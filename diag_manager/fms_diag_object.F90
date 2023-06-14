@@ -30,13 +30,14 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                           & get_diag_files_id, diag_yaml, DiagYamlFilesVar_type
+                           & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
                                    &parse_compress_att, get_axis_id_from_name
 use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler, error_mesg
+use constants_mod, only: SECONDS_PER_DAY
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -86,6 +87,7 @@ private
     procedure :: fms_diag_field_add_cell_measures
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_check_out_of_range_value
+    procedure :: fms_diag_compare_window
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -220,6 +222,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
 !> Use pointers for convenience
   fieldptr => this%FMS_diag_fields(this%registered_variables)
+
+!> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
+!! of the sorted variable list
+  fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
+
+!> Allocate and initialize member buffer_allocated of this field
+  allocate(fieldptr%buffer_allocated(size(diag_field_indices)))
+  fieldptr%buffer_allocated = .false.
+
 !> Register the data for the field
   call fieldptr%register(modname, varname, diag_field_indices, this%diag_axis, &
        axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
@@ -483,9 +494,19 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
                              !! later.  \note This is experimental
   !TODO logical, allocatable, dimension(:,:,:) :: oor_mask !< Out of range mask
+  integer :: sample !< Index along the diurnal time axis
+  integer :: day    !< Number of days
+  integer :: second !< Number of seconds
+  integer :: tick   !< Number of ticks representing fractional second
+  integer :: buffer_id !< Index of a buffer
+  !TODO: logical :: phys_window
+  character(len=128) :: error_string !< Store error text
+  integer :: i !< For looping
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+  class(diagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
+
   !TODO: weight is for time averaging where each time level may have a different weight
   ! call real_copy_set()
 
@@ -532,6 +553,47 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   else
 !!TODO: Loop through fields and do averages/math functions
+    do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
+      buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(i)
+
+      !!TODO: Check if the field is a physics window
+      !! phys_window = fms_diag_compare_window()
+
+      !!TODO: Get local start and end indices on 3 axes for regional output
+
+      !> Compute the diurnal index
+      sample = 1
+      if (present(time)) then
+        call get_time(time, second, day, tick) !< Current time in days and seconds
+        ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
+        sample = floor((second + real(tick) / get_ticks_per_second()) &
+          & * ptr_diag_field_yaml%get_n_diurnal() / SECONDS_PER_DAY) + 1
+      end if
+
+      !!TODO: Get the vertical layer start and end indices
+
+      !!TODO: Initialize output time for fields output every time step
+
+      !< Check if time should be present for this field
+      if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) then
+        write(error_string, '(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
+          & trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
+        if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
+          &//trim(error_string)//', time must be present for nonstatic field', err_msg)) then
+            !!TODO: deallocate local pointers/allocatables if needed
+          return
+        end if
+      end if
+
+      !!TODO: Is it time to output for this field? CAREFUL ABOUT > vs >= HERE
+      !--- The fields send out within openmp parallel region will be written out in
+      !--- diag_send_complete.
+
+      !!TODO: Is check to bounds of current field necessary?
+
+      !!TODO: Take care of submitted field data
+
+    enddo
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     fms_diag_accept_data = .TRUE.
     return
@@ -1211,4 +1273,49 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
 #endif
 end subroutine fms_diag_check_out_of_range_value
 
+!> @brief Determines if the window defined by the input bounds is a physics window.
+!> @return TRUE if the window size is less then the actual field size else FALSE.
+function fms_diag_compare_window(this, field, field_id, &
+  is_in, ie_in, js_in, je_in, ks_in, ke_in) result(is_phys_win)
+  class(fmsDiagObject_type), intent(in) :: this !< Diag Object
+  class(*), intent(in) :: field(:,:,:,:) !< Field data
+  integer, intent(in) :: field_id !< ID of the input field
+  integer, intent(in) :: is_in, js_in !< Starting field indices for the first 2 dimensions;
+                                      !< pass reconditioned indices fis and fjs
+                                      !< which are computed elsewhere.
+  integer, intent(in) :: ie_in, je_in !< Ending field indices for the first 2 dimensions;
+                                      !< pass reconditioned indices fie and fje
+                                      !< which are computed elsewhere.
+  integer, intent(in) :: ks_in, ke_in !< Starting and ending indices of the field in 3rd dimension
+  logical :: is_phys_win !< Return flag
+#ifdef use_yaml
+  integer, pointer :: axis_ids(:)
+  integer :: total_elements
+  integer :: i !< For do loop
+  integer :: field_size
+  integer, allocatable :: field_shape(:) !< Shape of the field data
+  integer :: window_size
+
+  !> Determine shape of the field defined by the input bounds
+  field_shape = shape(field(is_in:ie_in, js_in:je_in, ks_in:ke_in, :))
+
+  window_size = field_shape(1) * field_shape(2) * field_shape(3)
+
+  total_elements = 1
+  axis_ids => this%FMS_diag_fields(field_id)%get_axis_id()
+  do i=1, size(axis_ids)
+    total_elements = total_elements * this%fms_get_axis_length(axis_ids(i))
+  enddo
+
+  if (total_elements > window_size) then
+    is_phys_win = .true.
+  else
+    is_phys_win = .false.
+  end if
+#else
+  is_phys_win = .false.
+  call mpp_error( FATAL, "fms_diag_compare_window: "//&
+    "you can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
+end function fms_diag_compare_window
 end module fms_diag_object_mod
