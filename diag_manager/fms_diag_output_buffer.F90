@@ -221,17 +221,17 @@ function remap_buffer(buffobj, field_name)
     type is (outputBuffer2d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
                                                                  "for field:" // field_name)
-      remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:1, 1:1, 1:1) => buffobj%buffer(:,:)
+      remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:size(buffobj%buffer,2)) => buffobj%buffer(:,:)
     type is (outputBuffer3d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
                                                                  "for field:" // field_name)
-      remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), 1:1, 1:1) => &
+      remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:1, 1:1, 1:size(buffobj%buffer,3)) => &
                                                                                           & buffobj%buffer(:,:,:)
     type is (outputBuffer4d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
                                                                  "for field:" // field_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
-                   1:size(buffobj%buffer,4), 1:1) => buffobj%buffer(:,:,:,:)
+                  1:1, 1:size(buffobj%buffer,4)) => buffobj%buffer(:,:,:,:)
     type is (outputBuffer5d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
                                                                  "for field:" // field_name)
