@@ -65,123 +65,228 @@ module fms
                               fms_affinity_set
 
   !> amip_interp
-  use amip_interp_mod, only: amip_interp_init, get_amip_sst, get_amip_ice, &
-                             amip_interp_new,amip_interp_del, amip_interp_type, &
-                             assignment(=), i_sst, j_sst, sst_ncep, sst_anom, &
-                             forecast_mode, use_ncep_sst
+  use amip_interp_mod, only: fms_amip_interp_init         => amip_interp_init, &
+                             fms_get_amip_sst             => get_amip_sst, &
+                             fms_get_amip_ice             => get_amip_ice, &
+                             fms_amip_interp_new          => amip_interp_new, &
+                             fms_amip_interp_del          => amip_interp_del, &
+                             fms_amip_interp_type         => amip_interp_type, &
+                             assignment(=), &
+                             fms_amip_interp_i_sst        => i_sst, &
+                             fms_amip_interp_j_sst        => j_sst, &
+                             fms_amip_interp_sst_ncep     => sst_ncep, &
+                             fms_amip_interp_sst_anom     => sst_anom, &
+                             fms_amip_interp_forecast_mode=> forecast_mode, &
+                             fms_amip_interp_use_ncep_sst => use_ncep_sst
   !> astronomy
-  use astronomy_mod, only: astronomy_init, get_period, set_period, &
-                           set_orbital_parameters, get_orbital_parameters, &
-                           set_ref_date_of_ae, get_ref_date_of_ae,  &
-                           diurnal_solar, daily_mean_solar, annual_mean_solar,  &
-                           astronomy_end, universal_time, orbital_time
+  use astronomy_mod, only: fms_astronomy_init                   => astronomy_init, &
+                           fms_astronomy_get_period             => get_period, &
+                           fms_astronomy_set_period             => set_period, fms_astronomy_set_orbital_parameters=>, &
+                           fms_astronomy_get_orbital_parameters => get_orbital_parameters, &
+                           fms_astronomy_set_ref_date_of_ae     => set_ref_date_of_ae, &
+                           fms_astronomy_get_ref_date_of_ae     => get_ref_date_of_ae, &
+                           fms_astronomy_diurnal_solar          => diurnal_solar, &
+                           fms_astronomy_daily_mean_solar       => daily_mean_solar, &
+                           fms_astronomy_annual_mean_solar      => annual_mean_solar,  &
+                           fms_astronomy_end                    => astronomy_end, &
+                           fms_astronomy_universal_time         => universal_time, &
+                           fms_astronomy_orbital_time           => orbital_time
 
   !> axis_utils
-  use axis_utils2_mod, only: get_axis_cart, get_axis_modulo, lon_in_range, &
-                             tranlon, frac_index, nearest_index, interp_1d, &
-                             get_axis_modulo_times, axis_edges
+  use axis_utils2_mod, only: fms_get_axis_cart         => get_axis_cart, &
+                             fms_get_axis_modulo       => get_axis_modulo, &
+                             fms_lon_in_range          => lon_in_range, &
+                             fms_tranlon               => tranlon, &
+                             fms_frac_index            => frac_index, &
+                             fms_nearest_index         => nearest_index, &
+                             fms_interp_1d             => interp_1d, &
+                             fms_get_axis_modulo_times => get_axis_modulo_times, &
+                             fms_axis_edges            => axis_edges
 
   !>block_control
-  use block_control_mod, only: block_control_type, define_blocks, &
-                               define_blocks_packed
+  use block_control_mod, only: fms_block_control_type                 => block_control_type, &
+                               fms_block_control_define_blocks        => define_blocks, &
+                               fms_block_control_define_blocks_packed => define_blocks_packed
 
   !> column_diagnostics
-  use column_diagnostics_mod, only: column_diagnostics_init, &
-                                    initialize_diagnostic_columns, &
-                                    column_diagnostics_header, &
-                                    close_column_diagnostics_units
+  use column_diagnostics_mod, only: fms_column_diagnostics_init        => column_diagnostics_init, &
+                                    fms_initialize_diagnostic_columns  => initialize_diagnostic_columns, &
+                                    fms_column_diagnostics_header      => column_diagnostics_header, &
+                                    fms_close_column_diagnostics_units => close_column_diagnostics_units
 
   !> coupler
-  use coupler_types_mod, only: coupler_types_init, coupler_type_copy, &
-                               coupler_type_spawn, coupler_type_set_diags, &
-                               coupler_type_write_chksums, coupler_type_send_data, &
-                               coupler_type_data_override, coupler_type_register_restarts, &
-                               coupler_type_restore_state, coupler_type_increment_data, &
-                               coupler_type_rescale_data, coupler_type_copy_data, &
-                               coupler_type_redistribute_data, coupler_type_destructor, &
-                               coupler_type_initialized, coupler_type_extract_data, &
-                               coupler_type_set_data,coupler_type_copy_1d_2d, &
-                               coupler_type_copy_1d_3d, coupler_3d_values_type, &
-                               coupler_3d_field_type, coupler_3d_bc_type, &
-                               coupler_2d_values_type, coupler_2d_field_type, &
-                               coupler_2d_bc_type, coupler_1d_values_type, &
-                               coupler_1d_field_type, coupler_1d_bc_type, &
-                               ind_pcair, ind_u10, ind_psurf, ind_alpha, ind_csurf, &
-                               ind_sc_no, ind_flux, ind_deltap, ind_kw, ind_flux0, &
-                               ind_deposition, ind_runoff
-  use ensemble_manager_mod, only: ensemble_manager_init, get_ensemble_id, get_ensemble_size, &
-                               get_ensemble_pelist, ensemble_pelist_setup, &
-                               get_ensemble_filter_pelist
-  use atmos_ocean_fluxes_mod, only: atmos_ocean_fluxes_init, atmos_ocean_type_fluxes_init, &
-                               aof_set_coupler_flux
+  use coupler_types_mod, only: fms_coupler_types_init             => coupler_types_init, &
+                               fms_coupler_type_copy              => coupler_type_copy, &
+                               fms_coupler_type_spawn             => coupler_type_spawn, &
+                               fms_coupler_type_set_diags         => coupler_type_set_diags, &
+                               fms_coupler_type_write_chksums     => coupler_type_write_chksums, &
+                               fms_coupler_type_send_data         => coupler_type_send_data, &
+                               fms_coupler_type_data_override     => coupler_type_data_override, &
+                               fms_coupler_type_register_restarts => coupler_type_register_restarts, &
+                               fms_coupler_type_restore_state     => coupler_type_restore_state, &
+                               fms_coupler_type_increment_data    => coupler_type_increment_data, &
+                               fms_coupler_type_rescale_data      => coupler_type_rescale_data, &
+                               fms_coupler_type_copy_data         => coupler_type_copy_data, &
+                               fms_coupler_type_redistribute_data => coupler_type_redistribute_data, &
+                               fms_coupler_type_destructor        => coupler_type_destructor, &
+                               fms_coupler_type_initialized       => coupler_type_initialized, &
+                               fms_coupler_type_extract_data      => coupler_type_extract_data, &
+                               fms_coupler_type_set_data          => coupler_type_set_data, &
+                               fms_coupler_type_copy_1d_2d        => coupler_type_copy_1d_2d, &
+                               fms_coupler_type_copy_1d_3d        => coupler_type_copy_1d_3d, &
+                               fms_coupler_3d_values_type         => coupler_3d_values_type, &
+                               fms_coupler_3d_field_type          => coupler_3d_field_type, &
+                               fms_coupler_3d_bc_type             => coupler_3d_bc_type, &
+                               fms_coupler_2d_values_type         => coupler_2d_values_type, &
+                               fms_coupler_2d_field_type          => coupler_2d_field_type, &
+                               fms_coupler_2d_bc_type             => coupler_2d_bc_type, &
+                               fms_coupler_1d_values_type         => coupler_1d_values_type, &
+                               fms_coupler_1d_field_type          => coupler_1d_field_type, &
+                               fms_coupler_1d_bc_type             => coupler_1d_bc_type, &
+                               fms_ind_pcair                      => ind_pcair, &
+                               fms_ind_u10                        => ind_u10, &
+                               fms_ind_psurf                      => ind_psurf, &
+                               fms_ind_alpha                      => ind_alpha, &
+                               fms_ind_csurf                      => ind_csurf, &
+                               fms_ind_sc_no                      => ind_sc_no, &
+                               fms_ind_flux                       => ind_flux, &
+                               fms_ind_deltap                     => ind_deltap, &
+                               fms_ind_kw                         => ind_kw, &
+                               fms_ind_flux0                      => ind_flux0, &
+                               fms_ind_deposition                 => ind_deposition,&
+                               fms_ind_runoff                     => ind_runoff
+  use ensemble_manager_mod, only: fms_ensemble_manager_init     => ensemble_manager_init, &
+                               fms_get_ensemble_id              => get_ensemble_id,
+                               fms_get_ensemble_size            => get_ensemble_size, 
+                               fms_get_ensemble_pelist          => get_ensemble_pelist, &
+                               fms_ensemble_pelist_setup        => ensemble_pelist_setup, &
+                               fms_get_ensemble_filter_pelist   => get_ensemble_filter_pelist
+  use atmos_ocean_fluxes_mod, only: fms_atmos_ocean_fluxes_init => atmos_ocean_fluxes_init,
+                               fms_atmos_ocean_type_fluxes_init => atmos_ocean_type_fluxes_init, &
+                               fms_aof_set_coupler_flux         => aof_set_coupler_flux
 
   !> data_override
-  use data_override_mod, only: data_override_init, data_override, &
-                               data_override_unset_domains, data_override_UG
+  use data_override_mod, only: fms_data_override_init          => data_override_init, &
+                               fms_data_override               => data_override, &
+                               fms_data_override_unset_domains => data_override_unset_domains, &
+                               fms_data_override_UG            => data_override_UG
 
   !> diag_integral
-  use diag_integral_mod, only: diag_integral_init, diag_integral_field_init, &
-                               sum_diag_integral_field, diag_integral_output, &
-                               diag_integral_end
+  use diag_integral_mod, only: fms_diag_integral_init       => diag_integral_init, &
+                               fms_diag_integral_field_init => diag_integral_field_init, &
+                               fms_sum_diag_integral_field  => sum_diag_integral_field, &
+                               fms_diag_integral_output     => diag_integral_output, &
+                               fms_diag_integral_end        => diag_integral_end
 
   !> diag_manager
   !! includes imports from submodules made public
-  use diag_manager_mod, only: diag_manager_init, send_data, send_tile_averaged_data, &
-                           diag_manager_end, register_diag_field, register_static_field, &
-                           diag_axis_init, get_base_time, get_base_date, need_data, &
-                           DIAG_ALL, DIAG_OCEAN, DIAG_OTHER, get_date_dif, DIAG_SECONDS,&
-                           DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, &
-                           get_diag_global_att, set_diag_global_att, diag_field_add_attribute, &
-                           diag_field_add_cell_measures, get_diag_field_id, &
-                           diag_axis_add_attribute, diag_grid_init, diag_grid_end, &
-                           diag_manager_set_time_end, diag_send_complete, &
-                           diag_send_complete_instant, DIAG_FIELD_NOT_FOUND, &
-                           CMOR_MISSING_VALUE, null_axis_id
+  use diag_manager_mod, only: fms_diag_manager_init => diag_manager_init, &
+                              fms_send_data => send_data, &
+                              fms_send_tile_averaged_data => send_tile_averaged_data, &
+                              fms_diag_manager_end => diag_manager_end, &
+                              fms_register_diag_field => register_diag_field,
+                              fms_register_static_field => register_static_field, &
+                              fms_diag_axis_init => diag_axis_init, &
+                              fms_get_base_time => get_base_time,
+                              fms_get_base_date => get_base_date, &
+                              fms_need_data => need_data, &
+                              DIAG_ALL, &
+                              DIAG_OCEAN, &
+                              DIAG_OTHER, &
+                              fms_get_date_dif => get_date_dif, &
+                              DIAG_SECONDS,&
+                              DIAG_MINUTES, &
+                              DIAG_HOURS, &
+                              DIAG_DAYS, &
+                              DIAG_MONTHS, &
+                              DIAG_YEARS, &
+                              fms_get_diag_global_att => get_diag_global_att, &
+                              fms_set_diag_global_att => set_diag_global_att, &
+                              fms_diag_field_add_attribute => diag_field_add_attribute, &
+                              fms_diag_field_add_cell_measures => diag_field_add_cell_measures, &
+                              fms_get_diag_field_id => get_diag_field_id, &
+                              fms_diag_axis_add_attribute => diag_axis_add_attribute, &
+                              fms_diag_grid_init => diag_grid_init, &
+                              fms_diag_grid_end => diag_grid_end, &
+                              fms_diag_manager_set_time_end => diag_manager_set_time_end, &
+                              fms_diag_send_complete => diag_send_complete, &
+                              fms_diag_send_complete_instant => diag_send_complete_instant, &
+                              DIAG_FIELD_NOT_FOUND, &
+                              CMOR_MISSING_VALUE, &
+                              null_axis_id
 
   !> exchange
-  use xgrid_mod, only: xmap_type, setup_xmap, set_frac_area, put_to_xgrid, &
-                       get_from_xgrid, xgrid_count, some, conservation_check, &
-                       xgrid_init, AREA_ATM_SPHERE, AREA_OCN_SPHERE, AREA_ATM_MODEL, &
-                       AREA_OCN_MODEL, get_ocean_model_area_elements, grid_box_type, &
-                       get_xmap_grid_area, put_to_xgrid_ug, get_from_xgrid_ug, &
-                       set_frac_area_ug, FIRST_ORDER, SECOND_ORDER, stock_move_ug, &
-                       stock_move, stock_type, stock_print, get_index_range, &
-                       stock_integrate_2d
-  use stock_constants_mod, only: NELEMS, ISTOCK_WATER, ISTOCK_HEAT, ISTOCK_SALT, &
-                       ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, stocks_file, &
-                       stocks_report, stocks_report_init, stocks_set_init_time, &
-                       atm_stock, ocn_stock, lnd_stock, ice_stock
+  use xgrid_mod, only: fms_xmap_type => xmap_type, &
+                       fms_setup_xmap => setup_xmap, &
+                       fms_set_frac_area => set_frac_area, &
+                       fms_put_to_xgrid => put_to_xgrid, &
+                       fms_get_from_xgrid => get_from_xgrid, &
+                       fms_xgrid_count => xgrid_count, &
+                       fms_some => some,
+                       fms_conservation_check => conservation_check, &
+                       fms_xgrid_init => xgrid_init, &
+                       fms_AREA_ATM_SPHERE => AREA_ATM_SPHERE, &
+                       fms_AREA_OCN_SPHERE => AREA_OCN_SPHERE, &
+                       fms_AREA_ATM_MODEL =>
+                       AREA_ATM_MODEL, fms_AREA_OCN_MODEL => AREA_OCN_MODEL, &
+                       fms_get_ocean_model_area_elements => get_ocean_model_area_elements, &
+                       fms_grid_box_type => grid_box_type, &
+                       fms_get_xmap_grid_area => get_xmap_grid_area, fms_put_to_xgrid_ug => put_to_xgrid_ug, &
+                       fms_get_from_xgrid_ug => get_from_xgrid_ug, fms_set_frac_area_ug => set_frac_area_ug, &
+                       FIRST_ORDER, SECOND_ORDER, fms_stock_move_ug => stock_move_ug, fms_stock_move => stock_move, fms_stock_type => stock_type, fms_stock_print => stock_print,
+                       fms_get_index_range => get_index_range, &
+                       fms_stock_integrate_2d => stock_integrate_2d
+  use stock_constants_mod, only: fms_NELEMS => NELEMS, fms_ISTOCK_WATER => ISTOCK_WATER, fms_ISTOCK_HEAT => ISTOCK_HEAT, &
+                       fms_ISTOCK_SALT => ISTOCK_SALT, &
+                       fms_ISTOCK_TOP => ISTOCK_TOP, fms_ISTOCK_BOTTOM => ISTOCK_BOTTOM, fms_ISTOCK_SIDE => ISTOCK_SIDE,
+                       fms_stocks_file => stocks_file, &
+                       fms_stocks_report => stocks_report, fms_stocks_report_init => stocks_report_init, fms_stocks_set_init_time => stocks_set_init_time, &
+                       fms_atm_stock => atm_stock, fms_ocn_stock => ocn_stock, fms_lnd_stock => lnd_stock, fms_ice_stock => ice_stock
 
   !> field manager
-  use field_manager_mod, only: field_manager_init, field_manager_end, find_field_index, &
-                         get_field_info, &
-                         get_field_method, get_field_methods, parse, fm_change_list, &
-                         fm_change_root, fm_dump_list, fm_exists, fm_get_index, &
-                         fm_get_current_list, fm_get_length, fm_get_type, fm_get_value, &
-                         fm_init_loop, &
-                         fm_loop_over_list, fm_new_list, fm_new_value, &
-                         fm_reset_loop, fm_return_root, &
-                         fm_modify_name, fm_query_method, fm_find_methods, fm_copy_list, &
-                         fm_field_name_len, fm_path_name_len, &
-                         fm_string_len, fm_type_name_len, NUM_MODELS, NO_FIELD, &
-                         MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, MODEL_ICE, MODEL_COUPLER, &
-                         method_type, method_type_short, &
-                         method_type_very_short, fm_list_iter_type, default_method
-  use fm_util_mod, only: fm_util_start_namelist, fm_util_end_namelist, &
-                         fm_util_check_for_bad_fields, fm_util_set_caller, &
-                         fm_util_reset_caller, fm_util_set_no_overwrite, &
-                         fm_util_reset_no_overwrite, fm_util_set_good_name_list, &
-                         fm_util_reset_good_name_list, fm_util_get_length, &
-                         fm_util_get_integer, fm_util_get_logical, fm_util_get_real, &
-                         fm_util_get_string, fm_util_get_integer_array, &
-                         fm_util_get_logical_array, fm_util_get_real_array, &
-                         fm_util_get_string_array, fm_util_set_value, &
-                         fm_util_set_value_integer_array, fm_util_set_value_logical_array, &
-                         fm_util_set_value_real_array, fm_util_set_value_string_array, &
-                         fm_util_set_value_integer, fm_util_set_value_logical, &
-                         fm_util_set_value_real, fm_util_set_value_string, &
-                         fm_util_get_index_list, fm_util_get_index_string, &
-                         fm_util_default_caller
+  use field_manager_mod, only: fms_field_manager_init => field_manager_init, fms_field_manager_end => field_manager_end,
+                         fms_find_field_index => find_field_index, &
+                         fms_get_field_info => get_field_info, &
+                         fms_get_field_method => get_field_method, fms_get_field_methods => get_field_methods, fms_parse => parse,
+                         fms_fm_change_list => fm_change_list, &
+                         fms_fm_change_root => fm_change_root, fms_fm_dump_list => fm_dump_list, fms_fm_exists => fm_exists,
+                         fms_fm_get_index => fm_get_index, &
+                         fms_fm_get_current_list => fm_get_current_list, fms_fm_get_length => fm_get_length, fms_fm_get_type =>
+                         fm_get_type, fms_fm_get_value => fm_get_value, &
+                         fms_fm_init_loop => fm_init_loop, &
+                         fms_fm_loop_over_list => fm_loop_over_list, fms_fm_new_list => fm_new_list, fms_fm_new_value => fm_new_value, &
+                         fms_fm_reset_loop => fm_reset_loop, fms_fm_return_root => fm_return_root, &
+                         fms_fm_modify_name => fm_modify_name, fms_fm_query_method => fm_query_method, fms_fm_find_methods =>
+                         fm_find_methods, fms_fm_copy_list => fm_copy_list, &
+                         fms_fm_field_name_len => fm_field_name_len, fms_fm_path_name_len => fm_path_name_len, &
+                         fms_fm_string_len => fm_string_len, fms_fm_type_name_len => fm_type_name_len, fms_NUM_MODELS => NUM_MODELS,
+                         fms_NO_FIELD => NO_FIELD, &
+                         fms_MODEL_ATMOS => MODEL_ATMOS, fms_MODEL_OCEAN => MODEL_OCEAN, fms_MODEL_LAND => MODEL_LAND, fms_MODEL_ICE
+                         => MODEL_ICE, fms_MODEL_COUPLER => MODEL_COUPLER, &
+                         fms_method_type => method_type, fms_method_type_short => method_type_short, &
+                         fms_method_type_very_short => method_type_very_short, fms_fm_list_iter_type => fm_list_iter_type,
+                         fms_default_method => default_method
+  use fm_util_mod, only: fms_fm_util_start_namelist => fm_util_start_namelist, fms_fm_util_end_namelist => fm_util_end_namelist, &
+                         fms_fm_util_check_for_bad_fields => fm_util_check_for_bad_fields, fms_fm_util_set_caller => fm_util_set_caller, &
+                         fms_fm_util_reset_caller => fm_util_reset_caller, fms_fm_util_set_no_overwrite => fm_util_set_no_overwrite, &
+                         fms_fm_util_reset_no_overwrite => fm_util_reset_no_overwrite, fms_fm_util_set_good_name_list => fm_util_set_good_name_list, &
+                         fms_fm_util_reset_good_name_list => fm_util_reset_good_name_list, fms_fm_util_get_length => fm_util_get_length, &
+                         fms_fm_util_get_integer => fm_util_get_integer, fms_fm_util_get_logical => fm_util_get_logical,
+                         fms_fm_util_get_real => fm_util_get_real, &
+                         fms_fm_util_get_string => fm_util_get_string, fms_fm_util_get_integer_array => fm_util_get_integer_array, &
+                         fms_fm_util_get_logical_array => fm_util_get_logical_array, fms_fm_util_get_real_array => fm_util_get_real_array,
+                         fms_fm_util_get_string_array => fm_util_get_string_array, fms_fm_util_set_value => fm_util_set_value, &
+                         fms_fm_util_set_value_integer_array => fm_util_set_value_integer_array, &
+                         fms_fm_util_set_value_logical_array => fm_util_set_value_logical_array, &
+                         fms_fm_util_set_value_real_array => fm_util_set_value_real_array, &
+                         fms_fm_util_set_value_string_array => fm_util_set_value_string_array, &
+                         fms_fm_util_set_value_integer => fm_util_set_value_integer, &
+                         fms_fm_util_set_value_logical => fm_util_set_value_logical, &
+                         fms_fm_util_set_value_real => fm_util_set_value_real, &
+                         fms_fm_util_set_value_string => fm_util_set_value_string, &
+                         fms_fm_util_get_index_list => fm_util_get_index_list, &
+                         fms_fm_util_get_index_string => fm_util_get_index_string, &
+                         fms_fm_util_default_caller => fm_util_default_caller
 
   !> fms2_io
   use fms2_io_mod, only: unlimited, FmsNetcdfFile_t, FmsNetcdfDomainFile_t, &
@@ -215,12 +320,14 @@ module fms
   !> fms
   !! routines that don't conflict with fms2_io
   use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, check_nml_error, &
-                     monotonic_array, string_array_index, clock_flag_default, &
-                     print_memory_usage, write_version_number
+                     fms_monotonic_array => monotonic_array, fms_string_array_index => string_array_index, &
+                     fms_clock_flag_default => clock_flag_default, fms_print_memory_usage => print_memory_usage, &
+                     fms_write_version_number => write_version_number
 
   !> horiz_interp
-  use horiz_interp_mod, only: horiz_interp, horiz_interp_new, horiz_interp_del, &
-                              horiz_interp_init, horiz_interp_end
+  use horiz_interp_mod, only: fms_horiz_interp => horiz_interp, fms_horiz_interp_new => horiz_interp_new, &
+                              fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
+                              fms_horiz_interp_end => horiz_interp_end
   use horiz_interp_type_mod, only: horiz_interp_type, assignment(=), CONSERVE, &
                               BILINEAR, SPHERICA, BICUBIC, stats
   !! used via horiz_interp
