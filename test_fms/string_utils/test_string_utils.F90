@@ -22,6 +22,7 @@
 program test_fms_string_utils
   use fms_string_utils_mod
   use fms_mod, only: fms_init, fms_end
+  use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
   use mpp_mod
   use, intrinsic :: iso_c_binding
 
@@ -110,6 +111,9 @@ program test_fms_string_utils
   print *, "Checking if fms_find_unique determines the correct number of unique strings"
   if (nunique .ne. 7) call mpp_error(FATAL, "The number of unique strings in your array is not correct")
 
+  call check_string
+  call check_stringify
+
   call fms_end()
 
   deallocate(my_array)
@@ -164,5 +168,94 @@ program test_fms_string_utils
       endif
     end do
   end subroutine check_my_indices
+
+  subroutine check_string
+    if (string(.true.) .ne. "True") then
+      call mpp_error(FATAL, "string() unit test failed for Boolean true value")
+    endif
+
+    if (string(.false.) .ne. "False") then
+      call mpp_error(FATAL, "string() unit test failed for Boolean false value")
+    endif
+
+    if (string(12345_i4_kind) .ne. "12345") then
+      call mpp_error(FATAL, "string() unit test failed for positive integer(4)")
+    endif
+
+    if (string(-12345_i4_kind) .ne. "-12345") then
+      call mpp_error(FATAL, "string() unit test failed for negative integer(4)")
+    endif
+
+    if (string(12345_i8_kind) .ne. "12345") then
+      call mpp_error(FATAL, "string() unit test failed for positive integer(8)")
+    endif
+
+    if (string(-12345_i8_kind) .ne. "-12345") then
+      call mpp_error(FATAL, "string() unit test failed for negative integer(8)")
+    endif
+
+    if (string(1._r4_kind, "F15.7") .ne. "1.0000000") then
+      call mpp_error(FATAL, "string() unit test failed for positive real(4)")
+    endif
+
+    if (string(-1._r4_kind, "F15.7") .ne. "-1.0000000") then
+      call mpp_error(FATAL, "string() unit test failed for negative real(4)")
+    endif
+
+    if (string(1._r8_kind, "F25.16") .ne. "1.0000000000000000") then
+      call mpp_error(FATAL, "string() unit test failed for positive real(8)")
+    endif
+
+    if (string(-1._r8_kind, "F25.16") .ne. "-1.0000000000000000") then
+      call mpp_error(FATAL, "string() unit test failed for negative real(8)")
+    endif
+  end subroutine
+
+  subroutine check_stringify
+    real(r4_kind) :: arr_1d_r4(3), arr_2d_r4(2, 2), arr_3d_r4(2, 2, 2)
+    real(r8_kind) :: arr_1d_r8(3), arr_2d_r8(2, 2), arr_3d_r8(2, 2, 2)
+
+    arr_1d_r4 = [0._r4_kind, 1._r4_kind, 2._r4_kind]
+    if (stringify(arr_1d_r4, "F15.7") .ne. "[0.0000000, 1.0000000, 2.0000000]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 1D r4 array")
+    endif
+
+    arr_1d_r8 = [0._r8_kind, 1._r8_kind, 2._r8_kind]
+    if (stringify(arr_1d_r8, "F25.16") .ne. "[0.0000000000000000, 1.0000000000000000, 2.0000000000000000]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 1D r8 array")
+    endif
+
+    arr_2d_r4 = reshape([[0._r4_kind, 1._r4_kind], [2._r4_kind, 3._r4_kind]], [2, 2])
+    if (stringify(arr_2d_r4, "F15.7") .ne. &
+    & "[[0.0000000, 1.0000000], [2.0000000, 3.0000000]]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 2D r4 array")
+    endif
+
+    arr_2d_r8 = reshape([[0._r8_kind, 1._r8_kind], [2._r8_kind, 3._r8_kind]], [2, 2])
+    if (stringify(arr_2d_r8, "F25.16") .ne. &
+    & "[[0.0000000000000000, 1.0000000000000000], [2.0000000000000000, 3.0000000000000000]]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 2D r8 array")
+    endif
+
+    arr_3d_r4 = reshape([ &
+      & [[0._r4_kind, 1._r4_kind], [2._r4_kind, 3._r4_kind]], &
+      & [[4._r4_kind, 5._r4_kind], [6._r4_kind, 7._r4_kind]] &
+    & ], [2, 2, 2])
+    if (stringify(arr_3d_r4, "F15.7") .ne. &
+    & "[[[0.0000000, 1.0000000], [2.0000000, 3.0000000]],&
+      & [[4.0000000, 5.0000000], [6.0000000, 7.0000000]]]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 3D r4 array")
+    endif
+
+    arr_3d_r8 = reshape([ &
+      & [[0._r8_kind, 1._r8_kind], [2._r8_kind, 3._r8_kind]], &
+      & [[4._r8_kind, 5._r8_kind], [6._r8_kind, 7._r8_kind]] &
+    & ], [2, 2, 2])
+    if (stringify(arr_3d_r8, "F25.16") .ne. &
+    & "[[[0.0000000000000000, 1.0000000000000000], [2.0000000000000000, 3.0000000000000000]],&
+      & [[4.0000000000000000, 5.0000000000000000], [6.0000000000000000, 7.0000000000000000]]]") then
+      call mpp_error(FATAL, "stringify() unit test failed for 3D r8 array")
+    endif
+  end subroutine
 
 end program test_fms_string_utils
