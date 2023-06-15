@@ -335,26 +335,26 @@ end subroutine axis_edges
 
   end function lon_in_range
 
-  !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
+  !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) < lon_strt+360.
   !!
-  !> <br>The first istrt-1 entries are moved to the end of the array:
+  !! This may require that entries be moved from the beginning of the array to
+  !! the end. If no entries are moved (i.e., if lon(:) is already monotonic in
+  !! the range from lon_start to lon_start + 360), then istrt is set to 0. If
+  !! any entries are moved, then istrt is set to the original index of the entry
+  !! which becomes lon(1).
   !!
-  !! e.g.
-  !!        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
-  !!        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
+  !! e.g.,
+  !!
+  !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 3
+  !!    ==> lon = 3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
+  !!
+  !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 0
+  !!    ==> lon = 0 1 2 3 4 5  ...  358 359; istrt = 0
   subroutine tranlon(lon, lon_start, istrt)
-
-    ! returns array of longitudes s.t.  lon_strt <= lon < lon_strt+360.
-    ! also, the first istrt-1 entries are moved to the end of the array
-    !
-    ! e.g.
-    !        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
-    !        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
 
     real, intent(inout), dimension(:) :: lon
     real, intent(in) :: lon_start
     integer, intent(out) :: istrt
-
 
     integer :: len, i
     real :: lon_strt, tmp(size(lon(:))-1)
