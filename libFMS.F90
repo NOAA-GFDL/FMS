@@ -729,9 +729,12 @@ module fms
   use fms_string_utils_mod, only: fms_string_utils_string => string, &
                                   fms_string_utils_array_to_pointer => fms_array_to_pointer, &
                                   fms_string_utils_fms_pointer_to_array => fms_pointer_to_array, &
-                                  fms_sort_this, &
-                                  fms_find_my_string, fms_find_unique, fms_c2f_string, fms_cstring2cpointer, &
-                                  string_copy
+                                  fms_string_utils_sort_this => fms_sort_this, &
+                                  fms_string_utils_find_my_string => fms_find_my_string, &
+                                  fms_string_utils_find_unique => fms_find_unique, &
+                                  fms_string_utils_c2f_string => fms_c2f_string, &
+                                  fms_string_utils_cstring2cpointer => fms_cstring2cpointer, &
+                                  fms_string_utils_copy => string_copy
 
   !> time_interp
   use time_interp_mod, only: fms_time_interp_init => time_interp_init, &
