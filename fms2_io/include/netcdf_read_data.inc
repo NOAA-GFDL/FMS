@@ -177,6 +177,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
+    call unpack_data_0d(fileobj, varid, variable_name, buf)
   endif
   if (bcast) then
     select type(buf)
@@ -274,6 +275,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
+    call unpack_data_1d(fileobj, varid, variable_name, buf)
   endif
   if (bcast) then
     select type(buf)
@@ -367,6 +369,7 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
+    call unpack_data_2d(fileobj, varid, variable_name, buf)
   endif
   if (bcast) then
     select type(buf)
@@ -458,6 +461,7 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
+    call unpack_data_3d(fileobj, varid, variable_name, buf)
   endif
   if (bcast) then
     select type(buf)
@@ -549,6 +553,7 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
+    call unpack_data_4d(fileobj, varid, variable_name, buf)
   endif
   if (bcast) then
     select type(buf)
@@ -640,6 +645,7 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
     call check_netcdf_code(err, append_error_msg)
+    call unpack_data_5d(fileobj, varid, variable_name, buf)
   endif
   if (bcast) then
     select type(buf)

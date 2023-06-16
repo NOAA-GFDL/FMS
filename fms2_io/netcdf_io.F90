@@ -2001,6 +2001,7 @@ include "compressed_write.inc"
 include "compressed_read.inc"
 include "scatter_data_bc.inc"
 include "gather_data_bc.inc"
+include "unpack_data.inc"
 
 !> @brief Wrapper to distinguish interfaces.
 function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
