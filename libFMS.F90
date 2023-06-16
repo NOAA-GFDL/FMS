@@ -34,13 +34,10 @@
 !! Exceptions (mainly for rep:
 !!   - Parameter values are kept their original names
 !!   - If module name is already included (like in init routines) only fms prefix will be added.
-!!   - Similarly if theres a redundant module name included already included it will not be repeated (ie. mpp_update_domains => fms_mpp_domains_update_domains)
+!!   - Similarly if theres a redundant module name included already included it will not be repeated 
+!!     (ie. mpp_update_domains => fms_mpp_domains_update_domains)
 !!
-!! Previous remappings due to conflicts:
-!!
-!!           fms_mosaic_get_mosaic_tile_grid (fms2_io) => mosaic2_get_mosaic_tile_grid
-!!
-!!           read_data from interpolator_mod(fms2_io)   => interpolator_read_data
+!! Remappings due to name conflicts:
 !!
 !!           ZERO from interpolator_mod(mpp_parameter)  => INTERPOLATOR_ZERO
 !!
@@ -74,8 +71,8 @@ module fms
 
   !> amip_interp
   use amip_interp_mod, only: fms_amip_interp_init         => amip_interp_init, &
-                             fms_get_amip_sst             => get_amip_sst, &
-                             fms_get_amip_ice             => get_amip_ice, &
+                             fms_amip_interp_get_amip_sst             => get_amip_sst, &
+                             fms_amio_interp_get_amip_ice             => get_amip_ice, &
                              fms_amip_interp_new          => amip_interp_new, &
                              fms_amip_interp_del          => amip_interp_del, &
                              fms_amip_interp_type         => amip_interp_type, &
@@ -119,9 +116,10 @@ module fms
 
   !> column_diagnostics
   use column_diagnostics_mod, only: fms_column_diagnostics_init        => column_diagnostics_init, &
-                                    fms_initialize_diagnostic_columns  => initialize_diagnostic_columns, &
+                                    fms_column_diagnostics_initialize_diagnostic_columns => &
+                                                                          initialize_diagnostic_columns, &
                                     fms_column_diagnostics_header      => column_diagnostics_header, &
-                                    fms_close_column_diagnostics_units => close_column_diagnostics_units
+                                    fms_column_diagnostics_close_units => close_column_diagnostics_units
 
   !> coupler
   use coupler_types_mod, only: fms_coupler_types_init             => coupler_types_init, &
@@ -166,7 +164,7 @@ module fms
                                fms_coupler_ind_runoff                     => ind_runoff
   use ensemble_manager_mod, only: fms_ensemble_manager_init     => ensemble_manager_init, &
                                fms_ensemble_manager_eget_ensemble_id              => get_ensemble_id, &
-                               fms_ensemble_manager_get_ensemble_size            => get_ensemble_size, & 
+                               fms_ensemble_manager_get_ensemble_size            => get_ensemble_size, &
                                fms_ensemble_manager_get_ensemble_pelist          => get_ensemble_pelist, &
                                fms_ensemble_manager_ensemble_pelist_setup        => ensemble_pelist_setup, &
                                fms_ensemble_manager_get_ensemble_filter_pelist   => get_ensemble_filter_pelist
@@ -248,7 +246,8 @@ module fms
                        fms_xgrid_stock_print => stock_print, &
                        fms_xgrid_get_index_range => get_index_range, &
                        fms_xgrid_stock_integrate_2d => stock_integrate_2d
-  use stock_constants_mod, only: NELEMS, ISTOCK_WATER, ISTOCK_HEAT, ISTOCK_SALT, ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, &
+  use stock_constants_mod, only: NELEMS, ISTOCK_WATER, ISTOCK_HEAT, ISTOCK_SALT, &
+                       ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, &
                        fms_stock_constants_stocks_file => stocks_file, &
                        fms_stock_constants_stocks_report => stocks_report, &
                        fms_stocks_report_init => stocks_report_init, &
@@ -259,7 +258,8 @@ module fms
                        fms_ice_stock => ice_stock
 
   !> field manager
-  use field_manager_mod, only: fms_field_manager_init => field_manager_init, fms_field_manager_end => field_manager_end, &
+  use field_manager_mod, only: fms_field_manager_init => field_manager_init, &
+                         fms_field_manager_end => field_manager_end, &
                          fms_field_manager_find_field_index => find_field_index, &
                          fms_field_manager_get_field_info => get_field_info, &
                          fms_field_manager_get_field_method => get_field_method, &
@@ -291,7 +291,7 @@ module fms
                          NUM_MODELS, NO_FIELD, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, MODEL_ICE, MODEL_COUPLER, &
                          fms_field_manager_method_type => method_type, &
                          fms_field_manager_method_type_short => method_type_short, &
-                         fms_field_manager_field_manager_method_type_very_short => method_type_very_short, &
+                         fms_field_manager_method_type_very_short => method_type_very_short, &
                          fms_field_manager_fm_list_iter_type => fm_list_iter_type, &
                          fms_field_manager_default_method => default_method
   use fm_util_mod, only: fms_fm_util_start_namelist => fm_util_start_namelist, &
@@ -363,7 +363,7 @@ module fms
                          fms_fms2_io_get_valid => get_valid, &
                          fms_fms2_io_is_valid => is_valid, &
                          fms_fms2_io_get_unlimited_dimension_name => get_unlimited_dimension_name, &
-                         fms_fms2_io_get_variable_unlimited_dimension_index =>   get_variable_unlimited_dimension_index, &
+                         fms_fms2_io_get_variable_unlimited_dimension_index => get_variable_unlimited_dimension_index, &
                          fms_fms2_io_file_exists => file_exists, &
                          fms_fms2_io_compressed_start_and_count => compressed_start_and_count, &
                          fms_fms2_io_get_variable_sense =>   get_variable_sense, &
@@ -421,7 +421,7 @@ module fms
                               fms_interpolate_type => interpolate_type, &
                               CONSTANT, INTERP_WEIGHTED_P, INTERP_LINEAR_P, INTERP_LOG_P, &
                               FMS_INTERPOLATOR_ZERO=>ZERO, & !! conflicts with mpp_parameter's ZERO
-                              fms_interpolator_read_data=>read_data 
+                              fms_interpolator_read_data=>read_data
 
   !> memutils
   use memutils_mod, only: fms_memutils_init => memutils_init, &
@@ -561,8 +561,8 @@ module fms
                          fms_mpp_efp_real_to_efp => mpp_real_to_efp, &
                          fms_mpp_efp_real_diff => mpp_efp_real_diff, &
                          operator(+), operator(-), assignment(=), &
-                         fms_mpp_efp_query_efp_overflow_error => mpp_query_efp_overflow_error, &
-                         fms_mpp_efp_reset_efp_overflow_error => mpp_reset_efp_overflow_error, &
+                         fms_mpp_efp_query_overflow_error => mpp_query_efp_overflow_error, &
+                         fms_mpp_efp_reset_overflow_error => mpp_reset_efp_overflow_error, &
                          fms_mpp_efp_type => mpp_efp_type
   use mpp_domains_mod, only: fms_mpp_domains_domain_axis_spec => domain_axis_spec, &
                              fms_mpp_domains_domain1D => domain1D, &
