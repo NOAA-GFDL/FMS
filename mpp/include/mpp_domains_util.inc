@@ -324,6 +324,14 @@
         !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%data)
     enddo
 
+    do i=1, size(domain%x(1)%list)
+        call mpp_set_super_grid_indices(domain%x(1)%list(i-1)%compute)
+    enddo
+
+    do i=1, size(domain%y(1)%list)
+        call mpp_set_super_grid_indices(domain%y(1)%list(i-1)%compute)
+    enddo
+
   end subroutine mpp_create_super_grid_domain
 
   !#####################################################################
