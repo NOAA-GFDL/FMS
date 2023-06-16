@@ -128,6 +128,7 @@ use platform_mod
   INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds
   INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds
   INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds
+  INTEGER, PARAMETER :: MAX_STR_LEN = 255 !< Max length for a string
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.

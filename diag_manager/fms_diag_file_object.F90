@@ -28,13 +28,13 @@ module fms_diag_file_object_mod
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
                        get_instance_filename, open_file, close_file, get_mosaic_tile_file, unlimited, &
                        register_axis, register_field, register_variable_attribute, write_data, &
-                       dimension_exists
+                       dimension_exists, register_global_attribute
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
-                         middle_time, begin_time, end_time
+                         middle_time, begin_time, end_time, MAX_STR_LEN
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -156,6 +156,7 @@ type fmsDiagFileContainer_type
   procedure :: is_regional
   procedure :: is_file_static
   procedure :: open_diag_file
+  procedure :: write_global_metadata
   procedure :: write_time_metadata
   procedure :: write_axis_metadata
   procedure :: write_field_metadata
@@ -962,6 +963,7 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     if (is_regional) then
       if (.not. open_file(fileobj, file_name, "overwrite", pelist=(/mpp_pe()/))) &
       &call mpp_error(FATAL, "Error opening the file:"//file_name)
+      call register_global_attribute(fileobj, "is_subregional", "True", str_len=4)
    else
       allocate(pes(mpp_npes()))
       call mpp_get_current_pelist(pes)
@@ -988,6 +990,28 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   domain => null()
   diag_file => null()
 end subroutine open_diag_file
+
+!< @brief Write global attributes in the diag_file
+subroutine write_global_metadata(this)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this !< The file object
+
+  class(fmsDiagFile_type), pointer  :: diag_file      !< Diag_file object to open
+  class(FmsNetcdfFile_t),  pointer  :: fileobj        !< The fileobj to write to
+  integer                           :: i              !< For do loops
+  character (len=MAX_STR_LEN), allocatable :: yaml_file_attributes(:,:) !< Global attributes defined in the yaml
+
+  diag_file => this%FMS_diag_file
+  fileobj => diag_file%fileobj
+
+  if (diag_file%has_file_global_meta()) then
+    yaml_file_attributes = diag_file%get_file_global_meta()
+    do i = 1, size(yaml_file_attributes,1)
+      call register_global_attribute(fileobj, trim(yaml_file_attributes(i,1)), &
+      trim(yaml_file_attributes(i,2)), str_len=len_trim(yaml_file_attributes(i,2)))
+    enddo
+    deallocate(yaml_file_attributes)
+  endif
+end subroutine write_global_metadata
 
 !< @brief Writes a variable's metadata in the netcdf file
 subroutine write_var_metadata(fileobj, variable_name, dimensions, long_name, units)
