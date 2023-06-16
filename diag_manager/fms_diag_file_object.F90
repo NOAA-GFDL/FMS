@@ -538,7 +538,7 @@ end function get_file_varlist
 !! \return Copy of file_global_meta
 pure function get_file_global_meta (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
- character (len=:), allocatable, dimension(:,:) :: res
+ character (len=MAX_STR_LEN), allocatable, dimension(:,:) :: res
   res = this%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
 
@@ -995,16 +995,17 @@ end subroutine open_diag_file
 subroutine write_global_metadata(this)
   class(fmsDiagFileContainer_type), intent(inout), target :: this !< The file object
 
-  class(fmsDiagFile_type), pointer  :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer  :: fileobj        !< The fileobj to write to
   integer                           :: i              !< For do loops
   character (len=MAX_STR_LEN), allocatable :: yaml_file_attributes(:,:) !< Global attributes defined in the yaml
 
-  diag_file => this%FMS_diag_file
-  fileobj => diag_file%fileobj
+  type(diagYamlFiles_type), pointer :: diag_file_yaml !< The diag_file yaml
 
-  if (diag_file%has_file_global_meta()) then
-    yaml_file_attributes = diag_file%get_file_global_meta()
+  diag_file_yaml => this%FMS_diag_file%diag_yaml_file
+  fileobj => this%FMS_diag_file%fileobj
+
+  if (diag_file_yaml%has_file_global_meta()) then
+    yaml_file_attributes = diag_file_yaml%get_file_global_meta()
     do i = 1, size(yaml_file_attributes,1)
       call register_global_attribute(fileobj, trim(yaml_file_attributes(i,1)), &
       trim(yaml_file_attributes(i,2)), str_len=len_trim(yaml_file_attributes(i,2)))

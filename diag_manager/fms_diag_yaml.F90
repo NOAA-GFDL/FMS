@@ -1056,7 +1056,7 @@ end function get_file_varlist
 pure function get_file_global_meta (this) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
- character (:), allocatable :: res(:,:) !< What is returned
+ character (len=MAX_STR_LEN), allocatable :: res(:,:) !< What is returned
   res = this%file_global_meta
 end function get_file_global_meta
 !> @brief Get the integer equivalent of the time to use to determine the filename,
