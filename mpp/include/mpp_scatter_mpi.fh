@@ -77,11 +77,16 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
 
   if (is_root_pe) then
     root_pe = mpp_pe()
+    print "('mpp_scatter_mpi: number of PEs=', i6, ' size of pelist=', i6)", mpp_npes(), size(pelist)
+    print "('mpp_scatter_mpi: size of list=', i6)", size(peset(n)%list)
+    !print "('mpp_scatter_mpi: first two PEs of pelist:', 2i6)", pelist(1), pelist(2)
     if (.not.ANY(pelist(:).eq.root_pe)) call mpp_error(FATAL, "mpp_scatter_mpi: root_pe not a member of pelist")
     if (root_pe .ne. pelist(1)) call mpp_error(FATAL, "mpp_scatter_mpi: root_pe is not the first pe of pelist")
   endif
 
   root_pe = pelist(1)
+  print "('mpp_scatter_mpi: I am PE', i6, ' first two PEs of pelist:', 2i6, ' my root PE is', i6)", &
+    mpp_pe(), pelist(1), pelist(2), root_pe
 
   send_count = 0
   total_msgsize = 0
@@ -100,6 +105,11 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   call MPI_GATHER(my_ind, 4, MPI_TYPE_, gindx1D, 4, MPI_TYPE_, root_pe, peset(n)%id, ierr)
   if (ierr /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_scatter_mpi::MPI_GATHER something is wrong")
 
+  if (is_root_pe) then
+    print "('mpp_scatter_mpi: first and last two gindx1D are', 4i6)", gindx1D(1), gindx1D(2), &
+      gindx1D(4*size(pelist)-1), gindx1D(4*size(pelist))
+  end if
+
   ! Unpack gindx1D(:) to gind(:,:)
   !gind = reshape(gindx1D, (/4, size(pelist)/))
   if (is_root_pe) then
@@ -115,8 +125,6 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   ! Compute my message size
   msgsize = (my_ind(2)-my_ind(1)+1) * (my_ind(4)-my_ind(3)+1) * nk
   allocate(recv_buf(msgsize))
-
-  print "('mpp_scatter_mpi: message size of PE(', i4,'): ', i6)", mpp_pe(), msgsize
 
   if (is_root_pe) then
     ! Update group indices
