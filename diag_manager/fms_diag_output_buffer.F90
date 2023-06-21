@@ -295,15 +295,15 @@ subroutine allocate_buffer_0d(this, buff_type, field_name, diurnal_samples)
       allocate(integer(kind=i4_kind) :: this%buffer(1))
       allocate(integer(kind=i4_kind) :: this%counter(1))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(1))
       allocate(integer(kind=i8_kind) :: this%counter(1))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(1))
@@ -355,15 +355,15 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size, field_name, diurnal_sa
       allocate(integer(kind=i4_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i4_kind) :: this%counter(buff_size))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i8_kind) :: this%counter(buff_size))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_size))
@@ -416,15 +416,15 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
@@ -439,7 +439,7 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
-      this%buffer_type = r4
+      this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
@@ -476,30 +476,30 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r8_kind) :: this%counter( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%buffer_type = r4
-      this%counter = 0
+      this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
+      this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_3d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
@@ -539,28 +539,28 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
@@ -604,8 +604,8 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                    & buff_sizes(5)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
@@ -613,8 +613,8 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                   & buff_sizes(5)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
@@ -622,7 +622,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
@@ -631,7 +631,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
