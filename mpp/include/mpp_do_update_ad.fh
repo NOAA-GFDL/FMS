@@ -129,7 +129,7 @@
          deallocate(msg1, msg2, msg3)
       endif
 
-      !recv
+      ! forward recv info
       buffer_pos = 0
       
       do m = 1, update%nrecv
@@ -153,10 +153,9 @@
       buffer_recv_size = buffer_pos
       send_start_pos = buffer_pos
 
-      ! send info
-      !----------------------------------------------------------------------
+      ! forward send info
       buffer_pos = buffer_recv_size 
-      ! pack
+      ! forward pack
       do m = 1, update%nsend
          send_msgsize(m) = 0
          overPtr => update%send(m)
@@ -185,9 +184,8 @@
          buffer_pos = pos
       end do ! end do m = 1, nsend
  
-      !backward communication
-      !----------------------------------------------------------------------
-      !recv
+      ! backward communication
+      ! pack (recv in forward)
       buffer_pos = buffer_recv_size
       do m = update%nrecv, 1, -1
          overPtr => update%recv(m)
@@ -217,7 +215,7 @@
          end do ! do n = 1, overPtr%count
       end do
 
-      !----------------------------------------------------------------------
+      ! recv (send in forward)
       buffer_pos = send_start_pos
       do m = 1, update%nsend
          msgsize = send_msgsize(m)
@@ -227,8 +225,7 @@
          buffer_pos = buffer_pos + msgsize
       end do ! end do ist = 0,nlist-1
 
-      !----------------------------------------------------------------------
-      !recv
+      ! send (recv in forward)
       buffer_pos = 0
       do m = 1, update%nrecv
          overPtr => update%recv(m)
@@ -259,7 +256,7 @@
 
       call mpp_sync_self(check=EVENT_RECV)
 
-      !----------------------------------------------------------------------
+      ! unpack (pack in forward)
       buffer_pos = buffer_recv_size
       do m = 1, update%nsend
          send_msgsize(m) = 0
