@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 # Run the test
 test_expect_success "mpp global adjoint sum with mixed precision" '
     mpirun -n 4 ./test_mpp_global_sum_ad
