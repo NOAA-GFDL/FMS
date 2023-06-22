@@ -80,7 +80,8 @@ program test_fms
 contains
 
  call fms_end()
- 
+
 #include "test_fms_r4.fh"
 #include "test_fms_r8.fh"
+
 end program test_fms
