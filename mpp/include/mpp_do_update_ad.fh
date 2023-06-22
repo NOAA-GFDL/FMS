@@ -50,6 +50,7 @@
       integer :: send_start_pos
       integer :: send_msgsize(MAXLIST)
 
+
       outunit = stdout()
       ptr = LOC(mpp_domains_stack)
       l_size = size(f_addrs,1)
