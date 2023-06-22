@@ -131,6 +131,7 @@
 
       !recv
       buffer_pos = 0
+      call mpp_clock_begin(recv_clock)
       do m = 1, update%nrecv
          overPtr => update%recv(m)
          if( overPtr%count == 0 )cycle
