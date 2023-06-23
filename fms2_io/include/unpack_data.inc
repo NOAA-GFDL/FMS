@@ -59,8 +59,8 @@ subroutine unpack_data_0d(fileobj, varid, varname, var_data)
       var_data = var_data + buf_r8_kind
 
     class default
-      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be"&
-        "r4_kind or r8_kind."//trim(msg))
+      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be &
+        &r4_kind or r8_kind."//trim(msg))
     end select
   end if
 end subroutine
@@ -103,8 +103,8 @@ subroutine unpack_data_1d(fileobj, varid, varname, var_data)
       var_data = var_data + buf_r8_kind
 
     class default
-      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be"&
-        "r4_kind or r8_kind."//trim(msg))
+      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be &
+        &r4_kind or r8_kind."//trim(msg))
     end select
   end if
 end subroutine
@@ -147,8 +147,8 @@ subroutine unpack_data_2d(fileobj, varid, varname, var_data)
       var_data = var_data + buf_r8_kind
 
     class default
-      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be"&
-        "r4_kind or r8_kind."//trim(msg))
+      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be &
+        &r4_kind or r8_kind."//trim(msg))
     end select
   end if
 end subroutine
@@ -191,8 +191,8 @@ subroutine unpack_data_3d(fileobj, varid, varname, var_data)
       var_data = var_data + buf_r8_kind
 
     class default
-      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be"&
-        "r4_kind or r8_kind."//trim(msg))
+      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be &
+        &r4_kind or r8_kind."//trim(msg))
     end select
   end if
 end subroutine
@@ -235,8 +235,8 @@ subroutine unpack_data_4d(fileobj, varid, varname, var_data)
       var_data = var_data + buf_r8_kind
 
     class default
-      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be"&
-        "r4_kind or r8_kind."//trim(msg))
+      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be &
+        &r4_kind or r8_kind."//trim(msg))
     end select
   end if
 end subroutine
@@ -279,8 +279,8 @@ subroutine unpack_data_5d(fileobj, varid, varname, var_data)
       var_data = var_data + buf_r8_kind
 
     class default
-      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be"&
-        "r4_kind or r8_kind."//trim(msg))
+      call error("If using the scale_factor and add_offset variable, the buffer reading the data to needs to be &
+        &r4_kind or r8_kind."//trim(msg))
     end select
   end if
 end subroutine
