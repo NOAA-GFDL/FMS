@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/horiz_interp/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -36,7 +36,25 @@ libhoriz_interp_la_SOURCES = \
   horiz_interp_conserve.F90 \
   horiz_interp.F90 \
   horiz_interp_spherical.F90 \
-  horiz_interp_type.F90
+  horiz_interp_type.F90 \
+  include/horiz_interp_bicubic.inc \
+  include/horiz_interp_bilinear.inc \
+  include/horiz_interp_conserve.inc \
+  include/horiz_interp.inc \
+  include/horiz_interp_spherical.inc \
+  include/horiz_interp_type.inc \
+  include/horiz_interp_bicubic_r4.fh \
+  include/horiz_interp_bilinear_r4.fh \
+  include/horiz_interp_conserve_r4.fh \
+  include/horiz_interp_r4.fh \
+  include/horiz_interp_spherical_r4.fh \
+  include/horiz_interp_type_r4.fh \
+  include/horiz_interp_bicubic_r8.fh \
+  include/horiz_interp_bilinear_r8.fh \
+  include/horiz_interp_conserve_r8.fh \
+  include/horiz_interp_r8.fh \
+  include/horiz_interp_spherical_r8.fh \
+  include/horiz_interp_type_r8.fh
 
 # Some mods are dependant on other mods in this dir.
 horiz_interp_bicubic_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)

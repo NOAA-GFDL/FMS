@@ -23,6 +23,94 @@
 !> @addtogroup netcdf_io_mod
 !> @{
 
+!> @brief Character write 0d function.
+subroutine char_write_0d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*),  intent(in) :: variable_data !< Data that will be written.
+  character(len=200), intent(in) :: append_error_msg !< Msg to be appended to FATAL error message
+  integer, intent(inout) :: err
+  integer, intent(in) :: varid
+
+  integer :: ndims
+  integer, dimension(:), allocatable :: start
+  integer, dimension(:), allocatable :: dimsizes
+  character, dimension(:), allocatable :: charbuf
+  integer :: i
+  integer :: tlen
+
+  ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+  if (ndims .ne. 1) then
+    call error("currently only scalar and 1d character writes are supported: "//trim(append_error_msg))
+  endif
+  allocate(start(ndims))
+  start(:) = 1
+  allocate(dimsizes(ndims))
+  call get_variable_size(fileobj, variable_name, dimsizes, .false.)
+  call allocate_array(charbuf, dimsizes)
+  charbuf(:) = ""
+  tlen = len_trim(variable_data)
+  if (tlen .gt. dimsizes(1)) then
+    call error("character buffer is too big; decrease length: "//trim(append_error_msg))
+  endif
+  do i = 1, tlen
+    charbuf(i) = variable_data(i:i)
+  enddo
+  err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
+  deallocate(charbuf)
+  deallocate(dimsizes)
+  deallocate(start)
+end subroutine char_write_0d
+
+!> @brief Character write 1d function.
+subroutine character_write_1d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), dimension(:), intent(in) :: variable_data !< Data that will be written.
+  character(len=200), intent(in) :: append_error_msg !< Msg to be appended to FATAL error message
+  integer, intent(inout) :: err
+  integer, intent(in) :: varid
+
+  integer :: ndims
+  integer, dimension(:), allocatable :: start
+  integer, dimension(:), allocatable :: dimsizes
+  character, dimension(:,:), allocatable :: charbuf
+  character(len=1024) :: sbuf
+  integer :: i
+  integer :: j
+  integer :: tlen
+
+  ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+  if (ndims .ne. 2) then
+    call error("currently only scalar and 1d character writes are supported: "//trim(append_error_msg))
+  endif
+  allocate(start(ndims))
+  start(:) = 1
+  allocate(dimsizes(ndims))
+  call get_variable_size(fileobj, variable_name, dimsizes, .false.)
+  call allocate_array(charbuf, dimsizes)
+  charbuf(:,:) = ""
+  tlen = len(variable_data(1))
+  if (tlen .gt. dimsizes(1)) then
+    call error("character buffer is too big; decrease length: "//trim(append_error_msg))
+  endif
+  if (size(variable_data) .ne. dimsizes(2)) then
+    call error("incorrect size of variable_data array: "//trim(append_error_msg))
+  endif
+  do j = 1, dimsizes(2)
+    call string_copy(sbuf, variable_data(j))
+    do i = 1, tlen
+      charbuf(i,j) = sbuf(i:i)
+    enddo
+  enddo
+  err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
+  deallocate(charbuf)
+  deallocate(dimsizes)
+  deallocate(start)
+end subroutine character_write_1d
+
 !> @brief Write data to a variable in a netcdf file.
 subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim_level, &
                                 corner)
@@ -40,12 +128,6 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
   integer :: varid
   integer :: unlim_dim_index
   integer, dimension(1) :: c
-  integer :: ndims
-  integer, dimension(:), allocatable :: start
-  integer, dimension(:), allocatable :: dimsizes
-  character, dimension(:), allocatable :: charbuf
-  integer :: i
-  integer :: tlen
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   append_error_msg = "netcdf_write_data_0d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
@@ -74,27 +156,7 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
       type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
       type is (character(len=*))
-        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-        if (ndims .ne. 1) then
-          call error("currently only scalar and 1d character writes are supported: "//trim(append_error_msg))
-        endif
-        allocate(start(ndims))
-        start(:) = 1
-        allocate(dimsizes(ndims))
-        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
-        call allocate_array(charbuf, dimsizes)
-        charbuf(:) = ""
-        tlen = len_trim(variable_data)
-        if (tlen .gt. dimsizes(1)) then
-          call error("character buffer is too big; decrease length: "//trim(append_error_msg))
-        endif
-        do i = 1, tlen
-          charbuf(i) = variable_data(i:i)
-        enddo
-        err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
-        deallocate(charbuf)
-        deallocate(dimsizes)
-        deallocate(start)
+        call char_write_0d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
       class default
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
@@ -125,14 +187,6 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
   integer :: unlim_dim_index
   integer, dimension(2) :: c
   integer, dimension(2) :: e
-  integer :: ndims
-  integer, dimension(:), allocatable :: start
-  integer, dimension(:), allocatable :: dimsizes
-  character, dimension(:,:), allocatable :: charbuf
-  character(len=1024) :: sbuf
-  integer :: i
-  integer :: j
-  integer :: tlen
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
   append_error_msg = "netcdf_write_data_1d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
@@ -168,33 +222,7 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
       type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (character(len=*))
-        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-        if (ndims .ne. 2) then
-          call error("currently only scalar and 1d character writes are supported: "//trim(append_error_msg))
-        endif
-        allocate(start(ndims))
-        start(:) = 1
-        allocate(dimsizes(ndims))
-        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
-        call allocate_array(charbuf, dimsizes)
-        charbuf(:,:) = ""
-        tlen = len(variable_data(1))
-        if (tlen .gt. dimsizes(1)) then
-          call error("character buffer is too big; decrease length: "//trim(append_error_msg))
-        endif
-        if (size(variable_data) .ne. dimsizes(2)) then
-          call error("incorrect size of variable_data array: "//trim(append_error_msg))
-        endif
-        do j = 1, dimsizes(2)
-          call string_copy(sbuf, variable_data(j))
-          do i = 1, tlen
-            charbuf(i,j) = sbuf(i:i)
-          enddo
-        enddo
-        err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
-        deallocate(charbuf)
-        deallocate(dimsizes)
-        deallocate(start)
+        call character_write_1d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
       class default
         call error("Unsupported variable type: "//trim(append_error_msg))
     end select
