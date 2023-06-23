@@ -324,6 +324,14 @@
         !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%data)
     enddo
 
+    do i=1, size(domain%x(1)%list)
+        call mpp_set_super_grid_indices(domain%x(1)%list(i-1)%compute)
+    enddo
+
+    do i=1, size(domain%y(1)%list)
+        call mpp_set_super_grid_indices(domain%y(1)%list(i-1)%compute)
+    enddo
+
   end subroutine mpp_create_super_grid_domain
 
   !#####################################################################
@@ -1730,6 +1738,7 @@ end subroutine mpp_get_tile_compute_domains
      if (associated(domain_in%list)) then
          starting = lbound(domain_in%list, 1)
          ending = ubound(domain_in%list, 1)
+         if (associated(domain_out%list)) deallocate(domain_out%list) !< Check if allocated
          allocate(domain_out%list(starting:ending))
 
          do i = starting, ending
@@ -1835,6 +1844,7 @@ end subroutine mpp_get_tile_compute_domains
       starting = lbound(domain2D_spec_in%tile_id,1)
       ending = ubound(domain2D_spec_in%tile_id,1)
 
+      if (associated(domain2D_spec_out%tile_id)) deallocate(domain2D_spec_out%tile_id) !< Check if allocated
       allocate(domain2D_spec_out%tile_id(starting:ending))
       domain2D_spec_out%tile_id = domain2D_spec_in%tile_id
   endif
@@ -1843,6 +1853,7 @@ end subroutine mpp_get_tile_compute_domains
       starting = lbound(domain2D_spec_in%x,1)
       ending = ubound(domain2D_spec_in%x,1)
 
+      if (associated(domain2D_spec_out%x)) deallocate(domain2D_spec_out%x) !< Check if allocated
       allocate(domain2D_spec_out%x(starting:ending))
       do i = starting, ending
          call mpp_copy_domain1D_spec(domain2D_spec_in%x(i), domain2D_spec_out%x(i))
@@ -1853,6 +1864,7 @@ end subroutine mpp_get_tile_compute_domains
       starting = lbound(domain2D_spec_in%y,1)
       ending = ubound(domain2D_spec_in%y,1)
 
+      if (associated(domain2D_spec_out%y)) deallocate(domain2D_spec_out%y) !< Check if allocated
       allocate(domain2D_spec_out%y(starting:ending))
       do i = starting, ending
          call mpp_copy_domain1D_spec(domain2D_spec_in%y(i), domain2D_spec_out%y(i))
