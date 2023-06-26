@@ -1,4 +1,4 @@
-***********************************************************************
+!***********************************************************************
 !*                   GNU Lesser General Public License
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
@@ -332,6 +332,7 @@ module fms
   !! types do not follow our typical naming convention(no _type and uses camel case instead of _ spacing)
   use fms2_io_mod, only: unlimited, FmsNetcdfFile_t, FmsNetcdfDomainFile_t, &
                          FmsNetcdfUnstructuredDomainFile_t, &
+                         Valid_t, &
                          fms_fms2_io_open_file => open_file, &
                          fms_fms2_io_open_virtual_file => open_virtual_file, &
                          fms_fms2_io_close_file => close_file, &
@@ -363,7 +364,6 @@ module fms
                          fms_fms2_io_get_variable_size =>   get_variable_size, &
                          fms_fms2_io_get_compute_domain_dimension_indices => get_compute_domain_dimension_indices, &
                          fms_fms2_io_get_global_io_domain_indices => get_global_io_domain_indices, &
-                         d_t, &
                          fms_fms2_io_get_valid => get_valid, &
                          fms_fms2_io_is_valid => is_valid, &
                          fms_fms2_io_get_unlimited_dimension_name => get_unlimited_dimension_name, &
