@@ -1,4 +1,4 @@
-!***********************************************************************
+***********************************************************************
 !*                   GNU Lesser General Public License
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
@@ -34,8 +34,9 @@
 !! Exceptions (mainly for rep:
 !!   - Parameter values are kept their original names
 !!   - If module name is already included (like in init routines) only fms prefix will be added.
-!!   - Similarly if theres a redundant module name included already included it will not be repeated 
+!!   - Similarly if theres a redundant module name included already included it will not be repeated
 !!     (ie. mpp_update_domains => fms_mpp_domains_update_domains)
+!!   - Override interfaces for operators and assignment are provided
 !!
 !! Remappings due to name conflicts:
 !!
@@ -72,7 +73,7 @@ module fms
   !> amip_interp
   use amip_interp_mod, only: fms_amip_interp_init         => amip_interp_init, &
                              fms_amip_interp_get_amip_sst             => get_amip_sst, &
-                             fms_amio_interp_get_amip_ice             => get_amip_ice, &
+                             fms_amip_interp_get_amip_ice             => get_amip_ice, &
                              fms_amip_interp_new          => amip_interp_new, &
                              fms_amip_interp_del          => amip_interp_del, &
                              fms_amip_interp_type         => amip_interp_type, &
@@ -163,7 +164,7 @@ module fms
                                fms_coupler_ind_deposition                 => ind_deposition,&
                                fms_coupler_ind_runoff                     => ind_runoff
   use ensemble_manager_mod, only: fms_ensemble_manager_init     => ensemble_manager_init, &
-                               fms_ensemble_manager_eget_ensemble_id              => get_ensemble_id, &
+                               fms_ensemble_manager_get_ensemble_id              => get_ensemble_id, &
                                fms_ensemble_manager_get_ensemble_size            => get_ensemble_size, &
                                fms_ensemble_manager_get_ensemble_pelist          => get_ensemble_pelist, &
                                fms_ensemble_manager_ensemble_pelist_setup        => ensemble_pelist_setup, &
@@ -190,7 +191,7 @@ module fms
   use diag_manager_mod, only: fms_diag_manager_init => diag_manager_init, &
                               fms_diag_manager_send_data => send_data, &
                               fms_diag_manager_send_tile_averaged_data => send_tile_averaged_data, &
-                              fms_diag_manager_diag_manager_end => diag_manager_end, &
+                              fms_diag_manager_end => diag_manager_end, &
                               fms_diag_manager_register_diag_field => register_diag_field, &
                               fms_diag_manager_register_static_field => register_static_field, &
                               fms_diag_manager_diag_axis_init => diag_axis_init, &
@@ -228,10 +229,10 @@ module fms
                        fms_xgrid_set_frac_area => set_frac_area, &
                        fms_xgrid_put_to_xgrid => put_to_xgrid, &
                        fms_xgrid_get_from_xgrid => get_from_xgrid, &
-                       fms_xgrid_xgrid_count => xgrid_count, &
+                       fms_xgrid_count => xgrid_count, &
                        fms_xgrid_some => some, &
                        fms_xgrid_conservation_check => conservation_check, &
-                       fms_xgrid_xgrid_init => xgrid_init, &
+                       fms_xgrid_init => xgrid_init, &
                        AREA_ATM_SPHERE, AREA_OCN_SPHERE, AREA_ATM_MODEL, AREA_OCN_MODEL, &
                        fms_xgrid_get_ocean_model_area_elements => get_ocean_model_area_elements, &
                        fms_xgrid_grid_box_type => grid_box_type, &
@@ -326,6 +327,9 @@ module fms
                          fms_fm_util_default_caller => fm_util_default_caller
 
   !> fms2_io
+  !! TODO need to see opinions on these
+  !! not sure if we need fms_ prefix for routines
+  !! types do not follow our typical naming convention(no _type and uses camel case instead of _ spacing)
   use fms2_io_mod, only: unlimited, FmsNetcdfFile_t, FmsNetcdfDomainFile_t, &
                          FmsNetcdfUnstructuredDomainFile_t, &
                          fms_fms2_io_open_file => open_file, &
@@ -359,7 +363,7 @@ module fms
                          fms_fms2_io_get_variable_size =>   get_variable_size, &
                          fms_fms2_io_get_compute_domain_dimension_indices => get_compute_domain_dimension_indices, &
                          fms_fms2_io_get_global_io_domain_indices => get_global_io_domain_indices, &
-                         Valid_t, &
+                         d_t, &
                          fms_fms2_io_get_valid => get_valid, &
                          fms_fms2_io_is_valid => is_valid, &
                          fms_fms2_io_get_unlimited_dimension_name => get_unlimited_dimension_name, &
@@ -411,11 +415,11 @@ module fms
 
   !> interpolator
   use interpolator_mod, only: fms_interpolator_init => interpolator_init, &
-                              fms_interpolator_interpolator => interpolator, &
+                              fms_interpolator => interpolator, &
                               fms_interpolate_type_eq => interpolate_type_eq, &
                               fms_interpolator_obtain_interpolator_time_slices => obtain_interpolator_time_slices, &
                               fms_interpolator_unset_interpolator_time_flag => unset_interpolator_time_flag, &
-                              fms_interpolator_interpolator_end => interpolator_end, &
+                              fms_interpolator_end => interpolator_end, &
                               fms_interpolator_init_clim_diag => init_clim_diag, &
                               fms_interpolator_query_interpolator => query_interpolator, &
                               fms_interpolate_type => interpolate_type, &
@@ -622,8 +626,8 @@ module fms
                              fms_mpp_domains_global_sum_tl => mpp_global_sum_tl, &
                              fms_mpp_domains_global_sum_ad => mpp_global_sum_ad, &
                              fms_mpp_domains_broadcast_domain => mpp_broadcast_domain, &
-                             fms_mpp_domains_domains_init => mpp_domains_init, &
-                             fms_mpp_domains_domains_exit => mpp_domains_exit, &
+                             fms_mpp_domains_init => mpp_domains_init, &
+                             fms_mpp_domains_exit => mpp_domains_exit, &
                              fms_mpp_domains_redistribute => mpp_redistribute, &
                              fms_mpp_domains_update_domains => mpp_update_domains, &
                              fms_mpp_domains_check_field => mpp_check_field, &
@@ -713,7 +717,7 @@ module fms
   !> sat_vapor_pres
   use sat_vapor_pres_mod, only: fms_sat_vapor_pres_lookup_es => lookup_es, &
                                 fms_sat_vapor_pres_lookup_des => lookup_des, &
-                                fms_sat_vapor_pres_sat_vapor_pres_init => sat_vapor_pres_init, &
+                                fms_sat_vapor_pres_init => sat_vapor_pres_init, &
                                 fms_sat_vapor_pres_lookup_es2 => lookup_es2, &
                                 fms_sat_vapor_pres_lookup_des2 => lookup_des2, &
                                 fms_sat_vapor_pres_lookup_es2_des2 => lookup_es2_des2, &
