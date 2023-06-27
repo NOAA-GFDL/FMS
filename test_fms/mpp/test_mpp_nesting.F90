@@ -19,7 +19,9 @@
 !> Tests nested domain operations and routines in mpp_domains
 program test_mpp_nesting
 
-  use fms
+  use fms_mod
+  use mpp_domains_mod
+  use mpp_mod
   use compare_data_checksums
   use test_domains_utility_mod
   use platform_mod
