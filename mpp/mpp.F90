@@ -738,8 +738,6 @@ private
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
-     module procedure mpp_scatter_pelist_int8_2d
-     module procedure mpp_scatter_pelist_int8_3d
      module procedure mpp_scatter_pelist_real4_2d
      module procedure mpp_scatter_pelist_real4_3d
      module procedure mpp_scatter_pelist_real8_2d
