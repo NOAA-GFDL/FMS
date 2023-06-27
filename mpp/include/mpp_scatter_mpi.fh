@@ -58,8 +58,8 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   integer :: i2, j2 !< Ending indices of i and j
   integer :: ioff, joff !< Offsets to i and j
   integer :: my_ind(4) !< My starting and ending indices of i and j
-  integer, allocatable :: gind(:,:) !< Starting and ending indices of all processes in the group
-  integer :: n !< Peset number
+  integer :: gind(4,size(pelist)) !< Starting and ending indices of all processes in the group
+  integer :: n !< Peset id
   integer :: ierr !< MPI error state
   MPP_TYPE_, allocatable :: send_buf(:) !< Packed data to be scattered; only relevant to the root pe
   MPP_TYPE_, allocatable :: recv_buf(:) !< My chunk of data
@@ -67,26 +67,26 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   integer :: displ(size(pelist)) !< Displacements for data segments
   integer :: total_msgsize
   integer :: stdout_unit
-  integer :: gindx1D(4 * size(pelist)) !< Packed version of gind
+  integer :: gindx1D(4*size(pelist)) !< Packed version of gind
 
   if (.not.ANY(mpp_pe().eq.pelist(:))) return
 
   ! Get peset number
   n = get_peset(pelist)
-  if( peset(n)%count.EQ.1 )return
+  if( peset(n)%count.EQ.1 ) return
+
+  if( debug )then
+    call SYSTEM_CLOCK(tick)
+    write( stdout_unit,'(a,i18,a,i6,a,i6)' )&
+         'T=',tick, ' PE=', pe, ' MPP_SCATTER begin: from_pe, length=', mpp_pe()
+  end if
+
+  root_pe = pelist(1)
 
   if (is_root_pe) then
-    root_pe = mpp_pe()
-    print "('mpp_scatter_mpi: number of PEs=', i6, ' size of pelist=', i6)", mpp_npes(), size(pelist)
-    print "('mpp_scatter_mpi: size of list=', i6)", size(peset(n)%list)
-    !print "('mpp_scatter_mpi: first two PEs of pelist:', 2i6)", pelist(1), pelist(2)
     if (.not.ANY(pelist(:).eq.root_pe)) call mpp_error(FATAL, "mpp_scatter_mpi: root_pe not a member of pelist")
     if (root_pe .ne. pelist(1)) call mpp_error(FATAL, "mpp_scatter_mpi: root_pe is not the first pe of pelist")
   endif
-
-  root_pe = pelist(1)
-  print "('mpp_scatter_mpi: I am PE', i6, ' first two PEs of pelist:', 2i6, ' my root PE is', i6)", &
-    mpp_pe(), pelist(1), pelist(2), root_pe
 
   send_count = 0
   total_msgsize = 0
@@ -102,18 +102,11 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   my_ind(4) = je
 
   ! Gather indices from all processes in the group at the root pe
-  call MPI_GATHER(my_ind, 4, MPI_TYPE_, gindx1D, 4, MPI_TYPE_, root_pe, peset(n)%id, ierr)
+  if (mpp_npes() .gt. 1) call MPI_GATHER(my_ind, 4, MPI_INTEGER4, gindx1D, 4, MPI_INTEGER4, root_pe, peset(n)%id, ierr)
   if (ierr /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_scatter_mpi::MPI_GATHER something is wrong")
 
-  if (is_root_pe) then
-    print "('mpp_scatter_mpi: first and last two gindx1D are', 4i6)", gindx1D(1), gindx1D(2), &
-      gindx1D(4*size(pelist)-1), gindx1D(4*size(pelist))
-  end if
-
   ! Unpack gindx1D(:) to gind(:,:)
-  !gind = reshape(gindx1D, (/4, size(pelist)/))
   if (is_root_pe) then
-    allocate(gind(4, size(pelist)))
     do i = 1, size(pelist)
       gind(1, i) = gindx1D((i-1)*4 + 1)
       gind(2, i) = gindx1D((i-1)*4 + 2)
@@ -134,7 +127,6 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
     gind(4,:)=gind(4,:)+joff
     ! check indices to make sure they are within the range of "data"
     if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(data,1)) .OR. (maxval(gind(3:4,:)).gt.size(data,2))) then
-      print "('mpp_scatter_mpi:min-max ', 3i6)", minval(gind), maxval(gind(1:2,:)), maxval(gind(3:4,:))
       call mpp_error(FATAL,"mpp_scatter_mpi:: specified indices (with shift) are outside &
         of the range of the receiving array")
     end if
@@ -155,7 +147,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
     allocate(send_buf(total_msgsize))
 
     total_msgsize = 0
-
+    ! Fill up send_buf with corresponding data chunk for each PE
     do i = 1, size(pelist)
       i1 = gind(1,i)
       i2 = gind(2,i)
@@ -167,13 +159,17 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
     enddo
   end if
 
-  ! Scatter data segments to respective processes
-  call MPI_SCATTERV(send_buf, send_count, displ, MPI_TYPE_, recv_buf, &
+  ! Scatter data chunks to respective PEs
+  if (mpp_npes() .gt. 1) call MPI_SCATTERV(send_buf, send_count, displ, MPI_TYPE_, recv_buf, &
         msgsize, MPI_TYPE_, root_pe, peset(n)%id, ierr)
   if (ierr /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_scatter_mpi::MPI_SCATTERV something is wrong")
 
   ! Unpack received data
   array_seg(is:ie,js:je,1:nk) = reshape(recv_buf, (/shape(array_seg(is:ie,js:je,1:nk))/))
+
+  if( debug .and. (current_clock.NE.0) ) then
+    call increment_current_clock( EVENT_SCATTER, msgsize*MPP_TYPE_BYTELEN_ )
+  end if
 
   return
 end subroutine MPP_SCATTER_PELIST_3D_

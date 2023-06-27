@@ -167,7 +167,7 @@ module mpp_mod
   use mpp_parameter_mod, only : CLOCK_MODULE, CLOCK_ROUTINE, CLOCK_LOOP, CLOCK_INFRA
   use mpp_parameter_mod, only : MAX_EVENTS, MAX_BINS, MAX_EVENT_TYPES, MAX_CLOCKS
   use mpp_parameter_mod, only : MAXPES, EVENT_WAIT, EVENT_ALLREDUCE, EVENT_BROADCAST
-  use mpp_parameter_mod, only : EVENT_ALLTOALL
+  use mpp_parameter_mod, only : EVENT_ALLTOALL, EVENT_SCATTER
   use mpp_parameter_mod, only : EVENT_TYPE_CREATE, EVENT_TYPE_FREE
   use mpp_parameter_mod, only : EVENT_RECV, EVENT_SEND, MPP_READY, MPP_WAIT
   use mpp_parameter_mod, only : mpp_parameter_version=>version
