@@ -301,7 +301,7 @@ subroutine error_handler(string)
 
   call error_mesg ('time_interp_mod', trim(string), FATAL)
 
-end subroutine error_handler 
+end subroutine error_handler
 
 
 #include "time_interp_r4.fh"

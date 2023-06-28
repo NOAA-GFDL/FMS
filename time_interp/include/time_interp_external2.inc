@@ -93,7 +93,7 @@
 
         if (index < 1.or.index > num_fields) &
             call mpp_error(FATAL, &
-                        & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
+                    & 'invalid index in call to time_interp_ext -- field was not initialized or failed to initialize')
 
         isc=loaded_fields(index)%isc;iec=loaded_fields(index)%iec
         jsc=loaded_fields(index)%jsc;jec=loaded_fields(index)%jec
@@ -102,7 +102,7 @@
             nxw = iec-isc+1
             nyw = jec-jsc+1
         else
-            if( .not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in) ) then
+            if(.not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in) ) then
                 call mpp_error(FATAL, 'time_interp_external: is_in, ie_in, js_in and je_in must be present ' // &
                                     'when numwindows > 1, field='//trim(loaded_fields(index)%name))
             endif

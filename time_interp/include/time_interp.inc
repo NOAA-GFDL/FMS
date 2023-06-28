@@ -176,16 +176,16 @@
 
  !> Part of the time_interp interface, calculates for cyclical data
  !! Time_beg and Time_end mark a repeating period
- !! 
- !! Finds mid points and fractional weight for a time perioid  
+ !!
+ !! Finds mid points and fractional weight for a time perioid
 subroutine TIME_INTERP_MODULO_(Time, Time_beg, Time_end, Timelist, weight, index1, index2, &
                               correct_leap_year_inconsistency, err_msg)
-type(time_type), intent(in)  :: Time !< a specific time value 
+type(time_type), intent(in)  :: Time !< a specific time value
 type(time_type), intent(in)  :: Time_beg !< begining of period to search with
 type(time_type), intent(in)  :: Time_end !< end of period to search with
-type(time_type), intent(in)  :: Timelist(:) !< 
+type(time_type), intent(in)  :: Timelist(:) !< ascending time values to search between
 real(FMS_TI_KIND_)           , intent(out) :: weight
-integer        , intent(out) :: index1, index2
+integer        , intent(out) :: index1, index2 !< indices of bounding time values within Timelist
 logical, intent(in), optional :: correct_leap_year_inconsistency!< When true turns on a kluge for an
                                 !! inconsistency which may occur in a special case.
                                 !! When the modulo time period (i.e. Time_end - Time_beg) is a
