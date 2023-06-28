@@ -65,7 +65,7 @@ SHELL ["/bin/bash", "-O", "extglob", "-c"]
 RUN ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib && \
     ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/bin/!(autoreconf|pkgconfig|cmake) /usr/local/bin && \
     ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/include/* /usr/local/include && \
-    dnf install -y autoconf automake make binutils m4 libtool pkg-config libtool
+    dnf install -y autoconf automake make binutils m4 libtool pkg-config libtool autogen
 
 ENV FC="mpifort"
 ENV CC="mpicc"
