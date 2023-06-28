@@ -43,7 +43,7 @@ RUN spack install gcc@${gcc_version}                          && \
     spack -e . concretize -f > /opt/deps/deps.log             && \
     spack install --fail-fast
 
-RUN find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
+RUN find -L /opt/deps/* -type f -exec readlink -f '{}' \; | \
     xargs file -i | \
     grep 'charset=binary' | \
     grep 'x-executable\|x-arcive\|x-sharedlib' | \
@@ -63,9 +63,9 @@ COPY ./fms_test_input /home/fms_test_input
 SHELL ["/bin/bash", "-O", "extglob", "-c"]
 
 RUN ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib && \
-    ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/bin/* /usr/local/bin && \
+    ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/bin/!(autoreconf|pkgconfig|cmake) /usr/local/bin && \
     ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/include/* /usr/local/include && \
-    dnf install -y autoconf automake make cmake binutils glibc-devel m4 libtool pkg-config
+    dnf install -y autoconf automake make binutils m4 libtool pkg-config libtool
 
 ENV FC="mpifort"
 ENV CC="mpicc"
