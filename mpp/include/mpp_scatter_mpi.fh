@@ -75,6 +75,8 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
   n = get_peset(pelist)
   if( peset(n)%count.EQ.1 ) return
 
+  if (any(peset(n)%list .ne. pelist)) call mpp_error(FATAL, "mpp_scatter_mpi: two pelists don't match")
+
   if( debug )then
     call SYSTEM_CLOCK(tick)
     write( stdout_unit,'(a,i18,a,i6,a,i6)' )&

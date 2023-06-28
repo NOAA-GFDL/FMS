@@ -740,6 +740,16 @@ end subroutine mpp_exit
 #undef MPP_SCATTER_PELIST_3D_
 #undef MPP_TYPE_
 #undef MPI_TYPE_
+#define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int8_2d
+#define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int8_3d
+#define MPP_TYPE_ integer(i8_kind)
+#define MPI_TYPE_ MPI_INTEGER8
+#include <mpp_scatter_nocomm.fh>
+
+#undef MPP_SCATTER_PELIST_2D_
+#undef MPP_SCATTER_PELIST_3D_
+#undef MPP_TYPE_
+#undef MPI_TYPE_
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real4_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real4_3d
 #define MPP_TYPE_ real(r4_kind)
