@@ -132,45 +132,47 @@
             endif
         endif
 
+        ! only one record in the file => time-independent field
         if (loaded_fields(index)%siz(4) == 1) then
-            ! only one record in the file => time-independent field
             call load_record(loaded_fields(index),1,horz_interp, is_in, ie_in ,js_in, je_in,window_id)
             i1 = find_buf_index(1,loaded_fields(index)%ibuf)
             if( loaded_fields(index)%region_type == NO_REGION ) then
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1))
-                data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
+                  data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
                 elsewhere
     !               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, FMS_TI_KIND_)
+                  data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, FMS_TI_KIND_)
                 end where
             else
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1))
                 data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
                 end where
             endif
-            if(PRESENT(mask_out)) &
-                mask_out(isw:iew,jsw:jew,:) = loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1)
+            if(PRESENT(mask_out)) mask_out(isw:iew,jsw:jew,:) = loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1)
+        ! otherwise do interpolation
         else
+            ! using time_interp_modulo
             if(loaded_fields(index)%have_modulo_times) then
-            call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, loaded_fields(index)%time(:), &
-                            w2, t1, t2, loaded_fields(index)%correct_leap_year_inconsistency, err_msg=err_msg)
-            if(err_msg .NE. '') then
-                filename = trim(loaded_fields(index)%fileobj%path)
-                call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
-                        ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
-            endif
+                call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, loaded_fields(index)%time(:), &
+                                 w2, t1, t2, loaded_fields(index)%correct_leap_year_inconsistency, err_msg=err_msg)
+                if(err_msg .NE. '') then
+                    filename = trim(loaded_fields(index)%fileobj%path)
+                    call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
+                             ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
+                endif
+            ! using time_interp_list
             else
-            if(loaded_fields(index)%modulo_time) then
-                mod_time=1
-            else
-                mod_time=0
-            endif
-            call time_interp(time,loaded_fields(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
-            if(err_msg .NE. '') then
-                filename = trim(loaded_fields(index)%fileobj%path)
-                call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
-                        ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
-            endif
+                if(loaded_fields(index)%modulo_time) then
+                    mod_time=1
+                else
+                    mod_time=0
+                endif
+                call time_interp(time,loaded_fields(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
+                if(err_msg .NE. '') then
+                    filename = trim(loaded_fields(index)%fileobj%path)
+                    call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
+                                   ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
+                endif
             endif
             w1 = 1.0_kindl -w2
             if (verb) then
