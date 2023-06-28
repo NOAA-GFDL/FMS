@@ -671,6 +671,9 @@ diag_files:
     var_name: var7
     reduction: none
     kind: r4
+  global_meta:
+  - is_important: False
+    has_important: True
 - file_name: file1
   freq: 6
   freq_units: hours
@@ -777,6 +780,8 @@ diag_files:
     var_name: var1
     reduction: none
     kind: r4
+    attributes:
+    - GFDL_name: var_var
 - file_name: file8%4yr%2mo%2dy%2hr%2min
   freq: 1 1 1
   freq_units: hours hours hours

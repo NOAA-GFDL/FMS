@@ -34,7 +34,7 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
                            DIAG_MONTHS, DIAG_YEARS, time_average, time_rms, time_max, time_min, time_sum, &
                            time_diurnal, time_power, time_none, r8, i8, r4, i4, DIAG_NOT_REGISTERED, &
-                           middle_time, begin_time, end_time
+                           middle_time, begin_time, end_time, MAX_STR_LEN
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
@@ -58,7 +58,6 @@ public :: dump_diag_yaml_obj
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
-integer, parameter :: MAX_STR_LEN = 255
 integer, parameter :: MAX_FREQ = 12
 
 
@@ -1057,7 +1056,7 @@ end function get_file_varlist
 pure function get_file_global_meta (this) &
 result (res)
  class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
- character (:), allocatable :: res(:,:) !< What is returned
+ character (len=MAX_STR_LEN), allocatable :: res(:,:) !< What is returned
   res = this%file_global_meta
 end function get_file_global_meta
 !> @brief Get the integer equivalent of the time to use to determine the filename,

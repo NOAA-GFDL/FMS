@@ -8,7 +8,7 @@ module fms_diag_field_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 #ifdef use_yaml
-use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
+use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
@@ -1126,6 +1126,7 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   character(len=120),          allocatable :: dimnames(:) !< Dimension names of the field
   character(len=120)                       :: cell_methods!< Cell methods attribute to write
   integer                                  :: i           !< For do loops
+  character (len=MAX_STR_LEN), allocatable :: yaml_field_attributes(:,:) !< Variable attributes defined in the yaml
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   var_name = field_yaml%get_var_outname()
@@ -1208,6 +1209,15 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
     trim(this%get_standname()), str_len=len_trim(this%get_standname()))
 
   call this%write_coordinate_attribute(fileobj, var_name, diag_axis)
+
+  if (field_yaml%has_var_attributes()) then
+    yaml_field_attributes = field_yaml%get_var_attributes()
+    do i = 1, size(yaml_field_attributes,1)
+      call register_variable_attribute(fileobj, var_name, trim(yaml_field_attributes(i,1)), &
+      trim(yaml_field_attributes(i,2)), str_len=len_trim(yaml_field_attributes(i,2)))
+    enddo
+    deallocate(yaml_field_attributes)
+  endif
 end subroutine write_field_metadata
 
 !> @brief Writes the coordinate attribute of a field if any of the field's axis has an
