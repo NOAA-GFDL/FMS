@@ -563,6 +563,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   else
 !!TODO: Loop through fields and do averages/math functions
 ! This will be implemented in a separate function or subroutine.
+    call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
+    fms_diag_accept_data = .TRUE.
+    return
   end if main_if
 !> Return false if nothing is done
   fms_diag_accept_data = .FALSE.
