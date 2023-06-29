@@ -189,16 +189,16 @@ module fms
 
   !> diag_manager
   !! includes imports from submodules made public
-  use diag_manager_mod, only: fms_diag_manager_init => diag_manager_init, &
-                              fms_diag_manager_send_data => send_data, &
-                              fms_diag_manager_send_tile_averaged_data => send_tile_averaged_data, &
-                              fms_diag_manager_end => diag_manager_end, &
-                              fms_diag_manager_register_diag_field => register_diag_field, &
-                              fms_diag_manager_register_static_field => register_static_field, &
-                              fms_diag_manager_diag_axis_init => diag_axis_init, &
-                              fms_diag_manager_get_base_time => get_base_time, &
-                              fms_diag_manager_get_base_date => get_base_date, &
-                              fms_diag_manager_need_data => need_data, &
+  use diag_manager_mod, only: fms_diag_init => diag_manager_init, &
+                              fms_diag_send_data => send_data, &
+                              fms_diag_send_tile_averaged_data => send_tile_averaged_data, &
+                              fms_diag_end => diag_manager_end, &
+                              fms_diag_register_diag_field => register_diag_field, &
+                              fms_diag_register_static_field => register_static_field, &
+                              fms_diag_axis_init => diag_axis_init, &
+                              fms_diag_get_base_time => get_base_time, &
+                              fms_diag_get_base_date => get_base_date, &
+                              fms_diag_need_data => need_data, &
                               DIAG_ALL, &
                               DIAG_OCEAN, &
                               DIAG_OTHER, &
@@ -209,17 +209,17 @@ module fms
                               DIAG_DAYS, &
                               DIAG_MONTHS, &
                               DIAG_YEARS, &
-                              fms_diag_manager_get_diag_global_att => get_diag_global_att, &
-                              fms_diag_manager_set_diag_global_att => set_diag_global_att, &
-                              fms_diag_manager_diag_field_add_attribute => diag_field_add_attribute, &
-                              fms_diag_manager_diag_field_add_cell_measures => diag_field_add_cell_measures, &
-                              fms_diag_manager_get_diag_field_id => get_diag_field_id, &
-                              fms_diag_manager_diag_axis_add_attribute => diag_axis_add_attribute, &
-                              fms_diag_manager_diag_grid_init => diag_grid_init, &
-                              fms_diag_manager_diag_grid_end => diag_grid_end, &
-                              fms_diag_manager_set_time_end => diag_manager_set_time_end, &
-                              fms_diag_manager_diag_send_complete => diag_send_complete, &
-                              fms_diag_manager_diag_send_complete_instant => diag_send_complete_instant, &
+                              fms_diag_get_global_att => get_diag_global_att, &
+                              fms_diag_set_global_att => set_diag_global_att, &
+                              fms_diag_field_add_attribute => diag_field_add_attribute, &
+                              fms_diag_field_add_cell_measures => diag_field_add_cell_measures, &
+                              fms_diag_get_field_id => get_diag_field_id, &
+                              fms_diag_axis_add_attribute => diag_axis_add_attribute, &
+                              fms_diag_grid_init => diag_grid_init, &
+                              fms_diag_grid_end => diag_grid_end, &
+                              fms_diag_set_time_end => diag_manager_set_time_end, &
+                              fms_diag_send_complete => diag_send_complete, &
+                              fms_diag_send_complete_instant => diag_send_complete_instant, &
                               DIAG_FIELD_NOT_FOUND, &
                               CMOR_MISSING_VALUE, &
                               null_axis_id
