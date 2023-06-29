@@ -23,13 +23,14 @@
 !!
 !! @date 2/2021
 !!
-!! Imports all supported FMS modules so that any public interfaces, &
+!! Imports all supported FMS modules so that any public interfaces,
 !! variables or routines can be used via this module. Excludes mpp_io modules
 !! and routines. Overloaded type operators/assignments cannot be imported individually
 !! (ie. `use fms, only: OPERATOR(*)` includes any defined '*' operators within FMS).
 !!
 !! Renaming scheme:
-!!   fms_<module_name>_routine_or_type_name
+!!   Routines and variables: fms_<module_name>_routine_name
+!!   Types:                  FmsModuleNameTypeName
 !!
 !! Exceptions (mainly for rep:
 !!   - Parameter values are kept their original names
@@ -76,7 +77,7 @@ module fms
                              fms_amip_interp_get_amip_ice             => get_amip_ice, &
                              fms_amip_interp_new          => amip_interp_new, &
                              fms_amip_interp_del          => amip_interp_del, &
-                             fms_amip_interp_type         => amip_interp_type, &
+                             FmsAmipInterp_type => amip_interp_type, &
                              assignment(=), &
                              fms_amip_interp_i_sst        => i_sst, &
                              fms_amip_interp_j_sst        => j_sst, &
@@ -111,7 +112,7 @@ module fms
                              fms_axis_utils2_axis_edges            => axis_edges
 
   !>block_control
-  use block_control_mod, only: fms_block_control_type                 => block_control_type, &
+  use block_control_mod, only: FmsBlockControl_type                   => block_control_type, &
                                fms_block_control_define_blocks        => define_blocks, &
                                fms_block_control_define_blocks_packed => define_blocks_packed
 
@@ -142,15 +143,15 @@ module fms
                                fms_coupler_type_set_data          => coupler_type_set_data, &
                                fms_coupler_type_copy_1d_2d        => coupler_type_copy_1d_2d, &
                                fms_coupler_type_copy_1d_3d        => coupler_type_copy_1d_3d, &
-                               fms_coupler_3d_values_type         => coupler_3d_values_type, &
-                               fms_coupler_3d_field_type          => coupler_3d_field_type, &
-                               fms_coupler_3d_bc_type             => coupler_3d_bc_type, &
-                               fms_coupler_2d_values_type         => coupler_2d_values_type, &
-                               fms_coupler_2d_field_type          => coupler_2d_field_type, &
-                               fms_coupler_2d_bc_type             => coupler_2d_bc_type, &
-                               fms_coupler_1d_values_type         => coupler_1d_values_type, &
-                               fms_coupler_1d_field_type          => coupler_1d_field_type, &
-                               fms_coupler_1d_bc_type             => coupler_1d_bc_type, &
+                               FmsCoupler3dValues_type         => coupler_3d_values_type, &
+                               FmsCoupler3dField_type          => coupler_3d_field_type, &
+                               FmsCoupler3dBC_type             => coupler_3d_bc_type, &
+                               FmsCoupler2dValues_type         => coupler_2d_values_type, &
+                               FmsCoupler2dField_type          => coupler_2d_field_type, &
+                               FmsCoupler2dBC_type             => coupler_2d_bc_type, &
+                               FmsCoupler1dValues_type         => coupler_1d_values_type, &
+                               FmsCoupler1dField_type          => coupler_1d_field_type, &
+                               FmsCoupler1dBC_type             => coupler_1d_bc_type, &
                                fms_coupler_ind_pcair                      => ind_pcair, &
                                fms_coupler_ind_u10                        => ind_u10, &
                                fms_coupler_ind_psurf                      => ind_psurf, &
@@ -224,7 +225,7 @@ module fms
                               null_axis_id
 
   !> exchange
-  use xgrid_mod, only: fms_xgrid_xmap_type => xmap_type, &
+  use xgrid_mod, only: FmsXgridXmap_type => xmap_type, &
                        fms_xgrid_setup_xmap => setup_xmap, &
                        fms_xgrid_set_frac_area => set_frac_area, &
                        fms_xgrid_put_to_xgrid => put_to_xgrid, &
@@ -235,7 +236,7 @@ module fms
                        fms_xgrid_init => xgrid_init, &
                        AREA_ATM_SPHERE, AREA_OCN_SPHERE, AREA_ATM_MODEL, AREA_OCN_MODEL, &
                        fms_xgrid_get_ocean_model_area_elements => get_ocean_model_area_elements, &
-                       fms_xgrid_grid_box_type => grid_box_type, &
+                       FmsXgridGridBox_type => grid_box_type, &
                        fms_xgrid_get_xmap_grid_area => get_xmap_grid_area, &
                        fms_xgrid_put_to_xgrid_ug => put_to_xgrid_ug, &
                        fms_xgrid_get_from_xgrid_ug => get_from_xgrid_ug, &
@@ -243,7 +244,7 @@ module fms
                        FIRST_ORDER, SECOND_ORDER, &
                        fms_xgrid_stock_move_ug => stock_move_ug, &
                        fms_xgrid_stock_move => stock_move, &
-                       fms_xgrid_stock_type => stock_type, &
+                       FmsXgridStock_type => stock_type, &
                        fms_xgrid_stock_print => stock_print, &
                        fms_xgrid_get_index_range => get_index_range, &
                        fms_xgrid_stock_integrate_2d => stock_integrate_2d
@@ -254,9 +255,9 @@ module fms
                        fms_stocks_report_init => stocks_report_init, &
                        fms_stocks_set_init_time => stocks_set_init_time, &
                        fms_stock_constants_atm_stock => atm_stock, &
-                       fms_ocn_stock => ocn_stock, &
-                       fms_lnd_stock => lnd_stock, &
-                       fms_ice_stock => ice_stock
+                       fms_stock_constants_ocn_stock => ocn_stock, &
+                       fms_stock_constants_lnd_stock => lnd_stock, &
+                       fms_stock_constants_ice_stock => ice_stock
 
   !> field manager
   use field_manager_mod, only: fms_field_manager_init => field_manager_init, &
@@ -290,10 +291,10 @@ module fms
                          fms_field_manager_fm_string_len => fm_string_len, &
                          fms_field_manager_fm_type_name_len => fm_type_name_len, &
                          NUM_MODELS, NO_FIELD, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, MODEL_ICE, MODEL_COUPLER, &
-                         fms_field_manager_method_type => method_type, &
-                         fms_field_manager_method_type_short => method_type_short, &
-                         fms_field_manager_method_type_very_short => method_type_very_short, &
-                         fms_field_manager_fm_list_iter_type => fm_list_iter_type, &
+                         FmsFieldManagerMethod_type          => method_type, &
+                         FmsFieldManagerMethodShort_type     => method_type_short, &
+                         FmsFieldManagerMethodVeryShort_type => method_type_very_short, &
+                         FmsFieldManagerListIterator_type => fm_list_iter_type, &
                          fms_field_manager_default_method => default_method
   use fm_util_mod, only: fms_fm_util_start_namelist => fm_util_start_namelist, &
                          fms_fm_util_end_namelist => fm_util_end_namelist, &
@@ -333,63 +334,63 @@ module fms
   use fms2_io_mod, only: unlimited, FmsNetcdfFile_t, FmsNetcdfDomainFile_t, &
                          FmsNetcdfUnstructuredDomainFile_t, &
                          Valid_t, &
-                         fms_fms2_io_open_file => open_file, &
-                         fms_fms2_io_open_virtual_file => open_virtual_file, &
-                         fms_fms2_io_close_file => close_file, &
-                         fms_fms2_io_register_axis => register_axis, &
-                         fms_fms2_io_register_field => register_field, &
-                         fms_fms2_io_register_restart_field => register_restart_field, &
-                         fms_fms2_io_write_data => write_data, &
-                         fms_fms2_io_read_data => read_data, &
-                         fms_fms2_io_write_restart => write_restart, &
-                         fms_fms2_io_write_new_restart => write_new_restart, &
-                         fms_fms2_io_read_restart => read_restart, &
-                         fms_fms2_io_read_new_restart => read_new_restart, &
-                         fms_fms2_io_global_att_exists => global_att_exists, &
-                         fms_fms2_io_variable_att_exists => variable_att_exists, &
-                         fms_fms2_io_register_global_attribute => register_global_attribute, &
-                         fms_fms2_io_register_variable_attribute => register_variable_attribute, &
-                         fms_fms2_io_get_global_attribute => get_global_attribute, &
-                         fms_fms2_io_get_variable_attribute => get_variable_attribute, &
-                         fms_fms2_io_get_num_dimensions => get_num_dimensions, &
-                         fms_fms2_io_get_dimension_names => get_dimension_names, &
-                         fms_fms2_io_dimension_exists => dimension_exists, &
-                         fms_fms2_io_is_dimension_unlimited => is_dimension_unlimited, &
-                         fms_fms2_io_get_dimension_size => get_dimension_size, &
-                         fms_fms2_io_get_num_variables =>   get_num_variables, &
-                         fms_fms2_io_get_variable_names =>   get_variable_names, &
-                         fms_fms2_io_variable_exists => variable_exists, &
-                         fms_fms2_io_get_variable_num_dimensions => get_variable_num_dimensions, &
-                         fms_fms2_io_get_variable_dimension_names => get_variable_dimension_names, &
-                         fms_fms2_io_get_variable_size =>   get_variable_size, &
-                         fms_fms2_io_get_compute_domain_dimension_indices => get_compute_domain_dimension_indices, &
-                         fms_fms2_io_get_global_io_domain_indices => get_global_io_domain_indices, &
-                         fms_fms2_io_get_valid => get_valid, &
-                         fms_fms2_io_is_valid => is_valid, &
-                         fms_fms2_io_get_unlimited_dimension_name => get_unlimited_dimension_name, &
-                         fms_fms2_io_get_variable_unlimited_dimension_index => get_variable_unlimited_dimension_index, &
-                         fms_fms2_io_file_exists => file_exists, &
-                         fms_fms2_io_compressed_start_and_count => compressed_start_and_count, &
-                         fms_fms2_io_get_variable_sense =>   get_variable_sense, &
-                         fms_fms2_io_get_variable_missing =>   get_variable_missing, &
-                         fms_fms2_io_get_variable_units =>   get_variable_units, &
-                         fms_fms2_io_get_time_calendar =>   get_time_calendar, &
-                         fms_fms2_io_open_check =>   open_check, &
-                         fms_fms2_io_is_registered_to_restart =>  is_registered_to_restart, &
-                         fms_fms2_io_check_if_open =>   check_if_open, &
-                         fms_fms2_io_set_fileobj_time_name => set_fileobj_time_name, &
-                         fms_fms2_io_is_dimension_registered => is_dimension_registered, &
-                         fms_fms2_io_fms2_io_init =>   fms2_io_init, &
-                         fms_fms2_io_get_mosaic_tile_grid =>   get_mosaic_tile_grid, &
-                         fms_fms2_io_write_restart_bc =>   write_restart_bc, &
-                         fms_fms2_io_read_restart_bc =>   read_restart_bc, &
-                         fms_fms2_io_get_filename_appendix =>   get_filename_appendix, &
-                         fms_fms2_io_set_filename_appendix =>   set_filename_appendix, &
-                         fms_fms2_io_get_instance_filename =>   get_instance_filename, &
-                         fms_fms2_io_nullify_filename_appendix =>   nullify_filename_appendix, &
-                         fms_fms2_io_ascii_read =>   ascii_read, &
-                         fms_fms2_io_get_mosaic_tile_file =>   get_mosaic_tile_file, &
-                         fms_fms2_io_parse_mask_table => parse_mask_table
+                         fms2_io_open_file => open_file, &
+                         fms2_io_open_virtual_file => open_virtual_file, &
+                         fms2_io_close_file => close_file, &
+                         fms2_io_register_axis => register_axis, &
+                         fms2_io_register_field => register_field, &
+                         fms2_io_register_restart_field => register_restart_field, &
+                         fms2_io_write_data => write_data, &
+                         fms2_io_read_data => read_data, &
+                         fms2_io_write_restart => write_restart, &
+                         fms2_io_write_new_restart => write_new_restart, &
+                         fms2_io_read_restart => read_restart, &
+                         fms2_io_read_new_restart => read_new_restart, &
+                         fms2_io_global_att_exists => global_att_exists, &
+                         fms2_io_variable_att_exists => variable_att_exists, &
+                         fms2_io_register_global_attribute => register_global_attribute, &
+                         fms2_io_register_variable_attribute => register_variable_attribute, &
+                         fms2_io_get_global_attribute => get_global_attribute, &
+                         fms2_io_get_variable_attribute => get_variable_attribute, &
+                         fms2_io_get_num_dimensions => get_num_dimensions, &
+                         fms2_io_get_dimension_names => get_dimension_names, &
+                         fms2_io_dimension_exists => dimension_exists, &
+                         fms2_io_is_dimension_unlimited => is_dimension_unlimited, &
+                         fms2_io_get_dimension_size => get_dimension_size, &
+                         fms2_io_get_num_variables =>   get_num_variables, &
+                         fms2_io_get_variable_names =>   get_variable_names, &
+                         fms2_io_variable_exists => variable_exists, &
+                         fms2_io_get_variable_num_dimensions => get_variable_num_dimensions, &
+                         fms2_io_get_variable_dimension_names => get_variable_dimension_names, &
+                         fms2_io_get_variable_size =>   get_variable_size, &
+                         fms2_io_get_compute_domain_dimension_indices => get_compute_domain_dimension_indices, &
+                         fms2_io_get_global_io_domain_indices => get_global_io_domain_indices, &
+                         fms2_io_get_valid => get_valid, &
+                         fms2_io_is_valid => is_valid, &
+                         fms2_io_get_unlimited_dimension_name => get_unlimited_dimension_name, &
+                         fms2_io_get_variable_unlimited_dimension_index => get_variable_unlimited_dimension_index, &
+                         fms2_io_file_exists => file_exists, &
+                         fms2_io_compressed_start_and_count => compressed_start_and_count, &
+                         fms2_io_get_variable_sense =>   get_variable_sense, &
+                         fms2_io_get_variable_missing =>   get_variable_missing, &
+                         fms2_io_get_variable_units =>   get_variable_units, &
+                         fms2_io_get_time_calendar =>   get_time_calendar, &
+                         fms2_io_open_check =>   open_check, &
+                         fms2_io_is_registered_to_restart =>  is_registered_to_restart, &
+                         fms2_io_check_if_open =>   check_if_open, &
+                         fms2_io_set_fileobj_time_name => set_fileobj_time_name, &
+                         fms2_io_is_dimension_registered => is_dimension_registered, &
+                         fms2_io_fms2_io_init =>   fms2_io_init, &
+                         fms2_io_get_mosaic_tile_grid =>   get_mosaic_tile_grid, &
+                         fms2_io_write_restart_bc =>   write_restart_bc, &
+                         fms2_io_read_restart_bc =>   read_restart_bc, &
+                         fms2_io_get_filename_appendix =>   get_filename_appendix, &
+                         fms2_io_set_filename_appendix =>   set_filename_appendix, &
+                         fms2_io_get_instance_filename =>   get_instance_filename, &
+                         fms2_io_nullify_filename_appendix =>   nullify_filename_appendix, &
+                         fms2_io_ascii_read =>   ascii_read, &
+                         fms2_io_get_mosaic_tile_file =>   get_mosaic_tile_file, &
+                         fms2_io_parse_mask_table => parse_mask_table
   ! used via fms2_io
   ! fms_io_utils_mod, fms_netcdf_domain_io_mod, netcdf_io_mod, &
   ! fms_netcdf_unstructured_domain_io_mod, blackboxio
@@ -406,7 +407,7 @@ module fms
   use horiz_interp_mod, only: fms_horiz_interp => horiz_interp, fms_horiz_interp_new => horiz_interp_new, &
                               fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
                               fms_horiz_interp_end => horiz_interp_end
-  use horiz_interp_type_mod, only: fms_horiz_interp_type => horiz_interp_type, &
+  use horiz_interp_type_mod, only: FmsHorizInterp_type => horiz_interp_type, &
                               assignment(=), CONSERVE, BILINEAR, SPHERICA, BICUBIC, &
                               fms_horiz_interp_type_stats => stats
   !! used via horiz_interp
@@ -422,7 +423,7 @@ module fms
                               fms_interpolator_end => interpolator_end, &
                               fms_interpolator_init_clim_diag => init_clim_diag, &
                               fms_interpolator_query_interpolator => query_interpolator, &
-                              fms_interpolate_type => interpolate_type, &
+                              FmsInterpolate_type => interpolate_type, &
                               CONSTANT, INTERP_WEIGHTED_P, INTERP_LINEAR_P, INTERP_LOG_P, &
                               FMS_INTERPOLATOR_ZERO=>ZERO, & !! conflicts with mpp_parameter's ZERO
                               fms_interpolator_read_data=>read_data
@@ -518,8 +519,8 @@ module fms
                      fms_mpp_gather => mpp_gather, &
                      fms_mpp_scatter => mpp_scatter, &
                      fms_mpp_alltoall => mpp_alltoall, &
-                     fms_mpp_type => mpp_type, &
-                     fms_mpp_byte => mpp_byte, &
+                     FmsMpp_type => mpp_type, &
+                     FmsMpp_byte => mpp_byte, &
                      fms_mpp_type_create => mpp_type_create, &
                      fms_mpp_type_free => mpp_type_free, &
                      fms_mpp_input_nml_file => input_nml_file
@@ -567,13 +568,13 @@ module fms
                          operator(+), operator(-), assignment(=), &
                          fms_mpp_efp_query_overflow_error => mpp_query_efp_overflow_error, &
                          fms_mpp_efp_reset_overflow_error => mpp_reset_efp_overflow_error, &
-                         fms_mpp_efp_type => mpp_efp_type
-  use mpp_domains_mod, only: fms_mpp_domains_domain_axis_spec => domain_axis_spec, &
-                             fms_mpp_domains_domain1D => domain1D, &
-                             fms_mpp_domains_domain2D => domain2D, &
-                             fms_mpp_domains_DomainCommunicator2D => DomainCommunicator2D, &
-                             fms_mpp_domains_nest_domain_type => nest_domain_type, &
-                             fms_mpp_domains_group_update_type => mpp_group_update_type, &
+                         FmsMppEfp_type => mpp_efp_type
+  use mpp_domains_mod, only: FmsMppDomains_axis_spec => domain_axis_spec, &
+                             FmsMppDomain1D => domain1D, &
+                             FmsMppDomain2D => domain2D, &
+                             FmsMppDomainCommunicator2D => DomainCommunicator2D, &
+                             FmsMppDomainsNestDomain_type => nest_domain_type, &
+                             FmsMppDomainsGroupUpdate_type => mpp_group_update_type, &
                              fms_mpp_domains_domains_set_stack_size => mpp_domains_set_stack_size, &
                              fms_mpp_domains_get_compute_domain => mpp_get_compute_domain, &
                              fms_mpp_domains_get_compute_domains => mpp_get_compute_domains, &
@@ -657,7 +658,7 @@ module fms
                              fms_mpp_domains_compute_extent => mpp_compute_extent, &
                              fms_mpp_domains_compute_block_extent => mpp_compute_block_extent, &
                              fms_mpp_domains_define_unstruct_domain => mpp_define_unstruct_domain, &
-                             fms_mpp_domains_domainUG => domainUG, &
+                             fmsMppDomainUG => domainUG, &
                              fms_mpp_domains_get_UG_io_domain => mpp_get_UG_io_domain, &
                              fms_mpp_domains_get_UG_domain_npes => mpp_get_UG_domain_npes, &
                              fms_mpp_domains_get_UG_compute_domain => mpp_get_UG_compute_domain, &
@@ -688,8 +689,8 @@ module fms
                              fms_mpp_domains_domain_UG_is_tile_root_pe => mpp_domain_UG_is_tile_root_pe, &
                              fms_mpp_domains_deallocate_domainUG => mpp_deallocate_domainUG, &
                              fms_mpp_domains_get_io_domain_UG_layout => mpp_get_io_domain_UG_layout, &
-                             fms_mpp_domains_NULL_DOMAIN1D => NULL_DOMAIN1D, &
-                             fms_mpp_domains_NULL_DOMAIN2D => NULL_DOMAIN2D, &
+                             NULL_DOMAIN1D, &
+                             NULL_DOMAIN2D, &
                              fms_mpp_domains_create_super_grid_domain => mpp_create_super_grid_domain, &
                              fms_mpp_domains_shift_nest_domains => mpp_shift_nest_domains
   !> parser
@@ -699,9 +700,9 @@ module fms
                              fms_yaml_parser_get_block_ids => get_block_ids, &
                              fms_yaml_parser_get_value_from_key => get_value_from_key, &
                              fms_yaml_parser_get_nkeys => get_nkeys, &
-                             fms_yaml_get_key_ids => get_key_ids, &
-                             fms_yaml_get_key_name => get_key_name, &
-                             fms_yaml_get_key_value => get_key_value
+                             fms_yaml_parser_get_key_ids => get_key_ids, &
+                             fms_yaml_parser_get_key_name => get_key_name, &
+                             fms_yaml_parser_get_key_value => get_key_value
 #endif
 
   !> platform
@@ -758,7 +759,7 @@ module fms
                              SUCCESS, ERR_FIELD_NOT_FOUND
 
   !> time_manager
-  use time_manager_mod, only: fms_time_type => time_type, &
+  use time_manager_mod, only: FmsTime_type => time_type, &
                               operator(+), operator(-), operator(*), assignment(=),&
                               operator(/), operator(>), operator(>=), operator(==), &
                               operator(/=), operator(<), operator(<=), operator(//), &
