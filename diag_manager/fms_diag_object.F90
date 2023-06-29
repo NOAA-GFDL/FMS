@@ -494,13 +494,7 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
                              !! later.  \note This is experimental
   !TODO logical, allocatable, dimension(:,:,:) :: oor_mask !< Out of range mask
-  integer :: sample !< Index along the diurnal time axis
-  integer :: day    !< Number of days
-  integer :: second !< Number of seconds
-  integer :: tick   !< Number of ticks representing fractional second
-  integer :: buffer_id !< Index of a buffer
   character(len=128) :: error_string !< Store error text
-  integer :: i !< For looping
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
