@@ -504,12 +504,6 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  class(diagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
-  logical :: phys_window
-  integer, allocatable :: freq(:) !< Output frequency
-  integer :: file_id !< File id where the field/buffer is in
-  integer :: reduction_method !< Integer representing a reduction method: none, average, min, max, ... etc.
-
   !TODO: weight is for time averaging where each time level may have a different weight
   ! call real_copy_set()
 
