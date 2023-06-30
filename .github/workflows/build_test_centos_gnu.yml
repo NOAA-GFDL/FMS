@@ -7,23 +7,22 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
     strategy:
       matrix:
         conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
         input-flag:  [--with-yaml, --enable-test-input=/home/fms_test_input]
     container:
-      image: ryanmulhall/fms-ci-centos-gnu:12.2.0
+      image: ryanmulhall/fms-ubuntu-gnu:12.2.0
       env:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flags }} ${{ matrix.input-flag }}"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - name: print env
+      run: env
     - name: Prepare GNU autoconf for build
-      run: autoreconf -if
+      run: autoreconf -if || env
     - name: Configure the build
       if: ${{ matrix.conf-flags != '--disable-setting-flags' }}
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} || cat config.log
