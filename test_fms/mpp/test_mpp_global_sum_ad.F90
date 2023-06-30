@@ -38,7 +38,6 @@ program test_mpp_global_sum_ad
   use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains
   use mpp_domains_mod, only : NORTH, EAST, CORNER, CENTER
   use mpp_domains_mod, only : mpp_global_sum_ad
-  use mpp_io_mod,      only : mpp_io_init
   use platform_mod
 
 
@@ -51,7 +50,6 @@ program test_mpp_global_sum_ad
 
   call mpp_init(test_level=mpp_init_test_requests_allocated)
   call mpp_domains_init(MPP_DEBUG)
-  call mpp_io_init()
   call mpp_domains_set_stack_size(stackmax)
 
   pe = mpp_pe()

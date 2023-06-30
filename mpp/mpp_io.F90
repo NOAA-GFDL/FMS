@@ -309,6 +309,7 @@
 !> @{
 
 module mpp_io_mod
+#ifdef use_deprecated_io
 
 #define _MAX_FILE_UNITS 1024
 
@@ -1203,7 +1204,7 @@ contains
 #include <mpp_io_unstructured_write.inc>
 #include <mpp_io_unstructured_read.inc>
 !----------
-
+#endif
 end module mpp_io_mod
 !> @}
 ! close documentation grouping

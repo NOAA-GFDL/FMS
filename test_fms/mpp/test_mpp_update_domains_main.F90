@@ -31,7 +31,6 @@ program test_mpp_update_domains_main
   use mpp_mod, only : mpp_init_test_requests_allocated
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, mpp_domains_set_stack_size
   use mpp_domains_mod, only : mpp_domains_init, mpp_domains_exit
-  use mpp_io_mod, only: mpp_io_init
   use platform_mod
 
   implicit none
@@ -41,7 +40,6 @@ program test_mpp_update_domains_main
   !> Initialize mpp and mpp IO modules
   call mpp_init(test_level=mpp_init_test_requests_allocated)
   call mpp_domains_init(MPP_DOMAIN_TIME)
-  call mpp_io_init()
   call mpp_domains_set_stack_size(stackmax)
   !> run the tests
   !> run the tests
