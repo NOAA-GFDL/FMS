@@ -232,6 +232,7 @@ PROGRAM test
 #ifdef use_deprecated_io
   USE fms_io_mod, ONLY: fms_io_init, file_exist, open_file
   USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
+  use mpp_io_mod, only: mpp_io_init
 #endif
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
 
