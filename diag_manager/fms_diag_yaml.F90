@@ -698,8 +698,8 @@ subroutine parse_key(filename, buffer, file_freq, file_frequnit, var)
   character(len=*),         intent(inout)  :: buffer           !< Buffer that was read in from the yaml
   integer,                  intent(out)    :: file_freq(:)     !< buffer to store the freq, new_file_freq, or
                                                                !! file_duration after it is parsed
-  integer,                  intent(out)    :: file_frequnit(:) !< buffer to store the freq units, new_file_freq units, or
-                                                               !! file_duration units after it is parsed
+  integer,                  intent(out)    :: file_frequnit(:) !< buffer to store the freq units, new_file_freq units,
+                                                               !! or file_duration units after it is parsed
   character(len=*),         intent(in)     :: var              !< Name of the key parsing
 
   integer            :: j           !< location of the ",' in the buffer
