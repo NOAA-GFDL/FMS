@@ -523,15 +523,12 @@ base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: wild_card_name%4yr%2mo%2dy%2hr
   filename_time: end
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
-  new_file_freq: 6
-  new_file_freq_units: hours
+  new_file_freq: 6 hours
   start_time: 2 1 1 0 0 0
-  file_duration: 12
-  file_duration_units: hours
+  file_duration: 12 hours
   varlist:
   - module: test_diag_manager_mod
     var_name: sst
@@ -541,8 +538,7 @@ diag_files:
   global_meta:
   - is_a_file: true
 - file_name: normal
-  freq: 24
-  freq_units: days
+  freq: 24 days
   time_units: hours
   unlimdim: records
   varlist:
@@ -561,8 +557,7 @@ diag_files:
     corner3: -60, 0
     corner4: -60, 75
 - file_name: normal2
-  freq: -1
-  freq_units: days
+  freq: -1 days
   time_units: hours
   unlimdim: records
   write_file: true
@@ -588,8 +583,7 @@ diag_files:
     corner3: 10, 25
     corner4: 20, 25
 - file_name: normal3
-  freq: -1
-  freq_units: days
+  freq: -1 days
   time_units: hours
   unlimdim: records
   write_file: false
@@ -609,8 +603,7 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: file1
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -620,8 +613,7 @@ diag_files:
     reduction: average
     kind: r4
 - file_name: file2
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   is_ocean: True
@@ -632,8 +624,7 @@ diag_files:
     reduction: average
     kind: r4
 - file_name: file3
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -662,8 +653,7 @@ base_date: 2 1 1 0 0 0
 
 diag_files:
 - file_name: static_file
-  freq: -1
-  freq_units: hours
+  freq: -1 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -675,8 +665,7 @@ diag_files:
   - is_important: False
     has_important: True
 - file_name: file1
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -690,8 +679,7 @@ diag_files:
     reduction: average
     kind: r4
 - file_name: file2
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -715,8 +703,7 @@ diag_files:
     kind: r8
     zbounds: 2.0 3.0
 - file_name: file3
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -729,8 +716,7 @@ diag_files:
     reduction: average
     kind: r4
 - file_name: file4
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -739,8 +725,7 @@ diag_files:
     reduction: average
     kind: r4
 - file_name: file5
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -756,23 +741,19 @@ diag_files:
     corner3: 10, 25
     corner4: 20, 25
 - file_name: file6%4yr%2mo%2dy%2hr
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
-  new_file_freq: 6
-  new_file_freq_units: hours
+  new_file_freq: 6 hours
   start_time: 2 1 1 0 0 0
-  file_duration: 12
-  file_duration_units: hours
+  file_duration: 12 hours
   varlist:
   - module: ocn_mod
     var_name: var1
     reduction: average
     kind: r4
 - file_name: file7
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
   varlist:
@@ -783,15 +764,12 @@ diag_files:
     attributes:
     - GFDL_name: var_var
 - file_name: file8%4yr%2mo%2dy%2hr%2min
-  freq: 1 1 1
-  freq_units: hours hours hours
+  freq: 1 hours,1 hours,1 hours
   time_units: hours
   unlimdim: time
-  new_file_freq: 6 3 1
-  new_file_freq_units: hours hours hours
+  new_file_freq: 6 hours, 3 hours, 1 hours
   start_time: 2 1 1 0 0 0
-  file_duration: 12 3 9
-  file_duration_units: hours hours hours
+  file_duration: 12 hours, 3 hours, 9 hours
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -799,23 +777,19 @@ diag_files:
     kind: r4
 - file_name: file9%4yr%2mo%2dy%2hr%2min
   filename_time: begin
-  freq: 1 1 1
-  freq_units: hours hours hours
+  freq: 1 hours,1 hours,1 hours
   time_units: hours
   unlimdim: time
-  new_file_freq: 6 3 1
-  new_file_freq_units: hours hours hours
+  new_file_freq: 6 hours, 3 hours, 1 hours
   start_time: 2 1 1 0 0 0
-  file_duration: 12 3 9
-  file_duration_units: hours hours hours
+  file_duration: 12 hours, 3 hours, 9 hours
   varlist:
   - module: ocn_mod
     var_name: var1
     reduction: average
     kind: r4
 - file_name: file10_diurnal
-  freq: 1
-  freq_units: days
+  freq: 1 days
   time_units: hours
   unlimdim: time
   varlist:
@@ -842,8 +816,7 @@ base_date: 2 1 1 0 0 0
 
 diag_files:
 - file_name: file1_clock
-  freq: 1
-  freq_units: days
+  freq: 1 days
   time_units: hours
   unlimdim: time
   varlist:
@@ -865,8 +838,7 @@ base_date: 2 1 1 0 0 0
 
 diag_files:
 - file_name: file1_forecast
-  freq: 1
-  freq_units: days
+  freq: 1 days
   time_units: hours
   unlimdim: time
   varlist:
