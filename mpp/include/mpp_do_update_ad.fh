@@ -128,6 +128,7 @@
          deallocate(msg1, msg2, msg3)
       endif
 
+      ! checkpoint buffer recv size and send pos and msgsize
       ! forward recv info
       buffer_pos = 0
 
