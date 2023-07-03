@@ -66,6 +66,7 @@ option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
+option(USE_DEPRECATED_IO     "Enable compiler definition -Duse_deprecated_io (compile with fms_io/mpp_io)"   OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -244,6 +245,10 @@ endif()
 
 if(WITH_YAML)
   list(APPEND fms_defs use_yaml)
+endif()
+
+if(USE_DEPRECATED_IO)
+  list(APPEND fms_defs use_deprecated_io)
 endif()
 
 if(INTERNAL_FILE_NML)
