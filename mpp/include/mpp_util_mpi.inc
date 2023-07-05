@@ -93,7 +93,6 @@ function get_peset(pelist)
   integer, intent(in), optional :: pelist(:)
   integer                       :: errunit
   integer                       :: i, n
-  integer,          allocatable :: sorted(:)
 
   if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
      get_peset = current_peset_num; return
