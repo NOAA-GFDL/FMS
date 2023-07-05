@@ -431,6 +431,7 @@ subroutine astronomy_init (latb, lonb)
 
 class(*), dimension(:,:), intent(in), optional :: latb !< 2d array of model latitudes at cell corners [radians]
 class(*), dimension(:,:), intent(in), optional :: lonb !< 2d array of model longitudes at cell corners [radians]
+logical :: is_valid
 
 !-------------------------------------------------------------------
 !  local variables:
@@ -513,27 +514,20 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !!    allocate arrays to hold the needed astronomical factors. define
 !!    the total number of points that the processor is responsible for.
 !--------------------------------------------------------------------
-    ! check that no invalid types (integers or characters) are given as optional args
-      select type (latb)
-        type is (real(i4_kind))
-          select type (lonb)
-            type is (real(i4_kind))
-            call error_mesg('astronomy_mod', 'invalid data type given, r4_kind and r8_kind only', FATAL)
-          end select
-        type is (real(i8_kind))
-          select type (lonb)
-          type is (real(i8_kind))
-          call error_mesg('astronomy_mod', 'invalid data type given, r4_kind and r8_kind ony', FATAL)
-        end select
-        type is (character(len=*))
-          select type (lonb)
-            type is (character(len=*))
-            call error_mesg('astronomy_mod', 'invalid data type given, r4_kind and r8_kind only', FATAL)
-        end select
-      end select
-
     if (present(latb) .and. present(lonb)) then
-            jd = size(latb,2) - 1
+      select type (latb)
+        type is (real(r4_kind))
+        select type (lonb)
+        type is (real(r4_kind))
+          is_valid = .true.
+        end select
+      type is (real(r8_kind))
+      select type (lonb)
+        type is (real(r8_kind))
+        is_valid = .true.
+      end select
+    end select
+          jd = size(latb,2) - 1
             id = size(lonb,1) - 1
             allocate (cosz_ann(id, jd))
             allocate (solar_ann(id, jd))
