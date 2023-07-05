@@ -44,7 +44,7 @@ test_expect_success "Test get orbital parameters - r4_kind" '
   mpirun -n 1 ./test_get_orbital_parameters_r4
 '
 
-test_expect_success "Test set orbital parameters - r8_kind" '
+test_expect_success "Test get orbital parameters - r8_kind" '
   mpirun -n 1 ./test_get_orbital_parameters_r8
 '
 
