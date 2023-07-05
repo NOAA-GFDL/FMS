@@ -550,7 +550,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!    function universal_time.
 !---------------------------------------------------------------------
 
-    gmt = universal_time(time)
+    gmt = real(universal_time(time), FMS_AST_KIND_)
 
 !---------------------------------------------------------------------
 !>   Extract the time of year (time_since_ae) from time_type variable
@@ -565,7 +565,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !---------------------------------------------------------------------
 
     if (present(dt_time))  then
-        dt = universal_time(dt_time)
+        dt = real(universal_time(dt_time), FMS_AST_KIND_)
         if (dt > real(PI, FMS_AST_KIND_)) then
            call error_mesg('astronomy_mod', 'radiation time step must be no longer than 12 hrs', FATAL)
         endif

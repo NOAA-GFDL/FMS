@@ -498,7 +498,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !---------------------------------------------------------------------
 !>    Define useful module variables.
 !----------------------------------------------------------------------
-    twopi = 2.0_r8_kind * PI
+    twopi = 2.0_r8_kind * real(PI, r8_kind)
     deg_to_rad = twopi/360.0_r8_kind
 
 !---------------------------------------------------------------------
@@ -514,6 +514,8 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !!    allocate arrays to hold the needed astronomical factors. define
 !!    the total number of points that the processor is responsible for.
 !--------------------------------------------------------------------
+    ! check that no invalid types (integers or characters) are given as optional arg
+
     if (present(latb) .and. present(lonb)) then
       select type (latb)
         type is (real(r4_kind))
@@ -842,7 +844,7 @@ real(kind=r8_kind)    :: t
     integer ::  seconds, days
 
     call get_time(time, seconds, days)
-        t = twopi* seconds/real(seconds_per_day, r8_kind)
+        t = twopi * real(seconds, r8_kind)/real(seconds_per_day, r8_kind)
 
 end function universal_time
 
