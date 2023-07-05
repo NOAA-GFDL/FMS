@@ -106,17 +106,14 @@ function get_peset(pelist)
     enddo
   endif
 
-  allocate( sorted(size(pelist(:))) )
-  sorted = pelist
   errunit = stderr()
   if( debug )write( errunit,* )'pelist=', pelist
 
   !find if this array matches any existing peset
   do i = 1,peset_num
      if( debug )write( errunit,'(a,3i6)' )'pe, i, peset_num=', pe, i, peset_num
-     if( size(sorted(:)).EQ.size(peset(i)%list(:)) )then
-        if( ALL(sorted.EQ.peset(i)%list) )then
-           deallocate(sorted)
+     if( size(pelist(:)).EQ.size(peset(i)%list(:)) )then
+        if( ALL(pelist.EQ.peset(i)%list) )then
            get_peset = i; return
         end if
      end if
@@ -126,14 +123,13 @@ function get_peset(pelist)
   if( peset_num > current_peset_max ) call expand_peset()
   i = peset_num             !shorthand
   !create list
-  allocate( peset(i)%list(size(sorted(:))) )
-  peset(i)%list(:) = sorted(:)
-  peset(i)%count = size(sorted(:))
+  allocate( peset(i)%list(size(pelist(:))) )
+  peset(i)%list(:) = pelist(:)
+  peset(i)%count = size(pelist(:))
 
-  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted-mpp_root_pe(), peset(i)%group, error )
+  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(pelist(:)), pelist-mpp_root_pe(), peset(i)%group, error )
   call MPI_COMM_CREATE_GROUP(peset(current_peset_num)%id, peset(i)%group, &
                              DEFAULT_TAG, peset(i)%id, error )
-  deallocate(sorted)
   get_peset = i
 
   return
