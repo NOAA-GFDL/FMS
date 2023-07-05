@@ -42,7 +42,7 @@ module astronomy_mod
                                  operator( // ), operator(<)
     use constants_mod,     only: constants_init, PI
     use mpp_mod,           only: input_nml_file
-    use platform_mod,      only: r4_kind, r8_kind
+    use platform_mod,      only: r4_kind, r8_kind, i4_kind, i8_kind
 
     !--------------------------------------------------------------------
 
@@ -429,8 +429,8 @@ contains
 !! @throw FATAL, "astronomy_mod perihelion must be between 0 and 360 degrees"
 subroutine astronomy_init (latb, lonb)
 
-real(r8_kind), dimension(:,:), intent(in), optional :: latb !< 2d array of model latitudes at cell corners [radians]
-real(r8_kind), dimension(:,:), intent(in), optional :: lonb !< 2d array of model longitudes at cell corners [radians]
+class(*), dimension(:,:), intent(in), optional :: latb !< 2d array of model latitudes at cell corners [radians]
+class(*), dimension(:,:), intent(in), optional :: lonb !< 2d array of model longitudes at cell corners [radians]
 
 !-------------------------------------------------------------------
 !  local variables:
@@ -513,27 +513,32 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !!    allocate arrays to hold the needed astronomical factors. define
 !!    the total number of points that the processor is responsible for.
 !--------------------------------------------------------------------
-    !select type (latb)
-    !  type is (real(r4_kind))
-    !    select type (lonb)
-    !      type is (real(r4_kind))
-    !    end select
-    !end select
-
-    !select type (latb)
-    !  type is (real(r8_kind))
-    !    select type (lonb)
-    !      type is (real(r8_kind))
-    !    end select
-    !end select
+    ! check that no invalid types (integers or characters) are given as optional args
+      select type (latb)
+        type is (real(i4_kind))
+          select type (lonb)
+            type is (real(i4_kind))
+            call error_mesg('astronomy_mod', 'invalid data type given, r4_kind and r8_kind only', FATAL)
+          end select
+        type is (real(i8_kind))
+          select type (lonb)
+          type is (real(i8_kind))
+          call error_mesg('astronomy_mod', 'invalid data type given, r4_kind and r8_kind ony', FATAL)
+        end select
+        type is (character(len=*))
+          select type (lonb)
+            type is (character(len=*))
+            call error_mesg('astronomy_mod', 'invalid data type given, r4_kind and r8_kind only', FATAL)
+        end select
+      end select
 
     if (present(latb) .and. present(lonb)) then
-        jd = size(latb,2) - 1
-        id = size(lonb,1) - 1
-        allocate (cosz_ann(id, jd))
-        allocate (solar_ann(id, jd))
-        allocate (fracday_ann(id, jd))
-        total_pts = jd*id
+            jd = size(latb,2) - 1
+            id = size(lonb,1) - 1
+            allocate (cosz_ann(id, jd))
+            allocate (solar_ann(id, jd))
+            allocate (fracday_ann(id, jd))
+            total_pts = jd*id
     elseif (present(latb) .and. .not. present(lonb)) then
         call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
     else
