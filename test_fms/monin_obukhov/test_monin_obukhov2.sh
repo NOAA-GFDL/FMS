@@ -22,16 +22,21 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/monin_obukhov directory.
 
-# Ed Hartnett 11/29/19
-
 # Set common test settings.
 . ../test-lib.sh
 
-# Create file for test.
-touch input.nml
+# Run tests
+for p in r4 r8
+do
+  cp input.${p}.nml input.nml
+  test_expect_success "test monin_obukhov_mod (${p})" "mpirun -n 1 ./test_monin_obukhov_${p}"
 
-# Run test
-test_expect_success "test monin_obukhov" '
-    mpirun -n 2 ./test_monin_obukhov
-'
+  if [ -f OUT.nml ]
+  then
+    mv OUT.nml OUT.${p}.nml
+  fi
+done
+
+rm input.nml
+
 test_done

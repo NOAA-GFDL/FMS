@@ -17,253 +17,353 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-program test_monin_obukhov
+! Check monin_obukhov_mod calculations against a dictionary of reference answers.
 
-  use monin_obukhov_inter, only: monin_obukhov_drag_1d, monin_obukhov_stable_mix, monin_obukhov_diff, &
-                              &  monin_obukhov_profile_1d
-  use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
+program test_monin_obukhov
+  use monin_obukhov_mod
+  use mpp_mod, only: mpp_error, FATAL, stdout, mpp_init, mpp_exit, input_nml_file
+  use fms_mod, only: check_nml_error
+  use platform_mod, only: r4_kind, r8_kind, i4_kind, i8_kind
+  use fms_string_utils_mod, only: string
 
   implicit none
-  integer, parameter :: i8 = selected_int_kind(18)
-  integer(i8)        :: ier_tot, ier
 
-  real    :: grav, vonkarm, error, zeta_min, small, ustar_min
-  real    :: zref, zref_t
-  integer :: max_iter
+#if MO_TEST_KIND_ == 4
+  integer, parameter :: kr = r4_kind
+  integer, parameter :: ki = i4_kind
+#else
+  integer, parameter :: kr = r8_kind
+  integer, parameter :: ki = i8_kind
+#endif
 
-  real    :: rich_crit, zeta_trans
-  real    :: drag_min_heat, drag_min_moist, drag_min_mom
-  logical :: neutral
-  integer :: stable_option
-  logical :: new_mo_option
+  integer(ki), parameter :: mi(1) = [0_ki]
 
-  call mpp_init()
+#define INT_(arr)  reshape(transfer(arr, mi), shape(arr))
 
-  grav          = 9.80
-  vonkarm       = 0.4
-  error         = 1.0e-4
-  zeta_min      = 1.0e-6
-  max_iter      = 20
-  small         = 1.0e-4
-  neutral       = .false.
-  stable_option = 1
-  new_mo_option = .false.
-  rich_crit     =10.0
-  zeta_trans    = 0.5
-  drag_min_heat  = 1.0e-5
-  drag_min_moist= 1.0e-5
-  drag_min_mom  = 1.0e-5
-  ustar_min     = 1.e-10
+  integer, parameter :: n_1d = 5, &
+                      & diff_ni = 1, &
+                      & diff_nj = 1, &
+                      & diff_nk = 1
 
+  integer :: n_answers
+  namelist /metaparams_nml/ n_answers
 
-  zref   = 10.
-  zref_t = 2.
+  type drag_input_t
+    real(ki), dimension(n_1d) :: pt, pt0, z, z0, zt, zq, speed
+    logical, dimension(n_1d) :: avail
+  end type
 
+  type stable_mix_input_t
+    real(ki), dimension(n_1d) :: rich
+  end type
 
-  ier_tot = 0
-  call test_drag
-  print *,'test_drag                    ier = ', ier
-  ier_tot = ier_tot + ier
+  type diff_input_t
+    real(ki), dimension(diff_ni, diff_nj, diff_nk) :: z
+    real(ki), dimension(diff_ni, diff_nj)          :: u_star, b_star
+  end type
 
-  call test_stable_mix
-  print *,'test_stable_mix              ier = ', ier
-  ier_tot = ier_tot + ier
+  type profile_input_t
+    real(ki) :: zref, zref_t
+    real(ki), dimension(n_1d) :: z, z0, zt, zq, u_star, b_star, q_star
+    logical :: avail(n_1d)
+  end type
 
-  call test_diff
-  print *,'test_diff                    ier = ', ier
-  ier_tot = ier_tot + ier
+  type drag_answers_t
+    integer(ki), dimension(n_1d) :: drag_m, drag_t, drag_q, u_star, b_star
+  end type
 
-  call test_profile
-  print *,'test_profile                 ier = ', ier
-  ier_tot = ier_tot + ier
+  type stable_mix_answers_t
+    integer(ki), dimension(n_1d) :: mix
+  end type
 
-  if(ier_tot/=0) then
-      print *, 'Test_monin_obukhov: result different from expected result'
-  else
-     print *, 'No error detected.'
+  type diff_answers_t
+    integer(ki), dimension(diff_ni, diff_nj, diff_nk) :: k_m, k_h
+  end type
+
+  type profile_answers_t
+    integer(ki), dimension(n_1d) :: del_m, del_t, del_q
+  end type
+
+  type(drag_input_t)       :: drag_input
+  type(stable_mix_input_t) :: stable_mix_input
+  type(diff_input_t)       :: diff_input
+  type(profile_input_t)    :: profile_input
+
+  type(drag_answers_t),       allocatable :: drag_answers(:)
+  type(stable_mix_answers_t), allocatable :: stable_mix_answers(:)
+  type(diff_answers_t),       allocatable :: diff_answers(:)
+  type(profile_answers_t),    allocatable :: profile_answers(:)
+
+  namelist /answers_nml/ drag_answers, stable_mix_answers, diff_answers, profile_answers
+
+  call mpp_init
+
+  call monin_obukhov_init
+  call set_input_params
+  call read_answers
+  call calc_answers
+
+  if (.not.check_answers()) then
+    call write_answers
+    call mpp_error(FATAL, "monin_obukhov unit tests did not pass with any known answer key")
   endif
 
-  call mpp_exit()
+  call mpp_exit
 
-  CONTAINS
+  contains
 
-    subroutine test_drag
+    subroutine set_input_params
+      drag_input%pt     = [268.559120403867_kr, 269.799228886728_kr, 277.443023238556_kr, 295.79192777341_kr, 293.268717243262_kr]
+      drag_input%pt0    = [273.42369841804_kr , 272.551410044203_kr, 278.638168565727_kr, 298.133068766049_kr, 292.898163706587_kr]
+      drag_input%z      = [29.432779269303_kr, 30.0497139076724_kr, 31.6880000418153_kr, 34.1873479240475_kr, 33.2184943356517_kr]
+      drag_input%z0     = [5.86144925739178e-05_kr, 0.0001_kr, 0.000641655193293549_kr, 3.23383768877187e-05_kr, 0.07_kr]
+      drag_input%zt     = [3.69403636275411e-05_kr, 0.0001_kr, 1.01735489109205e-05_kr, 7.63933834969505e-05_kr, 0.00947346982656289_kr]
+      drag_input%zq     = [5.72575636226887e-05_kr, 0.0001_kr, 5.72575636226887e-05_kr, 5.72575636226887e-05_kr, 5.72575636226887e-05_kr]
+      drag_input%speed  = [2.9693638452068_kr, 2.43308757772094_kr, 5.69418282305367_kr, 9.5608693754561_kr, 4.35302260074334_kr]
+      drag_input%avail  = [.true., .true., .true., .true., .true.]
 
-      integer(i8)        :: w
+      stable_mix_input%rich = [1650.92431853365_kr, 1650.9256285137_kr, 77.7636819036559_kr, 1.92806556391324_kr, 0.414767442012442_kr]
 
-      integer :: i, ier_l, CHKSUM_DRAG
-      integer, parameter :: n = 5
-      logical :: avail(n), lavail
+      profile_input%zref   = 10._kr
+      profile_input%zref_t = 2._kr
+      profile_input%z      = [29.432779269303_kr, 30.0497139076724_kr, 31.6880000418153_kr, 34.1873479240475_kr, 33.2184943356517_kr]
+      profile_input%z0     = [5.86144925739178e-05_kr, 0.0001_kr, 0.000641655193293549_kr, 3.23383768877187e-05_kr, 0.07_kr]
+      profile_input%zt     = [3.69403636275411e-05_kr, 0.0001_kr, 1.01735489109205e-05_kr, 7.63933834969505e-05_kr, 0.00947346982656289_kr]
+      profile_input%zq     = [5.72575636226887e-05_kr, 0.0001_kr, 5.72575636226887e-05_kr, 5.72575636226887e-05_kr, 5.72575636226887e-05_kr]
+      profile_input%u_star = [0.109462510724615_kr, 0.0932942802513508_kr, 0.223232887323184_kr, 0.290918439028557_kr, 0.260087579361467_kr]
+      profile_input%b_star = [0.00690834676781433_kr, 0.00428178089592372_kr, 0.00121229800895103_kr, 0.00262353784027441_kr, -0.000570314880866852_kr]
+      profile_input%q_star = [0.000110861442197537_kr, 9.44983279664197e-05_kr, 4.17643828631936e-05_kr, 0.000133135421415819_kr, 9.36317815993945e-06_kr]
+      profile_input%avail = [.true., .true., .true., .true., .true.]
 
-      real, dimension(n) :: pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, drag_q, u_star, b_star
+      diff_input%z      = reshape([19.9982554527751_kr], shape(diff_input%z))
+      diff_input%u_star = reshape([0.129638955971075_kr], shape(diff_input%u_star))
+      diff_input%b_star = reshape([0.000991799765557209_kr], shape(diff_input%b_star))
+    end subroutine
 
-      ! potential temperature
-      pt     = (/ 268.559120403867, 269.799228886728, 277.443023238556, 295.79192777341, 293.268717243262 /)
-      pt0    = (/ 273.42369841804 , 272.551410044203, 278.638168565727, 298.133068766049, 292.898163706587/)
-      z      = (/ 29.432779269303, 30.0497139076724, 31.6880000418153, 34.1873479240475, 33.2184943356517/)
-      z0     = (/ 5.86144925739178e-05, 0.0001, 0.000641655193293549, 3.23383768877187e-05, 0.07/)
-      zt     = (/ 3.69403636275411e-05, 0.0001, 1.01735489109205e-05, 7.63933834969505e-05, 0.00947346982656289/)
-      zq     = (/ 5.72575636226887e-05, 0.0001, 5.72575636226887e-05, 5.72575636226887e-05, 5.72575636226887e-05/)
-      speed  = (/ 2.9693638452068, 2.43308757772094, 5.69418282305367, 9.5608693754561, 4.35302260074334/)
-      lavail = .true.
-      avail  = (/.true., .true., .true., .true., .true. /)
+    subroutine read_answers
+      integer :: io, ierr
 
-      drag_m = 0
-      drag_t = 0
-      drag_q = 0
-      u_star = 0
-      b_star = 0
+      read (input_nml_file, nml=metaparams_nml, iostat=io)
+      ierr = check_nml_error(io, "metaparams_nml")
 
-      call monin_obukhov_drag_1d(grav, vonkarm,               &
-           & error, zeta_min, max_iter, small,                         &
-           & neutral, stable_option, new_mo_option, rich_crit, zeta_trans,&
-           & drag_min_heat, drag_min_moist, drag_min_mom,              &
-           & n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t,         &
-           & drag_q, u_star, b_star, lavail, avail, ier_l)
+      allocate(drag_answers_t       :: drag_answers(n_answers+1))
+      allocate(stable_mix_answers_t :: stable_mix_answers(n_answers+1))
+      allocate(diff_answers_t       :: diff_answers(n_answers+1))
+      allocate(profile_answers_t    :: profile_answers(n_answers+1))
 
-      ! check sum results
-      w = 0
-      w = w + transfer(sum(drag_m), w)
-      w = w + transfer(sum(drag_t), w)
-      w = w + transfer(sum(drag_q), w)
-      w = w + transfer(sum(u_star), w)
-      w = w + transfer(sum(b_star), w)
+      if (n_answers.gt.0) then
+        read (input_nml_file, nml=answers_nml, iostat=io)
+        ierr = check_nml_error(io, "answers_nml")
+      endif
+    end subroutine
 
-      ! plug in check sum here>>>
-#if defined(__INTEL_COMPILER) || defined(_LF95)
-#define CHKSUM_DRAG 4466746452959549648
-#endif
-#if defined(_PGF95)
-#define CHKSUM_DRAG 4466746452959549650
-#endif
+    subroutine write_answers
+      integer :: fh
 
+      print "(A)", "Writing newly generated answers to OUT.nml"
 
-      print *,'chksum test_drag      : ', w, ' ref ', CHKSUM_DRAG
-      ier = CHKSUM_DRAG - w
+      n_answers = n_answers + 1
 
-    end subroutine test_drag
+      open (newunit=fh, file="OUT.nml")
+      write (fh, nml=metaparams_nml)
+      write (fh, nml=answers_nml)
+      close (fh)
+    end subroutine
 
-    subroutine test_stable_mix
+    function check_answers() result(res)
+      logical :: res
+      integer :: i
 
-      integer(i8)        :: w
+      res = .true.
 
-      integer, parameter      :: n = 5
-      real   , dimension(n)   :: rich
-      real   , dimension(n)   :: mix
-      integer                 :: ier_l, CHKSUM_STABLE_MIX
+      do i=1, n_answers
+        if(check_all(i)) then
+          print "(A)", "monin_obukhov tests passed with answer key " // string(i)
+          return
+        endif
+      enddo
 
+      res = .false.
+    end function
 
-      stable_option = 1
-      rich_crit     = 10.0
-      zeta_trans    =  0.5
+    subroutine calc_answers_drag
+      real(kr), dimension(n_1d) :: drag_m, drag_t, drag_q, u_star, b_star
 
-      rich = (/1650.92431853365, 1650.9256285137, 77.7636819036559, 1.92806556391324, 0.414767442012442/)
+      drag_m = 0._kr
+      drag_t = 0._kr
+      drag_q = 0._kr
+      u_star = 0._kr
+      b_star = 0._kr
 
+      associate (in => drag_input)
+        call mo_drag(in%pt, in%pt0, in%z, in%z0, in%zt, in%zq, in%speed, &
+                   & drag_m, drag_t, drag_q, u_star, b_star, drag_input%avail)
+      end associate
 
-      call monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
-           &                              n, rich, mix, ier_l)
+      associate(ans => drag_answers(n_answers+1))
+        ans%drag_m = INT_(drag_m)
+        ans%drag_t = INT_(drag_t)
+        ans%drag_q = INT_(drag_q)
+        ans%u_star = INT_(u_star)
+        ans%b_star = INT_(b_star)
+      end associate
+    end subroutine
 
-      w = transfer( sum(mix) , w)
+    subroutine calc_answers_stable_mix
+      real(kr), dimension(n_1d) :: mix
 
-      ! plug in check sum here>>>
-#if defined(__INTEL_COMPILER) || defined(_LF95)
-#define CHKSUM_STABLE_MIX 4590035772608644256
-#endif
-#if defined(_PGF95)
-#define CHKSUM_STABLE_MIX 4590035772608644258
-#endif
+      mix = 0._kr
 
-      print *,'chksum test_stable_mix: ', w, ' ref ', CHKSUM_STABLE_MIX
-      ier = CHKSUM_STABLE_MIX - w
+      associate (in => stable_mix_input)
+        call stable_mix(in%rich, mix)
+      end associate
 
-    end subroutine test_stable_mix
+      associate (ans => stable_mix_answers(n_answers+1))
+        ans%mix = INT_(mix)
+      end associate
+    end subroutine
 
-    !========================================================================
+    subroutine calc_answers_diff
+      real(kr), dimension(diff_ni, diff_nj, diff_nk) :: k_m, k_h
 
-    subroutine test_diff
+      k_m = 0._kr
+      k_h = 0._kr
 
-      integer(i8)        :: w
+      associate (in => diff_input)
+        call mo_diff(in%z, in%u_star, in%b_star, k_m, k_h)
+      end associate
 
-      integer, parameter             :: ni=1, nj=1, nk=1
-      real   , dimension(ni, nj, nk) :: z
-      real   , dimension(ni, nj)     :: u_star, b_star
-      real   , dimension(ni, nj, nk) :: k_m, k_h
-      integer                        :: ier_l, CHKSUM_DIFF
+      associate (ans => diff_answers(n_answers+1))
+        ans%k_m = INT_(k_m)
+        ans%k_h = INT_(k_h)
+      end associate
+    end subroutine
 
-      z      = 19.9982554527751
-      u_star = 0.129638955971075
-      b_star = 0.000991799765557209
+    subroutine calc_answers_profile
+      real(kr), dimension(n_1d) :: del_m, del_t, del_q
 
-      call monin_obukhov_diff(vonkarm,                        &
-           & ustar_min,                                     &
-           & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &!miz
-           & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier_l)
+      del_m = 0._kr
+      del_t = 0._kr
+      del_q = 0._kr
 
-      w = 0
-      w = w + transfer( sum(k_m) , w)
-      w = w + transfer( sum(k_h) , w)
+      associate (in => profile_input)
+        call mo_profile(in%zref, in%zref_t, in%z, in%z0, in%zt, in%zq, &
+                      & in%u_star, in%b_star, in%q_star, &
+                      & del_m, del_t, del_q, in%avail)
+      end associate
 
-      ! plug check sum in here>>>
-#if defined(__INTEL_COMPILER) || defined(_LF95) || defined(_PGF95)
-#define CHKSUM_DIFF -9222066590093362639
-#endif
+      associate (ans => profile_answers(n_answers+1))
+        ans%del_m = INT_(del_m)
+        ans%del_t = INT_(del_t)
+        ans%del_q = INT_(del_q)
+      end associate
+    end subroutine
 
-      print *,'chksum test_diff      : ', w, ' ref ', CHKSUM_DIFF
+    subroutine calc_answers
+      call calc_answers_drag
+      call calc_answers_stable_mix
+      call calc_answers_diff
+      call calc_answers_profile
+    end subroutine
 
-      ier = CHKSUM_DIFF - w
+    function check_all(i) result(res)
+      integer, intent(in) :: i !< Answer key to check against
+      logical :: res
 
-    end subroutine test_diff
+      res = check_drag(i) .and. check_stable_mix(i) .and. check_diff(i) .and. check_profile(i)
+    end function
 
-    !========================================================================
+    function check_drag(i) result(res)
+      integer, intent(in) :: i !< Answer key to check against
+      logical :: res
 
-    subroutine test_profile
+      associate (ans0 => drag_answers(i), ans1 => drag_answers(n_answers+1))
+        res = array_compare_1d(ans0%drag_m, ans1%drag_m) .and. &
+              array_compare_1d(ans0%drag_t, ans1%drag_t) .and. &
+              array_compare_1d(ans0%drag_q, ans1%drag_q) .and. &
+              array_compare_1d(ans0%u_star, ans1%u_star) .and. &
+              array_compare_1d(ans0%b_star, ans1%b_star)
+      end associate
+    end function
 
-      integer(i8)        :: w
+    function check_stable_mix(i) result(res)
+      integer, intent(in) :: i !< Answer key to check against
+      logical :: res
 
-      integer, parameter :: n = 5
-      integer            :: ier_l, CHKSUM_PROFILE
+      associate (ans0 => stable_mix_answers(i), ans1 => stable_mix_answers(n_answers+1))
+        res = array_compare_1d(ans0%mix, ans1%mix)
+      end associate
+    end function
 
-      logical :: avail(n)
+    function check_diff(i) result(res)
+      integer, intent(in) :: i !< Answer key to check against
+      logical :: res
 
-      real, dimension(n) :: z, z0, zt, zq, u_star, b_star, q_star
-      real, dimension(n) :: del_m, del_t, del_q
+      associate (ans0 => diff_answers(i), ans1 => diff_answers(n_answers+1))
+        res = array_compare_3d(ans0%k_m, ans1%k_m) .and. &
+            & array_compare_3d(ans0%k_h, ans1%k_h)
+      end associate
+    end function
 
-      z      = (/ 29.432779269303, 30.0497139076724, 31.6880000418153, 34.1873479240475, 33.2184943356517 /)
-      z0     = (/ 5.86144925739178e-05, 0.0001, 0.000641655193293549, 3.23383768877187e-05, 0.07/)
-      zt     = (/ 3.69403636275411e-05, 0.0001, 1.01735489109205e-05, 7.63933834969505e-05, 0.00947346982656289/)
-      zq     = (/ 5.72575636226887e-05, 0.0001, 5.72575636226887e-05, 5.72575636226887e-05, 5.72575636226887e-05/)
-      u_star = (/ 0.109462510724615, 0.0932942802513508, 0.223232887323184, 0.290918439028557, 0.260087579361467/)
-      b_star = (/ 0.00690834676781433, 0.00428178089592372, 0.00121229800895103, 0.00262353784027441, &
-               &  -0.000570314880866852/)
-      q_star = (/ 0.000110861442197537, 9.44983279664197e-05, 4.17643828631936e-05, 0.000133135421415819, &
-               &  9.36317815993945e-06/)
+    function check_profile(i) result(res)
+      integer, intent(in) :: i !< Answer key to check against
+      logical :: res
 
-      avail = (/ .true., .true.,.true.,.true.,.true. /)
+      associate (ans0 => profile_answers(i), ans1 => profile_answers(n_answers+1))
+        res = array_compare_1d(ans0%del_m, ans1%del_m) .and. &
+            & array_compare_1d(ans0%del_t, ans1%del_t) .and. &
+            & array_compare_1d(ans0%del_q, ans1%del_q)
+      end associate
+    end function
 
-      call monin_obukhov_profile_1d(vonkarm, &
-           & neutral, stable_option, new_mo_option, rich_crit, zeta_trans, &
-           & n, zref, zref_t, z, z0, zt, zq, u_star, b_star, q_star, &
-           & del_m, del_t, del_q, .true., avail, ier_l)
+    function array_compare_1d(arr1, arr2) result(res)
+      integer(ki), intent(in) :: arr1(:), arr2(:)
+      logical :: res
+      integer :: n, i
 
-      ! check sum results
-      w = 0
-      w = w + transfer(sum(del_m), w)
-      w = w + transfer(sum(del_t), w)
-      w = w + transfer(sum(del_q), w)
+      res = .false.
 
-      ! plug check sum in here>>>
-#if defined(__INTEL_COMPILER) || defined(_LF95)
-#define CHKSUM_PROFILE -4596910845317820786
-#endif
-#if defined(_PGF95)
-#define CHKSUM_PROFILE -4596910845317820785
-#endif
+      n = size(arr1, 1)
+      if (size(arr2, 1) .ne. n) return
 
-      print *,'chksum test_profile   : ', w, ' ref ', CHKSUM_PROFILE
+      do i=1, n
+        if (arr1(i) .ne. arr2(i)) return
+      enddo
 
-      ier = CHKSUM_PROFILE - w
+      res = .true.
+    end function
 
-    end subroutine test_profile
+    function array_compare_2d(arr1, arr2) result(res)
+      integer(ki), intent(in) :: arr1(:,:), arr2(:,:)
+      logical :: res
+      integer :: n, i
 
+      res = .false.
 
+      n = size(arr1, 2)
+      if (size(arr2, 2) .ne. n) return
+
+      do i=1, n
+        if (.not.array_compare_1d(arr1(:, i), arr2(:, i))) return
+      enddo
+
+      res = .true.
+    end function
+
+    function array_compare_3d(arr1, arr2) result(res)
+      integer(ki), intent(in) :: arr1(:,:,:), arr2(:,:,:)
+      logical :: res
+      integer :: n, i
+
+      res = .false.
+
+      n = size(arr1, 3)
+      if (size(arr2, 3) .ne. n) return
+
+      do i=1, n
+        if (.not.array_compare_2d(arr1(:, :, i), arr2(:, :, i))) return
+      enddo
+
+      res = .true.
+    end function
 end program test_monin_obukhov
