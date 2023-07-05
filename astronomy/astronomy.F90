@@ -513,6 +513,20 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !!    allocate arrays to hold the needed astronomical factors. define
 !!    the total number of points that the processor is responsible for.
 !--------------------------------------------------------------------
+    !select type (latb)
+    !  type is (real(r4_kind))
+    !    select type (lonb)
+    !      type is (real(r4_kind))
+    !    end select
+    !end select
+
+    !select type (latb)
+    !  type is (real(r8_kind))
+    !    select type (lonb)
+    !      type is (real(r8_kind))
+    !    end select
+    !end select
+
     if (present(latb) .and. present(lonb)) then
         jd = size(latb,2) - 1
         id = size(lonb,1) - 1
@@ -520,6 +534,9 @@ integer :: unit, ierr, io, seconds, days, jd, id
         allocate (solar_ann(id, jd))
         allocate (fracday_ann(id, jd))
         total_pts = jd*id
+    elseif (present(latb) .and. .not. present(lonb)) then
+        call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
+    else
     endif
 
 !---------------------------------------------------------------------
