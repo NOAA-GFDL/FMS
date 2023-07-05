@@ -28,6 +28,14 @@ program test_monin_obukhov
 
   implicit none
 
+  interface arr_2d
+    procedure arr_2d_real
+  end interface
+
+  interface arr_3d
+    procedure arr_3d_real
+  end interface
+
 #if MO_TEST_KIND_ == 4
   integer, parameter :: kr = r4_kind
   integer, parameter :: ki = i4_kind
@@ -205,39 +213,65 @@ program test_monin_obukhov
     end function
 
     subroutine calc_answers_drag
-      real(kr), dimension(n_1d) :: drag_m, drag_t, drag_q, u_star, b_star
+      real(kr), dimension(n_1d) :: drag_m_1d, drag_t_1d, drag_q_1d, u_star_1d, b_star_1d
+      real(kr), dimension(n_1d, n_1d) :: drag_m_2d, drag_t_2d, drag_q_2d, u_star_2d, b_star_2d
 
-      drag_m = 0._kr
-      drag_t = 0._kr
-      drag_q = 0._kr
-      u_star = 0._kr
-      b_star = 0._kr
+      drag_m_1d = 0._kr
+      drag_t_1d = 0._kr
+      drag_q_1d = 0._kr
+      u_star_1d = 0._kr
+      b_star_1d = 0._kr
+
+      drag_m_2d = 0._kr
+      drag_t_2d = 0._kr
+      drag_q_2d = 0._kr
+      u_star_2d = 0._kr
+      b_star_2d = 0._kr
 
       associate (in => drag_input)
         call mo_drag(in%pt, in%pt0, in%z, in%z0, in%zt, in%zq, in%speed, &
-                   & drag_m, drag_t, drag_q, u_star, b_star, drag_input%avail)
+                   & drag_m_1d, drag_t_1d, drag_q_1d, u_star_1d, b_star_1d, drag_input%avail)
+
+        call mo_drag(arr_2d(in%pt), arr_2d(in%pt0), arr_2d(in%z), arr_2d(in%z0), &
+                   & arr_2d(in%zt), arr_2d(in%zq), arr_2d(in%speed), &
+                   & drag_m_2d, drag_t_2d, drag_q_2d, u_star_2d, b_star_2d)
       end associate
 
       associate(ans => drag_answers(n_answers+1))
-        ans%drag_m = INT_(drag_m)
-        ans%drag_t = INT_(drag_t)
-        ans%drag_q = INT_(drag_q)
-        ans%u_star = INT_(u_star)
-        ans%b_star = INT_(b_star)
+        ans%drag_m = INT_(drag_m_1d)
+        ans%drag_t = INT_(drag_t_1d)
+        ans%drag_q = INT_(drag_q_1d)
+        ans%u_star = INT_(u_star_1d)
+        ans%b_star = INT_(b_star_1d)
+
+        call answer_validate_2d(ans%drag_m, drag_m_2d)
+        call answer_validate_2d(ans%drag_t, drag_t_2d)
+        call answer_validate_2d(ans%drag_q, drag_q_2d)
+        call answer_validate_2d(ans%u_star, u_star_2d)
+        call answer_validate_2d(ans%b_star, b_star_2d)
       end associate
     end subroutine
 
     subroutine calc_answers_stable_mix
-      real(kr), dimension(n_1d) :: mix
+      real(kr), dimension(n_1d) :: mix_1d
+      real(kr), dimension(n_1d, n_1d) :: mix_2d
+      real(kr), dimension(n_1d, n_1d, n_1d) :: mix_3d
 
-      mix = 0._kr
+      mix_1d = 0._kr
+      mix_2d = 0._kr
+      mix_3d = 0._kr
 
       associate (in => stable_mix_input)
-        call stable_mix(in%rich, mix)
+        call stable_mix(in%rich, mix_1d)
+        call stable_mix(arr_2d(in%rich), mix_2d)
+        call stable_mix(arr_3d(in%rich), mix_3d)
       end associate
 
       associate (ans => stable_mix_answers(n_answers+1))
-        ans%mix = INT_(mix)
+        ans%mix = INT_(mix_1d)
+
+        call answer_validate_2d(ans%mix, mix_2d)
+        call answer_validate_3d(ans%mix, mix_3d)
       end associate
     end subroutine
 
@@ -258,22 +292,36 @@ program test_monin_obukhov
     end subroutine
 
     subroutine calc_answers_profile
-      real(kr), dimension(n_1d) :: del_m, del_t, del_q
+      real(kr), dimension(n_1d)       :: del_m_1d, del_t_1d, del_q_1d
+      real(kr), dimension(n_1d, n_1d) :: del_m_2d, del_t_2d, del_q_2d
 
-      del_m = 0._kr
-      del_t = 0._kr
-      del_q = 0._kr
+      del_m_1d = 0._kr
+      del_t_1d = 0._kr
+      del_q_1d = 0._kr
+
+      del_m_2d = 0._kr
+      del_t_2d = 0._kr
+      del_q_2d = 0._kr
 
       associate (in => profile_input)
         call mo_profile(in%zref, in%zref_t, in%z, in%z0, in%zt, in%zq, &
                       & in%u_star, in%b_star, in%q_star, &
-                      & del_m, del_t, del_q, in%avail)
+                      & del_m_1d, del_t_1d, del_q_1d, in%avail)
+
+        call mo_profile(in%zref, in%zref_t, arr_2d(in%z), &
+                      & arr_2d(in%z0), arr_2d(in%zt), arr_2d(in%zq), &
+                      & arr_2d(in%u_star), arr_2d(in%b_star), arr_2d(in%q_star), &
+                      & del_m_2d, del_t_2d, del_q_2d)
       end associate
 
       associate (ans => profile_answers(n_answers+1))
-        ans%del_m = INT_(del_m)
-        ans%del_t = INT_(del_t)
-        ans%del_q = INT_(del_q)
+        ans%del_m = INT_(del_m_1d)
+        ans%del_t = INT_(del_t_1d)
+        ans%del_q = INT_(del_q_1d)
+
+        call answer_validate_2d(ans%del_m, del_m_2d)
+        call answer_validate_2d(ans%del_t, del_t_2d)
+        call answer_validate_2d(ans%del_q, del_q_2d)
       end associate
     end subroutine
 
@@ -383,5 +431,71 @@ program test_monin_obukhov
       enddo
 
       res = .true.
+    end function
+
+    subroutine answer_validate_2d(ref, arr)
+      integer(ki), dimension(:), intent(in) :: ref
+      real(kr), dimension(:,:), intent(in) :: arr
+      integer :: i, n
+
+      n = size(ref)
+
+      if (size(arr, 1).ne.n .or. size(arr, 2).ne.n) then
+        call mpp_error(FATAL, "Incorrect array shape")
+      endif
+
+      do i = 1,n
+        if (.not.array_compare_1d(ref, transfer(arr(:,i), mi))) then
+          call mpp_error(FATAL, "Array does not match reference value")
+        endif
+      enddo
+    end subroutine
+
+    subroutine answer_validate_3d(ref, arr)
+      integer(ki), dimension(:), intent(in) :: ref
+      real(kr), dimension(:,:,:), intent(in) :: arr
+      integer :: i, j, n
+
+      n = size(ref)
+
+      if (size(arr, 1).ne.n .or. size(arr, 2).ne.n .or. size(arr, 3).ne.n) then
+        call mpp_error(FATAL, "Incorrect array shape")
+      endif
+
+      do j = 1,n
+        do i = 1,n
+          if (.not.array_compare_1d(ref, transfer(arr(:,i,j), mi))) then
+            call mpp_error(FATAL, "Array does not match reference value")
+          endif
+        enddo
+      enddo
+    end subroutine
+
+    function arr_2d_real(arr) result(res)
+      real(kr), dimension(:), intent(in) :: arr
+      real(kr), dimension(:, :), allocatable :: res
+      integer :: i, n
+
+      n = size(arr)
+      allocate(res(n, n))
+
+      do i = 1, n
+        res(:, i) = arr
+      enddo
+    end function
+
+    function arr_3d_real(arr) result(res)
+      real(kr), dimension(:), intent(in) :: arr
+      real(kr), dimension(:, :, :), allocatable :: res
+      integer :: i, j, n
+
+      n = size(arr)
+      allocate(res(n, n, n))
+
+      do j = 1, n
+        do i = 1, n
+          res(:, i, j) = arr
+        enddo
+      enddo
     end function
 end program test_monin_obukhov
