@@ -55,7 +55,8 @@
     subroutine TIME_INTERP_EXTERNAL_3D_(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, &
                                       &  js_in, je_in, window_id)
 
-        integer,                    intent(in)           :: index !< index of external field from previous call to init_external_field
+        integer,                    intent(in)           :: index !< index of external field from previous call 
+                                                                  !! to init_external_field
         type(time_type),            intent(in)           :: time !< target time for data
         real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: data !< global or local data array
         integer,                    intent(in), optional :: interp
@@ -119,16 +120,18 @@
 
         if (nx < nxw .or. ny < nyw .or. nz < loaded_fields(index)%siz(3)) then
             write(message1,'(i6,2i5)') nx,ny,nz
-            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%name)//' Array size mismatch in time_interp_external.'// &
-            ' Array "data" is too small. shape(data)='//message1)
+            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%name)// &
+                        ' Array size mismatch in time_interp_external. Array "data" is too small. shape(data)=' &
+                        //message1)
         endif
         if(PRESENT(mask_out)) then
             if (size(mask_out,1) /= nx .or. size(mask_out,2) /= ny .or. size(mask_out,3) /= nz) then
             write(message1,'(i6,2i5)') nx,ny,nz
             write(message2,'(i6,2i5)') size(mask_out,1),size(mask_out,2),size(mask_out,3)
-            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%name)//' array size mismatch in time_interp_external.'// &
-            ' Shape of array "mask_out" does not match that of array "data".'// &
-            ' shape(data)='//message1//' shape(mask_out)='//message2)
+            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%name)// &
+                                 ' array size mismatch in time_interp_external.'// &
+                                 ' Shape of array "mask_out" does not match that of array "data".'// &
+                                 ' shape(data)='//message1//' shape(mask_out)='//message2)
             endif
         endif
 
@@ -195,7 +198,8 @@
             endif
 
             if( loaded_fields(index)%region_type == NO_REGION ) then
-                where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1).and.loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
+                where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1) .and. &
+                      loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
                 data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
                         real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 elsewhere
@@ -203,7 +207,8 @@
                 data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, kindl)
                 end where
             else
-                where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1).and.loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
+                where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1) .and. &
+                      loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
                 data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
                         real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 end where

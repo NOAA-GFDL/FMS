@@ -629,7 +629,8 @@ module time_interp_external2_mod
          call mpp_error(NOTE, 'time_interp_external_mod: file '//trim(file)//'  has only one time level')
       else
          do j= 1, ntime
-            loaded_fields(num_fields)%period(j) = loaded_fields(num_fields)%end_time(j)-loaded_fields(num_fields)%start_time(j)
+            loaded_fields(num_fields)%period(j) = loaded_fields(num_fields)%end_time(j) &
+                                                - loaded_fields(num_fields)%start_time(j)
             if (loaded_fields(num_fields)%period(j) > set_time(0,0)) then
                call get_time(loaded_fields(num_fields)%period(j), sec, day)
                sec = sec/2+mod(day,2)*43200
@@ -829,7 +830,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
            endif
         endif
         allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
-        !! added for mixed mode. if existing horiz_interp_type was initialized in r4, needs to cast down in order 
+        !! added for mixed mode. if existing horiz_interp_type was initialized in r4, needs to cast down in order
         !! to match up with saved values in horiz_interp_type.
         !! creates some temporary arrays since intent(out) vars can't get passed in diretory
         if (interp%horizInterpReals4_type%is_allocated) then
@@ -837,7 +838,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
             allocate(hi_tmp_msk_out(size(mask_out,1),size(mask_out,2),size(mask_out,3)))
             !hi_tmp_in = real(field%src_data(:,:,:,ib), r4_kind)
             hi_tmp_out = real(field%data, r4_kind)
-            call horiz_interp(interp, real(field%src_data(:,:,:,ib), r4_kind), hi_tmp_out(isw:iew,jsw:jew,:,ib), & 
+            call horiz_interp(interp, real(field%src_data(:,:,:,ib), r4_kind), hi_tmp_out(isw:iew,jsw:jew,:,ib), &
                               mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
             field%data = real(hi_tmp_out, r8_kind)
             field%mask(isw:iew,jsw:jew,:,ib) = hi_tmp_msk_out(isw:iew,jsw:jew,:) > 0.0_r4_kind
@@ -901,7 +902,7 @@ subroutine load_record_0d(field, rec)
 
 end subroutine load_record_0d
 
-!> Reallocates src_data for field from module level loaded_fields array 
+!> Reallocates src_data for field from module level loaded_fields array
 subroutine reset_src_data_region(index, is, ie, js, je)
    integer, intent(in) :: index
    integer, intent(in) :: is, ie, js, je
