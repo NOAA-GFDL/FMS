@@ -20,7 +20,7 @@
 !> @author Caitlyn McAllister
 !> @brief Unit test for astronomy/test_orbital_parameters
 !> @email gfdl.climate.model.info@noaa.gov
-!> @description Tests that astronomy_mod breaks when orbital 
+!> @description Tests that astronomy_mod breaks when orbital
 !> parameters are out of bounds using 32 and 64 bit reals
 
 program test_set_parameters

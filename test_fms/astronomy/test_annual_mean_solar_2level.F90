@@ -89,7 +89,7 @@ program test_annual_2level
     rrsun = 1.0_lkind
 
   end subroutine create_ref_values_2level
-  
+
   subroutine test_annual_mean_solar_2level
 
     implicit none

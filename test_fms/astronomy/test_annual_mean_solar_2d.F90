@@ -89,7 +89,7 @@ program test_annual_2d
     rrsun = 1.0_lkind
 
   end subroutine create_ref_values_2d
-  
+
   subroutine test_annual_mean_solar_2d
 
     implicit none
@@ -138,7 +138,7 @@ program test_annual_2d
       print *, ref_solar, " does not equal ", rrsun
       call mpp_error(FATAL, "test_annual_solar_2d: rrsun value does not match reference value")
     end if
-    
+
   end subroutine test_annual_mean_solar_2d
 
 

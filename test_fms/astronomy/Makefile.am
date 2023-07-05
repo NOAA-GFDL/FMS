@@ -72,7 +72,7 @@ test_annual_mean_solar_1d_r8_SOURCES = test_annual_mean_solar_1d.F90
 test_annual_mean_solar_2level_r4_SOURCES = test_annual_mean_solar_2level.F90
 test_annual_mean_solar_2level_r8_SOURCES = test_annual_mean_solar_2level.F90
 
-# Set r4_kind and r8_kind 
+# Set r4_kind and r8_kind
 test_set_orbital_parameters_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
 test_set_orbital_parameters_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
 

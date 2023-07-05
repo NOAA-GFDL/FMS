@@ -37,7 +37,7 @@ program test_daily_solar
 
   real(kind=TEST_AST_KIND_), parameter :: twopi = real(2.0, TEST_AST_KIND_) * real(PI, TEST_AST_KIND_)
   real(kind=TEST_AST_KIND_), parameter :: deg_to_rad = twopi/real(360.0,TEST_AST_KIND_)
-  
+
 
   real(kind=TEST_AST_KIND_)   :: ecc   = 0.01671  !< Eccentricity of Earth's orbit [dimensionless]
   real(kind=TEST_AST_KIND_)   :: obliq = 23.439   !< Obliquity [degrees]
@@ -67,7 +67,7 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), intent(out)                 :: rr_out
     real(kind=TEST_AST_KIND_)                              :: rad_per, rr, rad_obliq, sin_dec
     integer, parameter                                     :: lkind = TEST_AST_KIND_
-    
+
     ! rr_out calculation
     rad_per = per * deg_to_rad
     rr = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
@@ -77,7 +77,7 @@ program test_daily_solar
     rad_obliq    = obliq * deg_to_rad
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-    
+
     ! cosz calculation
     where (h == 0.0_lkind)
           cosz = 0.0_lkind
@@ -113,7 +113,7 @@ program test_daily_solar
         lat(j,i) = real(counter, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
         counter = counter + 1
       end do
-    end do 
+    end do
 
     call create_ref_values_2d(lat, dec, ang, h, ref_cosz, ref_rr_out, ref_h_out)
     call daily_mean_solar(lat, time_since_ae, cosz, h_out, rr_out)
@@ -150,7 +150,7 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), intent(out)                          :: rr_out
     real(kind=TEST_AST_KIND_)                                       :: rad_per, rr, rad_obliq, sin_dec
     integer, parameter                                              :: lkind = TEST_AST_KIND_
-    
+
     ! rr_out calculation
     rad_per = per * deg_to_rad
     rr      = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
@@ -160,7 +160,7 @@ program test_daily_solar
     rad_obliq    = obliq * deg_to_rad
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-    
+
     ! cosz calculation
     where (h == 0.0_lkind)
           cosz = 0.0_lkind
@@ -175,9 +175,9 @@ program test_daily_solar
     if (present(solar)) solar = cosz * h_out * rr_out
 
   end subroutine create_ref_values_1d
- 
+
   subroutine test_daily_mean_solar_1d
-    
+
     implicit none
     real(kind=TEST_AST_KIND_), dimension(16) :: lat
     real(kind=TEST_AST_KIND_)                :: time_since_ae
@@ -187,7 +187,7 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), dimension(16) :: ref_cosz, ref_h_out
     integer                                  :: i
     integer, parameter                       :: lkind = TEST_AST_KIND_
-    
+
     time_since_ae = 0.0_lkind !time of year (autumnal equinox)
     ang           = 0.0_lkind           !angle(time_since_ae)
     h             = real(PI,TEST_AST_KIND_)/2.0_lkind        !half_day(lat, dec)
@@ -229,7 +229,7 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), dimension(16) :: ref_cosz, ref_h_out, ref_solar
     integer                                  :: i
     integer, parameter                       :: lkind = TEST_AST_KIND_
-    
+
     time_since_ae = 0.0_lkind !time of year (autumnal equinox)
     ang           = 0.0_lkind           !angle(time_since_ae)
     h             = real(PI,TEST_AST_KIND_)/2.0_lkind        !half_day(lat, dec)
@@ -247,13 +247,13 @@ program test_daily_solar
         print *, ref_cosz(i), " @ ", i, " does not equal ", cosz(i)
         call mpp_error(FATAL, "test_daily_mean_solar: 2level cosz value does not match reference value")
       end if
-      if (abs(ref_solar(i) - solar(i)) .gt. real(1E-07,TEST_AST_KIND_)) then 
+      if (abs(ref_solar(i) - solar(i)) .gt. real(1E-07,TEST_AST_KIND_)) then
         print *, ref_solar(i), " @ ", i, " does not equal ", solar(i)
         call mpp_error(FATAL, "test_daily_mean_solar: 2level solar value does not match reference value")
       end if
     end do
 
-  end subroutine 
+  end subroutine
 
   ! create reference values to test daily_mean_solar_0d
   subroutine create_ref_values_0d(lat, dec, ang, h, cosz, rr_out, h_out)
@@ -264,7 +264,7 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), intent(out)   :: cosz, rr_out, h_out
     real(kind=TEST_AST_KIND_)                :: rad_per, rr, rad_obliq, sin_dec
     integer, parameter                       :: lkind = TEST_AST_KIND_
-    
+
     ! rr_out calculation
     rad_per = per * deg_to_rad
     rr      = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
@@ -274,7 +274,7 @@ program test_daily_solar
     rad_obliq    = obliq * deg_to_rad
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-    
+
     ! cosz calculation
     if (h == 0.0_lkind) then
       cosz = 0.0_lkind
@@ -286,7 +286,7 @@ program test_daily_solar
     h_out = h / real(PI, TEST_AST_KIND_)
 
   end subroutine create_ref_values_0d
-  
+
   subroutine test_daily_mean_solar_0d
 
     implicit none
@@ -296,7 +296,7 @@ program test_daily_solar
     integer                   :: i
     integer, parameter        :: lkind = TEST_AST_KIND_
 
-    
+
     time_since_ae = 0.0_lkind
     ang           = 0.0_lkind
     h             = real(PI,TEST_AST_KIND_)/2.0_lkind

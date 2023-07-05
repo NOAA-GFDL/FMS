@@ -41,7 +41,7 @@ program test_diurnal_solar
 
   real(kind=TEST_AST_KIND_), parameter :: twopi = real(2.0,TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)
   real(kind=TEST_AST_KIND_), parameter :: deg_to_rad = twopi / real(360.0,TEST_AST_KIND_)
-  
+
 
   real(kind=TEST_AST_KIND_)   :: ecc   = 0.01671  !< Eccentricity of Earth's orbit [dimensionless]
   real(kind=TEST_AST_KIND_)   :: obliq = 23.439   !< Obliquity [degrees]
@@ -73,7 +73,7 @@ program test_diurnal_solar
     real(kind=TEST_AST_KIND_), dimension(4,4)              :: aa, bb, t
     integer, parameter                                     :: lkind = TEST_AST_KIND_
     integer                                                :: i, j, k, counter
-    
+
     ! rr_out calculation
     rad_per = per * deg_to_rad
     rr      = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
@@ -83,7 +83,7 @@ program test_diurnal_solar
     rad_obliq    = obliq * deg_to_rad
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-    
+
     ! cosz calculation, cosz CANNOT be negative
     t = gmt + lon - real(PI, TEST_AST_KIND_)
     where(t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
@@ -91,7 +91,7 @@ program test_diurnal_solar
 
     aa = sin(lat)*sin(dec)
     bb = cos(lat)*cos(dec)
-    
+
     cosz = aa + bb*cos(t)
     where (abs(t) < h)
       fracday = 1.0_lkind
@@ -161,7 +161,7 @@ program test_diurnal_solar
     real(kind=TEST_AST_KIND_)                             :: rad_per, rr, rad_obliq, sin_dec
     real(kind=TEST_AST_KIND_), dimension(16)              :: aa, bb, t
     integer, parameter                                    :: lkind = TEST_AST_KIND_
-    
+
     ! rr_out calculation
     rad_per = per * deg_to_rad
     rr      = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
@@ -171,7 +171,7 @@ program test_diurnal_solar
     rad_obliq    = obliq * deg_to_rad
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-    
+
     ! cosz calculation, cosz CANNOT be negative
     t = gmt + lon - real(PI, TEST_AST_KIND_)
     where(t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
@@ -179,7 +179,7 @@ program test_diurnal_solar
 
     aa = sin(lat)*sin(dec)
     bb = cos(lat)*cos(dec)
-    
+
     cosz = aa + bb*cos(t)
     where (abs(t) < h)
       fracday = 1.0_lkind
@@ -212,7 +212,7 @@ program test_diurnal_solar
     call diurnal_solar(lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, allow_negative_cosz=.true.)
     call create_ref_values_1d(lat, lon, gmt, dec, ang, h, ref_cosz, &
                               ref_rrsun, ref_fracday)
-    
+
     do i = 1, 16
       if (abs(ref_cosz(i) - cosz(i)) .gt. real(1E-07,TEST_AST_KIND_)) then
         print *, ref_cosz(i), " @ ", i, " does not equal ", cosz(i)
@@ -242,7 +242,7 @@ program test_diurnal_solar
     call diurnal_solar(lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, allow_negative_cosz=.true.)
     call create_ref_values_1d(lat, lon, gmt, dec, ang, h, ref_cosz, &
                               ref_rrsun, ref_fracday)
-    
+
     do i = 1, 16
       if (abs(ref_cosz(i) - cosz(i)) .gt. real(1E-07,TEST_AST_KIND_)) then
         print *, ref_cosz(i), " @ ", i, " does not equal ", cosz(i)
@@ -319,7 +319,7 @@ program test_diurnal_solar
 
     aa = sin(lat)*sin(dec)
     bb = cos(lat)*cos(dec)
-    
+
     cosz = aa + bb*cos(t)
     if (abs(t) < h) then
       fracday = 1.0_lkind
@@ -351,7 +351,7 @@ program test_diurnal_solar
                                 ref_rrsun, ref_fracday)
 
       if (abs(ref_cosz - cosz) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_cosz, " @ ", i, " does not equal ", cosz 
+        print *, ref_cosz, " @ ", i, " does not equal ", cosz
         call mpp_error(FATAL, "test_diurnal_solar: 0d cosz value does not match reference value")
       end if
 
@@ -363,7 +363,7 @@ program test_diurnal_solar
       if (abs(ref_rrsun - rrsun) .gt. real(1E-07,TEST_AST_KIND_)) then
         print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
         call mpp_error(FATAL, "test_diurnal_solar: 0d rrsun value does not match reference value")
-      end if 
+      end if
     end do
 
     ! test by only changing lon, allow negative cosz
@@ -378,7 +378,7 @@ program test_diurnal_solar
                                 ref_rrsun, ref_fracday)
 
       if (abs(ref_cosz - cosz) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_cosz, " @ ", i, " does not equal ", cosz 
+        print *, ref_cosz, " @ ", i, " does not equal ", cosz
         call mpp_error(FATAL, "test_diurnal_solar: 0d cosz value does not match reference value")
       end if
 
@@ -390,7 +390,7 @@ program test_diurnal_solar
       if (abs(ref_rrsun - rrsun) .gt. real(1E-07,TEST_AST_KIND_)) then
         print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
         call mpp_error(FATAL, "test_diurnal_solar: 0d rrsun value does not match reference value")
-      end if 
+      end if
     end do
 
     ! test by only changing gmt, allow negative cosz
@@ -405,7 +405,7 @@ program test_diurnal_solar
                                 ref_rrsun, ref_fracday)
 
       if (abs(ref_cosz - cosz) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_cosz, " @ ", i, " does not equal ", cosz 
+        print *, ref_cosz, " @ ", i, " does not equal ", cosz
         call mpp_error(FATAL, "test_diurnal_solar: 0d cosz value does not match reference value")
       end if
 
@@ -417,7 +417,7 @@ program test_diurnal_solar
       if (abs(ref_rrsun - rrsun) .gt. real(1E-07,TEST_AST_KIND_)) then
         print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
         call mpp_error(FATAL, "test_diurnal_solar: 0d rrsun value does not match reference value")
-      end if 
+      end if
     end do
 
     ! test by changing lat and lon, allow negative cosz
@@ -434,23 +434,23 @@ program test_diurnal_solar
                                   ref_rrsun, ref_fracday)
 
         if (abs(ref_cosz - cosz) .gt. real(1E-07,TEST_AST_KIND_)) then
-          print *, ref_cosz, " @ ", i, j, " does not equal ", cosz 
+          print *, ref_cosz, " @ ", i, j, " does not equal ", cosz
           call mpp_error(FATAL, "test_diurnal_solar: 0d cosz value does not match reference value")
         end if
-  
+
         if (abs(ref_fracday - fracday) .gt. real(1E-07,TEST_AST_KIND_)) then
           print *, ref_fracday, " @ ", i, j, " does not equal ", fracday
           call mpp_error(FATAL, "test_diurnal_solar: 0d fracday value does not match reference value")
         end if
-  
+
         if (abs(ref_rrsun - rrsun) .gt. real(1E-07,TEST_AST_KIND_)) then
           print *, ref_rrsun, " @ ", i, j, " does not equal ", rrsun
           call mpp_error(FATAL, "test_diurnal_solar: 0d rrsun value does not match reference value")
-        end if 
+        end if
       end do
     end do
 
-    ! test by changing lat, lon, and gmt, allow negative cosz 
+    ! test by changing lat, lon, and gmt, allow negative cosz
     do i = 0, 16
       lat = real(i,TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
       do j = 0, 16
@@ -462,19 +462,19 @@ program test_diurnal_solar
                                     ref_rrsun, ref_fracday)
 
           if (abs(ref_cosz - cosz) .gt. real(1E-07,TEST_AST_KIND_)) then
-            print *, ref_cosz, " @ ", i, j, k, " does not equal ", cosz 
+            print *, ref_cosz, " @ ", i, j, k, " does not equal ", cosz
             call mpp_error(FATAL, "test_diurnal_solar: 0d cosz value does not match reference value")
           end if
-    
+
           if (abs(ref_fracday - fracday) .gt. real(1E-07,TEST_AST_KIND_)) then
             print *, ref_fracday, " @ ", i, j, k, " does not equal ", fracday
             call mpp_error(FATAL, "test_diurnal_solar: 0d fracday value does not match reference value")
           end if
-    
+
           if (abs(ref_rrsun - rrsun) .gt. real(1E-07,TEST_AST_KIND_)) then
             print *, ref_rrsun, " @ ", i, j, k, " does not equal ", rrsun
             call mpp_error(FATAL, "test_diurnal_solar: 0d rrsun value does not match reference value")
-          end if 
+          end if
         end do
       end do
     end do
