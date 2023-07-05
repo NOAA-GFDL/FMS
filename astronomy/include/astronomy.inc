@@ -1463,7 +1463,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
     int       = floor(norm_time)
     int       = modulo(int,num_angles)
     int_1     = int+1
-    x         = norm_time - floor(norm_time)
+    x         = norm_time - real(floor(norm_time), FMS_AST_KIND_)
     ANGLE_    = (1.0_lkind - x) * real(orb_angle(int), FMS_AST_KIND_) &
                 + x * real(orb_angle(int_1), FMS_AST_KIND_)
     ANGLE_    = modulo(ANGLE_, real(twopi, FMS_AST_KIND_))
