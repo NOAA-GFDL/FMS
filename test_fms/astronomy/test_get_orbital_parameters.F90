@@ -35,9 +35,10 @@ program test_get_parameters
 
   implicit none
 
-  real(kind=TEST_AST_KIND_) :: ecc   = 0.01671
-  real(kind=TEST_AST_KIND_) :: obliq = 23.439
-  real(kind=TEST_AST_KIND_) :: per   = 102.932
+  integer, parameter        :: lkind = TEST_AST_KIND_
+  real(kind=TEST_AST_KIND_) :: ecc   = 0.01671_lkind
+  real(kind=TEST_AST_KIND_) :: obliq = 23.439_lkind
+  real(kind=TEST_AST_KIND_) :: per   = 102.932_lkind
 
 
   call fms_init()
