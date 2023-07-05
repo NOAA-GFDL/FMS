@@ -174,13 +174,15 @@ program test_monin_obukhov
     end subroutine
 
     subroutine write_answers
+      character(:), allocatable :: filename
       integer :: fh
 
-      print "(A)", "Writing newly generated answers to OUT.nml"
+      filename = "OUT.r" // string(MO_TEST_KIND_) // ".nml"
+      print "(A)", "Writing newly generated answer key to " // filename
 
       n_answers = n_answers + 1
 
-      open (newunit=fh, file="OUT.nml")
+      open (newunit=fh, file=filename)
       write (fh, nml=metaparams_nml)
       write (fh, nml=answers_nml)
       close (fh)
