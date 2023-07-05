@@ -520,9 +520,6 @@ integer :: unit, ierr, io, seconds, days, jd, id
         allocate (solar_ann(id, jd))
         allocate (fracday_ann(id, jd))
         total_pts = jd*id
-    else
-        call error_mesg ('astronomy_mod', &
-            'lat and lon must both be present', FATAL)
     endif
 
 !---------------------------------------------------------------------
