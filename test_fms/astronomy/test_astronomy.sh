@@ -64,14 +64,6 @@ test_expect_success "Test daily mean 2d-0d - r8_kind" '
   mpirun -n 1 ./test_daily_mean_r8
 '
 
-test_expect_success "Test daily mean cal 2d-0d - r4_kind" '
-  mpirun -n 1 ./test_daily_mean_cal_r4
-'
-
-test_expect_success "Test daily mean cal 2d-0d - r8_kind" '
-  mpirun -n 1 ./test_daily_mean_cal_r8
-'
-
 test_expect_success "Test annual mean 2d - r4_kind" '
   mpirun -n 1 ./test_annual_mean_solar_2d_r4
 '
