@@ -17,24 +17,85 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/data_override directory of the FMS
-# package.
+# This is an automake file for the test_fms/astronomy directory of the
+# FMS package.
 
 # Caitlyn McAllister
 
 # Find the fms and mpp mod files.
-AM_CPPFLAGS = -I$(MODDIR)
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_orbital_parameters test_diurnal_solar test_daily_mean
+check_PROGRAMS = \
+  test_set_orbital_parameters_r4 \
+  test_set_orbital_parameters_r8 \
+  test_get_orbital_parameters_r4 \
+  test_get_orbital_parameters_r8 \
+  test_diurnal_solar_r4 \
+  test_diurnal_solar_r8 \
+  test_daily_mean_r4 \
+  test_daily_mean_r8 \
+  test_daily_mean_cal_r4 \
+  test_daily_mean_cal_r8 \
+  test_annual_mean_solar_2d_r4 \
+  test_annual_mean_solar_2d_r8 \
+  test_annual_mean_solar_1d_r4 \
+  test_annual_mean_solar_1d_r8 \
+  test_annual_mean_solar_2level_r4 \
+  test_annual_mean_solar_2level_r8
 
 # This is the source code for the test.
-test_orbital_parameters_SOURCES = test_orbital_parameters.F90
-test_diurnal_solar_SOURCES = test_diurnal_solar.F90
-test_daily_mean_SOURCES = test_daily_mean.F90
+test_set_orbital_parameters_r4_SOURCES = test_set_orbital_parameters.F90
+test_set_orbital_parameters_r8_SOURCES = test_set_orbital_parameters.F90
+
+test_get_orbital_parameters_r4_SOURCES = test_get_orbital_parameters.F90
+test_get_orbital_parameters_r8_SOURCES = test_get_orbital_parameters.F90
+
+test_diurnal_solar_r4_SOURCES = test_diurnal_solar.F90
+test_diurnal_solar_r8_SOURCES = test_diurnal_solar.F90
+
+test_daily_mean_r4_SOURCES = test_daily_mean.F90
+test_daily_mean_r8_SOURCES = test_daily_mean.F90
+
+test_daily_mean_cal_r4_SOURCES = test_daily_mean_cal.F90
+test_daily_mean_cal_r8_SOURCES = test_daily_mean_cal.F90
+
+test_annual_mean_solar_2d_r4_SOURCES = test_annual_mean_solar_2d.F90
+test_annual_mean_solar_2d_r8_SOURCES = test_annual_mean_solar_2d.F90
+
+test_annual_mean_solar_1d_r4_SOURCES = test_annual_mean_solar_1d.F90
+test_annual_mean_solar_1d_r8_SOURCES = test_annual_mean_solar_1d.F90
+
+test_annual_mean_solar_2level_r4_SOURCES = test_annual_mean_solar_2level.F90
+test_annual_mean_solar_2level_r8_SOURCES = test_annual_mean_solar_2level.F90
+
+# Set r4_kind and r8_kind 
+test_set_orbital_parameters_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_set_orbital_parameters_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_get_orbital_parameters_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_get_orbital_parameters_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_diurnal_solar_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_diurnal_solar_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_daily_mean_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_daily_mean_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_daily_mean_cal_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_daily_mean_cal_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_annual_mean_solar_2d_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_annual_mean_solar_2d_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_annual_mean_solar_1d_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_annual_mean_solar_1d_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_annual_mean_solar_2level_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_annual_mean_solar_2level_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
 
 # Run the test program.
 TESTS = test_astronomy.sh
