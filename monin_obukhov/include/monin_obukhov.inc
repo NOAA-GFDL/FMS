@@ -30,9 +30,9 @@ logical                                              :: lavail, avail_dummy(1)
 integer                                              :: n, ier
 
 integer, parameter                                   :: max_iter = 20
-real(kind=FMS_MO_KIND_), parameter                   :: error=real(1.d-04, FMS_MO_KIND_),    &
-                                                        zeta_min=real(1.d-06, FMS_MO_KIND_), &
-                                                        small=real(1.d-04, FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter                   :: error=real(1.0E-04, FMS_MO_KIND_),    &
+                                                        zeta_min=real(1.0E-06, FMS_MO_KIND_), &
+                                                        small=real(1.0E-04, FMS_MO_KIND_)
 
 
 if(.not.module_is_initialized) call error_mesg('mo_drag_1d in monin_obukhov_mod', &
@@ -151,7 +151,7 @@ real(kind=FMS_MO_KIND_), intent(in),  dimension(:,:)   :: u_star, b_star
 real(kind=FMS_MO_KIND_), intent(out), dimension(:,:,:) :: k_m, k_h
 
 integer                                                :: ni, nj, nk, ier
-real(kind=FMS_MO_KIND_), parameter                     :: ustar_min = real(1.d-10, FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter                     :: ustar_min = real(1.0E-10, FMS_MO_KIND_)
 
 if(.not.module_is_initialized) call error_mesg('mo_diff_2d_n in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)
@@ -176,8 +176,8 @@ logical, intent(in) , dimension(:)                 :: mask
 real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: f_m, f_t, f_q
 
 
-real(kind=FMS_MO_KIND_), parameter                 :: error    = real(1.d-04, FMS_MO_KIND_)
-real(kind=FMS_MO_KIND_), parameter                 :: zeta_min = real(1.d-06, FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter                 :: error    = real(1.0E-04, FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter                 :: zeta_min = real(1.0E-06, FMS_MO_KIND_)
 integer, parameter                                 :: max_iter = 20
 
 real(kind=FMS_MO_KIND_)                            :: max_cor
@@ -763,7 +763,7 @@ real(kind=FMS_MO_KIND_), intent(in)       :: z, u_star, b_star
 real(kind=FMS_MO_KIND_), intent(out)      :: k_m, k_h
 
 integer                                   :: ni, nj, nk, ier
-real(kind=FMS_MO_KIND_), parameter        :: ustar_min = real(1.d-10, FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter        :: ustar_min = real(1.0E-10, FMS_MO_KIND_)
 real(kind=FMS_MO_KIND_), dimension(1,1,1) :: z_a, k_m_a, k_h_a
 real(kind=FMS_MO_KIND_), dimension(1,1)   :: u_star_a, b_star_a
 
@@ -793,7 +793,7 @@ real(kind=FMS_MO_KIND_), intent(in)                :: u_star, b_star
 real(kind=FMS_MO_KIND_), intent(out), dimension(:) :: k_m, k_h
 
 integer                                            :: ni, nj, nk, ier
-real(kind=FMS_MO_KIND_), parameter                 :: ustar_min = real(1.d-10, FMS_MO_KIND_)
+real(kind=FMS_MO_KIND_), parameter                 :: ustar_min = real(1.0E-10, FMS_MO_KIND_)
 real(kind=FMS_MO_KIND_), dimension(1,1,size(z))    :: z_a, k_m_a, k_h_a
 real(kind=FMS_MO_KIND_), dimension(1,1)            :: u_star_a, b_star_a
 

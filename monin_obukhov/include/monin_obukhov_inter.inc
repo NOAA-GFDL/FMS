@@ -27,7 +27,7 @@ pure subroutine MONIN_OBUKHOV_DIFF_(vonkarm,                &
      & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
   real(kind=FMS_MO_KIND_), intent(in)                         :: vonkarm
-  real(kind=FMS_MO_KIND_), intent(in)                         :: ustar_min !< = 1.d-10
+  real(kind=FMS_MO_KIND_), intent(in)                         :: ustar_min !< = 1.0E-10
   logical, intent(in)                                         :: neutral
   integer, intent(in)                                         :: stable_option
   logical, intent(in)                                         :: new_mo_option !miz
@@ -78,10 +78,10 @@ pure subroutine MONIN_OBUKHOV_DRAG_1D_(grav, vonkarm,               &
 
   real(kind=FMS_MO_KIND_), intent(in)                  :: grav
   real(kind=FMS_MO_KIND_), intent(in)                  :: vonkarm
-  real(kind=FMS_MO_KIND_), intent(in)                  :: error    !< = 1.d-04
-  real(kind=FMS_MO_KIND_), intent(in)                  :: zeta_min !< = 1.d-06
+  real(kind=FMS_MO_KIND_), intent(in)                  :: error    !< = 1.0E-04
+  real(kind=FMS_MO_KIND_), intent(in)                  :: zeta_min !< = 1.0E-06
   integer, intent(in)                                  :: max_iter !< = 20
-  real(kind=FMS_MO_KIND_), intent(in)                  :: small    !< = 1.d-04
+  real(kind=FMS_MO_KIND_), intent(in)                  :: small    !< = 1.0E-04
   logical, intent(in)                                  :: neutral
   integer, intent(in)                                  :: stable_option
   logical, intent(in)                                  :: new_mo_option
@@ -185,10 +185,10 @@ pure subroutine MONIN_OBUKHOV_SOLVE_ZETA_(error, zeta_min, max_iter, small,  &
      & stable_option, new_mo_option, rich_crit, zeta_trans,        & !miz
      & n, rich, z, z0, zt, zq, f_m, f_t, f_q, mask, ier)
 
-  real(kind=FMS_MO_KIND_), intent(in)                :: error    !< = 1.d-04
-  real(kind=FMS_MO_KIND_), intent(in)                :: zeta_min !< = 1.d-06
+  real(kind=FMS_MO_KIND_), intent(in)                :: error    !< = 1.0E-04
+  real(kind=FMS_MO_KIND_), intent(in)                :: zeta_min !< = 1.0E-06
   integer,                 intent(in)                :: max_iter !< = 20
-  real(kind=FMS_MO_KIND_), intent(in)                :: small    !< = 1.d-04
+  real(kind=FMS_MO_KIND_), intent(in)                :: small    !< = 1.0E-04
   integer,                 intent(in)                :: stable_option
   logical,                 intent(in)                :: new_mo_option
   real(kind=FMS_MO_KIND_), intent(in)                :: rich_crit, zeta_trans
