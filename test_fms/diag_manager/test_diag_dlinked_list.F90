@@ -34,7 +34,6 @@
 !! 3rd Edition, by Mark Allen Weiss.
 program test_diag_dlinked_list
    use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
-   use mpp_io_mod, only: mpp_io_init
    use fms_mod, ONLY: error_mesg, FATAL,NOTE
    use fms_diag_object_mod, only : fmsDiagObject_type
    use fms_diag_dlinked_list_mod, only : FmsDlList_t, FmsDllIterator_t
@@ -63,7 +62,6 @@ program test_diag_dlinked_list
    !!
 
    call mpp_init(mpp_init_test_requests_allocated)
-   call mpp_io_init()
    call mpp_set_stack_size(145746)
 
    call error_mesg("test_diag_linked_list", "Starting tests",NOTE)

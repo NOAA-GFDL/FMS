@@ -28,7 +28,6 @@ program test_global_arrays
   use mpp_mod,         only: mpp_set_stack_size, mpp_sync, mpp_sync_self
   use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_send, mpp_recv, WARNING
   use mpp_mod,         only: mpp_init_test_init_true_only, mpp_set_root_pe
-  use mpp_io_mod,      only: mpp_io_init
   use mpp_domains_mod, only: mpp_domains_init, mpp_define_domains, domain2d
   use mpp_domains_mod, only: mpp_define_layout, mpp_domains_set_stack_size
   use mpp_domains_mod, only: mpp_get_global_domain, mpp_global_max
@@ -58,7 +57,6 @@ program test_global_arrays
   real(r8_kind), parameter      :: tol4 = 1e-4, tol8 = 1e-6!> tolerance for real comparisons
 
   call mpp_init(mpp_init_test_init_true_only)
-  call mpp_io_init()
   call mpp_domains_init()
   call mpp_set_stack_size(3145746)
   call mpp_domains_set_stack_size(3145746)

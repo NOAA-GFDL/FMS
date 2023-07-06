@@ -1406,10 +1406,10 @@ program test_mpp_nesting
 
           if( isw_f .NE. isw_f2 .OR. iew_f .NE. iew_f2 .OR. jsw_f .NE. jsw_f2 .OR. jew_f .NE. jew_f2 .OR. &
                isw_c .NE. isw_c2 .OR. iew_c .NE. iew_c2 .OR. jsw_c .NE. jsw_c2 .OR. jew_c .NE. jew_c2 ) then
-             write(5000+mpp_pe(),*), "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
-             write(5000+mpp_pe(),*), "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
-             write(5000+mpp_pe(),*), "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
-             write(5000+mpp_pe(),*), "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
+             write(5000+mpp_pe(),*) "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
+             write(5000+mpp_pe(),*) "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
+             write(5000+mpp_pe(),*) "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
+             write(5000+mpp_pe(),*) "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
              call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine scalar")
           endif
           if( ise_f .NE. ise_f2 .OR. iee_f .NE. iee_f2 .OR. jse_f .NE. jse_f2 .OR. jee_f .NE. jee_f2 .OR. &
@@ -3433,10 +3433,10 @@ program test_mpp_nesting
 
           if( isw_f .NE. isw_f2 .OR. iew_f .NE. iew_f2 .OR. jsw_f .NE. jsw_f2 .OR. jew_f .NE. jew_f2 .OR. &
                isw_c .NE. isw_c2 .OR. iew_c .NE. iew_c2 .OR. jsw_c .NE. jsw_c2 .OR. jew_c .NE. jew_c2 ) then
-             write(5000+mpp_pe(),*), "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
-             write(5000+mpp_pe(),*), "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
-             write(5000+mpp_pe(),*), "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
-             write(5000+mpp_pe(),*), "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
+             write(5000+mpp_pe(),*) "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
+             write(5000+mpp_pe(),*) "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
+             write(5000+mpp_pe(),*) "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
+             write(5000+mpp_pe(),*) "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
              call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine scalar")
           endif
           if( ise_f .NE. ise_f2 .OR. iee_f .NE. iee_f2 .OR. jse_f .NE. jse_f2 .OR. jee_f .NE. jee_f2 .OR. &

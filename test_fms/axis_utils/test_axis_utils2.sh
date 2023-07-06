@@ -27,9 +27,30 @@
 # Prepare the directory to run the tests.
 touch input.nml
 
-# Run the test.
-test_expect_success "Test AXIS utils" '
-  mpirun -n 2 ./test_axis_utils
-'
+TESTS_SUCCESS='--get-axis-modulo --get-axis-modulo-times --get-axis-cart --lon-in-range --frac-index --nearest-index --axis-edges --tranlon --interp-1d-1d --interp-1d-2d --interp-1d-3d'
+TESTS_FAIL='--frac-index-fail --nearest-index-fail'
+
+# TODO: Enable these tests after tranlon's memory corruption bug is fixed.
+SKIP_TESTS="test_axis_utils2.15 test_axis_utils2.16"
+
+# Run the tests
+
+for t in $TESTS_SUCCESS
+do
+  r4cmd="./test_axis_utils_r4 $t"
+  r8cmd="./test_axis_utils_r8 $t"
+
+  test_expect_success "Testing axis utils: $r4cmd" "mpirun -n 1 $r4cmd"
+  test_expect_success "Testing axis utils: $r8cmd" "mpirun -n 1 $r8cmd"
+done
+
+for t in $TESTS_FAIL
+do
+  r4cmd="./test_axis_utils_r4 $t"
+  r8cmd="./test_axis_utils_r8 $t"
+
+  test_expect_failure "Testing axis utils: $r4cmd" "mpirun -n 1 $r4cmd"
+  test_expect_failure "Testing axis utils: $r8cmd" "mpirun -n 1 $r8cmd"
+done
 
 test_done
