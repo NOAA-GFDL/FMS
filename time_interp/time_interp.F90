@@ -391,7 +391,7 @@ contains
     ! mid point of current month in seconds
       mid_month = days_in_month(Time) * halfday
     ! time into current month in seconds
-      cur_month = second + secmin*minute + sechour*hour + secday*(day-1)
+      cur_month = second + secmin*minute + sechour*hour + secday*(dy-1)
 
       if ( cur_month >= mid_month ) then
     ! current time is after mid point of current month
@@ -466,8 +466,8 @@ contains
            endif
       else
     ! current time is before mid point of day
-           year2 = year;  month2 = month;  day2 = day
-           year1 = year;  month1 = month;  day1 = day - 1
+           year2 = yr;  month2 = mo   ;  day2 = dy
+           year1 = yr;  month1 = mo;  day1 = dy - 1
            weight  = real(sday + halfday) / real(secday)
 
            if (day1 < 1) then

@@ -490,6 +490,7 @@
        "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)// &
        ": multiple tile per pe is not supported yet for this routine")
 
+    if (associated(domain%io_domain)) deallocate(domain%io_domain) !< Check if associated
     allocate(domain%io_domain)
     domain%io_layout = io_layout
     io_domain => domain%io_domain
@@ -516,6 +517,7 @@
     io_domain%ntiles   = 1
     io_domain%pe       = domain%pe
     io_domain%symmetry = domain%symmetry
+    if (associated(io_domain%list)) deallocate(io_domain%list) !< Check if associated
     allocate(io_domain%list(0:npes_in_group-1))
     do i = 0, npes_in_group-1
        allocate( io_domain%list(i)%x(1), io_domain%list(i)%y(1), io_domain%list(i)%tile_id(1) )
@@ -550,6 +552,9 @@
     enddo
     deallocate(posarray)
 
+    if (associated(io_domain%x)) deallocate(io_domain%x) !< Check if associated
+    if (associated(io_domain%y)) deallocate(io_domain%y) !< Check if associated
+    if (associated(io_domain%tile_id)) deallocate(io_domain%tile_id) !< Check if associated
     allocate(io_domain%x(1), io_domain%y(1), io_domain%tile_id(1) )
     allocate(io_domain%x(1)%list(0:npes_x-1), io_domain%y(1)%list(0:npes_y-1) )
     n = -1
@@ -858,6 +863,7 @@
 
        !--- when tile is not equal to 1, the layout for that tile always ( 1, 1), so no need for pearray in domain
        if( tile == 1 ) then
+         if (associated(domain%pearray)) deallocate(domain%pearray) !< Check if allocated
           allocate( domain%pearray(0:ndivx-1,0:ndivy-1) )
           domain%pearray = pearray
        end if
@@ -1010,11 +1016,18 @@
     if(is_complete) then
        domain%whalo = whalosz; domain%ehalo = ehalosz
        domain%shalo = shalosz; domain%nhalo = nhalosz
+       if (associated(domain%update_T)) deallocate(domain%update_T) !< Check if associated
+       if (associated(domain%update_E)) deallocate(domain%update_E) !< Check if associated
+       if (associated(domain%update_C)) deallocate(domain%update_C) !< Check if associated
+       if (associated(domain%update_N)) deallocate(domain%update_N) !< Check if associated
        allocate(domain%update_T, domain%update_E, domain%update_C, domain%update_N)
        domain%update_T%next => NULL()
        domain%update_E%next => NULL()
        domain%update_C%next => NULL()
        domain%update_N%next => NULL()
+       if (associated(domain%check_E)) deallocate(domain%check_E) !< Check if associated
+       if (associated(domain%check_C)) deallocate(domain%check_C) !< Check if associated
+       if (associated(domain%check_N)) deallocate(domain%check_N) !< Check if associated
        allocate(domain%check_E,  domain%check_C,  domain%check_N )
        domain%update_T%nsend = 0
        domain%update_T%nrecv = 0
@@ -1061,6 +1074,9 @@
           call set_check_overlap( domain, CORNER )
           call set_check_overlap( domain, EAST   )
           call set_check_overlap( domain, NORTH  )
+          if (associated(domain%bound_E)) deallocate(domain%bound_E) !< Check if associated
+          if (associated(domain%bound_C)) deallocate(domain%bound_C) !< Check if associated
+          if (associated(domain%bound_N)) deallocate(domain%bound_N) !< Check if associated
           allocate(domain%bound_E,  domain%bound_C,  domain%bound_N )
           call set_bound_overlap( domain, CORNER )
           call set_bound_overlap( domain, EAST   )
@@ -1297,6 +1313,7 @@ end subroutine check_message_size
             'mpp_domains_define.inc: the third dimension of maskmap is not equal num_tile')
     end if
 
+    if (associated(domain%tileList)) deallocate(domain%tileList) !< Check if associated
     allocate(domain%tileList(num_tile))
     do n = 1, num_tile
        domain%tileList(n)%xbegin = global_indices(1,n)
@@ -1306,6 +1323,10 @@ end subroutine check_message_size
     enddo
     !--- define some mosaic information in domain type
     nt = ntile_per_pe(mpp_pe()-mpp_root_pe())
+    if (associated(domain%tile_id)) deallocate(domain%tile_id) !< Check if associated
+    if (associated(domain%x)) deallocate(domain%x) !< Check if associated
+    if (associated(domain%y)) deallocate(domain%y) !< Check if associated
+    if (associated(domain%list)) deallocate(domain%list) !< Check if associated
     allocate(domain%tile_id(nt), domain%x(nt), domain%y(nt) )
     allocate(domain%list(0:nlist-1))
 
@@ -1344,6 +1365,7 @@ end subroutine check_message_size
        end if
     end do
 
+    if (associated(domain%tile_id_all)) deallocate(domain%tile_id_all) !< Check if associated
     allocate(domain%tile_id_all(num_tile))
     domain%tile_id_all(:) = tile_id_local(:)
 
@@ -1518,6 +1540,9 @@ end subroutine check_message_size
        call set_check_overlap( domain, NORTH  )
     endif
     if(domain%symmetry) then
+      if (associated(domain%bound_E)) deallocate(domain%bound_E) !< Check if associated
+      if (associated(domain%bound_C)) deallocate(domain%bound_C) !< Check if associated
+      if (associated(domain%bound_N)) deallocate(domain%bound_N) !< Check if associated
        allocate(domain%bound_E,  domain%bound_C,  domain%bound_N )
        call set_bound_overlap( domain, CORNER )
        call set_bound_overlap( domain, EAST   )
@@ -2128,6 +2153,7 @@ end subroutine check_message_size
 
     ! copy the overlapping information into domain data structure
     if(nsend>0) then
+      if (associated(update%send)) deallocate(update%send) !< Check if associated
        allocate(update%send(nsend))
        update%nsend = nsend
        do m = 1, nsend
@@ -2137,6 +2163,7 @@ end subroutine check_message_size
 
     if(nsend_check>0) then
        check%nsend = nsend_check
+       if (associated(check%send)) deallocate(check%send) !< Check if associated
        allocate(check%send(nsend_check))
        do m = 1, nsend_check
           call add_check_overlap( check%send(m), checkList(m) )
@@ -2705,6 +2732,7 @@ end subroutine check_message_size
 
     ! copy the overlapping information into domain
     if(nrecv>0) then
+      if (associated(update%recv)) deallocate(update%recv) !< Check if associated
        allocate(update%recv(nrecv))
        update%nrecv = nrecv
        do m = 1, nrecv
@@ -2720,6 +2748,7 @@ end subroutine check_message_size
 
     if(nrecv_check>0) then
        check%nrecv = nrecv_check
+       if (associated(check%recv)) deallocate(check%recv) !< Check if associated
        allocate(check%recv(nrecv_check))
        do m = 1, nrecv_check
           call add_check_overlap( check%recv(m), checkList(m) )
@@ -3296,6 +3325,7 @@ end subroutine check_message_size
 
     ! copy the overlapping information into domain data structure
     if(nsend>0) then
+      if (associated(update%send)) deallocate(update%send) !< Check if associated
        allocate(update%send(nsend))
        update%nsend = nsend
        do m = 1, nsend
@@ -3304,6 +3334,7 @@ end subroutine check_message_size
     endif
 
     if(nsend_check>0) then
+      if (associated(check%send)) deallocate(check%send) !< Check if associated
        allocate(check%send(nsend_check))
        check%nsend = nsend_check
        do m = 1, nsend_check
@@ -3568,6 +3599,7 @@ end subroutine check_message_size
     ! copy the overlapping information into domain
     if(nrecv>0) then
        update%nrecv = nrecv
+       if (associated(update%recv)) deallocate(update%recv) !< Check if associated
        allocate(update%recv(nrecv))
        do m = 1, nrecv
           call add_update_overlap( update%recv(m), overlapList(m) )
@@ -3582,6 +3614,7 @@ end subroutine check_message_size
 
     if(nrecv_check>0) then
        check%nrecv = nrecv_check
+       if (associated(check%recv)) deallocate(check%recv) !< Check if associated
        allocate(check%recv(nrecv_check))
        do m = 1, nrecv_check
           call add_check_overlap( check%recv(m), checkList(m) )
@@ -3931,6 +3964,7 @@ end subroutine check_message_size
    ! copy the overlapping information into domain data structure
     if(nsend>0) then
        update%nsend = nsend
+       if (associated(update%send)) deallocate(update%send) !< Check if associated
        allocate(update%send(nsend))
        do m = 1, nsend
           call add_update_overlap( update%send(m), overlapList(m) )
@@ -3939,6 +3973,7 @@ end subroutine check_message_size
 
     if(nsend_check>0) then
        check%nsend = nsend_check
+       if (associated(check%send)) deallocate(check%send) !< Check if associated
        allocate(check%send(nsend_check))
        do m = 1, nsend_check
           call add_check_overlap( check%send(m), checkList(m) )
@@ -4195,6 +4230,7 @@ end subroutine check_message_size
     ! copy the overlapping information into domain
     if(nrecv>0) then
        update%nrecv = nrecv
+       if (associated(update%recv)) deallocate(update%recv) !< Check if associated
        allocate(update%recv(nrecv))
        do m = 1, nrecv
           call add_update_overlap( update%recv(m), overlapList(m) )
@@ -4209,6 +4245,7 @@ end subroutine check_message_size
 
     if(nrecv_check>0) then
        check%nrecv = nrecv_check
+       if (associated(check%recv)) deallocate(check%recv) !< Check if associated
        allocate(check%recv(nrecv_check))
        do m = 1, nrecv_check
           call add_check_overlap( check%recv(m), checkList(m) )
@@ -4543,6 +4580,7 @@ end subroutine check_message_size
     ! copy the overlapping information into domain data structure
     if(nsend>0) then
        update%nsend = nsend
+       if (associated(update%send)) deallocate(update%send) !< Check if associated
        allocate(update%send(nsend))
        do m = 1, nsend
           call add_update_overlap( update%send(m), overlapList(m) )
@@ -4551,6 +4589,7 @@ end subroutine check_message_size
 
    if(nsend_check>0) then
        check%nsend = nsend_check
+       if (associated(check%send)) deallocate(check%send) !< Check if associated
        allocate(check%send(nsend_check))
        do m = 1, nsend_check
           call add_check_overlap( check%send(m), checkList(m) )
@@ -4794,6 +4833,7 @@ end subroutine check_message_size
     ! copy the overlapping information into domain
     if(nrecv>0) then
        update%nrecv = nrecv
+       if (associated(update%recv)) deallocate(update%recv) !< Check if associated
        allocate(update%recv(nrecv))
        do m = 1, nrecv
           call add_update_overlap( update%recv(m), overlapList(m) )
@@ -4808,6 +4848,7 @@ end subroutine check_message_size
 
     if(nrecv_check>0) then
        check%nrecv = nrecv_check
+       if (associated(check%recv)) deallocate(check%recv) !< Check if associated
        allocate(check%recv(nrecv_check))
        do m = 1, nrecv_check
           call add_check_overlap( check%recv(m), checkList(m) )
@@ -5065,6 +5106,7 @@ end subroutine check_message_size
 
     if(nsend>0) then
        overlap_out%nsend = nsend
+       if (associated(overlap_out%send)) deallocate(overlap_out%send) !< Check if associated
        allocate(overlap_out%send(nsend));
        do n = 1, nsend
           call add_update_overlap(overlap_out%send(n), send(n) )
@@ -5154,6 +5196,7 @@ end subroutine check_message_size
 
     if(nrecv>0) then
        overlap_out%nrecv = nrecv
+       if (associated(overlap_out%recv)) deallocate(overlap_out%recv) !< Check if associated
        allocate(overlap_out%recv(nrecv));
        do n = 1, nrecv
           call add_update_overlap(overlap_out%recv(n), recv(n) )
@@ -6053,6 +6096,7 @@ subroutine set_contact_point(domain, position)
 
   update_out%nsend = nsend
   if(nsend>0) then
+   if (associated(update_out%send)) deallocate(update_out%send) !< Check if associated
      allocate(update_out%send(nsend))
      pos = 0
      do list = 0, nlist-1
@@ -6135,6 +6179,7 @@ subroutine set_contact_point(domain, position)
 
   update_out%nrecv = nrecv
   if(nrecv>0) then
+   if (associated(update_out%recv)) deallocate(update_out%recv) !< Check if associated
      allocate(update_out%recv(nrecv))
      pos = 0
      do list = 0, nlist-1
@@ -6204,6 +6249,7 @@ do m = 1, update%nsend
 enddo
 
 if(nsend>0) then
+   if (associated(check%send)) deallocate(check%send) !< Check if associated
    allocate(check%send(nsend))
    call allocate_check_overlap(overlap, maxsize)
 endif
@@ -6280,6 +6326,7 @@ enddo
 if(nsend>0) call deallocate_overlap_type(overlap)
 
 if(nrecv>0) then
+   if (associated(check%recv)) deallocate(check%recv) !< Check if associated
    allocate(check%recv(nrecv))
    call allocate_check_overlap(overlap, maxsize)
 endif
@@ -6378,10 +6425,12 @@ subroutine set_bound_overlap( domain, position )
   bound%nsend = nlist_send
   bound%nrecv = nlist_recv
   if(nlist_send >0) then
+   if (associated(bound%send)) deallocate(bound%send) !< Check if associated
      allocate(bound%send(nlist_send))
      bound%send(:)%count = 0
   endif
   if(nlist_recv >0) then
+   if (associated(bound%recv)) deallocate(bound%recv) !< Check if associated
      allocate(bound%recv(nlist_recv))
      bound%recv(:)%count = 0
   endif
@@ -6522,6 +6571,13 @@ subroutine set_bound_overlap( domain, position )
            if(nsend > nlist_send)  call mpp_error(FATAL, "set_bound_overlap: nsend > nlist_send")
            bound%send(nsend)%count = count
            bound%send(nsend)%pe    = my_pe
+           if (associated(bound%send(nsend)%is)) deallocate(bound%send(nsend)%is) !< Check if allocated
+           if (associated(bound%send(nsend)%ie)) deallocate(bound%send(nsend)%ie) !< Check if allocated
+           if (associated(bound%send(nsend)%js)) deallocate(bound%send(nsend)%js) !< Check if allocated
+           if (associated(bound%send(nsend)%je)) deallocate(bound%send(nsend)%je) !< Check if allocated
+           if (associated(bound%send(nsend)%dir)) deallocate(bound%send(nsend)%dir) !< Check if allocated
+           if (associated(bound%send(nsend)%rotation)) deallocate(bound%send(nsend)%rotation) !< Check if allocated
+           if (associated(bound%send(nsend)%tileMe)) deallocate(bound%send(nsend)%tileMe) !< Check if allocated
            allocate(bound%send(nsend)%is(count),  bound%send(nsend)%ie(count) )
            allocate(bound%send(nsend)%js(count),  bound%send(nsend)%je(count) )
            allocate(bound%send(nsend)%dir(count), bound%send(nsend)%rotation(count) )
@@ -6621,6 +6677,13 @@ subroutine set_bound_overlap( domain, position )
         nsend = nsend + 1
         bound%send(nsend)%count = count
         bound%send(nsend)%pe    = overlap%pe
+        if (associated(bound%send(nsend)%is)) deallocate(bound%send(nsend)%is) !< Check if allocated
+        if (associated(bound%send(nsend)%ie)) deallocate(bound%send(nsend)%ie) !< Check if allocated
+        if (associated(bound%send(nsend)%js)) deallocate(bound%send(nsend)%js) !< Check if allocated
+        if (associated(bound%send(nsend)%je)) deallocate(bound%send(nsend)%je) !< Check if allocated
+        if (associated(bound%send(nsend)%dir)) deallocate(bound%send(nsend)%dir) !< Check if allocated
+        if (associated(bound%send(nsend)%rotation)) deallocate(bound%send(nsend)%rotation) !< Check if allocated
+        if (associated(bound%send(nsend)%tileMe)) deallocate(bound%send(nsend)%tileMe) !< Check if allocated
         allocate(bound%send(nsend)%is(count),  bound%send(nsend)%ie(count) )
         allocate(bound%send(nsend)%js(count),  bound%send(nsend)%je(count) )
         allocate(bound%send(nsend)%dir(count), bound%send(nsend)%rotation(count) )
@@ -6770,6 +6833,14 @@ subroutine set_bound_overlap( domain, position )
            if(nrecv > nlist_recv) call mpp_error(FATAL, "set_bound_overlap: nrecv > nlist_recv")
            bound%recv(nrecv)%count = count
            bound%recv(nrecv)%pe    = my_pe
+           if (associated(bound%recv(nrecv)%is)) deallocate(bound%recv(nrecv)%is) !< Check if allocated
+           if (associated(bound%recv(nrecv)%ie)) deallocate(bound%recv(nrecv)%ie) !< Check if allocated
+           if (associated(bound%recv(nrecv)%js)) deallocate(bound%recv(nrecv)%js) !< Check if allocated
+           if (associated(bound%recv(nrecv)%je)) deallocate(bound%recv(nrecv)%je) !< Check if allocated
+           if (associated(bound%recv(nrecv)%dir)) deallocate(bound%recv(nrecv)%dir) !< Check if allocated
+           if (associated(bound%recv(nrecv)%index)) deallocate(bound%recv(nrecv)%index) !< Check if allocated
+           if (associated(bound%recv(nrecv)%tileMe)) deallocate(bound%recv(nrecv)%tileMe) !< Check if allocated
+           if (associated(bound%recv(nrecv)%rotation)) deallocate(bound%recv(nrecv)%rotation) !< Check if allocated
            allocate(bound%recv(nrecv)%is(count),     bound%recv(nrecv)%ie(count) )
            allocate(bound%recv(nrecv)%js(count),     bound%recv(nrecv)%je(count) )
            allocate(bound%recv(nrecv)%dir(count),    bound%recv(nrecv)%index(count)  )
@@ -6865,6 +6936,14 @@ subroutine set_bound_overlap( domain, position )
            nrecv = nrecv + 1
            bound%recv(nrecv)%count = count
            bound%recv(nrecv)%pe    = overlap%pe
+           if (associated(bound%recv(nrecv)%is)) deallocate(bound%recv(nrecv)%is) !< Check if allocated
+           if (associated(bound%recv(nrecv)%ie)) deallocate(bound%recv(nrecv)%ie) !< Check if allocated
+           if (associated(bound%recv(nrecv)%js)) deallocate(bound%recv(nrecv)%js) !< Check if allocated
+           if (associated(bound%recv(nrecv)%je)) deallocate(bound%recv(nrecv)%je) !< Check if allocated
+           if (associated(bound%recv(nrecv)%dir)) deallocate(bound%recv(nrecv)%dir) !< Check if allocated
+           if (associated(bound%recv(nrecv)%index)) deallocate(bound%recv(nrecv)%index) !< Check if allocated
+           if (associated(bound%recv(nrecv)%tileMe)) deallocate(bound%recv(nrecv)%tileMe) !< Check if allocated
+           if (associated(bound%recv(nrecv)%rotation)) deallocate(bound%recv(nrecv)%rotation) !< Check if allocated
            allocate(bound%recv(nrecv)%is(count),     bound%recv(nrecv)%ie(count) )
            allocate(bound%recv(nrecv)%js(count),     bound%recv(nrecv)%je(count) )
            allocate(bound%recv(nrecv)%dir(count),    bound%recv(nrecv)%index(count)  )
@@ -7531,6 +7610,7 @@ if(present(whalo) .or. present(ehalo) .or. present(shalo) .or. present(nhalo) ) 
 else
  call mpp_define_null_domain(domain_out)
  nlist = size(domain_in%list(:))
+ if (associated(domain_out%list)) deallocate(domain_out%list) !< Check if allocated
  allocate(domain_out%list(0:nlist-1) )
  do i = 0, nlist-1
     allocate(domain_out%list(i)%tile_id(1))

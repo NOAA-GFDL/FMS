@@ -182,7 +182,7 @@
                'T=',tick, ' PE=',pe, ' MPP_BROADCAST begin: from_pe, length=', from_pe, length
       end if
 
-      if( .NOT.ANY(from_pe.EQ.peset(current_peset_num)%list) ) &
+      if( .NOT.ANY(from_pe.EQ.peset(n)%list) ) &
            call mpp_error( FATAL, 'MPP_BROADCAST: broadcasting from invalid PE.' )
 
       if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)

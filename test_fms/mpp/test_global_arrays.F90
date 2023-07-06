@@ -27,11 +27,10 @@ program test_global_arrays
   use mpp_mod,         only: mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe
   use mpp_mod,         only: mpp_set_stack_size, mpp_sync, mpp_sync_self
   use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_send, mpp_recv, WARNING
-  use mpp_mod,         only: mpp_init_test_init_true_only, mpp_set_root_pe, input_nml_file
-  use mpp_io_mod,      only: mpp_io_init
-  use mpp_domains_mod, only: mpp_domains_init, mpp_define_domains, domain2d, CYCLIC_GLOBAL_DOMAIN
-  use mpp_domains_mod, only: mpp_define_layout, mpp_domains_set_stack_size, CENTER, CORNER, EAST, WEST, NORTH, SOUTH
-  use mpp_domains_mod, only: mpp_get_global_domain, mpp_global_max, BITWISE_EXACT_SUM, BITWISE_EFP_SUM
+  use mpp_mod,         only: mpp_init_test_init_true_only, mpp_set_root_pe
+  use mpp_domains_mod, only: mpp_domains_init, mpp_define_domains, domain2d
+  use mpp_domains_mod, only: mpp_define_layout, mpp_domains_set_stack_size
+  use mpp_domains_mod, only: mpp_get_global_domain, mpp_global_max
   use mpp_domains_mod, only: mpp_global_min, mpp_get_data_domain,mpp_get_compute_domain
   use mpp_domains_mod, only: mpp_domains_exit, mpp_update_domains
   use mpp_domains_mod, only: mpp_get_domain_shift, mpp_global_sum
@@ -66,6 +65,7 @@ program test_global_arrays
   namelist / test_global_arrays_nml / test_simple, test_full
 
   call mpp_init()
+
   call mpp_domains_init()
   !call mpp_set_stack_size(3145746)
   call mpp_domains_set_stack_size(4000000)

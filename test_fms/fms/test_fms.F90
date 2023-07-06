@@ -11,10 +11,13 @@ module test_fms_mod
 end module test_fms_mod
 
 program test_fms
- use mpp_mod, only : mpp_error, fatal, note, mpp_init
- use fms_mod, only : fms_init, string, fms_end
+ use mpp_mod, only : mpp_error, fatal, note, mpp_init, stderr
+ use fms_mod, only : fms_init, fms_end
  use fms_mod, only : fms_c2f_string
  use fms_mod, only : fms_cstring2cpointer
+ use fms_mod, only : monotonic_array
+ use platform_mod, only : r4_kind, r8_kind
+ use fms_string_utils_mod, only : string, stringify
  use test_fms_mod
  use, intrinsic :: iso_c_binding
 
@@ -69,9 +72,15 @@ program test_fms
          call mpp_error(FATAL, trim(test)//" does not match "//trim(answer))
  endif
 
-
-
+ call test_monotonic_array_r4
+ call test_monotonic_array_r8
 
  call fms_end()
+
+contains
+
+
+#include "test_fms_r4.fh"
+#include "test_fms_r8.fh"
 
 end program test_fms
