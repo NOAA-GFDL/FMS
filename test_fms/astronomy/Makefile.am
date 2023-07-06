@@ -38,6 +38,8 @@ check_PROGRAMS = \
   test_diurnal_solar_r8 \
   test_daily_mean_r4 \
   test_daily_mean_r8 \
+  test_daily_mean_cal_r4 \
+  test_daily_mean_cal_r8 \
   test_annual_mean_solar_2d_r4 \
   test_annual_mean_solar_2d_r8 \
   test_annual_mean_solar_1d_r4 \
@@ -57,6 +59,9 @@ test_diurnal_solar_r8_SOURCES = test_diurnal_solar.F90
 
 test_daily_mean_r4_SOURCES = test_daily_mean.F90
 test_daily_mean_r8_SOURCES = test_daily_mean.F90
+
+test_daily_mean_cal_r4_SOURCES = test_daily_mean_cal.F90
+test_daily_mean_cal_r8_SOURCES = test_daily_mean_cal.F90
 
 test_annual_mean_solar_2d_r4_SOURCES = test_annual_mean_solar_2d.F90
 test_annual_mean_solar_2d_r8_SOURCES = test_annual_mean_solar_2d.F90
@@ -79,6 +84,9 @@ test_diurnal_solar_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
 
 test_daily_mean_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
 test_daily_mean_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+
+test_daily_mean_cal_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_daily_mean_cal_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
 
 test_annual_mean_solar_2d_r4_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
 test_annual_mean_solar_2d_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind

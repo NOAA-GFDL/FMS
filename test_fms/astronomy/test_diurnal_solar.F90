@@ -39,13 +39,14 @@ program test_diurnal_solar
 
   implicit none
 
-  real(kind=TEST_AST_KIND_), parameter :: twopi = real(2.0,TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)
-  real(kind=TEST_AST_KIND_), parameter :: deg_to_rad = twopi / real(360.0,TEST_AST_KIND_)
+  integer, parameter                   :: lkind = TEST_AST_KIND_
+  real(kind=TEST_AST_KIND_), parameter :: twopi = 2.0_lkind * real(PI,TEST_AST_KIND_)
+  real(kind=TEST_AST_KIND_), parameter :: deg_to_rad = twopi / 360.0_lkind
 
 
-  real(kind=TEST_AST_KIND_)   :: ecc   = 0.01671  !< Eccentricity of Earth's orbit [dimensionless]
-  real(kind=TEST_AST_KIND_)   :: obliq = 23.439   !< Obliquity [degrees]
-  real(kind=TEST_AST_KIND_)   :: per   = 102.932  !< Longitude of perihelion with respect
+  real(kind=TEST_AST_KIND_)   :: ecc   = 0.01671_lkind  !< Eccentricity of Earth's orbit [dimensionless]
+  real(kind=TEST_AST_KIND_)   :: obliq = 23.439_lkind   !< Obliquity [degrees]
+  real(kind=TEST_AST_KIND_)   :: per   = 102.932_lkind  !< Longitude of perihelion with respect
 
 
   call fms_init()
