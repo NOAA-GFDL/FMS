@@ -67,9 +67,9 @@ integer, parameter                   :: lkind = FMS_AST_KIND_
 !    save input values into module variables.
 !---------------------------------------------------------------------
 
-    ecc   = real(ecc_in,   FMS_AST_KIND_)
-    obliq = real(obliq_in, FMS_AST_KIND_)
-    per   = real(per_in,   FMS_AST_KIND_)
+    ecc   = real(ecc_in,   r8_kind)
+    obliq = real(obliq_in, r8_kind)
+    per   = real(per_in,   r8_kind)
 
 !---------------------------------------------------------------------
 !    call orbit to define table of orbital angles as function of
