@@ -17,7 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-! Check monin_obukhov_mod calculations against a dictionary of reference answers.
+! Check monin_obukhov_mod calculations against an array of known answer keys.
+! Each answer key should correspond to a particular hardware/compiler/flags combination.
 
 program test_monin_obukhov
   use monin_obukhov_mod
@@ -28,10 +29,14 @@ program test_monin_obukhov
 
   implicit none
 
+  ! Promote a dimension(n) array to a dimension(n,n) array by making n copies of
+  ! the original data
   interface arr_2d
     procedure arr_2d_real
   end interface
 
+  ! Promote a dimension(n) array to a dimension(n,n,n) array by making n*n copies
+  ! of the original data
   interface arr_3d
     procedure arr_3d_real
   end interface
@@ -44,16 +49,19 @@ program test_monin_obukhov
   integer, parameter :: ki = i8_kind
 #endif
 
-  integer(ki), parameter :: mi(1) = [0_ki]
+  integer(ki), parameter :: mi(1) = [0_ki] !< Mold for transfer() intrinsic
 
+! Express a real array as an integer array via transfer(), and reshape the result
+! to match the shape of the original data
 #define INT_(arr)  reshape(transfer(arr, mi), shape(arr))
 
+  !< Shapes of arrays passed to monin_obukhov_mod subroutines
   integer, parameter :: n_1d = 5, &
                       & diff_ni = 1, &
                       & diff_nj = 1, &
                       & diff_nk = 1
 
-  integer :: n_answers
+  integer :: n_answers !< Number of known answer keys
   namelist /metaparams_nml/ n_answers
 
   type drag_input_t
@@ -92,15 +100,19 @@ program test_monin_obukhov
     integer(ki), dimension(n_1d) :: del_m, del_t, del_q
   end type
 
-  type(drag_input_t)       :: drag_input
-  type(stable_mix_input_t) :: stable_mix_input
-  type(diff_input_t)       :: diff_input
-  type(profile_input_t)    :: profile_input
+  type(drag_input_t)       :: drag_input !< Input arguments for mo_drag
+  type(stable_mix_input_t) :: stable_mix_input !< Input arguments for stable_mix
+  type(diff_input_t)       :: diff_input !< Input arguments for mo_diff
+  type(profile_input_t)    :: profile_input !< Input arguments for mo_profile
 
-  type(drag_answers_t),       allocatable :: drag_answers(:)
-  type(stable_mix_answers_t), allocatable :: stable_mix_answers(:)
-  type(diff_answers_t),       allocatable :: diff_answers(:)
-  type(profile_answers_t),    allocatable :: profile_answers(:)
+  ! Entries 1:n of the arrays below contain known answer keys. Entry n+1 contains
+  ! the answers that we calculate. Represent answer data using integral arrays,
+  ! because Fortran does not guarantee bit-for-bit exactness of real values
+  ! stored in namelist files.
+  type(drag_answers_t),       allocatable :: drag_answers(:) !< mo_drag answers
+  type(stable_mix_answers_t), allocatable :: stable_mix_answers(:) !< stable_mix answers
+  type(diff_answers_t),       allocatable :: diff_answers(:) !< mo_diff answers
+  type(profile_answers_t),    allocatable :: profile_answers(:) !< mo_profile answers
 
   namelist /answers_nml/ drag_answers, stable_mix_answers, diff_answers, profile_answers
 
@@ -120,6 +132,7 @@ program test_monin_obukhov
 
   contains
 
+    !< Initialize input array data
     subroutine set_input_params
       drag_input%pt     = [268.559120403867_kr, 269.799228886728_kr, 277.443023238556_kr, &
                          & 295.79192777341_kr, 293.268717243262_kr]
@@ -164,16 +177,17 @@ program test_monin_obukhov
       diff_input%b_star = reshape([0.000991799765557209_kr], shape(diff_input%b_star))
     end subroutine
 
+    !< Read answer keys from input.nml
     subroutine read_answers
       integer :: io, ierr
 
       read (input_nml_file, nml=metaparams_nml, iostat=io)
       ierr = check_nml_error(io, "metaparams_nml")
 
-      allocate(drag_answers_t       :: drag_answers(n_answers+1))
-      allocate(stable_mix_answers_t :: stable_mix_answers(n_answers+1))
-      allocate(diff_answers_t       :: diff_answers(n_answers+1))
-      allocate(profile_answers_t    :: profile_answers(n_answers+1))
+      allocate(drag_answers(n_answers+1))
+      allocate(stable_mix_answers(n_answers+1))
+      allocate(diff_answers(n_answers+1))
+      allocate(profile_answers(n_answers+1))
 
       if (n_answers.gt.0) then
         read (input_nml_file, nml=answers_nml, iostat=io)
@@ -181,6 +195,8 @@ program test_monin_obukhov
       endif
     end subroutine
 
+    !> Store existing answer keys, as well as the answers just calculated, in an
+    !> output file.
     subroutine write_answers
       character(:), allocatable :: filename
       integer :: fh
@@ -196,22 +212,16 @@ program test_monin_obukhov
       close (fh)
     end subroutine
 
-    function check_answers() result(res)
-      logical :: res
-      integer :: i
+    !> Calculate all answers
+    subroutine calc_answers
+      call calc_answers_drag
+      call calc_answers_stable_mix
+      call calc_answers_diff
+      call calc_answers_profile
+    end subroutine
 
-      res = .true.
-
-      do i=1, n_answers
-        if(check_all(i)) then
-          print "(A)", "monin_obukhov tests passed with answer key " // string(i)
-          return
-        endif
-      enddo
-
-      res = .false.
-    end function
-
+    !> Calculate 1D answers for mo_drag, and assert that all 2D answers must agree
+    !> with the corresponding 1D answers
     subroutine calc_answers_drag
       real(kr), dimension(n_1d) :: drag_m_1d, drag_t_1d, drag_q_1d, u_star_1d, b_star_1d
       real(kr), dimension(n_1d, n_1d) :: drag_m_2d, drag_t_2d, drag_q_2d, u_star_2d, b_star_2d
@@ -252,6 +262,8 @@ program test_monin_obukhov
       end associate
     end subroutine
 
+    !> Calculate 1D answers for stable_mix, and assert that all 2D and 3D answers
+    !> must agree with the corresponding 1D answers
     subroutine calc_answers_stable_mix
       real(kr), dimension(n_1d) :: mix_1d
       real(kr), dimension(n_1d, n_1d) :: mix_2d
@@ -275,6 +287,7 @@ program test_monin_obukhov
       end associate
     end subroutine
 
+    !> Calculate answers for mo_diff
     subroutine calc_answers_diff
       real(kr), dimension(diff_ni, diff_nj, diff_nk) :: k_m, k_h
 
@@ -291,6 +304,8 @@ program test_monin_obukhov
       end associate
     end subroutine
 
+    !> Calculate 1D answers for mo_profile, and assert that all 2D answers must
+    !> agree with the corresponding 1D answers
     subroutine calc_answers_profile
       real(kr), dimension(n_1d)       :: del_m_1d, del_t_1d, del_q_1d
       real(kr), dimension(n_1d, n_1d) :: del_m_2d, del_t_2d, del_q_2d
@@ -325,20 +340,32 @@ program test_monin_obukhov
       end associate
     end subroutine
 
-    subroutine calc_answers
-      call calc_answers_drag
-      call calc_answers_stable_mix
-      call calc_answers_diff
-      call calc_answers_profile
-    end subroutine
+    !> Check whether the calculated answers agree with a known answer key
+    function check_answers() result(res)
+      logical :: res
+      integer :: i !< Answer key index
 
-    function check_all(i) result(res)
+      res = .true.
+
+      do i=1, n_answers
+        if(check_answer_key(i)) then
+          print "(A)", "monin_obukhov tests passed with answer key " // string(i)
+          return
+        endif
+      enddo
+
+      res = .false.
+    end function
+
+    !> Check whether the calculated answers agree with answer key i
+    function check_answer_key(i) result(res)
       integer, intent(in) :: i !< Answer key to check against
       logical :: res
 
       res = check_drag(i) .and. check_stable_mix(i) .and. check_diff(i) .and. check_profile(i)
     end function
 
+    !> Check whether the calculated mo_drag answers agree with answer key i
     function check_drag(i) result(res)
       integer, intent(in) :: i !< Answer key to check against
       logical :: res
@@ -352,6 +379,7 @@ program test_monin_obukhov
       end associate
     end function
 
+    !> Check whether the calculated stable_mix answers agree with answer key i
     function check_stable_mix(i) result(res)
       integer, intent(in) :: i !< Answer key to check against
       logical :: res
@@ -361,6 +389,7 @@ program test_monin_obukhov
       end associate
     end function
 
+    !> Check whether the calculated mo_diff answers agree with answer key i
     function check_diff(i) result(res)
       integer, intent(in) :: i !< Answer key to check against
       logical :: res
@@ -371,6 +400,7 @@ program test_monin_obukhov
       end associate
     end function
 
+    !> Check whether the calculated mo_profile answers agree with answer key i
     function check_profile(i) result(res)
       integer, intent(in) :: i !< Answer key to check against
       logical :: res
@@ -382,6 +412,7 @@ program test_monin_obukhov
       end associate
     end function
 
+    !< Check whether a pair of integral 1D arrays are equal
     function array_compare_1d(arr1, arr2) result(res)
       integer(ki), intent(in) :: arr1(:), arr2(:)
       logical :: res
@@ -399,6 +430,7 @@ program test_monin_obukhov
       res = .true.
     end function
 
+    !< Check whether a pair of integral 2D arrays are equal
     function array_compare_2d(arr1, arr2) result(res)
       integer(ki), intent(in) :: arr1(:,:), arr2(:,:)
       logical :: res
@@ -416,6 +448,7 @@ program test_monin_obukhov
       res = .true.
     end function
 
+    !< Check whether a pair of integral 3D arrays are equal
     function array_compare_3d(arr1, arr2) result(res)
       integer(ki), intent(in) :: arr1(:,:,:), arr2(:,:,:)
       logical :: res
@@ -433,6 +466,7 @@ program test_monin_obukhov
       res = .true.
     end function
 
+    ! Compare an integral 1D reference key array against a real-valued, 2D answer array
     subroutine answer_validate_2d(ref, arr)
       integer(ki), dimension(:), intent(in) :: ref
       real(kr), dimension(:,:), intent(in) :: arr
@@ -451,6 +485,7 @@ program test_monin_obukhov
       enddo
     end subroutine
 
+    ! Compare an integral 1D reference key array against a real-valued, 3D answer array
     subroutine answer_validate_3d(ref, arr)
       integer(ki), dimension(:), intent(in) :: ref
       real(kr), dimension(:,:,:), intent(in) :: arr
@@ -471,6 +506,7 @@ program test_monin_obukhov
       enddo
     end subroutine
 
+    !< Promote a real 1D array to 2D, by making n copies
     function arr_2d_real(arr) result(res)
       real(kr), dimension(:), intent(in) :: arr
       real(kr), dimension(:, :), allocatable :: res
@@ -484,6 +520,7 @@ program test_monin_obukhov
       enddo
     end function
 
+    !< Promote a real 1D array to 3D, by making n*n copies
     function arr_3d_real(arr) result(res)
       real(kr), dimension(:), intent(in) :: arr
       real(kr), dimension(:, :, :), allocatable :: res
