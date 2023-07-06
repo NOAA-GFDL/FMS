@@ -15,20 +15,24 @@ program test_diag_integral
   integer, parameter :: nxyp=nxy+1
   real(r8_kind) :: lat(nxyp,nxyp), lon(nxyp,nxyp), area(nxy,nxy)
   !> test arrays
-  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy), immadeup3(nxy,nxy,nxy), weight(nxy,nxy,nxy)
+  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy), immadeup3(nxy,nxy,nxy)
+  real(TEST_DI_KIND_) :: immadeuph(nxy,nxy), weight(nxy,nxy,nxy)
 
   type(FmsNetcdfFile_t):: fileobj        !< Fileobj for the files written by the test
 
   character(100), parameter :: ncfile='INPUT/sample.tile1.nc'
   character(9), parameter :: field_name2='immadeup2'
   character(9), parameter :: field_name3='immadeup3'
+  character(9), parameter :: field_nameh='immadeuph'
   character(8), parameter :: std_digits   = 'e23.15e3' !'e13.6e2'
 
-  type(time_type) :: Time_init, Time !< current time
+  type(time_type) :: Time_init, Time
 
   !testing and generating answers
   integer :: i, j, k
-  real(r8_kind) :: area_sum, itime, field_avg2, field_avg3, field_wght_avg3
+  real(r8_kind) :: area_sum, itime, field_avg2, field_avg3, field_wght_avg3, field_avgh
+
+
   integer, parameter :: lkind=TEST_DI_KIND_
 
   call fms_init
@@ -45,6 +49,7 @@ program test_diag_integral
   call test_call_sum_diag_integral_field
   call diag_integral_end(Time)
   call fms_end
+  !> diag_integral.out file is printed out by diag_integral_end
 
   !> compute total area
   area_sum=0.0_r8_kind
@@ -83,6 +88,7 @@ contains
 
     call diag_integral_field_init(field_name2, std_digits)
     call diag_integral_field_init(field_name3, std_digits)
+    call diag_integral_field_init(field_nameh, std_digits)
 
   end subroutine test_diag_integral_field_init
   !-------------------------------------
@@ -90,10 +96,17 @@ contains
   subroutine test_call_diag_integral_field
 
     implicit none
+    integer :: is, ie, js, je
+
+    is=1 ; ie=nxy
+    js=1 ; je=nxy !je is not used
 
     Time=set_time(0,3,0)
     call sum_diag_integral_field(field_name2, immadeup2)
     call sum_diag_integral_field(field_name3, immadeup3)
+    do js=1, nxy
+       call sum_diag_integral_field(field_nameh, immadeuph, is, ie, js, je)
+    end do
     call diag_integral_output(Time)
 
   end subroutine test_call_diag_integral_field
@@ -102,10 +115,17 @@ contains
   subroutine test_call_sum_diag_integral_field
 
     implicit none
+    integer :: is, ie, js, je
+
+    is=1 ; ie=nxy
+    js=1 ; je=nxy
 
     Time=set_time(0,4,0)
     call sum_diag_integral_field(field_name2, immadeup2)
     call sum_diag_integral_field(field_name3, immadeup3, weight)
+    do js=1, nxy
+       call sum_diag_integral_field(field_nameh, immadeuph, is, ie, js, je)
+    end do
     call diag_integral_output(Time)
 
   end subroutine test_call_sum_diag_integral_field
@@ -197,14 +217,15 @@ contains
     character(17), parameter :: di_file='diag_integral.out'
     integer, parameter  :: iunit=100
 
-    character(100) :: iline1, iline2, iline3, iline4
+    character(100) :: cline1, cline2, cline3, cline4, cline5
 
     !> read in computed values
     open(unit=iunit,file=trim(di_file))
-    read(iunit,*) iline1, iline2, iline3, iline4
-    read(iunit,*) itime, field_avg2, field_avg3
-    read(iunit,*) iline1, iline2, iline3, iline4
-    read(iunit,*) iline1, field_avg2, field_wght_avg3
+    read(iunit,*) cline1, cline2, cline3, cline4, cline5
+    read(iunit,*) itime, field_avg2, field_avg3, field_avgh
+    read(iunit,*) cline1, cline2, cline3, cline4, cline5
+    !> only the answers for the last time step will be checked
+    read(iunit,*) cline1, field_avg2, field_wght_avg3, cline5
     close(iunit)
 
   end subroutine read_diag_integral_file
@@ -257,6 +278,8 @@ contains
        end do
     end do
 
+    immadeuph=immadeup2
+
     do k=1, nxy
        do j=1, nxy
           do i=1, nxy
@@ -281,12 +304,14 @@ contains
        call register_field(fileobj, 'area', 'double', dimensions=(/'nx','ny'/))
        call register_field(fileobj, 'immadeup2', 'double', dimensions=(/'nx','ny'/))
        call register_field(fileobj, 'immadeup3', 'double', dimensions=(/'nx','ny','nz'/))
+       call register_field(fileobj, 'immadeuph', 'double', dimensions=(/'nx','ny'/))
 
        call write_data(fileobj, 'x', lon)
        call write_data(fileobj, 'y', lat)
        call write_data(fileobj, 'area', area)
        call write_data(fileobj, 'immadeup2', immadeup2)
        call write_data(fileobj, 'immadeup3', immadeup3)
+       call write_data(fileobj, 'immadeuph', immadeuph)
 
     end if
     call close_file(fileobj)
