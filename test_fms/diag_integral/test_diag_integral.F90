@@ -15,7 +15,7 @@ program test_diag_integral
   integer, parameter :: nxyp=nxy+1
   real(r8_kind) :: lat(nxyp,nxyp), lon(nxyp,nxyp), area(nxy,nxy)
   !> test arrays
-  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy), immadeup3(nxy,nxy,nxy)
+  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy), immadeup3(nxy,nxy,nxy), immadeupw(nxy,nxy,nxy)
   real(TEST_DI_KIND_) :: immadeuph(nxy,nxy), weight(nxy,nxy,nxy)
 
   type(FmsNetcdfFile_t):: fileobj        !< Fileobj for the files written by the test
@@ -23,6 +23,7 @@ program test_diag_integral
   character(100), parameter :: ncfile='INPUT/sample.tile1.nc'
   character(9), parameter :: field_name2='immadeup2'
   character(9), parameter :: field_name3='immadeup3'
+  character(9), parameter :: field_namew='immadeupw'
   character(9), parameter :: field_nameh='immadeuph'
   character(8), parameter :: std_digits   = 'e23.15e3' !'e13.6e2'
 
@@ -30,7 +31,7 @@ program test_diag_integral
 
   !testing and generating answers
   integer :: i, j, k
-  real(r8_kind) :: area_sum, itime, field_avg2, field_avg3, field_wght_avg3, field_avgh
+  real(r8_kind) :: area_sum, itime, field_avg2, field_avg3, field_avgw, field_avgh
 
 
   integer, parameter :: lkind=TEST_DI_KIND_
@@ -44,25 +45,16 @@ program test_diag_integral
 
   call test_diag_integral_init
   call test_diag_integral_field_init
-
   call test_call_diag_integral_field
-  call test_call_sum_diag_integral_field
   call diag_integral_end(Time)
   call fms_end
   !> diag_integral.out file is printed out by diag_integral_end
 
   !> compute total area
-  area_sum=0.0_r8_kind
-  do j=1, nxy
-     do i=1, nxy
-        area_sum = area_sum + area(i,j)
-     end do
-  end do
+  area_sum=real(nxy*nxy,r8_kind)
 
-  call read_diag_integral_file
-  call test_sum_diag_integral_field_2d
-  call test_sum_diag_integral_field_3d
-  call test_sum_field_wght_3d
+  call read_diag_integral_file !> read in computed values in file diag_integral.out
+  call test_sum_diag_integral_field
 
 contains
   !-------------------------------------
@@ -88,6 +80,7 @@ contains
 
     call diag_integral_field_init(field_name2, std_digits)
     call diag_integral_field_init(field_name3, std_digits)
+    call diag_integral_field_init(field_namew, std_digits)
     call diag_integral_field_init(field_nameh, std_digits)
 
   end subroutine test_diag_integral_field_init
@@ -104,6 +97,7 @@ contains
     Time=set_time(0,3,0)
     call sum_diag_integral_field(field_name2, immadeup2)
     call sum_diag_integral_field(field_name3, immadeup3)
+    call sum_diag_integral_field(field_namew, immadeupw)
     do js=1, nxy
        call sum_diag_integral_field(field_nameh, immadeuph, is, ie, js, je)
     end do
@@ -112,105 +106,24 @@ contains
   end subroutine test_call_diag_integral_field
   !-------------------------------------
   !-------------------------------------
-  subroutine test_call_sum_diag_integral_field
-
-    implicit none
-    integer :: is, ie, js, je
-
-    is=1 ; ie=nxy/2
-    js=1 ; je=nxy
-
-    Time=set_time(0,4,0)
-    call sum_diag_integral_field(field_name2, immadeup2)
-    call sum_diag_integral_field(field_name3, immadeup3, weight)
-    do js=1, nxy
-       call sum_diag_integral_field(field_nameh, immadeuph, is, ie, js, je)
-    end do
-    call diag_integral_output(Time)
-
-  end subroutine test_call_sum_diag_integral_field
-  !-------------------------------------
-  !-------------------------------------
-  subroutine test_sum_diag_integral_field_2d
+  subroutine test_sum_diag_integral_field
 
     implicit none
 
-    real(r8_kind) :: answer2
+    real(r8_kind) :: answer2, answer3, answerw, answerh
 
     !> compute answer for 2d
-    answer2=0.0_r8_kind
-    do j=1, nxy
-       do i=1, nxy
-          answer2 = answer2 + real(immadeup2(i,j),r8_kind)*area(i,j)
-       end do
-    end do
-
-    answer2=answer2/area_sum
+    answer2=real(nxy*nxy,lkind)/area_sum
+    answer3=real(nxy*nxy*nxy,lkind)/area_sum
+    answerw=answer3
+    answerh=answer2/2.0_lkind
 
     call check_answers(answer2, field_avg2, 'sum_diag_integral_field failed for 2d')
-    call check_answers(answer2/2.0,field_avgh, 'sum_diag_integral_field_hemi failed')
+    call check_answers(answer3, field_avg3, 'sum_diag_integral_field failed for 2d')
+    call check_answers(answerw, field_avgw, 'sum_diag_integral_field failed for 2d')
+    call check_answers(answerh, field_avgh, 'sum_diag_integral_field_hemi failed')
 
-  end subroutine test_sum_diag_integral_field_2d
-  !-------------------------------------
-  !-------------------------------------
-  subroutine test_sum_diag_integral_field_3d
-
-    implicit none
-
-    real(r8_kind) :: answer3, tmp
-
-    !> compute answer for 3d
-    answer3=0.0_r8_kind
-    do j=1, nxy
-       do i=1, nxy
-          tmp=0.0_r8_kind
-          do k=1, nxy
-             tmp=tmp+real(immadeup3(i,j,k),r8_kind)
-          end do
-          answer3 = answer3 + tmp*area(i,j)
-       end do
-    end do
-
-    answer3=answer3/area_sum
-    call check_answers(answer3,field_avg3,'sum_diag_integral_field failed for 3d')
-
-  end subroutine test_sum_diag_integral_field_3d
-  !-------------------------------------
-  !-------------------------------------
-  subroutine test_sum_field_wght_3d
-
-    implicit none
-
-    real(r8_kind) :: tmp3(nxy,nxy,nxy)
-    real(r8_kind) :: answer3, tmp, wght
-
-    !> adding onto it with weights
-    tmp3=0.0_r8_kind
-    do k=1, nxy
-       do j=1, nxy
-          do i=1, nxy
-             tmp3(i,j,k)=real(immadeup3(i,j,k),r8_kind)*real(weight(i,j,k),r8_kind)
-          end do
-       end do
-    end do
-
-    answer3=0.0_r8_kind
-    do j=1, nxy
-       do i=1, nxy
-          tmp=0.0_r8_kind
-          wght=0.0_r8_kind
-          do k=1, nxy
-             wght=wght+real(weight(i,j,k),r8_kind)
-             tmp=tmp+tmp3(i,j,k)
-          end do
-          answer3 = answer3 + tmp*area(i,j)/wght
-       end do
-    end do
-
-    answer3 = answer3/area_sum
-    call check_answers(answer3,field_wght_avg3,'sum_diag_field_wght failed for 3d')
-
-  end subroutine test_sum_field_wght_3d
+  end subroutine test_sum_diag_integral_field
   !-------------------------------------
   !-------------------------------------
   subroutine read_diag_integral_file
@@ -218,15 +131,12 @@ contains
     character(17), parameter :: di_file='diag_integral.out'
     integer, parameter  :: iunit=100
 
-    character(100) :: cline1, cline2, cline3, cline4, cline5
+    character(100) :: cline1, cline2, cline3, cline4, cline5, clin6
 
     !> read in computed values
     open(unit=iunit,file=trim(di_file))
-    read(iunit,*) cline1, cline2, cline3, cline4, cline5
-    read(iunit,*) itime, field_avg2, field_avg3, field_avgh
-    read(iunit,*) cline1, cline2, cline3, cline4, cline5
-    !> only the answers for the last time step will be checked
-    read(iunit,*) cline1, field_avg2, field_wght_avg3, field_avgh
+    read(iunit,*) cline1, cline2, cline3, cline4, cline5, clin6
+    read(iunit,*) itime, field_avg2, field_avg3, field_avgw, field_avgh
     close(iunit)
 
   end subroutine read_diag_integral_file
@@ -267,28 +177,12 @@ contains
        lat(:,j)=15.0_r8_kind*real(j,r8_kind)*dxy
     end do
 
-    do j=1, nxy
-       do i=1, nxy
-          area(i,j)=0.12_r8_kind*real(i,r8_kind)+real(j,r8_kind)
-       end do
-    end do
-
-    do j=1, nxy
-       do i=1, nxy
-          immadeup2(i,j)=100.0_lkind*real(j-1,lkind)+real(i,lkind)*real(PI,lkind)
-       end do
-    end do
-
-    immadeuph=immadeup2
-
-    do k=1, nxy
-       do j=1, nxy
-          do i=1, nxy
-             immadeup3(i,j,k)=real(k-1,lkind) + 150_lkind*real(j-1,lkind) + real(i,lkind)*real(PI,lkind)
-             weight(i,j,k)=real(i*k, lkind)/real(j,lkind)*real(PI,lkind)
-          end do
-       end do
-    end do
+    area=1.0_lkind
+    immadeup2=1.0_lkind
+    immadeup3=1.0_lkind
+    immadeupw=1.0_lkind
+    immadeuph=1.0_lkind
+    weight=1.0_lkind
 
     allocate(pes(mpp_npes()))
     call mpp_get_current_pelist(pes)
@@ -305,6 +199,7 @@ contains
        call register_field(fileobj, 'area', 'double', dimensions=(/'nx','ny'/))
        call register_field(fileobj, 'immadeup2', 'double', dimensions=(/'nx','ny'/))
        call register_field(fileobj, 'immadeup3', 'double', dimensions=(/'nx','ny','nz'/))
+       call register_field(fileobj, 'immadeupw', 'double', dimensions=(/'nx','ny','nz'/))
        call register_field(fileobj, 'immadeuph', 'double', dimensions=(/'nx','ny'/))
 
        call write_data(fileobj, 'x', lon)
@@ -312,6 +207,7 @@ contains
        call write_data(fileobj, 'area', area)
        call write_data(fileobj, 'immadeup2', immadeup2)
        call write_data(fileobj, 'immadeup3', immadeup3)
+       call write_data(fileobj, 'immadeupw', immadeupw)
        call write_data(fileobj, 'immadeuph', immadeuph)
 
     end if
