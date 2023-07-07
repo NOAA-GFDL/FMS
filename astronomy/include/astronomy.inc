@@ -557,7 +557,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!   time using the function orbital_time.
 !---------------------------------------------------------------------
 
-    time_since_ae = orbital_time(time)
+    time_since_ae = real(orbital_time(time), FMS_AST_KIND_)
 
 !---------------------------------------------------------------------
 !>    Convert optional time_type variable dt_time (length of averaging
@@ -981,7 +981,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
 
-    time_since_ae = orbital_time(time)
+    time_since_ae = real(orbital_time(time), FMS_AST_KIND_)
     if (time_since_ae < 0.0_lkind .or. time_since_ae > real(twopi, FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
 
