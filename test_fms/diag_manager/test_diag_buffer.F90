@@ -49,7 +49,7 @@ program test_diag_buffer
         r8val = p_val
     end select
     ! get the 5d remapped buffer data
-    remap_buffer_out => buffobj0(5)%remap_buffer(fname)
+    remap_buffer_out => buffobj0(5)%remap_buffer(fname, .false.)
     ! check output from object and remapped buffer
     print *, r8val
     call print_5d(remap_buffer_out)
@@ -75,7 +75,7 @@ program test_diag_buffer
         arr1d = p_data1
     end select
     !! get the remapped buffer
-    remap_buffer_out => buffobj1%remap_buffer(fname)
+    remap_buffer_out => buffobj1%remap_buffer(fname, .false.)
     !! check output
     print *, arr1d
     call print_5d(remap_buffer_out)
@@ -94,7 +94,7 @@ program test_diag_buffer
     !!! get the buffer
     call buffobj2%get_buffer(arr2d, fname)
     !!! get the remapped buffer
-    remap_buffer_out => buffobj2%remap_buffer(fname)
+    remap_buffer_out => buffobj2%remap_buffer(fname, .false.)
     !!! check output
     select type(arr2d)
       type is(integer(i4_kind))
@@ -115,7 +115,7 @@ program test_diag_buffer
     !! get the buffer
     call buffobj3%get_buffer(arr3d, fname)
     !! get the remapped buffer
-    remap_buffer_out => buffobj3%remap_buffer(fname)
+    remap_buffer_out => buffobj3%remap_buffer(fname, .false.)
     !! check output
     select type (arr3d)
       type is(integer(i8_kind))
@@ -136,7 +136,7 @@ program test_diag_buffer
     !! get the buffer
     call buffobj4%get_buffer(arr4d, fname)
     !! get the remapped buffer
-    remap_buffer_out => buffobj4%remap_buffer(fname)
+    remap_buffer_out => buffobj4%remap_buffer(fname, .false.)
     !! check output
     select type (arr4d)
       type is(integer(i8_kind))
@@ -150,7 +150,7 @@ program test_diag_buffer
     !! init to given value
     call buffobj5%initialize_buffer( int(5, kind=i8_kind), fname )
     !! get the remapped buffer
-    remap_buffer_out => buffobj5%remap_buffer(fname)
+    remap_buffer_out => buffobj5%remap_buffer(fname, .false.)
     !! set some values in the buffer
     allocate(i8arr5d(2,2,2,2,2))
     i8arr5d = 10

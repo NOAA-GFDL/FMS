@@ -66,6 +66,7 @@ option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
+option(USE_DEPRECATED_IO     "Enable compiler definition -Duse_deprecated_io (compile with fms_io/mpp_io)"   OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -255,6 +256,10 @@ if(WITH_YAML)
   list(APPEND fms_defs use_yaml)
 endif()
 
+if(USE_DEPRECATED_IO)
+  list(APPEND fms_defs use_deprecated_io)
+endif()
+
 if(INTERNAL_FILE_NML)
   list(APPEND fms_defs INTERNAL_FILE_NML)
 endif()
@@ -304,12 +309,16 @@ foreach(kind ${kinds})
 
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
+                                                 fms/include
                                                  fms2_io/include
                                                  string_utils/include
                                                  mpp/include
+                                                 sat_vapor_pres/include
+                                                 horiz_interp/include
                                                  diag_manager/include
                                                  constants4
-                                                 constants)
+                                                 constants
+                                                 axis_utils/include)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
@@ -343,7 +352,10 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/horiz_interp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>)

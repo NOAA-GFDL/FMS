@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 # Run the test for one processor
 test_expect_success "system clock functionality" '
     mpirun -n 1 ./test_system_clock

@@ -733,6 +733,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
+      call diag_file%write_global_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
       call diag_file%write_time_metadata()
       call diag_file%write_field_metadata(this%FMS_diag_fields, this%diag_axis)

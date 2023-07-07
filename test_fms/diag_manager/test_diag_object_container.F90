@@ -25,7 +25,6 @@
 !!  is also being tested.
 program test_diag_obj_container
   use mpp_mod, only: mpp_init, mpp_set_stack_size, mpp_init_test_requests_allocated
-  use mpp_io_mod, only: mpp_io_init
   use fms_mod, ONLY: error_mesg, FATAL,NOTE
 
   use fms_diag_object_mod, only : fmsDiagObject_type
@@ -56,7 +55,6 @@ program test_diag_obj_container
 
 
   call mpp_init(mpp_init_test_requests_allocated)
-  call mpp_io_init()
   call mpp_set_stack_size(145746)
 
   call error_mesg('test_diag_object_container', 'Test has started',NOTE)
