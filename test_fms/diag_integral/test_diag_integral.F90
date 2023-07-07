@@ -98,7 +98,7 @@ contains
     implicit none
     integer :: is, ie, js, je
 
-    is=1 ; ie=nxy
+    is=1 ; ie=nxy/2
     js=1 ; je=nxy !je is not used
 
     Time=set_time(0,3,0)
@@ -117,7 +117,7 @@ contains
     implicit none
     integer :: is, ie, js, je
 
-    is=1 ; ie=nxy
+    is=1 ; ie=nxy/2
     js=1 ; je=nxy
 
     Time=set_time(0,4,0)
@@ -148,6 +148,7 @@ contains
     answer2=answer2/area_sum
 
     call check_answers(answer2, field_avg2, 'sum_diag_integral_field failed for 2d')
+    call check_answers(answer2/2.0,field_avgh, 'sum_diag_integral_field_hemi failed')
 
   end subroutine test_sum_diag_integral_field_2d
   !-------------------------------------
@@ -225,7 +226,7 @@ contains
     read(iunit,*) itime, field_avg2, field_avg3, field_avgh
     read(iunit,*) cline1, cline2, cline3, cline4, cline5
     !> only the answers for the last time step will be checked
-    read(iunit,*) cline1, field_avg2, field_wght_avg3, cline5
+    read(iunit,*) cline1, field_avg2, field_wght_avg3, field_avgh
     close(iunit)
 
   end subroutine read_diag_integral_file
