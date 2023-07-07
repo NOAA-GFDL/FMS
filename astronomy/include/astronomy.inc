@@ -290,7 +290,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 
         where (real(twopi, FMS_AST_KIND_) - h < tt .and. &
             (tt+h-real(twopi, FMS_AST_KIND_)) /= 0.0_lkind .and. t <= h ) &
-            cosz = (cosz*(h - t) + (real(aa, FMS_AST_KIND_)*(tt + h - real(twopi, FMS_AST_KIND_)) + bb &
+            cosz = (cosz*(h - t) + (aa*(tt + h - real(twopi, FMS_AST_KIND_)) + bb &
                    * (stt + sh))) / ((h - t) + (tt + h - real(twopi, FMS_AST_KIND_)))
 
 !-------------------------------------------------------------------
@@ -1068,7 +1068,7 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-    lat_2d(:,1) = real(lat, FMS_AST_KIND_)
+    lat_2d(:,1) = lat
 
 !--------------------------------------------------------------------
 !>    call daily_mean_solar_cal_2d to convert the time_types to reals and
@@ -1422,7 +1422,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 
     rad_per        = real(per, FMS_AST_KIND_)*real(deg_to_rad, FMS_AST_KIND_)
     r              = (1.0_lkind - real(ecc, FMS_AST_KIND_)**2)/(1.0_lkind &
-                    + real(ecc, FMS_AST_KIND_)*cos(real(ang, FMS_AST_KIND_) - real(rad_per, FMS_AST_KIND_)))
+                    + real(ecc, FMS_AST_KIND_)*cos(ang - rad_per))
     R_INV_SQUARED_ = r**(-2)
 
 
