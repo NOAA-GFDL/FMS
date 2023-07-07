@@ -28,6 +28,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 # Run the test
 test_expect_success "get correct root PE single processor" '
     mpirun -n 1 ./test_mpp_root_pe

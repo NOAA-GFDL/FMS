@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 test_expect_success "global array functions with mixed precision" '
     mpirun -n 8 ./test_global_arrays
 '
