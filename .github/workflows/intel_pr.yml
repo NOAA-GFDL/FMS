@@ -20,6 +20,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: /libs
+        key: ${{ runner.os }}-intel-libs
     - name: Install packages for building
       run: apt update && apt install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
