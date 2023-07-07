@@ -2500,23 +2500,23 @@ END SUBROUTINE check_bounds_are_exact_dynamic
   END SUBROUTINE prepend_attribute_file
 
   !> @brief Updates indices based on presence/absence of input indices is, js, ks, ie, je, and ke.
-  ! Computes halo sizes in x and y directions.
+  ! Computes halo sizes in the I and J dimensions.
   ! This routine is intended to be used in diag manager.
   !> @return .false. if there is no error else .true.
   function recondition_indices(indices, data, is_in, js_in, ks_in, &
     ie_in, je_in, ke_in, err_msg) result(ierr)
     integer, intent(inout) :: indices(12) !< Stores indices in order:
                                               !! (/is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje/)
-    class(*), intent(in) :: data(:,:,:,:) !< Dummy variable; only the sizes of the first 3 dimensions are used
+    class(*), intent(in) :: field(:,:,:,:) !< Dummy variable; only the sizes of the first 3 dimensions are used
     integer, intent(in), optional :: is_in, js_in, ks_in, ie_in, je_in, ke_in !< User input indices
     character(len=*), intent(out), optional :: err_msg !< Error message to pass back to caller
     logical :: ierr !< Error flag
 
     integer :: is, js, ks, ie, je, ke !< Local indices to update
-    integer   :: hi !< halo size in x direction
-    integer   :: hj !< halo size in y direction
-    integer   :: twohi, twohj
-    integer   :: fis, fie, fjs, fje !< ! Used for field, mask and rmask bounds
+    integer   :: hi !< halo size in the I dimension
+    integer   :: hj !< halo size in the J dimension
+    integer   :: twohi, twohj !< Temporary storages
+    integer   :: fis, fie, fjs, fje !< ! Updated starting and ending indices in the I and J dimensions
     integer :: n1, n2, n3 !< Sizes of the first 3 dimenstions indicies of the data
 
     ierr = .false.
@@ -2531,9 +2531,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     IF ( PRESENT(js_in) ) js = js_in
     IF ( PRESENT(ks_in) ) ks = ks_in
 
-    n1 = SIZE(data, 1)
-    n2 = SIZE(data, 2)
-    n3 = SIZE(data, 3)
+    n1 = SIZE(field, 1)
+    n2 = SIZE(field, 2)
+    n3 = SIZE(field, 3)
 
     ie = is + n1 - 1
     je = js + n2 - 1
