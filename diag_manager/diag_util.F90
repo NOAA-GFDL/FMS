@@ -2503,7 +2503,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
   ! Computes halo sizes in the I and J dimensions.
   ! This routine is intended to be used in diag manager.
   !> @return .false. if there is no error else .true.
-  function recondition_indices(indices, data, is_in, js_in, ks_in, &
+  function recondition_indices(indices, field, is_in, js_in, ks_in, &
     ie_in, je_in, ke_in, err_msg) result(ierr)
     integer, intent(inout) :: indices(12) !< Stores indices in order:
                                               !! (/is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje/)
