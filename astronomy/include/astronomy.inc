@@ -290,7 +290,7 @@ integer, parameter                                           :: lkind = FMS_AST_
 
         where (real(twopi, FMS_AST_KIND_) - h < tt .and. &
             (tt+h-real(twopi, FMS_AST_KIND_)) /= 0.0_lkind .and. t <= h ) &
-            cosz = (cosz*(h - t) + (real(aa, FMS_AST_KIND_)*(tt + h - real(twopi, FMS_AST_KIND_)) + bb &
+            cosz = (cosz*(h - t) + (aa*(tt + h - real(twopi, FMS_AST_KIND_)) + bb &
                    * (stt + sh))) / ((h - t) + (tt + h - real(twopi, FMS_AST_KIND_)))
 
 !-------------------------------------------------------------------
@@ -557,7 +557,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !!   time using the function orbital_time.
 !---------------------------------------------------------------------
 
-    time_since_ae = orbital_time(time)
+    time_since_ae = real(orbital_time(time), FMS_AST_KIND_)
 
 !---------------------------------------------------------------------
 !>    Convert optional time_type variable dt_time (length of averaging
@@ -981,7 +981,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 !    be sure the time in the annual cycle is legitimate.
 !---------------------------------------------------------------------
 
-    time_since_ae = orbital_time(time)
+    time_since_ae = real(orbital_time(time), FMS_AST_KIND_)
     if (time_since_ae < 0.0_lkind .or. time_since_ae > real(twopi, FMS_AST_KIND_)) &
         call error_mesg('astronomy_mod', 'time_since_ae not between 0 and 2pi', FATAL)
 
@@ -1068,7 +1068,7 @@ real(kind=FMS_AST_KIND_)                         :: rrsun
 !>    define 2-d versions of input data array.
 !--------------------------------------------------------------------
 
-    lat_2d(:,1) = real(lat, FMS_AST_KIND_)
+    lat_2d(:,1) = lat
 
 !--------------------------------------------------------------------
 !>    call daily_mean_solar_cal_2d to convert the time_types to reals and
@@ -1422,7 +1422,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
 
     rad_per        = real(per, FMS_AST_KIND_)*real(deg_to_rad, FMS_AST_KIND_)
     r              = (1.0_lkind - real(ecc, FMS_AST_KIND_)**2)/(1.0_lkind &
-                    + real(ecc, FMS_AST_KIND_)*cos(real(ang, FMS_AST_KIND_) - real(rad_per, FMS_AST_KIND_)))
+                    + real(ecc, FMS_AST_KIND_)*cos(ang - rad_per))
     R_INV_SQUARED_ = r**(-2)
 
 
@@ -1463,7 +1463,7 @@ integer, parameter       :: lkind = FMS_AST_KIND_
     int       = floor(norm_time)
     int       = modulo(int,num_angles)
     int_1     = int+1
-    x         = norm_time - real(floor(norm_time), FMS_AST_KIND_)
+    x         = norm_time - real((norm_time), FMS_AST_KIND_)
     ANGLE_    = (1.0_lkind - x) * real(orb_angle(int), FMS_AST_KIND_) &
                 + x * real(orb_angle(int_1), FMS_AST_KIND_)
     ANGLE_    = modulo(ANGLE_, real(twopi, FMS_AST_KIND_))
