@@ -154,7 +154,7 @@
       send_start_pos = buffer_pos
 
       ! forward send info
-      buffer_pos = buffer_recv_size 
+      buffer_pos = buffer_recv_size
       ! forward pack
       do m = 1, update%nsend
          send_msgsize(m) = 0
@@ -183,7 +183,7 @@
          send_msgsize(m) = pos-buffer_pos
          buffer_pos = pos
       end do ! end do m = 1, nsend
- 
+
       ! backward communication
       ! pack (recv in forward)
       buffer_pos = buffer_recv_size
