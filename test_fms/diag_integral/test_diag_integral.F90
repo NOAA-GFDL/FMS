@@ -28,6 +28,9 @@
 !! TODO:  More comprehensive tests that use more complicated data.  All the arrays are initialized
 !!        to 1.0_lkind in this test.  The computed results are thus simple values with "a lot of trailing zeros"
 !!        Thus, the computed values should exactly equal the expected answers.
+!! TODO:  This test also only checks for one timepoint.  Additional tests that checks the evolution of the average/sum
+!!        wrt time are required.
+
 
 program test_diag_integral
 
