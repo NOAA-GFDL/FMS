@@ -690,12 +690,14 @@ end subroutine set_file_domain
 
 !> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
 subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, output_buffers)
-  class(fmsDiagFile_type),          intent(inout)       :: this          !< The file object
-  integer,                          INTENT(in)          :: axis_ids(:)   !< Array of axes_ids
-  class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
-  integer,                          intent(inout)       :: naxis         !< Number of axis that have been registered
-  integer,                          intent(in)          :: yaml_id       !< Yaml id of the yaml section for this var
-  type(fmsDiagOutputBufferContainer_type), intent(inout):: output_buffers(:)
+  class(fmsDiagFile_type),                 intent(inout) :: this              !< The file object
+  integer,                                 INTENT(in)    :: axis_ids(:)       !< Array of axes_ids
+  class(fmsDiagAxisContainer_type),        intent(inout) :: diag_axis(:)      !< Diag_axis object
+  integer,                                 intent(inout) :: naxis             !< Number of axis that have been
+                                                                              !! registered
+  integer,                                 intent(in)    :: yaml_id           !< Yaml id of the field section for
+                                                                              !! this var
+  type(fmsDiagOutputBufferContainer_type), intent(inout) :: output_buffers(:) !< Array of output buffers
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
 

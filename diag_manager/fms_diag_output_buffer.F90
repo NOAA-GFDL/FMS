@@ -61,7 +61,7 @@ end type fmsDiagOutputBuffer_class
 !> holds an allocated buffer0-5d object
 type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
-  integer, allocatable :: axis_ids(:)
+  integer,                          allocatable :: axis_ids(:)     !< Axis ids for the buffer
 
   contains
   procedure :: add_axis_ids
@@ -1433,18 +1433,18 @@ end subroutine add_to_buffer_5d
 
 !> @brief Adds the axis ids to the buffer object
 subroutine add_axis_ids(this, axis_ids)
-  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this
-  integer,                                  intent(in)    :: axis_ids(:)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: axis_ids(:) !< Axis ids to add
 
   this%axis_ids = axis_ids
 end subroutine
 
 !> @brief Get the axis_ids for the buffer
-!! @return Axis_ids
+!! @return Axis_ids, if the buffer doesn't have axis ids it returns diag_null
 function get_axis_ids(this) &
   result(res)
 
-  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
   integer, allocatable :: res(:)
 
   if (allocated(this%axis_ids)) then
