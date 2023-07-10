@@ -739,12 +739,17 @@ subroutine parse_key(filename, buffer, file_freq, file_frequnit, var)
         call mpp_error(FATAL, trim(var)//" is not valid. &
         &Check your entry for file:"//trim(filename))
 
-    if (trim(units) .eq. "") &
-        call mpp_error(FATAL, trim(var)//" is required. &
+    if (file_freq(count) .eq. -1 .or. file_freq(count) .eq. 0) then
+      !! The file is static so no need to read the units
+      file_frequnit(count) = DIAG_DAYS
+    else
+      if (trim(units) .eq. "") &
+        call mpp_error(FATAL, trim(var)//" units is required. &
         &Check your entry for file:"//trim(filename))
 
-    file_frequnit(count) = set_valid_time_units(units, &
-      trim(var)//" for file:"//trim(filename))
+      file_frequnit(count) = set_valid_time_units(units, &
+        trim(var)//" for file:"//trim(filename))
+    endif
   enddo
 end subroutine parse_key
 

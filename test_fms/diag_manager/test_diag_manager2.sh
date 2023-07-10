@@ -557,7 +557,7 @@ diag_files:
     corner3: -60, 0
     corner4: -60, 75
 - file_name: normal2
-  freq: -1 days
+  freq: -1
   time_units: hours
   unlimdim: records
   write_file: true
@@ -583,7 +583,7 @@ diag_files:
     corner3: 10, 25
     corner4: 20, 25
 - file_name: normal3
-  freq: -1 days
+  freq: -1
   time_units: hours
   unlimdim: records
   write_file: false
@@ -653,7 +653,7 @@ base_date: 2 1 1 0 0 0
 
 diag_files:
 - file_name: static_file
-  freq: -1 hours
+  freq: -1
   time_units: hours
   unlimdim: time
   varlist:
