@@ -20,7 +20,7 @@
 # Runs on centos stream (builder has same base from redhat registry)
 #
 # arguments to specify versions to build can be given to docker or changed here (--build-arg name=val)
-FROM spack/centos-stream:v0.19.1 as builder
+FROM spack/rockylinux9:latest as builder
 
 ARG gcc_version=12.2.0
 ARG netcdfc_version=4.9.0
@@ -30,7 +30,9 @@ ARG mpich_version=4.0.2
 
 COPY spack.env /opt/deps/spack.env
 
-RUN spack install gcc@${gcc_version}                          && \
+# perl's download kept timing out
+RUN sed -i 's/connect_timeout: 10/connect_timeout: 600/' /opt/spack/etc/spack/defaults/config.yaml && \
+    spack install gcc@${gcc_version}                          && \
     source /opt/spack/share/spack/setup-env.sh                && \
     spack load gcc@${gcc_version}                             && \
     spack compiler find                                       && \
@@ -43,31 +45,24 @@ RUN spack install gcc@${gcc_version}                          && \
     spack -e . concretize -f > /opt/deps/deps.log             && \
     spack install --fail-fast
 
-RUN find -L /opt/deps/* -type f -exec readlink -f '{}' \; | \
-    xargs file -i | \
-    grep 'charset=binary' | \
-    grep 'x-executable\|x-arcive\|x-sharedlib' | \
-    awk -F: '{print $1}' |  xargs strip -s
-
 # copy built software to base from first image
-FROM quay.io/centos/centos:stream
+FROM rockylinux:9 
 
+COPY --from=builder /opt/view/ /opt/view/
 COPY --from=builder /opt/deps/ /opt/deps/
-COPY --from=builder /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/  /opt/spack/opt/spack/linux-centos8-haswell/gcc-8.5.0/
 
 # input files used with --enable-input-tests
 # need to be on the dev boxes if building
 COPY ./fms_test_input /home/fms_test_input
 
-# extends glob patterns for exceptions
-SHELL ["/bin/bash", "-O", "extglob", "-c"]
-
-RUN ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/lib/!(pkgconfig|cmake) /usr/local/lib && \
-    ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/bin/!(autoreconf|pkgconfig|cmake) /usr/local/bin && \
-    ln -s /opt/deps/linux-centos8-haswell/gcc-12.2.0/*/include/* /usr/local/include && \
-    dnf install -y autoconf automake make binutils m4 libtool pkg-config libtool autogen
+RUN dnf install -y autoconf make automake m4 libtool pkg-config
 
 ENV FC="mpifort"
 ENV CC="mpicc"
-ENV FCFLAGS="-I/usr/local/include"
-ENV CFLAGS="-I/usr/local/include"
+ENV MPICH_FC="/opt/view/bin/gfortran"
+ENV MPICH_CC="/opt/view/bin/gcc"
+ENV FCFLAGS="-I/opt/view/include"
+ENV CFLAGS="-I/opt/view/include"
+ENV LDFLAGS="-L/opt/view/lib"
+ENV LD_LIBRARY_PATH="/opt/view/lib:/opt/view/lib64:/usr/local/lib:/usr/local/lib64"
+ENV PATH="/opt/view/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin"
