@@ -911,7 +911,7 @@ _EOF
 export OMP_NUM_THREADS=2
 my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end but it uses the openmp stuff(test $my_test_count)" '
-    mpirun -n 6 ../test_dm_openmp --export=ALL,OMP_NUM_THREADS=2 --cpus-per-task=2
+    mpirun -n 6 ../test_dm_openmp
   '
 else
   my_test_count=`expr $my_test_count + 1`
