@@ -20,6 +20,16 @@
 ! Check monin_obukhov_mod calculations against an array of known answer keys.
 ! Each answer key should correspond to a particular hardware/compiler/flags combination.
 
+! Express a real array as an integer array via transfer(), and reshape the result
+! to match the shape of the original data
+#define INT_(arr)  reshape(transfer(arr, mi), shape(arr))
+
+! Promote a dimension(n) array to dimension(n,n) by making n copies of the original data
+#define ARR_2D_(arr) spread(arr, 2, size(arr))
+
+! Promote a dimension(n) array to dimension(n,n,n) by making n*n copies of the original data
+#define ARR_3D_(arr) spread(ARR_2D_(arr), 3, size(arr))
+
 program test_monin_obukhov
   use monin_obukhov_mod
   use mpp_mod, only: mpp_error, FATAL, stdout, mpp_init, mpp_exit, input_nml_file
@@ -28,18 +38,6 @@ program test_monin_obukhov
   use fms_string_utils_mod, only: string
 
   implicit none
-
-  ! Promote a dimension(n) array to a dimension(n,n) array by making n copies of
-  ! the original data
-  interface arr_2d
-    procedure arr_2d_real
-  end interface
-
-  ! Promote a dimension(n) array to a dimension(n,n,n) array by making n*n copies
-  ! of the original data
-  interface arr_3d
-    procedure arr_3d_real
-  end interface
 
 #if MO_TEST_KIND_ == 4
   integer, parameter :: kr = r4_kind
@@ -50,10 +48,6 @@ program test_monin_obukhov
 #endif
 
   integer(ki), parameter :: mi(1) = [0_ki] !< Mold for transfer() intrinsic
-
-! Express a real array as an integer array via transfer(), and reshape the result
-! to match the shape of the original data
-#define INT_(arr)  reshape(transfer(arr, mi), shape(arr))
 
   !< Shapes of arrays passed to monin_obukhov_mod subroutines
   integer, parameter :: n_1d = 5, &
@@ -242,8 +236,8 @@ program test_monin_obukhov
         call mo_drag(in%pt, in%pt0, in%z, in%z0, in%zt, in%zq, in%speed, &
                    & drag_m_1d, drag_t_1d, drag_q_1d, u_star_1d, b_star_1d, drag_input%avail)
 
-        call mo_drag(arr_2d(in%pt), arr_2d(in%pt0), arr_2d(in%z), arr_2d(in%z0), &
-                   & arr_2d(in%zt), arr_2d(in%zq), arr_2d(in%speed), &
+        call mo_drag(ARR_2D_(in%pt), ARR_2D_(in%pt0), ARR_2D_(in%z), ARR_2D_(in%z0), &
+                   & ARR_2D_(in%zt), ARR_2D_(in%zq), ARR_2D_(in%speed), &
                    & drag_m_2d, drag_t_2d, drag_q_2d, u_star_2d, b_star_2d)
       end associate
 
@@ -275,8 +269,8 @@ program test_monin_obukhov
 
       associate (in => stable_mix_input)
         call stable_mix(in%rich, mix_1d)
-        call stable_mix(arr_2d(in%rich), mix_2d)
-        call stable_mix(arr_3d(in%rich), mix_3d)
+        call stable_mix(ARR_2D_(in%rich), mix_2d)
+        call stable_mix(ARR_3D_(in%rich), mix_3d)
       end associate
 
       associate (ans => stable_mix_answers(n_answers+1))
@@ -323,9 +317,9 @@ program test_monin_obukhov
                       & in%u_star, in%b_star, in%q_star, &
                       & del_m_1d, del_t_1d, del_q_1d, in%avail)
 
-        call mo_profile(in%zref, in%zref_t, arr_2d(in%z), &
-                      & arr_2d(in%z0), arr_2d(in%zt), arr_2d(in%zq), &
-                      & arr_2d(in%u_star), arr_2d(in%b_star), arr_2d(in%q_star), &
+        call mo_profile(in%zref, in%zref_t, ARR_2D_(in%z), &
+                      & ARR_2D_(in%z0), ARR_2D_(in%zt), ARR_2D_(in%zq), &
+                      & ARR_2D_(in%u_star), ARR_2D_(in%b_star), ARR_2D_(in%q_star), &
                       & del_m_2d, del_t_2d, del_q_2d)
       end associate
 
@@ -505,34 +499,4 @@ program test_monin_obukhov
         enddo
       enddo
     end subroutine
-
-    !< Promote a real 1D array to 2D, by making n copies
-    function arr_2d_real(arr) result(res)
-      real(kr), dimension(:), intent(in) :: arr
-      real(kr), dimension(:, :), allocatable :: res
-      integer :: i, n
-
-      n = size(arr)
-      allocate(res(n, n))
-
-      do i = 1, n
-        res(:, i) = arr
-      enddo
-    end function
-
-    !< Promote a real 1D array to 3D, by making n*n copies
-    function arr_3d_real(arr) result(res)
-      real(kr), dimension(:), intent(in) :: arr
-      real(kr), dimension(:, :, :), allocatable :: res
-      integer :: i, j, n
-
-      n = size(arr)
-      allocate(res(n, n, n))
-
-      do j = 1, n
-        do i = 1, n
-          res(:, i, j) = arr
-        enddo
-      enddo
-    end function
 end program test_monin_obukhov
