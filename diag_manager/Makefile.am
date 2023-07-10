@@ -70,7 +70,7 @@ fms_diag_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_file_objec
 fms_diag_field_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) \
                                         fms_diag_axis_object_mod.$(FC_MODEXT)
 fms_diag_file_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) fms_diag_field_object_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) \
-                                       fms_diag_axis_object_mod.$(FC_MODEXT)
+                                       fms_diag_axis_object_mod.$(FC_MODEXT) fms_diag_output_buffer_mod.$(FC_MODEXT)
 fms_diag_object_container_mod.$(FC_MODEXT): fms_diag_object_mod.$(FC_MODEXT) fms_diag_dlinked_list_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT)
 fms_diag_axis_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) \
                                        diag_grid_mod.$(FC_MODEXT)

@@ -61,6 +61,11 @@ end type fmsDiagOutputBuffer_class
 !> holds an allocated buffer0-5d object
 type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
+  integer, allocatable :: axis_ids(:)
+
+  contains
+  procedure :: add_axis_ids
+  procedure :: get_axis_ids
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -1425,5 +1430,30 @@ subroutine add_to_buffer_5d(this, input_data, field_name)
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_5d: mismatch between allocated buffer and input data types'//&
                                          'for field:'// field_name)
 end subroutine add_to_buffer_5d
+
+!> @brief Adds the axis ids to the buffer object
+subroutine add_axis_ids(this, axis_ids)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this
+  integer,                                  intent(in)    :: axis_ids(:)
+
+  this%axis_ids = axis_ids
+end subroutine
+
+!> @brief Get the axis_ids for the buffer
+!! @return Axis_ids
+function get_axis_ids(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this
+  integer, allocatable :: res(:)
+
+  if (allocated(this%axis_ids)) then
+    res = this%axis_ids
+  else
+    allocate(res(1))
+    res = diag_null
+  endif
+end function
+
 #endif
 end module fms_diag_output_buffer_mod

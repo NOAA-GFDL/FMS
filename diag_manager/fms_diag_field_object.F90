@@ -239,7 +239,7 @@ subroutine fms_register_diag_field_obj &
   if (present(axes)) then
     this%scalar = .false.
     this%axis_ids = axes
-    call get_domain_and_domain_type(diag_axis, this%axis_ids, this%type_of_domain, this%domain, this%varname)
+    call get_domain_and_domain_type(diag_axis, axes, this%type_of_domain, this%domain, this%varname)
   else
     !> The variable is a scalar
     this%scalar = .true.
