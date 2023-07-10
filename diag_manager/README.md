@@ -1,9 +1,9 @@
 ## Diag Table Yaml Format:
 
-The purpose of this documents is to explain the diag_table yaml format.
+The purpose of this document is to explain the diag_table yaml format.
 
 ## Contents
-- [1. Coverting from legacy ascii diag_table format](README.md#1-coverting-from-legacy-ascii-diag_table-format)
+- [1. Converting from legacy ascii diag_table format](README.md#1-converting-from-legacy-ascii-diag_table-format)
 - [2. Diag table yaml sections](README.md#2-diag-table-yaml-sections)
 - [2.1 Global Section](README.md#21-global-section)
 - [2.2 File Section](README.md#22-file-section)
@@ -15,7 +15,7 @@ The purpose of this documents is to explain the diag_table yaml format.
 - [2.6 Sub_region Section](README.md#26-sub_region-section)
 - [3. More examples](README.md#3-more-examples)
 
-### 1. Coverting from legacy ascii diag_table format
+### 1. Converting from legacy ascii diag_table format
 
 To convert the legacy ascii diad_table format to this yaml format, the python script [**diag_table_to_yaml.py**](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/aafc3293d45df2fc173d3c7afd8b8b0adc18fde4/fms_yaml_tools/diag_table/diag_table_to_yaml.py#L23-L26) can be used. To confirm that your diag_table.yaml was created correctly, the python script [**is_valid_diag_table_yaml.py**](https://github.com/NOAA-GFDL/fms_yaml_tools/blob/aafc3293d45df2fc173d3c7afd8b8b0adc18fde4/fms_yaml_tools/diag_table/is_valid_diag_table_yaml.py#L24-L27) can be used.
 
@@ -41,8 +41,8 @@ diag_files:
 
 ### 2.1 Global Section
 The diag_yaml requires “title” and the “baseDate”.
-- The **title** is a string that labels the diag yaml.  The equivalent in the diag table would be the experiment.  It is recommended that each diag_yaml have a separate title label that is descriptive of the experiment that is using it.
-- The **basedate** is an array of 6 integer indicating the base_date in the format [year month day hour minute second].
+- The **title** is a string that labels the diag yaml.  The equivalent in the legacy diag_table would be the experiment.  It is recommended that each diag_yaml have a separate title label that is descriptive of the experiment that is using it.
+- The **basedate** is an array of 6 integers indicating the base_date in the format [year month day hour minute second].
 
 **Example:**
 
@@ -62,8 +62,8 @@ ESM4_piControl
 The files are listed under the diagFiles section as a dashed array.
 
 Below are the **required** keys needed to define each file.
-- **file_name** is a string that defines the name of the file. Do not add ".nc" and "tileX" to the filename as this will handle by FMS.
-- **freq** is a string that defines the frequency and the units that data will be written.
+- **file_name** is a string that defines the name of the file. Do not add ".nc" and "tileX" to the filename as this will be handled by FMS.
+- **freq** is a string that defines the frequency and the units that data will be written (with a space between the frequency number and units)
   - The acceptable values for freq are:
     - =-1: output at the end of the run only
     - =0: output every timestep
@@ -95,7 +95,7 @@ In the legacy ascii format:
 
 Below are some *optional* keys that may be added.
 - **write_file** is a logical that indicates if you want the file to be created (default is true). This is a new feature that is not supported by the legacy ascii data_table.
-- **new_file_freq** is a string that defines the frequency and the frequency units for closing the existing file
+- **new_file_freq** is a string that defines the frequency and the frequency units (with a space between the frequency number and units) for closing the existing file
 - **start_time** is an array of 6 integer indicating when to start the file for the first time. It is in the format [year month day hour minute second]. Requires “new_file_freq”
 - **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will use the begining of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
 
@@ -132,7 +132,7 @@ ocn_2020_01_01_21.nc for time_bnds [18,24]
 
 ### 2.2.1 Flexible output timings
 
-In order to provide more flexibility in output timings, the new diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `new_file_freq`, and  `file_duration` keys to accept a comma seperated list.
+In order to provide more flexibility in output timings, the diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `new_file_freq`, and  `file_duration` keys to accept a comma seperated list.
 
 For example,
 ``` yaml
@@ -207,7 +207,7 @@ In the legacy ascii format:
 ```
 "moist",     "precip",                         "precip",           "atmos_8xdaily",   "all", .true.,  "none", 2
 ```
-**NOTE:** The fifth column (time_sampling) has be deprecated. The reduction_method (`.true.`) has been replaced with `average`. The output name was not included in the yaml because it is the same as the var_name.
+**NOTE:** The fifth column (time_sampling) has been deprecated. The reduction_method (`.true.`) has been replaced with `average`. The output name was not included in the yaml because it is the same as the var_name.
 
 which corresponds to the following model code
 ```F90
@@ -227,7 +227,7 @@ Below are some *optional* keys that may be added.
 - **zbounds:** is a 2 member array of integers that define the bounds of the z axis (zmin, zmin), optional default is no limits.
 
 ### 2.4 Variable Metadata Section
-Any aditional variable attributes can be added for each varible can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
+Any aditional variable attributes can be added for each variable can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
 
 **Example:**
 
