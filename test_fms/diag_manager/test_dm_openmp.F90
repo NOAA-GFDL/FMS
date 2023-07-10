@@ -43,6 +43,7 @@ program test_diag_openmp
   integer                            :: js           !< Starting y compute index
   integer                            :: je           !< Ending y compute index
   type(time_type)                    :: Time         !< Time of the simulation
+  type(time_type)                    :: Time_step    !< Time of the simulation
   real,    dimension(:), allocatable :: x            !< X axis data
   integer                            :: id_x         !< axis id for the x dimension
   real,    dimension(:), allocatable :: y            !< Y axis_data
@@ -99,6 +100,7 @@ program test_diag_openmp
   call define_blocks ('testing_model', my_block, is, ie, js, je, kpts=0, &
                       nx_block=1, ny_block=4, message=message)
 
+  Time_step = set_time (3600,0) !< 1 hour
   do j = 1, 23 !simulated time
     Time = set_date(2,1,1,j,0,0)
     var = real(j, kind=r8_kind) !< Set the data
@@ -113,7 +115,7 @@ program test_diag_openmp
                      ie_in=iew, je_in=jew)
     enddo
 
-    call diag_send_complete(Time)
+    call diag_send_complete(Time_step)
   enddo
 
   call diag_manager_end(Time)
