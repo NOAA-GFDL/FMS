@@ -105,7 +105,8 @@ program test_diag_openmp
   !< Register the variables
   id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x/), Time, 'Var in a lon domain', 'mullions')
   id_var2 = register_diag_field  ('ocn_mod', 'var2', (/id_x, id_y/), Time, 'Var in a lon/lat domain', 'mullions')
-  id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'Var in a lon/lat/z domain', 'mullions')
+  id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, &
+    'Var in a lon/lat/z domain', 'mullions')
 
   call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
