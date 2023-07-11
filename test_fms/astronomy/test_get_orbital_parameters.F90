@@ -35,10 +35,9 @@ program test_get_parameters
 
   implicit none
 
-  integer, parameter        :: lkind = TEST_AST_KIND_
-  real(kind=TEST_AST_KIND_) :: ecc   = 0.01671_lkind
-  real(kind=TEST_AST_KIND_) :: obliq = 23.439_lkind
-  real(kind=TEST_AST_KIND_) :: per   = 102.932_lkind
+  real(kind=r8_kind) :: ecc   = 0.01671_r8_kind
+  real(kind=r8_kind) :: obliq = 23.439_r8_kind
+  real(kind=r8_kind) :: per   = 102.932_r8_kind
 
 
   call fms_init()
@@ -54,12 +53,20 @@ program test_get_parameters
   subroutine test_get_orbital_parameters
 
     implicit none
-    real(kind=TEST_AST_KIND_) :: ecc_check, obliq_check, per_check
+    real(kind=r8_kind) :: ecc_check, obliq_check, per_check
 
     call get_orbital_parameters(ecc_check, obliq_check, per_check)
 
-    if ((ecc_check .ne. ecc) .and. (obliq_check .ne. obliq) .and. (per_check .ne. per)) then
-        call mpp_error(FATAL, "test_get_orbital_parameters: value(s) are unexpected")
+    if (ecc_check .ne. ecc) then
+      call mpp_error(FATAL, "test_get_orbital_parameters: eccentricity precision was lost by ", &
+           abs(ecc - ecc_check))
+    else if (obliq_check .ne. obliq) then
+      call mpp_error(FATAL, "test_get_orbital_parameters: obliquity precision was lost by ", &
+            abs(obliq - obliq_check))
+    else if (per .ne. per_check) then
+      call mpp_error(FATAL, "test_get_orbital_parameters: perihelion precision was lost by ", &
+            abs(per - per_check))
+    else
     end if
 
   end subroutine test_get_orbital_parameters

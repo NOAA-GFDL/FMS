@@ -35,14 +35,13 @@ program test_daily_solar
 
   implicit none
 
-  integer, parameter                   :: lkind = TEST_AST_KIND_
-  real(kind=TEST_AST_KIND_), parameter :: twopi = 2.0_lkind * real(PI, TEST_AST_KIND_)
-  real(kind=TEST_AST_KIND_), parameter :: deg_to_rad = twopi/360.0_lkind
+  real(kind=r8_kind), parameter :: twopi = 2.0_r8_kind * real(PI, r8_kind)
+  real(kind=r8_kind), parameter :: deg_to_rad = twopi/360.0_r8_kind
 
 
-  real(kind=TEST_AST_KIND_)   :: ecc   = 0.01671_lkind  !< Eccentricity of Earth's orbit [dimensionless]
-  real(kind=TEST_AST_KIND_)   :: obliq = 23.439_lkind   !< Obliquity [degrees]
-  real(kind=TEST_AST_KIND_)   :: per   = 102.932_lkind  !< Longitude of perihelion with respect
+  real(kind=r8_kind)   :: ecc   = 0.01671_r8_kind  !< Eccentricity of Earth's orbit [dimensionless]
+  real(kind=r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
+  real(kind=r8_kind)   :: per   = 102.932_r8_kind  !< Longitude of perihelion with respect
 
   call fms_init()
   call set_calendar_type(JULIAN)
@@ -50,282 +49,313 @@ program test_daily_solar
 
   call test_daily_mean_solar_2d
   call test_daily_mean_solar_1d
-  call test_daily_mean_2level
+  call test_daily_mean_solar_2level
   call test_daily_mean_solar_0d
 
   call fms_end()
 
   contains
 
-  ! create reference values to test daily_mean_solar_2d
-  subroutine create_ref_values_2d(lat, dec, ang, h, cosz, rr_out, h_out)
-
-    implicit none
-    real(kind=TEST_AST_KIND_), intent(in), dimension(4,4)  :: lat, h
-    real(kind=TEST_AST_KIND_), intent(in)                  :: ang
-    real(kind=TEST_AST_KIND_), intent(inout)               :: dec
-    real(kind=TEST_AST_KIND_), intent(out), dimension(4,4) :: cosz, h_out
-    real(kind=TEST_AST_KIND_), intent(out)                 :: rr_out
-    real(kind=TEST_AST_KIND_)                              :: rad_per, rr, rad_obliq, sin_dec
-    integer, parameter                                     :: lkind = TEST_AST_KIND_
-
-    ! rr_out calculation
-    rad_per = per * deg_to_rad
-    rr = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
-    rr_out = rr**(-2)
-
-    ! declination calculation
-    rad_obliq    = obliq * deg_to_rad
-    sin_dec      = - sin(rad_obliq)*sin(ang)
-    dec          = asin(sin_dec)
-
-    ! cosz calculation
-    where (h == 0.0_lkind)
-          cosz = 0.0_lkind
-    elsewhere
-          cosz = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
-    end where
-
-    ! h_out
-    h_out = h / real(PI, TEST_AST_KIND_)
-
-  end subroutine create_ref_values_2d
-
+    ! test routines below, reference values created below
   subroutine test_daily_mean_solar_2d
 
     implicit none
-    real(kind=TEST_AST_KIND_), dimension(4,4) :: lat
-    real(kind=TEST_AST_KIND_)                 :: time_since_ae
-    real(kind=TEST_AST_KIND_)                 :: rr_out, ref_rr_out
-    real(kind=TEST_AST_KIND_)                 :: ang, dec
-    real(kind=TEST_AST_KIND_), dimension(4,4) :: cosz, h_out, h
-    real(kind=TEST_AST_KIND_), dimension(4,4) :: ref_cosz, ref_h_out
-    integer                                   :: i, j, counter
+    integer, parameter                        :: n = 4
+    real(kind=TEST_AST_KIND_), dimension(n,n) :: lat_2d, h_2d
+    real(kind=TEST_AST_KIND_)                 :: ang, time_since_ae
+    real(kind=TEST_AST_KIND_), dimension(n,n) :: cosz_2d, h_out_2d
+    real(kind=TEST_AST_KIND_), dimension(n,n) :: ref_cosz_2d, ref_h_out_2d
+    real(kind=TEST_AST_KIND_)                 :: rr_out, ref_rr_out, ref_dec
     integer, parameter                        :: lkind = TEST_AST_KIND_
+    integer                                   :: i, j, counter
 
-    time_since_ae = 0.0_lkind                          !time of year (NH autumnal equinox)
-    ang           = 0.0_lkind                          !angle(time_since_ae)
-    h             = real(PI,TEST_AST_KIND_)/2.0_lkind  !half_day(lat, dec)
-    lat           = 0.0_lkind
+    ! set input values
+    time_since_ae = 0.0_lkind
+    ang           = 0.0_lkind
+    h_2d          = real(PI,TEST_AST_KIND_)/2.0_lkind
 
     counter = 1
     do i = 1, 4
       do j = 1, 4
-        lat(j,i) = real(counter, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+        lat_2d(j,i) = real(counter, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
         counter = counter + 1
       end do
     end do
 
-    call create_ref_values_2d(lat, dec, ang, h, ref_cosz, ref_rr_out, ref_h_out)
-    call daily_mean_solar(lat, time_since_ae, cosz, h_out, rr_out)
+    call create_ref_rr_out(ang, ref_rr_out)
+    call create_ref_declination(ang, ref_dec)
+    call create_ref_h_out_2d(h_2d, ref_h_out_2d)
+    call create_ref_cosz_2d(lat_2d, h_2d, ref_dec, ref_cosz_2d)
+
+    call daily_mean_solar(lat_2d, time_since_ae, cosz_2d, h_out_2d, rr_out)
 
     do i = 1, 4
       do j = 1, 4
-        if (abs(ref_cosz(i,j) - cosz(i,J)) .gt. real(1E-07,TEST_AST_KIND_)) then
-          print *, ref_cosz, " @ ", i,j, " does not equal ", cosz
+        if (ref_cosz_2d(i,j) .ne. cosz_2d(i,j)) then
+          print *, ref_cosz_2d(i,j), " @ ", i,j, " does not equal ", cosz_2d(i,j)
           call mpp_error(FATAL, "test_daily_mean_solar: 2d cosz value does not match reference value")
         end if
-        if (abs(ref_h_out(i,j) - h_out(i,j)) .gt. real(1E-07,TEST_AST_KIND_)) then
-          print *, ref_h_out, " @ ", i,j, " does not equal ", h_out
+
+        if (ref_h_out_2d(i,j) .ne. h_out_2d(i,j)) then
+          print *, ref_h_out_2d(i,j), " @ ", i,j, " does not equal ", h_out_2d(i,j)
           call mpp_error(FATAL, "test_daily_mean_solar: 2d h_out value does not match reference value")
         end if
       end do
     end do
 
-    if (abs(ref_rr_out - rr_out) .gt. real(1E-07,TEST_AST_KIND_)) then
+    if (ref_rr_out .ne. rr_out) then
       print *, ref_rr_out, " does not equal ", rr_out
-      call mpp_error(FATAL, "test_daily_mean_solar: 2d rr_out value does not match reference value")
+      call mpp_error(FATAL, "test_daily_mean_solar_cal: 2d rr_out value does not match reference value")
     end if
 
   end subroutine test_daily_mean_solar_2d
 
-  ! create reference values to test daily_mean_solar_1d and daily_mean_solar_2level
-  subroutine create_ref_values_1d(lat, dec, ang, h, cosz, rr_out, h_out, solar)
-
-    implicit none
-    real(kind=TEST_AST_KIND_), intent(in), dimension(16)            :: lat, h
-    real(kind=TEST_AST_KIND_), intent(in)                           :: ang
-    real(kind=TEST_AST_KIND_), intent(inout)                        :: dec
-    real(kind=TEST_AST_KIND_), intent(out), dimension(16)           :: cosz, h_out
-    real(kind=TEST_AST_KIND_), intent(out), dimension(16), optional :: solar
-    real(kind=TEST_AST_KIND_), intent(out)                          :: rr_out
-    real(kind=TEST_AST_KIND_)                                       :: rad_per, rr, rad_obliq, sin_dec
-    integer, parameter                                              :: lkind = TEST_AST_KIND_
-
-    ! rr_out calculation
-    rad_per = per * deg_to_rad
-    rr      = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
-    rr_out  = rr**(-2)
-
-    ! declination calculation
-    rad_obliq    = obliq * deg_to_rad
-    sin_dec      = - sin(rad_obliq)*sin(ang)
-    dec          = asin(sin_dec)
-
-    ! cosz calculation
-    where (h == 0.0_lkind)
-          cosz = 0.0_lkind
-    elsewhere
-          cosz = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
-    end where
-
-    ! h_out
-    h_out = h / real(PI, TEST_AST_KIND_)
-
-    ! solar for 2level
-    if (present(solar)) solar = cosz * h_out * rr_out
-
-  end subroutine create_ref_values_1d
-
   subroutine test_daily_mean_solar_1d
 
     implicit none
-    real(kind=TEST_AST_KIND_), dimension(16) :: lat
-    real(kind=TEST_AST_KIND_)                :: time_since_ae
-    real(kind=TEST_AST_KIND_)                :: rr_out, ref_rr_out
-    real(kind=TEST_AST_KIND_)                :: ang, dec
-    real(kind=TEST_AST_KIND_), dimension(16) :: cosz, h_out, h
-    real(kind=TEST_AST_KIND_), dimension(16) :: ref_cosz, ref_h_out
-    integer                                  :: i
-    integer, parameter                       :: lkind = TEST_AST_KIND_
+    integer, parameter                      :: n = 16
+    real(kind=TEST_AST_KIND_), dimension(n) :: lat_1d, h_1d
+    real(kind=TEST_AST_KIND_)               :: ang, time_since_ae
+    real(kind=TEST_AST_KIND_), dimension(n) :: cosz_1d, h_out_1d
+    real(kind=TEST_AST_KIND_), dimension(n) :: ref_cosz_1d, ref_h_out_1d
+    real(kind=TEST_AST_KIND_)               :: rr_out, ref_rr_out, ref_dec
+    integer, parameter                      :: lkind = TEST_AST_KIND_
+    integer                                 :: i
 
-    time_since_ae = 0.0_lkind !time of year (autumnal equinox)
-    ang           = 0.0_lkind           !angle(time_since_ae)
-    h             = real(PI,TEST_AST_KIND_)/2.0_lkind        !half_day(lat, dec)
-    lat           = 0.0_lkind
-
-    do i = 1, 16
-      lat(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
-    end do
-
-    call create_ref_values_1d(lat, dec, ang, h, ref_cosz, ref_rr_out, ref_h_out)
-    call daily_mean_solar(lat, time_since_ae, cosz, h_out, rr_out)
+    ! set input values
+    time_since_ae = 0.0_lkind
+    ang           = 0.0_lkind
+    h_1d          = real(PI,TEST_AST_KIND_)/2.0_lkind
 
     do i = 1, 16
-      if (abs(ref_cosz(i) - cosz(i)) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_cosz(i), " @ ", i, " does not equal ", cosz(i)
-        call mpp_error(FATAL, "test_daily_mean_solar: 1d cosz value does not match reference value")
-      end if
-      if (abs(ref_h_out(i) - h_out(i)) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_h_out(i), " @ ", i, " does not equal ", h_out(i)
-        call mpp_error(FATAL, "test_daily_mean_solar: 1d h_out value does not match reference value")
-      end if
+      lat_1d(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
     end do
 
-    if (abs(ref_rr_out - rr_out) .gt. real(1E-07,TEST_AST_KIND_)) then
+    call create_ref_rr_out(ang, ref_rr_out)
+    call create_ref_declination(ang, ref_dec)
+    call create_ref_h_out_1d(h_1d, ref_h_out_1d)
+    call create_ref_cosz_1d(lat_1d, h_1d, ref_dec, ref_cosz_1d)
+
+    call daily_mean_solar(lat_1d, time_since_ae, cosz_1d, h_out_1d, rr_out)
+
+    do i = 1, 16
+        if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
+          print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
+          call mpp_error(FATAL, "test_daily_mean_solar: 1d cosz value does not match reference value")
+        end if
+
+        if (ref_h_out_1d(i) .ne. h_out_1d(i)) then
+          print *, ref_h_out_1d(i), " @ ", i, " does not equal ", h_out_1d(i)
+          call mpp_error(FATAL, "test_daily_mean_solar: 1d h_out value does not match reference value")
+        end if
+    end do
+
+    if (ref_rr_out .ne. rr_out) then
       print *, ref_rr_out, " does not equal ", rr_out
-      call mpp_error(FATAL, "test_daily_mean_solar: 1d rr_out value does not match reference value")
+      call mpp_error(FATAL, "test_daily_mean_solar_cal: 1d rr_out value does not match reference value")
     end if
 
   end subroutine test_daily_mean_solar_1d
 
-  subroutine test_daily_mean_2level
+  subroutine test_daily_mean_solar_2level
 
     implicit none
-    real(kind=TEST_AST_KIND_), dimension(16) :: lat
-    real(kind=TEST_AST_KIND_)                :: time_since_ae
-    real(kind=TEST_AST_KIND_)                :: ref_rr_out
-    real(kind=TEST_AST_KIND_)                :: ang, dec
-    real(kind=TEST_AST_KIND_), dimension(16) :: cosz, h, solar
-    real(kind=TEST_AST_KIND_), dimension(16) :: ref_cosz, ref_h_out, ref_solar
-    integer                                  :: i
-    integer, parameter                       :: lkind = TEST_AST_KIND_
+    integer, parameter                      :: n = 16
+    real(kind=TEST_AST_KIND_), dimension(n) :: lat_1d, h_1d
+    real(kind=TEST_AST_KIND_)               :: ang, time_since_ae
+    real(kind=TEST_AST_KIND_), dimension(n) :: cosz_1d, ref_solar, ref_h_out_1d
+    real(kind=TEST_AST_KIND_), dimension(n) :: ref_cosz_1d, solar, h_out_1d
+    real(kind=TEST_AST_KIND_)               :: rr_out, ref_rr_out, ref_dec
+    integer, parameter                      :: lkind = TEST_AST_KIND_
+    integer                                 :: i
 
-    time_since_ae = 0.0_lkind !time of year (autumnal equinox)
-    ang           = 0.0_lkind           !angle(time_since_ae)
-    h             = real(PI,TEST_AST_KIND_)/2.0_lkind        !half_day(lat, dec)
-    lat           = 0.0_lkind
-
-    do i = 1, 16
-      lat(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
-    end do
-
-    call create_ref_values_1d(lat, dec, ang, h, ref_cosz, ref_rr_out, ref_h_out, ref_solar)
-    call daily_mean_solar(lat, time_since_ae, cosz, solar)
+    ! set input values
+    time_since_ae = 0.0_lkind
+    ang           = 0.0_lkind
+    h_1d          = real(PI,TEST_AST_KIND_)/2.0_lkind
 
     do i = 1, 16
-      if (abs(ref_cosz(i) - cosz(i)) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_cosz(i), " @ ", i, " does not equal ", cosz(i)
-        call mpp_error(FATAL, "test_daily_mean_solar: 2level cosz value does not match reference value")
-      end if
-      if (abs(ref_solar(i) - solar(i)) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_solar(i), " @ ", i, " does not equal ", solar(i)
-        call mpp_error(FATAL, "test_daily_mean_solar: 2level solar value does not match reference value")
-      end if
+      lat_1d(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
     end do
 
-  end subroutine
+    call create_ref_rr_out(ang, ref_rr_out)
+    call create_ref_declination(ang, ref_dec)
+    call create_ref_h_out_1d(h_1d, ref_h_out_1d)
+    call create_ref_cosz_1d(lat_1d, h_1d, ref_dec, ref_cosz_1d)
 
-  ! create reference values to test daily_mean_solar_0d
-  subroutine create_ref_values_0d(lat, dec, ang, h, cosz, rr_out, h_out)
+    ! calculate ref_solar value fracday == h_out
+    ref_solar = ref_cosz_1d * ref_h_out_1d * ref_rr_out
 
-    implicit none
-    real(kind=TEST_AST_KIND_), intent(in)    :: lat, ang
-    real(kind=TEST_AST_KIND_), intent(inout) :: h, dec
-    real(kind=TEST_AST_KIND_), intent(out)   :: cosz, rr_out, h_out
-    real(kind=TEST_AST_KIND_)                :: rad_per, rr, rad_obliq, sin_dec
-    integer, parameter                       :: lkind = TEST_AST_KIND_
+    call daily_mean_solar(lat_1d, time_since_ae, cosz_1d, solar)
 
-    ! rr_out calculation
-    rad_per = per * deg_to_rad
-    rr      = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
-    rr_out  = rr**(-2)
+    do i = 1, 16
+        if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
+          print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
+          call mpp_error(FATAL, "test_daily_mean_solar: 2level cosz value does not match reference value")
+        end if
 
-    ! declination calculation
-    rad_obliq    = obliq * deg_to_rad
-    sin_dec      = - sin(rad_obliq)*sin(ang)
-    dec          = asin(sin_dec)
+        if (ref_solar(i) .ne. solar(i)) then
+          print *, ref_solar(i), " @ ", i, " does not equal ", solar(i)
+          call mpp_error(FATAL, "test_daily_mean_solar: 2level solar value does not match reference value")
+        end if
+    end do
 
-    ! cosz calculation
-    if (h == 0.0_lkind) then
-      cosz = 0.0_lkind
-    else
-      cosz = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
-    endif
-
-    ! h_out
-    h_out = h / real(PI, TEST_AST_KIND_)
-
-  end subroutine create_ref_values_0d
+  end subroutine test_daily_mean_solar_2level
 
   subroutine test_daily_mean_solar_0d
 
     implicit none
-    real(kind=TEST_AST_KIND_) :: time_since_ae, ang, dec, h, lat
-    real(kind=TEST_AST_KIND_) :: cosz, h_out, rr_out
-    real(kind=TEST_AST_KIND_) :: ref_cosz, ref_rr_out, ref_h_out
-    integer                   :: i
+    real(kind=TEST_AST_KIND_) :: ang, h, lat, time_since_ae
+    type(time_type)           :: time
+    real(kind=TEST_AST_KIND_) :: cosz_0d, h_out_0d, rr_out
+    real(kind=TEST_AST_KIND_) :: ref_cosz_0d, ref_rr_out, ref_dec, ref_h_out_0d
     integer, parameter        :: lkind = TEST_AST_KIND_
+    integer                   :: i
 
-
-    time_since_ae = 0.0_lkind
+    ! set input values
+    time_since_ae = 0.0_lkind 
     ang           = 0.0_lkind
     h             = real(PI,TEST_AST_KIND_)/2.0_lkind
-    lat           = 0.0_lkind
 
-    do i = 0, 16
+    do i = 1, 16
       lat = real(i,TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
 
-      call daily_mean_solar(lat, time_since_ae, cosz, h_out, rr_out)
-      call create_ref_values_0d(lat, dec, ang, h, ref_cosz, ref_rr_out, ref_h_out)
+      call create_ref_rr_out(ang, ref_rr_out)
+      call create_ref_declination(ang, ref_dec)
+      call create_ref_h_out_0d(h, ref_h_out_0d)
+      call create_ref_cosz_0d(lat, h, ref_dec, ref_cosz_0d)
 
-      if (abs(ref_cosz - cosz) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_cosz, " @ ", i, " does not equal ", cosz
-        call mpp_error(FATAL, "test_daily_mean_solar: 0d cosz value does not match reference value")
+      call daily_mean_solar(lat, time_since_ae, cosz_0d, h_out_0d, rr_out)
+
+      if (ref_cosz_0d .ne. cosz_0d) then
+        print *, ref_cosz_0d, "@", i, " does not equal ", cosz_0d
+        call mpp_error(FATAL, "test_daily_mean_solar_cal: 0d cosz value does not match reference value")
       end if
 
-      if (abs(ref_rr_out - rr_out) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_rr_out, " @ ", i, " does not equal ", rr_out
-        call mpp_error(FATAL, "test_daily_mean_solar: 0d rr_out value does not match reference value")
+      if (ref_h_out_0d .ne. h_out_0d) then
+        print *, ref_h_out_0d, "@", i, " does not equal ", h_out_0d
+        call mpp_error(FATAL, "test_daily_mean_solar_cal: 0d h_out value does not match reference value")
       end if
 
-      if (abs(ref_h_out - h_out) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_h_out, " @ ", i, " does not equal ", h_out
-        call mpp_error(FATAL, "test_daily_mean_solar: 0d h_out value does not match reference value")
+      if (ref_rr_out .ne. rr_out) then
+        print *, ref_rr_out, "@", i, " does not equal ", rr_out
+        call mpp_error(FATAL, "test_daily_mean_solar_cal: 0d rr_out value does not match reference value")
       end if
-
     end do
 
   end subroutine test_daily_mean_solar_0d
+
+  ! create all reference values
+  subroutine create_ref_rr_out(ang, rr_out)
+
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)  :: ang
+    real(kind=TEST_AST_KIND_), intent(out) :: rr_out
+    real(kind=TEST_AST_KIND_)              :: rad_per, rr
+    integer, parameter                     :: lkind = TEST_AST_KIND_
+  
+    rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
+    rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
+    rr_out  = rr**(-2)
+  
+  end subroutine create_ref_rr_out
+  
+  subroutine create_ref_declination(ang, dec)
+  
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)  :: ang
+    real(kind=TEST_AST_KIND_), intent(out) :: dec
+    real(kind=TEST_AST_KIND_)              :: rad_obliq, sin_dec
+  
+    rad_obliq    = real(obliq, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
+    sin_dec      = - sin(rad_obliq)*sin(ang)
+    dec          = asin(sin_dec)
+  
+  end subroutine create_ref_declination
+
+  subroutine create_ref_h_out_2d(h_2d, h_out_2d)
+  
+    implicit none
+    integer, parameter                                     :: n = 4
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: h_2d
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: h_out_2d
+  
+    h_out_2d = h_2d / real(PI, TEST_AST_KIND_)
+  
+  end subroutine create_ref_h_out_2d
+  
+  subroutine create_ref_h_out_1d(h_1d, h_out_1d)
+  
+    implicit none
+    integer, parameter                                   :: n = 16
+    real(kind=TEST_AST_KIND_), intent(in),  dimension(n) :: h_1d
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n) :: h_out_1d
+  
+    h_out_1d = h_1d / real(PI, TEST_AST_KIND_)
+  
+  end subroutine create_ref_h_out_1d
+  
+  subroutine create_ref_h_out_0d(h_0d, h_out_0d)
+  
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)  :: h_0d
+    real(kind=TEST_AST_KIND_), intent(out) :: h_out_0d
+  
+    h_out_0d = h_0d / real(PI, TEST_AST_KIND_)
+  
+  end subroutine create_ref_h_out_0d
+
+  subroutine create_ref_cosz_2d(lat, h, dec, cosz_2d)
+  
+    implicit none
+    integer, parameter                                     :: n = 4
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat, h
+    real(kind=TEST_AST_KIND_), intent(inout)               :: dec
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: cosz_2d
+    integer, parameter                                     :: lkind = TEST_AST_KIND_
+    
+    ! cosz calculation
+    where (h == 0.0_lkind)
+      cosz_2d = 0.0_lkind
+    else where
+      cosz_2d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
+    end where
+  
+  end subroutine create_ref_cosz_2d
+
+  subroutine create_ref_cosz_1d(lat, h, dec, cosz_1d)
+  
+    implicit none
+    integer, parameter                                     :: n = 16
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n)    :: lat, h
+    real(kind=TEST_AST_KIND_), intent(inout)               :: dec
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n)   :: cosz_1d
+    integer, parameter                                     :: lkind = TEST_AST_KIND_
+    
+    ! cosz calculation
+    where (h == 0.0_lkind)
+      cosz_1d = 0.0_lkind
+    else where
+      cosz_1d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
+    end where
+  
+  end subroutine create_ref_cosz_1d
+  
+  subroutine create_ref_cosz_0d(lat, h, dec, cosz_0d)
+  
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)    :: lat, h
+    real(kind=TEST_AST_KIND_), intent(inout) :: dec
+    real(kind=TEST_AST_KIND_), intent(out)   :: cosz_0d
+    integer, parameter                       :: lkind = TEST_AST_KIND_
+    
+    ! cosz calculation
+    if (h == 0.0_lkind) then
+      cosz_0d = 0.0_lkind
+    else
+      cosz_0d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
+    endif
+  
+  end subroutine create_ref_cosz_0d
 
 end program test_daily_solar

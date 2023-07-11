@@ -36,9 +36,9 @@ program test_annual_2level
 
   implicit none
 
-  real(kind=TEST_AST_KIND_), parameter :: twopi = real(2.0, TEST_AST_KIND_) * real(PI, TEST_AST_KIND_)
-  real(kind=TEST_AST_KIND_), parameter :: deg_to_rad  = twopi/real(360.0,TEST_AST_KIND_)
-  integer                  :: num_angles = 3600
+  real(kind=r8_kind), parameter :: twopi = 2.0_r8_kind * real(PI, r8_kind)
+  real(kind=r8_kind), parameter :: deg_to_rad  = twopi/360.0_r8_kind
+  integer                       :: num_angles = 3600
 
 
   call fms_init()
@@ -55,20 +55,21 @@ program test_annual_2level
   subroutine create_ref_values_2level(jst, jnd, lat, cosz, solar, fracday, rrsun)
 
     implicit none
-    integer, intent(in)                                   :: jst, jnd
-    real(kind=TEST_AST_KIND_), intent(in), dimension(16)  :: lat
-    real(kind=TEST_AST_KIND_), intent(out), dimension(16) :: cosz, solar, fracday
-    real(kind=TEST_AST_KIND_), intent(out)                :: rrsun
-    real(kind=TEST_AST_KIND_)                             :: t
-    real(kind=TEST_AST_KIND_), dimension(16)              :: s, z
-    integer                                               :: n
-    integer, parameter                                    :: lkind = TEST_AST_KIND_
+    integer, parameter                                   :: n = 16
+    integer, intent(in)                                  :: jst, jnd
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n)  :: lat
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n) :: cosz, solar, fracday
+    real(kind=TEST_AST_KIND_), intent(out)               :: rrsun
+    real(kind=TEST_AST_KIND_)                            :: t
+    real(kind=TEST_AST_KIND_), dimension(n)              :: s, z
+    integer                                              :: i
+    integer, parameter                                   :: lkind = TEST_AST_KIND_
 
     solar = 0.0_lkind
     cosz  = 0.0_lkind
 
-    do n = 1, num_angles
-      t = real((n-1),TEST_AST_KIND_) * real(twopi,TEST_AST_KIND_) / real(num_angles,TEST_AST_KIND_)
+    do i = 1, num_angles
+      t = real((i-1),TEST_AST_KIND_) * real(twopi,TEST_AST_KIND_) / real(num_angles,TEST_AST_KIND_)
       call daily_mean_solar(lat, t, z, fracday, rrsun)
       s = z * rrsun * fracday
       solar = solar + s

@@ -34,9 +34,9 @@ program test_set_parameters
 
     implicit none
 
-    real(kind=TEST_AST_KIND_) :: ecc   = 0.01671
-    real(kind=TEST_AST_KIND_) :: obliq = 23.439
-    real(kind=TEST_AST_KIND_) :: per   = 102.932
+    real(kind=r8_kind) :: ecc   = 0.01671_r8_kind
+    real(kind=r8_kind) :: obliq = 23.439_r8_kind
+    real(kind=r8_kind) :: per   = 102.932_r8_kind
 
 
     call fms_init()
@@ -53,9 +53,9 @@ program test_set_parameters
     subroutine test_set_orbital_parameters
 
         implicit none
-        real(kind=TEST_AST_KIND_) :: ecc_in_check
-        real(kind=TEST_AST_KIND_) :: obliq_in_check
-        real(kind=TEST_AST_KIND_) :: per_in_check
+        real(kind=r8_kind) :: ecc_in_check
+        real(kind=r8_kind) :: obliq_in_check
+        real(kind=r8_kind) :: per_in_check
         integer, parameter :: lkind = TEST_AST_KIND_
 
         ! Eccentricity of Earth's orbit not in between 0.0 and 0.99

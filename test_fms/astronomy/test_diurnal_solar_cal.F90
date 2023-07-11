@@ -22,10 +22,9 @@
 !> @email gfdl.climate.model.info@noaa.gov
 !> @description Performs calculations done in astronomy_mod using the diurnal_solar
 !> interfaces using 32 and 64 bit reals
-!! TODO: Add more comprehensive testing with optional arguments for any dirunal
-!! solar interface
 !! TODO: XFAILS for out of bounds argument values
-!! TODO: A more comprehensive testing suite for any dirunal_solar_cal routines
+!! TODO: A more comprehensive testing suite with larger range of time_type times
+!! TODO: A more comprehensive testing suite for any dirunal_solar_cal routines using optional arguments
 
 program test_diurnal_solar_cal
 
@@ -38,13 +37,13 @@ program test_diurnal_solar_cal
 
   implicit none
 
-  real(kind=TEST_AST_KIND_), parameter :: twopi = real(2.0,TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)
-  real(kind=TEST_AST_KIND_), parameter :: deg_to_rad = twopi / real(360.0,TEST_AST_KIND_)
+  real(kind=r8_kind), parameter :: twopi = 2.0_r8_kind * real(PI, r8_kind)
+  real(kind=r8_kind), parameter :: deg_to_rad = twopi / 360.0_r8_kind
   
 
-  real(kind=TEST_AST_KIND_)   :: ecc   = 0.01671  !< Eccentricity of Earth's orbit [dimensionless]
-  real(kind=TEST_AST_KIND_)   :: obliq = 23.439   !< Obliquity [degrees]
-  real(kind=TEST_AST_KIND_)   :: per   = 102.932  !< Longitude of perihelion with respect
+  real(kind=r8_kind)   :: ecc   = 0.01671_r8_kind  !< Eccentricity of Earth's orbit [dimensionless]
+  real(kind=r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
+  real(kind=r8_kind)   :: per   = 102.932_r8_kind  !< Longitude of perihelion with respect
 
 
   call fms_init()
@@ -53,95 +52,849 @@ program test_diurnal_solar_cal
 
   call fms_end()
 
-  call test_diurnal_solar_2d
-  call test_diurnal_solar_1d
-  call test_diurnal_solar_0d
+  call test_diurnal_solar_cal_allow_neg_2d
+  call test_diurnal_solar_cal_allow_neg_1d 
+  call test_diurnal_solar_cal_allow_neg_0d
+
+  call test_diurnal_solar_cal_no_neg_2d
+  call test_diurnal_solar_cal_no_neg_1d
+  call test_diurnal_solar_cal_no_neg_0d
 
   contains
 
-  subroutine create_ref_values_0d(lat, lon, gmt, dec, ang, h, cosz, rr_out, fracday)
+  subroutine test_diurnal_solar_cal_allow_neg_2d
+    !! for this test, only the routine input variables lat and lon
+    !! will be changed since these are not dependent on private function calculations,
+    !! a more comprehensive test that includes different values for the 
+    !! time_type, orbit angle and declination should be created
+    !! this test will allow negative cosz (allow_negative_cosz=.true.)
+    implicit none
+    integer, parameter                        :: n = 4
+    real(kind=TEST_AST_KIND_), dimension(n,n) :: lat_2d, lon_2d, h
+    type(time_type)                           :: time
+    real(kind=TEST_AST_KIND_), dimension(n,n) :: ref_cosz_2d, cosz_2d, ref_fracday_2d, fracday_2d
+    real(kind=TEST_AST_KIND_)                 :: ref_rrsun, rrsun
+    real(kind=TEST_AST_KIND_)                 :: ang, dec
+    integer                                   :: i, j, counter
+    integer, parameter                        :: lkind = TEST_AST_KIND_
+
+    ! test only changes in lat
+    lon_2d = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+    ang = 0.0_lkind ; dec = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+
+    lat_2d = 0.0_lkind
+    counter = 1
+    do i = 1, 4
+      do j = 1, 4
+        lat_2d(j,i) = real(counter, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+        counter = counter + 1
+      end do
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_allow_neg_2d(lat_2d, lon_2d, h, dec, time, ref_cosz_2d, ref_fracday_2d)
+
+    call diurnal_solar(lat_2d, lon_2d, time, cosz_2d, fracday_2d, rrsun, allow_negative_cosz=.true.)
+
+    do i = 1, 4
+      do j = 1, 4
+
+        if (ref_cosz_2d(i,j) .ne. cosz_2d(i,j)) then
+        print *, ref_cosz_2d(i,j), " @ ", i,j, " does not equal ", cosz_2d(i,j)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 2d cosz value, with only changes in lat, does not match reference value")
+        end if
+
+        if (ref_fracday_2d(i,j) .ne. fracday_2d(i,j)) then
+          print *, ref_fracday_2d(i,j), " @ ", i,j, " does not equal ", fracday_2d(i,j)
+          call mpp_error(FATAL, &
+          "test_diurnal_solar: 2d fracday value, with only changes in lat, does not match reference value")
+        end if
+
+      end do
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i,j, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 2d rrsun value, with only changes in lat, does not match reference value")
+    end if
+
+    ! test only changes in lon
+    lat_2d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lon_2d = 0.0_lkind
+    counter = 1
+    do i = 1, 4
+      do j = 1, 4
+        lon_2d(j,i) = real(counter, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+        counter = counter + 1
+      end do
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_allow_neg_2d(lat_2d, lon_2d, h, dec, time, ref_cosz_2d, ref_fracday_2d)
+
+    call diurnal_solar(lat_2d, lon_2d, time, cosz_2d, fracday_2d, rrsun, allow_negative_cosz=.true.)
+
+    do i = 1, 4
+      do j = 1, 4
+
+        if (ref_cosz_2d(i,j) .ne. cosz_2d(i,j)) then
+          print *, ref_cosz_2d(i,j), " @ ", i,j, " does not equal ", cosz_2d(i,j)
+          call mpp_error(FATAL, &
+          "test_diurnal_solar: 2d cosz value, with only changes in lon, does not match reference value")
+        end if
+
+        if (ref_fracday_2d(i,j) .ne. fracday_2d(i,j)) then
+          print *, ref_fracday_2d(i,j), " @ ", i, " does not equal ", fracday_2d(i,j)
+          call mpp_error(FATAL, &
+          "test_diurnal_solar: 2d fracday value, with only changes in lon, does not match reference value")
+        end if
+
+      end do
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i,j, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 2d rrsun value, with only changes in lon, does not match reference value")
+    end if
+  end subroutine test_diurnal_solar_cal_allow_neg_2d
+
+  subroutine test_diurnal_solar_cal_allow_neg_1d
+    !! for this tests, only the routine input variables lat and lon
+    !! will be changed since these are not dependent on private function calculations,
+    !! a more comprehensive test that includes different values for the 
+    !! time_type, orbit angle and declination should be created
+    !! this test will allow negative cosz (allow_negative_cosz=.true.)
+    implicit none
+    integer, parameter                      :: n = 16
+    real(kind=TEST_AST_KIND_), dimension(n) :: lat_1d, lon_1d, h
+    type(time_type)                         :: time
+    real(kind=TEST_AST_KIND_), dimension(n) :: ref_cosz_1d, cosz_1d, ref_fracday_1d, fracday_1d
+    real(kind=TEST_AST_KIND_)               :: ref_rrsun, rrsun
+    real(kind=TEST_AST_KIND_)               :: ang, dec
+    integer                                 :: i
+    integer, parameter                      :: lkind = TEST_AST_KIND_
+
+    ! test only changes in lat
+    lon_1d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    h = real(PI, TEST_AST_KIND_)/2.0_lkind ; ang = 0.0_lkind ; dec = 0.0_lkind
+
+    lat_1d = 0.0_lkind
+    do i = 1, 16
+      lat_1d(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_allow_neg_1d(lat_1d, lon_1d, h, dec, time, ref_cosz_1d, ref_fracday_1d)
+
+    call diurnal_solar(lat_1d, lon_1d, time, cosz_1d, fracday_1d, rrsun, allow_negative_cosz=.true.)
+
+    do i = 1, 16
+
+      if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
+        print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d cosz value, with only changes in lat, does not match reference value")
+      end if
+
+      if (ref_fracday_1d(i) .ne. fracday_1d(i)) then
+        print *, ref_fracday_1d(i), " @ ", i, " does not equal ", fracday_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d fracday value, with only changes in lat, does not match reference value")
+      end if
+
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 1d rrsun value, with only changes in lat, does not match reference value")
+    end if
+
+    ! test only changes in lon
+    lat_1d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    h = real(PI, TEST_AST_KIND_)/2.0_lkind ; ang = 0.0_lkind ; dec = 0.0_lkind
+
+    lon_1d = 0.0_lkind
+    do i = 1, 16
+      lon_1d(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_allow_neg_1d(lat_1d, lon_1d, h, dec, time, ref_cosz_1d, ref_fracday_1d)
+
+    call diurnal_solar(lat_1d, lon_1d, time, cosz_1d, fracday_1d, rrsun, allow_negative_cosz=.true.)
+
+    do i = 1, 16
+
+      if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
+        print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d cosz value, with only changes in lon, does not match reference value")
+      end if
+
+      if (ref_fracday_1d(i) .ne. fracday_1d(i)) then
+        print *, ref_fracday_1d(i), " @ ", i, " does not equal ", fracday_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d fracday value, with only changes in lon, does not match reference value")
+      end if
+
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 1d rrsun value, with only changes in lon, does not match reference value")
+    end if
+
+  end subroutine test_diurnal_solar_cal_allow_neg_1d
+
+  subroutine test_diurnal_solar_cal_allow_neg_0d
+    !! for this test, only the routine input variables lat and lon
+    !! will be changed since these are not dependent on private function calculations,
+    !! a more comprehensive test that includes different values for the 
+    !! time_type, orbit angle and declination should be created
+    !! this test will allow negative cosz (allow_negative_cosz=.true.)
+    implicit none
+    real(kind=TEST_AST_KIND_) :: lat_0d, lon_0d, h
+    type(time_type)           :: time
+    real(kind=TEST_AST_KIND_) :: ref_cosz_0d, cosz_0d, ref_fracday_0d, fracday_0d
+    real(kind=TEST_AST_KIND_) :: ref_rrsun, rrsun
+    real(kind=TEST_AST_KIND_) :: ang, dec
+    integer                   :: i
+    integer, parameter        :: lkind = TEST_AST_KIND_
+
+    ! test only changes in latitude 
+    lon_0d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lat_0d = 0.0_lkind
+    do i = 1, 16
+      lat_0d = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+
+      call create_ref_rrsun(ang, ref_rrsun)
+      call create_ref_declination(ang, dec)
+      call create_ref_cosz_allow_neg_0d(lat_0d, lon_0d, h, dec, time, ref_cosz_0d, ref_fracday_0d)
+
+      call diurnal_solar(lat_0d, lon_0d, time, cosz_0d, fracday_0d, rrsun, allow_negative_cosz=.true.)
+
+      if (ref_cosz_0d .ne. cosz_0d) then
+        print *, ref_cosz_0d, " @ ", i, " does not equal ", cosz_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d cosz value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_fracday_0d .ne. fracday_0d) then
+        print *, ref_fracday_0d, " @ ", i, " does not equal ", fracday_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d fracday value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_rrsun .ne. rrsun) then
+        print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d rrsun value, with changes in lat, does not match reference value")
+      end if
+    end do
+  
+    ! test only changes in longitude 
+    lat_0d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lon_0d = 0.0_lkind
+    do i = 1, 16
+      lon_0d = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+
+      call create_ref_rrsun(ang, ref_rrsun)
+      call create_ref_declination(ang, dec)
+      call create_ref_cosz_allow_neg_0d(lat_0d, lon_0d, h, dec, time, ref_cosz_0d, ref_fracday_0d)
+
+      call diurnal_solar(lat_0d, lon_0d, time, cosz_0d, fracday_0d, rrsun, allow_negative_cosz=.true.)
+
+      if (ref_cosz_0d .ne. cosz_0d) then
+        print *, ref_cosz_0d, " @ ", i, " does not equal ", cosz_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d cosz value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_fracday_0d .ne. fracday_0d) then
+        print *, ref_fracday_0d, " @ ", i, " does not equal ", fracday_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d fracday value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_rrsun .ne. rrsun) then
+        print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d rrsun value, with changes in lat, does not match reference value")
+      end if
+    end do
+  end subroutine test_diurnal_solar_cal_allow_neg_0d
+
+  subroutine test_diurnal_solar_cal_no_neg_2d
+    !! for this test, only the routine input variables lat and lon
+    !! will be changed since these are not dependent on private function calculations,
+    !! a more comprehensive test that includes different values for the 
+    !! time_type, orbit angle and declination should be created
+    !! this test will not allow negative cosz and will explicitly have
+    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! should produce the same effect
+    implicit none
+    integer, parameter                        :: n = 4
+    real(kind=TEST_AST_KIND_), dimension(n,n) :: lat_2d, lon_2d, h
+    type(time_type)                           :: time
+    real(kind=TEST_AST_KIND_), dimension(n,n) :: ref_cosz_2d, cosz_2d, ref_fracday_2d, fracday_2d
+    real(kind=TEST_AST_KIND_)                 :: ref_rrsun, rrsun
+    real(kind=TEST_AST_KIND_)                 :: ang, dec
+    integer                                   :: i, j, counter
+    integer, parameter                        :: lkind = TEST_AST_KIND_
+
+    ! test only changes in lat
+    lon_2d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lat_2d = 0.0_lkind
+    counter = 1
+    do i = 1, 4
+      do j = 1, 4
+        lat_2d(j,i) = real(counter, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+        counter = counter + 1
+      end do
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_no_neg_2d(lat_2d, lon_2d, h, dec, time, ref_cosz_2d, ref_fracday_2d)
+
+    call diurnal_solar(lat_2d, lon_2d, time, cosz_2d, fracday_2d, rrsun, allow_negative_cosz=.false.)
+
+    do i = 1, 4
+      do j = 1, 4
+
+        if (ref_cosz_2d(i,j) .ne. cosz_2d(i,j)) then
+        print *, ref_cosz_2d(i,j), " @ ", i,j, " does not equal ", cosz_2d(i,j)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 2d cosz value, with only changes in lat, does not match reference value")
+        end if
+
+        if (ref_fracday_2d(i,j) .ne. fracday_2d(i,j)) then
+          print *, ref_fracday_2d(i,j), " @ ", i,j, " does not equal ", fracday_2d(i,j)
+          call mpp_error(FATAL, &
+          "test_diurnal_solar: 2d fracday value, with only changes in lat, does not match reference value")
+        end if
+
+      end do
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i,j, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 2d rrsun value, with only changes in lat, does not match reference value")
+    end if
+
+    ! test only changes in lon
+    lat_2d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lon_2d = 0.0_lkind
+    counter = 1
+    do i = 1, 4
+      do j = 1, 4
+        lon_2d(j,i) = real(counter, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+        counter = counter + 1
+      end do
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_no_neg_2d(lat_2d, lon_2d, h, dec, time, ref_cosz_2d, ref_fracday_2d)
+
+    call diurnal_solar(lat_2d, lon_2d, time, cosz_2d, fracday_2d, rrsun, allow_negative_cosz=.false.)
+
+    do i = 1, 4
+      do j = 1, 4
+
+        if (ref_cosz_2d(i,j) .ne. cosz_2d(i,j)) then
+          print *, ref_cosz_2d(i,j), " @ ", i,j, " does not equal ", cosz_2d(i,j)
+          call mpp_error(FATAL, &
+          "test_diurnal_solar: 2d cosz value, with only changes in lon, does not match reference value")
+        end if
+
+        if (ref_fracday_2d(i,j) .ne. fracday_2d(i,j)) then
+          print *, ref_fracday_2d(i,j), " @ ", i, " does not equal ", fracday_2d(i,j)
+          call mpp_error(FATAL, &
+          "test_diurnal_solar: 2d fracday value, with only changes in lon, does not match reference value")
+        end if
+
+      end do
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i,j, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 2d rrsun value, with only changes in lon, does not match reference value")
+    end if
+
+  end subroutine test_diurnal_solar_cal_no_neg_2d
+
+  subroutine test_diurnal_solar_cal_no_neg_1d
+    !! for this tests, only the routine input variables lat and lon
+    !! will be changed since these are not dependent on private function calculations,
+    !! a more comprehensive test that includes different values for the 
+    !! time_type, orbit angle and declination should be created
+    !! this test will not allow negative cosz and will explicitly have
+    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! should produce the same effect
 
     implicit none
-    real(kind=TEST_AST_KIND_), intent(in)    :: lat, lon, ang, h
-    real(kind=TEST_AST_KIND_), intent(inout) :: dec, gmt
-    real(kind=TEST_AST_KIND_), intent(out)   :: cosz, rr_out, fracday
-    real(kind=TEST_AST_KIND_)                :: rad_per, rr, rad_obliq, sin_dec
-    real(kind=TEST_AST_KIND_)                :: aa, bb, t
-    integer, parameter                       :: lkind = TEST_AST_KIND_
+    integer, parameter                      :: n = 16
+    real(kind=TEST_AST_KIND_), dimension(n) :: lat_1d, lon_1d, h
+    type(time_type)                         :: time
+    real(kind=TEST_AST_KIND_), dimension(n) :: ref_cosz_1d, cosz_1d, ref_fracday_1d, fracday_1d
+    real(kind=TEST_AST_KIND_)               :: ref_rrsun, rrsun
+    real(kind=TEST_AST_KIND_)               :: ang, dec
+    integer                                 :: i
+    integer, parameter                      :: lkind = TEST_AST_KIND_
 
-    ! rr_out calculation
-    rad_per = per * deg_to_rad
-    rr      = (1.0_lkind - ecc**2)/(1.0_lkind + ecc * cos(ang - rad_per))
-    rr_out  = rr**(-2)
+    ! test only changes in lat
+    lon_1d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
-    ! declination calculation
-    rad_obliq    = obliq * deg_to_rad
+    lat_1d = 0.0_lkind
+    do i = 1, 16
+      lat_1d(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_no_neg_1d(lat_1d, lon_1d, h, dec, time, ref_cosz_1d, ref_fracday_1d)
+
+    call diurnal_solar(lat_1d, lon_1d, time, cosz_1d, fracday_1d, rrsun, allow_negative_cosz=.false.)
+
+    do i = 1, 16
+
+      if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
+        print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d cosz value, with only changes in lat, does not match reference value")
+      end if
+
+      if (ref_fracday_1d(i) .ne. fracday_1d(i)) then
+        print *, ref_fracday_1d(i), " @ ", i, " does not equal ", fracday_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d fracday value, with only changes in lat, does not match reference value")
+      end if
+
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 1d rrsun value, with only changes in lat, does not match reference value")
+    end if
+
+    ! test only changes in lon
+    lat_1d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lon_1d = 0.0_lkind
+    do i = 1, 16
+      lon_1d(i) = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+    end do
+
+    call create_ref_rrsun(ang, ref_rrsun)
+    call create_ref_declination(ang, dec)
+    call create_ref_cosz_no_neg_1d(lat_1d, lon_1d, h, dec, time, ref_cosz_1d, ref_fracday_1d)
+
+    call diurnal_solar(lat_1d, lon_1d, time, cosz_1d, fracday_1d, rrsun, allow_negative_cosz=.false.)
+
+    do i = 1, 16
+
+      if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
+        print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d cosz value, with only changes in lon, does not match reference value")
+      end if
+
+      if (ref_fracday_1d(i) .ne. fracday_1d(i)) then
+        print *, ref_fracday_1d(i), " @ ", i, " does not equal ", fracday_1d(i)
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 1d fracday value, with only changes in lon, does not match reference value")
+      end if
+
+    end do
+
+    if (ref_rrsun .ne. rrsun) then
+      print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+      call mpp_error(FATAL, &
+      "test_diurnal_solar: 1d rrsun value, with only changes in lon, does not match reference value")
+    end if
+
+  end subroutine test_diurnal_solar_cal_no_neg_1d
+
+  subroutine test_diurnal_solar_cal_no_neg_0d
+    !! for this test, only the routine input variables lat and lon
+    !! will be changed since these are not dependent on private function calculations,
+    !! a more comprehensive test that includes different values for the 
+    !! time_type, orbit angle and declination should be created
+    !! this test will not allow negative cosz and will explicitly have
+    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! should produce the same effect
+    implicit none
+    real(kind=TEST_AST_KIND_) :: lat_0d, lon_0d, h
+    type(time_type)           :: time
+    real(kind=TEST_AST_KIND_) :: ref_cosz_0d, cosz_0d, ref_fracday_0d, fracday_0d
+    real(kind=TEST_AST_KIND_) :: ref_rrsun, rrsun
+    real(kind=TEST_AST_KIND_) :: ang, dec
+    integer                   :: i
+    integer, parameter        :: lkind = TEST_AST_KIND_
+
+    ! test only changes in latitude 
+    lon_0d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lat_0d = 5.0_lkind * real(PI,TEST_AST_KIND_)/8.0_lkind
+    do i = 0, 16
+      lat_0d = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+
+      call create_ref_rrsun(ang, ref_rrsun)
+      call create_ref_declination(ang, dec)
+      call create_ref_cosz_no_neg_0d(lat_0d, lon_0d, h, dec, time, ref_cosz_0d, ref_fracday_0d)
+
+      call diurnal_solar(lat_0d, lon_0d, time, cosz_0d, fracday_0d, rrsun, allow_negative_cosz=.false.)
+
+      if (ref_cosz_0d .ne. cosz_0d) then
+        print *, ref_cosz_0d, " @ ", i, " does not equal ", cosz_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d cosz value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_fracday_0d .ne. fracday_0d) then
+        print *, ref_fracday_0d, " @ ", i, " does not equal ", fracday_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d fracday value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_rrsun .ne. rrsun) then
+        print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d rrsun value, with changes in lat, does not match reference value")
+      end if
+    end do
+
+    ! test only changes in longitude
+    lat_0d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
+    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
+
+    lon_0d = 0.0_lkind
+    do i = 0, 16
+      lon_0d = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+
+      call create_ref_rrsun(ang, ref_rrsun)
+      call create_ref_declination(ang, dec)
+      call create_ref_cosz_no_neg_0d(lat_0d, lon_0d, h, dec, time, ref_cosz_0d, ref_fracday_0d)
+
+      call diurnal_solar(lat_0d, lon_0d, time, cosz_0d, fracday_0d, rrsun, allow_negative_cosz=.false.)
+
+      if (ref_cosz_0d .ne. cosz_0d) then
+        print *, ref_cosz_0d, " @ ", i, " does not equal ", cosz_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d cosz value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_fracday_0d .ne. fracday_0d) then
+        print *, ref_fracday_0d, " @ ", i, " does not equal ", fracday_0d
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d fracday value, with changes in lat, does not match reference value")
+      end if
+
+      if (ref_rrsun .ne. rrsun) then
+        print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
+        call mpp_error(FATAL, &
+        "test_diurnal_solar: 0d rrsun value, with changes in lat, does not match reference value")
+      end if
+    end do
+
+  end subroutine test_diurnal_solar_cal_no_neg_0d
+
+  ! create all reference values
+  subroutine create_ref_rrsun(ang, rrsun)
+
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)  :: ang
+    real(kind=TEST_AST_KIND_), intent(out) :: rrsun
+    real(kind=TEST_AST_KIND_)              :: rad_per, rr
+    integer, parameter                     :: lkind = TEST_AST_KIND_
+  
+    rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
+    rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
+    rrsun  = rr**(-2)
+  
+  end subroutine create_ref_rrsun
+  
+  subroutine create_ref_declination(ang, dec)
+  
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)  :: ang
+    real(kind=TEST_AST_KIND_), intent(out) :: dec
+    real(kind=TEST_AST_KIND_)              :: rad_obliq, sin_dec
+  
+    rad_obliq    = real(obliq, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
+  
+  end subroutine create_ref_declination
 
-    ! cosz calculation, cosz CANNOT be negative
-    t = gmt + lon - real(PI, TEST_AST_KIND_)
+  subroutine create_ref_cosz_allow_neg_2d(lat_2d, lon_2d, h, dec, time, cosz_2d, fracday_2d)
+
+    implicit none
+    integer, parameter :: n = 4
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat_2d, lon_2d, h
+    type(time_type),           intent(in)                  :: time
+    real(kind=TEST_AST_KIND_)                              :: gmt, time_since_ae, dec
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: cosz_2d, fracday_2d
+    real(kind=TEST_AST_KIND_), dimension(n,n)              :: aa, bb, t
+    integer, parameter                                     :: lkind = TEST_AST_KIND_
+
+
+    !! these reference values will allow negative cosz values,
+    !! i.e. Lallow_nagative = .true.
+    !! they will also not include time averaging, i.e. .not. present(dt)
+    !! fracday values calculated here
+
+    gmt = real(universal_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+
+    aa = sin(lat_2d)*sin(dec)
+    bb = cos(lat_2d)*cos(dec)
+
+    t = gmt + lon_2d - real(PI, TEST_AST_KIND_)
+    where (t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
+    where (t < real(-PI, TEST_AST_KIND_))  t = t + real(twopi, TEST_AST_KIND_)
+
+    cosz_2d = aa + bb * cos(t)
+
+    where (abs(t) < h)
+      fracday_2d = 1.0_lkind
+    else where
+      fracday_2d = 0.0_lkind
+    end where
+
+  end subroutine create_ref_cosz_allow_neg_2d
+
+  subroutine create_ref_cosz_allow_neg_1d(lat_1d, lon_1d, h, dec, time, cosz_1d, fracday_1d)
+
+    implicit none
+    integer, parameter :: n = 16
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n)  :: lat_1d, lon_1d, h
+    type(time_type),           intent(in)                :: time
+    real(TEST_AST_KIND_),      intent(in)                :: dec
+    real(kind=TEST_AST_KIND_)                            :: gmt, time_since_ae
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n) :: cosz_1d, fracday_1d
+    real(kind=TEST_AST_KIND_), dimension(n)              :: aa, bb, t
+    integer, parameter                                   :: lkind = TEST_AST_KIND_
+
+
+    !! these reference values will allow negative cosz values,
+    !! i.e. Lallow_nagative = .true.
+    !! they will also not include time averaging, i.e. .not. present(dt)
+    !! fracday values calculated here
+
+    gmt = real(universal_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+
+    aa = sin(lat_1d)*sin(dec)
+    bb = cos(lat_1d)*cos(dec)
+
+    t = gmt + lon_1d - real(PI, TEST_AST_KIND_)
+    where (t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
+    where (t < real(-PI, TEST_AST_KIND_))  t = t + real(twopi, TEST_AST_KIND_)
+
+    cosz_1d = aa + bb * cos(t)
+
+    where (abs(t) < h)
+      fracday_1d = 1.0_lkind
+    else where
+      fracday_1d = 0.0_lkind
+    end where
+
+  end subroutine create_ref_cosz_allow_neg_1d
+
+  subroutine create_ref_cosz_allow_neg_0d(lat_0d, lon_0d, h, dec, time, cosz_0d, fracday_0d)
+
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)  :: lat_0d, lon_0d, h, dec
+    type(time_type),           intent(in)  :: time
+    real(kind=TEST_AST_KIND_)              :: gmt, time_since_ae
+    real(kind=TEST_AST_KIND_), intent(out) :: cosz_0d, fracday_0d
+    real(kind=TEST_AST_KIND_)              :: aa, bb, t
+    integer, parameter                     :: lkind = TEST_AST_KIND_
+
+    !! these reference values will allow negative cosz values,
+    !! i.e. Lallow_nagative = .true.
+    !! they will also not include time averaging, i.e. .not. present(dt)
+    !! fracday values calculated here
+
+    gmt = real(universal_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+
+    aa = sin(lat_0d)*sin(dec)
+    bb = cos(lat_0d)*cos(dec)
+
+    t = gmt + lon_0d - real(PI, TEST_AST_KIND_)
     if (t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
     if (t < real(-PI, TEST_AST_KIND_))  t = t + real(twopi, TEST_AST_KIND_)
 
-    aa = sin(lat)*sin(dec)
-    bb = cos(lat)*cos(dec)
-    
-    if (.not. Lallow_negative) then
-      where (abs(t) < h)
-        cosz    = aa + bb*cos(t)
-        fracday = 1.0_lkind
-      elsewhere
-        cosz    = 0.0_lkind
-        fracday = 0.0_lkind
-  end where
-  else
-      cosz = aa + bb*cos(t)
-      where (abs(t) < h)
-        fracday = 1.0_lkind
-      elsewhere
-        fracday = 0.0_lkind
-      end where
-  end if
+    cosz_0d = aa + bb * cos(t)
 
-  end subroutine create_ref_values_0d
+    if (abs(t) < h) then
+      fracday_0d = 1.0_lkind
+    else
+      fracday_0d = 0.0_lkind
+    end if
 
-  subroutine test_diurnal_solar_0d
+  end subroutine create_ref_cosz_allow_neg_0d
+
+  subroutine create_ref_cosz_no_neg_2d(lat_2d, lon_2d, h, dec, time, cosz_2d, fracday_2d)
 
     implicit none
-    real(kind=TEST_AST_KIND_) :: lat, lon, gmt, time_since_ae
-    real(kind=TEST_AST_KIND_) :: cosz, fracday, rrsun
-    real(kind=TEST_AST_KIND_) :: ref_cosz, ref_fracday, ref_rrsun
-    real(kind=TEST_AST_KIND_) :: h, ang, dec
-    integer                   :: i, j, k
-    integer, parameter        :: lkind = TEST_AST_KIND_
+    integer, parameter :: n = 4
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat_2d, lon_2d, h
+    type(time_type),           intent(in)                  :: time
+    real(kind=TEST_AST_KIND_)                              :: gmt, time_since_ae, dec
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: cosz_2d, fracday_2d
+    real(kind=TEST_AST_KIND_), dimension(n,n)              :: aa, bb, t
+    integer, parameter                                     :: lkind = TEST_AST_KIND_
 
-    ! test by only changing lat, allow negative cosz
-    lon = 0.0_lkind ; gmt = 0.0_lkind ; time_since_ae = 0.0_lkind
-    ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI,TEST_AST_KIND_)/2.0_lkind
+    !! these reference values will not allow negative cosz values,
+    !! i.e. Lallow_nagative = .false.
+    !! they will also not include time averaging, i.e. .not. present(dt)
+    !! fracday values calculated here
 
-    lat = 0.0_lkind
-    do i = 0, 16
-      lat = real(i, TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
-      call diurnal_solar(lat, lon, gmt, time_since_ae, cosz, fracday, rrsun, allow_negative_cosz=.true.)
-      call create_ref_values_0d(lat, lon, gmt, dec, ang, h, ref_cosz, ref_rrsun, ref_fracday)
+    gmt = real(universal_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
 
-      if (abs(ref_cosz - cosz) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_cosz, " @ ", i, " does not equal ", cosz 
-        call mpp_error(FATAL, "test_diurnal_solar: 0d cosz value does not match reference value")
-      end if
+    aa = sin(lat_2d)*sin(dec)
+    bb = cos(lat_2d)*cos(dec)
 
-      if (abs(ref_fracday - fracday) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_fracday, " @ ", i, " does not equal ", fracday
-        call mpp_error(FATAL, "test_diurnal_solar: 0d fracday value does not match reference value")
-      end if
+    t = gmt + lon_2d - real(PI, TEST_AST_KIND_)
+    where (t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
+    where (t < real(-PI, TEST_AST_KIND_))  t = t + real(twopi, TEST_AST_KIND_)
+    
+    where (abs(t) < h)
+      cosz_2d    = aa + bb * cos(t)
+      fracday_2d = 1.0_lkind
+    else where
+      cosz_2d    = 0.0_lkind
+      fracday_2d = 0.0_lkind
+    end where
 
-      if (abs(ref_rrsun - rrsun) .gt. real(1E-07,TEST_AST_KIND_)) then
-        print *, ref_rrsun, " @ ", i, " does not equal ", rrsun
-        call mpp_error(FATAL, "test_diurnal_solar: 0d rrsun value does not match reference value")
-      end if 
-    end do
+    ! adds extra check that cosz is not negative when
+    ! allow_negative_cosz=.false. which is necessary 
+    ! because there are cases where abs(t) < h is true 
+    ! and cosz is then a negative value
+    
+    where (cosz_2d < 0.0_lkind)
+      cosz_2d = max(0.0_lkind, cosz_2d)
+    end where
 
-  end subroutine test_diurnal_solar_0d
+  end subroutine create_ref_cosz_no_neg_2d
+
+  subroutine create_ref_cosz_no_neg_1d(lat_1d, lon_1d, h, dec, time, cosz_1d, fracday_1d)
+
+    implicit none
+    integer, parameter :: n = 16
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n)  :: lat_1d, lon_1d, h
+    type(time_type),           intent(in)                :: time
+    real(kind=TEST_AST_KIND_)                            :: gmt, time_since_ae, dec
+    real(kind=TEST_AST_KIND_), intent(out), dimension(n) :: cosz_1d, fracday_1d
+    real(kind=TEST_AST_KIND_), dimension(n)              :: aa, bb, t
+    integer, parameter                                   :: lkind = TEST_AST_KIND_
+
+    !! these reference values will not allow negative cosz values,
+    !! i.e. Lallow_nagative = .false.
+    !! they will also not include time averaging, i.e. .not. present(dt)
+    !! fracday values calculated here
+
+    gmt = real(universal_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+
+    aa = sin(lat_1d)*sin(dec)
+    bb = cos(lat_1d)*cos(dec)
+
+    t = gmt + lon_1d - real(PI, TEST_AST_KIND_)
+    where (t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
+    where (t < real(-PI, TEST_AST_KIND_))  t = t + real(twopi, TEST_AST_KIND_)
+
+    where (abs(t) < h)
+      cosz_1d    = aa + bb * cos(t)
+      fracday_1d = 1.0_lkind
+    else where
+      cosz_1d    = 0.0_lkind
+      fracday_1d = 0.0_lkind
+    end where
+
+    ! adds extra check that cosz is not negative when
+    ! allow_negative_cosz=.false. which is necessary 
+    ! because there are cases where abs(t) < h is true 
+    ! and cosz is then a negative value
+    
+    where (cosz_1d < 0.0_lkind)
+      cosz_1d = max(0.0_lkind, cosz_1d)
+    end where
+
+  end subroutine create_ref_cosz_no_neg_1d
+
+  subroutine create_ref_cosz_no_neg_0d(lat_0d, lon_0d, h, dec, time, cosz_0d, fracday_0d)
+
+    implicit none
+    real(kind=TEST_AST_KIND_), intent(in)  :: lat_0d, lon_0d, h, dec
+    type(time_type),           intent(in)  :: time
+    real(kind=TEST_AST_KIND_), intent(out) :: cosz_0d, fracday_0d
+    real(kind=TEST_AST_KIND_)              :: gmt, time_since_ae
+    real(kind=TEST_AST_KIND_)              :: aa, bb, t
+    integer, parameter                     :: lkind = TEST_AST_KIND_
+
+    !! these reference values will not allow negative cosz values,
+    !! i.e. Lallow_nagative = .false.
+    !! they will also not include time averaging, i.e. .not. present(dt)
+    !! fracday values calculated here
+
+    gmt = real(universal_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+
+    aa = sin(lat_0d)*sin(dec)
+    bb = cos(lat_0d)*cos(dec)
+
+    t = gmt + lon_0d - real(PI, TEST_AST_KIND_)
+    if (t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
+    if (t < real(-PI, TEST_AST_KIND_))  t = t + real(twopi, TEST_AST_KIND_)
+
+    if (abs(t) < h) then
+      cosz_0d    = aa + bb * cos(t)
+      fracday_0d = 1.0_lkind
+    else
+      cosz_0d    = 0.0_lkind
+      fracday_0d = 0.0_lkind
+    end if
+
+    ! adds extra check that cosz is not negative when
+    ! allow_negative_cosz=.false. which is necessary 
+    ! because there are cases where abs(t) < h is true 
+    ! and cosz is then a negative value
+
+    if (cosz_0d < 0.0_lkind) then
+      cosz_0d = max(0.0_lkind, cosz_0d)
+    end if
+
+  end subroutine create_ref_cosz_no_neg_0d
 
 end program test_diurnal_solar_cal
