@@ -35,6 +35,7 @@ program test_diag_openmp
 
   integer                            :: nx           !< Number of points in the x direction
   integer                            :: ny           !< Number of points in the y direction
+  integer                            :: nz           !< Number of points in the z direction
   integer                            :: layout(2)    !< Layout
   integer                            :: io_layout(2) !< Io layout
   type(domain2d)                     :: Domain       !< 2D domain
@@ -48,7 +49,9 @@ program test_diag_openmp
   integer                            :: id_x         !< axis id for the x dimension
   real,    dimension(:), allocatable :: y            !< Y axis_data
   integer                            :: id_y         !< axis id for the y dimension
-  real(kind=r8_kind),    allocatable :: var(:,:)     !< Dummy variable data
+  real,    dimension(:), allocatable :: z            !< Z axis data
+  integer                            :: id_z         !< axis id for the z dimension
+  real(kind=r8_kind),    allocatable :: var(:,:,:)   !< Dummy variable data
   integer                            :: i, j         !< For do loops
   type(block_control_type)           :: my_block     !< Returns instantiated @ref block_control_type
   logical                            :: message      !< Flag for outputting debug message
@@ -56,7 +59,9 @@ program test_diag_openmp
   integer                            :: iew          !< Ending index for each thread in the x direction
   integer                            :: jsw          !< Starting index for each thread in the y direction
   integer                            :: jew          !< Ending index for each thread in the y direction
-  integer                            :: id_var1      !< diag_field id for var in lon/lat grid
+  integer                            :: id_var1      !< diag_field id for var in 1d
+  integer                            :: id_var2      !< diag_field id for var in lon/lat grid
+  integer                            :: id_var3      !< diag_field id for var in lon/lat/z grid
   logical                            :: used         !< .true. if the send_data call was sucessful
 
   call fms_init
@@ -65,6 +70,7 @@ program test_diag_openmp
 
   nx = 96
   ny = 96
+  nz = 5
   layout = (/1, mpp_npes()/)
   io_layout = (/1, 1/)
 
@@ -77,8 +83,8 @@ program test_diag_openmp
   call mpp_get_compute_domain(Domain, is, ie, js, je)
 
   ! Set up the data
-  allocate(x(nx), y(ny))
-  allocate(var(is:ie, js:je))
+  allocate(x(nx), y(ny), z(nz))
+  allocate(var(is:ie, js:je, nz))
   do i=1,nx
     x(i) = i
   enddo
@@ -87,12 +93,19 @@ program test_diag_openmp
     y(i) = i
   enddo
 
+  do i=1,nz
+    z(i) = i
+  enddo
+
   !< Register the axis:
   id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=Domain)
   id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Domain)
+  id_z  = diag_axis_init('z',  z,  'pressure', 'z', long_name='too much pressure')
 
   !< Register the variables
-  id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x, id_y/), Time, 'Var in a lon/lat domain', 'mullions')
+  id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x/), Time, 'Var in a lon domain', 'mullions')
+  id_var2 = register_diag_field  ('ocn_mod', 'var2', (/id_x, id_y/), Time, 'Var in a lon/lat domain', 'mullions')
+  id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'Var in a lon/lat/z domain', 'mullions')
 
   call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
@@ -111,8 +124,11 @@ program test_diag_openmp
       iew = my_block%ibe(i)
       jew = my_block%jbe(i)
 
-      used=send_data(id_var1, var(isw:iew, jsw:jew), time, is_in=isw, js_in=jsw, &
+      used=send_data(id_var1, var(isw:iew, 1, 1), time, is_in=isw, ie_in=iew)
+      used=send_data(id_var2, var(isw:iew, jsw:jew, 1), time, is_in=isw, js_in=jsw, &
                      ie_in=iew, je_in=jew)
+      used=send_data(id_var3, var(isw:iew, jsw:jew, :), time, is_in=isw, js_in=jsw, &
+                     ie_in=iew, je_in=jew, ks_in=1, ke_in=nz)
     enddo
     call diag_send_complete(Time_step)
   enddo

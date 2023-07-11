@@ -906,6 +906,14 @@ diag_files:
     var_name: var1
     reduction: none
     kind: r4
+  - module: ocn_mod
+    var_name: var2
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var3
+    reduction: none
+    kind: r4
 _EOF
 
 export OMP_NUM_THREADS=2
