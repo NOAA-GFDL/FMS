@@ -8,6 +8,7 @@ module fms_diag_field_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 #ifdef use_yaml
+use omp_lib
 use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
@@ -390,13 +391,27 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
   class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
   integer :: is, js, ks !< Starting indicies of the field_data
   integer :: ie, je, ke !< Ending indicied of the field_data
-!> Allocate the buffer if it is not allocated
+  integer :: isd, jsd, ksd !< Starting indicies of the field_data
+  integer :: ied, jed, ked !< Ending indicied of the field_data
+  integer :: wut(4)
+
+!$OMP SINGLE
+  !> Allocate the buffer if it is not allocated
   if (.not.allocated(this%data_buffer_allocated)) this%data_buffer_allocated = .false.
   if (.not.this%data_buffer_allocated) &
     this%data_buffer_allocated =  allocate_data_buffer(this, input_data, diag_axis)
   if (.not.this%data_buffer_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
+!$OMP END SINGLE
+
+  wut = get_starting_compute_domain(this%axis_ids, diag_axis)
+  isd = is - wut(1) + 1
+  jsd = js - wut(2) + 1
+  ksd = ks - wut(3) + 1
+  ied = isd + size(input_data, 1)
+  jed = jsd + size(input_data, 2)
+  ked = ksd + size(input_data, 3)
 
 !> Buffer a copy of the data
   select type (input_data)
@@ -408,7 +423,7 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
     type is (real(kind=r8_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r8_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
       end select
     type is (integer(kind=i4_kind))
       select type (db => this%data_buffer)
@@ -453,8 +468,6 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
         length(a) = axis%axis_length()
     end select
   enddo axis_loop
-!> On a single thread, allocate the data buffer to the correct kind and size
-!$omp single
   select type (input_data)
     type is (real(r4_kind))
       if (.not.allocated(this%data_buffer)) allocate(real(kind=r4_kind) :: this%data_buffer( &
@@ -484,7 +497,6 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
       call mpp_error ("allocate_data_buffer","The data input to set_data_buffer for "//&
         trim(this%varname)//" is not a supported type",  FATAL)
   end select
-!$omp end single
   allocate_data_buffer = allocated(this%data_buffer)
 end function allocate_data_buffer
 !> Sets the flag saying that the math functions need to be done
@@ -1639,6 +1651,26 @@ subroutine dump_field_obj (this, unit_num)
   endif
 
 end subroutine
+
+function get_starting_compute_domain(axis_ids, diag_axis) &
+  result(compute_domain)
+
+  integer, intent(in) :: axis_ids(:)
+  class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)
+  integer :: compute_domain(4)
+  integer :: a !< For looping through axes
+  integer :: compute_idx(2)
+  logical :: wut
+
+  compute_domain = 1
+  axis_loop: do a = 1,size(axis_ids)
+    select type (axis => diag_axis(axis_ids(a))%axis)
+      type is (fmsDiagFullAxis_type)
+        call axis%get_compute_domain(compute_idx, wut)
+        compute_domain(a) = compute_idx(1)
+    end select
+  enddo axis_loop
+end function
 
 #endif
 end module fms_diag_field_object_mod

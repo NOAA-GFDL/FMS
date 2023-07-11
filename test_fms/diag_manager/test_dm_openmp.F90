@@ -21,7 +21,7 @@
 
 program test_diag_openmp
   use omp_lib
-  use mpp_mod,           only: mpp_npes
+  use mpp_mod,           only: mpp_npes, mpp_pe, mpp_sync
   use platform_mod,      only: r8_kind
   use mpp_domains_mod,   only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain
   use block_control_mod, only: block_control_type, define_blocks
@@ -104,7 +104,7 @@ program test_diag_openmp
   do j = 1, 23 !simulated time
     Time = set_date(2,1,1,j,0,0)
     var = real(j, kind=r8_kind) !< Set the data
-!$OMP parallel do default(shared) private(i, isw, iew, jsw, jew)
+!$OMP parallel do default(shared) private(i, isw, iew, jsw, jew) schedule (dynamic,1)
     do i = 1, 4
       isw = my_block%ibs(i)
       jsw = my_block%jbs(i)
@@ -114,7 +114,6 @@ program test_diag_openmp
       used=send_data(id_var1, var(isw:iew, jsw:jew), time, is_in=isw, js_in=jsw, &
                      ie_in=iew, je_in=jew)
     enddo
-
     call diag_send_complete(Time_step)
   enddo
 
