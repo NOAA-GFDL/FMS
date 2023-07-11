@@ -1669,7 +1669,7 @@ result(compute_domain)
     select type (axis => diag_axis(axis_ids(a))%axis)
       type is (fmsDiagFullAxis_type)
         call axis%get_compute_domain(compute_idx, dummy)
-        compute_domain(a) = compute_idx(1)
+        if ( compute_idx(1) .ne. diag_null) compute_domain(a) = compute_idx(1)
     end select
   enddo axis_loop
 end function get_starting_compute_domain
