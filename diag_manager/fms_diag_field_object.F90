@@ -394,7 +394,6 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
   integer :: iec, jec, kec !< Ending indicied of the field_data relative to the compute domain
   integer :: cds(4) !< Compute domain starting indices
 
-!$OMP SINGLE
   !> Allocate the buffer if it is not allocated
   if (.not.allocated(this%data_buffer_allocated)) this%data_buffer_allocated = .false.
   if (.not.this%data_buffer_allocated) &
@@ -402,7 +401,6 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
   if (.not.this%data_buffer_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
-!$OMP END SINGLE
 
   cds = get_starting_compute_domain(this%axis_ids, diag_axis)
   isc = is - cds(1) + 1
@@ -467,6 +465,8 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
         length(a) = axis%axis_length()
     end select
   enddo axis_loop
+!> On a single thread, allocate the data buffer to the correct kind and size
+!$omp single
   select type (input_data)
     type is (real(r4_kind))
       if (.not.allocated(this%data_buffer)) allocate(real(kind=r4_kind) :: this%data_buffer( &
@@ -496,6 +496,7 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
       call mpp_error ("allocate_data_buffer","The data input to set_data_buffer for "//&
         trim(this%varname)//" is not a supported type",  FATAL)
   end select
+!$omp end single
   allocate_data_buffer = allocated(this%data_buffer)
 end function allocate_data_buffer
 !> Sets the flag saying that the math functions need to be done
