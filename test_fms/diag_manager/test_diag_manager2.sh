@@ -913,6 +913,27 @@ my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end but it uses the openmp stuff(test $my_test_count)" '
     mpirun -n 6 ../test_dm_openmp
   '
+
+mkdir wut
+cd build
+printf "&diag_manager_nml \n use_modern_diag = .true. \n /" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: file_openmp_test
+  freq: 1
+  freq_units: hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var1
+    reduction: none
+    kind: r4
+_EOF
+
+mpirun -n 6 ../test_dm_openmp
 else
   my_test_count=`expr $my_test_count + 1`
   test_expect_failure "test modern diag manager failure when compiled without -Duse-yaml flag (test $my_test_count)" '
