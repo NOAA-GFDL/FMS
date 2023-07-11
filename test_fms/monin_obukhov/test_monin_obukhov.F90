@@ -59,22 +59,22 @@ program test_monin_obukhov
   namelist /metaparams_nml/ n_answers
 
   type drag_input_t
-    real(ki), dimension(n_1d) :: pt, pt0, z, z0, zt, zq, speed
+    real(kr), dimension(n_1d) :: pt, pt0, z, z0, zt, zq, speed
     logical, dimension(n_1d) :: avail
   end type
 
   type stable_mix_input_t
-    real(ki), dimension(n_1d) :: rich
+    real(kr), dimension(n_1d) :: rich
   end type
 
   type diff_input_t
-    real(ki), dimension(diff_ni, diff_nj, diff_nk) :: z
-    real(ki), dimension(diff_ni, diff_nj)          :: u_star, b_star
+    real(kr), dimension(diff_ni, diff_nj, diff_nk) :: z
+    real(kr), dimension(diff_ni, diff_nj)          :: u_star, b_star
   end type
 
   type profile_input_t
-    real(ki) :: zref, zref_t
-    real(ki), dimension(n_1d) :: z, z0, zt, zq, u_star, b_star, q_star
+    real(kr) :: zref, zref_t
+    real(kr), dimension(n_1d) :: z, z0, zt, zq, u_star, b_star, q_star
     logical :: avail(n_1d)
   end type
 
