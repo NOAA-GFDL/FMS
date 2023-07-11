@@ -8,7 +8,6 @@ module fms_diag_field_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 #ifdef use_yaml
-use omp_lib
 use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
@@ -389,11 +388,11 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this !< The field object
   class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
   class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
-  integer :: is, js, ks !< Starting indicies of the field_data
-  integer :: ie, je, ke !< Ending indicied of the field_data
-  integer :: isd, jsd, ksd !< Starting indicies of the field_data
-  integer :: ied, jed, ked !< Ending indicied of the field_data
-  integer :: wut(4)
+  integer :: is, js, ks !< Starting indicies of the field_data relative to the global domain
+  integer :: ie, je, ke !< Ending indicied of the field_data relative to the global domain
+  integer :: isc, jsc, ksc !< Starting indicies of the field_data relative to the compute domain
+  integer :: iec, jec, kec !< Ending indicied of the field_data relative to the compute domain
+  integer :: cds(4) !< Compute domain starting indices
 
 !$OMP SINGLE
   !> Allocate the buffer if it is not allocated
@@ -405,35 +404,35 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
       "allocated.", FATAL)
 !$OMP END SINGLE
 
-  wut = get_starting_compute_domain(this%axis_ids, diag_axis)
-  isd = is - wut(1) + 1
-  jsd = js - wut(2) + 1
-  ksd = ks - wut(3) + 1
-  ied = isd + size(input_data, 1)
-  jed = jsd + size(input_data, 2)
-  ked = ksd + size(input_data, 3)
+  cds = get_starting_compute_domain(this%axis_ids, diag_axis)
+  isc = is - cds(1) + 1
+  jsc = js - cds(2) + 1
+  ksc = ks - cds(3) + 1
+  iec = isc + size(input_data, 1)
+  jec = jsc + size(input_data, 2)
+  kec = ksc + size(input_data, 3)
 
 !> Buffer a copy of the data
   select type (input_data)
     type is (real(kind=r4_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r4_kind))
-          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     type is (real(kind=r8_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r8_kind))
-          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     type is (integer(kind=i4_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i4_kind))
-          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     type is (integer(kind=i8_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i8_kind))
-          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
+          db(isc:iec, jsc:jec, ksc:kec, :) = input_data
       end select
     class default
         call mpp_error ("set_data_buffer", "The data input to set_data_buffer for "//&
@@ -1652,25 +1651,27 @@ subroutine dump_field_obj (this, unit_num)
 
 end subroutine
 
+!< @brief Get the starting compute domain indices for a set of axis
+!! @return compute domain starting indices
 function get_starting_compute_domain(axis_ids, diag_axis) &
-  result(compute_domain)
+result(compute_domain)
+  integer,                         intent(in) :: axis_ids(:)  !< Array of axis ids
+  class(fmsDiagAxisContainer_type),intent(in) :: diag_axis(:) !< Array of axis object
 
-  integer, intent(in) :: axis_ids(:)
-  class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)
   integer :: compute_domain(4)
-  integer :: a !< For looping through axes
-  integer :: compute_idx(2)
-  logical :: wut
+  integer :: a              !< For looping through axes
+  integer :: compute_idx(2) !< Compute domain indices (starting, ending)
+  logical :: dummy          !< Dummy variable for the `get_compute_domain` subroutine
 
   compute_domain = 1
   axis_loop: do a = 1,size(axis_ids)
     select type (axis => diag_axis(axis_ids(a))%axis)
       type is (fmsDiagFullAxis_type)
-        call axis%get_compute_domain(compute_idx, wut)
+        call axis%get_compute_domain(compute_idx, dummy)
         compute_domain(a) = compute_idx(1)
     end select
   enddo axis_loop
-end function
+end function get_starting_compute_domain
 
 #endif
 end module fms_diag_field_object_mod
