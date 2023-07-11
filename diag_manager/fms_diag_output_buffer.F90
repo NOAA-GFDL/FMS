@@ -36,6 +36,8 @@ implicit none
 private
 
 #ifdef use_yaml
+use diag_util_mod, only: update_scalar_extremum, update_array_extremum
+
 !> @brief Object that holds buffered data and other diagnostics
 !! Abstract to ensure use through its extensions(buffer0-5d types)
 type, abstract :: fmsDiagOutputBuffer_class
@@ -144,6 +146,7 @@ public :: fmsDiagOutputBufferContainer_type
 ! public routines
 public :: fms_diag_output_buffer_init
 public :: fms_diag_output_buffer_create_container
+public :: fms_diag_update_extremum
 
 contains
 
@@ -1425,5 +1428,162 @@ subroutine add_to_buffer_5d(this, input_data, field_name)
   if( type_error ) call mpp_error (FATAL,'add_to_buffer_5d: mismatch between allocated buffer and input data types'//&
                                          'for field:'// field_name)
 end subroutine add_to_buffer_5d
+
+!> @brief Updates the buffer with the field data based on the value of the flag passed:
+!! 0 for minimum; 1 for maximum.
+subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, l_start, &
+  l_end, is_regional, reduced_k_range, sample, mask, fieldName, hasDiurnalAxis, err_msg)
+  integer, intent(in) :: flag !< Flag to indicate what to update: 0 for minimum; 1 for maximum
+  class(fmsDiagOutputBuffer_class), intent(inout) :: buffer_obj !< Remapped buffer to update
+  class(*), intent(in) :: field_data(:,:,:,:) !< Field data
+  integer, intent(in) :: recon_bounds(12) !< Indices of bounds in the first three dimension of the field data
+  integer, intent(in) :: l_start(:) !< Local starting indices for the first three dimensions
+  integer, intent(in) :: l_end(:)   !< Local ending indices for the first three dimensions
+  logical, intent(in) :: is_regional
+  logical, intent(in) :: reduced_k_range
+  integer :: sample !< Index along the diurnal time axis
+  logical, intent(in) :: mask(:,:,:,:) !< Must be out of range mask
+  character(len=*), intent(in) :: fieldName !< Field name for error reporting
+  logical :: hasDiurnalAxis !< Flag to indicate if the buffer has a diurnal axis
+  character(len=*), intent(inout) :: err_msg
+
+  integer :: is, js, ks
+  integer :: ie, je, ke
+  integer :: hi, hj
+  integer :: f1, f2
+  integer :: f3, f4
+  integer :: ksr, ker
+  integer :: i, j, k, i1, j1 !< For loops
+  character(len=128) :: err_msg_local !< Stores local error message
+  class(*), pointer :: ptr_buffer(:,:,:,:,:)
+
+  !> Unpack bounds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
+  is = recon_bounds(1)
+  js = recon_bounds(2)
+  ks = recon_bounds(3)
+  ie = recon_bounds(4)
+  je = recon_bounds(5)
+  ke = recon_bounds(6)
+  hi = recon_bounds(7)
+  f1 = recon_bounds(8)
+  f2 = recon_bounds(9)
+  hj = recon_bounds(10)
+  f3 = recon_bounds(11)
+  f4 = recon_bounds(12)
+
+  if (flag .ne. 0 .and. flag .ne. 1) then
+    call mpp_error( FATAL, "fms_diag_object_mod::fms_diag_update_extremum: flag must be either 0 or 1.")
+  end if
+
+  !! TODO: remap buffer before passing to subroutines update_scalar_extremum and update_array_extremum
+  ptr_buffer => buffer_obj%remap_buffer(fieldName, hasDiurnalAxis)
+
+  ! Update buffer
+  IF (is_regional) THEN
+    DO k = l_start(3), l_end(3)
+      k1 = k - l_start(3) + 1
+      DO j = js, je
+        DO i = is, ie
+          IF ( l_start(1)+hi <= i .AND. i <= l_end(1)+hi .AND. l_start(2)+hj <= j .AND. &
+            & j <= l_end(2)+hj ) THEN
+            i1 = i-l_start(1)-hi+1
+            j1=  j-l_start(2)-hj+1
+            select type (buffer_obj)
+            type is (outputBuffer0d_type)
+              call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
+                recon_bounds, (/i,j,k/), (/i1,j1,k1/))
+            type is (outputBuffer1d_type)
+              call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
+                recon_bounds, (/i,j,k/), (/i1,j1,k1/))
+            type is (outputBuffer2d_type)
+              call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
+                recon_bounds, (/i,j,k/), (/i1,j1,k1/))
+            type is (outputBuffer3d_type)
+              call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
+                recon_bounds, (/i,j,k/), (/i1,j1,k1/))
+            type is (outputBuffer4d_type)
+              call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
+                recon_bounds, (/i,j,k/), (/i1,j1,k1/))
+            type is (outputBuffer5d_type)
+              call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
+                recon_bounds, (/i,j,k/), (/i1,j1,k1/))
+            class default
+              call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+            end select
+          end if
+        END DO
+      END DO
+    END DO
+  ELSE
+    IF (reduced_k_range) THEN
+      ksr = l_start(3)
+      ker = l_end(3)
+      recon_bounds(3) = ksr
+      recon_bounds(6) = ker
+      select type (buffer_obj)
+      type is (outputBuffer0d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer1d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer2d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer3d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer4d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer5d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      class default
+        call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+      end select
+    ELSE
+      IF ( debug_diag_manager ) THEN
+        ! Compare bounds {is-hi, ie-hi, js-hj, je-hj, ks, ke} with the bounds of first three dimensions of the buffer
+        if (compare_two_sets_of_bounds((/is-hi, ie-hi, js-hj, je-hj, ks, ke/), &
+          (/LBOUND(buffer,1), UBOUND(buffer,1), LBOUND(buffer,2), UBOUND(buffer,2), &
+          LBOUND(buffer,3), UBOUND(buffer,3)/), err_msg_local)) THEN
+          IF ( fms_error_handler('fms_diag_object_mod::fms_diag_update_extremum', err_msg_local, err_msg) ) THEN
+            DEALLOCATE(field_data)
+            DEALLOCATE(mask)
+            RETURN
+          END IF
+        END IF
+      END IF
+      select type (buffer_obj)
+      type is (outputBuffer0d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer1d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer2d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer3d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer4d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      type is (outputBuffer5d_type)
+        call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
+      class default
+        call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+      end select
+    END IF
+  end if
+  ! Reset counter count_0d of the buffer object
+  select type (buffer_obj)
+  type is (outputBuffer0d_type)
+    buffer_obj%count_0d(sample) = 1
+  type is (outputBuffer1d_type)
+    buffer_obj%count_0d(sample) = 1
+  type is (outputBuffer2d_type)
+    buffer_obj%count_0d(sample) = 1
+  type is (outputBuffer3d_type)
+    buffer_obj%count_0d(sample) = 1
+  type is (outputBuffer4d_type)
+    buffer_obj%count_0d(sample) = 1
+  type is (outputBuffer5d_type)
+    buffer_obj%count_0d(sample) = 1
+  class default
+    call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+  end select
+end subroutine fms_diag_update_extremum
 #endif
 end module fms_diag_output_buffer_mod
