@@ -418,7 +418,7 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
     type is (real(kind=r4_kind))
       select type (db => this%data_buffer)
         type is (real(kind=r4_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
       end select
     type is (real(kind=r8_kind))
       select type (db => this%data_buffer)
@@ -428,12 +428,12 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
     type is (integer(kind=i4_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i4_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
       end select
     type is (integer(kind=i8_kind))
       select type (db => this%data_buffer)
         type is (integer(kind=i8_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
+          db(isd:ied, jsd:jed, ksd:ked, :) = input_data
       end select
     class default
         call mpp_error ("set_data_buffer", "The data input to set_data_buffer for "//&
