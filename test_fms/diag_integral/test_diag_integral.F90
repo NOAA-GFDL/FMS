@@ -160,8 +160,8 @@ contains
     real(r8_kind) :: answer2, answer3, answerw, answerh
 
     !> expected answers
-    answer2=real(nxy*nxy,lkind)/area_sum
-    answer3=real(nxy*nxy*nxy,lkind)/area_sum
+    answer2=real(nxy*nxy,r8_kind)/area_sum
+    answer3=real(nxy*nxy*nxy,r8_kind)/area_sum
     answerw=answer3
     answerh=answer2/2.0_lkind
 
