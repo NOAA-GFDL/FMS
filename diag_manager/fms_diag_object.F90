@@ -502,7 +502,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   logical, allocatable, dimension(:,:,:) :: oor_mask !< Out of range mask
 
   !> Input weight is for time averaging where each time level may have a different weight.
-  !! The input weight is polymorphic in intrinsic real types. If it is present it will be 
+  !! The input weight is polymorphic in intrinsic real types. If it is present it will be
   !! assigned to weight2 else weight2 gets val value.
   call real_copy_set(weight2, in_data=weight, val=1., err_msg=err_msg)
 
