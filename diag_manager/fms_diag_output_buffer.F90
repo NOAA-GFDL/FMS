@@ -36,7 +36,7 @@ implicit none
 private
 
 #ifdef use_yaml
-
+use fms_diag_util_mod, only: compare_two_sets_of_bounds
 !> @brief Object that holds buffered data and other diagnostics
 !! Abstract to ensure use through its extensions(buffer0-5d types)
 type, abstract :: fmsDiagOutputBuffer_class
@@ -1541,8 +1541,8 @@ subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, 
       IF ( debug_diag_manager ) THEN
         ! Compare bounds {is-hi, ie-hi, js-hj, je-hj, ks, ke} with the bounds of first three dimensions of the buffer
         if (compare_two_sets_of_bounds((/is-hi, ie-hi, js-hj, je-hj, ks, ke/), &
-          (/LBOUND(buffer,1), UBOUND(buffer,1), LBOUND(buffer,2), UBOUND(buffer,2), &
-          LBOUND(buffer,3), UBOUND(buffer,3)/), err_msg_local)) THEN
+          (/LBOUND(ptr_buffer,1), UBOUND(ptr_buffer,1), LBOUND(ptr_buffer,2), UBOUND(ptr_buffer,2), &
+          LBOUND(ptr_buffer,3), UBOUND(ptr_buffer,3)/), err_msg_local)) THEN
           IF ( fms_error_handler('fms_diag_object_mod::fms_diag_update_extremum', err_msg_local, err_msg) ) THEN
             DEALLOCATE(field_data)
             DEALLOCATE(mask)
@@ -1569,7 +1569,7 @@ subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, 
     END IF
   end if
   ! Reset counter count_0d of the buffer object
-  select type (buffer_obj%count_0d)
+  select type (count_type => buffer_obj%count_0d)
   type is (real(kind=r4_kind))
     buffer_obj%count_0d(sample) = 1.
   type is (real(kind=r8_kind))

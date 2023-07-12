@@ -138,21 +138,22 @@ module fms_diag_util_mod
   !! Initializes the outmask depending on presence/absence of inmask and rmask.
   !! Uses and sets rmask_threshold.
   subroutine init_mask_3d(field, outmask, rmask_threshold, inmask, rmask, err_msg)
-    class(*), intent(in) :: field(:,:,:,:) !< Dummy variable whose sizes only in the first three dimensions are important
+    class(*), intent(in) :: field(:,:,:,:)  !< Dummy variable whose sizes only in the first three
+                                            !! dimensions are important
     logical, allocatable, intent(inout) :: outmask(:,:,:) !< Output logical mask
     real, intent(inout) :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
                                            !! needed to be passed to the math/buffer update functions.
     logical, intent(in), optional :: inmask(:,:,:) !< Input logical mask
     class(*), intent(in), optional :: rmask(:,:,:) !< Floating point input mask value
     character(len=*), intent(out), optional :: err_msg !< Error message to relay back to caller
- 
+
     character(len=256) :: err_msg_local !< Stores locally generated error message
     integer :: status !< Stores status of memory allocation call
- 
+
     ! Initialize character strings
     err_msg_local = ''
     if (present(err_msg)) err_msg = ''
- 
+
     ! Check if outmask is allocated
     if (allocated(outmask)) deallocate(outmask)
     ALLOCATE(outmask(SIZE(field, 1), SIZE(field, 2), SIZE(field, 3)), STAT=status)
@@ -163,13 +164,13 @@ module fms_diag_util_mod
         return
       end if
     END IF
- 
+
     IF ( PRESENT(inmask) ) THEN
       outmask = inmask
     ELSE
       outmask = .TRUE.
     END IF
- 
+
     IF ( PRESENT(rmask) ) THEN
       SELECT TYPE (rmask)
         TYPE IS (real(kind=r4_kind))
