@@ -29,7 +29,7 @@ use platform_mod
 use iso_c_binding
 use time_manager_mod, only: time_type
 use mpp_mod, only: mpp_error, FATAL
-use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
+use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, debug_diag_manager
 
 implicit none
 
@@ -1437,7 +1437,7 @@ subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, 
   integer, intent(in) :: flag !< Flag to indicate what to update: 0 for minimum; 1 for maximum
   class(fmsDiagOutputBuffer_class), intent(inout) :: buffer_obj !< Remapped buffer to update
   class(*), intent(in) :: field_data(:,:,:,:) !< Field data
-  integer, intent(in) :: recon_bounds(12) !< Indices of bounds in the first three dimension of the field data
+  integer, intent(inout) :: recon_bounds(12) !< Indices of bounds in the first three dimension of the field data
   integer, intent(in) :: l_start(:) !< Local starting indices for the first three dimensions
   integer, intent(in) :: l_end(:)   !< Local ending indices for the first three dimensions
   logical, intent(in) :: is_regional
@@ -1454,7 +1454,7 @@ subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, 
   integer :: f1, f2
   integer :: f3, f4
   integer :: ksr, ker
-  integer :: i, j, k, i1, j1 !< For loops
+  integer :: i, j, k, i1, j1, k1 !< For loops
   character(len=128) :: err_msg_local !< Stores local error message
   class(*), pointer :: ptr_buffer(:,:,:,:,:)
 
@@ -1569,21 +1569,13 @@ subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, 
     END IF
   end if
   ! Reset counter count_0d of the buffer object
-  select type (buffer_obj)
-  type is (outputBuffer0d_type)
-    buffer_obj%count_0d(sample) = 1
-  type is (outputBuffer1d_type)
-    buffer_obj%count_0d(sample) = 1
-  type is (outputBuffer2d_type)
-    buffer_obj%count_0d(sample) = 1
-  type is (outputBuffer3d_type)
-    buffer_obj%count_0d(sample) = 1
-  type is (outputBuffer4d_type)
-    buffer_obj%count_0d(sample) = 1
-  type is (outputBuffer5d_type)
-    buffer_obj%count_0d(sample) = 1
+  select type (buffer_obj%count_0d)
+  type is (real(kind=r4_kind))
+    buffer_obj%count_0d(sample) = 1.
+  type is (real(kind=r8_kind))
+    buffer_obj%count_0d(sample) = 1.
   class default
-    call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+    call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported intrinsic type')
   end select
 end subroutine fms_diag_update_extremum
 
