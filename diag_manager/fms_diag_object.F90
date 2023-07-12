@@ -1107,7 +1107,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
   logical, allocatable :: oor_mask_4d(:,:,:,:) !< Copy of the input out of range mask to remove incompatibility
                                                !! in ranks when masking with the input field data (4d)
 
-  err_module_name = 'fms_diag_object_mod:fms_diag_check_out_of_range_value'
+  err_module_name = 'fms_diag_object_mod::fms_diag_check_out_of_range_value'
 
   ! Remap the input out of range mask to 4d mask
   oor_mask_4d = reshape(oor_mask, (/shape(oor_mask), 1/))
@@ -1193,7 +1193,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
             !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
             !   value.
             ! </ERROR>
-            CALL error_mesg(err_module_name, 'A value for '//&
+            CALL mpp_error(FATAL, TRIM(err_module_name)//' A value for '//&
                 &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
                 &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '&  !< Make sure the modern diag manager
                                                                             ! 'varname' is same as
@@ -1210,7 +1210,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
             !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
             !   is outside the range [<lower_val>,<upper_val>].
             ! </ERROR>
-            CALL error_mesg(err_module_name, 'A value for '//&
+            CALL mpp_error(FATAL, TRIM(err_module_name)//' A value for '//&
               &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
               &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '& !< Make sure the modern diag manager
                                                                         ! 'varname' is same as
@@ -1235,7 +1235,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
               !   is outside the range [<lower_val>,<upper_val>] and not equal to the missing
               !   value.
               ! </ERROR>
-              CALL error_mesg(err_module_name, 'A value for '//&
+              CALL mpp_error(FATAL, TRIM(err_module_name)//' A value for '//&
                 &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
                 &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '&  !< Make sure the modern diag manager
                                                                            ! 'varname' is same as
@@ -1252,7 +1252,7 @@ subroutine fms_diag_check_out_of_range_value(this, field_data, field_id, oor_mas
               !   A value for <module_name> in field <field_name> (Min: <min_val>, Max: <max_val>)
               !   is outside the range [<lower_val>,<upper_val>].
               ! </ERROR>
-              CALL error_mesg(err_module_name, 'A value for '//&
+              CALL mpp_error(FATAL, TRIM(err_module_name)//' A value for '//&
                 &TRIM(this%FMS_diag_fields(field_id)%get_modname())//' in field '//&
                 &TRIM(this%FMS_diag_fields(field_id)%get_varname())//' '& !< Make sure the modern diag manager
                                                                           ! 'varname' is same as
