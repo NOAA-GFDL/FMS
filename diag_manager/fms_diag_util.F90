@@ -3,7 +3,7 @@ module fms_diag_util_mod
 !> \email gagna.purjapun@noaa.gov
 !! \brief Contains routines for the modern diag_manager
 !!
-!! \description 
+!! \description
 #ifdef use_yaml
   use platform_mod
   use fms_mod, only: fms_error_handler
