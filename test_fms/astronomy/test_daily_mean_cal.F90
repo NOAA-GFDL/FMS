@@ -37,7 +37,7 @@ program test_daily_solar_cal
 
   real(kind=r8_kind), parameter :: twopi = 2.0_r8_kind * real(PI, r8_kind)
   real(kind=r8_kind), parameter :: deg_to_rad = twopi/360.0_r8_kind
-  
+
 
   real(kind=r8_kind)   :: ecc   = 0.01671_r8_kind !< Eccentricity of Earth's orbit [dimensionless]
   real(kind=r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
@@ -256,66 +256,66 @@ program test_daily_solar_cal
     real(kind=TEST_AST_KIND_), intent(out) :: rrsun
     real(kind=TEST_AST_KIND_)              :: rad_per, rr
     integer, parameter                     :: lkind = TEST_AST_KIND_
-  
+
     rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
     rrsun  = rr**(-2)
-  
+
   end subroutine create_ref_rrsun
-  
+
   subroutine create_ref_declination(ang, dec)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)  :: ang
     real(kind=TEST_AST_KIND_), intent(out) :: dec
     real(kind=TEST_AST_KIND_)              :: rad_obliq, sin_dec
-  
+
     rad_obliq    = real(obliq, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-  
+
   end subroutine create_ref_declination
 
   subroutine create_ref_fracday_2d(h_2d, fracday_2d)
-  
+
     implicit none
     integer, parameter                                     :: n = 4
     real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: h_2d
     real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: fracday_2d
     real(kind=TEST_AST_KIND_), dimension(n,n)              :: h_out
-  
+
     h_out = h_2d / real(PI, TEST_AST_KIND_)
     fracday_2d = h_out
-  
+
   end subroutine create_ref_fracday_2d
-  
+
   subroutine create_ref_fracday_1d(h_1d, fracday_1d)
-  
+
     implicit none
     integer, parameter                                   :: n = 16
     real(kind=TEST_AST_KIND_), intent(in),  dimension(n) :: h_1d
     real(kind=TEST_AST_KIND_), intent(out), dimension(n) :: fracday_1d
     real(kind=TEST_AST_KIND_), dimension(n)              :: h_out
-  
+
     h_out = h_1d / real(PI, TEST_AST_KIND_)
     fracday_1d = h_out
-  
+
   end subroutine create_ref_fracday_1d
-  
+
   subroutine create_ref_fracday_0d(h_0d, fracday_0d)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)  :: h_0d
     real(kind=TEST_AST_KIND_), intent(out) :: fracday_0d
     real(kind=TEST_AST_KIND_)              :: h_out
-  
+
     h_out = h_0d / real(PI, TEST_AST_KIND_)
     fracday_0d = h_out
-  
+
   end subroutine create_ref_fracday_0d
 
   subroutine create_ref_cosz_2d(lat, h, dec, time_since_ae, cosz_2d)
-  
+
     implicit none
     integer, parameter                                     :: n = 4
     real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat, h
@@ -324,21 +324,21 @@ program test_daily_solar_cal
     real(kind=TEST_AST_KIND_), intent(inout)               :: dec
     real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: cosz_2d
     integer, parameter                                     :: lkind = TEST_AST_KIND_
-  
+
     ! change time type for calculation
     time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
-    
+
     ! cosz calculation
     where (h == 0.0_lkind)
       cosz_2d = 0.0_lkind
     else where
       cosz_2d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     end where
-  
+
   end subroutine create_ref_cosz_2d
 
   subroutine create_ref_cosz_1d(lat, h, dec, time_since_ae, cosz_1d)
-  
+
     implicit none
     integer, parameter                                     :: n = 16
     real(kind=TEST_AST_KIND_), intent(in), dimension(n)    :: lat, h
@@ -347,21 +347,21 @@ program test_daily_solar_cal
     real(kind=TEST_AST_KIND_), intent(inout)               :: dec
     real(kind=TEST_AST_KIND_), intent(out), dimension(n)   :: cosz_1d
     integer, parameter                                     :: lkind = TEST_AST_KIND_
-  
+
     ! change time type for calculation
     time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
-    
+
     ! cosz calculation
     where (h == 0.0_lkind)
       cosz_1d = 0.0_lkind
     else where
       cosz_1d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     end where
-  
+
   end subroutine create_ref_cosz_1d
-  
+
   subroutine create_ref_cosz_0d(lat, h, dec, time_since_ae, cosz_0d)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)    :: lat, h
     type(time_type)                          :: time
@@ -369,17 +369,17 @@ program test_daily_solar_cal
     real(kind=TEST_AST_KIND_), intent(inout) :: dec
     real(kind=TEST_AST_KIND_), intent(out)   :: cosz_0d
     integer, parameter                       :: lkind = TEST_AST_KIND_
-  
+
     ! change time type for calculation
     time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
-    
+
     ! cosz calculation
     if (h == 0.0_lkind) then
       cosz_0d = 0.0_lkind
     else
       cosz_0d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     endif
-  
+
   end subroutine create_ref_cosz_0d
 
 end program test_daily_solar_cal

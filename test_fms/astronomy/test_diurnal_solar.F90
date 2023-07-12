@@ -67,7 +67,7 @@ program test_diurnal_solar
   subroutine test_diurnal_solar_allow_neg_2d
     !! for this test, only the routine input variables lat and lon
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_since_ae, orbit angle and declination should be created
     !! this test will allow negative cosz (allow_negative_cosz=.true.)
     implicit none
@@ -171,7 +171,7 @@ program test_diurnal_solar
   subroutine test_diurnal_solar_allow_neg_1d
     !! for this tests, only the routine input variables lat, lon, and gmt
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_since_ae, orbit angle and declination should be created
     !! this test will allow negative cosz (allow_negative_cosz=.true.)
     implicit none
@@ -296,7 +296,7 @@ program test_diurnal_solar
   subroutine test_diurnal_solar_allow_neg_0d
     !! for this test, only the routine input variables lat, lon, and gmt
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_since_ae, orbit angle and declination should be created
     !! this test will allow negative cosz (allow_negative_cosz=.true.)
     implicit none
@@ -308,7 +308,7 @@ program test_diurnal_solar
     integer                   :: i
     integer, parameter        :: lkind = TEST_AST_KIND_
 
-    ! test only changes in latitude 
+    ! test only changes in latitude
     lon_0d = 0.0_lkind ; gmt = 0.0_lkind ; time_since_ae = 0.0_lkind
     ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
@@ -341,7 +341,7 @@ program test_diurnal_solar
       end if
     end do
 
-    ! test only changes in longitude 
+    ! test only changes in longitude
     lat_0d = 0.0_lkind ; gmt = 0.0_lkind ; time_since_ae = 0.0_lkind
     ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
@@ -412,10 +412,10 @@ program test_diurnal_solar
   subroutine test_diurnal_solar_no_neg_2d
     !! for this test, only the routine input variables lat, lon, and gmt
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_since_ae, orbit angle and declination should be created
     !! this test will not allow negative cosz and will explicitly have
-    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! allow_negative_cosz=.false. although omitting the optional argument
     !! should produce the same effect
     implicit none
     integer, parameter                        :: n = 4
@@ -518,10 +518,10 @@ program test_diurnal_solar
   subroutine test_diurnal_solar_no_neg_1d
     !! for this tests, only the routine input variables lat, lon, and gmt
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_since_ae, orbit angle and declination should be created
     !! this test will not allow negative cosz and will explicitly have
-    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! allow_negative_cosz=.false. although omitting the optional argument
     !! should produce the same effect
 
     implicit none
@@ -646,10 +646,10 @@ program test_diurnal_solar
   subroutine test_diurnal_solar_no_neg_0d
     !! for this test, only the routine input variables lat, lon, and gmt
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_since_ae, orbit angle and declination should be created
     !! this test will not allow negative cosz and will explicitly have
-    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! allow_negative_cosz=.false. although omitting the optional argument
     !! should produce the same effect
     implicit none
     real(kind=TEST_AST_KIND_) :: lat_0d, lon_0d, h
@@ -660,7 +660,7 @@ program test_diurnal_solar
     integer                   :: i
     integer, parameter        :: lkind = TEST_AST_KIND_
 
-    ! test only changes in latitude 
+    ! test only changes in latitude
     lon_0d = 0.0_lkind ; gmt = 0.0_lkind ; time_since_ae = 0.0_lkind
     ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
@@ -693,7 +693,7 @@ program test_diurnal_solar
       end if
     end do
 
-    ! test only changes in longitude 
+    ! test only changes in longitude
     lat_0d = 0.0_lkind ; gmt = 0.0_lkind ; time_since_ae = 0.0_lkind
     ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
@@ -769,24 +769,24 @@ program test_diurnal_solar
     real(kind=TEST_AST_KIND_), intent(out) :: rrsun
     real(kind=TEST_AST_KIND_)              :: rad_per, rr
     integer, parameter                     :: lkind = TEST_AST_KIND_
-  
+
     rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
     rrsun  = rr**(-2)
-  
+
   end subroutine create_ref_rrsun
-  
+
   subroutine create_ref_declination(ang, dec)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)  :: ang
     real(kind=TEST_AST_KIND_), intent(out) :: dec
     real(kind=TEST_AST_KIND_)              :: rad_obliq, sin_dec
-  
+
     rad_obliq    = real(obliq, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-  
+
   end subroutine create_ref_declination
 
   subroutine create_ref_cosz_allow_neg_2d(lat_2d, lon_2d, gmt, h, dec, cosz_2d, fracday_2d)

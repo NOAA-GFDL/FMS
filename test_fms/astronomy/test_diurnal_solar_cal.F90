@@ -39,7 +39,7 @@ program test_diurnal_solar_cal
 
   real(kind=r8_kind), parameter :: twopi = 2.0_r8_kind * real(PI, r8_kind)
   real(kind=r8_kind), parameter :: deg_to_rad = twopi / 360.0_r8_kind
-  
+
 
   real(kind=r8_kind)   :: ecc   = 0.01671_r8_kind  !< Eccentricity of Earth's orbit [dimensionless]
   real(kind=r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
@@ -53,7 +53,7 @@ program test_diurnal_solar_cal
   call fms_end()
 
   call test_diurnal_solar_cal_allow_neg_2d
-  call test_diurnal_solar_cal_allow_neg_1d 
+  call test_diurnal_solar_cal_allow_neg_1d
   call test_diurnal_solar_cal_allow_neg_0d
 
   call test_diurnal_solar_cal_no_neg_2d
@@ -65,7 +65,7 @@ program test_diurnal_solar_cal
   subroutine test_diurnal_solar_cal_allow_neg_2d
     !! for this test, only the routine input variables lat and lon
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_type, orbit angle and declination should be created
     !! this test will allow negative cosz (allow_negative_cosz=.true.)
     implicit none
@@ -168,7 +168,7 @@ program test_diurnal_solar_cal
   subroutine test_diurnal_solar_cal_allow_neg_1d
     !! for this tests, only the routine input variables lat and lon
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_type, orbit angle and declination should be created
     !! this test will allow negative cosz (allow_negative_cosz=.true.)
     implicit none
@@ -260,7 +260,7 @@ program test_diurnal_solar_cal
   subroutine test_diurnal_solar_cal_allow_neg_0d
     !! for this test, only the routine input variables lat and lon
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_type, orbit angle and declination should be created
     !! this test will allow negative cosz (allow_negative_cosz=.true.)
     implicit none
@@ -272,7 +272,7 @@ program test_diurnal_solar_cal
     integer                   :: i
     integer, parameter        :: lkind = TEST_AST_KIND_
 
-    ! test only changes in latitude 
+    ! test only changes in latitude
     lon_0d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
     ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
@@ -304,8 +304,8 @@ program test_diurnal_solar_cal
         "test_diurnal_solar: 0d rrsun value, with changes in lat, does not match reference value")
       end if
     end do
-  
-    ! test only changes in longitude 
+
+    ! test only changes in longitude
     lat_0d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
     ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
@@ -342,10 +342,10 @@ program test_diurnal_solar_cal
   subroutine test_diurnal_solar_cal_no_neg_2d
     !! for this test, only the routine input variables lat and lon
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_type, orbit angle and declination should be created
     !! this test will not allow negative cosz and will explicitly have
-    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! allow_negative_cosz=.false. although omitting the optional argument
     !! should produce the same effect
     implicit none
     integer, parameter                        :: n = 4
@@ -448,10 +448,10 @@ program test_diurnal_solar_cal
   subroutine test_diurnal_solar_cal_no_neg_1d
     !! for this tests, only the routine input variables lat and lon
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_type, orbit angle and declination should be created
     !! this test will not allow negative cosz and will explicitly have
-    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! allow_negative_cosz=.false. although omitting the optional argument
     !! should produce the same effect
 
     implicit none
@@ -543,10 +543,10 @@ program test_diurnal_solar_cal
   subroutine test_diurnal_solar_cal_no_neg_0d
     !! for this test, only the routine input variables lat and lon
     !! will be changed since these are not dependent on private function calculations,
-    !! a more comprehensive test that includes different values for the 
+    !! a more comprehensive test that includes different values for the
     !! time_type, orbit angle and declination should be created
     !! this test will not allow negative cosz and will explicitly have
-    !! allow_negative_cosz=.false. although omitting the optional argument 
+    !! allow_negative_cosz=.false. although omitting the optional argument
     !! should produce the same effect
     implicit none
     real(kind=TEST_AST_KIND_) :: lat_0d, lon_0d, h
@@ -557,7 +557,7 @@ program test_diurnal_solar_cal
     integer                   :: i
     integer, parameter        :: lkind = TEST_AST_KIND_
 
-    ! test only changes in latitude 
+    ! test only changes in latitude
     lon_0d = 0.0_lkind ; time = set_date(2022,9,22,12,0,0)
     ang = 0.0_lkind ; dec = 0.0_lkind ; h = real(PI, TEST_AST_KIND_)/2.0_lkind
 
@@ -633,24 +633,24 @@ program test_diurnal_solar_cal
     real(kind=TEST_AST_KIND_), intent(out) :: rrsun
     real(kind=TEST_AST_KIND_)              :: rad_per, rr
     integer, parameter                     :: lkind = TEST_AST_KIND_
-  
+
     rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
     rrsun  = rr**(-2)
-  
+
   end subroutine create_ref_rrsun
-  
+
   subroutine create_ref_declination(ang, dec)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)  :: ang
     real(kind=TEST_AST_KIND_), intent(out) :: dec
     real(kind=TEST_AST_KIND_)              :: rad_obliq, sin_dec
-  
+
     rad_obliq    = real(obliq, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-  
+
   end subroutine create_ref_declination
 
   subroutine create_ref_cosz_allow_neg_2d(lat_2d, lon_2d, h, dec, time, cosz_2d, fracday_2d)
@@ -788,7 +788,7 @@ program test_diurnal_solar_cal
     t = gmt + lon_2d - real(PI, TEST_AST_KIND_)
     where (t >= real(PI, TEST_AST_KIND_))  t = t - real(twopi, TEST_AST_KIND_)
     where (t < real(-PI, TEST_AST_KIND_))  t = t + real(twopi, TEST_AST_KIND_)
-    
+
     where (abs(t) < h)
       cosz_2d    = aa + bb * cos(t)
       fracday_2d = 1.0_lkind
@@ -798,10 +798,10 @@ program test_diurnal_solar_cal
     end where
 
     ! adds extra check that cosz is not negative when
-    ! allow_negative_cosz=.false. which is necessary 
-    ! because there are cases where abs(t) < h is true 
+    ! allow_negative_cosz=.false. which is necessary
+    ! because there are cases where abs(t) < h is true
     ! and cosz is then a negative value
-    
+
     where (cosz_2d < 0.0_lkind)
       cosz_2d = max(0.0_lkind, cosz_2d)
     end where
@@ -843,10 +843,10 @@ program test_diurnal_solar_cal
     end where
 
     ! adds extra check that cosz is not negative when
-    ! allow_negative_cosz=.false. which is necessary 
-    ! because there are cases where abs(t) < h is true 
+    ! allow_negative_cosz=.false. which is necessary
+    ! because there are cases where abs(t) < h is true
     ! and cosz is then a negative value
-    
+
     where (cosz_1d < 0.0_lkind)
       cosz_1d = max(0.0_lkind, cosz_1d)
     end where
@@ -887,8 +887,8 @@ program test_diurnal_solar_cal
     end if
 
     ! adds extra check that cosz is not negative when
-    ! allow_negative_cosz=.false. which is necessary 
-    ! because there are cases where abs(t) < h is true 
+    ! allow_negative_cosz=.false. which is necessary
+    ! because there are cases where abs(t) < h is true
     ! and cosz is then a negative value
 
     if (cosz_0d < 0.0_lkind) then

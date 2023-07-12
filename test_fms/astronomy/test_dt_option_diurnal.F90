@@ -52,7 +52,7 @@ program test_diurnal_dt_option
   call astronomy_init
 
   call fms_end()
-  
+
   call test_dt_cases_0d
 
   contains
@@ -82,7 +82,7 @@ program test_diurnal_dt_option
       call mpp_error(FATAL, &
       "test_diurnal_solar: cosz for case 1 does not match reference value")
     end if
-      
+
     ! case 2: t = -PI(lon=0.0, gmt=0.0) ; h = pi/2 ; dt = PI
     lat_0d = 0.0_lkind ; lon_0d = 0.0_lkind ; gmt = 0.0_lkind ; time_since_ae = 0.0_lkind
     dec = 0.0_lkind ; h = real(PI,TEST_AST_KIND_)/2.0_lkind ; dt = real(PI, TEST_AST_KIND_)
@@ -145,8 +145,8 @@ program test_diurnal_dt_option
       "test_diurnal_solar: cosz for case 5 does not match reference value")
     end if
 
-    ! case 6: 
-    ! case 7: 
+    ! case 6:
+    ! case 7:
     ! case 8: t = -3.0*PI/2.0 ; h = PI/2.0 ; dt = 4.0*PI
     lat_0d = 0.0_lkind ; lon_0d = 5.0_lkind*real(PI,TEST_AST_KIND_)/8.0_lkind
     gmt = 5.0_lkind*real(PI,TEST_AST_KIND_)/8.0_lkind ; time_since_ae = 0.0_lkind ; dec = 0.0_lkind
@@ -173,11 +173,11 @@ program test_diurnal_dt_option
     real(kind=TEST_AST_KIND_), intent(out) :: rrsun
     real(kind=TEST_AST_KIND_)              :: rad_per, rr
     integer, parameter                     :: lkind = TEST_AST_KIND_
-  
+
     rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
     rrsun  = rr**(-2)
-  
+
   end subroutine create_ref_rrsun
 
   subroutine create_ref_dt_cosz_cases_0d(lat, lon, gmt, dt, h, dec, cosz)

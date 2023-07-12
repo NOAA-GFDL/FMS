@@ -213,7 +213,7 @@ program test_daily_solar
     integer                   :: i
 
     ! set input values
-    time_since_ae = 0.0_lkind 
+    time_since_ae = 0.0_lkind
     ang           = 0.0_lkind
     h             = real(PI,TEST_AST_KIND_)/2.0_lkind
 
@@ -253,109 +253,109 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), intent(out) :: rr_out
     real(kind=TEST_AST_KIND_)              :: rad_per, rr
     integer, parameter                     :: lkind = TEST_AST_KIND_
-  
+
     rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
     rr_out  = rr**(-2)
-  
+
   end subroutine create_ref_rr_out
-  
+
   subroutine create_ref_declination(ang, dec)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)  :: ang
     real(kind=TEST_AST_KIND_), intent(out) :: dec
     real(kind=TEST_AST_KIND_)              :: rad_obliq, sin_dec
-  
+
     rad_obliq    = real(obliq, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
     sin_dec      = - sin(rad_obliq)*sin(ang)
     dec          = asin(sin_dec)
-  
+
   end subroutine create_ref_declination
 
   subroutine create_ref_h_out_2d(h_2d, h_out_2d)
-  
+
     implicit none
     integer, parameter                                     :: n = 4
     real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: h_2d
     real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: h_out_2d
-  
+
     h_out_2d = h_2d / real(PI, TEST_AST_KIND_)
-  
+
   end subroutine create_ref_h_out_2d
-  
+
   subroutine create_ref_h_out_1d(h_1d, h_out_1d)
-  
+
     implicit none
     integer, parameter                                   :: n = 16
     real(kind=TEST_AST_KIND_), intent(in),  dimension(n) :: h_1d
     real(kind=TEST_AST_KIND_), intent(out), dimension(n) :: h_out_1d
-  
+
     h_out_1d = h_1d / real(PI, TEST_AST_KIND_)
-  
+
   end subroutine create_ref_h_out_1d
-  
+
   subroutine create_ref_h_out_0d(h_0d, h_out_0d)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)  :: h_0d
     real(kind=TEST_AST_KIND_), intent(out) :: h_out_0d
-  
+
     h_out_0d = h_0d / real(PI, TEST_AST_KIND_)
-  
+
   end subroutine create_ref_h_out_0d
 
   subroutine create_ref_cosz_2d(lat, h, dec, cosz_2d)
-  
+
     implicit none
     integer, parameter                                     :: n = 4
     real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat, h
     real(kind=TEST_AST_KIND_), intent(inout)               :: dec
     real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: cosz_2d
     integer, parameter                                     :: lkind = TEST_AST_KIND_
-    
+
     ! cosz calculation
     where (h == 0.0_lkind)
       cosz_2d = 0.0_lkind
     else where
       cosz_2d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     end where
-  
+
   end subroutine create_ref_cosz_2d
 
   subroutine create_ref_cosz_1d(lat, h, dec, cosz_1d)
-  
+
     implicit none
     integer, parameter                                     :: n = 16
     real(kind=TEST_AST_KIND_), intent(in), dimension(n)    :: lat, h
     real(kind=TEST_AST_KIND_), intent(inout)               :: dec
     real(kind=TEST_AST_KIND_), intent(out), dimension(n)   :: cosz_1d
     integer, parameter                                     :: lkind = TEST_AST_KIND_
-    
+
     ! cosz calculation
     where (h == 0.0_lkind)
       cosz_1d = 0.0_lkind
     else where
       cosz_1d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     end where
-  
+
   end subroutine create_ref_cosz_1d
-  
+
   subroutine create_ref_cosz_0d(lat, h, dec, cosz_0d)
-  
+
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)    :: lat, h
     real(kind=TEST_AST_KIND_), intent(inout) :: dec
     real(kind=TEST_AST_KIND_), intent(out)   :: cosz_0d
     integer, parameter                       :: lkind = TEST_AST_KIND_
-    
+
     ! cosz calculation
     if (h == 0.0_lkind) then
       cosz_0d = 0.0_lkind
     else
       cosz_0d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
     endif
-  
+
   end subroutine create_ref_cosz_0d
 
 end program test_daily_solar
