@@ -39,7 +39,7 @@ use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_time_reduction_mod, only: time_none, time_average, time_min, time_max, time_rms, &
                                       time_sum, time_diurnal, time_power
-use diag_util_mod, only: compare_two_sets_of_bounds, real_copy_set, check_indices_order, init_mask_3d
+use fms_diag_util_mod, only: compare_two_sets_of_bounds, real_copy_set, check_indices_order, init_mask_3d
 #endif
 #if defined(_OPENMP)
 use omp_lib
