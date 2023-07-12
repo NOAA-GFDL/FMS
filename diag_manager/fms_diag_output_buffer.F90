@@ -30,7 +30,6 @@ use iso_c_binding
 use time_manager_mod, only: time_type
 use mpp_mod, only: mpp_error, FATAL
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
-use diag_util_mod, only: update_scalar_extremum, update_array_extremum
 
 implicit none
 
