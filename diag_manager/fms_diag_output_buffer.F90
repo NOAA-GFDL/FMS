@@ -1585,5 +1585,286 @@ subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, 
     call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
   end select
 end subroutine fms_diag_update_extremum
+
+!> @brief Updates individual element of buffer
+subroutine update_scalar_extremum(flag, field_data, buffer, mask, sample, recon_bounds, &
+  running_indx1, running_indx2)
+   integer, intent(in) :: flag !< 0 for minimum; 1 for maximum
+   class(*), intent(in) :: field_data(:,:,:,:)
+   class(*), intent(inout) :: buffer(:,:,:,:,:)
+   logical, intent(in) :: mask(:,:,:,:)
+   integer, intent(in) :: sample !< diurnal sample index
+   integer, intent(in) :: recon_bounds(12) !< holds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
+   integer, intent(in) :: running_indx1(3) !< holds indices i, j, and k
+   integer, intent(in) :: running_indx2(3) !< holds indices i1, j1, and k1
+
+   integer :: i, j, k
+   integer :: i1, j1, k1
+   integer :: is, js, ks
+   integer :: ie, je, ke
+   integer :: hi, hj
+
+   ! Initialize i, j, and k
+   i = running_indx1(1)
+   j = running_indx1(2)
+   k = running_indx1(3)
+
+   ! Initialize i1, j1, and k1
+   i1 = running_indx2(1)
+   j1 = running_indx2(2)
+   k1 = running_indx2(3)
+
+   !> Unpack bounds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
+    is = recon_bounds(1)
+    js = recon_bounds(2)
+    ks = recon_bounds(3)
+    ie = recon_bounds(4)
+    je = recon_bounds(5)
+    ke = recon_bounds(6)
+    hi = recon_bounds(7)
+    hj = recon_bounds(10)
+
+   ! Select proper type and update the buffer
+   select type (field_data)
+   type is (real(kind=r4_kind))
+     select type (buffer)
+     type is (real(kind=r4_kind))
+       if (flag .eq. 0) then
+       ! Update the buffer with the current minimum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       else
+       ! Update the buffer with the current maximum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) >&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+     end select
+   type is (real(kind=r8_kind))
+     select type (buffer)
+     type is (real(kind=r8_kind))
+       if (flag .eq. 0) then
+       ! Update the buffer with the current minimum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       else
+       ! Update the buffer with the current maximum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) >&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+     end select
+   type is (integer(kind=i4_kind))
+     select type (buffer)
+     type is (integer(kind=i4_kind))
+       if (flag .eq. 0) then
+       ! Update the buffer with the current minimum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       else
+       ! Update the buffer with the current maximum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) >&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+     end select
+   type is (integer(kind=i8_kind))
+     select type (buffer)
+     type is (integer(kind=i8_kind))
+       if (flag .eq. 0) then
+       ! Update the buffer with the current minimum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       else
+       ! Update the buffer with the current maximum
+         where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) >&
+           buffer(i1,j1,k1,:,sample))
+           buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
+         end where
+       end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+     end select
+   class default
+     call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum unsupported field data type")
+   end select
+end subroutine update_scalar_extremum
+
+!> @brief Updates a chunk of buffer
+subroutine update_array_extremum(flag, field_data, buffer, mask, sample, recon_bounds, reduced_k_range)
+   integer :: flag !< 0 for minimum; 1 for extremum
+   class(*), intent(in) :: field_data(:,:,:,:)
+   class(*), intent(inout) :: buffer(:,:,:,:,:)
+   logical, intent(in) :: mask(:,:,:,:)
+   integer, intent(in) :: sample !< diurnal sample index
+   integer, intent(in) :: recon_bounds(12)
+   logical, intent(in) :: reduced_k_range
+
+   integer :: is, js, ks
+   integer :: ie, je, ke
+   integer :: hi, hj
+   integer :: f1, f2, f3, f4
+
+   !> Unpack bounds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
+   is = recon_bounds(1)
+   js = recon_bounds(2)
+   ks = recon_bounds(3)
+   ie = recon_bounds(4)
+   je = recon_bounds(5)
+   ke = recon_bounds(6)
+   hi = recon_bounds(7)
+   f1 = recon_bounds(8)
+   f2 = recon_bounds(9)
+   hj = recon_bounds(10)
+   f3 = recon_bounds(11)
+   f4 = recon_bounds(12)
+
+   ! Select proper type and update the buffer
+   select type (field_data)
+   type is (real(kind=r4_kind))
+     select type (buffer)
+     type is (real(kind=r4_kind))
+       if (flag .eq. 0) then
+       !> Update the buffer with the current minimum
+         if (reduced_k_range) then
+           ! recon_bounds must have ks = ksr and ke = ker
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         else
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         end if
+       else
+       !> Update the buffer with the current maximum
+         if (reduced_k_range) then
+           ! recon_bounds must have ks = ksr and ke = ker
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         else
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:)>&
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         end if
+       end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+     end select
+   type is (real(kind=r8_kind))
+     select type (buffer)
+     type is (real(kind=r8_kind))
+         if (flag .eq. 0) then
+         !> Update the buffer with the current minimum
+           if (reduced_k_range) then
+             ! recon_bounds must have ks = ksr and ke = ker
+             WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+               buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+               buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+           else
+             WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+           end if
+         else
+         !> Update the buffer with the current maximum
+           if (reduced_k_range) then
+             ! recon_bounds must have ks = ksr and ke = ker
+             WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+               buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+               buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+           else
+             WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:)>&
+               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+           end if
+         end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+     end select
+   type is (integer(kind=i4_kind))
+     select type (buffer)
+     type is (integer(kind=i4_kind))
+       if (flag .eq. 0) then
+       !> Update the buffer with the current minimum
+         if (reduced_k_range) then
+           ! recon_bounds must have ks = ksr and ke = ker
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         else
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         end if
+       else
+       !> Update the buffer with the current maximum
+         if (reduced_k_range) then
+           ! recon_bounds must have ks = ksr and ke = ker
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         else
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:)>&
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         end if
+       end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+     end select
+   type is (integer(kind=i8_kind))
+     select type (buffer)
+     type is (integer(kind=i8_kind))
+       if (flag .eq. 0) then
+       !> Update the buffer with the current minimum
+         if (reduced_k_range) then
+           ! recon_bounds must have ks = ksr and ke = ker
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         else
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         end if
+       else
+       !> Update the buffer with the current maximum
+         if (reduced_k_range) then
+           ! recon_bounds must have ks = ksr and ke = ker
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:) <&
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,:,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         else
+           WHERE (mask(f1:f2,f3:f4,ks:ke,:) .AND. field_data(f1:f2,f3:f4,ks:ke,:)>&
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
+             buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
+         end if
+       end if
+     class default
+       call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+     end select
+   class default
+     call mpp_error( FATAL, "diag_util_mod::update_array_extremum unsupported field data type")
+   end select
+end subroutine update_array_extremum
 #endif
 end module fms_diag_output_buffer_mod
