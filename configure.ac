@@ -110,6 +110,13 @@ AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
 
+AC_ARG_ENABLE([deprecated-io],
+  [AS_HELP_STRING([--enable-deprecated-io],
+    [Enables compilation of deprecated mpp_io and fms_io modules in addition to the updated fms2_io modules (default no)])])
+AS_IF([test ${enable_deprecated_io:-no} = yes],
+  [enable_deprecated_io=yes],
+  [enable_deprecated_io=no])
+
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
 AC_ARG_ENABLE([test-input],
@@ -203,7 +210,6 @@ AC_MSG_CHECKING([if netCDF was built with HDF5])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
 #include <netcdf_meta.h>
 #if !(NC_HAS_NC4)
-      choke me
 #endif]])], [nc_has_nc4=yes], [nc_has_nc4=no])
 AC_MSG_RESULT([$nc_has_nc4])
 if test $nc_has_nc4 = no; then
@@ -279,6 +285,15 @@ AC_LANG_POP(Fortran)
 AC_DEFINE([use_netCDF], [1], [This is required for the library to build])
 if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
+fi
+
+# check if compiling old io
+if test $enable_deprecated_io = yes; then
+  #If the test pass, define use_deprecated_io macro and skip it's unit tests
+  AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
+  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
+else
+  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
 fi
 
 # Set any required compile flags.  This will not be done if the user wants to
@@ -480,6 +495,7 @@ AC_CONFIG_FILES([
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
+  test_fms/sat_vapor_pres/Makefile
   FMS.pc
   ])
 
