@@ -274,7 +274,9 @@ subroutine stable_mix_3d(rich, mix)
 
 real, intent(in) , dimension(:,:,:)  :: rich
 real, intent(out), dimension(:,:,:)  :: mix
-integer :: n2, n3, i, j
+integer :: n2 !< Size of dimension 2 of mix and rich
+integer :: n3 !< Size of dimension 3 of mix and rich
+integer :: i, j !< Loop indices
 
 n2 = size(mix, 2)
 n3 = size(mix, 3)
@@ -943,7 +945,8 @@ subroutine stable_mix_2d(rich, mix)
 
 real, intent(in) , dimension(:,:)  :: rich
 real, intent(out), dimension(:,:)  :: mix
-integer :: n2, i
+integer :: n2 !< Size of dimension 2 of mix and rich
+integer :: i !< Loop index
 
 n2 = size(mix, 2)
 
@@ -960,7 +963,8 @@ subroutine stable_mix_1d(rich, mix)
 
 real, intent(in) , dimension(:)  :: rich
 real, intent(out), dimension(:)  :: mix
-integer :: n, ierr
+integer :: n !< Size of mix and rich
+integer :: ierr !< Error code set by monin_obukhov_stable_mix
 
 if (.not.module_is_initialized) call error_mesg('stable_mix in monin_obukhov_mod', &
      'monin_obukhov_init has not been called', FATAL)
@@ -979,7 +983,7 @@ subroutine stable_mix_0d(rich, mix)
 real, intent(in) :: rich
 real, intent(out) :: mix
 
-real, dimension(1) :: mix_1d
+real, dimension(1) :: mix_1d !< Representation of mix as a dimension(1) array
 
 call stable_mix([rich], mix_1d)
 
