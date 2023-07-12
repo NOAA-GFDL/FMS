@@ -689,7 +689,7 @@ subroutine set_file_domain(this, domain, type_of_domain)
 end subroutine set_file_domain
 
 !> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
-subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, output_buffers)
+subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output_buffers)
   class(fmsDiagFile_type),                 intent(inout) :: this              !< The file object
   integer,                                 INTENT(in)    :: axis_ids(:)       !< Array of axes_ids
   class(fmsDiagAxisContainer_type),        intent(inout) :: diag_axis(:)      !< Diag_axis object
@@ -697,6 +697,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, output_buffers)
                                                                               !! registered
   integer,                                 intent(in)    :: yaml_id           !< Yaml id of the field section for
                                                                               !! this var
+  integer,                                 intent(in)    :: buffer_id        !< ID of the buffer
   type(fmsDiagOutputBufferContainer_type), intent(inout) :: output_buffers(:) !< Array of output buffers
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
@@ -765,7 +766,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, output_buffers)
   end select
 
   !> Add the axis to the buffer object
-  call output_buffers(yaml_id)%add_axis_ids(var_axis_ids)
+  call output_buffers(buffer_id)%add_axis_ids(var_axis_ids)
 end subroutine add_axes
 
 !> @brief adds the start time to the fileobj
