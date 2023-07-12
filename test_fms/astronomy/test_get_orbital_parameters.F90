@@ -58,14 +58,11 @@ program test_get_parameters
     call get_orbital_parameters(ecc_check, obliq_check, per_check)
 
     if (ecc_check .ne. ecc) then
-      call mpp_error(FATAL, "test_get_orbital_parameters: eccentricity precision was lost by ", &
-           abs(ecc - ecc_check))
+      call mpp_error(FATAL, "test_get_orbital_parameters: eccentricity precision was lost")
     else if (obliq_check .ne. obliq) then
-      call mpp_error(FATAL, "test_get_orbital_parameters: obliquity precision was lost by ", &
-            abs(obliq - obliq_check))
+      call mpp_error(FATAL, "test_get_orbital_parameters: obliquity precision was lost")
     else if (per .ne. per_check) then
-      call mpp_error(FATAL, "test_get_orbital_parameters: perihelion precision was lost by ", &
-            abs(per - per_check))
+      call mpp_error(FATAL, "test_get_orbital_parameters: perihelion precision was lost")
     else
     end if
 
