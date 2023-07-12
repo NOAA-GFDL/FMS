@@ -406,9 +406,9 @@ subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
   isc = is - cds(1) + 1
   jsc = js - cds(2) + 1
   ksc = ks - cds(3) + 1
-  iec = isc + size(input_data, 1)
-  jec = jsc + size(input_data, 2)
-  kec = ksc + size(input_data, 3)
+  iec = isc + size(input_data, 1) - 1
+  jec = jsc + size(input_data, 2) - 1
+  kec = ksc + size(input_data, 3) - 1
 
 !> Buffer a copy of the data
   select type (input_data)
