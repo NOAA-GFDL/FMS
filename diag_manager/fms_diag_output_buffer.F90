@@ -30,13 +30,13 @@ use iso_c_binding
 use time_manager_mod, only: time_type
 use mpp_mod, only: mpp_error, FATAL
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, debug_diag_manager
+use fms_diag_util_mod, only: compare_two_sets_of_bounds
 
 implicit none
 
 private
 
 #ifdef use_yaml
-use fms_diag_util_mod, only: compare_two_sets_of_bounds
 !> @brief Object that holds buffered data and other diagnostics
 !! Abstract to ensure use through its extensions(buffer0-5d types)
 type, abstract :: fmsDiagOutputBuffer_class
