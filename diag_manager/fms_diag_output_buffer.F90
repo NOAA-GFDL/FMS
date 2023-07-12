@@ -146,6 +146,8 @@ public :: fmsDiagOutputBufferContainer_type
 public :: fms_diag_output_buffer_init
 public :: fms_diag_output_buffer_create_container
 public :: fms_diag_update_extremum
+public :: update_scalar_extremum
+public :: update_array_extremum
 
 contains
 
