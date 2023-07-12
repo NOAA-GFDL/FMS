@@ -90,6 +90,7 @@ diag_manager_mod.$(FC_MODEXT): diag_axis_mod.$(FC_MODEXT) diag_data_mod.$(FC_MOD
                                fms_diag_time_reduction_mod.$(FC_MODEXT) fms_diag_outfield_mod.$(FC_MODEXT) \
                                fms_diag_fieldbuff_update_mod.$(FC_MODEXT)
 fms_diag_output_buffer_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
+fms_diag_util_mod.$(FC_MODEXT): platform_mod.$(FC_MODEXT) fms_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
