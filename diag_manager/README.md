@@ -63,11 +63,12 @@ The files are listed under the diagFiles section as a dashed array.
 
 Below are the **required** keys needed to define each file.
 - **file_name** is a string that defines the name of the file. Do not add ".nc" and "tileX" to the filename as this will be handled by FMS.
-- **freq** is a string that defines the frequency and the units that data will be written
+- **freq** defines the frequency and the units that data will be written
   - The acceptable values for freq are:
     - =-1: output at the end of the run only
     - =0: output every timestep
-    - \>0: output frequency and units (with a space between the frequency number and units e.g 24 hours)
+    - \>0 units: output frequency and units (with a space between the frequency number and units e.g 24 hours)
+  - Values of -1 or 0 do not require units.
   - The acceptable values for units are seconds, minutes, hours, days, months, years.
 - **time_units** is a string that defines units for time. The acceptable values are seconds, minutes, hours, days, months, years.
 - **unlimdim** is a string that defines the name of the unlimited dimension in the output netcdf file, usually “time”.
