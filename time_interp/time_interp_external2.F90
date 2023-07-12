@@ -758,8 +758,9 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   integer :: window_id
   real(r8_kind)    :: mask_in(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
   real(r8_kind), allocatable :: mask_out(:,:,:)
-  real(r4_kind), allocatable :: hi_tmp_out(:,:,:,:) !< used to hold a copy of field%data if using r4_kind
+  real(r4_kind), allocatable :: hi_tmp_data(:,:,:,:) !< used to hold a copy of field%data if using r4_kind
   real(r4_kind), allocatable :: hi_tmp_msk_out(:,:,:) !< used return the field mask if using r4_kind
+  real(r4_kind), allocatable :: hi_tmp_src_data(:,:,:,:) !< used return the field mask if using r4_kind
 
   window_id = 1
   if( PRESENT(window_id_in) ) window_id = window_id_in
@@ -829,28 +830,36 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
               enddo
            endif
         endif
-        allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
         !! added for mixed mode. if existing horiz_interp_type was initialized in r4, needs to cast down in order
         !! to match up with saved values in horiz_interp_type.
         !! creates some temporary arrays since intent(out) vars can't get passed in diretory
         if (interp%horizInterpReals4_type%is_allocated) then
-            allocate(hi_tmp_out(size(field%data,1),size(field%data,2),size(field%data,3), size(field%data,4)))
-            allocate(hi_tmp_msk_out(size(mask_out,1),size(mask_out,2),size(mask_out,3)))
-            !hi_tmp_in = real(field%src_data(:,:,:,ib), r4_kind)
-            hi_tmp_out = real(field%data, r4_kind)
-            call horiz_interp(interp, real(field%src_data(:,:,:,ib), r4_kind), hi_tmp_out(isw:iew,jsw:jew,:,ib), &
+            ! allocate (there may be a better way to do this, had issues with gnu)
+            allocate(hi_tmp_msk_out(isw:iew,jsw:jew, SIZE(field%src_data,3)))
+            allocate(hi_tmp_data(LBOUND(field%data,1):UBOUND(field%data,1), LBOUND(field%data,2):UBOUND(field%data,2),LBOUND(field%data,3):UBOUND(field%data,3),LBOUND(field%data,4):UBOUND(field%data,4)))
+            allocate(hi_tmp_src_data(LBOUND(field%src_data,1):UBOUND(field%src_data,1), LBOUND(field%src_data,2):UBOUND(field%src_data,2),LBOUND(field%src_data,3):UBOUND(field%src_data,3),LBOUND(field%src_data,4):UBOUND(field%src_data,4)))
+            ! assign if needed
+            hi_tmp_data = real(field%data, r4_kind)
+            hi_tmp_src_data = real(field%src_data, r4_kind)
+            ! do interpolation
+            call horiz_interp(interp, hi_tmp_src_data(:,:,:,ib), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
                               mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
-            field%data = real(hi_tmp_out, r8_kind)
+            ! assign any output
+            field%data = real(hi_tmp_data, r8_kind)
             field%mask(isw:iew,jsw:jew,:,ib) = hi_tmp_msk_out(isw:iew,jsw:jew,:) > 0.0_r4_kind
-            deallocate(hi_tmp_out, hi_tmp_msk_out)
+
+            if(allocated(hi_tmp_data))     deallocate(hi_tmp_data)
+            if(allocated(hi_tmp_msk_out))  deallocate(hi_tmp_msk_out)
+            if(allocated(hi_tmp_src_data)) deallocate(hi_tmp_src_data)
         else
+            allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
             call horiz_interp(interp, field%src_data(:,:,:,ib),field%data(isw:iew,jsw:jew,:,ib), &
                               mask_in=mask_in, &
                               mask_out=mask_out)
             field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0.0_r8_kind
+            deallocate(mask_out)
         endif
 
-        deallocate(mask_out)
      else
         if ( field%region_type .NE. NO_REGION ) then
            call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present")
@@ -862,6 +871,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      where(field%mask(isw:iew,jsw:jew,:,ib)) field%data(isw:iew,jsw:jew,:,ib) = &
           field%data(isw:iew,jsw:jew,:,ib)*field%slope + field%intercept
      field%need_compute(ib, window_id) = .false.
+
   endif
 
 end subroutine load_record
