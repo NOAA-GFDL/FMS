@@ -21,7 +21,7 @@
 !> @addtogroup mpp_domains_mod
 !> @{
 
-!> This routine is used to retrieve scalar boundary data for symmetric domain.
+!> This routine is used to retrieve scalar ad boundary data for symmetric domain.
 subroutine MPP_GET_BOUNDARY_AD_2D_(field, domain, ebuffer, sbuffer, wbuffer, nbuffer, flags, &
                                 position, complete, tile_count)
   type(domain2D),       intent(in)   :: domain
