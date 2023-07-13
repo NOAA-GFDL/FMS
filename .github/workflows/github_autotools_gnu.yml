@@ -19,8 +19,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: print env
-      run: env
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build
