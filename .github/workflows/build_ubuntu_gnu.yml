@@ -12,7 +12,6 @@ jobs:
       matrix:
         conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
         input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
-        io-flag: [ --enable-deprecated-io, --disable-deprecated-io]
     container:
       image: noaagfdl/hpc-me.ubuntu-minimal:gnu-input
       env:
