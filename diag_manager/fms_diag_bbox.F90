@@ -59,6 +59,24 @@ MODULE fms_diag_bbox_mod
       procedure :: get_kmax
    END TYPE fmsDiagIbounds_type
 
+   !> @brief Data structure holding starting and ending indices in the I, J, and
+   !! K dimensions. It also has extra members related to halo sizes and updated indices
+   !! in I and J dimensions.
+   type, public :: fmsDiagBoundsHalos_type
+      integer :: is
+      integer :: ie
+      integer :: js
+      integer :: je
+      integer :: ks
+      integer :: ke
+      integer :: hi
+      integer :: hj
+      integer :: fis
+      integer :: fie
+      integer :: fjs
+      integer :: fje
+   end type fmsDiagBoundsHalos_type
+
 CONTAINS
 
    !> @brief Gets imin of fmsDiagIbounds_type

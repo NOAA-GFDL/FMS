@@ -72,7 +72,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_mod, ONLY: mpp_npes
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE fms2_io_mod
-  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
+  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type, fmsDiagBoundsHalos_type
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
@@ -2505,7 +2505,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
   !> @return .false. if there is no error else .true.
   function recondition_indices(indices, field, is_in, js_in, ks_in, &
     ie_in, je_in, ke_in, err_msg) result(ierr)
-    integer, intent(inout) :: indices(12) !< Stores indices in order:
+    type(fmsDiagBoundsHalos_type), intent(inout) :: indices !< Stores indices in order:
                                               !! (/is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje/)
     class(*), intent(in) :: field(:,:,:,:) !< Dummy variable; only the sizes of the first 3 dimensions are used
     integer, intent(in), optional :: is_in, js_in, ks_in, ie_in, je_in, ke_in !< User input indices
@@ -2576,7 +2576,18 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     fje = n2 - hj
 
     ! Update indices
-    indices = (/is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje/)
+    indices%is = is
+    indices%ie = ie
+    indices%js = js
+    indices%je = je
+    indices%ks = ks
+    indices%ke = ke
+    indices%hi = hi
+    indices%hj = hj
+    indices%fis = fis
+    indices%fie = fie
+    indices%fjs = fjs
+    indices%fje = fje
   end function recondition_indices
 
   !> @brief Allocates outmask(second argument) with sizes of the first three dimensions of field(first argument).
