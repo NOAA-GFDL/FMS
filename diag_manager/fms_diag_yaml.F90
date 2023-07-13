@@ -503,35 +503,31 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
 
   integer, allocatable :: key_ids(:) !< Id of the gloabl atttributes key/value pairs
   character(len=:), ALLOCATABLE :: grid_type !< grid_type as it is read in from the yaml
-  character(len=:), ALLOCATABLE :: freq_buffer !< buffer to store any freq as it is read from the yaml
   character(len=:), ALLOCATABLE :: buffer      !< buffer to store any *_units as it is read from the yaml
 
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", fileobj%file_fname)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq_units", buffer)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq", freq_buffer)
-  call set_file_freq(fileobj, freq_buffer, buffer)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq", buffer)
+  call parse_key(fileobj%file_fname, buffer, fileobj%file_freq, fileobj%file_frequnit, "freq")
+  deallocate(buffer)
 
-  deallocate(freq_buffer, buffer)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "unlimdim", fileobj%file_unlimdim)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", buffer)
   call set_file_time_units(fileobj, buffer)
-
   deallocate(buffer)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq", freq_buffer, is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq_units", buffer, &
-         is_optional=.true.)
-  call set_new_file_freq(fileobj, freq_buffer, buffer)
 
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq", buffer, is_optional=.true.)
+  call parse_key(fileobj%file_fname, buffer, fileobj%file_new_file_freq, fileobj%file_new_file_freq_units, &
+    "new_file_freq")
   deallocate(buffer)
+
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "filename_time", buffer, is_optional=.true.)
   call set_filename_time(fileobj, buffer)
+  deallocate(buffer)
 
-  deallocate(freq_buffer, buffer)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", freq_buffer, is_optional=.true.)
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration_units", buffer, &
-    is_optional=.true.)
-  call set_file_duration(fileobj, freq_buffer, buffer)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", buffer, is_optional=.true.)
+  call parse_key(fileobj%file_fname, buffer, fileobj%file_duration, fileobj%file_duration_units, &
+    "file_duration")
 
   nsubregion = 0
   nsubregion = get_num_blocks(diag_yaml_id, "sub_region", parent_block_id=diag_file_id)
@@ -696,34 +692,66 @@ result(total_nvars)
   end do
 end function
 
-!> @brief This checks if the file frequency and file frequency units in a diag file are valid and
-!! sets the integer equivalent
-subroutine set_file_freq(fileobj, file_freq, file_frequnit)
-  type(diagYamlFiles_type), intent(inout) :: fileobj         !< diagYamlFiles_type obj to check
-  character(len=*),         intent(in)    :: file_freq       !< File_freq as it is read from the diag_table
-  character(len=*),         intent(in)    :: file_frequnit   !< File_freq_units as it is read from the diag_table
+!> @brief This parses the freq, new_file_freq, or file_duration keys which are read in as a comma list
+subroutine parse_key(filename, buffer, file_freq, file_frequnit, var)
+  character(len=*),         intent(in)     :: filename         !< The name of the file (for error messages)
+  character(len=*),         intent(inout)  :: buffer           !< Buffer that was read in from the yaml
+  integer,                  intent(out)    :: file_freq(:)     !< buffer to store the freq, new_file_freq, or
+                                                               !! file_duration after it is parsed
+  integer,                  intent(out)    :: file_frequnit(:) !< buffer to store the freq units, new_file_freq units,
+                                                               !! or file_duration units after it is parsed
+  character(len=*),         intent(in)     :: var              !< Name of the key parsing
 
-  integer           :: i                         !< For do loops
-  character(len=10) :: file_freq_units(MAX_FREQ) !< Array of file frequencies as a string
-  integer           :: err_unit                  !< Dummy error unit
+  integer            :: j           !< location of the ",' in the buffer
+  integer            :: k           !< location of the " " that seperated the units
+  logical            :: finished    !< .true. if the parsing is complete
+  integer            :: count       !< Number of keys that have been parsed
+  character(len=255) :: str         !< Member of the comma seperated list
+  character(len=10)  :: units       !< String to hold the units
+  integer            :: err_unit    !< Error key
 
-  file_freq_units = ""
-  read(file_freq, *, iostat=err_unit) fileobj%file_freq
-  read(file_frequnit, *, iostat=err_unit) file_freq_units
+  if (buffer .eq. "") return
 
-  do i = 1, MAX_FREQ
-    if (fileobj%file_freq(i) >= -1) then
-      if (trim(file_freq_units(i)) .eq. "") &
-        call mpp_error(FATAL, "file_freq_units is required. &
-        &Check your entry for file:"//trim(fileobj%file_fname))
+  finished = .false.
+  j = 0
+  count = 0
+  do while (.not. finished)
+    count = count + 1
+    buffer = buffer(j+1:len_trim(buffer))
+    j = index(buffer, ",")
+    if (j == 0) then
+      !< There is only 1 member in the list
+      j = len_trim(buffer)+1
+      finished = .true.
+    endif
 
-      fileobj%file_frequnit(i) = set_valid_time_units(file_freq_units(i), &
-      "file_freq_units for file:"//trim(fileobj%file_fname))
+    str = adjustl(buffer(1:j-1))
+
+    k = index(str, " ")
+    read(str(1:k-1), *, iostat=err_unit) file_freq(count)
+    units = str(k+1:len_trim(str))
+
+    if (err_unit .ne. 0) &
+      call mpp_error(FATAL, "Error parsing "//trim(var)//". Check your entry for file"//&
+        trim(filename))
+
+    if (file_freq(count) .lt. -1) &
+        call mpp_error(FATAL, trim(var)//" is not valid. &
+        &Check your entry for file:"//trim(filename))
+
+    if (file_freq(count) .eq. -1 .or. file_freq(count) .eq. 0) then
+      !! The file is static so no need to read the units
+      file_frequnit(count) = DIAG_DAYS
     else
-      return
+      if (trim(units) .eq. "") &
+        call mpp_error(FATAL, trim(var)//" units is required. &
+        &Check your entry for file:"//trim(filename))
+
+      file_frequnit(count) = set_valid_time_units(units, &
+        trim(var)//" for file:"//trim(filename))
     endif
   enddo
-end subroutine set_file_freq
+end subroutine parse_key
 
 !> @brief This checks if the time unit in a diag file is valid and sets the integer equivalent
 subroutine set_file_time_units (fileobj, file_timeunit)
@@ -732,36 +760,6 @@ subroutine set_file_time_units (fileobj, file_timeunit)
 
  fileobj%file_timeunit = set_valid_time_units(file_timeunit, "timeunit for file:"//trim(fileobj%file_fname))
 end subroutine set_file_time_units
-
-!> @brief This checks if the new file frequency and the new file frequency units in a diag file are valid
-!! and sets the integer equivalent
-subroutine set_new_file_freq(fileobj, new_file_freq, new_file_freq_units)
-  type(diagYamlFiles_type), intent(inout) :: fileobj                  !< diagYamlFiles_type obj to check
-  character(len=*),         intent(in)    :: new_file_freq            !< new file freq units as it is read from
-                                                                      !! the diag_table
-  character(len=*),         intent(in)    :: new_file_freq_units      !< new file freq units as it is read from
-                                                                      !! the diag_table
-  integer           :: i                                  !< For do loops
-  character(len=10) :: file_new_file_freq_units(MAX_FREQ) !< Array of new file frequencies as string
-  integer           :: err_unit                           !< Dummy error unit
-
-  file_new_file_freq_units = ""
-  read(new_file_freq, *, iostat=err_unit) fileobj%file_new_file_freq
-  read(new_file_freq_units, *, iostat=err_unit) file_new_file_freq_units
-
-  do i = 1, MAX_FREQ
-    if (fileobj%file_new_file_freq(i) > 0) then
-      if (trim(file_new_file_freq_units(i)) .eq. "") &
-        call mpp_error(FATAL, "new_file_freq_units is required if using new_file_freq. &
-        &Check your entry for file:"//trim(fileobj%file_fname))
-
-      fileobj%file_new_file_freq_units(i) = set_valid_time_units(file_new_file_freq_units(i), &
-      "new_file_freq_units for file:"//trim(fileobj%file_fname))
-    else
-      return
-    endif
-  enddo
-end subroutine set_new_file_freq
 
 !> @brief This checks if the filename_time in a diag file is correct and sets the integer equivalent
 subroutine set_filename_time(fileobj, filename_time)
@@ -783,63 +781,6 @@ subroutine set_filename_time(fileobj, filename_time)
     &Check your entry for file "//trim(fileobj%file_fname))
   end select
 end subroutine set_filename_time
-
-!> @brief This checks if the file duration and the file duration units in a diag file are valid
-!! and sets the integer equivalent
-subroutine set_file_duration(fileobj, file_duration, file_duration_units)
-  type(diagYamlFiles_type), intent(inout) :: fileobj             !< diagYamlFiles_type obj to check
-  character(len=*),         intent(in)    :: file_duration       !< file_duration as it is read from the yaml
-  character(len=*),         intent(in)    :: file_duration_units !< file_duration units as it is read from the yaml
-
-  integer           :: i                                   !< For do loops
-  character(len=10) :: file_duration_units_array(MAX_FREQ) !< Array of file_duration_units as string
-  integer           :: err_unit                            !< Dummy error unit
-  logical           :: mask(MAX_FREQ)                      !< Array of logical
-  integer           :: nfile_duration                      !< Number of file durations defined
-  integer           :: nfile_freq                          !< Number of file frequencies defined
-  integer           :: nnew_file_freq                      !< Number of new file frequencies defined
-
-  file_duration_units_array = ""
-  read(file_duration, *, iostat=err_unit) fileobj%file_duration
-  read(file_duration_units, *, iostat=err_unit) file_duration_units_array
-
-  nfile_duration = 0
-  do i = 1, MAX_FREQ
-    if (fileobj%file_duration(i) > 0) then
-      if(trim(file_duration_units_array(i)) .eq. "") &
-      call mpp_error(FATAL, "file_duration_units is required if using file_duration. &
-        &Check your entry for file:"//trim(fileobj%file_fname))
-
-      fileobj%file_duration_units(i) = set_valid_time_units(file_duration_units_array(i), &
-      "file_duration_units for file:"//trim(fileobj%file_fname))
-      nfile_duration = nfile_duration + 1
-    else
-      exit
-    endif
-  enddo
-
-  !< Make sure the user send in the correct number of freq, new_file_freq, and file_duration
-  mask = .FALSE.
-  mask = fileobj%file_freq .ne. DIAG_NULL
-  nfile_freq = count(mask)
-
-  mask = .FALSE.
-  mask = fileobj%file_new_file_freq .ne. DIAG_NULL
-  nnew_file_freq = count(mask)
-
-  if (nfile_freq .ne. nfile_duration .and. nfile_freq-1 .ne. nfile_duration) &
-    call mpp_error(FATAL, "freq and file_duration do not have consistent size. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-
-  if (nfile_freq .ne. nnew_file_freq .and. nfile_freq-1 .ne. nnew_file_freq) &
-    call mpp_error(FATAL, "freq and new_file_freq do not have consistent size. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-
-  if (nnew_file_freq .ne. nfile_duration .and. nnew_file_freq-1 .ne. nfile_duration) &
-    call mpp_error(FATAL, "new_file_freq and file_duration do not have consistent size. &
-      &Check your entry for file:"//trim(fileobj%file_fname))
-
-end subroutine set_file_duration
 
 !> @brief This checks if the kind of a diag field is valid and sets it
 subroutine set_field_kind(field, skind)
