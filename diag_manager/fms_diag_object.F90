@@ -245,7 +245,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
-     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i))
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
+       fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
      call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
@@ -255,7 +256,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
-     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i))
+     call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
+       fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(init_time)) then !only inti time present
@@ -976,10 +978,11 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: i, j !< For looping
   class(fmsDiagOutputBuffer_class), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
-  integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
+  integer, allocatable :: axis_ids(:) !< Pointer to indices of axes of the field variable
   integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
   real :: missing_value !< Fill value to initialize output buffers
   character(len=128), allocatable :: var_name !< Field name to initialize output buffers
+  logical :: is_scalar !< Flag indicating that the variable is a scalar
 
   ! Determine the type of the field data
   var_type = get_var_type(field_data(1, 1, 1, 1))
@@ -1009,15 +1012,21 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   endif
 
   ! Determine dimensions of the field
-  ndims = 0
+  is_scalar = .True.
   if (this%FMS_diag_fields(field_id)%has_axis_ids()) then
-    axis_ids => this%FMS_diag_fields(field_id)%get_axis_id() !< Get ids of axes of the variable
-    ndims = size(axis_ids) !< Dimensions of the field
+    is_scalar = .False.
   endif
 
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
+
+    ndims = 0
+    if (.not. is_scalar) then
+      axis_ids = this%FMS_diag_output_buffers(buffer_id)%get_axis_ids()
+      ndims = size(axis_ids)
+    endif
+
     ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
     num_diurnal_samples = ptr_diag_field_yaml%get_n_diurnal() !< Get number of diurnal samples
 
