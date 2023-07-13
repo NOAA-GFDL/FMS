@@ -336,6 +336,11 @@ subroutine fms_init (localcomm, alt_input_nml_path)
  use fms_io_mod,    only: fms_io_version
 #endif
 
+ interface
+    subroutine maximize_system_stacksize_limit() bind(C)
+    end subroutine
+ end interface
+
  integer, intent(in), optional :: localcomm
  character(len=*), intent(in), optional :: alt_input_nml_path
  integer :: ierr, io
@@ -344,6 +349,10 @@ subroutine fms_init (localcomm, alt_input_nml_path)
 
     if (module_is_initialized) return    ! return silently if already called
     module_is_initialized = .true.
+
+!---- Raise the system stack size limit to its maximum permissible value ----
+    call maximize_system_stacksize_limit
+
 !---- initialize mpp routines ----
     if(present(localcomm)) then
        if(present(alt_input_nml_path)) then
