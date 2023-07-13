@@ -9,9 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        conf-flag: [--disable-openmp, --enable-mixed-mode, --with-mpi=no]
+        conf-flag: [ --enable-deprecated-io, --disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
         input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
-        io-flag: [ --enable-deprecated-io, --disable-deprecated-io]
         exclude:
           - conf-flag: --with-mpi=no
             input-flag: --enable-test-input=/home/unit_tests_input
@@ -27,6 +26,9 @@ jobs:
       run: autoreconf -if
     - name: Configure the build
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+    - name: Configure the build with compiler flags
+      if: ${{ matrix.conf-flags == '--disable-setting-flags' }}
+      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include $FCFLAGS"
     - name: Build the library
       run: make distcheck
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
