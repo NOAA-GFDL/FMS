@@ -921,6 +921,7 @@ my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end but it uses the openmp stuff(test $my_test_count)" '
     mpirun -n 6 ../test_dm_openmp
   '
+export OMP_NUM_THREADS=1
 else
   my_test_count=`expr $my_test_count + 1`
   test_expect_failure "test modern diag manager failure when compiled without -Duse-yaml flag (test $my_test_count)" '
