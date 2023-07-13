@@ -47,8 +47,10 @@
       integer :: n, l_size, l, m, i, j, k
       integer :: is, ie, js, je, tMe, dir
       integer :: buffer_recv_size, nlist, outunit
-      integer :: send_start_pos
-      integer :: send_msgsize(MAXLIST)
+      integer :: send_start_pos  !>Send buffer start location
+                                 !!This serves as ad recv buffer start location
+      integer :: send_msgsize(MAXLIST)  !>Send buffer msg size storage
+                                        !!This should be checkpointed for reverse ad communication
 
       outunit = stdout()
       ptr = LOC(mpp_domains_stack)
@@ -58,7 +60,6 @@
       if( PRESENT(flags) )update_flags = flags
 
       update_edge_only = BTEST(update_flags, EDGEONLY)
-      !recv = .false.
       recv(1) = BTEST(update_flags,EAST)
       recv(3) = BTEST(update_flags,SOUTH)
       recv(5) = BTEST(update_flags,WEST)
@@ -114,6 +115,11 @@
             l = overPtr%pe - mpp_root_pe()
             msg3(l) = msgsize
          enddo
+         ! mpp_sync_self is desirable but keep mpp_alltoall
+         ! to exactly follow the duality of mpp_do_update.fh
+         ! all-to-all may have scaling issues on very large systems
+         ! ref: BN. Cheng, A Duality between Forward and Adjoint MPI Communication Routines
+         !      COMPUTATIONAL METHODS IN SCIENCE AND TECHNOLOGY Special Issue 2006, 23-24
          call mpp_alltoall(msg3, 1, msg1, 1)
 
          do m = 0, nlist-1
@@ -128,8 +134,9 @@
          deallocate(msg1, msg2, msg3)
       endif
 
-      ! checkpoint buffer recv size and send pos and msgsize
-      ! forward recv info
+      ! Duality of ad code requires checkpoint info: buffer recv size and send pos and msgsize
+      ! from the forward recv portion of mpp_do_update.fh
+      ! ref above in line 121
       buffer_pos = 0
 
       do m = 1, update%nrecv
@@ -149,13 +156,12 @@
          if( msgsize.GT.0 )then
             buffer_pos = buffer_pos + msgsize
          end if
-      end do ! end do m = 1, update%nrecv
+      end do
       buffer_recv_size = buffer_pos
       send_start_pos = buffer_pos
 
-      ! forward send info
+      ! checkpoint send_msgsize
       buffer_pos = buffer_recv_size
-      ! forward pack
       do m = 1, update%nsend
          send_msgsize(m) = 0
          overPtr => update%send(m)
@@ -178,14 +184,14 @@
                js = overPtr%js(n); je = overPtr%je(n)
                pos = pos + (ie-is+1)*(je-js+1)*ke*l_size
             endif
-         end do ! do n = 1, overPtr%count
+         end do
 
          send_msgsize(m) = pos-buffer_pos
          buffer_pos = pos
-      end do ! end do m = 1, nsend
+      end do
 
-      ! backward communication
-      ! pack (recv in forward)
+      ! bufferize for backward communication
+      ! using pack procedures of recv in mpp_do_update.fh
       buffer_pos = buffer_recv_size
       do m = update%nrecv, 1, -1
          overPtr => update%recv(m)
@@ -212,10 +218,10 @@
                   end do
                end do
             endif
-         end do ! do n = 1, overPtr%count
+         end do
       end do
 
-      ! recv (send in forward)
+      ! for duality, mpp_send of mpp_do_update.sh becomes mpp_recv in adjoint
       buffer_pos = send_start_pos
       do m = 1, update%nsend
          msgsize = send_msgsize(m)
@@ -223,9 +229,9 @@
          to_pe = update%send(m)%pe
          call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=to_pe, block=.FALSE., tag=COMM_TAG_2 )
          buffer_pos = buffer_pos + msgsize
-      end do ! end do ist = 0,nlist-1
+      end do
 
-      ! send (recv in forward)
+      ! for duality, mpp_recv of mpp_do_update.sh becomes mpp_send in adjoint
       buffer_pos = 0
       do m = 1, update%nrecv
          overPtr => update%recv(m)
@@ -252,11 +258,12 @@
             call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=from_pe, tag=COMM_TAG_2 )
             buffer_pos = buffer_pos + msgsize
          end if
-      end do ! end do m = 1, update%nrecv
+      end do
 
       call mpp_sync_self(check=EVENT_RECV)
 
-      ! unpack (pack in forward)
+      ! unpack and linear adjoint operation
+      ! in reverse order of pack process of mpp_do_update.fh
       buffer_pos = buffer_recv_size
       do m = 1, update%nsend
          send_msgsize(m) = 0
@@ -338,7 +345,7 @@
          end do ! do n = 1, overPtr%count
          send_msgsize(m) = pos-buffer_pos
          buffer_pos = pos
-      end do ! end do m = 1, nsend
+      end do
 
       call mpp_sync_self()
 
