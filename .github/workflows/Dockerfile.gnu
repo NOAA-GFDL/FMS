@@ -22,7 +22,7 @@
 # arguments to specify versions to build can be given to docker or changed here (--build-arg name=val)
 FROM spack/rockylinux9:latest as builder
 
-ARG gcc_version=12.2.0
+ARG gcc_version=12.3.0
 ARG netcdfc_version=4.9.0
 ARG netcdff_version=4.6.0
 ARG libyaml_version=0.2.5
