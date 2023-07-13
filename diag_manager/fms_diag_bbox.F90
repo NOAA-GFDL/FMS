@@ -30,7 +30,7 @@
 !> @{
 MODULE fms_diag_bbox_mod
 
-   USE fms_mod, ONLY: error_mesg, FATAL
+   USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler
 
    implicit none
 

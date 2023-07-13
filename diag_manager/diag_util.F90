@@ -72,7 +72,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE mpp_mod, ONLY: mpp_npes
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE fms2_io_mod
-  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type, fmsDiagBoundsHalos_type
+  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
 #endif
