@@ -34,8 +34,9 @@ program test_global_arrays
   use mpp_domains_mod, only: mpp_global_min, mpp_get_data_domain,mpp_get_compute_domain
   use mpp_domains_mod, only: mpp_domains_exit, mpp_update_domains
   use mpp_domains_mod, only: mpp_get_domain_shift, mpp_global_sum
+  use mpp_domains_mod, only: CYCLIC_GLOBAL_DOMAIN, NORTH, EAST, CENTER, CORNER, BITWISE_EXACT_SUM
   use mpp_mod,         only: MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED, mpp_clock_id, mpp_clock_begin, mpp_clock_end
-  use fms_mod,         only: check_nml_error
+  use fms_mod,         only: check_nml_error, input_nml_file
 
   implicit none
 
