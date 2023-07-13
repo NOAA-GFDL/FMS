@@ -20,6 +20,11 @@
 !> @addtogroup mpp_domains_mod
 !> @{
     !> Updates data domain of 3D ad field whose computational domains have been computed
+    !! @brief Applies linear adjoint operation to 3D field based on duality of MPP_DO_UPDATE_3D_
+    !! @note Duality exists between MPI SEND and MPI_RECV. 
+    !!  However, checkpoint is needed for forward buffer information.
+    !!  ref: BN. Cheng, A Duality between Forward and Adjoint MPI Communication Routines
+    !!  COMPUTATIONAL METHODS IN SCIENCE AND TECHNOLOGY Special Issue 2006, 23-24
     subroutine MPP_DO_UPDATE_AD_3D_( f_addrs, domain, update, d_type, ke, flags)
       integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
@@ -118,8 +123,6 @@
          ! mpp_sync_self is desirable but keep mpp_alltoall
          ! to exactly follow the duality of mpp_do_update.fh
          ! all-to-all may have scaling issues on very large systems
-         ! ref: BN. Cheng, A Duality between Forward and Adjoint MPI Communication Routines
-         !      COMPUTATIONAL METHODS IN SCIENCE AND TECHNOLOGY Special Issue 2006, 23-24
          call mpp_alltoall(msg3, 1, msg1, 1)
 
          do m = 0, nlist-1
@@ -136,7 +139,7 @@
 
       ! Duality of ad code requires checkpoint info: buffer recv size and send pos and msgsize
       ! from the forward recv portion of mpp_do_update.fh
-      ! ref above in line 121
+      ! ref above in line 26
       buffer_pos = 0
 
       do m = 1, update%nrecv
