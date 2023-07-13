@@ -369,7 +369,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   !Get the path of a "distributed" file.
   io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
-    call error("The domain associated with the file:"//trim(fileobj%path)//" does not have an io_domain.")
+    call error("The domain associated with the file:"//trim(path)//" does not have an io_domain.")
   endif
   if (io_layout(1)*io_layout(2) .gt. 1) then
     tile_id = mpp_get_tile_id(io_domain)
@@ -393,7 +393,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
         success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
                                     is_restart, dont_add_res_to_filename)
         if (success2) then
-          call error("The domain decomposed file:"//trim(fileobj%path)// &
+          call error("The domain decomposed file:"//trim(path)// &
                    & " contains both combined (*.nc) and distributed files (*.nc.XXXX).")
         endif
       endif

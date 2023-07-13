@@ -86,6 +86,7 @@
 !> @addtogroup fms_io_mod
 !> @{
 module fms_io_mod
+#ifdef use_deprecated_io
 
 #include <fms_platform.h>
 
@@ -8706,7 +8707,7 @@ end function get_great_circle_algorithm
 #include <fms_io_unstructured_get_field_size.inc>
 #include <fms_io_unstructured_field_exist.inc>
 !----------
-
+#endif
 end module fms_io_mod
 !> @}
 ! close documentation grouping

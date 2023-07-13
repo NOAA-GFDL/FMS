@@ -33,7 +33,6 @@ program test_mpp_update_domains_ad
   use mpp_domains_mod, only : mpp_update_domains, mpp_update_domains_ad, mpp_check_field
   use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains, mpp_modify_domain
   use mpp_domains_mod, only : mpp_get_global_domain
-  use mpp_io_mod, only : mpp_io_init
   use platform_mod, only : r4_kind, r8_kind
 
   implicit none
@@ -48,7 +47,6 @@ program test_mpp_update_domains_ad
   !> Initialize mpp and mpp IO modules
   call mpp_init(test_level=mpp_init_test_requests_allocated)
   call mpp_domains_init(MPP_DOMAIN_TIME)
-  call mpp_io_init()
   call mpp_domains_set_stack_size(stackmax)
   pe = mpp_pe()
   npes = mpp_npes()

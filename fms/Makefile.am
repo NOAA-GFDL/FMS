@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/fms/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -32,6 +32,9 @@ noinst_LTLIBRARIES = libfms.la
 # Each convenience library depends on its source.
 libfms_la_SOURCES = \
   fms.F90 \
+  include/fms.inc \
+  include/fms_r4.fh \
+  include/fms_r8.fh \
   fms_io.F90 \
   fms_io_unstructured_field_exist.inc \
   fms_io_unstructured_get_file_name.inc \
@@ -47,7 +50,12 @@ libfms_la_SOURCES = \
   fms_io_unstructured_save_restart.inc \
   read_data_3d.inc
 
-fms_mod.$(FC_MODEXT): fms_io_mod.$(FC_MODEXT)
+fms_mod.$(FC_MODEXT): fms_io_mod.$(FC_MODEXT) \
+  fms.F90 \
+  include/fms.inc \
+  include/fms_r4.fh \
+  include/fms_r8.fh
+
 fms_io_mod.$(FC_MODEXT): fms_io_unstructured_field_exist.inc \
   fms_io_unstructured_get_file_name.inc \
   fms_io_unstructured_register_restart_axis.inc \

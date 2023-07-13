@@ -9,27 +9,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
-        input-flag:  [--with-yaml, --enable-test-input=/home/fms_test_input]
+        conf-flag: [--disable-openmp, --enable-mixed-mode, --with-mpi=no]
+        input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
+        io-flag: [ --enable-deprecated-io, --disable-deprecated-io]
+        exclude:
+          - conf-flag: --with-mpi=no
+            input-flag: --enable-test-input=/home/unit_tests_input
     container:
       image: ryanmulhall/fms-ci-rocky-gnu:12.2.0
       env:
         TEST_VERBOSE: 1
-        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flags }} ${{ matrix.input-flag }}"
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build
-      if: ${{ matrix.conf-flags != '--disable-setting-flags' }}
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS}
-    - name: Configure the build with explicit required flags
-      if: ${{ matrix.conf-flags == '--disable-setting-flags' }}
-      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/opt/view/include $FCFLAGS"
     - name: Build the library
-      run: make -k distcheck
-      if: ${{ matrix.conf-flags != '--with-mpi=no' }}
+      run: make distcheck
+      if: ${{ matrix.conf-flag != '--with-mpi=no' }}
     - name: Build the library (without test suite for serial build)
       run: make
-      if: ${{ matrix.conf-flags == '--with-mpi=no' }}
+      if: ${{ matrix.conf-flag == '--with-mpi=no' }}

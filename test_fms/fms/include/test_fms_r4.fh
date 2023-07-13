@@ -1,0 +1,13 @@
+#undef FMS_MOD_TEST_KIND_
+#undef TEST_MONOTONIC_ARRAY_
+#undef TEST_MONOTONIC_ARRAY_ASSERT_
+
+#define FMS_MOD_TEST_KIND_ r4_kind
+#define TEST_MONOTONIC_ARRAY_ test_monotonic_array_r4
+#define TEST_MONOTONIC_ARRAY_ASSERT_ test_monotonic_array_assert_r4
+
+#include "test_fms.inc"
+
+#undef FMS_MOD_TEST_KIND_
+#undef TEST_MONOTONIC_ARRAY_
+#undef TEST_MONOTONIC_ARRAY_ASSERT_

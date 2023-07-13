@@ -28,6 +28,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 # Run test with one processor
 test_expect_success "get stdout with 1 PE" '
     mpirun -n 2 ./test_stdout
