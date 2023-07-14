@@ -158,9 +158,7 @@ module time_interp_external2_mod
   type(ext_fieldtype), save, private, pointer :: loaded_fields(:) => NULL()
   type(filetype),      save, private, pointer :: opened_files(:) => NULL()
 !Balaji: really should use field%missing
-  integer, private, parameter :: dk = r8_kind ! ensures that time_interp_missing is in range for mixed-mode
-                                                  ! compiling
-  real(r8_kind), private, parameter :: time_interp_missing=-1e99_dk
+  real(r8_kind), private, parameter :: time_interp_missing=-1e99_r8_kind
   contains
 
 ! <SUBROUTINE NAME="time_interp_external_init">
