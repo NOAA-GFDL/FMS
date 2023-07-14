@@ -836,8 +836,14 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         if (interp%horizInterpReals4_type%is_allocated) then
             ! allocate (there may be a better way to do this, had issues with gnu)
             allocate(hi_tmp_msk_out(isw:iew,jsw:jew, SIZE(field%src_data,3)))
-            allocate(hi_tmp_data(LBOUND(field%data,1):UBOUND(field%data,1), LBOUND(field%data,2):UBOUND(field%data,2),LBOUND(field%data,3):UBOUND(field%data,3),LBOUND(field%data,4):UBOUND(field%data,4)))
-            allocate(hi_tmp_src_data(LBOUND(field%src_data,1):UBOUND(field%src_data,1), LBOUND(field%src_data,2):UBOUND(field%src_data,2),LBOUND(field%src_data,3):UBOUND(field%src_data,3),LBOUND(field%src_data,4):UBOUND(field%src_data,4)))
+            allocate(hi_tmp_data(LBOUND(field%data,1):UBOUND(field%data,1), &
+                                 LBOUND(field%data,2):UBOUND(field%data,2), &
+                                 LBOUND(field%data,3):UBOUND(field%data,3), &
+                                 LBOUND(field%data,4):UBOUND(field%data,4)))
+            allocate(hi_tmp_src_data(LBOUND(field%src_data,1):UBOUND(field%src_data,1), &
+                                     LBOUND(field%src_data,2):UBOUND(field%src_data,2), &
+                                     LBOUND(field%src_data,3):UBOUND(field%src_data,3), &
+                                     LBOUND(field%src_data,4):UBOUND(field%src_data,4)))
             ! assign if needed
             hi_tmp_data = real(field%data, r4_kind)
             hi_tmp_src_data = real(field%src_data, r4_kind)

@@ -34,7 +34,7 @@ program test_time_interp
  integer :: index1, index2, mo, yr, outunit, ntest, nline
  real(TI_TEST_KIND_) :: weight
  real(TI_TEST_KIND_) :: ref_weights(num_Time), ref_weights_leap(num_Time)
- real(TI_TEST_KIND_), parameter :: SMALL = 1.0e-8_kindl 
+ real(TI_TEST_KIND_), parameter :: SMALL = 1.0e-8_kindl
  real(TI_TEST_KIND_), parameter :: midpoint = 0.483870967741935_kindl
  real(TI_TEST_KIND_), parameter :: day_before_leap_day =  0.964285714285714_kindl
  real(TI_TEST_KIND_), parameter :: day_before_leap_day_with_ly =  0.931034482758621_kindl
@@ -57,16 +57,16 @@ program test_time_interp
 
  ref_weights(1) = 0.0 ! on 'edge' (timeList value)
  ref_weights(2) = midpoint ! rough midpoint of a month ie. jan 16
- ref_weights(3) = 0.0 
- ref_weights(4) = 0.0 
+ ref_weights(3) = 0.0
+ ref_weights(4) = 0.0
  ref_weights(5) = midpoint
- ref_weights(6) = 0.0 
+ ref_weights(6) = 0.0
 
  ref_weights_leap(1) = 0.0 ! on 'edge' (timeList value)
- ref_weights_leap(2) = day_before_leap_day ! feb 28th 
+ ref_weights_leap(2) = day_before_leap_day ! feb 28th
  ref_weights_leap(3) = midpoint
- ref_weights_leap(4) = 0.0 
- ref_weights_leap(5) = day_before_leap_day 
+ ref_weights_leap(4) = 0.0
+ ref_weights_leap(5) = day_before_leap_day
  ref_weights_leap(6) = day_before_leap_day ! checks that 29th gives same result
 
 ! Tests with modulo time
@@ -171,7 +171,7 @@ program test_time_interp
         call mpp_error(FATAL, "invalid result without modtime")
      if(abs(weight - ref_weights(ntest)) .gt. SMALL) &
          call mpp_error(FATAL, "test_time_interp: incorrect weight value with reference")
-     
+
    enddo
    deallocate(Timelist)
  enddo
@@ -220,11 +220,11 @@ program test_time_interp
 
  ! swap around ref numbers for different data set
  ref_weights_leap(1) = day_before_leap_day
- ref_weights_leap(2) = day_before_leap_day ! feb 28th 
+ ref_weights_leap(2) = day_before_leap_day ! feb 28th
  ref_weights_leap(3) = 0.0
  ref_weights_leap(4) = day_before_leap_day_with_ly
- ref_weights_leap(5) = 0.0 
- ref_weights_leap(6) = 0.0 
+ ref_weights_leap(5) = 0.0
+ ref_weights_leap(6) = 0.0
 ! Tests of modulo time and leap year inconsistency
  Time_beg = set_date(1978, 1, 1)
  Time_end = set_date(1981, 1, 1)
@@ -358,7 +358,7 @@ program test_time_interp
        integer, intent(in) :: ind1, ind2
        type(time_type), intent(in) :: tList(:), tintv
        real(TI_TEST_KIND_), intent(in) :: res_weight
-       integer, intent(in) :: mtime 
+       integer, intent(in) :: mtime
        integer :: i
 
         ! modulo_time determines wrap around

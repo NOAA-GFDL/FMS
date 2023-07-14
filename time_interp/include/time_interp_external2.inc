@@ -55,7 +55,7 @@
     subroutine TIME_INTERP_EXTERNAL_3D_(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, &
                                       &  js_in, je_in, window_id)
 
-        integer,                    intent(in)           :: index !< index of external field from previous call 
+        integer,                    intent(in)           :: index !< index of external field from previous call
                                                                   !! to init_external_field
         type(time_type),            intent(in)           :: time !< target time for data
         real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: data !< global or local data array
@@ -103,7 +103,7 @@
             nxw = iec-isc+1
             nyw = jec-jsc+1
         else
-            if(.not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in) ) then
+            if(.not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in))then
                 call mpp_error(FATAL, 'time_interp_external: is_in, ie_in, js_in and je_in must be present ' // &
                                     'when numwindows > 1, field='//trim(loaded_fields(index)%name))
             endif
@@ -156,8 +156,9 @@
         else
             ! using time_interp_modulo
             if(loaded_fields(index)%have_modulo_times) then
-                call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, loaded_fields(index)%time(:), &
-                                 w2, t1, t2, loaded_fields(index)%correct_leap_year_inconsistency, err_msg=err_msg)
+                call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, &
+                                 loaded_fields(index)%time(:), w2, t1, t2, &
+                                 loaded_fields(index)%correct_leap_year_inconsistency, err_msg=err_msg)
                 if(err_msg .NE. '') then
                     filename = trim(loaded_fields(index)%fileobj%path)
                     call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
@@ -254,8 +255,9 @@
          data = real(loaded_fields(index)%data(1,1,1,i1), FMS_TI_KIND_)
       else
         if(loaded_fields(index)%have_modulo_times) then
-          call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, loaded_fields(index)%time(:), &
-                          w2, t1, t2, loaded_fields(index)%correct_leap_year_inconsistency, err_msg=err_msg)
+          call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, &
+                           loaded_fields(index)%time(:), w2, t1, t2, &
+                           loaded_fields(index)%correct_leap_year_inconsistency, err_msg=err_msg)
           if(err_msg .NE. '') then
              filename = trim(loaded_fields(index)%fileobj%path)
              call mpp_error(FATAL,"time_interp_external 3:"//trim(err_msg)//&
@@ -288,7 +290,8 @@
 
          if(i1<0.or.i2<0) &
               call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-         data = real(loaded_fields(index)%data(1,1,1,i1), FMS_TI_KIND_)*w1 + real(loaded_fields(index)%data(1,1,1,i2), FMS_TI_KIND_)*w2
+         data = real(loaded_fields(index)%data(1,1,1,i1), FMS_TI_KIND_)*w1 &
+              & + real(loaded_fields(index)%data(1,1,1,i2), FMS_TI_KIND_)*w2
          if (verb) then
             write(outunit,*) 'ibuf= ',loaded_fields(index)%ibuf
             write(outunit,*) 'i1,i2= ',i1, i2
