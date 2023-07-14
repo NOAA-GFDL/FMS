@@ -30,7 +30,7 @@
 !> @{
 MODULE fms_diag_bbox_mod
 
-   USE fms_mod, ONLY: error_mesg, FATAL
+   USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler
 
    implicit none
 
@@ -58,6 +58,30 @@ MODULE fms_diag_bbox_mod
       procedure :: get_kmin
       procedure :: get_kmax
    END TYPE fmsDiagIbounds_type
+
+   !> @brief Data structure holding starting and ending indices in the I, J, and
+   !! K dimensions. It also has extra members related to halo sizes and updated indices
+   !! in I and J dimensions.
+   type, public :: fmsDiagBoundsHalos_type
+      private
+      type(fmsDiagIbounds_type) :: bounds3D !< Holds starting and ending indices of
+                                            !! the I, J, and K dimensions
+      integer :: hi !< Halo size in the I dimension
+      integer :: hj !< Halo size in the J dimension
+      integer :: fis !< Updated starting index in the I dimension
+      integer :: fie !< Updated ending index in the I dimension
+      integer :: fjs !< Updated starting index in the J dimension
+      integer :: fje !< Updated ending index in the J dimension
+      contains
+      procedure :: get_hi
+      procedure :: get_hj
+      procedure :: get_fis
+      procedure :: get_fie
+      procedure :: get_fjs
+      procedure :: get_fje
+   end type fmsDiagBoundsHalos_type
+
+   public :: recondition_indices
 
 CONTAINS
 
@@ -103,6 +127,48 @@ CONTAINS
       class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
       rslt = this%kmax
    end function get_kmax
+
+   !> @brief Gets the halo size of fmsDiagBoundsHalos_type in the I dimension
+   !! @return copy of integer member hi
+   pure integer function get_hi (this) result(rslt)
+      class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
+      rslt = this%hi
+   end function get_hi
+
+   !> @brief Gets the halo size of fmsDiagBoundsHalos_type in the J dimension
+   !! @return copy of integer member hj
+   pure integer function get_hj (this) result(rslt)
+      class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
+      rslt = this%hj
+   end function get_hj
+
+   !> @brief Gets the updated index `fis' of fmsDiagBoundsHalos_type in the I dimension
+   !! @return copy of integer member `fis'
+   pure integer function get_fis (this) result(rslt)
+      class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
+      rslt = this%fis
+   end function get_fis
+
+   !> @brief Gets the updated index `fie' of fmsDiagBoundsHalos_type in the I dimension
+   !! @return copy of integer member `fie'
+   pure integer function get_fie (this) result(rslt)
+      class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
+      rslt = this%fie
+   end function get_fie
+
+   !> @brief Gets the updated index `fjs' of fmsDiagBoundsHalos_type in the I dimension
+   !! @return copy of integer member `fjs'
+   pure integer function get_fjs (this) result(rslt)
+      class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
+      rslt = this%fjs
+   end function get_fjs
+
+   !> @brief Gets the updated index `fje' of fmsDiagBoundsHalos_type in the I dimension
+   !! @return copy of integer member `fje'
+   pure integer function get_fje (this) result(rslt)
+      class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
+      rslt = this%fje
+   end function get_fje
 
    !> @brief Reset the instance bounding lower and upper bounds to lower_val and upper_val, respectively.
    SUBROUTINE reset_bounds (this, lower_val, upper_val)
@@ -161,6 +227,97 @@ CONTAINS
       this%kmin = LBOUND(array,3)
       this%kmax = UBOUND(array,3)
    END SUBROUTINE  reset_bounds_from_array_5D
+
+  !> @brief Updates indices based on presence/absence of input indices is, js, ks, ie, je, and ke.
+  ! Computes halo sizes in the I and J dimensions.
+  ! This routine is intended to be used in diag manager.
+  !> @return .false. if there is no error else .true.
+  function recondition_indices(indices, field, is_in, js_in, ks_in, &
+   ie_in, je_in, ke_in, err_msg) result(ierr)
+   type(fmsDiagBoundsHalos_type), intent(inout) :: indices !< Stores indices in order:
+                                             !! (/is, js, ks, ie, je, ke, hi, fis, fie, hj, fjs, fje/)
+   class(*), intent(in) :: field(:,:,:,:) !< Dummy variable; only the sizes of the first 3 dimensions are used
+   integer, intent(in), optional :: is_in, js_in, ks_in, ie_in, je_in, ke_in !< User input indices
+   character(len=*), intent(out), optional :: err_msg !< Error message to pass back to caller
+   logical :: ierr !< Error flag
+
+   integer :: is, js, ks, ie, je, ke !< Local indices to update
+   integer   :: hi !< halo size in the I dimension
+   integer   :: hj !< halo size in the J dimension
+   integer   :: twohi, twohj !< Temporary storages
+   integer   :: fis, fie, fjs, fje !< ! Updated starting and ending indices in the I and J dimensions
+   integer :: n1, n2, n3 !< Sizes of the first 3 dimenstions indicies of the data
+
+   ierr = .false.
+   if (present(err_msg)) err_msg = ''
+
+   ! If is, js, or ks not present default them to 1
+   is = 1
+   js = 1
+   ks = 1
+
+   IF ( PRESENT(is_in) ) is = is_in
+   IF ( PRESENT(js_in) ) js = js_in
+   IF ( PRESENT(ks_in) ) ks = ks_in
+
+   n1 = SIZE(field, 1)
+   n2 = SIZE(field, 2)
+   n3 = SIZE(field, 3)
+
+   ie = is + n1 - 1
+   je = js + n2 - 1
+   ke = ks + n3 - 1
+
+   IF ( PRESENT(ie_in) ) ie = ie_in
+   IF ( PRESENT(je_in) ) je = je_in
+   IF ( PRESENT(ke_in) ) ke = ke_in
+
+   twohi = n1 - (ie - is + 1)
+   IF ( MOD(twohi, 2) /= 0 ) THEN
+     ierr = fms_error_handler('diag_util_mod:recondition_indices', &
+       'non-symmetric halos in first dimension', err_msg)
+     IF (ierr) RETURN
+   END IF
+
+   twohj = n2 - (je - js + 1)
+   IF ( MOD(twohj, 2) /= 0 ) THEN
+     ierr = fms_error_handler('diag_util_mod:recondition_indices', &
+       'non-symmetric halos in second dimension', err_msg)
+     IF (ierr) RETURN
+   END IF
+
+   hi = twohi/2
+   hj = twohj/2
+
+   ! The next line is necessary to ensure that is, ie, js, ie are relative to field(1:,1:)
+   ! But this works only when there is no windowing.
+   IF ( PRESENT(ie_in) .AND. PRESENT(je_in) ) THEN
+     is = 1 + hi
+     ie = n1 - hi
+     js = 1 + hj
+     je = n2 - hj
+   END IF
+
+   ! Used for field, mask and rmask bounds
+   fis = 1 + hi
+   fie = n1 - hi
+   fjs = 1 + hj
+   fje = n2 - hj
+
+   ! Update indices
+   indices%bounds3D%imin = is
+   indices%bounds3D%imax = ie
+   indices%bounds3D%jmin = js
+   indices%bounds3D%jmax = je
+   indices%bounds3D%kmin = ks
+   indices%bounds3D%kmax = ke
+   indices%hi = hi
+   indices%hj = hj
+   indices%fis = fis
+   indices%fie = fie
+   indices%fjs = fjs
+   indices%fje = fje
+ end function recondition_indices
 
   END MODULE fms_diag_bbox_mod
   !> @}
