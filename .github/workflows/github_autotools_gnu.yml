@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         conf-flag: [ --enable-deprecated-io, --disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
-        input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
+        input-flag: [--with-yaml, --enable-test-input=/home/unit_tests_input]
         exclude:
           - conf-flag: --with-mpi=no
             input-flag: --enable-test-input=/home/unit_tests_input
@@ -19,6 +19,7 @@ jobs:
       env:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
+        SKIP_TESTS: "test_mpp_domains.14" # temporary workaround for gnu bug
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
