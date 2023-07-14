@@ -3,7 +3,7 @@ jobs:
   intel-autotools:
     runs-on: ubuntu-latest
     container:
-      image: intel/oneapi-hpckit:2022.2-devel-ubuntu20.04
+      image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
         CC: mpiicc
         FC: mpiifort
@@ -22,7 +22,7 @@ jobs:
         path: /libs
         key: ${{ runner.os }}-intel-libs
     - name: Install packages for building
-      run: apt update && apt install -y autoconf libtool automake zlibc zlib1g-dev
+      run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
@@ -50,4 +50,4 @@ jobs:
     - name: Compile
       run: make -j || make
     - name: Run test suite
-      run: make check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" SKIP_TESTS="$SKIP_TESTS" VERBOSE=1
+      run: make check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" TEST_VERBOSE=1

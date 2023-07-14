@@ -62,6 +62,11 @@ end type fmsDiagOutputBuffer_class
 !> holds an allocated buffer0-5d object
 type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
+  integer,                          allocatable :: axis_ids(:)     !< Axis ids for the buffer
+
+  contains
+  procedure :: add_axis_ids
+  procedure :: get_axis_ids
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -314,15 +319,15 @@ subroutine allocate_buffer_0d(this, buff_type, field_name, diurnal_samples)
       allocate(integer(kind=i4_kind) :: this%buffer(1))
       allocate(integer(kind=i4_kind) :: this%counter(1))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(1))
       allocate(integer(kind=i8_kind) :: this%counter(1))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(1))
@@ -374,15 +379,15 @@ subroutine allocate_buffer_1d(this, buff_type, buff_size, field_name, diurnal_sa
       allocate(integer(kind=i4_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i4_kind) :: this%counter(buff_size))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_size))
       allocate(integer(kind=i8_kind) :: this%counter(buff_size))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_size))
@@ -435,15 +440,15 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
@@ -458,7 +463,7 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
       this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
-      this%buffer_type = r4
+      this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_1d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
@@ -495,30 +500,30 @@ subroutine allocate_buffer_3d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r8_kind) :: this%counter( buff_sizes(1),buff_sizes(2), buff_sizes(3)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%buffer_type = r4
-      this%counter = 0
+      this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
+      this%buffer_type = r8
     class default
        call mpp_error("allocate_buffer_3d", &
            "The buff_type value passed to allocate a buffer is not a r8, r4, i8, or i4" // &
@@ -558,28 +563,28 @@ subroutine allocate_buffer_4d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
@@ -623,8 +628,8 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                    & buff_sizes(5)))
       allocate(integer(kind=i4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i4_kind
+      this%count_0d = 0_i4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
@@ -632,8 +637,8 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                   & buff_sizes(5)))
       allocate(integer(kind=i8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
-      this%count_0d = 0
+      this%counter = 0_i8_kind
+      this%count_0d = 0_i8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
@@ -641,7 +646,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
       allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
@@ -650,7 +655,7 @@ subroutine allocate_buffer_5d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%counter = 0
+      this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
     class default
@@ -1859,5 +1864,29 @@ subroutine update_array_extremum(flag, field_data, buffer, mask, sample, recon_b
      call mpp_error( FATAL, "diag_util_mod::update_array_extremum unsupported field data type")
    end select
 end subroutine update_array_extremum
+
+!> @brief Adds the axis ids to the buffer object
+subroutine add_axis_ids(this, axis_ids)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: axis_ids(:) !< Axis ids to add
+
+  this%axis_ids = axis_ids
+end subroutine
+
+!> @brief Get the axis_ids for the buffer
+!! @return Axis_ids, if the buffer doesn't have axis ids it returns diag_null
+function get_axis_ids(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer, allocatable :: res(:)
+
+  if (allocated(this%axis_ids)) then
+    res = this%axis_ids
+  else
+    allocate(res(1))
+    res = diag_null
+  endif
+end function
 #endif
 end module fms_diag_output_buffer_mod
