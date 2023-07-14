@@ -25,6 +25,7 @@ jobs:
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build
+      if: ${{ matrix.conf-flags != '--disable-setting-flags' }}
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS}
     - name: Configure the build with compiler flags
       if: ${{ matrix.conf-flags == '--disable-setting-flags' }}
