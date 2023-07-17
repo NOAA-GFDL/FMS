@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,16 +19,24 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/topography directory.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Caitlyn McAllister
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic interpolator fms mpp mpp_io time_interp time_manager topography \
-horiz_interp field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres
+# Set common test settings.
+. ../test-lib.sh
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# Prepare the directory to run the tests.
+touch input.nml
+
+# Run the test.
+
+test_expect_success "TEST - test 11: r4_kind" '
+  mpirun -n 2 ./test_routine_r4
+'
+
+test_expect_success "TEST - test 11: r8_kind" '
+  mpirun -n 2 ./test_routine_r8
+'
+test_done
