@@ -82,8 +82,8 @@ public :: topography_init,                 &
 !> @ingroup topography_mod
 
 interface get_topog_mean
-    module procedure get_topog_mean_1d_r4, get_topog_mean_1d_r8 
-    module procedure get_topog_mean_2d_r4, get_topog_mean_2d_r8 
+    module procedure get_topog_mean_1d_r4, get_topog_mean_1d_r8
+    module procedure get_topog_mean_2d_r4, get_topog_mean_2d_r8
 end interface get_topog_mean
 
 !> Returns a standard deviation of higher resolution topography with
@@ -108,7 +108,7 @@ end interface get_topog_mean
 !> @ingroup topography_mod
 interface get_topog_stdev
     module procedure get_topog_stdev_1d_r4, get_topog_stdev_1d_r8
-    module procedure get_topog_stdev_2d_r4, get_topog_stdev_2d_r8 
+    module procedure get_topog_stdev_2d_r4, get_topog_stdev_2d_r8
 end interface get_topog_stdev
 
 !> @brief Returns fractional area covered by ocean in a grid box.
@@ -128,7 +128,7 @@ end interface get_topog_stdev
 !> @ingroup topography_mod
 interface get_ocean_frac
     module procedure get_ocean_frac_1d_r4, get_ocean_frac_1d_r8
-    module procedure get_ocean_frac_2d_r4, get_ocean_frac_2d_r8 
+    module procedure get_ocean_frac_2d_r4, get_ocean_frac_2d_r8
 end interface get_ocean_frac
 
 !> @brief Returns a land-ocean mask in a grid box.
@@ -169,7 +169,7 @@ end interface get_ocean_mask
 !> @ingroup topography_mod
 interface get_water_frac
     module procedure get_water_frac_1d_r4, get_water_frac_1d_r8
-    module procedure get_water_frac_2d_r4, get_water_frac_2d_r8 
+    module procedure get_water_frac_2d_r4, get_water_frac_2d_r8
 end interface get_water_frac
 
 !> @brief Returns a land-water mask in a grid box.
@@ -189,7 +189,7 @@ end interface get_water_frac
 !> @ingroup topography_mod
 interface get_water_mask
     module procedure get_water_mask_1d_r4, get_water_mask_1d_r8
-    module procedure get_water_mask_2d_r4, get_water_mask_2d_r8 
+    module procedure get_water_mask_2d_r4, get_water_mask_2d_r8
 end interface get_water_mask
 
 interface interp_topog
@@ -291,7 +291,7 @@ function open_topog_file ( )
 logical :: open_topog_file
 real(kind=r8_kind)    :: r_ipts, r_jpts
 integer :: namelen
-     
+
 namelen = len(trim(topog_file))
    if ( file_exists(topog_file) .AND. topog_file(namelen-2:namelen) == '.nc') then
       if (mpp_pe() == mpp_root_pe()) call mpp_error ('topography_mod', &
@@ -301,7 +301,7 @@ namelen = len(trim(topog_file))
                call mpp_error(FATAL, 'topography_mod: Error in opening file '//trim(topog_file))
             endif
          endif
-     
+
          call read_data(fileobj(TOPOG_INDEX), 'ipts', r_ipts)
          call read_data(fileobj(TOPOG_INDEX), 'jpts', r_jpts)
          ipts = nint(r_ipts)
@@ -311,14 +311,14 @@ namelen = len(trim(topog_file))
       else
          open_topog_file = .false.
       endif
-     
+
 end function open_topog_file
-     
+
 function open_water_file ( )
 logical :: open_water_file
 real(kind=r8_kind)    :: r_ipts, r_jpts
 integer :: namelen
-     
+
 namelen = len(trim(water_file))
 if ( file_exists(water_file) .AND. water_file(namelen-2:namelen) == '.nc') then
    if (mpp_pe() == mpp_root_pe()) call mpp_error ('topography_mod', &
@@ -328,7 +328,7 @@ if ( file_exists(water_file) .AND. water_file(namelen-2:namelen) == '.nc') then
             call mpp_error(FATAL, 'topography_mod: Error in opening file '//trim(water_file))
          endif
       endif
-     
+
       call read_data(fileobj(WATER_INDEX), 'ipts', r_ipts)
       call read_data(fileobj(WATER_INDEX), 'jpts', r_jpts)
       ipts = nint(r_ipts)
@@ -338,10 +338,10 @@ if ( file_exists(water_file) .AND. water_file(namelen-2:namelen) == '.nc') then
    else
       open_water_file = .false.
    endif
-     
+
 end function open_water_file
-   
-     
+
+
 !#######################################################################
 
 !> @brief Reads the namelist file, write namelist to log file,
