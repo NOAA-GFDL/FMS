@@ -31,7 +31,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 # Build this test program.
 check_PROGRAMS = \
   test_routine_r4 \
-  test_routine_r8 
+  test_routine_r8
 
 # This is the source code for the test.
 test_routine_r4_SOURCES = test_routine.F90
