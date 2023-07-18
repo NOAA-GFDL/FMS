@@ -1233,7 +1233,7 @@ end subroutine allocate_diag_field_output_buffers
         select type (ptr_axis)
         type is (fmsDiagSubAxis_type)
           if (ptr_axis%is_unstructured_grid()) then
-            bounds_with_halos%bounds3D%set_jbounds(ptr_axis%get_starting_index(), &
+            call bounds_with_halos%bounds3D%set_jbounds(ptr_axis%get_starting_index(), &
               ptr_axis%get_ending_index())
           end if
           l_start(3) = ptr_axis%get_starting_index()
