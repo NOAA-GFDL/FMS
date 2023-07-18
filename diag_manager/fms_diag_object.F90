@@ -1127,8 +1127,6 @@ end subroutine allocate_diag_field_output_buffers
     integer, intent(in), optional :: ie_in, je_in, ke_in !< Ending indices of the variable
     character(len=*), intent(out), optional :: err_msg !< An error message returned
     logical :: redn_done !< Return flag: .TRUE. if no error occurs
-
-    redn_done = .FALSE.
 #ifdef use_yaml
     integer :: buffer_id !< Index of a buffer
     integer :: file_id !< File id where the field/buffer is in
@@ -1159,6 +1157,8 @@ end subroutine allocate_diag_field_output_buffers
     integer :: n_axis !< Number of axes
     integer :: axis_id !< Axis id
     type(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
+
+    redn_done = .FALSE.
 
     !> Recondition the input indices
     call recondition_indices(bounds_with_halos, field_data, is_in, js_in, ks_in, &
