@@ -759,16 +759,18 @@ module fms_diag_axis_object_mod
 
   !> @brief Accesses its member starting_index
   !! @return Returns a copy of the starting_index
-  function get_starting_index(this)
+  function get_starting_index(this) result(indx)
     class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
-    get_starting_index = this%starting_index
+    integer :: indx !< Result to return
+    indx = this%starting_index
   end function get_starting_index
 
   !> @brief Accesses its member ending_index
   !! @return Returns a copy of the ending_index
-  function get_ending_index(this)
+  function get_ending_index(this) result(indx)
     class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
-    get_ending_index = this%ending_index
+    integer :: indx !< Result to return
+    indx = this%ending_index
   end function get_ending_index
 
   !> @brief Get the ntiles in a domain

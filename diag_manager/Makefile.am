@@ -52,7 +52,7 @@ libdiag_manager_la_SOURCES = \
   fms_diag_elem_weight_procs.F90 \
   fms_diag_fieldbuff_update.F90 \
 		fms_diag_bbox.F90 \
-  fms_diag_reduction_methods_mod \
+  fms_diag_reduction_methods.F90 \
   include/fms_diag_fieldbuff_update.inc \
   include/fms_diag_fieldbuff_update.fh
 
@@ -114,6 +114,7 @@ MODFILES = \
 	fms_diag_bbox_mod.$(FC_MODEXT) \
   fms_diag_elem_weight_procs_mod.$(FC_MODEXT) \
   fms_diag_fieldbuff_update_mod.$(FC_MODEXT) \
+  fms_diag_reduction_methods_mod.$(FC_MODEXT) \
   include/fms_diag_fieldbuff_update.inc \
   include/fms_diag_fieldbuff_update.fh
 

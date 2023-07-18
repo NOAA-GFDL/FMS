@@ -210,7 +210,7 @@ module fms_diag_reduction_methods_mod
     character(len=*), intent(inout) :: err_msg
 
     integer :: is, js, ks !< Starting indices in the I, J, and K dimensions
-    integer :: ie, je, ke !< Ending indices in the I, J, and K dimensions 
+    integer :: ie, je, ke !< Ending indices in the I, J, and K dimensions
     integer :: hi, hj !< Halo sizes in the I, and J dimensions
     integer :: f1, f2 !< Updated starting and ending indices in the I dimension
     integer :: f3, f4 !< Updated starting and ending indices in the J dimension
