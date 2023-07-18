@@ -127,6 +127,10 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
+ procedure, public :: get_last_output
+ procedure, public :: get_next_output
+ procedure, public :: get_next_next_output
+ procedure, public :: get_no_more_data
  procedure, public :: has_file_fname
  procedure, public :: has_file_frequnit
  procedure, public :: has_file_freq
@@ -542,6 +546,38 @@ pure function get_file_global_meta (this) result(res)
  character (len=MAX_STR_LEN), allocatable, dimension(:,:) :: res
   res = this%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
+
+!> \brief Gets last_output time
+!! \return Copy of last_output time
+pure function get_last_output (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+  type(time_type) :: res
+  res = this%last_output
+end function get_last_output
+
+!> \brief Gets next_output time
+!! \return Copy of next_output time
+pure function get_next_output (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+  type(time_type) :: res
+  res = this%next_output
+end function get_next_output
+
+!> \brief Gets next_next_output time
+!! \return Copy of next_next_output time
+pure function get_next_next_output (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+  type(time_type) :: res
+  res = this%next_next_output
+end function get_next_next_output
+
+!> \brief Gets no_more_data time
+!! \return Copy of no_more_data time
+pure function get_no_more_data (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+  type(time_type) :: res
+  res = this%no_more_data
+end function get_no_more_data
 
 !> \brief Checks if file_fname is allocated in the yaml object
 !! \return true if file_fname is allocated

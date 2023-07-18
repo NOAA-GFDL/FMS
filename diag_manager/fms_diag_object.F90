@@ -37,6 +37,7 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
 use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
+use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -1201,7 +1202,7 @@ end subroutine allocate_diag_field_output_buffers
       !> If sub regional output, get starting and ending indices
       if (is_regional) then
         if (allocated(this%FMS_diag_output_buffers(buffer_id)%axis_ids)) then
-          n_axis = size(this%FMS_diag_output_buffers(buffer_id)%axis_ids())
+          n_axis = size(this%FMS_diag_output_buffers(buffer_id)%axis_ids)
           allocate(l_start(n))
           allocate(l_end(n))
           do j = 1, n_axis
