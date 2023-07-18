@@ -8,12 +8,12 @@ module fms_diag_reduction_methods_mod
   use platform_mod
   use fms_mod, only: fms_error_handler
   use fms_diag_bbox_mod
-  use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_class
 
   implicit none
   private
 
 #ifdef use_yaml
+  use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_class
   public :: compare_two_sets_of_bounds, real_copy_set, check_indices_order, init_mask_3d
   contains
 

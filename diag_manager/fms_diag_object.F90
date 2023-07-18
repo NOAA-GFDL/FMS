@@ -40,6 +40,7 @@ use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_time_reduction_mod, only: time_none, time_average, time_min, time_max, time_rms, &
                                       time_sum, time_diurnal, time_power
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices
+use fms_diag_reduction_methods_mod, only: check_indices_order
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -1160,11 +1161,12 @@ end subroutine allocate_diag_field_output_buffers
     integer :: n_axis !< Number of axes
     integer :: axis_id !< Axis id
     type(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
+    logical :: ierr !< Error flag
 
     redn_done = .FALSE.
 
     !> Recondition the input indices
-    call recondition_indices(bounds_with_halos, field_data, is_in, js_in, ks_in, &
+    ierr = recondition_indices(bounds_with_halos, field_data, is_in, js_in, ks_in, &
       ie_in, je_in, ke_in, err_msg=err_msg)
 
     do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
@@ -1291,10 +1293,10 @@ end subroutine allocate_diag_field_output_buffers
         !! TODO: root-mean-square error
       case (time_max)
         call fms_diag_update_extremum(1, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
-          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg=err_msg)
+          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg)
       case (time_min)
         call fms_diag_update_extremum(0, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
-          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg=err_msg)
+          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg)
       case (time_sum)
         !! TODO: sum for the interval
         !! call fms_diag_sum(time_sum, .......)
