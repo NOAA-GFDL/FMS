@@ -21,8 +21,8 @@
 !***********************************************************************
 !> @addtogroup mpp_domains_mod
 !> @{
-    !> Get a global field from a local field
-    !! local field may be on compute OR data domain
+    !> Get a local ad field from a global ad field
+    !! global field may be on compute OR data domain
     subroutine MPP_GLOBAL_FIELD_2D_AD_( domain, local, global, flags, position,tile_count, default_data)
       type(domain2D), intent(in) :: domain
       MPP_TYPE_, intent(out)  ::  local(:,:)

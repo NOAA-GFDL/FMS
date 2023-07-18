@@ -137,6 +137,7 @@
         pe_end(n) = te
         ioff = ioff+ npts_tile(n)
      enddo
+     if (associated(UG_domain%list)) deallocate(UG_domain%list) !< Check if allocated
      allocate(UG_domain%list(0:ndivs-1))
      do p = 0, ndivs-1
         UG_domain%list(p)%compute%begin = ibegin(p)
@@ -185,12 +186,14 @@
      UG_domain%global%begin_index = grid_index(pos+1)
      UG_domain%global%end_index = grid_index(pos+npts_tile(n))
 
+     if (associated(UG_domain%grid_index)) deallocate(UG_domain%grid_index) !< Check if allocated
      allocate(UG_domain%grid_index(UG_domain%compute%size))
      do n = 1, UG_domain%compute%size
         UG_domain%grid_index(n) = grid_index(pos+UG_domain%compute%begin+n-1)
      enddo
 
      !--- define io_domain
+     if (associated(UG_domain%io_domain)) deallocate(UG_domain%io_domain) !< Check if allocated
      allocate(UG_domain%io_domain)
      tile_id = UG_domain%tile_id
      UG_domain%io_domain%pe = UG_domain%pe
@@ -230,6 +233,7 @@
      UG_domain%io_domain%global%size        = UG_domain%io_domain%global%end -  UG_domain%io_domain%global%begin + 1
 
      npes_in_group = iend(group_id) - ibegin(group_id) + 1
+     if (associated(UG_domain%io_domain%list)) deallocate(UG_domain%io_domain%list) !< Check if allocated
      allocate(UG_domain%io_domain%list(0:npes_in_group-1))
      do n = 0, npes_in_group-1
         pos = UG_domain%io_domain%tile_root_pe - mpp_root_pe() + n
@@ -307,6 +311,7 @@
 
      nrecv = count( recv_cnt > 0 )
      UG_domain%SG2UG%nrecv = nrecv
+     if (associated(UG_domain%SG2UG%recv)) deallocate(UG_domain%SG2UG%recv) !< Check if allocated
      allocate(UG_domain%SG2UG%recv(nrecv))
      nrecv = 0
      pos = 0
@@ -351,6 +356,7 @@
 
      nsend = count( recv_cnt(:) > 0 )
      UG_domain%SG2UG%nsend = nsend
+     if (associated(UG_domain%SG2UG%send)) deallocate(UG_domain%SG2UG%send) !< Check if allocated
      allocate(UG_domain%SG2UG%send(nsend))
      nsend = 0
      isc = SG_domain%x(1)%compute%begin
@@ -610,6 +616,7 @@ return
 
       if( .NOT.native )then
 !initialize domain%list and set null values in message
+         if (associated(domain%list)) deallocate(domain%list) !< Check if allocated
           allocate( domain%list(0:listsize-1) )
           domain%pe = NULL_PE
           domain%pos = -1

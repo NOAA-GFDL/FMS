@@ -1,6 +1,4 @@
 ! -*-f90-*-
-
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -21,8 +19,12 @@
 !***********************************************************************
 !> @addtogroup mpp_domains_mod
 !> @{
-
-    !> Updates data domain of 3D field whose computational domains have been computed
+    !> Updates data domain of 3D ad field whose computational domains have been computed
+    !! @brief Applies linear adjoint operation to 3D field based on duality of MPP_DO_UPDATE_3D_
+    !! @note Adjoint duality exists between MPI SEND and MPI_RECV.
+    !!  However, checkpoint is needed for forward buffer information.
+    !!  ref: BN. Cheng, A Duality between Forward and Adjoint MPI Communication Routines
+    !!  COMPUTATIONAL METHODS IN SCIENCE AND TECHNOLOGY Special Issue 2006, 23-24
     subroutine MPP_DO_UPDATE_AD_3D_( f_addrs, domain, update, d_type, ke, flags)
       integer(i8_kind),         intent(in) :: f_addrs(:,:)
       type(domain2D),             intent(in) :: domain
@@ -35,6 +37,7 @@
       pointer(ptr_field, field)
       integer                     :: update_flags
       type(overlap_type), pointer :: overPtr => NULL()
+      character(len=8)            :: text
 
 !equate to mpp_domains_stack
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
@@ -43,13 +46,16 @@
 
 !receive domains saved here for unpacking
 !for non-blocking version, could be recomputed
-      integer,    allocatable :: msg1(:), msg2(:)
+      integer,    allocatable :: msg1(:), msg2(:), msg3(:)
       logical :: send(8), recv(8), update_edge_only
-      integer :: to_pe, from_pe, pos, msgsize, msgsize_send
+      integer :: to_pe, from_pe, pos, msgsize
       integer :: n, l_size, l, m, i, j, k
       integer :: is, ie, js, je, tMe, dir
       integer :: buffer_recv_size, nlist, outunit
-
+      integer :: send_start_pos  !>Send buffer start location
+                                 !!This serves as ad recv buffer start location
+      integer :: send_msgsize(MAXLIST)  !>Send buffer msg size storage
+                                        !!This should be checkpointed for reverse ad communication
 
       outunit = stdout()
       ptr = LOC(mpp_domains_stack)
@@ -80,9 +86,10 @@
 
       if(debug_message_passing) then
          nlist = size(domain%list(:))
-         allocate(msg1(0:nlist-1), msg2(0:nlist-1) )
+         allocate(msg1(0:nlist-1), msg2(0:nlist-1), msg3(0:nlist-1) )
          msg1 = 0
          msg2 = 0
+         msg3 = 0
          do m = 1, update%nrecv
             overPtr => update%recv(m)
             msgsize = 0
@@ -96,7 +103,6 @@
             end do
             from_pe = update%recv(m)%pe
             l = from_pe-mpp_root_pe()
-            call mpp_recv( msg1(l), glen=1, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
             msg2(l) = msgsize
          enddo
 
@@ -111,9 +117,13 @@
                   msgsize = msgsize + (ie-is+1)*(je-js+1)
                end if
             end do
-            call mpp_send( msgsize, plen=1, to_pe=overPtr%pe, tag=COMM_TAG_1 )
+            l = overPtr%pe - mpp_root_pe()
+            msg3(l) = msgsize
          enddo
-         call mpp_sync_self(check=EVENT_RECV)
+         ! mpp_sync_self is desirable but keep mpp_alltoall
+         ! to exactly follow the duality of mpp_do_update.fh
+         ! all-to-all may have scaling issues on very large systems
+         call mpp_alltoall(msg3, 1, msg1, 1)
 
          do m = 0, nlist-1
             if(msg1(m) .NE. msg2(m)) then
@@ -122,14 +132,16 @@
                call mpp_error(FATAL, "mpp_do_update: mismatch on send and recv size")
             endif
          enddo
-         call mpp_sync_self()
          write(outunit,*)"NOTE from mpp_do_update: message sizes are matched between send and recv for domain " &
                           //trim(domain%name)
-         deallocate(msg1, msg2)
+         deallocate(msg1, msg2, msg3)
       endif
 
-      !recv
+      ! Duality of ad code requires checkpoint info: buffer recv size and send pos and msgsize
+      ! from the forward recv portion of mpp_do_update.fh
+      ! ref above in line 26
       buffer_pos = 0
+
       do m = 1, update%nrecv
          overPtr => update%recv(m)
          if( overPtr%count == 0 )cycle
@@ -137,38 +149,24 @@
          do n = 1, overPtr%count
             dir = overPtr%dir(n)
             if(recv(dir)) then
-               tMe = overPtr%tileMe(n)
                is = overPtr%is(n); ie = overPtr%ie(n)
                js = overPtr%js(n); je = overPtr%je(n)
                msgsize = msgsize + (ie-is+1)*(je-js+1)
-               msgsize_send = (ie-is+1)*(je-js+1)*ke*l_size
-               pos = buffer_pos + msgsize_send
-               do l=1,l_size  ! loop over number of fields
-                  ptr_field = f_addrs(l, tMe)
-                  do k = ke,1,-1
-                     do j = je, js, -1
-                        do i = ie, is, -1
-                           buffer(pos) = field(i,j,k)
-                           field(i,j,k) = 0.
-                           pos = pos - 1
-                        end do
-                     end do
-                  end do
-               end do
             end if
          end do
 
          msgsize = msgsize*ke*l_size
          if( msgsize.GT.0 )then
-            to_pe = overPtr%pe
-            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_2 )
             buffer_pos = buffer_pos + msgsize
          end if
-      end do ! end do m = 1, update%nrecv
+      end do
       buffer_recv_size = buffer_pos
+      send_start_pos = buffer_pos
 
-      ! send
+      ! checkpoint send_msgsize
+      buffer_pos = buffer_recv_size
       do m = 1, update%nsend
+         send_msgsize(m) = 0
          overPtr => update%send(m)
          if( overPtr%count == 0 )cycle
          pos = buffer_pos
@@ -179,19 +177,99 @@
          enddo
          if( msgsize.GT.0 )then
             msgsize = msgsize*ke*l_size
-            msgsize_send = msgsize
+         end if
+
+         do n = 1, overPtr%count
+            dir = overPtr%dir(n)
+            if( send(dir) ) then
+               tMe = overPtr%tileMe(n)
+               is = overPtr%is(n); ie = overPtr%ie(n)
+               js = overPtr%js(n); je = overPtr%je(n)
+               pos = pos + (ie-is+1)*(je-js+1)*ke*l_size
+            endif
+         end do
+
+         send_msgsize(m) = pos-buffer_pos
+         buffer_pos = pos
+      end do
+
+      ! bufferize for backward communication
+      ! using pack procedures of recv in mpp_do_update.fh
+      buffer_pos = buffer_recv_size
+      do m = update%nrecv, 1, -1
+         overPtr => update%recv(m)
+         if( overPtr%count == 0 )cycle
+         pos = buffer_pos
+         do n = overPtr%count, 1, -1
+            dir = overPtr%dir(n)
+            if( recv(dir) ) then
+               tMe = overPtr%tileMe(n)
+               is = overPtr%is(n); ie = overPtr%ie(n)
+               js = overPtr%js(n); je = overPtr%je(n)
+               msgsize = (ie-is+1)*(je-js+1)*ke*l_size
+               pos = buffer_pos - msgsize
+               buffer_pos = pos
+               do l=1,l_size  ! loop over number of fields
+                  ptr_field = f_addrs(l, tMe)
+                  do k = 1,ke
+                     do j = js, je
+                        do i = is, ie
+                           pos = pos + 1
+                           buffer(pos) = field(i,j,k)
+                        end do
+                     end do
+                  end do
+               end do
+            endif
+         end do
+      end do
+
+      ! for duality, mpp_send of mpp_do_update.sh becomes mpp_recv in adjoint
+      buffer_pos = send_start_pos
+      do m = 1, update%nsend
+         msgsize = send_msgsize(m)
+         if(msgsize == 0) cycle
+         to_pe = update%send(m)%pe
+         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=to_pe, block=.FALSE., tag=COMM_TAG_2 )
+         buffer_pos = buffer_pos + msgsize
+      end do
+
+      ! for duality, mpp_recv of mpp_do_update.sh becomes mpp_send in adjoint
+      buffer_pos = 0
+      do m = 1, update%nrecv
+         overPtr => update%recv(m)
+         if( overPtr%count == 0 )cycle
+         msgsize = 0
+         do n = 1, overPtr%count
+            dir = overPtr%dir(n)
+            if(recv(dir)) then
+               is = overPtr%is(n); ie = overPtr%ie(n)
+               js = overPtr%js(n); je = overPtr%je(n)
+               msgsize = msgsize + (ie-is+1)*(je-js+1)
+            end if
+         end do
+
+         msgsize = msgsize*ke*l_size
+         if( msgsize.GT.0 )then
             from_pe = overPtr%pe
-            call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_2 )
+            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, (buffer_pos+msgsize) )
+            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+               write( text,'(i8)' )mpp_domains_stack_hwm
+               call mpp_error( FATAL, 'MPP_DO_UPDATE: mpp_domains_stack overflow, '// &
+                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.' )
+            end if
+            call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=from_pe, tag=COMM_TAG_2 )
             buffer_pos = buffer_pos + msgsize
          end if
-      end do ! end do ist = 0,nlist-1
+      end do
 
       call mpp_sync_self(check=EVENT_RECV)
 
+      ! unpack and linear adjoint operation
+      ! in reverse order of pack process of mpp_do_update.fh
       buffer_pos = buffer_recv_size
-
-      ! send
       do m = 1, update%nsend
+         send_msgsize(m) = 0
          overPtr => update%send(m)
          if( overPtr%count == 0 )cycle
          pos = buffer_pos
@@ -201,7 +279,13 @@
             if( send(dir) )  msgsize = msgsize + overPtr%msgsize(n)
          enddo
          if( msgsize.GT.0 )then
-            buffer_pos = pos
+            msgsize = msgsize*ke*l_size
+            mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, pos+msgsize )
+            if( mpp_domains_stack_hwm.GT.mpp_domains_stack_size )then
+               write( text,'(i8)' )mpp_domains_stack_hwm
+               call mpp_error( FATAL, 'MPP_START_UPDATE_DOMAINS: mpp_domains_stack overflow, ' // &
+                    'call mpp_domains_set_stack_size('//trim(text)//') from all PEs.')
+            end if
          end if
 
          do n = 1, overPtr%count
@@ -259,15 +343,12 @@
                            end do
                         end do
                      end do
-                  end select
+               end select
             endif
          end do ! do n = 1, overPtr%count
-
-         msgsize = pos - buffer_pos
-         if( msgsize.GT.0 )then
-            buffer_pos = pos
-         end if
-      end do ! end do ist = 0,nlist-1
+         send_msgsize(m) = pos-buffer_pos
+         buffer_pos = pos
+      end do
 
       call mpp_sync_self()
 

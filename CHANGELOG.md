@@ -6,6 +6,21 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2023.01.01] - 2023-06-06
+### Changed
+- FMS2_IO: Performance changes for domain_reads_2d and domain_reads_3d:
+  - Root pe reads the data
+  - Uses mpp_scatter to send the data to the other pes
+  - Added unit tests to test all of the domain_read/domain_write interfaces
+
+- FMS2_IO: Performance changes for compressed_writes_1d/2d/3d
+  - Uses mpp_gather to get data for write
+  - Added unit tests to test all of the compressed writes interfaces
+  - Compressed_writes_4d/5d were unchanged
+
+- FMS2_IO: Extended mpp_scatter and mpp_gather to work for int8; added a kludge for scatter since the data is assumed to be (x,y,z)
+
+
 ## [2023.01] - 2023-04-03
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).

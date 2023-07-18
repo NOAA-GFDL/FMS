@@ -37,12 +37,17 @@ program test_interpolator
 
 use mpp_mod
 use mpp_domains_mod
+#ifdef use_deprecated_io
+use fms_mod, old_open_file => open_file
+#else
 use fms_mod
+#endif
 use time_manager_mod
 use diag_manager_mod
 use interpolator_mod
 use constants_mod
 use time_interp_mod, only : time_interp_init
+use fms2_io_mod,     only : open_file, FmsNetcdfFile_t
 
 implicit none
 integer, parameter :: nsteps_per_day = 8, ndays = 16
@@ -255,8 +260,12 @@ character(len=64),      intent(in)            :: names(:)
 integer,                intent(in)            :: data_out_of_bounds(:)
 integer,                intent(in), optional  :: vert_interp(:)
 character(len=*),       intent(out),optional  :: units(:)
+character(len=128)                            :: filename_aerosol
 
-if (.not. file_exist("INPUT/aerosol.climatology.nc") ) return
+type(FmsNetcdfFile_t) :: fileobj_aerosol
+
+filename_aerosol = "INPUT/aerosol.climatology.nc"
+if (.not. open_file(fileobj_aerosol, filename_aerosol, "read") ) return
 call interpolator_init( aerosol, "aerosol.climatology.nc", lonb, latb, &
                         data_names=names, data_out_of_bounds=data_out_of_bounds, &
                         vert_interp=vert_interp, clim_units=units )
@@ -287,8 +296,12 @@ type(time_type),       intent(in)           :: model_time
 type(interpolate_type),intent(inout)        :: o3
 integer,               intent(in)           :: data_out_of_bounds(:)
 integer,               intent(in), optional :: vert_interp(:)
+character(len=128)                          :: filename_o3
 
-if (.not. file_exist("INPUT/o3.climatology.nc") ) return
+type(FmsNetcdfFile_t) :: fileobj_o3
+
+filename_o3 = "INPUT/o3.climatology.nc"
+if (.not. open_file(fileobj_o3, filename_o3, "read") ) return
 call interpolator_init( o3, "o3.climatology.nc", lonb, latb, &
                         data_out_of_bounds=data_out_of_bounds, vert_interp=vert_interp )
 
