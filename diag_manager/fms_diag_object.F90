@@ -39,7 +39,7 @@ use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_time_reduction_mod, only: time_none, time_average, time_min, time_max, time_rms, &
                                       time_sum, time_diurnal, time_power
-use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type
+use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -1205,8 +1205,8 @@ end subroutine allocate_diag_field_output_buffers
       if (is_regional) then
         if (allocated(this%FMS_diag_output_buffers(buffer_id)%axis_ids)) then
           n_axis = size(this%FMS_diag_output_buffers(buffer_id)%axis_ids)
-          allocate(l_start(n))
-          allocate(l_end(n))
+          allocate(l_start(n_axis))
+          allocate(l_end(n_axis))
           do j = 1, n_axis
             ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(j))%axis
             select type (ptr_axis)
@@ -1231,8 +1231,8 @@ end subroutine allocate_diag_field_output_buffers
         select type (ptr_axis)
         type is (fmsDiagSubAxis_type)
           if (ptr_axis%is_unstructured_grid()) then
-            bounds_with_halos%bounds3D%jmin = ptr_axis%get_starting_index()
-            bounds_with_halos%bounds3D%jmin = ptr_axis%get_ending_index()
+            bounds_with_halos%bounds3D%set_jbounds(ptr_axis%get_starting_index(), &
+              ptr_axis%get_ending_index())
           end if
           l_start(3) = ptr_axis%get_starting_index()
           l_end(3) = ptr_axis%get_ending_index()
