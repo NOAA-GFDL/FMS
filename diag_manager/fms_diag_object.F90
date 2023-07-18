@@ -40,7 +40,7 @@ use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_time_reduction_mod, only: time_none, time_average, time_min, time_max, time_rms, &
                                       time_sum, time_diurnal, time_power
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices
-use fms_diag_reduction_methods_mod, only: check_indices_order
+use fms_diag_reduction_methods_mod
 #endif
 #if defined(_OPENMP)
 use omp_lib
