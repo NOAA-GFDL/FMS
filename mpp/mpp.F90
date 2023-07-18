@@ -230,7 +230,7 @@ private
   type :: communicator
      private
      character(len=32) :: name
-     integer, pointer  :: list(:) =>NULL()
+     integer, allocatable  :: list(:)
      integer           :: count
      integer           :: start, log2stride !< dummy variables when libMPI is defined.
      integer           :: id, group         !< MPI communicator and group id for this PE set.
@@ -256,7 +256,7 @@ private
      integer              :: peset_num
      logical              :: sync_on_begin, detailed
      integer              :: grain
-     type(event), pointer :: events(:) =>NULL() !> if needed, allocate to MAX_EVENT_TYPES
+     type(event), allocatable :: events(:) !> if needed, allocate to MAX_EVENT_TYPES
      logical              :: is_on              !> initialize to false. set true when calling mpp_clock_begin
                                                 !! set false when calling mpp_clock_end
   end type clock

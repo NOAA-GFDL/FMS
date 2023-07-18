@@ -247,8 +247,8 @@ module mpp_domains_mod
      private
      integer :: count = 0
      integer :: pe
-     integer, pointer :: i(:)=>NULL()
-     integer, pointer :: j(:)=>NULL()
+     integer, allocatable :: i(:)
+     integer, allocatable :: j(:)
   end type unstruct_overlap_type
 
   !> Private type
@@ -256,8 +256,8 @@ module mpp_domains_mod
   type :: unstruct_pass_type
      private
      integer :: nsend, nrecv
-     type(unstruct_overlap_type), pointer :: recv(:)=>NULL()
-     type(unstruct_overlap_type), pointer :: send(:)=>NULL()
+     type(unstruct_overlap_type), allocatable :: recv(:)
+     type(unstruct_overlap_type), allocatable :: send(:)
   end type unstruct_pass_type
 
   !> Domain information for managing data on unstructured grids
@@ -265,11 +265,11 @@ module mpp_domains_mod
   type :: domainUG
      private
      type(unstruct_axis_spec) :: compute, global !< axis specifications
-     type(unstruct_domain_spec), pointer :: list(:)=>NULL() !<
-     type(domainUG), pointer :: io_domain=>NULL() !<
+     type(unstruct_domain_spec), allocatable :: list(:)
+     type(domainUG), allocatable :: io_domain
      type(unstruct_pass_type) :: SG2UG
      type(unstruct_pass_type) :: UG2SG
-     integer, pointer :: grid_index(:) => NULL() !< index of grid on current pe
+     integer, allocatable :: grid_index(:) !< index of grid on current pe
      type(domain2d), pointer :: SG_domain => NULL()
      integer :: pe
      integer :: pos
@@ -305,9 +305,9 @@ module mpp_domains_mod
   !> @ingroup mpp_domains_mod
   type :: domain2D_spec
      private
-     type(domain1D_spec), pointer :: x(:)       => NULL() !< x-direction domain decomposition
-     type(domain1D_spec), pointer :: y(:)       => NULL() !< y-direction domain decomposition
-     integer,        pointer :: tile_id(:) => NULL() !< tile id of each tile
+     type(domain1D_spec), allocatable :: x(:) !< x-direction domain decomposition
+     type(domain1D_spec), allocatable :: y(:) !< y-direction domain decomposition
+     integer,        allocatable :: tile_id(:) !< tile id of each tile
      integer                 :: pe                   !< PE to which this domain is assigned
      integer                 :: pos                  !< position of this PE within link list
      integer                 :: tile_root_pe         !< root pe of tile.
@@ -321,17 +321,17 @@ module mpp_domains_mod
      integer                  :: pe
      integer                  :: start_pos                 !< start position in the buffer
      integer                  :: totsize                   !< all message size
-     integer ,        pointer :: msgsize(:)      => NULL() !< overlapping msgsize to be sent or received
-     integer,         pointer :: tileMe(:)       => NULL() !< my tile id for this overlap
-     integer,         pointer :: tileNbr(:)      => NULL() !< neighbor tile id for this overlap
-     integer,         pointer :: is(:)           => NULL() !< starting i-index
-     integer,         pointer :: ie(:)           => NULL() !< ending   i-index
-     integer,         pointer :: js(:)           => NULL() !< starting j-index
-     integer,         pointer :: je(:)           => NULL() !< ending   j-index
-     integer,         pointer :: dir(:)          => NULL() !< direction ( value 1,2,3,4 = E,S,W,N)
-     integer,         pointer :: rotation(:)     => NULL() !< rotation angle.
-     integer,         pointer :: index(:)        => NULL() !< for refinement
-     logical,         pointer :: from_contact(:) => NULL() !< indicate if the overlap is computed from
+     integer ,        allocatable :: msgsize(:) !< overlapping msgsize to be sent or received
+     integer,         allocatable :: tileMe(:)  !< my tile id for this overlap
+     integer,         allocatable :: tileNbr(:) !< neighbor tile id for this overlap
+     integer,         allocatable :: is(:)       !< starting i-index
+     integer,         allocatable :: ie(:)       !< ending   i-index
+     integer,         allocatable :: js(:)       !< starting j-index
+     integer,         allocatable :: je(:)       !< ending   j-index
+     integer,         allocatable :: dir(:)      !< direction ( value 1,2,3,4 = E,S,W,N)
+     integer,         allocatable :: rotation(:) !< rotation angle.
+     integer,         allocatable :: index(:)        !< for refinement
+     logical,         allocatable :: from_contact(:) !< indicate if the overlap is computed from
                                                            !! define_contact_overlap
   end type overlap_type
 
@@ -343,9 +343,9 @@ module mpp_domains_mod
      integer                     :: xbegin, xend, ybegin, yend
      integer                     :: nsend, nrecv
      integer                     :: sendsize, recvsize
-     type(overlap_type), pointer :: send(:) => NULL()
-     type(overlap_type), pointer :: recv(:) => NULL()
-     type(overlapSpec),  pointer :: next => NULL()
+     type(overlap_type), allocatable :: send(:)
+     type(overlap_type), allocatable :: recv(:)
+     type(overlapSpec),  allocatable :: next
   end type overlapSpec
 
   !> @brief Upper and lower x and y bounds for a tile
@@ -381,30 +381,30 @@ module mpp_domains_mod
      integer                     :: tile_root_pe  !< root pe of current tile.
      integer                     :: io_layout(2)  !< io_layout, will be set through mpp_define_io_domain
                                                   !! default = domain layout
-     integer,            pointer :: pearray(:,:)  => NULL() !< pe of each layout position
-     integer,            pointer :: tile_id(:)    => NULL() !< tile id of each tile on current processor
-     integer,            pointer :: tile_id_all(:)=> NULL() !< tile id of all the tiles of domain
-     type(domain1D),     pointer :: x(:)          => NULL() !< x-direction domain decomposition
-     type(domain1D),     pointer :: y(:)          => NULL() !< y-direction domain decomposition
-     type(domain2D_spec),pointer :: list(:)       => NULL() !< domain decomposition on pe list
-     type(tile_type),    pointer :: tileList(:)   => NULL() !< store tile information
-     type(overlapSpec),  pointer :: check_C       => NULL() !< send and recv information for boundary
+     integer,            allocatable :: pearray(:,:) !< pe of each layout position
+     integer,            allocatable :: tile_id(:) !< tile id of each tile on current processor
+     integer,            allocatable :: tile_id_all(:) !< tile id of all the tiles of domain
+     type(domain1D),     allocatable :: x(:) !< x-direction domain decomposition
+     type(domain1D),     allocatable :: y(:) !< y-direction domain decomposition
+     type(domain2D_spec),allocatable :: list(:) !< domain decomposition on pe list
+     type(tile_type),    allocatable :: tileList(:) !< store tile information
+     type(overlapSpec),  allocatable :: check_C !< send and recv information for boundary
                                                             !! consistency check of C-cell
-     type(overlapSpec),  pointer :: check_E       => NULL() !< send and recv information for boundary
+     type(overlapSpec),  allocatable :: check_E !< send and recv information for boundary
                                                             !! consistency check of E-cell
-     type(overlapSpec),  pointer :: check_N       => NULL() !< send and recv information for boundary
+     type(overlapSpec),  allocatable :: check_N !< send and recv information for boundary
                                                             !! consistency check of N-cell
-     type(overlapSpec),  pointer :: bound_C       => NULL() !< send information for getting boundary
+     type(overlapSpec),  allocatable :: bound_C !< send information for getting boundary
                                                             !! value for symmetry domain.
-     type(overlapSpec),  pointer :: bound_E       => NULL() !< send information for getting boundary
+     type(overlapSpec),  allocatable :: bound_E !< send information for getting boundary
                                                             !! value for symmetry domain.
-     type(overlapSpec),  pointer :: bound_N       => NULL() !< send information for getting boundary
+     type(overlapSpec),  allocatable :: bound_N !< send information for getting boundary
                                                             !! value for symmetry domain.
-     type(overlapSpec),  pointer :: update_T      => NULL() !< send and recv information for halo update of T-cell.
-     type(overlapSpec),  pointer :: update_E      => NULL() !< send and recv information for halo update of E-cell.
-     type(overlapSpec),  pointer :: update_C      => NULL() !< send and recv information for halo update of C-cell.
-     type(overlapSpec),  pointer :: update_N      => NULL() !< send and recv information for halo update of N-cell.
-     type(domain2d),     pointer :: io_domain     => NULL() !< domain for IO, will be set through calling
+     type(overlapSpec),  allocatable :: update_T !< send and recv information for halo update of T-cell.
+     type(overlapSpec),  allocatable :: update_E !< send and recv information for halo update of E-cell.
+     type(overlapSpec),  allocatable :: update_C !< send and recv information for halo update of C-cell.
+     type(overlapSpec),  allocatable :: update_N !< send and recv information for halo update of N-cell.
+     type(domain2d),     allocatable :: io_domain !< domain for IO, will be set through calling
                                                             !! mpp_set_io_domain ( this will be changed).
   END TYPE domain2D
 
@@ -414,13 +414,13 @@ module mpp_domains_mod
   type, private :: contact_type
      private
      integer          :: ncontact                               !< number of neighbor tile.
-     integer, pointer :: tile(:) =>NULL()                       !< neighbor tile
-     integer, pointer :: align1(:)=>NULL(), align2(:)=>NULL()   !< alignment of me and neighbor
-     real,    pointer :: refine1(:)=>NULL(), refine2(:)=>NULL() !
-     integer, pointer :: is1(:)=>NULL(), ie1(:)=>NULL()         !< i-index of current tile repsenting contact
-     integer, pointer :: js1(:)=>NULL(), je1(:)=>NULL()         !< j-index of current tile repsenting contact
-     integer, pointer :: is2(:)=>NULL(), ie2(:)=>NULL()         !< i-index of neighbor tile repsenting contact
-     integer, pointer :: js2(:)=>NULL(), je2(:)=>NULL()         !< j-index of neighbor tile repsenting contact
+     integer, allocatable :: tile(:)                        !< neighbor tile
+     integer, allocatable :: align1(:), align2(:)   !< alignment of me and neighbor
+     real,    allocatable :: refine1(:), refine2(:) !
+     integer, allocatable :: is1(:), ie1(:)         !< i-index of current tile repsenting contact
+     integer, allocatable :: js1(:), je1(:)         !< j-index of current tile repsenting contact
+     integer, allocatable :: is2(:), ie2(:)         !< i-index of neighbor tile repsenting contact
+     integer, allocatable :: js2(:), je2(:)        !< j-index of neighbor tile repsenting contact
   end type contact_type
 
   !> index bounds for use in @ref nestSpec
@@ -441,9 +441,9 @@ module mpp_domains_mod
      type(index_type)            :: west, east, south, north, center
      integer                     :: nsend, nrecv
      integer                     :: extra_halo
-     type(overlap_type), pointer :: send(:) => NULL()
-     type(overlap_type), pointer :: recv(:) => NULL()
-     type(nestSpec),     pointer :: next => NULL()
+     type(overlap_type), allocatable :: send(:)
+     type(overlap_type), allocatable :: recv(:)
+     type(nestSpec),     allocatable :: next
 
   end type nestSpec
 
@@ -452,12 +452,12 @@ module mpp_domains_mod
   type :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
-     integer,               pointer :: nest_level(:)    !< Added for moving nest functionality
-     type(nest_level_type), pointer :: nest(:) => NULL()
+     integer,           allocatable :: nest_level(:)    !< Added for moving nest functionality
+     type(nest_level_type), allocatable :: nest(:)
      integer                        :: num_nest
-     integer,               pointer :: tile_fine(:), tile_coarse(:)
-     integer,               pointer :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
-     integer,               pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
+     integer,           allocatable :: tile_fine(:), tile_coarse(:)
+     integer,           allocatable :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
+     integer,           allocatable :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
   end type nest_domain_type
 
   !> Private type to hold data for each level of nesting
@@ -468,25 +468,25 @@ module mpp_domains_mod
      logical                    :: is_fine, is_coarse
      integer                    :: num_nest
      integer                    :: my_num_nest
-     integer,           pointer :: my_nest_id(:)
-     integer,           pointer :: tile_fine(:), tile_coarse(:)
-     integer,           pointer :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
-     integer,           pointer :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
+     integer,           allocatable :: my_nest_id(:)
+     integer,           allocatable :: tile_fine(:), tile_coarse(:)
+     integer,           allocatable :: istart_fine(:), iend_fine(:), jstart_fine(:), jend_fine(:)
+     integer,           allocatable :: istart_coarse(:), iend_coarse(:), jstart_coarse(:), jend_coarse(:)
      integer                    :: x_refine, y_refine
      logical                    :: is_fine_pe, is_coarse_pe
-     integer,           pointer :: pelist(:) => NULL()
-     integer,           pointer :: pelist_fine(:) => NULL()
-     integer,           pointer :: pelist_coarse(:) => NULL()
-     type(nestSpec), pointer :: C2F_T => NULL()
-     type(nestSpec), pointer :: C2F_C => NULL()
-     type(nestSpec), pointer :: C2F_E => NULL()
-     type(nestSpec), pointer :: C2F_N => NULL()
-     type(nestSpec), pointer :: F2C_T => NULL()
-     type(nestSpec), pointer :: F2C_C => NULL()
-     type(nestSpec), pointer :: F2C_E => NULL()
-     type(nestSpec), pointer :: F2C_N => NULL()
-     type(domain2d), pointer :: domain_fine   => NULL()
-     type(domain2d), pointer :: domain_coarse => NULL()
+     integer,           allocatable :: pelist(:)
+     integer,           allocatable :: pelist_fine(:)
+     integer,           allocatable :: pelist_coarse(:)
+     type(nestSpec), allocatable :: C2F_T
+     type(nestSpec), allocatable :: C2F_C
+     type(nestSpec), allocatable :: C2F_E
+     type(nestSpec), allocatable :: C2F_N
+     type(nestSpec), allocatable :: F2C_T
+     type(nestSpec), allocatable :: F2C_C
+     type(nestSpec), allocatable :: F2C_E
+     type(nestSpec), allocatable :: F2C_N
+     type(domain2d), allocatable :: domain_fine
+     type(domain2d), allocatable :: domain_coarse
   end type nest_level_type
 
 
@@ -632,7 +632,7 @@ module mpp_domains_mod
      type(domain_axis_spec) :: global  !< index limits for global domain
      type(domain_axis_spec) :: memory  !< index limits for memory domain
      logical :: cyclic !< true if domain is cyclic
-     type(domain1D), pointer :: list(:) =>NULL() !< list of each pe's domains
+     type(domain1D), allocatable :: list(:) !< list of each pe's domains
      integer :: pe !<PE to which this domain is assigned
      integer :: pos !< position of this PE within link list, i.e domain%list(pos)%pe = pe
      integer :: goffset !< needed for global sum

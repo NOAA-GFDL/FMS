@@ -475,7 +475,7 @@ end subroutine init_nonblock_type
       call mpp_get_current_pelist(pes)
 
 !am I part of this domain?
-      native = ASSOCIATED(domain%list)
+      native = ALLOCATED(domain%list)
 
 !set local list size
       if( native )then
@@ -599,10 +599,10 @@ end subroutine init_nonblock_type
       call mpp_get_current_pelist(pes)
 
 ! domain_in must be initialized
-      if( .not. ASSOCIATED(domain_in%list) ) then
+      if( .not. ALLOCATED(domain_in%list) ) then
          call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_2: domain_in is not initialized')
       endif
-      if( ASSOCIATED(domain_out%list) ) then
+      if( ALLOCATED(domain_out%list) ) then
          call mpp_error( FATAL, 'MPP_BROADCAST_DOMAIN_2: domain_out is already initialized')
       endif
 
@@ -729,7 +729,7 @@ end subroutine init_nonblock_type
       call mpp_get_current_pelist(pes)
 
 !am I part of this domain?
-      native = ASSOCIATED(domain%list)
+      native = ALLOCATED(domain%list)
       num_nest = size(tile_nest(:))
 !set local list size
       nestsize = 0
@@ -853,7 +853,7 @@ end subroutine init_nonblock_type
       allocate(tile_pesize(maxtile))
       tile_pesize = 0
 !am I part of this domain?
-      native = ASSOCIATED(domain%list)
+      native = ALLOCATED(domain%list)
 !set local list size
       if( native )then
 !          tile = domain%tile_id(1)

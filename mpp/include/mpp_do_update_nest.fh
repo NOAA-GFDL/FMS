@@ -34,7 +34,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
   integer,                    intent(in) :: xbegin, xend, ybegin, yend
 
   character(len=8)            :: text
-  type(overlap_type), pointer :: overPtr => NULL()
+  type(overlap_type), allocatable :: overPtr
   logical   :: send(8), recv(8)
   integer   :: from_pe, to_pe, dir
   integer   :: m, n, l, i, j, k
@@ -68,7 +68,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
   !--- pre-post receiving
   buffer_pos = 0
   do m = 1, update%nrecv
-     overPtr => update%recv(m)
+     overPtr = update%recv(m)
      if( overPtr%count == 0 )cycle
      call mpp_clock_begin(nest_recv_clock)
      msgsize = 0
@@ -98,7 +98,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
 
   !--- pack and send the data
   do m = 1, update%nsend
-     overPtr => update%send(m)
+     overPtr = update%send(m)
      if( overPtr%count == 0 )cycle
      call mpp_clock_begin(nest_pack_clock)
      pos = buffer_pos
@@ -185,7 +185,7 @@ subroutine MPP_DO_UPDATE_NEST_FINE_3D_(f_addrs, nest_domain, update, d_type, ke,
 
   call mpp_clock_begin(nest_unpk_clock)
   do m = update%nrecv, 1, -1
-     overPtr => update%recv(m)
+     overPtr = update%recv(m)
      if( overPtr%count == 0 )cycle
 
      pos = buffer_pos
@@ -684,7 +684,7 @@ subroutine MPP_DO_UPDATE_NEST_COARSE_3D_(f_addrs_in, f_addrs_out, nest_domain, u
   integer(i8_kind),         intent(in) :: f_addrs_in(:)
   integer(i8_kind),         intent(in) :: f_addrs_out(:)
   type(nest_domain_type),     intent(in) :: nest_domain
-  type(nestSpec),             intent(in) :: update
+  type(nestSpec),             intent(in), target :: update
   MPP_TYPE_,                  intent(in) :: d_type  ! creates unique interface
   integer,                    intent(in) :: ke
 

@@ -66,7 +66,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
   character(len=128)         :: text, field_name
   integer, save              :: ke_list(MAX_DOMAIN_FIELDS, MAX_TILES)=0
   integer(i8_kind), save   :: f_addrs(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  type(overlapSpec), pointer :: update => NULL()
+  type(overlapSpec), allocatable :: update
   MPP_TYPE_                  :: d_type
 
   field_name = "unknown"
@@ -225,7 +225,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
 
      ke_max = maxval(ke_list(1:l_size,1:ntile))
      if( domain_update_is_needed(domain, update_whalo, update_ehalo, update_shalo, update_nhalo) )then
-        update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+        update = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
                                        &  update_position)
         call mpp_start_do_update(current_id, f_addrs(1:l_size,1:ntile), domain, update, d_type, &
                                  ke_max, ke_list(1:l_size,1:ntile), update_flags, reuse_id_update, field_name )
@@ -327,7 +327,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
 
   integer                    :: update_whalo, update_ehalo, update_shalo, update_nhalo
   integer                    :: update_position, update_flags
-  type(overlapSpec), pointer :: update => NULL()
+  type(overlapSpec), allocatable :: update
   integer                    :: tile, max_ntile, ntile, n
   logical                    :: is_complete
   logical                    :: do_update
@@ -438,7 +438,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
              "mismatch of number of fields between mpp_start_update_domains and mpp_complete_update_domains")
      num_update = num_update - 1
      if( domain_update_is_needed(domain, update_whalo, update_ehalo, update_shalo, update_nhalo) ) then
-        update => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
+        update = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, &
                                        &  update_position)
         ke_max = maxval(ke_list(1:l_size,1:ntile))
         call mpp_complete_do_update(id_update, f_addrs(1:l_size,1:ntile), domain, update, d_type, &
@@ -554,8 +554,8 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
   integer,            save    :: ke_list (MAX_DOMAIN_FIELDS, MAX_TILES)=0
   integer(i8_kind), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
   integer(i8_kind), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  type(overlapSpec),  pointer :: updatex => NULL()
-  type(overlapSpec),  pointer :: updatey => NULL()
+  type(overlapSpec), allocatable :: updatex
+  type(overlapSpec), allocatable :: updatey
   MPP_TYPE_                   :: d_type
 
   field_name = "unknown"
@@ -744,8 +744,8 @@ function MPP_START_UPDATE_DOMAINS_3D_V_( fieldx, fieldy, domain, flags, gridtype
         case default
            call mpp_error(FATAL, "mpp_update_domains2D_nonblock.h: invalid value of grid_offset_type")
         end select
-        updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
-        updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
+        updatex = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
+        updatey = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
 
         ke_max = maxval(ke_list(1:l_size,1:ntile))
         if(exchange_uv) then
@@ -873,8 +873,8 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
   integer,            save    :: ke_list (MAX_DOMAIN_FIELDS, MAX_TILES)=0
   integer(i8_kind), save    :: f_addrsx(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
   integer(i8_kind), save    :: f_addrsy(MAX_DOMAIN_FIELDS, MAX_TILES)=-9999
-  type(overlapSpec),  pointer :: updatex => NULL()
-  type(overlapSpec),  pointer :: updatey => NULL()
+  type(overlapSpec), allocatable :: updatex
+  type(overlapSpec), allocatable :: updatey
   MPP_TYPE_                   :: d_type
 
   if(present(whalo)) then
@@ -1011,8 +1011,8 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_V_( id_update, fieldx, fieldy, domain,
         case default
            call mpp_error(FATAL, "mpp_update_domains2D.h: invalid value of grid_offset_type")
         end select
-        updatex => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
-        updatey => search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
+        updatex = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_x)
+        updatey = search_update_overlap(domain, update_whalo, update_ehalo, update_shalo, update_nhalo, position_y)
 
         ke_max = maxval(ke_list(1:l_size,1:ntile))
         if(exchange_uv) then

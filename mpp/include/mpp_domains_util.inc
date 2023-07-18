@@ -96,7 +96,7 @@
 
     if( mpp_domain2D_eq .AND. ((a%pe.EQ.NULL_PE).OR.(b%pe.EQ.NULL_PE)) )return !NULL_DOMAIN2D
     !compare pelists
-    if( mpp_domain2D_eq )mpp_domain2D_eq = ASSOCIATED(a%list) .AND. ASSOCIATED(b%list)
+    if( mpp_domain2D_eq )mpp_domain2D_eq = ALLOCATED(a%list) .AND. ALLOCATED(b%list)
     if( mpp_domain2D_eq )mpp_domain2D_eq = size(a%list(:)).EQ.size(b%list(:))
     if( mpp_domain2D_eq )mpp_domain2D_eq = ALL(a%list%pe.EQ.b%list%pe)
     if( mpp_domain2D_eq )mpp_domain2D_eq = ALL(a%io_layout .EQ. b%io_layout)
@@ -690,10 +690,10 @@ function mpp_get_domain_tile_root_pe(domain)
 end function mpp_get_domain_tile_root_pe
 
 function mpp_get_io_domain(domain)
-   type(domain2d), intent(in) :: domain
+   type(domain2d), intent(in), target :: domain
    type(domain2d), pointer    :: mpp_get_io_domain
 
-   if(ASSOCIATED(domain%io_domain)) then
+   if(ALLOCATED(domain%io_domain)) then
       mpp_get_io_domain => domain%io_domain
    else
       mpp_get_io_domain => NULL()
@@ -951,7 +951,7 @@ end subroutine mpp_get_domain_shift
   subroutine nullify_domain2d_list(domain)
      type(domain2d), intent(inout) :: domain
 
-     domain%list =>NULL()
+     if (allocated(domain%list)) deallocate(domain%list) !domain%list =>NULL()
 
   end subroutine nullify_domain2d_list
 
@@ -1008,33 +1008,33 @@ end subroutine mpp_get_domain_shift
   !> this routine found the domain has the same halo size with the input
   !! whalo, ehalo,
   function search_update_overlap(domain, whalo, ehalo, shalo, nhalo, position)
-    type(domain2d),          intent(inout) :: domain
+    type(domain2d),          intent(inout), target :: domain
     integer,                    intent(in) :: whalo, ehalo, shalo, nhalo
     integer,                    intent(in) :: position
-    type(overlapSpec),          pointer    :: search_update_overlap
-    type(overlapSpec),          pointer    :: update_ref
-    type(overlapSpec), pointer :: check => NULL()
+    type(overlapSpec),          allocatable    :: search_update_overlap
+    type(overlapSpec),          allocatable    :: update_ref
+    type(overlapSpec), allocatable :: check
     integer :: ishift, jshift, shift
 
     shift = 0; if(domain%symmetry) shift = 1
     select case(position)
     case (CENTER)
-       update_ref => domain%update_T
+       update_ref = domain%update_T
        ishift = 0; jshift = 0
     case (CORNER)
-       update_ref => domain%update_C
+       update_ref = domain%update_C
        ishift = shift; jshift = shift
     case (NORTH)
-       update_ref => domain%update_N
+       update_ref = domain%update_N
        ishift = 0; jshift = shift
     case (EAST)
-       update_ref => domain%update_E
+       update_ref = domain%update_E
        ishift = shift; jshift = 0
     case default
        call mpp_error(FATAL,"mpp_domains_util.inc(search_update_overlap): position should be CENTER|CORNER|EAST|NORTH")
     end select
 
-    search_update_overlap => update_ref
+    search_update_overlap = update_ref
 
     do
        if(whalo == search_update_overlap%whalo .AND. ehalo == search_update_overlap%ehalo .AND. &
@@ -1042,9 +1042,9 @@ end subroutine mpp_get_domain_shift
             exit ! found domain
        endif
        !--- if not found, switch to next
-       if(.NOT. ASSOCIATED(search_update_overlap%next)) then
+       if(.NOT. ALLOCATED(search_update_overlap%next)) then
           allocate(search_update_overlap%next)
-          search_update_overlap => search_update_overlap%next
+          search_update_overlap = search_update_overlap%next
           if(domain%fold .NE. 0) then
              call compute_overlaps(domain, position, search_update_overlap, check, &
                                    ishift, jshift, 0, 0, whalo, ehalo, shalo, nhalo)
@@ -1053,19 +1053,19 @@ end subroutine mpp_get_domain_shift
           endif
           exit
        else
-          search_update_overlap => search_update_overlap%next
+          search_update_overlap = search_update_overlap%next
        end if
 
     end do
 
-    update_ref => NULL()
+    !update_ref => NULL()
 
   end function search_update_overlap
 
 !#######################################################################
   !> this routine finds the check at certain position
   function search_check_overlap(domain, position)
-    type(domain2d),             intent(in) :: domain
+    type(domain2d),     intent(in), target :: domain
     integer,                    intent(in) :: position
     type(overlapSpec),          pointer    :: search_check_overlap
 
@@ -1087,7 +1087,7 @@ end subroutine mpp_get_domain_shift
 !#######################################################################
   !> This routine finds the bound at certain position
   function search_bound_overlap(domain, position)
-    type(domain2d),             intent(in) :: domain
+    type(domain2d),     intent(in), target :: domain
     integer,                    intent(in) :: position
     type(overlapSpec),          pointer    :: search_bound_overlap
 
@@ -1258,7 +1258,7 @@ end subroutine mpp_get_tile_compute_domains
 
   !#############################################################################
   function mpp_get_num_overlap(domain, action, p, position)
-    type(domain2d),    intent(in) :: domain
+    type(domain2d),    intent(in), target :: domain
     integer,           intent(in) :: action
     integer,           intent(in) :: p
     integer, optional, intent(in) :: position
@@ -1325,7 +1325,7 @@ end subroutine mpp_get_tile_compute_domains
 
   !#############################################################################
   subroutine mpp_get_update_pelist(domain, action, pelist, position)
-    type(domain2d),       intent(in) :: domain
+    type(domain2d),       intent(in), target :: domain
     integer,              intent(in) :: action
     integer,           intent(inout) :: pelist(:)
     integer, optional,    intent(in) :: position
@@ -1367,7 +1367,7 @@ end subroutine mpp_get_tile_compute_domains
 
   !#############################################################################
   subroutine mpp_get_overlap(domain, action, p, is, ie, js, je, dir, rot, position)
-    type(domain2d),         intent(in) :: domain
+    type(domain2d), intent(in), target :: domain
     integer,                intent(in) :: action
     integer,                intent(in) :: p
     integer, dimension(:), intent(out) :: is, ie, js, je
@@ -1735,7 +1735,7 @@ end subroutine mpp_get_tile_compute_domains
      domain_out%pe      = domain_in%pe
      domain_out%pos     = domain_in%pos
 
-     if (associated(domain_in%list)) then
+     if (allocated(domain_in%list)) then
          starting = lbound(domain_in%list, 1)
          ending = ubound(domain_in%list, 1)
          if (associated(domain_out%list)) deallocate(domain_out%list) !< Check if allocated
@@ -1760,7 +1760,7 @@ end subroutine mpp_get_tile_compute_domains
      integer :: starting(2)  !< Starting bounds
      integer :: ending(2)    !< Ending bounds
 
-     if (associated(domain_out%x)) then
+     if (allocated(domain_out%x)) then
          call mpp_error(FATAL, "mpp_copy_domain: domain_out is already set")
      endif
 
@@ -1789,7 +1789,7 @@ end subroutine mpp_get_tile_compute_domains
         call mpp_copy_domain1D(domain_in%y(n), domain_out%y(n))
      enddo
 
-     if (associated(domain_in%pearray)) then
+     if (allocated(domain_in%pearray)) then
          starting = lbound(domain_in%pearray)
          ending = ubound(domain_in%pearray)
 
@@ -1797,7 +1797,7 @@ end subroutine mpp_get_tile_compute_domains
          domain_out%pearray=domain_in%pearray
      endif
 
-     if (associated(domain_in%tile_id)) then
+     if (allocated(domain_in%tile_id)) then
          starting(1) = lbound(domain_in%tile_id,1)
          ending(1) = ubound(domain_in%tile_id,1)
 
@@ -1805,7 +1805,7 @@ end subroutine mpp_get_tile_compute_domains
          domain_out%tile_id = domain_in%tile_id
      endif
 
-     if (associated(domain_in%tile_id_all)) then
+     if (allocated(domain_in%tile_id_all)) then
          starting(1) = lbound(domain_in%tile_id_all,1)
          ending(1) = ubound(domain_in%tile_id_all,1)
 
@@ -1813,7 +1813,7 @@ end subroutine mpp_get_tile_compute_domains
          domain_out%tile_id_all = domain_in%tile_id_all
      endif
 
-     if (associated(domain_in%list)) then
+     if (allocated(domain_in%list)) then
          starting(1) = lbound(domain_in%list,1)
          ending(1) = ubound(domain_in%list,1)
 
@@ -1840,7 +1840,7 @@ end subroutine mpp_get_tile_compute_domains
   domain2D_spec_out%pos = domain2D_spec_in%pos
   domain2D_spec_out%tile_root_pe = domain2D_spec_in%tile_root_pe
 
-  if (associated(domain2D_spec_in%tile_id)) then
+  if (allocated(domain2D_spec_in%tile_id)) then
       starting = lbound(domain2D_spec_in%tile_id,1)
       ending = ubound(domain2D_spec_in%tile_id,1)
 
@@ -1849,7 +1849,7 @@ end subroutine mpp_get_tile_compute_domains
       domain2D_spec_out%tile_id = domain2D_spec_in%tile_id
   endif
 
-  if (associated(domain2D_spec_in%x)) then
+  if (allocated(domain2D_spec_in%x)) then
       starting = lbound(domain2D_spec_in%x,1)
       ending = ubound(domain2D_spec_in%x,1)
 
@@ -1860,7 +1860,7 @@ end subroutine mpp_get_tile_compute_domains
       enddo
   endif
 
-  if (associated(domain2D_spec_in%y)) then
+  if (allocated(domain2D_spec_in%y)) then
       starting = lbound(domain2D_spec_in%y,1)
       ending = ubound(domain2D_spec_in%y,1)
 
@@ -1919,10 +1919,10 @@ end subroutine mpp_get_tile_compute_domains
      integer   :: pack_buffer_pos, unpack_buffer_pos
      integer   :: omp_get_num_threads, nthreads
      character(len=8)            :: text
-     type(overlap_type), pointer :: overPtr => NULL()
-     type(overlapSpec), pointer  :: update_s => NULL()
-     type(overlapSpec), pointer  :: update_x => NULL()
-     type(overlapSpec), pointer  :: update_y => NULL()
+     type(overlap_type), allocatable :: overPtr
+     type(overlapSpec), allocatable  :: update_s
+     type(overlapSpec), allocatable  :: update_x
+     type(overlapSpec), allocatable  :: update_y
 
      nscalar = group%nscalar
      nvector = group%nvector
@@ -1945,13 +1945,13 @@ end subroutine mpp_get_tile_compute_domains
         call mpp_error(FATAL, "set_group_update: invalid value of gridtype")
      end select
      if(nscalar>0) then
-        update_s => search_update_overlap(domain, group%whalo_s, group%ehalo_s, &
+        update_s = search_update_overlap(domain, group%whalo_s, group%ehalo_s, &
              group%shalo_s, group%nhalo_s, group%position)
      endif
      if(nvector>0) then
-        update_x => search_update_overlap(domain, group%whalo_v, group%ehalo_v, &
+        update_x = search_update_overlap(domain, group%whalo_v, group%ehalo_v, &
              group%shalo_v, group%nhalo_v, position_x)
-        update_y => search_update_overlap(domain, group%whalo_v, group%ehalo_v, &
+        update_y = search_update_overlap(domain, group%whalo_v, group%ehalo_v, &
              group%shalo_v, group%nhalo_v, position_y)
      endif
 
@@ -2103,7 +2103,7 @@ end subroutine mpp_get_tile_compute_domains
      do l = 1, nrecv_old
         m = ind_s(l)
         if(m>0) then
-           overptr => update_s%recv(m)
+           overptr = update_s%recv(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
               if(recv_s(dir)) then
@@ -2125,7 +2125,7 @@ end subroutine mpp_get_tile_compute_domains
 
         m = ind_x(l)
         if(m>0) then
-           overptr => update_x%recv(m)
+           overptr = update_x%recv(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
               if(recv_x(dir)) then
@@ -2147,7 +2147,7 @@ end subroutine mpp_get_tile_compute_domains
 
         m = ind_y(l)
         if(m>0) then
-           overptr => update_y%recv(m)
+           overptr = update_y%recv(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
               if(recv_y(dir)) then
@@ -2258,7 +2258,7 @@ end subroutine mpp_get_tile_compute_domains
      do l = 1, nsend_old
         m = ind_s(l)
         if(m>0) then
-           overptr => update_s%send(m)
+           overptr = update_s%send(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
               if(send_s(dir)) then
@@ -2280,7 +2280,7 @@ end subroutine mpp_get_tile_compute_domains
 
         m = ind_x(l)
         if(m>0) then
-           overptr => update_x%send(m)
+           overptr = update_x%send(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
               !--- nonsym_edge update is not for rotation of 90 or -90 degree ( cubic sphere grid )
@@ -2308,7 +2308,7 @@ end subroutine mpp_get_tile_compute_domains
 
         m = ind_y(l)
         if(m>0) then
-           overptr => update_y%send(m)
+           overptr = update_y%send(m)
            do n = 1, overptr%count
               dir = overptr%dir(n)
               if( group%nonsym_edge .and. (overptr%rotation(n)==NINETY .or. &
