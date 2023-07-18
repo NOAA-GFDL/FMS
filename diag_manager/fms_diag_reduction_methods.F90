@@ -7,8 +7,8 @@
 module fms_diag_reduction_methods_mod
   use platform_mod
   use fms_mod, only: fms_error_handler
-  !use fms_diag_bbox_mod
-  !use fms_diag_output_buffer_mod
+  use fms_diag_bbox_mod
+  use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_class
 
   implicit none
   private
