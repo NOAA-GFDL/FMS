@@ -67,7 +67,7 @@ MODULE fms_diag_bbox_mod
    !! in I and J dimensions.
    type, public :: fmsDiagBoundsHalos_type
       private
-      type(fmsDiagIbounds_type) :: bounds3D !< Holds starting and ending indices of
+      type(fmsDiagIbounds_type), public :: bounds3D !< Holds starting and ending indices of
                                             !! the I, J, and K dimensions
       integer :: hi !< Halo size in the I dimension
       integer :: hj !< Halo size in the J dimension
