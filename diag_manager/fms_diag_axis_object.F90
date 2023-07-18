@@ -118,6 +118,8 @@ module fms_diag_axis_object_mod
     real(kind=r4_kind), allocatable, private  :: zbounds(:)     !< Bounds of the Z axis
     contains
       procedure :: fill_subaxis
+      procedure :: get_starting_index
+      procedure :: get_ending_index
   END TYPE fmsDiagSubAxis_type
 
   !> @brief Type to hold the diurnal axis
@@ -754,6 +756,20 @@ module fms_diag_axis_object_mod
       this%zbounds = zbounds
     endif
   end subroutine fill_subaxis
+
+  !> @brief Accesses its member starting_index
+  !! @return Returns a copy of the starting_index
+  function get_starting_index(this)
+    class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
+    get_starting_index = this%starting_index
+  end function get_starting_index
+
+  !> @brief Accesses its member ending_index
+  !! @return Returns a copy of the ending_index
+  function get_ending_index(this)
+    class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
+    get_ending_index = this%ending_index
+  end function get_ending_index
 
   !> @brief Get the ntiles in a domain
   !> @return the number of tiles in a domain

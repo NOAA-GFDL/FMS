@@ -57,6 +57,9 @@ MODULE fms_diag_bbox_mod
       procedure :: get_jmax
       procedure :: get_kmin
       procedure :: get_kmax
+      procedure :: set_ibounds
+      procedure :: set_jbounds
+      procedure :: set_kbounds
    END TYPE fmsDiagIbounds_type
 
    !> @brief Data structure holding starting and ending indices in the I, J, and
@@ -127,6 +130,36 @@ CONTAINS
       class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
       rslt = this%kmax
    end function get_kmax
+
+   !> @brief Sets bounds in the I dimensions
+   subroutine set_ibounds(this, lower, upper)
+      class(fmsDiagIbounds_type), intent(inout) :: this !< The calling object
+      integer, intent(in) :: lower !< The lower bound
+      integer, intent(in) :: upper !< The upper bound
+
+      this%imin = lower
+      this%imax = upper
+   end subroutine set_ibounds
+
+   !> @brief Sets bounds in the J dimensions
+   subroutine set_jbounds(this, lower, upper)
+      class(fmsDiagIbounds_type), intent(inout) :: this !< The calling object
+      integer, intent(in) :: lower !< The lower bound
+      integer, intent(in) :: upper !< The upper bound
+
+      this%jmin = lower
+      this%jmax = upper
+   end subroutine set_jbounds
+
+   !> @brief Sets bounds in the K dimensions
+   subroutine set_kbounds(this, lower, upper)
+      class(fmsDiagIbounds_type), intent(inout) :: this !< The calling object
+      integer, intent(in) :: lower !< The lower bound
+      integer, intent(in) :: upper !< The upper bound
+
+      this%kmin = lower
+      this%kmax = upper
+   end subroutine set_kbounds
 
    !> @brief Gets the halo size of fmsDiagBoundsHalos_type in the I dimension
    !! @return copy of integer member hi

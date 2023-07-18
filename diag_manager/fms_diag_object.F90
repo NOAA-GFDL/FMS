@@ -43,6 +43,8 @@ use omp_lib
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 use platform_mod
+!use fms_diag_bbox_mod
+!use fms_diag_reduction_methods_mod, only: fms_diag_update_extremum
 implicit none
 private
 
@@ -86,6 +88,7 @@ private
     procedure :: fms_diag_field_add_cell_measures
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
+    procedure :: fms_diag_do_reduction
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -493,28 +496,38 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   integer :: omp_level !< The openmp active level
   logical :: buffer_the_data !< True if the user selects to buffer the data and run the calculations
                              !! later.  \note This is experimental
-  !TODO logical, allocatable, dimension(:,:,:) :: oor_mask !< Out of range mask
-  integer :: sample !< Index along the diurnal time axis
-  integer :: day    !< Number of days
-  integer :: second !< Number of seconds
-  integer :: tick   !< Number of ticks representing fractional second
-  integer :: buffer_id !< Index of a buffer
-  !TODO: logical :: phys_window
-  character(len=128) :: error_string !< Store error text
-  integer :: i !< For looping
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  class(diagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
+  real :: weight2 !< Weight to be used in computation of sum, average, etc.
+  logical, allocatable, dimension(:,:,:) :: oor_mask !< Out of range mask
 
-  !TODO: weight is for time averaging where each time level may have a different weight
-  ! call real_copy_set()
+  !> Input weight is for time averaging where each time level may have a different weight.
+  !! The input weight is polymorphic in intrinsic real types. If it is present it will be
+  !! assigned to weight2 else weight2 gets val value.
+  call real_copy_set(weight2, in_data=weight, val=1., err_msg=err_msg)
 
-  !TODO: oor_mask is only used for checking out of range values.
-  ! call init_mask_3d()
+  !> oor_mask is only used for checking out of range values.
+  if (present(rmask)) then
+    select type (rmask)
+    type is (real(kind=r4_kind))
+      call init_mask_3d(field_data, oor_mask, rmask_threshold=0.5_r4_kind, inmask=mask, rmask=rmask)
+    type is (real(kind=r8_kind))
+      call init_mask_3d(field_data, oor_mask, rmask_threshold=0.5_r8_kind, inmask=mask, rmask=rmask)
+    class default
+      call mpp_error(FATAL, "fms_diag_object_mod::fms_diag_accept_data unsupported type")
+    end select
+  end if
 
-  !TODO: Check improper combinations of is, ie, js, and je.
-  ! if (check_indices_order()) deallocate(oor_mask)
+  !> Check improper combinations of is, ie, js, and je.
+  if (check_indices_order(is_in, ie_in, js_in, je_in, err_msg)) then
+    if (associated(field_data)) deallocate(field_data)
+    if (allocated(oor_mask)) deallocate(oor_mask)
+    return
+  end if
+
+  !> Allocate buffers of this field variable
+  call allocate_diag_field_output_buffers(field_data, diag_field_id)
 
 !> Does the user want to push off calculations until send_diag_complete?
   buffer_the_data = .false.
@@ -553,47 +566,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   else
 !!TODO: Loop through fields and do averages/math functions
-    do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
-      buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(i)
-
-      !!TODO: Check if the field is a physics window
-      !! phys_window = fms_diag_compare_window()
-
-      !!TODO: Get local start and end indices on 3 axes for regional output
-
-      !> Compute the diurnal index
-      sample = 1
-      if (present(time)) then
-        call get_time(time, second, day, tick) !< Current time in days and seconds
-        ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
-        sample = floor((second + real(tick) / get_ticks_per_second()) &
-          & * ptr_diag_field_yaml%get_n_diurnal() / SECONDS_PER_DAY) + 1
-      end if
-
-      !!TODO: Get the vertical layer start and end indices
-
-      !!TODO: Initialize output time for fields output every time step
-
-      !< Check if time should be present for this field
-      if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) then
-        write(error_string, '(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
-          & trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
-        if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
-          &//trim(error_string)//', time must be present for nonstatic field', err_msg)) then
-            !!TODO: deallocate local pointers/allocatables if needed
-          return
-        end if
-      end if
-
-      !!TODO: Is it time to output for this field? CAREFUL ABOUT > vs >= HERE
-      !--- The fields send out within openmp parallel region will be written out in
-      !--- diag_send_complete.
-
-      !!TODO: Is check to bounds of current field necessary?
-
-      !!TODO: Take care of submitted field data
-
-    enddo
+    fms_diag_accept_data = fms_diag_do_reduction(field_data, diag_field_id, oor_mask, weight, &
+      time, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     fms_diag_accept_data = .TRUE.
     return
@@ -1019,6 +993,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
+    if (this%FMS_diag_fields(field_id)%buffer_allocated(i)) return !< The buffer is allocated before
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
 
     ndims = 0
@@ -1084,6 +1059,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
       class default
         call mpp_error( FATAL, 'allocate_diag_field_output_buffers: invalid buffer type')
     end select
+    this%FMS_diag_fields(field_id)%buffer_allocated(i) = .true. !< The buffer is allocated.
   enddo
 #else
   call mpp_error( FATAL, "allocate_diag_field_output_buffers: "//&
@@ -1091,49 +1067,246 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 #endif
 end subroutine allocate_diag_field_output_buffers
 
-!> @brief Determines if the window defined by the input bounds is a physics window.
-!> @return TRUE if the window size is less then the actual field size else FALSE.
-function fms_diag_compare_window(this, field, field_id, &
-  is_in, ie_in, js_in, je_in, ks_in, ke_in) result(is_phys_win)
-  class(fmsDiagObject_type), intent(in) :: this !< Diag Object
-  class(*), intent(in) :: field(:,:,:,:) !< Field data
-  integer, intent(in) :: field_id !< ID of the input field
-  integer, intent(in) :: is_in, js_in !< Starting field indices for the first 2 dimensions;
-                                      !< pass reconditioned indices fis and fjs
-                                      !< which are computed elsewhere.
-  integer, intent(in) :: ie_in, je_in !< Ending field indices for the first 2 dimensions;
-                                      !< pass reconditioned indices fie and fje
-                                      !< which are computed elsewhere.
-  integer, intent(in) :: ks_in, ke_in !< Starting and ending indices of the field in 3rd dimension
-  logical :: is_phys_win !< Return flag
+  !> @brief Determines if the window defined by the input bounds is a physics window.
+  !> @return TRUE if the window size is less then the actual field size else FALSE.
+  function fms_diag_compare_window(this, field, field_id, &
+    is_in, ie_in, js_in, je_in, ks_in, ke_in) result(is_phys_win)
+    class(fmsDiagObject_type), intent(in) :: this !< Diag Object
+    class(*), intent(in) :: field(:,:,:,:) !< Field data
+    integer, intent(in) :: field_id !< ID of the input field
+    integer, intent(in) :: is_in, js_in !< Starting field indices for the first 2 dimensions;
+                                        !< pass reconditioned indices fis and fjs
+                                        !< which are computed elsewhere.
+    integer, intent(in) :: ie_in, je_in !< Ending field indices for the first 2 dimensions;
+                                        !< pass reconditioned indices fie and fje
+                                        !< which are computed elsewhere.
+    integer, intent(in) :: ks_in, ke_in !< Starting and ending indices of the field in 3rd dimension
+    logical :: is_phys_win !< Return flag
 #ifdef use_yaml
-  integer, pointer :: axis_ids(:)
-  integer :: total_elements
-  integer :: i !< For do loop
-  integer :: field_size
-  integer, allocatable :: field_shape(:) !< Shape of the field data
-  integer :: window_size
+    integer, pointer :: axis_ids(:)
+    integer :: total_elements
+    integer :: i !< For do loop
+    integer :: field_size
+    integer, allocatable :: field_shape(:) !< Shape of the field data
+    integer :: window_size
 
-  !> Determine shape of the field defined by the input bounds
-  field_shape = shape(field(is_in:ie_in, js_in:je_in, ks_in:ke_in, :))
+    !> Determine shape of the field defined by the input bounds
+    field_shape = shape(field(is_in:ie_in, js_in:je_in, ks_in:ke_in, :))
 
-  window_size = field_shape(1) * field_shape(2) * field_shape(3)
+    window_size = field_shape(1) * field_shape(2) * field_shape(3)
 
-  total_elements = 1
-  axis_ids => this%FMS_diag_fields(field_id)%get_axis_id()
-  do i=1, size(axis_ids)
-    total_elements = total_elements * this%fms_get_axis_length(axis_ids(i))
-  enddo
+    total_elements = 1
+    axis_ids => this%FMS_diag_fields(field_id)%get_axis_id()
+    do i=1, size(axis_ids)
+      total_elements = total_elements * this%fms_get_axis_length(axis_ids(i))
+    enddo
 
-  if (total_elements > window_size) then
-    is_phys_win = .true.
-  else
-    is_phys_win = .false.
-  end if
+    if (total_elements > window_size) then
+      is_phys_win = .true.
+    else
+      is_phys_win = .false.
+    end if
 #else
-  is_phys_win = .false.
-  call mpp_error( FATAL, "fms_diag_compare_window: "//&
-    "you can not use the modern diag manager without compiling with -Duse_yaml")
+    call mpp_error( FATAL, "fms_diag_compare_window: "//&
+      "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
-end function fms_diag_compare_window
+  end function fms_diag_compare_window
+
+  !> @brief Computes average, min, max, rms error, etc.
+  !! based on the specified reduction method for the field.
+  !> @return .True. if no error occurs.
+  function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
+    time, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg) result(redn_done)
+    class(fmsDiagObject_type), intent(in) :: this !< Diag Object
+    class(*), intent(in) :: field_data(:,:,:,:) !< Field data
+    integer, intent(in) :: diag_field_id !< ID of the input field
+    logical, intent(in)           :: oor_mask(:,:,:) !< Out of range mask
+    real, intent(in)              :: weight !< Must be a updated weight
+    integer, intent(in), optional :: time !< Current time
+    integer, intent(in), optional :: is_in, js_in, ks_in !< Starting indices of the variable
+    integer, intent(in), optional :: ie_in, je_in, ke_in !< Ending indices of the variable
+    character(len=*), intent(out), optional :: err_msg !< An error message returned
+    logical :: redn_done !< Return flag: .TRUE. if no error occurs
+
+    redn_done = .FALSE.
+#ifdef use_yaml
+    integer :: buffer_id !< Index of a buffer
+    integer :: file_id !< File id where the field/buffer is in
+    integer, allocatable :: freq(:) !< Output frequency
+    integer :: reduction_method !< Integer representing a reduction method: none, average, min, max, ... etc.
+    integer :: pow_val !< Exponent used in calculation of time average
+    logical :: phys_window
+    logical :: reduced_k_range
+    logical :: is_regional !< Flag to indicate if the field is regional
+    logical :: this_pe_writes !< Flag to indicate if the data from the current PE need to be written
+    integer, allocatable :: l_start(:) !< local start indices on axes for regional output
+    integer, allocatable :: l_end(:) !< local end indices on axes for regional output
+    integer :: day    !< Number of days
+    integer :: second !< Number of seconds
+    integer :: tick   !< Number of ticks representing fractional second
+    integer :: sample !< Index along the diurnal time axis
+    class(diagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
+    class(fmsDiagOutputBuffer_class), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
+    character(len=128) :: error_string !< Store error text
+    integer :: updated_bounds(12) !< Adjusted starting and ending indices in the I, J, and K dimensions &
+                                  !! and halo sizes
+    logical :: has_diurnal_axis !< Flag to indicate if the field/buffer has a diurnal axis
+    character(len=128) :: field_name !< Field name for error reporting
+    type(fmsDiagBoundsHalos_type) :: bounds_with_halos !< Data structure that holds 3D bounds
+                                                       !! in the I, J, and K dimensions and halo sizes
+                                                       !! in the I, and J dimensions
+    integer :: i, j !< For looping
+    integer :: n_axis !< Number of axes
+    integer :: axis_id !< Axis id
+    type(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
+
+    !> Recondition the input indices
+    call recondition_indices(bounds_with_halos, field_data, is_in, js_in, ks_in, &
+      ie_in, je_in, ke_in, err_msg=err_msg)
+
+    do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
+      file_id = this%FMS_diag_fields(diag_field_id)%file_ids(i)
+      ! Is this field output on a local domain only?
+      this_pe_writes = this%FMS_diag_files(file_id)%writing_on_this_pe()
+
+      ! If local_output, does the current PE take part in send_data?
+      is_regional = this%FMS_diag_files(file_id)%is_regional()
+
+      ! Skip all PEs not participating in outputting this field
+      if (.not.this_pe_writes) cycle
+
+      buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(i)
+      freq = this%FMS_diag_fields(diag_field_id)%get_frequency()
+      reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_reduction()
+      has_diurnal_axis = this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_n_diurnal()
+      field_name = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_fname()
+
+      if (this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_pow_value()) THEN
+        pow_val = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_pow_value()
+      else
+        pow_val = 0
+      end if
+
+      !> Check if the field is a physics window
+      !! Pass fis, fie, fjs, fje, ks, and ke indices obtained from call to
+      !! recondition_indices() above as components of an array of indices output.
+      phys_window = this%fms_diag_compare_window(field_data, diag_field_id, &
+        bounds_with_halos%get_fis(), &
+        bounds_with_halos%get_fie(), &
+        bounds_with_halos%get_fjs(), &
+        bounds_with_halos%get_fje(), &
+        bounds_with_halos%bounds3D%get_kmin(), &
+        bounds_with_halos%bounds3D%get_kmax())
+
+      !> If sub regional output, get starting and ending indices
+      if (is_regional) then
+        if (allocated(this%FMS_diag_output_buffers(buffer_id)%axis_ids)) then
+          n_axis = size(this%FMS_diag_output_buffers(buffer_id)%axis_ids())
+          allocate(l_start(n))
+          allocate(l_end(n))
+          do j = 1, n_axis
+            ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(j))%axis
+            select type (ptr_axis)
+            type is (fmsDiagSubAxis_type)
+              l_start(j) = ptr_axis%get_starting_index()
+              l_end(j) = ptr_axis%get_ending_index()
+            class default
+              call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction non fmsDiagSubAxis_type axis')
+            end select
+          end do
+        else
+          call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction '//&
+            'member axis_ids of the current buffer is not allocated')
+        end if
+      end if
+
+      !> Get the vertical layer starting and ending indices
+      if (reduced_k_range) then
+        if (.not.allocated(l_start)) allocate(l_start(3))
+        if (.not.allocated(l_end)) allocate(l_end(3))
+        ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(2))%axis !< Axis in the J dimension
+        select type (ptr_axis)
+        type is (fmsDiagSubAxis_type)
+          if (ptr_axis%is_unstructured_grid()) then
+            bounds_with_halos%bounds3D%jmin = ptr_axis%get_starting_index()
+            bounds_with_halos%bounds3D%jmin = ptr_axis%get_ending_index()
+          end if
+          l_start(3) = ptr_axis%get_starting_index()
+          l_end(3) = ptr_axis%get_ending_index()
+        class default
+          call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction non fmsDiagSubAxis_type axis')
+        end select
+      end if
+
+      ! Compute the diurnal index
+      sample = 1
+      if (present(time)) then
+        call get_time(time, second, day, tick) !< Current time in days and seconds
+        ptr_diag_field_yaml => diag_yaml%get_diag_field_from_id(buffer_id)
+        sample = floor((second + real(tick) / get_ticks_per_second()) &
+          & * ptr_diag_field_yaml%get_n_diurnal() / SECONDS_PER_DAY) + 1
+      end if
+
+      ! Check if time is not present for fields output every time step
+      if (all(freq(:) == EVERY_TIME) .and. .not.this%FMS_diag_fields(diag_field_id)%is_static()) then
+        if (this%FMS_diag_files(file_id)%FMS_diag_file%get_next_output() == &
+          this%FMS_diag_files(file_id)%FMS_diag_file%get_last_output()) then
+          if (.not.present(time)) then
+            write (error_string,'(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
+              trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
+            if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
+              &//trim(error_string)//', time must be present when output frequency = EVERY_TIME', err_msg)) then
+              if (associated(field_data)) deallocate(field_data)
+            end if
+          end if
+        end if
+      end if
+
+      ! Check if time should be present for this field
+      if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) then
+        write(error_string, '(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
+          & trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
+        if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
+          &//trim(error_string)//', time must be present for nonstatic field', err_msg)) then
+            if (associated(field_data)) deallocate(field_data)
+          return
+        end if
+      end if
+
+      !!TODO: Is check to bounds of current field necessary?
+
+      ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)%diag_buffer_obj
+
+      !!TODO: Take care of submitted field data
+      Reduction: select case (reduction_method)
+      case (time_none)
+        !! TODO: just copy field data to buffer
+      case (time_average)
+        !! TODO: average data over time
+        !! call fms_diag_sum(time_average, weight=weight, pow_val=power_val, .......)
+      case (time_rms)
+        !! TODO: root-mean-square error
+      case (time_max)
+        call fms_diag_update_extremum(1, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
+          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg=err_msg)
+      case (time_min)
+        call fms_diag_update_extremum(0, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
+          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg=err_msg)
+      case (time_sum)
+        !! TODO: sum for the interval
+        !! call fms_diag_sum(time_sum, .......)
+      case (time_diurnal)
+        !! TODO: diurnal calculation
+      case (time_power)
+        !! TODO: reduction is power
+      case default
+        call mpp_error(FATAL, "fms_diag_object_mod::fms_diag_accept_data unsupported reduction method!")
+      end select Reduction
+    enddo
+    redn_done = .TRUE.
+#else
+    call mpp_error( FATAL, "fms_diag_object_mod::fms_diag_do_reduction "//&
+      "you can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
+  end function fms_diag_do_reduction
 end module fms_diag_object_mod

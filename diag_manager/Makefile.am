@@ -52,6 +52,7 @@ libdiag_manager_la_SOURCES = \
   fms_diag_elem_weight_procs.F90 \
   fms_diag_fieldbuff_update.F90 \
 		fms_diag_bbox.F90 \
+  fms_diag_reduction_methods_mod \
   include/fms_diag_fieldbuff_update.inc \
   include/fms_diag_fieldbuff_update.fh
 
@@ -67,6 +68,7 @@ fms_diag_yaml_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
 fms_diag_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_file_object_mod.$(FC_MODEXT) fms_diag_field_object_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) \
                                   fms_diag_time_utils_mod.$(FC_MODEXT) \
                                   fms_diag_output_buffer_mod.$(FC_MODEXT)
+#                                  fms_diag_reduction_methods_mod.$(FC_MODEXT)
 fms_diag_field_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) \
                                         fms_diag_axis_object_mod.$(FC_MODEXT)
 fms_diag_file_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) fms_diag_field_object_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) \
