@@ -237,29 +237,28 @@ program test_daily_solar
   end subroutine test_daily_mean_solar_0d
 
   ! create all reference values
-  subroutine create_ref_rr_out(ang, rr_out)
+  subroutine create_ref_rr_out(ang_in, rr_out)
 
     implicit none
-    real(kind=TEST_AST_KIND_), intent(in)  :: ang
+    real(kind=TEST_AST_KIND_), intent(in)  :: ang_in
     real(kind=TEST_AST_KIND_), intent(out) :: rr_out
     real(kind=TEST_AST_KIND_)              :: rad_per, rr
-    integer, parameter                     :: lkind = TEST_AST_KIND_
 
     rad_per = real(per, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
-    rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang - rad_per))
+    rr      = (1.0_lkind - real((ecc**2),TEST_AST_KIND_))/(1.0_lkind + real(ecc, TEST_AST_KIND_) * cos(ang_in - rad_per))
     rr_out  = rr**(-2)
 
   end subroutine create_ref_rr_out
 
-  subroutine create_ref_declination(ang, dec)
+  subroutine create_ref_declination(ang_in, dec)
 
     implicit none
-    real(kind=TEST_AST_KIND_), intent(in)  :: ang
+    real(kind=TEST_AST_KIND_), intent(in)  :: ang_in
     real(kind=TEST_AST_KIND_), intent(out) :: dec
     real(kind=TEST_AST_KIND_)              :: rad_obliq, sin_dec
 
     rad_obliq    = real(obliq, TEST_AST_KIND_) * real(deg_to_rad, TEST_AST_KIND_)
-    sin_dec      = - sin(rad_obliq)*sin(ang)
+    sin_dec      = - sin(rad_obliq)*sin(ang_in)
     dec          = asin(sin_dec)
 
   end subroutine create_ref_declination
@@ -303,7 +302,6 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat_in, h_in
     real(kind=TEST_AST_KIND_), intent(in)                  :: dec_in
     real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: cosz_2d
-    integer, parameter                                     :: lkind = TEST_AST_KIND_
 
     ! cosz calculation
     where (h_in == 0.0_lkind)
@@ -321,7 +319,6 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), intent(in), dimension(n)    :: lat_in, h_in
     real(kind=TEST_AST_KIND_), intent(in)                  :: dec_in
     real(kind=TEST_AST_KIND_), intent(out), dimension(n)   :: cosz_1d
-    integer, parameter                                     :: lkind = TEST_AST_KIND_
 
     ! cosz calculation
     where (h_in == 0.0_lkind)
@@ -337,7 +334,6 @@ program test_daily_solar
     implicit none
     real(kind=TEST_AST_KIND_), intent(in)    :: lat_in, h_in, dec_in
     real(kind=TEST_AST_KIND_), intent(out)   :: cosz_0d
-    integer, parameter                       :: lkind = TEST_AST_KIND_
 
     ! cosz calculation
     if (h_in == 0.0_lkind) then
