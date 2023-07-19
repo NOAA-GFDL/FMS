@@ -530,9 +530,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   end if
 
-  !> Allocate buffers of this field variable
-  call allocate_diag_field_output_buffers(field_data, diag_field_id)
-
 !> Does the user want to push off calculations until send_diag_complete?
   buffer_the_data = .false.
 !> initialize the number of threads and level to be 0
@@ -569,7 +566,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_diag_accept_data = .TRUE.
     return
   else
-!!TODO: Loop through fields and do averages/math functions
+    !> Allocate buffers of this field variable
+    call allocate_diag_field_output_buffers(field_data, diag_field_id)
+
+    !> Do time reductions (average, min, max, rms error, sum, etc.)
     fms_diag_accept_data = fms_diag_do_reduction(field_data, diag_field_id, oor_mask, weight, &
       time, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
@@ -1185,6 +1185,7 @@ end subroutine allocate_diag_field_output_buffers
       reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_reduction()
       has_diurnal_axis = this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_n_diurnal()
       field_name = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_fname()
+      reduced_k_range = this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_var_zbounds()
 
       if (this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_pow_value()) THEN
         pow_val = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_pow_value()
@@ -1215,6 +1216,9 @@ end subroutine allocate_diag_field_output_buffers
             type is (fmsDiagSubAxis_type)
               l_start(j) = ptr_axis%get_starting_index()
               l_end(j) = ptr_axis%get_ending_index()
+            type is (fmsDiagFullAxis_type)
+              l_start(j) = 1
+              l_end(j) = ptr_axis%axis_length()
             class default
               call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction non fmsDiagSubAxis_type axis')
             end select

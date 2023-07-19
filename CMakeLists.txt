@@ -139,6 +139,7 @@ list(APPEND fms_fortran_src_files
   diag_manager/fms_diag_elem_weight_procs.F90
   diag_manager/fms_diag_fieldbuff_update.F90
   diag_manager/fms_diag_bbox.F90
+  diag_manager/fms_diag_reduction_methods.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90

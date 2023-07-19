@@ -9,7 +9,7 @@ module fms_diag_reduction_methods_mod
   use fms_mod, only: fms_error_handler
   use fms_diag_bbox_mod
   use fms_diag_output_buffer_mod
-  use diag_util_mod, only: debug_diag_manager
+  use diag_data_mod, only: debug_diag_manager
 
   implicit none
   private
