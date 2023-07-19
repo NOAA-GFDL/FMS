@@ -146,7 +146,7 @@ module fms_diag_reduction_methods_mod
     class(*), intent(in) :: field(:,:,:,:)  !< Dummy variable whose sizes only in the first three
                                             !! dimensions are important
     logical, allocatable, intent(inout) :: outmask(:,:,:) !< Output logical mask
-    real, intent(in) :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
+    class(*), intent(in) :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
                                           !! needed to be passed to the math/buffer update functions.
     logical, intent(in), optional :: inmask(:,:,:) !< Input logical mask
     class(*), intent(in), optional :: rmask(:,:,:) !< Floating point input mask value

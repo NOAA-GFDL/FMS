@@ -525,8 +525,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !> Check improper combinations of is, ie, js, and je.
   if (check_indices_order(is_in, ie_in, js_in, je_in, err_msg)) then
-    if (associated(field_data)) deallocate(field_data)
-    if (allocated(oor_mask)) deallocate(oor_mask)
+    !if (associated(field_data)) deallocate(field_data)
+    !if (allocated(oor_mask)) deallocate(oor_mask)
     return
   end if
 
@@ -1160,7 +1160,7 @@ end subroutine allocate_diag_field_output_buffers
     integer :: i, j !< For looping
     integer :: n_axis !< Number of axes
     integer :: axis_id !< Axis id
-    type(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
+    class(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
     logical :: ierr !< Error flag
 
     redn_done = .FALSE.
