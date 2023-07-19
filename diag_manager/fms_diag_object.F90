@@ -570,7 +570,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call allocate_diag_field_output_buffers(field_data, diag_field_id)
 
     !> Do time reductions (average, min, max, rms error, sum, etc.)
-    fms_diag_accept_data = fms_diag_do_reduction(field_data, diag_field_id, oor_mask, weight, &
+    fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, weight, &
       time, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     fms_diag_accept_data = .TRUE.
@@ -1265,7 +1265,7 @@ end subroutine allocate_diag_field_output_buffers
               trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
             if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
               &//trim(error_string)//', time must be present when output frequency = EVERY_TIME', err_msg)) then
-              if (associated(field_data)) deallocate(field_data)
+              !if (associated(field_data)) deallocate(field_data)
             end if
           end if
         end if
@@ -1277,7 +1277,7 @@ end subroutine allocate_diag_field_output_buffers
           & trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
         if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
           &//trim(error_string)//', time must be present for nonstatic field', err_msg)) then
-            if (associated(field_data)) deallocate(field_data)
+            !if (associated(field_data)) deallocate(field_data)
           return
         end if
       end if
