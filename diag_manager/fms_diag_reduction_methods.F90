@@ -329,56 +329,56 @@ module fms_diag_reduction_methods_mod
     ! Reset counter count_0d of the buffer object
     select type (buffer_obj)
     type is (outputBuffer0d_type)
-      select type (realtype => buffer_obj%count_0d)
+      select type (real_counter => buffer_obj%count_0d)
       type is (real(kind=r4_kind))
-        realtype(sample) = 1.
+        real_counter(sample) = 1.0_r4_kind
       type is (real(kind=r8_kind))
-        realtype(sample) = 1.
+        real_counter(sample) = 1.0_r8_kind
       class default
         call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
       end select
     type is (outputBuffer1d_type)
-      select type (outputBuffer1d_type%count_0d)
+      select type (real_counter => buffer_obj%count_0d)
       type is (real(kind=r4_kind))
-        outputBuffer1d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r4_kind
       type is (real(kind=r8_kind))
-        outputBuffer1d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r8_kind
       class default
         call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
       end select
     type is (outputBuffer2d_type)
-      select type (outputBuffer2d_type%count_0d)
+      select type (real_counter => buffer_obj%count_0d)
       type is (real(kind=r4_kind))
-        outputBuffer2d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r4_kind
       type is (real(kind=r8_kind))
-        outputBuffer2d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r8_kind
       class default
         call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
       end select
     type is (outputBuffer3d_type)
-      select type (outputBuffer3d_type%count_0d)
+      select type (real_counter => buffer_obj%count_0d)
       type is (real(kind=r4_kind))
-        outputBuffer3d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r4_kind
       type is (real(kind=r8_kind))
-        outputBuffer3d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r8_kind
       class default
         call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
       end select
     type is (outputBuffer4d_type)
-      select type (outputBuffer4d_type%count_0d)
+      select type (real_counter => buffer_obj%count_0d)
       type is (real(kind=r4_kind))
-        outputBuffer4d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r4_kind
       type is (real(kind=r8_kind))
-        outputBuffer4d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r8_kind
       class default
         call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
       end select
     type is (outputBuffer5d_type)
-      select type (outputBuffer5d_type%count_0d)
+      select type (real_counter => buffer_obj%count_0d)
       type is (real(kind=r4_kind))
-        outputBuffer5d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r4_kind
       type is (real(kind=r8_kind))
-        outputBuffer5d_type%count_0d(sample) = 1.
+        real_counter(sample) = 1.0_r8_kind
       class default
         call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
       end select
