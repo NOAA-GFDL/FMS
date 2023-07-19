@@ -241,8 +241,8 @@ iter_loop: do iter = 1, max_iter
   call mo_derivative_t(phi_t  , zeta  , mask_1)
   call mo_derivative_t(phi_t_0, zeta_t, mask_1)
 
-  call mo_integral(f_m, zeta, zeta_0, ln_z_z0, mask_1)
-  call mo_integral(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
+  call mo_integral_m(f_m, zeta, zeta_0, ln_z_z0, mask_1)
+  call mo_integral_tq(f_t, f_q, zeta, zeta_t, zeta_q, ln_z_zt, ln_z_zq, mask_1)
 
   where (mask_1)
     df_m       = (phi_m - phi_m_0)*rzeta

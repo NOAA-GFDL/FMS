@@ -83,10 +83,13 @@ interface stable_mix
     module procedure stable_mix_3d_r4, stable_mix_3d_r8
 end interface
 
-interface mo_integral
+interface mo_integral_m
     module procedure mo_integral_m_r4, mo_integral_m_r8
+end interface mo_integral_m
+
+interface mo_integral_tq
     module procedure mo_integral_tq_r4, mo_integral_tq_r8
-end interface mo_integral
+end interface mo_integral_tq
 
 interface mo_derivative_m
     module procedure mo_derivative_m_r4, mo_derivative_m_r8
@@ -125,7 +128,7 @@ namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
 
 !  MODULE VARIABLES
 
-real(kind=r8_kind), parameter    :: small  = 1.0E-04_r8_kind)
+real(kind=r8_kind), parameter    :: small  = 1.0E-04_r8_kind
 real(kind=r8_kind)               :: b_stab, r_crit, lambda, rich_trans
 real(kind=r8_kind)               :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
 logical                          :: module_is_initialized = .false.
