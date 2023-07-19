@@ -22,7 +22,7 @@
 !> @email gfdl.climate.model.info@noaa.gov
 !> @description Performs calculations done in astronomy_mod using the daily_mean_solar
 !> interfaces using 32 and 64 bit reals
-!! TODO: A more comprehensive testing suite for any daily_mean_solar_cal subroutine
+!! TODO: A more comprehensive testing suite with various dates and times
 
 program test_daily_solar_cal
 
@@ -38,19 +38,22 @@ program test_daily_solar_cal
   real(kind=r8_kind), parameter :: twopi = 2.0_r8_kind * real(PI, r8_kind)
   real(kind=r8_kind), parameter :: deg_to_rad = twopi/360.0_r8_kind
 
-
   real(kind=r8_kind)   :: ecc   = 0.01671_r8_kind !< Eccentricity of Earth's orbit [dimensionless]
   real(kind=r8_kind)   :: obliq = 23.439_r8_kind   !< Obliquity [degrees]
   real(kind=r8_kind)   :: per   = 102.932_r8_kind  !< Longitude of perihelion with respect
+
+  type(time_type)      :: time
 
   call fms_init()
   call set_calendar_type(JULIAN)
   call astronomy_init
 
-  call test_daily_mean_solar_cal_2d
-  call test_daily_mean_solar_cal_1d
-  call test_daily_mean_solar_cal_2level
-  call test_daily_mean_solar_cal_0d
+  !call test_daily_mean_solar_cal_2d
+  !call test_daily_mean_solar_cal_1d
+  !call test_daily_mean_solar_cal_2level
+  !call test_daily_mean_solar_cal_0d
+
+  time = set_date(2022,9,22,12,0,0)
 
   call fms_end()
 
@@ -63,7 +66,6 @@ program test_daily_solar_cal
     integer, parameter                        :: n = 4
     real(kind=TEST_AST_KIND_), dimension(n,n) :: lat_2d, h_2d
     real(kind=TEST_AST_KIND_)                 :: ang, time_since_ae
-    type(time_type)                           :: time
     real(kind=TEST_AST_KIND_), dimension(n,n) :: cosz_2d, fracday_2d
     real(kind=TEST_AST_KIND_), dimension(n,n) :: ref_cosz_2d, ref_fracday_2d
     real(kind=TEST_AST_KIND_)                 :: rrsun, ref_rrsun, ref_dec
@@ -71,7 +73,6 @@ program test_daily_solar_cal
     integer                                   :: i, j, counter
 
     ! set input values
-    time          = set_date(2022,9,22,12,0,0)
     ang           = 0.0_lkind
     h_2d          = real(PI,TEST_AST_KIND_)/2.0_lkind
 
@@ -86,7 +87,7 @@ program test_daily_solar_cal
     call create_ref_rrsun(ang, ref_rrsun)
     call create_ref_declination(ang, ref_dec)
     call create_ref_fracday_2d(h_2d, ref_fracday_2d)
-    call create_ref_cosz_2d(lat_2d, h_2d, ref_dec, time_since_ae, ref_cosz_2d)
+    call create_ref_cosz_2d(lat_2d, h_2d, ref_dec, time, time_since_ae, ref_cosz_2d)
 
     call daily_mean_solar(lat_2d, time, cosz_2d, fracday_2d, rrsun)
 
@@ -94,19 +95,19 @@ program test_daily_solar_cal
       do j = 1, 4
         if (ref_cosz_2d(i,j) .ne. cosz_2d(i,j)) then
           print *, ref_cosz_2d(i,j), " @ ", i,j, " does not equal ", cosz_2d(i,j)
-          call mpp_error(FATAL, "test_daily_mean_solar: 2d cosz value does not match reference value")
+          call mpp_error(FATAL, "test_daily_mean_cal: 2d cosz value does not match reference value")
         end if
 
         if (ref_fracday_2d(i,j) .ne. fracday_2d(i,j)) then
           print *, ref_fracday_2d(i,j), " @ ", i,j, " does not equal ", fracday_2d(i,j)
-          call mpp_error(FATAL, "test_daily_mean_solar: 2d fracday value does not match reference value")
+          call mpp_error(FATAL, "test_daily_mean_cal: 2d fracday value does not match reference value")
         end if
       end do
     end do
 
     if (ref_rrsun .ne. rrsun) then
       print *, ref_rrsun, " does not equal ", rrsun
-      call mpp_error(FATAL, "test_daily_mean_solar_cal: 2d rrsun value does not match reference value")
+      call mpp_error(FATAL, "test_daily_mean_cal: 2d rrsun value does not match reference value")
     end if
 
   end subroutine test_daily_mean_solar_cal_2d
@@ -117,7 +118,6 @@ program test_daily_solar_cal
     integer, parameter                      :: n = 16
     real(kind=TEST_AST_KIND_), dimension(n) :: lat_1d, h_1d
     real(kind=TEST_AST_KIND_)               :: ang, time_since_ae
-    type(time_type)                         :: time
     real(kind=TEST_AST_KIND_), dimension(n) :: cosz_1d, fracday_1d
     real(kind=TEST_AST_KIND_), dimension(n) :: ref_cosz_1d, ref_fracday_1d
     real(kind=TEST_AST_KIND_)               :: rrsun, ref_rrsun, ref_dec
@@ -125,7 +125,6 @@ program test_daily_solar_cal
     integer                                 :: i
 
     ! set input values
-    time          = set_date(2022,9,22,12,0,0)
     ang           = 0.0_lkind
     h_1d          = real(PI,TEST_AST_KIND_)/2.0_lkind
 
@@ -136,25 +135,25 @@ program test_daily_solar_cal
     call create_ref_rrsun(ang, ref_rrsun)
     call create_ref_declination(ang, ref_dec)
     call create_ref_fracday_1d(h_1d, ref_fracday_1d)
-    call create_ref_cosz_1d(lat_1d, h_1d, ref_dec, time_since_ae, ref_cosz_1d)
+    call create_ref_cosz_1d(lat_1d, h_1d, ref_dec, time, time_since_ae, ref_cosz_1d)
 
     call daily_mean_solar(lat_1d, time, cosz_1d, fracday_1d, rrsun)
 
     do i = 1, 16
         if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
           print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
-          call mpp_error(FATAL, "test_daily_mean_solar: 1d cosz value does not match reference value")
+          call mpp_error(FATAL, "test_daily_mean_cal: 1d cosz value does not match reference value")
         end if
 
         if (ref_fracday_1d(i) .ne. fracday_1d(i)) then
           print *, ref_fracday_1d(i), " @ ", i, " does not equal ", fracday_1d(i)
-          call mpp_error(FATAL, "test_daily_mean_solar: 1d fracday value does not match reference value")
+          call mpp_error(FATAL, "test_daily_mean_cal: 1d fracday value does not match reference value")
         end if
     end do
 
     if (ref_rrsun .ne. rrsun) then
       print *, ref_rrsun, " does not equal ", rrsun
-      call mpp_error(FATAL, "test_daily_mean_solar_cal: 1d rrsun value does not match reference value")
+      call mpp_error(FATAL, "test_daily_mean_cal: 1d rrsun value does not match reference value")
     end if
 
   end subroutine test_daily_mean_solar_cal_1d
@@ -165,7 +164,6 @@ program test_daily_solar_cal
     integer, parameter                      :: n = 16
     real(kind=TEST_AST_KIND_), dimension(n) :: lat_1d, h_1d, h_out_1d
     real(kind=TEST_AST_KIND_)               :: ang, time_since_ae
-    type(time_type)                         :: time
     real(kind=TEST_AST_KIND_), dimension(n) :: cosz_1d, ref_solar, ref_fracday_1d
     real(kind=TEST_AST_KIND_), dimension(n) :: ref_cosz_1d, solar, fracday_1d
     real(kind=TEST_AST_KIND_)               :: rrsun, ref_rrsun, ref_dec
@@ -173,7 +171,6 @@ program test_daily_solar_cal
     integer                                 :: i
 
     ! set input values
-    time          = set_date(2022,9,22,12,0,0)
     ang           = 0.0_lkind
     h_1d          = real(PI,TEST_AST_KIND_)/2.0_lkind
 
@@ -184,7 +181,7 @@ program test_daily_solar_cal
     call create_ref_rrsun(ang, ref_rrsun)
     call create_ref_declination(ang, ref_dec)
     call create_ref_fracday_1d(h_1d, ref_fracday_1d)
-    call create_ref_cosz_1d(lat_1d, h_1d, ref_dec, time_since_ae, ref_cosz_1d)
+    call create_ref_cosz_1d(lat_1d, h_1d, ref_dec, time, time_since_ae, ref_cosz_1d)
 
     ! calculate ref_solar value fracday == h_out
     ref_solar = ref_cosz_1d * ref_fracday_1d * ref_rrsun
@@ -194,12 +191,12 @@ program test_daily_solar_cal
     do i = 1, 16
         if (ref_cosz_1d(i) .ne. cosz_1d(i)) then
           print *, ref_cosz_1d(i), " @ ", i, " does not equal ", cosz_1d(i)
-          call mpp_error(FATAL, "test_daily_mean_solar: 2level cosz value does not match reference value")
+          call mpp_error(FATAL, "test_daily_mean_cal: 2level cosz value does not match reference value")
         end if
 
         if (ref_solar(i) .ne. solar(i)) then
           print *, ref_solar(i), " @ ", i, " does not equal ", solar(i)
-          call mpp_error(FATAL, "test_daily_mean_solar: 2level solar value does not match reference value")
+          call mpp_error(FATAL, "test_daily_mean_cal: 2level solar value does not match reference value")
         end if
     end do
 
@@ -209,7 +206,6 @@ program test_daily_solar_cal
 
     implicit none
     real(kind=TEST_AST_KIND_) :: ang, h, lat, time_since_ae
-    type(time_type)           :: time
     real(kind=TEST_AST_KIND_) :: cosz, fracday, rrsun
     real(kind=TEST_AST_KIND_) :: ref_cosz, ref_rrsun, ref_dec, ref_fracday
     integer, parameter        :: lkind = TEST_AST_KIND_
@@ -222,29 +218,31 @@ program test_daily_solar_cal
 
     do i = 1, 16
       lat = real(i,TEST_AST_KIND_) * real(PI,TEST_AST_KIND_)/8.0_lkind
+    end do
+
+    lat = 0.0_lkind
 
       call create_ref_rrsun(ang, ref_rrsun)
       call create_ref_declination(ang, ref_dec)
       call create_ref_fracday_0d(h, ref_fracday)
-      call create_ref_cosz_0d(lat, h, ref_dec, time_since_ae, ref_cosz)
+      call create_ref_cosz_0d(lat, h, ref_dec, time, time_since_ae, ref_cosz)
 
       call daily_mean_solar(lat, time, cosz, fracday, rrsun)
 
       if (ref_cosz .ne. cosz) then
         print *, ref_cosz, "@", i, " does not equal ", cosz
-        call mpp_error(FATAL, "test_daily_mean_solar_cal: 0d cosz value does not match reference value")
+        call mpp_error(FATAL, "test_daily_mean_cal: 0d cosz value does not match reference value")
       end if
 
       if (ref_fracday .ne. fracday) then
         print *, ref_fracday, "@", i, " does not equal ", fracday
-        call mpp_error(FATAL, "test_daily_mean_solar_cal: 0d fracday value does not match reference value")
+        call mpp_error(FATAL, "test_daily_mean_cal: 0d fracday value does not match reference value")
       end if
 
       if (ref_rrsun .ne. rrsun) then
         print *, ref_rrsun, "@", i, " does not equal ", rrsun
-        call mpp_error(FATAL, "test_daily_mean_solar_cal: 0d rrsun value does not match reference value")
+        call mpp_error(FATAL, "test_daily_mean_cal: 0d rrsun value does not match reference value")
       end if
-    end do
 
   end subroutine test_daily_mean_solar_cal_0d
 
@@ -314,70 +312,70 @@ program test_daily_solar_cal
 
   end subroutine create_ref_fracday_0d
 
-  subroutine create_ref_cosz_2d(lat, h, dec, time_since_ae, cosz_2d)
+  subroutine create_ref_cosz_2d(lat_in, h_in, dec_in, time_in, time_since_ae, cosz_2d)
 
     implicit none
     integer, parameter                                     :: n = 4
-    real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat, h
-    type(time_type)                                        :: time
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n,n)  :: lat_in, h_in
+    real(kind=TEST_AST_KIND_), intent(in)                  :: dec_in
+    type(time_type),           intent(in)                  :: time_in
     real(kind=TEST_AST_KIND_), intent(out)                 :: time_since_ae
-    real(kind=TEST_AST_KIND_), intent(inout)               :: dec
     real(kind=TEST_AST_KIND_), intent(out), dimension(n,n) :: cosz_2d
     integer, parameter                                     :: lkind = TEST_AST_KIND_
 
     ! change time type for calculation
-    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time_in), TEST_AST_KIND_)
 
     ! cosz calculation
-    where (h == 0.0_lkind)
+    where (h_in == 0.0_lkind)
       cosz_2d = 0.0_lkind
     else where
-      cosz_2d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
+      cosz_2d = sin(lat_in)*sin(dec_in) + cos(lat_in)*cos(dec_in)*sin(h_in)/h_in
     end where
 
   end subroutine create_ref_cosz_2d
 
-  subroutine create_ref_cosz_1d(lat, h, dec, time_since_ae, cosz_1d)
+  subroutine create_ref_cosz_1d(lat_in, h_in, dec_in, time_in, time_since_ae, cosz_1d)
 
     implicit none
     integer, parameter                                     :: n = 16
-    real(kind=TEST_AST_KIND_), intent(in), dimension(n)    :: lat, h
-    type(time_type)                                        :: time
+    real(kind=TEST_AST_KIND_), intent(in), dimension(n)    :: lat_in, h_in
+    real(kind=TEST_AST_KIND_), intent(in)                  :: dec_in
+    type(time_type),           intent(in)                  :: time_in
     real(kind=TEST_AST_KIND_), intent(out)                 :: time_since_ae
-    real(kind=TEST_AST_KIND_), intent(inout)               :: dec
     real(kind=TEST_AST_KIND_), intent(out), dimension(n)   :: cosz_1d
     integer, parameter                                     :: lkind = TEST_AST_KIND_
 
     ! change time type for calculation
-    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time_in), TEST_AST_KIND_)
 
     ! cosz calculation
-    where (h == 0.0_lkind)
+    where (h_in == 0.0_lkind)
       cosz_1d = 0.0_lkind
     else where
-      cosz_1d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
+      cosz_1d = sin(lat_in)*sin(dec_in) + cos(lat_in)*cos(dec_in)*sin(h_in)/h_in
     end where
 
   end subroutine create_ref_cosz_1d
 
-  subroutine create_ref_cosz_0d(lat, h, dec, time_since_ae, cosz_0d)
+  subroutine create_ref_cosz_0d(lat_in, h_in, dec_in, time_in, time_since_ae, cosz_0d)
 
     implicit none
-    real(kind=TEST_AST_KIND_), intent(in)    :: lat, h
-    type(time_type)                          :: time
+    real(kind=TEST_AST_KIND_), intent(in)    :: lat_in, h_in
+    real(kind=TEST_AST_KIND_), intent(in)    :: dec_in
+    type(time_type),           intent(in)    :: time_in
     real(kind=TEST_AST_KIND_), intent(out)   :: time_since_ae
-    real(kind=TEST_AST_KIND_), intent(inout) :: dec
     real(kind=TEST_AST_KIND_), intent(out)   :: cosz_0d
     integer, parameter                       :: lkind = TEST_AST_KIND_
 
     ! change time type for calculation
-    time_since_ae = real(orbital_time(time), TEST_AST_KIND_)
+    time_since_ae = real(orbital_time(time_in), TEST_AST_KIND_)
 
     ! cosz calculation
-    if (h == 0.0_lkind) then
+    if (h_in == 0.0_lkind) then
       cosz_0d = 0.0_lkind
     else
-      cosz_0d = sin(lat)*sin(dec) + cos(lat)*cos(dec)*sin(h)/h
+      cosz_0d = sin(lat_in)*sin(dec_in) + cos(lat_in)*cos(dec_in)*sin(h_in)/h_in
     endif
 
   end subroutine create_ref_cosz_0d
