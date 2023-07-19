@@ -20,7 +20,9 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, EVERY_TIME
+                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, EVERY_TIME, &
+                         time_none, time_average, time_min, time_max, time_rms, time_sum, &
+                         time_diurnal, time_power
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -37,8 +39,6 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
 use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
-use fms_diag_time_reduction_mod, only: time_none, time_average, time_min, time_max, time_rms, &
-                                      time_sum, time_diurnal, time_power
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices
 use fms_diag_reduction_methods_mod
 #endif

@@ -271,7 +271,8 @@ module fms_diag_reduction_methods_mod
                 call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
                   recon_bounds, (/i,j,k/), (/i1,j1,k1/))
               class default
-                call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported buffer type')
+                call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum &
+                  unsupported buffer type')
               end select
             end if
           END DO
