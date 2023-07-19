@@ -40,15 +40,13 @@ use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices
-use fms_diag_reduction_methods_mod
+use fms_diag_reduction_methods_mod, only: fms_diag_update_extremum
 #endif
 #if defined(_OPENMP)
 use omp_lib
 #endif
 use mpp_domains_mod, only: domain1d, domain2d, domainUG, null_domain2d
 use platform_mod
-!use fms_diag_bbox_mod
-!use fms_diag_reduction_methods_mod, only: fms_diag_update_extremum
 implicit none
 private
 
