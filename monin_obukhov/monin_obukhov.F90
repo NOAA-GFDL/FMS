@@ -125,7 +125,7 @@ namelist /monin_obukhov_nml/ rich_crit, neutral, drag_min_heat, &
 
 !  MODULE VARIABLES
 
-real(kind=r8_kind), parameter    :: small  = real(1.0E-04, r8_kind)
+real(kind=r8_kind), parameter    :: small  = 1.0E-04_r8_kind)
 real(kind=r8_kind)               :: b_stab, r_crit, lambda, rich_trans
 real(kind=r8_kind)               :: sqrt_drag_min_heat, sqrt_drag_min_moist, sqrt_drag_min_mom
 logical                          :: module_is_initialized = .false.
