@@ -225,13 +225,18 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
+      integer :: i, j
       MPP_TYPE_ :: field3D_in (size(field_in, 1),size(field_in, 2),1)
       MPP_TYPE_ :: field3D_out(size(field_out,1),size(field_out,2),1)
       type(DomainCommunicator2D),pointer,optional :: dc_handle
       pointer( ptr_in,  field3D_in  )
       pointer( ptr_out, field3D_out )
 
-      field_out = 0
+      do j = 1, size(field_out, 2)
+        do i = 1, size(field_out, 1)
+          field_out(i,j) = 0
+        enddo
+      enddo
       ptr_in = 0
       ptr_out = 0
       if(domain_in%initialized) ptr_in  = LOC(field_in )
