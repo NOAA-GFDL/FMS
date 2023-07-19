@@ -515,9 +515,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   if (present(rmask)) then
     select type (rmask)
     type is (real(kind=r4_kind))
-      call init_mask_3d(field_data, oor_mask, rmask_threshold=0.5_r4_kind, inmask=mask, rmask=rmask)
+      call init_mask_3d(field_data, oor_mask, 0.5_r4_kind, mask, rmask)
     type is (real(kind=r8_kind))
-      call init_mask_3d(field_data, oor_mask, rmask_threshold=0.5_r8_kind, inmask=mask, rmask=rmask)
+      call init_mask_3d(field_data, oor_mask, 0.5_r8_kind, mask, rmask)
     class default
       call mpp_error(FATAL, "fms_diag_object_mod::fms_diag_accept_data unsupported type")
     end select
@@ -567,7 +567,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   else
     !> Allocate buffers of this field variable
-    call allocate_diag_field_output_buffers(field_data, diag_field_id)
+    call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
 
     !> Do time reductions (average, min, max, rms error, sum, etc.)
     fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, weight, &
@@ -1121,12 +1121,12 @@ end subroutine allocate_diag_field_output_buffers
   !> @return .True. if no error occurs.
   function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
     time, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg) result(redn_done)
-    class(fmsDiagObject_type), intent(in) :: this !< Diag Object
+    class(fmsDiagObject_type), intent(in), target :: this !< Diag Object
     class(*), intent(in) :: field_data(:,:,:,:) !< Field data
     integer, intent(in) :: diag_field_id !< ID of the input field
     logical, intent(in)           :: oor_mask(:,:,:) !< Out of range mask
     real, intent(in)              :: weight !< Must be a updated weight
-    integer, intent(in), optional :: time !< Current time
+    type(time_type), intent(in), optional :: time !< Current time
     integer, intent(in), optional :: is_in, js_in, ks_in !< Starting indices of the variable
     integer, intent(in), optional :: ie_in, je_in, ke_in !< Ending indices of the variable
     character(len=*), intent(out), optional :: err_msg !< An error message returned

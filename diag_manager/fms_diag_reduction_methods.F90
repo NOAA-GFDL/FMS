@@ -138,14 +138,15 @@ module fms_diag_reduction_methods_mod
     END IF
   end subroutine real_copy_set
 
-  !> @brief Allocates outmask(second argument) with sizes of the first three dimensions of field(first argument).
-  !! Initializes the outmask depending on presence/absence of inmask and rmask.
-  !! Uses and sets rmask_threshold.
+  !> @brief Allocates `outmask'(second argument) with sizes of the first three dimensions of
+  !! the field(first argument).
+  !! Initializes the `outmask' depending on presence/absence of `inmask' and `rmask'.
+  !! Uses `rmask_threshold' to set the `outmask'.
   subroutine init_mask_3d(field, outmask, rmask_threshold, inmask, rmask, err_msg)
     class(*), intent(in) :: field(:,:,:,:)  !< Dummy variable whose sizes only in the first three
                                             !! dimensions are important
     logical, allocatable, intent(inout) :: outmask(:,:,:) !< Output logical mask
-    real, intent(inout) :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
+    real, intent(in) :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
                                           !! needed to be passed to the math/buffer update functions.
     logical, intent(in), optional :: inmask(:,:,:) !< Input logical mask
     class(*), intent(in), optional :: rmask(:,:,:) !< Floating point input mask value
@@ -179,10 +180,8 @@ module fms_diag_reduction_methods_mod
       SELECT TYPE (rmask)
         TYPE IS (real(kind=r4_kind))
             WHERE (rmask < real(rmask_threshold, kind=r4_kind)) outmask = .FALSE.
-            rmask_threshold = real(rmask_threshold, kind=r4_kind)
         TYPE IS (real(kind=r8_kind))
             WHERE ( rmask < real(rmask_threshold, kind=r8_kind) ) outmask = .FALSE.
-            rmask_threshold = real(rmask_threshold, kind=r8_kind)
         CLASS DEFAULT
           if (fms_error_handler('fms_diag_reduction_methods_mod::init_mask_3d',&
             & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) then
