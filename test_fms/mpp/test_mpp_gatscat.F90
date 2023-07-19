@@ -34,7 +34,6 @@ program test_mpp_gatscat
   use mpp_mod, only : mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_gather, mpp_scatter, mpp_error, FATAL
-  use mpp_io_mod, only: mpp_io_init, mpp_flush
   use mpp_mod, only : mpp_init_test_requests_allocated
   use platform_mod
 
@@ -59,7 +58,6 @@ program test_mpp_gatscat
   integer                         :: ierr
 
   call mpp_init(mpp_init_test_requests_allocated)
-  call mpp_io_init()
   call mpp_set_stack_size(3145746)
   pe = mpp_pe()
   npes = mpp_npes()

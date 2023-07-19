@@ -23,7 +23,10 @@
 !> single pe and distributed checksums
 program test_mpp_chksum
 
-  use fms
+  use mpp_mod
+  use mpp_domains_mod
+  use fms_mod
+  use platform_mod
 
   implicit none
 

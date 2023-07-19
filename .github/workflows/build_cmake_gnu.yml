@@ -9,10 +9,11 @@ jobs:
       matrix:
         omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
         libyaml-flag: [ "", -DWITH_YAML=on ]
+        io-flag: [ "", -DUSE_DEPRECATED_IO=on ]
     container:
       image: noaagfdl/hpc-me.ubuntu-minimal:cmake
       env:
-        CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }} -D64BIT=on"
+        CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2

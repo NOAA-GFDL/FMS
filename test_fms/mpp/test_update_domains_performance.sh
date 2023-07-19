@@ -26,6 +26,10 @@
 
 # Set common test settings.
 . ../test-lib.sh
+
+# ensure input.nml file present
+touch input.nml
+
 # Run the test for one processor
 test_expect_success "domain update performance with 1 PE" '
     mpirun -n 1 ./test_update_domains_performance

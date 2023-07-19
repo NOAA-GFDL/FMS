@@ -1353,7 +1353,10 @@ endif
      else
           call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
      endif
-     idat =  nint(dat, I2_KIND) ! reconstruct packed data for reproducibility
+     !TODO This assumes that the data is "packed" (has the scale_factor and add_offset attributes)
+     ! in fms2_io_read_data the data is unpacked (data_in_file*scale_factor + add_offset)
+     ! the line below "packs" the data again. This is needed for reproducibility
+     idat =  nint(dat*100., I2_KIND)
 
    !---- unpacking of data ----
 

@@ -274,16 +274,18 @@ subroutine stable_mix_3d(rich, mix)
 
 real, intent(in) , dimension(:,:,:)  :: rich
 real, intent(out), dimension(:,:,:)  :: mix
+integer :: n2 !< Size of dimension 2 of mix and rich
+integer :: n3 !< Size of dimension 3 of mix and rich
+integer :: i, j !< Loop indices
 
-integer :: n, ier
+n2 = size(mix, 2)
+n3 = size(mix, 3)
 
-if(.not.module_is_initialized) call error_mesg('stable_mix_3d in monin_obukhov_mod', &
-     'monin_obukhov_init has not been called', FATAL)
-
-n = size(rich,1)*size(rich,2)*size(rich,3)
-call monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
-     & n, rich, mix, ier)
-
+do j=1, n3
+  do i=1, n2
+    call stable_mix(rich(:, i, j), mix(:, i, j))
+  enddo
+enddo
 
 end subroutine stable_mix_3d
 
@@ -943,16 +945,15 @@ subroutine stable_mix_2d(rich, mix)
 
 real, intent(in) , dimension(:,:)  :: rich
 real, intent(out), dimension(:,:)  :: mix
+integer :: n2 !< Size of dimension 2 of mix and rich
+integer :: i !< Loop index
 
-real, dimension(size(rich,1),size(rich,2),1) :: rich_3d, mix_3d
+n2 = size(mix, 2)
 
-rich_3d(:,:,1) = rich
+do i=1, n2
+  call stable_mix(rich(:, i), mix(:, i))
+enddo
 
-call stable_mix_3d(rich_3d, mix_3d)
-
-mix = mix_3d(:,:,1)
-
-return
 end subroutine stable_mix_2d
 
 
@@ -962,16 +963,17 @@ subroutine stable_mix_1d(rich, mix)
 
 real, intent(in) , dimension(:)  :: rich
 real, intent(out), dimension(:)  :: mix
+integer :: n !< Size of mix and rich
+integer :: ierr !< Error code set by monin_obukhov_stable_mix
 
-real, dimension(size(rich),1,1) :: rich_3d, mix_3d
+if (.not.module_is_initialized) call error_mesg('stable_mix in monin_obukhov_mod', &
+     'monin_obukhov_init has not been called', FATAL)
 
-rich_3d(:,1,1) = rich
+n = size(mix)
 
-call stable_mix_3d(rich_3d, mix_3d)
+call monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
+     & n, rich, mix, ierr)
 
-mix = mix_3d(:,1,1)
-
-return
 end subroutine stable_mix_1d
 
 !=======================================================================
@@ -981,15 +983,12 @@ subroutine stable_mix_0d(rich, mix)
 real, intent(in) :: rich
 real, intent(out) :: mix
 
-real, dimension(1,1,1) :: rich_3d, mix_3d
+real, dimension(1) :: mix_1d !< Representation of mix as a dimension(1) array
 
-rich_3d(1,1,1) = rich
+call stable_mix([rich], mix_1d)
 
-call stable_mix_3d(rich_3d, mix_3d)
+mix = mix_1d(1)
 
-mix = mix_3d(1,1,1)
-
-return
 end subroutine stable_mix_0d
 !=======================================================================
 
