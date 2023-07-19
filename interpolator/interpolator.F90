@@ -346,7 +346,7 @@ type(interpolate_type), intent(inout) :: Out
 
      Out%interph = In%interph
      if (allocated(In%time_slice)) Out%time_slice =  In%time_slice
-     Out%fileobj   = In%fileobj
+      Out%fileobj   = In%fileobj
      Out%file_name = In%file_name
      Out%time_flag = In%time_flag
      Out%level_type = In%level_type
