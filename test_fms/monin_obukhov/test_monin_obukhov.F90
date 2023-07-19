@@ -22,7 +22,7 @@
 
 ! Express a real array as an integer array via transfer(), and reshape the result
 ! to match the shape of the original data
-#define INT_(arr)  reshape(transfer(arr, mi), shape(arr))
+#define INT_(arr)  reshape(transfer(arr, [mi]), shape(arr))
 
 ! Promote a dimension(n) array to dimension(n,n) by making n copies of the original data
 #define ARR_2D_(arr) spread(arr, 2, size(arr))
@@ -47,13 +47,10 @@ program test_monin_obukhov
   integer, parameter :: ki = i8_kind
 #endif
 
-  integer(ki), parameter :: mi(1) = [0_ki] !< Mold for transfer() intrinsic
+  integer(ki), parameter :: mi = 0_ki !< Mold for transfer() intrinsic
 
-  !< Shapes of arrays passed to monin_obukhov_mod subroutines
-  integer, parameter :: n_1d = 5, &
-                      & diff_ni = 1, &
-                      & diff_nj = 1, &
-                      & diff_nk = 1
+  !< Shape of 1D arrays passed to monin_obukhov_mod subroutines
+  integer, parameter :: n_1d = 5
 
   integer :: n_answers !< Number of known answer keys
   namelist /metaparams_nml/ n_answers
@@ -68,8 +65,7 @@ program test_monin_obukhov
   end type
 
   type diff_input_t
-    real(kr), dimension(diff_ni, diff_nj, diff_nk) :: z
-    real(kr), dimension(diff_ni, diff_nj)          :: u_star, b_star
+    real(kr) :: z, u_star, b_star
   end type
 
   type profile_input_t
@@ -87,7 +83,7 @@ program test_monin_obukhov
   end type
 
   type diff_answers_t
-    integer(ki), dimension(diff_ni, diff_nj, diff_nk) :: k_m, k_h
+    integer(ki) :: k_m, k_h
   end type
 
   type profile_answers_t
@@ -166,9 +162,9 @@ program test_monin_obukhov
                             & 0.000133135421415819_kr, 9.36317815993945e-06_kr]
       profile_input%avail = [.true., .true., .true., .true., .true.]
 
-      diff_input%z      = reshape([19.9982554527751_kr], shape(diff_input%z))
-      diff_input%u_star = reshape([0.129638955971075_kr], shape(diff_input%u_star))
-      diff_input%b_star = reshape([0.000991799765557209_kr], shape(diff_input%b_star))
+      diff_input%z      = 19.9982554527751_kr
+      diff_input%u_star = 0.129638955971075_kr
+      diff_input%b_star = 0.000991799765557209_kr
     end subroutine
 
     !< Read answer keys from input.nml
@@ -283,18 +279,54 @@ program test_monin_obukhov
 
     !> Calculate answers for mo_diff
     subroutine calc_answers_diff
-      real(kr), dimension(diff_ni, diff_nj, diff_nk) :: k_m, k_h
+      real(kr), dimension(1,1,1) :: k_m, k_h
 
       k_m = 0._kr
       k_h = 0._kr
 
       associate (in => diff_input)
-        call mo_diff(in%z, in%u_star, in%b_star, k_m, k_h)
+        ! mo_diff_0d_1
+        call mo_diff(in%z, in%u_star, in%b_star, k_m(1,1,1), k_h(1,1,1))
+
+        associate (ans => diff_answers(n_answers+1))
+          ans%k_m = transfer(k_m(1,1,1), mi)
+          ans%k_h = transfer(k_h(1,1,1), mi)
+        end associate
+
+        ! mo_diff_0d_n
+        call mo_diff([in%z], in%u_star, in%b_star, k_m(:,1,1), k_h(:,1,1))
+        call diff_check(k_m, k_h, "mo_diff_0d_n")
+
+        ! mo_diff_1d_1
+        call mo_diff([in%z], [in%u_star], [in%b_star], k_m(:,1,1), k_h(:,1,1))
+        call diff_check(k_m, k_h, "mo_diff_1d_1")
+
+        ! mo_diff_1d_n
+        call mo_diff(ARR_2D_([in%z]), [in%u_star], [in%b_star], k_m(:,:,1), k_h(:,:,1))
+        call diff_check(k_m, k_h, "mo_diff_1d_n")
+
+        ! mo_diff_2d_1
+        call mo_diff(ARR_2D_([in%z]), ARR_2D_([in%u_star]), ARR_2D_([in%b_star]), k_m(:,:,1), k_h(:,:,1))
+        call diff_check(k_m, k_h, "mo_diff_2d_1")
+
+        ! mo_diff_2d_n
+        call mo_diff(ARR_3D_([in%z]), ARR_2D_([in%u_star]), ARR_2D_([in%b_star]), k_m(:,:,:), k_h(:,:,:))
+        call diff_check(k_m, k_h, "mo_diff_2d_n")
       end associate
+    end subroutine
+
+    subroutine diff_check(k_m, k_h, label)
+      real(kr), dimension(1,1,1), intent(in) :: k_m, k_h
+      character(*), intent(in) :: label
 
       associate (ans => diff_answers(n_answers+1))
-        ans%k_m = INT_(k_m)
-        ans%k_h = INT_(k_h)
+        if (ans%k_m .ne. transfer(k_m(1,1,1), mi)) then
+          call mpp_error(FATAL, label // " test failed: k_m value differs from that of mo_diff_0d_1")
+        endif
+
+        if (ans%k_h .ne. transfer(k_h(1,1,1), mi)) then
+          call mpp_error(FATAL, label // " test failed: k_h value differs from that of mo_diff_0d_1")
+        endif
       end associate
     end subroutine
 
@@ -389,8 +421,7 @@ program test_monin_obukhov
       logical :: res
 
       associate (ans0 => diff_answers(i), ans1 => diff_answers(n_answers+1))
-        res = array_compare_3d(ans0%k_m, ans1%k_m) .and. &
-            & array_compare_3d(ans0%k_h, ans1%k_h)
+        res = (ans0%k_m.eq.ans1%k_m) .and. (ans0%k_h.eq.ans1%k_h)
       end associate
     end function
 
@@ -473,7 +504,7 @@ program test_monin_obukhov
       endif
 
       do i = 1,n
-        if (.not.array_compare_1d(ref, transfer(arr(:,i), mi))) then
+        if (.not.array_compare_1d(ref, transfer(arr(:,i), [mi]))) then
           call mpp_error(FATAL, "Array does not match reference value")
         endif
       enddo
@@ -493,7 +524,7 @@ program test_monin_obukhov
 
       do j = 1,n
         do i = 1,n
-          if (.not.array_compare_1d(ref, transfer(arr(:,i,j), mi))) then
+          if (.not.array_compare_1d(ref, transfer(arr(:,i,j), [mi]))) then
             call mpp_error(FATAL, "Array does not match reference value")
           endif
         enddo
