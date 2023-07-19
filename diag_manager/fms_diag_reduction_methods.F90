@@ -30,11 +30,11 @@ module fms_diag_reduction_methods_mod
 
     if (size(bounds_a) .ne. size(bounds_b)) then
       compare_two_sets_of_bounds = .TRUE.
-      error_str = 'diag_util_mod::compare_two_sets_of_bounds Error: sizes of sets do not match'
+      error_str = 'fms_diag_reduction_methods_mod::compare_two_sets_of_bounds Error: sizes of sets do not match'
     else
       if ((size(bounds_a) .ne. 6) .and. (size(bounds_b) .ne. 6)) then
         compare_two_sets_of_bounds = .TRUE.
-        error_str = 'diag_util_mod::compare_two_sets_of_bounds Error: sizes of sets must be 6'
+        error_str = 'fms_diag_reduction_methods_mod::compare_two_sets_of_bounds Error: sizes of sets must be 6'
       end if
     end if
 
@@ -83,7 +83,7 @@ module fms_diag_reduction_methods_mod
 
     rslt = .false. !< If no error occurs.
 
-    err_module_name = 'diag_util_mod:check_indices_order'
+    err_module_name = 'fms_diag_reduction_methods_mod::check_indices_order'
 
     IF ( PRESENT(ie_in) ) THEN
       IF ( .NOT.PRESENT(is_in) ) THEN
@@ -128,7 +128,7 @@ module fms_diag_reduction_methods_mod
       TYPE IS (real(kind=r8_kind))
         out_data = real(in_data)
       CLASS DEFAULT
-        if (fms_error_handler('diag_util_mod:real_copy_set',&
+        if (fms_error_handler('fms_diag_reduction_methods_mod::real_copy_set',&
           & 'The in_data is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) THEN
           return
         end if
@@ -164,7 +164,7 @@ module fms_diag_reduction_methods_mod
     IF ( status .NE. 0 ) THEN
       WRITE (err_msg_local, FMT='("Unable to allocate outmask(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
             & SIZE(field, 1), SIZE(field, 2), SIZE(field, 3), status
-      if (fms_error_handler('diag_util_mod:init_mask_3d', trim(err_msg_local), err_msg)) then
+      if (fms_error_handler('fms_diag_reduction_methods_mod::init_mask_3d', trim(err_msg_local), err_msg)) then
         return
       end if
     END IF
@@ -184,7 +184,7 @@ module fms_diag_reduction_methods_mod
             WHERE ( rmask < real(rmask_threshold, kind=r8_kind) ) outmask = .FALSE.
             rmask_threshold = real(rmask_threshold, kind=r8_kind)
         CLASS DEFAULT
-          if (fms_error_handler('diag_util_mod:init_mask_3d',&
+          if (fms_error_handler('fms_diag_reduction_methods_mod::init_mask_3d',&
             & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) then
           end if
       END SELECT
@@ -235,7 +235,7 @@ module fms_diag_reduction_methods_mod
     f4 = recon_bounds%get_fje()
 
     if (flag .ne. 0 .and. flag .ne. 1) then
-      call mpp_error( FATAL, "fms_diag_object_mod::fms_diag_update_extremum: flag must be either 0 or 1.")
+      call mpp_error( FATAL, "fms_diag_reduction_methods_mod::fms_diag_update_extremum: flag must be either 0 or 1.")
     end if
 
     !! TODO: remap buffer before passing to subroutines update_scalar_extremum and update_array_extremum
@@ -271,7 +271,7 @@ module fms_diag_reduction_methods_mod
                 call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
                   recon_bounds, (/i,j,k/), (/i1,j1,k1/))
               class default
-                call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+                call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported buffer type')
               end select
             end if
           END DO
@@ -294,7 +294,7 @@ module fms_diag_reduction_methods_mod
         type is (outputBuffer5d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
         class default
-          call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported buffer type')
         end select
       ELSE
         IF ( debug_diag_manager ) THEN
@@ -303,8 +303,8 @@ module fms_diag_reduction_methods_mod
             (/LBOUND(ptr_buffer,1), UBOUND(ptr_buffer,1), LBOUND(ptr_buffer,2), UBOUND(ptr_buffer,2), &
             LBOUND(ptr_buffer,3), UBOUND(ptr_buffer,3)/), err_msg_local)) THEN
             IF ( fms_error_handler('fms_diag_object_mod::fms_diag_update_extremum', err_msg_local, err_msg) ) THEN
-              if (associated(field_data)) deallocate(field_data)
-              if (allocated(mask)) deallocate(mask)
+              !if (associated(field_data)) deallocate(field_data)
+              !if (allocated(mask)) deallocate(mask)
               RETURN
             END IF
           END IF
@@ -323,7 +323,7 @@ module fms_diag_reduction_methods_mod
         type is (outputBuffer5d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
         class default
-          call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_update_extremum unsupported buffer type')
+          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported buffer type')
         end select
       END IF
     end if
@@ -447,7 +447,7 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
       end select
     type is (real(kind=r8_kind))
       select type (buffer)
@@ -466,7 +466,7 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
       end select
     type is (integer(kind=i4_kind))
       select type (buffer)
@@ -485,7 +485,7 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
       end select
     type is (integer(kind=i8_kind))
       select type (buffer)
@@ -504,10 +504,10 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
       end select
     class default
-      call mpp_error( FATAL, "diag_util_mod::update_scalar_extremum unsupported field data type")
+      call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum unsupported field data type")
     end select
   end subroutine update_scalar_extremum
 
@@ -574,7 +574,7 @@ module fms_diag_reduction_methods_mod
           end if
         end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
       end select
     type is (real(kind=r8_kind))
       select type (buffer)
@@ -605,7 +605,7 @@ module fms_diag_reduction_methods_mod
             end if
           end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
       end select
     type is (integer(kind=i4_kind))
       select type (buffer)
@@ -636,7 +636,7 @@ module fms_diag_reduction_methods_mod
           end if
         end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
       end select
     type is (integer(kind=i8_kind))
       select type (buffer)
@@ -667,10 +667,10 @@ module fms_diag_reduction_methods_mod
           end if
         end if
       class default
-        call mpp_error( FATAL, "diag_util_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
       end select
     class default
-      call mpp_error( FATAL, "diag_util_mod::update_array_extremum unsupported field data type")
+      call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum unsupported field data type")
     end select
   end subroutine update_array_extremum
 #endif
