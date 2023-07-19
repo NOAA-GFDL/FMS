@@ -179,9 +179,9 @@ module fms_diag_reduction_methods_mod
     IF ( PRESENT(rmask) ) THEN
       SELECT TYPE (rmask)
         TYPE IS (real(kind=r4_kind))
-            WHERE (rmask < rmask_threshold(kind=r4_kind)) outmask = .FALSE.
+            WHERE (rmask < real(rmask_threshold, king=r4_kind)) outmask = .FALSE.
         TYPE IS (real(kind=r8_kind))
-            WHERE (rmask < rmask_threshold(kind=r8_kind)) outmask = .FALSE.
+            WHERE (rmask < real(rmask_threshold, kind=r8_kind)) outmask = .FALSE.
         CLASS DEFAULT
           if (fms_error_handler('fms_diag_reduction_methods_mod::init_mask_3d',&
             & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) then
