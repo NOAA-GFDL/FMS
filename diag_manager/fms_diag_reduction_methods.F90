@@ -329,11 +329,11 @@ module fms_diag_reduction_methods_mod
     ! Reset counter count_0d of the buffer object
     select type (buffer_obj)
     type is (outputBuffer0d_type)
-      select type (buffer_obj%count_0d)
+      select type (realtype => buffer_obj%count_0d)
       type is (real(kind=r4_kind))
-        buffer_obj%count_0d(sample) = 1.
+        realtype(sample) = 1.
       type is (real(kind=r8_kind))
-        buffer_obj%count_0d(sample) = 1.
+        realtype(sample) = 1.
       class default
         call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
       end select
