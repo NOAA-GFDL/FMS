@@ -9,6 +9,7 @@ module fms_diag_reduction_methods_mod
   use fms_mod, only: fms_error_handler
   use fms_diag_bbox_mod
   use fms_diag_output_buffer_mod
+  use diag_util_mod, only: debug_diag_manager
 
   implicit none
   private
@@ -302,8 +303,8 @@ module fms_diag_reduction_methods_mod
             (/LBOUND(ptr_buffer,1), UBOUND(ptr_buffer,1), LBOUND(ptr_buffer,2), UBOUND(ptr_buffer,2), &
             LBOUND(ptr_buffer,3), UBOUND(ptr_buffer,3)/), err_msg_local)) THEN
             IF ( fms_error_handler('fms_diag_object_mod::fms_diag_update_extremum', err_msg_local, err_msg) ) THEN
-              DEALLOCATE(field_data)
-              DEALLOCATE(mask)
+              if (associated(field_data)) deallocate(field_data)
+              if (allocated(mask)) deallocate(mask)
               RETURN
             END IF
           END IF
