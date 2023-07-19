@@ -40,7 +40,7 @@ use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices
-use fms_diag_reduction_methods_mod, only: fms_diag_update_extremum
+use fms_diag_reduction_methods_mod
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -507,7 +507,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !> Input weight is for time averaging where each time level may have a different weight.
   !! The input weight is polymorphic in intrinsic real types. If it is present it will be
   !! assigned to weight2 else weight2 gets val value.
-  call real_copy_set(weight2, in_data=weight, val=1., err_msg=err_msg)
+  call real_copy_set(weight2, weight, 1., err_msg)
 
   !> oor_mask is only used for checking out of range values.
   if (present(rmask)) then
