@@ -1160,12 +1160,19 @@ end subroutine allocate_diag_field_output_buffers
     integer :: axis_id !< Axis id
     class(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
     logical :: ierr !< Error flag
+    logical, pointer :: oor_mask_4d(:,:,:,:) !< Remapped out-of-range mask oor_mask
 
     redn_done = .FALSE.
 
     !> Recondition the input indices
     ierr = recondition_indices(bounds_with_halos, field_data, is_in, js_in, ks_in, &
-      ie_in, je_in, ke_in, err_msg=err_msg)
+      ie_in, je_in, ke_in, err_msg)
+    if (ierr) return
+
+    !> Remap oor_mask to 4D array
+    oor_mask_4d => null()
+    oor_mask_4d(LBOUND(oor_mask,1):UBOUND(oor_mask,1), LBOUND(oor_mask,2):UBOUND(oor_mask,2), &
+      LBOUND(oor_mask,3):UBOUND(oor_mask,3), 1:1) => oor_mask
 
     do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
       file_id = this%FMS_diag_fields(diag_field_id)%file_ids(i)
@@ -1295,10 +1302,10 @@ end subroutine allocate_diag_field_output_buffers
         !! TODO: root-mean-square error
       case (time_max)
         call fms_diag_update_extremum(1, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
-          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg)
+          l_end, is_regional, reduced_k_range, sample, oor_mask_4d, field_name, has_diurnal_axis, err_msg)
       case (time_min)
         call fms_diag_update_extremum(0, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
-          l_end, is_regional, reduced_k_range, sample, oor_mask, field_name, has_diurnal_axis, err_msg)
+          l_end, is_regional, reduced_k_range, sample, oor_mask_4d, field_name, has_diurnal_axis, err_msg)
       case (time_sum)
         !! TODO: sum for the interval
         !! call fms_diag_sum(time_sum, .......)
