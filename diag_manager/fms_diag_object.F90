@@ -1122,7 +1122,7 @@ end subroutine allocate_diag_field_output_buffers
     class(fmsDiagObject_type), intent(in), target :: this !< Diag Object
     class(*), intent(in) :: field_data(:,:,:,:) !< Field data
     integer, intent(in) :: diag_field_id !< ID of the input field
-    logical, intent(in)           :: oor_mask(:,:,:) !< Out of range mask
+    logical, intent(in), target, contiguous :: oor_mask(:,:,:) !< Out of range mask
     real, intent(in)              :: weight !< Must be a updated weight
     type(time_type), intent(in), optional :: time !< Current time
     integer, intent(in), optional :: is_in, js_in, ks_in !< Starting indices of the variable
