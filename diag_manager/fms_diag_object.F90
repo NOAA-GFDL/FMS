@@ -565,11 +565,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   else
     !> Allocate buffers of this field variable
-    call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
+    !call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
 
     !> Do time reductions (average, min, max, rms error, sum, etc.)
-    fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, weight2, &
-      time, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg)
+    !fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, weight2, &
+      !time, is_in, js_in, ks_in, ie_in, je_in, ke_in, err_msg)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     fms_diag_accept_data = .TRUE.
     return
