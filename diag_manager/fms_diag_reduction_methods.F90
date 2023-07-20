@@ -16,6 +16,7 @@ module fms_diag_reduction_methods_mod
 
 #ifdef use_yaml
   public :: compare_two_sets_of_bounds, real_copy_set, check_indices_order, init_mask_3d
+  public :: fms_diag_update_extremum, update_scalar_extremum, update_array_extremum
   contains
 
   !> @brief Compares the corresponding bounding indices of the first set with the second set.
