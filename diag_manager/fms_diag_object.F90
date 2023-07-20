@@ -1171,8 +1171,7 @@ end subroutine allocate_diag_field_output_buffers
 
     !> Remap oor_mask to 4D array
     oor_mask_4d => null()
-    oor_mask_4d(LBOUND(oor_mask,1):UBOUND(oor_mask,1), LBOUND(oor_mask,2):UBOUND(oor_mask,2), &
-      LBOUND(oor_mask,3):UBOUND(oor_mask,3), 1:1) => oor_mask
+    oor_mask_4d(1:size(oor_mask,1), 1:size(oor_mask,2), 1:size(oor_mask,3), 1:1) => oor_mask
 
     do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
       file_id = this%FMS_diag_fields(diag_field_id)%file_ids(i)
