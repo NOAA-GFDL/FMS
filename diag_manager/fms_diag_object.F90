@@ -502,6 +502,8 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, time, is
   !TODO: logical :: phys_window
   character(len=128) :: error_string !< Store error text
   integer :: i !< For looping
+  logical :: data_buffer_is_allocated !< .true. if the data buffer is allocated
+
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
@@ -545,10 +547,17 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     IF ( PRESENT(ie_in) ) ie = ie_in
     IF ( PRESENT(je_in) ) je = je_in
     IF ( PRESENT(ke_in) ) ke = ke_in
-!> Buffer the data
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, FMS_diag_object%diag_axis,&
-                                                             is, js, ks, ie, je, ke)
+
+!> Only 1 thread allocates the output buffer amd sets set_math_needs_to_be_done
+!$omp single
+    data_buffer_is_allocated = &
+      this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, FMS_diag_object%diag_axis)
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(data_buffer_is_allocated)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
+!$omp end single
+
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data,&
+                                                             is, js, ks, ie, je, ke)
     fms_diag_accept_data = .TRUE.
     return
   else

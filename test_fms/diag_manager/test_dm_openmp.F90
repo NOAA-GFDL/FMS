@@ -59,6 +59,10 @@ program test_diag_openmp
   integer                            :: iew          !< Ending index for each thread in the x direction
   integer                            :: jsw          !< Starting index for each thread in the y direction
   integer                            :: jew          !< Ending index for each thread in the y direction
+  integer                            :: is1          !< Starting index for each thread in the x direction (1-based)
+  integer                            :: ie1          !< Ending index for each thread in the x direction (1-based)
+  integer                            :: js1          !< Starting index for each thread in the y direction (1-based)
+  integer                            :: je1          !< Ending index for each thread in the y direction (1-based)
   integer                            :: id_var1      !< diag_field id for var in 1d
   integer                            :: id_var2      !< diag_field id for var in lon/lat grid
   integer                            :: id_var3      !< diag_field id for var in lon/lat/z grid
@@ -125,11 +129,17 @@ program test_diag_openmp
       iew = my_block%ibe(i)
       jew = my_block%jbe(i)
 
-      used=send_data(id_var1, var(isw:iew, 1, 1), time, is_in=isw, ie_in=iew)
-      used=send_data(id_var2, var(isw:iew, jsw:jew, 1), time, is_in=isw, js_in=jsw, &
-                     ie_in=iew, je_in=jew)
-      used=send_data(id_var3, var(isw:iew, jsw:jew, :), time, is_in=isw, js_in=jsw, &
-                     ie_in=iew, je_in=jew, ks_in=1, ke_in=nz)
+      !--- indices for 1-based arrays ---
+      is1 = isw-is+1
+      ie1 = iew-is+1
+      js1 = jsw-js+1
+      je1 = jew-js+1
+
+      used=send_data(id_var1, var(is1:ie1, 1, 1), time, is_in=is1, ie_in=ie1)
+      used=send_data(id_var2, var(is1:ie1, js1:je1, 1), time, is_in=is1, js_in=js1, &
+                     ie_in=ie1, je_in=je1)
+      used=send_data(id_var3, var(is1:ie1, js1:je1, :), time, is_in=is1, js_in=js1, &
+                     ie_in=ie1, je_in=je1, ks_in=1, ke_in=nz)
     enddo
     call diag_send_complete(Time_step)
   enddo
