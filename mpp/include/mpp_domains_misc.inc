@@ -413,13 +413,16 @@ end subroutine init_nonblock_type
     if(any(pelist2 == pe)) then
        call mpp_get_data_domain(domain2, isd, ied, jsd, jed)
        call mpp_get_compute_domain(domain2, is, ie, js, je)
-       allocate(field2(isd:ied, jsd:jed))
+       allocate(field1(isd:ied, jsd:jed),field2(isd:ied, jsd:jed))
       if((size(field_in,1) .ne. ied-isd+1) .or. (size(field_in,2) .ne. jed-jsd+1)) &
          call mpp_error(FATAL,'mpp_check_field: input field is not on the data domain')
       field2(isd:ied, jsd:jed) = field_in(:,:)
     endif
 
-    allocate(field1(isd:ied, jsd:jed))
+    if(any(pelist1 == pe)) then
+      allocate(field1(1,1))
+    endif
+
 !  broadcast domain
     call mpp_broadcast_domain(domain1)
     call mpp_broadcast_domain(domain2)
@@ -443,6 +446,8 @@ end subroutine init_nonblock_type
     endif
 
     if(any(pelist2 == pe))    deallocate(field1, field2)
+
+    if(any(pelist1 == pe))    deallocate(field1)
 
     call mpp_sync()
 
