@@ -1,6 +1,7 @@
 !> \author Ganga Purja Pun
 !> \email gagna.purjapun@noaa.gov
-!! \brief Contains routines for the modern diag_manager
+!! \brief Contains routines for the modern diag manager
+!! These routines are meant to be used for reduction methods.
 !!
 !! \description
 
@@ -218,13 +219,13 @@ module fms_diag_reduction_methods_mod
                                                                  !! of the field data
     integer, intent(in) :: l_start(:) !< Local starting indices for the first three dimensions
     integer, intent(in) :: l_end(:)   !< Local ending indices for the first three dimensions
-    logical, intent(in) :: is_regional
-    logical, intent(in) :: reduced_k_range
-    integer :: sample !< Index along the diurnal time axis
+    logical, intent(in) :: is_regional !< Flag indicating if the current PE takes part in send_data
+    logical, intent(in) :: reduced_k_range !< Flag indicating if the field has zbounds
+    integer, intent(in) :: sample !< Index along the diurnal time axis
     logical, intent(in) :: mask(:,:,:,:) !< Must be out of range mask
     character(len=*), intent(in) :: fieldName !< Field name for error reporting
-    logical :: hasDiurnalAxis !< Flag to indicate if the buffer has a diurnal axis
-    character(len=*), intent(inout) :: err_msg
+    logical, intent(in) :: hasDiurnalAxis !< Flag to indicate if the buffer has a diurnal axis
+    character(len=*), intent(inout), optional :: err_msg
 
     integer :: is, js, ks !< Starting indices in the I, J, and K dimensions
     integer :: ie, je, ke !< Ending indices in the I, J, and K dimensions
