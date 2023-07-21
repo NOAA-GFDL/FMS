@@ -89,6 +89,7 @@ type fmsDiagField_type
      procedure :: set_type => set_vartype
      procedure :: set_data_buffer => set_data_buffer
      procedure :: set_data_buffer_is_allocated
+     procedure :: is_data_buffer_allocated
      procedure :: allocate_data_buffer
      procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
      procedure :: add_attribute => diag_field_add_attribute
@@ -390,7 +391,7 @@ subroutine set_data_buffer (this, input_data, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this !< The field object
   class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
   integer :: is, js, ks !< Starting indicies of the field_data relative to the global domain
-  integer :: ie, je, ke !< Ending indicied of the field_data relative to the global domain
+  integer :: ie, je, ke !< Ending indicies of the field_data relative to the global domain
 
   if (.not.this%data_buffer_is_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
@@ -489,12 +490,21 @@ end subroutine set_math_needs_to_be_done
 !> @brief Sets the flag saying that the data buffer is allocated
 subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)
   class (fmsDiagField_type) , intent(inout) :: this                     !< The field object
-  logical,                    intent (in)   :: data_buffer_is_allocated !< Flag saying that the math
-                                                                        !! functions need to be done
+  logical,                    intent (in)   :: data_buffer_is_allocated !< Flag to determine that the
+                                                                        !! data buffer is allocated
 
   this%data_buffer_is_allocated = data_buffer_is_allocated
 end subroutine set_data_buffer_is_allocated
 
+!> @brief Determine if the data_buffer is allocated
+!! @return logical indicating if the data_buffer is allocated
+pure logical function is_data_buffer_allocated (this)
+  class (fmsDiagField_type) , intent(in) :: this                     !< The field object
+
+  is_data_buffer_allocated = .false.
+  if (allocated(this%data_buffer_is_allocated)) is_data_buffer_allocated = this%data_buffer_is_allocated
+
+end function
 !> \brief Prints to the screen what type the diag variable is
 subroutine what_is_vartype(this)
  class (fmsDiagField_type) , intent(inout):: this
