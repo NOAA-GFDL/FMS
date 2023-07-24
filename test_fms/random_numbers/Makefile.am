@@ -17,35 +17,36 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/field_manager directory of
-# the FMS package.
+# This is an automake file for the test_fms/data_override directory of the FMS
+# package.
 
-# uramirez, Ed Hartnett
-
-# Find the needed mod files.
+# Find the fms and mpp mod files.
 AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_field_manager_r4 test_field_manager_r8
+check_PROGRAMS = \
+    test_random_numbers_r4 \
+    test_random_numbers_r8
 
 # This is the source code for the test.
-test_field_manager_r4_SOURCES = test_field_manager.F90
-test_field_manager_r8_SOURCES = test_field_manager.F90
+test_random_numbers_r4_SOURCES = test_random_numbers.F90
+test_random_numbers_r8_SOURCES = test_random_numbers.F90
 
-test_field_manager_r4_CPPFLAGS=-DTEST_FM_KIND_=4 -I$(MODDIR)
-test_field_manager_r8_CPPFLAGS=-DTEST_FM_KIND_=8 -I$(MODDIR)
+test_random_numbers_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_RN_KIND_=r4_kind
+test_random_numbers_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_RN_KIND_=r8_kind
 
 TEST_EXTENSIONS = .sh
-SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test program.
-TESTS = test_field_manager2.sh
+TESTS = test_random_numbers.sh
 
-# These files will also be included in the distribution.
-EXTRA_DIST = test_field_manager2.sh
+# Copy over other needed files to the srcdir
+EXTRA_DIST = test_random_numbers.sh
 
 # Clean up
-CLEANFILES = input.nml *.out* field_table *.dpi *.spi *.dyn *.spl *.yaml
+CLEANFILES = input.nml *.out* *.nc* *.dpi *.spi *.dyn *.spl
