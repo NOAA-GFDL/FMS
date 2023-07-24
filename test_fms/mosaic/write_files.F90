@@ -481,10 +481,10 @@ contains
 
     !< made up numbers
     do i=1,ncells
-       tile1_cell(1,i) = i
-       tile1_cell(2,i) = i
-       tile2_cell(1,i) = i
-       tile2_cell(2,i) = i
+       tile1_cell(1,i) = i*10
+       tile1_cell(2,i) = i*100
+       tile2_cell(1,i) = i*1000
+       tile2_cell(2,i) = i*5
     end do
 
     !< made up numbers

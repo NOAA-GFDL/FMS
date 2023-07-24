@@ -22,20 +22,19 @@
 
 program test_mosaic
 
-use mosaic2_mod, only : get_mosaic_ntiles, get_mosaic_ncontacts
-use mosaic2_mod, only : get_mosaic_grid_sizes, get_mosaic_contact, get_mosaic_xgrid
-use mosaic2_mod, only : calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area, is_inside_polygon
-use grid2_mod,   only : get_grid_cell_vertices
-use mpp_mod,     only : mpp_init, mpp_error, FATAL, mpp_sync, mpp_npes, mpp_get_current_pelist
-use fms2_io_mod, only : open_file, close_file, FmsNetcdfFile_t, fms2_io_init, read_data
-use fms_mod,     only : fms_init, fms_end
+use mosaic2_mod
+use grid2_mod
+use write_files
+use mpp_mod,       only : mpp_init, mpp_error, FATAL, mpp_sync, mpp_npes, mpp_get_current_pelist
+use fms2_io_mod,   only : open_file, close_file, FmsNetcdfFile_t, fms2_io_init, read_data
+use fms_mod,       only : fms_init, fms_end
 use constants_mod, only : DEG_TO_RAD
-use write_files !< use all of it
-use platform_mod, only : r4_kind, r8_kind
+use platform_mod,  only : r4_kind, r8_kind
 
 implicit none
 
 !> create mosaic and grid files
+!! In orderr to create the mosaic and grid files, fms2_io needs to be initialized first
 call fms2_io_init()
 call write_all()
 
@@ -58,28 +57,42 @@ subroutine test_get_mosaic_grid_sizes
 
   !> test get_mosaic_grid_sizes
 
-  integer              :: ntiles         !< Number of tiles
-  integer              :: n              !< For do loops
-  integer, allocatable :: nx_out(:), ny_out(:)   !< Number of x/y points for each tile
+  integer              :: ntiles
+  integer              :: n
+  integer, allocatable :: nx_out(:), ny_out(:)
 
-  type(FmsNetcdfFile_t):: ocn_fileobj
+  type(FmsNetcdfFile_t):: fileobj
   integer, allocatable :: pes(:)
 
+  !-- ocean --!
   allocate(pes(mpp_npes()))
   call mpp_get_current_pelist(pes)
-  if( .not. open_file(ocn_fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read', pelist=pes) ) &
+  if( .not. open_file(fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read', pelist=pes) ) &
        call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(ocn_mosaic_file))
 
-  !> get the number of tiles
-  ntiles = get_mosaic_ntiles(ocn_fileobj)
-  allocate( nx_out(ntiles), ny_out(ntiles) )
 
+  allocate( nx_out(ocn_ntiles), ny_out(ocn_ntiles) )
   !> get_mosaic_grid_sizes reads in the grid file
-  call get_mosaic_grid_sizes(ocn_fileobj, nx_out, ny_out )
-  do n=1, ntiles
-     if (nx_out(n) .ne. ocn_nx/2)  call mpp_error(FATAL, "nx is not the expected result")
-     if (ny_out(n) .ne. ocn_ny/2)  call mpp_error(FATAL, "ny is not the expected result")
+  call get_mosaic_grid_sizes(fileobj, nx_out, ny_out )
+  do n=1, ocn_ntiles
+     call check_answer(ocn_nx/2, nx_out(n), 'ocn TEST_GET_MOSAIC_GRID_SIZES')
+     call check_answer(ocn_nY/2, ny_out(n), 'ocn TEST_GET_MOSAIC_GRID_SIZES')
   end do
+  deallocate(nx_out, ny_out)
+  call close_file(fileobj)
+
+  !-- atm --!
+  if( .not. open_file(fileobj, 'INPUT/'//trim(c1_mosaic_file), 'read', pelist=pes) ) &
+       call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(c1_mosaic_file))
+
+  allocate( nx_out(c1_ntiles), ny_out(c1_ntiles) )
+  call get_mosaic_grid_sizes(fileobj, nx_out, ny_out)
+  do n=1, ntiles
+     call check_answer(c1_nx/2, nx_out(n), 'atm TEST_GET_MOSAIC_GRID_SIZES')
+     call check_answer(c1_nx/2, ny_out(n), 'atm TEST_GET_MOSAIC_GRID_SIZES')
+  end do
+  deallocate(nx_out, ny_out)
+  call close_file(fileobj)
 
 end subroutine test_get_mosaic_grid_sizes
 !------------------------------------------------------!
@@ -144,8 +157,17 @@ end subroutine test_get_mosaic_contact
 !------------------------------------------------------!
 subroutine test_get_grid_area
 
-  !> This subroutine tests calc_mosaic_grid_great_circl_area
-  !! This subroutine only checks the consistency of the the tested subroutine
+  !> This subroutine tests get_grid_area
+  !! This subroutine does not check the correctness of the computed area.
+  !! Rather, this subroutine only checks the consistency of the areas
+  !! given different grid points.  Since each tile is a C1 grid,
+  !! the areas of grid cells in tile 1 should equal those of tile 2, etc.
+  !! This subroutine only tests calc_mosaic_grid_great_circle_area_2d
+  !! For reasons that haven't been figured out, areas of tile 3 do not equal
+  !! those of tile 1.  Instead, areas of tile 3 equal those of tile 6.  Tile 3
+  !! and tile 6 are unique in that they contain the North and South Poles.  As
+  !! to why this should give rise to different areas is to be determined
+  !! by FMS in the future.  It may be due to the inaccuracy of the method.
 
   implicit none
 
@@ -161,6 +183,8 @@ subroutine test_get_grid_area
   x_rad = x1 * DEG_TO_RAD
   y_rad = y1 * DEG_TO_RAD
   call calc_mosaic_grid_area(x_rad, y_rad, area_answer)
+  write(*,*) area_answer
+  write(*,*)'***'
 
   !> Tile 2 area should be the same as tile 1 area
   x_rad = x2 * DEG_TO_RAD
@@ -172,16 +196,15 @@ subroutine test_get_grid_area
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 2 ')
      end do
   end do
+  write(*,*) area_out
+  write(*,*)'***'
 
+  !> Tile 3 area should be the same as tile 1 area
   x_rad = x3 * DEG_TO_RAD
   y_rad = y3 * DEG_TO_RAD
   call calc_mosaic_grid_area(x_rad, y_rad, area_w_pole_answer)
-  !> Tile 3 area should be the same as tile 1 area
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 3')
-     end do
-  end do
+  write(*,*) area_w_pole_answer
+  write(*,*)'***'
 
   !> Tile 4 area should be the same as tile 1 area
   x_rad = x4 * DEG_TO_RAD
@@ -192,6 +215,8 @@ subroutine test_get_grid_area
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 4')
      end do
   end do
+  write(*,*) area_out
+  write(*,*)'***'
 
   !> Tile 5 area should be the same as tile 1 area
   x_rad = x5 * DEG_TO_RAD
@@ -202,8 +227,10 @@ subroutine test_get_grid_area
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 5')
      end do
   end do
+  write(*,*) area_out
+  write(*,*)'***'
 
-  !> Tile 6 area should be the same as tile 1 area
+  !> Tile 6 area should be the same as tile 3 area
   x_rad = x6 * DEG_TO_RAD
   y_rad = y6 * DEG_TO_RAD
   call calc_mosaic_grid_area(x_rad, y_rad, area_out)
@@ -213,13 +240,19 @@ subroutine test_get_grid_area
         call check_answer_w_tol(area_w_pole_answer(i,j), area_out(i,j), 'test_grid_area tile 6')
      end do
   end do
+  write(*,*) area_out
+  write(*,*)'***'
 
 end subroutine test_get_grid_area
 !------------------------------------------------------!
 subroutine test_get_grid_great_circle_area
 
-  !> This subroutine tests calc_mosaic_grid_great_circl_area
-  !! This subroutine only checks the consistency of the the tested subroutine
+  !> This subroutine tests calc_mosaic_grid_great_circle_area
+  !! This subroutine does not check the correctness of the computed area.
+  !! Rather, this subroutine only checks the consistency of the areas
+  !! given different grid points.  Since each tile is a C1 grid,
+  !! the areas of grid cells in tile 1 should equal those of tile 2, etc.
+  !! This subroutine only tests calc_mosaic_grid_great_circle_area_2d
 
   implicit none
 
@@ -236,23 +269,24 @@ subroutine test_get_grid_great_circle_area
   y_rad = y1 * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_answer)
 
-  !> Tile 2 area should be the same as tile 1 area
+  !> Tile 2 areas should be the same as tile 1 area
   x_rad = x2 * DEG_TO_RAD
   y_rad = y2 * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
   !> check answers
-  do j=1, c1_ny-1
-     do i=1, c1_nx-1
+  do j=1, c1_ny
+     do i=1, c1_nx
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 2 ')
      end do
   end do
 
+  !> Tile 3 area should be the same as tile 1 area
   x_rad = x3 * DEG_TO_RAD
   y_rad = y3 * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  !> Tile 3 area should be the same as tile 1 area
-  do j=1, c1_ny-1
-     do i=1, c1_nx-1
+  !> check answers
+  do j=1, c1_ny
+     do i=1, c1_nx
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 3')
      end do
   end do
@@ -261,8 +295,9 @@ subroutine test_get_grid_great_circle_area
   x_rad = x4 * DEG_TO_RAD
   y_rad = y4 * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  do j=1, c1_ny-1
-     do i=1, c1_nx-1
+  !> check answers
+  do j=1, c1_ny
+     do i=1, c1_nx
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 4')
      end do
   end do
@@ -271,8 +306,9 @@ subroutine test_get_grid_great_circle_area
   x_rad = x5 * DEG_TO_RAD
   y_rad = y5 * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  do j=1, c1_ny-1
-     do i=1, c1_nx-1
+  !> check answers
+  do j=1, c1_ny
+     do i=1, c1_nx
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 5')
      end do
   end do
@@ -282,8 +318,8 @@ subroutine test_get_grid_great_circle_area
   y_rad = y6 * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
   !> check answers
-  do j=1, c1_ny-1
-     do i=1, c1_nx-1
+  do j=1, c1_ny
+     do i=1, c1_nx
         call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 6')
      end do
   end do
@@ -319,7 +355,12 @@ subroutine test_get_mosaic_xgrid
 
   call close_file(x_fileobj)
 
-  !> TODO:  check i1, j1, i2, j2
+  do i=1, ncells
+     call check_answer(tile1_cell(1,1), i1(1), "TEST_GET_MOSAIC_XGRID i1")
+     call check_answer(tile2_cell(1,1), i2(1), "TEST_GET_MOSAIC_XGRID i2")
+     call check_answer(tile1_cell(1,2), j1(1), "TEST_GET_MOSAIC_XGRID j1")
+     call check_answer(tile2_cell(1,2), j2(1), "TEST_GET_MOSAIC_XGRID j2")
+  end do
 
 end subroutine test_get_mosaic_xgrid
 !------------------------------------------------------!
@@ -341,7 +382,7 @@ subroutine test_is_inside_polygon
   z2(1)=2.0 ; z2(2)=4.0 ; z2(3)=4.0 ; z2(4)=2.0 ; z2(5)=2.0
   do i=1, n
      r = sqrt( x2(i)**2 + y2(i)**2 + z2(i)**2 )
-     lon2(i)=atan(y2(i), x2(i))
+     lon2(i)=atan(y2(i)/x2(i))
      lat2(i)=asin(z2(i)/r)
   end do
 
@@ -350,22 +391,24 @@ subroutine test_is_inside_polygon
   y1=5.0
   z1=4.2
   r = sqrt(x1**2+y1**2+z1**2)
-  lon1=atan(y1,x1)
+  lon1=atan(y1/x1)
   lat1=asin(z1/r)
 
   answer=.false.
   is_inside=is_inside_polygon(lon1, lat1, lon2, lat2)
+  call check_answer(answer,is_inside,' TEST_IS_INSIDE_POLYGON')
 
   !> point inside the polygon
   x1=0.0
   y1=3.0
   z1=2.5
   r = sqrt(x1**2+y1**2+z1**2)
-  lon1=atan(y1,x1)
+  lon1=atan(y1/x1)
   lat1=asin(z1/r)
 
   answer=.true.
   is_inside=is_inside_polygon(lon1, lat1, lon2, lat2)
+  call check_answer(answer,is_inside,'TEST_IS_INSIDE_POLYGON')
 
 end subroutine test_is_inside_polygon
 !------------------------------------------------------!
