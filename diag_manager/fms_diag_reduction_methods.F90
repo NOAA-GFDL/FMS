@@ -297,7 +297,7 @@ module fms_diag_reduction_methods_mod
       END DO
     ELSE
       IF (reduced_k_range) THEN
-        call recon_bounds%bounds3D%set_kbounds(l_start(3), l_end(3))
+        call recon_bounds%get_bounds3D()%set_kbounds(l_start(3), l_end(3))
         select type (buffer_obj)
         type is (outputBuffer0d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
