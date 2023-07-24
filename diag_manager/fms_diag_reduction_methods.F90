@@ -1,7 +1,7 @@
 !> \author Ganga Purja Pun
-!> \email gagna.purjapun@noaa.gov
+!> \email GFDL.Climate.Model.Info@noaa.gov
 !! \brief Contains routines for the modern diag manager
-!! These routines are meant to be used for reduction methods.
+!! These routines are meant to be used for checks and in reduction methods.
 !!
 !! \description
 
