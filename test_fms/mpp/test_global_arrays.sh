@@ -27,10 +27,26 @@
 # Set common test settings.
 . ../test-lib.sh
 
-# ensure input.nml file present
-touch input.nml
+cat <<_EOF  > input.nml
+&test_global_arrays_nml
+  test_simple = .true.
+  test_full = .false.
+/
+_EOF
 
-test_expect_success "global array functions with mixed precision" '
+test_expect_success "mpp_global_sum/max/min with simple domain" '
     mpirun -n 8 ./test_global_arrays
 '
+
+cat <<_EOF  > input.nml
+&test_global_arrays_nml
+  test_simple = .false.
+  test_full = .true.
+/
+_EOF
+
+test_expect_success "mpp_global_sum/max/min with symmetry and halos" '
+    mpirun -n 6 ./test_global_arrays
+'
+
 test_done
