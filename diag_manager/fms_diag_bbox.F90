@@ -67,7 +67,7 @@ MODULE fms_diag_bbox_mod
    !! in I and J dimensions.
    type, public :: fmsDiagBoundsHalos_type
       private
-      type(fmsDiagIbounds_type), public :: bounds3D !< Holds starting and ending indices of
+      type(fmsDiagIbounds_type) :: bounds3D !< Holds starting and ending indices of
                                             !! the I, J, and K dimensions
       integer :: hi !< Halo size in the I dimension
       integer :: hj !< Halo size in the J dimension
@@ -82,6 +82,7 @@ MODULE fms_diag_bbox_mod
       procedure :: get_fie
       procedure :: get_fjs
       procedure :: get_fje
+      procedure :: get_bounds3D
    end type fmsDiagBoundsHalos_type
 
    public :: recondition_indices
@@ -175,33 +176,41 @@ CONTAINS
       rslt = this%hj
    end function get_hj
 
-   !> @brief Gets the updated index `fis' of fmsDiagBoundsHalos_type in the I dimension
+   !> @brief Gets the updated starting index `fis' of fmsDiagBoundsHalos_type in the I dimension
    !! @return copy of integer member `fis'
    pure integer function get_fis (this) result(rslt)
       class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
       rslt = this%fis
    end function get_fis
 
-   !> @brief Gets the updated index `fie' of fmsDiagBoundsHalos_type in the I dimension
+   !> @brief Gets the updated ending index `fie' of fmsDiagBoundsHalos_type in the I dimension
    !! @return copy of integer member `fie'
    pure integer function get_fie (this) result(rslt)
       class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
       rslt = this%fie
    end function get_fie
 
-   !> @brief Gets the updated index `fjs' of fmsDiagBoundsHalos_type in the I dimension
+   !> @brief Gets the updated starting index `fjs' of fmsDiagBoundsHalos_type in the J dimension
    !! @return copy of integer member `fjs'
    pure integer function get_fjs (this) result(rslt)
       class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
       rslt = this%fjs
    end function get_fjs
 
-   !> @brief Gets the updated index `fje' of fmsDiagBoundsHalos_type in the I dimension
+   !> @brief Gets the updated ending index `fje' of fmsDiagBoundsHalos_type in the J dimension
    !! @return copy of integer member `fje'
    pure integer function get_fje (this) result(rslt)
       class (fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
       rslt = this%fje
    end function get_fje
+
+   !> @brief Gets a member of fmsDiagIbounds_type, `bounds3D`, of calling fmsDiagBoundsHalos_type object.
+   !! @return Returns a copy of fmsDiagIbounds_type member `bounds3D`
+   pure function get_bounds3D(this) result(bounds_obj)
+     class(fmsDiagBoundsHalos_type), intent(in) :: this !< Calling object
+     type(fmsDiagIbounds_type) :: bounds_obj !< Object copy to return
+     bounds_obj = this%bounds3D
+   end function
 
    !> @brief Reset the instance bounding lower and upper bounds to lower_val and upper_val, respectively.
    SUBROUTINE reset_bounds (this, lower_val, upper_val)
