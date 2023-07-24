@@ -554,7 +554,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       data_buffer_is_allocated = &
         this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, this%diag_axis)
     endif
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(data_buffer_is_allocated)
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
 !$omp end critical
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data,&
