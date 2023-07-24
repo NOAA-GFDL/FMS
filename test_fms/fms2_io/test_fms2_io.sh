@@ -31,16 +31,6 @@
 # Create and enter output directory
 output_dir
 
-# use smaller arrays if system stack size is limited
-if [ $STACK_LIMITED ]; then
-  cat <<_EOF > input.nml
-&test_fms2_io_nml
-  nx = 32
-  ny = 32
-  nz = 10
-/
-_EOF
-fi
 touch input.nml
 
 # run the tests
