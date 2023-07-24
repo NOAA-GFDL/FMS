@@ -549,17 +549,14 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     IF ( PRESENT(ke_in) ) ke = ke_in
 
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
+!$omp critical
     if (.not. this%FMS_diag_fields(diag_field_id)%is_data_buffer_allocated()) then
-!$omp single
       data_buffer_is_allocated = &
         this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, this%diag_axis)
-!$omp end single
     endif
-
-!$omp single
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(data_buffer_is_allocated)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
-!$omp end single
+!$omp end critical
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data,&
                                                              is, js, ks, ie, je, ke)
     fms_diag_accept_data = .TRUE.
