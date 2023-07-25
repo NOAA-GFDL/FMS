@@ -25,7 +25,7 @@ module fms_diag_reduction_methods_mod
   LOGICAL FUNCTION compare_two_sets_of_bounds(bounds_a, bounds_b, error_str)
     integer, intent(in) :: bounds_a(:) !< First array with order: (/imin, imax, jmin, jmax, kmin, kmax/)
     integer, intent(in) :: bounds_b(:) !< Second array with the same order as the first
-    character(*), intent(out) :: error_str
+    character(*), intent(out) :: error_str !< Error message to report back
 
     compare_two_sets_of_bounds = .FALSE.
 
@@ -64,22 +64,22 @@ module fms_diag_reduction_methods_mod
 
   !> @brief Checks improper combinations of is, ie, js, and je.
   !> @return Returns .false. if there is no error else .true.
-  !> @note send_data works in either one or another of two modes.
-  ! 1. Input field is a window (e.g. FMS physics)
-  ! 2. Input field includes halo data
-  ! It cannot handle a window of data that has halos.
-  ! (A field with no windows or halos can be thought of as a special case of either mode.)
-  ! The logic for indexing is quite different for these two modes, but is not clearly separated.
-  ! If both the beggining and ending indices are present, then field is assumed to have halos.
-  ! If only beggining indices are present, then field is assumed to be a window.
+  !> @note accept_data works in either one or another of two modes.
+  !! 1. Input field is a window (e.g. FMS physics)
+  !! 2. Input field includes halo data
+  !! It cannot handle a window of data that has halos.
+  !! (A field with no windows or halos can be thought of as a special case of either mode.)
+  !! The logic for indexing is quite different for these two modes, but is not clearly separated.
+  !! If both the beggining and ending indices are present, then field is assumed to have halos.
+  !! If only beggining indices are present, then field is assumed to be a window.
   !> @par
-  ! There are a number of ways a user could mess up this logic, depending on the combination
-  ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
+  !! There are a number of ways a user could mess up this logic, depending on the combination
+  !! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
   function check_indices_order(is_in, ie_in, js_in, je_in, error_msg) result(rslt)
     integer, intent(in), optional :: is_in, ie_in, js_in, je_in !< Indices passed to fms_diag_accept_data()
     character(len=*), intent(inout), optional :: error_msg !< An error message used only for testing purpose!!!
 
-    character(len=128) :: err_module_name !< Stores the module name to be used in error calls
+    character(len=52) :: err_module_name !< Stores the module name to be used in error calls
     logical :: rslt !< Return value
 
     rslt = .false. !< If no error occurs.
@@ -111,8 +111,8 @@ module fms_diag_reduction_methods_mod
     END IF
   end function check_indices_order
 
-  !> @brief Copies input data to output data with proper type if the input data is present
-  !! else sets the output data to a given value val if it is present.
+  !> @brief Copies input data to output data with specific type and precision
+  !! if the input data is present else sets the output data to a given value val if it is present.
   !! If the value val and the input data are not present, the output data is untouched.
   subroutine real_copy_set(out_data, in_data, val, err_msg)
     real, intent(out) :: out_data !< Proper type copy of in_data
@@ -135,7 +135,11 @@ module fms_diag_reduction_methods_mod
         end if
       END SELECT
     ELSE
-      if (present(val)) out_data = val
+      if (present(val)) then
+        out_data = val
+      else
+        call mpp_error(FATL, 'fms_diag_reduction_methods_mod::real_copy_set both in_data and val can be absent')
+      end if
     END IF
   end subroutine real_copy_set
 
@@ -184,33 +188,29 @@ module fms_diag_reduction_methods_mod
           type is (real(kind=r4_kind))
             WHERE (rmask < rmask_threshold) outmask = .FALSE.
           class default
-            if (fms_error_handler('fms_diag_reduction_methods_mod::init_mask_3d', 'type mismatch', err_msg)) then
-              return
-            end if
+            call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::init_mask_3d'//&
+              ' types of rmask and rmask_threshold do not match')
           end select
         TYPE IS (real(kind=r8_kind))
           select type (rmask_threshold)
           type is (real(kind=r8_kind))
             WHERE (rmask < rmask_threshold) outmask = .FALSE.
           class default
-            if (fms_error_handler('fms_diag_reduction_methods_mod::init_mask_3d', 'type mismatch', err_msg)) then
-              return
-            end if
+            call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::init_mask_3d'//&
+              ' types of rmask and rmask_threshold do not match')
           end select
         CLASS DEFAULT
-          if (fms_error_handler('fms_diag_reduction_methods_mod::init_mask_3d',&
-            & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) then
-            return
-          end if
+          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::init_mask_3d'//&
+            & ' The rmask is not one of the supported types of real(kind=4) or real(kind=8)')
       END SELECT
     END IF
   end subroutine init_mask_3d
 
   !> @brief Updates the buffer with the field data based on the value of the flag passed:
-  !! 0 for minimum; 1 for maximum.
+  !! time_min for minimum; time_max for maximum.
   subroutine fms_diag_update_extremum(flag, buffer_obj, field_data, recon_bounds, l_start, &
     l_end, is_regional, reduced_k_range, sample, mask, fieldName, hasDiurnalAxis, err_msg)
-    integer, intent(in) :: flag !< Flag to indicate what to update: 0 for minimum; 1 for maximum
+    integer, intent(in) :: flag !< Flag to indicate what to update: time_min for minimum; time_max for maximum
     class(fmsDiagOutputBuffer_class), intent(inout) :: buffer_obj !< Remapped buffer to update
     class(*), intent(in) :: field_data(:,:,:,:) !< Field data
     type(fmsDiagBoundsHalos_type), intent(inout) :: recon_bounds !< Indices of bounds in the first three dimension
@@ -223,7 +223,7 @@ module fms_diag_reduction_methods_mod
     logical, intent(in) :: mask(:,:,:,:) !< Must be out of range mask
     character(len=*), intent(in) :: fieldName !< Field name for error reporting
     logical, intent(in) :: hasDiurnalAxis !< Flag to indicate if the buffer has a diurnal axis
-    character(len=*), intent(inout), optional :: err_msg
+    character(len=*), intent(inout), optional :: err_msg !< Error mesage to report back
 
     integer :: is, js, ks !< Starting indices in the I, J, and K dimensions
     integer :: ie, je, ke !< Ending indices in the I, J, and K dimensions
@@ -231,7 +231,8 @@ module fms_diag_reduction_methods_mod
     integer :: f1, f2 !< Updated starting and ending indices in the I dimension
     integer :: f3, f4 !< Updated starting and ending indices in the J dimension
     integer :: ksr, ker !< Reduced indices in the K dimension
-    integer :: i, j, k, i1, j1, k1 !< For loops
+    integer :: i, j, k !< For loops
+    integer :: i1, j1, k1 !< Intermediate computed indices
     character(len=128) :: err_msg_local !< Stores local error message
     class(*), pointer :: ptr_buffer(:,:,:,:,:) !< Pointer to 5D buffer for remapping
     type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
@@ -261,7 +262,7 @@ module fms_diag_reduction_methods_mod
     ptr_buffer => buffer_obj%remap_buffer(fieldName, hasDiurnalAxis)
 
     ! Update buffer
-    IF (is_regional) THEN
+    regional_if: IF (is_regional) THEN
       DO k = l_start(3), l_end(3)
         k1 = k - l_start(3) + 1
         DO j = js, je
@@ -291,14 +292,16 @@ module fms_diag_reduction_methods_mod
                   recon_bounds, (/i,j,k/), (/i1,j1,k1/))
               class default
                 call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum &
-                  unsupported buffer type')
+                  regional buffer_obj is not one of the support buffer types: outputBuffer0d_type &
+                  outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type &
+                  outputBuffer4d_type outputBuffer5d_type')
               end select
             end if
           END DO
         END DO
       END DO
-    ELSE
-      IF (reduced_k_range) THEN
+    ELSE !< if not regional
+      reduced_k_range_if: IF (reduced_k_range) THEN
         call IJKBounds%set_kbounds(l_start(3), l_end(3))
         select type (buffer_obj)
         type is (outputBuffer0d_type)
@@ -314,21 +317,24 @@ module fms_diag_reduction_methods_mod
         type is (outputBuffer5d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
         class default
-          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported buffer type')
+          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum in reduced_k_range_if &
+            regional buffer_obj is not one of the support buffer types: outputBuffer0d_type &
+            outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type &
+            outputBuffer4d_type outputBuffer5d_type')
         end select
-      ELSE
-        IF ( debug_diag_manager ) THEN
+      ELSE !< does not have reduced_k_range
+        debug_diag_if: IF ( debug_diag_manager ) THEN
           ! Compare bounds {is-hi, ie-hi, js-hj, je-hj, ks, ke} with the bounds of first three dimensions of the buffer
           if (compare_two_sets_of_bounds((/is-hi, ie-hi, js-hj, je-hj, ks, ke/), &
             (/LBOUND(ptr_buffer,1), UBOUND(ptr_buffer,1), LBOUND(ptr_buffer,2), UBOUND(ptr_buffer,2), &
             LBOUND(ptr_buffer,3), UBOUND(ptr_buffer,3)/), err_msg_local)) THEN
             IF ( fms_error_handler('fms_diag_object_mod::fms_diag_update_extremum', err_msg_local, err_msg) ) THEN
-              !if (associated(field_data)) deallocate(field_data)
-              !if (allocated(mask)) deallocate(mask)
               RETURN
             END IF
           END IF
-        END IF
+        END IF debug_diag_if
+
+        !> If no error above, do update the buffer
         select type (buffer_obj)
         type is (outputBuffer0d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
@@ -343,10 +349,14 @@ module fms_diag_reduction_methods_mod
         type is (outputBuffer5d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
         class default
-          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported buffer type')
+          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum &
+            regional buffer_obj is not one of the support buffer types: outputBuffer0d_type &
+            outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type &
+            outputBuffer4d_type outputBuffer5d_type')
         end select
-      END IF
-    end if
+      END IF reduced_k_range_if
+    end if regional_if
+
     ! Reset counter count_0d of the buffer object
     select type (buffer_obj)
     type is (outputBuffer0d_type)
@@ -429,12 +439,17 @@ module fms_diag_reduction_methods_mod
     integer, intent(in) :: running_indx2(3) !< Holds indices i1, j1, and k1
 
     type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
+    integer :: i, j, k !< Unpack running_indx1 to
+    integer :: i1, j1, k1 !< Unpack running_indx2 to
+    integer :: is, js, ks !< Starting indices in the I, J, and K dimensions
+    integer :: ie, je, ke !< Ending indices in the I, J, and K dimensiions
+    integer :: hi, hj !< Halo sizes in the I, and J dimensions
 
-    integer :: i, j, k
-    integer :: i1, j1, k1
-    integer :: is, js, ks
-    integer :: ie, je, ke
-    integer :: hi, hj
+    !> Check flag for unsupported operation
+    if (flag .ne. time_max .and. flag .ne. time_min) then
+      call mpp_error(FATAL, "fms_diag_reduction_methods_mod::fms_diag_scalar_extremum &
+        unsupported reduction method")
+    endif
 
     ! Initialize i, j, and k
     i = running_indx1(1)
@@ -449,7 +464,7 @@ module fms_diag_reduction_methods_mod
     !> Get the `bounds3D` member of the `recon_bounds`
     IJKBounds = recon_bounds%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
 
-    !> Unpack bounds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
+    !> Unpack index bounds
       is = IJKBounds%get_imin()
       js = IJKBounds%get_jmin()
       ks = IJKBounds%get_kmin()
@@ -464,19 +479,19 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r4_kind))
       select type (buffer)
       type is (real(kind=r4_kind))
-        if (flag .eq. time_min) then
-        ! Update the buffer with the current minimum
+        minimum_if: if (flag .eq. time_min) then
+        !> Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
             buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
           end where
-        else
-        ! Update the buffer with the current maximum
+        else !< if not minimum, check for maximum
+        !> Update the buffer with the current maximum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) >&
             buffer(i1,j1,k1,:,sample))
             buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
           end where
-        end if
+        end if minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
           " buffer type does not match with field_data type.")
