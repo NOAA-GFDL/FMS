@@ -1161,6 +1161,7 @@ end subroutine allocate_diag_field_output_buffers
     class(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
     logical :: ierr !< Error flag
     logical, pointer :: oor_mask_4d(:,:,:,:) !< Remapped out-of-range mask oor_mask
+    type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
 
     redn_done = .FALSE.
 
@@ -1168,6 +1169,9 @@ end subroutine allocate_diag_field_output_buffers
     ierr = recondition_indices(bounds_with_halos, field_data, is_in, js_in, ks_in, &
       ie_in, je_in, ke_in, err_msg)
     if (ierr) return
+
+    !> Get the `bounds3D` member of the `recon_bounds`
+    IJKBounds = bounds_with_halos%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
 
     !> Remap oor_mask to 4D array
     oor_mask_4d => null()
@@ -1205,8 +1209,8 @@ end subroutine allocate_diag_field_output_buffers
         bounds_with_halos%get_fie(), &
         bounds_with_halos%get_fjs(), &
         bounds_with_halos%get_fje(), &
-        bounds_with_halos%bounds3D%get_kmin(), &
-        bounds_with_halos%bounds3D%get_kmax())
+        IJKBounds%get_kmin(), &
+        IJKBounds%get_kmax())
 
       !> If sub regional output, get starting and ending indices
       if (is_regional) then
@@ -1241,7 +1245,7 @@ end subroutine allocate_diag_field_output_buffers
         select type (ptr_axis)
         type is (fmsDiagSubAxis_type)
           if (ptr_axis%is_unstructured_grid()) then
-            call bounds_with_halos%bounds3D%set_jbounds(ptr_axis%get_starting_index(), &
+            call IJKBounds%set_jbounds(ptr_axis%get_starting_index(), &
               ptr_axis%get_ending_index())
           end if
           l_start(3) = ptr_axis%get_starting_index()
