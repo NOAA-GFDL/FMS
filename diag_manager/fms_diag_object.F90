@@ -1320,7 +1320,7 @@ end subroutine allocate_diag_field_output_buffers
       case default
         call mpp_error(FATAL, "fms_diag_object_mod::fms_diag_accept_data unsupported reduction method!")
       end select Reduction
-    enddo !< End of label:loop_over_buffer_id
+    enddo loop_over_buffer_id
     redn_done = .TRUE.
 #else
     call mpp_error( FATAL, "fms_diag_object_mod::fms_diag_do_reduction "//&
