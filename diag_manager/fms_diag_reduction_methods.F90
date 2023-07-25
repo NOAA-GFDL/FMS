@@ -2,8 +2,6 @@
 !> \email GFDL.Climate.Model.Info@noaa.gov
 !! \brief Contains routines for the modern diag manager
 !! These routines are meant to be used for checks and in reduction methods.
-!!
-!! \description
 
 module fms_diag_reduction_methods_mod
   use platform_mod
@@ -11,7 +9,7 @@ module fms_diag_reduction_methods_mod
   use fms_mod, only: fms_error_handler
   use fms_diag_bbox_mod
   use fms_diag_output_buffer_mod
-  use diag_data_mod, only: debug_diag_manager
+  use diag_data_mod, only: debug_diag_manager, time_max, time_min
 
   implicit none
   private
