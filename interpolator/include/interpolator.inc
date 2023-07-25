@@ -261,8 +261,8 @@ else
 !! this is the case for zonal mean data, lon = 1, lonb not present
 !! in file.
     allocate(clim_type%FMS_INTP_TYPE_%lonb(2))
-    clim_type%FMS_INTP_TYPE_%lonb(1) = -360._lkind*dtr
-    clim_type%FMS_INTP_TYPE_%lonb(2) = 360.0_lkind*dtr
+    clim_type%FMS_INTP_TYPE_%lonb(1) = -360._lkind*real(dtr,FMS_INTP_KIND_)
+    clim_type%FMS_INTP_TYPE_%lonb(2) = 360.0_lkind*real(dtr,FMS_INTP_KIND_)
     clim_type%FMS_INTP_TYPE_%lon(1) = 0.0_lkind
   endif
 endif
@@ -453,8 +453,8 @@ if(dimension_exists(fileobj, "time")) then
            !! the time that is needed in time_slice is the displacement into the
            !! year, not the displacement from a base_time.
            clim_type%time_slice(n) = &
-               set_time(INT( ( time_in(n) - INT(time_in(n)) ) * SECONDS_PER_DAY ), &
-                              INT(time_in(n)))
+               set_time( INT((time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
+                               * real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n)))
          else
 
            !--------------------------------------------------------------------
@@ -475,8 +475,8 @@ if(dimension_exists(fileobj, "time")) then
              !    no calendar conversion needed.
              !---------------------------------------------------------------------
              clim_type%time_slice(n) = &
-                set_time(INT( ( time_in(n) - INT(time_in(n)) ) * SECONDS_PER_DAY ),&
-                                INT(time_in(n)))  &
+               set_time( INT((time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
+                               * real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n))) &
                  + base_time
 
            !---------------------------------------------------------------------
@@ -534,7 +534,7 @@ if(dimension_exists(fileobj, "time")) then
    else
       allocate(time_in(1), clim_type%time_slice(1))
       allocate(clim_type%clim_times(1,1))
-      time_in = 0.0
+      time_in = 0.0_lkind
       clim_type%time_slice = set_time(0,0) + base_time
       clim_type%clim_times(1,1) = set_time(0,0) + base_time
    endif
@@ -1679,7 +1679,7 @@ endif ! (.not. separate_time_vary_calc)
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
     do n=1, size(clim_type%field_name(:))
-      hinterp_data(:,:,:,n) = (1.-clim_type%FMS_INTP_TYPE_%tweight)*  &
+      hinterp_data(:,:,:,n) = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight)*  &
                 clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaum,n)  +  &
                                  clim_type%FMS_INTP_TYPE_%tweight*   &
                 clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaup,n)
@@ -1688,11 +1688,12 @@ select case(clim_type%TIME_FLAG)
 ! Do sine fit to data at this point
   case (BILINEAR)
     do n=1, size(clim_type%field_name(:))
-      hinterp_data(:,:,:,n) = (1.-clim_type%FMS_INTP_TYPE_%tweight1)*(1.-clim_type%FMS_INTP_TYPE_%tweight3)*   &
+      hinterp_data(:,:,:,n) = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight1)*&
+                              (1._lkind-clim_type%FMS_INTP_TYPE_%tweight3)*   &
                    clim_type%FMS_INTP_TYPE_%pmon_pyear(istart:iend,jstart:jend,:,n) + &
-                              (1.-clim_type%FMS_INTP_TYPE_%tweight2)*clim_type%FMS_INTP_TYPE_%tweight3*    &
+                              (1._lkind-clim_type%FMS_INTP_TYPE_%tweight2)*clim_type%FMS_INTP_TYPE_%tweight3* &
                    clim_type%FMS_INTP_TYPE_%nmon_pyear(istart:iend,jstart:jend,:,n) + &
-                               clim_type%FMS_INTP_TYPE_%tweight1* (1.-clim_type%FMS_INTP_TYPE_%tweight3)*  &
+                               clim_type%FMS_INTP_TYPE_%tweight1* (1._lkind-clim_type%FMS_INTP_TYPE_%tweight3)*&
                    clim_type%FMS_INTP_TYPE_%pmon_nyear(istart:iend,jstart:jend,:,n) + &
                                clim_type%FMS_INTP_TYPE_%tweight2* clim_type%FMS_INTP_TYPE_%tweight3*   &
                    clim_type%FMS_INTP_TYPE_%nmon_nyear(istart:iend,jstart:jend,:,n)
@@ -1715,7 +1716,7 @@ select case(clim_type%mr(i))
   case(NO_CONV)
     do k = 1,size(hinterp_data,3)
    col_data(:,:,i) = col_data(:,:,i) + hinterp_data(:,:,k,i)* &
-      (clim_type%FMS_INTP_TYPE_%halflevs(k+1)-clim_type%FMS_INTP_TYPE_%halflevs(k))/grav
+      (clim_type%FMS_INTP_TYPE_%halflevs(k+1)-clim_type%FMS_INTP_TYPE_%halflevs(k))/real(grav,FMS_INTP_KIND_)
     enddo
 
   case(KG_M2)
@@ -1923,7 +1924,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
        else
           taum = 1
           taup = 1
-          clim_type%FMS_INTP_TYPE_%tweight = 0.
+          clim_type%FMS_INTP_TYPE_%tweight = 0._lkind
        end if
 !--lwh
     else
@@ -1996,7 +1997,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
         call time_interp(Time, month, clim_type%FMS_INTP_TYPE_%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is
                                                                                  !! the time weight between the months.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight3 = 1. ! protect against post-perth time_interp behavior
+        if (taum==2 .and. taup==2) &
+             clim_type%FMS_INTP_TYPE_%tweight3 = 1._lkind ! protect against post-perth time_interp behavior
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_3D 3: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -2007,7 +2009,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_prev, month, clim_type%FMS_INTP_TYPE_%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight1 = 1. ! protect against post-perth time_interp behavior
+        if (taum==2 .and. taup==2) &
+             clim_type%FMS_INTP_TYPE_%tweight1 = 1._lkind ! protect against post-perth time_interp behavior
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_3D 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -2018,7 +2021,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_next, month, clim_type%FMS_INTP_TYPE_%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight2 = 1. ! protect against post-perth time_interp behavior
+        if (taum==2 .and. taup==2) &
+             clim_type%FMS_INTP_TYPE_%tweight2 = 1._lkind ! protect against post-perth time_interp behavior
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_3D 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -2159,7 +2163,7 @@ select case(clim_type%mr(i))
   case(NO_CONV)
     do k = 1,size(hinterp_data,3)
    col_data(:,:) = col_data(:,:) + hinterp_data(:,:,k)* &
-      (clim_type%FMS_INTP_TYPE_%halflevs(k+1)-clim_type%FMS_INTP_TYPE_%halflevs(k))/grav
+      (clim_type%FMS_INTP_TYPE_%halflevs(k+1)-clim_type%FMS_INTP_TYPE_%halflevs(k))/real(grav,FMS_INTP_KIND_)
     enddo
 
   case(KG_M2)
@@ -2528,7 +2532,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
           clim_type%time_init(i,2) = taup
         endif
 !       clim_type%tweight3 = 0.0 ! This makes [pn]mon_nyear irrelevant. Set them to 0 to test.
-        clim_type%FMS_INTP_TYPE_%tweight1 = 0.0 ; clim_type%FMS_INTP_TYPE_%tweight2 = 0.0
+        clim_type%FMS_INTP_TYPE_%tweight1 = 0.0_lkind
+        clim_type%FMS_INTP_TYPE_%tweight2 = 0.0_lkind
         clim_type%FMS_INTP_TYPE_%tweight3 = clim_type%FMS_INTP_TYPE_%tweight
       endif
 
@@ -3188,7 +3193,7 @@ if(found) then
     do k=1,size(model_data,3)
       col_data(:,:) = col_data(:,:) + &
         model_data(:,:,k)* &
-        (clim_type%FMS_INTP_TYPE_%halflevs(k+1)-clim_type%FMS_INTP_TYPE_%halflevs(k))/grav
+        (clim_type%FMS_INTP_TYPE_%halflevs(k+1)-clim_type%FMS_INTP_TYPE_%halflevs(k))/real(grav,FMS_INTP_KIND_)
     enddo
     result = send_data(climo_diag_id(j),col_data(clim_type%is:clim_type%ie,clim_type%js:clim_type%je),Time)
   endif

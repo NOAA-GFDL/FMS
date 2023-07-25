@@ -199,6 +199,11 @@ interface latlon2xyz
    module procedure latlon2xyz_r8
 end interface latlon2xyz
 
+interface diag_read_data
+  module procedure diag_read_data_r4
+  module procedure diag_read_data_r8
+end interface diag_read_data
+
 interface read_data
    module procedure read_data_r4
    module procedure read_data_r8
