@@ -39,7 +39,7 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
 use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
-use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices
+use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices, fmsDiagIbounds_type
 use fms_diag_reduction_methods_mod
 #endif
 #if defined(_OPENMP)
