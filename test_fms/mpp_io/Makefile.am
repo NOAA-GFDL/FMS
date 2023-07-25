@@ -38,6 +38,10 @@ test_mpp_io_SOURCES = test_mpp_io.F90
 test_io_R4_R8_SOURCES = test_io_R4_R8.F90
 test_io_mosaic_R4_R8_SOURCES = test_io_mosaic_R4_R8.F90
 
+if SKIP_DEPRECATED_IO_TESTS
+TESTS_ENVIRONMENT= SKIP_TESTS="test_mpp_io2.1 test_io_R4_R8.1 test_io_mosaic_R4_R8.1"
+endif
+
 # Run the test program.
 TESTS = test_mpp_io2.sh \
 	test_io_R4_R8.sh      \

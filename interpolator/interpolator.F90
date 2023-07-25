@@ -150,12 +150,12 @@ public interpolator_init, &
 !! @param [out] <clim_units> The units of field_name
 !> @ingroup interpolator_mod
 interface interpolator
-   module procedure interpolator_4D_r4!, interpolator_4D_r8
-   module procedure interpolator_3D_r4!, interpolator_3D_r8
-   module procedure interpolator_2D_r4!, interpolator_2D_r8
-   module procedure interpolator_4D_no_time_axis_r4!, interpolator_4D_no_time_axis_r8
-   module procedure interpolator_3D_no_time_axis_r4!, interpolator_3D_no_time_axis_r8
-   module procedure interpolator_2D_no_time_axis_r4!, interpolator_2D_no_time_axis_r8
+   module procedure interpolator_4D_r4, interpolator_4D_r8
+   module procedure interpolator_3D_r4, interpolator_3D_r8
+   module procedure interpolator_2D_r4, interpolator_2D_r8
+   module procedure interpolator_4D_no_time_axis_r4, interpolator_4D_no_time_axis_r8
+   module procedure interpolator_3D_no_time_axis_r4, interpolator_3D_no_time_axis_r8
+   module procedure interpolator_2D_no_time_axis_r4, interpolator_2D_no_time_axis_r8
 end interface interpolator
 
 !> Private assignment override interface for interpolate type
@@ -166,52 +166,52 @@ end interface
 
 interface interpolator_init
    module procedure interpolator_init_r4
-   !module procedure interpolator_init_r8
+   module procedure interpolator_init_r8
 end interface interpolator_init
 
 interface fms2io_interpolator_init
    module procedure fms2io_interpolator_init_r4
-   !module procedure fms2io_interpolator_init_r8
+   module procedure fms2io_interpolator_init_r8
 end interface fms2io_interpolator_init
 
 interface get_axis_latlon_data
    module procedure get_axis_latlon_data_r4
-   !module procedure get_axis_latlon_data_r8
+   module procedure get_axis_latlon_data_r8
 end interface get_axis_latlon_data
 
 interface get_axis_level_data
    module procedure get_axis_level_data_r4
-   !module procedure get_axis_level_data_r8
+   module procedure get_axis_level_data_r8
 end interface get_axis_level_data
 
 interface cell_center2
    module procedure cell_center2_r4
-   !module procedure cell_center2_r8
+   module procedure cell_center2_r8
 end interface cell_center2
 
 interface cart_to_latlon
    module procedure cart_to_latlon_r4
-   !module procedure cart_to_latlon_r8
+   module procedure cart_to_latlon_r8
 end interface cart_to_latlon
 
 interface latlon2xyz
    module procedure latlon2xyz_r4
-   !module procedure latlon2xyz_r8
+   module procedure latlon2xyz_r8
 end interface latlon2xyz
 
 interface read_data
    module procedure read_data_r4
-   !module procedure read_data_r8
+   module procedure read_data_r8
 end interface read_data
 
 interface read_data_no_time_axis
    module procedure read_data_no_time_axis_r4
-   !module procedure read_data_no_time_axis_r8
+   module procedure read_data_no_time_axis_r8
 end interface read_data_no_time_axis
 
 interface interp_linear
    module procedure interp_linear_r4
-   !module procedure interp_linear_r8
+   module procedure interp_linear_r8
 end interface interp_linear
 
 !> Private interface for weighted scalar interpolation
@@ -228,8 +228,8 @@ end interface interp_linear
 !! @param [out] <datout> Output data
 !> @ingroup interpolator_mod
 interface interp_weighted_scalar
-   module procedure interp_weighted_scalar_1D_r4!, interp_weighted_scalar_1D_r8
-   module procedure interp_weighted_scalar_2D_r4!, interp_weighted_scalar_2d_r8
+   module procedure interp_weighted_scalar_1D_r4, interp_weighted_scalar_1D_r8
+   module procedure interp_weighted_scalar_2D_r4, interp_weighted_scalar_2d_r8
 end interface interp_weighted_scalar
 
 !---------------------------------------------------------------------

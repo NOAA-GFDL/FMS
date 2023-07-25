@@ -889,7 +889,7 @@ end subroutine GET_AXIS_LEVEL_DATA_
       real(FMS_INTP_KIND_) , intent(out) :: e2(2)
 ! Local
       real(FMS_INTP_KIND_) :: p1(3), p2(3), p3(3), p4(3)
-      real(FMS_INTP_KIND_) :: ec(3)
+      real(FMS_INTP_KIND_) :: ec(3,1)
       real(FMS_INTP_KIND_) :: dd
       integer k
 
@@ -899,15 +899,15 @@ end subroutine GET_AXIS_LEVEL_DATA_
       call latlon2xyz(q4, p4)
 
       do k=1,3
-         ec(k) = p1(k) + p2(k) + p3(k) + p4(k)
+         ec(k,1) = p1(k) + p2(k) + p3(k) + p4(k)
       enddo
-      dd = sqrt( ec(1)**2 + ec(2)**2 + ec(3)**2 )
+      dd = sqrt( ec(1,1)**2 + ec(2,1)**2 + ec(3,1)**2 )
 
       do k=1,3
-         ec(k) = ec(k) / dd
+         ec(k,1) = ec(k,1) / dd
       enddo
 
-      call cart_to_latlon(1, ec, e2(1), e2(2))
+      call cart_to_latlon(1, ec, e2(1:1), e2(2:2))
 
  end subroutine CELL_CENTER2_
 !
@@ -948,8 +948,8 @@ end subroutine GET_AXIS_LEVEL_DATA_
      if ( lon < 0._f_p ) lon = 2._f_p*real(PI,f_p) + lon
      lat = asin(p(3))
 
-     xs(i) = lon
-     ys(i) = lat
+     xs(i) = real(lon,FMS_INTP_KIND_)
+     ys(i) = real(lat,FMS_INTP_KIND_)
 ! q Normalized:
      do k=1,3
         q(k,i) = real(p(k),FMS_INTP_KIND_)
@@ -1923,7 +1923,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
        else
           taum = 1
           taup = 1
-          clim_type%FMS_INTP_TYPE_%FMS_INTP_TYPE_%tweight = 0.
+          clim_type%FMS_INTP_TYPE_%tweight = 0.
        end if
 !--lwh
     else
@@ -3379,8 +3379,6 @@ if (size(grdout(:)).ne. (size(datout(:))+1)) &
 end subroutine INTERP_LINEAR_
 !
 !########################################################################
-
-end module interpolator_mod
 
 !> @}
 ! close documentation grouping

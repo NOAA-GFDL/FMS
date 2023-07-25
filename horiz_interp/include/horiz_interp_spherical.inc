@@ -72,8 +72,6 @@
     if(present(num_nbrs)) num_neighbors = num_nbrs
     if (num_neighbors <= 0) call mpp_error(FATAL,'horiz_interp_spherical_mod: num_neighbors must be > 0')
 
-    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
-
     max_src_dist = real(max_dist_default, FMS_HI_KIND_)
     if (PRESENT(max_dist)) max_src_dist = max_dist
     Interp%HI_KIND_TYPE_%max_src_dist = max_src_dist

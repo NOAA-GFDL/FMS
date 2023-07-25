@@ -426,6 +426,15 @@ module time_interp_external2_mod
         endif
       endif
 
+      tavg = -1.0
+      tstart = tstamp
+      tend = tstamp
+      if(variable_att_exists(fileobj, fieldname, 'time_avg_info')) then
+        if(variable_exists(fileobj, 'average_T1')) call read_data(fileobj, 'average_T1', tstart)
+        if(variable_exists(fileobj, 'average_T2')) call read_data(fileobj, 'average_T2', tend)
+        if(variable_exists(fileobj, 'average_DT')) call read_data(fileobj, 'average_DT', tavg)
+      endif
+
       num_fields = num_fields + 1
       if(num_fields > max_fields) then
          !--- z1l: For the case of multiple thread, realoc_fields will cause memory leak.
