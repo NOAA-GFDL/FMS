@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,35 +17,25 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/mpp directory.
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
 
-# Ed Hartnett 11/29/19
+# Including the following, as they may be useful when building other components
+# and as a way to better record how the library was built.
+ccompiler=mpiicc
+fccompiler=mpiifort
+cppflagss.compiled= -fopenmp
+cflags.compiled=-I/opt/netcdf/4.9.2/ONEAPI/2023.1/include -I/opt/hdf5/1.14.1-2/ONEAPI/2023.1/include -fopenmp
+fcflags.compiled=-O0 -g -traceback -I/opt/netcdf/4.9.2/ONEAPI/2023.1/include -I/opt/netcdf/4.9.2/ONEAPI/2023.1/include  -FR -real-size 64 -fopenmp
+ldflags.compiled=-L/opt/netcdf/4.9.2/ONEAPI/2023.1/lib64 -lnetcdf
 
-# Set common test settings.
-. ../test-lib.sh
-
-# Copy file for test.
-touch input.nml
-
-rm -rf INPUT
-mkdir INPUT
-# Run the test.
-test_expect_success "test time interpolation with r8_kind" '
-  mpirun -n 2 ./test_time_interp_r8
-'
-test_expect_success "test time interpolation with r4_kind" '
-  mpirun -n 2 ./test_time_interp_r4
-'
-
-rm -rf INPUT
-mkdir INPUT
-
-test_expect_success "test time interpolation external with r8_kind" '
-  mpirun -n 2 ./test_time_interp_external_r8
-'
-test_expect_success "test time interpolation external with r4_kind" '
-  mpirun -n 2 ./test_time_interp_external_r4
-'
-
-test_done
+Name: FMS
+Description: The Flexible Modeling System Infrastructure Library
+URL: https://www.gfdl.noaa.gov/fms
+Version: 2022.04.00-dev
+Libs: -L$(libdir) -lFMS
+Libs.private: -lnetcdff 
+Cflags: -I${includedir}
+Fflags: -I${includedir}
