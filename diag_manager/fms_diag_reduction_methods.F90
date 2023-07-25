@@ -138,7 +138,7 @@ module fms_diag_reduction_methods_mod
       if (present(val)) then
         out_data = val
       else
-        call mpp_error(FATL, 'fms_diag_reduction_methods_mod::real_copy_set both in_data and val can be absent')
+        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::real_copy_set both in_data and val can be absent')
       end if
     END IF
   end subroutine real_copy_set
@@ -291,10 +291,10 @@ module fms_diag_reduction_methods_mod
                 call update_scalar_extremum(flag, field_data, ptr_buffer, mask, sample, &
                   recon_bounds, (/i,j,k/), (/i1,j1,k1/))
               class default
-                call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum &
-                  regional buffer_obj is not one of the support buffer types: outputBuffer0d_type &
-                  outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type &
-                  outputBuffer4d_type outputBuffer5d_type')
+                call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+                  ' regional buffer_obj is not one of the support buffer types: outputBuffer0d_type'//&
+                  ' outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type'//&
+                  ' outputBuffer4d_type outputBuffer5d_type')
               end select
             end if
           END DO
@@ -317,10 +317,10 @@ module fms_diag_reduction_methods_mod
         type is (outputBuffer5d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
         class default
-          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum in reduced_k_range_if &
-            regional buffer_obj is not one of the support buffer types: outputBuffer0d_type &
-            outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type &
-            outputBuffer4d_type outputBuffer5d_type')
+          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum in reduced_k_range_if'//&
+            ' regional buffer_obj is not one of the support buffer types: outputBuffer0d_type'//&
+            ' outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type'//&
+            ' outputBuffer4d_type outputBuffer5d_type')
         end select
       ELSE !< does not have reduced_k_range
         debug_diag_if: IF ( debug_diag_manager ) THEN
@@ -349,10 +349,10 @@ module fms_diag_reduction_methods_mod
         type is (outputBuffer5d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
         class default
-          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum &
-            regional buffer_obj is not one of the support buffer types: outputBuffer0d_type &
-            outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type &
-            outputBuffer4d_type outputBuffer5d_type')
+          call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+            ' regional buffer_obj is not one of the support buffer types: outputBuffer0d_type'//&
+            ' outputBuffer1d_type outputBuffer2d_type outputBuffer3d_type'//&
+            ' outputBuffer4d_type outputBuffer5d_type')
         end select
       END IF reduced_k_range_if
     end if regional_if
@@ -424,7 +424,7 @@ module fms_diag_reduction_methods_mod
     end select
   end subroutine fms_diag_update_extremum
 
-  !> @brief Updates individual element of buffer
+  !> @brief Updates individual element of the buffer associated with indices in running_indx1 and running_indx2
   subroutine update_scalar_extremum(flag, field_data, buffer, mask, sample, recon_bounds, &
     running_indx1, running_indx2)
     integer, intent(in) :: flag !< Flag indicating maximum(time_max) or minimum(time_min)
@@ -499,7 +499,7 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r8_kind))
       select type (buffer)
       type is (real(kind=r8_kind))
-        if (flag .eq. time_min) then
+        minimum_if: if (flag .eq. time_min) then
         ! Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
@@ -511,7 +511,7 @@ module fms_diag_reduction_methods_mod
             buffer(i1,j1,k1,:,sample))
             buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
           end where
-        end if
+        endif minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
           " buffer type does not match with field_data type.")
@@ -519,7 +519,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i4_kind))
       select type (buffer)
       type is (integer(kind=i4_kind))
-        if (flag .eq. time_min) then
+        minimum_if: if (flag .eq. time_min) then
         ! Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
@@ -531,7 +531,7 @@ module fms_diag_reduction_methods_mod
             buffer(i1,j1,k1,:,sample))
             buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
           end where
-        end if
+        endif minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
           " buffer type does not match with field_data type.")
@@ -539,7 +539,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i8_kind))
       select type (buffer)
       type is (integer(kind=i8_kind))
-        if (flag .eq. time_min) then
+        minimum_if: if (flag .eq. time_min) then
         ! Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
@@ -551,7 +551,7 @@ module fms_diag_reduction_methods_mod
             buffer(i1,j1,k1,:,sample))
             buffer(i1,j1,k1,:,sample) = field_data(i-is+1+hi,j-js+1+hj,k,:)
           end where
-        end if
+        end if minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
           " buffer type does not match with field_data type.")
@@ -561,7 +561,7 @@ module fms_diag_reduction_methods_mod
     end select
   end subroutine update_scalar_extremum
 
-  !> @brief Updates a chunk of buffer
+  !> @brief Updates a chunk of the buffer defined by the bounds in recon_bounds
   subroutine update_array_extremum(flag, field_data, buffer, mask, sample, recon_bounds, reduced_k_range)
     integer :: flag !< Flag indicating maximum(time_max) or minimum(time_min)
     class(*), intent(in) :: field_data(:,:,:,:) !< Field data
@@ -579,6 +579,12 @@ module fms_diag_reduction_methods_mod
     integer :: f1, f2 !< Updated starting and ending indices in the I dimension
     integer :: f3, f4 !< Updated starting and ending indices in the J dimension
     type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
+
+    !> Check flag for unsupported operation
+    if (flag .ne. time_max .and. flag .ne. time_min) then
+      call mpp_error(FATAL, "fms_diag_reduction_methods_mod::fms_diag_scalar_extremum &
+        unsupported reduction method")
+    endif
 
     !> Get the `bounds3D` member of the `recon_bounds`
     IJKBounds = recon_bounds%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
@@ -602,7 +608,7 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r4_kind))
       select type (buffer)
       type is (real(kind=r4_kind))
-        if (flag .eq. time_min) then
+        minimum_if: if (flag .eq. time_min) then
         !> Update the buffer with the current minimum
           if (reduced_k_range) then
             ! recon_bounds must have ks = ksr and ke = ker
@@ -626,7 +632,7 @@ module fms_diag_reduction_methods_mod
               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
           end if
-        end if
+        end if minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
           " buffer type does not match with field_data type.")
@@ -634,7 +640,7 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r8_kind))
       select type (buffer)
       type is (real(kind=r8_kind))
-          if (flag .eq. time_min) then
+          minimum_if: if (flag .eq. time_min) then
           !> Update the buffer with the current minimum
             if (reduced_k_range) then
               ! recon_bounds must have ks = ksr and ke = ker
@@ -658,7 +664,7 @@ module fms_diag_reduction_methods_mod
                 buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
                 buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
             end if
-          end if
+          end if minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
           " buffer type does not match with field_data type.")
@@ -666,7 +672,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i4_kind))
       select type (buffer)
       type is (integer(kind=i4_kind))
-        if (flag .eq. time_min) then
+        minimum_if: if (flag .eq. time_min) then
         !> Update the buffer with the current minimum
           if (reduced_k_range) then
             ! recon_bounds must have ks = ksr and ke = ker
@@ -690,7 +696,7 @@ module fms_diag_reduction_methods_mod
               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
           end if
-        end if
+        end if minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
           " buffer type does not match with field_data type.")
@@ -698,7 +704,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i8_kind))
       select type (buffer)
       type is (integer(kind=i8_kind))
-        if (flag .eq. time_min) then
+        minimum_if: if (flag .eq. time_min) then
         !> Update the buffer with the current minimum
           if (reduced_k_range) then
             ! recon_bounds must have ks = ksr and ke = ker
@@ -722,7 +728,7 @@ module fms_diag_reduction_methods_mod
               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample)) &
               buffer(is-hi:ie-hi,js-hj:je-hj,ks:ke,:,sample) = field_data(f1:f2,f3:f4,ks:ke,:)
           end if
-        end if
+        end if minimum_if
       class default
         call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
           " buffer type does not match with field_data type.")
