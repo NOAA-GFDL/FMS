@@ -301,7 +301,7 @@ module fms_diag_reduction_methods_mod
       END DO
     ELSE
       IF (reduced_k_range) THEN
-        call recon_bounds%get_bounds3D()%set_kbounds(l_start(3), l_end(3))
+        call IJKBounds%set_kbounds(l_start(3), l_end(3))
         select type (buffer_obj)
         type is (outputBuffer0d_type)
           call update_array_extremum(flag, field_data, ptr_buffer, mask, sample, recon_bounds, reduced_k_range)
@@ -426,9 +426,6 @@ module fms_diag_reduction_methods_mod
 
     type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
 
-    !> Get the `bounds3D` member of the `recon_bounds`
-    IJKBounds = recon_bounds%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
-
     integer :: i, j, k
     integer :: i1, j1, k1
     integer :: is, js, ks
@@ -444,6 +441,9 @@ module fms_diag_reduction_methods_mod
     i1 = running_indx2(1)
     j1 = running_indx2(2)
     k1 = running_indx2(3)
+
+    !> Get the `bounds3D` member of the `recon_bounds`
+    IJKBounds = recon_bounds%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
 
     !> Unpack bounds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
       is = IJKBounds%get_imin()
