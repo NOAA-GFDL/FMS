@@ -358,7 +358,8 @@ module fms_diag_reduction_methods_mod
       type is (real(kind=r8_kind))
         real_counter(sample) = 1.0_r8_kind
       class default
-        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
+        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+          ' Unsupported type of buffer_obj%count_0d')
       end select
     type is (outputBuffer1d_type)
       select type (real_counter => buffer_obj%count_0d)
@@ -367,7 +368,8 @@ module fms_diag_reduction_methods_mod
       type is (real(kind=r8_kind))
         real_counter(sample) = 1.0_r8_kind
       class default
-        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
+        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+          ' Unsupported type of buffer_obj%count_0d')
       end select
     type is (outputBuffer2d_type)
       select type (real_counter => buffer_obj%count_0d)
@@ -376,7 +378,8 @@ module fms_diag_reduction_methods_mod
       type is (real(kind=r8_kind))
         real_counter(sample) = 1.0_r8_kind
       class default
-        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
+        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+          ' Unsupported type of buffer_obj%count_0d')
       end select
     type is (outputBuffer3d_type)
       select type (real_counter => buffer_obj%count_0d)
@@ -385,7 +388,8 @@ module fms_diag_reduction_methods_mod
       type is (real(kind=r8_kind))
         real_counter(sample) = 1.0_r8_kind
       class default
-        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
+        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+          ' Unsupported type of buffer_obj%count_0d')
       end select
     type is (outputBuffer4d_type)
       select type (real_counter => buffer_obj%count_0d)
@@ -394,7 +398,8 @@ module fms_diag_reduction_methods_mod
       type is (real(kind=r8_kind))
         real_counter(sample) = 1.0_r8_kind
       class default
-        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
+        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+          ' Unsupported type of buffer_obj%count_0d')
       end select
     type is (outputBuffer5d_type)
       select type (real_counter => buffer_obj%count_0d)
@@ -403,7 +408,8 @@ module fms_diag_reduction_methods_mod
       type is (real(kind=r8_kind))
         real_counter(sample) = 1.0_r8_kind
       class default
-        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported intrinsic type')
+        call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum'//&
+          ' Unsupported type of buffer_obj%count_0d')
       end select
     class default
       call mpp_error(FATAL, 'fms_diag_reduction_methods_mod::fms_diag_update_extremum unsupported buffer type')
@@ -474,7 +480,8 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     type is (real(kind=r8_kind))
       select type (buffer)
@@ -493,7 +500,8 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     type is (integer(kind=i4_kind))
       select type (buffer)
@@ -512,7 +520,8 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     type is (integer(kind=i8_kind))
       select type (buffer)
@@ -531,7 +540,8 @@ module fms_diag_reduction_methods_mod
           end where
         end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     class default
       call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_scalar_extremum unsupported field data type")
@@ -605,7 +615,8 @@ module fms_diag_reduction_methods_mod
           end if
         end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     type is (real(kind=r8_kind))
       select type (buffer)
@@ -636,7 +647,8 @@ module fms_diag_reduction_methods_mod
             end if
           end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     type is (integer(kind=i4_kind))
       select type (buffer)
@@ -667,7 +679,8 @@ module fms_diag_reduction_methods_mod
           end if
         end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     type is (integer(kind=i8_kind))
       select type (buffer)
@@ -698,7 +711,8 @@ module fms_diag_reduction_methods_mod
           end if
         end if
       class default
-        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum type mismatch")
+        call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum"//&
+          " buffer type does not match with field_data type.")
       end select
     class default
       call mpp_error( FATAL, "fms_diag_reduction_methods_mod::update_array_extremum unsupported field data type")
