@@ -40,7 +40,7 @@ use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices, fmsDiagIbounds_type
-use fms_diag_reduction_methods_mod
+use fms_diag_reduction_methods_mod, only: fms_diag_update_extremum
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -1155,7 +1155,7 @@ end subroutine allocate_diag_field_output_buffers
     type(fmsDiagBoundsHalos_type) :: bounds_with_halos !< Data structure that holds 3D bounds
                                                        !! in the I, J, and K dimensions and halo sizes
                                                        !! in the I, and J dimensions
-    integer :: i, j !< For looping
+    integer :: id, ax !< For looping
     integer :: n_axis !< Number of axes
     integer :: axis_id !< Axis id
     class(fmsDiagAxis_type), pointer :: ptr_axis !< Pointer of type diag_axis%axis
@@ -1177,28 +1177,30 @@ end subroutine allocate_diag_field_output_buffers
     oor_mask_4d => null()
     oor_mask_4d(1:size(oor_mask,1), 1:size(oor_mask,2), 1:size(oor_mask,3), 1:1) => oor_mask
 
-    do i = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
-      file_id = this%FMS_diag_fields(diag_field_id)%file_ids(i)
-      ! Is this field output on a local domain only?
+    loop_over_buffer_id: do id = 1, size(this%FMS_diag_fields(diag_field_id)%buffer_ids)
+      file_id = this%FMS_diag_fields(diag_field_id)%file_ids(id)
+      !> Is this field output on a local domain only?
       this_pe_writes = this%FMS_diag_files(file_id)%writing_on_this_pe()
 
-      ! If local_output, does the current PE take part in send_data?
+      !> If local_output, does the current PE take part in send_data?
       is_regional = this%FMS_diag_files(file_id)%is_regional()
 
-      ! Skip all PEs not participating in outputting this field
+      !> Skip all PEs not participating in outputting this field
       if (.not.this_pe_writes) cycle
 
-      buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(i)
-      freq = this%FMS_diag_fields(diag_field_id)%get_frequency()
-      reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_reduction()
-      has_diurnal_axis = this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_n_diurnal()
-      field_name = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_fname()
-      reduced_k_range = this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_var_zbounds()
+      !> Store buffer ID of the i-th element of the buffer_ids(:)
+      buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(id)
 
-      if (this%FMS_diag_fields(diag_field_id)%diag_field(i)%has_pow_value()) THEN
-        pow_val = this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_pow_value()
+      !> Make locak copies of field information
+      freq = this%FMS_diag_fields(diag_field_id)%get_frequency()
+      reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(id)%get_var_reduction()
+      has_diurnal_axis = this%FMS_diag_fields(diag_field_id)%diag_field(id)%has_n_diurnal()
+      field_name = this%FMS_diag_fields(diag_field_id)%diag_field(id)%get_var_fname()
+      reduced_k_range = this%FMS_diag_fields(diag_field_id)%diag_field(id)%has_var_zbounds()
+      if (this%FMS_diag_fields(diag_field_id)%diag_field(id)%has_pow_value()) THEN
+        pow_val = this%FMS_diag_fields(diag_field_id)%diag_field(id)%get_pow_value()
       else
-        pow_val = 0
+        pow_val = 1 !< Default value, if not explicitly set, that guarantees simple weighted arithmetic mean
       end if
 
       !> Check if the field is a physics window
@@ -1218,15 +1220,15 @@ end subroutine allocate_diag_field_output_buffers
           n_axis = size(this%FMS_diag_output_buffers(buffer_id)%axis_ids)
           allocate(l_start(n_axis))
           allocate(l_end(n_axis))
-          do j = 1, n_axis
-            ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(j))%axis
+          do ax = 1, n_axis
+            ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(ax))%axis
             select type (ptr_axis)
             type is (fmsDiagSubAxis_type)
-              l_start(j) = ptr_axis%get_starting_index()
-              l_end(j) = ptr_axis%get_ending_index()
+              l_start(ax) = ptr_axis%get_starting_index()
+              l_end(ax) = ptr_axis%get_ending_index()
             type is (fmsDiagFullAxis_type)
-              l_start(j) = 1
-              l_end(j) = ptr_axis%axis_length()
+              l_start(ax) = 1
+              l_end(ax) = ptr_axis%axis_length()
             class default
               call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction non fmsDiagSubAxis_type axis')
             end select
@@ -1273,7 +1275,7 @@ end subroutine allocate_diag_field_output_buffers
               trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
             if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
               &//trim(error_string)//', time must be present when output frequency = EVERY_TIME', err_msg)) then
-              !if (associated(field_data)) deallocate(field_data)
+            return
             end if
           end if
         end if
@@ -1285,7 +1287,6 @@ end subroutine allocate_diag_field_output_buffers
           & trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
         if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
           &//trim(error_string)//', time must be present for nonstatic field', err_msg)) then
-            !if (associated(field_data)) deallocate(field_data)
           return
         end if
       end if
@@ -1304,10 +1305,10 @@ end subroutine allocate_diag_field_output_buffers
       case (time_rms)
         !! TODO: root-mean-square error
       case (time_max)
-        call fms_diag_update_extremum(1, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
+        call fms_diag_update_extremum(time_max, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
           l_end, is_regional, reduced_k_range, sample, oor_mask_4d, field_name, has_diurnal_axis, err_msg)
       case (time_min)
-        call fms_diag_update_extremum(0, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
+        call fms_diag_update_extremum(time_min, ptr_diag_buffer_obj, field_data, bounds_with_halos, l_start, &
           l_end, is_regional, reduced_k_range, sample, oor_mask_4d, field_name, has_diurnal_axis, err_msg)
       case (time_sum)
         !! TODO: sum for the interval
@@ -1319,7 +1320,7 @@ end subroutine allocate_diag_field_output_buffers
       case default
         call mpp_error(FATAL, "fms_diag_object_mod::fms_diag_accept_data unsupported reduction method!")
       end select Reduction
-    enddo
+    enddo !< End of label:loop_over_buffer_id
     redn_done = .TRUE.
 #else
     call mpp_error( FATAL, "fms_diag_object_mod::fms_diag_do_reduction "//&
