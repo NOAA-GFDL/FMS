@@ -40,7 +40,7 @@ use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices, fmsDiagIbounds_type
-use fms_diag_reduction_methods_mod, only: fms_diag_update_extremum
+use fms_diag_reduction_methods_mod, only: check_indices_order, fms_diag_update_extremum
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -1272,7 +1272,7 @@ end subroutine allocate_diag_field_output_buffers
           this%FMS_diag_files(file_id)%FMS_diag_file%get_last_output()) then
           if (.not.present(time)) then
             write (error_string,'(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
-              trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
+              trim(this%FMS_diag_fields(diag_field_id)%diag_field(id)%get_var_outname())
             if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
               &//trim(error_string)//', time must be present when output frequency = EVERY_TIME', err_msg)) then
             return
@@ -1284,7 +1284,7 @@ end subroutine allocate_diag_field_output_buffers
       ! Check if time should be present for this field
       if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) then
         write(error_string, '(a,"/",a)') trim(this%FMS_diag_fields(diag_field_id)%get_modname()),&
-          & trim(this%FMS_diag_fields(diag_field_id)%diag_field(i)%get_var_outname())
+          & trim(this%FMS_diag_fields(diag_field_id)%diag_field(id)%get_var_outname())
         if (fms_error_handler('fms_diag_object_mod::fms_diag_accept_data', 'module/output_name: '&
           &//trim(error_string)//', time must be present for nonstatic field', err_msg)) then
           return
