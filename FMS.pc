@@ -24,12 +24,12 @@ includedir=${prefix}/include
 
 # Including the following, as they may be useful when building other components
 # and as a way to better record how the library was built.
-ccompiler=mpicc
-fccompiler=mpif90
+ccompiler=mpiicc
+fccompiler=mpiifort
 cppflagss.compiled= -fopenmp
-cflags.compiled=-I/opt/netcdf/4.9.2/GCC/13.1.0/include -I/opt/libyaml/0.2.5/GNU/13.1.0/include -fopenmp
-fcflags.compiled=-I/opt/netcdf/4.9.2/GCC/13.1.0/include -I/opt/netcdf/4.9.2/GCC/13.1.0/include -g -fbacktrace -fopenmp -Wall -Wconversion-extra -I/opt/libyaml/0.2.5/GNU/13.1.0/include  -ffree-form -ffree-line-length-none -fdefault-real-8 -fcray-pointer
-ldflags.compiled= -L/opt/netcdf/4.9.2/GCC/13.1.0/lib64 -lnetcdf -L/opt/mpich/4.0.3/GNU/12.2.0/lib -L/opt/libyaml/0.2.5/GNU/13.1.0/lib
+cflags.compiled=-I/opt/netcdf/4.9.2/ONEAPI/2023.1/include -I/opt/hdf5/1.14.1-2/ONEAPI/2023.1/include -fopenmp
+fcflags.compiled=-O0 -g -traceback -I/opt/netcdf/4.9.2/ONEAPI/2023.1/include -I/opt/netcdf/4.9.2/ONEAPI/2023.1/include  -FR -real-size 64 -fopenmp
+ldflags.compiled=-L/opt/netcdf/4.9.2/ONEAPI/2023.1/lib64 -lnetcdf
 
 Name: FMS
 Description: The Flexible Modeling System Infrastructure Library
