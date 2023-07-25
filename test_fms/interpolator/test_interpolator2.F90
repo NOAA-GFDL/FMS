@@ -44,6 +44,8 @@ program test_interpolator
   character(100), parameter :: ncfile='immadeup.o3.climatology.nc'
   integer, parameter :: calendar_type=2     !< JULIAN
 
+  integer, parameter :: lkind=TEST_INTP_KIND_
+
   integer :: nlonlat       !< number of latitude and longitudinal center coordinates
   integer :: nlonlatb      !< number of latitude and longitudinal boundary coordinates
   integer :: ntime         !< number of time slices
@@ -52,20 +54,20 @@ program test_interpolator
   integer :: nlonlat_mod, nlonlatb_mod
 
   !> climatology related arrays that will hold made-up data
-  real, allocatable :: lat(:)   !< climatology coordinates
-  real, allocatable :: lon(:)   !< climatology coordinates
-  real, allocatable :: latb(:)  !< climatology coordinates
-  real, allocatable :: lonb(:)  !< climatology coordinates
-  real, allocatable :: clim_time (:) !< climatology time
-  real, allocatable :: pfull(:) !< climatology p level
-  real, allocatable :: phalf(:) !< climatology p half level
-  real, allocatable :: ozone(:,:,:,:) !< climatology ozone data
+  real(TEST_INTP_KIND_), allocatable :: lat(:)   !< climatology coordinates
+  real(TEST_INTP_KIND_), allocatable :: lon(:)   !< climatology coordinates
+  real(TEST_INTP_KIND_), allocatable :: latb(:)  !< climatology coordinates
+  real(TEST_INTP_KIND_), allocatable :: lonb(:)  !< climatology coordinates
+  real(TEST_INTP_KIND_), allocatable :: clim_time (:) !< climatology time
+  real(TEST_INTP_KIND_), allocatable :: pfull(:) !< climatology p level
+  real(TEST_INTP_KIND_), allocatable :: phalf(:) !< climatology p half level
+  real(TEST_INTP_KIND_), allocatable :: ozone(:,:,:,:) !< climatology ozone data
 
   !> model related arrays
-  real, allocatable :: lat_mod(:,:)  !< model coordinates
-  real, allocatable :: lon_mod(:,:)  !< model coordinates
-  real, allocatable :: latb_mod(:,:) !< model coordinates
-  real, allocatable :: lonb_mod(:,:) !< model coordinates
+  real(TEST_INTP_KIND_), allocatable :: lat_mod(:,:)  !< model coordinates
+  real(TEST_INTP_KIND_), allocatable :: lon_mod(:,:)  !< model coordinates
+  real(TEST_INTP_KIND_), allocatable :: latb_mod(:,:) !< model coordinates
+  real(TEST_INTP_KIND_), allocatable :: lonb_mod(:,:) !< model coordinates
 
   type(interpolate_type) :: o3
 
@@ -152,7 +154,7 @@ contains
     implicit none
     type(interpolate_type), intent(inout)    :: clim_type
 
-    real, dimension(nlonlat_mod,nlonlat_mod) :: interp_data !< returns interpolation for first plevel
+    real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod) :: interp_data !< returns interpolation for first plevel
     type(time_type) :: model_time
     integer :: itime, i, j, k
 
@@ -166,7 +168,8 @@ contains
        do i=1, 1
           do j=1, nlonlat_mod
              do k=1, nlonlat_mod
-                !call check_answers(interp_data(k,j), ozone(k,j,i,itime), 'test interpolator_2D')
+                write(*,*) j,k, interp_data(k,j)-ozone(k,j,i,itime)
+                call check_answers(interp_data(k,j), ozone(k,j,i,itime), 'test interpolator_2D')
              end do
           end do
        end do
@@ -179,8 +182,8 @@ contains
 
     implicit none
     type(interpolate_type), intent(inout) :: clim_type
-    real, dimension(nlonlat,nlonlat,nphalf-1) :: interp_data
-    real, dimension(nlonlat,nlonlat,nphalf) :: phalf
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf-1) :: interp_data
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf
     type(time_type) :: model_time
 
     integer :: itime, i, j, k
@@ -188,10 +191,10 @@ contains
     do itime=1, ntime
 
        model_time=set_date(1849,1,1+int(clim_time(itime)))
-       phalf(:,:,1)=0.0000
-       phalf(:,:,2)=0.0002
-       phalf(:,:,3)=0.0004
-       phalf(:,:,4)=0.0005
+       phalf(:,:,1)=0.0000_lkind
+       phalf(:,:,2)=0.0002_lkind
+       phalf(:,:,3)=0.0004_lkind
+       phalf(:,:,4)=0.0005_lkind
        call interpolator(clim_type, model_time, phalf, interp_data, 'ozone')
 
        do i=1, nphalf-1
@@ -212,9 +215,9 @@ contains
 
     type(interpolate_type) :: clim_type
 
-    real, dimension(nlonlat,nlonlat,nphalf-1,1) :: interp_data !< last column, there is only one field
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf-1,1) :: interp_data !< last column, there is only one field
 
-    real, dimension(nlonlat,nlonlat,nphalf) :: phalf
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf
     type(time_type) :: model_time
 
     integer :: itime, i, j, k, l
@@ -222,10 +225,10 @@ contains
     do itime=1, ntime
 
        model_time=set_date(1849,1,1+int(clim_time(itime)))
-       phalf(:,:,1)=0.0000
-       phalf(:,:,2)=0.0002
-       phalf(:,:,3)=0.0004
-       phalf(:,:,4)=0.0005
+       phalf(:,:,1)=0.0000_lkind
+       phalf(:,:,2)=0.0002_lkind
+       phalf(:,:,3)=0.0004_lkind
+       phalf(:,:,4)=0.0005_lkind
        call interpolator(clim_type, model_time, phalf, interp_data, 'ozone')
 
        do i=1, nphalf-1
@@ -256,15 +259,15 @@ contains
 
     type(interpolate_type) :: clim_type
 
-    real, dimension(nlonlat,nlonlat,nphalf-1) :: interp_data !< last column, there is only one field
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf-1) :: interp_data !< last column, there is only one field
 
-    real, dimension(nlonlat,nlonlat,nphalf) :: phalf
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf
     type(time_type) :: model_time
 
-    phalf(:,:,1)=0.0000
-    phalf(:,:,2)=0.0002
-    phalf(:,:,3)=0.0004
-    phalf(:,:,4)=0.0005
+    phalf(:,:,1)=0.0000_lkind
+    phalf(:,:,2)=0.0002_lkind
+    phalf(:,:,3)=0.0004_lkind
+    phalf(:,:,4)=0.0005_lkind
     model_time=set_date(1849,1,1+int(clim_time(1)))
     call read_data(clim_type, 'ozone', interp_data, 1, 1, Time=model_time)
     call interpolator(clim_type, phalf, interp_data, 'ozone')
@@ -317,7 +320,7 @@ contains
   subroutine check_answers(results, answers, whoami)
 
     implicit none
-    real :: results, answers
+    real(TEST_INTP_KIND_) :: results, answers
     character(*) :: whoami
 
     if (results.ne.answers) then

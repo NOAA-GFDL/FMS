@@ -57,8 +57,10 @@ test_expect_success "test interpolator" '
     mpirun -n 2 ./test_interpolator
 '
 
-#Run the second interpolator test
-test_expect_success "test_interpolator" 'mpirun -n 1 ./test_interpolator'
+#Run the second set of interpolator tests
+mkdir -p INPUT
+test_expect_success "test_interpolator2 r4 unit tests" 'mpirun -n 1 ./test_interpolator2_r4'
+test_expect_success "test_interpolator2 r8 unit tests" 'mpirun -n 1 ./test_interpolator2_r8'
 
 rm -rf INPUT *.nc # remove any leftover io files to save space
 

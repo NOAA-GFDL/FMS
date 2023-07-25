@@ -10,7 +10,7 @@ subroutine write_climatology_file
   real :: dx, dy
 
   ! write netcdf file
-  if(open_file(fileobj, 'INPUT'//trim(ncfile), 'overwrite')) then
+  if(open_file(fileobj, 'INPUT/'//trim(ncfile), 'overwrite')) then
      call register_axis(fileobj, 'time', UNLIMITED)
      call register_axis(fileobj, 'lon',   nlonlat)
      call register_axis(fileobj, 'lat',   nlonlat)
@@ -148,15 +148,15 @@ subroutine set_latlon_b()
   integer :: i
 
   do i=1, nlonlat
-     lat(i)= real(2*i-1)
-     lon(i)= real(2*i-1)
+     lat(i)= real(2*i-1,TEST_INTP_KIND_)
+     lon(i)= real(2*i-1,TEST_INTP_KIND_)
   end do
 
-  lonb(1)=0.0
-  latb(1)=0.0
+  lonb(1)=0.0_lkind
+  latb(1)=0.0_lkind
   do i=2,nlonlat
-     lonb(i)=0.5*(lon(i-1)+lon(i))
-     latb(i)=0.5*(lat(i-1)+lat(i))
+     lonb(i)=0.5_lkind*(lon(i-1)+lon(i))
+     latb(i)=0.5_lkind*(lat(i-1)+lat(i))
   enddo
   lonb(nlonlat+1)=real(2*nlonlat-1)
   latb(nlonlat+1)=real(2*nlonlat-1)
@@ -171,24 +171,24 @@ subroutine set_latlon_b_mod
 
   !> the model grid and the climatology grid are the same
   do i=1, nlonlat_mod
-     lon_mod(:,i) = real(2*i-1)
-     lat_mod(i,:) = real(2*i-1)
+     lon_mod(:,i) = real(2*i-1,TEST_INTP_KIND_)
+     lat_mod(i,:) = real(2*i-1,TEST_INTP_KIND_)
   end do
 
-  lonb_mod(1:nlonlat,1)=0.0
-  latb_mod(1,1:nlonlat)=0.0
+  lonb_mod(1:nlonlat,1)=0.0_lkind
+  latb_mod(1,1:nlonlat)=0.0_lkind
   do i=2, nlonlatb_mod
-     lonb_mod(1:nlonlat,i)=0.5*(lon_mod(:,i-1)+lon_mod(:,i))
-     latb_mod(i,1:nlonlat)=0.5*(lat_mod(i-1,:)+lat_mod(i,:))
+     lonb_mod(1:nlonlat,i)=0.5_lkind*(lon_mod(:,i-1)+lon_mod(:,i))
+     latb_mod(i,1:nlonlat)=0.5_lkind*(lat_mod(i-1,:)+lat_mod(i,:))
   end do
-  lonb_mod(1:nlonlat,nlonlat+1)=real(2*nlonlat-1)
-  latb_mod(nlonlat+1,1:nlonlat)=real(2*nlonlat-1)
+  lonb_mod(1:nlonlat,nlonlat+1)=real(2*nlonlat-1,TEST_INTP_KIND_)
+  latb_mod(nlonlat+1,1:nlonlat)=real(2*nlonlat-1,TEST_INTP_KIND_)
 
   !> convert from degrees to radians
-  lon_mod  = lon_mod*PI/180.0
-  lat_mod  = lat_mod*PI/180.0
-  lonb_mod = lonb_mod*PI/180.0
-  latb_mod = latb_mod*PI/180.0
+  lon_mod  = lon_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
+  lat_mod  = lat_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
+  lonb_mod = lonb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
+  latb_mod = latb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
 
 end subroutine set_latlon_b_mod
 !===============================================!
@@ -198,12 +198,12 @@ subroutine set_pfullhalf()
   integer :: i
 
   do i=1, npfull
-     pfull(i) = 0.0001 * real(i-1)
+     pfull(i) = 0.0001_lkind * real(i-1,TEST_INTP_KIND_)
   end do
 
-  phalf(1)=0.0
+  phalf(1)=0.0_lkind
   do i=2, npfull
-     phalf(i)=0.5*( pfull(i)+pfull(i-1) )
+     phalf(i)=0.5_lkind*( pfull(i)+pfull(i-1) )
   end do
   phalf(npfull+1)=pfull(npfull)
 
@@ -218,7 +218,7 @@ subroutine set_ozone()
      do j=1, npfull
         do k=1, nlonlat
            do l=1, nlonlat
-              ozone(l,k,j,i)=real(i)
+              ozone(l,k,j,i)=real(i,TEST_INTP_KIND_)
            end do
         end do
      end do
