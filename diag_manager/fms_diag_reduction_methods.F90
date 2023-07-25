@@ -255,8 +255,8 @@ module fms_diag_reduction_methods_mod
     f3 = recon_bounds%get_fjs()
     f4 = recon_bounds%get_fje()
 
-    if (flag .ne. 0 .and. flag .ne. 1) then
-      call mpp_error( FATAL, "fms_diag_reduction_methods_mod::fms_diag_update_extremum: flag must be either 0 or 1.")
+    if (flag .ne. 3 .and. flag .ne. 4) then
+      call mpp_error( FATAL, "fms_diag_reduction_methods_mod::fms_diag_update_extremum: flag must be either 3 or 4.")
     end if
 
     !! TODO: remap buffer before passing to subroutines update_scalar_extremum and update_array_extremum
@@ -419,7 +419,7 @@ module fms_diag_reduction_methods_mod
   !> @brief Updates individual element of buffer
   subroutine update_scalar_extremum(flag, field_data, buffer, mask, sample, recon_bounds, &
     running_indx1, running_indx2)
-    integer, intent(in) :: flag !< 0 for minimum; 1 for maximum
+    integer, intent(in) :: flag !< Flag indicating maximum(time_max) or minimum(time_min)
     class(*), intent(in) :: field_data(:,:,:,:) !< Field data
     class(*), intent(inout) :: buffer(:,:,:,:,:) !< Remapped output buffer
     logical, intent(in) :: mask(:,:,:,:) !< Update mask
@@ -466,7 +466,7 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r4_kind))
       select type (buffer)
       type is (real(kind=r4_kind))
-        if (flag .eq. 0) then
+        if (flag .eq. time_min) then
         ! Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
@@ -486,7 +486,7 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r8_kind))
       select type (buffer)
       type is (real(kind=r8_kind))
-        if (flag .eq. 0) then
+        if (flag .eq. time_min) then
         ! Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
@@ -506,7 +506,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i4_kind))
       select type (buffer)
       type is (integer(kind=i4_kind))
-        if (flag .eq. 0) then
+        if (flag .eq. time_min) then
         ! Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
@@ -526,7 +526,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i8_kind))
       select type (buffer)
       type is (integer(kind=i8_kind))
-        if (flag .eq. 0) then
+        if (flag .eq. time_min) then
         ! Update the buffer with the current minimum
           where (mask(i-is+1+hi,j-js+1+hj,k,:) .AND. field_data(i-is+1+hi,j-js+1+hj,k,:) <&
             buffer(i1,j1,k1,:,sample))
@@ -550,7 +550,7 @@ module fms_diag_reduction_methods_mod
 
   !> @brief Updates a chunk of buffer
   subroutine update_array_extremum(flag, field_data, buffer, mask, sample, recon_bounds, reduced_k_range)
-    integer :: flag !< 0 for minimum; 1 for extremum
+    integer :: flag !< Flag indicating maximum(time_max) or minimum(time_min)
     class(*), intent(in) :: field_data(:,:,:,:) !< Field data
     class(*), intent(inout) :: buffer(:,:,:,:,:) !< Remapped output buffer
     logical, intent(in) :: mask(:,:,:,:) !< Updated mask
@@ -589,7 +589,7 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r4_kind))
       select type (buffer)
       type is (real(kind=r4_kind))
-        if (flag .eq. 0) then
+        if (flag .eq. time_min) then
         !> Update the buffer with the current minimum
           if (reduced_k_range) then
             ! recon_bounds must have ks = ksr and ke = ker
@@ -621,7 +621,7 @@ module fms_diag_reduction_methods_mod
     type is (real(kind=r8_kind))
       select type (buffer)
       type is (real(kind=r8_kind))
-          if (flag .eq. 0) then
+          if (flag .eq. time_min) then
           !> Update the buffer with the current minimum
             if (reduced_k_range) then
               ! recon_bounds must have ks = ksr and ke = ker
@@ -653,7 +653,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i4_kind))
       select type (buffer)
       type is (integer(kind=i4_kind))
-        if (flag .eq. 0) then
+        if (flag .eq. time_min) then
         !> Update the buffer with the current minimum
           if (reduced_k_range) then
             ! recon_bounds must have ks = ksr and ke = ker
@@ -685,7 +685,7 @@ module fms_diag_reduction_methods_mod
     type is (integer(kind=i8_kind))
       select type (buffer)
       type is (integer(kind=i8_kind))
-        if (flag .eq. 0) then
+        if (flag .eq. time_min) then
         !> Update the buffer with the current minimum
           if (reduced_k_range) then
             ! recon_bounds must have ks = ksr and ke = ker
