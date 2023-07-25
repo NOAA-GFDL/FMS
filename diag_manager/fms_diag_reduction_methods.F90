@@ -236,14 +236,18 @@ module fms_diag_reduction_methods_mod
     integer :: i, j, k, i1, j1, k1 !< For loops
     character(len=128) :: err_msg_local !< Stores local error message
     class(*), pointer :: ptr_buffer(:,:,:,:,:) !< Pointer to 5D buffer for remapping
+    type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
+
+    !> Get the `bounds3D` member of the `recon_bounds`
+    IJKBounds = recon_bounds%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
 
     !> Unpack recon_bounds
-    is = recon_bounds%get_bounds3D()%get_imin()
-    js = recon_bounds%get_bounds3D()%get_jmin()
-    ks = recon_bounds%get_bounds3D()%get_kmin()
-    ie = recon_bounds%get_bounds3D()%get_imax()
-    je = recon_bounds%get_bounds3D()%get_jmax()
-    ke = recon_bounds%get_bounds3D()%get_kmax()
+    is = IJKBounds%get_imin()
+    js = IJKBounds%get_jmin()
+    ks = IJKBounds%get_kmin()
+    ie = IJKBounds%get_imax()
+    je = IJKBounds%get_jmax()
+    ke = IJKBounds%get_kmax()
     hi = recon_bounds%get_hi()
     f1 = recon_bounds%get_fis()
     f2 = recon_bounds%get_fie()
@@ -420,6 +424,11 @@ module fms_diag_reduction_methods_mod
     integer, intent(in) :: running_indx1(3) !< Holds indices i, j, and k
     integer, intent(in) :: running_indx2(3) !< Holds indices i1, j1, and k1
 
+    type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
+
+    !> Get the `bounds3D` member of the `recon_bounds`
+    IJKBounds = recon_bounds%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
+
     integer :: i, j, k
     integer :: i1, j1, k1
     integer :: is, js, ks
@@ -437,12 +446,12 @@ module fms_diag_reduction_methods_mod
     k1 = running_indx2(3)
 
     !> Unpack bounds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
-      is = recon_bounds%get_bounds3D()%get_imin()
-      js = recon_bounds%get_bounds3D()%get_jmin()
-      ks = recon_bounds%get_bounds3D()%get_kmin()
-      ie = recon_bounds%get_bounds3D()%get_imax()
-      je = recon_bounds%get_bounds3D()%get_jmax()
-      ke = recon_bounds%get_bounds3D()%get_kmax()
+      is = IJKBounds%get_imin()
+      js = IJKBounds%get_jmin()
+      ks = IJKBounds%get_kmin()
+      ie = IJKBounds%get_imax()
+      je = IJKBounds%get_jmax()
+      ke = IJKBounds%get_kmax()
       hi = recon_bounds%get_hi()
       hj = recon_bounds%get_hj()
 
@@ -546,14 +555,18 @@ module fms_diag_reduction_methods_mod
     integer :: hi, hj !< Halo sizes in the I, and J dimensions
     integer :: f1, f2 !< Updated starting and ending indices in the I dimension
     integer :: f3, f4 !< Updated starting and ending indices in the J dimension
+    type(fmsDiagIbounds_type) :: IJKBounds !< Bounding object for the I, J, and K indices
+
+    !> Get the `bounds3D` member of the `recon_bounds`
+    IJKBounds = recon_bounds%get_bounds3D() !< Assignment of data structure with intrinsic type members may work!!!
 
     !> Unpack bounds (/is, js, ks, ie, je, ke, hi, f1, f2, hj, f3, f4/)
-    is = recon_bounds%get_bounds3D()%get_imin()
-    js = recon_bounds%get_bounds3D()%get_jmin()
-    ks = recon_bounds%get_bounds3D()%get_kmin()
-    ie = recon_bounds%get_bounds3D()%get_imax()
-    je = recon_bounds%get_bounds3D()%get_jmax()
-    ke = recon_bounds%get_bounds3D()%get_kmax()
+    is = IJKBounds%get_imin()
+    js = IJKBounds%get_jmin()
+    ks = IJKBounds%get_kmin()
+    ie = IJKBounds%get_imax()
+    je = IJKBounds%get_jmax()
+    ke = IJKBounds%get_kmax()
     hi = recon_bounds%get_hi()
     f1 = recon_bounds%get_fis()
     f2 = recon_bounds%get_fie()
