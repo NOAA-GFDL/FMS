@@ -226,7 +226,7 @@ program test_monin_obukhov
 
       associate (in => drag_input)
         call mo_drag(in%pt, in%pt0, in%z, in%z0, in%zt, in%zq, in%speed, &
-                   & drag_m_1d, drag_t_1d, drag_q_1d, u_star_1d, b_star_1d, drag_input%avail)
+                   & drag_m_1d, drag_t_1d, drag_q_1d, u_star_1d, b_star_1d, in%avail)
 
         call mo_drag(ARR_2D_(in%pt), ARR_2D_(in%pt0), ARR_2D_(in%z), ARR_2D_(in%z0), &
                    & ARR_2D_(in%zt), ARR_2D_(in%zq), ARR_2D_(in%speed), &
