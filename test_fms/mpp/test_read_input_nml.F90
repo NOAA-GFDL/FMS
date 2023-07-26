@@ -36,14 +36,15 @@ integer :: stat !< IOSTAT output integer
 integer :: n, m !< Loop counting variable
 integer :: current_pelist_name_len_plus1 !< Current pelist name length plus 1
 integer :: ierr !< used by MPI_FINALIZE
+integer :: nml_unit_var !< stores nml file unit number for reads
 character(len=:), allocatable :: toobig !< String passed as argument into read_input_nml that is
                                         !!larger than pelis_name and should raise an error
 
 namelist /test_read_input_nml_nml/ test_numb
 
-open(10, file="test_numb.nml", form="formatted", status="old")
-read(10, nml = test_read_input_nml_nml)
-close(10)
+open(newunit=nml_unit_var, file="test_numb.nml", form="formatted", status="old")
+read(unit=nml_unit_var, nml = test_read_input_nml_nml)
+close(nml_unit_var)
 
 call mpp_init(test_level=mpp_init_test_peset_allocated)
 
@@ -64,11 +65,11 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     filename = "input_alternative.nml"
     call read_input_nml("alternative")
   end if
-  open(1, file=filename, iostat=stat) ! Open input nml or alternative
+  open(newunit=nml_unit_var, file=filename, iostat=stat) ! Open input nml or alternative
   n = 1
   do
-    read(1, '(A)', iostat=stat) line
-    if (stat.eq.-1) then
+    read(unit=nml_unit_var, '(A)', iostat=stat) line
+    if (stat < 0) then
       exit
     end if
     if (input_nml_file(n).ne.line) then
@@ -77,7 +78,7 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
     end if
     n = n + 1
   end do
-  close(1)
+  close(nml_unit_var)
 
 else if (test_numb.eq.3) then
   ! Test 3: Tests with an invalid pelist_name_in pass as an argument. An invalid
