@@ -206,8 +206,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #else
  diag_field_indices = find_diag_field(varname, modname)
  if (diag_field_indices(1) .eq. diag_null) then
-    !< The field was not found in the table, so return diag_null
-    fms_register_diag_field_obj = diag_null
+    !< The field was not found in the table, so return DIAG_FIELD_NOT_FOUND
+    fms_register_diag_field_obj = DIAG_FIELD_NOT_FOUND
     deallocate(diag_field_indices)
     return
   endif
@@ -300,7 +300,7 @@ INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, in
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 #ifndef use_yaml
-fms_register_diag_field_scalar=diag_null
+fms_register_diag_field_scalar=DIAG_FIELD_NOT_FOUND
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
     fms_register_diag_field_scalar = this%register(&
@@ -340,7 +340,7 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
 
 #ifndef use_yaml
-fms_register_diag_field_array=diag_null
+fms_register_diag_field_array=DIAG_FIELD_NOT_FOUND
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
     fms_register_diag_field_array = this%register( &
@@ -382,7 +382,7 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
                                                                           !! modeling_realm attribute
 
 #ifndef use_yaml
-fms_register_static_field=diag_null
+fms_register_static_field=DIAG_FIELD_NOT_FOUND
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
   !TODO The register_static_field interface does not have the capabiliy to register a variable as a "scalar"
