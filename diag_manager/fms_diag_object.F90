@@ -40,7 +40,8 @@ use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use constants_mod, only: SECONDS_PER_DAY
 use fms_diag_bbox_mod, only: fmsDiagBoundsHalos_type, recondition_indices, fmsDiagIbounds_type
-use fms_diag_reduction_methods_mod, only: check_indices_order, init_mask_3d, real_copy_set, fms_diag_update_extremum
+use fms_diag_reduction_methods_mod, only: check_indices_order, init_mask_3d, real_copy_set, fms_diag_update_extremum, &
+                                          fms_diag_time_average
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -1135,8 +1136,8 @@ end subroutine allocate_diag_field_output_buffers
     integer, allocatable :: freq(:) !< Output frequency
     integer :: reduction_method !< Integer representing a reduction method: none, average, min, max, ... etc.
     integer :: pow_val !< Exponent used in calculation of time average
-    logical :: phys_window
-    logical :: reduced_k_range
+    logical :: phys_window !< Flag indicating if the field is a physics window
+    logical :: reduced_k_range !< Flag indicating if the field has zbounds
     logical :: is_regional !< Flag to indicate if the field is regional
     logical :: this_pe_writes !< Flag to indicate if the data from the current PE need to be written
     integer, allocatable :: l_start(:) !< local start indices on axes for regional output
@@ -1191,7 +1192,7 @@ end subroutine allocate_diag_field_output_buffers
       !> Store buffer ID of the i-th element of the buffer_ids(:)
       buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(id)
 
-      !> Make locak copies of field information
+      !> Make local copies of field information
       freq = this%FMS_diag_fields(diag_field_id)%get_frequency()
       reduction_method = this%FMS_diag_fields(diag_field_id)%diag_field(id)%get_var_reduction()
       has_diurnal_axis = this%FMS_diag_fields(diag_field_id)%diag_field(id)%has_n_diurnal()
@@ -1220,6 +1221,8 @@ end subroutine allocate_diag_field_output_buffers
           n_axis = size(this%FMS_diag_output_buffers(buffer_id)%axis_ids)
           allocate(l_start(n_axis))
           allocate(l_end(n_axis))
+          l_start = 1
+          l_end = 1
           do ax = 1, n_axis
             ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(ax))%axis
             select type (ptr_axis)
@@ -1241,8 +1244,14 @@ end subroutine allocate_diag_field_output_buffers
 
       !> Get the vertical layer starting and ending indices
       if (reduced_k_range) then
-        if (.not.allocated(l_start)) allocate(l_start(3))
-        if (.not.allocated(l_end)) allocate(l_end(3))
+        if (.not.allocated(l_start)) then
+          allocate(l_start(3))
+          l_start = 1
+        endif
+        if (.not.allocated(l_end)) then
+          allocate(l_end(3))
+          l_end = 1
+        endif
         ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(2))%axis !< Axis in the J dimension
         select type (ptr_axis)
         type is (fmsDiagSubAxis_type)
@@ -1253,7 +1262,16 @@ end subroutine allocate_diag_field_output_buffers
           l_start(3) = ptr_axis%get_starting_index()
           l_end(3) = ptr_axis%get_ending_index()
         class default
-          call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction non fmsDiagSubAxis_type axis')
+          call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction Not a fmsDiagSubAxis_type axis')
+        end select
+
+        ptr_axis => this%diag_axis(this%FMS_diag_output_buffers(buffer_id)%axis_ids(3))%axis !< Axis in the K dimension
+        select type (ptr_axis)
+        type is (fmsDiagSubAxis_type)
+          l_start(3) = ptr_axis%get_starting_index()
+          l_end(3) = ptr_axis%get_ending_index()
+        class default
+          call mpp_error(FATAL, 'fms_diag_object_mod::fms_diag_do_reduction Not a fmsDiagSubAxis_type axis')
         end select
       end if
 
@@ -1300,8 +1318,9 @@ end subroutine allocate_diag_field_output_buffers
       case (time_none)
         !! TODO: just copy field data to buffer
       case (time_average)
-        !! TODO: average data over time
-        !! call fms_diag_sum(time_average, weight=weight, pow_val=power_val, .......)
+        call fms_diag_time_average(time_average, this%FMS_diag_fields(diag_field_id), ptr_diag_buffer_obj, &
+          field_data, bounds_with_halos, l_start, l_end, is_regional, reduced_k_range, sample, &
+          oor_mask_4d, field_name, has_diurnal_axis, phys_window, weight, pow_val, err_msg)
       case (time_rms)
         !! TODO: root-mean-square error
       case (time_max)
