@@ -15,7 +15,7 @@ jobs:
           - conf-flag: --with-mpi=no
             input-flag: --enable-test-input=/home/unit_tests_input
     container:
-      image: ryanmulhall/fms-ci-rocky-gnu:12.3.0
+      image: noaagfdl/fms-ci-rocky-gnu:12.3.0
       env:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
