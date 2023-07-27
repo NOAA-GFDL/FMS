@@ -228,10 +228,6 @@ interface monotonic_array
   module procedure :: monotonic_array_r4, monotonic_array_r8
 end interface monotonic_array
 
-interface monotonic_array
-  module procedure :: monotonic_array_r4, monotonic_array_r8
-end interface monotonic_array
-
 !Balaji
 !this is published by fms and applied to any initialized clocks
 !of course you can go and set the flag to SYNC or DETAILED by hand
