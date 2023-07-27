@@ -600,7 +600,7 @@ if (new_mo_option) then
  where(unstable)
   x     = (1.0_lkind - 16.0_lkind*zeta)**(1.0_lkind/3.0_lkind)
   x_t   = (1.0_lkind - 16.0_lkind*zeta_t)**(1.0_lkind/3.0_lkind)
-  x_q   = (1.0_lkind - 16.0*zeta_q)**(1.0_lkind/3.0_lkind)
+  x_q   = (1.0_lkind - 16.0_lkind*zeta_q)**(1.0_lkind/3.0_lkind)
 
   psi_t = ln_z_zt - 1.5_lkind*log((x**2+x+1.0_lkind)/(x_t**2 + x_t + 1.0_lkind)) + s3 * &
           (atan((2.0_lkind*x+1.0_lkind)/s3) - atan((2.0_lkind*x_t + 1.0_lkind)/s3))
