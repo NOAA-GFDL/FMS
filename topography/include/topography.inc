@@ -85,8 +85,8 @@
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
-        any(shape(zmean(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
+   if ( any(shape(zmean(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(zmean(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_topog_mean_2d','shape(zmean) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
