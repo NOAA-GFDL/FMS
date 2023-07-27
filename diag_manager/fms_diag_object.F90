@@ -163,7 +163,8 @@ end subroutine fms_diag_object_end
 
 !> @brief Registers a field.
 !! @description This to avoid having duplicate code in each of the _scalar, _array and _static register calls
-!! @return field index for subsequent call to send_data.
+!! @return field index to be used in subsequent calls to send_data or DIAG_FIELD_NOT_FOUND if the field is not
+!! in the diag_table.yaml
 integer function fms_register_diag_field_obj &
        (this, modname, varname, axes, init_time, &
        longname, units, missing_value, varRange, mask_variant, standname, &
@@ -280,8 +281,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end function fms_register_diag_field_obj
 
-  !> @brief Registers a scalar field
-  !! @return field index for subsequent call to send_data.
+!> @brief Registers a scalar field
+!! @return field index to be used in subsequent calls to send_data or DIAG_FIELD_NOT_FOUND if the field is not
+!! in the diag_table.yaml
 INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, init_time, &
        & long_name, units, missing_value, var_range, standard_name, do_not_log, err_msg,&
        & area, volume, realm)
@@ -311,8 +313,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 #endif
 end function fms_register_diag_field_scalar
 
-    !> @brief Registers an array field
-  !> @return field index for subsequent call to send_data.
+!> @brief Registers an array field
+!! @return field index to be used in subsequent calls to send_data or DIAG_FIELD_NOT_FOUND if the field is not
+!! in the diag_table.yaml
 INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, var_range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
@@ -352,7 +355,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 end function fms_register_diag_field_array
 
 !> @brief Return field index for subsequent call to send_data.
-!! @return field index for subsequent call to send_data.
+!! @return field index to be used in subsequent calls to send_data or DIAG_FIELD_NOT_FOUND if the field is not
+!! in the diag_table.yaml
 INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, long_name, units,&
        & missing_value, range, mask_variant, standard_name, DYNAMIC, do_not_log, interp_method,&
        & tile_count, area, volume, realm)
