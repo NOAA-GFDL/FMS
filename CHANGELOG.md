@@ -6,21 +6,25 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
-## [2023.02] - 2023-07-26
+## [2023.02] - 2023-07-27
 ### Known Issues
-- GCC runtime failures have been reported with -O2 optimization flags
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
 - When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+- GCC 10 and greater causing io issues when compiled using O2 optimization flags
+- GNU compilers prior to the GCC 9.0 release are unsupported for this release due to lack of support for the findloc intrinsic function. This will result in an error saying 'findloc' has no IMPLICIT type and can be resolved by compiling with gcc version 9.0 or greater.
+
 ### Added
 - MPP/EXCHANGE: Adds association checks before pointer deallocations in mpp includes and xgrid
+
 ### Changed
 - LIBFMS: The libFMS.F90 file (module name `fms`) meant to provide global access has been updated to include 'fms' and it's module/subdirectory name as prefixes for all names. This will only affect external codes that are already using the global module (via `use fms`) and not individual modules.
-- MIXED PRECSION: Updates the axis_utils2, horiz_interp, sat_vapor_pressure, and axis_utils subdirectories to support mixed precision real values.
+- MIXED PRECISION: Updates the axis_utils2, horiz_interp, sat_vapor_pressure, and axis_utils subdirectories to support mixed precision real values.
 - FMS2_IO: Added in mpp_scatter and mpp_gather performance changes from the 2023.01.01 patch. See below for more details.
 - FMS2_IO: Improved error messages to give more debugging information 
 - FMS_MOD: Changed fms_init to include a system call to set the stack size to unlimited, removed previously added stack size fixes
 - MONIN_OBUKHOV: Restructures the subroutines in `stable_mix` interface so that 1d calls the underlying implementation, and 2 and 3d call it on 1d slices of the data as opposed to passing in mismatched arrays.
 - MPP: Updates from JEDI for ajoint version the mpp halo filling (mpp_do_update_ad.fh), adds checkpoint for forward buffer information.
+
 ### Fixed
 - MPP: mpp_broadcast causing an unintended error message due to checking the wrong pe value
 - MPP: Added workaround for GCC 12 issues causing errors with string lengths in fms2_io
@@ -30,6 +34,7 @@ sequential patch number (starting from `01`).
 - TIME_INTERP: Fixes crashes when calling with a non-existant field
 - DIAG_MANAGER: Fixes a module dependency issue causing failures during parallel builds
 - AXIS_UTILS2: Fixes an out of bounds memory index
+
 ### Removed
 - FMS_IO/MPP_IO: The two older io modules, fms_io_mod and mpp_io_mod, have been deprecated and will not be compiled by default. If you wish to compile these modules, you must use the -Duse_deprecated_io CPP flag or the --enable-deprecated-io configure option if building with autotools.
 
@@ -38,6 +43,7 @@ sequential patch number (starting from `01`).
 - 2023.02-alpha3 8c73bd18dc1d580f2ee524c37cf903ff54d40501
 - 2023.02-alpha2 783019fdec89a8db2b26247c2f63d4782e1495c0
 - 2023.02-alpga1 419c66be31f82ebb13a91ea5e837c707eb54473b
+
 
 ## [2023.01.01] - 2023-06-06
 ### Changed
