@@ -924,7 +924,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
   integer :: i
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
-  append_error_msg = "netcdf_add_variable: file:"//trim(fileobj%path)//"variable:"//trim(variable_name)
+  append_error_msg = "netcdf_add_variable: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)
 
   if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
@@ -1015,6 +1015,7 @@ function get_variable_compressed_dimension_index(fileobj, variable_name, broadca
     endif
   endif
   call mpp_broadcast(compressed_dimension_index(1), fileobj%io_root, pelist=fileobj%pelist)
+  call mpp_broadcast(compressed_dimension_index(2), fileobj%io_root, pelist=fileobj%pelist)
 end function get_variable_compressed_dimension_index
 
 
@@ -1056,7 +1057,8 @@ subroutine netcdf_save_restart(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("write_restart:: file "//trim(fileobj%path)//" is not a restart file."&
+              &" Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -1097,7 +1099,8 @@ subroutine netcdf_restore_state(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("read_restart:: file "//trim(fileobj%path)//" is not a restart file."&
+              &" Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -1998,6 +2001,7 @@ include "compressed_write.inc"
 include "compressed_read.inc"
 include "scatter_data_bc.inc"
 include "gather_data_bc.inc"
+include "unpack_data.inc"
 
 !> @brief Wrapper to distinguish interfaces.
 function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &

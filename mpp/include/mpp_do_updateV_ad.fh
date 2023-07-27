@@ -21,7 +21,7 @@
 !***********************************************************************
 !> @addtogroup mpp_domains_mod
 !> @{
-    !> Updates data domain of 3D field whose computational domains have been computed
+    !> Updates data domain of 3D ad field whose computational domains have been computed
     subroutine MPP_DO_UPDATE_AD_3D_V_(f_addrsx,f_addrsy, domain, update_x, update_y, &
                                    d_type, ke, gridtype, flags)
       integer(i8_kind),  intent(in)        :: f_addrsx(:,:), f_addrsy(:,:)
