@@ -11,7 +11,7 @@ jobs:
         CC: mpiicc
         FC: mpiifort
         CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback"
+        FCFLAGS: "-I/libs/include -g -traceback ${{ matrix.io-flag }}"
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
