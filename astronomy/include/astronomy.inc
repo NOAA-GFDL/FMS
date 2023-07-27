@@ -1220,10 +1220,10 @@ integer, parameter                                           :: lkind = FMS_AST_
 !---------------------------------------------------------------------
         if (allocated (cosz_ann)) then
 
-          cosz_ann    = real(cosz,    FMS_AST_KIND_)
-          solar_ann   = real(solar,   FMS_AST_KIND_)
-          fracday_ann = real(fracday, FMS_AST_KIND_)
-          rrsun_ann   = real(rrsun,   FMS_AST_KIND_)
+          cosz_ann    = real(cosz,    r8_kind)
+          solar_ann   = real(solar,   r8_kind)
+          fracday_ann = real(fracday, r8_kind)
+          rrsun_ann   = real(rrsun,   r8_kind)
 
 !--------------------------------------------------------------------
 !>    increment the points computed counter. set flag to end execution
