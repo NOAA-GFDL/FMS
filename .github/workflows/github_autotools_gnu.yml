@@ -19,7 +19,7 @@ jobs:
       env:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
-        SKIP_TESTS: "test_mpp_domains.14 test_horiz_interp2.9 test_horiz_interp2.10" # temporary till fixes are in
+        SKIP_TESTS: "test_mpp_domains2.14 test_horiz_interp2.9 test_horiz_interp2.10" # temporary till fixes are in
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
