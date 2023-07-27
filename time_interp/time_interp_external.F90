@@ -32,6 +32,7 @@
 !> @addtogroup time_interp_external_mod
 !> @{
 module time_interp_external_mod
+#ifdef use_deprecated_io
 #include  <fms_platform.h>
 !
 !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
@@ -1417,7 +1418,7 @@ end subroutine
 
     end subroutine time_interp_external_exit
 !</SUBROUTINE> NAME="time_interp_external_exit"
-
+#endif
 end module time_interp_external_mod
 !> @}
 ! close documentation grouping

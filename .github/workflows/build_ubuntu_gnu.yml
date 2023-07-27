@@ -12,11 +12,12 @@ jobs:
       matrix:
         conf-flags: [--disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
         input-flag:  [--with-yaml, --enable-test-input=/home/unit_tests_input]
+        io-flag: [ --enable-deprecated-io, --disable-deprecated-io]
     container:
       image: noaagfdl/hpc-me.ubuntu-minimal:gnu-input
       env:
         TEST_VERBOSE: 1
-        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flags }} ${{ matrix.input-flag }}"
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flags }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
