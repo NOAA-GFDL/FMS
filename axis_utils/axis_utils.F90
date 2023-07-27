@@ -27,6 +27,7 @@
 !> @addtogroup axis_utils_mod
 !> @{
 module axis_utils_mod
+#ifdef use_deprecated_io
   use netcdf
   use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
                         mpp_get_atts, mpp_get_axis_data, mpp_modify_meta,     &
@@ -787,7 +788,7 @@ contains
     if(ke == 0 ) call mpp_error(FATAL,' xe locate outside of grid1')
 
   end subroutine find_index
-
+#endif
 end module axis_utils_mod
 !> @}
 ! close documentation grouping

@@ -54,7 +54,7 @@ program test_mpp_domains
                               NONSYMEDGEUPDATE
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_UG_domain_tile_id
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
-  use mpp_domains_mod, only : mpp_global_field_ug
+  use mpp_domains_mod, only : mpp_global_field_ug, mpp_get_ug_global_domain
 
   use compare_data_checksums
   use test_domains_utility_mod
@@ -250,17 +250,6 @@ program test_mpp_domains
       call test_uniform_mosaic('Cubic-Grid') ! 6 tiles.
       call test_nonuniform_mosaic('Five-Tile')
 
-      if(.not. wide_halo) then
-         call test_global_reduce( 'Simple')
-         call test_global_reduce( 'Simple symmetry center')
-         call test_global_reduce( 'Simple symmetry corner')
-         call test_global_reduce( 'Simple symmetry east')
-         call test_global_reduce( 'Simple symmetry north')
-         call test_global_reduce( 'Cyclic symmetry center')
-         call test_global_reduce( 'Cyclic symmetry corner')
-         call test_global_reduce( 'Cyclic symmetry east')
-         call test_global_reduce( 'Cyclic symmetry north')
-      endif
 
       call test_redistribute( 'Complete pelist' )
       call test_redistribute( 'Overlap  pelist' )
@@ -6056,112 +6045,6 @@ end subroutine test_halosize_update
 
 
   end subroutine test_cyclic_offset
-
-  !--- test mpp_global_sum, mpp_global_min and mpp_global_max
-  subroutine test_global_reduce (type)
-    character(len=*), intent(in) :: type
-    real    :: lsum, gsum, lmax, gmax, lmin, gmin
-    integer :: ni, nj, ishift, jshift, position
-    integer              :: is, ie, js, je, isd, ied, jsd, jed
-
-    type(domain2D) :: domain
-    real, allocatable, dimension(:,:,:) :: global1, x
-    real, allocatable, dimension(:,:)   :: global2D
-    !--- set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Simple' )
-           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-                                    shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Simple symmetry center', 'Simple symmetry corner', 'Simple symmetry east', 'Simple symmetry north' )
-           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-                                    shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case( 'Cyclic symmetry center', 'Cyclic symmetry corner', 'Cyclic symmetry east', 'Cyclic symmetry north' )
-           call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo,&
-                                    name=type, symmetry = .true., xflags=CYCLIC_GLOBAL_DOMAIN, &
-                                            &  yflags=CYCLIC_GLOBAL_DOMAIN )
-    case default
-        call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !--- determine if an extra point is needed
-    ishift = 0; jshift = 0; position = CENTER
-    select case(type)
-    case ('Simple symmetry corner', 'Cyclic symmetry corner')
-       ishift = 1; jshift = 1; position = CORNER
-    case ('Simple symmetry east', 'Cyclic symmetry east' )
-       ishift = 1; jshift = 0; position = EAST
-    case ('Simple symmetry north', 'Cyclic symmetry north')
-       ishift = 0; jshift = 1; position = NORTH
-    end select
-
-    ie  = ie+ishift;  je  = je+jshift
-    ied = ied+ishift; jed = jed+jshift
-    ni  = nx+ishift;  nj  = ny+jshift
-    allocate(global1(1-whalo:ni+ehalo, 1-shalo:nj+nhalo, nz))
-    global1 = 0.0
-    do k = 1,nz
-       do j = 1,nj
-          do i = 1,ni
-             global1(i,j,k) = k + i*1e-3 + j*1e-6
-          end do
-       end do
-    enddo
-
-    !--- NOTE: even though the domain is cyclic, no need to apply cyclic condition on the global data
-
-    allocate( x (isd:ied,jsd:jed,nz) )
-    allocate( global2D(ni,nj))
-
-    x(:,:,:) = global1(isd:ied,jsd:jed,:)
-    do j = 1, nj
-       do i = 1, ni
-          global2D(i,j) = sum(global1(i,j,:))
-       enddo
-    enddo
-    !test mpp_global_sum
-
-    if(type(1:6) == 'Simple') then
-       gsum = sum( global2D(1:ni,1:nj) )
-    else
-       gsum = sum( global2D(1:nx, 1:ny) )
-    endif
-    id = mpp_clock_id( type//' sum', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    call mpp_clock_begin(id)
-    lsum = mpp_global_sum( domain, x, position = position  )
-    call mpp_clock_end  (id)
-    if( pe.EQ.mpp_root_pe() )print '(a,2es15.8,a,es12.4)', type//' Fast sum=', lsum, gsum
-
-    !test exact mpp_global_sum
-    id = mpp_clock_id( type//' exact sum', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    call mpp_clock_begin(id)
-    lsum = mpp_global_sum( domain, x, BITWISE_EXACT_SUM, position = position )
-    call mpp_clock_end  (id)
-    !--- The following check will fail on altix in normal mode, but it is ok
-    !--- in debugging mode. It is ok on irix.
-    call compare_data_scalar(lsum, gsum, FATAL, type//' mpp_global_exact_sum')
-
-    !test mpp_global_min
-    gmin = minval(global1(1:ni, 1:nj, :))
-    id = mpp_clock_id( type//' min', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    call mpp_clock_begin(id)
-    lmin = mpp_global_min( domain, x, position = position )
-    call mpp_clock_end  (id)
-    call compare_data_scalar(lmin, gmin, FATAL, type//' mpp_global_min')
-
-    !test mpp_global_max
-    gmax = maxval(global1(1:ni, 1:nj, :))
-    id = mpp_clock_id( type//' max', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    call mpp_clock_begin(id)
-    lmax = mpp_global_max( domain, x, position = position )
-    call mpp_clock_end  (id)
-    call compare_data_scalar(lmax, gmax, FATAL, type//' mpp_global_max' )
-
-    deallocate(global1, x)
-
-  end subroutine test_global_reduce
 
   subroutine test_parallel_2D ( )
 

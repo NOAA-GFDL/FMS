@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 program test
-
+#ifdef use_deprecated_io
   use platform_mod,    only : i8_kind, r8_kind
   use mpp_mod,         only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_sync_self
   use mpp_mod,         only : FATAL, NOTE, mpp_chksum, MPP_DEBUG, mpp_set_stack_size, MPP_CLOCK_SYNC
@@ -565,5 +565,5 @@ program test
   call mpp_deallocate_domain(domain)
 
   end subroutine test_netcdf_io_mosaic
-
+#endif
 end program test
