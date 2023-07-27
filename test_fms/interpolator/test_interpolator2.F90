@@ -36,6 +36,7 @@ program test_interpolator
   use time_manager_mod, only: time_type, set_date, set_calendar_type, time_manager_init
   use fms_mod,     only: fms_init
   use constants_mod, only: PI
+  use platform_mod, only: r4_kind, r8_kind
 
   use interpolator_mod
 
@@ -45,6 +46,9 @@ program test_interpolator
   integer, parameter :: calendar_type=2     !< JULIAN
 
   integer, parameter :: lkind=TEST_INTP_KIND_
+
+  real(r8_kind) :: tol=1.e-5_r8_kind !< the interpolation methods are not perfect.
+                                     !! Will not get perfectly agreeing answers
 
   integer :: nlonlat       !< number of latitude and longitudinal center coordinates
   integer :: nlonlatb      !< number of latitude and longitudinal boundary coordinates
@@ -168,8 +172,7 @@ contains
        do i=1, 1
           do j=1, nlonlat_mod
              do k=1, nlonlat_mod
-                write(*,*) j,k, interp_data(k,j)-ozone(k,j,i,itime)
-                call check_answers(interp_data(k,j), ozone(k,j,i,itime), 'test interpolator_2D')
+                call check_answers(interp_data(k,j), ozone(k,j,i,itime), tol, 'test interpolator_2D')
              end do
           end do
        end do
@@ -200,7 +203,7 @@ contains
        do i=1, nphalf-1
           do j=1, nlonlat
              do k=1, nlonlat
-                !call check_answers(interp_data(k,j,i), ozone(k,j,i,itime), 'test interpolator_3D')
+                call check_answers(interp_data(k,j,i), ozone(k,j,i,itime), tol, 'test interpolator_3D')
              end do
           end do
        end do
@@ -234,7 +237,7 @@ contains
        do i=1, nphalf-1
           do j=1, nlonlat
              do k=1, nlonlat
-                !call check_answers(interp_data(k,j,i,1), ozone(k,j,i,itime), 'test interpolator_3D')
+                call check_answers(interp_data(k,j,i,1), ozone(k,j,i,itime), tol, 'test interpolator_3D')
              end do
           end do
        end do
@@ -317,13 +320,14 @@ contains
 
   end subroutine test_query_interpolator
   !===============================================!
-  subroutine check_answers(results, answers, whoami)
+  subroutine check_answers(results, answers, tol, whoami)
 
     implicit none
-    real(TEST_INTP_KIND_) :: results, answers
+    real(TEST_INTP_KIND_), intent(in) :: results, answers
+    real(r8_kind), intent(in) :: tol
     character(*) :: whoami
 
-    if (results.ne.answers) then
+    if (real(abs(results-answers),r8_kind).gt.tol) then
        write(*,*) '      EXPECTED ', answers, ' but computed ', results
        call mpp_error(FATAL, trim(whoami))
     end if
