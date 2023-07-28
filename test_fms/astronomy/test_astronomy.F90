@@ -90,9 +90,9 @@ program test_daily_solar
     ! test dirunal_solar_2d
     lat2D = 0.0_lkind
     lon2D = 0.0_lkind
-  
+
     call diurnal_solar(lat2D, lon2D, gmt, time_since_ae, cosz2D, fracday2D, rrsun)
-  
+
     if (cosz2D(1,1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_2D cosz')
     if (fracday2D(1,1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_2D fracday')
     if (rrsun .ne. 1.0_lkind)          call mpp_error(FATAL, 'test_dirunal_solar_2D rrsun')
@@ -102,7 +102,7 @@ program test_daily_solar
     lon1D = 0.0_lkind
 
     call diurnal_solar(lat1D, lon1D, gmt, time_since_ae, cosz1D, fracday1D, rrsun)
-  
+
     if (cosz1D(1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_1D cosz')
     if (fracday1D(1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_1D fracday')
     if (rrsun .ne. 1.0_lkind)        call mpp_error(FATAL, 'test_dirunal_solar_1D rrsun')
@@ -112,7 +112,7 @@ program test_daily_solar
     lon0D = 0.0_lkind
 
     call diurnal_solar(lat0D, lon0D, gmt, time_since_ae, cosz0D, fracday0D, rrsun)
-  
+
     if (cosz0D .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_0D cosz')
     if (fracday0D .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_0D fracday')
     if (rrsun .ne. 1.0_lkind)     call mpp_error(FATAL, 'test_dirunal_solar_0D rrsun')
@@ -123,7 +123,7 @@ program test_daily_solar
     time_in = set_time(seconds=0, days=1, ticks=0 )
 
     call diurnal_solar(lat2D, lon2D, time_in, cosz2D, fracday2D, rrsun)
-  
+
     if (cosz2D(1,1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_2D cosz')
     if (fracday2D(1,1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_2D fracday')
     if (rrsun .ne. 1.0_lkind)          call mpp_error(FATAL, 'test_dirunal_solar_2D rrsun')
@@ -132,9 +132,9 @@ program test_daily_solar
     lat1D = 0.0_lkind
     lon1D = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
-  
+
     call diurnal_solar(lat1D, lon1D, time_in, cosz1D, fracday1D, rrsun)
-  
+
     if (cosz1D(1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_1D cosz')
     if (fracday1D(1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_1D fracday')
     if (rrsun .ne. 1.0_lkind)        call mpp_error(FATAL, 'test_dirunal_solar_1D rrsun')
@@ -143,9 +143,9 @@ program test_daily_solar
     lat0D = 0.0_lkind
     lon0D = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
-  
+
     call diurnal_solar(lat0D, lon0D, time_in, cosz0D, fracday0D, rrsun)
-  
+
     if (cosz0D .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_0D cosz')
     if (fracday0D .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_0D fracday')
     if (rrsun .ne. 1.0_lkind)     call mpp_error(FATAL, 'test_dirunal_solar_0D rrsun')
