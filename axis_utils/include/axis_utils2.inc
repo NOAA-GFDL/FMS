@@ -1,4 +1,3 @@
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -178,8 +177,6 @@
   !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 3
   !!    ==> lon = 3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
   !!
-  !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 0
-  !!    ==> lon = 0 1 2 3 4 5  ...  358 359; istrt = 0
 
   subroutine TRANLON_(lon, lon_start, istrt)
     real(kind=FMS_AU_KIND_), intent(inout), dimension(:) :: lon
@@ -212,7 +209,7 @@
        endif
 
        lon_strt = lon(1)
-       do i=2,len+1
+       do i=2,len
           lon(i)   = lon_in_range(lon(i),lon_strt)
           lon_strt = lon(i)
        enddo

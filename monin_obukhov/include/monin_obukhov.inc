@@ -106,34 +106,20 @@ end subroutine MO_PROFILE_1D_
 
 subroutine STABLE_MIX_3D_(rich, mix)
 
-real(kind=FMS_MO_KIND_), intent(in) , dimension(:,:,:)  :: rich
-real(kind=FMS_MO_KIND_), intent(out), dimension(:,:,:)  :: mix
+real, intent(in) , dimension(:,:,:)  :: rich
+real, intent(out), dimension(:,:,:)  :: mix
+integer :: n2 !< Size of dimension 2 of mix and rich
+integer :: n3 !< Size of dimension 3 of mix and rich
+integer :: i, j !< Loop indices
 
-integer                                                 :: n, ier, m, i, j , k
-real(kind=FMS_MO_KIND_), dimension(:), allocatable      :: rich1d
-real(kind=FMS_MO_KIND_), dimension(:), allocatable      :: mix1d
-integer, parameter                                      :: lkind = FMS_MO_KIND_
+n2 = size(mix, 2)
+n3 = size(mix, 3)
 
-if(.not.module_is_initialized) call error_mesg('stable_mix_3d in monin_obukhov_mod', &
-     'monin_obukhov_init has not been called', FATAL)
-
-n = size(rich,1)*size(rich,2)*size(rich,3)
-  allocate(rich1d(n), mix1d(n))
-  rich1d = 0.0_lkind
-  mix1d = 0.0_lkind
-
-  do k = 1, size(rich,3)
-    do j = 1, size(rich,2)
-      do i = 1, size(rich,1)
-        rich1d(m) = rich(i, j, k)
-        mix1d(m) = mix(i, j, k)
-        m = m+1
-      end do
-    end do
-  end do
-
-call monin_obukhov_stable_mix(stable_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_), &
-     & n, rich1d, mix1d, ier)
+do j=1, n3
+  do i=1, n2
+    call stable_mix(rich(:, i, j), mix(:, i, j))
+  enddo
+enddo
 
 
 
@@ -814,18 +800,17 @@ end subroutine MO_DIFF_0D_N_
 
 subroutine STABLE_MIX_2D_(rich, mix)
 
-real(kind=FMS_MO_KIND_), intent(in) , dimension(:,:)  :: rich
-real(kind=FMS_MO_KIND_), intent(out), dimension(:,:)  :: mix
+real, intent(in) , dimension(:,:)  :: rich
+real, intent(out), dimension(:,:)  :: mix
+integer :: n2 !< Size of dimension 2 of mix and rich
+integer :: i !< Loop index
 
-real(kind=FMS_MO_KIND_), dimension(size(rich,1),size(rich,2),1) :: rich_3d, mix_3d
+n2 = size(mix, 2)
 
-rich_3d(:,:,1) = rich
+do i=1, n2
+  call stable_mix(rich(:, i), mix(:, i))
+enddo
 
-call stable_mix(rich_3d, mix_3d)
-
-mix = mix_3d(:,:,1)
-
-return
 end subroutine STABLE_MIX_2D_
 
 
@@ -833,18 +818,20 @@ end subroutine STABLE_MIX_2D_
 
 subroutine STABLE_MIX_1D_(rich, mix)
 
-real(kind=FMS_MO_KIND_), intent(in) , dimension(:)  :: rich
-real(kind=FMS_MO_KIND_), intent(out), dimension(:)  :: mix
+real, intent(in) , dimension(:)  :: rich
+real, intent(out), dimension(:)  :: mix
+integer :: n !< Size of mix and rich
+integer :: ierr !< Error code set by monin_obukhov_stable_mix
 
-real(kind=FMS_MO_KIND_), dimension(size(rich),1,1) :: rich_3d, mix_3d
+if (.not.module_is_initialized) call error_mesg('stable_mix in monin_obukhov_mod', &
+     'monin_obukhov_init has not been called', FATAL)
 
-rich_3d(:,1,1) = rich
+n = size(mix)
 
-call stable_mix(rich_3d, mix_3d)
+call monin_obukhov_stable_mix(stable_option, rich_crit, zeta_trans, &
+     & n, rich, mix, ierr)
 
-mix = mix_3d(:,1,1)
 
-return
 end subroutine STABLE_MIX_1D_
 
 !=======================================================================
@@ -853,16 +840,13 @@ subroutine STABLE_MIX_0D_(rich, mix)
 
 real(kind=FMS_MO_KIND_), intent(in)       :: rich
 real(kind=FMS_MO_KIND_), intent(out)      :: mix
+real, dimension(1) :: mix_1d !< Representation of mix as a dimension(1) array
 
-real(kind=FMS_MO_KIND_), dimension(1,1,1) :: rich_3d, mix_3d
+call stable_mix([rich], mix_1d)
 
-rich_3d(1,1,1) = rich
+mix = mix_1d(1)
 
-call stable_mix(rich_3d, mix_3d)
 
-mix = mix_3d(1,1,1)
-
-return
 end subroutine STABLE_MIX_0D_
 !=======================================================================
 
