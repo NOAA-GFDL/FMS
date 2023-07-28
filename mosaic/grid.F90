@@ -21,6 +21,7 @@
 !> @brief Routines for grid calculations
 
 module grid_mod
+#ifdef use_deprecated_io
 
 use mpp_mod, only : mpp_root_pe, uppercase, lowercase, FATAL, NOTE, mpp_error
 use constants_mod, only : PI, radius
@@ -1030,7 +1031,7 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   deallocate(is2,ie2,js2,je2)
 
 end subroutine define_cube_mosaic
-
+#endif
 end module grid_mod
 !> @}
 ! close documentation grouping

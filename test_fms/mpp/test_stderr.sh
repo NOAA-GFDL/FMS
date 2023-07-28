@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 test_expect_success "get stderr" '
     mpirun -n 1 ./test_stderr
 '
