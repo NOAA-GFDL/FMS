@@ -46,8 +46,13 @@ integer            :: i  !< Index for loops
 character(len=128) :: filename='INPUT/aerosol.climatology.nc'
 character(len=128) :: fieldname='so4_anthro'
 type(time_type)    :: time !< "model" time
-real(TI_TEST_KIND_), allocatable  :: data_d(:,:,:) !< interpolated data in compute domain
-real(TI_TEST_KIND_), allocatable  :: data_g(:,:,:) !< interpolated global data
+integer, parameter :: kindl = TI_TEST_KIND_
+real(TI_TEST_KIND_), allocatable  :: data_d_3d(:,:,:) !< interpolated data in compute domain
+real(TI_TEST_KIND_), allocatable  :: data_g_3d(:,:,:) !< interpolated global data
+real(TI_TEST_KIND_), allocatable  :: data_d_2d(:,:) !< interpolated data in compute domain
+real(TI_TEST_KIND_), allocatable  :: data_g_2d(:,:) !< interpolated global data
+real(TI_TEST_KIND_) :: data_d_0d = 1.0_kindl !< interpolated data in compute domain
+real(TI_TEST_KIND_) :: data_g_0d = 1.0_kindl !< interpolated global data
 type(domain2d)     :: domain !<Domain to interpolate data to
 integer            :: layout(2) !< Domain layout
 integer            :: fld_size(4) !< Size of fieldname
@@ -68,7 +73,6 @@ integer            :: outunit !< stdout unit number
 type(FmsNetcdfFile_t) :: fileobj !< fileobj
 character(len=12)  :: axis_names(4) !< axis_names
 real(TI_TEST_KIND_), allocatable  :: data_in(:,:)  !< data added to file
-integer, parameter :: kindl = TI_TEST_KIND_
 
 call mpp_init
 call constants_init
@@ -134,15 +138,15 @@ write(outunit,*) '======================================'
 
 id = init_external_field(filename,fieldname,verbose=.false.)
 fld_size = get_external_field_size(id)
-allocate(data_g(fld_size(1),fld_size(2),fld_size(3)))
-data_g = 0
+allocate(data_g_3d(fld_size(1),fld_size(2),fld_size(3)))
+data_g_3d = 0
 
 !< Corresponds to time=1 in the file, so no time_interpolation
 time = set_date(1800,1,2,0,0,0)
-call time_interp_external(id,time,data_g,verbose=.true.)
-sm = sum(data_g)
-mn = minval(data_g)
-mx = maxval(data_g)
+call time_interp_external(id,time,data_g_3d,verbose=.true.)
+sm = sum(data_g_3d)
+mn = minval(data_g_3d)
+mx = maxval(data_g_3d)
 write(outunit,*) 'sum= ', sm
 write(outunit,*) 'max= ', mx
 write(outunit,*) 'min= ', mn
@@ -150,10 +154,10 @@ write(outunit,*) 'min= ', mn
 !< Corresponds to time=2, so there will be time_interpolation between time=1 and
 !time =3 in the file
 time = set_date(1800,1,3,0,0,0)
-call time_interp_external(id,time,data_g,verbose=.true.)
-sm = sum(data_g)
-mn = minval(data_g)
-mx = maxval(data_g)
+call time_interp_external(id,time,data_g_3d,verbose=.true.)
+sm = sum(data_g_3d)
+mn = minval(data_g_3d)
+mx = maxval(data_g_3d)
 write(outunit,*) 'sum= ', sm
 write(outunit,*) 'max= ', mx
 write(outunit,*) 'min= ', mn
@@ -168,16 +172,16 @@ call mpp_get_compute_domain(domain,isc,iec,jsc,jec)
 call mpp_get_compute_domain(domain,isd,ied,jsd,jed)
 
 call mpp_domains_set_stack_size(fld_size(1)*fld_size(2)*min(fld_size(3),1)*2)
-allocate(data_d(isd:ied,jsd:jed,fld_size(3)))
-data_d = 0
+allocate(data_d_3d(isd:ied,jsd:jed,fld_size(3)))
+data_d_3d = 0
 
 id = init_external_field(filename,fieldname,domain=domain, verbose=.false.)
 
 time = set_date(1800,1,2,0,0,0)
-call time_interp_external(id,time,data_d,verbose=.true.)
-sm = mpp_global_sum(domain,data_d,flags=BITWISE_EXACT_SUM)
-mx = mpp_global_max(domain,data_d)
-mn = mpp_global_min(domain,data_d)
+call time_interp_external(id,time,data_d_3d,verbose=.true.)
+sm = mpp_global_sum(domain,data_d_3d,flags=BITWISE_EXACT_SUM)
+mx = mpp_global_max(domain,data_d_3d)
+mn = mpp_global_min(domain,data_d_3d)
 write(outunit,*) 'global sum= ', sm
 write(outunit,*) 'global max= ', mx
 write(outunit,*) 'global min= ', mn
@@ -185,10 +189,10 @@ write(outunit,*) 'global min= ', mn
 !< Corresponds to time=2, so there will be time_interpolation between time=1 and
 !time =3 in the file
 time = set_date(1800,1,3,0,0,0)
-call time_interp_external(id,time,data_d,verbose=.true.)
-sm = mpp_global_sum(domain,data_d,flags=BITWISE_EXACT_SUM)
-mx = mpp_global_max(domain,data_d)
-mn = mpp_global_min(domain,data_d)
+call time_interp_external(id,time,data_d_3d,verbose=.true.)
+sm = mpp_global_sum(domain,data_d_3d,flags=BITWISE_EXACT_SUM)
+mx = mpp_global_max(domain,data_d_3d)
+mn = mpp_global_min(domain,data_d_3d)
 write(outunit,*) 'global sum= ', sm
 write(outunit,*) 'global max= ', mx
 write(outunit,*) 'global min= ', mn
@@ -231,20 +235,20 @@ lat_in = lat_in*atan(1.0_kindl)/45.0_kindl
 call horiz_interp_new(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
      interp_method='bilinear')
 
-deallocate(data_d)
-allocate(data_d(isc:iec,jsc:jec,fld_size(3)))
+deallocate(data_d_3d)
+allocate(data_d_3d(isc:iec,jsc:jec,fld_size(3)))
 
 time = set_date(1800,1,3,0,0,0)
-data_d = 0.0_kindl
-call time_interp_external(id,time,data_d,verbose=.true.,horz_interp=Hinterp)
-sm = mpp_global_sum(domain,data_d,flags=BITWISE_EXACT_SUM)
-mx = mpp_global_max(domain,data_d)
-mn = mpp_global_min(domain,data_d)
+data_d_3d = 0.0_kindl
+call time_interp_external(id,time,data_d_3d,verbose=.true.,horz_interp=Hinterp)
+sm = mpp_global_sum(domain,data_d_3d,flags=BITWISE_EXACT_SUM)
+mx = mpp_global_max(domain,data_d_3d)
+mn = mpp_global_min(domain,data_d_3d)
 write(outunit,*) 'global sum= ', sm
 write(outunit,*) 'global max= ', mx
 write(outunit,*) 'global min= ', mn
 
-sm = mpp_global_sum(domain,data_d,flags=BITWISE_EXACT_SUM)
+sm = mpp_global_sum(domain,data_d_3d,flags=BITWISE_EXACT_SUM)
 write(outunit,*) 'n valid points= ', sm
 
 call horiz_interp_del(Hinterp)
