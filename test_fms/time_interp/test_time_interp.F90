@@ -34,7 +34,7 @@ program test_time_interp
  integer :: index1, index2, mo, yr, outunit, ntest, nline
  real(TI_TEST_KIND_) :: weight
  real(TI_TEST_KIND_) :: ref_weights(num_Time), ref_weights_leap(num_Time)
- real(TI_TEST_KIND_), parameter :: SMALL = 1.0e-8_kindl
+ real(TI_TEST_KIND_), parameter :: SMALL = 1.0e-7_kindl ! r4 will fail with 8
  real(TI_TEST_KIND_), parameter :: midpoint = 0.483870967741935_kindl
  real(TI_TEST_KIND_), parameter :: day_before_leap_day =  0.964285714285714_kindl
  real(TI_TEST_KIND_), parameter :: day_before_leap_day_with_ly =  0.931034482758621_kindl
