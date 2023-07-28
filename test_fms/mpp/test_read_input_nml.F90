@@ -68,7 +68,7 @@ if (test_numb == 1 .or. test_numb == 2 .or. test_numb == 4) then
   n = 1
   do
     read(1, '(A)', iostat=stat) line
-    if (stat < 0) then
+    if (is_iostat_end(stat)) then
       exit
     end if
     if (input_nml_file(n).ne.line) then
