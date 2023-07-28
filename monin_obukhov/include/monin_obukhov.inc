@@ -59,7 +59,7 @@ call monin_obukhov_drag_1d(real(grav, FMS_MO_KIND_), real(vonkarm, FMS_MO_KIND_)
         & new_mo_option, real(rich_crit, FMS_MO_KIND_), real(zeta_trans, FMS_MO_KIND_),       &!miz
         & real(drag_min_heat, FMS_MO_KIND_), real(drag_min_moist, FMS_MO_KIND_),              &
         & real(drag_min_mom, FMS_MO_KIND_), n, pt, pt0, z, z0, zt, zq, speed, drag_m, drag_t, &
-        & drag_q, u_star, b_star, lavail, avail, ier)
+        & drag_q, u_star, b_star, lavail, avail_dummy, ier)
 endif
 
 end subroutine MO_DRAG_1D_
