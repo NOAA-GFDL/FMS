@@ -441,6 +441,7 @@ AC_CONFIG_FILES([
   time_interp/Makefile
   time_manager/Makefile
   constants/Makefile
+  constants4/Makefile
   platform/Makefile
   fms/Makefile
   fms2_io/Makefile

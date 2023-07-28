@@ -1,4 +1,3 @@
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -212,7 +211,7 @@
        endif
 
        lon_strt = lon(1)
-       do i=2,len+1
+       do i=2,len
           lon(i)   = lon_in_range(lon(i),lon_strt)
           lon_strt = lon(i)
        enddo

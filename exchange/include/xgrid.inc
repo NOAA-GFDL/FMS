@@ -1087,6 +1087,7 @@ logical,        intent(in)             :: use_higher_order
         grid%x(1:size_prev) = x_local
         deallocate(x_local)
      else
+      if(ASSOCIATED(grid%x)) deallocate(grid%x) !< Check if allocated
         allocate( grid%x( grid%size ) )
         grid%x%di = 0.0; grid%x%dj = 0.0
      end if
@@ -1248,6 +1249,7 @@ logical,        intent(in)             :: use_higher_order
         grid%x_repro(1:ll_repro) = x_local
         deallocate(x_local)
      else
+      if(ASSOCIATED(grid%x_repro)) deallocate(grid%x_repro) !< Check if allocated
         allocate( grid%x_repro( grid%size_repro ) )
         grid%x_repro%di = 0.0; grid%x_repro%dj = 0.0
      end if
@@ -1318,7 +1320,8 @@ subroutine get_grid_version1(grid, grid_id, grid_file)
   endif
 
   call mpp_get_compute_domain(grid%domain, is, ie, js, je)
-
+  if (associated(grid%lon)) deallocate(grid%lon) !< Check if allocated
+  if (associated(grid%lat)) deallocate(grid%lat) !< Check if allocated
   allocate(grid%lon(grid%im), grid%lat(grid%jm))
   if(grid_id == 'ATM') then
      call read_data(fileobj, 'xta', lonb)
@@ -1413,6 +1416,8 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
         start(2) = 2; nread(1) = nlon*2+1
         allocate(tmpx(nlon*2+1, 1), tmpy(1, nlat*2+1))
         call read_data(fileobj, "x", tmpx, corner=start, edge_lengths=nread)
+        if (associated(grid%lon)) deallocate(grid%lon) !< Check if allocated
+        if (associated(grid%lat)) deallocate(grid%lat) !< Check if allocated
         allocate(grid%lon(grid%im), grid%lat(grid%jm))
         do i = 1, grid%im
            grid%lon(i) = tmpx(2*i,1) * d2r
@@ -1425,6 +1430,8 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
         end do
         grid%is_latlon = .true.
      else
+        if (associated(grid%geolon)) deallocate(grid%geolon) !< Check if allocated
+        if (associated(grid%geolat)) deallocate(grid%geolat) !< Check if allocated
         allocate(grid%geolon(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
         allocate(grid%geolat(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
         grid%geolon = 1e10
@@ -1545,8 +1552,12 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   xmap%npes = mpp_npes()
   xmap%root_pe = mpp_root_pe()
 
+  if (associated(xmap%grids)) deallocate(xmap%grids) !< Check if allocated
   allocate( xmap%grids(1:size(grid_ids(:))) )
 
+  if (associated(xmap%your1my2)) deallocate(xmap%your1my2) !< Check if allocated
+  if (associated(xmap%your2my1)) deallocate(xmap%your2my1) !< Check if allocated
+  if (associated(xmap%your2my1_size)) deallocate(xmap%your2my1_size) !< Check if allocated
   allocate ( xmap%your1my2(0:xmap%npes-1), xmap%your2my1(0:xmap%npes-1) )
   allocate ( xmap%your2my1_size(0:xmap%npes-1) )
 
@@ -1589,6 +1600,11 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      grid%id     = grid_ids    (g)
      grid%domain = grid_domains(g)
      grid%on_this_pe = mpp_domain_is_initialized(grid_domains(g))
+     if (associated(grid%is)) deallocate(grid%is) !< Check if allocated
+     if (associated(grid%ie)) deallocate(grid%ie) !< Check if allocated
+     if (associated(grid%js)) deallocate(grid%js) !< Check if allocated
+     if (associated(grid%je)) deallocate(grid%je) !< Check if allocated
+     if (associated(grid%tile)) deallocate(grid%tile) !< Check if allocated
      allocate ( grid%is(0:xmap%npes-1), grid%ie(0:xmap%npes-1) )
      allocate ( grid%js(0:xmap%npes-1), grid%je(0:xmap%npes-1) )
      allocate ( grid%tile(0:xmap%npes-1) )
@@ -1679,6 +1695,10 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                                      'does not support unstructured grid for VERSION1 grid' ,FATAL)
         grid%is_ug     = .true.
         grid%ug_domain = lnd_ug_domain
+        if (associated(grid%ls)) deallocate(grid%ls) !< Check if allocated
+        if (associated(grid%le)) deallocate(grid%le) !< Check if allocated
+        if (associated(grid%gs)) deallocate(grid%gs) !< Check if allocated
+        if (associated(grid%ge)) deallocate(grid%ge) !< Check if allocated
         allocate ( grid%ls(0:xmap%npes-1), grid%le(0:xmap%npes-1) )
         allocate ( grid%gs(0:xmap%npes-1), grid%ge(0:xmap%npes-1) )
         grid%ls = 0
@@ -1695,6 +1715,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
         grid%gs_me => grid%gs(xmap%me-xmap%root_pe); grid%ge_me => grid%ge(xmap%me-xmap%root_pe)
         grid%tile_me => grid%tile(xmap%me-xmap%root_pe)
         grid%nxl_me = grid%le_me - grid%ls_me + 1
+        if (associated(grid%l_index)) deallocate(grid%l_index) !< Check if allocated
         allocate(grid%l_index(grid%gs_me:grid%ge_me))
         allocate(grid_index(grid%ls_me:grid%le_me))
         call mpp_get_UG_domain_grid_index(grid%ug_domain, grid_index)
@@ -1705,6 +1726,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
         enddo
 
         if( grid%on_this_pe ) then
+           if (associated(grid%area)) deallocate(grid%area) !< Check if allocated
+           if (associated(grid%area_inv)) deallocate(grid%area_inv) !< Check if allocated
            allocate( grid%area    (grid%ls_me:grid%le_me,1) )
            allocate( grid%area_inv(grid%ls_me:grid%le_me,1) )
            grid%area       = 0.0
@@ -1712,6 +1735,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            grid%size_repro = 0
         endif
      else if( grid%on_this_pe ) then
+        if (associated(grid%area)) deallocate(grid%area) !< Check if allocated
+        if (associated(grid%area_inv)) deallocate(grid%area_inv) !< Check if allocated
         allocate( grid%area    (grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
         allocate( grid%area_inv(grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
         grid%area       = 0.0
@@ -1783,6 +1808,17 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%vlon', FATAL)
               if(size(atm_grid%vlat,1) .NE. 3 .OR. size(atm_grid%vlat,2) .NE. nxc .OR. size(atm_grid%vlat,3) .NE. nyc)&
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%vlat', FATAL)
+              if (associated(grid%box%dx)) deallocate(grid%box%dx) !< Check if allocated
+              if (associated(grid%box%dy)) deallocate(grid%box%dy) !< Check if allocated
+              if (associated(grid%box%area)) deallocate(grid%box%area) !< Check if allocated
+              if (associated(grid%box%edge_w)) deallocate(grid%box%edge_w) !< Check if allocated
+              if (associated(grid%box%edge_e)) deallocate(grid%box%edge_e) !< Check if allocated
+              if (associated(grid%box%edge_s)) deallocate(grid%box%edge_s) !< Check if allocated
+              if (associated(grid%box%edge_n)) deallocate(grid%box%edge_n) !< Check if allocated
+              if (associated(grid%box%en1)) deallocate(grid%box%en1) !< Check if allocated
+              if (associated(grid%box%en2)) deallocate(grid%box%en2) !< Check if allocated
+              if (associated(grid%box%vlon)) deallocate(grid%box%vlon) !< Check if allocated
+              if (associated(grid%box%vlat)) deallocate(grid%box%vlat) !< Check if allocated
               allocate(grid%box%dx    (grid%is_me:grid%ie_me,   grid%js_me:grid%je_me+1 ))
               allocate(grid%box%dy    (grid%is_me:grid%ie_me+1, grid%js_me:grid%je_me   ))
               allocate(grid%box%area  (grid%is_me:grid%ie_me,   grid%js_me:grid%je_me   ))
@@ -1811,6 +1847,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      if(xmap%version==VERSION2) call close_file(mosaicfileobj)
      if (g>1) then
         if(grid%on_this_pe) then
+         if (associated(grid%frac_area)) deallocate(grid%frac_area) !< Check if allocated
            if(grid%is_ug) then
               allocate( grid%frac_area(grid%ls_me:grid%le_me, 1, grid%km) )
            else
@@ -1939,6 +1976,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   xmap%your2my1(xmap%me-xmap%root_pe) = .false. ! a PE from communicating with itself
 
   if (make_exchange_reproduce) then
+   if (associated(xmap%send_count_repro)) deallocate(xmap%send_count_repro) !< Check if allocated
+   if (associated(xmap%recv_count_repro)) deallocate(xmap%recv_count_repro) !< Check if allocated
      allocate( xmap%send_count_repro(0:xmap%npes-1) )
      allocate( xmap%recv_count_repro(0:xmap%npes-1) )
      xmap%send_count_repro = 0
@@ -1960,12 +1999,18 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      xmap%recv_count_repro_tot = 0
   end if
 
+  if (associated(xmap%x1)) deallocate(xmap%x1) !< Check if allocated
+  if (associated(xmap%x2)) deallocate(xmap%x2) !< Check if allocated
+  if (associated(xmap%x1_put)) deallocate(xmap%x1_put) !< Check if allocated
+  if (associated(xmap%x2_get)) deallocate(xmap%x2_get) !< Check if allocated
   allocate( xmap%x1(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x2(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x1_put(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
   allocate( xmap%x2_get(1:sum(xmap%grids(2:size(xmap%grids(:)))%size)) )
 
   !--- The following will setup indx to be used in regen
+  if (associated(xmap%get1)) deallocate(xmap%get1) !< Check if allocated
+  if (associated(xmap%put1)) deallocate(xmap%put1) !< Check if allocated
   allocate(xmap%get1, xmap%put1)
   call mpp_clock_begin(id_set_comm)
 
@@ -1974,6 +2019,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   call set_comm_put1(xmap)
 
   if(make_exchange_reproduce) then
+   if (associated(xmap%get1_repro)) deallocate(xmap%get1_repro) !< Check if allocated
     allocate(xmap%get1_repro)
     call set_comm_get1_repro(xmap)
   endif
@@ -2174,6 +2220,7 @@ subroutine set_comm_get1_repro(xmap)
 
   comm%nrecv = nrecv
   if( nrecv > 0 ) then
+   if (associated(comm%recv)) deallocate(comm%recv) !< Check if allocated
     allocate(comm%recv(nrecv))
     pos = 0
     do n = 1, nrecv
@@ -2200,6 +2247,7 @@ subroutine set_comm_get1_repro(xmap)
 
   comm%nsend = nsend
   if( nsend > 0 ) then
+   if (associated(comm%send)) deallocate(comm%send) !< Check if allocated
      allocate(comm%send(nsend))
      pos = 0
      cnt(:) = 0
@@ -2296,6 +2344,7 @@ subroutine set_comm_get1(xmap)
 
   if(max_size > 0) then
      allocate(pe_side1(max_size))
+     if (associated(xmap%ind_get1)) deallocate(xmap%ind_get1) !< Check if allocated
      allocate(xmap%ind_get1(max_size))
 
      !--- find the recv_indx
@@ -2399,6 +2448,7 @@ subroutine set_comm_get1(xmap)
   nsend = count( send_size> 0)
   comm%nsend = nsend
   if(nsend>0) then
+   if (associated(comm%send)) deallocate(comm%send) !< Check if allocated
      allocate(comm%send(nsend))
      comm%send(:)%count = 0
   endif
@@ -2474,6 +2524,7 @@ subroutine set_comm_get1(xmap)
   comm%recvsize = 0
 
   if(nrecv >0) then
+   if (associated(comm%recv)) deallocate(comm%recv) !< Check if allocated
      allocate(comm%recv(nrecv))
      comm%recv(:)%count = 0
      !--- set up the buffer pos for each receiving
@@ -2526,6 +2577,7 @@ subroutine set_comm_get1(xmap)
            endif
         endif
      enddo
+     if (associated(comm%unpack_ind)) deallocate(comm%unpack_ind) !< Check if allocated
      allocate(comm%unpack_ind(nrecv))
      pos = 0
      do p = 0, npes-1
@@ -2604,6 +2656,7 @@ subroutine set_comm_put1(xmap)
 
   if(max_size > 0) then
      allocate(pe_put1(max_size))
+     if (associated(xmap%ind_put1)) deallocate(xmap%ind_put1) !< Check if allocated
      allocate(xmap%ind_put1(max_size))
 
      !--- find the recv_indx
@@ -2724,6 +2777,7 @@ subroutine set_comm_put1(xmap)
   nrecv = count( send_size> 0)
   comm%nrecv = nrecv
   if(nrecv>0) then
+   if (associated(comm%recv)) deallocate(comm%recv) !< Check if allocated
      allocate(comm%recv(nrecv))
      comm%recv(:)%count = 0
   endif
@@ -2798,6 +2852,7 @@ subroutine set_comm_put1(xmap)
   comm%sendsize = 0
 
   if(nsend >0) then
+   if (associated(comm%send)) deallocate(comm%send) !< Check if allocated
      allocate(comm%send(nsend))
      comm%send(:)%count = 0
      pos = 0
@@ -2864,8 +2919,8 @@ type (xmap_type), intent(inout) :: xmap
   end do
 
   if (max_size>size(xmap%x1(:))) then
-    deallocate(xmap%x1)
-    deallocate(xmap%x2)
+    if (associated(xmap%x1)) deallocate(xmap%x1) !< Check x1 if allocated
+    if (associated(xmap%x2)) deallocate(xmap%x2) !< Check x2 if allocated
     allocate( xmap%x1(1:max_size) )
     allocate( xmap%x2(1:max_size) )
   endif
@@ -2933,11 +2988,11 @@ type (xmap_type), intent(inout) :: xmap
 
 
   if (max_size>size(xmap%x1_put(:))) then
-    deallocate(xmap%x1_put)
+   if (associated(xmap%x1_put)) deallocate(xmap%x1_put) !< Check if allocated
     allocate( xmap%x1_put(1:max_size) )
   endif
   if (max_size>size(xmap%x2_get(:))) then
-    deallocate(xmap%x2_get)
+    if (associated(xmap%x2_get)) deallocate(xmap%x2_get) !< Check if allocated
     allocate( xmap%x2_get(1:max_size) )
   endif
 
@@ -3067,7 +3122,7 @@ type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid I
     grid => xmap%grids(g)
     if (grid_id==grid%id) then
       if (size(f,3)/=size(grid%frac_area,3)) then
-        deallocate (grid%frac_area)
+        if (associated(grid%frac_area)) deallocate (grid%frac_area) !< Check if allocated
         grid%km = size(f,3);
         allocate( grid%frac_area(grid%is_me:grid%ie_me, grid%js_me:grid%je_me, &
                                                                       grid%km) )
@@ -3101,7 +3156,7 @@ type (xmap_type),       intent(inout) :: xmap !< exchange grid with given grid I
     grid => xmap%grids(g)
     if (grid_id==grid%id) then
       if (size(f,2)/=size(grid%frac_area,3)) then
-        deallocate (grid%frac_area)
+        if (associated(grid%frac_area)) deallocate (grid%frac_area) !< Check if allocated
         grid%km = size(f,2);
         allocate( grid%frac_area(grid%ls_me:grid%le_me, 1, grid%km) )
       end if
