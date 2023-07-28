@@ -26,6 +26,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 # Run the test for one processor
 test_expect_success "mpp all-to-all with mixed precision" '
     mpirun -n 4 ./test_mpp_alltoall

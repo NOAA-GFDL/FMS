@@ -22,9 +22,9 @@
 module test_domains_utility_mod
     use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE
     use mpp_mod, only : mpp_error
-    use mpp_domains_mod, only : ZERO, NINETY, MINUS_NINETY
+    use mpp_domains_mod, only : ZERO, NINETY, MINUS_NINETY, &
+                                domain2d, mpp_define_mosaic
     use platform_mod, only: r4_kind, r8_kind
-    use fms
 
   interface fill_coarse_data
     module procedure fill_coarse_data_r8
