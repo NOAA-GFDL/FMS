@@ -408,15 +408,6 @@ module time_interp_external2_mod
       init_external_field = -1
       nfields_orig = num_fields
 
-      tavg = -1.0
-      tstart = tstamp
-      tend = tstamp
-      if(variable_att_exists(fileobj, fieldname, 'time_avg_info')) then
-        if(variable_exists(fileobj, 'average_T1')) call read_data(fileobj, 'average_T1', tstart)
-        if(variable_exists(fileobj, 'average_T2')) call read_data(fileobj, 'average_T2', tend)
-        if(variable_exists(fileobj, 'average_DT')) call read_data(fileobj, 'average_DT', tavg)
-      endif
-
       if (.not. variable_exists(fileobj, fieldname) ) then
         if (present(ierr)) then
            ierr = ERR_FIELD_NOT_FOUND
@@ -424,6 +415,15 @@ module time_interp_external2_mod
         else
            call mpp_error(FATAL,'external field "'//trim(fieldname)//'" not found in file "'//trim(file)//'"')
         endif
+      endif
+
+      tavg = -1.0
+      tstart = tstamp
+      tend = tstamp
+      if(variable_att_exists(fileobj, fieldname, 'time_avg_info')) then
+        if(variable_exists(fileobj, 'average_T1')) call read_data(fileobj, 'average_T1', tstart)
+        if(variable_exists(fileobj, 'average_T2')) call read_data(fileobj, 'average_T2', tend)
+        if(variable_exists(fileobj, 'average_DT')) call read_data(fileobj, 'average_DT', tavg)
       endif
 
       num_fields = num_fields + 1

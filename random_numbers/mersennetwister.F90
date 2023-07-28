@@ -92,17 +92,19 @@
 !> @{
 module MersenneTwister_mod
 ! -------------------------------------------------------------
+  use platform_mod, only: r8_kind, i8_kind
+
   implicit none
   private
 
   ! Algorithm parameters
   ! -------
   ! Period parameters
-  integer, parameter :: blockSize = 624,         &
-                        M         = 397,         &
-                        MATRIX_A  = -1727483681, & !< constant vector a         (0x9908b0dfUL)
-                        UMASK     = -2147483648_8, & !< most significant w-r bits (0x80000000UL)
-                        LMASK     =  2147483647    !< least significant r bits  (0x7fffffffUL)
+  integer, parameter :: blockSize = 624,                 &
+                        M         = 397,                 &
+                        MATRIX_A  = -1727483681,         & !< constant vector a         (0x9908b0dfUL)
+                        UMASK     = -2147483648_i8_kind, & !< most significant w-r bits (0x80000000UL)
+                        LMASK     =  2147483647            !< least significant r bits  (0x7fffffffUL)
   !> Tempering parameters
   integer, parameter :: TMASKB= -1658038656, & !< (0x9d2c5680UL)
                         TMASKC= -272236544     !< (0xefc60000UL)
@@ -296,7 +298,7 @@ contains
   !! The result is stored as double precision but has 32 bit resolution
   function getRandomReal(twister)
     type(randomNumberSequence), intent(inout) :: twister
-    double precision             :: getRandomReal
+    real(r8_kind)                             :: getRandomReal
 
     integer :: localInt
 

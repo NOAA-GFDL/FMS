@@ -31,13 +31,16 @@ module coupler_types_mod
   use fms2_io_mod,       only: get_variable_attribute, get_dimension_size, get_dimension_names
   use fms2_io_mod,       only: register_variable_attribute, get_variable_dimension_names
   use fms2_io_mod,       only: get_variable_num_dimensions
+#ifdef use_deprecated_io
   use fms_io_mod,        only: restart_file_type, fms_io_register_restart_field=>register_restart_field
   use fms_io_mod,        only: query_initialized, restore_state
+#endif
   use time_manager_mod,  only: time_type
   use diag_manager_mod,  only: register_diag_field, send_data
   use data_override_mod, only: data_override
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
+  use platform_mod,      only: r4_kind, r8_kind
 
   use iso_fortran_env, only : int32, int64  !To get mpp_chksum value
 
@@ -95,8 +98,10 @@ module coupler_types_mod
     integer                           :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
     character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
+#ifdef use_deprecated_io
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
+#endif
     type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
                                                                         !! That is used for this field
     logical                           :: use_atm_pressure !< use_atm_pressure
@@ -149,8 +154,10 @@ module coupler_types_mod
     integer                           :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
     character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
+#ifdef use_deprecated_io
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
+#endif
     type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
                                                                         !! That is used for this field
     logical                           :: use_atm_pressure !< use_atm_pressure
@@ -193,7 +200,10 @@ module coupler_types_mod
     type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)             :: flux_type = ' ' !< flux_type
     character(len=128)             :: implementation = ' ' !< implementation
-    real, pointer, dimension(:)    :: param => NULL() !< param
+    !> precision has been explicitly defined
+    !! to be r8_kind during mixedmode update to field_manager
+    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
+    real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
@@ -201,8 +211,12 @@ module coupler_types_mod
     logical                        :: use_atm_pressure !< use_atm_pressure
     logical                        :: use_10m_wind_speed !< use_10m_wind_speed
     logical                        :: pass_through_ice !< pass_through_ice
-    real                           :: mol_wt = 0.0 !< mol_wt
-  end type coupler_1d_field_type
+    !> precision has been explicitly defined
+    !! to be r8_kind during mixedmode update to field_manager
+    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
+    real(r8_kind)                  :: mol_wt = 0.0 !< mol_wt
+
+ end type coupler_1d_field_type
 
   !> Coupler data for 1D boundary conditions
   !> @ingroup coupler_types_mod
@@ -319,9 +333,10 @@ module coupler_types_mod
   !! in restart files.
   !> @ingroup coupler_types_mod
   interface coupler_type_register_restarts
+#ifdef use_deprecated_io
     module procedure mpp_io_CT_register_restarts_2d, mpp_io_CT_register_restarts_3d
     module procedure mpp_io_CT_register_restarts_to_file_2d, mpp_io_CT_register_restarts_to_file_3d
-
+#endif
     module procedure CT_register_restarts_2d, CT_register_restarts_3d
   end interface coupler_type_register_restarts
 
@@ -329,7 +344,9 @@ module coupler_types_mod
   !! been saved in restart files.
   !> @ingroup coupler_types_mod
   interface coupler_type_restore_state
+#ifdef use_deprecated_io
     module procedure mpp_io_CT_restore_state_2d, mpp_io_CT_restore_state_3d
+#endif
     module procedure CT_restore_state_2d, CT_restore_state_3d
   end interface coupler_type_restore_state
 
@@ -3743,6 +3760,7 @@ contains
   !!
   !! This subroutine registers the fields in a coupler_2d_bc_type to be saved in restart files
   !! specified in the field table.
+#ifdef use_deprecated_io
   subroutine mpp_io_CT_register_restarts_2d(var, bc_rest_files, num_rest_files, mpp_domain, ocean_restart)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to be registered for restarts
     type(restart_file_type),  dimension(:), pointer :: bc_rest_files !< Structures describing the restart files
@@ -4056,7 +4074,7 @@ contains
       endif
     endif
   end subroutine mpp_io_CT_restore_state_3d
-
+#endif
 end module coupler_types_mod
 !> @}
 ! close documentation grouping

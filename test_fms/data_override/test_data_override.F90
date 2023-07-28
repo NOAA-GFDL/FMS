@@ -46,12 +46,15 @@ program test
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
                            &  mpp_define_layout
- use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, check_nml_error
- use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
+ use           fms_mod, only: fms_init, fms_end, mpp_npes, check_nml_error, error_mesg, FATAL
+#ifdef use_deprecated_io
+ use           fms_mod, only:   field_exist, field_size, file_exist
+#endif
  use  fms_affinity_mod, only: fms_affinity_set
- use        fms_io_mod, only: read_data, fms_io_exit
+ use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file
  use     constants_mod, only: constants_init, pi
- use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
+ use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), &
+                              set_time, print_time
  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
  use  diag_manager_mod, only: send_data, diag_axis_init
  use data_override_mod, only: data_override_init, data_override, data_override_UG
@@ -98,7 +101,7 @@ program test
  integer, allocatable              :: is_win(:), js_win(:)
  integer                           :: nx_dom, ny_dom, nx_win, ny_win
  type(domain2d)                    :: Domain
- integer                           :: nlon, nlat, siz(4)
+ integer                           :: nlon, nlat, siz(2)
  real, allocatable, dimension(:)   :: x, y
  real, allocatable, dimension(:,:) :: lon, lat
  real, allocatable, dimension(:,:) :: sst, ice
@@ -117,6 +120,9 @@ program test
  integer                           :: nwindows
  integer                           :: nx_cubic=90, ny_cubic=90, nx_latlon=90, ny_latlon=90
  integer                           :: test_num=1 !* 1 for unstruct cubic grid, 2 for unstruct latlon-grid
+
+ type(FmsNetcdfFile_t) :: fileobj_grid, fileobj_solo_mosaic, fileobj_tile
+
  namelist / test_data_override_nml / layout, window, nthreads, nx_cubic, ny_cubic, nx_latlon, ny_latlon, test_num
 
  call fms_init
@@ -131,23 +137,27 @@ program test
  read (input_nml_file, test_data_override_nml, iostat=io)
  ierr = check_nml_error(io, 'test_data_override_nml')
 
- if(field_exist(grid_file, "x_T" ) ) then
-    call field_size(grid_file, 'x_T', siz)
+ if (.not. open_file(fileobj_grid, grid_file, "read")) call error_mesg('test_data_override', &
+ 'The grid_file does not exist', FATAL)
+ if(variable_exists(fileobj_grid, "x_T" ) ) then
+    call get_variable_size(fileobj_grid, 'x_T', siz)
     nlon = siz(1)
     nlat = siz(2)
- else if(field_exist(grid_file, "geolon_t" ) ) then
-    call field_size(grid_file, 'geolon_t', siz)
+ else if(variable_exists(fileobj_grid, "geolon_t" ) ) then
+    call get_variable_size(fileobj_grid, 'geolon_t', siz)
     nlon = siz(1)
     nlat = siz(2)
- else if (field_exist(grid_file, "ocn_mosaic_file" )) then
-    call read_data(grid_file, 'ocn_mosaic_file', solo_mosaic_file)
+ else if (variable_exists(fileobj_grid, "ocn_mosaic_file" )) then
+    call read_data(fileobj_grid, 'ocn_mosaic_file', solo_mosaic_file)
     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
-    call field_size(solo_mosaic_file, 'gridfiles', siz)
-    if( siz(2) .NE. 1) &
-       call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
-    call read_data(solo_mosaic_file, 'gridfiles', tile_file)
+    if (.not. open_file(fileobj_solo_mosaic, solo_mosaic_file, "read")) call error_mesg('test_data_override', &
+       'The solo_mosaic fike does not exist', FATAL)
+    call get_variable_size(fileobj_solo_mosaic, 'gridfiles', siz)
+    call read_data(fileobj_solo_mosaic, 'gridfiles', tile_file)
     tile_file = 'INPUT/'//trim(tile_file)
-    call field_size(tile_file, 'area', siz)
+    if(.not. open_file(fileobj_tile, tile_file, "read")) call error_mesg('test_data_override', &
+       'The tile_file does not exist', FATAL)
+    call get_variable_size(fileobj_tile, 'area', siz)
     if(mod(siz(1),2) .NE. 0 .OR. mod(siz(2),2) .NE. 0 ) call error_mesg('test_data_override', &
         "test_data_override: supergrid size can not be divided by 2", FATAL)
     nlon = siz(1)/2
@@ -306,41 +316,43 @@ enddo
 !-------------------------------------------------------------------------------------------------------
 
  call diag_manager_end(Time)
- call fms_io_exit
  call fms_end
 
 contains
 
-!======================================================================================================================
+!====================================================================================================================
  subroutine get_grid
    real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
    real, allocatable, dimension(:,:)   :: lon_global, lat_global
-   integer, dimension(4)  :: siz
+   integer, dimension(2)  :: siz
    character(len=128) :: message
 
+   type(FmsNetcdfFile_t) :: fileobj_grid, fileobj_solo_mosaic, fileobj_tile
 
-   if(field_exist(grid_file, 'x_T')) then
-      call field_size(grid_file, 'x_T', siz)
+   if (.not. open_file(fileobj_grid, grid_file, "read")) call error_mesg('test_data_override', &
+   'The grid_file does not exist', FATAL)
+   if(variable_exists(fileobj_grid, 'x_T')) then
+      call get_variable_size(fileobj_grid, 'x_T', siz)
       if(siz(1) /= nlon .or. siz(2) /= nlat) then
          write(message,'(a,2i4)') 'x_T is wrong shape. shape(x_T)=',siz(1:2)
          call error_mesg('test_data_override', trim(message), FATAL)
       endif
       allocate(lon_vert_glo(nlon,nlat,4), lat_vert_glo(nlon,nlat,4) )
       allocate(lon_global  (nlon,nlat  ), lat_global  (nlon,nlat  ) )
-      call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo, no_domain=.true.)
-      call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo, no_domain=.true.)
+      call read_data(fileobj_grid, 'x_vert_T', lon_vert_glo)
+      call read_data(fileobj_grid, 'y_vert_T', lat_vert_glo)
       lon_global(:,:)  = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
       lat_global(:,:) =  (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
-   else  if(field_exist(grid_file, "geolon_t" ) ) then
-      call field_size(grid_file, 'geolon_vert_t', siz)
+   else  if(variable_exists(fileobj_grid, "geolon_t" ) ) then
+      call get_variable_size(fileobj_grid, 'geolon_vert_t', siz)
       if(siz(1) /= nlon+1 .or. siz(2) /= nlat+1) then
          write(message,'(a,2i4)') 'geolon_vert_t is wrong shape. shape(geolon_vert_t)=',siz(1:2)
          call error_mesg('test_data_override', trim(message), FATAL)
       endif
       allocate(lon_vert_glo(nlon+1,nlat+1,1), lat_vert_glo(nlon+1,nlat+1,1))
       allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-      call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo, no_domain=.true.)
-      call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo, no_domain=.true.)
+      call read_data(fileobj_grid, 'geolon_vert_t', lon_vert_glo)
+      call read_data(fileobj_grid, 'geolat_vert_t', lat_vert_glo)
 
       do i = 1, nlon
          do j = 1, nlat
@@ -350,16 +362,18 @@ contains
                  lat_vert_glo(i+1,j+1,1) + lat_vert_glo(i,j+1,1))*0.25
          enddo
       enddo
-   else if( field_exist(grid_file, "ocn_mosaic_file") ) then ! reading from mosaic file
-      call field_size(tile_file, 'area', siz)
+   else if( variable_exists(fileobj_grid, "ocn_mosaic_file") ) then ! reading from mosaic file
+      if(.not. open_file(fileobj_tile, tile_file, "read")) call error_mesg('test_data_override', &
+      'The tile_file does not exist', FATAL)
+      call get_variable_size(fileobj_tile, 'area', siz)
       if(siz(1) /= nlon*2 .or. siz(2) /= nlat*2) then
          write(message,'(a,2i4)') 'area is wrong shape. shape(area)=',siz(1:2)
          call error_mesg('test_data_override', trim(message), FATAL)
       endif
       allocate(lon_vert_glo(siz(1)+1,siz(2)+1,1), lat_vert_glo(siz(1)+1,siz(2)+1,1))
       allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-      call read_data( tile_file, 'x', lon_vert_glo, no_domain=.true.)
-      call read_data( tile_file, 'y', lat_vert_glo, no_domain=.true.)
+      call read_data(fileobj_tile, 'x', lon_vert_glo)
+      call read_data(fileobj_tile, 'y', lat_vert_glo)
       do j = 1, nlat
          do i = 1, nlon
             lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
@@ -824,5 +838,5 @@ contains
 
   end subroutine define_cubic_mosaic
 
-!======================================================================================================================
+!====================================================================================================================
  end program test

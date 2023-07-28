@@ -27,6 +27,8 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
 
 # Run the tests
 test_expect_success "get current PE single processor" '
