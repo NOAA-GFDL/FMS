@@ -839,7 +839,7 @@ subroutine STABLE_MIX_0D_(rich, mix)
 
 real(kind=FMS_MO_KIND_), intent(in)       :: rich
 real(kind=FMS_MO_KIND_), intent(out)      :: mix
-real, dimension(1) :: mix_1d !< Representation of mix as a dimension(1) array
+real(kind=FMS_MO_KIND_), dimension(1)     :: mix_1d !< Representation of mix as a dimension(1) array
 
 call stable_mix([rich], mix_1d)
 
