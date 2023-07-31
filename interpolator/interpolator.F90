@@ -415,6 +415,7 @@ integer         , intent(in), optional  :: vert_interp(:)
 !--lwh
 character(len=*), intent(out), optional :: clim_units(:)
 logical,          intent(out), optional :: single_year_file
+
 !
 ! INTENT IN
 !  file_name  :: Climatology filename
@@ -432,6 +433,28 @@ logical,          intent(out), optional :: single_year_file
 !  clim_units :: A list of the units for the components listed in data_names.
 !
 integer :: io, ierr
+character(len=64)            :: src_file
+!++lwh
+real                         :: dlat, dlon
+!--lwh
+type(time_type)              :: base_time
+integer                      :: fileday, filemon, fileyr, filehr, filemin,filesec, m,m1
+character(len= 20)           :: fileunits
+character(len=128)           :: var_dimname(6)
+character(len=128), allocatable :: var_names(:)
+integer,            allocatable :: var_ndims(:)
+integer   :: j, i
+logical :: non_monthly
+character(len=24) :: file_calendar
+character(len=256) :: error_mesg
+integer :: model_calendar
+integer :: yr, mo, dy, hr, mn, sc
+integer :: n
+type(time_type) :: Julian_time, Noleap_time
+real, allocatable :: time_in(:)
+real, allocatable, save :: agrid_mod(:,:,:)
+integer :: nx, ny
+type(FmsNetcdfFile_t) :: fileobj
 
 if (.not. module_is_initialized) then
   call fms_init
@@ -466,50 +489,6 @@ if (use_mpp_io) then
    call mpp_error(FATAL, "Interpolator::nml=interpolator_nml " //&
            'MPP_IO is no longer supported.  Please remove from use_mpp_io from interpolator_nml')
 endif
-
-call fms2io_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
-                              data_names, data_out_of_bounds,           &
-                              vert_interp, clim_units, single_year_file)
-
-end subroutine interpolator_init
-
-subroutine fms2io_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
-                              data_names, data_out_of_bounds,           &
-                              vert_interp, clim_units, single_year_file)
-
-type(interpolate_type), intent(inout) :: clim_type
-character(len=*), intent(in)            :: file_name
-real            , intent(in)            :: lonb_mod(:,:), latb_mod(:,:)
-character(len=*), intent(in) , optional :: data_names(:)
-!++lwh
-integer         , intent(in)            :: data_out_of_bounds(:)
-integer         , intent(in), optional  :: vert_interp(:)
-!--lwh
-character(len=*), intent(out), optional :: clim_units(:)
-logical,          intent(out), optional :: single_year_file
-
-character(len=64)            :: src_file
-!++lwh
-real                         :: dlat, dlon
-!--lwh
-type(time_type)              :: base_time
-integer                      :: fileday, filemon, fileyr, filehr, filemin,filesec, m,m1
-character(len= 20)           :: fileunits
-character(len=128)           :: var_dimname(6)
-character(len=128), allocatable :: var_names(:)
-integer,            allocatable :: var_ndims(:)
-integer   :: j, i
-logical :: non_monthly
-character(len=24) :: file_calendar
-character(len=256) :: error_mesg
-integer :: model_calendar
-integer :: yr, mo, dy, hr, mn, sc
-integer :: n
-type(time_type) :: Julian_time, Noleap_time
-real, allocatable :: time_in(:)
-real, allocatable, save :: agrid_mod(:,:,:)
-integer :: nx, ny
-type(FmsNetcdfFile_t) :: fileobj
 
 clim_type%separate_time_vary_calc = .false.
 
@@ -1161,7 +1140,7 @@ if (present (single_year_file)) then
   single_year_file = clim_type%climatological_year
 endif
 
-end subroutine fms2io_interpolator_init
+end subroutine interpolator_init
 
 subroutine get_axis_latlon_data(fileobj, name, data)
    type(FmsNetcdfFile_t), intent(in) :: fileobj
