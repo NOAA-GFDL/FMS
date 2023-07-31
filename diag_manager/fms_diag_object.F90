@@ -225,6 +225,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
 !! of the sorted variable list
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
+  do i = 1, size(fieldptr%buffer_ids)
+    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_field_id(this%registered_variables)
+    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_yaml_id(diag_field_indices(i))
+  enddo
 
 !> Allocate and initialize member buffer_allocated of this field
   allocate(fieldptr%buffer_allocated(size(diag_field_indices)))
