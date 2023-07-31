@@ -415,7 +415,6 @@ integer         , intent(in), optional  :: vert_interp(:)
 !--lwh
 character(len=*), intent(out), optional :: clim_units(:)
 logical,          intent(out), optional :: single_year_file
-
 !
 ! INTENT IN
 !  file_name  :: Climatology filename
