@@ -241,10 +241,12 @@ else
    dlat = (clim_type%FMS_INTP_TYPE_%lat(2)-clim_type%FMS_INTP_TYPE_%lat(1)) * 0.5_lkind
 !  clim_type%latb(1) = min( 90., max(-90., clim_type%lat(1) - dlat) )
    clim_type%FMS_INTP_TYPE_%latb(1) = min( lPI/2._lkind, max(-lPI/2._lkind, clim_type%FMS_INTP_TYPE_%lat(1) - dlat) )
-   clim_type%FMS_INTP_TYPE_%latb(2:nlat) = ( clim_type%FMS_INTP_TYPE_%lat(1:nlat-1) + clim_type%FMS_INTP_TYPE_%lat(2:nlat) ) * 0.5_lkind
+   clim_type%FMS_INTP_TYPE_%latb(2:nlat) = ( clim_type%FMS_INTP_TYPE_%lat(1:nlat-1) + &
+                                               clim_type%FMS_INTP_TYPE_%lat(2:nlat) ) * 0.5_lkind
    dlat = ( clim_type%FMS_INTP_TYPE_%lat(nlat) - clim_type%FMS_INTP_TYPE_%lat(nlat-1) ) * 0.5_lkind
 !  clim_type%latb(nlat+1) = min( 90., max(-90., clim_type%lat(nlat) + dlat) )
-   clim_type%FMS_INTP_TYPE_%latb(nlat+1) = min( lPI/2._lkind, max(-lPI/2._lkind, clim_type%FMS_INTP_TYPE_%lat(nlat) + dlat) )
+   clim_type%FMS_INTP_TYPE_%latb(nlat+1) = min( lPI/2._lkind, max(-lPI/2._lkind, &
+                                                clim_type%FMS_INTP_TYPE_%lat(nlat) + dlat) )
 endif
 
 !--- get clim_type%lonb
@@ -276,7 +278,8 @@ clim_type%vertical_indices = 0
 if(dimension_exists(fileobj, "pfull")) then
    call get_dimension_size(fileobj, "pfull", nlev)
    allocate(clim_type%FMS_INTP_TYPE_%levs(nlev))
-   call get_axis_level_data(fileobj, 'pfull', clim_type%FMS_INTP_TYPE_%levs, clim_type%level_type, clim_type%vertical_indices)
+   call get_axis_level_data(fileobj, 'pfull', clim_type%FMS_INTP_TYPE_%levs, &
+                                     clim_type%level_type, clim_type%vertical_indices)
 else if(dimension_exists(fileobj, "sigma_full")) then
    call get_dimension_size(fileobj, "sigma_full", nlev)
    allocate(clim_type%FMS_INTP_TYPE_%levs(nlev))
@@ -296,7 +299,8 @@ endif
 if(dimension_exists(fileobj, "phalf")) then
    call get_dimension_size(fileobj, "phalf", nlevh)
    allocate(clim_type%FMS_INTP_TYPE_%halflevs(nlevh))
-   call get_axis_level_data(fileobj, 'phalf', clim_type%FMS_INTP_TYPE_%halflevs, clim_type%level_type, clim_type%vertical_indices)
+   call get_axis_level_data(fileobj, 'phalf', clim_type%FMS_INTP_TYPE_%halflevs, &
+                                     clim_type%level_type, clim_type%vertical_indices)
 else if(dimension_exists(fileobj, "sigma_half")) then
    call get_dimension_size(fileobj, "sigma_half", nlevh)
    allocate(clim_type%FMS_INTP_TYPE_%halflevs(nlevh))
@@ -1049,8 +1053,10 @@ nyd = size(clim_type%FMS_INTP_TYPE_%lat(:))
 call mpp_define_layout ((/1,nxd,1,nyd/), ndivs, domain_layout)
 call mpp_define_domains((/1,nxd,1,nyd/),domain_layout, domain,xhalo=0,yhalo=0)
 call mpp_get_compute_domain(domain, iscomp, iecomp, jscomp, jecomp)
-   axes(1) = diag_axis_init(clim_type%file_name(1:5)//'x',clim_type%FMS_INTP_TYPE_%lon,units='degrees',cart_name='x',domain2=domain)
-   axes(2) = diag_axis_init(clim_type%file_name(1:5)//'y',clim_type%FMS_INTP_TYPE_%lat,units='degrees',cart_name='y',domain2=domain)
+   axes(1) = diag_axis_init(clim_type%file_name(1:5)//'x',clim_type%FMS_INTP_TYPE_%lon,units='degrees',&
+                            cart_name='x',domain2=domain)
+   axes(2) = diag_axis_init(clim_type%file_name(1:5)//'y',clim_type%FMS_INTP_TYPE_%lat,units='degrees',&
+                            cart_name='y',domain2=domain)
 clim_type%is = iscomp
 clim_type%ie = iecomp
 clim_type%js = jscomp
@@ -1126,7 +1132,8 @@ integer, parameter :: lkind=FMS_INTP_KIND_
     if (clim_type%climatological_year) then
        !++lwh
        if (size(clim_type%time_slice) > 1) then
-          call time_interp(Time, clim_type%time_slice, clim_type%FMS_INTP_TYPE_%tweight, taum, taup, modtime=YEAR, err_msg=err_msg )
+          call time_interp(Time, clim_type%time_slice, clim_type%FMS_INTP_TYPE_%tweight, &
+                           taum, taup, modtime=YEAR, err_msg=err_msg )
           if(trim(err_msg) /= '') then
              call mpp_error(FATAL,'interpolator_timeslice 1: '// &
                             & trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
@@ -1201,7 +1208,8 @@ integer, parameter :: lkind=FMS_INTP_KIND_
 
         call time_interp(Time, month, clim_type%FMS_INTP_TYPE_%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is
                                                                                  !! the time weight between the months.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight3 = 1._lkind ! protect against post-perth time_interp behavior
+        !> protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight3 = 1._lkind
         if(trim(err_msg) /= '') then
           call mpp_error(FATAL,'interpolator_timeslice 3: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -1212,7 +1220,8 @@ integer, parameter :: lkind=FMS_INTP_KIND_
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_prev, month, clim_type%FMS_INTP_TYPE_%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight1 = 1._lkind ! protect against post-perth time_interp behavior
+        !>  protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight1 = 1._lkind
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_timeslice 4: '// &
                           & trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
@@ -1224,7 +1233,8 @@ integer, parameter :: lkind=FMS_INTP_KIND_
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_next, month, clim_type%FMS_INTP_TYPE_%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight2 = 1._lkind ! protect against post-perth time_interp behavior
+        !> protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight2 = 1._lkind
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_timeslice 5: '// &
                           & trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
@@ -1323,7 +1333,8 @@ integer, parameter :: lkind=FMS_INTP_KIND_
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
         do i=1, size(clim_type%field_name(:))
-           call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+           call read_data(clim_type,clim_type%field_name(i), &
+                          clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
            clim_type%time_init(i,clim_type%itaup)=taup
         end do
       endif
@@ -1473,7 +1484,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
     if (clim_type%climatological_year) then
 !++lwh
        if (size(clim_type%time_slice) > 1) then
-          call time_interp(Time, clim_type%time_slice, clim_type%FMS_INTP_TYPE_%tweight, taum, taup, modtime=YEAR, err_msg=err_msg )
+          call time_interp(Time, clim_type%time_slice, clim_type%FMS_INTP_TYPE_%tweight, &
+                           taum, taup, modtime=YEAR, err_msg=err_msg )
           if(trim(err_msg) /= '') then
              call mpp_error(FATAL,'interpolator_4D 1: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
           endif
@@ -1547,7 +1559,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
         call time_interp(Time, month, clim_type%FMS_INTP_TYPE_%tweight3, taum, taup, err_msg=err_msg ) ! tweight3 is
                                                                                  !! the time weight between the months.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight3 = 1._lkind ! protect against post-perth time_interp behavior
+        !> protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight3 = 1._lkind
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_4D 3: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -1558,7 +1571,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_prev, month, clim_type%FMS_INTP_TYPE_%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight1 = 1._lkind ! protect against post-perth time_interp behavior
+        !> protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight1 = 1._lkind
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_4D 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -1568,7 +1582,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_next, month, clim_type%FMS_INTP_TYPE_%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight2 = 1._lkind ! protect against post-perth time_interp behavior
+        !> protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight2 = 1._lkind
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_4D 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -1667,7 +1682,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
     do i=1, size(clim_type%field_name(:))
-        call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+        call read_data(clim_type,clim_type%field_name(i), &
+                       clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
      end do
       endif
@@ -2467,7 +2483,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         t_prev = set_date(yearm, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_prev, month, clim_type%FMS_INTP_TYPE_%tweight1, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight1 = 1._lkind ! protect against post-perth time_interp behavior
+        !> protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight1 = 1._lkind
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_2D 4: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
@@ -2478,7 +2495,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         t_next = set_date(yearp, climmonth, climday, climhour, climminute, climsecond)
         call time_interp(t_next, month, clim_type%FMS_INTP_TYPE_%tweight2, taum, taup, err_msg=err_msg ) !tweight1 is
                                                                       !! the time weight between the climatology years.
-        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight2 = 1._lkind ! protect against post-perth time_interp behavior
+        !> protect against post-perth time_interp behavior below
+        if (taum==2 .and. taup==2) clim_type%FMS_INTP_TYPE_%tweight2 = 1._lkind
         if(trim(err_msg) /= '') then
            call mpp_error(FATAL,'interpolator_2D 5: '//trim(err_msg)//' file='//trim(clim_type%file_name), FATAL)
         endif
