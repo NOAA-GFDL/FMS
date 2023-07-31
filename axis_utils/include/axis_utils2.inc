@@ -171,6 +171,7 @@
   !! the range from lon_start to lon_start + 360), then istrt is set to 0. If
   !! any entries are moved, then istrt is set to the original index of the entry
   !! which becomes lon(1).
+<<<<<<< HEAD
   !!
   !! e.g.,
   !!
@@ -179,12 +180,23 @@
   !!
   !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 0
   !!    ==> lon = 0 1 2 3 4 5  ...  358 359; istrt = 0
+=======
+  !!
+  !! e.g.,
+  !!
+  !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 3
+  !!    ==> lon = 3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
+  !!
+>>>>>>> origin/mixedmode
 
   subroutine TRANLON_(lon, lon_start, istrt)
     real(kind=FMS_AU_KIND_), intent(inout), dimension(:) :: lon
     real(kind=FMS_AU_KIND_), intent(in)                  :: lon_start
     integer, intent(out)                                 :: istrt
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/mixedmode
     integer                 :: len, i
     real(kind=FMS_AU_KIND_) :: lon_strt, tmp(size(lon(:))-1)
 

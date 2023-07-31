@@ -339,7 +339,7 @@ character(len=*), intent(out), optional :: err_msg
   else if (T<Timelist(is)) then
      ! time is before the beginning of the portion of the time list within the requested period
      index1 = ie;   index2 = is
-     weight = real( 1.0_kindl -real(((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is)))),kindl), FMS_TI_KIND_ )
+     weight = 1.0_kindl - real(((Timelist(is)-T)//(Period-(Timelist(ie)-Timelist(is)))), FMS_TI_KIND_ )
   else
      call bisect(Timelist,T,index1,index2)
      weight = real((T-Timelist(index1)) // (Timelist(index2)-Timelist(index1)), FMS_TI_KIND_ )
@@ -433,7 +433,7 @@ integer, parameter :: kindl = FMS_TI_KIND_
         deallocate(terr,tserr,teerr)
      endif
      Td = Te-Ts
-     weight = real(1.0_kindl - real(((Ts-T) // (Period-Td)),kindl), FMS_TI_KIND_ )
+     weight = 1.0_kindl - real(((Ts-T) // (Period-Td)), FMS_TI_KIND_ )
      index1 = n
      index2 = 1
 

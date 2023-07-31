@@ -496,6 +496,8 @@ AC_CONFIG_FILES([
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
   test_fms/sat_vapor_pres/Makefile
+  test_fms/tracer_manager/Makefile
+  test_fms/random_numbers/Makefile
   FMS.pc
   ])
 
