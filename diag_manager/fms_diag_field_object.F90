@@ -490,7 +490,7 @@ end subroutine set_math_needs_to_be_done
 !> @brief Sets the flag saying that the data buffer is allocated
 subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)
   class (fmsDiagField_type) , intent(inout) :: this                     !< The field object
-  logical,                    intent (in)   :: data_buffer_is_allocated !< Flag to determine that the
+  logical,                    intent (in)   :: data_buffer_is_allocated !< .true. if the
                                                                         !! data buffer is allocated
 
   this%data_buffer_is_allocated = data_buffer_is_allocated
