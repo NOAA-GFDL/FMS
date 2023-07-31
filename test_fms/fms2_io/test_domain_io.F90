@@ -46,7 +46,7 @@ program test_domain_read
   integer                               :: xhalo = 3           !< Number of halo points in X
   integer                               :: yhalo = 2           !< Number of halo points in Y
   integer                               :: nz = 2              !< Number of points in the z dimension
-  character(len=20)                     :: filename="test.nc"  !< Name of the file
+  character(len=32)                     :: filename="test.nc"  !< Name of the file
   logical                               :: use_edges=.false.   !< Use North and East domain positions
 
   integer                               :: ndim4               !< Number of points in dim4
@@ -64,7 +64,7 @@ program test_domain_read
 
   namelist /test_domain_io_nml/ layout, io_layout, nx, ny, nz, mask_table, xhalo, yhalo, nz, filename, use_edges
 
-  call fms_init
+  call fms_init()
 
   read(input_nml_file, nml=test_domain_io_nml, iostat=io)
   ierr = check_nml_error(io, 'test_domain_io_nml')
@@ -134,7 +134,7 @@ program test_domain_read
 
     call close_file(fileobj)
   endif
-  call fms_end
+  call fms_end()
 
   contains
 
