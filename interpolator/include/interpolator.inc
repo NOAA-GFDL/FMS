@@ -104,6 +104,9 @@ if (use_mpp_io) then
            'MPP_IO is no longer supported.  Please remove from use_mpp_io from interpolator_nml')
 endif
 
+if(kind(lonb_mod).eq.r4_kind) clim_type%is_r4=.true.
+if(kind(lonb_mod).eq.r8_kind) clim_type%is_r8=.true.
+
 call fms2io_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
                               data_names, data_out_of_bounds,           &
                               vert_interp, clim_units, single_year_file)

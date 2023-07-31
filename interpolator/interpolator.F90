@@ -675,15 +675,22 @@ else if(clim_type%is_r8) then
    if (allocated (clim_type%r8_type%lonb    )) deallocate(clim_type%r8_type%lonb)
    if (allocated (clim_type%r8_type%levs    )) deallocate(clim_type%r8_type%levs)
    if (allocated (clim_type%r8_type%halflevs)) deallocate(clim_type%r8_type%halflevs)
-   if (allocated (clim_type%r8_type%data))     deallocate(clim_type%r4_type%data)
+   if (allocated (clim_type%r8_type%data))     deallocate(clim_type%r8_type%data)
 end if
 
-call horiz_interp_del(clim_type%interph)
 if (allocated (clim_type%time_slice)) deallocate(clim_type%time_slice)
-if (allocated (clim_type%has_level))  deallocate(clim_type%has_level)
 if (allocated (clim_type%field_name)) deallocate(clim_type%field_name)
 if (allocated (clim_type%time_init )) deallocate(clim_type%time_init)
+if (allocated (clim_type%has_level))  deallocate(clim_type%has_level)
 if (allocated (clim_type%mr        )) deallocate(clim_type%mr)
+if (allocated (clim_type%out_of_bounds )) deallocate(clim_type%out_of_bounds)
+if (allocated (clim_type%vert_interp )) deallocate(clim_type%vert_interp)
+if (allocated(clim_type%indexm)) deallocate(clim_type%indexm)
+if (allocated(clim_type%indexp)) deallocate(clim_type%indexp)
+if (allocated(clim_type%clim_times)) deallocate(clim_type%clim_times)
+if (allocated(clim_type%climatology)) deallocate(clim_type%climatology)
+
+call horiz_interp_del(clim_type%interph)
 
 if(clim_type%is_r4) then
    if (allocated (clim_type%r4_type%pmon_pyear)) then
@@ -700,6 +707,9 @@ else if(clim_type%is_r8) then
       deallocate(clim_type%r8_type%nmon_pyear)
    end if
 endif
+
+clim_type%is_r4=.false.
+clim_type%is_r8=.false.
 
 !! RSH mod
 if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &

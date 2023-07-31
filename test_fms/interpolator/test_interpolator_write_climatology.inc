@@ -22,11 +22,13 @@ subroutine write_climatology_file
      call register_axis(fileobj, 'latitude',  nlonlat)
 
      !time axes
+     !if(ntime /=0 ) then
      call register_field(fileobj, 'time', 'double', dimensions=(/'time'/))
      call register_string_attribute(fileobj, 'time', 'axis', 'T')
      call register_string_attribute(fileobj, 'time', 'calendar', 'noleap')
      call register_string_attribute(fileobj, 'time', 'climatology', '1979-01-01 00:00:00, 1998-01-01 00:00:00')
      call register_string_attribute(fileobj, 'time', 'units', 'days since 1849-01-01 00:00:00')
+     !end if
 
      !lon axes
      call register_field(fileobj, 'lon', 'float', dimensions=(/'longitude'/))
@@ -63,10 +65,14 @@ subroutine write_climatology_file
      call register_string_attribute(fileobj, 'phalf', 'units', 'hPa')
 
      !ozone ozone mass mixing ratio
-     call register_field(fileobj, 'ozone', 'float', dimensions=(/'lon  ','lat  ','pfull','time '/))
+     if( ntime==0 ) then
+        call register_field(fileobj, 'ozone', 'float', dimensions=(/'lon  ','lat  ','pfull'/))
+     else
+        call register_field(fileobj, 'ozone', 'float', dimensions=(/'lon  ','lat  ','pfull','time '/))
+     end if
      call register_string_attribute(fileobj, 'ozone', 'units', 'kg/kg')
 
-     call write_data(fileobj, 'time',  clim_time)
+     if(ntime /= 0 ) call write_data(fileobj, 'time',  clim_time)
      call write_data(fileobj, 'lon',   lon)
      call write_data(fileobj, 'lonb',  lonb)
      call write_data(fileobj, 'lat',   lat)
@@ -97,14 +103,19 @@ end subroutine register_string_attribute
 subroutine allocate_arrays()
 
   implicit none
-  allocate( lat(nlonlat),   &
-            lon(nlonlat),   &
-            latb(nlonlatb), &
-            lonb(nlonlatb), &
-            clim_time(ntime),    &
-            pfull(npfull),  &
-            phalf(nphalf),  &
-            ozone(nlonlat, nlonlat, npfull, ntime) )
+  integer :: ntime2
+
+  ntime2=ntime
+  if(ntime==0) ntime2=1
+
+  allocate( lat(nlonlat),     &
+            lon(nlonlat),     &
+            latb(nlonlatb),   &
+            lonb(nlonlatb),   &
+            clim_time(ntime2),&
+            pfull(npfull),    &
+            phalf(nphalf),    &
+            ozone(nlonlat, nlonlat, npfull, ntime2) )
 
   allocate( lat_mod(nlonlat_mod, nlonlat_mod),    &
             lon_mod(nlonlat_mod, nlonlat_mod),    &
@@ -130,6 +141,29 @@ subroutine deallocate_arrays()
               ozone )
 
 end subroutine deallocate_arrays
+!===============================================!
+subroutine set_write_data(nlonlat_in, nlonlat_mod_in, ntime_in, npfull_in)
+
+  implicit none
+  integer, intent(in) :: nlonlat_in, nlonlat_mod_in, ntime_in, npfull_in
+
+  nlonlat  = nlonlat_in   !< number of latitude and longitudinal center coordinates
+  nlonlatb = nlonlat_in+1 !< number of latitude and longitudinal boundary coordinates
+  nlonlat_mod  = nlonlat_mod_in
+  nlonlatb_mod = nlonlat_mod_in+1
+  ntime  = ntime_in    !< number of time slices
+  npfull = npfull_in   !< number of p levels
+  nphalf = npfull_in+1 !< number of half p levels
+  call allocate_arrays()
+  if( ntime /= 0) call set_clim_time()
+  call set_latlon_b()
+  call set_pfullhalf()
+  call set_ozone()
+  call write_climatology_file()
+
+  call set_latlon_b_mod()
+
+end subroutine set_write_data
 !===============================================!
 subroutine set_clim_time()
 
@@ -213,8 +247,12 @@ subroutine set_ozone()
 
   implicit none
   integer :: i, j, k, l
+  integer :: ntime2
 
-  do i=1, ntime
+  ntime2=ntime
+  if(ntime == 0 ) ntime2=1
+
+  do i=1, ntime2
      do j=1, npfull
         do k=1, nlonlat
            do l=1, nlonlat
