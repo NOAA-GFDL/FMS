@@ -895,6 +895,8 @@ fms_get_axis_length = 0
   select type (axis => this%diag_axis(axis_id)%axis)
   type is (fmsDiagFullAxis_type)
     fms_get_axis_length = axis%axis_length()
+  type is (fmsDiagSubAxis_type)
+    fms_get_axis_length = axis%axis_length()
   end select
 #endif
 end function fms_get_axis_length
