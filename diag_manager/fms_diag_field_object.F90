@@ -492,7 +492,6 @@ subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)
   class (fmsDiagField_type) , intent(inout) :: this                     !< The field object
   logical,                    intent (in)   :: data_buffer_is_allocated !< .true. if the
                                                                         !! data buffer is allocated
-
   this%data_buffer_is_allocated = data_buffer_is_allocated
 end subroutine set_data_buffer_is_allocated
 
