@@ -29,10 +29,14 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_monin_obukhov
+check_PROGRAMS = test_monin_obukhov_r4 test_monin_obukhov_r8
 
 # This is the source code for the test.
-test_monin_obukhov_SOURCES = test_monin_obukhov.F90
+test_monin_obukhov_r4_SOURCES = test_monin_obukhov.F90
+test_monin_obukhov_r8_SOURCES = test_monin_obukhov.F90
+
+test_monin_obukhov_r4_CPPFLAGS = $(AM_CPPFLAGS) -DMO_TEST_KIND_=4
+test_monin_obukhov_r8_CPPFLAGS = $(AM_CPPFLAGS) -DMO_TEST_KIND_=8
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
@@ -42,7 +46,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_monin_obukhov2.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = test_monin_obukhov2.sh
+EXTRA_DIST = test_monin_obukhov2.sh input.r4.nml input.r8.nml
 
 # Clean up
 CLEANFILES = input.nml *.out *.dpi *.spi *.dyn *.spl

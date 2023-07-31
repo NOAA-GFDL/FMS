@@ -7,7 +7,10 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 sequential patch number (starting from `01`).
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> origin/mixedmode
 ## [2023.01.01] - 2023-06-06
 ### Changed
 - FMS2_IO: Performance changes for domain_reads_2d and domain_reads_3d:
@@ -23,7 +26,10 @@ sequential patch number (starting from `01`).
 - FMS2_IO: Extended mpp_scatter and mpp_gather to work for int8; added a kludge for scatter since the data is assumed to be (x,y,z)
 
 
+<<<<<<< HEAD
 >>>>>>> mkl/update_mixedmode_base
+=======
+>>>>>>> origin/mixedmode
 ## [2023.01] - 2023-04-03
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
