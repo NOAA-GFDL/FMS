@@ -62,10 +62,16 @@ end type fmsDiagOutputBuffer_class
 type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
   integer,                          allocatable :: axis_ids(:)     !< Axis ids for the buffer
+  integer                                       :: field_id        !< The id of the field the buffer belongs to
+  integer                                       :: yaml_id         !< The id of the yaml id the buffer belongs to
 
   contains
   procedure :: add_axis_ids
   procedure :: get_axis_ids
+  procedure :: set_field_id
+  procedure :: get_field_id
+  procedure :: set_yaml_id
+  procedure :: get_yaml_id
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -1455,5 +1461,42 @@ function get_axis_ids(this) &
   endif
 end function
 
+!> @brief Get the field id of the buffer
+!! @return the field id of the buffer
+function get_field_id(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%field_id
+end function get_field_id
+
+!> @brief set the field id of the buffer
+subroutine set_field_id(this, field_id)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: field_id    !< field id of the buffer
+
+  this%field_id = field_id
+end subroutine set_field_id
+
+!> @brief set the field id of the buffer
+subroutine set_yaml_id(this, yaml_id)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: yaml_id     !< yaml id of the buffer
+
+  this%yaml_id = yaml_id
+end subroutine set_yaml_id
+
+!> @brief Get the yaml id of the buffer
+!! @return the yaml id of the buffer
+function get_yaml_id(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%yaml_id
+end function get_yaml_id
 #endif
 end module fms_diag_output_buffer_mod

@@ -225,6 +225,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
 !! of the sorted variable list
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
+  do i = 1, size(fieldptr%buffer_ids)
+    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_field_id(this%registered_variables)
+    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_yaml_id(diag_field_indices(i))
+  enddo
 
 !> Allocate and initialize member buffer_allocated of this field
   allocate(fieldptr%buffer_allocated(size(diag_field_indices)))
@@ -244,6 +248,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
+     call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
@@ -255,6 +260,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
+     call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
@@ -265,6 +271,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
+     call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
@@ -272,6 +279,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     do i = 1, size(file_ids)
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
+     call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   endif
@@ -890,6 +898,8 @@ fms_get_axis_length = 0
 
   select type (axis => this%diag_axis(axis_id)%axis)
   type is (fmsDiagFullAxis_type)
+    fms_get_axis_length = axis%axis_length()
+  type is (fmsDiagSubAxis_type)
     fms_get_axis_length = axis%axis_length()
   end select
 #endif
