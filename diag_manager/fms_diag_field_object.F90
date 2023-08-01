@@ -75,7 +75,7 @@ type fmsDiagField_type
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
                                                                            !! functions. False when done.
-     logical, allocatable, dimension(:)               :: buffer_allocated  !< True if a buffer pointed by
+     logical, allocatable                             :: buffer_allocated  !< True if a buffer pointed by
                                                                            !! the corresponding index in
                                                                            !! buffer_ids(:) is allocated.
   contains
@@ -146,6 +146,7 @@ type fmsDiagField_type
      procedure :: get_missing_value
      procedure :: get_data_RANGE
      procedure :: get_axis_id
+     procedure :: get_data_buffer
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
@@ -629,7 +630,8 @@ end function diag_obj_is_registered
 function diag_obj_is_static (this) result (rslt)
     class(fmsDiagField_type), intent(in) :: this
     logical :: rslt
-    rslt = this%static
+    rslt = .false.
+    if (allocated(this%static)) rslt = this%static
 end function diag_obj_is_static
 
 !> @brief Determine if the field is a scalar
@@ -1276,38 +1278,13 @@ result(rslt)
   else
     rslt => null()
   endif
-!  select type (db => this%data_buffer)
-!    type is (real(kind=r4_kind))
-!      allocate (real(kind=r4_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!    type is (real(kind=r8_kind))
-!      allocate (real(kind=r8_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!    type is (integer(kind=i4_kind))
-!      allocate (integer(kind=i4_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!    type is (integer(kind=i8_kind))
-!      allocate (integer(kind=i8_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!  end select
 end function get_data_buffer
 !> Gets the flag telling if the math functions need to be done
 !! \return Copy of math_needs_to_be_done flag
 pure logical function get_math_needs_to_be_done(this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
-  get_math_needs_to_be_done = this%math_needs_to_be_done
+  get_math_needs_to_be_done = .false.
+  if (allocated(this%math_needs_to_be_done)) get_math_needs_to_be_done = this%math_needs_to_be_done
 end function get_math_needs_to_be_done
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
@@ -1494,10 +1471,10 @@ function get_default_missing_value(var_type) &
 
   select case(var_type)
   case (r4)
-    allocate(integer(kind=r4_kind) :: rslt)
+    allocate(real(kind=r4_kind) :: rslt)
     rslt = real(CMOR_MISSING_VALUE, kind=r4_kind)
   case (r8)
-    allocate(integer(kind=r8_kind) :: rslt)
+    allocate(real(kind=r8_kind) :: rslt)
     rslt = real(CMOR_MISSING_VALUE, kind=r8_kind)
   case default
   end select

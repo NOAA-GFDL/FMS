@@ -174,33 +174,32 @@ end function fms_diag_output_buffer_init
 !> Creates a container type encapsulating a new buffer object for the given dimensions.
 !! The buffer object will still need to be allocated to a type via allocate_buffer() before use.
 !> @result A fmsDiagBufferContainer_type that holds a bufferNd_type, where N is buff_dims
-function fms_diag_output_buffer_create_container(buff_dims) &
-result(rslt)
-  integer, intent(in)                            :: buff_dims !< dimensions
-  type(fmsDiagOutputBufferContainer_type), allocatable :: rslt
+subroutine fms_diag_output_buffer_create_container(buff_dims, buffer_obj)
+  integer,                                 intent(in)     :: buff_dims !< dimensions
+  type(fmsDiagOutputBufferContainer_type), intent(inout)  :: buffer_obj
+
   character(len=5) :: dim_output !< string to output buff_dims on error
 
-  allocate(rslt)
   select case (buff_dims)
     case (0)
-      allocate(outputBuffer0d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer0d_type :: buffer_obj%diag_buffer_obj)
     case (1)
-      allocate(outputBuffer1d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer1d_type :: buffer_obj%diag_buffer_obj)
     case (2)
-      allocate(outputBuffer2d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer2d_type :: buffer_obj%diag_buffer_obj)
     case (3)
-      allocate(outputBuffer3d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer3d_type :: buffer_obj%diag_buffer_obj)
     case (4)
-      allocate(outputBuffer4d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer4d_type :: buffer_obj%diag_buffer_obj)
     case (5)
-      allocate(outputBuffer5d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer5d_type :: buffer_obj%diag_buffer_obj)
     case default
       write( dim_output, *) buff_dims
       dim_output = adjustl(dim_output)
       call mpp_error(FATAL, 'fms_diag_buffer_create_container: invalid number of dimensions given:' // dim_output //&
                             '. Must be 0-5')
   end select
-end function fms_diag_output_buffer_create_container
+end subroutine fms_diag_output_buffer_create_container
 
 !!--------generic routines for any fmsDiagBuffer_class objects
 

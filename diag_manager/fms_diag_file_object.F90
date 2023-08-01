@@ -760,7 +760,6 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
         this%axis_ids = diag_null
       endif
     endif
-    return
   type is (fmsDiagFile_type)
     do i = 1, size(var_axis_ids)
       axis_found = .false.
