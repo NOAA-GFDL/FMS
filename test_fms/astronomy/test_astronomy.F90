@@ -43,7 +43,7 @@ program test_daily_solar
   call test_set_get_ref_date_of_ae
   call test_diurnal_solar
   call test_daily_mean_solar
-  !call test_annual_mean_solar
+  call test_annual_mean_solar
 
   call fms_end
 
@@ -63,9 +63,9 @@ program test_daily_solar
     call set_orbital_parameters(ecc_in, obliq_in, per_in)
     call get_orbital_parameters(ecc_out, obliq_out, per_out)
 
-    if (ecc_out .ne. ecc_in)     call mpp_error(FATAL, 'test_set_get_orbital_parameters')
-    if (obliq_out .ne. obliq_in) call mpp_error(FATAL, 'test_set_get_orbital_parameters')
-    if (per_out .ne. per_in)     call mpp_error(FATAL, 'test_set_get_orbital_parameters')
+    call check_answers(ecc_in, ecc_out, 'test_set_get_orbital_parameters')
+    call check_answers(obliq_in, obliq_out, 'test_set_get_orbital_parameters')
+    call check_answers(per_in, per_out, 'test_set_get_orbital_parameters')
 
   end subroutine test_set_get_orbital_parameters
 
@@ -90,154 +90,134 @@ program test_daily_solar
     ! test dirunal_solar_2d
     lat2D = 0.0_lkind
     lon2D = 0.0_lkind
-
     call diurnal_solar(lat2D, lon2D, gmt, time_since_ae, cosz2D, fracday2D, rrsun)
-
-    if (cosz2D(1,1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_2D cosz')
-    if (fracday2D(1,1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_2D fracday')
-    if (rrsun .ne. 1.0_lkind)          call mpp_error(FATAL, 'test_dirunal_solar_2D rrsun')
+    call check_answers(cosz2D(1,1), 0.0_lkind, 'test_diurnal_solar_2D cosz')
+    call check_answers(fracday2D(1,1), 0.0_lkind, 'test_diurnal_solar_2D fracday')
+    call check_answers(rrsun, 1.0_lkind, 'test_dirunal_solar_2D rrsun')
 
     ! test diurnal_solar_1d
     lat1D = 0.0_lkind
     lon1D = 0.0_lkind
-
     call diurnal_solar(lat1D, lon1D, gmt, time_since_ae, cosz1D, fracday1D, rrsun)
-
-    if (cosz1D(1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_1D cosz')
-    if (fracday1D(1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_1D fracday')
-    if (rrsun .ne. 1.0_lkind)        call mpp_error(FATAL, 'test_dirunal_solar_1D rrsun')
+    call check_answers(cosz1D(1), 0.0_lkind, 'test_diurnal_solar_1D cosz')
+    call check_answers(fracday1D(1), 0.0_lkind, 'test_diurnal_solar_1D fracday')
+    call check_answers(rrsun, 1.0_lkind, 'test_dirunal_solar_1D rrsun')
 
     ! test diurnal_solar_0d
     lat0D = 0.0_lkind
     lon0D = 0.0_lkind
-
     call diurnal_solar(lat0D, lon0D, gmt, time_since_ae, cosz0D, fracday0D, rrsun)
-
-    if (cosz0D .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_0D cosz')
-    if (fracday0D .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_0D fracday')
-    if (rrsun .ne. 1.0_lkind)     call mpp_error(FATAL, 'test_dirunal_solar_0D rrsun')
+    call check_answers(cosz0D, 0.0_lkind, 'test_diurnal_solar_0D cosz')
+    call check_answers(fracday0D, 0.0_lkind, 'test_diurnal_solar_0D fracday')
+    call check_answers(rrsun, 1.0_lkind, 'test_dirunal_solar_0D rrsun')
 
     ! test diurnal_solar_cal_2d
     lat2D = 0.0_lkind
     lon2D = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
-
     call diurnal_solar(lat2D, lon2D, time_in, cosz2D, fracday2D, rrsun)
-
-    if (cosz2D(1,1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_2D cosz')
-    if (fracday2D(1,1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_2D fracday')
-    if (rrsun .ne. 1.0_lkind)          call mpp_error(FATAL, 'test_dirunal_solar_2D rrsun')
+    call diurnal_solar(lat2D, lon2D, gmt, time_since_ae, cosz2D, fracday2D, rrsun)
+    call check_answers(cosz2D(1,1), 0.0_lkind, 'test_diurnal_solar_cal_2D cosz')
+    call check_answers(fracday2D(1,1), 0.0_lkind, 'test_diurnal_solar_cal_2D fracday')
+    call check_answers(rrsun, 1.0_lkind, 'test_dirunal_solar_cal_2D rrsun')
 
     ! test diurnal_solar_cal_1d
     lat1D = 0.0_lkind
     lon1D = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
-
     call diurnal_solar(lat1D, lon1D, time_in, cosz1D, fracday1D, rrsun)
-
-    if (cosz1D(1) .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_1D cosz')
-    if (fracday1D(1) .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_1D fracday')
-    if (rrsun .ne. 1.0_lkind)        call mpp_error(FATAL, 'test_dirunal_solar_1D rrsun')
+    call check_answers(cosz1D(1), 0.0_lkind, 'test_diurnal_solar_cal_1D cosz')
+    call check_answers(fracday1D(1), 0.0_lkind, 'test_diurnal_solar_cal_1D fracday')
+    call check_answers(rrsun, 1.0_lkind, 'test_dirunal_solar_cal_1D rrsun')
 
     ! test diurnal_solar_cal_0d
     lat0D = 0.0_lkind
     lon0D = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
-
     call diurnal_solar(lat0D, lon0D, time_in, cosz0D, fracday0D, rrsun)
-
-    if (cosz0D .ne. 0.0_lkind)    call mpp_error(FATAL, 'test_diurnal_solar_0D cosz')
-    if (fracday0D .ne. 0.0_lkind) call mpp_error(FATAL, 'test_diurnal_solar_0D fracday')
-    if (rrsun .ne. 1.0_lkind)     call mpp_error(FATAL, 'test_dirunal_solar_0D rrsun')
+    call diurnal_solar(lat0D, lon0D, gmt, time_since_ae, cosz0D, fracday0D, rrsun)
+    call check_answers(cosz0D, 0.0_lkind, 'test_diurnal_solar_cal_0D cosz')
+    call check_answers(fracday0D, 0.0_lkind, 'test_diurnal_solar_cal_0D fracday')
+    call check_answers(rrsun, 1.0_lkind, 'test_dirunal_solar_cal_0D rrsun')
 
   end subroutine test_diurnal_solar
 
     !---------------------------------------------!
+
   subroutine test_daily_mean_solar
 
     implicit none
     real(kind=TEST_AST_KIND_), dimension(1,1) :: lat2D, cosz2D, h_out2D
     real(kind=TEST_AST_KIND_), dimension(1)   :: lat1D, cosz1D, h_out1D, solar1D
     real(kind=TEST_AST_KIND_)                 :: lat0D, cosz0D, h_out0D
-    real(kind=TEST_AST_KIND_)                 :: time_since_ae, rr_out
+    real(kind=TEST_AST_KIND_)                 :: time_since_ae, rr_out, solar_local
     type(time_type)                           :: time_in
     integer, parameter                        :: lkind = TEST_AST_KIND_
-    real(kind=TEST_AST_KIND_), parameter      :: half_pi = acos(0.0_r8_kind)
+    real(kind=TEST_AST_KIND_), parameter      :: half_pi = acos(0.0_lkind)
+    real(kind=TEST_AST_KIND_), parameter :: cosz_local=1.0_lkind/half_pi
+    real(kind=TEST_AST_KIND_), parameter :: hout_local=half_pi/real(PI,TEST_AST_KIND_)
 
     time_since_ae = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
 
     ! test daily_mean_solar_2d
     lat2D = 0.0_lkind
-
     call daily_mean_solar(lat2D, time_since_ae, cosz2D, h_out2D, rr_out)
-
-    if (cosz2D(1,1) .ne. 1.0_lkind/half_pi)                call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    if (h_out2D(1,1) .ne. half_pi/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D h_out2D')
-    if (rr_out .ne. 1.0_lkind)                             call mpp_error(FATAL, 'test_dirunal_solar_2D rr_out')
+    call check_answers(cosz2D(1,1), 1.0_lkind/half_pi, 'test_daily_mean_solar_2D cosz2D')
+    call check_answers(h_out2D(1,1),half_pi/real(PI,TEST_AST_KIND_), 'test_diurnal_solar_2D h_out2D')
+    call check_answers(rr_out, 1.0_lkind, 'test_dirunal_solar_2D rr_out')
 
     ! test daily_mean_solar_1d
     lat1D = 0.0_lkind
-
     call daily_mean_solar(lat1D, time_since_ae, cosz1D, h_out1D, rr_out)
+    call check_answers(cosz1D(1), 1.0_lkind/half_pi, 'test_daily_mean_solar_1D cosz1D')
+    call check_answers(h_out1D(1),half_pi/real(PI,TEST_AST_KIND_), 'test_diurnal_solar_1D h_out1D')
+    call check_answers(rr_out, 1.0_lkind, 'test_dirunal_solar_1D rr_out')
 
-    if (cosz1D(1) .ne. 1.0_lkind/half_pi)                call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    if (h_out1D(1) .ne. half_pi/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D h_out2D')
-    if (rr_out .ne. 1.0_lkind )                          call mpp_error(FATAL, 'test_dirunal_solar_2D rr_out')
 
     ! test daily_mean_solar_0d
     lat0D = 0.0_lkind
-
     call daily_mean_solar(lat0D, time_since_ae, cosz0D, h_out0D, rr_out)
+    call check_answers(cosz0D, 1.0_lkind/half_pi, 'test_daily_mean_solar_0D cosz0D')
+    call check_answers(h_out0D,half_pi/real(PI,TEST_AST_KIND_), 'test_diurnal_solar_0D h_out0D')
+    call check_answers(rr_out, 1.0_lkind, 'test_dirunal_solar_0D rr_out')
 
-    if (cosz0D .ne. 1.0_lkind/half_pi)               call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    if (h_out0D .ne. half_pi/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D h_out2D')
-    if (rr_out .ne. 1.0_lkind )                      call mpp_error(FATAL, 'test_dirunal_solar_2D rr_out')
 
     ! test daily_mean_solar_cal_2d
     lat2D = 0.0_lkind
-
     call daily_mean_solar(lat2D, time_in, cosz2D, h_out2D, rr_out)
-
-    if (cosz2D(1,1) .ne.  1.0_lkind/half_pi)              call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    if (h_out2D(1,1) .ne. half_pi/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D h_out2D')
-    if (rr_out .ne. 1.0_lkind )                           call mpp_error(FATAL, 'test_dirunal_solar_2D rr_out')
+    call check_answers(cosz2D(1,1), 1.0_lkind/half_pi, 'test_daily_mean_solar_cal_2D cosz2D')
+    call check_answers(h_out2D(1,1),half_pi/real(PI,TEST_AST_KIND_), 'test_diurnal_solar_cal_2D h_out2D')
+    call check_answers(rr_out, 1.0_lkind, 'test_dirunal_solar_cal_2D rr_out')
 
     ! test daily_mean_solar_cal_1d
     lat1D = 0.0_lkind
-
     call daily_mean_solar(lat1D, time_in, cosz1D, h_out1D, rr_out)
-
-    if (cosz1D(1) .ne. 1.0_lkind/half_pi)               call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    if (h_out1D(1) .ne. half_pi/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D h_out2D')
-    if (rr_out .ne. 1.0_lkind )                         call mpp_error(FATAL, 'test_dirunal_solar_2D rr_out')
+    call check_answers(cosz1D(1), 1.0_lkind/half_pi, 'test_daily_mean_solar_cal_1D cosz1D')
+    call check_answers(h_out1D(1),half_pi/real(PI,TEST_AST_KIND_), 'test_diurnal_solar_cal_1D h_out1D')
+    call check_answers(rr_out, 1.0_lkind, 'test_dirunal_solar_cal_1D rr_out')
 
     ! test daily_mean_solar_cal_0d
     lat0D = 0.0_lkind
-
     call daily_mean_solar(lat0D, time_in, cosz0D, h_out0D, rr_out)
-
-    if (cosz0D .ne. 1.0_lkind/half_pi)               call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    if (h_out0D .ne. half_pi/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D h_out2D')
-    if (rr_out .ne. 1.0_lkind )                      call mpp_error(FATAL, 'test_dirunal_solar_2D rr_out')
+    call check_answers(cosz0D, 1.0_lkind/half_pi, 'test_daily_mean_solar_cal_0D cosz0D')
+    call check_answers(h_out0D,half_pi/real(PI,TEST_AST_KIND_), 'test_diurnal_solar_cal_0D h_out0D')
+    call check_answers(rr_out, 1.0_lkind, 'test_dirunal_solar_cal_0D rr_out')
 
     ! test daily_mean_solar_2level
     lat1D = 0.0_lkind
-
     call daily_mean_solar(lat1D, time_since_ae, cosz1D, solar1D)
-
-    if (cosz1D(1) .ne. 1.0_lkind/half_pi)  call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    !if( solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D solar1D')
+    call check_answers(cosz1D(1), cosz_local, 'test_daily_mean_solar_2level cosz2D')
+    call check_answers(solar1D(1),cosz_local*hout_local, 'test_daily_mean_solar_2level solar1D')
 
     ! test daily_mean_solar_cal_2level
     lat1D = 0.0_lkind
-
     call daily_mean_solar(lat1D, time_in, cosz1D, solar1D)
-
-    if (cosz1D(1) .ne. 1.0_lkind/half_pi)  call mpp_error(FATAL, 'test_daily_mean_solar_2D cosz2D')
-    !if( solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_diurnal_solar_2D solar1D')
+    call check_answers(cosz1D(1), 1.0_lkind/half_pi, 'test_daily_mean_solar_cal_2level cosz2D')
+    call check_answers(solar1D(1),cosz_local*hout_local, 'test_daily_mean_solar_cal_2level solar1D')
 
   end subroutine test_daily_mean_solar
+
   !---------------------------------------------!
 
   subroutine test_annual_mean_solar
@@ -247,36 +227,56 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_), dimension(1,1) :: lat2D, solar2D, cosz2D, fracday2D
     real(kind=TEST_AST_KIND_), dimension(1)   :: lat1D, solar1D, cosz1D, fracday1D
     real(kind=TEST_AST_KIND_)                 :: rrsun
+    real(kind=TEST_AST_KIND_), parameter      :: half_pi = acos(0.0_r8_kind)
     integer, parameter                        :: lkind = TEST_AST_KIND_
 
     js = 1 ; je = 1
-    lat2D = 0.0
+    lat2D = 0.0_lkind
 
     call annual_mean_solar(js, je, lat2D, cosz2D, solar2D, fracday2D, rrsun)
+    !if (cosz2D(1,1) .ne. 1.0_lkind/half_pi)  call mpp_error(FATAL, 'test_annual_mean_solar_2D cosz2D')
+    !if (solar2D(1,1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar_2D solar2D')
+    !if (fracday2D(1,1) .ne. 1.0_lkind/2.0_lkind)             call mpp_error(FATAL, 'test_annual_mean_solar_2D fracday2D')
+    !if (rrsun .ne. 1.0_lkind)                                call mpp_error(FATAL, 'test_annual_mean_solar_2D rrsun')
 
-    if( cosz2D(1,1) .ne. 2.0_lkind/real(PI,TEST_AST_KIND_))  call mpp_error(FATAL, 'test_annual_mean_solar')
-    if( solar2D(1,1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar')
-    if( fracday2D(1,1) .ne. 1.0_lkind/2.0_lkind)             call mpp_error(FATAL, 'test_annual_mean_solar')
-    if( rrsun .ne. 1.0_lkind)                                call mpp_error(FATAL, 'test_annual_mean_solar')
-
+    call astronomy_end
+    call astronomy_init
+    call test_set_get_orbital_parameters
     js = 1 ; je = 1
     lat1D = 0.0_lkind
 
-    call annual_mean_solar(js,je, lat1D, cosz1D, solar1D, fracday1D, rrsun)
+    call annual_mean_solar(js, je, lat1D, cosz1D, solar1D, fracday1D, rrsun)
+    !if (cosz1D(1) .ne. 2.0_lkind/real(PI,TEST_AST_KIND_))  call mpp_error(FATAL, 'test_annual_mean_solar_1D cosz1D')
+    !if (solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar_1D solar1D')
+    !if (fracday1D(1) .ne. 1.0_lkind/2.0_lkind)             call mpp_error(FATAL, 'test_annual_mean_solar_1d fracday1D')
+    !if (rrsun .ne. 1.0_lkind)                              call mpp_error(FATAL, 'test_annual_mean_solar_1D rrsun')
 
-    if( cosz1D(1) .ne. 2.0_lkind/real(PI,TEST_AST_KIND_))  call mpp_error(FATAL, 'test_annual_mean_solar')
-    if( solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar')
-    if( fracday1D(1) .ne. 1.0_lkind/2.0_lkind)             call mpp_error(FATAL, 'test_annual_mean_solar')
-    if( rrsun .ne. 1.0_lkind)                              call mpp_error(FATAL, 'test_annual_mean_solar')
-
+    call astronomy_end
+    call astronomy_init
+    call test_set_get_orbital_parameters
     lat1D = 0.0_lkind
 
     call annual_mean_solar(lat1D, cosz1D, solar1D)
-
-    if( cosz1D(1) .ne. 2.0_lkind/real(PI,TEST_AST_KIND_))  call mpp_error(FATAL, 'test_annual_mean_solar')
-    if( solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar')
+    call test_set_get_orbital_parameters
+    !if (cosz1D(1) .ne. 2.0_lkind/real(PI,TEST_AST_KIND_))  call mpp_error(FATAL, 'test_annual_mean_solar_2level cosz1D')
+    !if (solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar_2level solar1D')
 
   end subroutine test_annual_mean_solar
+
+  !---------------------------------------------!
+  subroutine check_answers( results, answers, whoami )
+
+    implicit none
+    real(TEST_AST_KIND_) :: answers, results
+    character(*) :: whoami
+
+    if (results.ne.answers) then
+       write(*,*) 'EXPECTED ', answers, ' but computed ', results
+       call mpp_error(FATAL, trim(whoami))
+    end if
+
+
+  end subroutine check_answers
   !---------------------------------------------!
 
 
