@@ -67,13 +67,14 @@ module coupler_types_mod
 
 !> @}
 
+  type, private :: coupler_3d_reals_r8_type
+
+  end type coupler_3d_reals_r8_type
+  
   !> Coupler data for 3D values
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
-    real, pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
-                                           !! array of values for this field; this
-                                           !! should be changed to allocatable
     logical                 :: mean = .true. !< mean
     logical                 :: override = .false. !< override
     integer                 :: id_diag = 0 !< The diagnostic id for this array
@@ -83,6 +84,9 @@ module coupler_types_mod
     logical                 :: may_init = .true. !< If true, there is an internal method
                                            !! that can be used to initialize this field
                                            !! if it can not be read from a restart file
+    real, pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
+                                           !! array of values for this field; this
+                                           !! should be changed to allocatable
   end type coupler_3d_values_type
 
   !> Coupler data for 3D fields
@@ -93,7 +97,6 @@ module coupler_types_mod
     type(coupler_3d_values_type), pointer, dimension(:) :: field => NULL() !< field
     character(len=128)                :: flux_type = ' ' !< flux_type
     character(len=128)                :: implementation = ' ' !< implementation
-    real, pointer, dimension(:)       :: param => NULL() !< param
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
     integer                           :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
@@ -107,6 +110,7 @@ module coupler_types_mod
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
+    real, pointer, dimension(:)       :: param => NULL() !< param
     real                              :: mol_wt = 0.0 !< mol_wt
   end type coupler_3d_field_type
 
@@ -204,6 +208,7 @@ module coupler_types_mod
     !! to be r8_kind during mixedmode update to field_manager
     !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
     real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
+    real(r4_kind), pointer, dimension(:) :: param => NULL() !< param
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file

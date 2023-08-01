@@ -18,68 +18,9 @@
 !***********************************************************************
 !> @defgroup atmos_ocean_fluxes_mod atmos_ocean_fluxes_mod
 !> @ingroup coupler
-!> @brief Implementation of routines to solve the gas fluxes at the
-!! ocean surface for a coupled model as outlined in the Biotic-HOWTO
-!! documentation below, revision 1.7, 1999/10/05.
-!!
-!> @author Richard Slater, John Dunne
-!!
-!! Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
-!!
-!! This module will take fields from an atmospheric and an
-!! oceanic model and calculate ocean surface fluxes for
-!! CO2, O2, CFC-11 or CFC-12 as outlined in the various
-!! HOWTO documents at the OCMIP2 website. Multiple instances
-!! of a given tracer may be given, resulting in multiple
-!! surface fluxes. Additionally, data may be overridden at
-!! the individual fields, or fluxes. This could be used in
-!! the absence of an atmospheric or oceanic model.
-!!
-!! http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
 
 !> @addtogroup atmos_ocean_fluxes_mod
 !> @{
-module  atmos_ocean_fluxes_mod
-  use mpp_mod,           only: stdout, mpp_error, FATAL, mpp_sum, mpp_npes
-  use fms_mod,           only: write_version_number
-
-  use coupler_types_mod, only: coupler_1d_bc_type
-  use coupler_types_mod, only: ind_alpha, ind_csurf, ind_sc_no
-  use coupler_types_mod, only: ind_pcair, ind_u10, ind_psurf
-  use coupler_types_mod, only: ind_deposition
-  use coupler_types_mod, only: ind_runoff
-  use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0
-
-  use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
-  use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
-  use field_manager_mod, only: fm_field_name_len, fm_type_name_len, fm_dump_list
-  use field_manager_mod, only: fm_loop_over_list
-
-  use fm_util_mod,       only: fm_util_default_caller
-  use fm_util_mod,       only: fm_util_get_length
-  use fm_util_mod,       only: fm_util_set_value, fm_util_set_good_name_list
-  use fm_util_mod,       only: fm_util_set_no_overwrite, fm_util_set_caller
-  use fm_util_mod,       only: fm_util_reset_good_name_list, fm_util_reset_no_overwrite
-  use fm_util_mod,       only: fm_util_reset_caller, fm_util_get_string_array
-  use fm_util_mod,       only: fm_util_check_for_bad_fields, fm_util_get_string
-  use fm_util_mod,       only: fm_util_get_real_array, fm_util_get_real, fm_util_get_integer
-  use fm_util_mod,       only: fm_util_get_logical, fm_util_get_logical_array
-
-  implicit none
-  private
-
-  public :: atmos_ocean_fluxes_init
-  public :: atmos_ocean_type_fluxes_init
-  public :: aof_set_coupler_flux
-
-  character(len=*), parameter :: mod_name = 'atmos_ocean_fluxes_mod'
-  real, parameter :: epsln=1.0e-30
-
-
-  ! Include variable "version" to be written to log file.
-#include<file_version.h>
-
-contains
 
   !> @brief Set the values for a coupler flux
   !! @return its index (0 on error)
@@ -111,16 +52,16 @@ contains
   !!     Mismatch between parameter input and the parameters being replaced
   !! @throw FATAL, "Could not change back to [current_list]"
   !! @throw FATAL, "Empty [name] list"
-  function aof_set_coupler_flux(name, flux_type, implementation, atm_tr_index, param, flag,&
+  function AOF_SET_COUPLER_FLUX_(name, flux_type, implementation, atm_tr_index, param, flag,&
       & mol_wt, ice_restart_file, ocean_restart_file, units, caller, verbosity) &
       & result (coupler_index)
     character(len=*), intent(in)                :: name !< name
     character(len=*), intent(in)                :: flux_type !< flux_type
     character(len=*), intent(in)                :: implementation !< implementation
     integer, intent(in), optional               :: atm_tr_index !< atm_tr_index
-    real, intent(in), dimension(:), optional    :: param !< param
+    real(FMS_CP_TYPE_), intent(in), dimension(:), optional    :: param !< param
     logical, intent(in), dimension(:), optional :: flag !< flag
-    real, intent(in), optional                  :: mol_wt !< mol_wt
+    real(FMS_CP_TYPE_), intent(in), optional                  :: mol_wt !< mol_wt
     character(len=*), intent(in), optional      :: ice_restart_file !< ice_restart_file
     character(len=*), intent(in), optional      :: ocean_restart_file !< ocean_restart_file
     character(len=*), intent(in), optional      :: units !< units
@@ -398,7 +339,7 @@ contains
     endif
 
     return
-  end function aof_set_coupler_flux
+  end function AOF_SET_COUPLER_FLUX_
 
   !> @brief Initialize gas flux structures
   !! @throw FATAL, "Could not get number of fluxes"

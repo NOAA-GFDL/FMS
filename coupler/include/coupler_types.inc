@@ -614,7 +614,9 @@ contains
 
     if (var%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
-    if (.not.var_in%set)&
+    if (.not.var_in%set)&Crontab Explanation
+
+    As you can see, the crontab syntax has 5 asterisks. Here’s what each of those asterisk represent:
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
     var%num_bcs = var_in%num_bcs
