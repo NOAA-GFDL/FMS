@@ -500,7 +500,7 @@ subroutine allocate_buffer_2d(this, buff_type, buff_sizes, field_name, diurnal_s
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1), buff_sizes(2)))
       allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
-      this%counter = 0.0_r8_kind 
+      this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
