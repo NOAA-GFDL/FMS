@@ -123,13 +123,6 @@ do j=1, n3
   enddo
 enddo
 
-do j=1, n3
-  do i=1, n2
-    call stable_mix(rich(:, i, j), mix(:, i, j))
-  enddo
-enddo
-
-
 end subroutine STABLE_MIX_3D_
 
 !=======================================================================
