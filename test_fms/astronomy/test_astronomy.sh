@@ -28,7 +28,11 @@
 . ../test-lib.sh
 
 # Prepare the directory to run the tests.
-touch input.nml
+cat <<EOF > input.nml
+&astronomy_nml
+ num_angles=1
+/
+EOF
 
 # Run the test.
 

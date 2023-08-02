@@ -24,7 +24,7 @@
 !> interfaces using 32 and 64 bit reals
 !! TODO: A more comprehensive testing suite for any daily_mean_solar_cal subroutine
 
-program test_daily_solar
+program test_astronomy
 
   use astronomy_mod
   use fms_mod,           only: fms_init, fms_end
@@ -40,7 +40,6 @@ program test_daily_solar
   call astronomy_init
 
   call test_set_get_orbital_parameters
-  call test_set_get_ref_date_of_ae
   call test_diurnal_solar
   call test_daily_mean_solar
   call test_annual_mean_solar
@@ -69,9 +68,6 @@ program test_daily_solar
 
   end subroutine test_set_get_orbital_parameters
 
-  !---------------------------------------------!
-  subroutine test_set_get_ref_date_of_ae
-  end subroutine test_set_get_ref_date_of_ae
   !---------------------------------------------!
 
   subroutine test_diurnal_solar
@@ -143,7 +139,6 @@ program test_daily_solar
   end subroutine test_diurnal_solar
 
     !---------------------------------------------!
-
   subroutine test_daily_mean_solar
 
     implicit none
@@ -217,7 +212,6 @@ program test_daily_solar
     call check_answers(solar1D(1),cosz_local*hout_local, 'test_daily_mean_solar_cal_2level solar1D')
 
   end subroutine test_daily_mean_solar
-
   !---------------------------------------------!
 
   subroutine test_annual_mean_solar
@@ -229,40 +223,41 @@ program test_daily_solar
     real(kind=TEST_AST_KIND_)                 :: rrsun
     real(kind=TEST_AST_KIND_), parameter      :: half_pi = acos(0.0_r8_kind)
     integer, parameter                        :: lkind = TEST_AST_KIND_
+    real(kind=TEST_AST_KIND_)                 :: cosz_local, solar_local
 
+    solar_local = (1.0_lkind/half_pi)*(half_pi/real(PI, TEST_AST_KIND_))
+    cosz_local = 1.0_lkind/half_pi*solar_local
+
+    ! test annual_mean_solar_2d
     js = 1 ; je = 1
     lat2D = 0.0_lkind
-
     call annual_mean_solar(js, je, lat2D, cosz2D, solar2D, fracday2D, rrsun)
-    !if (cosz2D(1,1) .ne. 1.0_lkind/half_pi)  call mpp_error(FATAL, 'test_annual_mean_solar_2D cosz2D')
-    !if (solar2D(1,1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar_2D solar2D')
-    !if (fracday2D(1,1) .ne. 1.0_lkind/2.0_lkind)             call mpp_error(FATAL, 'test_annual_mean_solar_2D fracday2D')
-    !if (rrsun .ne. 1.0_lkind)                                call mpp_error(FATAL, 'test_annual_mean_solar_2D rrsun')
+    call check_answers(cosz2D(1,1), cosz_local/solar_local, 'test_annual_mean_solar_2D cosz2D')
+    call check_answers(solar2D(1,1), solar_local, 'test_annual_mean_solar_2D solar2D')
+    call check_answers(fracday2D(1,1), half_pi/real(PI,TEST_AST_KIND_), 'test_annual_mean_solar_2D fracday2D')
+    call check_answers(rrsun, 1.0_lkind, 'test_annual_mean_solar_2D rrsun')
 
-    call astronomy_end
-    call astronomy_init
-    call test_set_get_orbital_parameters
+    ! test annual_mean_solar_1d
     js = 1 ; je = 1
     lat1D = 0.0_lkind
-
     call annual_mean_solar(js, je, lat1D, cosz1D, solar1D, fracday1D, rrsun)
-    !if (cosz1D(1) .ne. 2.0_lkind/real(PI,TEST_AST_KIND_))  call mpp_error(FATAL, 'test_annual_mean_solar_1D cosz1D')
-    !if (solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar_1D solar1D')
-    !if (fracday1D(1) .ne. 1.0_lkind/2.0_lkind)             call mpp_error(FATAL, 'test_annual_mean_solar_1d fracday1D')
-    !if (rrsun .ne. 1.0_lkind)                              call mpp_error(FATAL, 'test_annual_mean_solar_1D rrsun')
+    call check_answers(cosz1D(1), cosz_local/solar_local, 'test_annual_mean_solar_1D cosz1D')
+    call check_answers(solar1D(1), solar_local, 'test_annual_mean_solar_1D solar1D')
+    call check_answers(fracday1D(1), half_pi/real(PI,TEST_AST_KIND_), 'test_annual_mean_solar_1D fracday1D')
+    call check_answers(rrsun, 1.0_lkind, 'test_annual_mean_solar_1D rrsun')
 
-    call astronomy_end
-    call astronomy_init
-    call test_set_get_orbital_parameters
+    !call astronomy_end
+    !call astronomy_init
+    !call test_set_get_orbital_parameters
+
+    ! test annual_mean_solar_2level
     lat1D = 0.0_lkind
-
     call annual_mean_solar(lat1D, cosz1D, solar1D)
     call test_set_get_orbital_parameters
-    !if (cosz1D(1) .ne. 2.0_lkind/real(PI,TEST_AST_KIND_))  call mpp_error(FATAL, 'test_annual_mean_solar_2level cosz1D')
-    !if (solar1D(1) .ne. 1.0_lkind/real(PI,TEST_AST_KIND_)) call mpp_error(FATAL, 'test_annual_mean_solar_2level solar1D')
+    if (solar1D(1) .ne. solar_local) call mpp_error(FATAL, 'test_annual_mean_solar_2level solar1D')
+    if (cosz1D(1) .ne. 1.0_lkind/half_pi)  call mpp_error(FATAL, 'test_annual_mean_solar_2level cosz1D')
 
   end subroutine test_annual_mean_solar
-
   !---------------------------------------------!
   subroutine check_answers( results, answers, whoami )
 
@@ -279,5 +274,4 @@ program test_daily_solar
   end subroutine check_answers
   !---------------------------------------------!
 
-
-end program test_daily_solar
+end program test_astronomy
