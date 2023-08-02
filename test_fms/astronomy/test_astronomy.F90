@@ -20,9 +20,10 @@
 !> @author Caitlyn McAllister
 !> @brief Unit test for astronomy/daily_mean_solar interfaces
 !> @email gfdl.climate.model.info@noaa.gov
-!> @description Performs calculations done in astronomy_mod using the daily_mean_solar
+!> @description Performs calculations done in astronomy_mod for all
 !> interfaces using 32 and 64 bit reals
-!! TODO: A more comprehensive testing suite for any daily_mean_solar_cal subroutine
+!! TODO: A more comprehensive testing suite for optional arguments in diurnal_solar,
+!! a more comprehensive testing suite for all interfaces using different times of the year
 
 program test_astronomy
 
@@ -149,8 +150,10 @@ program test_astronomy
     type(time_type)                           :: time_in
     integer, parameter                        :: lkind = TEST_AST_KIND_
     real(kind=TEST_AST_KIND_), parameter      :: half_pi = acos(0.0_lkind)
-    real(kind=TEST_AST_KIND_), parameter :: cosz_local=1.0_lkind/half_pi
-    real(kind=TEST_AST_KIND_), parameter :: hout_local=half_pi/real(PI,TEST_AST_KIND_)
+    real(kind=TEST_AST_KIND_), parameter      :: cosz_local = 1.0_lkind/half_pi
+    real(kind=TEST_AST_KIND_), parameter      :: hout_local = half_pi/real(PI,TEST_AST_KIND_)
+    ! half_pi is needed in these calculations due to the way it is defined in the constants_mod
+    ! and how pi is used in the calculations in astronomy_mod
 
     time_since_ae = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
