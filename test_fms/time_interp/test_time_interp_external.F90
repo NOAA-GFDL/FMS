@@ -115,13 +115,13 @@ call mpp_exit
                 call register_field(fileobj, "time", "double", dimensions=(/"time"/))
 
                 call register_field(fileobj, fieldname, "double", dimensions=(/"lon ", "lat ", "time"/))
-                call register_field(fileobj, trim(fieldname)//"_random", "double", dimensions=(/"lon ", "lat ", "time"/))
+                call register_field(fileobj, trim(fieldname)//"_random", "double", dimensions=(/"lon ","lat ","time"/))
 
                 call register_variable_attribute(fileobj, "lon", "cartesian_axis", "X", str_len=1)
                 call register_variable_attribute(fileobj, "lat", "cartesian_axis", "Y", str_len=1)
 
                 call register_variable_attribute(fileobj, "time", "cartesian_axis", "T", str_len=1)
-                call register_variable_attribute(fileobj, "time", "units", "days since 1800-01-01 00:00:00", str_len=30)
+                call register_variable_attribute(fileobj, "time", "units", "days since 1800-01-01 00:00:00",str_len=30)
                 call register_variable_attribute(fileobj, "time", "calendar", "julian", str_len=6)
 
                 !call register_global_attribute(fileobj, "global_scalar", 1024.0_r8_kind)
@@ -411,7 +411,7 @@ call mpp_exit
     end subroutine time_interpolate_2d_data
 
     subroutine time_interpolate_scalar_data
-        real(TI_TEST_KIND_) :: data_scalar !< scalar to interpolate 
+        real(TI_TEST_KIND_) :: data_scalar !< scalar to interpolate
 
         id = init_external_field(filename, fieldname,verbose=.false.)
 
