@@ -5,7 +5,10 @@ jobs:
   coupler-build:
     runs-on: ubuntu-latest
     container:
-      image: ryanmulhall/hpc-me.ubuntu-minimal:coupler
+      image: ghcr.io/rem1776/fms-ci-rocky-gnu:12.3.0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
       env:
         CC: mpicc
         FC: mpif90
