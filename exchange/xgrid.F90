@@ -130,7 +130,7 @@ use gradient_mod,        only: gradient_cubic
 use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
 use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
 use fms2_io_mod,         only: get_variable_units, dimension_exists
-use platform_mod
+use platform_mod,        only: r8_kind, i8_kind
 
 implicit none
 private
@@ -1089,7 +1089,7 @@ logical,          intent(in)           :: use_higher_order
      else
       if(ASSOCIATED(grid%x)) deallocate(grid%x) !< Check if allocated
         allocate( grid%x( grid%size ) )
-        grid%x%di = 0.0; grid%x%dj = 0.0
+        grid%x%di = 0.0_r8_kind; grid%x%dj = 0.0_r8_kind
      end if
   end if
 
@@ -1112,7 +1112,7 @@ logical,          intent(in)           :: use_higher_order
            if(scale_exist) then
               grid%x(ll)%scale = scale(l)
            else
-              grid%x(ll)%scale = 1.0
+              grid%x(ll)%scale = 1.0_r8_kind
            endif
            if(use_higher_order) then
               grid%x(ll)%di  = di(l)
@@ -1251,7 +1251,7 @@ logical,          intent(in)           :: use_higher_order
      else
       if(ASSOCIATED(grid%x_repro)) deallocate(grid%x_repro) !< Check if allocated
         allocate( grid%x_repro( grid%size_repro ) )
-        grid%x_repro%di = 0.0; grid%x_repro%dj = 0.0
+        grid%x_repro%di = 0.0_r8_kind; grid%x_repro%dj = 0.0_r8_kind
      end if
      do l=1,nxgrid1
         if (in_box_me(i1_side1(l),j1_side1(l), grid1) ) then
@@ -1313,7 +1313,7 @@ subroutine get_grid_version1(grid, grid_id, grid_file)
   integer                           :: is, ie, js, je
   type(FmsNetcdfDomainFile_t)       :: fileobj
 
-  d2r = PI/180.0
+  d2r = real(PI, r8_kind) / 180.0_r8_kind
 
   if(.not. open_file(fileobj, grid_file, 'read', grid%domain) ) then
      call error_mesg('xgrid_mod(get_grid_version1)', 'Error in opening file '//trim(grid_file), FATAL)
@@ -1385,7 +1385,7 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
      call error_mesg('xgrid_mod(get_grid_version2)', 'Error in opening file '//trim(grid_file), FATAL)
   endif
 
-  d2r = PI/180.0
+  d2r = real(PI, r8_kind) / 180.0_r8_kind
 
   call mpp_get_compute_domain(grid%domain, is, ie, js, je)
 
@@ -1434,8 +1434,8 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
         if (associated(grid%geolat)) deallocate(grid%geolat) !< Check if allocated
         allocate(grid%geolon(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
         allocate(grid%geolat(grid%isd_me:grid%ied_me, grid%jsd_me:grid%jed_me))
-        grid%geolon = 1e10
-        grid%geolat = 1e10
+        grid%geolon = 1.0e10_r8_kind
+        grid%geolat = 1.0e10_r8_kind
         !--- area_ocn_sphere, area_lnd_sphere, area_atm_sphere is not been defined.
         do j = grid%js_me,grid%je_me
            do i = grid%is_me,grid%ie_me
@@ -1469,7 +1469,7 @@ subroutine get_area_elements_fms2_io(fileobj, name, data)
      call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file '//trim(fileobj%path)// &
                      ' Will set data to negative values...', NOTE)
      ! area elements no present in grid_spec file, set to negative values....
-     data = -1.0
+     data = -1.0_r8_kind
   endif
 
 end subroutine get_area_elements_fms2_io
@@ -1730,7 +1730,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            if (associated(grid%area_inv)) deallocate(grid%area_inv) !< Check if allocated
            allocate( grid%area    (grid%ls_me:grid%le_me,1) )
            allocate( grid%area_inv(grid%ls_me:grid%le_me,1) )
-           grid%area       = 0.0
+           grid%area       = 0.0_r8_kind
            grid%size       = 0
            grid%size_repro = 0
         endif
@@ -1739,7 +1739,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
         if (associated(grid%area_inv)) deallocate(grid%area_inv) !< Check if allocated
         allocate( grid%area    (grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
         allocate( grid%area_inv(grid%is_me:grid%ie_me, grid%js_me:grid%je_me) )
-        grid%area       = 0.0
+        grid%area       = 0.0_r8_kind
         grid%size       = 0
         grid%size_repro = 0
      endif
@@ -1853,7 +1853,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            else
               allocate( grid%frac_area(grid%is_me:grid%ie_me, grid%js_me:grid%je_me, grid%km) )
            endif
-           grid%frac_area = 1.0
+           grid%frac_area = 1.0_r8_kind
         endif
 
         ! load exchange cells, sum grid cell areas, set your1my2/your2my1
@@ -1957,8 +1957,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            deallocate(tile1_list, tile2_list)
         end select
         if(grid%on_this_pe) then
-           grid%area_inv = 0.0;
-           where (grid%area>0.0) grid%area_inv = 1.0/grid%area
+           grid%area_inv = 0.0_r8_kind;
+           where (grid%area>0.0_r8_kind) grid%area_inv = 1.0_r8_kind/grid%area
         endif
      end if
   end do
@@ -1967,9 +1967,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
 
   call mpp_clock_end(id_load_xgrid)
 
-  grid1%area_inv = 0.0;
-  where (grid1%area>0.0)
-     grid1%area_inv = 1.0/grid1%area
+  grid1%area_inv = 0.0_r8_kind;
+  where (grid1%area>0.0_r8_kind)
+     grid1%area_inv = 1.0_r8_kind/grid1%area
   end where
 
   xmap%your1my2(xmap%me-xmap%root_pe) = .false. ! this is not necessarily true but keeps
@@ -2033,10 +2033,10 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   call mpp_clock_begin(id_conservation_check)
 
   if(lnd_ug_id ==0) then
-     xxx = conservation_check(grid1%area*0.0+1.0, grid1%id, xmap)
+     xxx = conservation_check(grid1%area*0.0_r8_kind+1.0_r8_kind, grid1%id, xmap)
   else
      allocate(tmp_2d(grid1%is_me:grid1%ie_me, grid1%js_me:grid1%je_me))
-     tmp_2d = 1.0
+     tmp_2d = 1.0_r8_kind
      xxx = conservation_check_ug(tmp_2d, grid1%id, xmap)
      deallocate(tmp_2d)
   endif
@@ -2045,14 +2045,14 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
 
   if(lnd_ug_id == 0) then
      do g=2,size(xmap%grids(:))
-        xxx = conservation_check(xmap%grids(g)%frac_area*0.0+1.0, xmap%grids(g)%id, xmap )
+        xxx = conservation_check(xmap%grids(g)%frac_area*0.0_r8_kind+1.0_r8_kind, xmap%grids(g)%id, xmap )
         write( out_unit,* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx
      enddo
   else
      do g=2,size(xmap%grids(:))
         grid => xmap%grids(g)
         allocate(tmp_3d(grid%is_me:grid%ie_me, grid%js_me:grid%je_me,grid%km))
-        tmp_3d = 1.0
+        tmp_3d = 1.0_r8_kind
         xxx = conservation_check_ug(tmp_3d, xmap%grids(g)%id, xmap )
         write( out_unit,* )xmap%grids(g)%id,'(',xmap%grids(:)%id,')=', xxx
         deallocate(tmp_3d)
@@ -3882,7 +3882,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   !--- unpack the buffer
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = 0.0
+     d = 0.0_r8_kind
   enddo
   !--- To bitwise reproduce old results, first copy the data onto its own pe.
 
@@ -3994,7 +3994,7 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            l2 = send%xloc(n)
            pos = pos + 1
            do k =1, xmap%grids(g)%km
-             if(xmap%grids(g)%frac_area(i,j,k)/=0.0) then
+             if(xmap%grids(g)%frac_area(i,j,k)/=0.0_r8_kind) then
               l2 = l2+1
               send_buffer(pos) = send_buffer(pos) + xmap%x1(l2)%area *x(l2)
              endif
@@ -4061,7 +4061,7 @@ integer, intent(in), optional                :: remap_method
   type (grid_type), pointer, save               :: grid1 =>NULL(), grid2 =>NULL()
 
   grid1 => xmap%grids(1)
-  conservation_check_side1 = 0.0
+  conservation_check_side1 = 0.0_r8_kind
   if(grid1%tile_me .NE. tile_nest) conservation_check_side1(1) = sum(grid1%area*d)
 !  if(grid1%tile_me .NE. tile_parent .OR. grid1%id .NE. "ATM") &
 !      conservation_check_side1(1) = sum(grid1%area*d)
@@ -4108,7 +4108,7 @@ integer, intent(in), optional                  :: remap_method
   type (grid_type), pointer, save              :: grid1 =>NULL(), grid2 =>NULL()
 
   grid1 => xmap%grids(1)
-  conservation_check_side2 = 0.0
+  conservation_check_side2 = 0.0_r8_kind
   do g = 2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if (grid_id==grid2%id) then
@@ -4117,7 +4117,7 @@ integer, intent(in), optional                  :: remap_method
       endif
       call put_to_xgrid(d, grid_id, x_over, xmap)  ! put from this side 2
     else
-      call put_to_xgrid(0.0 * grid2%frac_area, grid2%id, x_over, xmap) ! zero rest
+      call put_to_xgrid(0.0_r8_kind * grid2%frac_area, grid2%id, x_over, xmap) ! zero rest
     end if
   end do
 
@@ -4127,7 +4127,7 @@ integer, intent(in), optional                  :: remap_method
   call put_to_xgrid(d1,  grid1%id, x_back, xmap,remap_method)   ! put from side 1
   deallocate ( d1 )
 
-  conservation_check_side2(3) = 0.0;
+  conservation_check_side2(3) = 0.0_r8_kind;
   do g = 2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if(grid2%on_this_pe) then
@@ -4165,7 +4165,7 @@ integer, intent(in), optional                   :: remap_method
   type (grid_type), pointer, save               :: grid1 =>NULL(), grid2 =>NULL()
 
   grid1 => xmap%grids(1)
-  conservation_check_ug_side1 = 0.0
+  conservation_check_ug_side1 = 0.0_r8_kind
 
 
   if(grid1%is_ug) then
@@ -4237,7 +4237,7 @@ integer, intent(in),   optional                :: remap_method
   type (grid_type), pointer, save              :: grid1 =>NULL(), grid2 =>NULL()
 
   grid1 => xmap%grids(1)
-  conservation_check_ug_side2 = 0.0
+  conservation_check_ug_side2 = 0.0_r8_kind
   do g = 2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if (grid_id==grid2%id) then
@@ -4258,9 +4258,9 @@ integer, intent(in),   optional                :: remap_method
        if(allocated(d_ug)) deallocate(d_ug)
     else
        if(grid2%is_ug) then
-          call put_to_xgrid_ug(0.0 * grid2%frac_area(:,1,:), grid2%id, x_over, xmap) ! zero rest
+          call put_to_xgrid_ug(0.0_r8_kind * grid2%frac_area(:,1,:), grid2%id, x_over, xmap) ! zero rest
        else
-          call put_to_xgrid(0.0 * grid2%frac_area, grid2%id, x_over, xmap) ! zero rest
+          call put_to_xgrid(0.0_r8_kind * grid2%frac_area, grid2%id, x_over, xmap) ! zero rest
        endif
     end if
   end do
@@ -4279,7 +4279,7 @@ integer, intent(in),   optional                :: remap_method
   endif
   deallocate ( d1 )
 
-  conservation_check_ug_side2(3) = 0.0;
+  conservation_check_ug_side2(3) = 0.0_r8_kind;
   do g = 2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if(grid2%on_this_pe) then
@@ -4352,8 +4352,8 @@ function grad_zonal_latlon(d, lon, lat, is, ie, js, je, isd, jsd)
      endif
      dx = lon(ip1) - lon(im1)
      if(abs(dx).lt.EPS )  call error_mesg('xgrids_mod(grad_zonal_latlon)', 'Improper grid size in lontitude', FATAL)
-     if(dx .gt. PI)  dx = dx - 2.0* PI
-     if(dx .lt. -PI) dx = dx + 2.0* PI
+     if(dx .gt. real(PI,r8_kind))  dx = dx - 2.0_r8_kind* real(PI, r8_kind)
+     if(dx .lt. real(-PI,r8_kind)) dx = dx + 2.0_r8_kind* real(PI, r8_kind)
      do j = js, je
         costheta = cos(lat(j))
         if(abs(costheta) .lt. EPS) call error_mesg('xgrids_mod(grad_zonal_latlon)', 'Improper latitude grid', FATAL)
@@ -4455,7 +4455,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
      return
   endif
 
-     from_dq = delta_t * 4.0*PI*radius**2 * sum( sum(xmap%grids(grid_index)%area * &
+     from_dq = delta_t * 4.0_r8_kind * real(PI,r8_kind) * radius**2 * sum( sum(xmap%grids(grid_index)%area * &
           & sum(xmap%grids(grid_index)%frac_area * data, DIM=3), DIM=1))
      to_dq = from_dq
 
@@ -4466,8 +4466,8 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   if(present(verbose).and.debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4.0*PI*radius**2)
-     to_dq   = to_dq  /(4.0*PI*radius**2)
+     from_dq = from_dq/(4.0_r8_kind*real(PI,r8_kind)*radius**2)
+     to_dq   = to_dq  /(4.0_r8_kind*real(PI,r8_kind)*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -4529,8 +4529,8 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if(debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4.0*PI*radius**2)
-     to_dq   = to_dq  /(4.0*PI*radius**2)
+     from_dq = from_dq/(4.0_r8_kind*real(PI,r8_kind)*radius**2)
+     to_dq   = to_dq  /(4.0_r8_kind*real(PI,r8_kind)*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -4581,7 +4581,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   endif
 
      tmp = xmap%grids(grid_index)%frac_area(:,1,:) * data
-     from_dq = delta_t * 4.0*PI*radius**2 * sum( xmap%grids(grid_index)%area(:,1) * &
+     from_dq = delta_t * 4.0_r8_kind * real(PI,r8_kind) * radius**2 * sum( xmap%grids(grid_index)%area(:,1) * &
           & sum(tmp, DIM=2))
      to_dq = from_dq
 
@@ -4592,8 +4592,8 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   if(present(verbose).and.debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4.0*PI*radius**2)
-     to_dq   = to_dq  /(4.0*PI*radius**2)
+     from_dq = from_dq/(4.0_r8_kind*real(PI,r8_kind)*radius**2)
+     to_dq   = to_dq  /(4.0_r8_kind*real(PI,r8_kind)*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -4626,7 +4626,7 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
      return
   endif
 
-  res = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+  res = delta_t * 4.0_r8_kind * real(PI,r8_kind) * radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
 
 end subroutine stock_integrate_2d
 !#######################################################################
@@ -4677,7 +4677,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
 
   if(mpp_pe() == mpp_root_pe()) then
      ! normalize to 1 earth m^2
-     planet_area = 4.0*PI*radius**2
+     planet_area = 4.0_r8_kind * real(PI,r8_kind) * radius**2
      f_value       = f_value     / planet_area
      c_value       = c_value     / planet_area
 
@@ -5269,7 +5269,7 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   enddo
 
   !pack the data
-  send_buffer(:) = 0.0
+  send_buffer(:) = 0.0_r8_kind
 !$OMP parallel do default(none) shared(lsize,x_addrs,comm,xmap,send_buffer) &
 !$OMP                          private(ptr_x,i,j,g,l2,pos,send)
   do p = 1, comm%nsend
@@ -5341,7 +5341,7 @@ type (xmap_type),                                         intent(in)  :: xmap
 
   call mpp_clock_begin(id_get_2_from_xgrid)
 
-  d = 0.0
+  d = 0.0_r8_kind
   do l=grid%first_get,grid%last_get
     d(xmap%x2_get(l)%l,xmap%x2_get(l)%k) = &
             d(xmap%x2_get(l)%l,xmap%x2_get(l)%k) + xmap%x2_get(l)%area*x(xmap%x2_get(l)%pos)
