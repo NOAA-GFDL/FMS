@@ -198,10 +198,9 @@ contains
       nblks = 1
       blksz = tot_pts
     else
-      if (mod(tot_pts,blksz) .eq. 0) then
-        nblks = tot_pts/blksz
-      else
-        nblks = ceiling(real(tot_pts)/real(blksz))
+      nblks = tot_pts/blksz
+      if (mod(tot_pts,blksz) .gt. 0) then
+        nblks = nblks + 1
       endif
     endif
 
