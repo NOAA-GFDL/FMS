@@ -314,6 +314,7 @@ foreach(kind ${kinds})
                                                  constants
                                                  axis_utils/include
                                                  field_manager/include
+                                                 time_interp/include
                                                  tracer_manager/include)
 
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
