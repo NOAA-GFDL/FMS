@@ -240,6 +240,7 @@ public :: set_fileobj_time_name
 public :: write_restart_bc
 public :: read_restart_bc
 public :: flush_file
+public :: assignment(=)
 
 !> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
@@ -330,6 +331,12 @@ interface is_valid
   module procedure is_valid_r8
   module procedure is_valid_r4
 end interface is_valid
+
+!> @brief
+interface assignment(=)
+   module procedure FmsNetcdfFile_t_eq
+end interface assignment(=)
+
 
 !> @addtogroup netcdf_io_mod
 !> @{
@@ -2356,6 +2363,92 @@ subroutine flush_file(fileobj)
     call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
   endif
 end subroutine flush_file
+
+!> @brief "=" operator for FmsNetcdfFile_t type
+subroutine FmsNetcdfFile_t_eq(FmsNetcdfFile_out, FmsNetcdfFile_in)
+
+  type(FmsNetcdfFile_t), intent(inout) :: FmsNetcdfFile_out
+  type(FmsNetcdfFile_t), intent(in)    :: FmsNetcdfFile_in
+
+  FmsNetcdfFile_out%path        = FmsNetcdfFile_in%path
+  FmsNetcdfFile_out%is_readonly = FmsNetcdfFile_in%is_readonly
+  FmsNetcdfFile_out%ncid        = FmsNetcdfFile_in%ncid
+  FmsNetcdfFile_out%nc_format   = FmsNetcdfFile_in%nc_format
+  FmsNetcdfFile_out%is_netcdf4  = FmsNetcdfFile_in%is_netcdf4
+  if(allocated(FmsNetcdfFile_in%pelist)) FmsNetcdfFile_out%pelist = FmsNetcdfFile_in%pelist
+  FmsNetcdfFile_out%io_root         = FmsNetcdfFile_in%io_root
+  FmsNetcdfFile_out%is_root         = FmsNetcdfFile_in%is_root
+  FmsNetcdfFile_out%is_restart      = FmsNetcdfFile_in%is_restart
+  FmsNetcdfFile_out%mode_is_append  = FmsNetcdfFile_out%mode_is_append
+  if(allocated(FmsNetcdfFile_in%is_open)) FmsNetcdfFile_out%is_open = FmsNetcdfFile_in%is_open
+  FmsNetcdfFile_out%num_restart_vars    = FmsNetcdfFile_in%num_restart_vars
+  FmsNetcdfFile_out%num_compressed_dims = FmsNetcdfFile_in%num_compressed_dims
+  FmsNetcdfFile_out%is_diskless         = FmsNetcdfFile_in%is_diskless
+  FmsNetcdfFile_out%time_name           = FmsNetcdfFile_in%time_name
+
+  FmsNetcdfFile_out%bc_dimensions = dimension_information_copy(FmsNetcdfFile_in%bc_dimensions)
+
+  if(allocated(FmsNetcdfFile_in%compressed_dims)) &
+       FmsNetcdfFile_out%compressed_dims = CompressedDimension_copy(FmsNetcdfFile_in%compressed_dims)
+
+  if(allocated(FmsNetcdfFile_in%restart_vars)) then
+     allocate(FmsNetcdfFile_out%restart_vars(size(FmsNetcdfFile_in%restart_vars)))
+     call RestartVariable_copy(FmsNetcdfFile_in%restart_vars,FmsNetcdfFile_out%restart_vars)
+  end if
+
+
+end subroutine FmsNetcdfFile_t_eq
+
+!> @brief copies the type RestartVariable_t
+!! Note, RestartVariable_copy cannot be declared as an elemental function
+!! due to pointer assignments
+subroutine RestartVariable_copy(RestartVariable_in,RestartVariable_out)
+
+  implicit none
+  type(RestartVariable_t), intent(in), dimension(:)  :: RestartVariable_in
+  type(RestartVariable_t), intent(out), dimension(:) :: RestartVariable_out
+
+  integer :: i
+
+  do i=1, size(RestartVariable_in)
+     RestartVariable_out(i)%varname = RestartVariable_in(i)%varname
+     if(associated(RestartVariable_in(i)%data1d)) RestartVariable_out(i)%data1d => RestartVariable_in(i)%data1d
+     if(associated(RestartVariable_in(i)%data2d)) RestartVariable_out(i)%data2d => RestartVariable_in(i)%data2d
+     if(associated(RestartVariable_in(i)%data3d)) RestartVariable_out(i)%data3d => RestartVariable_in(i)%data3d
+     if(associated(RestartVariable_in(i)%data4d)) RestartVariable_out(i)%data4d => RestartVariable_in(i)%data4d
+     if(associated(RestartVariable_in(i)%data5d)) RestartVariable_out(i)%data5d => RestartVariable_in(i)%data5d
+  end do
+
+end subroutine  RestartVariable_copy
+
+!> @brief copies the type CompressedDimension_t
+elemental function CompressedDimension_copy(CompressedDimension_in)
+
+  implicit none
+  type(CompressedDimension_t), intent(in)  :: CompressedDimension_in
+  type(CompressedDimension_t) :: CompressedDimension_copy
+
+  CompressedDimension_copy%dimname = CompressedDimension_in%dimname
+  if(allocated(CompressedDimension_copy%npes_corner)) &
+       CompressedDimension_copy%npes_corner = CompressedDimension_in%npes_corner
+  if(allocated(CompressedDimension_in%npes_nelems)) &
+       CompressedDimension_copy%npes_nelems = CompressedDimension_in%npes_nelems
+
+end function CompressedDimension_copy
+
+!> @brief copies the type dimension information
+elemental function dimension_information_copy(dimension_information_in)
+
+  implicit none
+  type(dimension_information), intent(in)  :: dimension_information_in
+  type(dimension_information) :: dimension_information_copy
+
+  dimension_information_copy%xlen = dimension_information_in%xlen
+  dimension_information_copy%ylen = dimension_information_in%ylen
+  dimension_information_copy%zlen = dimension_information_in%zlen
+  dimension_information_copy%cur_dim_len = dimension_information_in%cur_dim_len
+
+end function dimension_information_copy
 
 end module netcdf_io_mod
 !> @}

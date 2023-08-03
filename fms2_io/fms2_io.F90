@@ -99,6 +99,7 @@ public :: set_filename_appendix
 public :: get_instance_filename
 public :: nullify_filename_appendix
 public :: flush_file
+public :: assignment(=)
 !> @}
 
 !> @brief Opens a given netcdf or domain file.
@@ -418,6 +419,33 @@ subroutine fms2_io_init ()
 !> Mark the fms2_io as initialized
   fms2_io_is_initialized = .true.
 end subroutine fms2_io_init
+
+!> @brief = operator for FmsNetcdfFile_t type
+subroutine FmsNetcdfFile_t_eq(FmsNetcdfFile_out, FmsNetcdfFile_in)
+
+  type(FmsNetcdfFile_t), intent(in)  :: FmsNetcdfFile_in
+  type(FmsNetcdfFile_t), intent(out) :: FmsNetcdfFile_out
+
+  FmsNetcdfFile_out%path        = FmsNetcdfFile_in%path
+  FmsNetcdfFile_out%is_readonly = FmsNetcdfFile_in%is_readonly
+  FmsNetcdfFile_out%ncid        = FmsNetcdfFile_in%ncid
+  FmsNetcdfFile_out%nc_format   = FmsNetcdfFile_in%nc_format
+  FmsNetcdfFile_out%is_netcdf4  = FmsNetcdfFile_in%is_netcdf4
+  if(allocated(FmsNetcdfFile_in%pelist)) FmsNetcdfFile_out%pelist = FmsNetcdfFile_in%pelist
+  FmsNetcdfFile_out%io_root         = FmsNetcdfFile_in%io_root
+  FmsNetcdfFile_out%is_root         = FmsNetcdfFile_in%is_root
+  FmsNetcdfFile_out%is_restart      = FmsNetcdfFile_in%is_restart
+  FmsNetcdfFile_out%mode_is_append  = FmsNetcdfFile_out%mode_is_append
+  if(allocated(FmsNetcdfFile_in%is_open))      FmsNetcdfFile_out%is_open      = FmsNetcdfFile_in%is_open
+  if(allocated(FmsNetcdfFile_in%restart_vars)) FmsNetcdfFile_out%restart_vars = FmsNetcdfFile_in%restart_vars
+  FmsNetcdfFile_out%num_restart_vars = FmsNetcdfFile_in%num_restart_vars
+  if(allocated(FmsNetcdfFile_in%compressed_dims)) FmsNetcdfFile_out%compressed_dims = FmsNetcdfFile_in%compressed_dims
+  FmsNetcdfFile_out%num_compressed_dims = FmsNetcdfFile_in%num_compressed_dims
+  FmsNetcdfFile_out%is_diskless         = FmsNetcdfFile_in%is_diskless
+  FmsNetcdfFile_out%time_name           = FmsNetcdfFile_in%time_name
+  FmsNetcdfFile_out%bc_dimensions       = FmsNetcdfFile_in%bc_dimensions
+
+end subroutine FmsNetcdfFile_t_eq
 
 end module fms2_io_mod
 !> @}

@@ -52,7 +52,7 @@ use fms2_io_mod,       only : FmsNetcdfFile_t, fms2_io_file_exist => file_exists
                               get_num_variables, get_dimension_size,   &
                               get_variable_units, get_variable_names,  &
                               get_time_calendar, close_file,           &
-                              get_variable_dimension_names, get_variable_sense
+                              get_variable_dimension_names, get_variable_sense, assignment(=)
 
 use horiz_interp_mod,  only : horiz_interp_type, &
                               horiz_interp_new,  &
