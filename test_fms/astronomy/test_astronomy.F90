@@ -17,13 +17,13 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @file
-!> @author Caitlyn McAllister
-!> @brief Unit test for astronomy/daily_mean_solar interfaces
+!> @author Mikyung Lee, Caitlyn McAllister
+!> @brief Unit tests for astronomy_mod
 !> @email gfdl.climate.model.info@noaa.gov
 !> @description Performs calculations done in astronomy_mod for all
 !> interfaces using 32 and 64 bit reals
 !! TODO: A more comprehensive testing suite for optional arguments in diurnal_solar,
-!! a more comprehensive testing suite for all interfaces using different times of the year
+!! a more comprehensive testing suite for all routines using different times of the year
 
 program test_astronomy
 
@@ -50,7 +50,8 @@ program test_astronomy
   contains
 
   subroutine test_set_get_orbital_parameters
-
+    ! test that whatever values get sent into set_orbital_parameters
+    ! are the same after calling get_orbital_parameters
     implicit none
     real(kind=TEST_AST_KIND_) :: ecc_in, obliq_in, per_in
     real(kind=TEST_AST_KIND_) :: ecc_out, obliq_out, per_out
@@ -72,7 +73,8 @@ program test_astronomy
   !---------------------------------------------!
 
   subroutine test_diurnal_solar
-
+    ! very simple test cases where all input arguments are set to 0.0,
+    ! expected output --> cosz=0.0, fracday=0.0, and rrsun=1.0
     implicit none
     real(kind=TEST_AST_KIND_), dimension(1,1) :: lat2D, lon2D, cosz2D, fracday2D
     real(kind=TEST_AST_KIND_), dimension(1)   :: lat1D, lon1D, cosz1D, fracday1D
@@ -141,7 +143,11 @@ program test_astronomy
 
     !---------------------------------------------!
   subroutine test_daily_mean_solar
-
+    ! simple test cases where all input arguments are set to 0.0,
+    ! expected output --> cosz=2/pi, h_out=0.5, rr_out=1.0
+    ! half_pi is needed in these calculations due to the way it is 
+    ! defined in the constants_mod, the expected values lose precision
+    ! without the use of half_pi
     implicit none
     real(kind=TEST_AST_KIND_), dimension(1,1) :: lat2D, cosz2D, h_out2D
     real(kind=TEST_AST_KIND_), dimension(1)   :: lat1D, cosz1D, h_out1D, solar1D
@@ -152,8 +158,6 @@ program test_astronomy
     real(kind=TEST_AST_KIND_), parameter      :: half_pi = acos(0.0_lkind)
     real(kind=TEST_AST_KIND_), parameter      :: cosz_local = 1.0_lkind/half_pi
     real(kind=TEST_AST_KIND_), parameter      :: hout_local = half_pi/real(PI,TEST_AST_KIND_)
-    ! half_pi is needed in these calculations due to the way it is defined in the constants_mod
-    ! and how pi is used in the calculations in astronomy_mod
 
     time_since_ae = 0.0_lkind
     time_in = set_time(seconds=0, days=1, ticks=0 )
