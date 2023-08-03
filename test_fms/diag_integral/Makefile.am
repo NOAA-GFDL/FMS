@@ -17,31 +17,33 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the diag_integral directory of the FMS
+# This is an automake file for the test_fms/diag_integral directory of the FMS
 # package.
 
-# Ed Hartnett 2/22/19
+# Find the fms_mod.mod file.
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/diag_integral/include
-AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
+# Link to the FMS library.
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
-# Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libdiag_integral.la
+# Build this test program.
+check_PROGRAMS = test_diag_integral_r4 test_diag_integral_r8
 
-# The convenience library depends on its source.
-libdiag_integral_la_SOURCES = diag_integral.F90\
-															include/diag_integral.inc\
-															include/diag_integral_r4.fh\
-															include/diag_integral_r8.fh
+# This is the source code for the test.
+test_diag_integral_r4_SOURCES = test_diag_integral.F90
+test_diag_integral_r8_SOURCES = test_diag_integral.F90
 
-diag_integral_mod.$(FC_MODEXT): include/diag_integral.inc\
-																include/diag_integral_r4.fh\
-																include/diag_integral_r8.fh
+test_diag_integral_r4_CPPFLAGS=-DTEST_DI_KIND_=4 -I$(MODDIR)
+test_diag_integral_r8_CPPFLAGS=-DTEST_DI_KIND_=8 -I$(MODDIR)
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh
 
-nodist_include_HEADERS = diag_integral_mod.$(FC_MODEXT)
-BUILT_SOURCES = diag_integral_mod.$(FC_MODEXT)
+# Run the test program.
+TESTS = test_diag_integral2.sh
 
+# These files will be included in the distribution.
+EXTRA_DIST = test_diag_integral2.sh
 
-include $(top_srcdir)/mkmods.mk
+# Clean up
+CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl
