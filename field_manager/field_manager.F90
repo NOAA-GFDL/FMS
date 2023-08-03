@@ -204,8 +204,6 @@ logical            :: module_is_initialized  = .false.
 public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
 public :: field_manager_end    !< ()
 public :: find_field_index     !< (model, field_name) or (list_path)
-public :: find_field_index_old !< (model, field_name) returns index of field_name in
-public :: find_field_index_new
 public :: get_field_info       !< (n,fld_type,fld_name,model,num_methods)
                                !! Returns parameters relating to field n.
 public :: get_field_method     !< (n, m, method) Returns the m-th method of field n
@@ -222,19 +220,11 @@ public :: fm_get_current_list  !< () return path
 public :: fm_get_length        !< (list) return length
 public :: fm_get_type          !< (field) return string
 public :: fm_get_value         !< (entry, value [, index]) return success !! generic
-public :: fm_get_value_integer !<   as above (overloaded function)
-public :: fm_get_value_logical !<   as above (overloaded function)
-public :: fm_get_value_real    !<   as above (overloaded function)
-public :: fm_get_value_string  !<   as above (overloaded function)
 public :: fm_init_loop         !< (list, iter)
 public :: fm_loop_over_list    !< (list, name, type, index) return success
                                !! (iter, name, type, index) return success
 public :: fm_new_list          !< (list [, create] [, keep]) return index
 public :: fm_new_value         !< (entry, value [, create] [, index]) return index !! generic
-public :: fm_new_value_integer !<   as above (overloaded function)
-public :: fm_new_value_logical !<   as above (overloaded function)
-public :: fm_new_value_real    !<   as above (overloaded function)
-public :: fm_new_value_string  !<   as above (overloaded function)
 public :: fm_reset_loop        !< ()
 public :: fm_return_root       !< () return success
 public :: fm_modify_name       !< (oldname, newname) return success

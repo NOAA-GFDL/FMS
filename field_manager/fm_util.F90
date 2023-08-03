@@ -59,14 +59,6 @@ public  fm_util_get_logical_array
 public  fm_util_get_real_array
 public  fm_util_get_string_array
 public  fm_util_set_value
-public  fm_util_set_value_integer_array
-public  fm_util_set_value_logical_array
-public  fm_util_set_value_real_array
-public  fm_util_set_value_string_array
-public  fm_util_set_value_integer
-public  fm_util_set_value_logical
-public  fm_util_set_value_real
-public  fm_util_set_value_string
 !public  fm_util_get_index
 public  fm_util_get_index_list
 public  fm_util_get_index_string
@@ -101,17 +93,6 @@ character(len=fm_path_name_len) :: save_name
 !
 !        Interface definitions for overloaded routines
 !
-
-!interface  fm_util_get_value  !{
-  !module procedure  fm_util_get_value_integer
-  !module procedure  fm_util_get_value_logical
-  !module procedure  fm_util_get_value_real
-  !module procedure  fm_util_get_value_string
-  !module procedure  fm_util_get_value_integer_array
-  !module procedure  fm_util_get_value_logical_array
-  !module procedure  fm_util_get_value_real_array
-  !module procedure  fm_util_get_value_string_array
-!end interface  !}
 
 !> @}
 
