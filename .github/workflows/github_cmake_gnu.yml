@@ -31,7 +31,7 @@ jobs:
         echo "    use fms_mod" >> test.F90
         echo "    call fms_init" >> test.F90
         echo "    call fms_end" >> test.F90
-        echo "program end" >> test.F90
+        echo "end program" >> test.F90
         mpifort `nf-config --flibs` -Iinclude_r4 -Iinclude_r8 test.F90 libfms_r4.a libfms_r8.a -o test.x
     - name: Run executable
       run: ./test.x
