@@ -45,11 +45,11 @@ program xgrid_test
   use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
   use ensemble_manager_mod, only : get_ensemble_size
-  use platform_mod
+  use platform_mod,         only: r8_kind, i8_kind
 
 implicit none
 
-  real(r8_kind), parameter :: EPSLN = 1.0e-10
+  real(r8_kind), parameter :: EPSLN = 1.0e-10_r8_kind
   character(len=256) :: atm_input_file  = "INPUT/atmos_input.nc"
   character(len=256) :: atm_output_file = "atmos_output.nc"
   character(len=256) :: lnd_output_file = "land_output.nc"
@@ -459,14 +459,14 @@ implicit none
         xt = 0; yt = 0;
         do j = jsc_atm, jec_atm
            do i = isc_atm, iec_atm
-              xt(i,j) = tmpx(2*i, 2*j)*DEG_TO_RAD
-              yt(i,j) = tmpy(2*i, 2*j)*DEG_TO_RAD
+              xt(i,j) = tmpx(2*i, 2*j)*real(DEG_TO_RAD, r8_kind)
+              yt(i,j) = tmpy(2*i, 2*j)*real(DEG_TO_RAD, r8_kind)
            end do
         end do
         do j = jsc_atm, jed_atm
            do i = isc_atm, ied_atm
-              xc(i,j) = tmpx(2*i-1, 2*j-1)*DEG_TO_RAD
-              yc(i,j) = tmpy(2*i-1, 2*j-1)*DEG_TO_RAD
+              xc(i,j) = tmpx(2*i-1, 2*j-1)*real(DEG_TO_RAD, r8_kind)
+              yc(i,j) = tmpy(2*i-1, 2*j-1)*real(DEG_TO_RAD, r8_kind)
            end do
         end do
         call mpp_update_domains(xt, atm_domain)
@@ -493,7 +493,7 @@ implicit none
   if(nk_lnd > 0 .AND. lnd_pe) then
     allocate(lnd_frac(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd))
     call random_number(lnd_frac)
-    lnd_frac = lnd_frac + 0.5
+    lnd_frac = lnd_frac + 0.5_r8_kind
     do j = jsc_lnd, jec_lnd
        do i = isc_lnd, iec_lnd
           tot = sum(lnd_frac(i,j,:))
@@ -508,7 +508,7 @@ implicit none
     if( ice_pe ) then
        allocate(ice_frac(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice))
        call random_number(ice_frac)
-       ice_frac = ice_frac + 0.5
+       ice_frac = ice_frac + 0.5_r8_kind
        do j = jsc_ice, jec_ice
           do i = isc_ice, iec_ice
              tot = sum(ice_frac(i,j,:))

@@ -774,7 +774,7 @@ logical,          intent(in)           :: use_higher_order
         call get_variable_units(fileobj, "xgrid_area", attvalue)
 
         if( trim(attvalue) == 'm2' ) then
-           garea = 4.0*PI*RADIUS*RADIUS;
+           garea = 4.0_r8_kind * real(PI,r8_kind) * real(RADIUS,r8_kind) * real(RADIUS, r8_kind);
            area_tmp = tmp(:,1)/garea
         else if( trim(attvalue) == 'none' ) then
            area_tmp = tmp(:,1)
@@ -873,10 +873,10 @@ logical,          intent(in)           :: use_higher_order
               do l = isc, iec
                  if(in_box_nbr(i2(l), j2(l), grid, p) ) then
                     nsend2(p) = nsend2(p) + 1
-                    send_buffer(pos+1) = i1(l)
-                    send_buffer(pos+2) = j1(l)
-                    send_buffer(pos+3) = i2(l)
-                    send_buffer(pos+4) = j2(l)
+                    send_buffer(pos+1) = real(i1(l), r8_kind)
+                    send_buffer(pos+2) = real(j1(l), r8_kind)
+                    send_buffer(pos+3) = real(i2(l), r8_kind)
+                    send_buffer(pos+4) = real(j2(l), r8_kind)
                     send_buffer(pos+5) = area(l)
                     if(use_higher_order) then
                        send_buffer(pos+6) = di(l)
@@ -891,10 +891,10 @@ logical,          intent(in)           :: use_higher_order
               do l = isc, iec
                  if(in_box_nbr(i1(l), j1(l), grid1, p)) then
                     nsend1(p) = nsend1(p) + 1
-                    send_buffer(pos+1) = i1(l)
-                    send_buffer(pos+2) = j1(l)
-                    send_buffer(pos+3) = i2(l)
-                    send_buffer(pos+4) = j2(l)
+                    send_buffer(pos+1) = real(i1(l), r8_kind)
+                    send_buffer(pos+2) = real(j1(l), r8_kind)
+                    send_buffer(pos+3) = real(i2(l), r8_kind)
+                    send_buffer(pos+4) = real(j2(l), r8_kind)
                     send_buffer(pos+5) = area(l)
                     if(use_higher_order) then
                        send_buffer(pos+6) = di(l)
@@ -2498,9 +2498,9 @@ subroutine set_comm_get1(xmap)
   do n = 0, npes-1
      p = mod(mypos+n, npes)
      do l = 1, send_size(p)
-        send_buf(pos+1) = iarray(pos_x(p)+l)
-        send_buf(pos+2) = jarray(pos_x(p)+l)
-        send_buf(pos+3) = tarray(pos_x(p)+l)
+        send_buf(pos+1) = real(iarray(pos_x(p)+l), r8_kind)
+        send_buf(pos+2) = real(jarray(pos_x(p)+l), r8_kind)
+        send_buf(pos+3) = real(tarray(pos_x(p)+l), r8_kind)
         if(monotonic_exchange) then
            send_buf(pos+4) = diarray(pos_x(p)+l)
            send_buf(pos+5) = djarray(pos_x(p)+l)
@@ -2826,9 +2826,9 @@ subroutine set_comm_put1(xmap)
   do n = 0, npes-1
      p = mod(mypos+n, npes)
      do l = 1, send_size(p)
-        send_buf(pos+1) = iarray(pos_x(p)+l)
-        send_buf(pos+2) = jarray(pos_x(p)+l)
-        send_buf(pos+3) = tarray(pos_x(p)+l)
+        send_buf(pos+1) = real(iarray(pos_x(p)+l), r8_kind)
+        send_buf(pos+2) = real(jarray(pos_x(p)+l), r8_kind)
+        send_buf(pos+3) = real(tarray(pos_x(p)+l), r8_kind)
         if(monotonic_exchange) then
            send_buf(pos+4) = diarray(pos_x(p)+l)
            send_buf(pos+5) = djarray(pos_x(p)+l)
@@ -2946,7 +2946,7 @@ type (xmap_type), intent(inout) :: xmap
         if(xmap%grids(g)%is_ug) then
            do k=1,xmap%grids(g)%km
               lll = xmap%grids(g)%l_index((j2-1)*xmap%grids(g)%im+i2)
-              if (xmap%grids(g)%frac_area(lll,1,k)/=0.0) then
+              if (xmap%grids(g)%frac_area(lll,1,k)/=0.0_r8_kind) then
               xmap%size = xmap%size+1
               xmap%x1(xmap%size)%pos  = xmap%ind_get1(ll)
               xmap%x1(xmap%size)%i    = xmap%grids(g)%x(l)%i1
@@ -2965,7 +2965,7 @@ type (xmap_type), intent(inout) :: xmap
            enddo
         else
            do k=1,xmap%grids(g)%km
-              if (xmap%grids(g)%frac_area(i2,j2,k)/=0.0) then
+              if (xmap%grids(g)%frac_area(i2,j2,k)/=0.0_r8_kind) then
               xmap%size = xmap%size+1
               xmap%x1(xmap%size)%pos  = xmap%ind_get1(ll)
               xmap%x1(xmap%size)%i    = xmap%grids(g)%x(l)%i1
@@ -3020,7 +3020,7 @@ type (xmap_type), intent(inout) :: xmap
         if(xmap%grids(g)%is_ug) then
         do k=1,xmap%grids(g)%km
            lll = xmap%grids(g)%l_index((j2-1)*xmap%grids(g)%im+i2)
-           if (xmap%grids(g)%frac_area(lll,1,k)/=0.0) then
+           if (xmap%grids(g)%frac_area(lll,1,k)/=0.0_r8_kind) then
               xmap%size_put1 = xmap%size_put1+1
               xmap%x1_put(xmap%size_put1)%pos  = xmap%ind_put1(ll)
               xmap%x1_put(xmap%size_put1)%i    = xmap%grids(g)%x(l)%i1
@@ -3043,7 +3043,7 @@ type (xmap_type), intent(inout) :: xmap
         end do
         else
         do k=1,xmap%grids(g)%km
-           if (xmap%grids(g)%frac_area(i2,j2,k)/=0.0) then
+           if (xmap%grids(g)%frac_area(i2,j2,k)/=0.0_r8_kind) then
               xmap%size_put1 = xmap%size_put1+1
               xmap%x1_put(xmap%size_put1)%pos  = xmap%ind_put1(ll)
               xmap%x1_put(xmap%size_put1)%i    = xmap%grids(g)%x(l)%i1
@@ -3092,11 +3092,11 @@ type (xmap_type), intent(inout) :: xmap
            xmap%get1_repro%send(n)%xLoc(pos) = xloc
            if( xmap%grids(g)%is_ug ) then
              i = xmap%grids(g)%x(l)%l2
-             xloc = xloc + count(xmap%grids(g)%frac_area(i,1,:)/=0.0)
+             xloc = xloc + count(xmap%grids(g)%frac_area(i,1,:)/=0.0_r8_kind)
            else
              i = xmap%grids(g)%x(l)%i2
              j = xmap%grids(g)%x(l)%j2
-             xloc = xloc + count(xmap%grids(g)%frac_area(i,j,:)/=0.0)
+             xloc = xloc + count(xmap%grids(g)%frac_area(i,j,:)/=0.0_r8_kind)
            endif
         enddo
      enddo
@@ -3318,7 +3318,7 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
   integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
 
-  d = 0.
+  d = 0.0_r8_kind
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
      if(present(complete)) is_complete=complete
@@ -3467,7 +3467,7 @@ type (xmap_type),                                intent(in)  :: xmap
 
   call mpp_clock_begin(id_get_2_from_xgrid)
 
-  d = 0.0
+  d = 0.0_r8_kind
   do l=grid%first_get,grid%last_get
     d(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) = &
             d(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) + xmap%x2_get(l)%area*x(xmap%x2_get(l)%pos)
@@ -3846,7 +3846,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
      call mpp_recv(recv_buffer(buffer_pos+1), glen=msgsize, from_pe = recv%pe, block=.false., tag=COMM_TAG_9)
   enddo
 
-  dg = 0.0;
+  dg = 0.0_r8_kind;
 !$OMP parallel do default(none) shared(lsize,xmap,dg,x_addrs) private(dgp,ptr_x)
   do l = 1, lsize
      ptr_x = x_addrs(l)
@@ -3979,7 +3979,7 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   enddo
 
   !pack the data
-  send_buffer(:) = 0.0
+  send_buffer(:) = 0.0_r8_kind
 !$OMP parallel do default(none) shared(lsize,x_addrs,comm,xmap,send_buffer) &
 !$OMP                          private(ptr_x,i,j,g,l2,pos,send)
   do p = 1, comm%nsend
@@ -4512,7 +4512,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if( .not. present(grid_index) .or. grid_index==1 ) then
 
      ! only makes sense if grid_index == 1
-     from_dq = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+     from_dq = delta_t * 4.0_r8_kind*real(PI,r8_kind)*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
      to_dq = from_dq
 
   else
@@ -4619,7 +4619,7 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
   integer,         intent(out)  :: ier
 
   ier = 0
-  res = 0.0
+  res = 0.0_r8_kind
 
   if(.not. associated(xmap%grids) ) then
      ier = 6
@@ -4801,7 +4801,7 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
   integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
   integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
 
-  d = 0.
+  d = 0.0_r8_kind
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
      if(present(complete)) is_complete=complete
@@ -5139,7 +5139,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
      call mpp_recv(recv_buffer(buffer_pos+1), glen=msgsize, from_pe = recv%pe, block=.false., tag=COMM_TAG_9)
   enddo
 
-  dg = 0.0;
+  dg = 0.0_r8_kind;
 !$OMP parallel do default(none) shared(lsize,xmap,dg,x_addrs) private(dgp,ptr_x)
   do l = 1, lsize
      ptr_x = x_addrs(l)
@@ -5175,7 +5175,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
   !--- unpack the buffer
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = 0.0
+     d = 0.0_r8_kind
   enddo
   !--- To bitwise reproduce old results, first copy the data onto its own pe.
 
@@ -5284,7 +5284,7 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            l2 = send%xloc(n)
            pos = pos + 1
            do k =1, xmap%grids(g)%km
-             if(xmap%grids(g)%frac_area(i,j,k)/=0.0) then
+             if(xmap%grids(g)%frac_area(i,j,k)/=0.0_r8_kind) then
               l2 = l2+1
               send_buffer(pos) = send_buffer(pos) + xmap%x1(l2)%area *x(l2)
              endif

@@ -195,7 +195,7 @@ contains
        call get_time(Time, isec, iday)
 
        hours = iday*24 + isec/3600 - iday0*24 - isec0/3600
-       days  = hours/24.
+       days  = hours/24.0_r8_kind
        write(stocks_file,*) '==============================================='
        write(stocks_file,'(a,f12.3)') 't = TimeSinceStart[days]= ',days
        write(stocks_file,*) '==============================================='
