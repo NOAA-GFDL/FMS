@@ -17,6 +17,7 @@ jobs:
         password: ${{ secrets.github_token }}
       env:
         CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
+        LIBYAML_ROOT: "/opt/deps/linux-rocky9-haswell/gcc-12.3.0/libyaml-0.2.5-yiouvafr3qwcdrwdpumepit4wmqvh642/" # TODO should find better way for cmake to find this
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
