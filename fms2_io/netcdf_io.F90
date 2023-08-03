@@ -332,7 +332,7 @@ interface is_valid
   module procedure is_valid_r4
 end interface is_valid
 
-!> @brief
+!> @brief "=" operator for FmsNetcdfFile_t type
 interface assignment(=)
    module procedure FmsNetcdfFile_t_eq
 end interface assignment(=)
@@ -2367,8 +2367,8 @@ end subroutine flush_file
 !> @brief "=" operator for FmsNetcdfFile_t type
 subroutine FmsNetcdfFile_t_eq(FmsNetcdfFile_out, FmsNetcdfFile_in)
 
-  type(FmsNetcdfFile_t), intent(inout) :: FmsNetcdfFile_out
-  type(FmsNetcdfFile_t), intent(in)    :: FmsNetcdfFile_in
+  type(FmsNetcdfFile_t), intent(out) :: FmsNetcdfFile_out
+  type(FmsNetcdfFile_t), intent(in)  :: FmsNetcdfFile_in
 
   FmsNetcdfFile_out%path        = FmsNetcdfFile_in%path
   FmsNetcdfFile_out%is_readonly = FmsNetcdfFile_in%is_readonly
