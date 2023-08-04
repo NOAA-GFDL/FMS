@@ -13,7 +13,7 @@ jobs:
         CC: mpicc
         FC: mpif90
         CPPFLAGS: '-I/opt/view/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500'
-        FCFLAGS: '-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check -I/opt/view/include'
+        FCFLAGS: '-fallow-argument-mismatch -fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check -I/opt/view/include'
         LDFLAGS: '-L/opt/view/lib'
         VERBOSE: 1
     steps:
