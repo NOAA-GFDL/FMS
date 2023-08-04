@@ -33,7 +33,10 @@ noinst_LTLIBRARIES = libcoupler.la
 libcoupler_la_SOURCES = \
   coupler_types.F90 \
   ensemble_manager.F90 \
-  atmos_ocean_fluxes.F90
+  atmos_ocean_fluxes.F90 \
+  include/coupler_types.inc \
+  include/coupler_types_r4.fh \
+  include/coupler_types_r8.fh
 
 # Some mods are dependant on other mods in this dir.
 atmos_ocean_fluxes_mod.$(FC_MODEXT): coupler_types_mod.$(FC_MODEXT)

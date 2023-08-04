@@ -67,13 +67,22 @@ module coupler_types_mod
 
 !> @}
 
-  type, private :: coupler_3d_reals_r8_type
+  !! mixed precision methodology for the encapsulated types:
+  !! each level is an array of the type within the previous type
+  !!
+  !!                      bc (coupler_nd_real8_field) -> field (coupler_nd_real8_values)
+  !! coupler_nd_bc_type <
+  !!                      bc_r4 (coupler_nd_real4_field) -> field (coupler_nd_real4_values)
+  !!
+  !! This allows for minimal changes to other codes since these real values are usually accessed directly.
+  !!
+  !! Theres no real constructor/initializer for these types (oddly).
+  !! Arrays (values + field) are typically directly allocated and then 'spawn' can be used to create a new type from a previously allocated 'template' type
+  !! ie. allocate(ex_gas_fields_ice%bc(n)%field(m)%values) 
 
-  end type coupler_3d_reals_r8_type
-  
   !> Coupler data for 3D values
   !> @ingroup coupler_types_mod
-  type, public :: coupler_3d_values_type
+  type, public :: coupler_3d_real8_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
     logical                 :: mean = .true. !< mean
     logical                 :: override = .false. !< override
@@ -84,17 +93,17 @@ module coupler_types_mod
     logical                 :: may_init = .true. !< If true, there is an internal method
                                            !! that can be used to initialize this field
                                            !! if it can not be read from a restart file
-    real, pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
+    real(r8_kind), pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
-  end type coupler_3d_values_type
+  end type coupler_3d_real8_values_type
 
   !> Coupler data for 3D fields
   !> @ingroup coupler_types_mod
-  type, public :: coupler_3d_field_type
+  type, public :: coupler_3d_real8_field_type
     character(len=48)                 :: name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
-    type(coupler_3d_values_type), pointer, dimension(:) :: field => NULL() !< field
+    type(coupler_3d_real8_values_type), pointer, dimension(:) :: field => NULL() !< field
     character(len=128)                :: flux_type = ' ' !< flux_type
     character(len=128)                :: implementation = ' ' !< implementation
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
@@ -110,16 +119,60 @@ module coupler_types_mod
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
-    real, pointer, dimension(:)       :: param => NULL() !< param
-    real                              :: mol_wt = 0.0 !< mol_wt
-  end type coupler_3d_field_type
+    real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
+    real(r8_kind)                              :: mol_wt = 0.0 !< mol_wt
+  end type coupler_3d_real8_field_type
+  
+  !> Coupler data for 3D values
+  !> @ingroup coupler_types_mod
+  type, public :: coupler_3d_real4_values_type
+    character(len=48)       :: name = ' '  !< The diagnostic name for this array
+    logical                 :: mean = .true. !< mean
+    logical                 :: override = .false. !< override
+    integer                 :: id_diag = 0 !< The diagnostic id for this array
+    character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
+    character(len=128)      :: units = ' ' !< The units for this array
+    integer                 :: id_rest = 0 !< The id of this array in the restart field
+    logical                 :: may_init = .true. !< If true, there is an internal method
+                                           !! that can be used to initialize this field
+                                           !! if it can not be read from a restart file
+    real(r4_kind), pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
+                                           !! array of values for this field; this
+                                           !! should be changed to allocatable
+  end type coupler_3d_real4_values_type
+
+  !> Coupler data for 3D fields
+  !> @ingroup coupler_types_mod
+  type, public :: coupler_3d_real4_field_type
+    character(len=48)                 :: name = ' ' !< name
+    integer                           :: num_fields = 0 !< num_fields
+    type(coupler_3d_real4_values_type), pointer, dimension(:) :: field => NULL() !< field
+    character(len=128)                :: flux_type = ' ' !< flux_type
+    character(len=128)                :: implementation = ' ' !< implementation
+    logical, pointer, dimension(:)    :: flag => NULL() !< flag
+    integer                           :: atm_tr_index = 0 !< atm_tr_index
+    character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=128)                :: ocean_restart_file = ' ' !< ocean_restart_file
+#ifdef use_deprecated_io
+    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                             !! that is used for this field.
+#endif
+    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
+                                                                        !! That is used for this field
+    logical                           :: use_atm_pressure !< use_atm_pressure
+    logical                           :: use_10m_wind_speed !< use_10m_wind_speed
+    logical                           :: pass_through_ice !< pass_through_ice
+    real(r4_kind), pointer, dimension(:)       :: param => NULL() !< param
+    real(r4_kind)                              :: mol_wt = 0.0 !< mol_wt
+  end type coupler_3d_real4_field_type
 
   !> Coupler data for 3D boundary conditions
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_3d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
-                                                                       !! condition fields
+    type(coupler_3d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                    !! TODO above should be renamed eventually to indicate kind=8
+    type(coupler_3d_real4_field_type), dimension(:), pointer :: bc_r4 => NULL() !< A pointer to the array of boundary
     logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
@@ -129,9 +182,9 @@ module coupler_types_mod
 
   !> Coupler data for 2D values
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_2d_values_type
+  type, public    :: coupler_2d_real8_values_type
     character(len=48)       :: name = ' '  !< The diagnostic name for this array
-    real, pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
+    real(r8_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
     logical                 :: mean = .true. !< mean
@@ -143,17 +196,17 @@ module coupler_types_mod
     logical                 :: may_init = .true. !< If true, there is an internal method
                                            !! that can be used to initialize this field
                                            !! if it can not be read from a restart file
-  end type coupler_2d_values_type
+  end type coupler_2d_real8_values_type
 
   !> Coupler data for 2D fields
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_2d_field_type
+  type, public    :: coupler_2d_real8_field_type
     character(len=48)                 :: name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
-    type(coupler_2d_values_type), pointer, dimension(:)   :: field => NULL() !< field
+    type(coupler_2d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)                :: flux_type = ' ' !< flux_type
     character(len=128)                :: implementation = ' ' !< implementation
-    real, pointer, dimension(:)       :: param => NULL() !< param
+    real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
     integer                           :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)                :: ice_restart_file = ' ' !< ice_restart_file
@@ -167,14 +220,59 @@ module coupler_types_mod
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
-    real                              :: mol_wt = 0.0 !< mol_wt
-  end type coupler_2d_field_type
+    real(r8_kind)                              :: mol_wt = 0.0 !< mol_wt
+  end type coupler_2d_real8_field_type
+
+  !> Coupler data for 2D values
+  !> @ingroup coupler_types_mod
+  type, public    :: coupler_2d_real4_values_type
+    character(len=44)       :: name = ' '  !< The diagnostic name for this array
+    real(r4_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
+                                           !! array of values for this field; this
+                                           !! should be changed to allocatable
+    logical                 :: mean = .true. !< mean
+    logical                 :: override = .false. !< override
+    integer                 :: id_diag = 0 !< The diagnostic id for this array
+    character(len=124)      :: long_name = ' ' !< The diagnostic long_name for this array
+    character(len=124)      :: units = ' ' !< The units for this array
+    integer                 :: id_rest = 0 !< The id of this array in the restart field
+    logical                 :: may_init = .true. !< If true, there is an internal method
+                                           !! that can be used to initialize this field
+                                           !! if it can not be read from a restart file
+  end type coupler_2d_real4_values_type
+
+  !> Coupler data for 2D fields
+  !> @ingroup coupler_types_mod
+  type, public    :: coupler_2d_real4_field_type
+    character(len=44)                 :: name = ' ' !< name
+    integer                           :: num_fields = 0 !< num_fields
+    type(coupler_2d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
+    character(len=124)                :: flux_type = ' ' !< flux_type
+    character(len=124)                :: implementation = ' ' !< implementation
+    real(r4_kind), pointer, dimension(:)       :: param => NULL() !< param
+    logical, pointer, dimension(:)    :: flag => NULL() !< flag
+    integer                           :: atm_tr_index = 0 !< atm_tr_index
+    character(len=124)                :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=124)                :: ocean_restart_file = ' ' !< ocean_restart_file
+#ifdef use_deprecated_io
+    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                             !! that is used for this field.
+#endif
+    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
+                                                                        !! That is used for this field
+    logical                           :: use_atm_pressure !< use_atm_pressure
+    logical                           :: use_10m_wind_speed !< use_10m_wind_speed
+    logical                           :: pass_through_ice !< pass_through_ice
+    real(r4_kind)                              :: mol_wt = 0.0 !< mol_wt
+  end type coupler_2d_real4_field_type
 
   !> Coupler data for 2D boundary conditions
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_2d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+    type(coupler_2d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
+    type(coupler_2d_real4_field_type), dimension(:), pointer :: bc_r4 => NULL() !< A pointer to the array of boundary
                                                                        !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
@@ -183,9 +281,9 @@ module coupler_types_mod
 
   !> Coupler data for 1D values
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_1d_values_type
+  type, public    :: coupler_1d_real8_values_type
     character(len=48)           :: name = ' '  !< The diagnostic name for this array
-    real, pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
+    real(r8_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
     logical                     :: mean = .true. !< mean
     logical                     :: override = .false. !< override
     integer                     :: id_diag = 0 !< The diagnostic id for this array
@@ -194,21 +292,20 @@ module coupler_types_mod
     logical                     :: may_init = .true. !< If true, there is an internal method
                                                !! that can be used to initialize this field
                                                !! if it can not be read from a restart file
-  end type coupler_1d_values_type
+  end type coupler_1d_real8_values_type
 
   !> Coupler data for 1D fields
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_1d_field_type
+  type, public    :: coupler_1d_real8_field_type
     character(len=48)              :: name = ' ' !< name
     integer                        :: num_fields = 0 !< num_fields
-    type(coupler_1d_values_type), pointer, dimension(:)   :: field => NULL() !< field
+    type(coupler_1d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)             :: flux_type = ' ' !< flux_type
     character(len=128)             :: implementation = ' ' !< implementation
     !> precision has been explicitly defined
     !! to be r8_kind during mixedmode update to field_manager
     !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
     real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
-    real(r4_kind), pointer, dimension(:) :: param => NULL() !< param
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
     character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
@@ -221,13 +318,56 @@ module coupler_types_mod
     !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
     real(r8_kind)                  :: mol_wt = 0.0 !< mol_wt
 
- end type coupler_1d_field_type
+ end type coupler_1d_real8_field_type
+
+  !> Coupler data for 1D values
+  !> @ingroup coupler_types_mod
+  type, public    :: coupler_1d_real4_values_type
+    character(len=48)           :: name = ' '  !< The diagnostic name for this array
+    real(r4_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
+    logical                     :: mean = .true. !< mean
+    logical                     :: override = .false. !< override
+    integer                     :: id_diag = 0 !< The diagnostic id for this array
+    character(len=128)          :: long_name = ' ' !< The diagnostic long_name for this array
+    character(len=128)          :: units = ' ' !< The units for this array
+    logical                     :: may_init = .true. !< If true, there is an internal method
+                                               !! that can be used to initialize this field
+                                               !! if it can not be read from a restart file
+  end type coupler_1d_real4_values_type
+
+  !> Coupler data for 1D fields
+  !> @ingroup coupler_types_mod
+  type, public    :: coupler_1d_real4_field_type
+    character(len=48)              :: name = ' ' !< name
+    integer                        :: num_fields = 0 !< num_fields
+    type(coupler_1d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
+    character(len=128)             :: flux_type = ' ' !< flux_type
+    character(len=128)             :: implementation = ' ' !< implementation
+    !> precision has been explicitly defined
+    !! to be r8_kind during mixedmode update to field_manager
+    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
+    real(r4_kind), pointer, dimension(:) :: param => NULL() !< param
+    logical, pointer, dimension(:) :: flag => NULL() !< flag
+    integer                        :: atm_tr_index = 0 !< atm_tr_index
+    character(len=128)             :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=128)             :: ocean_restart_file = ' ' !< ocean_restart_file
+    logical                        :: use_atm_pressure !< use_atm_pressure
+    logical                        :: use_10m_wind_speed !< use_10m_wind_speed
+    logical                        :: pass_through_ice !< pass_through_ice
+    !> precision has been explicitly defined
+    !! to be r8_kind during mixedmode update to field_manager
+    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
+    real(r4_kind)                  :: mol_wt = 0.0 !< mol_wt
+
+ end type coupler_1d_real4_field_type
 
   !> Coupler data for 1D boundary conditions
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_bc_type
     integer                                            :: num_bcs = 0  !< The number of boundary condition fields
-    type(coupler_1d_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+    type(coupler_1d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
+                                                                       !! condition fields
+    type(coupler_1d_real4_field_type), dimension(:), pointer :: bc_r4 => NULL() !< A pointer to the array of boundary
                                                                        !! condition fields
     logical    :: set = .false.       !< If true, this type has been initialized
   end type coupler_1d_bc_type
@@ -287,7 +427,8 @@ module coupler_types_mod
   !> This is the interface to rescale the field data in a coupler_bc_type.
   !> @ingroup coupler_types_mod
   interface coupler_type_rescale_data
-    module procedure CT_rescale_data_2d, CT_rescale_data_3d
+    module procedure CT_rescale_data_2d_r4, CT_rescale_data_3d_r4
+    module procedure CT_rescale_data_2d_r8, CT_rescale_data_3d_r8
   end interface coupler_type_rescale_data
 
   !> This is the interface to increment the field data from one coupler_bc_type
@@ -295,13 +436,16 @@ module coupler_types_mod
   !! decomposition, but a 2d type may be incremented by a 2d or 3d type
   !> @ingroup coupler_types_mod
   interface coupler_type_increment_data
-    module procedure CT_increment_data_2d_2d, CT_increment_data_3d_3d, CT_increment_data_2d_3d
+    module procedure CT_increment_data_2d_2d, CT_increment_data_3d_3d
+    module procedure CT_increment_data_2d_3d_r4, CT_increment_data_2d_3d_r8
   end interface coupler_type_increment_data
 
   !> This is the interface to extract a field in a coupler_bc_type into an array.
   !> @ingroup coupler_types_mod
   interface coupler_type_extract_data
-    module procedure CT_extract_data_2d, CT_extract_data_3d, CT_extract_data_3d_2d
+    module procedure CT_extract_data_2d_r4, CT_extract_data_2d_r8
+    module procedure CT_extract_data_3d_r4, CT_extract_data_3d_r8
+    module procedure CT_extract_data_3d_2d_r4, CT_extract_data_3d_2d_r8
   end interface coupler_type_extract_data
 
   !> This is the interface to set a field in a coupler_bc_type from an array.
@@ -914,6 +1058,7 @@ contains
         & '==>Error from coupler_types_mod (CT_spawn_2d_3d):'
     character(len=400)      :: error_msg
     integer                 :: m, n
+    logical                 :: is_kind_8
 
     if (present(as_needed)) then
       if (as_needed) then
@@ -925,6 +1070,8 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    is_kind_8 = associated(var_in%bc)
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -2225,432 +2372,6 @@ contains
     enddo
   end subroutine CT_increment_data_2d_3d
 
-  !> @brief Extract a 2d field from a coupler_2d_bc_type
-  !!
-  !! Extract a single 2-d field from a coupler_2d_bc_type into a two-dimensional array.
-  !!
-  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! @throw FATAL, "Disordered i-dimension index bound list"
-  !! @throw FATAL, "Disordered j-dimension index bound list"
-  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
-  subroutine CT_extract_data_2d(var_in, bc_index, field_index, array_out,&
-      & scale_factor, halo_size, idim, jdim)
-    type(coupler_2d_bc_type),   intent(in)    :: var_in    !< BC_type structure with the data to extract
-    integer,                    intent(in)    :: bc_index  !< The index of the boundary condition
-                                                           !! that is being copied
-    integer,                    intent(in)    :: field_index !< The index of the field in the
-                                                           !! boundary condition that is being copied
-    real, dimension(1:,1:),     intent(out)   :: array_out !< The recipient array for the field; its size
-                                                           !! must match the size of the data being copied
-                                                           !! unless idim and jdim are supplied.
-    real,             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
-    integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
-    integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
-                                                           !! the first dimension of the output array
-                                                           !! in a non-decreasing list
-    integer, dimension(4), optional, intent(in) :: jdim    !< The data and computational domain extents of
-                                                           !! the second dimension of the output array
-                                                           !! in a non-decreasing list
-
-    character(len=*), parameter :: error_header =&
-        & '==>Error from coupler_types_mod (CT_extract_data_2d):'
-    character(len=400)      :: error_msg
-
-    real :: scale
-    integer :: i, j, halo, i_off, j_off
-
-    if (bc_index <= 0) then
-      array_out(:,:) = 0.0
-      return
-    endif
-
-    halo = 0
-    if (present(halo_size)) halo = halo_size
-    scale = 1.0
-    if (present(scale_factor)) scale = scale_factor
-
-    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
-        & call mpp_error(FATAL, trim(error_header)//" Excessive i-direction halo size for the input structure.")
-    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo))&
-        & call mpp_error(FATAL, trim(error_header)//" Excessive j-direction halo size for the input structure.")
-
-    if (bc_index > var_in%num_bcs)&
-        & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
-    if (field_index > var_in%bc(bc_index)%num_fields)&
-        & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%bc(bc_index)%name) )
-
-    ! Do error checking on the i-dimension and determine the array offsets.
-    if (present(idim)) then
-      if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
-        write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if (size(array_out,1) /= (1+idim(4)-idim(1))) then
-        write (error_msg, *) trim(error_header), ' The declared i-dimension size of ',&
-            & (1+idim(4)-idim(1)), ' does not match the actual size of ', size(array_out,1)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if ((var_in%iec-var_in%isc) /= (idim(3)-idim(2)))&
-          & call mpp_error(FATAL, trim(error_header)//" There is an i-direction computational domain size mismatch.")
-      if ((idim(2)-idim(1) < halo) .or. (idim(4)-idim(3) < halo))&
-          & call mpp_error(FATAL, trim(error_header)//" Excessive i-direction halo size for the output array.")
-      if (size(array_out,1) < 2*halo + 1 + var_in%iec - var_in%isc) then
-        write (error_msg, *) trim(error_header), ' The target array with i-dimension size ',&
-            & (1+idim(4)-idim(1)), ' is too small to match the data of size ',&
-            & (2*halo + 1 + var_in%iec - var_in%isc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-
-      i_off = (1-idim(1)) + (idim(2)-var_in%isc)
-    else
-      if (size(array_out,1) < 2*halo + 1 + var_in%iec - var_in%isc) then
-        write (error_msg, *) trim(error_header), ' The target array with i-dimension size ',&
-            & size(array_out,1), ' does not match the data of size ',&
-            & (2*halo + 1 + var_in%iec - var_in%isc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      i_off = 1 - (var_in%isc-halo)
-    endif
-
-    ! Do error checking on the j-dimension and determine the array offsets.
-    if (present(jdim)) then
-      if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
-        write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list ', jdim
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if (size(array_out,2) /= (1+jdim(4)-jdim(1))) then
-        write (error_msg, *) trim(error_header), ' The declared j-dimension size of ',&
-            & (1+jdim(4)-jdim(1)), ' does not match the actual size of ', size(array_out,2)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if ((var_in%jec-var_in%jsc) /= (jdim(3)-jdim(2)))&
-          & call mpp_error(FATAL, trim(error_header)//" There is an j-direction computational domain size mismatch.")
-      if ((jdim(2)-jdim(1) < halo) .or. (jdim(4)-jdim(3) < halo))&
-          & call mpp_error(FATAL, trim(error_header)//" Excessive j-direction halo size for the output array.")
-      if (size(array_out,2) < 2*halo + 1 + var_in%jec - var_in%jsc) then
-        write (error_msg, *) trim(error_header), ' The target array with j-dimension size ',&
-            & (1+jdim(4)-jdim(1)), ' is too small to match the data of size ',&
-            & (2*halo + 1 + var_in%jec - var_in%jsc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-
-      j_off = (1-jdim(1)) + (jdim(2)-var_in%jsc)
-    else
-      if (size(array_out,2) < 2*halo + 1 + var_in%jec - var_in%jsc) then
-        write (error_msg, *) trim(error_header), ' The target array with j-dimension size ',&
-            & size(array_out,2), ' does not match the data of size ',&
-            & (2*halo + 1 + var_in%jec - var_in%jsc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      j_off = 1 - (var_in%jsc-halo)
-    endif
-
-    do j=var_in%jsc-halo,var_in%jec+halo
-      do i=var_in%isc-halo,var_in%iec+halo
-        array_out(i+i_off,j+j_off) = scale * var_in%bc(bc_index)%field(field_index)%values(i,j)
-      enddo
-    enddo
-  end subroutine CT_extract_data_2d
-
-  !> @brief Extract a single k-level of a 3d field from a coupler_3d_bc_type
-  !!
-  !! Extract a single k-level of a 3-d field from a coupler_3d_bc_type into a two-dimensional array.
-  !!
-  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! @throw FATAL, "Disordered i-dimension index bound list"
-  !! @throw FATAL, "Disordered j-dimension index bound list"
-  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
-  !! @throw FATAL, "The extracted k-index of 'k' is outside of the valid range of 'ks' to 'ke'"
-  subroutine CT_extract_data_3d_2d(var_in, bc_index, field_index, k_in, array_out,&
-      & scale_factor, halo_size, idim, jdim)
-    type(coupler_3d_bc_type),   intent(in)    :: var_in    !< BC_type structure with the data to extract
-    integer,                    intent(in)    :: bc_index  !< The index of the boundary condition
-                                                           !! that is being copied
-    integer,                    intent(in)    :: field_index !< The index of the field in the
-                                                           !! boundary condition that is being copied
-    integer,                    intent(in)    :: k_in      !< The k-index to extract
-    real, dimension(1:,1:),     intent(out)   :: array_out !< The recipient array for the field; its size
-                                                           !! must match the size of the data being copied
-                                                           !! unless idim and jdim are supplied.
-    real,             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
-    integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
-    integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
-                                                           !! the first dimension of the output array
-                                                           !! in a non-decreasing list
-    integer, dimension(4), optional, intent(in) :: jdim    !< The data and computational domain extents of
-                                                           !! the second dimension of the output array
-                                                           !! in a non-decreasing list
-    character(len=*), parameter :: error_header =&
-        & '==>Error from coupler_types_mod (CT_extract_data_3d_2d):'
-    character(len=400)      :: error_msg
-
-    real :: scale
-    integer :: i, j, halo, i_off, j_off
-
-    if (bc_index <= 0) then
-      array_out(:,:) = 0.0
-      return
-    endif
-
-    halo = 0
-    if (present(halo_size)) halo = halo_size
-    scale = 1.0
-    if (present(scale_factor)) scale = scale_factor
-
-    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
-        & call mpp_error(FATAL, trim(error_header)//" Excessive i-direction halo size for the input structure.")
-    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo))&
-        & call mpp_error(FATAL, trim(error_header)//" Excessive j-direction halo size for the input structure.")
-
-    if (bc_index > var_in%num_bcs)&
-        & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
-    if (field_index > var_in%bc(bc_index)%num_fields)&
-        & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%bc(bc_index)%name) )
-
-    ! Do error checking on the i-dimension and determine the array offsets.
-    if (present(idim)) then
-      if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
-        write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if (size(array_out,1) /= (1+idim(4)-idim(1))) then
-        write (error_msg, *) trim(error_header), ' The declared i-dimension size of ',&
-            & (1+idim(4)-idim(1)), ' does not match the actual size of ', size(array_out,1)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if ((var_in%iec-var_in%isc) /= (idim(3)-idim(2)))&
-          & call mpp_error(FATAL, trim(error_header)//" There is an i-direction computational domain size mismatch.")
-      if ((idim(2)-idim(1) < halo) .or. (idim(4)-idim(3) < halo))&
-          & call mpp_error(FATAL, trim(error_header)//" Excessive i-direction halo size for the output array.")
-      if (size(array_out,1) < 2*halo + 1 + var_in%iec - var_in%isc) then
-        write (error_msg, *) trim(error_header), ' The target array with i-dimension size ',&
-            & (1+idim(4)-idim(1)), ' is too small to match the data of size ',&
-            & (2*halo + 1 + var_in%iec - var_in%isc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-
-      i_off = (1-idim(1)) + (idim(2)-var_in%isc)
-    else
-      if (size(array_out,1) < 2*halo + 1 + var_in%iec - var_in%isc) then
-        write (error_msg, *) trim(error_header), ' The target array with i-dimension size ',&
-            & size(array_out,1), ' does not match the data of size ',&
-            & (2*halo + 1 + var_in%iec - var_in%isc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      i_off = 1 - (var_in%isc-halo)
-    endif
-
-    ! Do error checking on the j-dimension and determine the array offsets.
-    if (present(jdim)) then
-      if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
-        write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list ', jdim
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if (size(array_out,2) /= (1+jdim(4)-jdim(1))) then
-        write (error_msg, *) trim(error_header), ' The declared j-dimension size of ',&
-            & (1+jdim(4)-jdim(1)), ' does not match the actual size of ', size(array_out,2)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if ((var_in%jec-var_in%jsc) /= (jdim(3)-jdim(2)))&
-          & call mpp_error(FATAL, trim(error_header)//" There is an j-direction computational domain size mismatch.")
-      if ((jdim(2)-jdim(1) < halo) .or. (jdim(4)-jdim(3) < halo))&
-          & call mpp_error(FATAL, trim(error_header)//" Excessive j-direction halo size for the output array.")
-      if (size(array_out,2) < 2*halo + 1 + var_in%jec - var_in%jsc) then
-        write (error_msg, *) trim(error_header), ' The target array with j-dimension size ',&
-            & (1+jdim(4)-jdim(1)), ' is too small to match the data of size ',&
-            & (2*halo + 1 + var_in%jec - var_in%jsc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-
-      j_off = (1-jdim(1)) + (jdim(2)-var_in%jsc)
-    else
-      if (size(array_out,2) < 2*halo + 1 + var_in%jec - var_in%jsc) then
-        write (error_msg, *) trim(error_header), ' The target array with j-dimension size ',&
-            & size(array_out,2), ' does not match the data of size ',&
-            & (2*halo + 1 + var_in%jec - var_in%jsc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      j_off = 1 - (var_in%jsc-halo)
-    endif
-
-    if ((k_in > var_in%ke) .or. (k_in < var_in%ks)) then
-      write (error_msg, *) trim(error_header), ' The extracted k-index of ', k_in,&
-          & ' is outside of the valid range of ', var_in%ks, ' to ', var_in%ke
-      call mpp_error(FATAL, trim(error_msg))
-    endif
-
-    do j=var_in%jsc-halo,var_in%jec+halo
-      do i=var_in%isc-halo,var_in%iec+halo
-        array_out(i+i_off,j+j_off) = scale * var_in%bc(bc_index)%field(field_index)%values(i,j,k_in)
-      enddo
-    enddo
-  end subroutine CT_extract_data_3d_2d
-
-  !> @brief Extract single 3d field from a coupler_3d_bc_type
-  !!
-  !! Extract a single 3-d field from a coupler_3d_bc_type into a three-dimensional array.
-  !!
-  !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
-  !! @throw FATAL, "Excessive i-direction halo size for the input structure."
-  !! @throw FATAL, "Excessive j-direction halo size for the input structure."
-  !! @throw FATAL, "Disordered i-dimension index bound list"
-  !! @throw FATAL, "Disordered j-dimension index bound list"
-  !! @throw FATAL, "The declared i-dimension size of 'n' does not match the actual size of 'a'"
-  !! @throw FATAL, "The declared j-dimension size of 'n' does not match the actual size of 'a'"
-  !! @throw FATAL, "There is an i-direction computational domain size mismatch."
-  !! @throw FATAL, "There is an j-direction computational domain size mismatch."
-  !! @throw FATAL, "The target array with i-dimension size 'n' is too small to match the data of size 'd'"
-  !! @throw FATAL, "The target array with j-dimension size 'n' is too small to match the data of size 'd'"
-  !! @throw FATAL, "The target array with k-dimension size 'n' does not match the data of size 'd'"
-  subroutine CT_extract_data_3d(var_in, bc_index, field_index, array_out,&
-      & scale_factor, halo_size, idim, jdim)
-    type(coupler_3d_bc_type),   intent(in)    :: var_in    !< BC_type structure with the data to extract
-    integer,                    intent(in)    :: bc_index  !< The index of the boundary condition
-                                                           !! that is being copied
-    integer,                    intent(in)    :: field_index !< The index of the field in the
-                                                           !! boundary condition that is being copied
-    real, dimension(1:,1:,1:),  intent(out)   :: array_out !< The recipient array for the field; its size
-                                                           !! must match the size of the data being copied
-                                                           !! unless idim and jdim are supplied.
-    real,             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
-    integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
-    integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
-                                                           !! the first dimension of the output array
-                                                           !! in a non-decreasing list
-    integer, dimension(4), optional, intent(in) :: jdim    !< The data and computational domain extents of
-                                                           !! the second dimension of the output array
-                                                           !! in a non-decreasing list
-
-    character(len=*), parameter :: error_header =&
-        & '==>Error from coupler_types_mod (CT_extract_data_3d):'
-    character(len=400) :: error_msg
-
-    real :: scale
-    integer :: i, j, k, halo, i_off, j_off, k_off
-
-    if (bc_index <= 0) then
-      array_out(:,:,:) = 0.0
-      return
-    endif
-
-    halo = 0
-    if (present(halo_size)) halo = halo_size
-    scale = 1.0
-    if (present(scale_factor)) scale = scale_factor
-
-    if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
-        & call mpp_error(FATAL, trim(error_header)//" Excessive i-direction halo size for the input structure.")
-    if ((var_in%jsc-var_in%jsd < halo) .or. (var_in%jed-var_in%jec < halo))&
-        & call mpp_error(FATAL, trim(error_header)//" Excessive j-direction halo size for the input structure.")
-
-    if (bc_index > var_in%num_bcs)&
-        & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
-    if (field_index > var_in%bc(bc_index)%num_fields)&
-        & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%bc(bc_index)%name) )
-
-    ! Do error checking on the i-dimension and determine the array offsets.
-    if (present(idim)) then
-      if ((idim(1) > idim(2)) .or. (idim(3) > idim(4))) then
-        write (error_msg, *) trim(error_header), ' Disordered i-dimension index bound list ', idim
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if (size(array_out,1) /= (1+idim(4)-idim(1))) then
-        write (error_msg, *) trim(error_header), ' The declared i-dimension size of ',&
-            & (1+idim(4)-idim(1)), ' does not match the actual size of ', size(array_out,1)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if ((var_in%iec-var_in%isc) /= (idim(3)-idim(2)))&
-          & call mpp_error(FATAL, trim(error_header)//" There is an i-direction computational domain size mismatch.")
-      if ((idim(2)-idim(1) < halo) .or. (idim(4)-idim(3) < halo))&
-          & call mpp_error(FATAL, trim(error_header)//" Excessive i-direction halo size for the output array.")
-      if (size(array_out,1) < 2*halo + 1 + var_in%iec - var_in%isc) then
-        write (error_msg, *) trim(error_header), ' The target array with i-dimension size ',&
-            & (1+idim(4)-idim(1)), ' is too small to match the data of size ',&
-            & (2*halo + 1 + var_in%iec - var_in%isc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-
-      i_off = (1-idim(1)) + (idim(2)-var_in%isc)
-    else
-      if (size(array_out,1) < 2*halo + 1 + var_in%iec - var_in%isc) then
-        write (error_msg, *) trim(error_header), ' The target array with i-dimension size ',&
-            & size(array_out,1), ' does not match the data of size ',&
-            & (2*halo + 1 + var_in%iec - var_in%isc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      i_off = 1 - (var_in%isc-halo)
-    endif
-
-    ! Do error checking on the j-dimension and determine the array offsets.
-    if (present(jdim)) then
-      if ((jdim(1) > jdim(2)) .or. (jdim(3) > jdim(4))) then
-        write (error_msg, *) trim(error_header), ' Disordered j-dimension index bound list ', jdim
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if (size(array_out,2) /= (1+jdim(4)-jdim(1))) then
-        write (error_msg, *) trim(error_header), ' The declared j-dimension size of ',&
-            & (1+jdim(4)-jdim(1)), ' does not match the actual size of ', size(array_out,2)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      if ((var_in%jec-var_in%jsc) /= (jdim(3)-jdim(2)))&
-          & call mpp_error(FATAL, trim(error_header)//" There is an j-direction computational domain size mismatch.")
-      if ((jdim(2)-jdim(1) < halo) .or. (jdim(4)-jdim(3) < halo))&
-          & call mpp_error(FATAL, trim(error_header)//" Excessive j-direction halo size for the output array.")
-      if (size(array_out,2) < 2*halo + 1 + var_in%jec - var_in%jsc) then
-        write (error_msg, *) trim(error_header), ' The target array with j-dimension size ',&
-            & (1+jdim(4)-jdim(1)), ' is too small to match the data of size ',&
-            & (2*halo + 1 + var_in%jec - var_in%jsc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-
-      j_off = (1-jdim(1)) + (jdim(2)-var_in%jsc)
-    else
-      if (size(array_out,2) < 2*halo + 1 + var_in%jec - var_in%jsc) then
-        write (error_msg, *) trim(error_header), ' The target array with j-dimension size ',&
-            & size(array_out,2), ' does not match the data of size ',&
-            & (2*halo + 1 + var_in%jec - var_in%jsc)
-        call mpp_error(FATAL, trim(error_msg))
-      endif
-      j_off = 1 - (var_in%jsc-halo)
-    endif
-
-    if (size(array_out,3) /= 1 + var_in%ke - var_in%ks) then
-      write (error_msg, *) trim(error_header), ' The target array with k-dimension size ',&
-          & size(array_out,3), ' does not match the data of size ',&
-          & (1 + var_in%ke - var_in%ks)
-      call mpp_error(FATAL, trim(error_msg))
-    endif
-    k_off = 1 - var_in%ks
-
-    do k=var_in%ks,var_in%ke
-      do j=var_in%jsc-halo,var_in%jec+halo
-        do i=var_in%isc-halo,var_in%iec+halo
-          array_out(i+i_off,j+j_off,k+k_off) = scale * var_in%bc(bc_index)%field(field_index)%values(i,j,k)
-        enddo
-      enddo
-    enddo
-  end subroutine CT_extract_data_3d
-
   !> @brief Set single 2d field in coupler_3d_bc_type
   !!
   !! Set a single 2-d field in a coupler_3d_bc_type from a two-dimensional array.
@@ -3760,6 +3481,9 @@ contains
     var%num_bcs = 0
     var%set = .false.
   end subroutine CT_destructor_3d
+
+#include "include/coupler_types_r4.fh"
+#include "include/coupler_types_r8.fh"
 
   !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !!

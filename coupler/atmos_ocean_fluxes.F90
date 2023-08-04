@@ -64,6 +64,7 @@ module  atmos_ocean_fluxes_mod
   use fm_util_mod,       only: fm_util_check_for_bad_fields, fm_util_get_string
   use fm_util_mod,       only: fm_util_get_real_array, fm_util_get_real, fm_util_get_integer
   use fm_util_mod,       only: fm_util_get_logical, fm_util_get_logical_array
+  use platform_mod,      only: r4_kind, r8_kind
 
   implicit none
   private
