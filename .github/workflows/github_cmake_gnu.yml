@@ -33,5 +33,6 @@ jobs:
         echo "    call fms_end" >> test.F90
         echo "end program" >> test.F90
         mpifort -L/opt/view/lib `nf-config --flibs` -Iinclude_r4 -Iinclude_r8 test.F90 libfms_r4.a libfms_r8.a -o test.x
+        touch input.nml
     - name: Run executable
       run: ./test.x
