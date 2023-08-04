@@ -145,7 +145,7 @@ program test_astronomy
   subroutine test_daily_mean_solar
     ! simple test cases where all input arguments are set to 0.0,
     ! expected output --> cosz=2/pi, h_out=0.5, rr_out=1.0
-    ! half_pi is needed in these calculations due to the way it is 
+    ! half_pi is needed in these calculations due to the way it is
     ! defined in the constants_mod, the expected values lose precision
     ! without the use of half_pi
     implicit none
