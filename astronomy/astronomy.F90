@@ -516,31 +516,28 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !--------------------------------------------------------------------
     ! check that no invalid types (integers or characters) are given as optional arg
 
-    is_valid=.false.
     if (present(latb) .and. present(lonb)) then
       select type (latb)
         type is (real(r4_kind))
-          select type (lonb)
-            type is (real(r4_kind))
-            is_valid = .true.
-          end select
-        type is (real(r8_kind))
+        select type (lonb)
+        type is (real(r4_kind))
+          is_valid = .true.
+        end select
+      type is (real(r8_kind))
       select type (lonb)
         type is (real(r8_kind))
         is_valid = .true.
-        end select
       end select
-    end if
-
-    if(is_valid) then
-       jd = size(latb,2) - 1
-       id = size(lonb,1) - 1
-       allocate (cosz_ann(id, jd))
-       allocate (solar_ann(id, jd))
-       allocate (fracday_ann(id, jd))
-       total_pts = jd*id
+    end select
+          jd = size(latb,2) - 1
+            id = size(lonb,1) - 1
+            allocate (cosz_ann(id, jd))
+            allocate (solar_ann(id, jd))
+            allocate (fracday_ann(id, jd))
+            total_pts = jd*id
+    elseif (present(latb) .and. .not. present(lonb)) then
+        call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
     else
-       call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
     endif
 
 !---------------------------------------------------------------------
