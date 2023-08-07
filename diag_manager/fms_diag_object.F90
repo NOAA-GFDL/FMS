@@ -36,6 +36,7 @@ use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type,
                                    &parse_compress_att, get_axis_id_from_name
 use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
+use fms_diag_reduction_methods_mod, only: check_indices_order
 use constants_mod, only: SECONDS_PER_DAY
 #endif
 #if defined(_OPENMP)
@@ -526,8 +527,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !TODO: oor_mask is only used for checking out of range values.
   ! call init_mask_3d()
 
-  !TODO: Check improper combinations of is, ie, js, and je.
-  ! if (check_indices_order()) deallocate(oor_mask)
+  !< Check that the indices are present in the correct combination
+  error_string = check_indices_order(is_in, ie_in, js_in, je_in)
+  if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//" Check send data call for field:"//&
+                                                 trim(this%FMS_diag_fields(diag_field_id)%get_varname()))
 
 !> Does the user want to push off calculations until send_diag_complete?
   buffer_the_data = .false.
