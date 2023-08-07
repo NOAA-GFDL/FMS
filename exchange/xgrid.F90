@@ -95,7 +95,6 @@ module xgrid_mod
 
 use       fms_mod,   only: check_nml_error,  &
                            error_mesg, FATAL, NOTE, stdlog,      &
-                           WARNING, &
                            write_version_number, lowercase, string
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self, stdout, mpp_max, EVENT_RECV,        &
@@ -3201,8 +3200,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   integer,                                   save :: xsize=0
   integer,                                   save :: method_saved=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
 
   if (grid_id==xmap%grids(1)%id) then
      method = FIRST_ORDER      ! default
@@ -3250,8 +3249,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
            call put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
         endif
 
-        d_addrs = -9999
-        x_addrs = -9999
+        d_addrs = -9999_i8_kind
+        x_addrs = -9999_i8_kind
         isize   = 0
         jsize   = 0
         xsize   = 0
@@ -3315,8 +3314,8 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
 
   d = 0.0_r8_kind
   if (grid_id==xmap%grids(1)%id) then
@@ -4798,8 +4797,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
 
   d = 0.0_r8_kind
   if (grid_id==xmap%grids(1)%id) then
@@ -4835,8 +4834,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
         else
            call get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
         end if
-        d_addrs(1:lsize) = -9999
-        x_addrs(1:lsize) = -9999
+        d_addrs(1:lsize) = -9999_i8_kind
+        x_addrs(1:lsize) = -9999_i8_kind
         isize   = 0
         xsize   = 0
         lsize   = 0
@@ -4880,8 +4879,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
+  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -4912,8 +4911,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
 
      if(is_complete) then
         call put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize)
-        d_addrs(1:lsize) = -9999
-        x_addrs(1:lsize) = -9999
+        d_addrs(1:lsize) = -9999_i8_kind
+        x_addrs(1:lsize) = -9999_i8_kind
         dsize   = 0
         xsize   = 0
         lsize   = 0
