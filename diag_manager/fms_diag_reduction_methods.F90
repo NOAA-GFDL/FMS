@@ -4,15 +4,16 @@
 !! These routines are meant to be used for checks and in reduction methods.
 
 module fms_diag_reduction_methods_mod
+  use platform_mod, only: r8_kind, r4_kind
   implicit none
   private
 
-  public :: check_indices_order
+  public :: check_indices_order, init_mask, set_weight
 
   contains
 
   !> @brief Checks improper combinations of is, ie, js, and je.
-  !> @return The error message, empty string if no errors were found
+  !! @return The error message, empty string if no errors were found
   !> @note accept_data works in either one or another of two modes.
   !! 1. Input field is a window (e.g. FMS physics)
   !! 2. Input field includes halo data
@@ -24,7 +25,8 @@ module fms_diag_reduction_methods_mod
   !> @par
   !! There are a number of ways a user could mess up this logic, depending on the combination
   !! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
-  function check_indices_order(is_in, ie_in, js_in, je_in) result(error_msg)
+  pure function check_indices_order(is_in, ie_in, js_in, je_in) &
+  result(error_msg)
     integer, intent(in), optional :: is_in, ie_in, js_in, je_in !< Indices passed to fms_diag_accept_data()
     character(len=128) :: error_msg !< An error message used only for testing purpose!!!
 
@@ -51,5 +53,50 @@ module fms_diag_reduction_methods_mod
       END IF
     END IF
   end function check_indices_order
+
+  !> @brief Sets the logical mask based on mask or rmask
+  !> @return logical mask
+  function init_mask(rmask, mask, field) &
+  result(oor_mask)
+    LOGICAL,  DIMENSION(:,:,:,:), pointer, INTENT(in) :: mask  !< The location of the mask
+    CLASS(*), DIMENSION(:,:,:,:), pointer, INTENT(in) :: rmask !< The masking values
+    CLASS(*), DIMENSION(:,:,:,:),          intent(in) :: field !< Field_data
+
+    logical, allocatable, dimension(:,:,:,:) :: oor_mask !< mask
+
+    ALLOCATE(oor_mask(SIZE(field, 1), SIZE(field, 2), SIZE(field, 3), SIZE(field, 4)))
+    oor_mask = .true.
+
+    if (associated(mask)) then
+      oor_mask = mask
+    elseif (associated(rmask)) then
+      select type (rmask)
+      type is (real(kind=r8_kind))
+        WHERE (rmask < 0.5_r8_kind) oor_mask = .FALSE.
+      type is (real(kind=r4_kind))
+        WHERE (rmask < 0.5_r4_kind) oor_mask = .FALSE.
+      end select
+    endif
+
+  end function init_mask
+
+  !> @brief Sets the weight based on the weight passed into send_data (1.0_r8_kind if the weight is not passed in)
+  !> @return weight to used when averaging
+  pure function set_weight(weight) &
+  result(out_weight)
+    CLASS(*), INTENT(in), OPTIONAL :: weight !< The weight used for averaging
+
+    real(kind=r8_kind) :: out_weight
+
+    out_weight = 1.0_r8_kind
+    if (present(weight)) then
+      select type(weight)
+      type is (real(kind=r8_kind))
+        out_weight = real(weight, kind = r8_kind)
+      type is (real(kind=r4_kind))
+        out_Weight = real(weight, kind = r4_kind)
+      end select
+    endif
+  end function set_weight
 
 end module fms_diag_reduction_methods_mod

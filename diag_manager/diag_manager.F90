@@ -1675,7 +1675,9 @@ END FUNCTION register_static_field
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-    class(*), pointer, dimension(:,:,:,:) :: field_modern !< i8 4d remapped pointer
+    class(*), pointer, dimension(:,:,:,:) :: field_modern !< 4d remapped pointer
+    logical,  pointer, dimension(:,:,:,:) :: mask_modern  !< 4d remapped pointer
+    class(*), pointer, dimension(:,:,:,:) :: rmask_modern !< 4d remapped pointer
     REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 !< A pointer to r4 type of rmask
     REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 !<A pointer to r8 type of rmask
 
@@ -1717,10 +1719,13 @@ END FUNCTION register_static_field
     END IF
     if (use_modern_diag) then !> Set up array lengths for remapping
       field_modern => null()
+      mask_modern  => null()
+      rmask_modern => null()
       ie = SIZE(field,1)
       je = SIZE(field,2)
       ke = SIZE(field,3)
       field_modern(1:ie,1:je,1:ke,1:1) => field
+      if (present(mask)) mask_modern(1:ie,1:je,1:ke,1:1) => mask
     endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
@@ -1734,8 +1739,9 @@ END FUNCTION register_static_field
     END SELECT
   ! Split old and modern2023 here
   modern_if: iF (use_modern_diag) then
-    diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, time, is_in, js_in, ks_in, &
-             & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_modern, mask_modern, rmask_modern, &
+                                                          time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
+                                                          err_msg)
     nullify (field_modern)
   elSE ! modern_if
     ! oor_mask is only used for checking out of range values.
