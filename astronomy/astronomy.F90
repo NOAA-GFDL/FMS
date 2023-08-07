@@ -516,6 +516,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
 !--------------------------------------------------------------------
     ! check that no invalid types (integers or characters) are given as optional arg
 
+    is_valid = .false.
     if (present(latb) .and. present(lonb)) then
       select type (latb)
         type is (real(r4_kind))
