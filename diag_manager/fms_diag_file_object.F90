@@ -45,7 +45,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
                                     fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
                                     fmsDiagDiurnalAxis_type, create_new_z_subaxis
 use fms_diag_field_object_mod, only: fmsDiagField_type
-use fms_diag_output_buffer_mod, only: fmsDiagOutputBufferContainer_type
+use fms_diag_output_buffer_mod, only: fmsDiagOutputBufferContainer_type, fmsDiagOutputBuffer_class
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
 
@@ -161,6 +161,7 @@ type fmsDiagFileContainer_type
   procedure :: open_diag_file
   procedure :: write_global_metadata
   procedure :: write_time_metadata
+  procedure :: write_field_data
   procedure :: write_axis_metadata
   procedure :: write_field_metadata
   procedure :: write_axis_data
@@ -1118,6 +1119,40 @@ subroutine write_time_metadata(this)
   endif
 
 end subroutine write_time_metadata
+
+!> \brief Write out the field data to the file
+subroutine write_field_data(this, field_obj, buffer_obj)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
+  type(fmsDiagField_type),                 intent(in), target :: field_obj(:)
+  type(fmsDiagOutputBufferContainer_type), intent(in), target :: buffer_obj(:)
+
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< Fileobj to write to
+  integer                              :: i              !< For do loops
+  integer                              :: field_id       !< The id of the field writing the data to
+
+  diag_file => this%FMS_diag_file
+  fileobj => diag_file%fileobj
+
+  if (diag_file%is_static) then
+    !< Here the file is static so there is no need for the unlimited dimension
+    !! as a variables are static
+    do i = 1, diag_file%number_of_buffers
+      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
+    enddo
+  else
+    do i = 1, diag_file%number_of_buffers
+      field_id = buffer_obj(diag_file%buffer_ids(i))%get_field_id()
+      if (field_obj(field_id)%is_static()) then
+        !< If the variable is static, only write it the first time
+        if (diag_file%unlim_dimension_level .eq. 1) call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
+      else
+        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj, unlim_dim_level=diag_file%unlim_dimension_level)
+      endif
+    enddo
+  endif
+
+end subroutine write_field_data
 
 !> \brief Determine if it is time to close the file
 !! \return .True. if it is time to close the file
