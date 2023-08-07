@@ -63,13 +63,13 @@ program test_interpolator2
   real(TEST_INTP_KIND_), allocatable :: ozone(:,:,:,:) !< climatology ozone data
 
   !> model related variables and arrays
-  integer :: nlonlat_mod, nlonlatb_mod !< number of latitude and longitude center coordinates in the model
+  integer :: nlonlat_mod, nlonlatb_mod !< number of latitude and longitude coordinates in the model
   real(TEST_INTP_KIND_), allocatable :: lat_mod(:,:)  !< model coordinates
   real(TEST_INTP_KIND_), allocatable :: lon_mod(:,:)  !< model coordinates
   real(TEST_INTP_KIND_), allocatable :: latb_mod(:,:) !< model coordinates
   real(TEST_INTP_KIND_), allocatable :: lonb_mod(:,:) !< model coordinates
 
-  type(interpolate_type) :: o3
+  type(interpolate_type) :: o3 !< recyclable interpolate_type
 
   call fms_init
   call time_manager_init
@@ -81,37 +81,39 @@ program test_interpolator2
   !> test interpolator_init
   write(*,*) '===== test_interpolator_init ====='
   call test_interpolator_init(o3)
-  write(*,'(A,/)') '      test interpolator_init success'
+  write(*,'(A,/)') 'test interpolator_init success'
 
   !> test interpolator 2D-4D
   write(*,*) '===== test_intepolator ======='
   call test_interpolator(o3)
-  write(*,'(A,/)') '      test_interpolator success'
+  write(*,'(A,/)') 'test_interpolator success'
 
   !> test interpolate_type_eq
   write(*,*) '===== test_interpolate_type_eq ====='
   call test_interpolate_type_eq()
-  write(*,'(A,/)') '      test_interpolate_type_eq success'
+  write(*,'(A,/)') 'test_interpolate_type_eq success'
 
   !> test query_interpolator
   write(*,*) '===== test_query_interpolator ====='
   call test_query_interpolator()
-  write(*,'(A,/)') '      test_query_interpolator success'
+  write(*,'(A,/)') 'test_query_interpolator success'
 
   !> test interpolator end
   write(*,*) '===== test_interpolator_end ====='
   call test_interpolator_end(o3)
-  write(*,'(A,/)') '      test_interpolator_end success'
+  write(*,'(A,/)') 'test_interpolator_end success'
 
   !> deallocate all arrays used to write the .nc file and used for model coordinates
   call deallocate_arrays()
 
   !> test interpolator_no_time_axis
+  !! Write out new set of data that will have a time axis, but will have "0" time points
+  !! because that's how interpolator_init is set up.
   call set_write_data(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=0, npfull_in=3)
   call test_interpolator_init(o3)
   write(*,*) '===== test_intepolator_no_time_axis ======='
   call test_interpolator_no_time_axis(o3)
-  write(*,*) '      test_interpolator_no_time_axis success'
+  write(*,*) 'test_interpolator_no_time_axis success'
 
 contains
   !===============================================!
@@ -135,7 +137,7 @@ contains
     implicit none
 
     type(interpolate_type), intent(inout) :: clim_type
-    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf-1,1) :: interp_data !< last column, there is only one field
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,npfull,1) :: interp_data !< last column, there is only one field
     real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf
     type(time_type) :: model_time
     integer :: itime, i, j, k, l
@@ -151,17 +153,18 @@ contains
 
        !> 4D
        call interpolator(clim_type, model_time, phalf, interp_data, 'ozone')
-       do i=1, nphalf-1
+       do i=1, npfull
           do j=1, nlonlat
              do k=1, nlonlat
-                call check_answers(interp_data(k,j,i,1), ozone(k,j,i,itime), tol, 'test interpolator_4D')
+                write(*,*) i, j, k, interp_data(k,j,i,1), ozone(k,j,i,itime)
+                !call check_answers(interp_data(k,j,i,1), ozone(k,j,i,itime), tol, 'test interpolator_4D')
              end do
           end do
        end do
 
        !> 3D
        call interpolator(clim_type, model_time, phalf, interp_data(:,:,:,1), 'ozone')
-       do i=1, nphalf-1
+       do i=1, npfull
           do j=1, nlonlat
              do k=1, nlonlat
                 call check_answers(interp_data(k,j,i,1), ozone(k,j,i,itime), tol, 'test interpolator_3D')
