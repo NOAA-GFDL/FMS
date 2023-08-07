@@ -80,7 +80,7 @@ type horizInterpReals8_type
    real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
    real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in
    real(kind=r8_kind)                                   :: max_src_dist
-   logical                                              :: is_allocated !< set to true upon field allocation
+   logical                                              :: is_allocated = .false. !< set to true upon field allocation
 
 end type horizInterpReals8_type
 
@@ -107,7 +107,7 @@ type horizInterpReals4_type
    real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
    real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in
    real(kind=r4_kind)                                   :: max_src_dist
-   logical                                              :: is_allocated !< set to true upon field allocation
+   logical                                              :: is_allocated = .false. !< set to true upon field allocation
 
 end type horizInterpReals4_type
 

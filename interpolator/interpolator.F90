@@ -311,12 +311,12 @@ integer,           allocatable :: out_of_bounds(:) !< Flag for when surface pres
 integer,           allocatable :: vert_interp(:)   !< Flag for type of vertical interpolation.
 !--lwh
 !integer                    :: indexm, indexp, climatology
-integer,dimension(:),  allocatable :: indexm                     !< No description
-integer,dimension(:),  allocatable :: indexp                     !< No description
-integer,dimension(:),  allocatable :: climatology                !< No description
+integer,dimension(:),  allocatable :: indexm        !< No description
+integer,dimension(:),  allocatable :: indexp        !< No description
+integer,dimension(:),  allocatable :: climatology   !< No description
 
-type(time_type), allocatable :: clim_times(:,:)                !< No description
-logical :: separate_time_vary_calc                                        !< No description
+type(time_type), allocatable :: clim_times(:,:) !< No description
+logical :: separate_time_vary_calc              !< No description
 integer :: itaum     !< No description
 integer :: itaup     !< No description
 
@@ -328,14 +328,14 @@ end type interpolate_type
 logical            :: module_is_initialized = .false.
 logical            :: clim_diag_initialized = .false.
 
-integer :: ndim          !< No description
-integer :: nvar          !< No description
+integer :: ndim      !< No description
+integer :: nvar      !< No description
 integer :: ntime     !< No description
-integer :: nlat          !< No description
+integer :: nlat      !< No description
 integer :: nlatb     !< No description
-integer :: nlon          !< No description
+integer :: nlon      !< No description
 integer :: nlonb     !< No description
-integer :: nlev          !< No description
+integer :: nlev      !< No description
 integer :: nlevh     !< No description
 integer ::          len, ntime_in, num_fields               !< No description
 
@@ -384,24 +384,24 @@ real(r8_kind), parameter :: DTR = TPI/360._r8_kind
 
 
 
-integer :: num_clim_diag = 0                                                       !< No description
-character(len=64) :: climo_diag_name(max_diag_fields)                         !< No description
-integer :: climo_diag_id(max_diag_fields), hinterp_id(max_diag_fields)     !< No description
+integer :: num_clim_diag = 0                                            !< No description
+character(len=64) :: climo_diag_name(max_diag_fields)                   !< No description
+integer :: climo_diag_id(max_diag_fields), hinterp_id(max_diag_fields)  !< No description
 real(r8_kind) ::  missing_value = -1.e10_r8_kind                        !< No description
 ! sjs integer :: itaum, itaup
 
 #ifdef ENABLE_QUAD_PRECISION
 ! Higher precision (kind=16) for grid geometrical factors:
- integer, parameter:: f_p = selected_real_kind(20)     !< Higher precision (kind=16) for grid geometrical factors
+ integer, parameter:: f_p = r16_kind    !< Higher precision (kind=16) for grid geometrical factors
 #else
 ! 64-bit precision (kind=8)
- integer, parameter:: f_p = selected_real_kind(15)     !< 64-bit precision (kind=8)
+ integer, parameter:: f_p = r8_kind     !< 64-bit precision (kind=8)
 #endif
 
 logical :: read_all_on_init = .false.          !< No description
-integer :: verbose = 0                              !< No description
-logical :: conservative_interp = .true.          !< No description
-logical :: retain_cm3_bug = .false.               !< No description
+integer :: verbose = 0                         !< No description
+logical :: conservative_interp = .true.        !< No description
+logical :: retain_cm3_bug = .false.            !< No description
 logical :: use_mpp_io = .false. !< Set to true to use mpp_io, otherwise fms2io is used
 
 namelist /interpolator_nml/    &
@@ -434,8 +434,8 @@ type(interpolate_type), intent(inout) :: Out
 
      Out%interph = In%interph
      if (allocated(In%time_slice)) Out%time_slice =  In%time_slice
-     Out%file_name = In%file_name
-     Out%time_flag = In%time_flag
+     Out%file_name  = In%file_name
+     Out%time_flag  = In%time_flag
      Out%level_type = In%level_type
      Out%is = In%is
      Out%ie = In%ie
@@ -443,6 +443,7 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
+     Out%fileobj = In%fileobj
      if (allocated(In%has_level    )) Out%has_level     =  In%has_level
      if (allocated(In%field_name   )) Out%field_name    =  In%field_name
      if (allocated(In%time_init    )) Out%time_init     =  In%time_init
@@ -684,23 +685,23 @@ if (allocated (clim_type%time_init )) deallocate(clim_type%time_init)
 if (allocated (clim_type%has_level))  deallocate(clim_type%has_level)
 if (allocated (clim_type%mr        )) deallocate(clim_type%mr)
 if (allocated (clim_type%out_of_bounds )) deallocate(clim_type%out_of_bounds)
-if (allocated (clim_type%vert_interp )) deallocate(clim_type%vert_interp)
+if (allocated (clim_type%vert_interp ))   deallocate(clim_type%vert_interp)
 if (allocated(clim_type%indexm)) deallocate(clim_type%indexm)
 if (allocated(clim_type%indexp)) deallocate(clim_type%indexp)
-if (allocated(clim_type%clim_times)) deallocate(clim_type%clim_times)
+if (allocated(clim_type%clim_times))  deallocate(clim_type%clim_times)
 if (allocated(clim_type%climatology)) deallocate(clim_type%climatology)
 
 call horiz_interp_del(clim_type%interph)
 
 if(clim_type%is_r4) then
-   if (allocated (clim_type%r4_type%pmon_pyear)) then
+   if (allocated(clim_type%r4_type%pmon_pyear)) then
       deallocate(clim_type%r4_type%pmon_pyear)
       deallocate(clim_type%r4_type%pmon_nyear)
       deallocate(clim_type%r4_type%nmon_nyear)
       deallocate(clim_type%r4_type%nmon_pyear)
    end if
 else if(clim_type%is_r8) then
-   if (allocated (clim_type%r8_type%pmon_pyear)) then
+   if (allocated(clim_type%r8_type%pmon_pyear)) then
       deallocate(clim_type%r8_type%pmon_pyear)
       deallocate(clim_type%r8_type%pmon_nyear)
       deallocate(clim_type%r8_type%nmon_nyear)

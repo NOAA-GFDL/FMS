@@ -104,8 +104,8 @@ if (use_mpp_io) then
            'MPP_IO is no longer supported.  Please remove from use_mpp_io from interpolator_nml')
 endif
 
-if(kind(lonb_mod).eq.r4_kind) clim_type%is_r4=.true.
-if(kind(lonb_mod).eq.r8_kind) clim_type%is_r8=.true.
+if(kind(FMS_INTP_KIND_).eq.r4_kind) clim_type%is_r4=.true.
+if(kind(FMS_INTP_KIND_).eq.r8_kind) clim_type%is_r8=.true.
 
 call fms2io_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
                               data_names, data_out_of_bounds,           &
@@ -242,7 +242,7 @@ else
 !  clim_type%latb(1) = min( 90., max(-90., clim_type%lat(1) - dlat) )
    clim_type%FMS_INTP_TYPE_%latb(1) = min( lPI/2._lkind, max(-lPI/2._lkind, clim_type%FMS_INTP_TYPE_%lat(1) - dlat) )
    clim_type%FMS_INTP_TYPE_%latb(2:nlat) = ( clim_type%FMS_INTP_TYPE_%lat(1:nlat-1) + &
-                                               clim_type%FMS_INTP_TYPE_%lat(2:nlat) ) * 0.5_lkind
+                                             clim_type%FMS_INTP_TYPE_%lat(2:nlat) ) * 0.5_lkind
    dlat = ( clim_type%FMS_INTP_TYPE_%lat(nlat) - clim_type%FMS_INTP_TYPE_%lat(nlat-1) ) * 0.5_lkind
 !  clim_type%latb(nlat+1) = min( 90., max(-90., clim_type%lat(nlat) + dlat) )
    clim_type%FMS_INTP_TYPE_%latb(nlat+1) = min( lPI/2._lkind, max(-lPI/2._lkind, &
@@ -259,15 +259,15 @@ else
 ! of the boundaries to be half-way between the midpoints.
   if (size(clim_type%FMS_INTP_TYPE_%lon(:)) /= 1) then
     allocate(clim_type%FMS_INTP_TYPE_%lonb(size(clim_type%FMS_INTP_TYPE_%lon(:))+1))
-    dlon = (clim_type%FMS_INTP_TYPE_%lon(2)-clim_type%FMS_INTP_TYPE_%lon(1))/2.0_lkind
-    clim_type%FMS_INTP_TYPE_%lonb(1) = clim_type%FMS_INTP_TYPE_%lon(1) - dlon
+    dlon = ( clim_type%FMS_INTP_TYPE_%lon(2)-clim_type%FMS_INTP_TYPE_%lon(1) )/2.0_lkind
+    clim_type%FMS_INTP_TYPE_%lonb(1)  = clim_type%FMS_INTP_TYPE_%lon(1) - dlon
     clim_type%FMS_INTP_TYPE_%lonb(2:) = clim_type%FMS_INTP_TYPE_%lon(1:) + dlon
   else
 !! this is the case for zonal mean data, lon = 1, lonb not present
 !! in file.
     allocate(clim_type%FMS_INTP_TYPE_%lonb(2))
-    clim_type%FMS_INTP_TYPE_%lonb(1) = -360._lkind*real(dtr,FMS_INTP_KIND_)
-    clim_type%FMS_INTP_TYPE_%lonb(2) = 360.0_lkind*real(dtr,FMS_INTP_KIND_)
+    clim_type%FMS_INTP_TYPE_%lonb(1) = -360.0_lkind*real(dtr,FMS_INTP_KIND_)
+    clim_type%FMS_INTP_TYPE_%lonb(2) =  360.0_lkind*real(dtr,FMS_INTP_KIND_)
     clim_type%FMS_INTP_TYPE_%lon(1) = 0.0_lkind
   endif
 endif
@@ -279,7 +279,7 @@ if(dimension_exists(fileobj, "pfull")) then
    call get_dimension_size(fileobj, "pfull", nlev)
    allocate(clim_type%FMS_INTP_TYPE_%levs(nlev))
    call get_axis_level_data(fileobj, 'pfull', clim_type%FMS_INTP_TYPE_%levs, &
-                                     clim_type%level_type, clim_type%vertical_indices)
+                            clim_type%level_type, clim_type%vertical_indices)
 else if(dimension_exists(fileobj, "sigma_full")) then
    call get_dimension_size(fileobj, "sigma_full", nlev)
    allocate(clim_type%FMS_INTP_TYPE_%levs(nlev))
@@ -300,7 +300,7 @@ if(dimension_exists(fileobj, "phalf")) then
    call get_dimension_size(fileobj, "phalf", nlevh)
    allocate(clim_type%FMS_INTP_TYPE_%halflevs(nlevh))
    call get_axis_level_data(fileobj, 'phalf', clim_type%FMS_INTP_TYPE_%halflevs, &
-                                     clim_type%level_type, clim_type%vertical_indices)
+                            clim_type%level_type, clim_type%vertical_indices)
 else if(dimension_exists(fileobj, "sigma_half")) then
    call get_dimension_size(fileobj, "sigma_half", nlevh)
    allocate(clim_type%FMS_INTP_TYPE_%halflevs(nlevh))
@@ -316,7 +316,7 @@ else
    endif
       do n=2,nlev
          clim_type%FMS_INTP_TYPE_%halflevs(n) = 0.5_lkind*(clim_type%FMS_INTP_TYPE_%levs(n) + &
-                                                     clim_type%FMS_INTP_TYPE_%levs(n-1))
+                                                           clim_type%FMS_INTP_TYPE_%levs(n-1))
       end do
 endif
 
@@ -329,9 +329,9 @@ if(dimension_exists(fileobj, "time")) then
    model_calendar = get_calendar_type()
    fileday = 0
    filemon = 0
-   fileyr = 0
-   filehr = 0
-   filemin= 0
+   fileyr  = 0
+   filehr  = 0
+   filemin = 0
    filesec = 0
    select case(units(:3))
      case('day')
@@ -434,7 +434,7 @@ if(dimension_exists(fileobj, "time")) then
       ! determine whether the data is a continuous set of monthly values or
       ! a series of annual cycles spread throughout the period of data
       non_monthly = .false.
-     do n = 1, ntime-1
+      do n = 1, ntime-1
          !  Assume that the times in the data file correspond to days only.
          if (time_in(n+1) > (time_in(n) + 32._lkind)) then
            non_monthly = .true.
@@ -443,10 +443,10 @@ if(dimension_exists(fileobj, "time")) then
       end do
       if (clim_type%climatological_year) then
          call mpp_error (NOTE, 'interpolator_mod :'  // &
-         trim(file_name) // ' is a year-independent climatology file')
+                      & trim(file_name) // ' is a year-independent climatology file')
       else
          call mpp_error (NOTE, 'interpolator_mod :' // &
-           trim(file_name) // ' is a timeseries file')
+                      & trim(file_name) // ' is a timeseries file')
       endif
 
       do n = 1, ntime
@@ -460,8 +460,8 @@ if(dimension_exists(fileobj, "time")) then
            !! the time that is needed in time_slice is the displacement into the
            !! year, not the displacement from a base_time.
            clim_type%time_slice(n) = &
-               set_time( INT((time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
-                               * real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n)))
+               set_time( INT( (time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
+                               *real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n)))
          else
 
            !--------------------------------------------------------------------
@@ -482,8 +482,8 @@ if(dimension_exists(fileobj, "time")) then
              !    no calendar conversion needed.
              !---------------------------------------------------------------------
              clim_type%time_slice(n) = &
-               set_time( INT((time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
-                               * real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n))) &
+               set_time( INT( (time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
+                               *real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n))) &
                  + base_time
 
            !---------------------------------------------------------------------
@@ -512,20 +512,20 @@ if(dimension_exists(fileobj, "time")) then
            !    convert file times from julian to noleap.
            !---------------------------------------------------------------------
            else if ( (model_calendar == NOLEAP .and.   &
-                & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
+                      & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
              Julian_time = set_time (0, INT(time_in(n))) + base_time
              call get_date_julian (Julian_time, yr, mo, dy, hr, mn, sc)
              clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy, &
                                                          hr, mn, sc)
              if (n == 1) then
                call print_date (clim_type%time_slice(1), &
-                        str= 'for file ' // trim(file_name) // ', the &
-                              &first time slice is mapped to :')
+                                str= 'for file ' // trim(file_name) // ', the &
+                                &first time slice is mapped to :')
              endif
              if (n == ntime) then
                call print_date (clim_type%time_slice(ntime), &
-                        str= 'for file ' // trim(file_name) // ', the &
-                              &last time slice is mapped to:')
+                                str= 'for file ' // trim(file_name) // ', the &
+                                &last time slice is mapped to:')
              endif
 
            !---------------------------------------------------------------------
@@ -554,8 +554,8 @@ endif
 
  if (conservative_interp) then
     call horiz_interp_new (clim_type%interph, &
-                        clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
-                        lonb_mod, latb_mod)
+                           clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
+                           lonb_mod, latb_mod)
  else
 
     call mpp_error(NOTE, "Using Bilinear interpolation")
@@ -567,10 +567,10 @@ endif
        allocate(agrid_mod(nx,ny,2))
        do j=1,ny
        do i=1,nx
-          call cell_center2((/lonb_mod(i,j),latb_mod(i,j)/), &
-               (/lonb_mod(i+1,j),latb_mod(i+1,j)/), &
-               (/lonb_mod(i,j+1),latb_mod(i,j+1)/), &
-               (/lonb_mod(i+1,j+1),latb_mod(i+1,j+1)/),  agrid_mod(i,j,:))
+          call cell_center2((/lonb_mod(i,j),latb_mod(i,j)/),     &
+                            (/lonb_mod(i+1,j),latb_mod(i+1,j)/), &
+                            (/lonb_mod(i,j+1),latb_mod(i,j+1)/), &
+                            (/lonb_mod(i+1,j+1),latb_mod(i+1,j+1)/), agrid_mod(i,j,:))
        enddo
        enddo
     endif
@@ -578,8 +578,8 @@ endif
     !!! END DEBUG CODE
 
     call horiz_interp_new (clim_type%interph, &
-                        clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
-                        agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
+                           clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
+                           agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
  endif
 
 !--------------------------------------------------------------------
@@ -618,7 +618,7 @@ else
    allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
    allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
-               ntime, num_fields))
+            ntime, num_fields))
    endif
    clim_type%FMS_INTP_TYPE_%data = 0.0_lkind
    clim_type%TIME_FLAG = LINEAR
@@ -635,7 +635,7 @@ endif
    allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
    allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
-               ntime, num_fields))
+            ntime, num_fields))
    endif
    clim_type%FMS_INTP_TYPE_%data = 0.0_lkind
    clim_type%TIME_FLAG = LINEAR
@@ -723,7 +723,7 @@ if(present(data_names)) then
          end if
       else
          call mpp_error(FATAL,'interpolator_init : Check names of fields being passed. ' &
-                              //trim(data_names(j))//' does not exist.')
+                              &//trim(data_names(j))//' does not exist.')
       endif
    enddo
 else
@@ -1065,13 +1065,13 @@ clim_type%je = jecomp
 !init_time = set_date(1980,1,1,0,0,0)
 
 if ((num_clim_diag + size(clim_type%field_name(:))) .gt. max_diag_fields )  &
-   call mpp_error(FATAL, "init_clim_diag : Trying to set up too many diagnostic fields for the climatology data")
+    call mpp_error(FATAL, "init_clim_diag : Trying to set up too many diagnostic fields for the climatology data")
 do i=1,size(clim_type%field_name(:))
 climo_diag_name(i+num_clim_diag) = clim_type%field_name(i)
 climo_diag_id(i+num_clim_diag) =  register_diag_field('climo',clim_type%field_name(i),axes(1:2),init_time,&
-                                'climo_'//clim_type%field_name(i), 'kg/kg', missing_value)
+                                                      'climo_'//clim_type%field_name(i), 'kg/kg', missing_value)
 hinterp_id(i+num_clim_diag) =  register_diag_field('hinterp',clim_type%field_name(i),mod_axes(1:2),init_time,&
-                                'interp_'//clim_type%field_name(i),'kg/kg' , missing_value)
+                                                   'interp_'//clim_type%field_name(i),'kg/kg' , missing_value)
 enddo
 ! Total number of climatology diagnostics (num_clim_diag). This can be from multiple climatology
 ! fields with different spatial axes.
@@ -1709,13 +1709,13 @@ select case(clim_type%TIME_FLAG)
     do n=1, size(clim_type%field_name(:))
       hinterp_data(:,:,:,n) = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight1)*&
                               (1._lkind-clim_type%FMS_INTP_TYPE_%tweight3)*   &
-                   clim_type%FMS_INTP_TYPE_%pmon_pyear(istart:iend,jstart:jend,:,n) + &
+                              clim_type%FMS_INTP_TYPE_%pmon_pyear(istart:iend,jstart:jend,:,n) + &
                               (1._lkind-clim_type%FMS_INTP_TYPE_%tweight2)*clim_type%FMS_INTP_TYPE_%tweight3* &
-                   clim_type%FMS_INTP_TYPE_%nmon_pyear(istart:iend,jstart:jend,:,n) + &
-                               clim_type%FMS_INTP_TYPE_%tweight1* (1._lkind-clim_type%FMS_INTP_TYPE_%tweight3)*&
-                   clim_type%FMS_INTP_TYPE_%pmon_nyear(istart:iend,jstart:jend,:,n) + &
-                               clim_type%FMS_INTP_TYPE_%tweight2* clim_type%FMS_INTP_TYPE_%tweight3*   &
-                   clim_type%FMS_INTP_TYPE_%nmon_nyear(istart:iend,jstart:jend,:,n)
+                              clim_type%FMS_INTP_TYPE_%nmon_pyear(istart:iend,jstart:jend,:,n) + &
+                              clim_type%FMS_INTP_TYPE_%tweight1* (1._lkind-clim_type%FMS_INTP_TYPE_%tweight3)*&
+                              clim_type%FMS_INTP_TYPE_%pmon_nyear(istart:iend,jstart:jend,:,n) + &
+                              clim_type%FMS_INTP_TYPE_%tweight2* clim_type%FMS_INTP_TYPE_%tweight3*   &
+                              clim_type%FMS_INTP_TYPE_%nmon_nyear(istart:iend,jstart:jend,:,n)
 
     end do
 
@@ -1787,7 +1787,7 @@ do j = 1, size(phalf,2)
          if (verbose > 3) then
          call mpp_error(NOTE,"Interpolator: model top pressure&
                              & is less than climatology top pressure for "&
-                             // trim(clim_type%file_name))
+                             & // trim(clim_type%file_name))
          endif
          select case(clim_type%out_of_bounds(i))
             case(CONSTANT)

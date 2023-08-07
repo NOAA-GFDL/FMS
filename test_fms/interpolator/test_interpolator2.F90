@@ -20,44 +20,39 @@
 !! @brief unit tests for interpolator_mod
 !! @author MiKyung Lee
 !! @email gfdl.climate.model.info@noaa.gov
-!! @description This program tests the various subroutines in interpolator_mod.
-!! TODO:  Test obtain_interpolator_time_slices.
-!!        The subroutine obtain_interpolator_time_slices returns
-!!        an interpolator_type which cannot be queried.
-!!        This subroutine should be called by the interpolators.
+!! @description This program tests the various subroutines in interpolator_mod.  The code in
+!! in test_interpolator.F90 shows how to use interpolator_mod.  This program contains the
+!! actual testing.
+!! TODO:
 
-program test_interpolator_mod
+program test_interpolator2
 
   use fms2_io_mod, only: FmsNetcdfFile_t, UNLIMITED,                  &
                          register_field, register_variable_attribute, &
                          register_axis,                               &
                          write_data, close_file, open_file
-  use mpp_mod,     only: mpp_error, FATAL
+  use mpp_mod,          only: mpp_error, FATAL
   use time_manager_mod, only: time_type, set_date, set_calendar_type, time_manager_init
-  use fms_mod,     only: fms_init
-  use constants_mod, only: PI
-  use platform_mod, only: r4_kind, r8_kind
+  use fms_mod,          only: fms_init
+  use constants_mod,    only: PI
+  use platform_mod,     only: r4_kind, r8_kind
 
   use interpolator_mod
 
   implicit none
 
-  character(100), parameter :: ncfile='immadeup.o3.climatology.nc'
-  integer, parameter :: calendar_type=2     !< JULIAN
-
+  character(100), parameter :: ncfile='immadeup.o3.climatology.nc' !< fake climatology file.
+  integer, parameter :: calendar_type=2  !< JULIAN calendar
   integer, parameter :: lkind=TEST_INTP_KIND_
+  real(r8_kind), parameter :: tol=1.e-5_r8_kind !< the interpolation methods are not perfect.
+                                                !! Will not get perfectly agreeing answers
 
-  real(r8_kind) :: tol=1.e-5_r8_kind !< the interpolation methods are not perfect.
-                                     !! Will not get perfectly agreeing answers
-
+  !> climatology related variables and arrays (holding made up data)
   integer :: nlonlat       !< number of latitude and longitudinal center coordinates
   integer :: nlonlatb      !< number of latitude and longitudinal boundary coordinates
   integer :: ntime         !< number of time slices
   integer :: npfull        !< number of p levels
   integer :: nphalf        !< number of half p levels
-  integer :: nlonlat_mod, nlonlatb_mod
-
-  !> climatology related arrays that will hold made-up data
   real(TEST_INTP_KIND_), allocatable :: lat(:)   !< climatology coordinates
   real(TEST_INTP_KIND_), allocatable :: lon(:)   !< climatology coordinates
   real(TEST_INTP_KIND_), allocatable :: latb(:)  !< climatology coordinates
@@ -67,7 +62,8 @@ program test_interpolator_mod
   real(TEST_INTP_KIND_), allocatable :: phalf(:) !< climatology p half level
   real(TEST_INTP_KIND_), allocatable :: ozone(:,:,:,:) !< climatology ozone data
 
-  !> model related arrays
+  !> model related variables and arrays
+  integer :: nlonlat_mod, nlonlatb_mod !< number of latitude and longitude center coordinates in the model
   real(TEST_INTP_KIND_), allocatable :: lat_mod(:,:)  !< model coordinates
   real(TEST_INTP_KIND_), allocatable :: lon_mod(:,:)  !< model coordinates
   real(TEST_INTP_KIND_), allocatable :: latb_mod(:,:) !< model coordinates
@@ -82,29 +78,35 @@ program test_interpolator_mod
   !> set data
   call set_write_data(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=5, npfull_in=3)
 
-  write(*,*) '===== test_intepolator_init ====='
+  !> test interpolator_init
+  write(*,*) '===== test_interpolator_init ====='
   call test_interpolator_init(o3)
   write(*,'(A,/)') '      test interpolator_init success'
 
+  !> test interpolator 2D-4D
   write(*,*) '===== test_intepolator ======='
   call test_interpolator(o3)
   write(*,'(A,/)') '      test_interpolator success'
 
+  !> test interpolate_type_eq
   write(*,*) '===== test_interpolate_type_eq ====='
   call test_interpolate_type_eq()
   write(*,'(A,/)') '      test_interpolate_type_eq success'
 
+  !> test query_interpolator
   write(*,*) '===== test_query_interpolator ====='
   call test_query_interpolator()
   write(*,'(A,/)') '      test_query_interpolator success'
 
+  !> test interpolator end
   write(*,*) '===== test_interpolator_end ====='
   call test_interpolator_end(o3)
   write(*,'(A,/)') '      test_interpolator_end success'
 
+  !> deallocate all arrays used to write the .nc file and used for model coordinates
   call deallocate_arrays()
 
-  !> set data
+  !> test interpolator_no_time_axis
   call set_write_data(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=0, npfull_in=3)
   call test_interpolator_init(o3)
   write(*,*) '===== test_intepolator_no_time_axis ======='
@@ -286,4 +288,4 @@ contains
   !===============================================!
 #include "test_interpolator_write_climatology.inc"
 
-end program test_interpolator_mod
+end program test_interpolator2
