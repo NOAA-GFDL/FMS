@@ -364,6 +364,10 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (real(kind=r4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=r8_kind))
+         if(string_compare(trim(fileobj%path), "INPUT/C3463_grid.tile7.nc", .true.) .or. &
+           string_compare(trim(fileobj%path), "INPUT/sfc_data.nc"        , .true.) ) then
+          err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+        endif
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       class default
         call error("Unsupported variable type: "//trim(append_error_msg))
@@ -454,8 +458,16 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (integer(kind=i8_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=r4_kind))
+        if(string_compare(trim(fileobj%path), "INPUT/fv_tracer.res.tile1.nc"   , .true.) .or. &
+           string_compare(trim(fileobj%path), "INPUT/fv_core.res.tile1.nc"  , .true.) ) then
+          err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+        endif
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=r8_kind))
+        if(string_compare(trim(fileobj%path), "INPUT/phy_data.nc"   , .true.) .or. &
+           string_compare(trim(fileobj%path), "INPUT/sfc_data.nc", .true.) ) then
+          err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+        endif
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       class default
         call error("Unsupported variable type: "//trim(append_error_msg))
