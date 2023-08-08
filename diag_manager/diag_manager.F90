@@ -1726,6 +1726,7 @@ END FUNCTION register_static_field
       ke = SIZE(field,3)
       field_modern(1:ie,1:je,1:ke,1:1) => field
       if (present(mask)) mask_modern(1:ie,1:je,1:ke,1:1) => mask
+      if (present(rmask)) rmask_modern(1:ie,1:je,1:ke,1:1) => rmask
     endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
