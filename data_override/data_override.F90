@@ -1220,10 +1220,10 @@ subroutine data_override_0d(gridname,fieldname_code,output_data,time,override,da
 end subroutine data_override_0d
 
 !> @brief Data override for 2D unstructured grids
-subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
+subroutine data_override_UG_1d(gridname,fieldname,return_data,time,override)
   character(len=3),   intent(in) :: gridname !< model grid ID
   character(len=*),   intent(in) :: fieldname !< field to override
-  real, dimension(:), intent(inout) :: data !< data returned by this call
+  real, dimension(:), intent(inout) :: return_data !< data returned by this call
   type(time_type),    intent(in) :: time !<  model time
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   !local vars
@@ -1249,7 +1249,7 @@ subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
 
   call data_override_2d(gridname,fieldname,data_SG,time,override)
 
-  call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:), data(:))
+  call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:), return_data(:))
 
   deallocate(data_SG)
 
