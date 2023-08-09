@@ -637,26 +637,26 @@ end subroutine sum_field_3d
 !! <b> Template: </b>
 !!
 !! @code{.f90}
-!! call sum_field_wght_3d (name, data, wt, is, js)
+!! call sum_field_wght_3d (name, field_data, wt, is, js)
 !! @endcode
 !!
 !! <b> Parameters: </b>
 !!
 !! @code{.f90}
 !! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:,:), wt(:,:,:)
+!! real,              intent(in) :: field_data(:,:,:), wt(:,:,:)
 !! integer, optional, intent(in) :: is, js
 !! @endcode
 !!
 !! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <field_data> field of integrands to be summed over
 !! @param [in] <wt> the weight function to be evaluated at summation
 !! @param [in] <is, js> starting i,j indices over which summation is to occur
 !!
-subroutine sum_field_wght_3d (name, data, wt, is, js)
+subroutine sum_field_wght_3d (name, field_data, wt, is, js)
 
 character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:,:) !< field of integrands to be summed over
+real,              intent(in) :: field_data(:,:,:) !< field of integrands to be summed over
 real,              intent(in) :: wt(:,:,:) !< the weight function to be evaluated at summation
 integer, optional, intent(in) :: is !< starting i indices over which summation is to occur
 integer, optional, intent(in) :: js !< starting j indices over which summation is to occur
@@ -668,7 +668,7 @@ integer, optional, intent(in) :: js !< starting j indices over which summation i
 !     i1, j1, i2, j2  ! location indices of current data in
 !                       processor-global coordinates
 !-------------------------------------------------------------------------------
-      real, dimension (size(data,1),size(data,2)) :: data2
+      real, dimension (size(field_data,1),size(field_data,2)) :: data2
       integer :: field !< index of desired integral
       integer :: i1 !< location indices of current data in
                                        !! processor-global coordinates
@@ -702,8 +702,8 @@ integer, optional, intent(in) :: js !< starting j indices over which summation i
 !-------------------------------------------------------------------------------
       i1 = 1;  if (present(is)) i1 = is
       j1 = 1;  if (present(js)) j1 = js
-      i2 = i1 + size(data,1) - 1
-      j2 = j1 + size(data,2) - 1
+      i2 = i1 + size(field_data,1) - 1
+      j2 = j1 + size(field_data,2) - 1
 
 !-------------------------------------------------------------------------------
 !    increment the count of points toward this integral. sum first
@@ -713,8 +713,8 @@ integer, optional, intent(in) :: js !< starting j indices over which summation i
 !-------------------------------------------------------------------------------
 !$OMP CRITICAL
       field_count (field) = field_count (field) +   &
-                            size(data,1)*size(data,2)
-      data2 = vert_diag_integral (data, wt)
+                            size(field_data,1)*size(field_data,2)
+      data2 = vert_diag_integral (field_data, wt)
       field_sum(field) = field_sum   (field) +  &
                          sum (data2 * area(i1:i2,j1:j2))
 
