@@ -1420,31 +1420,31 @@ end function diag_integral_alarm
 !! <b> Template: </b>
 !!
 !! @code{.f90}
-!! data2 = vert_diag_integral (data, wt)
+!! data2 = vert_diag_integral (field_data, wt)
 !! @endcode
 !!
 !! <b> Parameters: </b>
 !!
 !! @code{.f90}
-!! real, dimension (:,:,:),         intent(in) :: data, wt
-!! real, dimension (size(data,1),size(data,2)) :: data2
+!! real, dimension (:,:,:),         intent(in) :: field_data, wt
+!! real, dimension (size(field_data,1),size(field_data,2)) :: data2
 !! @endcode
 !!
-!! @param [in] <data> integral field data arrays
+!! @param [in] <field_data> integral field data arrays
 !! @param [in] <wt> integral field weighting functions
 !! @param [out] <data2>
 !! @return real array data2
-function vert_diag_integral (data, wt) result (data2)
+function vert_diag_integral (field_data, wt) result (data2)
 
-real, dimension (:,:,:),         intent(in) :: data !< integral field data arrays
+real, dimension (:,:,:),         intent(in) :: field_data !< integral field data arrays
 real, dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
-real, dimension (size(data,1),size(data,2)) :: data2
+real, dimension (size(field_data,1),size(field_data,2)) :: data2
 
 !-------------------------------------------------------------------------------
 ! local variables:
 !       wt2
 !-------------------------------------------------------------------------------
-      real, dimension(size(data,1),size(data,2)) :: wt2
+      real, dimension(size(field_data,1),size(field_data,2)) :: wt2
 
 !-------------------------------------------------------------------------------
       wt2 = sum(wt,3)
@@ -1452,7 +1452,7 @@ real, dimension (size(data,1),size(data,2)) :: data2
         call error_mesg ('diag_integral_mod',  &
                              'vert sum of weights equals zero', FATAL)
       endif
-      data2 = sum(data*wt,3) / wt2
+      data2 = sum(field_data*wt,3) / wt2
 
 end function vert_diag_integral
 
