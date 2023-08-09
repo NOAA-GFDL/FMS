@@ -107,10 +107,10 @@ CONTAINS
   !! increments the axis counter and fills in the axes
   !!
   !! @return integer axis ID
-  INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
+  INTEGER FUNCTION diag_axis_init(name, array_data, units, cart_name, long_name, direction,&
        & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     CHARACTER(len=*), INTENT(in) :: name !< Short name for axis
-    CLASS(*), DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
+    CLASS(*), DIMENSION(:), INTENT(in) :: array_data !< Array of coordinate values
     CHARACTER(len=*), INTENT(in) :: units !< Units for the axis
     CHARACTER(len=*), INTENT(in) :: cart_name !< Cartesian axis ("X", "Y", "Z", "T")
     CHARACTER(len=*), INTENT(in), OPTIONAL :: long_name !< Long name for the axis.
@@ -222,17 +222,17 @@ CONTAINS
     IF ( Axes(diag_axis_init)%cart_name == 'T' ) THEN
        axlen = 0
     ELSE
-       axlen = SIZE(DATA(:))
+       axlen = SIZE(array_data(:))
     END IF
-    ALLOCATE ( Axes(diag_axis_init)%data(1:axlen) )
+    ALLOCATE ( Axes(diag_axis_init)%diag_type_data(1:axlen) )
 
     ! Initialize Axes(diag_axis_init)
     Axes(diag_axis_init)%name   = TRIM(name)
-    SELECT TYPE (DATA)
+    SELECT TYPE (array_data)
     TYPE IS (real(kind=r4_kind))
-       Axes(diag_axis_init)%data = DATA(1:axlen)
+       Axes(diag_axis_init)%diag_type_data = array_data(1:axlen)
     TYPE IS (real(kind=r8_kind))
-       Axes(diag_axis_init)%data = real(DATA(1:axlen))
+       Axes(diag_axis_init)%diag_type_data = real(array_data(1:axlen))
     CLASS DEFAULT
        CALL error_mesg('diag_axis_mod::diag_axis_init',&
             & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
