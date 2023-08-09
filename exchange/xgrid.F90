@@ -95,7 +95,7 @@ module xgrid_mod
 
 use       fms_mod,   only: check_nml_error,  &
                            error_mesg, FATAL, NOTE, stdlog,      &
-                           write_version_number, string
+                           write_version_number, lowercase, string
 use mpp_mod,         only: mpp_npes, mpp_pe, mpp_root_pe, mpp_send, mpp_recv, &
                            mpp_sync_self, stdout, mpp_max, EVENT_RECV,        &
                            mpp_get_current_pelist, mpp_clock_id, mpp_min,     &
@@ -665,8 +665,8 @@ logical,          intent(in)           :: use_higher_order
   select case(xmap%version)
   case(VERSION1)
      nxgrid = 0
-     if (dimension_exists(fileobj, 'i_'//grid1_id//'X'//grid_id)) then
-         call get_dimension_size(fileobj, 'i_'//grid1_id//'X'//grid_id, nxgrid)
+     if (dimension_exists(fileobj, 'i_'//lowercase(grid1_id)//'X'//lowercase(grid_id))) then
+         call get_dimension_size(fileobj, 'i_'//lowercase(grid1_id)//'X'//lowercase(grid_id), nxgrid)
      endif
      if(nxgrid .LE. 0) return
   case(VERSION2)
@@ -1620,7 +1620,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      case(VERSION1)
         grid%ntile = 1
      case(VERSION2)
-        call read_data(gridfileobj, grid_ids(g)//'_mosaic_file', mosaic_file)
+        call read_data(gridfileobj, lowercase(grid_ids(g))//'_mosaic_file', mosaic_file)
         if(.not. open_file(mosaicfileobj,'INPUT/'//trim(mosaic_file), "read")) then
            call error_mesg('xgrid_mod', 'Error when opening solo mosaic file INPUT/'//trim(mosaic_file), FATAL)
         endif
@@ -1885,8 +1885,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            end select
            ! get the tile list for each mosaic
 
-           call read_data(gridfileobj, grid_ids(1)//'_mosaic_file', mosaic1)
-           call read_data(gridfileobj, grid_ids(g)//'_mosaic_file', mosaic2)
+           call read_data(gridfileobj, lowercase(grid_ids(1))//'_mosaic_file', mosaic1)
+           call read_data(gridfileobj, lowercase(grid_ids(g))//'_mosaic_file', mosaic2)
 
            mosaic1 = 'INPUT/'//trim(mosaic1)
            mosaic2 = 'INPUT/'//trim(mosaic2)
