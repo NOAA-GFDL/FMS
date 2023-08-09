@@ -3999,7 +3999,7 @@ CONTAINS
   INTEGER FUNCTION init_diurnal_axis(n_samples)
     INTEGER, INTENT(in) :: n_samples !< number of intervals during the day
 
-    REAL :: DATA  (n_samples)   !< central points of time intervals
+    REAL :: center_data  (n_samples)   !< central points of time intervals
     REAL :: edges (n_samples+1) !< boundaries of time intervals
     INTEGER :: edges_id !< id of the corresponding edges
     INTEGER :: i
@@ -4018,7 +4018,7 @@ CONTAINS
     ! compute central points and units
     edges(1) = 0.0
     DO i = 1, n_samples
-       DATA (i) = 24.0*(REAL(i)-0.5)/n_samples
+       center_data (i) = 24.0*(REAL(i)-0.5)/n_samples
        edges(i+1) = 24.0* REAL(i)/n_samples
     END DO
 
@@ -4035,7 +4035,7 @@ CONTAINS
     WRITE (name,'(a,i2.2)') 'time_of_day_', n_samples
     init_diurnal_axis = get_axis_num(name, 'diurnal')
     IF ( init_diurnal_axis <= 0 ) THEN
-       init_diurnal_axis = diag_axis_init(name, DATA, units, 'N', 'time of day', set_name='diurnal', edges=edges_id)
+       init_diurnal_axis = diag_axis_init(name, center_data, units, 'N', 'time of day', set_name='diurnal', edges=edges_id)
     END IF
   END FUNCTION init_diurnal_axis
 
