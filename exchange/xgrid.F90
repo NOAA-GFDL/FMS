@@ -4419,7 +4419,7 @@ end subroutine get_index_range
 !!   first grid, which typically is on the atmos side.
 !!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
 !!   if these are present.
-subroutine stock_move_3d(from, to, grid_index, data, xmap, &
+subroutine stock_move_3d(from, to, grid_index, stock_data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
   ! this version takes rank 3 data, it can be used to compute the flux on anything but the
@@ -4432,7 +4432,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, intent(in)             :: grid_index        !< grid index
-  real(r8_kind), intent(in)                :: data(:,:,:)  !< data array is 3d
+  real(r8_kind), intent(in)                :: stock_data(:,:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
   real(r8_kind), intent(in)                :: delta_t
   integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
@@ -4456,7 +4456,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   endif
 
      from_dq = delta_t * 4.0*PI*radius**2 * sum( sum(xmap%grids(grid_index)%area * &
-          & sum(xmap%grids(grid_index)%frac_area * data, DIM=3), DIM=1))
+          & sum(xmap%grids(grid_index)%frac_area * stock_data, DIM=3), DIM=1))
      to_dq = from_dq
 
   ! update only if argument is present.
@@ -4479,7 +4479,7 @@ end subroutine stock_move_3d
 !> @brief this version takes rank 2 data, it can be used to compute the flux on the atmos side
 !!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
 !!   if these are present.
-subroutine stock_move_2d(from, to, grid_index, data, xmap, &
+subroutine stock_move_2d(from, to, grid_index, stock_data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
   ! this version takes rank 2 data, it can be used to compute the flux on the atmos side
@@ -4491,7 +4491,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, optional, intent(in)   :: grid_index
-  real(r8_kind), intent(in)                :: data(:,:)    !< data array is 2d
+  real(r8_kind), intent(in)                :: stock_data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
   real(r8_kind), intent(in)                :: delta_t
   integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
@@ -4512,7 +4512,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if( .not. present(grid_index) .or. grid_index==1 ) then
 
      ! only makes sense if grid_index == 1
-     from_dq = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+     from_dq = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * stock_data, DIM=1))
      to_dq = from_dq
 
   else
@@ -4543,7 +4543,7 @@ end subroutine stock_move_2d
 !!   first grid, which typically is on the atmos side.
 !!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
 !!   if these are present.
-subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
+subroutine stock_move_ug_3d(from, to, grid_index, stock_data, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
   ! this version takes rank 3 data, it can be used to compute the flux on anything but the
@@ -4556,7 +4556,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer, intent(in)             :: grid_index        !< grid index
-  real(r8_kind), intent(in)                :: data(:,:)  !< data array is 3d
+  real(r8_kind), intent(in)                :: stock_data(:,:)  !< data array is 3d
   type(xmap_type), intent(in)     :: xmap
   real(r8_kind), intent(in)                :: delta_t
   integer, intent(in)             :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
@@ -4564,7 +4564,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   real(r8_kind), intent(in)                :: radius       !< earth radius
   character(len=*), intent(in), optional      :: verbose
   integer, intent(out)            :: ier
-  real(r8_kind), dimension(size(data,1),size(data,2)) :: tmp
+  real(r8_kind), dimension(size(stock_data,1),size(stock_data,2)) :: tmp
 
   real(r8_kind)    :: from_dq, to_dq
 
@@ -4580,7 +4580,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
      return
   endif
 
-     tmp = xmap%grids(grid_index)%frac_area(:,1,:) * data
+     tmp = xmap%grids(grid_index)%frac_area(:,1,:) * stock_data
      from_dq = delta_t * 4.0*PI*radius**2 * sum( xmap%grids(grid_index)%area(:,1) * &
           & sum(tmp, DIM=2))
      to_dq = from_dq
@@ -4605,13 +4605,13 @@ end subroutine stock_move_ug_3d
 
 !#######################################################################
 !> @brief surface/time integral of a 2d array
-subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
+subroutine stock_integrate_2d(stock_data, xmap, delta_t, radius, res, ier)
 
   ! surface/time integral of a 2d array
 
   use mpp_mod, only : mpp_sum
 
-  real(r8_kind), intent(in)                :: data(:,:)    !< data array is 2d
+  real(r8_kind), intent(in)                :: stock_data(:,:)    !< data array is 2d
   type(xmap_type), intent(in)     :: xmap
   real(r8_kind), intent(in)                :: delta_t
   real(r8_kind), intent(in)                :: radius       !< earth radius
@@ -4626,7 +4626,7 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
      return
   endif
 
-  res = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+  res = delta_t * 4.0*PI*radius**2 * sum(sum(xmap%grids(1)%area * stock_data, DIM=1))
 
 end subroutine stock_integrate_2d
 !#######################################################################
