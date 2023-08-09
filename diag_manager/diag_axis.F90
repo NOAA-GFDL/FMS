@@ -457,7 +457,7 @@ CONTAINS
   END FUNCTION diag_subaxes_init
   !> @brief Return information about the axis with index ID
   SUBROUTINE get_diag_axis(id, name, units, long_name, cart_name,&
-       & direction, edges, Domain, DomainU, DATA, num_attributes, attributes, domain_position)
+       & direction, edges, Domain, DomainU, array_data, num_attributes, attributes, domain_position)
     CHARACTER(len=*), INTENT(out) :: name, units, long_name, cart_name
     INTEGER, INTENT(in) :: id !< Axis ID
     TYPE(domain1d), INTENT(out) :: Domain
@@ -465,7 +465,7 @@ CONTAINS
     INTEGER, INTENT(out) :: direction !< Direction of data. (See <TT>@ref diag_axis_init</TT> for a description of
                                       !! allowed values)
     INTEGER, INTENT(out) :: edges !< Axis ID for the previously defined "edges axis".
-    CLASS(*), DIMENSION(:), INTENT(out) :: DATA !< Array of coordinate values for this axis.
+    CLASS(*), DIMENSION(:), INTENT(out) :: array_data !< Array of coordinate values for this axis.
     INTEGER, INTENT(out), OPTIONAL :: num_attributes
     TYPE(diag_atttype), ALLOCATABLE, DIMENSION(:), INTENT(out), OPTIONAL :: attributes
     INTEGER, INTENT(out), OPTIONAL :: domain_position
@@ -482,15 +482,15 @@ CONTAINS
     Domain    = Axes(id)%Domain
     DomainU   = Axes(id)%DomainUG
     if (present(domain_position)) domain_position = Axes(id)%domain_position
-    IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN
+    IF ( Axes(id)%length > SIZE(array_data(:)) ) THEN
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
-       SELECT TYPE (DATA)
+       SELECT TYPE (array_data)
        TYPE IS (real(kind=r4_kind))
-          DATA(1:Axes(id)%length) = real(Axes(id)%data(1:Axes(id)%length), kind=r4_kind)
+          array_data(1:Axes(id)%length) = real(Axes(id)%diag_type_data(1:Axes(id)%length), kind=r4_kind)
        TYPE IS (real(kind=r8_kind))
-          DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+          array_data(1:Axes(id)%length) = Axes(id)%diag_type_data(1:Axes(id)%length)
        CLASS DEFAULT
           CALL error_mesg('diag_axis_mod::get_diag_axis',&
                & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
