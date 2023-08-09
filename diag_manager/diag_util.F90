@@ -1708,7 +1708,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
                                                            !! writting periodic files
 
     TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
-    REAL, DIMENSION(2) :: DATA
+    REAL, DIMENSION(2) :: open_file_data
     INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
     INTEGER :: position
@@ -2086,9 +2086,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        time_axis_id(1) = files(file)%time_axis_id
        time_bounds_id(1) = files(file)%time_bounds_id
        CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
+            & cart_name, dir, edges, Domain, domainU, open_file_data)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
+            & cart_name, dir, edges, Domain, domainU, open_file_data)
        ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
             & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
