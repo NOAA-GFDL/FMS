@@ -30,7 +30,8 @@ use mpp_domains_mod, only: mpp_define_domains, mpp_define_io_domain, mpp_get_com
 use fms2_io_mod,     only: fms2_io_init
 use platform_mod
 
-use get_grid_version_mod, only : get_grid_version_1, deg_to_radian
+use get_grid_version_mod, only : get_grid_version_1
+use constants_mod, only: DEG_TO_RAD
 
 implicit none
 
@@ -38,17 +39,17 @@ type(domain2d)                                   :: Domain !< 2D domain
 integer                                          :: is, ie, js, je !< Starting and ending compute
                                                                    !! domain indices
 integer                                          :: nlon, nlat !< Number of lat, lon in grid
-real                                             :: min_lon, max_lon !< Maximum lat and lon
-real, dimension(:,:), allocatable                :: lon, lat !< Lat and lon
+real(DO_TEST_KIND_)                              :: min_lon, max_lon !< Maximum lat and lon
+real(DO_TEST_KIND_), dimension(:,:), allocatable                :: lon, lat !< Lat and lon
 integer                                          :: ncid, err !< Netcdf integers
 integer                                          :: dimid1, dimid2, dimid3, dimid4 !< Dimensions IDs
 integer                                          :: varid1, varid2, varid3, varid4, varid5 !< Variable IDs
-real                                             :: lat_in(1), lon_in(1) !< Lat and lon to be written to file
-real, dimension(:,:,:), allocatable              :: lat_vert_in, lon_vert_in !<Lat and lon vertices
+real(DO_TEST_KIND_)                              :: lat_in(1), lon_in(1) !< Lat and lon to be written to file
+real(DO_TEST_KIND_), dimension(:,:,:), allocatable              :: lat_vert_in, lon_vert_in !<Lat and lon vertices
 
 
-lat_in = real(55.5, kind=r8_kind)
-lon_in = real(44.5, kind=r8_kind)
+lat_in = real(55.5, DO_TEST_KIND_)
+lon_in = real(44.5, DO_TEST_KIND_)
 
 call mpp_init
 call fms2_io_init
@@ -91,8 +92,8 @@ call get_grid_version_1("grid_spec.nc", "atm", Domain, is, ie, js, je, lon, lat,
                         min_lon, max_lon)
 
 !< Error checking:
-if (lon(1,1) .ne. lon_in(1)*deg_to_radian) call mpp_error(FATAL,'test_get_grid_v1: lon is not the expected result')
-if (lat(1,1) .ne. lat_in(1)*deg_to_radian) call mpp_error(FATAL,'test_get_grid_v1: lat is not the expected result')
+if (lon(1,1) .ne. lon_in(1)*DEG_TO_RAD) call mpp_error(FATAL,'test_get_grid_v1: lon is not the expected result')
+if (lat(1,1) .ne. lat_in(1)*DEG_TO_RAD) call mpp_error(FATAL,'test_get_grid_v1: lat is not the expected result')
 
 !< Try again with ocean
 lat = 0.
@@ -103,8 +104,8 @@ call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat,
 
 !< Try again with ocean, "new_grid"
 allocate(lat_vert_in(1,1,4), lon_vert_in(1,1,4))
-lat_vert_in = real(55.5, kind=r8_kind)
-lon_vert_in = real(65.5, kind=r8_kind)
+lat_vert_in = real(55.5, DO_TEST_KIND_)
+lon_vert_in = real(65.5, DO_TEST_KIND_)
 
 !< Create a new grid_spec file with "x_T" instead of "geolon_t"
 if (mpp_pe() .eq. mpp_root_pe()) then
@@ -129,11 +130,11 @@ call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat,
                         min_lon, max_lon)
 
 !< Error checking:
-if (lon(1,1) .ne. sum(lon_vert_in)/4*deg_to_radian ) then
+if (lon(1,1) .ne. sum(lon_vert_in)/4*DEG_TO_RAD ) then
      call mpp_error(FATAL,'test_get_grid_v1: ocn, new grid, lon is not the expected result')
 endif
 
-if (lat(1,1) .ne. sum(lat_vert_in)/4*deg_to_radian ) then
+if (lat(1,1) .ne. sum(lat_vert_in)/4*DEG_TO_RAD ) then
      call mpp_error(FATAL,'test_get_grid_v1: ocn, new grid, lat is not the expected result')
 endif
 

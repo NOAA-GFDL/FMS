@@ -1,0 +1,14 @@
+#undef GET_GRID_VERSION_KIND_
+#define GET_GRID_VERSION_KIND_ r4_kind
+
+#undef GET_GRID_VERSION_1_
+#define GET_GRID_VERSION_1_ get_grid_version_1_r4
+
+#undef GET_GRID_VERSION_2_
+#define GET_GRID_VERSION_2_ get_grid_version_2_r4
+
+#include "get_grid_version.inc"
+
+#undef GET_GRID_VERSION_KIND_
+#undef GET_GRID_VERSION_1_
+#undef GET_GRID_VERSION_2_

@@ -102,12 +102,12 @@ program test
  integer                           :: nx_dom, ny_dom, nx_win, ny_win
  type(domain2d)                    :: Domain
  integer                           :: nlon, nlat, siz(2)
- real, allocatable, dimension(:)   :: x, y
- real, allocatable, dimension(:,:) :: lon, lat
- real, allocatable, dimension(:,:) :: sst, ice
+ real(DO_TEST_KIND_), allocatable, dimension(:)   :: x, y
+ real(DO_TEST_KIND_), allocatable, dimension(:,:) :: lon, lat
+ real(DO_TEST_KIND_), allocatable, dimension(:,:) :: sst, ice
  integer                           :: id_x, id_y, id_lon, id_lat, id_sst, id_ice
  integer                           :: i, j, is, ie, js, je, io, ierr, n
- real                              :: rad_to_deg
+ real(DO_TEST_KIND_)                              :: rad_to_deg
  character(len=36)                 :: message
  type(time_type)                   :: Time
  logical                           :: used
@@ -322,8 +322,8 @@ contains
 
 !====================================================================================================================
  subroutine get_grid
-   real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
-   real, allocatable, dimension(:,:)   :: lon_global, lat_global
+   real(DO_TEST_KIND_), allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
+   real(DO_TEST_KIND_), allocatable, dimension(:,:)   :: lon_global, lat_global
    integer, dimension(2)  :: siz
    character(len=128) :: message
 
@@ -421,10 +421,10 @@ contains
 
     integer, allocatable, dimension(:)       :: pe_start, pe_end, npts_tile, grid_index, ntiles_grid
     integer, allocatable, dimension(:,:)     :: layout2D, global_indices
-    real,    allocatable, dimension(:,:)     :: x1, x2, g1, g2
-    real,    allocatable, dimension(:,:,:)   :: a1, a2, gdata
-    real,    allocatable, dimension(:,:)     :: rmask
-    real,    allocatable, dimension(:)       :: frac_crit
+    real(DO_TEST_KIND_),    allocatable, dimension(:,:)     :: x1, x2, g1, g2
+    real(DO_TEST_KIND_),    allocatable, dimension(:,:,:)   :: a1, a2, gdata
+    real(DO_TEST_KIND_),    allocatable, dimension(:,:)     :: rmask
+    real(DO_TEST_KIND_),    allocatable, dimension(:)       :: frac_crit
     logical, allocatable, dimension(:,:,:)   :: lmask,msk
     integer, allocatable, dimension(:)       :: isl, iel, jsl, jel
     character(len=3)   :: text
@@ -667,7 +667,7 @@ contains
   end subroutine test_unstruct_grid
 
   subroutine compare_checksums( a, b, string )
-    real, intent(in), dimension(:,:,:) :: a, b
+    real(DO_TEST_KIND_), intent(in), dimension(:,:,:) :: a, b
     character(len=*), intent(in) :: string
     integer(i8_kind) :: sum1, sum2
     integer :: i, j, k,pe
@@ -712,7 +712,7 @@ contains
 
   !###########################################################################
   subroutine compare_checksums_2D( a, b, string )
-    real, intent(in), dimension(:,:) :: a, b
+    real(DO_TEST_KIND_), intent(in), dimension(:,:) :: a, b
     character(len=*), intent(in) :: string
     integer(i8_kind) :: sum1, sum2
     integer :: i, j,pe

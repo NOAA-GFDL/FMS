@@ -16,71 +16,30 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup get_grid_version_mod get_grid_version_mod
-!> @ingroup data_override
-!> @brief get_grid implementations and helper routines for @ref data_override_mod
-
-!> @addtogroup get_grid_version_mod
-!> @{
-module get_grid_version_mod
-use constants_mod, only: PI
-use mpp_mod, only : mpp_error,FATAL,NOTE, mpp_min, mpp_max
-use mpp_domains_mod, only : domain2d, operator(.NE.),operator(.EQ.)
-use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
-use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file, &
-                            variable_exists, read_data, get_variable_size, get_variable_num_dimensions
-use mosaic2_mod,     only : get_mosaic_tile_grid
-
-implicit none
-
-real, parameter    :: deg_to_radian=PI/180.
-contains
-
-!> Get lon and lat of three model (target) grids from grid_spec.nc
-subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
-character(len=12), intent(in) :: domain_name
-type (domain2d),   intent(in) :: Domain
-integer,           intent(in) :: nlon, nlat
-
-character(len=184) :: error_message
-integer            :: xsize, ysize
-
-call mpp_get_global_domain(Domain, xsize=xsize, ysize=ysize)
-if(nlon .NE. xsize .OR. nlat .NE. ysize) then
-  error_message = 'Error in data_override_init. Size of grid as specified by '// &
-                  '             does not conform to that specified by grid_spec.nc.'// &
-                  '  From             :     by      From grid_spec.nc:     by    '
-  error_message( 59: 70) = domain_name
-  error_message(130:141) = domain_name
-  write(error_message(143:146),'(i4)') xsize
-  write(error_message(150:153),'(i4)') ysize
-  write(error_message(174:177),'(i4)') nlon
-  write(error_message(181:184),'(i4)') nlat
-  call mpp_error(FATAL,error_message)
-endif
-end subroutine check_grid_sizes
 
 !> Get global lon and lat of three model (target) grids, with a given file name
-subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  character(len=*),            intent(in) :: grid_file !< name of grid file
-  character(len=*),            intent(in) :: mod_name !< module name
-  type(domain2d),              intent(in) :: domain !< 2D domain
-  integer,                     intent(in) :: isc, iec, jsc, jec
-  real, dimension(isc:,jsc:), intent(out) :: lon, lat
-  real,                       intent(out) :: min_lon, max_lon
+subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+  integer, parameter :: lkind = GET_GRID_VERSION_KIND_
 
-  integer                                      :: i, j, siz(4)
-  integer                                      :: nlon, nlat !< size of global lon and lat
-  real,          dimension(:,:,:), allocatable :: lon_vert, lat_vert !< of OCN grid vertices
-  real,          dimension(:),     allocatable :: glon, glat  !< lon and lat of 1-D grid of atm/lnd
-  logical                                      :: is_new_grid
-  integer                                      :: is, ie, js, je
-  integer                                      :: isd, ied, jsd, jed
-  integer                                      :: isg, ieg, jsg, jeg
-  character(len=3)                             :: xname, yname
-  integer                                      :: start(2), nread(2)
-  type(FmsNetcdfDomainFile_t)                  :: fileobj
-  integer                                      :: ndims  !< Number of dimensions
+  character(len=*), intent(in) :: grid_file !< name of grid file
+  character(len=*), intent(in) :: mod_name !< module name
+  type(domain2d),   intent(in) :: domain !< 2D domain
+  integer,          intent(in) :: isc, iec, jsc, jec
+  real(lkind), dimension(isc:,jsc:), intent(out) :: lon, lat
+  real(lkind),                       intent(out) :: min_lon, max_lon
+
+  integer                     :: i, j, siz(4)
+  integer                     :: nlon, nlat !< size of global lon and lat
+  real(lkind), dimension(:,:,:), allocatable :: lon_vert, lat_vert !< of OCN grid vertices
+  real(lkind), dimension(:), allocatable :: glon, glat  !< lon and lat of 1-D grid of atm/lnd
+  logical                     :: is_new_grid
+  integer                     :: is, ie, js, je
+  integer                     :: isd, ied, jsd, jed
+  integer                     :: isg, ieg, jsg, jeg
+  character(len=3)            :: xname, yname
+  integer                     :: start(2), nread(2)
+  type(FmsNetcdfDomainFile_t) :: fileobj
+  integer                     :: ndims  !< Number of dimensions
 
   if(.not. open_file(fileobj, grid_file, 'read', domain )) then
      call mpp_error(FATAL, 'data_override_mod(get_grid_version_1): Error in opening file '//trim(grid_file))
@@ -111,8 +70,8 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
       call read_data(fileobj, 'y_vert_T', lat_vert)
 
 !2 Global lon and lat of ocean grid cell centers are determined from adjacent vertices
-      lon(:,:) = (lon_vert(:,:,1) + lon_vert(:,:,2) + lon_vert(:,:,3) + lon_vert(:,:,4))*0.25
-      lat(:,:) = (lat_vert(:,:,1) + lat_vert(:,:,2) + lat_vert(:,:,3) + lat_vert(:,:,4))*0.25
+      lon(:,:) = (lon_vert(:,:,1) + lon_vert(:,:,2) + lon_vert(:,:,3) + lon_vert(:,:,4))*0.25_lkind
+      lat(:,:) = (lat_vert(:,:,1) + lat_vert(:,:,2) + lat_vert(:,:,3) + lat_vert(:,:,4))*0.25_lkind
     else
 
       ndims = get_variable_num_dimensions(fileobj, 'geolon_vert_t')
@@ -132,9 +91,9 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
       do j = jsc, jec
          do i = isc, iec
             lon(i,j) = (lon_vert(i,j,1) + lon_vert(i+1,j,1) + &
-                 lon_vert(i+1,j+1,1) + lon_vert(i,j+1,1))*0.25
+                 lon_vert(i+1,j+1,1) + lon_vert(i,j+1,1))*0.25_lkind
             lat(i,j) = (lat_vert(i,j,1) + lat_vert(i+1,j,1) + &
-                 lat_vert(i+1,j+1,1) + lat_vert(i,j+1,1))*0.25
+                 lat_vert(i+1,j+1,1) + lat_vert(i,j+1,1))*0.25_lkind
          enddo
       enddo
     endif
@@ -174,37 +133,37 @@ subroutine get_grid_version_1(grid_file, mod_name, domain, isc, iec, jsc, jec, l
   call close_file(fileobj)
 
   ! convert from degree to radian
-  lon = lon * deg_to_radian
-  lat = lat* deg_to_radian
+  lon = lon * real(DEG_TO_RAD, lkind)
+  lat = lat* real(DEG_TO_RAD, lkind)
   min_lon = minval(lon)
   max_lon = maxval(lon)
   call mpp_min(min_lon)
   call mpp_max(max_lon)
-
-
-end subroutine get_grid_version_1
+end subroutine GET_GRID_VERSION_1_
 
 !> Get global lon and lat of three model (target) grids from mosaic.nc.
 !! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
-subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  type(FmsNetcdfFile_t),       intent(in) :: fileobj !< file object for grid file
-  character(len=*),            intent(in) :: mod_name !< module name
-  type(domain2d),              intent(in) :: domain !< 2D domain
-  integer,                     intent(in) :: isc, iec, jsc, jec
-  real, dimension(isc:,jsc:), intent(out) :: lon, lat
-  real,                       intent(out) :: min_lon, max_lon
+subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+  integer, parameter :: lkind = GET_GRID_VERSION_KIND_
 
-  integer            :: i, j, siz(2)
-  integer            :: nlon, nlat             ! size of global grid
-  integer            :: nlon_super, nlat_super ! size of global supergrid.
-  integer            :: isd, ied, jsd, jed
-  integer            :: isg, ieg, jsg, jeg
-  integer            :: isc2, iec2, jsc2, jec2
-  character(len=256) :: solo_mosaic_file, grid_file
-  real, allocatable  :: tmpx(:,:), tmpy(:,:)
-  logical            :: open_solo_mosaic
-  type(FmsNetcdfFile_t) :: mosaicfileobj, tilefileobj
-  integer            :: start(2), nread(2)
+  type(FmsNetcdfFile_t), intent(in) :: fileobj !< file object for grid file
+  character(len=*),      intent(in) :: mod_name !< module name
+  type(domain2d),        intent(in) :: domain !< 2D domain
+  integer,               intent(in) :: isc, iec, jsc, jec
+  real(lkind), dimension(isc:,jsc:), intent(out) :: lon, lat
+  real(lkind),                       intent(out) :: min_lon, max_lon
+
+  integer                   :: i, j, siz(2)
+  integer                   :: nlon, nlat             ! size of global grid
+  integer                   :: nlon_super, nlat_super ! size of global supergrid.
+  integer                   :: isd, ied, jsd, jed
+  integer                   :: isg, ieg, jsg, jeg
+  integer                   :: isc2, iec2, jsc2, jec2
+  character(len=256)        :: solo_mosaic_file, grid_file
+  real(lkind), allocatable  :: tmpx(:,:), tmpy(:,:)
+  logical                   :: open_solo_mosaic
+  type(FmsNetcdfFile_t)     :: mosaicfileobj, tilefileobj
+  integer                   :: start(2), nread(2)
 
   if(trim(mod_name) .NE. 'atm' .AND. trim(mod_name) .NE. 'ocn' .AND. &
      trim(mod_name) .NE. 'ice' .AND. trim(mod_name) .NE. 'lnd' ) call mpp_error(FATAL, &
@@ -259,8 +218,8 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   if(trim(mod_name) == 'ocn' .OR. trim(mod_name) == 'ice') then
      do j = jsc, jec
         do i = isc, iec
-           lon(i,j) = (tmpx(i*2-1,j*2-1)+tmpx(i*2+1,j*2-1)+tmpx(i*2+1,j*2+1)+tmpx(i*2-1,j*2+1))*0.25
-           lat(i,j) = (tmpy(i*2-1,j*2-1)+tmpy(i*2+1,j*2-1)+tmpy(i*2+1,j*2+1)+tmpy(i*2-1,j*2+1))*0.25
+           lon(i,j) = (tmpx(i*2-1,j*2-1)+tmpx(i*2+1,j*2-1)+tmpx(i*2+1,j*2+1)+tmpx(i*2-1,j*2+1))*0.25_lkind
+           lat(i,j) = (tmpy(i*2-1,j*2-1)+tmpy(i*2+1,j*2-1)+tmpy(i*2+1,j*2+1)+tmpy(i*2-1,j*2+1))*0.25_lkind
         end do
      end do
   else
@@ -273,8 +232,8 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
   endif
 
   ! convert to radian
-  lon = lon * deg_to_radian
-  lat = lat * deg_to_radian
+  lon = lon * real(DEG_TO_RAD, lkind)
+  lat = lat * real(DEG_TO_RAD, lkind)
 
   deallocate(tmpx, tmpy)
   min_lon = minval(lon)
@@ -284,9 +243,4 @@ subroutine get_grid_version_2(fileobj, mod_name, domain, isc, iec, jsc, jec, lon
 
   call close_file(tilefileobj)
   if(open_solo_mosaic)  call close_file(mosaicfileobj)
-
-end subroutine get_grid_version_2
-
-end module get_grid_version_mod
-!> @}
-! close documentation grouping
+end subroutine GET_GRID_VERSION_2_
