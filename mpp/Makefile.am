@@ -101,7 +101,8 @@ libmpp_la_SOURCES = \
   include/mpp_read_distributed_ascii.inc \
   include/mpp_reduce_mpi.fh \
   include/mpp_reduce_nocomm.fh \
-  include/mpp_scatter.fh \
+  include/mpp_scatter_mpi.fh \
+  include/mpp_scatter_nocomm.fh \
   include/mpp_sum.inc \
   include/mpp_sum_ad.inc \
   include/mpp_sum_mpi.fh \
@@ -160,7 +161,8 @@ mpp_mod.$(FC_MODEXT): \
   include/mpp_transmit_nocomm.fh \
   include/mpp_type_nocomm.fh \
   include/mpp_gather.fh \
-  include/mpp_scatter.fh \
+  include/mpp_scatter_mpi.fh \
+  include/mpp_scatter_nocomm.fh \
   include/system_clock.fh
 mpp_data_mod.$(FC_MODEXT): \
   mpp_parameter_mod.$(FC_MODEXT) \
