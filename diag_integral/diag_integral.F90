@@ -732,26 +732,26 @@ end subroutine sum_field_wght_3d
 !! <b> Template: </b>
 !!
 !! @code{.f90}
-!! call sum_field_2d_hemi (name, data, is, ie, js, je)
+!! call sum_field_2d_hemi (name, field_data, is, ie, js, je)
 !! @endcode
 !!
 !! <b> Parameters: </b>
 !!
 !! @code{.f90}
 !! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:)
+!! real,              intent(in) :: field_data(:,:)
 !! integer,           intent(in) :: is, js, ie, je
 !! @endcode
 !!
 !! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <field_data> field of integrands to be summed over
 !! @param [in] <is, js, ie, je> starting/ending i,j indices over which summation
 !!        is to occur
 !!
-subroutine sum_field_2d_hemi (name, data, is, ie, js, je)
+subroutine sum_field_2d_hemi (name, field_data, is, ie, js, je)
 
 character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:) !< field of integrands to be summed over
+real,              intent(in) :: field_data(:,:) !< field of integrands to be summed over
 integer,           intent(in) :: is !< starting/ending i,j indices over which summation
                                                 !! is to occur
 integer,           intent(in) :: js !< starting/ending i,j indices over which summation
@@ -799,14 +799,14 @@ integer,           intent(in) :: je !< starting/ending i,j indices over which su
 !    is needed to handle case of 2d domain decomposition with physics
 !    window smaller than processor domain size.
 !-------------------------------------------------------------------------------
-      i1 = mod ( (is-1), size(data,1) ) + 1
-      i2 = i1 + size(data,1) - 1
+      i1 = mod ( (is-1), size(field_data,1) ) + 1
+      i2 = i1 + size(field_data,1) - 1
 
 !-------------------------------------------------------------------------------
 !    for a hemispheric sum, sum one jrow at a time in case a processor
 !    has data from both hemispheres.
 !-------------------------------------------------------------------------------
-      j1 = mod ( (js-1) ,size(data,2) ) + 1
+      j1 = mod ( (js-1) ,size(field_data,2) ) + 1
       j2 = j1
 
 !-------------------------------------------------------------------------------
@@ -817,7 +817,7 @@ integer,           intent(in) :: je !< starting/ending i,j indices over which su
 !$OMP CRITICAL
       field_count (field) = field_count (field) + 2* (i2-i1+1)*(j2-j1+1)
       field_sum   (field) = field_sum   (field) +  &
-                            sum (data(i1:i2,j1:j2)*area(is:ie,js:je))
+                            sum (field_data(i1:i2,j1:j2)*area(is:ie,js:je))
 
 !$OMP END CRITICAL
 
