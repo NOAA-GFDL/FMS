@@ -1458,18 +1458,18 @@ end subroutine get_grid_version2
 
 !#######################################################################
 !> @brief Read the area elements from NetCDF file
-subroutine get_area_elements_fms2_io(fileobj, name, data)
+subroutine get_area_elements_fms2_io(fileobj, name, get_area_data)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
   character(len=*), intent(in) :: name
-  real(r8_kind), intent(out)            :: data(:,:)
+  real(r8_kind), intent(out)            :: get_area_data(:,:)
 
   if(variable_exists(fileobj, name)) then
-     call read_data(fileobj, name, data)
+     call read_data(fileobj, name, get_area_data)
   else
      call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file '//trim(fileobj%path)// &
                      ' Will set data to negative values...', NOTE)
      ! area elements no present in grid_spec file, set to negative values....
-     data = -1.0
+     get_area_data = -1.0
   endif
 
 end subroutine get_area_elements_fms2_io
