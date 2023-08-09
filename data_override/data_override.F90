@@ -686,13 +686,13 @@ subroutine data_override_2d(gridname,fieldname,data_2D,time,override, is_in, ie_
 end subroutine data_override_2d
 
 !> @brief This routine performs data override for 3D fields
-subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
+subroutine data_override_3d(gridname,fieldname_code,return_data,time,override,data_index, is_in, ie_in, js_in, je_in)
   character(len=3),             intent(in) :: gridname !< model grid ID
   character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
   logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
   type(time_type),              intent(in) :: time !< (target) model time
   integer,           optional,  intent(in) :: data_index
-  real, dimension(:,:,:),    intent(inout) :: data !< data returned by this call
+  real, dimension(:,:,:),    intent(inout) :: return_data !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
@@ -759,7 +759,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
   factor = data_table(index1)%factor
 
   if(fieldname == "") then
-     data = factor
+     return_data = factor
      if(PRESENT(override)) override = .true.
      return
   else
@@ -807,17 +807,17 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 !---    The another restrition is that size(data,1) == ie_in - is_in + 1,
 !---                                   size(data,2) == je_in - js_in + 1
      nwindows = 1
-     if( nxd == size(data,1) .AND. nyd == size(data,2) ) then  !
+     if( nxd == size(return_data,1) .AND. nyd == size(return_data,2) ) then  !
         use_comp_domain = .false.
-     else if ( mod(nxc, size(data,1)) ==0 .AND. mod(nyc, size(data,2)) ==0 ) then
+     else if ( mod(nxc, size(return_data,1)) ==0 .AND. mod(nyc, size(return_data,2)) ==0 ) then
         use_comp_domain = .true.
-        nwindows = (nxc/size(data,1))*(nyc/size(data,2))
+        nwindows = (nxc/size(return_data,1))*(nyc/size(return_data,2))
      else
         call mpp_error(FATAL, &
                      & "data_override: data is not on data domain and compute domain is not divisible by size(data)")
      endif
-     override_array(curr_position)%window_size(1) = size(data,1)
-     override_array(curr_position)%window_size(2) = size(data,2)
+     override_array(curr_position)%window_size(1) = size(return_data,1)
+     override_array(curr_position)%window_size(2) = size(return_data,2)
 
      window_size = override_array(curr_position)%window_size
      override_array(curr_position)%numwindows = nwindows
@@ -963,7 +963,7 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
      je_src      = override_array(curr_position)%je_src
      window_size = override_array(curr_position)%window_size
      !---make sure data size match window_size
-     if( window_size(1) .NE. size(data,1) .OR. window_size(2) .NE. size(data,2) ) then
+     if( window_size(1) .NE. size(return_data,1) .OR. window_size(2) .NE. size(return_data,2) ) then
         call mpp_error(FATAL, "data_override: window_size does not match size(data)")
      endif
 !9 Get id_time  previously stored in override_array
@@ -1035,92 +1035,92 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 
   ! Determine if  data in netCDF file is 2D or not
   data_file_is_2D = .false.
-  if((dims(3) == 1) .and. (size(data,3)>1)) data_file_is_2D = .true.
+  if((dims(3) == 1) .and. (size(return_data,3)>1)) data_file_is_2D = .true.
 
-  if(dims(3) .NE. 1 .and. (size(data,3) .NE. dims(3))) &
+  if(dims(3) .NE. 1 .and. (size(return_data,3) .NE. dims(3))) &
       call mpp_error(FATAL, "data_override: dims(3) .NE. 1 and size(data,3) .NE. dims(3)")
 
   if(ongrid) then
     if (.not. use_comp_domain) then
         !< Determine the size of the halox and the part of `data` that is in the compute domain
-        nhalox = (size(data,1) - nxc)/2
-        nhaloy = (size(data,2) - nyc)/2
-        startingi = lbound(data,1) + nhalox
-        startingj = lbound(data,2) + nhaloy
-        endingi   = ubound(data,1) - nhalox
-        endingj   = ubound(data,2) - nhaloy
+        nhalox = (size(return_data,1) - nxc)/2
+        nhaloy = (size(return_data,2) - nyc)/2
+        startingi = lbound(return_data,1) + nhalox
+        startingj = lbound(return_data,2) + nhaloy
+        endingi   = ubound(return_data,1) - nhalox
+        endingj   = ubound(return_data,2) - nhaloy
     end if
 
 !10 do time interp to get data in compute_domain
     if(data_file_is_2D) then
       if (use_comp_domain) then
-        call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+        call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
       else
-        !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+        !> If this in an ongrid case and you are not in the compute domain, send in `return_data` to be the correct
         !! size
-        call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+        call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
       end if
-      data(:,:,1) = data(:,:,1)*factor
-      do i = 2, size(data,3)
-        data(:,:,i) = data(:,:,1)
+      return_data(:,:,1) = return_data(:,:,1)*factor
+      do i = 2, size(return_data,3)
+        return_data(:,:,i) = return_data(:,:,1)
       end do
     else
       if (use_comp_domain) then
-        call time_interp_external(id_time,time,data,verbose=.false., &
+        call time_interp_external(id_time,time,return_data,verbose=.false., &
                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
       else
-        !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+        !> If this in an ongrid case and you are not in the compute domain, send in `return_data` to be the correct
         !! size
-        call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
+        call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
       end if
-      data = data*factor
+      return_data = return_data*factor
     endif
   else  ! off grid case
 ! do time interp to get global data
      if(data_file_is_2D) then
         if( data_table(index1)%region_type == NO_REGION ) then
-           call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+           call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                  horz_interp=override_array(curr_position)%horz_interp(window_id), &
                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           data(:,:,1) = data(:,:,1)*factor
-           do i = 2, size(data,3)
-             data(:,:,i) = data(:,:,1)
+           return_data(:,:,1) = return_data(:,:,1)*factor
+           do i = 2, size(return_data,3)
+             return_data(:,:,i) = return_data(:,:,1)
            enddo
         else
-           allocate(mask_out(size(data,1), size(data,2),1))
+           allocate(mask_out(size(return_data,1), size(return_data,2),1))
            mask_out = .false.
-           call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+           call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                  horz_interp=override_array(curr_position)%horz_interp(window_id),      &
                  mask_out   =mask_out(:,:,1), &
                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            where(mask_out(:,:,1))
-              data(:,:,1) = data(:,:,1)*factor
+              return_data(:,:,1) = return_data(:,:,1)*factor
            end where
-           do i = 2, size(data,3)
+           do i = 2, size(return_data,3)
               where(mask_out(:,:,1))
-                data(:,:,i) = data(:,:,1)
+                return_data(:,:,i) = return_data(:,:,1)
               end where
            enddo
            deallocate(mask_out)
         endif
      else
         if( data_table(index1)%region_type == NO_REGION ) then
-           call time_interp_external(id_time,time,data,verbose=.false.,      &
+           call time_interp_external(id_time,time,return_data,verbose=.false.,      &
               horz_interp=override_array(curr_position)%horz_interp(window_id), &
               is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           data = data*factor
+           return_data = return_data*factor
         else
-           allocate(mask_out(size(data,1), size(data,2), size(data,3)) )
+           allocate(mask_out(size(return_data,1), size(return_data,2), size(return_data,3)) )
            mask_out = .false.
-           call time_interp_external(id_time,time,data,verbose=.false.,      &
+           call time_interp_external(id_time,time,return_data,verbose=.false.,      &
               horz_interp=override_array(curr_position)%horz_interp(window_id),    &
               mask_out   =mask_out, &
               is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            where(mask_out)
-              data = data*factor
+              return_data = return_data*factor
            end where
            deallocate(mask_out)
         endif
@@ -1133,13 +1133,13 @@ subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_inde
 end subroutine data_override_3d
 
 !> @brief Routine to perform data override for scalar fields
-subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_index)
+subroutine data_override_0d(gridname,fieldname_code,output_data,time,override,data_index)
   character(len=3), intent(in) :: gridname !< model grid ID (ocn,ice,atm,lnd)
   character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
                                                  !! different from the name in NetCDF data file)
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   type(time_type), intent(in) :: time !< (target) model time
-  real,             intent(out) :: data !< output data array returned by this call
+  real,             intent(out) :: output_data !< output data array returned by this call
   integer, intent(in), optional :: data_index
 
   character(len=512) :: filename !< file containing source data
@@ -1176,7 +1176,7 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
   factor = data_table(index1)%factor
 
   if(fieldname == "") then
-     data = factor
+     output_data = factor
      if(PRESENT(override)) override = .true.
      return
   else
@@ -1211,8 +1211,8 @@ subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_inde
   endif !if curr_position < 0
 
   !10 do time interp to get data in compute_domain
-  call time_interp_external(id_time, time, data, verbose=.false.)
-  data = data*factor
+  call time_interp_external(id_time, time, output_data, verbose=.false.)
+  output_data = output_data*factor
 !$OMP END SINGLE
 
   if(PRESENT(override)) override = .true.
