@@ -542,25 +542,25 @@ end subroutine sum_field_2d
 !! <b> Template: </b>
 !!
 !! @code{.f90}
-!! call sum_field_3d (name, data, is, js)
+!! call sum_field_3d (name, field_data, is, js)
 !! @endcode
 !!
 !! <b> Parameters: </b>
 !!
 !! @code{.f90}
 !! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:,:)
+!! real,              intent(in) :: field_data(:,:,:)
 !! integer, optional, intent(in) :: is, js
 !! @endcode
 !!
 !! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <field_data> field of integrands to be summed over
 !! @param [in] <is, js> starting i,j indices over which summation is to occur
 !!
-subroutine sum_field_3d (name, data, is, js)
+subroutine sum_field_3d (name, field_data, is, js)
 
 character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:,:) !< field of integrands to be summed over
+real,              intent(in) :: field_data(:,:,:) !< field of integrands to be summed over
 integer, optional, intent(in) :: is !< starting i,j indices over which summation is to occur
 integer, optional, intent(in) :: js !< starting i,j indices over which summation is to occur
 
@@ -571,8 +571,8 @@ integer, optional, intent(in) :: js !< starting i,j indices over which summation
 !     i1, j1, i2, j2  ! location indices of current data in
 !                       processor-global coordinates
 !-------------------------------------------------------------------------------
-      real, dimension (size(data,1),  &
-                       size(data,2)) :: data2
+      real, dimension (size(field_data,1),  &
+                       size(field_data,2)) :: data2
 
       integer :: field !< index of desired integral
       integer :: i1 !< location indices of current data in
@@ -608,8 +608,8 @@ integer, optional, intent(in) :: js !< starting i,j indices over which summation
 !-------------------------------------------------------------------------------
       i1 = 1;  if (present(is)) i1 = is
       j1 = 1;  if (present(js)) j1 = js
-      i2 = i1 + size(data,1) - 1
-      j2 = j1 + size(data,2) - 1
+      i2 = i1 + size(field_data,1) - 1
+      j2 = j1 + size(field_data,2) - 1
 
 !-------------------------------------------------------------------------------
 !    increment the count of points toward this integral. sum first
@@ -618,8 +618,8 @@ integer, optional, intent(in) :: js !< starting i,j indices over which summation
 !-------------------------------------------------------------------------------
 !$OMP CRITICAL
       field_count (field) = field_count (field) +   &
-                            size(data,1)*size(data,2)
-      data2 = sum(data,3)
+                            size(field_data,1)*size(field_data,2)
+      data2 = sum(field_data,3)
       field_sum   (field) = field_sum   (field) +  &
                             sum (data2 * area(i1:i2,j1:j2))
 
