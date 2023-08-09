@@ -564,16 +564,16 @@ CONTAINS
   END SUBROUTINE get_diag_axis_cart
 
   !> @brief Return the axis data.
-  SUBROUTINE get_diag_axis_data(id, DATA)
+  SUBROUTINE get_diag_axis_data(id, axis_data)
     INTEGER, INTENT(in) :: id !< Axis ID
-    REAL, DIMENSION(:), INTENT(out) :: DATA !< Axis data
+    REAL, DIMENSION(:), INTENT(out) :: axis_data !< Axis data
 
     CALL valid_id_check(id, 'get_diag_axis_data')
-    IF (Axes(id)%length > SIZE(DATA(:))) THEN
+    IF (Axes(id)%length > SIZE(axis_data(:))) THEN
        ! <ERROR STATUS="FATAL">array data is too small</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis_data', 'array data is too small', FATAL)
     ELSE
-       DATA(1:Axes(id)%length) = Axes(id)%data
+       axis_data(1:Axes(id)%length) = Axes(id)%diag_type_data
     END IF
   END SUBROUTINE get_diag_axis_data
 
