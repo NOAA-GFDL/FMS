@@ -456,25 +456,25 @@ end subroutine diag_integral_field_init
 !! <b> Template: </b>
 !!
 !! @code{.f90}
-!! call sum_field_2d (name, data, is, js)
+!! call sum_field_2d (name, field_data, is, js)
 !! @endcode
 !!
 !! <b> Parameters: </b>
 !!
 !! @code{.f90}
 !! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:)
+!! real,              intent(in) :: field_data(:,:)
 !! integer, optional, intent(in) :: is, js
 !! @endcode
 !!
 !! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
+!! @param [in] <field_data> field of integrands to be summed over
 !! @param [in] <is, js> starting i,j indices over which summation is to occur
 !!
-subroutine sum_field_2d (name, data, is, js)
+subroutine sum_field_2d (name, field_data, is, js)
 
 character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:) !< field of integrands to be summed over
+real,              intent(in) :: field_data(:,:) !< field of integrands to be summed over
 integer, optional, intent(in) :: is !< starting i indices over which summation is to occur
 integer, optional, intent(in) :: js !< starting j indices over which summation is to occur
 
@@ -515,8 +515,8 @@ integer, optional, intent(in) :: js !< starting j indices over which summation i
 !-------------------------------------------------------------------------------
      i1 = 1;  if (present(is)) i1 = is
      j1 = 1;  if (present(js)) j1 = js
-     i2 = i1 + size(data,1) - 1
-     j2 = j1 + size(data,2) - 1
+     i2 = i1 + size(field_data,1) - 1
+     j2 = j1 + size(field_data,2) - 1
 
 !-------------------------------------------------------------------------------
 !    increment the count of points toward this integral and add the
@@ -524,9 +524,9 @@ integer, optional, intent(in) :: js !< starting j indices over which summation i
 !-------------------------------------------------------------------------------
 !$OMP CRITICAL
       field_count (field) = field_count(field) +   &
-                            size(data,1)*size(data,2)
+                            size(field_data,1)*size(field_data,2)
       field_sum   (field) = field_sum   (field) +  &
-                            sum (data * area(i1:i2,j1:j2))
+                            sum (field_data * area(i1:i2,j1:j2))
 
 !$OMP END CRITICAL
 
