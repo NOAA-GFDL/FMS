@@ -1,8 +1,32 @@
-!> \author Ganga Purja Pun
-!> \email GFDL.Climate.Model.Info@noaa.gov
-!! \brief Contains routines for the modern diag manager
-!! These routines are meant to be used for checks and in reduction methods.
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 
+!> @defgroup fms_diag_reduction_methods_mod fms_diag_reduction_methods_mod
+!> @ingroup diag_manager
+!! @brief fms_diag_reduction_methods_mod contains routines that are meant to be used for
+!! error checking and setting up to do the reduction methods
+
+!> @file
+!> @brief File for @ref fms_diag_reduction_methods_mod
+
+!> @addtogroup fms_diag_reduction_methods_mod
+!> @{
 module fms_diag_reduction_methods_mod
   use platform_mod, only: r8_kind, r4_kind
   implicit none
@@ -81,10 +105,11 @@ module fms_diag_reduction_methods_mod
   end function init_mask
 
   !> @brief Sets the weight based on the weight passed into send_data (1.0_r8_kind if the weight is not passed in)
-  !> @return weight to used when averaging
+  !! The weight will be saved as an r8 and converted to r4 as needed
+  !! @return weight to use when averaging
   pure function set_weight(weight) &
   result(out_weight)
-    CLASS(*), INTENT(in), OPTIONAL :: weight !< The weight used for averaging
+    CLASS(*), INTENT(in), OPTIONAL :: weight !< The weight use when averaging
 
     real(kind=r8_kind) :: out_weight
 
@@ -94,9 +119,11 @@ module fms_diag_reduction_methods_mod
       type is (real(kind=r8_kind))
         out_weight = real(weight, kind = r8_kind)
       type is (real(kind=r4_kind))
-        out_Weight = real(weight, kind = r4_kind)
+        out_Weight = real(weight, kind = r8_kind)
       end select
     endif
   end function set_weight
 
 end module fms_diag_reduction_methods_mod
+!> @}
+! close documentation grouping

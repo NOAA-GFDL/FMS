@@ -769,7 +769,7 @@ module fms_diag_axis_object_mod
     end function
 
    !> @brief Accesses its member starting_index
-  !! @return Returns a copy of the starting_index
+  !! @return a copy of the starting_index
   function get_starting_index(this) result(indx)
     class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
     integer :: indx !< Result to return
@@ -777,7 +777,7 @@ module fms_diag_axis_object_mod
   end function get_starting_index
 
   !> @brief Accesses its member ending_index
-  !! @return Returns a copy of the ending_index
+  !! @return a copy of the ending_index
   function get_ending_index(this) result(indx)
     class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
     integer :: indx !< Result to return

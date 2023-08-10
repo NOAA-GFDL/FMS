@@ -505,7 +505,7 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
   CHARACTER(len=*),                      INTENT(out),  OPTIONAL :: err_msg       !< An error message returned
 
   integer                                  :: is, js, ks      !< Starting indicies of the field_data
-  integer                                  :: ie, je, ke      !< Ending indicied of the field_data
+  integer                                  :: ie, je, ke      !< Ending indicies of the field_data
   integer                                  :: n1, n2, n3      !< Size of the 3 indicies of the field data
   integer                                  :: omp_num_threads !< Number of openmp threads
   integer                                  :: omp_level       !< The openmp active level
