@@ -63,10 +63,16 @@ end type fmsDiagOutputBuffer_class
 type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
   integer,                          allocatable :: axis_ids(:)     !< Axis ids for the buffer
+  integer                                       :: field_id        !< The id of the field the buffer belongs to
+  integer                                       :: yaml_id         !< The id of the yaml id the buffer belongs to
 
   contains
   procedure :: add_axis_ids
   procedure :: get_axis_ids
+  procedure :: set_field_id
+  procedure :: get_field_id
+  procedure :: set_yaml_id
+  procedure :: get_yaml_id
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -169,33 +175,32 @@ end function fms_diag_output_buffer_init
 !> Creates a container type encapsulating a new buffer object for the given dimensions.
 !! The buffer object will still need to be allocated to a type via allocate_buffer() before use.
 !> @result A fmsDiagBufferContainer_type that holds a bufferNd_type, where N is buff_dims
-function fms_diag_output_buffer_create_container(buff_dims) &
-result(rslt)
-  integer, intent(in)                            :: buff_dims !< dimensions
-  type(fmsDiagOutputBufferContainer_type), allocatable :: rslt
+subroutine fms_diag_output_buffer_create_container(buff_dims, buffer_obj)
+  integer,                                 intent(in)     :: buff_dims !< dimensions
+  type(fmsDiagOutputBufferContainer_type), intent(inout)  :: buffer_obj
+
   character(len=5) :: dim_output !< string to output buff_dims on error
 
-  allocate(rslt)
   select case (buff_dims)
     case (0)
-      allocate(outputBuffer0d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer0d_type :: buffer_obj%diag_buffer_obj)
     case (1)
-      allocate(outputBuffer1d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer1d_type :: buffer_obj%diag_buffer_obj)
     case (2)
-      allocate(outputBuffer2d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer2d_type :: buffer_obj%diag_buffer_obj)
     case (3)
-      allocate(outputBuffer3d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer3d_type :: buffer_obj%diag_buffer_obj)
     case (4)
-      allocate(outputBuffer4d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer4d_type :: buffer_obj%diag_buffer_obj)
     case (5)
-      allocate(outputBuffer5d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer5d_type :: buffer_obj%diag_buffer_obj)
     case default
       write( dim_output, *) buff_dims
       dim_output = adjustl(dim_output)
       call mpp_error(FATAL, 'fms_diag_buffer_create_container: invalid number of dimensions given:' // dim_output //&
                             '. Must be 0-5')
   end select
-end function fms_diag_output_buffer_create_container
+end subroutine fms_diag_output_buffer_create_container
 
 !!--------generic routines for any fmsDiagBuffer_class objects
 
@@ -1522,5 +1527,42 @@ function get_axis_ids(this) &
   endif
 end function
 
+!> @brief Get the field id of the buffer
+!! @return the field id of the buffer
+function get_field_id(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%field_id
+end function get_field_id
+
+!> @brief set the field id of the buffer
+subroutine set_field_id(this, field_id)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: field_id    !< field id of the buffer
+
+  this%field_id = field_id
+end subroutine set_field_id
+
+!> @brief set the field id of the buffer
+subroutine set_yaml_id(this, yaml_id)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: yaml_id     !< yaml id of the buffer
+
+  this%yaml_id = yaml_id
+end subroutine set_yaml_id
+
+!> @brief Get the yaml id of the buffer
+!! @return the yaml id of the buffer
+function get_yaml_id(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%yaml_id
+end function get_yaml_id
 #endif
 end module fms_diag_output_buffer_mod

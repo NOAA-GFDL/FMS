@@ -88,14 +88,16 @@ type :: fmsDiagFile_type
   integer, allocatable                         :: num_registered_fields !< The number of fields registered
                                                                         !! to the file
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
-  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_axis !< Number of axis in the file
+  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
+  integer :: number_of_buffers !< Number of buffers that have been added to the file
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: is_static !< .True. if the frequency is -1
 
  contains
   procedure, public :: add_field_and_yaml_id
+  procedure, public :: add_buffer_id
   procedure, public :: is_field_registered
   procedure, public :: init_diurnal_axis
   procedure, public :: has_file_metadata_from_model
@@ -210,13 +212,16 @@ logical function fms_diag_files_object_init (files_array)
      obj%diag_yaml_file => diag_yaml%diag_files(i)
      obj%id = i
      allocate(obj%field_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%buffer_ids(diag_yaml%diag_files(i)%size_file_varlist()))
      allocate(obj%yaml_ids(diag_yaml%diag_files(i)%size_file_varlist()))
      allocate(obj%field_registered(diag_yaml%diag_files(i)%size_file_varlist()))
      !! Initialize the integer arrays
      obj%field_ids = DIAG_NOT_REGISTERED
      obj%yaml_ids = DIAG_NOT_REGISTERED
+     obj%buffer_ids = DIAG_NOT_REGISTERED
      obj%field_registered = .FALSE.
      obj%num_registered_fields = 0
+     obj%number_of_buffers = 0
 
      !> These will be set in a set_file_domain
      obj%type_of_domain = NO_DOMAIN
@@ -286,6 +291,16 @@ subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
                  "number of fields.")
   endif
 end subroutine add_field_and_yaml_id
+
+!> \brief Adds a buffer_id to the file object
+subroutine add_buffer_id (this, buffer_id)
+  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  integer,                 intent(in)    :: buffer_id    !< Buffer id to add to the file
+
+  this%number_of_buffers = this%number_of_buffers + 1
+  this%buffer_ids(this%number_of_buffers) = buffer_id
+
+end subroutine add_buffer_id
 
 !> \brief Initializes a diurnal axis for a fileobj
 !! \note This is going to be called for every variable in the file, if the variable is not a diurnal variable
@@ -745,7 +760,6 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
         this%axis_ids = diag_null
       endif
     endif
-    return
   type is (fmsDiagFile_type)
     do i = 1, size(var_axis_ids)
       axis_found = .false.
