@@ -43,6 +43,7 @@ type, abstract :: fmsDiagOutputBuffer_class
   integer, allocatable, public :: num_elements(:) !< used in time-averaging
   class(*), allocatable, public :: count_0d(:) !< used in time-averaging along with
                                        !! counter which is stored in the child types (bufferNd)
+                                       !! Always allocated to a real type since its used for weights
   integer(i4_kind), public :: buffer_type !<set to allocated data type & kind value, one of i4,i8,r4,r8
   integer, allocatable, public :: buffer_dims(:) !< holds the size of each dimension in the buffer
   contains
@@ -80,6 +81,7 @@ type, extends(fmsDiagOutputBuffer_class) :: outputBuffer0d_type
   class(*), allocatable :: buffer(:) !< "scalar" numeric buffer value
                                      !! will only be allocated to hold 1 value
   class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
+                                      !! Always allocated to a real type since its used for weights
   contains
   procedure :: allocate_buffer => allocate_buffer_0d
   procedure :: initialize_buffer => initialize_buffer_0d
@@ -92,6 +94,7 @@ end type outputBuffer0d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer1d_type
   class(*), allocatable :: buffer(:) !< 1D numeric data array
   class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
+                                      !! Always allocated to a real type since its used for weights
   contains
   procedure :: allocate_buffer => allocate_buffer_1d
   procedure :: initialize_buffer => initialize_buffer_1d
@@ -103,6 +106,7 @@ end type outputBuffer1d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer2d_type
   class(*), allocatable :: buffer(:,:) !< 2D numeric data array
   class(*), allocatable :: counter(:,:) !< (x,y,z, time-of-day) used in the time averaging functions
+                                      !! Always allocated to a real type since its used for weights
   contains
   procedure :: allocate_buffer => allocate_buffer_2d
   procedure :: initialize_buffer => initialize_buffer_2d
@@ -114,6 +118,7 @@ end type outputBuffer2d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer3d_type
   class(*), allocatable :: buffer(:,:,:) !< 3D numeric data array
   class(*), allocatable :: counter(:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
+                                          !! Always allocated to a real type since its used for weights
   contains
   procedure :: allocate_buffer => allocate_buffer_3d
   procedure :: initialize_buffer => initialize_buffer_3d
@@ -125,6 +130,7 @@ end type outputBuffer3d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer4d_type
   class(*), allocatable :: buffer(:,:,:,:) !< 4D numeric data array
   class(*), allocatable :: counter(:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
+                                            !! Always allocated to a real type since its used for weights
   contains
   procedure :: allocate_buffer => allocate_buffer_4d
   procedure :: initialize_buffer => initialize_buffer_4d
@@ -136,6 +142,7 @@ end type outputBuffer4d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer5d_type
   class(*), allocatable :: buffer(:,:,:,:,:) !< 5D numeric data array
   class(*), allocatable :: counter(:,:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
+                                              !! Always allocated to a real type since its used for weights
   contains
   procedure :: allocate_buffer => allocate_buffer_5d
   procedure :: initialize_buffer => initialize_buffer_5d
