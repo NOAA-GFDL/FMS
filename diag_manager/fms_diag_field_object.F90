@@ -1104,33 +1104,33 @@ end subroutine get_dimnames
 
 !> @brief Wrapper for the register_field call. The select types are needed so that the code can go
 !! in the correct interface
-subroutine register_field_wrap(fileobj, varname, vartype, dimensions)
-  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
-  character(len=*),                  INTENT(IN)    :: varname       !< Name of the variable
-  character(len=*),                  INTENT(IN)    :: vartype       !< The type of the variable
-  character(len=*), optional,        INTENT(IN)    :: dimensions(:) !< The dimension names of the field
+subroutine register_field_wrap(fms2io_fileobj, varname, vartype, dimensions)
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj  !< Fms2_io fileobj to write to
+  character(len=*),                  INTENT(IN)    :: varname         !< Name of the variable
+  character(len=*),                  INTENT(IN)    :: vartype         !< The type of the variable
+  character(len=*), optional,        INTENT(IN)    :: dimensions(:)   !< The dimension names of the field
 
-  select type(fileobj)
+  select type(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
-    call register_field(fileobj, varname, vartype, dimensions)
+    call register_field(fms2io_fileobj, varname, vartype, dimensions)
   type is (FmsNetcdfDomainFile_t)
-    call register_field(fileobj, varname, vartype, dimensions)
+    call register_field(fms2io_fileobj, varname, vartype, dimensions)
   type is (FmsNetcdfUnstructuredDomainFile_t)
-    call register_field(fileobj, varname, vartype, dimensions)
+    call register_field(fms2io_fileobj, varname, vartype, dimensions)
   end select
 end subroutine register_field_wrap
 
 !> @brief Write the field's metadata to the file
-subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional, &
+subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional, &
                                 cell_measures)
-  class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
-  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
-  integer,                           intent(in)    :: file_id       !< File id of the file to write to
-  integer,                           intent(in)    :: yaml_id       !< Yaml id of the yaml entry of this field
-  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
-  character(len=*),                  intent(in)    :: unlim_dimname !< The name of the unlimited dimension
-  logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
-  character(len=*),                  intent(in)    :: cell_measures !< The cell measures attribute to write
+  class (fmsDiagField_type), target, intent(inout) :: this           !< diag field
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj !< Fms2_io fileobj to write to
+  integer,                           intent(in)    :: file_id        !< File id of the file to write to
+  integer,                           intent(in)    :: yaml_id        !< Yaml id of the yaml entry of this field
+  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)   !< Diag_axis object
+  character(len=*),                  intent(in)    :: unlim_dimname  !< The name of the unlimited dimension
+  logical,                           intent(in)    :: is_regional    !< Flag indicating if the field is regional
+  character(len=*),                  intent(in)    :: cell_measures  !< The cell measures attribute to write
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
   character(len=:),            allocatable :: var_name    !< Variable name
@@ -1146,50 +1146,50 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
 
   if (allocated(this%axis_ids)) then
     call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
-    call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
+    call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
   else
     if (this%is_static()) then
-      call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml))
+      call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml))
     else
       !< In this case, the scalar variable is a function of time, so we need to pass in the
       !! unlimited dimension as a dimension
-      call register_field_wrap(fileobj, var_name, this%get_var_skind(field_yaml), (/unlim_dimname/))
+      call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), (/unlim_dimname/))
     endif
   endif
 
   long_name = this%get_longname_to_write(field_yaml)
-  call register_variable_attribute(fileobj, var_name, "long_name", long_name, str_len=len_trim(long_name))
+  call register_variable_attribute(fms2io_fileobj, var_name, "long_name", long_name, str_len=len_trim(long_name))
 
   units = this%get_units()
   if (units .ne. diag_null_string) &
-    call register_variable_attribute(fileobj, var_name, "units", units, str_len=len_trim(units))
+    call register_variable_attribute(fms2io_fileobj, var_name, "units", units, str_len=len_trim(units))
 
   if (this%has_missing_value()) then
-    call register_variable_attribute(fileobj, var_name, "missing_value", &
+    call register_variable_attribute(fms2io_fileobj, var_name, "missing_value", &
       this%get_missing_value(field_yaml%get_var_kind()))
-    call register_variable_attribute(fileobj, var_name, "_FillValue", &
+    call register_variable_attribute(fms2io_fileobj, var_name, "_FillValue", &
       this%get_missing_value(field_yaml%get_var_kind()))
   else
-    call register_variable_attribute(fileobj, var_name, "missing_value", &
+    call register_variable_attribute(fms2io_fileobj, var_name, "missing_value", &
       get_default_missing_value(field_yaml%get_var_kind()))
-      call register_variable_attribute(fileobj, var_name, "_FillValue", &
+      call register_variable_attribute(fms2io_fileobj, var_name, "_FillValue", &
       get_default_missing_value(field_yaml%get_var_kind()))
   endif
 
   if (this%has_data_RANGE()) then
-    call register_variable_attribute(fileobj, var_name, "valid_range", &
+    call register_variable_attribute(fms2io_fileobj, var_name, "valid_range", &
       this%get_data_range(field_yaml%get_var_kind()))
   endif
 
   if (this%has_interp_method()) then
-    call register_variable_attribute(fileobj, var_name, "interp_method", this%get_interp_method(), &
+    call register_variable_attribute(fms2io_fileobj, var_name, "interp_method", this%get_interp_method(), &
       str_len=len_trim(this%get_interp_method()))
   endif
 
   if (.not. this%static) then
     select case (field_yaml%get_var_reduction())
     case (time_average, time_max, time_min, time_diurnal, time_power, time_rms, time_sum)
-      call register_variable_attribute(fileobj, var_name, "time_avg_info", &
+      call register_variable_attribute(fms2io_fileobj, var_name, "time_avg_info", &
         trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
         str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
     end select
@@ -1199,34 +1199,34 @@ subroutine write_field_metadata(this, fileobj, file_id, yaml_id, diag_axis, unli
   !< Check if any of the attributes defined via a "diag_field_add_attribute" call
   !! are the cell_methods, if so add to the "cell_methods" variable:
   do i = 1, this%num_attributes
-    call this%attributes(i)%write_metadata(fileobj, var_name, &
+    call this%attributes(i)%write_metadata(fms2io_fileobj, var_name, &
       cell_methods=cell_methods)
   enddo
 
   !< Append the time cell methods based on the variable's reduction
   call this%append_time_cell_methods(cell_methods, field_yaml)
   if (trim(cell_methods) .ne. "") &
-    call register_variable_attribute(fileobj, var_name, "cell_methods", &
+    call register_variable_attribute(fms2io_fileobj, var_name, "cell_methods", &
       trim(adjustl(cell_methods)), str_len=len_trim(adjustl(cell_methods)))
 
   !< Write out the cell_measures attribute (i.e Area, Volume)
   !! The diag field ids for the Area and Volume are sent in the register call
   !! This was defined in file object and passed in here
   if (trim(cell_measures) .ne. "") &
-    call register_variable_attribute(fileobj, var_name, "cell_measures", &
+    call register_variable_attribute(fms2io_fileobj, var_name, "cell_measures", &
       trim(adjustl(cell_measures)), str_len=len_trim(adjustl(cell_measures)))
 
   !< Write out the standard_name (this was defined in the register call)
   if (this%has_standname()) &
-  call register_variable_attribute(fileobj, var_name, "standard_name", &
+  call register_variable_attribute(fms2io_fileobj, var_name, "standard_name", &
     trim(this%get_standname()), str_len=len_trim(this%get_standname()))
 
-  call this%write_coordinate_attribute(fileobj, var_name, diag_axis)
+  call this%write_coordinate_attribute(fms2io_fileobj, var_name, diag_axis)
 
   if (field_yaml%has_var_attributes()) then
     yaml_field_attributes = field_yaml%get_var_attributes()
     do i = 1, size(yaml_field_attributes,1)
-      call register_variable_attribute(fileobj, var_name, trim(yaml_field_attributes(i,1)), &
+      call register_variable_attribute(fms2io_fileobj, var_name, trim(yaml_field_attributes(i,1)), &
       trim(yaml_field_attributes(i,2)), str_len=len_trim(yaml_field_attributes(i,2)))
     enddo
     deallocate(yaml_field_attributes)
@@ -1235,11 +1235,11 @@ end subroutine write_field_metadata
 
 !> @brief Writes the coordinate attribute of a field if any of the field's axis has an
 !! auxiliary axis
-subroutine write_coordinate_attribute (this, fileobj, var_name, diag_axis)
-  CLASS(fmsDiagField_type),          intent(in)    :: this         !< The field object
-  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj      !< Fms2_io fileobj to write to
-  character(len=*),                  intent(in)    :: var_name     !< Variable name
-  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:) !< Diag_axis object
+subroutine write_coordinate_attribute (this, fms2io_fileobj, var_name, diag_axis)
+  CLASS(fmsDiagField_type),          intent(in)    :: this           !< The field object
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj !< Fms2_io fileobj to write to
+  character(len=*),                  intent(in)    :: var_name       !< Variable name
+  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)   !< Diag_axis object
 
   integer              :: i         !< For do loops
   character(len = 252) :: aux_coord !< Auxuliary axis name
@@ -1261,7 +1261,7 @@ subroutine write_coordinate_attribute (this, fileobj, var_name, diag_axis)
 
   if (trim(aux_coord) .eq. "") return
 
-  call register_variable_attribute(fileobj, var_name, "coordinates", &
+  call register_variable_attribute(fms2io_fileobj, var_name, "coordinates", &
     trim(adjustl(aux_coord)), str_len=len_trim(adjustl(aux_coord)))
 
 end subroutine write_coordinate_attribute

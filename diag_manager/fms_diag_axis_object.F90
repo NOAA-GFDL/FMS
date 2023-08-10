@@ -289,14 +289,14 @@ module fms_diag_axis_object_mod
   end subroutine add_axis_attribute
 
   !> @brief Write the axis meta data to an open fileobj
-  subroutine write_axis_metadata(this, fileobj, edges_in_file, parent_axis)
-    class(fmsDiagAxis_type),          target,  INTENT(IN)    :: this          !< diag_axis obj
-    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write the data to
-    logical,                                   INTENT(IN)    :: edges_in_file !< .True. if the edges to this axis are
-                                                                              !! already in the file
-    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis   !< If the axis is a subaxis, axis object
-                                                                              !! for the parent axis (this will be used
-                                                                              !! to get some of the metadata info)
+  subroutine write_axis_metadata(this, fms2io_fileobj, edges_in_file, parent_axis)
+    class(fmsDiagAxis_type),          target,  INTENT(IN)    :: this            !< diag_axis obj
+    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fms2io_fileobj  !< Fms2_io fileobj to write the data to
+    logical,                                   INTENT(IN)    :: edges_in_file   !< .True. if the edges to this axis are
+                                                                                !! already in the file
+    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis     !< If the axis is a subaxis, axis object
+                                                                                !! for the parent axis (this will be used
+                                                                                !! to get some of the metadata info)
 
     character(len=:), ALLOCATABLE         :: axis_edges_name !< Name of the edges, if it exist
     character(len=:), pointer             :: axis_name       !< Name of the axis
@@ -328,64 +328,64 @@ module fms_diag_axis_object_mod
       endif
       type_of_domain = NO_DOMAIN !< All subaxes are treated as non-domain decomposed (each rank writes it own file)
     type is (fmsDiagDiurnalAxis_type)
-      call this%write_diurnal_metadata(fileobj)
+      call this%write_diurnal_metadata(fms2io_fileobj)
       return
     end select
 
     !< Add the axis as a dimension in the netcdf file based on the type of axis_domain and the fileobj type
-    select type (fileobj)
+    select type (fms2io_fileobj)
       !< The register_field calls need to be inside the select type block so that it can go inside the correct
       !! register_field interface
       type is (FmsNetcdfFile_t)
         !< Here the axis is not domain decomposed (i.e z_axis)
-        call register_axis(fileobj, axis_name, axis_length)
-        call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+        call register_axis(fms2io_fileobj, axis_name, axis_length)
+        call register_field(fms2io_fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
       type is (FmsNetcdfDomainFile_t)
         select case (type_of_domain)
         case (NO_DOMAIN)
           !< Here the fileobj is domain decomposed, but the axis is not
           !! Domain decomposed fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, axis_name, axis_length)
-          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+          call register_axis(fms2io_fileobj, axis_name, axis_length)
+          call register_field(fms2io_fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case (TWO_D_DOMAIN)
           !< Here the axis is domain decomposed
-          call register_axis(fileobj, axis_name, diag_axis%cart_name, domain_position=diag_axis%domain_position)
-          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+          call register_axis(fms2io_fileobj, axis_name, diag_axis%cart_name, domain_position=diag_axis%domain_position)
+          call register_field(fms2io_fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
       type is (FmsNetcdfUnstructuredDomainFile_t)
         select case (type_of_domain)
         case (UG_DOMAIN)
           !< Here the axis is in a unstructured domain
-          call register_axis(fileobj, axis_name)
-          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+          call register_axis(fms2io_fileobj, axis_name)
+          call register_field(fms2io_fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         case default
           !< Here the fileobj is in the unstructured domain, but the axis is not
           !< Unstructured domain fileobjs can have axis that are not domain decomposed (i.e "Z" axis)
-          call register_axis(fileobj, axis_name, axis_length)
-          call register_field(fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+          call register_axis(fms2io_fileobj, axis_name, axis_length)
+          call register_field(fms2io_fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
         end select
     end select
 
     !< Write its metadata
-    call register_variable_attribute(fileobj, axis_name, "long_name", diag_axis%long_name, &
+    call register_variable_attribute(fms2io_fileobj, axis_name, "long_name", diag_axis%long_name, &
       str_len=len_trim(diag_axis%long_name))
 
     if (diag_axis%cart_name .NE. "N") &
-      call register_variable_attribute(fileobj, axis_name, "axis", diag_axis%cart_name, str_len=1)
+      call register_variable_attribute(fms2io_fileobj, axis_name, "axis", diag_axis%cart_name, str_len=1)
 
     if (trim(diag_axis%units) .NE. "none") &
-      call register_variable_attribute(fileobj, axis_name, "units", diag_axis%units, str_len=len_trim(diag_axis%units))
+      call register_variable_attribute(fms2io_fileobj, axis_name, "units", diag_axis%units, str_len=len_trim(diag_axis%units))
 
     select case (diag_axis%direction)
     case (direction_up)
-      call register_variable_attribute(fileobj, axis_name, "positive", "up", str_len=2)
+      call register_variable_attribute(fms2io_fileobj, axis_name, "positive", "up", str_len=2)
     case (direction_down)
-      call register_variable_attribute(fileobj, axis_name, "positive", "down", str_len=4)
+      call register_variable_attribute(fms2io_fileobj, axis_name, "positive", "down", str_len=4)
     end select
 
     !< Ignore the edges attribute, if the edges are already in the file or if it is subaxis
     if (.not. edges_in_file .and. allocated(diag_axis%edges_name) .and. .not. is_subaxis) then
-      call register_variable_attribute(fileobj, axis_name, "edges", diag_axis%edges_name, &
+      call register_variable_attribute(fms2io_fileobj, axis_name, "edges", diag_axis%edges_name, &
         str_len=len_trim(diag_axis%edges_name))
     endif
 
@@ -393,10 +393,10 @@ module fms_diag_axis_object_mod
       do i = 1, diag_axis%num_attributes
         select type (att_value => diag_axis%attributes(i)%att_value)
         type is (character(len=*))
-          call register_variable_attribute(fileobj, axis_name, diag_axis%attributes(i)%att_name, trim(att_value(1)), &
+          call register_variable_attribute(fms2io_fileobj, axis_name, diag_axis%attributes(i)%att_name, trim(att_value(1)), &
                                            str_len=len_trim(att_value(1)))
         class default
-          call register_variable_attribute(fileobj, axis_name, diag_axis%attributes(i)%att_name, att_value)
+          call register_variable_attribute(fms2io_fileobj, axis_name, diag_axis%attributes(i)%att_name, att_value)
         end select
       enddo
     endif
@@ -404,10 +404,10 @@ module fms_diag_axis_object_mod
   end subroutine write_axis_metadata
 
   !> @brief Write the axis data to an open fileobj
-  subroutine write_axis_data(this, fileobj, parent_axis)
-    class(fmsDiagAxis_type),           target, INTENT(IN)    :: this        !< diag_axis obj
-    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fileobj     !< Fms2_io fileobj to write the data to
-    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis !< The parent axis if this is a subaxis
+  subroutine write_axis_data(this, fms2io_fileobj, parent_axis)
+    class(fmsDiagAxis_type),           target, INTENT(IN)    :: this           !< diag_axis obj
+    class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fms2io_fileobj !< Fms2_io fileobj to write the data to
+    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis    !< The parent axis if this is a subaxis
 
     integer                       :: i                 !< Starting index of a sub_axis
     integer                       :: j                 !< Ending index of a sub_axis
@@ -415,7 +415,7 @@ module fms_diag_axis_object_mod
     select type(this)
     type is (fmsDiagFullAxis_type)
       call this%get_global_io_domain(global_io_index)
-      call write_data(fileobj, this%axis_name, this%axis_data(global_io_index(1):global_io_index(2)))
+      call write_data(fms2io_fileobj, this%axis_name, this%axis_data(global_io_index(1):global_io_index(2)))
     type is (fmsDiagSubAxis_type)
       i = this%starting_index
       j = this%ending_index
@@ -423,11 +423,11 @@ module fms_diag_axis_object_mod
       if (present(parent_axis)) then
         select type(parent_axis)
         type is (fmsDiagFullAxis_type)
-          call write_data(fileobj, this%subaxis_name, parent_axis%axis_data(i:j))
+          call write_data(fms2io_fileobj, this%subaxis_name, parent_axis%axis_data(i:j))
         end select
       endif
     type is (fmsDiagDiurnalAxis_type)
-      call write_data(fileobj, this%axis_name, this%diurnal_data)
+      call write_data(fms2io_fileobj, this%axis_name, this%diurnal_data)
     end select
   end subroutine write_axis_data
 
@@ -1245,18 +1245,18 @@ module fms_diag_axis_object_mod
   end function get_diurnal_axis_samples
 
   !< @brief Writes out the metadata for a diurnal axis
-  subroutine write_diurnal_metadata(this, fileobj)
-    class(fmsDiagDiurnalAxis_type), intent(in)    :: this     !< Diurnal axis Object
-    class(FmsNetcdfFile_t),         intent(inout) :: fileobj  !< Fms2_io fileobj to write the data to
+  subroutine write_diurnal_metadata(this, fms2io_fileobj)
+    class(fmsDiagDiurnalAxis_type), intent(in)    :: this            !< Diurnal axis Object
+    class(FmsNetcdfFile_t),         intent(inout) :: fms2io_fileobj  !< Fms2_io fileobj to write the data to
 
-    call register_axis(fileobj, this%axis_name, size(this%diurnal_data))
-    call register_field(fileobj, this%axis_name, pack_size_str, (/trim(this%axis_name)/))
-    call register_variable_attribute(fileobj, this%axis_name, "units", &
+    call register_axis(fms2io_fileobj, this%axis_name, size(this%diurnal_data))
+    call register_field(fms2io_fileobj, this%axis_name, pack_size_str, (/trim(this%axis_name)/))
+    call register_variable_attribute(fms2io_fileobj, this%axis_name, "units", &
                                     &trim(this%units), str_len=len_trim(this%units))
-    call register_variable_attribute(fileobj, this%axis_name, "long_name", &
+    call register_variable_attribute(fms2io_fileobj, this%axis_name, "long_name", &
                                     &trim(this%long_name), str_len=len_trim(this%long_name))
     if (this%edges_id .ne. diag_null) &
-      call register_variable_attribute(fileobj, this%axis_name, "edges", &
+      call register_variable_attribute(fms2io_fileobj, this%axis_name, "edges", &
                                       &trim(this%edges_name), str_len=len_trim(this%edges_name))
   end subroutine write_diurnal_metadata
 
