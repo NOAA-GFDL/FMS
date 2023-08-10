@@ -104,6 +104,8 @@ if (use_mpp_io) then
            'MPP_IO is no longer supported.  Please remove from use_mpp_io from interpolator_nml')
 endif
 
+clim_type%is_r4=.false.
+clim_type%is_r8=.false.
 if(kind(FMS_INTP_KIND_).eq.r4_kind) clim_type%is_r4=.true.
 if(kind(FMS_INTP_KIND_).eq.r8_kind) clim_type%is_r8=.true.
 
