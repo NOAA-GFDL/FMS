@@ -49,6 +49,7 @@ type, abstract :: fmsDiagOutputBuffer_class
 
   procedure :: flush_buffer
   procedure :: remap_buffer
+  procedure :: remap_counter
   procedure :: set_buffer_id
   ! TODO could make these 'defered' ie. declared here but defined in each child type
   ! holding off cause the class(*) + polymorphism in here is probably already enough to upset the gods of compilation
@@ -208,25 +209,26 @@ end subroutine set_buffer_id
 
 !> Remaps 0-5d data buffer from the given object onto a 5d array pointer.
 !> @returns a 5D remapped buffer, with 1:1 for any added dimensions.
-function remap_buffer(buffobj, field_name, has_diurnal_axis)
+function remap_buffer(buffobj, field_name, file_name, has_diurnal_axis)
   class(fmsDiagOutputBuffer_class), target, intent(inout) :: buffobj !< any dimension buffer object
   class(*), pointer                                 :: remap_buffer(:,:,:,:,:)
   character(len=*), intent(in)                      :: field_name !< name of field for error output
+  character(len=*), intent(in)                      :: file_name !< name of field for error output
   logical, intent(in) :: has_diurnal_axis !< true if the buffer has diurnal axis
 
   ! get num dimensions from type extension
   select type (buffobj)
     type is (outputBuffer0d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name // "in file:" // file_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer
     type is (outputBuffer1d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name // "in file:" // file_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer(1:size(buffobj%buffer,1))
     type is (outputBuffer2d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name // "in file:" // file_name)
       if (has_diurnal_axis) then
         remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:size(buffobj%buffer,2)) => buffobj%buffer(:,:)
       else
@@ -234,7 +236,7 @@ function remap_buffer(buffobj, field_name, has_diurnal_axis)
       end if
     type is (outputBuffer3d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name // "in file:" // file_name)
       if (has_diurnal_axis) then
         remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:1, 1:1, &
           1:size(buffobj%buffer,3)) => buffobj%buffer(:,:,:)
@@ -244,7 +246,7 @@ function remap_buffer(buffobj, field_name, has_diurnal_axis)
       end if
     type is (outputBuffer4d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name // "in file:" // file_name)
       if (has_diurnal_axis) then
         remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                   1:1, 1:size(buffobj%buffer,4)) => buffobj%buffer(:,:,:,:)
@@ -254,7 +256,7 @@ function remap_buffer(buffobj, field_name, has_diurnal_axis)
       end if
     type is (outputBuffer5d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name // "in file:" // file_name)
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                    1:size(buffobj%buffer,4), 1:size(buffobj%buffer,5)) => buffobj%buffer(:,:,:,:,:)
     class default
@@ -264,26 +266,30 @@ function remap_buffer(buffobj, field_name, has_diurnal_axis)
 end function remap_buffer
 
 !> Remaps the counter
-!> @returns a 5D remappeding of the counter array, with 1:1 for any added dimensions.
-function remap_counter(buffobj, field_name, has_diurnal_axis)
+!> @returns a 5D remapping of the counter array, with 1:1 for any added dimensions.
+function remap_counter(buffobj, field_name, file_name, has_diurnal_axis)
   class(fmsDiagOutputBuffer_class), target, intent(inout) :: buffobj !< any dimension buffer object
   class(*), pointer                                 :: remap_counter(:,:,:,:,:)
   character(len=*), intent(in)                      :: field_name !< name of field for error output
+  character(len=*), intent(in)                      :: file_name !< name of field for error output
   logical, intent(in) :: has_diurnal_axis !< true if the buffer has diurnal axis
 
   ! get num dimensions from type extension
   select type (buffobj)
     type is (outputBuffer0d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name // " in file:" // &
+                                                                 file_name)
       remap_counter(1:size(buffobj%counter,1), 1:1, 1:1, 1:1, 1:1) => buffobj%counter
     type is (outputBuffer1d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name// " in file:" // &
+                                                                 file_name)
       remap_counter(1:size(buffobj%counter,1), 1:1, 1:1, 1:1, 1:1) => buffobj%counter(1:size(buffobj%counter,1))
     type is (outputBuffer2d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name// " in file:" // &
+                                                                  file_name)
       if (has_diurnal_axis) then
         remap_counter(1:size(buffobj%counter,1), 1:1, 1:1, 1:1, 1:size(buffobj%counter,2)) => buffobj%counter(:,:)
       else
@@ -291,7 +297,8 @@ function remap_counter(buffobj, field_name, has_diurnal_axis)
       end if
     type is (outputBuffer3d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name// " in file:" // &
+                                                                 file_name)
       if (has_diurnal_axis) then
         remap_counter(1:size(buffobj%counter,1), 1:size(buffobj%counter,2), 1:1, 1:1, &
           1:size(buffobj%counter,3)) => buffobj%counter(:,:,:)
@@ -301,7 +308,8 @@ function remap_counter(buffobj, field_name, has_diurnal_axis)
       end if
     type is (outputBuffer4d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                  "for field:" // field_name// " in file:" // &
+                                                                  file_name)
       if (has_diurnal_axis) then
         remap_counter(1:size(buffobj%counter,1), 1:size(buffobj%counter,2), 1:size(buffobj%counter,3), &
                   1:1, 1:size(buffobj%counter,4)) => buffobj%counter(:,:,:,:)
@@ -311,11 +319,13 @@ function remap_counter(buffobj, field_name, has_diurnal_axis)
       end if
     type is (outputBuffer5d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name)
+                                                                 "for field:" // field_name// " in file:" // &
+                                                                  file_name)
       remap_counter(1:size(buffobj%counter,1), 1:size(buffobj%counter,2), 1:size(buffobj%counter,3), &
                    1:size(buffobj%counter,4), 1:size(buffobj%counter,5)) => buffobj%counter(:,:,:,:,:)
     class default
-      call mpp_error( FATAL, 'remap_buffer_pointer: invalid buffer type for remapping')
+      call mpp_error( FATAL, 'remap_buffer_pointer: invalid buffer type for remapping for field:'//field_name//&
+                             ' in file:'// file_name)
   end select
 
 end function remap_counter
