@@ -31,44 +31,44 @@ subroutine write_climatology_file
      !end if
 
      !lon axes
-     call register_field(fileobj, 'lon', 'float', dimensions=(/'longitude'/))
+     call register_field(fileobj, 'lon', 'double', dimensions=(/'longitude'/))
      call register_string_attribute(fileobj, 'lon', 'edges', 'lonb')
      call register_string_attribute(fileobj, 'lon', 'cartesian_axis', 'X')
      call register_string_attribute(fileobj, 'lon', 'units', 'degrees_east')
 
      !lonb  axes longitude edges
-     call register_field(fileobj, 'lonb', 'float', dimensions=(/'lonb'/))
+     call register_field(fileobj, 'lonb', 'double', dimensions=(/'lonb'/))
      call register_string_attribute(fileobj, 'lonb', 'cartesian_axis','X')
      call register_string_attribute(fileobj, 'lonb', 'units', 'degrees_edges')
 
      !lat
-     call register_field(fileobj, 'lat', 'float', dimensions=(/'latitude'/))
+     call register_field(fileobj, 'lat', 'double', dimensions=(/'latitude'/))
      call register_string_attribute(fileobj, 'lat', 'edges', 'latb')
      call register_string_attribute(fileobj, 'lat', 'cartesian_axis', 'Y')
      call register_string_attribute(fileobj, 'lat', 'units', 'degrees_north')
 
      !latb latitude_edges
-     call register_field(fileobj, 'latb', 'float', dimensions=(/'latb'/))
+     call register_field(fileobj, 'latb', 'double', dimensions=(/'latb'/))
      call register_string_attribute(fileobj, 'latb', 'cartesian_axis', 'Y')
      call register_string_attribute(fileobj, 'latb', 'units', 'degrees_N')
 
      !pfull layer-mean pressure
-     call register_field(fileobj, 'pfull', 'float', dimensions=(/'pfull'/))
+     call register_field(fileobj, 'pfull', 'double', dimensions=(/'pfull'/))
      call register_string_attribute(fileobj, 'pfull', 'positive', 'down')
      call register_string_attribute(fileobj, 'pfull', 'cartesian_axis', 'Z')
      call register_string_attribute(fileobj, 'pfull', 'units', 'hPa')
 
      !phalf half pressure level
-     call register_field(fileobj, 'phalf', 'float', dimensions=(/'phalf'/))
+     call register_field(fileobj, 'phalf', 'double', dimensions=(/'phalf'/))
      call register_string_attribute(fileobj, 'phalf', 'positive', 'down')
      call register_string_attribute(fileobj, 'phalf', 'cartesian_axis', 'Z')
      call register_string_attribute(fileobj, 'phalf', 'units', 'hPa')
 
      !ozone ozone mass mixing ratio
      if( ntime==0 ) then
-        call register_field(fileobj, 'ozone', 'float', dimensions=(/'lon  ','lat  ','pfull'/))
+        call register_field(fileobj, 'ozone', 'double', dimensions=(/'lon  ','lat  ','pfull'/))
      else
-        call register_field(fileobj, 'ozone', 'float', dimensions=(/'lon  ','lat  ','pfull','time '/))
+        call register_field(fileobj, 'ozone', 'double', dimensions=(/'lon  ','lat  ','pfull','time '/))
      end if
      call register_string_attribute(fileobj, 'ozone', 'units', 'kg/kg')
 
@@ -186,8 +186,8 @@ subroutine set_latlon_b()
      lon(i)= real(2*i-1,TEST_INTP_KIND_)
   end do
 
-  lonb(1)=0.0_lkind
-  latb(1)=0.0_lkind
+  lonb(1)=1.0_lkind
+  latb(1)=1.0_lkind
   do i=2,nlonlat
      lonb(i)=0.5_lkind*(lon(i-1)+lon(i))
      latb(i)=0.5_lkind*(lat(i-1)+lat(i))
@@ -201,28 +201,29 @@ end subroutine set_latlon_b
 subroutine set_latlon_b_mod
 
   implicit none
-  integer :: i
+  integer :: i, j
 
   !> the model grid and the climatology grid are the same
-  do i=1, nlonlat_mod
+  do i=1, nlonlat
      lon_mod(:,i) = real(2*i-1,TEST_INTP_KIND_)
      lat_mod(i,:) = real(2*i-1,TEST_INTP_KIND_)
   end do
 
-  lonb_mod(1:nlonlat,1)=0.0_lkind
-  latb_mod(1,1:nlonlat)=0.0_lkind
-  do i=2, nlonlatb_mod
-     lonb_mod(1:nlonlat,i)=0.5_lkind*(lon_mod(:,i-1)+lon_mod(:,i))
-     latb_mod(i,1:nlonlat)=0.5_lkind*(lat_mod(i-1,:)+lat_mod(i,:))
+  lonb_mod(1:nlonlatb,1)=1.0_lkind
+  latb_mod(1,1:nlonlatb)=1.0_lkind
+  do i=1, nlonlat-1
+     lonb_mod(1:nlonlatb,i+1)=2*i
+     latb_mod(i+1,1:nlonlatb)=2*i
   end do
-  lonb_mod(1:nlonlat,nlonlat+1)=real(2*nlonlat-1,TEST_INTP_KIND_)
-  latb_mod(nlonlat+1,1:nlonlat)=real(2*nlonlat-1,TEST_INTP_KIND_)
+  lonb_mod(1:nlonlatb,nlonlatb)=real(2*nlonlat-1,TEST_INTP_KIND_)
+  latb_mod(nlonlatb,1:nlonlatb)=real(2*nlonlat-1,TEST_INTP_KIND_)
 
   !> convert from degrees to radians
   lon_mod  = lon_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
   lat_mod  = lat_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
   lonb_mod = lonb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
   latb_mod = latb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
+
 
 end subroutine set_latlon_b_mod
 !===============================================!

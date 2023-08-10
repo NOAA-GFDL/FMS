@@ -156,8 +156,7 @@ contains
        do i=1, npfull
           do j=1, nlonlat
              do k=1, nlonlat
-                write(*,*) i, j, k, interp_data(k,j,i,1), ozone(k,j,i,itime)
-                !call check_answers(interp_data(k,j,i,1), ozone(k,j,i,itime), tol, 'test interpolator_4D')
+                call check_answers(interp_data(k,j,i,1), ozone(k,j,i,itime), tol, 'test interpolator_4D')
              end do
           end do
        end do

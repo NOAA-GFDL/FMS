@@ -247,6 +247,7 @@ end interface interp_weighted_scalar
 !> @ingroup interpolate_type
 
 type, private :: interpolate_r4_type
+logical :: is_allocated = .false.
 real(r4_kind), allocatable :: lat(:)               !< No description
 real(r4_kind), allocatable :: lon(:)               !< No description
 real(r4_kind), allocatable :: latb(:)              !< No description
@@ -265,6 +266,7 @@ real(r4_kind) :: tweight3     !< The time weight between the month
 end type interpolate_r4_type
 
 type, private :: interpolate_r8_type
+logical :: is_allocated = .false.
 real(r8_kind), allocatable :: lat(:)               !< No description
 real(r8_kind), allocatable :: lon(:)               !< No description
 real(r8_kind), allocatable :: latb(:)              !< No description
@@ -286,7 +288,6 @@ type, public  :: interpolate_type
 private
 !Redundant data between fields
 !All climatology data
-logical :: is_r4, is_r8
 type(interpolate_r4_type) :: r4_type
 type(interpolate_r8_type) :: r8_type
 type(horiz_interp_type)  :: interph                         !< No description
@@ -416,14 +417,14 @@ subroutine interpolate_type_eq (Out, In)
 type(interpolate_type), intent(in) :: In
 type(interpolate_type), intent(inout) :: Out
 
-     if(In%is_r4) then
+     if(In%r4_type%is_allocated) then
         if (allocated(In%r4_type%lat))      Out%r4_type%lat      =  In%r4_type%lat
         if (allocated(In%r4_type%lon))      Out%r4_type%lon      =  In%r4_type%lon
         if (allocated(In%r4_type%latb))     Out%r4_type%latb     =  In%r4_type%latb
         if (allocated(In%r4_type%lonb))     Out%r4_type%lonb     =  In%r4_type%lonb
         if (allocated(In%r4_type%levs))     Out%r4_type%levs     =  In%r4_type%levs
         if (allocated(In%r4_type%halflevs)) Out%r4_type%halflevs =  In%r4_type%halflevs
-     else if(In%is_r8) then
+     else if(In%r8_type%is_allocated) then
         if (allocated(In%r8_type%lat))      Out%r8_type%lat      =  In%r8_type%lat
         if (allocated(In%r8_type%lon))      Out%r8_type%lon      =  In%r8_type%lon
         if (allocated(In%r8_type%latb))     Out%r8_type%latb     =  In%r8_type%latb
@@ -450,13 +451,13 @@ type(interpolate_type), intent(inout) :: Out
      if (allocated(In%mr           )) Out%mr            =  In%mr
      if (allocated(In%out_of_bounds)) Out%out_of_bounds =  In%out_of_bounds
      if (allocated(In%vert_interp  )) Out%vert_interp   =  In%vert_interp
-     if(In%is_r4) then
+     if(In%r4_type%is_allocated) then
         if (allocated(In%r4_type%data         )) Out%r4_type%data          =  In%r4_type%data
         if (allocated(In%r4_type%pmon_pyear   )) Out%r4_type%pmon_pyear    =  In%r4_type%pmon_pyear
         if (allocated(In%r4_type%pmon_nyear   )) Out%r4_type%pmon_nyear    =  In%r4_type%pmon_nyear
         if (allocated(In%r4_type%nmon_nyear   )) Out%r4_type%nmon_nyear    =  In%r4_type%nmon_nyear
         if (allocated(In%r4_type%nmon_pyear   )) Out%r4_type%nmon_pyear    =  In%r4_type%nmon_pyear
-     else if(In%is_r8) then
+     else if(In%r8_type%is_allocated) then
         if (allocated(In%r8_type%data         )) Out%r8_type%data          =  In%r8_type%data
         if (allocated(In%r8_type%pmon_pyear   )) Out%r8_type%pmon_pyear    =  In%r8_type%pmon_pyear
         if (allocated(In%r8_type%pmon_nyear   )) Out%r8_type%pmon_nyear    =  In%r8_type%pmon_nyear
@@ -468,12 +469,12 @@ type(interpolate_type), intent(inout) :: Out
      if (allocated(In%climatology  )) Out%climatology   =  In%climatology
      if (allocated(In%clim_times   )) Out%clim_times    =  In%clim_times
      Out%separate_time_vary_calc = In%separate_time_vary_calc
-     if(In%is_r4) then
+     if(In%r4_type%is_allocated) then
         Out%r4_type%tweight  = In%r4_type%tweight
         Out%r4_type%tweight1 = In%r4_type%tweight1
         Out%r4_type%tweight2 = In%r4_type%tweight2
         Out%r4_type%tweight3 = In%r4_type%tweight3
-     else if(In%is_r8) then
+     else if(In%r8_type%is_allocated) then
         Out%r8_type%tweight  = In%r8_type%tweight
         Out%r8_type%tweight1 = In%r8_type%tweight1
         Out%r8_type%tweight2 = In%r8_type%tweight2
@@ -482,8 +483,8 @@ type(interpolate_type), intent(inout) :: Out
      Out%itaum = In%itaum
      Out%itaup = In%itaup
 
-     Out%is_r4=In%is_r4
-     Out%is_r8=Out%is_r8
+     Out%r4_type%is_allocated = In%r4_type%is_allocated
+     Out%r8_type%is_allocated = Out%r8_type%is_allocated
 
 end subroutine interpolate_type_eq
 
@@ -565,8 +566,8 @@ integer :: axes(2),nxd,nyd,ndivs,i
 type(domain2d) :: domain
 integer :: domain_layout(2), iscomp, iecomp,jscomp,jecomp
 
-if(clim_type%is_r4) call init_clim_diag_r4(clim_type, mod_axes, init_time)
-if(clim_type%is_r8) call init_clim_diag_r8(clim_type, mod_axes, init_time)
+if(clim_type%r4_type%is_allocated) call init_clim_diag_r4(clim_type, mod_axes, init_time)
+if(clim_type%r8_type%is_allocated) call init_clim_diag_r8(clim_type, mod_axes, init_time)
 
 end subroutine init_clim_diag
 
@@ -615,8 +616,8 @@ integer :: indexm, indexp, yearm, yearp
 integer :: i, n
 character(len=256) :: err_msg
 
-if(clim_type%is_r4) call obtain_interpolator_time_slices_r4(clim_type, Time)
-if(clim_type%is_r8) call obtain_interpolator_time_slices_r8(clim_type, Time)
+if(clim_type%r4_type%is_allocated) call obtain_interpolator_time_slices_r4(clim_type, Time)
+if(clim_type%r8_type%is_allocated) call obtain_interpolator_time_slices_r8(clim_type, Time)
 
 
 end subroutine obtain_interpolator_time_slices
@@ -661,7 +662,7 @@ if ( mpp_pe() == mpp_root_pe() ) then
    write (logunit,'(/,(a))') 'Exiting interpolator, have a nice day ...'
 end if
 
-if(clim_type%is_r4) then
+if(clim_type%r4_type%is_allocated) then
    if (allocated (clim_type%r4_type%lat     )) deallocate(clim_type%r4_type%lat)
    if (allocated (clim_type%r4_type%lon     )) deallocate(clim_type%r4_type%lon)
    if (allocated (clim_type%r4_type%latb    )) deallocate(clim_type%r4_type%latb)
@@ -669,7 +670,7 @@ if(clim_type%is_r4) then
    if (allocated (clim_type%r4_type%levs    )) deallocate(clim_type%r4_type%levs)
    if (allocated (clim_type%r4_type%halflevs)) deallocate(clim_type%r4_type%halflevs)
    if (allocated (clim_type%r4_type%data))     deallocate(clim_type%r4_type%data)
-else if(clim_type%is_r8) then
+else if(clim_type%r8_type%is_allocated) then
    if (allocated (clim_type%r8_type%lat     )) deallocate(clim_type%r8_type%lat)
    if (allocated (clim_type%r8_type%lon     )) deallocate(clim_type%r8_type%lon)
    if (allocated (clim_type%r8_type%latb    )) deallocate(clim_type%r8_type%latb)
@@ -693,14 +694,14 @@ if (allocated(clim_type%climatology)) deallocate(clim_type%climatology)
 
 call horiz_interp_del(clim_type%interph)
 
-if(clim_type%is_r4) then
+if(clim_type%r4_type%is_allocated) then
    if (allocated(clim_type%r4_type%pmon_pyear)) then
       deallocate(clim_type%r4_type%pmon_pyear)
       deallocate(clim_type%r4_type%pmon_nyear)
       deallocate(clim_type%r4_type%nmon_nyear)
       deallocate(clim_type%r4_type%nmon_pyear)
    end if
-else if(clim_type%is_r8) then
+else if(clim_type%r8_type%is_allocated) then
    if (allocated(clim_type%r8_type%pmon_pyear)) then
       deallocate(clim_type%r8_type%pmon_pyear)
       deallocate(clim_type%r8_type%pmon_nyear)
@@ -709,8 +710,8 @@ else if(clim_type%is_r8) then
    end if
 endif
 
-clim_type%is_r4=.false.
-clim_type%is_r8=.false.
+clim_type%r4_type%is_allocated=.false.
+clim_type%r8_type%is_allocated=.false.
 
 !! RSH mod
 if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &
