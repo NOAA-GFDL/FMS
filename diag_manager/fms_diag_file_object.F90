@@ -1122,18 +1122,19 @@ end subroutine write_time_metadata
 
 !> \brief Write out the field data to the file
 subroutine write_field_data(this, field_obj, buffer_obj)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
-  type(fmsDiagField_type),                 intent(in), target :: field_obj(:)
-  type(fmsDiagOutputBufferContainer_type), intent(in), target :: buffer_obj(:)
+  class(fmsDiagFileContainer_type),        intent(in), target :: this           !< The diag file object to write to
+  type(fmsDiagField_type),                 intent(in), target :: field_obj(:)   !< The field object to write from
+  type(fmsDiagOutputBufferContainer_type), intent(in), target :: buffer_obj(:)  !< The buffer object with the data
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fileobj        !< Fileobj to write to
   integer                              :: i              !< For do loops
-  integer                              :: field_id       !< The id of the field writing the data to
+  integer                              :: field_id       !< The id of the field writing the data from
 
   diag_file => this%FMS_diag_file
   fileobj => diag_file%fileobj
 
+  !TODO This may be offloaded in the future
   if (diag_file%is_static) then
     !< Here the file is static so there is no need for the unlimited dimension
     !! as a variables are static

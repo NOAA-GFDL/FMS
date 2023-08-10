@@ -1517,6 +1517,9 @@ subroutine write_buffer(this, fileobj, unlim_dim_level)
     call this%write_buffer_wrapper_domain(fileobj, unlim_dim_level=unlim_dim_level)
   type is (FmsNetcdfUnstructuredDomainFile_t)
     call this%write_buffer_wrapper_u(fileobj, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The file "//trim(fileobj%path)//" is not one of the accepted types"//&
+      " only FmsNetcdfFile_t, FmsNetcdfDomainFile_t, and FmsNetcdfUnstructuredDomainFile_t are accepted.")
   end select
 end subroutine write_buffer
 
@@ -1542,8 +1545,11 @@ subroutine write_buffer_wrapper_netcdf(this, fileobj, unlim_dim_level)
     call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   type is (outputBuffer5d_type)
     call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The field:"//trim(varname)//" does not have a valid buffer object type."//&
+      " Only 0d, 1d, 2d, 3d, 4d, and 5d buffers are supported.")
   end select
-end subroutine
+end subroutine write_buffer_wrapper_netcdf
 
 !> @brief Write the buffer to the FmsNetcdfDomainFile_t fileobj
 subroutine write_buffer_wrapper_domain(this, fileobj, unlim_dim_level)
@@ -1567,8 +1573,11 @@ subroutine write_buffer_wrapper_domain(this, fileobj, unlim_dim_level)
     call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   type is (outputBuffer5d_type)
     call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The field:"//trim(varname)//" does not have a valid buffer object type."//&
+      " Only 0d, 1d, 2d, 3d, 4d, and 5d buffers are supported.")
   end select
-end subroutine
+end subroutine write_buffer_wrapper_domain
 
 !> @brief Write the buffer to the FmsNetcdfUnstructuredDomainFile_t fileobj
 subroutine write_buffer_wrapper_u(this, fileobj, unlim_dim_level)
@@ -1592,7 +1601,10 @@ subroutine write_buffer_wrapper_u(this, fileobj, unlim_dim_level)
     call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
   type is (outputBuffer5d_type)
     call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The field:"//trim(varname)//" does not have a valid buffer object type."//&
+      " Only 0d, 1d, 2d, 3d, 4d, and 5d buffers are supported.")
   end select
-end subroutine
+end subroutine write_buffer_wrapper_u
 #endif
 end module fms_diag_output_buffer_mod
