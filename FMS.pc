@@ -36,6 +36,6 @@ Description: The Flexible Modeling System Infrastructure Library
 URL: https://www.gfdl.noaa.gov/fms
 Version: 2023.01.00-dev
 Libs: -L$(libdir) -lFMS
-Libs.private: -lnetcdff 
+Libs.private: -lnetcdff
 Cflags: -I${includedir}
 Fflags: -I${includedir}
