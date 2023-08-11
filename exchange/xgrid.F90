@@ -2641,7 +2641,7 @@ subroutine set_comm_put1(xmap)
   integer,       allocatable :: iarray(:), jarray(:), tarray(:)
   integer,       allocatable :: pos_x(:), pelist(:), size_pe(:), pe_put1(:)
   integer                    :: recv_buffer_pos(0:xmap%npes)
-  
+
   type(comm_type), pointer, save :: comm => NULL()
 
 
@@ -3427,7 +3427,7 @@ end subroutine get_side2_from_xgrid
 subroutine some(xmap, some_arr, grid_id)
   type (xmap_type),           intent(in)  :: xmap
   character(len=3), optional, intent(in)  :: grid_id
-  logical, dimension(:),      intent(out) :: some_arr !< logical associating exchange 
+  logical, dimension(:),      intent(out) :: some_arr !< logical associating exchange
                                                       !! grid cells with given side 2 grid.
   integer :: g
 
