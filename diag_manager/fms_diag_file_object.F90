@@ -1200,7 +1200,7 @@ subroutine write_time_data(this)
                     (/T1, T2/), unlim_dim_level=diag_file%unlim_dimension_level)
 
     if (diag_file%unlim_dimension_level .eq. 1) then
-      call write_data(fileobj, "nv", (/1, 2/))
+      call write_data(fms2io_fileobj, "nv", (/1, 2/))
     endif
   endif
 
