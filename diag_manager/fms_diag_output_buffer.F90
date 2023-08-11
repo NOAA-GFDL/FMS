@@ -43,7 +43,8 @@ type, abstract :: fmsDiagOutputBuffer_class
   integer, allocatable, public :: num_elements(:) !< used in time-averaging
   class(*), allocatable, public :: count_0d(:) !< used in time-averaging along with
                                        !! counter which is stored in the child types (bufferNd)
-                                       !! Always allocated to a real type since its used for weights
+                                       !! Always allocated to a real type because it is used in a calculation
+                                       !! with the variable weights
   integer(i4_kind), public :: buffer_type !<set to allocated data type & kind value, one of i4,i8,r4,r8
   integer, allocatable, public :: buffer_dims(:) !< holds the size of each dimension in the buffer
   contains
@@ -81,7 +82,8 @@ type, extends(fmsDiagOutputBuffer_class) :: outputBuffer0d_type
   class(*), allocatable :: buffer(:) !< "scalar" numeric buffer value
                                      !! will only be allocated to hold 1 value
   class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
-                                      !! Always allocated to a real type since its used for weights
+                                      !! Always allocated to a real type because it is used in a calculation
+                                      !! with the variable weights
   contains
   procedure :: allocate_buffer => allocate_buffer_0d
   procedure :: initialize_buffer => initialize_buffer_0d
@@ -94,7 +96,8 @@ end type outputBuffer0d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer1d_type
   class(*), allocatable :: buffer(:) !< 1D numeric data array
   class(*), allocatable :: counter(:) !< (x,y,z, time-of-day) used in the time averaging functions
-                                      !! Always allocated to a real type since its used for weights
+                                      !! Always allocated to a real type because it is used in a calculation
+                                      !! with the variable weights
   contains
   procedure :: allocate_buffer => allocate_buffer_1d
   procedure :: initialize_buffer => initialize_buffer_1d
@@ -106,7 +109,8 @@ end type outputBuffer1d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer2d_type
   class(*), allocatable :: buffer(:,:) !< 2D numeric data array
   class(*), allocatable :: counter(:,:) !< (x,y,z, time-of-day) used in the time averaging functions
-                                      !! Always allocated to a real type since its used for weights
+                                      !! Always allocated to a real type because it is used in a calculation
+                                      !! with the variable weights
   contains
   procedure :: allocate_buffer => allocate_buffer_2d
   procedure :: initialize_buffer => initialize_buffer_2d
@@ -118,7 +122,8 @@ end type outputBuffer2d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer3d_type
   class(*), allocatable :: buffer(:,:,:) !< 3D numeric data array
   class(*), allocatable :: counter(:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
-                                          !! Always allocated to a real type since its used for weights
+                                          !! Always allocated to a real type because it is used in a calculation
+                                          !! with the variable weights
   contains
   procedure :: allocate_buffer => allocate_buffer_3d
   procedure :: initialize_buffer => initialize_buffer_3d
@@ -130,7 +135,8 @@ end type outputBuffer3d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer4d_type
   class(*), allocatable :: buffer(:,:,:,:) !< 4D numeric data array
   class(*), allocatable :: counter(:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
-                                            !! Always allocated to a real type since its used for weights
+                                            !! Always allocated to a real type because it is used in a calculation
+                                            !! with the variable weights
   contains
   procedure :: allocate_buffer => allocate_buffer_4d
   procedure :: initialize_buffer => initialize_buffer_4d
@@ -142,7 +148,8 @@ end type outputBuffer4d_type
 type, extends(fmsDiagOutputBuffer_class) :: outputBuffer5d_type
   class(*), allocatable :: buffer(:,:,:,:,:) !< 5D numeric data array
   class(*), allocatable :: counter(:,:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
-                                              !! Always allocated to a real type since its used for weights
+                                              !! Always allocated to a real type because it is used in a calculation
+                                              !! with the variable weights
   contains
   procedure :: allocate_buffer => allocate_buffer_5d
   procedure :: initialize_buffer => initialize_buffer_5d
@@ -225,22 +232,25 @@ function remap_buffer(buffobj, field_name, file_name, has_diurnal_axis)
   class(fmsDiagOutputBuffer_class), target, intent(inout) :: buffobj !< any dimension buffer object
   class(*), pointer                                 :: remap_buffer(:,:,:,:,:)
   character(len=*), intent(in)                      :: field_name !< name of field for error output
-  character(len=*), intent(in)                      :: file_name !< name of field for error output
+  character(len=*), intent(in)                      :: file_name !< name of file for error output
   logical, intent(in) :: has_diurnal_axis !< true if the buffer has diurnal axis
 
   ! get num dimensions from type extension
   select type (buffobj)
     type is (outputBuffer0d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name // "in file:" // file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 "in file:" // trim(file_name))
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer
     type is (outputBuffer1d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name // "in file:" // file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 "in file:" // trim(file_name))
       remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:1) => buffobj%buffer(1:size(buffobj%buffer,1))
     type is (outputBuffer2d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name // "in file:" // file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 "in file:" //trim(file_name))
       if (has_diurnal_axis) then
         remap_buffer(1:size(buffobj%buffer,1), 1:1, 1:1, 1:1, 1:size(buffobj%buffer,2)) => buffobj%buffer(:,:)
       else
@@ -248,7 +258,8 @@ function remap_buffer(buffobj, field_name, file_name, has_diurnal_axis)
       end if
     type is (outputBuffer3d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name // "in file:" // file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 "in file:" // trim(file_name))
       if (has_diurnal_axis) then
         remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:1, 1:1, &
           1:size(buffobj%buffer,3)) => buffobj%buffer(:,:,:)
@@ -258,7 +269,8 @@ function remap_buffer(buffobj, field_name, file_name, has_diurnal_axis)
       end if
     type is (outputBuffer4d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name // "in file:" // file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 "in file:" // trim(file_name))
       if (has_diurnal_axis) then
         remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                   1:1, 1:size(buffobj%buffer,4)) => buffobj%buffer(:,:,:,:)
@@ -268,7 +280,8 @@ function remap_buffer(buffobj, field_name, file_name, has_diurnal_axis)
       end if
     type is (outputBuffer5d_type)
       if (.not. allocated(buffobj%buffer)) call mpp_error(FATAL, "remap_buffer: buffer data not yet allocated" // &
-                                                                 "for field:" // field_name // "in file:" // file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 "in file:" // trim(file_name))
       remap_buffer(1:size(buffobj%buffer,1), 1:size(buffobj%buffer,2), 1:size(buffobj%buffer,3), &
                    1:size(buffobj%buffer,4), 1:size(buffobj%buffer,5)) => buffobj%buffer(:,:,:,:,:)
     class default
@@ -283,25 +296,25 @@ function remap_counter(buffobj, field_name, file_name, has_diurnal_axis)
   class(fmsDiagOutputBuffer_class), target, intent(inout) :: buffobj !< any dimension buffer object
   class(*), pointer                                 :: remap_counter(:,:,:,:,:)
   character(len=*), intent(in)                      :: field_name !< name of field for error output
-  character(len=*), intent(in)                      :: file_name !< name of field for error output
+  character(len=*), intent(in)                      :: file_name !< name of file for error output
   logical, intent(in) :: has_diurnal_axis !< true if the buffer has diurnal axis
 
   ! get num dimensions from type extension
   select type (buffobj)
     type is (outputBuffer0d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name // " in file:" // &
-                                                                 file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 " in file:" // trim(file_name))
       remap_counter(1:size(buffobj%counter,1), 1:1, 1:1, 1:1, 1:1) => buffobj%counter
     type is (outputBuffer1d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name// " in file:" // &
-                                                                 file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 " in file:" // trim(file_name))
       remap_counter(1:size(buffobj%counter,1), 1:1, 1:1, 1:1, 1:1) => buffobj%counter(1:size(buffobj%counter,1))
     type is (outputBuffer2d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name// " in file:" // &
-                                                                  file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 " in file:" // trim(file_name))
       if (has_diurnal_axis) then
         remap_counter(1:size(buffobj%counter,1), 1:1, 1:1, 1:1, 1:size(buffobj%counter,2)) => buffobj%counter(:,:)
       else
@@ -309,8 +322,8 @@ function remap_counter(buffobj, field_name, file_name, has_diurnal_axis)
       end if
     type is (outputBuffer3d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name// " in file:" // &
-                                                                 file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 " in file:" // trim(file_name))
       if (has_diurnal_axis) then
         remap_counter(1:size(buffobj%counter,1), 1:size(buffobj%counter,2), 1:1, 1:1, &
           1:size(buffobj%counter,3)) => buffobj%counter(:,:,:)
@@ -320,8 +333,8 @@ function remap_counter(buffobj, field_name, file_name, has_diurnal_axis)
       end if
     type is (outputBuffer4d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                  "for field:" // field_name// " in file:" // &
-                                                                  file_name)
+                                                                  "for field:" // trim(field_name) // &
+                                                                  " in file:" //  trim(file_name))
       if (has_diurnal_axis) then
         remap_counter(1:size(buffobj%counter,1), 1:size(buffobj%counter,2), 1:size(buffobj%counter,3), &
                   1:1, 1:size(buffobj%counter,4)) => buffobj%counter(:,:,:,:)
@@ -331,8 +344,8 @@ function remap_counter(buffobj, field_name, file_name, has_diurnal_axis)
       end if
     type is (outputBuffer5d_type)
       if (.not. allocated(buffobj%counter)) call mpp_error(FATAL, "remap_counter: counter data not yet allocated" // &
-                                                                 "for field:" // field_name// " in file:" // &
-                                                                  file_name)
+                                                                 "for field:" // trim(field_name) // &
+                                                                 " in file:" // trim(file_name))
       remap_counter(1:size(buffobj%counter,1), 1:size(buffobj%counter,2), 1:size(buffobj%counter,3), &
                    1:size(buffobj%counter,4), 1:size(buffobj%counter,5)) => buffobj%counter(:,:,:,:,:)
     class default
