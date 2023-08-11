@@ -227,7 +227,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
   do i = 1, size(fieldptr%buffer_ids)
     call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_field_id(this%registered_variables)
-    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_yaml_id(diag_field_indices(i))
+    call this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))%set_yaml_id(fieldptr%buffer_ids(i))
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
@@ -719,7 +719,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
     if (diag_file%is_time_to_write(model_time)) then
       call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
-      !TODO call diag_file%add_variable_data()
+      call diag_file%write_field_data(this%FMS_diag_fields, this%FMS_diag_output_buffers)
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
