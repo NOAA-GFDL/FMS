@@ -54,9 +54,9 @@
     if (present(bc_index)) then
       if (bc_index > var%num_bcs)&
           & call mpp_error(FATAL, "CT_rescale_data_2d: bc_index is present and exceeds var%num_bcs.")
-      if (present(field_index)) then ; if (field_index > var%bc(bc_index)%num_fields)&
+      if (present(field_index)) then ; if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
           & call mpp_error(FATAL, "CT_rescale_data_2d: field_index is present and exceeds num_fields for" //&
-          & trim(var%bc(bc_index)%name) )
+          & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
       endif
     elseif (present(field_index)) then
       call mpp_error(FATAL, "CT_rescale_data_2d: bc_index must be present if field_index is present.")
@@ -83,32 +83,32 @@
     do n = n1, n2
       do_bc = .true.
       if (do_bc .and. present(exclude_flux_type))&
-          & do_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+          & do_bc = .not.(trim(var%FMS_CP_BC_TYPE_(n)%flux_type) == trim(exclude_flux_type))
       if (do_bc .and. present(only_flux_type))&
-          & do_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+          & do_bc = (trim(var%FMS_CP_BC_TYPE_(n)%flux_type) == trim(only_flux_type))
       if (do_bc .and. present(pass_through_ice))&
-          & do_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+          & do_bc = (pass_through_ice .eqv. var%FMS_CP_BC_TYPE_(n)%pass_through_ice)
       if (.not.do_bc) cycle
 
-      do m = 1, var%bc(n)%num_fields
+      do m = 1, var%FMS_CP_BC_TYPE_(n)%num_fields
         if (present(field_index)) then
           if (m /= field_index) cycle
         endif
-        if ( associated(var%bc(n)%field(m)%values) ) then
+        if ( associated(var%FMS_CP_BC_TYPE_(n)%field(m)%values) ) then
           if (scale == 0.0) then
             if (present(halo_size)) then
               do j=var%jsc-halo,var%jec+halo
                 do i=var%isc-halo,var%iec+halo
-                  var%bc(n)%field(m)%values(i,j) = 0.0
+                  var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j) = 0.0
                 enddo
               enddo
             else
-              var%bc(n)%field(m)%values(:,:) = 0.0
+              var%FMS_CP_BC_TYPE_(n)%field(m)%values(:,:) = 0.0
             endif
           else
             do j=var%jsc-halo,var%jec+halo
               do i=var%isc-halo,var%iec+halo
-                var%bc(n)%field(m)%values(i,j) = scale * var%bc(n)%field(m)%values(i,j)
+                var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j) = scale * var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j)
               enddo
             enddo
           endif
@@ -144,9 +144,9 @@
     if (present(bc_index)) then
       if (bc_index > var%num_bcs)&
           & call mpp_error(FATAL, "CT_rescale_data_2d: bc_index is present and exceeds var%num_bcs.")
-      if (present(field_index)) then ; if (field_index > var%bc(bc_index)%num_fields)&
+      if (present(field_index)) then ; if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
           & call mpp_error(FATAL, "CT_rescale_data_2d: field_index is present and exceeds num_fields for" //&
-          & trim(var%bc(bc_index)%name) )
+          & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
       endif
     elseif (present(field_index)) then
       call mpp_error(FATAL, "CT_rescale_data_2d: bc_index must be present if field_index is present.")
@@ -173,35 +173,35 @@
     do n = n1, n2
       do_bc = .true.
       if (do_bc .and. present(exclude_flux_type))&
-          & do_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+          & do_bc = .not.(trim(var%FMS_CP_BC_TYPE_(n)%flux_type) == trim(exclude_flux_type))
       if (do_bc .and. present(only_flux_type))&
-          & do_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+          & do_bc = (trim(var%FMS_CP_BC_TYPE_(n)%flux_type) == trim(only_flux_type))
       if (do_bc .and. present(pass_through_ice))&
-          & do_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+          & do_bc = (pass_through_ice .eqv. var%FMS_CP_BC_TYPE_(n)%pass_through_ice)
       if (.not.do_bc) cycle
 
-      do m = 1, var%bc(n)%num_fields
+      do m = 1, var%FMS_CP_BC_TYPE_(n)%num_fields
         if (present(field_index)) then
           if (m /= field_index) cycle
         endif
-        if ( associated(var%bc(n)%field(m)%values) ) then
+        if ( associated(var%FMS_CP_BC_TYPE_(n)%field(m)%values) ) then
           if (scale == 0.0) then
             if (present(halo_size)) then
               do k=var%ks,var%ke
                 do j=var%jsc-halo,var%jec+halo
                   do i=var%isc-halo,var%iec+halo
-                    var%bc(n)%field(m)%values(i,j,k) = 0.0
+                    var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j,k) = 0.0
                   enddo
                 enddo
               enddo
             else
-              var%bc(n)%field(m)%values(:,:,:) = 0.0
+              var%FMS_CP_BC_TYPE_(n)%field(m)%values(:,:,:) = 0.0
             endif
           else
             do k=var%ks,var%ke
               do j=var%jsc-halo,var%jec+halo
                 do i=var%isc-halo,var%iec+halo
-                  var%bc(n)%field(m)%values(i,j,k) = scale * var%bc(n)%field(m)%values(i,j,k)
+                  var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j,k) = scale * var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j,k)
                 enddo
               enddo
             enddo
@@ -219,7 +219,7 @@
   !! normalized weight array must match the array sizes of the coupler_3d_bc_type.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
   !! @throw FATAL, "bc_index must be present if field_index is present."
   !! @throw FATAL, "There is an i-direction computational domain size mismatch."
   !! @throw FATAL, "There is an j-direction computational domain size mismatch."
@@ -263,9 +263,9 @@
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
           & call mpp_error(FATAL, "CT_increment_data_2d_3d: bc_index is present and exceeds var_in%num_bcs.")
-      if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields)&
+      if (present(field_index)) then ; if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
           & call mpp_error(FATAL, "CT_increment_data_2d_3d: field_index is present and exceeds num_fields for" //&
-          & trim(var_in%bc(bc_index)%name) )
+          & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
       endif
     elseif (present(field_index)) then
       call mpp_error(FATAL, "CT_increment_data_2d_3d: bc_index must be present if field_index is present.")
@@ -330,23 +330,23 @@
     do n = n1, n2
       increment_bc = .true.
       if (increment_bc .and. present(exclude_flux_type))&
-          & increment_bc = .not.(trim(var_in%bc(n)%flux_type) == trim(exclude_flux_type))
+          & increment_bc = .not.(trim(var_in%FMS_CP_BC_TYPE_(n)%flux_type) == trim(exclude_flux_type))
       if (increment_bc .and. present(only_flux_type))&
-          & increment_bc = (trim(var_in%bc(n)%flux_type) == trim(only_flux_type))
+          & increment_bc = (trim(var_in%FMS_CP_BC_TYPE_(n)%flux_type) == trim(only_flux_type))
       if (increment_bc .and. present(pass_through_ice))&
-          & increment_bc = (pass_through_ice .eqv. var_in%bc(n)%pass_through_ice)
+          & increment_bc = (pass_through_ice .eqv. var_in%FMS_CP_BC_TYPE_(n)%pass_through_ice)
       if (.not.increment_bc) cycle
 
-      do m = 1, var_in%bc(n)%num_fields
+      do m = 1, var_in%FMS_CP_BC_TYPE_(n)%num_fields
         if (present(field_index)) then
           if (m /= field_index) cycle
         endif
-        if ( associated(var%bc(n)%field(m)%values) ) then
+        if ( associated(var%FMS_CP_BC_TYPE_(n)%field(m)%values) ) then
           do k=var_in%ks,var_in%ke
             do j=var%jsc-halo,var%jec+halo
               do i=var%isc-halo,var%iec+halo
-                var%bc(n)%field(m)%values(i,j) = sc_prev * var%bc(n)%field(m)%values(i,j) +&
-                    & (scale * weights(i+iow,j+jow,k+kow)) * var_in%bc(n)%field(m)%values(i+io1,j+io1,k)
+                var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j) = sc_prev * var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j) +&
+                    & (scale * weights(i+iow,j+jow,k+kow)) * var_in%FMS_CP_BC_TYPE_(n)%field(m)%values(i+io1,j+io1,k)
               enddo
             enddo
           enddo
@@ -360,7 +360,7 @@
   !! Extract a single 2-d field from a coupler_2d_bc_type into a two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -414,9 +414,9 @@
 
     if (bc_index > var_in%num_bcs)&
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
-    if (field_index > var_in%bc(bc_index)%num_fields)&
+    if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%bc(bc_index)%name) )
+        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -486,7 +486,7 @@
 
     do j=var_in%jsc-halo,var_in%jec+halo
       do i=var_in%isc-halo,var_in%iec+halo
-        array_out(i+i_off,j+j_off) = scale * var_in%bc(bc_index)%field(field_index)%values(i,j)
+        array_out(i+i_off,j+j_off) = scale * var_in%FMS_CP_BC_TYPE_(bc_index)%field(field_index)%values(i,j)
       enddo
     enddo
   end subroutine CT_EXTRACT_DATA_2D_
@@ -496,7 +496,7 @@
   !! Extract a single k-level of a 3-d field from a coupler_3d_bc_type into a two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -551,9 +551,9 @@
 
     if (bc_index > var_in%num_bcs)&
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
-    if (field_index > var_in%bc(bc_index)%num_fields)&
+    if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%bc(bc_index)%name) )
+        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -629,7 +629,7 @@
 
     do j=var_in%jsc-halo,var_in%jec+halo
       do i=var_in%isc-halo,var_in%iec+halo
-        array_out(i+i_off,j+j_off) = scale * var_in%bc(bc_index)%field(field_index)%values(i,j,k_in)
+        array_out(i+i_off,j+j_off) = scale * var_in%FMS_CP_BC_TYPE_(bc_index)%field(field_index)%values(i,j,k_in)
       enddo
     enddo
   end subroutine CT_EXTRACT_DATA_3D_2D_
@@ -639,7 +639,7 @@
   !! Extract a single 3-d field from a coupler_3d_bc_type into a three-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -694,9 +694,9 @@
 
     if (bc_index > var_in%num_bcs)&
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
-    if (field_index > var_in%bc(bc_index)%num_fields)&
+    if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%bc(bc_index)%name) )
+        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -775,7 +775,7 @@
     do k=var_in%ks,var_in%ke
       do j=var_in%jsc-halo,var_in%jec+halo
         do i=var_in%isc-halo,var_in%iec+halo
-          array_out(i+i_off,j+j_off,k+k_off) = scale * var_in%bc(bc_index)%field(field_index)%values(i,j,k)
+          array_out(i+i_off,j+j_off,k+k_off) = scale * var_in%FMS_CP_BC_TYPE_(bc_index)%field(field_index)%values(i,j,k)
         enddo
       enddo
     enddo
@@ -786,7 +786,7 @@
   !! Set a single 2-d field in a coupler_3d_bc_type from a two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -836,9 +836,9 @@
 
     if (bc_index > var%num_bcs) &
         call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var%num_bcs.")
-    if (field_index > var%bc(bc_index)%num_fields)&
+    if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var%bc(bc_index)%name) )
+        & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -908,7 +908,7 @@
 
     do j=var%jsc-halo,var%jec+halo
       do i=var%isc-halo,var%iec+halo
-        var%bc(bc_index)%field(field_index)%values(i,j) = scale * array_in(i+i_off,j+j_off)
+        var%FMS_CP_BC_TYPE_(bc_index)%field(field_index)%values(i,j) = scale * array_in(i+i_off,j+j_off)
       enddo
     enddo
   end subroutine CT_SET_DATA_2D_
@@ -919,7 +919,7 @@
   !! two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -972,9 +972,9 @@
 
     if (bc_index > var%num_bcs)&
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var%num_bcs.")
-    if (field_index > var%bc(bc_index)%num_fields)&
+    if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var%bc(bc_index)%name) )
+        & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -1050,7 +1050,7 @@
 
     do j=var%jsc-halo,var%jec+halo
       do i=var%isc-halo,var%iec+halo
-        var%bc(bc_index)%field(field_index)%values(i,j,k_out) = scale * array_in(i+i_off,j+j_off)
+        var%FMS_CP_BC_TYPE_(bc_index)%field(field_index)%values(i,j,k_out) = scale * array_in(i+i_off,j+j_off)
       enddo
     enddo
   end subroutine CT_SET_DATA_2D_3D_
@@ -1060,7 +1060,7 @@
   !! This subroutine sets a single 3-d field in a coupler_3d_bc_type from a three-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%bc(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -1112,9 +1112,9 @@
 
     if (bc_index > var%num_bcs)&
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var%num_bcs.")
-    if (field_index > var%bc(bc_index)%num_fields)&
+    if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var%bc(bc_index)%name) )
+        & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -1193,7 +1193,7 @@
     do k=var%ks,var%ke
       do j=var%jsc-halo,var%jec+halo
         do i=var%isc-halo,var%iec+halo
-          var%bc(bc_index)%field(field_index)%values(i,j,k) = scale * array_in(i+i_off,j+j_off,k+k_off)
+          var%FMS_CP_BC_TYPE_(bc_index)%field(field_index)%values(i,j,k) = scale * array_in(i+i_off,j+j_off,k+k_off)
         enddo
       enddo
     enddo

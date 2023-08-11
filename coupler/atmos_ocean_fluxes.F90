@@ -34,8 +34,6 @@
 !! surface fluxes. Additionally, data may be overridden at
 !! the individual fields, or fluxes. This could be used in
 !! the absence of an atmospheric or oceanic model.
-!!
-!! http://ocmip5.ipsl.fr/documentation/OCMIP/phase2/simulations/Biotic/HOWTO-Biotic.html
 
 !> @addtogroup atmos_ocean_fluxes_mod
 !> @{
@@ -119,9 +117,9 @@ contains
     character(len=*), intent(in)                :: flux_type !< flux_type
     character(len=*), intent(in)                :: implementation !< implementation
     integer, intent(in), optional               :: atm_tr_index !< atm_tr_index
-    real, intent(in), dimension(:), optional    :: param !< param
+    real(r8_kind), intent(in), dimension(:), optional    :: param !< param
     logical, intent(in), dimension(:), optional :: flag !< flag
-    real, intent(in), optional                  :: mol_wt !< mol_wt
+    real(r8_kind), intent(in), optional                  :: mol_wt !< mol_wt
     character(len=*), intent(in), optional      :: ice_restart_file !< ice_restart_file
     character(len=*), intent(in), optional      :: ocean_restart_file !< ocean_restart_file
     character(len=*), intent(in), optional      :: units !< units
@@ -401,7 +399,8 @@ contains
     return
   end function aof_set_coupler_flux
 
-  !> @brief Initialize gas flux structures
+  !> @brief Initialize gas flux structures.
+  !!Will allocate to r8_kind unless use_r4_kind is present and true.
   !! @throw FATAL, "Could not get number of fluxes"
   !!     Number of gas fluxes is not a valid number
   !! @throw NOTE, "No gas fluxes"
@@ -425,7 +424,7 @@ contains
   !! @throw FATAL, "Num_flags is negative for [name]: [num_flags]"
   !! @throw FATAL, "Problem dumping fluxes tracer tree"
   !! @throw FATAL, "Number of fluxes does not match across the processors: [gas_fluxes%num_bcs] fluxes"
-  subroutine atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, verbosity)
+  subroutine atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, verbosity, use_r4_kind)
 
     type(coupler_1d_bc_type), intent(inout) :: gas_fluxes !< Structure containing the gas fluxes between
                                                           !! the atmosphere and the ocean and parameters
@@ -443,6 +442,9 @@ contains
                                                           !! The properties stored in this type are set
                                                           !! here, but the actual value arrays are set later.
     integer,        optional, intent(in)    :: verbosity  !< A 0-9 integer indicating a level of verbosity.
+    logical, optional, intent(in)           :: use_r4_kind!< Allocate field data to r4 kind instead of r8 kind.
+                                                          !! Defaults to r8_kind if not present.
+    logical                                 :: use_r4_kind_loc = .false.
 
     character(len=*), parameter    :: sub_name = 'atmos_ocean_fluxes_init'
     character(len=*), parameter   :: error_header =&
@@ -511,10 +513,18 @@ contains
           write (outunit,*) trim(note_header), ' Processing ', gas_fluxes%num_bcs, ' gas fluxes'
     endif
 
-    ! allocate the arrays
-    allocate (gas_fluxes%bc(gas_fluxes%num_bcs))
-    allocate (gas_fields_atm%bc(gas_fields_atm%num_bcs))
-    allocate (gas_fields_ice%bc(gas_fields_ice%num_bcs))
+    if(present(use_r4_kind)) use_r4_kind_loc = use_r4_kind
+
+    ! allocate the arrays for selected kind (default r8)
+    if( .not. use_r4_kind_loc) then
+      allocate (gas_fluxes%bc(gas_fluxes%num_bcs))
+      allocate (gas_fields_atm%bc(gas_fields_atm%num_bcs))
+      allocate (gas_fields_ice%bc(gas_fields_ice%num_bcs))
+    else
+      allocate (gas_fluxes%bc_r4(gas_fluxes%num_bcs))
+      allocate (gas_fields_atm%bc_r4(gas_fields_atm%num_bcs))
+      allocate (gas_fields_ice%bc_r4(gas_fields_ice%num_bcs))
+    endif  
 
     ! Loop over the input fields, setting the values in the flux_type.
     n = 0
@@ -536,172 +546,345 @@ contains
         call mpp_error(FATAL, trim(error_header) // ' Problem changing to ' // trim(name))
       endif
 
-      ! Save and check the flux_type.
-      gas_fluxes%bc(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
-      if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type))) then
-        call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given for ' //&
-            & trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type))
-      endif
-      gas_fields_atm%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
-      gas_fields_ice%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
+      !! mixed precision support
+      !! if use_r4_kind is false or not present will allocate to r8_kind
+      if (.not.use_r4_kind_loc) then
+        ! Save and check the flux_type.
+        gas_fluxes%bc(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
+        if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type))) then
+          call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given for ' //&
+              & trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type))
+        endif
+        gas_fields_atm%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
+        gas_fields_ice%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
 
-      ! Save and check the implementation.
-      gas_fluxes%bc(n)%implementation = fm_util_get_string('implementation', scalar = .true.)
-      if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type) //&
-          & '/implementation/' // trim(gas_fluxes%bc(n)%implementation))) then
-        call mpp_error(FATAL, trim(error_header) // ' Undefined implementation given for ' //&
-            & trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type) // '/implementation/' //&
-            & trim(gas_fluxes%bc(n)%implementation))
-      endif
-      gas_fields_atm%bc(n)%implementation = gas_fluxes%bc(n)%implementation
-      gas_fields_ice%bc(n)%implementation = gas_fluxes%bc(n)%implementation
+        ! Save and check the implementation.
+        gas_fluxes%bc(n)%implementation = fm_util_get_string('implementation', scalar = .true.)
+        if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type) //&
+            & '/implementation/' // trim(gas_fluxes%bc(n)%implementation))) then
+          call mpp_error(FATAL, trim(error_header) // ' Undefined implementation given for ' //&
+              & trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type) // '/implementation/' //&
+              & trim(gas_fluxes%bc(n)%implementation))
+        endif
+        gas_fields_atm%bc(n)%implementation = gas_fluxes%bc(n)%implementation
+        gas_fields_ice%bc(n)%implementation = gas_fluxes%bc(n)%implementation
 
-      ! Set the flux list name.
-      flux_list = '/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type) // '/'
+        ! Set the flux list name.
+        flux_list = '/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type) // '/'
 
-      ! allocate the arrays
-      gas_fluxes%bc(n)%num_fields = fm_util_get_length(trim(flux_list) // 'flux/name')
-      allocate (gas_fluxes%bc(n)%field(gas_fluxes%bc(n)%num_fields))
-      gas_fields_atm%bc(n)%num_fields = fm_util_get_length(trim(flux_list) // 'atm/name')
-      allocate (gas_fields_atm%bc(n)%field(gas_fields_atm%bc(n)%num_fields))
-      gas_fields_ice%bc(n)%num_fields = fm_util_get_length(trim(flux_list) // 'ice/name')
-      allocate (gas_fields_ice%bc(n)%field(gas_fields_ice%bc(n)%num_fields))
+        ! allocate the arrays
+        gas_fluxes%bc(n)%num_fields = fm_util_get_length(trim(flux_list) // 'flux/name')
+        allocate (gas_fluxes%bc(n)%field(gas_fluxes%bc(n)%num_fields))
+        gas_fields_atm%bc(n)%num_fields = fm_util_get_length(trim(flux_list) // 'atm/name')
+        allocate (gas_fields_atm%bc(n)%field(gas_fields_atm%bc(n)%num_fields))
+        gas_fields_ice%bc(n)%num_fields = fm_util_get_length(trim(flux_list) // 'ice/name')
+        allocate (gas_fields_ice%bc(n)%field(gas_fields_ice%bc(n)%num_fields))
 
-      ! Save the name and generate unique field names for Flux, Ice and Atm.
-      gas_fluxes%bc(n)%name = name
-      do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
-        gas_fluxes%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
-            & 'flux/name', index = m)
-        gas_fluxes%bc(n)%field(m)%override = .false.
-        gas_fluxes%bc(n)%field(m)%mean     = .false.
-      enddo
+        ! Save the name and generate unique field names for Flux, Ice and Atm.
+        gas_fluxes%bc(n)%name = name
+        do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
+          gas_fluxes%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+              & 'flux/name', index = m)
+          gas_fluxes%bc(n)%field(m)%override = .false.
+          gas_fluxes%bc(n)%field(m)%mean     = .false.
+        enddo
 
-      gas_fields_atm%bc(n)%name = name
-      do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
-        gas_fields_atm%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
-            & 'atm/name', index = m)
-        gas_fields_atm%bc(n)%field(m)%override = .false.
-        gas_fields_atm%bc(n)%field(m)%mean     = .false.
-      enddo
+        gas_fields_atm%bc(n)%name = name
+        do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
+          gas_fields_atm%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+              & 'atm/name', index = m)
+          gas_fields_atm%bc(n)%field(m)%override = .false.
+          gas_fields_atm%bc(n)%field(m)%mean     = .false.
+        enddo
 
-      gas_fields_ice%bc(n)%name = name
-      do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
-        gas_fields_ice%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) // &
-                                        &  'ice/name', index = m)
-        gas_fields_ice%bc(n)%field(m)%override = .false.
-        gas_fields_ice%bc(n)%field(m)%mean     = .false.
-      enddo
+        gas_fields_ice%bc(n)%name = name
+        do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
+          gas_fields_ice%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) // &
+                                          &  'ice/name', index = m)
+          gas_fields_ice%bc(n)%field(m)%override = .false.
+          gas_fields_ice%bc(n)%field(m)%mean     = .false.
+        enddo
 
-      ! Save the units.
-      do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
-        gas_fluxes%bc(n)%field(m)%units =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
-            &  '-units', scalar = .true.)
-      enddo
-      do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
-        gas_fields_atm%bc(n)%field(m)%units =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-units')
-      enddo
-      do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
-        gas_fields_ice%bc(n)%field(m)%units =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-units')
-      enddo
+        ! Save the units.
+        do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
+          gas_fluxes%bc(n)%field(m)%units =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
+              &  '-units', scalar = .true.)
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
+          gas_fields_atm%bc(n)%field(m)%units =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-units')
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
+          gas_fields_ice%bc(n)%field(m)%units =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-units')
+        enddo
 
-      ! Save the long names.
-      do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
-        gas_fluxes%bc(n)%field(m)%long_name =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
-            &  '-long_name', scalar = .true.)
-        gas_fluxes%bc(n)%field(m)%long_name = trim(gas_fluxes%bc(n)%field(m)%long_name) // ' for ' // name
-      enddo
-      do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
-        gas_fields_atm%bc(n)%field(m)%long_name =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-long_name')
-        gas_fields_atm%bc(n)%field(m)%long_name = trim(gas_fields_atm%bc(n)%field(m)%long_name) // ' for ' // name
-      enddo
-      do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
-        gas_fields_ice%bc(n)%field(m)%long_name =&
-            & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-long_name')
-        gas_fields_ice%bc(n)%field(m)%long_name = trim(gas_fields_ice%bc(n)%field(m)%long_name) // ' for ' // name
-      enddo
+        ! Save the long names.
+        do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
+          gas_fluxes%bc(n)%field(m)%long_name =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
+              &  '-long_name', scalar = .true.)
+          gas_fluxes%bc(n)%field(m)%long_name = trim(gas_fluxes%bc(n)%field(m)%long_name) // ' for ' // name
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
+          gas_fields_atm%bc(n)%field(m)%long_name =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-long_name')
+          gas_fields_atm%bc(n)%field(m)%long_name = trim(gas_fields_atm%bc(n)%field(m)%long_name) // ' for ' // name
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
+          gas_fields_ice%bc(n)%field(m)%long_name =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-long_name')
+          gas_fields_ice%bc(n)%field(m)%long_name = trim(gas_fields_ice%bc(n)%field(m)%long_name) // ' for ' // name
+        enddo
 
-      ! Save the atm_tr_index.
-      gas_fluxes%bc(n)%atm_tr_index = fm_util_get_integer('atm_tr_index', scalar = .true.)
+        ! Save the atm_tr_index.
+        gas_fluxes%bc(n)%atm_tr_index = fm_util_get_integer('atm_tr_index', scalar = .true.)
 
-      ! Save the molecular weight.
-      gas_fluxes%bc(n)%mol_wt = fm_util_get_real('mol_wt', scalar = .true.)
-      gas_fields_atm%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
-      gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
+        ! Save the molecular weight.
+        gas_fluxes%bc(n)%mol_wt = fm_util_get_real('mol_wt', scalar = .true.)
+        gas_fields_atm%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
+        gas_fields_ice%bc(n)%mol_wt = gas_fluxes%bc(n)%mol_wt
 
-      ! Save the ice_restart_file.
-      gas_fluxes%bc(n)%ice_restart_file = fm_util_get_string('ice_restart_file', scalar = .true.)
-      gas_fields_atm%bc(n)%ice_restart_file = gas_fluxes%bc(n)%ice_restart_file
-      gas_fields_ice%bc(n)%ice_restart_file = gas_fluxes%bc(n)%ice_restart_file
+        ! Save the ice_restart_file.
+        gas_fluxes%bc(n)%ice_restart_file = fm_util_get_string('ice_restart_file', scalar = .true.)
+        gas_fields_atm%bc(n)%ice_restart_file = gas_fluxes%bc(n)%ice_restart_file
+        gas_fields_ice%bc(n)%ice_restart_file = gas_fluxes%bc(n)%ice_restart_file
 
-      ! Save the ocean_restart_file.
-      gas_fluxes%bc(n)%ocean_restart_file = fm_util_get_string('ocean_restart_file', scalar = .true.)
-      gas_fields_atm%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
-      gas_fields_ice%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
+        ! Save the ocean_restart_file.
+        gas_fluxes%bc(n)%ocean_restart_file = fm_util_get_string('ocean_restart_file', scalar = .true.)
+        gas_fields_atm%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
+        gas_fields_ice%bc(n)%ocean_restart_file = gas_fluxes%bc(n)%ocean_restart_file
 
-      ! Save the params.
-      gas_fluxes%bc(n)%param => fm_util_get_real_array('param')
+        ! Save the params.
+        gas_fluxes%bc(n)%param => fm_util_get_real_array('param')
 
-      ! Save the flags.
-      gas_fluxes%bc(n)%flag => fm_util_get_logical_array('flag')
+        ! Save the flags.
+        gas_fluxes%bc(n)%flag => fm_util_get_logical_array('flag')
 
-      ! Perform some integrity checks.
-      num_parameters = fm_util_get_integer(trim(flux_list) // 'implementation/' //&
-          & trim(gas_fluxes%bc(n)%implementation) // '/num_parameters', scalar = .true.)
-      if (num_parameters .gt. 0) then
-        if (.not. associated(gas_fluxes%bc(n)%param)) then
-          write (error_string,'(a,i2)') ': need ', num_parameters
-          call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
-        elseif (size(gas_fluxes%bc(n)%param(:)) .ne. num_parameters) then
-          write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%param(:)), ' given, need ', num_parameters
+        ! Perform some integrity checks.
+        num_parameters = fm_util_get_integer(trim(flux_list) // 'implementation/' //&
+            & trim(gas_fluxes%bc(n)%implementation) // '/num_parameters', scalar = .true.)
+        if (num_parameters .gt. 0) then
+          if (.not. associated(gas_fluxes%bc(n)%param)) then
+            write (error_string,'(a,i2)') ': need ', num_parameters
+            call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
+          elseif (size(gas_fluxes%bc(n)%param(:)) .ne. num_parameters) then
+            write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%param(:)), ' given, need ', num_parameters
+            call mpp_error(FATAL, trim(error_header) // &
+                          &  ' Wrong number of param for ' // trim(name) // trim(error_string))
+          endif
+        elseif (num_parameters .eq. 0) then
+          if (associated(gas_fluxes%bc(n)%param)) then
+            write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%param(:))
+            call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(name) // trim(error_string))
+          endif
+        else
+          write (error_string,'(a,i2)') ': ', num_parameters
           call mpp_error(FATAL, trim(error_header) // &
-                         &  ' Wrong number of param for ' // trim(name) // trim(error_string))
+                        &  'Num_parameters is negative for ' // trim(name) // trim(error_string))
         endif
-      elseif (num_parameters .eq. 0) then
-        if (associated(gas_fluxes%bc(n)%param)) then
-          write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%param(:))
-          call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(name) // trim(error_string))
+        num_flags = fm_util_get_integer(trim(flux_list) // '/num_flags', scalar = .true.)
+        if (num_flags .gt. 0) then
+          if (.not. associated(gas_fluxes%bc(n)%flag)) then
+            write (error_string,'(a,i2)') ': need ', num_flags
+            call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
+          elseif (size(gas_fluxes%bc(n)%flag(:)) .ne. num_flags) then
+            write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%flag(:)), ' given, need ', num_flags
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name) // trim(error_string))
+          endif
+        elseif (num_flags .eq. 0) then
+          if (associated(gas_fluxes%bc(n)%flag)) then
+            write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%flag(:))
+            call mpp_error(FATAL, trim(error_header) // ' No flags needed for ' // trim(name) // trim(error_string))
+          endif
+        else
+          write (error_string,'(a,i2)') ': ', num_flags
+          call mpp_error(FATAL, trim(error_header) // 'Num_flags is negative for ' // trim(name) // trim(error_string))
         endif
+
+        ! Set some flags for this flux_type.
+        gas_fluxes%bc(n)%use_atm_pressure = fm_util_get_logical(trim(flux_list) // '/use_atm_pressure')
+        gas_fields_atm%bc(n)%use_atm_pressure = gas_fluxes%bc(n)%use_atm_pressure
+        gas_fields_ice%bc(n)%use_atm_pressure = gas_fluxes%bc(n)%use_atm_pressure
+
+        gas_fluxes%bc(n)%use_10m_wind_speed = fm_util_get_logical(trim(flux_list) // '/use_10m_wind_speed')
+        gas_fields_atm%bc(n)%use_10m_wind_speed = gas_fluxes%bc(n)%use_10m_wind_speed
+        gas_fields_ice%bc(n)%use_10m_wind_speed = gas_fluxes%bc(n)%use_10m_wind_speed
+
+        gas_fluxes%bc(n)%pass_through_ice = fm_util_get_logical(trim(flux_list) // '/pass_through_ice')
+        gas_fields_atm%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
+        gas_fields_ice%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
+      !! mixed precision support
+      !! if use_r4_kind is present and true will intialize to the r4_kind type
       else
-        write (error_string,'(a,i2)') ': ', num_parameters
-        call mpp_error(FATAL, trim(error_header) // &
-                       &  'Num_parameters is negative for ' // trim(name) // trim(error_string))
-      endif
-      num_flags = fm_util_get_integer(trim(flux_list) // '/num_flags', scalar = .true.)
-      if (num_flags .gt. 0) then
-        if (.not. associated(gas_fluxes%bc(n)%flag)) then
-          write (error_string,'(a,i2)') ': need ', num_flags
-          call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
-        elseif (size(gas_fluxes%bc(n)%flag(:)) .ne. num_flags) then
-          write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%flag(:)), ' given, need ', num_flags
-          call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name) // trim(error_string))
+        ! Save and check the flux_type.
+        gas_fluxes%bc_r4(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
+        if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc_r4(n)%flux_type))) then
+          call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given for ' //&
+              & trim(name) // ': ' // trim(gas_fluxes%bc_r4(n)%flux_type))
         endif
-      elseif (num_flags .eq. 0) then
-        if (associated(gas_fluxes%bc(n)%flag)) then
-          write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%flag(:))
-          call mpp_error(FATAL, trim(error_header) // ' No flags needed for ' // trim(name) // trim(error_string))
+        gas_fields_atm%bc_r4(n)%flux_type = gas_fluxes%bc_r4(n)%flux_type
+        gas_fields_ice%bc_r4(n)%flux_type = gas_fluxes%bc_r4(n)%flux_type
+
+        ! Save and check the implementation.
+        gas_fluxes%bc_r4(n)%implementation = fm_util_get_string('implementation', scalar = .true.)
+        if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc_r4(n)%flux_type) //&
+            & '/implementation/' // trim(gas_fluxes%bc_r4(n)%implementation))) then
+          call mpp_error(FATAL, trim(error_header) // ' Undefined implementation given for ' //&
+              & trim(name) // ': ' // trim(gas_fluxes%bc_r4(n)%flux_type) // '/implementation/' //&
+              & trim(gas_fluxes%bc_r4(n)%implementation))
         endif
-      else
-        write (error_string,'(a,i2)') ': ', num_flags
-        call mpp_error(FATAL, trim(error_header) // 'Num_flags is negative for ' // trim(name) // trim(error_string))
-      endif
+        gas_fields_atm%bc_r4(n)%implementation = gas_fluxes%bc_r4(n)%implementation
+        gas_fields_ice%bc_r4(n)%implementation = gas_fluxes%bc_r4(n)%implementation
 
-      ! Set some flags for this flux_type.
-      gas_fluxes%bc(n)%use_atm_pressure = fm_util_get_logical(trim(flux_list) // '/use_atm_pressure')
-      gas_fields_atm%bc(n)%use_atm_pressure = gas_fluxes%bc(n)%use_atm_pressure
-      gas_fields_ice%bc(n)%use_atm_pressure = gas_fluxes%bc(n)%use_atm_pressure
+        ! Set the flux list name.
+        flux_list = '/coupler_mod/types/' // trim(gas_fluxes%bc_r4(n)%flux_type) // '/'
 
-      gas_fluxes%bc(n)%use_10m_wind_speed = fm_util_get_logical(trim(flux_list) // '/use_10m_wind_speed')
-      gas_fields_atm%bc(n)%use_10m_wind_speed = gas_fluxes%bc(n)%use_10m_wind_speed
-      gas_fields_ice%bc(n)%use_10m_wind_speed = gas_fluxes%bc(n)%use_10m_wind_speed
+        ! allocate the arrays
+        gas_fluxes%bc_r4(n)%num_fields = fm_util_get_length(trim(flux_list) // 'flux/name')
+        allocate (gas_fluxes%bc_r4(n)%field(gas_fluxes%bc_r4(n)%num_fields))
+        gas_fields_atm%bc_r4(n)%num_fields = fm_util_get_length(trim(flux_list) // 'atm/name')
+        allocate (gas_fields_atm%bc_r4(n)%field(gas_fields_atm%bc_r4(n)%num_fields))
+        gas_fields_ice%bc_r4(n)%num_fields = fm_util_get_length(trim(flux_list) // 'ice/name')
+        allocate (gas_fields_ice%bc_r4(n)%field(gas_fields_ice%bc_r4(n)%num_fields))
 
-      gas_fluxes%bc(n)%pass_through_ice = fm_util_get_logical(trim(flux_list) // '/pass_through_ice')
-      gas_fields_atm%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
-      gas_fields_ice%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
+        ! Save the name and generate unique field names for Flux, Ice and Atm.
+        gas_fluxes%bc_r4(n)%name = name
+        do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
+          gas_fluxes%bc_r4(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+              & 'flux/name', index = m)
+          gas_fluxes%bc_r4(n)%field(m)%override = .false.
+          gas_fluxes%bc_r4(n)%field(m)%mean     = .false.
+        enddo
+
+        gas_fields_atm%bc_r4(n)%name = name
+        do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
+          gas_fields_atm%bc_r4(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+              & 'atm/name', index = m)
+          gas_fields_atm%bc_r4(n)%field(m)%override = .false.
+          gas_fields_atm%bc_r4(n)%field(m)%mean     = .false.
+        enddo
+
+        gas_fields_ice%bc_r4(n)%name = name
+        do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
+          gas_fields_ice%bc_r4(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) // &
+                                          &  'ice/name', index = m)
+          gas_fields_ice%bc_r4(n)%field(m)%override = .false.
+          gas_fields_ice%bc_r4(n)%field(m)%mean     = .false.
+        enddo
+
+        ! Save the units.
+        do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
+          gas_fluxes%bc_r4(n)%field(m)%units =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
+              &  '-units', scalar = .true.)
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
+          gas_fields_atm%bc_r4(n)%field(m)%units =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-units')
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
+          gas_fields_ice%bc_r4(n)%field(m)%units =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-units')
+        enddo
+
+        ! Save the long names.
+        do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
+          gas_fluxes%bc_r4(n)%field(m)%long_name =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
+              &  '-long_name', scalar = .true.)
+          gas_fluxes%bc_r4(n)%field(m)%long_name = trim(gas_fluxes%bc_r4(n)%field(m)%long_name) // ' for ' // name
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
+          gas_fields_atm%bc_r4(n)%field(m)%long_name =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-long_name')
+          gas_fields_atm%bc_r4(n)%field(m)%long_name = trim(gas_fields_atm%bc_r4(n)%field(m)%long_name) // ' for ' // name
+        enddo
+        do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
+          gas_fields_ice%bc_r4(n)%field(m)%long_name =&
+              & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-long_name')
+          gas_fields_ice%bc_r4(n)%field(m)%long_name = trim(gas_fields_ice%bc_r4(n)%field(m)%long_name) // ' for ' // name
+        enddo
+
+        ! Save the atm_tr_index.
+        gas_fluxes%bc_r4(n)%atm_tr_index = fm_util_get_integer('atm_tr_index', scalar = .true.)
+
+        ! Save the molecular weight.
+        gas_fluxes%bc_r4(n)%mol_wt = fm_util_get_real('mol_wt', scalar = .true.)
+        gas_fields_atm%bc_r4(n)%mol_wt = gas_fluxes%bc_r4(n)%mol_wt
+        gas_fields_ice%bc_r4(n)%mol_wt = gas_fluxes%bc_r4(n)%mol_wt
+
+        ! Save the ice_restart_file.
+        gas_fluxes%bc_r4(n)%ice_restart_file = fm_util_get_string('ice_restart_file', scalar = .true.)
+        gas_fields_atm%bc_r4(n)%ice_restart_file = gas_fluxes%bc_r4(n)%ice_restart_file
+        gas_fields_ice%bc_r4(n)%ice_restart_file = gas_fluxes%bc_r4(n)%ice_restart_file
+
+        ! Save the ocean_restart_file.
+        gas_fluxes%bc_r4(n)%ocean_restart_file = fm_util_get_string('ocean_restart_file', scalar = .true.)
+        gas_fields_atm%bc_r4(n)%ocean_restart_file = gas_fluxes%bc_r4(n)%ocean_restart_file
+        gas_fields_ice%bc_r4(n)%ocean_restart_file = gas_fluxes%bc_r4(n)%ocean_restart_file
+
+        ! Save the params.
+        gas_fluxes%bc_r4(n)%param => fm_util_get_real_array('param')
+
+        ! Save the flags.
+        gas_fluxes%bc_r4(n)%flag => fm_util_get_logical_array('flag')
+
+        ! Perform some integrity checks.
+        num_parameters = fm_util_get_integer(trim(flux_list) // 'implementation/' //&
+            & trim(gas_fluxes%bc_r4(n)%implementation) // '/num_parameters', scalar = .true.)
+        if (num_parameters .gt. 0) then
+          if (.not. associated(gas_fluxes%bc_r4(n)%param)) then
+            write (error_string,'(a,i2)') ': need ', num_parameters
+            call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
+          elseif (size(gas_fluxes%bc_r4(n)%param(:)) .ne. num_parameters) then
+            write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc_r4(n)%param(:)), ' given, need ', num_parameters
+            call mpp_error(FATAL, trim(error_header) // &
+                          &  ' Wrong number of param for ' // trim(name) // trim(error_string))
+          endif
+        elseif (num_parameters .eq. 0) then
+          if (associated(gas_fluxes%bc_r4(n)%param)) then
+            write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc_r4(n)%param(:))
+            call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(name) // trim(error_string))
+          endif
+        else
+          write (error_string,'(a,i2)') ': ', num_parameters
+          call mpp_error(FATAL, trim(error_header) // &
+                        &  'Num_parameters is negative for ' // trim(name) // trim(error_string))
+        endif
+        num_flags = fm_util_get_integer(trim(flux_list) // '/num_flags', scalar = .true.)
+        if (num_flags .gt. 0) then
+          if (.not. associated(gas_fluxes%bc_r4(n)%flag)) then
+            write (error_string,'(a,i2)') ': need ', num_flags
+            call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
+          elseif (size(gas_fluxes%bc_r4(n)%flag(:)) .ne. num_flags) then
+            write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc_r4(n)%flag(:)), ' given, need ', num_flags
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name) // trim(error_string))
+          endif
+        elseif (num_flags .eq. 0) then
+          if (associated(gas_fluxes%bc_r4(n)%flag)) then
+            write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc_r4(n)%flag(:))
+            call mpp_error(FATAL, trim(error_header) // ' No flags needed for ' // trim(name) // trim(error_string))
+          endif
+        else
+          write (error_string,'(a,i2)') ': ', num_flags
+          call mpp_error(FATAL, trim(error_header) // 'Num_flags is negative for ' // trim(name) // trim(error_string))
+        endif
+
+        ! Set some flags for this flux_type.
+        gas_fluxes%bc_r4(n)%use_atm_pressure = fm_util_get_logical(trim(flux_list) // '/use_atm_pressure')
+        gas_fields_atm%bc_r4(n)%use_atm_pressure = gas_fluxes%bc_r4(n)%use_atm_pressure
+        gas_fields_ice%bc_r4(n)%use_atm_pressure = gas_fluxes%bc_r4(n)%use_atm_pressure
+
+        gas_fluxes%bc_r4(n)%use_10m_wind_speed = fm_util_get_logical(trim(flux_list) // '/use_10m_wind_speed')
+        gas_fields_atm%bc_r4(n)%use_10m_wind_speed = gas_fluxes%bc_r4(n)%use_10m_wind_speed
+        gas_fields_ice%bc_r4(n)%use_10m_wind_speed = gas_fluxes%bc_r4(n)%use_10m_wind_speed
+
+        gas_fluxes%bc_r4(n)%pass_through_ice = fm_util_get_logical(trim(flux_list) // '/pass_through_ice')
+        gas_fields_atm%bc_r4(n)%pass_through_ice = gas_fluxes%bc_r4(n)%pass_through_ice
+        gas_fields_ice%bc_r4(n)%pass_through_ice = gas_fluxes%bc_r4(n)%pass_through_ice
+      endif ! r8/r4kind if
     enddo ! while loop
 
     if (verbose >= 5) then

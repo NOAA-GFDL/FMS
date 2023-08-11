@@ -20,6 +20,9 @@
 #undef FMS_CP_KIND_
 #define FMS_CP_KIND_ r4_kind
 
+#undef FMS_CP_BC_TYPE_
+#define FMS_CP_BC_TYPE_ bc_r4
+
 #undef CT_RESCALE_DATA_2D_
 #define CT_RESCALE_DATA_2D_ CT_rescale_data_2d_r4
 
