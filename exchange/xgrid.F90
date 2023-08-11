@@ -3129,10 +3129,10 @@ end subroutine regen
 !#######################################################################
 
 !> @brief Changes sub-grid portion areas and/or number.
-subroutine set_frac_area_sg(f, grid_id, xmap)
-  real(r8_kind),    dimension(:,:,:), intent(in)    :: f       !< fraction area to be set
-  character(len=3),                   intent(in)    :: grid_id !< 3 character grid ID
-  type (xmap_type),                   intent(inout) :: xmap    !< exchange grid with given grid ID
+subroutine set_frac_area_sg(sub_grid_frac_area, grid_id, xmap)
+  real(r8_kind),    dimension(:,:,:), intent(in)    :: sub_grid_frac_area    !< fraction area to be set
+  character(len=3),                   intent(in)    :: grid_id               !< 3 character grid ID
+  type (xmap_type),                   intent(inout) :: xmap                  !< exchange grid with given grid ID
 
   integer                        :: g
   type(grid_type), pointer, save :: grid =>NULL()
@@ -3142,13 +3142,13 @@ subroutine set_frac_area_sg(f, grid_id, xmap)
   do g=2,size(xmap%grids(:))
     grid => xmap%grids(g)
     if (grid_id==grid%id) then
-      if (size(f,3)/=size(grid%frac_area,3)) then
+      if (size(sub_grid_frac_area,3)/=size(grid%frac_area,3)) then
         if (associated(grid%frac_area)) deallocate (grid%frac_area) !< Check if allocated
-        grid%km = size(f,3);
+        grid%km = size(sub_grid_frac_area,3);
         allocate( grid%frac_area(grid%is_me:grid%ie_me, grid%js_me:grid%je_me, &
                                                                       grid%km) )
       end if
-      grid%frac_area = f;
+      grid%frac_area = sub_grid_frac_area;
       call regen(xmap)
       return;
     end if
@@ -3161,10 +3161,10 @@ end subroutine  set_frac_area_sg
 !#######################################################################
 
 !> @brief Changes sub-grid portion areas and/or number.
-subroutine set_frac_area_ug(f, grid_id, xmap)
-  real(r8_kind),   dimension(:,:), intent(in)    :: f       !< fractional area to set
-  character(len=3),                intent(in)    :: grid_id !< 3 character grid ID
-  type (xmap_type),                intent(inout) :: xmap    !< exchange grid with given grid ID
+subroutine set_frac_area_ug(sub_grid_frac_area, grid_id, xmap)
+  real(r8_kind),   dimension(:,:), intent(in)    :: sub_grid_frac_area  !< fractional area to set
+  character(len=3),                intent(in)    :: grid_id             !< 3 character grid ID
+  type (xmap_type),                intent(inout) :: xmap                !< exchange grid with given grid ID
 
   integer                        :: g
   type(grid_type), pointer, save :: grid =>NULL()
@@ -3176,12 +3176,12 @@ subroutine set_frac_area_ug(f, grid_id, xmap)
   do g=2,size(xmap%grids(:))
     grid => xmap%grids(g)
     if (grid_id==grid%id) then
-      if (size(f,2)/=size(grid%frac_area,3)) then
+      if (size(sub_grid_frac_area,2)/=size(grid%frac_area,3)) then
         if (associated(grid%frac_area)) deallocate (grid%frac_area) !< Check if allocated
-        grid%km = size(f,2);
+        grid%km = size(sub_grid_frac_area,2);
         allocate( grid%frac_area(grid%ls_me:grid%le_me, 1, grid%km) )
       end if
-      grid%frac_area(:,1,:) = f(:,:);
+      grid%frac_area(:,1,:) = sub_grid_frac_area(:,:);
       call regen(xmap)
       return;
     end if
@@ -3204,11 +3204,11 @@ end function xgrid_count
 !#######################################################################
 
 !> Scatters data to exchange grid
-subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
-  real(r8_kind),    dimension(:,:), intent(in)       :: d       !< data to send
-  character(len=3),                 intent(in)       :: grid_id !< 3 character grid ID
-  real(r8_kind),    dimension(:),   intent(inout)    :: x       !< xgrid data
-  type (xmap_type),                 intent(inout)    :: xmap    !< exchange grid
+subroutine put_side1_to_xgrid(data2send, grid_id, xgrid_data, xmap, remap_method, complete)
+  real(r8_kind),    dimension(:,:), intent(in)       :: data2send   !< data to send
+  character(len=3),                 intent(in)       :: grid_id     !< 3 character grid ID
+  real(r8_kind),    dimension(:),   intent(inout)    :: xgrid_data  !< xgrid data
+  type (xmap_type),                 intent(inout)    :: xmap        !< exchange grid
   integer, intent(in), optional                      :: remap_method !< exchange grid interpolation method can
                                                          !! be FIRST_ORDER(=1) or SECOND_ORDER(=2)
   logical, intent(in), optional                      :: complete
@@ -3235,20 +3235,20 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group put_side1_to_xgrid', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = LOC(data2send)
+     x_addrs(lsize) = LOC(xgrid_data)
 
      if(lsize == 1) then
-        isize = size(d,1)
-        jsize = size(d,2)
-        xsize = size(x(:))
+        isize = size(data2send,1)
+        jsize = size(data2send,2)
+        xsize = size(xgrid_data(:))
         method_saved = method
         grid_id_saved = grid_id
      else
         set_mismatch = .false.
-        set_mismatch = set_mismatch .OR. (isize /= size(d,1))
-        set_mismatch = set_mismatch .OR. (jsize /= size(d,2))
-        set_mismatch = set_mismatch .OR. (xsize /= size(x(:)))
+        set_mismatch = set_mismatch .OR. (isize /= size(data2send,1))
+        set_mismatch = set_mismatch .OR. (jsize /= size(data2send,2))
+        set_mismatch = set_mismatch .OR. (xsize /= size(xgrid_data(:)))
         set_mismatch = set_mismatch .OR. (method_saved /= method)
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
@@ -3296,11 +3296,11 @@ end subroutine put_side1_to_xgrid
 !#######################################################################
 
 !> Scatters data to exchange grid
-subroutine put_side2_to_xgrid(d, grid_id, x, xmap)
-  real(r8_kind),    dimension(:,:,:), intent(in)    :: d       !< data to send
-  character(len=3),                   intent(in)    :: grid_id !< 3 character grid ID
-  real(r8_kind),    dimension(:),     intent(inout) :: x       !< xgrid data
-  type (xmap_type),                   intent(inout) :: xmap    !< exchange grid
+subroutine put_side2_to_xgrid(data2send, grid_id, xgrid_data, xmap)
+  real(r8_kind),    dimension(:,:,:), intent(in)    :: data2send  !< data to send
+  character(len=3),                   intent(in)    :: grid_id    !< 3 character grid ID
+  real(r8_kind),    dimension(:),     intent(inout) :: xgrid_data !< xgrid data
+  type (xmap_type),                   intent(inout) :: xmap       !< exchange grid
 
   integer :: g
 
@@ -3310,7 +3310,7 @@ subroutine put_side2_to_xgrid(d, grid_id, x, xmap)
 
   do g=2,size(xmap%grids(:))
     if (grid_id==xmap%grids(g)%id) then
-         call put_2_to_xgrid(d, xmap%grids(g), x, xmap)
+         call put_2_to_xgrid(data2send, xmap%grids(g), xgrid_data, xmap)
       return;
     end if
   end do
@@ -3321,11 +3321,11 @@ end subroutine put_side2_to_xgrid
 
 !#######################################################################
 
-subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
-  real(r8_kind),   dimension(:,:), intent(out)   :: d       !< recieved xgrid data
-  character(len=3),                intent(in)    :: grid_id !< 3 character grid ID
-  real(r8_kind),   dimension(:),   intent(in)    :: x       !< xgrid data
-  type (xmap_type),                intent(inout) :: xmap    !< exchange grid
+subroutine get_side1_from_xgrid(recieve_data, grid_id, xgrid_data, xmap, complete)
+  real(r8_kind),   dimension(:,:), intent(out)   :: recieve_data  !< recieved xgrid data
+  character(len=3),                intent(in)    :: grid_id       !< 3 character grid ID
+  real(r8_kind),   dimension(:),   intent(in)    :: xgrid_data    !< xgrid data
+  type (xmap_type),                intent(inout) :: xmap          !< exchange grid
   logical, intent(in), optional                  :: complete
 
   logical                                         :: is_complete, set_mismatch
@@ -3339,7 +3339,7 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
   integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
 
-  d = 0.
+  recieve_data = 0.
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
      if(present(complete)) is_complete=complete
@@ -3348,19 +3348,19 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = LOC(recieve_data)
+     x_addrs(lsize) = LOC(xgrid_data)
 
      if(lsize == 1) then
-        isize = size(d,1)
-        jsize = size(d,2)
-        xsize = size(x(:))
+        isize = size(recieve_data,1)
+        jsize = size(recieve_data,2)
+        xsize = size(xgrid_data(:))
         grid_id_saved = grid_id
      else
         set_mismatch = .false.
-        set_mismatch = set_mismatch .OR. (isize /= size(d,1))
-        set_mismatch = set_mismatch .OR. (jsize /= size(d,2))
-        set_mismatch = set_mismatch .OR. (xsize /= size(x(:)))
+        set_mismatch = set_mismatch .OR. (isize /= size(recieve_data,1))
+        set_mismatch = set_mismatch .OR. (jsize /= size(recieve_data,2))
+        set_mismatch = set_mismatch .OR. (xsize /= size(xgrid_data(:)))
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
            write( text,'(i2)' ) lsize
@@ -3398,11 +3398,11 @@ end subroutine get_side1_from_xgrid
 
 !#######################################################################
 
-subroutine get_side2_from_xgrid(d, grid_id, x, xmap)
-  real(r8_kind),    dimension(:,:,:), intent(out) :: d       !< received xgrid data
-  character(len=3),                   intent(in)  :: grid_id !< 3 character grid ID
-  real(r8_kind),    dimension(:),     intent(in)  :: x       !< xgrid data
-  type (xmap_type),                   intent(in)  :: xmap    !< exchange grid
+subroutine get_side2_from_xgrid(recieve_data, grid_id, xgrid_data, xmap)
+  real(r8_kind),    dimension(:,:,:), intent(out) :: recieve_data  !< received xgrid data
+  character(len=3),                   intent(in)  :: grid_id       !< 3 character grid ID
+  real(r8_kind),    dimension(:),     intent(in)  :: xgrid_data    !< xgrid data
+  type (xmap_type),                   intent(in)  :: xmap          !< exchange grid
 
   integer :: g
 
@@ -3412,7 +3412,7 @@ subroutine get_side2_from_xgrid(d, grid_id, x, xmap)
 
   do g=2,size(xmap%grids(:))
     if (grid_id==xmap%grids(g)%id) then
-      call get_2_from_xgrid(d, xmap%grids(g), x, xmap)
+      call get_2_from_xgrid(recieve_data, xmap%grids(g), xgrid_data, xmap)
       return;
     end if
   end do
@@ -3458,18 +3458,18 @@ end subroutine some
 
 !#######################################################################
 
-subroutine put_2_to_xgrid(d, grid, x, xmap)
+subroutine put_2_to_xgrid(data2send, grid, xgrid_data, xmap)
   type (grid_type),                                intent(in)    :: grid
   real(r8_kind), dimension(grid%is_me:grid%ie_me, &
-                grid%js_me:grid%je_me, grid%km),   intent(in)    :: d
-  real(r8_kind), dimension(:),                     intent(inout) :: x
+                grid%js_me:grid%je_me, grid%km),   intent(in)    :: data2send
+  real(r8_kind), dimension(:),                     intent(inout) :: xgrid_data
   type (xmap_type),                                intent(in)    :: xmap
 
   integer                 ::   l
   call mpp_clock_begin(id_put_2_to_xgrid)
 
   do l=grid%first,grid%last
-    x(l) = d(xmap%x2(l)%i,xmap%x2(l)%j,xmap%x2(l)%k)
+    xgrid_data(l) = data2send(xmap%x2(l)%i,xmap%x2(l)%j,xmap%x2(l)%k)
   end do
 
   call mpp_clock_end(id_put_2_to_xgrid)
@@ -3477,27 +3477,27 @@ end subroutine put_2_to_xgrid
 
 !#######################################################################
 
-subroutine get_2_from_xgrid(d, grid, x, xmap)
+subroutine get_2_from_xgrid(recieve_data, grid, xgrid_data, xmap)
   type (grid_type),                                intent(in)  :: grid
   real(r8_kind), dimension(grid%is_me:grid%ie_me, &
-                grid%js_me:grid%je_me, grid%km),   intent(out) :: d
-  real(r8_kind), dimension(:),                     intent(in)  :: x
+                grid%js_me:grid%je_me, grid%km),   intent(out) :: recieve_data
+  real(r8_kind), dimension(:),                     intent(in)  :: xgrid_data
   type (xmap_type),                                intent(in)  :: xmap
 
   integer                 :: l, k
 
   call mpp_clock_begin(id_get_2_from_xgrid)
 
-  d = 0.0
+  recieve_data = 0.0
   do l=grid%first_get,grid%last_get
-    d(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) = &
-            d(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) + xmap%x2_get(l)%area*x(xmap%x2_get(l)%pos)
+    recieve_data(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) = &
+            recieve_data(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) + xmap%x2_get(l)%area*xgrid_data(xmap%x2_get(l)%pos)
   end do
   !
   !  normalize with side 2 grid cell areas
   !
-  do k=1,size(d,3)
-    d(:,:,k) = d(:,:,k) * grid%area_inv
+  do k=1,size(recieve_data,3)
+    recieve_data(:,:,k) = recieve_data(:,:,k) * grid%area_inv
   end do
 
   call mpp_clock_end(id_get_2_from_xgrid)
@@ -3520,11 +3520,11 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   real(r8_kind)                            :: recv_buffer(xmap%put1%recvsize*lsize)
   real(r8_kind)                            :: send_buffer(xmap%put1%sendsize*lsize)
   real(r8_kind)                            :: unpack_buffer(xmap%put1%recvsize)
-  real(r8_kind), dimension(isize, jsize)   :: d
-  real(r8_kind), dimension(xsize)          :: x
+  real(r8_kind), dimension(isize, jsize)   :: d_array
+  real(r8_kind), dimension(xsize)          :: x_array
 
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  pointer(ptr_d, d_array)
+  pointer(ptr_x, x_array)
 
   call mpp_clock_begin(id_put_1_to_xgrid_order_1)
 
@@ -3549,7 +3549,7 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
            pos = pos + 1
            i = comm%send(p)%i(n)
            j = comm%send(p)%j(n)
-           send_buffer(pos) = d(i,j)
+           send_buffer(pos) = d_array(i,j)
         enddo
      enddo
      call mpp_send(send_buffer(buffer_pos+1), plen=msgsize, to_pe = to_pe, tag=COMM_TAG_7 )
@@ -3562,7 +3562,7 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   if( lsize == 1) then
      ptr_x = x_addrs(1)
      do l=1,xmap%size_put1
-        x(l) =  recv_buffer(xmap%x1_put(l)%pos)
+        x_array(l) =  recv_buffer(xmap%x1_put(l)%pos)
      end do
   else
      start_pos = 0
@@ -3582,7 +3582,7 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
            enddo
         enddo
         do i=1,xmap%size_put1
-           x(i) =  unpack_buffer(xmap%x1_put(i)%pos)
+           x_array(i) =  unpack_buffer(xmap%x1_put(i)%pos)
         end do
      enddo
   endif
@@ -3620,10 +3620,10 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   real(r8_kind)                   :: unpack_buffer(xmap%put1%recvsize*3)
   logical                         :: on_west_edge, on_east_edge, on_south_edge, on_north_edge
 
-  real(r8_kind), dimension(isize, jsize)   :: d
-  real(r8_kind), dimension(xsize)          :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), dimension(isize, jsize)   :: d_array
+  real(r8_kind), dimension(xsize)          :: x_array
+  pointer(ptr_d, d_array)
+  pointer(ptr_x, x_array)
 
   call mpp_clock_begin(id_put_1_to_xgrid_order_2)
   grid1 => xmap%grids(1)
@@ -3637,7 +3637,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   do l = 1, lsize
      tmp(:,:,l) = LARGE_NUMBER
      ptr_d = d_addrs(l)
-     tmp(1:isize,1:jsize,l) = d(:,:)
+     tmp(1:isize,1:jsize,l) = d_array(:,:)
   enddo
 
   if(grid1%is_latlon) then
@@ -3714,7 +3714,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
               pos = pos + 1
               i = comm%send(p)%i(n)
               j = comm%send(p)%j(n)
-              send_buffer(pos) = d(i,j) + tmpy(i,j,l)*comm%send(p)%dj(n) + tmpx(i,j,l)*comm%send(p)%di(n)
+              send_buffer(pos) = d_array(i,j) + tmpy(i,j,l)*comm%send(p)%dj(n) + tmpx(i,j,l)*comm%send(p)%di(n)
               if(send_buffer(pos) > d_max(i,j,l)) d_max(i,j,l) = send_buffer(pos)
               if(send_buffer(pos) < d_min(i,j,l)) d_min(i,j,l) = send_buffer(pos)
            enddo
@@ -3731,7 +3731,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
               pos = pos + 1
               i = comm%send(p)%i(n)
               j = comm%send(p)%j(n)
-              d_bar = d(i,j)
+              d_bar = d_array(i,j)
               if( d_max(i,j,l) > d_bar_max(i,j,l) ) then
                  send_buffer(pos) = d_bar + ((send_buffer(pos)-d_bar)/(d_max(i,j,l)-d_bar)) * (d_bar_max(i,j,l)-d_bar)
               else if( d_min(i,j,l) < d_bar_min(i,j,l) ) then
@@ -3753,7 +3753,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
               pos = pos + 3
               i = comm%send(p)%i(n)
               j = comm%send(p)%j(n)
-              send_buffer(pos-2) = d(i,j)
+              send_buffer(pos-2) = d_array(i,j)
               send_buffer(pos-1) = tmpy(i,j,l)
               send_buffer(pos  ) = tmpx(i,j,l)
            enddo
@@ -3771,7 +3771,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
         ptr_x = x_addrs(1)
         do l=1,xmap%size_put1
            pos = xmap%x1_put(l)%pos
-           x(l) =  recv_buffer(pos)
+           x_array(l) =  recv_buffer(pos)
         end do
      else
         do l = 1, lsize
@@ -3790,7 +3790,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
            enddo
            do i=1,xmap%size_put1
               pos = xmap%x1_put(i)%pos
-              x(i) =  unpack_buffer(pos)
+              x_array(i) =  unpack_buffer(pos)
            end do
         enddo
      endif
@@ -3800,7 +3800,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
 !$OMP parallel do default(none) shared(xmap,recv_buffer,ptr_x) private(pos)
         do l=1,xmap%size_put1
            pos = xmap%x1_put(l)%pos
-           x(l) = recv_buffer(3*pos-2) + recv_buffer(3*pos-1)*xmap%x1_put(l)%dj + recv_buffer(3*pos)*xmap%x1_put(l)%di
+           x_array(l) = recv_buffer(3*pos-2) + recv_buffer(3*pos-1)*xmap%x1_put(l)%dj + recv_buffer(3*pos)*xmap%x1_put(l)%di
         end do
      else
 !$OMP parallel do default(none) shared(lsize,comm,xmap,recv_buffer,x_addrs) &
@@ -3822,7 +3822,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
            enddo
            do i=1,xmap%size_put1
               pos = xmap%x1_put(i)%pos
-              x(i) = unpack_buffer(3*pos-2) + unpack_buffer(3*pos-1)*xmap%x1_put(i)%dj + unpack_buffer(3*pos) &
+              x_array(i) = unpack_buffer(3*pos-2) + unpack_buffer(3*pos-1)*xmap%x1_put(i)%dj + unpack_buffer(3*pos) &
                    & * xmap%x1_put(i)%di
            end do
         enddo
@@ -3854,10 +3854,10 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   type(overlap_type), pointer, save  :: recv => NULL()
   real(r8_kind)                      :: recv_buffer(xmap%get1%recvsize*lsize*3)
   real(r8_kind)                      :: send_buffer(xmap%get1%sendsize*lsize*3)
-  real(r8_kind)                      :: d(isize,jsize)
-  real(r8_kind), dimension(xsize)    :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind)                      :: d_array(isize,jsize)
+  real(r8_kind), dimension(xsize)    :: x_array
+  pointer(ptr_d, d_array)
+  pointer(ptr_x, x_array)
 
   call mpp_clock_begin(id_get_1_from_xgrid)
 
@@ -3877,7 +3877,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
      ptr_x = x_addrs(l)
      do i=1,xmap%size
         dgp => dg(xmap%x1(i)%pos,l)
-        dgp =  dgp + xmap%x1(i)%area*x(i)
+        dgp =  dgp + xmap%x1(i)%area*x_array(i)
      enddo
   enddo
 
@@ -3907,7 +3907,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   !--- unpack the buffer
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = 0.0
+     d_array = 0.0
   enddo
   !--- To bitwise reproduce old results, first copy the data onto its own pe.
 
@@ -3925,7 +3925,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
               i = recv%i(n)
               j = recv%j(n)
               pos = pos + 1
-              d(i,j) = recv_buffer(pos)
+              d_array(i,j) = recv_buffer(pos)
            enddo
         enddo
         exit
@@ -3949,7 +3949,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
            i = recv%i(n)
            j = recv%j(n)
            pos = pos + 1
-           d(i,j) = d(i,j) + recv_buffer(pos)
+           d_array(i,j) = d_array(i,j) + recv_buffer(pos)
         enddo
      enddo
   enddo
@@ -3960,7 +3960,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
 !$OMP parallel do default(none) shared(lsize,d_addrs,grid1) private(ptr_d)
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = d * grid1%area_inv
+     d_array = d_array * grid1%area_inv
   enddo
   call mpp_sync_self()
   call mpp_clock_end(id_get_1_from_xgrid)
@@ -3984,11 +3984,11 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   integer,  dimension(0:xmap%npes-1) :: pl, ml
   real(r8_kind)                      :: recv_buffer(xmap%recv_count_repro_tot*lsize)
   real(r8_kind)                      :: send_buffer(xmap%send_count_repro_tot*lsize)
-  real(r8_kind)                      :: d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, &
+  real(r8_kind)                      :: d_array(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, &
                                           xmap%grids(1)%js_me:xmap%grids(1)%je_me)
-  real(r8_kind), dimension(xsize)    :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), dimension(xsize)    :: x_array
+  pointer(ptr_d, d_array)
+  pointer(ptr_x, x_array)
 
   call mpp_clock_begin(id_get_1_from_xgrid_repro)
   comm => xmap%get1_repro
@@ -4021,7 +4021,7 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            do k =1, xmap%grids(g)%km
              if(xmap%grids(g)%frac_area(i,j,k)/=0.0) then
               l2 = l2+1
-              send_buffer(pos) = send_buffer(pos) + xmap%x1(l2)%area *x(l2)
+              send_buffer(pos) = send_buffer(pos) + xmap%x1(l2)%area *x_array(l2)
              endif
            enddo
          enddo
@@ -4036,7 +4036,7 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
 
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = 0
+     d_array = 0
   enddo
 
   call mpp_sync_self(check=EVENT_RECV)
@@ -4052,11 +4052,11 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            j = grid%x_repro(l3)%j1
            p = grid%x_repro(l3)%pe-xmap%root_pe
            pos = pl(p) + (l-1)*ml(p) + grid%x_repro(l3)%recv_pos
-           d(i,j) = d(i,j) + recv_buffer(pos)
+           d_array(i,j) = d_array(i,j) + recv_buffer(pos)
         end do
      end do
      ! normalize with side 1 grid cell areas
-     d = d * xmap%grids(1)%area_inv
+     d_array = d_array * xmap%grids(1)%area_inv
   enddo
 
   call mpp_sync_self()
@@ -4071,40 +4071,40 @@ end subroutine get_1_from_xgrid_repro
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real(r8_kind) conservation_check_side1
-function conservation_check_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
-  real(r8_kind),    dimension(:,:),    intent(in)    :: d       !< model data to check
+function conservation_check_side1(check_data, grid_id, xmap,remap_method) ! this one for 1->2->1
+  real(r8_kind),    dimension(:,:),    intent(in)    :: check_data       !< model data to check
   character(len=3),                    intent(in)    :: grid_id !< 3 character grid id
   type (xmap_type),                    intent(inout) :: xmap    !< exchange grid
   real(r8_kind),    dimension(3)                     :: conservation_check_side1
   integer, intent(in), optional                      :: remap_method
 
   real(r8_kind), dimension(xmap%size)           :: x_over, x_back
-  real(r8_kind), dimension(size(d,1),size(d,2)) :: d1
-  real(r8_kind), dimension(:,:,:), allocatable  :: d2
+  real(r8_kind), dimension(size(check_data,1),size(check_data,2)) :: d_array2d
+  real(r8_kind), dimension(:,:,:), allocatable  :: d_array3d
   integer                                       :: g
   type (grid_type), pointer, save               :: grid1 =>NULL(), grid2 =>NULL()
 
   grid1 => xmap%grids(1)
   conservation_check_side1 = 0.0
-  if(grid1%tile_me .NE. tile_nest) conservation_check_side1(1) = sum(grid1%area*d)
+  if(grid1%tile_me .NE. tile_nest) conservation_check_side1(1) = sum(grid1%area*check_data)
 !  if(grid1%tile_me .NE. tile_parent .OR. grid1%id .NE. "ATM") &
 !      conservation_check_side1(1) = sum(grid1%area*d)
 
-  call put_to_xgrid (d, grid1%id, x_over, xmap, remap_method)    ! put from side 1
+  call put_to_xgrid (check_data, grid1%id, x_over, xmap, remap_method)    ! put from side 1
   do g=2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if(grid2%on_this_pe) then
-      allocate (d2 (grid2%is_me:grid2%ie_me, grid2%js_me:grid2%je_me,  grid2%km) )
+      allocate (d_array3d (grid2%is_me:grid2%ie_me, grid2%js_me:grid2%je_me,  grid2%km) )
     endif
-    call get_from_xgrid (d2, grid2%id, x_over, xmap) ! get onto side 2's
+    call get_from_xgrid (d_array3d, grid2%id, x_over, xmap) ! get onto side 2's
     if(grid2%on_this_pe) then
-       conservation_check_side1(2) = conservation_check_side1(2) + sum( grid2%area * sum(grid2%frac_area*d2,DIM=3) )
+       conservation_check_side1(2) = conservation_check_side1(2) + sum( grid2%area * sum(grid2%frac_area*d_array3d,DIM=3) )
     endif
-    call put_to_xgrid (d2, grid2%id, x_back, xmap) ! put from side 2's
-    if(allocated(d2))deallocate (d2)
+    call put_to_xgrid (d_array3d, grid2%id, x_back, xmap) ! put from side 2's
+    if(allocated(d_array3d))deallocate (d_array3d)
   end do
-  call get_from_xgrid(d1, grid1%id, x_back, xmap)  ! get onto side 1
-  if(grid1%tile_me .NE. tile_nest) conservation_check_side1(3) = sum(grid1%area*d1)
+  call get_from_xgrid(d_array2d, grid1%id, x_back, xmap)  ! get onto side 1
+  if(grid1%tile_me .NE. tile_nest) conservation_check_side1(3) = sum(grid1%area*d_array2d)
 !  if(grid1%tile_me .NE. tile_parent .OR. grid1%id .NE. "ATM") &
 !     conservation_check_side1(3) = sum(grid1%area*d1)
   call mpp_sum(conservation_check_side1,3)
@@ -4117,16 +4117,16 @@ end function conservation_check_side1
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real(r8_kind) conservation_check_side2
-function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
-  real(r8_kind),    dimension(:,:,:), intent(in)     :: d       !< model data to check
+function conservation_check_side2(check_data, grid_id, xmap,remap_method) ! this one for 2->1->2
+  real(r8_kind),    dimension(:,:,:), intent(in)     :: check_data       !< model data to check
   character(len=3),                   intent(in)     :: grid_id !< 3 character grid ID
   type (xmap_type),                   intent(inout)  :: xmap    !< exchange grid
   real(r8_kind),    dimension(3)                     :: conservation_check_side2
   integer, intent(in), optional                      :: remap_method
 
   real(r8_kind), dimension(xmap%size)          :: x_over, x_back
-  real(r8_kind), dimension(:,:),   allocatable :: d1
-  real(r8_kind), dimension(:,:,:), allocatable :: d2
+  real(r8_kind), dimension(:,:),   allocatable :: d_array2d
+  real(r8_kind), dimension(:,:,:), allocatable :: d_array3d
   integer                                      :: g
   type (grid_type), pointer, save              :: grid1 =>NULL(), grid2 =>NULL()
 
@@ -4136,30 +4136,31 @@ function conservation_check_side2(d, grid_id, xmap,remap_method) ! this one for 
     grid2 => xmap%grids(g)
     if (grid_id==grid2%id) then
       if(grid2%on_this_pe) then
-         conservation_check_side2(1) = sum( grid2%area * sum(grid2%frac_area*d,DIM=3) )
+         conservation_check_side2(1) = sum( grid2%area * sum(grid2%frac_area*check_data,DIM=3) )
       endif
-      call put_to_xgrid(d, grid_id, x_over, xmap)  ! put from this side 2
+      call put_to_xgrid(check_data, grid_id, x_over, xmap)  ! put from this side 2
     else
       call put_to_xgrid(0.0 * grid2%frac_area, grid2%id, x_over, xmap) ! zero rest
     end if
   end do
 
-  allocate ( d1(size(grid1%area,1),size(grid1%area,2)) )
-  call get_from_xgrid(d1, grid1%id, x_over, xmap)  ! get onto side 1
-  if(grid1%tile_me .NE. tile_nest)conservation_check_side2(2) = sum(grid1%area*d1)
-  call put_to_xgrid(d1,  grid1%id, x_back, xmap,remap_method)   ! put from side 1
-  deallocate ( d1 )
+  allocate ( d_array2d(size(grid1%area,1),size(grid1%area,2)) )
+  call get_from_xgrid(d_array2d, grid1%id, x_over, xmap)  ! get onto side 1
+  if(grid1%tile_me .NE. tile_nest)conservation_check_side2(2) = sum(grid1%area*d_array2d)
+  call put_to_xgrid(d_array2d,  grid1%id, x_back, xmap,remap_method)   ! put from side 1
+  deallocate ( d_array2d )
 
   conservation_check_side2(3) = 0.0;
   do g = 2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if(grid2%on_this_pe) then
-       allocate ( d2 ( size(grid2%frac_area, 1), size(grid2%frac_area, 2),  &
+       allocate ( d_array3d ( size(grid2%frac_area, 1), size(grid2%frac_area, 2),  &
                                                  size(grid2%frac_area, 3) ) )
     endif
-    call get_from_xgrid(d2,  grid2%id, x_back, xmap) ! get onto side 2's
-    conservation_check_side2(3) = conservation_check_side2(3) + sum( grid2%area * sum(grid2%frac_area*d2,DIM=3) )
-    if(allocated(d2) )deallocate ( d2 )
+    call get_from_xgrid(d_array3d,  grid2%id, x_back, xmap) ! get onto side 2's
+    conservation_check_side2(3) = conservation_check_side2(3) + &
+                                 sum( grid2%area * sum(grid2%frac_area*d_array3d,DIM=3) )
+    if(allocated(d_array3d) )deallocate ( d_array3d )
   end do
   call mpp_sum(conservation_check_side2, 3)
 
@@ -4172,69 +4173,69 @@ end function conservation_check_side2
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real(r8_kind) conservation_check_ug_side1
-function conservation_check_ug_side1(d, grid_id, xmap,remap_method) ! this one for 1->2->1
-  real(r8_kind),    dimension(:,:), intent(in)    :: d       !< model data to check
-  character(len=3),                 intent(in)    :: grid_id !< 3 character grid ID
-  type (xmap_type),                 intent(inout) :: xmap    !< exchange grid
+function conservation_check_ug_side1(check_data, grid_id, xmap,remap_method) ! this one for 1->2->1
+  real(r8_kind),    dimension(:,:), intent(in)    :: check_data !< model data to check
+  character(len=3),                 intent(in)    :: grid_id    !< 3 character grid ID
+  type (xmap_type),                 intent(inout) :: xmap       !< exchange grid
   real(r8_kind),    dimension(3)                  :: conservation_check_ug_side1
   integer, intent(in), optional                   :: remap_method
 
-  real(r8_kind), dimension(xmap%size)           :: x_over, x_back
-  real(r8_kind), dimension(size(d,1),size(d,2)) :: d1
-  real(r8_kind), dimension(:,:,:), allocatable  :: d2
-  real(r8_kind), dimension(:),     allocatable  :: d_ug
-  real(r8_kind), dimension(:,:),   allocatable  :: d2_ug
-  integer                                       :: g
-  type (grid_type), pointer, save               :: grid1 =>NULL(), grid2 =>NULL()
+  real(r8_kind), dimension(xmap%size)                             :: x_over, x_back
+  real(r8_kind), dimension(size(check_data,1),size(check_data,2)) :: d_array2d
+  real(r8_kind), dimension(:,:,:), allocatable                    :: d_array3d
+  real(r8_kind), dimension(:),     allocatable                    :: d_array1d_ug
+  real(r8_kind), dimension(:,:),   allocatable                    :: d_array2d_ug
+  integer                                                         :: g
+  type (grid_type), pointer, save                                 :: grid1 =>NULL(), grid2 =>NULL()
 
   grid1 => xmap%grids(1)
   conservation_check_ug_side1 = 0.0
 
 
   if(grid1%is_ug) then
-     allocate(d_ug(grid1%ls_me:grid1%le_me))
-     call mpp_pass_sg_to_ug(grid1%ug_domain, d, d_ug)
-       if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(1) = sum(grid1%area(:,1)*d_ug)
-     call put_to_xgrid_ug (d_ug, grid1%id, x_over, xmap)    ! put from side 1
+     allocate(d_array1d_ug(grid1%ls_me:grid1%le_me))
+     call mpp_pass_sg_to_ug(grid1%ug_domain, check_data, d_array1d_ug)
+       if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(1) = sum(grid1%area(:,1)*d_array1d_ug)
+     call put_to_xgrid_ug (d_array1d_ug, grid1%id, x_over, xmap)    ! put from side 1
   else
-     if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(1) = sum(grid1%area*d)
-     call put_to_xgrid (d, grid1%id, x_over, xmap, remap_method)    ! put from side 1
+     if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(1) = sum(grid1%area*check_data)
+     call put_to_xgrid (check_data, grid1%id, x_over, xmap, remap_method)    ! put from side 1
   endif
   do g=2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if(grid2%is_ug) then
       if(grid2%on_this_pe) then
-         allocate (d2_ug (grid2%ls_me:grid2%le_me, grid2%km) )
-         d2_ug = 0
+         allocate (d_array2d_ug (grid2%ls_me:grid2%le_me, grid2%km) )
+         d_array2d_ug = 0
       endif
-      call get_from_xgrid_ug (d2_ug, grid2%id, x_over, xmap) ! get onto side 2's
+      call get_from_xgrid_ug (d_array2d_ug, grid2%id, x_over, xmap) ! get onto side 2's
       if(grid2%on_this_pe) then
          conservation_check_ug_side1(2) = conservation_check_ug_side1(2) + &
-                                          sum( grid2%area(:,1) * sum(grid2%frac_area(:,1,:)*d2_ug,DIM=2) )
+                                          sum( grid2%area(:,1) * sum(grid2%frac_area(:,1,:)*d_array2d_ug,DIM=2) )
       endif
-      call put_to_xgrid_ug (d2_ug, grid2%id, x_back, xmap) ! put from side 2's
-      if(allocated(d2_ug))deallocate (d2_ug)
+      call put_to_xgrid_ug (d_array2d_ug, grid2%id, x_back, xmap) ! put from side 2's
+      if(allocated(d_array2d_ug))deallocate (d_array2d_ug)
     else
        if(grid2%on_this_pe) then
-          allocate (d2 (grid2%is_me:grid2%ie_me, grid2%js_me:grid2%je_me,  grid2%km) )
+          allocate (d_array3d (grid2%is_me:grid2%ie_me, grid2%js_me:grid2%je_me,  grid2%km) )
        endif
-       call get_from_xgrid (d2, grid2%id, x_over, xmap) ! get onto side 2's
+       call get_from_xgrid (d_array3d, grid2%id, x_over, xmap) ! get onto side 2's
        if(grid2%on_this_pe) then
           conservation_check_ug_side1(2) = conservation_check_ug_side1(2) &
-                                         & + sum( grid2%area * sum(grid2%frac_area*d2,DIM=3) )
+                                         & + sum( grid2%area * sum(grid2%frac_area*d_array3d,DIM=3) )
        endif
-       call put_to_xgrid (d2, grid2%id, x_back, xmap) ! put from side 2's
-       if(allocated(d2))deallocate (d2)
+       call put_to_xgrid (d_array3d, grid2%id, x_back, xmap) ! put from side 2's
+       if(allocated(d_array3d))deallocate (d_array3d)
      endif
   end do
   if(grid1%is_ug) then
 !     call get_from_xgrid_ug(d_ug, grid1%id, x_back, xmap)  ! get onto side 1
-     if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(3) = sum(grid1%area(:,1)*d_ug)
+     if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(3) = sum(grid1%area(:,1)*d_array1d_ug)
   else
-     call get_from_xgrid(d1, grid1%id, x_back, xmap)  ! get onto side 1
-     if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(3) = sum(grid1%area*d1)
+     call get_from_xgrid(d_array2d, grid1%id, x_back, xmap)  ! get onto side 1
+     if(grid1%tile_me .NE. tile_nest) conservation_check_ug_side1(3) = sum(grid1%area*d_array2d)
   endif
-  if(allocated(d_ug)) deallocate(d_ug)
+  if(allocated(d_array1d_ug)) deallocate(d_array1d_ug)
   call mpp_sum(conservation_check_ug_side1,3)
 
 end function conservation_check_ug_side1
@@ -4245,16 +4246,16 @@ end function conservation_check_ug_side1
 !!   variable (1) on its home model grid, (2) after interpolation to the other
 !!   side grid(s), and (3) after re_interpolation back onto its home side grid(s).
 !! @return real(r8_kind) conservation_check_ug_side2
-function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one for 2->1->2
-  real(r8_kind),    dimension(:,:,:), intent(in)     :: d       !< model data to check
+function conservation_check_ug_side2(check_data, grid_id, xmap,remap_method) ! this one for 2->1->2
+  real(r8_kind),    dimension(:,:,:), intent(in)     :: check_data       !< model data to check
   character(len=3),                   intent(in)     :: grid_id !< 3 character grid ID
   type (xmap_type),                   intent(inout)  :: xmap    !< exchange grid
   real(r8_kind),    dimension(3)                     :: conservation_check_ug_side2
   integer, intent(in), optional                      :: remap_method
 
   real(r8_kind), dimension(xmap%size)          :: x_over, x_back
-  real(r8_kind), dimension(:,:),   allocatable :: d1, d_ug
-  real(r8_kind), dimension(:,:,:), allocatable :: d2
+  real(r8_kind), dimension(:,:),   allocatable :: d_array2d, d_array2d_ug
+  real(r8_kind), dimension(:,:,:), allocatable :: d_array3d
   integer                                      :: g
   type (grid_type), pointer, save              :: grid1 =>NULL(), grid2 =>NULL()
 
@@ -4265,19 +4266,20 @@ function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one f
     if (grid_id==grid2%id) then
        if(grid2%on_this_pe) then
           if(grid2%is_ug) then
-             allocate(d_ug(grid2%ls_me:grid2%le_me,grid2%km))
-             call mpp_pass_sg_to_ug(grid2%ug_domain, d, d_ug)
-             conservation_check_ug_side2(1) = sum( grid2%area(:,1) * sum(grid2%frac_area(:,1,:)*d_ug,DIM=2) )
+             allocate(d_array2d_ug(grid2%ls_me:grid2%le_me,grid2%km))
+             call mpp_pass_sg_to_ug(grid2%ug_domain, check_data, d_array2d_ug)
+             conservation_check_ug_side2(1) = sum( grid2%area(:,1) * &
+                                              sum(grid2%frac_area(:,1,:)*d_array2d_ug,DIM=2) )
           else
-             conservation_check_ug_side2(1) = sum( grid2%area(:,:) * sum(grid2%frac_area(:,:,:)*d,DIM=3) )
+             conservation_check_ug_side2(1) = sum( grid2%area(:,:) * sum(grid2%frac_area(:,:,:)*check_data,DIM=3) )
           endif
        endif
        if(grid2%is_ug) then
-          call put_to_xgrid_ug(d_ug, grid_id, x_over, xmap)  ! put from this side 2
+          call put_to_xgrid_ug(d_array2d_ug, grid_id, x_over, xmap)  ! put from this side 2
        else
-          call put_to_xgrid(d, grid_id, x_over, xmap)  ! put from this side 2
+          call put_to_xgrid(check_data, grid_id, x_over, xmap)  ! put from this side 2
        endif
-       if(allocated(d_ug)) deallocate(d_ug)
+       if(allocated(d_array2d_ug)) deallocate(d_array2d_ug)
     else
        if(grid2%is_ug) then
           call put_to_xgrid_ug(0.0 * grid2%frac_area(:,1,:), grid2%id, x_over, xmap) ! zero rest
@@ -4287,34 +4289,35 @@ function conservation_check_ug_side2(d, grid_id, xmap,remap_method) ! this one f
     end if
   end do
 
-  allocate ( d1(size(grid1%area,1),size(grid1%area,2)) )
+  allocate ( d_array2d(size(grid1%area,1),size(grid1%area,2)) )
   if(grid1%is_ug) then
-    call get_from_xgrid_ug(d1(:,1), grid1%id, x_over, xmap)  ! get onto side 1
+    call get_from_xgrid_ug(d_array2d(:,1), grid1%id, x_over, xmap)  ! get onto side 1
   else
-    call get_from_xgrid(d1, grid1%id, x_over, xmap)  ! get onto side 1
+    call get_from_xgrid(d_array2d, grid1%id, x_over, xmap)  ! get onto side 1
   endif
-  if(grid1%tile_me .NE. tile_nest)conservation_check_ug_side2(2) = sum(grid1%area*d1)
+  if(grid1%tile_me .NE. tile_nest)conservation_check_ug_side2(2) = sum(grid1%area*d_array2d)
   if(grid1%is_ug) then
-     call put_to_xgrid_ug(d1(:,1), grid1%id, x_back, xmap)   ! put from side 1
+     call put_to_xgrid_ug(d_array2d(:,1), grid1%id, x_back, xmap)   ! put from side 1
   else
-     call put_to_xgrid(d1,  grid1%id, x_back, xmap,remap_method)   ! put from side 1
+     call put_to_xgrid(d_array2d,  grid1%id, x_back, xmap,remap_method)   ! put from side 1
   endif
-  deallocate ( d1 )
+  deallocate ( d_array2d )
 
   conservation_check_ug_side2(3) = 0.0;
   do g = 2,size(xmap%grids(:))
     grid2 => xmap%grids(g)
     if(grid2%on_this_pe) then
-       allocate ( d2 ( size(grid2%frac_area, 1), size(grid2%frac_area, 2),  &
+       allocate ( d_array3d ( size(grid2%frac_area, 1), size(grid2%frac_area, 2),  &
                                                  size(grid2%frac_area, 3) ) )
     endif
     if(grid2%is_ug) then
-       call get_from_xgrid_ug(d2(:,1,:),  grid2%id, x_back, xmap) ! get onto side 2's
+       call get_from_xgrid_ug(d_array3d(:,1,:),  grid2%id, x_back, xmap) ! get onto side 2's
     else
-       call get_from_xgrid(d2,  grid2%id, x_back, xmap) ! get onto side 2's
+       call get_from_xgrid(d_array3d, grid2%id, x_back, xmap) ! get onto side 2's
     endif
-    conservation_check_ug_side2(3) = conservation_check_ug_side2(3) + sum( grid2%area * sum(grid2%frac_area*d2,DIM=3) )
-    if(allocated(d2) )deallocate ( d2 )
+    conservation_check_ug_side2(3) = conservation_check_ug_side2(3) &
+                                     + sum( grid2%area * sum(grid2%frac_area*d_array3d,DIM=3) )
+    if(allocated(d_array3d) )deallocate ( d_array3d )
   end do
   call mpp_sum(conservation_check_ug_side2, 3)
 
@@ -4352,10 +4355,10 @@ end subroutine get_xmap_grid_area
 !!   Maybe need to setup a limit for the gradient. The grid is assumeed
 !!   to be regular lat-lon grid
 !! @return real(r8_kind) grad_zonal_latlon
-function grad_zonal_latlon(d, lon, lat, is, ie, js, je, isd, jsd)
+function grad_zonal_latlon(zonal_data, lon, lat, is, ie, js, je, isd, jsd)
 
   integer,                             intent(in) :: isd, jsd
-  real(r8_kind), dimension(isd:,jsd:), intent(in) :: d
+  real(r8_kind), dimension(isd:,jsd:), intent(in) :: zonal_data
   real(r8_kind), dimension(:),         intent(in) :: lon
   real(r8_kind), dimension(:),         intent(in) :: lat
   integer,                             intent(in) :: is, ie, js, je
@@ -4379,7 +4382,7 @@ function grad_zonal_latlon(d, lon, lat, is, ie, js, je, isd, jsd)
      do j = js, je
         costheta = cos(lat(j))
         if(abs(costheta) .lt. EPS) call error_mesg('xgrids_mod(grad_zonal_latlon)', 'Improper latitude grid', FATAL)
-        grad_zonal_latlon(i,j) = (d(ip1,j)-d(im1,j))/(dx*costheta)
+        grad_zonal_latlon(i,j) = (zonal_data(ip1,j)-zonal_data(im1,j))/(dx*costheta)
      enddo
   enddo
 
@@ -4392,9 +4395,9 @@ end function grad_zonal_latlon
 !> @brief This function is used to calculate the gradient along meridinal direction.
 !!   Maybe need to setup a limit for the gradient. regular lat-lon grid are assumed
 !! @return grad_merid_latlon
-function grad_merid_latlon(d, lat, is, ie, js, je, isd, jsd)
+function grad_merid_latlon(meridinal_data, lat, is, ie, js, je, isd, jsd)
   integer,                             intent(in) :: isd, jsd
-  real(r8_kind), dimension(isd:,jsd:), intent(in) :: d
+  real(r8_kind), dimension(isd:,jsd:), intent(in) :: meridinal_data
   real(r8_kind), dimension(:),         intent(in) :: lat
   integer,                             intent(in) :: is, ie, js, je
   real(r8_kind), dimension(is:ie,js:je)           :: grad_merid_latlon
@@ -4414,7 +4417,7 @@ function grad_merid_latlon(d, lat, is, ie, js, je, isd, jsd)
      if(abs(dy).lt.EPS) call error_mesg('xgrids_mod(grad_merid_latlon)', 'Improper grid size in latitude', FATAL)
 
      do i = is, ie
-        grad_merid_latlon(i,j) = (d(i,jp1) - d(i,jm1))/dy
+        grad_merid_latlon(i,j) = (meridinal_data(i,jp1) - meridinal_data(i,jm1))/dy
      enddo
   enddo
 
@@ -4805,10 +4808,10 @@ end subroutine stock_print
 !   <OUT NAME="d"  TYPE="real(r8_kind)" DIM="(:,:)" > </OUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
-subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
-  real(r8_kind),    dimension(:), intent(out)     :: d
+subroutine get_side1_from_xgrid_ug(data_array, grid_id, x_array, xmap, complete)
+  real(r8_kind),    dimension(:), intent(out)     :: data_array
   character(len=3),               intent(in)      :: grid_id
-  real(r8_kind),    dimension(:), intent(in)      :: x
+  real(r8_kind),    dimension(:), intent(in)      :: x_array
   type (xmap_type),               intent(inout)   :: xmap
   logical, intent(in), optional                   :: complete
 
@@ -4822,7 +4825,7 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
   integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs=-9999
   integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs=-9999
 
-  d = 0.
+  data_array = 0.
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
      if(present(complete)) is_complete=complete
@@ -4831,17 +4834,17 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid_ug', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = LOC(data_array)
+     x_addrs(lsize) = LOC(x_array)
 
      if(lsize == 1) then
-        isize = size(d(:))
-        xsize = size(x(:))
+        isize = size(data_array(:))
+        xsize = size(x_array(:))
         grid_id_saved = grid_id
      else
         set_mismatch = .false.
-        set_mismatch = set_mismatch .OR. (isize /= size(d(:)))
-        set_mismatch = set_mismatch .OR. (xsize /= size(x(:)))
+        set_mismatch = set_mismatch .OR. (isize /= size(data_array(:)))
+        set_mismatch = set_mismatch .OR. (xsize /= size(x_array(:)))
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
            write( text,'(i2)' ) lsize
@@ -4887,10 +4890,10 @@ end subroutine get_side1_from_xgrid_ug
 !   <IN NAME="remap_method" TYPE="integer,optional"></IN>
 
 !> @brief Currently only support first order.
-subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
-  real(r8_kind),   dimension(:), intent(in)    :: d !<
+subroutine put_side1_to_xgrid_ug(data_array, grid_id, x_array, xmap, complete)
+  real(r8_kind),   dimension(:), intent(in)    :: data_array !<
   character(len=3),              intent(in)    :: grid_id
-  real(r8_kind),   dimension(:), intent(inout) :: x
+  real(r8_kind),   dimension(:), intent(inout) :: x_array
   type (xmap_type),              intent(inout) :: xmap
   logical, intent(in), optional                :: complete
 
@@ -4912,17 +4915,17 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group put_side1_to_xgrid_ug', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = LOC(data_array)
+     x_addrs(lsize) = LOC(x_array)
 
      if(lsize == 1) then
-        dsize = size(d(:))
-        xsize = size(x(:))
+        dsize = size(data_array(:))
+        xsize = size(x_array(:))
         grid_id_saved = grid_id
      else
         set_mismatch = .false.
-        set_mismatch = set_mismatch .OR. (dsize /= size(d(:)))
-        set_mismatch = set_mismatch .OR. (xsize /= size(x(:)))
+        set_mismatch = set_mismatch .OR. (dsize /= size(data_array(:)))
+        set_mismatch = set_mismatch .OR. (xsize /= size(x_array(:)))
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
            write( text,'(i2)' ) lsize
@@ -4962,10 +4965,10 @@ end subroutine put_side1_to_xgrid_ug
 !   <INOUT NAME="x"  TYPE="real(r8_kind)" DIM="(:)" > </INOUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
-subroutine put_side2_to_xgrid_ug(d, grid_id, x, xmap)
-  real(r8_kind),   dimension(:,:), intent(in)    :: d
+subroutine put_side2_to_xgrid_ug(data_array, grid_id, x_array, xmap)
+  real(r8_kind),   dimension(:,:), intent(in)    :: data_array
   character(len=3),                intent(in)    :: grid_id
-  real(r8_kind),   dimension(:),   intent(inout) :: x
+  real(r8_kind),   dimension(:),   intent(inout) :: x_array
   type (xmap_type),                intent(inout) :: xmap
 
   integer :: g
@@ -4976,7 +4979,7 @@ subroutine put_side2_to_xgrid_ug(d, grid_id, x, xmap)
 
   do g=2,size(xmap%grids(:))
     if (grid_id==xmap%grids(g)%id) then
-         call put_2_to_xgrid_ug(d, xmap%grids(g), x, xmap)
+         call put_2_to_xgrid_ug(data_array, xmap%grids(g), x_array, xmap)
       return;
     end if
   end do
@@ -4994,10 +4997,10 @@ end subroutine put_side2_to_xgrid_ug
 !   <OUT NAME="d"  TYPE="real(r8_kind)" DIM="(:,:)" > </OUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
-subroutine get_side2_from_xgrid_ug(d, grid_id, x, xmap)
-  real(r8_kind),    dimension(:,:), intent(out) :: d
+subroutine get_side2_from_xgrid_ug(data_array, grid_id, x_array, xmap)
+  real(r8_kind),    dimension(:,:), intent(out) :: data_array
   character(len=3),                 intent(in)  :: grid_id
-  real(r8_kind),    dimension(:),   intent(in)  :: x
+  real(r8_kind),    dimension(:),   intent(in)  :: x_array
   type (xmap_type),                 intent(in)  :: xmap
 
   integer :: g
@@ -5008,7 +5011,7 @@ subroutine get_side2_from_xgrid_ug(d, grid_id, x, xmap)
 
   do g=2,size(xmap%grids(:))
     if (grid_id==xmap%grids(g)%id) then
-      call get_2_from_xgrid_ug(d, xmap%grids(g), x, xmap)
+      call get_2_from_xgrid_ug(data_array, xmap%grids(g), x_array, xmap)
       return;
     end if
   end do
@@ -5035,10 +5038,10 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
   real(r8_kind)                   :: send_buffer(xmap%put1%sendsize*lsize)
   real(r8_kind)                   :: unpack_buffer(xmap%put1%recvsize)
 
-  real(r8_kind), dimension(dsize) :: d
-  real(r8_kind), dimension(xsize) :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), dimension(dsize) :: d_array
+  real(r8_kind), dimension(xsize) :: x_array
+  pointer(ptr_d, d_array)
+  pointer(ptr_x, x_array)
   integer :: lll
 
   call mpp_clock_begin(id_put_1_to_xgrid_order_1)
@@ -5063,7 +5066,7 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
         do n = 1, comm%send(p)%count
            pos = pos + 1
            lll = comm%send(p)%i(n)
-           send_buffer(pos) = d(lll)
+           send_buffer(pos) = d_array(lll)
         enddo
      enddo
      call mpp_send(send_buffer(buffer_pos+1), plen=msgsize, to_pe = to_pe, tag=COMM_TAG_7 )
@@ -5076,7 +5079,7 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
   if( lsize == 1) then
      ptr_x = x_addrs(1)
      do l=1,xmap%size_put1
-        x(l) =  recv_buffer(xmap%x1_put(l)%pos)
+        x_array(l) =  recv_buffer(xmap%x1_put(l)%pos)
      end do
   else
      start_pos = 0
@@ -5096,7 +5099,7 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
            enddo
         enddo
         do i=1,xmap%size_put1
-           x(i) =  unpack_buffer(xmap%x1_put(i)%pos)
+           x_array(i) =  unpack_buffer(xmap%x1_put(i)%pos)
         end do
      enddo
   endif
@@ -5109,17 +5112,17 @@ end subroutine put_1_to_xgrid_ug_order_1
 
 !#######################################################################
 
-subroutine put_2_to_xgrid_ug(d, grid, x, xmap)
+subroutine put_2_to_xgrid_ug(data_array, grid, x_array, xmap)
   type (grid_type),                                         intent(in)    :: grid
-  real(r8_kind), dimension(grid%ls_me:grid%le_me, grid%km), intent(in)    :: d
-  real(r8_kind), dimension(:),                              intent(inout) :: x
+  real(r8_kind), dimension(grid%ls_me:grid%le_me, grid%km), intent(in)    :: data_array
+  real(r8_kind), dimension(:),                              intent(inout) :: x_array
   type (xmap_type),                                         intent(in)    :: xmap
 
   integer                 ::   l
   call mpp_clock_begin(id_put_2_to_xgrid)
 
   do l=grid%first,grid%last
-    x(l) = d(xmap%x2(l)%l,xmap%x2(l)%k)
+    x_array(l) = data_array(xmap%x2(l)%l,xmap%x2(l)%k)
   end do
 
   call mpp_clock_end(id_put_2_to_xgrid)
@@ -5143,10 +5146,10 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
   type(overlap_type),          pointer, save  :: recv => NULL()
   real(r8_kind)                               :: recv_buffer(xmap%get1%recvsize*lsize*3)
   real(r8_kind)                               :: send_buffer(xmap%get1%sendsize*lsize*3)
-  real(r8_kind)                               :: d(isize)
-  real(r8_kind), dimension(xsize)             :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind)                               :: d_array(isize)
+  real(r8_kind), dimension(xsize)             :: x_array
+  pointer(ptr_d, d_array)
+  pointer(ptr_x, x_array)
 
   call mpp_clock_begin(id_get_1_from_xgrid)
 
@@ -5166,7 +5169,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
      ptr_x = x_addrs(l)
      do i=1,xmap%size
         dgp => dg(xmap%x1(i)%pos,l)
-        dgp =  dgp + xmap%x1(i)%area*x(i)
+        dgp =  dgp + xmap%x1(i)%area*x_array(i)
      enddo
   enddo
 
@@ -5196,7 +5199,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
   !--- unpack the buffer
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = 0.0
+     d_array = 0.0
   enddo
   !--- To bitwise reproduce old results, first copy the data onto its own pe.
 
@@ -5213,7 +5216,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
            do n = 1,count
               i = recv%i(n)
               pos = pos + 1
-              d(i) = recv_buffer(pos)
+              d_array(i) = recv_buffer(pos)
            enddo
         enddo
         exit
@@ -5236,7 +5239,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
         do n = 1, recv%count
            i = recv%i(n)
            pos = pos + 1
-           d(i) = d(i) + recv_buffer(pos)
+           d_array(i) = d_array(i) + recv_buffer(pos)
         enddo
      enddo
   enddo
@@ -5247,7 +5250,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
 !$OMP parallel do default(none) shared(lsize,d_addrs,grid1) private(ptr_d)
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = d * grid1%area_inv(:,1)
+     d_array = d_array * grid1%area_inv(:,1)
   enddo
   call mpp_sync_self()
   call mpp_clock_end(id_get_1_from_xgrid)
@@ -5271,10 +5274,10 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
     integer,  dimension(0:xmap%npes-1) :: pl, ml
   real(r8_kind)                        :: recv_buffer(xmap%recv_count_repro_tot*lsize)
   real(r8_kind)                        :: send_buffer(xmap%send_count_repro_tot*lsize)
-  real(r8_kind)                        :: d(xmap%grids(1)%ls_me:xmap%grids(1)%le_me)
-  real(r8_kind), dimension(xsize)      :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind)                        :: d_array(xmap%grids(1)%ls_me:xmap%grids(1)%le_me)
+  real(r8_kind), dimension(xsize)      :: x_array
+  pointer(ptr_d, d_array)
+  pointer(ptr_x, x_array)
 
   call mpp_clock_begin(id_get_1_from_xgrid_repro)
   comm => xmap%get1_repro
@@ -5307,7 +5310,7 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            do k =1, xmap%grids(g)%km
              if(xmap%grids(g)%frac_area(i,j,k)/=0.0) then
               l2 = l2+1
-              send_buffer(pos) = send_buffer(pos) + xmap%x1(l2)%area *x(l2)
+              send_buffer(pos) = send_buffer(pos) + xmap%x1(l2)%area *x_array(l2)
              endif
            enddo
          enddo
@@ -5322,7 +5325,7 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
 
   do l = 1, lsize
      ptr_d = d_addrs(l)
-     d = 0
+     d_array = 0
   enddo
 
   call mpp_sync_self(check=EVENT_RECV)
@@ -5337,11 +5340,11 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            i = grid%x_repro(l3)%l1
            p = grid%x_repro(l3)%pe-xmap%root_pe
            pos = pl(p) + (l-1)*ml(p) + grid%x_repro(l3)%recv_pos
-           d(i) = d(i) + recv_buffer(pos)
+           d_array(i) = d_array(i) + recv_buffer(pos)
         end do
      end do
      ! normalize with side 1 grid cell areas
-     d = d * xmap%grids(1)%area_inv(:,1)
+     d_array = d_array * xmap%grids(1)%area_inv(:,1)
   enddo
 
   call mpp_sync_self()
@@ -5352,26 +5355,26 @@ end subroutine get_1_from_xgrid_ug_repro
 
 !#######################################################################
 
-subroutine get_2_from_xgrid_ug(d, grid, x, xmap)
+subroutine get_2_from_xgrid_ug(data_array, grid, x_array, xmap)
   type (grid_type),                                         intent(in)  :: grid
-  real(r8_kind), dimension(grid%ls_me:grid%le_me, grid%km), intent(out) :: d
-  real(r8_kind), dimension(:),                              intent(in)  :: x
+  real(r8_kind), dimension(grid%ls_me:grid%le_me, grid%km), intent(out) :: data_array
+  real(r8_kind), dimension(:),                              intent(in)  :: x_array
   type (xmap_type),                                         intent(in)  :: xmap
 
   integer                 :: l, k
 
   call mpp_clock_begin(id_get_2_from_xgrid)
 
-  d = 0.0
+  data_array = 0.0
   do l=grid%first_get,grid%last_get
-    d(xmap%x2_get(l)%l,xmap%x2_get(l)%k) = &
-            d(xmap%x2_get(l)%l,xmap%x2_get(l)%k) + xmap%x2_get(l)%area*x(xmap%x2_get(l)%pos)
+    data_array(xmap%x2_get(l)%l,xmap%x2_get(l)%k) = &
+            data_array(xmap%x2_get(l)%l,xmap%x2_get(l)%k) + xmap%x2_get(l)%area*x_array(xmap%x2_get(l)%pos)
   end do
   !
   !  normalize with side 2 grid cell areas
   !
-  do k=1,size(d,2)
-    d(:,k) = d(:,k) * grid%area_inv(:,1)
+  do k=1,size(data_array,2)
+    data_array(:,k) = data_array(:,k) * grid%area_inv(:,1)
   end do
 
   call mpp_clock_end(id_get_2_from_xgrid)
