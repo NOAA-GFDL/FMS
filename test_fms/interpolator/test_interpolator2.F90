@@ -1,4 +1,4 @@
-!***********************************************************************
+ !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
@@ -47,7 +47,7 @@ program test_interpolator2
   real(r8_kind), parameter :: tol=1.e-5_r8_kind !< the interpolation methods are not perfect.
                                                 !! Will not get perfectly agreeing answers
 
-  !> climatology related variables and arrays (holding made up data)
+  !> climatology related variables and arrays (made up data)
   integer :: nlonlat       !< number of latitude and longitudinal center coordinates
   integer :: nlonlatb      !< number of latitude and longitudinal boundary coordinates
   integer :: ntime         !< number of time slices
@@ -81,27 +81,22 @@ program test_interpolator2
   !> test interpolator_init
   write(*,*) '===== test_interpolator_init ====='
   call test_interpolator_init(o3)
-  write(*,'(A,/)') 'test interpolator_init success'
 
   !> test interpolator 2D-4D
   write(*,*) '===== test_intepolator ======='
   call test_interpolator(o3)
-  write(*,'(A,/)') 'test_interpolator success'
 
   !> test interpolate_type_eq
   write(*,*) '===== test_interpolate_type_eq ====='
   call test_interpolate_type_eq()
-  write(*,'(A,/)') 'test_interpolate_type_eq success'
 
   !> test query_interpolator
   write(*,*) '===== test_query_interpolator ====='
   call test_query_interpolator()
-  write(*,'(A,/)') 'test_query_interpolator success'
 
   !> test interpolator end
   write(*,*) '===== test_interpolator_end ====='
   call test_interpolator_end(o3)
-  write(*,'(A,/)') 'test_interpolator_end success'
 
   !> deallocate all arrays used to write the .nc file and used for model coordinates
   call deallocate_arrays()
@@ -113,12 +108,11 @@ program test_interpolator2
   call test_interpolator_init(o3)
   write(*,*) '===== test_intepolator_no_time_axis ======='
   call test_interpolator_no_time_axis(o3)
-  write(*,*) 'test_interpolator_no_time_axis success'
 
 contains
   !===============================================!
-  !> test interpolator init
   subroutine test_interpolator_init(clim_type)
+
     !> interopolator_init initializes the interpolate_type after reading in the
     !! climatology data.  The required arguments are clim_type, file_name, lonb_mod, latb_mod
     !! where lonb_mod and latb_mod contain the model longitude and latitude values on the grid.
@@ -133,6 +127,10 @@ contains
   end subroutine test_interpolator_init
   !===============================================!
   subroutine test_interpolator(clim_type)
+
+    !> call the variants of interpolator (4D-2d) that interpolates data at a given time-point
+    !! The tests here do not test the "no_axis" interpolator routines
+    !! This subroutine also tests obtain_interpolator_time_slices for the 2D case.
 
     implicit none
 
@@ -151,7 +149,7 @@ contains
 
        model_time=set_date(1849,1,1+int(clim_time(itime)))
 
-       !> 4D
+       !> test interpolator_4D_r4/8
        call interpolator(clim_type, model_time, phalf, interp_data, 'ozone')
        do i=1, npfull
           do j=1, nlonlat
@@ -161,7 +159,7 @@ contains
           end do
        end do
 
-       !> 3D
+       !> test interpolator_3_r4/8
        call interpolator(clim_type, model_time, phalf, interp_data(:,:,:,1), 'ozone')
        do i=1, npfull
           do j=1, nlonlat
@@ -171,11 +169,18 @@ contains
           end do
        end do
 
-       !> 2D.  Also test obtain_interpolator_time_slices
+       !> test interpolator_2D_r4/8
+       call interpolator(clim_type, model_time, interp_data(:,:,1,1), 'ozone')
+       do j=1, nlonlat_mod
+          do k=1, nlonlat_mod
+             call check_answers(interp_data(k,j,1,1), ozone(k,j,1,itime), tol, 'test interpolator_2D')
+          end do
+       end do
+
+       !> Test obtain_interpolator_time_slices
        call obtain_interpolator_time_slices(clim_type,model_time)
        call interpolator(clim_type, model_time, interp_data(:,:,1,1), 'ozone')
        call unset_interpolator_time_flag(clim_type)
-       call interpolator(clim_type, model_time, interp_data(:,:,1,1), 'ozone')
        do j=1, nlonlat_mod
           do k=1, nlonlat_mod
              call check_answers(interp_data(k,j,1,1), ozone(k,j,1,itime), tol, 'test interpolator_2D')
@@ -188,6 +193,8 @@ contains
   !===============================================!
   subroutine test_interpolator_end(clim_type)
 
+    !> This subroutine tests interpolator_end
+
     implicit none
 
     type(interpolate_type) :: clim_type
@@ -198,12 +205,13 @@ contains
   !===============================================!
   subroutine test_interpolator_no_time_axis(clim_type)
 
+    !> This subroutine tests the variants (42-2D) of interpolator_no_time_axis
+
     implicit none
 
     type(interpolate_type) :: clim_type
 
     real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf-1,1) :: interp_data !< last column, there is only one field
-
     real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf
     integer :: i, j, k
 
@@ -212,7 +220,7 @@ contains
     phalf(:,:,3)=0.0004_lkind
     phalf(:,:,4)=0.0005_lkind
 
-    !> 4D
+    !> test interpolator_4D_no_time_axis_r4/8
     call interpolator(clim_type, phalf, interp_data, 'ozone')
     do i=1, nphalf-1
        do j=1, nlonlat
@@ -222,7 +230,7 @@ contains
        end do
     end do
 
-    !> 3D
+    !> test interpolator_3D_no_time_axis_r4/8
     call interpolator(clim_type, phalf, interp_data(:,:,:,1), 'ozone')
     do i=1, nphalf-1
        do j=1, nlonlat
@@ -232,7 +240,7 @@ contains
        end do
     end do
 
-    !> 2D
+    !> test interpolator_2D_no_time_axis_r4/8
     call interpolator(clim_type, interp_data(:,:,1,1), 'ozone')
     do j=1, nlonlat
        do k=1, nlonlat
@@ -244,6 +252,9 @@ contains
   !===============================================!
   subroutine test_interpolate_type_eq
 
+    !> This subroutine tests interpolaote_type_eq (assignment = operator)
+    !! The success of "=" is insured by checking to see if interpolation with o3_copy succeds.
+
     implicit none
 
     type(interpolate_type) :: o3_copy
@@ -254,6 +265,8 @@ contains
   end subroutine test_interpolate_type_eq
   !===============================================!
   subroutine test_query_interpolator
+
+    !> This subroutne tests query_interpolator
 
     implicit none
 
