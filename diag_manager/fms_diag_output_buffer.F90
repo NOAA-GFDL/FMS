@@ -225,8 +225,8 @@ subroutine get_buffer (this, buff_out, field_name)
       allocate(integer(i8_kind) :: buff_out(buff_size(1), buff_size(2), buff_size(3), buff_size(4), buff_size(5)))
       buff_out = buff
     class default
-      call mpp_error(FATAL, "get_buffer: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)." // &
-                            "field name: "// field_name)
+      call mpp_error(FATAL, "get_buffer: buffer allocated to invalid type(must be integer or real, kind size 4 or 8)."&
+                            //"field name: "// field_name)
   end select
 end subroutine
 
