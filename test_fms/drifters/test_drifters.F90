@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program test_drifters
+#ifdef use_drifters
 
 !* contents of input file: drifters_inp_test_3d.nc
 !!$netcdf drifters_inp_test_3d {
@@ -351,5 +352,5 @@ subroutine my_error_handler(mesg)
 !  print *, mesg
 !  stop
 !#endif
-
+#endif
 end subroutine my_error_handler
