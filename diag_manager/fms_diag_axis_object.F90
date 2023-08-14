@@ -296,8 +296,8 @@ module fms_diag_axis_object_mod
     class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fms2io_fileobj  !< Fms2_io fileobj to write the data to
     logical,                                   INTENT(IN)    :: edges_in_file   !< .True. if the edges to this axis are
                                                                                 !! already in the file
-    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis     !< If the axis is a subaxis, axis 
-                                                                                !! object for the parent axis 
+    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis     !< If the axis is a subaxis, axis
+                                                                                !! object for the parent axis
                                                                                 !! (this will be used to get some
                                                                                 !! of the metadata info)
 
