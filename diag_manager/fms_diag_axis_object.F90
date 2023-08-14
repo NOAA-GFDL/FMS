@@ -296,9 +296,10 @@ module fms_diag_axis_object_mod
     class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fms2io_fileobj  !< Fms2_io fileobj to write the data to
     logical,                                   INTENT(IN)    :: edges_in_file   !< .True. if the edges to this axis are
                                                                                 !! already in the file
-    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis     !< If the axis is a subaxis, axis object
-                                                                                !! for the parent axis (this will be used
-                                                                                !! to get some of the metadata info)
+    class(fmsDiagAxis_type), OPTIONAL, target, INTENT(IN)    :: parent_axis     !< If the axis is a subaxis, axis 
+                                                                                !! object for the parent axis 
+                                                                                !! (this will be used to get some
+                                                                                !! of the metadata info)
 
     character(len=:), ALLOCATABLE         :: axis_edges_name !< Name of the edges, if it exist
     character(len=:), pointer             :: axis_name       !< Name of the axis
@@ -743,7 +744,8 @@ module fms_diag_axis_object_mod
     integer                     , intent(in)    :: starting_index   !< Starting index of the subRegion for the PE
     integer                     , intent(in)    :: ending_index     !< Ending index of the subRegion for the PE
     integer                     , intent(in)    :: axis_id          !< Axis id to assign to the subaxis
-    integer                     , intent(in)    :: parent_id        !< The id of the parent axis, the subaxis belongs to
+    integer                     , intent(in)    :: parent_id        !< The id of the parent axis,
+                                                                    !! the subaxis belongs to
     character(len=*)            , intent(in)    :: parent_axis_name !< Name of the parent_axis
     real(kind=r4_kind), optional, intent(in)    :: zbounds(2)       !< Bounds of the z-axis
 
