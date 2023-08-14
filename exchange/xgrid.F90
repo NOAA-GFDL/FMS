@@ -773,7 +773,7 @@ logical,          intent(in)           :: use_higher_order
         call get_variable_units(fileobj, "xgrid_area", attvalue)
 
         if( trim(attvalue) == 'm2' ) then
-           garea = 4.0_r8_kind * real(PI,r8_kind) * real(RADIUS,r8_kind) * real(RADIUS, r8_kind);
+           garea = 4.0_r8_kind * PI * RADIUS * RADIUS;
            area_tmp = tmp(:,1)/garea
         else if( trim(attvalue) == 'none' ) then
            area_tmp = tmp(:,1)
@@ -1312,7 +1312,7 @@ subroutine get_grid_version1(grid, grid_id, grid_file)
   integer                           :: is, ie, js, je
   type(FmsNetcdfDomainFile_t)       :: fileobj
 
-  d2r = real(PI, r8_kind) / 180.0_r8_kind
+  d2r = PI / 180.0_r8_kind
 
   if(.not. open_file(fileobj, grid_file, 'read', grid%domain) ) then
      call error_mesg('xgrid_mod(get_grid_version1)', 'Error in opening file '//trim(grid_file), FATAL)
@@ -1384,7 +1384,7 @@ subroutine get_grid_version2(grid, grid_id, grid_file)
      call error_mesg('xgrid_mod(get_grid_version2)', 'Error in opening file '//trim(grid_file), FATAL)
   endif
 
-  d2r = real(PI, r8_kind) / 180.0_r8_kind
+  d2r = PI / 180.0_r8_kind
 
   call mpp_get_compute_domain(grid%domain, is, ie, js, je)
 
@@ -4351,8 +4351,8 @@ function grad_zonal_latlon(d, lon, lat, is, ie, js, je, isd, jsd)
      endif
      dx = lon(ip1) - lon(im1)
      if(abs(dx).lt.EPS )  call error_mesg('xgrids_mod(grad_zonal_latlon)', 'Improper grid size in lontitude', FATAL)
-     if(dx .gt. real(PI,r8_kind))  dx = dx - 2.0_r8_kind* real(PI, r8_kind)
-     if(dx .lt. real(-PI,r8_kind)) dx = dx + 2.0_r8_kind* real(PI, r8_kind)
+     if(dx .gt. PI)  dx = dx - 2.0_r8_kind* PI
+     if(dx .lt. -PI) dx = dx + 2.0_r8_kind* PI
      do j = js, je
         costheta = cos(lat(j))
         if(abs(costheta) .lt. EPS) call error_mesg('xgrids_mod(grad_zonal_latlon)', 'Improper latitude grid', FATAL)
@@ -4454,7 +4454,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
      return
   endif
 
-     from_dq = delta_t * 4.0_r8_kind * real(PI,r8_kind) * radius**2 * sum( sum(xmap%grids(grid_index)%area * &
+     from_dq = delta_t * 4.0_r8_kind * PI * radius**2 * sum( sum(xmap%grids(grid_index)%area * &
           & sum(xmap%grids(grid_index)%frac_area * data, DIM=3), DIM=1))
      to_dq = from_dq
 
@@ -4465,8 +4465,8 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   if(present(verbose).and.debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4.0_r8_kind*real(PI,r8_kind)*radius**2)
-     to_dq   = to_dq  /(4.0_r8_kind*real(PI,r8_kind)*radius**2)
+     from_dq = from_dq/(4.0_r8_kind*PI*radius**2)
+     to_dq   = to_dq  /(4.0_r8_kind*PI*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -4511,7 +4511,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if( .not. present(grid_index) .or. grid_index==1 ) then
 
      ! only makes sense if grid_index == 1
-     from_dq = delta_t * 4.0_r8_kind*real(PI,r8_kind)*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+     from_dq = delta_t * 4.0_r8_kind*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
      to_dq = from_dq
 
   else
@@ -4528,8 +4528,8 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if(debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4.0_r8_kind*real(PI,r8_kind)*radius**2)
-     to_dq   = to_dq  /(4.0_r8_kind*real(PI,r8_kind)*radius**2)
+     from_dq = from_dq/(4.0_r8_kind*PI*radius**2)
+     to_dq   = to_dq  /(4.0_r8_kind*PI*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -4580,7 +4580,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   endif
 
      tmp = xmap%grids(grid_index)%frac_area(:,1,:) * data
-     from_dq = delta_t * 4.0_r8_kind * real(PI,r8_kind) * radius**2 * sum( xmap%grids(grid_index)%area(:,1) * &
+     from_dq = delta_t * 4.0_r8_kind * PI * radius**2 * sum( xmap%grids(grid_index)%area(:,1) * &
           & sum(tmp, DIM=2))
      to_dq = from_dq
 
@@ -4591,8 +4591,8 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   if(present(verbose).and.debug_stocks) then
      call mpp_sum(from_dq)
      call mpp_sum(to_dq)
-     from_dq = from_dq/(4.0_r8_kind*real(PI,r8_kind)*radius**2)
-     to_dq   = to_dq  /(4.0_r8_kind*real(PI,r8_kind)*radius**2)
+     from_dq = from_dq/(4.0_r8_kind*PI*radius**2)
+     to_dq   = to_dq  /(4.0_r8_kind*PI*radius**2)
      if(mpp_pe()==mpp_root_pe()) then
         write(stocks_file,'(a,es19.12,a,es19.12,a)') verbose, from_dq,' [*/m^2]'
      endif
@@ -4625,7 +4625,7 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
      return
   endif
 
-  res = delta_t * 4.0_r8_kind * real(PI,r8_kind) * radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+  res = delta_t * 4.0_r8_kind * PI * radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
 
 end subroutine stock_integrate_2d
 !#######################################################################
@@ -4676,7 +4676,7 @@ subroutine stock_print(stck, Time, comp_name, index, ref_value, radius, pelist)
 
   if(mpp_pe() == mpp_root_pe()) then
      ! normalize to 1 earth m^2
-     planet_area = 4.0_r8_kind * real(PI,r8_kind) * radius**2
+     planet_area = 4.0_r8_kind * PI * radius**2
      f_value       = f_value     / planet_area
      c_value       = c_value     / planet_area
 
