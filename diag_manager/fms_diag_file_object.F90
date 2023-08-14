@@ -1132,7 +1132,7 @@ subroutine write_field_data(this, field_obj, buffer_obj)
   integer                              :: field_id       !< The id of the field writing the data from
 
   diag_file => this%FMS_diag_file
-  fileobj => diag_file%fileobj
+  fms2io_fileobj => diag_file%fms2io_fileobj
 
   !TODO This may be offloaded in the future
   if (diag_file%is_static) then
