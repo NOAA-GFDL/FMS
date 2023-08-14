@@ -78,7 +78,7 @@ use time_manager_mod,  only : time_type,   &
                               decrement_time
 use time_interp_mod,   only : time_interp, YEAR
 use constants_mod,     only : grav, PI, SECONDS_PER_DAY
-use platform_mod,      only : r4_kind, r8_kind
+use platform_mod,      only : r4_kind, r8_kind, r16_kind
 
 !--------------------------------------------------------------------
 
