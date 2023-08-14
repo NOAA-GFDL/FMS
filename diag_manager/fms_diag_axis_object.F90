@@ -118,6 +118,7 @@ module fms_diag_axis_object_mod
     real(kind=r4_kind), allocatable, private  :: zbounds(:)     !< Bounds of the Z axis
     contains
       procedure :: fill_subaxis
+      procedure :: axis_length
       procedure :: get_starting_index
       procedure :: get_ending_index
   END TYPE fmsDiagSubAxis_type
@@ -757,8 +758,18 @@ module fms_diag_axis_object_mod
     endif
   end subroutine fill_subaxis
 
-  !> @brief Accesses its member starting_index
-  !! @return Returns a copy of the starting_index
+  !> @brief Get the axis length of a subaxis
+  !> @return the axis length
+  function axis_length(this) &
+    result(res)
+      class(fmsDiagSubAxis_type)  , INTENT(IN) :: this             !< diag_sub_axis obj
+      integer :: res
+
+      res = this%ending_index - this%starting_index + 1
+    end function
+
+   !> @brief Accesses its member starting_index
+  !! @return a copy of the starting_index
   function get_starting_index(this) result(indx)
     class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
     integer :: indx !< Result to return
@@ -766,7 +777,7 @@ module fms_diag_axis_object_mod
   end function get_starting_index
 
   !> @brief Accesses its member ending_index
-  !! @return Returns a copy of the ending_index
+  !! @return a copy of the ending_index
   function get_ending_index(this) result(indx)
     class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
     integer :: indx !< Result to return

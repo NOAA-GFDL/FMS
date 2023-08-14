@@ -24,18 +24,19 @@
 !! buffer0-5d types extend fmsDiagBuffer_class, and upon allocation
 !! are added to the module's buffer_lists depending on it's dimension
 module fms_diag_output_buffer_mod
-
+#ifdef use_yaml
 use platform_mod
 use iso_c_binding
 use time_manager_mod, only: time_type
 use mpp_mod, only: mpp_error, FATAL
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
+use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
+use fms_diag_yaml_mod, only: diag_yaml
 
 implicit none
 
 private
 
-#ifdef use_yaml
 !> @brief Object that holds buffered data and other diagnostics
 !! Abstract to ensure use through its extensions(buffer0-5d types)
 type, abstract :: fmsDiagOutputBuffer_class
@@ -62,10 +63,21 @@ end type fmsDiagOutputBuffer_class
 type :: fmsDiagOutputBufferContainer_type
   class(fmsDiagOutputBuffer_class), allocatable :: diag_buffer_obj !< any 0-5d buffer object
   integer,                          allocatable :: axis_ids(:)     !< Axis ids for the buffer
+  integer                                       :: field_id        !< The id of the field the buffer belongs to
+  integer                                       :: yaml_id         !< The id of the yaml id the buffer belongs to
 
   contains
   procedure :: add_axis_ids
   procedure :: get_axis_ids
+  procedure :: set_field_id
+  procedure :: get_field_id
+  procedure :: set_yaml_id
+  procedure :: get_yaml_id
+  procedure :: write_buffer
+  !! These are needed because otherwise the write_data calls will go into the wrong interface
+  procedure :: write_buffer_wrapper_netcdf
+  procedure :: write_buffer_wrapper_domain
+  procedure :: write_buffer_wrapper_u
 end type
 
 !> Scalar buffer type to extend fmsDiagBufferContainer_type
@@ -168,33 +180,32 @@ end function fms_diag_output_buffer_init
 !> Creates a container type encapsulating a new buffer object for the given dimensions.
 !! The buffer object will still need to be allocated to a type via allocate_buffer() before use.
 !> @result A fmsDiagBufferContainer_type that holds a bufferNd_type, where N is buff_dims
-function fms_diag_output_buffer_create_container(buff_dims) &
-result(rslt)
-  integer, intent(in)                            :: buff_dims !< dimensions
-  type(fmsDiagOutputBufferContainer_type), allocatable :: rslt
+subroutine fms_diag_output_buffer_create_container(buff_dims, buffer_obj)
+  integer,                                 intent(in)     :: buff_dims !< dimensions
+  type(fmsDiagOutputBufferContainer_type), intent(inout)  :: buffer_obj
+
   character(len=5) :: dim_output !< string to output buff_dims on error
 
-  allocate(rslt)
   select case (buff_dims)
     case (0)
-      allocate(outputBuffer0d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer0d_type :: buffer_obj%diag_buffer_obj)
     case (1)
-      allocate(outputBuffer1d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer1d_type :: buffer_obj%diag_buffer_obj)
     case (2)
-      allocate(outputBuffer2d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer2d_type :: buffer_obj%diag_buffer_obj)
     case (3)
-      allocate(outputBuffer3d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer3d_type :: buffer_obj%diag_buffer_obj)
     case (4)
-      allocate(outputBuffer4d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer4d_type :: buffer_obj%diag_buffer_obj)
     case (5)
-      allocate(outputBuffer5d_type :: rslt%diag_buffer_obj)
+      allocate(outputBuffer5d_type :: buffer_obj%diag_buffer_obj)
     case default
       write( dim_output, *) buff_dims
       dim_output = adjustl(dim_output)
       call mpp_error(FATAL, 'fms_diag_buffer_create_container: invalid number of dimensions given:' // dim_output //&
                             '. Must be 0-5')
   end select
-end function fms_diag_output_buffer_create_container
+end subroutine fms_diag_output_buffer_create_container
 
 !!--------generic routines for any fmsDiagBuffer_class objects
 
@@ -1455,5 +1466,145 @@ function get_axis_ids(this) &
   endif
 end function
 
+!> @brief Get the field id of the buffer
+!! @return the field id of the buffer
+function get_field_id(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%field_id
+end function get_field_id
+
+!> @brief set the field id of the buffer
+subroutine set_field_id(this, field_id)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: field_id    !< field id of the buffer
+
+  this%field_id = field_id
+end subroutine set_field_id
+
+!> @brief set the field id of the buffer
+subroutine set_yaml_id(this, yaml_id)
+  class(fmsDiagOutputBufferContainer_type), intent(inout) :: this        !< Buffer object
+  integer,                                  intent(in)    :: yaml_id     !< yaml id of the buffer
+
+  this%yaml_id = yaml_id
+end subroutine set_yaml_id
+
+!> @brief Get the yaml id of the buffer
+!! @return the yaml id of the buffer
+function get_yaml_id(this) &
+  result(res)
+
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%yaml_id
+end function get_yaml_id
+
+!> @brief Write the buffer to the file
+subroutine write_buffer(this, fileobj, unlim_dim_level)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this            !< buffer object to write
+  class(FmsNetcdfFile_t),                   intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,                        intent(in) :: unlim_dim_level !< unlimited dimension
+
+  select type(fileobj)
+  type is (FmsNetcdfFile_t)
+    call this%write_buffer_wrapper_netcdf(fileobj, unlim_dim_level=unlim_dim_level)
+  type is (FmsNetcdfDomainFile_t)
+    call this%write_buffer_wrapper_domain(fileobj, unlim_dim_level=unlim_dim_level)
+  type is (FmsNetcdfUnstructuredDomainFile_t)
+    call this%write_buffer_wrapper_u(fileobj, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The file "//trim(fileobj%path)//" is not one of the accepted types"//&
+      " only FmsNetcdfFile_t, FmsNetcdfDomainFile_t, and FmsNetcdfUnstructuredDomainFile_t are accepted.")
+  end select
+end subroutine write_buffer
+
+!> @brief Write the buffer to the FmsNetcdfFile_t fileobj
+subroutine write_buffer_wrapper_netcdf(this, fileobj, unlim_dim_level)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this            !< buffer object to write
+  type(FmsNetcdfFile_t),                    intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,                        intent(in) :: unlim_dim_level !< unlimited dimension
+
+  character(len=:), allocatable :: varname !< name of the variable
+
+  varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+  select type(buffer_obj=>this%diag_buffer_obj)
+  type is (outputBuffer0d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer(1), unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer1d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer2d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer3d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer4d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer5d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The field:"//trim(varname)//" does not have a valid buffer object type."//&
+      " Only 0d, 1d, 2d, 3d, 4d, and 5d buffers are supported.")
+  end select
+end subroutine write_buffer_wrapper_netcdf
+
+!> @brief Write the buffer to the FmsNetcdfDomainFile_t fileobj
+subroutine write_buffer_wrapper_domain(this, fileobj, unlim_dim_level)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this            !< buffer object to write
+  type(FmsNetcdfDomainFile_t),              intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,                        intent(in) :: unlim_dim_level !< unlimited dimension
+
+  character(len=:), allocatable :: varname !< name of the variable
+
+  varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+  select type(buffer_obj=>this%diag_buffer_obj)
+  type is (outputBuffer0d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer(1), unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer1d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer2d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer3d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer4d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer5d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The field:"//trim(varname)//" does not have a valid buffer object type."//&
+      " Only 0d, 1d, 2d, 3d, 4d, and 5d buffers are supported.")
+  end select
+end subroutine write_buffer_wrapper_domain
+
+!> @brief Write the buffer to the FmsNetcdfUnstructuredDomainFile_t fileobj
+subroutine write_buffer_wrapper_u(this, fileobj, unlim_dim_level)
+  class(fmsDiagOutputBufferContainer_type), intent(in) :: this            !< buffer object to write
+  type(FmsNetcdfUnstructuredDomainFile_t),  intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,                        intent(in) :: unlim_dim_level !< unlimited dimension
+
+  character(len=:), allocatable :: varname !< name of the variable
+
+  varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+  select type(buffer_obj=>this%diag_buffer_obj)
+  type is (outputBuffer0d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer(1), unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer1d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer2d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer3d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer4d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  type is (outputBuffer5d_type)
+    call write_data(fileobj, varname, buffer_obj%buffer, unlim_dim_level=unlim_dim_level)
+  class default
+    call mpp_error(FATAL, "The field:"//trim(varname)//" does not have a valid buffer object type."//&
+      " Only 0d, 1d, 2d, 3d, 4d, and 5d buffers are supported.")
+  end select
+end subroutine write_buffer_wrapper_u
 #endif
 end module fms_diag_output_buffer_mod

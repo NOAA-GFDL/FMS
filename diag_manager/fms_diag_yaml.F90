@@ -226,7 +226,7 @@ type diagYamlObject_type
   character(len=:), allocatable, private :: diag_title                   !< Experiment name
   integer, private, dimension (basedate_size) :: diag_basedate           !< basedate array
   type(diagYamlFiles_type), allocatable, public, dimension (:) :: diag_files!< History file info
-  type(diagYamlFilesVar_type), allocatable, private, dimension (:) :: diag_fields !< Diag fields info
+  type(diagYamlFilesVar_type), allocatable, public, dimension (:) :: diag_fields !< Diag fields info
   contains
   procedure :: size_diag_files
 

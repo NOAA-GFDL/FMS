@@ -71,11 +71,11 @@ type fmsDiagField_type
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
      class(*), allocatable, dimension(:,:,:,:), private :: data_buffer     !< Buffer for field data
-     logical, allocatable, private                    :: data_buffer_allocated !< True if the buffer has
+     logical, allocatable, private                    :: data_buffer_is_allocated !< True if the buffer has
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
                                                                            !! functions. False when done.
-     logical, allocatable, dimension(:)               :: buffer_allocated  !< True if a buffer pointed by
+     logical, allocatable                             :: buffer_allocated  !< True if a buffer pointed by
                                                                            !! the corresponding index in
                                                                            !! buffer_ids(:) is allocated.
   contains
@@ -88,6 +88,9 @@ type fmsDiagField_type
      procedure :: setID => set_diag_id
      procedure :: set_type => set_vartype
      procedure :: set_data_buffer => set_data_buffer
+     procedure :: set_data_buffer_is_allocated
+     procedure :: is_data_buffer_allocated
+     procedure :: allocate_data_buffer
      procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
      procedure :: add_attribute => diag_field_add_attribute
      procedure :: vartype_inq => what_is_vartype
@@ -143,6 +146,7 @@ type fmsDiagField_type
      procedure :: get_missing_value
      procedure :: get_data_RANGE
      procedure :: get_axis_id
+     procedure :: get_data_buffer
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
@@ -382,19 +386,15 @@ subroutine set_vartype(objin , var)
           " r8, r4, i8, i4, or string.", warning)
  end select
 end subroutine set_vartype
-!> Allocates the data buffer in the field object.
-!! Adds the input data to the buffered data.
-subroutine set_data_buffer (this, input_data, diag_axis, is, js, ks, ie, je, ke)
+
+!> @brief Adds the input data to the buffered data.
+subroutine set_data_buffer (this, input_data, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this !< The field object
   class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
-  class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:)          !< Array of diag_axis
-  integer :: is, js, ks !< Starting indicies of the field_data
-  integer :: ie, je, ke !< Ending indicied of the field_data
-!> Allocate the buffer if it is not allocated
-  if (.not.allocated(this%data_buffer_allocated)) this%data_buffer_allocated = .false.
-  if (.not.this%data_buffer_allocated) &
-    this%data_buffer_allocated =  allocate_data_buffer(this, input_data, diag_axis)
-  if (.not.this%data_buffer_allocated) &
+  integer :: is, js, ks !< Starting indicies of the field_data relative to the global domain
+  integer :: ie, je, ke !< Ending indicies of the field_data relative to the global domain
+
+  if (.not.this%data_buffer_is_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
 
@@ -436,16 +436,12 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
   integer, dimension (ndims) :: length !< The length of an axis
   integer :: a !< For looping through axes
   integer, pointer :: axis_id !< The axis ID
-!!TODO:
-!! Use global data
-!! use is, ie, js, je, ks, ke, ls, le
+
 !! Use the axis to get the size
 !> Initialize the axis lengths to 1.  Any dimension that does not have an axis will have a length
 !! of 1.
   length = 1
-!> Get the number of axes
   naxes = size(this%axis_ids)
-!> Loop through the axes and get the length of the axes for this field
   axis_loop: do a = 1,naxes
     axis_id => this%axis_ids(a)
     select type (axis => diag_axis(axis_id)%axis)
@@ -453,8 +449,7 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
         length(a) = axis%axis_length()
     end select
   enddo axis_loop
-!> On a single thread, allocate the data buffer to the correct kind and size
-!$omp single
+
   select type (input_data)
     type is (real(r4_kind))
       if (.not.allocated(this%data_buffer)) allocate(real(kind=r4_kind) :: this%data_buffer( &
@@ -484,7 +479,6 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
       call mpp_error ("allocate_data_buffer","The data input to set_data_buffer for "//&
         trim(this%varname)//" is not a supported type",  FATAL)
   end select
-!$omp end single
   allocate_data_buffer = allocated(this%data_buffer)
 end function allocate_data_buffer
 !> Sets the flag saying that the math functions need to be done
@@ -493,6 +487,24 @@ subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
   logical, intent (in) :: math_needs_to_be_done !< Flag saying that the math functions need to be done
   this%math_needs_to_be_done = math_needs_to_be_done
 end subroutine set_math_needs_to_be_done
+
+!> @brief Sets the flag saying that the data buffer is allocated
+subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)
+  class (fmsDiagField_type) , intent(inout) :: this                     !< The field object
+  logical,                    intent (in)   :: data_buffer_is_allocated !< .true. if the
+                                                                        !! data buffer is allocated
+  this%data_buffer_is_allocated = data_buffer_is_allocated
+end subroutine set_data_buffer_is_allocated
+
+!> @brief Determine if the data_buffer is allocated
+!! @return logical indicating if the data_buffer is allocated
+pure logical function is_data_buffer_allocated (this)
+  class (fmsDiagField_type) , intent(in) :: this                     !< The field object
+
+  is_data_buffer_allocated = .false.
+  if (allocated(this%data_buffer_is_allocated)) is_data_buffer_allocated = this%data_buffer_is_allocated
+
+end function
 !> \brief Prints to the screen what type the diag variable is
 subroutine what_is_vartype(this)
  class (fmsDiagField_type) , intent(inout):: this
@@ -618,7 +630,8 @@ end function diag_obj_is_registered
 function diag_obj_is_static (this) result (rslt)
     class(fmsDiagField_type), intent(in) :: this
     logical :: rslt
-    rslt = this%static
+    rslt = .false.
+    if (allocated(this%static)) rslt = this%static
 end function diag_obj_is_static
 
 !> @brief Determine if the field is a scalar
@@ -667,7 +680,8 @@ pure function get_mask_variant (this) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: this !< diag object
      logical :: rslt
-     rslt = this%mask_variant
+     rslt = .false.
+     if (allocated(this%mask_variant)) rslt = this%mask_variant
 end function get_mask_variant
 
 !> @brief Gets local
@@ -1265,38 +1279,13 @@ result(rslt)
   else
     rslt => null()
   endif
-!  select type (db => this%data_buffer)
-!    type is (real(kind=r4_kind))
-!      allocate (real(kind=r4_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!    type is (real(kind=r8_kind))
-!      allocate (real(kind=r8_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!    type is (integer(kind=i4_kind))
-!      allocate (integer(kind=i4_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!    type is (integer(kind=i8_kind))
-!      allocate (integer(kind=i8_kind) :: rslt(size(this%data_buffer,1), &
-!                                      size(this%data_buffer,2), &
-!                                      size(this%data_buffer,3), &
-!                                      size(this%data_buffer,4) ))
-!      rslt = this%data_buffer
-!  end select
 end function get_data_buffer
 !> Gets the flag telling if the math functions need to be done
 !! \return Copy of math_needs_to_be_done flag
 pure logical function get_math_needs_to_be_done(this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
-  get_math_needs_to_be_done = this%math_needs_to_be_done
+  get_math_needs_to_be_done = .false.
+  if (allocated(this%math_needs_to_be_done)) get_math_needs_to_be_done = this%math_needs_to_be_done
 end function get_math_needs_to_be_done
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
@@ -1483,10 +1472,10 @@ function get_default_missing_value(var_type) &
 
   select case(var_type)
   case (r4)
-    allocate(integer(kind=r4_kind) :: rslt)
+    allocate(real(kind=r4_kind) :: rslt)
     rslt = real(CMOR_MISSING_VALUE, kind=r4_kind)
   case (r8)
-    allocate(integer(kind=r8_kind) :: rslt)
+    allocate(real(kind=r8_kind) :: rslt)
     rslt = real(CMOR_MISSING_VALUE, kind=r8_kind)
   case default
   end select
@@ -1639,6 +1628,28 @@ subroutine dump_field_obj (this, unit_num)
   endif
 
 end subroutine
+
+!< @brief Get the starting compute domain indices for a set of axis
+!! @return compute domain starting indices
+function get_starting_compute_domain(axis_ids, diag_axis) &
+result(compute_domain)
+  integer,                         intent(in) :: axis_ids(:)  !< Array of axis ids
+  class(fmsDiagAxisContainer_type),intent(in) :: diag_axis(:) !< Array of axis object
+
+  integer :: compute_domain(4)
+  integer :: a              !< For looping through axes
+  integer :: compute_idx(2) !< Compute domain indices (starting, ending)
+  logical :: dummy          !< Dummy variable for the `get_compute_domain` subroutine
+
+  compute_domain = 1
+  axis_loop: do a = 1,size(axis_ids)
+    select type (axis => diag_axis(axis_ids(a))%axis)
+      type is (fmsDiagFullAxis_type)
+        call axis%get_compute_domain(compute_idx, dummy)
+        if ( compute_idx(1) .ne. diag_null) compute_domain(a) = compute_idx(1)
+    end select
+  enddo axis_loop
+end function get_starting_compute_domain
 
 #endif
 end module fms_diag_field_object_mod
