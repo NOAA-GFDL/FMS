@@ -459,14 +459,14 @@ implicit none
         xt = 0; yt = 0;
         do j = jsc_atm, jec_atm
            do i = isc_atm, iec_atm
-              xt(i,j) = tmpx(2*i, 2*j)*real(DEG_TO_RAD, r8_kind)
-              yt(i,j) = tmpy(2*i, 2*j)*real(DEG_TO_RAD, r8_kind)
+              xt(i,j) = tmpx(2*i, 2*j)*DEG_TO_RAD
+              yt(i,j) = tmpy(2*i, 2*j)*DEG_TO_RAD
            end do
         end do
         do j = jsc_atm, jed_atm
            do i = isc_atm, ied_atm
-              xc(i,j) = tmpx(2*i-1, 2*j-1)*real(DEG_TO_RAD, r8_kind)
-              yc(i,j) = tmpy(2*i-1, 2*j-1)*real(DEG_TO_RAD, r8_kind)
+              xc(i,j) = tmpx(2*i-1, 2*j-1)*DEG_TO_RAD
+              yc(i,j) = tmpy(2*i-1, 2*j-1)*DEG_TO_RAD
            end do
         end do
         call mpp_update_domains(xt, atm_domain)
