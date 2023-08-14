@@ -21,7 +21,7 @@
 program test_diag_buffer
 #ifdef use_yaml
 
-    use fms_diag_output_buffer_mod, only: outputBuffer_type
+    use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer
     use platform_mod,               only: r8_kind, r4_kind, i8_kind, i4_kind
     use fms_mod,                    only: string, fms_init, fms_end
     use mpp_mod,                    only: mpp_error, FATAL
@@ -29,15 +29,15 @@ program test_diag_buffer
 
     implicit none
 
-    type(outputBuffer_type) :: buffobj(6)       !< Dummy output buffers
-    integer                 :: buff_sizes(5)    !< Size of the buffer for each dimension
-    class(*),allocatable    :: p_val(:,:,:,:,:) !< Dummy variable to get the data
-    integer                 :: i, j             !< For do loops
-    real(r8_kind)           :: r8_data          !< Dummy r8 data
-    real(r4_kind)           :: r4_data          !< Dummy r4 data
-    integer(i8_kind)        :: i8_data          !< Dummy i8 data
-    integer(i4_kind)        :: i4_data          !< Dummy i4 data
-    character(len=4)        :: fname = 'test'   !< Dummy name for error messages
+    type(fmsDiagOutputBuffer) :: buffobj(6)       !< Dummy output buffers
+    integer                   :: buff_sizes(5)    !< Size of the buffer for each dimension
+    class(*),allocatable      :: p_val(:,:,:,:,:) !< Dummy variable to get the data
+    integer                   :: i, j             !< For do loops
+    real(r8_kind)             :: r8_data          !< Dummy r8 data
+    real(r4_kind)             :: r4_data          !< Dummy r4 data
+    integer(i8_kind)          :: i8_data          !< Dummy i8 data
+    integer(i4_kind)          :: i4_data          !< Dummy i4 data
+    character(len=4)          :: fname = 'test'   !< Dummy name for error messages
 
     call fms_init
 
