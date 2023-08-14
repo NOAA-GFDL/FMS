@@ -337,7 +337,7 @@ program test_drifters
 !#ifndef _SERIAL
   call mpp_exit
 !#endif
-
+#endif
 end program test_drifters
 
 subroutine my_error_handler(mesg)
@@ -352,5 +352,5 @@ subroutine my_error_handler(mesg)
 !  print *, mesg
 !  stop
 !#endif
-#endif
+
 end subroutine my_error_handler
