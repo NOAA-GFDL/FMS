@@ -119,6 +119,8 @@ module fms_diag_axis_object_mod
     contains
       procedure :: fill_subaxis
       procedure :: axis_length
+      procedure :: get_starting_index
+      procedure :: get_ending_index
   END TYPE fmsDiagSubAxis_type
 
   !> @brief Type to hold the diurnal axis
@@ -765,6 +767,22 @@ module fms_diag_axis_object_mod
 
       res = this%ending_index - this%starting_index + 1
     end function
+
+   !> @brief Accesses its member starting_index
+  !! @return a copy of the starting_index
+  function get_starting_index(this) result(indx)
+    class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
+    integer :: indx !< Result to return
+    indx = this%starting_index
+  end function get_starting_index
+
+  !> @brief Accesses its member ending_index
+  !! @return a copy of the ending_index
+  function get_ending_index(this) result(indx)
+    class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
+    integer :: indx !< Result to return
+    indx = this%ending_index
+  end function get_ending_index
 
   !> @brief Get the ntiles in a domain
   !> @return the number of tiles in a domain

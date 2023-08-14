@@ -680,7 +680,8 @@ pure function get_mask_variant (this) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: this !< diag object
      logical :: rslt
-     rslt = this%mask_variant
+     rslt = .false.
+     if (allocated(this%mask_variant)) rslt = this%mask_variant
 end function get_mask_variant
 
 !> @brief Gets local
