@@ -1127,7 +1127,7 @@ subroutine write_field_data(this, field_obj, buffer_obj)
   type(fmsDiagOutputBufferContainer_type), intent(in), target :: buffer_obj(:)  !< The buffer object with the data
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< Fileobj to write to
+  class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
   integer                              :: i              !< For do loops
   integer                              :: field_id       !< The id of the field writing the data from
 
@@ -1139,16 +1139,18 @@ subroutine write_field_data(this, field_obj, buffer_obj)
     !< Here the file is static so there is no need for the unlimited dimension
     !! as a variables are static
     do i = 1, diag_file%number_of_buffers
-      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
+      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
     enddo
   else
     do i = 1, diag_file%number_of_buffers
       field_id = buffer_obj(diag_file%buffer_ids(i))%get_field_id()
       if (field_obj(field_id)%is_static()) then
         !< If the variable is static, only write it the first time
-        if (diag_file%unlim_dimension_level .eq. 1) call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj)
+        if (diag_file%unlim_dimension_level .eq. 1) &
+            call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
       else
-        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fileobj, unlim_dim_level=diag_file%unlim_dimension_level)
+        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
+             unlim_dim_level=diag_file%unlim_dimension_level)
       endif
     enddo
   endif
