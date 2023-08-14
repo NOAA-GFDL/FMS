@@ -210,8 +210,7 @@ program test_reduction_methods
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
       case (real_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, &
-          is_in=isd1, ie_in=ied1, &
-          rmask=drmask(:,1,1,1))
+          rmask=crmask(:,1,1,1))
         used = send_data(id_var2, ddata(:,:,1,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           rmask=drmask(:,:,1,1))
@@ -220,11 +219,10 @@ program test_reduction_methods
           rmask=drmask(:,:,:,1))
       case (logical_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, &
-          is_in=isd1, ie_in=ied1, &
-          mask=dlmask(:,1,1,1))
+          mask=clmask(:,1,1,1))
         used = send_data(id_var2, ddata(:,:,1,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
-          mask=dlmask(isd1:ied1,jsd1:jed1,1,1))
+          mask=dlmask(:,:,1,1))
         used = send_data(id_var3, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           mask=dlmask(:,:,:,1))
