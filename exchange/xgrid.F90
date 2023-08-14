@@ -1591,7 +1591,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   else if(variable_exists(gridfileobj, "ocn_mosaic_file" ) ) then
      xmap%version = VERSION2
   else
-     call error_mesg('xgrid_mod', 'both AREA_ATMxOCN and ocn_mosaic_file does not exist in '//trim(grid_file), FATAL)
+     call error_mesg('xgrid_mod', &
+     'both AREA_ATMxOCN and ocn_mosaic_file does not exist in '//trim(grid_file), FATAL)
   end if
 
 
@@ -1645,7 +1646,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
      end select
 
      if( g == 1 .AND. grid_ids(1) == 'ATM' ) then
-        if( .NOT. grid%on_this_pe ) call error_mesg('xgrid_mod', 'ATM domain is not defined on some processor' ,FATAL)
+        if( .NOT. grid%on_this_pe ) call error_mesg('xgrid_mod', &
+        'ATM domain is not defined on some processor' ,FATAL)
      endif
      grid%npes =  mpp_get_domain_npes(grid%domain)
      if( xmap%npes > grid%npes .AND. g == 1 .AND. grid_ids(1) == 'ATM' ) then
@@ -1677,8 +1679,10 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
         npes2 = xmap%npes-npes
         call mpp_get_compute_domains(domain2,  xbegin=grid%is(0:npes2-1), xend=grid%ie(0:npes2-1), &
                                      ybegin=grid%js(0:npes2-1), yend=grid%je(0:npes2-1) )
-        call mpp_get_compute_domains(grid%domain, xbegin=grid%is(npes2:xmap%npes-1), xend=grid%ie(npes2:xmap%npes-1), &
-                                     ybegin=grid%js(npes2:xmap%npes-1), yend=grid%je(npes2:xmap%npes-1) )
+        call mpp_get_compute_domains(grid%domain, xbegin=grid%is(npes2:xmap%npes-1), &
+                                     xend=grid%ie(npes2:xmap%npes-1),                &
+                                     ybegin=grid%js(npes2:xmap%npes-1),              &
+                                     yend=grid%je(npes2:xmap%npes-1) )
         call mpp_get_tile_list(domain2, grid%tile(0:npes2-1))
         call mpp_get_tile_list(grid%domain, grid%tile(npes2:xmap%npes-1))
      endif
@@ -1816,13 +1820,17 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%edge_w/edge_e', FATAL)
               if(size(atm_grid%edge_s(:)) .NE. nxc+1 .OR. size(atm_grid%edge_n(:)) .NE. nxc+1)    &
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%edge_s/edge_n', FATAL)
-              if(size(atm_grid%en1,1) .NE. 3 .OR. size(atm_grid%en1,2) .NE. nxc .OR. size(atm_grid%en1,3) .NE. nyc+1) &
+              if(size(atm_grid%en1,1) .NE. 3 .OR. size(atm_grid%en1,2) .NE. nxc &
+                  & .OR. size(atm_grid%en1,3) .NE. nyc+1) &
                    call error_mesg( 'xgrid_mod', 'incorrect dimension size of atm_grid%en1', FATAL)
-              if(size(atm_grid%en2,1) .NE. 3 .OR. size(atm_grid%en2,2) .NE. nxc+1 .OR. size(atm_grid%en2,3) .NE. nyc) &
+              if(size(atm_grid%en2,1) .NE. 3 .OR. size(atm_grid%en2,2) .NE. nxc+1 &
+                  & .OR. size(atm_grid%en2,3) .NE. nyc) &
                    call error_mesg( 'xgrid_mod', 'incorrect dimension size of atm_grid%en2', FATAL)
-              if(size(atm_grid%vlon,1) .NE. 3 .OR. size(atm_grid%vlon,2) .NE. nxc .OR. size(atm_grid%vlon,3) .NE. nyc)&
+              if(size(atm_grid%vlon,1) .NE. 3 .OR. size(atm_grid%vlon,2) .NE. nxc &
+                  & .OR. size(atm_grid%vlon,3) .NE. nyc)&
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%vlon', FATAL)
-              if(size(atm_grid%vlat,1) .NE. 3 .OR. size(atm_grid%vlat,2) .NE. nxc .OR. size(atm_grid%vlat,3) .NE. nyc)&
+              if(size(atm_grid%vlat,1) .NE. 3 .OR. size(atm_grid%vlat,2) .NE. nxc &
+                  & .OR. size(atm_grid%vlat,3) .NE. nyc)&
                    call error_mesg('xgrid_mod', 'incorrect dimension size of atm_grid%vlat', FATAL)
               if (associated(grid%box%dx))     deallocate(grid%box%dx)     !< Check if allocated
               if (associated(grid%box%dy))     deallocate(grid%box%dy)     !< Check if allocated
@@ -2733,7 +2741,8 @@ subroutine set_comm_put1(xmap)
               else
                  !---may need to replace with a fast search algorithm
                  do n = 1, send_size(p)
-                    if(i1 == iarray(pos_x(p)+n) .AND. j1 == jarray(pos_x(p)+n) .AND. tile1 == tarray(pos_x(p)+n)) then
+                    if(i1 == iarray(pos_x(p)+n) .AND. j1 == jarray(pos_x(p)+n) &
+                        .AND. tile1 == tarray(pos_x(p)+n)) then
                        found = .true.
                        exit
                     endif
@@ -3253,7 +3262,8 @@ subroutine put_side1_to_xgrid(data2send, grid_id, xgrid_data, xmap, remap_method
         set_mismatch = set_mismatch .OR. (grid_id_saved /= grid_id)
         if(set_mismatch)then
            write( text,'(i2)' ) lsize
-           call error_mesg ('xgrid_mod', 'Incompatible field at count '//text//' for group put_side1_to_xgrid', FATAL )
+           call error_mesg ('xgrid_mod', &
+           'Incompatible field at count '//text//' for group put_side1_to_xgrid', FATAL )
         endif
      endif
 
@@ -3346,7 +3356,8 @@ subroutine get_side1_from_xgrid(recieve_data, grid_id, xgrid_data, xmap, complet
      lsize = lsize + 1
      if( lsize > MAX_FIELDS ) then
         write( text,'(i2)' ) MAX_FIELDS
-        call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid', FATAL)
+        call error_mesg ('xgrid_mod',  &
+        'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid', FATAL)
      endif
      d_addrs(lsize) = LOC(recieve_data)
      x_addrs(lsize) = LOC(xgrid_data)
@@ -3490,8 +3501,9 @@ subroutine get_2_from_xgrid(recieve_data, grid, xgrid_data, xmap)
 
   recieve_data = 0.0
   do l=grid%first_get,grid%last_get
-    recieve_data(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) = &
-            recieve_data(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) + xmap%x2_get(l)%area*xgrid_data(xmap%x2_get(l)%pos)
+    recieve_data(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) =       &
+            recieve_data(xmap%x2_get(l)%i,xmap%x2_get(l)%j,xmap%x2_get(l)%k) &
+            + xmap%x2_get(l)%area*xgrid_data(xmap%x2_get(l)%pos)
   end do
   !
   !  normalize with side 2 grid cell areas
@@ -3733,9 +3745,11 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
               j = comm%send(p)%j(n)
               d_bar = d_array(i,j)
               if( d_max(i,j,l) > d_bar_max(i,j,l) ) then
-                 send_buffer(pos) = d_bar + ((send_buffer(pos)-d_bar)/(d_max(i,j,l)-d_bar)) * (d_bar_max(i,j,l)-d_bar)
+                 send_buffer(pos) = d_bar + ((send_buffer(pos)-d_bar) / &
+                                    (d_max(i,j,l)-d_bar)) * (d_bar_max(i,j,l)-d_bar)
               else if( d_min(i,j,l) < d_bar_min(i,j,l) ) then
-                 send_buffer(pos) = d_bar + ((send_buffer(pos)-d_bar)/(d_min(i,j,l)-d_bar)) * (d_bar_min(i,j,l)-d_bar)
+                 send_buffer(pos) = d_bar + ((send_buffer(pos)-d_bar) / &
+                                    (d_min(i,j,l)-d_bar)) * (d_bar_min(i,j,l)-d_bar)
               endif
            enddo
         enddo
@@ -3800,7 +3814,8 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
 !$OMP parallel do default(none) shared(xmap,recv_buffer,ptr_x) private(pos)
         do l=1,xmap%size_put1
            pos = xmap%x1_put(l)%pos
-           x_array(l) = recv_buffer(3*pos-2) + recv_buffer(3*pos-1)*xmap%x1_put(l)%dj + recv_buffer(3*pos)*xmap%x1_put(l)%di
+           x_array(l) = recv_buffer(3*pos-2) + recv_buffer(3*pos-1)*xmap%x1_put(l)%dj &
+                        + recv_buffer(3*pos)*xmap%x1_put(l)%di
         end do
      else
 !$OMP parallel do default(none) shared(lsize,comm,xmap,recv_buffer,x_addrs) &
@@ -3822,8 +3837,8 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
            enddo
            do i=1,xmap%size_put1
               pos = xmap%x1_put(i)%pos
-              x_array(i) = unpack_buffer(3*pos-2) + unpack_buffer(3*pos-1)*xmap%x1_put(i)%dj + unpack_buffer(3*pos) &
-                   & * xmap%x1_put(i)%di
+              x_array(i) = unpack_buffer(3*pos-2) + unpack_buffer(3*pos-1)*xmap%x1_put(i)%dj + &
+                           & unpack_buffer(3*pos) * xmap%x1_put(i)%di
            end do
         enddo
      endif
@@ -4098,7 +4113,8 @@ function conservation_check_side1(check_data, grid_id, xmap,remap_method) ! this
     endif
     call get_from_xgrid (d_array3d, grid2%id, x_over, xmap) ! get onto side 2's
     if(grid2%on_this_pe) then
-       conservation_check_side1(2) = conservation_check_side1(2) + sum( grid2%area * sum(grid2%frac_area*d_array3d,DIM=3) )
+       conservation_check_side1(2) = conservation_check_side1(2) + &
+       sum( grid2%area * sum(grid2%frac_area*d_array3d,DIM=3) )
     endif
     call put_to_xgrid (d_array3d, grid2%id, x_back, xmap) ! put from side 2's
     if(allocated(d_array3d))deallocate (d_array3d)
@@ -4376,12 +4392,14 @@ function grad_zonal_latlon(zonal_data, lon, lat, is, ie, js, je, isd, jsd)
         ip1 = i+1; im1 = i-1
      endif
      dx = lon(ip1) - lon(im1)
-     if(abs(dx).lt.EPS )  call error_mesg('xgrids_mod(grad_zonal_latlon)', 'Improper grid size in lontitude', FATAL)
+     if(abs(dx).lt.EPS )  call error_mesg('xgrids_mod(grad_zonal_latlon)', &
+                               'Improper grid size in lontitude', FATAL)
      if(dx .gt. PI)  dx = dx - 2.0* PI
      if(dx .lt. -PI) dx = dx + 2.0* PI
      do j = js, je
         costheta = cos(lat(j))
-        if(abs(costheta) .lt. EPS) call error_mesg('xgrids_mod(grad_zonal_latlon)', 'Improper latitude grid', FATAL)
+        if(abs(costheta) .lt. EPS) call error_mesg('xgrids_mod(grad_zonal_latlon)', &
+                                        'Improper latitude grid', FATAL)
         grad_zonal_latlon(i,j) = (zonal_data(ip1,j)-zonal_data(im1,j))/(dx*costheta)
      enddo
   enddo
@@ -4832,7 +4850,8 @@ subroutine get_side1_from_xgrid_ug(data_array, grid_id, x_array, xmap, complete)
      lsize = lsize + 1
      if( lsize > MAX_FIELDS ) then
         write( text,'(i2)' ) MAX_FIELDS
-        call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid_ug', FATAL)
+        call error_mesg ('xgrid_mod', &
+        'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid_ug', FATAL)
      endif
      d_addrs(lsize) = LOC(data_array)
      x_addrs(lsize) = LOC(x_array)
@@ -4913,7 +4932,8 @@ subroutine put_side1_to_xgrid_ug(data_array, grid_id, x_array, xmap, complete)
      lsize = lsize + 1
      if( lsize > MAX_FIELDS ) then
         write( text,'(i2)' ) MAX_FIELDS
-        call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group put_side1_to_xgrid_ug', FATAL)
+        call error_mesg ('xgrid_mod', &
+        'MAX_FIELDS='//trim(text)//' exceeded for group put_side1_to_xgrid_ug', FATAL)
      endif
      d_addrs(lsize) = LOC(data_array)
      x_addrs(lsize) = LOC(x_array)
