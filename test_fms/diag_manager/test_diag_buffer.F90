@@ -21,7 +21,7 @@
 program test_diag_buffer
 #ifdef use_yaml
 
-    use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer
+    use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
     use platform_mod,               only: r8_kind, r4_kind, i8_kind, i4_kind
     use fms_mod,                    only: string, fms_init, fms_end
     use mpp_mod,                    only: mpp_error, FATAL
@@ -29,7 +29,7 @@ program test_diag_buffer
 
     implicit none
 
-    type(fmsDiagOutputBuffer) :: buffobj(6)       !< Dummy output buffers
+    type(fmsDiagOutputBuffer_type) :: buffobj(6)       !< Dummy output buffers
     integer                   :: buff_sizes(5)    !< Size of the buffer for each dimension
     class(*),allocatable      :: p_val(:,:,:,:,:) !< Dummy variable to get the data
     integer                   :: i, j             !< For do loops

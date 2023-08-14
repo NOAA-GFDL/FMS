@@ -38,7 +38,7 @@ implicit none
 private
 
 !> holds an allocated buffer0-5d object
-type :: fmsDiagOutputBuffer
+type :: fmsDiagOutputBuffer_type
   integer               :: buffer_id          !< index in buffer list
   integer(i4_kind)      :: buffer_type        !< set to allocated data type & kind value, one of i4,i8,r4,r8
   class(*), allocatable :: buffer(:,:,:,:,:)  !< 5D numeric data array
@@ -69,10 +69,10 @@ type :: fmsDiagOutputBuffer
   procedure :: get_buffer
   procedure :: flush_buffer
 
-end type fmsDiagOutputBuffer
+end type fmsDiagOutputBuffer_type
 
 ! public types
-public :: fmsDiagOutputBuffer
+public :: fmsDiagOutputBuffer_type
 
 ! public routines
 public :: fms_diag_output_buffer_init
@@ -84,9 +84,9 @@ contains
 !> Initializes a list of diag buffers
 !> @returns true if allocation is successfull
 logical function fms_diag_output_buffer_init(buffobjs, buff_list_size)
-  type(fmsDiagOutputBuffer), allocatable, intent(out) :: buffobjs(:)    !< an array of buffer container types
+  type(fmsDiagOutputBuffer_type), allocatable, intent(out) :: buffobjs(:)    !< an array of buffer container types
                                                                         !! to allocate
-  integer,                                intent(in)  :: buff_list_size !< size of buffer array to allocate
+  integer,                                     intent(in)  :: buff_list_size !< size of buffer array to allocate
 
   if (allocated(buffobjs)) call mpp_error(FATAL,'fms_diag_buffer_init: passed in buffobjs array is already allocated')
   allocate(buffobjs(buff_list_size))
@@ -97,15 +97,15 @@ end function fms_diag_output_buffer_init
 
 !> Setter for buffer_id for any buffer objects
 subroutine set_buffer_id(this, id)
-  class(fmsDiagOutputBuffer), intent(inout) :: this !< buffer object to set id for
-  integer,                    intent(in)    :: id   !< positive integer id to set
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this !< buffer object to set id for
+  integer,                         intent(in)    :: id   !< positive integer id to set
 
   this%buffer_id = id
 end subroutine set_buffer_id
 
 !> Deallocates data fields from a buffer object.
 subroutine flush_buffer(this)
-  class(fmsDiagOutputBuffer), intent(inout) :: this !< any buffer object
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this !< any buffer object
 
   this%buffer_id   = diag_null
   this%buffer_type = diag_null
@@ -122,12 +122,12 @@ end subroutine flush_buffer
 
 !> Allocates a 5D buffer to given buff_type.
 subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurnal_samples)
-  class(fmsDiagOutputBuffer), intent(inout), target :: this            !< 5D buffer object
-  class(*),                   intent(in)            :: buff_type       !< allocates to the type of buff_type
-  integer,                    intent(in)            :: ndim            !< Number of dimension
-  integer,                    intent(in)            :: buff_sizes(5)   !< dimension buff_sizes
-  character(len=*),           intent(in)            :: field_name      !< field name for error output
-  integer, optional,          intent(in)            :: diurnal_samples !< number of diurnal samples
+  class(fmsDiagOutputBuffer_type), intent(inout), target :: this            !< 5D buffer object
+  class(*),                        intent(in)            :: buff_type       !< allocates to the type of buff_type
+  integer,                         intent(in)            :: ndim            !< Number of dimension
+  integer,                         intent(in)            :: buff_sizes(5)   !< dimension buff_sizes
+  character(len=*),                intent(in)            :: field_name      !< field name for error output
+  integer, optional,               intent(in)            :: diurnal_samples !< number of diurnal samples
 
   integer :: n_samples !< number of diurnal samples, defaults to 1
 
@@ -196,10 +196,10 @@ end subroutine allocate_buffer
 !> Get routine for 5D buffers.
 !! Sets the buff_out argument to the integer or real array currently stored in the buffer.
 subroutine get_buffer (this, buff_out, field_name)
-  class(fmsDiagOutputBuffer), intent(in)   :: this                !< 5d allocated buffer object
-  class(*), allocatable,      intent(out)  :: buff_out(:,:,:,:,:) !< output of copied buffer data
-                                                                  !! must be the same size as the allocated buffer
-  character(len=*),           intent(in)   :: field_name          !< field name for error output
+  class(fmsDiagOutputBuffer_type), intent(in)   :: this                !< 5d allocated buffer object
+  class(*), allocatable,           intent(out)  :: buff_out(:,:,:,:,:) !< output of copied buffer data
+                                                                       !! must be the same size as the allocated buffer
+  character(len=*),                intent(in)   :: field_name          !< field name for error output
 
   integer(i4_kind) :: buff_size(5)!< sizes for allocated buffer
 
@@ -232,9 +232,9 @@ end subroutine
 
 !> @brief Initializes a buffer to a given fill value.
 subroutine initialize_buffer (this, fillval, field_name)
-  class(fmsDiagOutputBuffer), intent(inout) :: this       !< allocated 5D buffer object
-  class(*),                   intent(in)    :: fillval    !< fill value, must be same type as the allocated buffer
-  character(len=*),           intent(in)    :: field_name !< field name for error output
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this       !< allocated 5D buffer object
+  class(*),                        intent(in)    :: fillval    !< fill value, must be same type as the allocated buffer
+  character(len=*),                intent(in)    :: field_name !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
@@ -280,8 +280,8 @@ end subroutine initialize_buffer
 
 !> @brief Adds the axis ids to the buffer object
 subroutine add_axis_ids(this, axis_ids)
-  class(fmsDiagOutputBuffer), intent(inout) :: this        !< Buffer object
-  integer,                    intent(in)    :: axis_ids(:) !< Axis ids to add
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  integer,                         intent(in)    :: axis_ids(:) !< Axis ids to add
 
   this%axis_ids = axis_ids
 end subroutine
@@ -291,7 +291,7 @@ end subroutine
 function get_axis_ids(this) &
   result(res)
 
-  class(fmsDiagOutputBuffer), intent(inout) :: this        !< Buffer object
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
   integer, allocatable :: res(:)
 
   if (allocated(this%axis_ids)) then
@@ -306,7 +306,7 @@ end function
 !! @return the field id of the buffer
 function get_field_id(this) &
   result(res)
-  class(fmsDiagOutputBuffer), intent(in) :: this        !< Buffer object
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
   integer :: res
 
   res = this%field_id
@@ -314,16 +314,16 @@ end function get_field_id
 
 !> @brief set the field id of the buffer
 subroutine set_field_id(this, field_id)
-  class(fmsDiagOutputBuffer), intent(inout) :: this        !< Buffer object
-  integer,                    intent(in)    :: field_id    !< field id of the buffer
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  integer,                         intent(in)    :: field_id    !< field id of the buffer
 
   this%field_id = field_id
 end subroutine set_field_id
 
 !> @brief set the field id of the buffer
 subroutine set_yaml_id(this, yaml_id)
-  class(fmsDiagOutputBuffer), intent(inout) :: this        !< Buffer object
-  integer,                    intent(in)    :: yaml_id     !< yaml id of the buffer
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  integer,                         intent(in)    :: yaml_id     !< yaml id of the buffer
 
   this%yaml_id = yaml_id
 end subroutine set_yaml_id
@@ -333,7 +333,7 @@ end subroutine set_yaml_id
 function get_yaml_id(this) &
   result(res)
 
-  class(fmsDiagOutputBuffer), intent(in) :: this        !< Buffer object
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
   integer :: res
 
   res = this%yaml_id
@@ -341,9 +341,9 @@ end function get_yaml_id
 
 !> @brief Write the buffer to the file
 subroutine write_buffer(this, fileobj, unlim_dim_level)
-  class(fmsDiagOutputBuffer), intent(in) :: this            !< buffer object to write
-  class(FmsNetcdfFile_t),     intent(in) :: fileobj         !< fileobj to write to
-  integer, optional,          intent(in) :: unlim_dim_level !< unlimited dimension
+  class(fmsDiagOutputBuffer_type), intent(in) :: this            !< buffer object to write
+  class(FmsNetcdfFile_t),          intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,               intent(in) :: unlim_dim_level !< unlimited dimension
 
   select type(fileobj)
   type is (FmsNetcdfFile_t)
@@ -360,9 +360,9 @@ end subroutine write_buffer
 
 !> @brief Write the buffer to the FmsNetcdfFile_t fileobj
 subroutine write_buffer_wrapper_netcdf(this, fileobj, unlim_dim_level)
-  class(fmsDiagOutputBuffer),  intent(in) :: this            !< buffer object to write
-  type(FmsNetcdfFile_t),       intent(in) :: fileobj         !< fileobj to write to
-  integer, optional,           intent(in) :: unlim_dim_level !< unlimited dimension
+  class(fmsDiagOutputBuffer_type),  intent(in) :: this            !< buffer object to write
+  type(FmsNetcdfFile_t),            intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,                intent(in) :: unlim_dim_level !< unlimited dimension
 
   character(len=:), allocatable :: varname !< name of the variable
 
@@ -385,9 +385,9 @@ end subroutine write_buffer_wrapper_netcdf
 
 !> @brief Write the buffer to the FmsNetcdfDomainFile_t fileobj
 subroutine write_buffer_wrapper_domain(this, fileobj, unlim_dim_level)
-  class(fmsDiagOutputBuffer),    intent(in) :: this            !< buffer object to write
-  type(FmsNetcdfDomainFile_t),   intent(in) :: fileobj         !< fileobj to write to
-  integer, optional,             intent(in) :: unlim_dim_level !< unlimited dimension
+  class(fmsDiagOutputBuffer_type),    intent(in) :: this            !< buffer object to write
+  type(FmsNetcdfDomainFile_t),        intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,                  intent(in) :: unlim_dim_level !< unlimited dimension
 
   character(len=:), allocatable :: varname !< name of the variable
 
@@ -410,9 +410,9 @@ end subroutine write_buffer_wrapper_domain
 
 !> @brief Write the buffer to the FmsNetcdfUnstructuredDomainFile_t fileobj
 subroutine write_buffer_wrapper_u(this, fileobj, unlim_dim_level)
-  class(fmsDiagOutputBuffer),                 intent(in) :: this            !< buffer object to write
-  type(FmsNetcdfUnstructuredDomainFile_t),    intent(in) :: fileobj         !< fileobj to write to
-  integer, optional,                          intent(in) :: unlim_dim_level !< unlimited dimension
+  class(fmsDiagOutputBuffer_type),                 intent(in) :: this            !< buffer object to write
+  type(FmsNetcdfUnstructuredDomainFile_t),         intent(in) :: fileobj         !< fileobj to write to
+  integer, optional,                               intent(in) :: unlim_dim_level !< unlimited dimension
 
   character(len=:), allocatable :: varname !< name of the variable
 

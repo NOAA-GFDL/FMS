@@ -54,7 +54,7 @@ private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
   class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
-  type(fmsDiagOutputBuffer), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
+  type(fmsDiagOutputBuffer_type), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
                                                                        !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
@@ -849,7 +849,7 @@ function get_diag_buffer(this, bufferid) &
 result(rslt)
   class(fmsDiagObject_type), intent(in) :: this
   integer, intent(in)                   :: bufferid
-  class(fmsDiagOutputBuffer),allocatable:: rslt
+  class(fmsDiagOutputBuffer_type),allocatable:: rslt
   if( (bufferid .gt. UBOUND(this%FMS_diag_output_buffers, 1)) .or. &
       (bufferid .lt. LBOUND(this%FMS_diag_output_buffers, 1))) &
     call mpp_error(FATAL, 'get_diag_bufer: invalid bufferid given')
@@ -999,7 +999,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: num_diurnal_samples !< Number of diurnal samples from diag_yaml
   integer :: axes_length(5) !< Length of each axis
   integer :: i, j !< For looping
-  class(fmsDiagOutputBuffer), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
+  class(fmsDiagOutputBuffer_type), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
   integer, allocatable :: axis_ids(:) !< Pointer to indices of axes of the field variable
   integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
