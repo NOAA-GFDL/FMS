@@ -137,7 +137,7 @@ program test_reduction_methods
 
     if (test_case .eq. test_halos) then
       dlmask = allocate_logical_mask(isd, ied, jsd, jed, nz, nw)
-      if (mpp_pe() .eq. 0) dlmask(isc, jsc, 1, 1) = .False.
+      if (mpp_pe() .eq. 0) dlmask(1+nhalox, 1+nhaloy, 1, 1) = .False.
     endif
   case (real_mask)
     crmask = allocate_real_mask(isc, iec, jsc, jec, nz, nw)
@@ -145,7 +145,7 @@ program test_reduction_methods
 
     if (test_case .eq. test_halos) then
       drmask = allocate_real_mask(isd, ied, jsd, jed, nz, nw)
-      if (mpp_pe() .eq. 0) drmask(isc, jsc, 1, 1) = 0_r8_kind
+      if (mpp_pe() .eq. 0) drmask(1+nhalox, 1+nhaloy, 1, 1) = 0_r8_kind
     endif
   end select
 

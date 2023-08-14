@@ -28,6 +28,7 @@ if [ -z "${skipflag}" ]; then
 # create and enter directory for in/output files
 output_dir
 
+#TODO replace with yaml diag_table and set diag_manager_nml::use_modern_diag=.true.
 cat <<_EOF > diag_table
 test_none
 2 1 1 0 0 0
@@ -115,7 +116,7 @@ printf "&test_reduction_methods_nml \n test_case = 2 \n mask_case = 1 \n \n/" | 
 test_expect_success "Running diag_manager with "none" reduction method with halo output with logical mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
-test_expect_failure "Checking answers for the "none" reduction method with halo output with logical mask (test $my_test_count)" '
+test_expect_success "Checking answers for the "none" reduction method with halo output with logical mask (test $my_test_count)" '
   mpirun -n 1 ../check_time_none
 '
 
@@ -124,7 +125,7 @@ printf "&test_reduction_methods_nml \n test_case = 2 \n mask_case = 2 \n \n/" | 
 test_expect_success "Running diag_manager with "none" reduction method with halo output with real mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
-test_expect_failure "Checking answers for the "none" reduction method with halo output with real mask (test $my_test_count)" '
+test_expect_success "Checking answers for the "none" reduction method with halo output with real mask (test $my_test_count)" '
   mpirun -n 1 ../check_time_none
 '
 fi
