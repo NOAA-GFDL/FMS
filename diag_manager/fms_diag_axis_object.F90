@@ -376,7 +376,8 @@ module fms_diag_axis_object_mod
       call register_variable_attribute(fms2io_fileobj, axis_name, "axis", diag_axis%cart_name, str_len=1)
 
     if (trim(diag_axis%units) .NE. "none") &
-      call register_variable_attribute(fms2io_fileobj, axis_name, "units", diag_axis%units, str_len=len_trim(diag_axis%units))
+      call register_variable_attribute(fms2io_fileobj, axis_name, "units", diag_axis%units, &
+                                       str_len=len_trim(diag_axis%units))
 
     select case (diag_axis%direction)
     case (direction_up)
@@ -395,8 +396,8 @@ module fms_diag_axis_object_mod
       do i = 1, diag_axis%num_attributes
         select type (att_value => diag_axis%attributes(i)%att_value)
         type is (character(len=*))
-          call register_variable_attribute(fms2io_fileobj, axis_name, diag_axis%attributes(i)%att_name, trim(att_value(1)), &
-                                           str_len=len_trim(att_value(1)))
+          call register_variable_attribute(fms2io_fileobj, axis_name, diag_axis%attributes(i)%att_name, &
+                                           trim(att_value(1)), str_len=len_trim(att_value(1)))
         class default
           call register_variable_attribute(fms2io_fileobj, axis_name, diag_axis%attributes(i)%att_name, att_value)
         end select
