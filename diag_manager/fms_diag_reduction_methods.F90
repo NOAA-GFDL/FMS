@@ -29,10 +29,16 @@
 !> @{
 module fms_diag_reduction_methods_mod
   use platform_mod, only: r8_kind, r4_kind
+  use fms_diag_bbox_mod, only: fmsDiagIbounds_type
   implicit none
   private
 
   public :: check_indices_order, init_mask, set_weight
+  public :: do_time_none
+
+  interface do_time_none
+    module procedure do_time_none_r4, do_time_none_r8
+  end interface do_time_none
 
   contains
 
@@ -123,6 +129,9 @@ module fms_diag_reduction_methods_mod
       end select
     endif
   end function set_weight
+
+#include "fms_diag_reduction_methods_r4.fh"
+#include "fms_diag_reduction_methods_r8.fh"
 
 end module fms_diag_reduction_methods_mod
 !> @}
