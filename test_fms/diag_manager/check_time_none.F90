@@ -34,8 +34,8 @@ program check_time_none
   integer                            :: nz                 !< Number of points in the z direction
   integer                            :: nw                 !< Number of points in the 4th dimension
   integer                            :: i                  !< For looping
-  integer :: io_status
-  logical :: use_mask
+  integer                            :: io_status          !< Io status after reading the namelist
+  logical                            :: use_mask           !< .true. if using masks
 
   integer :: test_case = test_normal !< Indicates which test case to run
   integer :: mask_case = no_mask     !< Indicates which masking option to run
@@ -170,16 +170,16 @@ contains
   subroutine check_data_3d(buffer, time_level, is_regional, nx_offset, ny_offset, nz_offset)
     real(kind=r4_kind), intent(in)    :: buffer(:,:,:) !< Buffer read from the table
     integer,            intent(in)    :: time_level    !< Time level read in
-    logical,            intent(in)    :: is_regional
+    logical,            intent(in)    :: is_regional   !< .True. if the variable is subregional
     real(kind=r4_kind)                :: buffer_exp    !< Expected result
-    integer, optional,  intent(in)    :: nx_offset
-    integer, optional,  intent(in)    :: ny_offset
-    integer, optional,  intent(in)    :: nz_offset
+    integer, optional,  intent(in)    :: nx_offset     !< Offset in the x direction
+    integer, optional,  intent(in)    :: ny_offset     !< Offset in the y direction
+    integer, optional,  intent(in)    :: nz_offset     !< Offset in the z direction
 
     integer :: ii, j, k, l !< For looping
-    integer :: nx_oset
-    integer :: ny_oset
-    integer :: nz_oset
+    integer :: nx_oset !< Offset in the x direction (local variable)
+    integer :: ny_oset !< Offset in the y direction (local variable)
+    integer :: nz_oset !< Offset in the z direction (local variable)
 
     nx_oset = 0
     if (present(nx_offset)) nx_oset = nx_offset

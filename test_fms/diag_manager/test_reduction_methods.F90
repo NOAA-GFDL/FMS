@@ -81,7 +81,7 @@ program test_reduction_methods
   integer                            :: iblock          !< For looping through the blocks
   integer                            :: i               !< For do loops
   logical                            :: used            !< Dummy argument to send_data
-  real(kind=r8_kind) :: missing_value
+  real(kind=r8_kind)                 :: missing_value   !< Missing value to use
 
   !< Configuration parameters
   integer :: test_case = test_normal !< Indicates which test case to run
