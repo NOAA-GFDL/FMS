@@ -11,6 +11,7 @@ jobs:
       matrix:
         conf-flag: [ --disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
         input-flag: [--with-yaml, --enable-test-input=/home/unit_tests_input]
+        target-flags: [ "-O2 -fno-expensive-optimizations", "-O0 -g -W -fbounds-check -ffpe-trap=invalid,zero,overflow"]
         exclude:
           - conf-flag: --with-mpi=no
             input-flag: --enable-test-input=/home/unit_tests_input
@@ -18,7 +19,7 @@ jobs:
       image: noaagfdl/fms-ci-rocky-gnu:12.3.0
       env:
         TEST_VERBOSE: 1
-        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }} ${{ matrix.target-flags }}"
         SKIP_TESTS: "test_mpp_domains2.14 test_horiz_interp2.9 test_horiz_interp2.10 test_yaml_parser.5" # temporary till fixes are in
     steps:
     - name: Checkout code
