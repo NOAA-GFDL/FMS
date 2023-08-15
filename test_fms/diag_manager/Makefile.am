@@ -58,7 +58,7 @@ TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.s
 testing_utils.mod: testing_utils.$(OBJEXT)
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_min.sh
+EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_min.sh test_time_max.sh
 
 if USING_YAML
 skipflag=""
