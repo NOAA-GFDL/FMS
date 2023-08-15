@@ -340,28 +340,28 @@ function get_yaml_id(this) &
 end function get_yaml_id
 
 !> @brief Write the buffer to the file
-subroutine write_buffer(this, fileobj, unlim_dim_level)
+subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level)
   class(fmsDiagOutputBuffer_type), intent(in) :: this            !< buffer object to write
-  class(FmsNetcdfFile_t),          intent(in) :: fileobj         !< fileobj to write to
+  class(FmsNetcdfFile_t),          intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,               intent(in) :: unlim_dim_level !< unlimited dimension
 
-  select type(fileobj)
+  select type(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
-    call this%write_buffer_wrapper_netcdf(fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_netcdf(fms2io_fileobj, unlim_dim_level=unlim_dim_level)
   type is (FmsNetcdfDomainFile_t)
-    call this%write_buffer_wrapper_domain(fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_domain(fms2io_fileobj, unlim_dim_level=unlim_dim_level)
   type is (FmsNetcdfUnstructuredDomainFile_t)
-    call this%write_buffer_wrapper_u(fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_u(fms2io_fileobj, unlim_dim_level=unlim_dim_level)
   class default
-    call mpp_error(FATAL, "The file "//trim(fileobj%path)//" is not one of the accepted types"//&
+    call mpp_error(FATAL, "The file "//trim(fms2io_fileobj%path)//" is not one of the accepted types"//&
       " only FmsNetcdfFile_t, FmsNetcdfDomainFile_t, and FmsNetcdfUnstructuredDomainFile_t are accepted.")
   end select
 end subroutine write_buffer
 
-!> @brief Write the buffer to the FmsNetcdfFile_t fileobj
-subroutine write_buffer_wrapper_netcdf(this, fileobj, unlim_dim_level)
+!> @brief Write the buffer to the FmsNetcdfFile_t fms2io_fileobj
+subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level)
   class(fmsDiagOutputBuffer_type),  intent(in) :: this            !< buffer object to write
-  type(FmsNetcdfFile_t),            intent(in) :: fileobj         !< fileobj to write to
+  type(FmsNetcdfFile_t),            intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                intent(in) :: unlim_dim_level !< unlimited dimension
 
   character(len=:), allocatable :: varname !< name of the variable
@@ -369,24 +369,24 @@ subroutine write_buffer_wrapper_netcdf(this, fileobj, unlim_dim_level)
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
   select case(this%ndim)
   case (0)
-    call write_data(fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (1)
-    call write_data(fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (2)
-    call write_data(fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
   case (3)
-    call write_data(fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
   case (4)
-    call write_data(fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
   case (5)
-    call write_data(fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_netcdf
 
-!> @brief Write the buffer to the FmsNetcdfDomainFile_t fileobj
-subroutine write_buffer_wrapper_domain(this, fileobj, unlim_dim_level)
+!> @brief Write the buffer to the FmsNetcdfDomainFile_t fms2io_fileobj
+subroutine write_buffer_wrapper_domain(this, fms2io_fileobj, unlim_dim_level)
   class(fmsDiagOutputBuffer_type),    intent(in) :: this            !< buffer object to write
-  type(FmsNetcdfDomainFile_t),        intent(in) :: fileobj         !< fileobj to write to
+  type(FmsNetcdfDomainFile_t),        intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                  intent(in) :: unlim_dim_level !< unlimited dimension
 
   character(len=:), allocatable :: varname !< name of the variable
@@ -394,24 +394,24 @@ subroutine write_buffer_wrapper_domain(this, fileobj, unlim_dim_level)
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
   select case(this%ndim)
   case (0)
-    call write_data(fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (1)
-    call write_data(fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (2)
-    call write_data(fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
   case (3)
-    call write_data(fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
   case (4)
-    call write_data(fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
   case (5)
-    call write_data(fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_domain
 
-!> @brief Write the buffer to the FmsNetcdfUnstructuredDomainFile_t fileobj
-subroutine write_buffer_wrapper_u(this, fileobj, unlim_dim_level)
+!> @brief Write the buffer to the FmsNetcdfUnstructuredDomainFile_t fms2io_fileobj
+subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level)
   class(fmsDiagOutputBuffer_type),                 intent(in) :: this            !< buffer object to write
-  type(FmsNetcdfUnstructuredDomainFile_t),         intent(in) :: fileobj         !< fileobj to write to
+  type(FmsNetcdfUnstructuredDomainFile_t),         intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                               intent(in) :: unlim_dim_level !< unlimited dimension
 
   character(len=:), allocatable :: varname !< name of the variable
@@ -419,17 +419,17 @@ subroutine write_buffer_wrapper_u(this, fileobj, unlim_dim_level)
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
   select case(this%ndim)
   case (0)
-    call write_data(fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (1)
-    call write_data(fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (2)
-    call write_data(fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
   case (3)
-    call write_data(fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
   case (4)
-    call write_data(fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
   case (5)
-    call write_data(fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_u
 #endif
