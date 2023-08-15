@@ -45,7 +45,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
                                     fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
                                     fmsDiagDiurnalAxis_type, create_new_z_subaxis
 use fms_diag_field_object_mod, only: fmsDiagField_type
-use fms_diag_output_buffer_mod, only: fmsDiagOutputBufferContainer_type, fmsDiagOutputBuffer_class
+use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
 
@@ -714,7 +714,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   integer,                                 intent(in)    :: yaml_id           !< Yaml id of the field section for
                                                                               !! this var
   integer,                                 intent(in)    :: buffer_id        !< ID of the buffer
-  type(fmsDiagOutputBufferContainer_type), intent(inout) :: output_buffers(:) !< Array of output buffers
+  type(fmsDiagOutputBuffer_type),          intent(inout) :: output_buffers(:) !< Array of output buffers
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
 
@@ -1124,7 +1124,7 @@ end subroutine write_time_metadata
 subroutine write_field_data(this, field_obj, buffer_obj)
   class(fmsDiagFileContainer_type),        intent(in), target :: this           !< The diag file object to write to
   type(fmsDiagField_type),                 intent(in), target :: field_obj(:)   !< The field object to write from
-  type(fmsDiagOutputBufferContainer_type), intent(in), target :: buffer_obj(:)  !< The buffer object with the data
+  type(fmsDiagOutputBuffer_type),          intent(in), target :: buffer_obj(:)  !< The buffer object with the data
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
