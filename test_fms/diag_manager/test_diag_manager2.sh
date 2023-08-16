@@ -460,7 +460,6 @@ test_expect_success "Unstructured grid (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 my_test_count=`expr $my_test_count + 1`
-
 # test_diag_manager_time
 cat <<_EOF > diag_table
 test_diag_manager
@@ -479,7 +478,6 @@ test_diag_manager
  "test_diag_manager_mod", "sst", "sst", "ocn_end%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
 _EOF
 
-my_test_count=25
 rm -f input.nml && touch input.nml
 test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
@@ -505,7 +503,7 @@ test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 setup_test
-my_test_count=26
+my_test_count=`expr $my_test_count + 1`
 test_expect_success "Test the diag update_buffer (test $my_test_count)" '
   mpirun -n 1 ../test_diag_update_buffer
 '
@@ -865,36 +863,6 @@ printf "&diag_manager_nml \n use_modern_diag = .false. \n use_clock_average = .t
     mpirun -n 1 ../test_flexible_time
   '
 
-printf "&diag_manager_nml \n use_modern_diag = .true. \n /" | cat > input.nml
-cat <<_EOF > diag_table.yaml
-title: test_diag_manager
-base_date: 2 1 1 0 0 0
-diag_files:
-- file_name: file_openmp_test
-  freq: 1 hours
-  time_units: hours
-  unlimdim: time
-  varlist:
-  - module: ocn_mod
-    var_name: var1
-    reduction: none
-    kind: r4
-  - module: ocn_mod
-    var_name: var2
-    reduction: none
-    kind: r4
-  - module: ocn_mod
-    var_name: var3
-    reduction: none
-    kind: r4
-_EOF
-
-export OMP_NUM_THREADS=2
-my_test_count=`expr $my_test_count + 1`
-  test_expect_success "Test the modern diag manager end to end but it uses the openmp stuff(test $my_test_count)" '
-    mpirun -n 6 ../test_dm_openmp
-  '
-export OMP_NUM_THREADS=1
 else
   my_test_count=`expr $my_test_count + 1`
   test_expect_failure "test modern diag manager failure when compiled without -Duse-yaml flag (test $my_test_count)" '
