@@ -17,6 +17,15 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!! defaults to ensure compilation 
+#ifndef FMS_CP_TEST_KIND_
+#define FMS_CP_TEST_KIND_ r8_kind
+#endif
+
+#ifndef FMS_TEST_BC_TYPE_
+#define FMS_TEST_BC_TYPE_ bc 
+#endif
+
 !> @brief  This programs tests the functionality in
 !! 1. coupler_type_register_restarts (CT_register_restarts_3d)
 !! 2. coupler_type_restore_state (CT_restore_state_3d)
@@ -30,7 +39,7 @@ use   mpp_mod,            only: mpp_error, mpp_pe, mpp_root_pe, FATAL
 use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
                                 & mpp_domains_set_stack_size
 use   coupler_types_mod,  only: coupler_3d_bc_type, coupler_type_register_restarts, coupler_type_restore_state
-use   platform_mod,       only: r8_kind
+use   platform_mod,       only: FMS_CP_TEST_KIND_
 
 implicit none
 
@@ -46,7 +55,7 @@ integer, dimension(5)                 :: data_grid        !< Starting/Ending ind
 integer                               :: num_rest_files   !< Number of restart files
 integer                               :: i                !< No description
 type(FmsNetcdfFile_t)                 :: fileobj          !< fms2_io fileobjs
-real, allocatable                     :: dummy_var(:,:,:) !< Dummy variable
+real(FMS_CP_TEST_KIND_), allocatable                     :: dummy_var(:,:,:) !< Dummy variable
 
 call fms_init()
 
@@ -78,10 +87,10 @@ if (mpp_pe() .eq. mpp_root_pe()) then
        call register_variable_attribute(fileobj, "laty", "axis", "y", str_len=1)
 
        allocate(dummy_var(nlon, nlat, data_grid(5)))
-       dummy_var = real(1, kind=r8_kind)
+       dummy_var = real(1, kind=FMS_CP_TEST_KIND_)
        call write_data(fileobj, "var_1", dummy_var)
 
-       dummy_var = real(2, kind=r8_kind)
+       dummy_var = real(2, kind=FMS_CP_TEST_KIND_)
        call write_data(fileobj, "var_2", dummy_var)
 
        call close_file(fileobj)
@@ -151,30 +160,30 @@ subroutine set_up_coupler_type(bc_type, data_grid, appendix, to_read)
    endif
 
    nfiles = bc_type%num_bcs
-   allocate(bc_type%bc(nfiles))
+   allocate(bc_type%FMS_TEST_BC_TYPE_(nfiles))
    bc_type%ks = 1
    bc_type%ke = data_grid(5)
 
    do i = 1, nfiles
       write(file_num,'(i1)') i
       if (i==3) then
-          bc_type%bc(i)%ice_restart_file="default_"//file_num//"_ice_restart_3d.nc"
+          bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file="default_"//file_num//"_ice_restart_3d.nc"
       else
-          bc_type%bc(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_3d.nc"
+          bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_3d.nc"
       endif
 
-      bc_type%bc(i)%num_fields=2
-      nfields = bc_type%bc(i)%num_fields
-      allocate(bc_type%bc(i)%field(nfields))
+      bc_type%FMS_TEST_BC_TYPE_(i)%num_fields=2
+      nfields = bc_type%FMS_TEST_BC_TYPE_(i)%num_fields
+      allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(nfields))
 
       do j = 1, nfields
          write(field_num,'(i1)') j
-         bc_type%bc(i)%field(j)%name="var_"//field_num
-         allocate(bc_type%bc(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4), data_grid(5)))
+         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
+         allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4), data_grid(5)))
          if (to_read) then
-             bc_type%bc(i)%field(j)%values = real(999., kind=r8_kind)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=FMS_CP_TEST_KIND_)
          else
-             bc_type%bc(i)%field(j)%values = real(j, kind=r8_kind)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
          endif
       end do
    end do
@@ -188,13 +197,13 @@ subroutine destroy_coupler_type(bc_type)
    integer :: i,j !< No description
 
    do i=1, bc_type%num_bcs
-      do j = 1, bc_type%bc(i)%num_fields
-         deallocate(bc_type%bc(i)%field(j)%values)
+      do j = 1, bc_type%FMS_TEST_BC_TYPE_(i)%num_fields
+         deallocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values)
       end do
-      deallocate(bc_type%bc(i)%field)
+      deallocate(bc_type%FMS_TEST_BC_TYPE_(i)%field)
    end do
 
-   deallocate(bc_type%bc)
+   deallocate(bc_type%FMS_TEST_BC_TYPE_)
 
 end subroutine
 
@@ -206,21 +215,21 @@ subroutine compare_answers(bc_type_read, bc_type)
    integer :: i,j !< No description
 
    do i=1, bc_type%num_bcs
-      do j = 1, bc_type%bc(i)%num_fields
-         if (sum(bc_type%bc(i)%field(j)%values) .ne. sum(bc_type_read%bc(i)%field(j)%values)) then
-             call mpp_error(FATAL, "test_coupler_3d: Answers do not match for: "//trim(bc_type%bc(i)%ice_restart_file)&
-                            & //" var: "//trim(bc_type%bc(i)%field(j)%name))
+      do j = 1, bc_type%FMS_TEST_BC_TYPE_(i)%num_fields
+         if (sum(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values) .ne. sum(bc_type_read%FMS_TEST_BC_TYPE_(i)%field(j)%values)) then
+             call mpp_error(FATAL, "test_coupler_3d: Answers do not match for: "//trim(bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file)&
+                            & //" var: "//trim(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name))
          endif
       end do
    end do
 
    !< Check the dummy general file
-   if (sum(bc_type_read%bc(3)%field(1)%values) .ne. sum(bc_type_read%bc(1)%field(1)%values)) then
-       call mpp_error(FATAL, "test_coupler_3d: Answers do not match for var: "//trim(bc_type_read%bc(3)%field(1)%name))
+   if (sum(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%values) .ne. sum(bc_type_read%FMS_TEST_BC_TYPE_(1)%field(1)%values)) then
+       call mpp_error(FATAL, "test_coupler_3d: Answers do not match for var: "//trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%name))
    endif
 
-   if (sum(bc_type_read%bc(3)%field(2)%values) .ne. sum(bc_type_read%bc(1)%field(2)%values)) then
-       call mpp_error(FATAL, "test_coupler_3d: Answers do not match for var: "//trim(bc_type_read%bc(3)%field(2)%name))
+   if (sum(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%values) .ne. sum(bc_type_read%FMS_TEST_BC_TYPE_(1)%field(2)%values)) then
+       call mpp_error(FATAL, "test_coupler_3d: Answers do not match for var: "//trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%name))
    endif
 
 

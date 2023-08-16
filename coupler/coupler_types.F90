@@ -3296,25 +3296,25 @@ contains
       do n = 1, var%num_bcs
         any_var_set = .false.
         all_var_set = .true.
-        do m = 1, var%bc(n)%num_fields
+        do m = 1, var%bc_r4(n)%num_fields
           var_set = .false.
-          if (check_if_open(var%bc(n)%fms2_io_rest_type)) then
-              var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%name)
+          if (check_if_open(var%bc_r4(n)%fms2_io_rest_type)) then
+              var_set = variable_exists(var%bc_r4(n)%fms2_io_rest_type, var%bc_r4(n)%field(m)%name)
           endif
 
-          if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+          if (.not.var_set) unset_varname = trim(var%bc_r4(n)%field(m)%name)
           if (var_set) any_set = .true.
           if (all_set) all_set = var_set
           if (var_set) any_var_set = .true.
           if (all_var_set) all_var_set = var_set
         enddo
 
-        num_fld = num_fld + var%bc(n)%num_fields
-        if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
+        num_fld = num_fld + var%bc_r4(n)%num_fields
+        if ((var%bc_r4(n)%num_fields > 0) .and. present(test_by_field)) then
           if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
               & "CT_restore_state_2d: test_by_field is true, and "//&
               & trim(unset_varname)//" was not read but some other fields in "//&
-              & trim(trim(var%bc(n)%name))//" were.")
+              & trim(trim(var%bc_r4(n)%name))//" were.")
         endif
       enddo
     else
@@ -3392,13 +3392,13 @@ contains
       do n = 1, var%num_bcs
         any_var_set = .false.
         all_var_set = .true.
-        do m = 1, var%bc(n)%num_fields
+        do m = 1, var%bc_r4(n)%num_fields
           var_set = .false.
-          if (check_if_open(var%bc(n)%fms2_io_rest_type)) then
-              var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%name)
+          if (check_if_open(var%bc_r4(n)%fms2_io_rest_type)) then
+              var_set = variable_exists(var%bc_r4(n)%fms2_io_rest_type, var%bc_r4(n)%field(m)%name)
           endif
 
-          if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+          if (.not.var_set) unset_varname = trim(var%bc_r4(n)%field(m)%name)
 
           if (var_set) any_set = .true.
           if (all_set) all_set = var_set
@@ -3406,8 +3406,8 @@ contains
           if (all_var_set) all_var_set = var_set
         enddo
 
-        num_fld = num_fld + var%bc(n)%num_fields
-        if ((var%bc(n)%num_fields > 0) .and. present(test_by_field)) then
+        num_fld = num_fld + var%bc_r4(n)%num_fields
+        if ((var%bc_r4(n)%num_fields > 0) .and. present(test_by_field)) then
           if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
               & "CT_restore_state_3d: test_by_field is true, and "//&
               & trim(unset_varname)//" was not read but some other fields in "//&

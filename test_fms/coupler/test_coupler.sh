@@ -33,12 +33,19 @@ touch input.nml
 
 mkdir RESTART
 
-test_expect_success "2D coupler" '
-  mpirun -n 1 ./test_coupler_2d
+test_expect_success "2D coupler r4_kind precsion" '
+  mpirun -n 1 ./test_coupler_2d_r4
+'
+test_expect_success "2D coupler r8_kind precision" '
+  mpirun -n 1 ./test_coupler_2d_r8
 '
 
-test_expect_success "3D coupler" '
-  mpirun -n 1 ./test_coupler_3d
+test_expect_success "3D coupler r4_kind precision" '
+  mpirun -n 1 ./test_coupler_3d_r4
+'
+
+test_expect_success "3D coupler r8_kind precision" '
+  mpirun -n 1 ./test_coupler_3d_r8
 '
 rm -rf RESTART
 
