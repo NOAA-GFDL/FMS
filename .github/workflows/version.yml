@@ -1,5 +1,3 @@
-# appends -dev to the version upon release and opens pr
-# CI won't run on generated PR, easiest workaround is to close + reopen
 on:
   release:
     types: [published]
@@ -18,4 +16,4 @@ jobs:
         branch-suffix: timestamp     # add a timestamp to branch name
         delete-branch: true          # delete afer merge
         title: Append dev to version number post-release
-        body: automated change, adds '-dev' to the version number upon releases. This PR will need to be closed and reopened to run CI testing.
+        body: automated change, adds '-dev' to the version number upon releases
