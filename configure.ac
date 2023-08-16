@@ -487,7 +487,6 @@ AC_CONFIG_FILES([
   test_fms/mpp_io/Makefile
   test_fms/time_interp/Makefile
   test_fms/time_manager/Makefile
-  test_fms/topography/Makefile
   test_fms/horiz_interp/Makefile
   test_fms/field_manager/Makefile
   test_fms/axis_utils/Makefile
