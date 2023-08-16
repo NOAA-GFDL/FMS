@@ -19,7 +19,7 @@ jobs:
       image: noaagfdl/fms-ci-rocky-gnu:12.3.0
       env:
         TEST_VERBOSE: 1
-        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }} ${{ matrix.target-flags }}"
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }} FCFLAGS='${{ matrix.target-flags }} $FCFLAGS'"
         SKIP_TESTS: "test_mpp_domains2.14 test_horiz_interp2.9 test_horiz_interp2.10 test_yaml_parser.5" # temporary till fixes are in
     steps:
     - name: Checkout code
