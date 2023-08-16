@@ -30,16 +30,16 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = \
-  test_routine_r4 \
-  test_routine_r8
+  test_topography_r4 \
+  test_topography_r8
 
 # This is the source code for the test.
-test_routine_r4_SOURCES = test_routine.F90
-test_routine_r8_SOURCES = test_routine.F90
+test_topography_r4_SOURCES = test_topography.F90
+test_topography_r8_SOURCES = test_topography.F90
 
 # Set r4_kind and r8_kind
-test_routine_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_TOP_KIND_=r4_kind
-test_routine_r8_CPPFLAGS= $(AM_CPPFLAGS) -DTEST_TOP_KIND_=r8_kind
+test_topography_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_TOP_KIND_=r4_kind
+test_topography_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_TOP_KIND_=r8_kind
 
 # Run the test program.
 TESTS = test_topography.sh

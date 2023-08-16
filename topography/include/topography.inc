@@ -67,6 +67,7 @@
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    GET_TOPOG_MEAN_1D_ = open_topog_file()
+   print *, GET_TOPOG_MEAN_1D_
 
    if (GET_TOPOG_MEAN_1D_) call interp_topog(blon, blat, zmean)
 
@@ -120,7 +121,7 @@
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1.0_lkind,size(blat(:))-1.0_lkind/)) ) &
+   if ( any(shape(stdev(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
        call error_mesg('get_topog_stdev','shape(stdev) is not&
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
@@ -144,8 +145,8 @@
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
-        any(shape(stdev(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
+   if ( any(shape(stdev(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(stdev(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_topog_stdev_2d','shape(stdev) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
@@ -173,7 +174,7 @@
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1.0_lkind,size(blat(:))-1.0_lkind/)) ) &
+   if ( any(shape(ocean_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_ocean_frac','shape(ocean_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
@@ -196,8 +197,8 @@
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
-        any(shape(ocean_frac(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
+   if ( any(shape(ocean_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(ocean_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_ocean_frac_2d','shape(ocean_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
@@ -284,7 +285,7 @@
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1.0_lkind,size(blat(:))-1.0_lkind/)) ) &
+   if ( any(shape(water_frac(:,:)) /= (/size(blon(:))-1,size(blat(:))-1/)) ) &
         call error_mesg('get_water_frac_1d','shape(water_frac) is not&
                  & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
@@ -309,8 +310,8 @@
 !-----------------------------------------------------------------------
    if (.not. module_is_initialized) call topography_init()
 
-   if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1.0_lkind,size(blon,2)-1.0_lkind/)) .or. &
-        any(shape(water_frac(:,:)) /= (/size(blat,1)-1.0_lkind,size(blat,2)-1.0_lkind/)) ) &
+   if ( any(shape(water_frac(:,:)) /= (/size(blon,1)-1,size(blon,2)-1/)) .or. &
+        any(shape(water_frac(:,:)) /= (/size(blat,1)-1,size(blat,2)-1/)) ) &
         call error_mesg('get_water_frac_2d','shape(water_frac) is not&
             & equal to (/size(blon,1)-1,size(blon,2)-1/))', FATAL)
 
@@ -457,22 +458,22 @@ end subroutine INTERP_TOPOG_2D_
 !#######################################################################
 
 subroutine FIND_INDICES_( ybeg, yend, ydat, js, je )
-real(kind=FMS_TOP_KIND_),    intent(in)  :: ybeg, yend, ydat(:)
-integer, intent(out) :: js, je
-integer :: j
-integer, parameter :: lkind = FMS_TOP_KIND_
+real(kind=FMS_TOP_KIND_), intent(in)  :: ybeg, yend, ydat(:)
+integer,                  intent(out) :: js, je
+integer                               :: j
+integer, parameter                    :: lkind = FMS_TOP_KIND_
 
    js = 1
-   do j = 1, size(ydat(:))-1.0_lkind
-      if (ybeg >= ydat(j) .and. ybeg <= ydat(j+1.0_lkind)) then
+   do j = 1, size(ydat(:))-1
+      if (ybeg >= ydat(j) .and. ybeg <= ydat(real(j,FMS_TOP_KIND_)+1.0_lkind)) then
          js = j
          exit
       endif
    enddo
 
-   je = size(ydat(:))-1.0_lkind
-   do j = js, size(ydat(:))-1.0_lkind
-      if (yend >= ydat(j) .and. yend <= ydat(j+1.0_lkind)) then
+   je = size(ydat(:))-1
+   do j = js, size(ydat(:))-1
+      if (yend >= ydat(j) .and. yend <= ydat(real(j,FMS_TOP_KIND_)+1.0_lkind)) then
          je = j
          exit
       endif
@@ -541,7 +542,7 @@ real(kind=FMS_TOP_KIND_), intent(inout) :: pctwater(:,:)
 logical :: ocean(size(pctwater,1),size(pctwater,2))
 integer :: i, j, m, n, im, ip, jm, jp, new
 integer, parameter :: lkind = FMS_TOP_KIND_
-real(kind=FMS_TOP_KIND_) :: ocean_pct_crit = real(0.500_lkind)
+real(kind=FMS_TOP_KIND_) :: ocean_pct_crit = 0.500_lkind
 
 
 ! resolution of the grid

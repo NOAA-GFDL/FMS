@@ -28,15 +28,29 @@
 . ../test-lib.sh
 
 # Prepare the directory to run the tests.
+cat <<_EOF > input.nml
+&topography_nml
+  topog_file = 'topography.data.nc'
+  water_file = 'water.data.nc'
+  /
+&gaussian_topog_nml
+  height = 5000.0, 3000.0, 3000.0, 3000.0,
+  olon   =   90.0,  255.0,  285.0,    0.0,
+  olat   =   45.0,   45.0,  -15.0,  -90.0,
+  wlon   =   15.0,   10.0,    5.0,  180.0,
+  wlat   =   15.0,   25.0,   25.0,   20.0, 
+  /
+_EOF
+
 touch input.nml
 
 # Run the test.
 
-test_expect_success "TEST - test 11: r4_kind" '
-  mpirun -n 2 ./test_routine_r4
+test_expect_success "Test topography_mod: r4_kind" '
+  mpirun -n 2 ./test_topography_r4
 '
 
-test_expect_success "TEST - test 11: r8_kind" '
-  mpirun -n 2 ./test_routine_r8
+test_expect_success "Test topography_mod: r8_kind" '
+  mpirun -n 2 ./test_topography_r8
 '
 test_done
