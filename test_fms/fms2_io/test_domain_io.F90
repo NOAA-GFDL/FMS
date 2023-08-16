@@ -146,10 +146,10 @@ program test_domain_read
     character(len=*),            intent(in)    :: dimension_names(:) !< dimension names
     integer,                     intent(in)    :: ndim               !< Number of dimension
 
-    call register_field(fileob, trim(var_name)//"_r8", "double", names(1:ndim))
-    call register_field(fileob, trim(var_name)//"_r4", "float",  names(1:ndim))
-    call register_field(fileob, trim(var_name)//"_i8", "int",    names(1:ndim))
-    call register_field(fileob, trim(var_name)//"_i4", "int64",  names(1:ndim))
+    call register_field(fileob, trim(var_name)//"_r8", "double", dimension_names(1:ndim))
+    call register_field(fileob, trim(var_name)//"_r4", "float",  dimension_names(1:ndim))
+    call register_field(fileob, trim(var_name)//"_i8", "int",    dimension_names(1:ndim))
+    call register_field(fileob, trim(var_name)//"_i4", "int64",  dimension_names(1:ndim))
   end subroutine register_field_wrapper
 
   !> @brief Allocates the variable to be the size of data compute domain for x and y
