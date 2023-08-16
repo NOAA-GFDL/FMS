@@ -29,9 +29,9 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_diag_manager test_diag_manager_time \
-                 test_diag_update_buffer test_diag_dlinked_list \
-                 test_diag_yaml test_diag_ocean test_modern_diag test_diag_buffer test_flexible_time \
-                 test_dm_openmp
+ test_diag_dlinked_list test_diag_yaml test_diag_ocean test_modern_diag test_diag_buffer \
+ test_flexible_time test_diag_update_buffer test_reduction_methods check_time_none \
+ check_time_min check_time_max
 
 # This is the source code for the test.
 test_diag_manager_SOURCES = test_diag_manager.F90
@@ -43,17 +43,22 @@ test_diag_ocean_SOURCES = test_diag_ocean.F90
 test_modern_diag_SOURCES = test_modern_diag.F90
 test_diag_buffer_SOURCES= test_diag_buffer.F90
 test_flexible_time_SOURCES = test_flexible_time.F90
-test_dm_openmp_SOURCES = test_dm_openmp.F90
+test_reduction_methods_SOURCES = testing_utils.F90 test_reduction_methods.F90
+check_time_none_SOURCES = testing_utils.F90 check_time_none.F90
+check_time_min_SOURCES = testing_utils.F90 check_time_min.F90
+check_time_max_SOURCES = testing_utils.F90 check_time_max.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test.
-TESTS = test_diag_manager2.sh
+TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh
+
+testing_utils.mod: testing_utils.$(OBJEXT)
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input.nml_base diagTables test_diag_manager2.sh check_crashes.sh
+EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_min.sh test_time_max.sh
 
 if USING_YAML
 skipflag=""
@@ -63,4 +68,5 @@ endif
 
 TESTS_ENVIRONMENT = skipflag=${skipflag}
 
-CLEANFILES = input.nml *.nc *.out diag_table *-files/* *.dpi *.spi *.dyn *.spl
+CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
+
