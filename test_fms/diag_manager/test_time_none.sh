@@ -81,12 +81,10 @@ diag_files:
     reduction: none
     zbounds: 2. 3.
     kind: r4
-    write_var: True
 - file_name: test_none_regional
   freq: 6 hours
   time_units: hours
   unlimdim: time
-  write_file: True
   sub_region:
   - grid_type: latlon
     corner1: 78. 78.

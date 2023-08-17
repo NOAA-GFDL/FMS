@@ -60,11 +60,11 @@ program check_time_none
   if (.not. open_file(fileobj, "test_none.nc", "read")) &
     call mpp_error(FATAL, "unable to open file")
 
-  ! if (.not. open_file(fileobj1, "test_none_regional.nc.0004", "read")) &
-  !   call mpp_error(FATAL, "unable to open file")
+  if (.not. open_file(fileobj1, "test_none_regional.nc.0004", "read")) &
+    call mpp_error(FATAL, "unable to open file")
 
-  ! if (.not. open_file(fileobj2, "test_none_regional.nc.0005", "read")) &
-  !   call mpp_error(FATAL, "unable to open file")
+  if (.not. open_file(fileobj2, "test_none_regional.nc.0005", "read")) &
+    call mpp_error(FATAL, "unable to open file")
 
   cdata_out = allocate_buffer(1, nx, 1, ny, nz, nw)
 
@@ -89,20 +89,20 @@ program check_time_none
     call read_data(fileobj, "var3_none", cdata_out(:,:,:,1), unlim_dim_level=i)
     call check_data_3d(cdata_out(:,:,:,1), i, .false.)
 
-    ! cdata_out = -999_r4_kind
-    ! print *, "Checking answers for var3_Z - time_level:", string(i)
-    ! call read_data(fileobj, "var3_Z", cdata_out(:,:,1:2,1), unlim_dim_level=i)
-    ! call check_data_3d(cdata_out(:,:,1:2,1), i, .true., nz_offset=1)
+    cdata_out = -999_r4_kind
+    print *, "Checking answers for var3_Z - time_level:", string(i)
+    call read_data(fileobj, "var3_Z", cdata_out(:,:,1:2,1), unlim_dim_level=i)
+    call check_data_3d(cdata_out(:,:,1:2,1), i, .true., nz_offset=1)
 
-    ! cdata_out = -999_r4_kind
-    ! print *, "Checking answers for var3_none in the first regional file- time_level:", string(i)
-    ! call read_data(fileobj1, "var3_none", cdata_out(1:4,1:3,1:2,1), unlim_dim_level=i)
-    ! call check_data_3d(cdata_out(1:4,1:3,1:2,1), i, .true., nx_offset=77, ny_offset=77, nz_offset=1)
+    cdata_out = -999_r4_kind
+    print *, "Checking answers for var3_none in the first regional file- time_level:", string(i)
+    call read_data(fileobj1, "var3_none", cdata_out(1:4,1:3,1:2,1), unlim_dim_level=i)
+    call check_data_3d(cdata_out(1:4,1:3,1:2,1), i, .true., nx_offset=77, ny_offset=77, nz_offset=1)
 
-    ! cdata_out = -999_r4_kind
-    ! print *, "Checking answers for var3_none in the second regional file- time_level:", string(i)
-    ! call read_data(fileobj2, "var3_none", cdata_out(1:4,1:1,1:2,1), unlim_dim_level=i)
-    ! call check_data_3d(cdata_out(1:4,1:1,1:2,1), i, .true., nx_offset=77, ny_offset=80, nz_offset=1)
+    cdata_out = -999_r4_kind
+    print *, "Checking answers for var3_none in the second regional file- time_level:", string(i)
+    call read_data(fileobj2, "var3_none", cdata_out(1:4,1:1,1:2,1), unlim_dim_level=i)
+    call check_data_3d(cdata_out(1:4,1:1,1:2,1), i, .true., nx_offset=77, ny_offset=80, nz_offset=1)
   enddo
 
   call fms_end()
