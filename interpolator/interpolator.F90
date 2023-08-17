@@ -1188,16 +1188,16 @@ subroutine get_axis_latlon_data(fileobj, name, latlon_data)
 end subroutine get_axis_latlon_data
 
 
-subroutine get_axis_level_data(fileobj, name, data, level_type, vertical_indices)
+subroutine get_axis_level_data(fileobj, name, level_data, level_type, vertical_indices)
    type(FmsNetcdfFile_t), intent(in) :: fileobj
    character(len=*),      intent(in) :: name
-   real, dimension(:),   intent(out) :: data
+   real, dimension(:),   intent(out) :: level_data
    integer,              intent(out) :: level_type, vertical_indices
    real, dimension(:), allocatable   :: alpha
    integer                           :: n, nlev
 
    if(variable_exists(fileobj, name)) then
-      call fms2_io_read_data(fileobj, name, data)
+      call fms2_io_read_data(fileobj, name, level_data)
    else
       call mpp_error(FATAL,'get_axis_level_data: variable '// &
                      & trim(name)//' does not exist in file '//trim(fileobj%path) )
@@ -1206,9 +1206,9 @@ subroutine get_axis_level_data(fileobj, name, data, level_type, vertical_indices
    level_type = PRESSURE
    ! Convert to Pa
    if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
-      data = data * 100.
+      level_data = level_data * 100.
    endif
-   nlev = size(data(:))
+   nlev = size(level_data(:))
    sense = get_variable_sense(fileobj, name)
 ! define the direction of the vertical data axis
 ! switch index order if necessary so that indx 1 is at lowest pressure,
@@ -1217,10 +1217,10 @@ subroutine get_axis_level_data(fileobj, name, data, level_type, vertical_indices
         vertical_indices = INCREASING_UPWARD
         allocate (alpha(nlev))
         do n = 1, nlev
-          alpha(n) = data(nlev-n+1)
+          alpha(n) = level_data(nlev-n+1)
         end do
         do n = 1, nlev
-          data(n) = alpha(n)
+          level_data(n) = alpha(n)
         end do
         deallocate (alpha)
       else
