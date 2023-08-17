@@ -23,18 +23,23 @@ program test_time_interp
  use time_manager_mod, only: get_date, set_time, set_date, time_manager_init, set_calendar_type, operator(+)
  use time_manager_mod, only: JULIAN, time_type, increment_time, NOLEAP, print_date
  use  time_interp_mod, only: time_interp_init, time_interp, NONE, YEAR, MONTH, DAY
+ use time_manager_mod, only: operator(<=), operator(>=), operator(==)
+ use platform_mod
 
  implicit none
 
- integer, parameter :: num_Time=6
+ integer, parameter :: num_Time=6, kindl = TI_TEST_KIND_
  type(time_type) :: Time_beg, Time_end, Time(num_Time)
  type(time_type), allocatable, dimension(:) :: Timelist
- integer :: index1, index2, mo, yr, timelist_len, outunit, ntest, nline
- real :: weight
+ integer :: index1, index2, mo, yr, outunit, ntest, nline
+ real(TI_TEST_KIND_) :: weight
+ real(TI_TEST_KIND_) :: ref_weights(num_Time), ref_weights_leap(num_Time)
+ real(TI_TEST_KIND_), parameter :: SMALL = 1.0e-7_kindl ! r4 will fail with 8
+ real(TI_TEST_KIND_), parameter :: midpoint = 0.483870967741935_kindl
+ real(TI_TEST_KIND_), parameter :: day_before_leap_day =  0.964285714285714_kindl
+ real(TI_TEST_KIND_), parameter :: day_before_leap_day_with_ly =  0.931034482758621_kindl
 
  integer :: nmin, nmax
-
- namelist / test_time_interp_nml / timelist_len
 
  call fms_init
  outunit = stdout()
@@ -50,8 +55,23 @@ program test_time_interp
  Time(5) = set_date(1,12,16)
  Time(6) = Time_end
 
+ ref_weights(1) = 0.0 ! on 'edge' (timeList value)
+ ref_weights(2) = midpoint ! rough midpoint of a month ie. jan 16
+ ref_weights(3) = 0.0
+ ref_weights(4) = 0.0
+ ref_weights(5) = midpoint
+ ref_weights(6) = 0.0
+
+ ref_weights_leap(1) = 0.0 ! on 'edge' (timeList value)
+ ref_weights_leap(2) = day_before_leap_day ! feb 28th
+ ref_weights_leap(3) = midpoint
+ ref_weights_leap(4) = 0.0
+ ref_weights_leap(5) = day_before_leap_day
+ ref_weights_leap(6) = day_before_leap_day ! checks that 29th gives same result
+
 ! Tests with modulo time
  do nline=1,3
+
    if(nline == 1) then
      allocate(Timelist(12))
      do mo=1,12
@@ -72,6 +92,7 @@ program test_time_interp
    endif
 
    do ntest=1,num_Time
+     print *, ntest
      call diagram(nline,ntest,modulo_time=.true.)
      call time_interp(Time(ntest), Time_beg, Time_end, Timelist, weight, index1, index2)
      write(outunit,*) 'time_interp_modulo:'
@@ -84,6 +105,11 @@ program test_time_interp
      write(outunit,99) index1,index2,weight
      write(outunit,'()')
 
+     if(.not. is_valid_indices(index1, index2, Timelist, Time(ntest), weight, YEAR)) &
+         call mpp_error(FATAL, "test_time_interp: invalid indices from time_interp_timelist")
+     if(abs(weight - ref_weights(ntest)) .gt. SMALL) &
+         call mpp_error(FATAL, "test_time_interp: incorrect weight value with reference")
+
      call time_interp(Time(ntest), Timelist, weight, index1, index2, modtime=YEAR)
      write(outunit,*) 'time_interp_list with modtime=YEAR:'
      write(outunit,'()')
@@ -91,9 +117,17 @@ program test_time_interp
      call print_date(Timelist(1),                'Timelist(1)=')
      call print_date(Timelist(size(Timelist(:))),'Timelist(n)=')
      write(outunit,99) index1,index2,weight
+
+     if(.not. is_valid_indices(index1, index2, Timelist, Time(ntest), weight, YEAR)) &
+         call mpp_error(FATAL, "test_time_interp: invalid indices from time_interp_modulo")
+     if(abs(weight - ref_weights(ntest)) .gt. SMALL) &
+         call mpp_error(FATAL, "test_time_interp: incorrect weight value with reference")
+
    enddo
    deallocate(Timelist)
  enddo
+
+
 
 ! Tests without modulo time
  do nline=1,3
@@ -132,6 +166,12 @@ program test_time_interp
      call print_date(Timelist(1),                'Timelist(1)=')
      call print_date(Timelist(size(Timelist(:))),'Timelist(n)=')
      write(outunit,99) index1,index2,weight
+
+     if( .not. is_valid_indices(index1, index2, TimeList, Time(ntest), weight, NONE)) &
+        call mpp_error(FATAL, "invalid result without modtime")
+     if(abs(weight - ref_weights(ntest)) .gt. SMALL) &
+         call mpp_error(FATAL, "test_time_interp: incorrect weight value with reference")
+
    enddo
    deallocate(Timelist)
  enddo
@@ -171,9 +211,20 @@ program test_time_interp
    call print_date(Time(ntest),' Time =')
    write(outunit,99) index1,index2,weight
    write(outunit,'()')
+   if( .not. is_valid_indices(index1, index2, Timelist, Time(ntest), weight, YEAR)) &
+       call mpp_error(FATAL, 'invalid results for indices with leap year correction')
+   if(abs(weight - ref_weights_leap(ntest)) .gt. SMALL) &
+       call mpp_error(FATAL, "test_time_interp: incorrect weight value with reference")
  enddo
  deallocate(Timelist)
 
+ ! swap around ref numbers for different data set
+ ref_weights_leap(1) = day_before_leap_day
+ ref_weights_leap(2) = day_before_leap_day ! feb 28th
+ ref_weights_leap(3) = 0.0
+ ref_weights_leap(4) = day_before_leap_day_with_ly
+ ref_weights_leap(5) = 0.0
+ ref_weights_leap(6) = 0.0
 ! Tests of modulo time and leap year inconsistency
  Time_beg = set_date(1978, 1, 1)
  Time_end = set_date(1981, 1, 1)
@@ -210,6 +261,10 @@ program test_time_interp
    call print_date(Time(ntest),' Time=')
    write(outunit,99) index1,index2,weight
    write(outunit,'()')
+   if( .not. is_valid_indices(index1, index2, Timelist, Time(ntest), weight, YEAR)) &
+       call mpp_error(FATAL, 'invalid results for indices with leap year correction')
+   if(abs(weight - ref_weights_leap(ntest)) .gt. SMALL) &
+       call mpp_error(FATAL, "test_time_interp: incorrect weight value with reference")
  enddo
  deallocate(Timelist)
 
@@ -296,5 +351,31 @@ program test_time_interp
  write(outunit,'()')
 
  end subroutine diagram
+
+   !> helper function to check results
+   !! true if invalid , false for valid
+   logical function is_valid_indices(ind1, ind2, tList, tintv, res_weight, mtime)
+       integer, intent(in) :: ind1, ind2
+       type(time_type), intent(in) :: tList(:), tintv
+       real(TI_TEST_KIND_), intent(in) :: res_weight
+       integer, intent(in) :: mtime
+       integer :: i
+
+        ! modulo_time determines wrap around
+        if( mtime .eq. NONE) then
+           if (ind1 .eq. SIZE(tList)) then
+                is_valid_indices = ind2 .eq. ind1
+           else
+                is_valid_indices = ind2 .eq. ind1+1
+           endif
+        else ! YEAR, default
+           if (ind1 .eq. 12 ) then
+                is_valid_indices = ind2 .eq. 1
+           else
+                is_valid_indices = ind2 .eq. ind1+1
+           endif
+        endif
+
+    end function is_valid_indices
 
  end program test_time_interp
