@@ -220,7 +220,7 @@ integer,           allocatable :: out_of_bounds(:) !< Flag for when surface pres
 !++lwh
 integer,           allocatable :: vert_interp(:)   !< Flag for type of vertical interpolation.
 !--lwh
-real,              allocatable :: data(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
+real,              allocatable :: data_array5d(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
 
 real,              allocatable :: pmon_pyear(:,:,:,:)           !< No description
 real,              allocatable :: pmon_nyear(:,:,:,:)           !< No description
@@ -361,7 +361,7 @@ type(interpolate_type), intent(inout) :: Out
      if (allocated(In%mr           )) Out%mr            =  In%mr
      if (allocated(In%out_of_bounds)) Out%out_of_bounds =  In%out_of_bounds
      if (allocated(In%vert_interp  )) Out%vert_interp   =  In%vert_interp
-     if (allocated(In%data         )) Out%data          =  In%data
+     if (allocated(In%data_array5d )) Out%data_array5d  =  In%data_array5d
      if (allocated(In%pmon_pyear   )) Out%pmon_pyear    =  In%pmon_pyear
      if (allocated(In%pmon_nyear   )) Out%pmon_nyear    =  In%pmon_nyear
      if (allocated(In%nmon_nyear   )) Out%nmon_nyear    =  In%nmon_nyear
@@ -968,12 +968,12 @@ select case(ntime)
 else
 ! We have a continuous time-line so treat as for 5-12 timelevels as below.
    if ( .not. read_all_on_init) then
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
+   allocate(clim_type%data_array5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
+   allocate(clim_type%data_array5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
                ntime, num_fields))
    endif
-   clim_type%data = 0.0
+   clim_type%data_array5d = 0.0
    clim_type%TIME_FLAG = LINEAR
 endif
 
@@ -985,12 +985,12 @@ endif
 ! Assume we have monthly or higher time resolution datasets (climatology or time series)
 ! So we only need to read 2 datasets and apply linear temporal interpolation.
    if ( .not. read_all_on_init) then
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
+   allocate(clim_type%data_array5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
+   allocate(clim_type%data_array5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
                ntime, num_fields))
    endif
-   clim_type%data = 0.0
+   clim_type%data_array5d = 0.0
    clim_type%TIME_FLAG = LINEAR
 !++lwh
 !case (1:4)
@@ -1004,7 +1004,7 @@ endif
 ! case (default)
  case(:0)
    clim_type%TIME_FLAG = NOTIME
-   allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 1, num_fields))
+   allocate(clim_type%data_array5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 1, num_fields))
 end select
 
 
@@ -1131,7 +1131,7 @@ if( clim_type%TIME_FLAG .eq. SEASONAL ) then
    do i=1,num_fields
       do n = 1, ntime
          call read_data( clim_type, clim_type%field_name(i), &
-                         clim_type%data(:,:,:,n,i), n, i, base_time )
+                         clim_type%data_array5d(:,:,:,n,i), n, i, base_time )
       enddo
    enddo
 endif
@@ -1141,7 +1141,7 @@ if( clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) then
    do i=1,num_fields
       do n = 1, ntime
          call read_data( clim_type, clim_type%field_name(i), &
-                         clim_type%data(:,:,:,n,i), n, i, base_time )
+                         clim_type%data_array5d(:,:,:,n,i), n, i, base_time )
       enddo
    enddo
 
@@ -1152,7 +1152,7 @@ if( clim_type%TIME_FLAG .eq. NOTIME ) then
 ! Read all the data at this point.
    do i=1,num_fields
      call read_data_no_time_axis( clim_type, clim_type%field_name(i), &
-                                  clim_type%data(:,:,:,1,i), i )
+                                  clim_type%data_array5d(:,:,:,1,i), i )
    enddo
    call close_file (fileobj)
 endif
@@ -1692,10 +1692,10 @@ character(len=256) :: err_msg
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
       do i=1, size(clim_type%field_name(:))
-          call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,1,i), taum,i,Time)
+          call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,1,i), taum,i,Time)
                clim_type%time_init(i,1) = taum
                clim_type%itaum = 1
-          call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,2,i), taup,i,Time)
+          call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,2,i), taup,i,Time)
                clim_type%time_init(i,2) = taup
                clim_type%itaup = 2
       end do
@@ -1710,7 +1710,8 @@ character(len=256) :: err_msg
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
         do i=1, size(clim_type%field_name(:))
-           call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+           call read_data(clim_type,clim_type%field_name(i), &
+                clim_type%data_array5d(:,:,:,clim_type%itaup,i), taup,i, Time)
            clim_type%time_init(i,clim_type%itaup)=taup
         end do
       endif
@@ -2052,10 +2053,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
     do i=1, size(clim_type%field_name(:))
-    call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,1,i), taum,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
-    call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,2,i), taup,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
     end do
@@ -2070,7 +2071,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
     do i=1, size(clim_type%field_name(:))
-        call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+        call read_data(clim_type,clim_type%field_name(i), &
+             clim_type%data_array5d(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
      end do
       endif
@@ -2086,9 +2088,9 @@ select case(clim_type%TIME_FLAG)
   case (LINEAR)
     do n=1, size(clim_type%field_name(:))
       hinterp_data(:,:,:,n) = (1.-clim_type%tweight)*  &
-                clim_type%data(istart:iend,jstart:jend,:,clim_type%itaum,n)  +  &
+                clim_type%data_array5d(istart:iend,jstart:jend,:,clim_type%itaum,n)  +  &
                                  clim_type%tweight*   &
-                clim_type%data(istart:iend,jstart:jend,:,clim_type%itaup,n)
+                clim_type%data_array5d(istart:iend,jstart:jend,:,clim_type%itaup,n)
     end do
 ! case (SEASONAL)
 ! Do sine fit to data at this point
@@ -2501,10 +2503,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
-    call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,1,i), taum,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
-    call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,2,i), taup,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
@@ -2517,7 +2519,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !We have the previous time step but not the next time step data
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
-        call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+        call read_data(clim_type,clim_type%field_name(i), &
+             clim_type%data_array5d(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
       endif
 
@@ -2527,8 +2530,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
     endif   !( .not. clim_type%separate_time_vary_calc)
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
-    hinterp_data = (1.-clim_type%tweight) * clim_type%data(istart:iend,jstart:jend,:,clim_type%itaum,i) + &
-                       clim_type%tweight * clim_type%data(istart:iend,jstart:jend,:,clim_type%itaup,i)
+    hinterp_data = (1.-clim_type%tweight) * clim_type%data_array5d(istart:iend,jstart:jend,:,clim_type%itaum,i) + &
+                       clim_type%tweight * clim_type%data_array5d(istart:iend,jstart:jend,:,clim_type%itaup,i)
 ! case (SEASONAL)
 ! Do sine fit to data at this point
   case (BILINEAR)
@@ -2942,10 +2945,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
       !Set up
       ! field(:,:,:,1) as the previous time slice.
       ! field(:,:,:,2) as the next time slice.
-        call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,1,i), taum,i,Time)
+        call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
-        call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,2,i), taup,i,Time)
+        call read_data(clim_type,clim_type%field_name(i), clim_type%data_array5d(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
@@ -2958,7 +2961,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
       !We have the previous time step but not the next time step data
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
-        call read_data(clim_type,clim_type%field_name(i), clim_type%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+        call read_data(clim_type,clim_type%field_name(i), &
+             clim_type%data_array5d(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
       endif
     endif! TIME_FLAG .eq. LINEAR .and. (.not. read_all_on_init)
@@ -2969,8 +2973,8 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
-    hinterp_data = (1.-clim_type%tweight)*clim_type%data(istart:iend,jstart:jend,:,clim_type%itaum,i) &
-                     + clim_type%tweight*clim_type%data(istart:iend,jstart:jend,:,clim_type%itaup,i)
+    hinterp_data = (1.-clim_type%tweight)*clim_type%data_array5d(istart:iend,jstart:jend,:,clim_type%itaum,i) &
+                     + clim_type%tweight*clim_type%data_array5d(istart:iend,jstart:jend,:,clim_type%itaup,i)
 ! case (SEASONAL)
 ! Do sine fit to data at this point
   case (BILINEAR)
@@ -3101,7 +3105,7 @@ if(present(clim_units)) then
 endif
 
 do n=1, size(clim_type%field_name(:))
-  hinterp_data(:,:,:,n) = clim_type%data(istart:iend,jstart:jend,:,1,n)
+  hinterp_data(:,:,:,n) = clim_type%data_array5d(istart:iend,jstart:jend,:,1,n)
 end do
 
 select case(clim_type%level_type)
@@ -3248,7 +3252,7 @@ do i= 1,size(clim_type%field_name(:))
       clim_units = chomp(clim_units)
     endif
 
-    hinterp_data = clim_type%data(istart:iend,jstart:jend,:,1,i)
+    hinterp_data = clim_type%data_array5d(istart:iend,jstart:jend,:,1,i)
 
 select case(clim_type%level_type)
   case(PRESSURE)
@@ -3376,7 +3380,7 @@ do i= 1,size(clim_type%field_name(:))
       clim_units = chomp(clim_units)
     endif
 
-    hinterp_data = clim_type%data(istart:iend,jstart:jend,:,1,i)
+    hinterp_data = clim_type%data_array5d(istart:iend,jstart:jend,:,1,i)
 
     interp_data(:,:) = hinterp_data(:,:,1)
 
@@ -3423,8 +3427,8 @@ if (allocated (clim_type%has_level))  deallocate(clim_type%has_level)
 if (allocated (clim_type%field_name)) deallocate(clim_type%field_name)
 if (allocated (clim_type%time_init )) deallocate(clim_type%time_init)
 if (allocated (clim_type%mr        )) deallocate(clim_type%mr)
-if (allocated (clim_type%data)) then
-  deallocate(clim_type%data)
+if (allocated (clim_type%data_array5d)) then
+  deallocate(clim_type%data_array5d)
 endif
 if (allocated (clim_type%pmon_pyear)) then
   deallocate(clim_type%pmon_pyear)
