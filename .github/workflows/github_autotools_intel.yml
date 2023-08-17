@@ -33,7 +33,7 @@ jobs:
         make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
-        ./configure --prefix=/libs --enable-remote-fortran-bootstrap
+        ./configure --prefix=/libs --enable-remote-fortran-bootstrap CC=icc # build issue with icx, should be cross-compatible
         make -j install
         # sets this here to pass embeded configure checks
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
