@@ -30,6 +30,7 @@
 module fms_diag_reduction_methods_mod
   use platform_mod, only: r8_kind, r4_kind
   use fms_diag_bbox_mod, only: fmsDiagIbounds_type
+  use mpp_mod
   implicit none
   private
 

@@ -40,7 +40,7 @@ use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use fms_diag_reduction_methods_mod, only: check_indices_order, init_mask, set_weight
 use constants_mod, only: SECONDS_PER_DAY
-USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
+USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type, update_bounds_out, determine_if_block_is_in_region
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -520,6 +520,7 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
                                                               !! based on the type of field_data when doing the math)
   type(fmsDiagIbounds_type)                :: bounds          !< Bounds (starting ending indices) for the field
 
+  logical :: has_halos
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
@@ -535,6 +536,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
   if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
+
+  has_halos = .false.
+  if ((present(is_in) .and. present(ie_in)) .or. (present(js_in) .and. present(je_in))) &
+    has_halos = .true.
 
   !< If the field has `mask_variant=.true.`, check that mask OR rmask are present
   if (this%FMS_diag_fields(diag_field_id)%is_mask_variant()) then
@@ -596,7 +601,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     return
   else
     call bounds%reset(999,-999)
-    call bounds%update_bounds(is, ie, js, je, ks, ke) !TODO may need more updates for halos
+    err_msg = bounds%update_bounds_from_halos(field_data, is, ie, js, je, ks, ke, has_halos)
+    if (trim(err_msg) .ne. "") call mpp_error(FATAL, "WUT")
     call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
     fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, field_weight, &
       bounds, Time=Time)
@@ -741,6 +747,19 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
   integer           :: buffer_id        !< Id of the buffer
   integer           :: file_id          !< File id
   character(len=50) :: error_msg        !< Error message to check
+  integer, allocatable :: axis_ids(:)
+  logical :: is_regional
+  logical :: reduced_k_range
+  type(fmsDiagIbounds_type) :: bounds_in
+  type(fmsDiagIbounds_type) :: bounds_out
+  integer :: i
+  integer :: sindex
+  integer :: eindex
+  integer :: compute_idx(2)
+  logical :: dummy
+  character(len=1) :: cart_axis
+  logical :: is_block_in_region
+  integer :: starting, ending
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
@@ -753,13 +772,50 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
     file_id = this%FMS_diag_fields(diag_field_id)%file_ids(ids) !TODO not sure if this is correct
     file_ptr => this%FMS_diag_files(file_id)
 
+    if (.not. file_ptr%writing_on_this_pe()) cycle
+
+    !< Initialize the bounds
+    bounds_out = bounds
+    bounds_in = bounds
+    call bounds_out%reset_bounds_from_array_4D(buffer_ptr%buffer(:,:,:,:,1))
+    call update_bounds_out(bounds, bounds_out)
+
+    if (.not. bounds_in%has_halos) then
+       print *, "buffer has halos"
+      call bounds_in%reset_bounds_from_array_4D(field_data)
+    endif
+
     !< Reset the bounds based on the reduced k range and subregional
+    is_regional = file_ptr%is_regional()
+    reduced_k_range = field_yaml_ptr%has_var_zbounds()
+
+    if (is_regional .or. reduced_k_range) then
+      print *, "buffer is subregional"
+      axis_ids = buffer_ptr%get_axis_ids()
+      do i = 1, size(axis_ids)
+        select type (diag_axis => this%diag_axis(axis_ids(i))%axis)
+        type is (fmsDiagSubAxis_type)
+          sindex = diag_axis%get_starting_index()
+          eindex = diag_axis%get_ending_index()
+          compute_idx = diag_axis%get_compute_indices()
+          starting=sindex-compute_idx(1)+1
+          ending=eindex-compute_idx(1)+1
+          call bounds_in%update_index(starting, ending, i, .false.)
+          call bounds_out%update_index(1, ending-starting+1, i, .true.)
+          print *, mpp_pe(), ":", ending-starting+1
+
+          is_block_in_region = determine_if_block_is_in_region(starting, ending, bounds_out, i)
+          if (.not. is_block_in_region) return
+        end select
+      enddo
+      deallocate(axis_ids)
+    endif
 
     !< Determine the reduction method for the buffer
     reduction_method = field_yaml_ptr%get_var_reduction()
     select case(reduction_method)
     case (time_none)
-      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, bounds)
+      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, bounds_in, bounds_out)
     case (time_min)
     case (time_max)
     case (time_sum)
@@ -1050,6 +1106,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   character(len=128), allocatable :: var_name !< Field name to initialize output buffers
   logical :: is_scalar !< Flag indicating that the variable is a scalar
   integer :: yaml_id
+  integer :: file_id
 
   if (this%FMS_diag_fields(field_id)%buffer_allocated) return
 
@@ -1088,6 +1145,9 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
+    file_id = this%FMS_diag_fields(field_id)%file_ids(i)
+
+    if (.not. this%FMS_diag_files(file_id)%writing_on_this_pe()) cycle
 
     ndims = 0
     if (.not. is_scalar) then

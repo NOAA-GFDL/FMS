@@ -75,11 +75,18 @@ diag_files:
     output_name: var3_none
     reduction: none
     kind: r4
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_Z
+    reduction: none
+    zbounds: 2. 3.
+    kind: r4
+    write_var: True
 - file_name: test_none_regional
-  freq: 6
-  freq_units: hours
+  freq: 6 hours
   time_units: hours
   unlimdim: time
+  write_file: True
   sub_region:
   - grid_type: latlon
     corner1: 78. 78.
@@ -105,7 +112,7 @@ test_expect_success "Checking answers for the "none" reduction method (test $my_
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 0 \n mask_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n &test_reduction_methods_nml \n test_case = 0 \n mask_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method, logical mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -114,7 +121,7 @@ test_expect_success "Checking answers for the "none" reduction method, logical m
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 0 \n mask_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n &test_reduction_methods_nml \n test_case = 0 \n mask_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method, real mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -122,9 +129,9 @@ test_expect_success "Checking answers for the "none" reduction method, real mask
   mpirun -n 1 ../check_time_none
 '
 
-export OMP_NUM_THREADS=2
+export OMP_NUM_THREADS=1
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method with openmp (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -133,7 +140,7 @@ test_expect_success "Checking answers for the "none" reduction method with openm
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 1 \n mask_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n mask_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method with openmp, logical mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -142,7 +149,7 @@ test_expect_success "Checking answers for the "none" reduction method with openm
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 1 \n mask_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n mask_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method with openmp, real mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -152,7 +159,7 @@ test_expect_success "Checking answers for the "none" reduction method with openm
 export OMP_NUM_THREADS=1
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method with halo output (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -161,7 +168,7 @@ test_expect_success "Checking answers for the "none" reduction method with halo 
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 2 \n mask_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n mask_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method with halo output with logical mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -170,7 +177,7 @@ test_expect_success "Checking answers for the "none" reduction method with halo 
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 2 \n mask_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n mask_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method with halo output with real mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '

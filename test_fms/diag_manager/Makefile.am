@@ -53,7 +53,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test.
-#TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh
+TESTS = test_time_none.sh #test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 

@@ -28,7 +28,7 @@ module fms_diag_output_buffer_mod
 use platform_mod
 use iso_c_binding
 use time_manager_mod, only: time_type
-use mpp_mod, only: mpp_error, FATAL
+use mpp_mod, only: mpp_error, FATAL, mpp_pe
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
 use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 use fms_diag_yaml_mod, only: diag_yaml
@@ -436,21 +436,21 @@ subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_u
 
-function do_time_none_wrapper(this, field_data, mask, bounds) &
+function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type),                 intent(inout) :: this            !< buffer object to write
   class(*),                                        intent(in) :: field_data(:,:,:,:)
+  type(fmsDiagIbounds_type), intent(in) :: bounds_in
+  type(fmsDiagIbounds_type), intent(in) :: bounds_out
   logical, intent(in) :: mask(:,:,:,:)
   character(len=50) :: err_msg
-
-  type(fmsDiagIbounds_type), intent(in) :: bounds
 
   err_msg = ""
   select type (output_buffer => this%buffer)
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
-        err_msg=do_time_none(output_buffer, field_data, mask, bounds)
+        err_msg=do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
       end select
   end select
 
