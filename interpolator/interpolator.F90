@@ -1163,14 +1163,14 @@ endif
 
 end subroutine fms2io_interpolator_init
 
-subroutine get_axis_latlon_data(fileobj, name, data)
+subroutine get_axis_latlon_data(fileobj, name, latlon_data)
    type(FmsNetcdfFile_t), intent(in) :: fileobj
    character(len=*),      intent(in) :: name
-   real, dimension(:),   intent(out) :: data
+   real, dimension(:),   intent(out) :: latlon_data
 
 
    if(variable_exists(fileobj, name)) then
-      call fms2_io_read_data(fileobj, name, data)
+      call fms2_io_read_data(fileobj, name, latlon_data)
    else
       call mpp_error(FATAL,'get_axis_latlon_data: variable '// &
                      & trim(name)//' does not exist in file '//trim(fileobj%path) )
@@ -1178,7 +1178,7 @@ subroutine get_axis_latlon_data(fileobj, name, data)
    call get_variable_units(fileobj, name, units)
    select case(units(1:6))
    case('degree')
-      data = data*dtr
+      latlon_data = latlon_data*dtr
    case('radian')
    case default
       call mpp_error(FATAL, "get_axis_latlon_data : Units for '// &
