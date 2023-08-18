@@ -304,7 +304,7 @@ foreach(kind ${kinds})
                                                  constants4
                                                  constants
                                                  axis_utils/include
-                                                 mosaic2/include)
+                                                 mosaic2/include
                                                  field_manager/include
                                                  tracer_manager/include)
 
