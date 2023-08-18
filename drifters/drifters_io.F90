@@ -23,6 +23,7 @@
 !> @addtogroup drifters_io_mod
 !> @{
 module drifters_io_mod
+#ifdef use_drifters
 
   use netcdf
   use netcdf_nf_data
@@ -307,7 +308,7 @@ contains
     self%it_id = self%it_id + np
 
   end subroutine drifters_io_write
-
+#endif
 end module drifters_io_mod
 !> @}
 ! close documentation grouping

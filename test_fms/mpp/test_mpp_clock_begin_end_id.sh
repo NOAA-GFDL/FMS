@@ -26,6 +26,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
+touch input.nml
 touch clock.nml
 echo "&test_mpp_clock_begin_end_id_nml" > clock.nml
 echo "test_number = 0" >> clock.nml
