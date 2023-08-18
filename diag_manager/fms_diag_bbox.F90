@@ -56,6 +56,7 @@ MODULE fms_diag_bbox_mod
       procedure :: update_bounds
       procedure :: update_bounds_from_halos
       procedure :: reset_bounds_to_write
+      procedure :: rebase
       procedure :: get_imin
       procedure :: get_imax
       procedure :: get_jmin
@@ -467,6 +468,24 @@ end function
    indices%fjs = fjs
    indices%fje = fje
  end function recondition_indices
+
+ subroutine rebase(bounds_in, bounds, dimension)
+   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in
+   CLASS (fmsDiagIbounds_type), INTENT(in) :: bounds
+   integer, intent(in) :: dimension
+
+   select case (dimension)
+   case (xdimension)
+      bounds_in%imin = bounds_in%imin - bounds%imin +1
+      bounds_in%imax = bounds_in%imax - bounds%imin +1
+   case (ydimension)
+      bounds_in%jmin = bounds_in%jmin - bounds%jmin +1
+      bounds_in%jmax = bounds_in%jmax - bounds%jmin +1
+   case (zdimension)
+      bounds_in%kmin = bounds_in%kmin - bounds%kmin +1
+      bounds_in%kmax = bounds_in%kmax - bounds%kmin +1
+   end select
+ end subroutine
 
  subroutine update_bounds_out(bounds_in, bounds_out)
    CLASS (fmsDiagIbounds_type), INTENT(in) :: bounds_in

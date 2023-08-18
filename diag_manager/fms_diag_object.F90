@@ -802,10 +802,13 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
           ending=eindex-compute_idx(1)+1
           call bounds_in%update_index(starting, ending, i, .false.)
           call bounds_out%update_index(1, ending-starting+1, i, .true.)
-          print *, mpp_pe(), ":", ending-starting+1
 
-          is_block_in_region = determine_if_block_is_in_region(starting, ending, bounds_out, i)
-          if (.not. is_block_in_region) return
+          is_block_in_region = determine_if_block_is_in_region(starting, ending, bounds, i)
+          if (.not. is_block_in_region) then
+            return
+          endif
+
+          call bounds_in%rebase(bounds, i)
         end select
       enddo
       deallocate(axis_ids)

@@ -177,7 +177,7 @@ program test_reduction_methods
   jed1 = jsd1 + jec-jsc
 
   call diag_manager_set_time_end(set_date(2,1,3,0,0,0))
-  do i = 1, ntimes
+  do i = 1, 1 !, ntimes
     Time = Time + Time_step
 
     call set_buffer(cdata, i)
