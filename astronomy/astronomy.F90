@@ -490,7 +490,7 @@ integer :: unit, ierr, io, seconds, days, jd, id
     if (period == 0) then
         period_time_type = length_of_year()
         call get_time (period_time_type, seconds, days)
-            period = int(seconds_per_day * days + seconds)
+            period = int(seconds_per_day) * days + seconds
     else
         period_time_type = set_time(period,0)
     endif
@@ -518,27 +518,32 @@ integer :: unit, ierr, io, seconds, days, jd, id
 
     is_valid = .false.
     if (present(latb) .and. present(lonb)) then
-      select type (latb)
-        type is (real(r4_kind))
-        select type (lonb)
-        type is (real(r4_kind))
-          is_valid = .true.
-        end select
-      type is (real(r8_kind))
-      select type (lonb)
-        type is (real(r8_kind))
-        is_valid = .true.
-      end select
-    end select
+       select type (latb)
+       type is (real(r4_kind))
+          select type (lonb)
+          type is (real(r4_kind))
+             is_valid = .true.
+          end select
+       type is (real(r8_kind))
+          select type (lonb)
+          type is (real(r8_kind))
+             is_valid = .true.
+          end select
+       end select
+       if( is_valid ) then
           jd = size(latb,2) - 1
-            id = size(lonb,1) - 1
-            allocate (cosz_ann(id, jd))
-            allocate (solar_ann(id, jd))
-            allocate (fracday_ann(id, jd))
-            total_pts = jd*id
+          id = size(lonb,1) - 1
+          allocate (cosz_ann(id, jd))
+          allocate (solar_ann(id, jd))
+          allocate (fracday_ann(id, jd))
+          total_pts = jd*id
+       else
+          call error_mesg('astronomy_mod', 'latb and/or lonb are not valid types', FATAL)
+       end if
     elseif (present(latb) .and. .not. present(lonb)) then
-        call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
-    else
+       call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
+    elseif (present(lonb) .and. .not. present(latb)) then
+       call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
     endif
 
 !---------------------------------------------------------------------
@@ -574,7 +579,7 @@ integer :: seconds, days
 !    define length of year in seconds.
 !--------------------------------------------------------------------
     call get_time (period_time_type, seconds, days)
-    period_out = int(seconds_per_day * days + seconds)
+    period_out = int(seconds_per_day) * days + seconds
 
 
 end subroutine get_period_integer
