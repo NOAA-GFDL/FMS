@@ -1,4 +1,3 @@
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -165,28 +164,24 @@
 
   end function LON_IN_RANGE_
 
-  !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
+  !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) < lon_strt+360.
   !!
-  !> <br>The first istrt-1 entries are moved to the end of the array:
+  !! This may require that entries be moved from the beginning of the array to
+  !! the end. If no entries are moved (i.e., if lon(:) is already monotonic in
+  !! the range from lon_start to lon_start + 360), then istrt is set to 0. If
+  !! any entries are moved, then istrt is set to the original index of the entry
+  !! which becomes lon(1).
   !!
-  !! e.g.
-  !!        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
-  !!        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
+  !! e.g.,
+  !!
+  !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 3
+  !!    ==> lon = 3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
+  !!
 
   subroutine TRANLON_(lon, lon_start, istrt)
-
-    ! returns array of longitudes s.t.  lon_strt <= lon < lon_strt+360.
-    ! also, the first istrt-1 entries are moved to the end of the array
-    !
-    ! e.g.
-    !        lon =      0 1 2 3 4 5  ...  358 359; lon_strt = 3 ==>
-    !        tranlon =  3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
-
     real(kind=FMS_AU_KIND_), intent(inout), dimension(:) :: lon
     real(kind=FMS_AU_KIND_), intent(in)                  :: lon_start
     integer, intent(out)                                 :: istrt
-
-
     integer                 :: len, i
     real(kind=FMS_AU_KIND_) :: lon_strt, tmp(size(lon(:))-1)
 
@@ -214,7 +209,7 @@
        endif
 
        lon_strt = lon(1)
-       do i=2,len+1
+       do i=2,len
           lon(i)   = lon_in_range(lon(i),lon_strt)
           lon_strt = lon(i)
        enddo
