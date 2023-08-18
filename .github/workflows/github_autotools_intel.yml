@@ -1,6 +1,6 @@
 on: pull_request
 jobs:
-  intel-autotools:
+  build-dependencies:
     runs-on: ubuntu-latest
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
@@ -10,10 +10,6 @@ jobs:
         CFLAGS:  "-I/libs/include"
         FCFLAGS: "-I/libs/include -g -traceback"
         LDFLAGS: "-L/libs/lib"
-        TEST_VERBOSE: 1
-        I_MPI_FABRICS: "shm" # needed for mpi in image
-        # intel bug causes some failures with shm option(required in container)
-        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23"
     steps:
     - name: Cache dependencies
       id: cache
@@ -43,6 +39,35 @@ jobs:
         tar xf yaml-0.2.5.tar.gz && cd yaml-0.2.5
         ./configure --prefix=/libs
         make -j install && cd
+  make-check-fms:
+    needs: build-dependencies
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        FC: ["ifx", "ifort"]
+        CC: ["icx", "icc"]
+        exclude:
+          - FC: "ifx"
+            CC: "icc"
+    container:
+      image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
+      env:
+        CC: mpicc -cc=${{ matrix.CC }}
+        FC: mpifc -fc=${{ matrix.FC }}
+        CFLAGS:  "-I/libs/include"
+        FCFLAGS: "-I/libs/include -g -traceback"
+        LDFLAGS: "-L/libs/lib"
+        TEST_VERBOSE: 1
+        I_MPI_FABRICS: "shm" # needed for mpi in image
+        # intel bug causes some failures with shm option(required in container)
+        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23"
+    steps:
+    - name: Get dependencies from cache
+      id: cache
+      uses: actions/cache@v3
+      with:
+        path: /libs
+        key: ${{ runner.os }}-intel-libs
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
