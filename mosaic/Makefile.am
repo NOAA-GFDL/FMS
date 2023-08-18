@@ -44,7 +44,7 @@ create_xgrid.h \
 gradient_c2l.h \
 interp.h \
 mosaic_util.h \
-read_mosaic.h
+get_global_area.h
 
 # Some mods are dependant on other mods in this dir.
 grid_mod.$(FC_MODEXT): mosaic_mod.$(FC_MODEXT)
