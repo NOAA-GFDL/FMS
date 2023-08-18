@@ -37,7 +37,7 @@
     real(kind=FMS_MOS_KIND_) :: garea
     real(kind=FMS_MOS_KIND_) :: get_global_area
 
-    garea = get_global_area()
+    garea = real( get_global_area(), FMS_MOS_KIND_) !< get_global_area returns a r8_kind
 
     ! When start and nread present, make sure nread(1) is the same as the size of the data
     if(present(ibegin) .and. present(iend)) then
