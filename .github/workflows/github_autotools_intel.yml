@@ -68,6 +68,8 @@ jobs:
       with:
         path: /libs
         key: ${{ runner.os }}-intel-libs
+    - name: Install packages for building
+      run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
