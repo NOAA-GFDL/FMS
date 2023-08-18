@@ -37,6 +37,8 @@ module fms_diag_reduction_methods_mod
   public :: check_indices_order, init_mask, set_weight
   public :: do_time_none
 
+  !> @brief Does the time_none reduction method. See include/fms_diag_reduction_methods.inc
+  !TODO This needs to be extended to integers
   interface do_time_none
     module procedure do_time_none_r4, do_time_none_r8
   end interface do_time_none

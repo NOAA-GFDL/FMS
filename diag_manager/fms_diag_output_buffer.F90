@@ -28,7 +28,7 @@ module fms_diag_output_buffer_mod
 use platform_mod
 use iso_c_binding
 use time_manager_mod, only: time_type
-use mpp_mod, only: mpp_error, FATAL, mpp_pe
+use mpp_mod, only: mpp_error, FATAL
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
 use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 use fms_diag_yaml_mod, only: diag_yaml
@@ -436,24 +436,36 @@ subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_u
 
+!> @brief Does the time_none reduction method on the buffer object
+!! @return Error message if the math was not successful
 function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out) &
   result(err_msg)
-  class(fmsDiagOutputBuffer_type),                 intent(inout) :: this            !< buffer object to write
-  class(*),                                        intent(in) :: field_data(:,:,:,:)
-  type(fmsDiagIbounds_type), intent(in) :: bounds_in
-  type(fmsDiagIbounds_type), intent(in) :: bounds_out
-  logical, intent(in) :: mask(:,:,:,:)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
+  class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
+  type(fmsDiagIbounds_type),       intent(in)    :: bounds_in           !< Indicies for the buffer passed in
+  type(fmsDiagIbounds_type),       intent(in)    :: bounds_out          !< Indicies for the output buffer
+  logical,                         intent(in)    :: mask(:,:,:,:)       !< Mask for the field
   character(len=50) :: err_msg
 
+  !TODO This does not need to be done for every time step
+  !TODO This will be expanded for integers
   err_msg = ""
   select type (output_buffer => this%buffer)
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
-        err_msg=do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
+        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
+      class default
+        err_msg="output buffer the buffer send in are not of the same type (r8_kind)"
+      end select
+    type is (real(kind=r4_kind))
+      select type (field_data)
+      type is (real(kind=r4_kind))
+        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
+      class default
+        err_msg="output buffer the buffer send in are not of the same type (r4_kind)"
       end select
   end select
-
 end function do_time_none_wrapper
 #endif
 end module fms_diag_output_buffer_mod

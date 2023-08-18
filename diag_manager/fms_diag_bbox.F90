@@ -54,7 +54,7 @@ MODULE fms_diag_bbox_mod
       procedure :: reset_bounds_from_array_4D
       procedure :: reset_bounds_from_array_5D
       procedure :: update_bounds
-      procedure :: update_bounds_from_halos
+      procedure :: set_bounds
       procedure :: reset_bounds_to_write
       procedure :: rebase
       procedure :: rebase_more
@@ -89,7 +89,7 @@ MODULE fms_diag_bbox_mod
       procedure :: get_fje
    end type fmsDiagBoundsHalos_type
 
-   public :: recondition_indices, update_bounds_out, determine_if_block_is_in_region
+   public :: recondition_indices, determine_if_block_is_in_region
 
    integer, parameter :: xdimension = 1
    integer, parameter :: ydimension = 2
@@ -299,7 +299,7 @@ end function
      endif
    end subroutine
 
-   function update_bounds_from_halos(this, field_data, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k, has_halos) &
+   function set_bounds(this, field_data, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k, has_halos) &
       result(error_msg)
       CLASS  (fmsDiagIbounds_type), intent(inout) :: this !<The bounding box of the output field buffer inindex space.
       class(*), intent(in) :: field_data(:,:,:,:)
@@ -352,7 +352,7 @@ end function
          this%jmax = upper_j
       endif
 
-   end function update_bounds_from_halos
+   end function set_bounds
    !> @brief Reset the instance bounding box with the bounds determined from the
    !! first three dimensions of the 5D "array" argument
    SUBROUTINE reset_bounds_from_array_4D(this, array)
@@ -478,15 +478,11 @@ end function
 
    select case (dimension)
    case (xdimension)
-      print *, mpp_pe(), "beforex:", bounds_in%imin, bounds_in%imax, starting
       bounds_in%imin = max(starting, bounds_in%imin)-starting+1
       bounds_in%imax = min(bounds_in%imax, bounds_in%imin + ending-starting)
-      print *, mpp_pe(), "afterx:", bounds_in%imin, bounds_in%imax
    case (ydimension)
-      print *, mpp_pe(), "beforey:", bounds_in%jmin, bounds_in%jmax, starting
       bounds_in%jmin =  max(starting, bounds_in%jmin)-starting+1
       bounds_in%jmax = min(bounds_in%jmax, bounds_in%jmin + ending-starting)
-      print *, mpp_pe(), "aftery:", bounds_in%jmin, bounds_in%jmax, starting
    case (zdimension)
       bounds_in%kmin =max(starting, bounds_in%kmin)-starting+1
       bounds_in%kmax = min(bounds_in%kmax, bounds_in%kmin + ending-starting)
@@ -513,22 +509,6 @@ end function
       bounds_in%kmin = min(starting-bounds%kmin+1, starting)
       bounds_in%kmax = bounds_in%kmin + (ending-starting)
    end select
- end subroutine
-
- subroutine update_bounds_out(bounds_in, bounds_out)
-   CLASS (fmsDiagIbounds_type), INTENT(in) :: bounds_in
-   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_out
-
-   if ((bounds_in%imax - bounds_in%imin+1) .ne. (bounds_out%imax - bounds_out%imin+1)) then
-      bounds_out%imax = bounds_in%imax
-      bounds_out%imin = bounds_in%imin
-   endif
-
-   if ((bounds_in%jmax - bounds_in%jmin+1) .ne. (bounds_out%jmax - bounds_out%jmin+1)) then
-      bounds_out%jmax = bounds_in%jmax
-      bounds_out%jmin = bounds_in%jmin
-   endif
-
  end subroutine
 
   END MODULE fms_diag_bbox_mod

@@ -41,7 +41,7 @@ use fms_diag_output_buffer_mod
 use fms_mod, only: fms_error_handler
 use fms_diag_reduction_methods_mod, only: check_indices_order, init_mask, set_weight
 use constants_mod, only: SECONDS_PER_DAY
-USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type, update_bounds_out, determine_if_block_is_in_region
+USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type, determine_if_block_is_in_region
 #endif
 #if defined(_OPENMP)
 use omp_lib
@@ -520,9 +520,8 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
   real(kind=r8_kind)                       :: field_weight    !< Weight to use when averaging (it will be converted
                                                               !! based on the type of field_data when doing the math)
   type(fmsDiagIbounds_type)                :: bounds          !< Bounds (starting ending indices) for the field
-
-  logical :: has_halos
-  logical :: using_blocking
+  logical                                  :: has_halos       !< .True. if field_data contains halos
+  logical                                  :: using_blocking  !< .True. if field_data is passed in blocks
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
@@ -606,9 +605,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_diag_accept_data = .TRUE.
     return
   else
-    call bounds%reset(999,-999)
-    err_msg = bounds%update_bounds_from_halos(field_data, is, ie, js, je, ks, ke, has_halos)
-    if (trim(err_msg) .ne. "") call mpp_error(FATAL, "WUT")
+    error_string = bounds%set_bounds(field_data, is, ie, js, je, ks, ke, has_halos)
+    if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
+
     call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
     fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, field_weight, &
       bounds, using_blocking, Time=Time)
@@ -728,9 +727,9 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 #endif
 end subroutine fms_diag_do_io
 
- !> @brief Computes average, min, max, rms error, etc.
-  !! based on the specified reduction method for the field.
-  !> @return .True. if no error occurs.
+!> @brief Computes average, min, max, rms error, etc.
+!! based on the specified reduction method for the field.
+!> @return .True. if no error occurs.
 logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
   bounds, using_blocking, time)
   class(fmsDiagObject_type), intent(in), target   :: this                !< Diag Object
@@ -739,7 +738,8 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
   logical,                   intent(in), target   :: oor_mask(:,:,:,:)   !< mask
   real(kind=r8_kind),        intent(in)           :: weight              !< Must be a updated weight
   type(fmsDiagIbounds_type), intent(in)           :: bounds              !< Bounds for the field
-  logical,                   intent(in)           :: using_blocking
+  logical,                   intent(in)           :: using_blocking      !< .True. if field data is passed
+                                                                         !! in blocks
   type(time_type),           intent(in), optional :: time                !< Current time
 
   !TODO Mostly everything
@@ -749,59 +749,64 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
   class(fmsDiagFileContainer_type), pointer :: file_ptr       !< Pointer to the field's file
   type(diagYamlFilesVar_type),      pointer :: field_yaml_ptr !< Pointer to the field's yaml
 
-  integer           :: reduction_method !< Integer representing a reduction method
-  integer           :: ids              !< For looping through buffer ids
-  integer           :: buffer_id        !< Id of the buffer
-  integer           :: file_id          !< File id
-  character(len=50) :: error_msg        !< Error message to check
-  integer, allocatable :: axis_ids(:)
-  logical :: is_regional
-  logical :: reduced_k_range
-  type(fmsDiagIbounds_type) :: bounds_in
-  type(fmsDiagIbounds_type) :: bounds_out
-  integer :: i
-  integer :: sindex
-  integer :: eindex
-  integer :: compute_idx(2)
-  logical :: dummy
-  character(len=1) :: cart_axis
-  logical :: is_block_in_region
-  integer :: starting, ending
+  integer                   :: reduction_method   !< Integer representing a reduction method
+  integer                   :: ids                !< For looping through buffer ids
+  integer                   :: buffer_id          !< Id of the buffer
+  integer                   :: file_id            !< File id
+  character(len=50)         :: error_msg          !< Error message to check
+  integer, allocatable      :: axis_ids(:)        !< Axis ids for the buffer
+  logical                   :: is_subregional     !< .True. if the buffer is subregional
+  logical                   :: reduced_k_range    !< .True. is the field is only outputing a section
+                                                  !! of the z dimension
+  type(fmsDiagIbounds_type) :: bounds_in          !< Starting and ending indices of the input field_data
+  type(fmsDiagIbounds_type) :: bounds_out         !< Starting and ending indices of the output buffer
+  integer                   :: i                  !< For looping through axid ids
+  integer                   :: sindex             !< Starting index of a subregion
+  integer                   :: eindex             !< Ending index of a subregion
+  integer                   :: compute_idx(2)     !< Starting and Ending of the compute domain
+  character(len=1)          :: cart_axis          !< Cartesian axis of the axis
+  logical                   :: block_in_subregion !< .True. if the current block is part of the subregion
+  integer                   :: starting           !< Starting index of the subregion relative to the compute domain
+  integer                   :: ending             !< Ending index of the subregion relative to the compute domain
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
-  do ids = 1, size(field_ptr%buffer_ids)
+  buffer_loop: do ids = 1, size(field_ptr%buffer_ids)
     error_msg = ""
+    buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(ids)
+    file_id = this%FMS_diag_fields(diag_field_id)%file_ids(ids)
+
     !< Gather all the objects needed for the buffer
     field_yaml_ptr => field_ptr%diag_field(ids)
-    buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(ids)
-    buffer_ptr => this%FMS_diag_output_buffers(buffer_id)
-    file_id = this%FMS_diag_fields(diag_field_id)%file_ids(ids) !TODO not sure if this is correct
-    file_ptr => this%FMS_diag_files(file_id)
+    buffer_ptr     => this%FMS_diag_output_buffers(buffer_id)
+    file_ptr       => this%FMS_diag_files(file_id)
 
+    !< Leave if the current PE does not contain any data
     if (.not. file_ptr%writing_on_this_pe()) cycle
 
-    !< Initialize the bounds
     bounds_out = bounds
-    bounds_in = bounds
-    call bounds_out%reset_bounds_from_array_4D(buffer_ptr%buffer(:,:,:,:,1))
-    call update_bounds_out(bounds, bounds_out)
+    if (.not. using_blocking) then
+      !< Set output bounds to start at 1:size(buffer_ptr%buffer)
+      call bounds_out%reset_bounds_from_array_4D(buffer_ptr%buffer(:,:,:,:,1))
+    endif
 
-    if (.not. bounds_in%has_halos) then
-       print *, "buffer has halos"
+    bounds_in = bounds
+    if (.not. bounds%has_halos) then
+      !< If field_data does not contain halos, set bounds_in to start at 1:size(field_data)
       call bounds_in%reset_bounds_from_array_4D(field_data)
     endif
 
-    !< Reset the bounds based on the reduced k range and subregional
-    is_regional = file_ptr%is_regional()
+    is_subregional = file_ptr%is_regional()
     reduced_k_range = field_yaml_ptr%has_var_zbounds()
 
-    if (is_regional .or. reduced_k_range) then
-      print *, "buffer is subregional"
+    !< Reset the bounds based on the reduced k range and subregional
+    is_subregional_reduced_k_range: if (is_subregional .or. reduced_k_range) then
       axis_ids = buffer_ptr%get_axis_ids()
-      is_block_in_region = .true.
-      do i = 1, size(axis_ids)
-        if (.not. is_block_in_region) cycle
+      block_in_subregion = .true.
+      axis_loops: do i = 1, size(axis_ids)
+        !< Move on if the block does not have any data for the subregion
+        if (.not. block_in_subregion) cycle
+
         select type (diag_axis => this%diag_axis(axis_ids(i))%axis)
         type is (fmsDiagSubAxis_type)
           sindex = diag_axis%get_starting_index()
@@ -810,24 +815,25 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
           starting=sindex-compute_idx(1)+1
           ending=eindex-compute_idx(1)+1
           if (using_blocking) then
-            is_block_in_region = determine_if_block_is_in_region(starting, ending, bounds, i)
-            !call bounds_out%update_index(starting, ending, i, .false.)
-            call bounds_out%rebase_more(starting, ending, i)
+            block_in_subregion = determine_if_block_is_in_region(starting, ending, bounds, i)
+            !< Set bounds_in so that you can the correct section of the data for the block (starting at 1)
             call bounds_in%rebase(bounds, starting, ending, i)
-            if (i .eq. 1) print *, string(mpp_pe()), " is x ", string(bounds%get_imin()), ":", string(bounds%get_imax()), starting, ending, is_block_in_region, string(bounds_in%get_imin()), ":", string(bounds_in%get_imax())
-            if (i .eq. 2) print *, string(mpp_pe()), " is y ", string(bounds%get_jmin()), ":", string(bounds%get_jmax()), starting, ending, is_block_in_region, string(bounds_in%get_jmin()), ":", string(bounds_in%get_jmax())
-            if (i .eq. 3) print *, string(mpp_pe()), " is z ", string(bounds%get_kmin()), ":", string(bounds%get_kmax()), starting, ending, is_block_in_region, string(bounds_in%get_kmin()), ":", string(bounds_in%get_kmax())
+
+            !< Set bounds_out to be the correct section relative to the block starting and ending indices
+            call bounds_out%rebase_more(starting, ending, i)
           else
+            !< Set bounds_in so that only the subregion section of the data will be used (starting at 1)
             call bounds_in%update_index(starting, ending, i, .false.)
+
+            !< Set bounds_out to 1:size(subregion) for the PE
             call bounds_out%update_index(1, ending-starting+1, i, .true.)
           endif
         end select
-      enddo
-      ! write((mpp_pe()+1)*100, *) bounds_in%get_imin(), bounds_in%get_imax(), bounds_in%get_jmin(), bounds_in%get_jmax()
-      ! write((mpp_pe()+1)*100, *) bounds_out%get_imin(), bounds_out%get_imax(), bounds_out%get_jmin(), bounds_out%get_jmax()
+      enddo axis_loops
       deallocate(axis_ids)
-      if (.not. is_block_in_region) return
-    endif
+      !< Move on to the next buffer if the block does not have any data for the subregion
+      if (.not. block_in_subregion) cycle
+    endif is_subregional_reduced_k_range
 
     !< Determine the reduction method for the buffer
     reduction_method = field_yaml_ptr%get_var_reduction()
@@ -841,7 +847,7 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
     case (time_rms)
     case (time_diurnal)
     end select
-  enddo
+  enddo buffer_loop
   fms_diag_do_reduction = .true.
 #else
   fms_diag_do_reduction = .false.

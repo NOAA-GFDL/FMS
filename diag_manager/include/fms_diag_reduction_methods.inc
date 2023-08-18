@@ -17,17 +17,20 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-function DO_TIME_NONE_ (data_out, data_in, mask, bounds_in, bounds_out) &
-result(error_msg)
-  real(FMS_TRM_KIND_), intent(inout) :: data_out(:,:,:,:,:)
-  real(FMS_TRM_KIND_), intent(in)    :: data_in(:,:,:,:)
-  logical, intent(in), target :: mask(:,:,:,:)
-  type(fmsDiagIbounds_type), intent(in) :: bounds_in
-  type(fmsDiagIbounds_type), intent(in) :: bounds_out
+!> @brief Do the time_none reduction method (i.e copy the correct portion of the input data)
+subroutine DO_TIME_NONE_ (data_out, data_in, mask, bounds_in, bounds_out)
+  real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
+  real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
+  logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
+                                                                  !! of the input buffer
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
+                                                                  !! of the output buffer
 
-  character(len=50) :: error_msg
-  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in
-  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out
+  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
+                                                            !! the input buffer
+  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
+                                                            !! the output buffer
 
   is_out = bounds_out%get_imin()
   ie_out = bounds_out%get_imax()
@@ -43,18 +46,8 @@ result(error_msg)
   ks_in = bounds_in%get_kmin()
   ke_in = bounds_in%get_kmax()
 
-!  write ((mpp_pe()+1)*100, *) "BOUNDS", lbound(mask), ubound(mask)
-  write ((mpp_pe()+1)*100, *) "indices_in:", is_in,ie_in, js_in,je_in, ks_in,ke_in
-  write ((mpp_pe()+1)*100, *) "indices_out:", is_out,ie_out, js_out,je_out, ks_out,ke_out
-  write ((mpp_pe()+1)*100, *) "bounds_in", lbound(data_in), ubound(data_in)
-  write ((mpp_pe()+1)*100, *) "bounds_in", lbound(data_out), ubound(data_out)
-
-  write ((mpp_pe()+1)*100, *) "WUTT:", mask(is_in:ie_in, js_in:je_in, ks_in:ke_in, :)
   where (mask(is_in:ie_in, js_in:je_in, ks_in:ke_in, :)) &
     data_out(is_out:ie_out, js_out:je_out, ks_out:ke_out, :, 1) = &
     data_in(is_in:ie_in, js_in:je_in, ks_in:ke_in, :)
-    
-    write ((mpp_pe()+1)*100, *) "data_in:", data_in(is_in:ie_in, js_in:je_in, ks_in:ke_in, :)
-    write ((mpp_pe()+1)*100, *) "data_out:", data_out(is_out:ie_out, js_out:je_out, ks_out:ke_out, :, 1)
-  error_msg = ""
-end function DO_TIME_NONE_
+
+end subroutine DO_TIME_NONE_
