@@ -48,12 +48,16 @@ test_expect_success "coupler register restart 3D (r8_kind)" '
   mpirun -n 1 ./test_coupler_3d_r8
 '
 
-test_expect_success "coupler type interfaces (r4_kind)" '
+test_expect_success "coupler type operation interfaces (r4_kind)" '
   mpirun -n 4 ./test_coupler_types_r4
 '
 
-test_expect_success "coupler type interfaces (r8_kind)" '
+test_expect_success "coupler type operation interfaces (r8_kind)" '
   mpirun -n 4 ./test_coupler_types_r8
+'
+
+test_expect_success "test atmos_ocean_fluxes" '
+  mpirun -n 1 ./test_atmos_ocean_fluxes
 '
 
 rm -rf RESTART
