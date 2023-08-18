@@ -1052,10 +1052,10 @@ nyd = size(clim_type%FMS_INTP_TYPE_%lat(:))
 call mpp_define_layout ((/1,nxd,1,nyd/), ndivs, domain_layout)
 call mpp_define_domains((/1,nxd,1,nyd/),domain_layout, domain,xhalo=0,yhalo=0)
 call mpp_get_compute_domain(domain, iscomp, iecomp, jscomp, jecomp)
-   axes(1) = diag_axis_init(clim_type%file_name(1:5)//'x',clim_type%FMS_INTP_TYPE_%lon,units='degrees',&
-                            cart_name='x',domain2=domain)
-   axes(2) = diag_axis_init(clim_type%file_name(1:5)//'y',clim_type%FMS_INTP_TYPE_%lat,units='degrees',&
-                            cart_name='y',domain2=domain)
+axes(1) = diag_axis_init(clim_type%file_name(1:5)//'x',clim_type%FMS_INTP_TYPE_%lon,units='degrees',&
+                         cart_name='x',domain2=domain)
+axes(2) = diag_axis_init(clim_type%file_name(1:5)//'y',clim_type%FMS_INTP_TYPE_%lat,units='degrees',&
+                         cart_name='y',domain2=domain)
 clim_type%is = iscomp
 clim_type%ie = iecomp
 clim_type%js = jscomp
