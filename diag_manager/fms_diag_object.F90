@@ -17,6 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module fms_diag_object_mod
+  use fms_mod, only: string
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
@@ -521,6 +522,7 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
   type(fmsDiagIbounds_type)                :: bounds          !< Bounds (starting ending indices) for the field
 
   logical :: has_halos
+  logical :: using_blocking
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
@@ -536,6 +538,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
   if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
+
+  using_blocking = .false.
+  if ((present(is_in) .and. .not. present(ie_in)) .or. (present(js_in) .and. .not. present(je_in))) &
+    using_blocking = .true.
 
   has_halos = .false.
   if ((present(is_in) .and. present(ie_in)) .or. (present(js_in) .and. present(je_in))) &
@@ -605,7 +611,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (trim(err_msg) .ne. "") call mpp_error(FATAL, "WUT")
     call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
     fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, field_weight, &
-      bounds, Time=Time)
+      bounds, using_blocking, Time=Time)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     return
   end if main_if
@@ -726,13 +732,14 @@ end subroutine fms_diag_do_io
   !! based on the specified reduction method for the field.
   !> @return .True. if no error occurs.
 logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
-  bounds, time)
+  bounds, using_blocking, time)
   class(fmsDiagObject_type), intent(in), target   :: this                !< Diag Object
   class(*),                  intent(in)           :: field_data(:,:,:,:) !< Field data
   integer,                   intent(in)           :: diag_field_id       !< ID of the input field
   logical,                   intent(in), target   :: oor_mask(:,:,:,:)   !< mask
   real(kind=r8_kind),        intent(in)           :: weight              !< Must be a updated weight
   type(fmsDiagIbounds_type), intent(in)           :: bounds              !< Bounds for the field
+  logical,                   intent(in)           :: using_blocking
   type(time_type),           intent(in), optional :: time                !< Current time
 
   !TODO Mostly everything
@@ -792,7 +799,9 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
     if (is_regional .or. reduced_k_range) then
       print *, "buffer is subregional"
       axis_ids = buffer_ptr%get_axis_ids()
+      is_block_in_region = .true.
       do i = 1, size(axis_ids)
+        if (.not. is_block_in_region) cycle
         select type (diag_axis => this%diag_axis(axis_ids(i))%axis)
         type is (fmsDiagSubAxis_type)
           sindex = diag_axis%get_starting_index()
@@ -800,18 +809,24 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
           compute_idx = diag_axis%get_compute_indices()
           starting=sindex-compute_idx(1)+1
           ending=eindex-compute_idx(1)+1
-          call bounds_in%update_index(starting, ending, i, .false.)
-          call bounds_out%update_index(1, ending-starting+1, i, .true.)
-
-          is_block_in_region = determine_if_block_is_in_region(starting, ending, bounds, i)
-          if (.not. is_block_in_region) then
-            return
+          if (using_blocking) then
+            is_block_in_region = determine_if_block_is_in_region(starting, ending, bounds, i)
+            !call bounds_out%update_index(starting, ending, i, .false.)
+            call bounds_out%rebase_more(starting, ending, i)
+            call bounds_in%rebase(bounds, starting, ending, i)
+            if (i .eq. 1) print *, string(mpp_pe()), " is x ", string(bounds%get_imin()), ":", string(bounds%get_imax()), starting, ending, is_block_in_region, string(bounds_in%get_imin()), ":", string(bounds_in%get_imax())
+            if (i .eq. 2) print *, string(mpp_pe()), " is y ", string(bounds%get_jmin()), ":", string(bounds%get_jmax()), starting, ending, is_block_in_region, string(bounds_in%get_jmin()), ":", string(bounds_in%get_jmax())
+            if (i .eq. 3) print *, string(mpp_pe()), " is z ", string(bounds%get_kmin()), ":", string(bounds%get_kmax()), starting, ending, is_block_in_region, string(bounds_in%get_kmin()), ":", string(bounds_in%get_kmax())
+          else
+            call bounds_in%update_index(starting, ending, i, .false.)
+            call bounds_out%update_index(1, ending-starting+1, i, .true.)
           endif
-
-          call bounds_in%rebase(bounds, i)
         end select
       enddo
+      ! write((mpp_pe()+1)*100, *) bounds_in%get_imin(), bounds_in%get_imax(), bounds_in%get_jmin(), bounds_in%get_jmax()
+      ! write((mpp_pe()+1)*100, *) bounds_out%get_imin(), bounds_out%get_imax(), bounds_out%get_jmin(), bounds_out%get_jmax()
       deallocate(axis_ids)
+      if (.not. is_block_in_region) return
     endif
 
     !< Determine the reduction method for the buffer

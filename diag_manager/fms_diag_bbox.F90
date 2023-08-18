@@ -30,7 +30,7 @@
 !> @{
 MODULE fms_diag_bbox_mod
 
-   USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler
+   USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler, string
    use mpp_mod
 
    implicit none
@@ -57,6 +57,7 @@ MODULE fms_diag_bbox_mod
       procedure :: update_bounds_from_halos
       procedure :: reset_bounds_to_write
       procedure :: rebase
+      procedure :: rebase_more
       procedure :: get_imin
       procedure :: get_imax
       procedure :: get_jmin
@@ -469,21 +470,48 @@ end function
    indices%fje = fje
  end function recondition_indices
 
- subroutine rebase(bounds_in, bounds, dimension)
+ subroutine rebase_more(bounds_in, starting, ending, dimension)
    CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in
-   CLASS (fmsDiagIbounds_type), INTENT(in) :: bounds
+   integer, intent(in) :: starting
+   integer, intent(in) :: ending
    integer, intent(in) :: dimension
 
    select case (dimension)
    case (xdimension)
-      bounds_in%imin = bounds_in%imin - bounds%imin +1
-      bounds_in%imax = bounds_in%imax - bounds%imin +1
+      print *, mpp_pe(), "beforex:", bounds_in%imin, bounds_in%imax, starting
+      bounds_in%imin = max(starting, bounds_in%imin)-starting+1
+      bounds_in%imax = min(bounds_in%imax, bounds_in%imin + ending-starting)
+      print *, mpp_pe(), "afterx:", bounds_in%imin, bounds_in%imax
    case (ydimension)
-      bounds_in%jmin = bounds_in%jmin - bounds%jmin +1
-      bounds_in%jmax = bounds_in%jmax - bounds%jmin +1
+      print *, mpp_pe(), "beforey:", bounds_in%jmin, bounds_in%jmax, starting
+      bounds_in%jmin =  max(starting, bounds_in%jmin)-starting+1
+      bounds_in%jmax = min(bounds_in%jmax, bounds_in%jmin + ending-starting)
+      print *, mpp_pe(), "aftery:", bounds_in%jmin, bounds_in%jmax, starting
    case (zdimension)
-      bounds_in%kmin = bounds_in%kmin - bounds%kmin +1
-      bounds_in%kmax = bounds_in%kmax - bounds%kmin +1
+      bounds_in%kmin =max(starting, bounds_in%kmin)-starting+1
+      bounds_in%kmax = min(bounds_in%kmax, bounds_in%kmin + ending-starting)
+   end select
+ end subroutine
+
+ subroutine rebase(bounds_in, bounds, starting, ending, dimension)
+   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in
+   CLASS (fmsDiagIbounds_type), INTENT(in) :: bounds
+   integer, intent(in) :: ending
+   integer, intent(in) :: starting
+   integer, intent(in) :: dimension
+
+   select case (dimension)
+   case (xdimension)
+      print *, string(mpp_pe()), " is x ", starting-bounds_in%imin+1, starting
+      bounds_in%imin = min(starting-bounds%imin+1, starting)
+      bounds_in%imax = bounds_in%imin + (ending-starting)
+   case (ydimension)
+      print *, string(mpp_pe()), " is x ", starting-bounds_in%jmin+1, starting
+      bounds_in%jmin = min(starting-bounds%jmin+1, starting)
+      bounds_in%jmax = bounds_in%jmin + (ending-starting)
+   case (zdimension)
+      bounds_in%kmin = min(starting-bounds%kmin+1, starting)
+      bounds_in%kmax = bounds_in%kmin + (ending-starting)
    end select
  end subroutine
 
