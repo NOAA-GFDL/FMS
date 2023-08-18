@@ -2742,6 +2742,7 @@ contains
 
 
   !> @brief Write out all diagnostics of elements of a coupler_2d_bc_type
+  !! TODO this should really be a function in order to return the status of send_data call
   subroutine CT_send_data_2d(var, Time)
     type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
     type(time_type),          intent(in) :: time !< The current model time
@@ -2771,6 +2772,7 @@ contains
   end subroutine CT_send_data_2d
 
   !> @brief Write out all diagnostics of elements of a coupler_3d_bc_type
+  !! TODO this should really be a function in order to return the status of send_data call
   subroutine CT_send_data_3d(var, Time)
     type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
     type(time_type),          intent(in) :: time !< The current model time

@@ -31,6 +31,18 @@
 # Run the ongrid test case with 2 halos in x and y
 touch input.nml
 
+cat <<_EOF > diag_table
+test_coupler
+1 1 1 0 0 0
+
+#output files
+ "coupler_types_test",  1, "days", 1, "days", "time"
+
+#output variables
+ "test_coupler", "dat1", "dat1", "coupler_types_test", "all", .false., "none", 2
+ "test_coupler", "dat2", "dat2", "coupler_types_test", "all", .false., "none", 2
+_EOF
+
 mkdir RESTART
 
 test_expect_success "coupler register restart 2D(r4_kind)" '
