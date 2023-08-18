@@ -91,11 +91,8 @@
      real(kind=FMS_MOS_KIND_), dimension(:,:), intent(inout) :: area
      integer :: nlon, nlat
 
-     real(r8_kind) :: lon_r8(size(lon,1),size(lon,2)), lat_r8(size(lat,1),size(lat,2))
      real(r8_kind) :: area_r8(size(area,1),size(area,2))
 
-     lon_r8=real(lon,r8_kind)
-     lat_r8=real(lat,r8_kind)
      area_r8=real(area,r8_kind)
 
      nlon = size(area,1)
@@ -107,7 +104,7 @@
         call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
 
      ! get_grid_area only accepts double precision data
-     call get_grid_area( nlon, nlat, lon_r8, lat_r8, area_r8)
+     call get_grid_area( nlon, nlat, real(lon,r8_kind), real(lat,r8_kind), area_r8)
 
      area=real(area_r8,FMS_MOS_KIND_)
 
@@ -127,7 +124,6 @@
      real(kind=FMS_MOS_KIND_), dimension(:,:), intent(inout) :: area
      integer :: nlon, nlat
 
-     real(r8_kind) :: lon_r8(size(lon,1),size(lon,2)), lat_r8(size(lat,1),size(lat,2))
      real(r8_kind) :: area_r8(size(area,1),size(area,2))
 
      nlon = size(area,1)
@@ -139,7 +135,7 @@
         call mpp_error(FATAL, "mosaic_mod: size(lon,2) and size(lat,2) should equal to size(area,2)+1")
 
      ! get_grid_great_circle_area only accepts r8_kind arguments
-     call get_grid_great_circle_area( nlon, nlat, lon_r8, lat_r8, area_r8)
+     call get_grid_great_circle_area( nlon, nlat, real(lon,r8_kind), real(lat,r8_kind), area_r8)
 
      area=real(area_r8, FMS_MOS_KIND_)
 
@@ -154,18 +150,11 @@
      integer :: npts, isinside
      integer :: inside_a_polygon
 
-     real(r8_kind) :: lon1_r8, lat1_r8
-     real(r8_kind) :: lon2_r8(size(lon2)), lat2_r8(size(lat2))
-
      npts = size(lon2(:))
 
      !> inside_a_polygon function only accepts r8_kind real variables
-     lon1_r8=real(lon1,r8_kind)
-     lat1_r8=real(lat1,r8_kind)
-     lon2_r8=real(lon2_r8,r8_kind)
-     lat2_r8=real(lat2_r8,r8_kind)
 
-     isinside = inside_a_polygon(lon1_r8, lat1_r8, npts, lon2_r8, lat2_r8)
+     isinside = inside_a_polygon(real(lon1,r8_kind), real(lat1,r8_kind), npts, real(lon2,r8_kind), real(lat2,r8_kind))
      if(isinside == 1) then
         IS_INSIDE_POLYGON_ = .TRUE.
      else
