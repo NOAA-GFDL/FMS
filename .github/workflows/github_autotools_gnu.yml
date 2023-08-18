@@ -11,7 +11,7 @@ jobs:
       matrix:
         conf-flag: [ --disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
         input-flag: [--with-yaml, --enable-test-input=/home/unit_tests_input]
-        target-flags: [ "-O2 -fno-expensive-optimizations", "-O0 -g -W -fbounds-check -ffpe-trap=invalid,zero,overflow"]
+        target-flags: [ "-O2 -fno-expensive-optimizations", "-O0 -g -W -fbounds-check -ffpe-trap=invalid,zero,overflow", "-O2"] # prod, debug, repro
         exclude:
           - conf-flag: --with-mpi=no
             input-flag: --enable-test-input=/home/unit_tests_input
