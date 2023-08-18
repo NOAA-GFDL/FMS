@@ -28,8 +28,6 @@ subroutine write_climatology_file
   integer :: stringlen
   character(100) :: mystring
 
-  real :: dx, dy
-
   ! write netcdf file
   if(open_file(fileobj, 'INPUT/'//trim(ncfile), 'overwrite')) then
      call register_axis(fileobj, 'time', UNLIMITED)
