@@ -38,7 +38,7 @@ create_xgrid.c \
 gradient_c2l.c \
 interp.c \
 mosaic_util.c \
-read_mosaic.c \
+get_global_area.c \
 constant.h \
 create_xgrid.h \
 gradient_c2l.h \
@@ -51,9 +51,9 @@ grid_mod.$(FC_MODEXT): mosaic_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
-  mosaic_mod.$(FC_MODEXT) \
-  grid_mod.$(FC_MODEXT) \
-  gradient_mod.$(FC_MODEXT)
+	mosaic_mod.$(FC_MODEXT) \
+	grid_mod.$(FC_MODEXT) \
+	gradient_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

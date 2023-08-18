@@ -201,7 +201,7 @@ list(APPEND fms_c_src_files
   mosaic/gradient_c2l.c
   mosaic/interp.c
   mosaic/mosaic_util.c
-  mosaic/read_mosaic.c
+  mosaic/get_global_area.c
   mpp/mpp_memuse.c
   parser/yaml_parser_binding.c
   parser/yaml_output_functions.c
