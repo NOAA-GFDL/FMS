@@ -836,7 +836,7 @@ contains
             var%bc(n)%field(m)%values(:,:) = 0.0
           enddo
         enddo
-      else if( associated(var%bc_r4)) then
+      else if( associated(var_in%bc_r4)) then
         if (associated(var%bc_r4)) then
           call mpp_error(FATAL, trim(error_header) // ' var%bc_r4 already associated')
         endif
@@ -879,7 +879,7 @@ contains
           enddo
         enddo
       else
-        call mpp_error(FATAL, "CT_spawn_1d_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, "CT_spawn_1d_2d: passed var_in has unassociated coupler_1d_field_type pointers for both kinds")
       endif
     endif
   end subroutine  CT_spawn_1d_2d
@@ -984,45 +984,45 @@ contains
             var%bc(n)%field(m)%values(:,:,:) = 0.0
           enddo
         enddo
-      else if(associated(var%bc_r4)) then
-        if (associated(var%bc)) then
-          call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
+      else if(associated(var_in%bc_r4)) then
+        if (associated(var%bc_r4)) then
+          call mpp_error(FATAL, trim(error_header) // ' var%bc_r4 already associated')
         endif
-        allocate ( var%bc(var%num_bcs) )
+        allocate ( var%bc_r4(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc(n)%name = var_in%bc(n)%name
-          var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
-          var%bc(n)%flux_type = var_in%bc(n)%flux_type
-          var%bc(n)%implementation = var_in%bc(n)%implementation
-          var%bc(n)%ice_restart_file = var_in%bc(n)%ice_restart_file
-          var%bc(n)%ocean_restart_file = var_in%bc(n)%ocean_restart_file
-          var%bc(n)%use_atm_pressure = var_in%bc(n)%use_atm_pressure
-          var%bc(n)%use_10m_wind_speed = var_in%bc(n)%use_10m_wind_speed
-          var%bc(n)%pass_through_ice = var_in%bc(n)%pass_through_ice
-          var%bc(n)%mol_wt = var_in%bc(n)%mol_wt
-          var%bc(n)%num_fields = var_in%bc(n)%num_fields
-          if (associated(var%bc(n)%field)) then
-            write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field already associated'
+          var%bc_r4(n)%name = var_in%bc_r4(n)%name
+          var%bc_r4(n)%atm_tr_index = var_in%bc_r4(n)%atm_tr_index
+          var%bc_r4(n)%flux_type = var_in%bc_r4(n)%flux_type
+          var%bc_r4(n)%implementation = var_in%bc_r4(n)%implementation
+          var%bc_r4(n)%ice_restart_file = var_in%bc_r4(n)%ice_restart_file
+          var%bc_r4(n)%ocean_restart_file = var_in%bc_r4(n)%ocean_restart_file
+          var%bc_r4(n)%use_atm_pressure = var_in%bc_r4(n)%use_atm_pressure
+          var%bc_r4(n)%use_10m_wind_speed = var_in%bc_r4(n)%use_10m_wind_speed
+          var%bc_r4(n)%pass_through_ice = var_in%bc_r4(n)%pass_through_ice
+          var%bc_r4(n)%mol_wt = var_in%bc_r4(n)%mol_wt
+          var%bc_r4(n)%num_fields = var_in%bc_r4(n)%num_fields
+          if (associated(var%bc_r4(n)%field)) then
+            write (error_msg, *) trim(error_header), ' var%bc_r4(', n, ')%field already associated'
             call mpp_error(FATAL, trim(error_msg))
           endif
-          allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
-          do m = 1, var%bc(n)%num_fields
+          allocate ( var%bc_r4(n)%field(var%bc_r4(n)%num_fields) )
+          do m = 1, var%bc_r4(n)%num_fields
             if (present(suffix)) then
-              var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+              var%bc_r4(n)%field(m)%name = trim(var_in%bc_r4(n)%field(m)%name) // trim(suffix)
             else
-              var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+              var%bc_r4(n)%field(m)%name = var_in%bc_r4(n)%field(m)%name
             endif
-            var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
-            var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
-            var%bc(n)%field(m)%may_init = var_in%bc(n)%field(m)%may_init
-            var%bc(n)%field(m)%mean = var_in%bc(n)%field(m)%mean
-            if (associated(var%bc(n)%field(m)%values)) then
-              write (error_msg, *) trim(error_header), ' var%bc(', n, ')%field(', m, ')%values already associated'
+            var%bc_r4(n)%field(m)%long_name = var_in%bc_r4(n)%field(m)%long_name
+            var%bc_r4(n)%field(m)%units = var_in%bc_r4(n)%field(m)%units
+            var%bc_r4(n)%field(m)%may_init = var_in%bc_r4(n)%field(m)%may_init
+            var%bc_r4(n)%field(m)%mean = var_in%bc_r4(n)%field(m)%mean
+            if (associated(var%bc_r4(n)%field(m)%values)) then
+              write (error_msg, *) trim(error_header), ' var%bc_r4(', n, ')%field(', m, ')%values already associated'
               call mpp_error(FATAL, trim(error_msg))
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
-            allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc(n)%field(m)%values(:,:,:) = 0.0
+            allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
+            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0
           enddo
         enddo
       else
@@ -1523,7 +1523,7 @@ contains
     var%ks  = kdim(1) ; var%ke  = kdim(2)
 
     if (var%num_bcs > 0) then
-      if(associated(var%bc)) then
+      if(associated(var_in%bc)) then
         if (associated(var%bc)) then
           call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
         endif
@@ -1651,6 +1651,10 @@ contains
           if (field_index > var_in%bc(bc_index)%num_fields)&
             & call mpp_error(FATAL, "CT_copy_data_2d: field_index is present and exceeds num_fields for" //&
             & trim(var_in%bc(bc_index)%name) )
+        else
+          if (field_index > var_in%bc_r4(bc_index)%num_fields)&
+            & call mpp_error(FATAL, "CT_copy_data_2d: field_index is present and exceeds num_fields for" //&
+            & trim(var_in%bc_r4(bc_index)%name) )
         endif
       endif
     elseif (present(field_index)) then
@@ -1715,21 +1719,21 @@ contains
       do n = n1, n2
         copy_bc = .true.
         if (copy_bc .and. present(exclude_flux_type))&
-            & copy_bc = .not.(trim(var%bc(n)%flux_type) == trim(exclude_flux_type))
+            & copy_bc = .not.(trim(var%bc_r4(n)%flux_type) == trim(exclude_flux_type))
         if (copy_bc .and. present(only_flux_type))&
-            & copy_bc = (trim(var%bc(n)%flux_type) == trim(only_flux_type))
+            & copy_bc = (trim(var%bc_r4(n)%flux_type) == trim(only_flux_type))
         if (copy_bc .and. present(pass_through_ice))&
-            & copy_bc = (pass_through_ice .eqv. var%bc(n)%pass_through_ice)
+            & copy_bc = (pass_through_ice .eqv. var%bc_r4(n)%pass_through_ice)
         if (.not.copy_bc) cycle
 
-        do m = 1, var%bc(n)%num_fields
+        do m = 1, var%bc_r4(n)%num_fields
           if (present(field_index)) then
             if (m /= field_index) cycle
           endif
-          if ( associated(var%bc(n)%field(m)%values) ) then
+          if ( associated(var%bc_r4(n)%field(m)%values) ) then
             do j=var%jsc-halo,var%jec+halo
               do i=var%isc-halo,var%iec+halo
-                var%bc(n)%field(m)%values(i,j) = var_in%bc(n)%field(m)%values(i+i_off,j+j_off)
+                var%bc_r4(n)%field(m)%values(i,j) = var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off)
               enddo
             enddo
           endif
@@ -2295,16 +2299,16 @@ contains
     else if(associated(var_in%bc_r4)) then
       if (do_in) then
         do n = 1, var_in%num_bcs
-          do m = 1, var_in%bc(n)%num_fields
-            if (associated(var_in%bc(n)%field(m)%values)) fc_in = fc_in + 1
+          do m = 1, var_in%bc_r4(n)%num_fields
+            if (associated(var_in%bc_r4(n)%field(m)%values)) fc_in = fc_in + 1
           enddo
         enddo
       endif
       if (fc_in == 0) do_in = .false.
       if (do_out) then
         do n = 1, var_out%num_bcs
-          do m = 1, var_out%bc(n)%num_fields
-            if (associated(var_out%bc(n)%field(m)%values)) fc_out = fc_out + 1
+          do m = 1, var_out%bc_r4(n)%num_fields
+            if (associated(var_out%bc_r4(n)%field(m)%values)) fc_out = fc_out + 1
           enddo
         enddo
       endif
@@ -2322,37 +2326,37 @@ contains
       fc = 0
       if (do_in .and. do_out) then
         do n = 1, var_in%num_bcs
-          do m = 1, var_in%bc(n)%num_fields
-            if ( associated(var_in%bc(n)%field(m)%values) .neqv.&
-                & associated(var_out%bc(n)%field(m)%values) )&
+          do m = 1, var_in%bc_r4(n)%num_fields
+            if ( associated(var_in%bc_r4(n)%field(m)%values) .neqv.&
+                & associated(var_out%bc_r4(n)%field(m)%values) )&
                 & call mpp_error(FATAL,&
                 & "Mismatch in which fields are associated in CT_redistribute_data_3d.")
-            if ( associated(var_in%bc(n)%field(m)%values) ) then
+            if ( associated(var_in%bc_r4(n)%field(m)%values) ) then
               fc = fc + 1
-              call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values,&
-                  & domain_out, var_out%bc(n)%field(m)%values,&
+              call mpp_redistribute(domain_in, var_in%bc_r4(n)%field(m)%values,&
+                  & domain_out, var_out%bc_r4(n)%field(m)%values,&
                   & complete=(do_complete.and.(fc==fc_in)) )
             endif
           enddo
         enddo
       elseif (do_in) then
         do n = 1, var_in%num_bcs
-          do m = 1, var_in%bc(n)%num_fields
-            if ( associated(var_in%bc(n)%field(m)%values) ) then
+          do m = 1, var_in%bc_r4(n)%num_fields
+            if ( associated(var_in%bc_r4(n)%field(m)%values) ) then
               fc = fc + 1
-              call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values,&
-                  & domain_out, null_ptr3D_r8,&
+              call mpp_redistribute(domain_in, var_in%bc_r4(n)%field(m)%values,&
+                  & domain_out, null_ptr3D_r4,&
                   & complete=(do_complete.and.(fc==fc_in)) )
             endif
           enddo
         enddo
       elseif (do_out) then
         do n = 1, var_out%num_bcs
-          do m = 1, var_out%bc(n)%num_fields
-            if ( associated(var_out%bc(n)%field(m)%values) ) then
+          do m = 1, var_out%bc_r4(n)%num_fields
+            if ( associated(var_out%bc_r4(n)%field(m)%values) ) then
               fc = fc + 1
-              call mpp_redistribute(domain_in, null_ptr3D_r8,&
-                  & domain_out, var_out%bc(n)%field(m)%values,&
+              call mpp_redistribute(domain_in, null_ptr3D_r4,&
+                  & domain_out, var_out%bc_r4(n)%field(m)%values,&
                   & complete=(do_complete.and.(fc==fc_out)) )
             endif
           enddo
@@ -2784,9 +2788,9 @@ contains
       enddo
     else if(associated(var%bc_r4)) then
       do n = 1, var%num_bcs
-        do m = 1, var%bc(n)%num_fields
-          if (var%bc(n)%field(m)%id_diag > 0) then
-            used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+        do m = 1, var%bc_r4(n)%num_fields
+          if (var%bc_r4(n)%field(m)%id_diag > 0) then
+            used = send_data(var%bc_r4(n)%field(m)%id_diag, var%bc_r4(n)%field(m)%values, Time)
           endif
         enddo
       enddo
@@ -3577,7 +3581,7 @@ contains
   !> @brief Indicate whether a coupler_1d_bc_type has been initialized.
   !! @return Logical
   logical function CT_initialized_1d(var)
-    type(coupler_1d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
+    type(coupler_1d_bc_type), intent(in) :: var  !< BC_type structure to check initialization
 
     CT_initialized_1d = var%set
   end function CT_initialized_1d
@@ -3585,7 +3589,7 @@ contains
   !> @brief Indicate whether a coupler_2d_bc_type has been initialized.
   !! @return Logical
   logical function CT_initialized_2d(var)
-    type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
+    type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure to check initialization
 
     CT_initialized_2d = var%set
   end function CT_initialized_2d
@@ -3593,7 +3597,7 @@ contains
   !> @brief Indicate whether a coupler_3d_bc_type has been initialized.
   !! @return Logical
   logical function CT_initialized_3d(var)
-    type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure to be deconstructed
+    type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure to check initialization
 
     CT_initialized_3d = var%set
   end function CT_initialized_3d
