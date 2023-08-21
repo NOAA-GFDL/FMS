@@ -2,13 +2,16 @@ on: pull_request
 jobs:
   build-dependencies:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
         CC: mpiicc
         FC: mpiifort
         CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback"
+        FCFLAGS: "-I/libs/include -g -traceback ${{ matrix.io-flag }}"
         LDFLAGS: "-L/libs/lib"
     steps:
     - name: Cache dependencies
