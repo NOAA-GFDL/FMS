@@ -68,14 +68,16 @@ end interface
 !> Version of @ref data_override for unstructured grids
 !> @ingroup data_override_mod
 interface data_override_UG
-     module procedure data_override_UG_1d
-     module procedure data_override_UG_2d
+     module procedure data_override_UG_1d_r4
+     module procedure data_override_UG_1d_r8
+     module procedure data_override_UG_2d_r4
+     module procedure data_override_UG_2d_r8
 end interface
 
-integer :: atm_mode = 0
-integer :: ocn_mode = 0
-integer :: lnd_mode = 0
-integer :: ice_mode = 0
+integer :: atm_mode = 0 !> Atmosphere mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
+integer :: ocn_mode = 0 !> Ocean mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
+integer :: lnd_mode = 0 !> Land mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
+integer :: ice_mode = 0 !> Ice mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
 
 !> @addtogroup data_override_mod
 !> @{
@@ -92,19 +94,23 @@ contains
 !! This subroutine should be called in coupler_init after
 !! (ocean/atmos/land/ice)_model_init have been called.
 !!
-!! data_override_init can be called more than once, in one call the user can pass
-!! up to 4 domains of component models, at least one domain must be present in
-!! any call
+!! data_override_init can be called more than once. In one call the user can pass
+!! up to 4 domains of component models. At least one domain must be present in
+!! any call. The real precision of initialized domains can be specified via the
+!! optional mode argument. If no mode is specified, r8_kind is assumed. Mixed mode
+!! operation can be accomplished via multiple calls to data_override_init with
+!! different mode arguments.
 !!
 !! Data_table is initialized here with default values. Users should provide "real" values
 !! that will override the default values. Real values can be given using data_table, each
 !! line of data_table contains one data_entry. Items of data_entry are comma separated.
 subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in, mode)
-  type (domain2d), intent(in), optional :: Atm_domain_in
-  type (domain2d), intent(in), optional :: Ocean_domain_in, Ice_domain_in
-  type (domain2d), intent(in), optional :: Land_domain_in
-  type(domainUG) , intent(in), optional :: Land_domainUG_in
-  integer, intent(in), optional :: mode !< r4_kind or r8_kind
+  type (domain2d), intent(in), optional :: Atm_domain_in !< Atmosphere domain
+  type (domain2d), intent(in), optional :: Ocean_domain_in !< Ocean domain
+  type (domain2d), intent(in), optional :: Ice_domain_in !< Ice domain
+  type (domain2d), intent(in), optional :: Land_domain_in !< Land domain
+  type(domainUG) , intent(in), optional :: Land_domainUG_in !< Land domain, unstructured grid
+  integer, intent(in), optional :: mode !< Real precision of initialized domains. Possible values are r4_kind or r8_kind.
   integer :: mode_selector
 
   if (present(mode)) then
@@ -133,9 +139,10 @@ end subroutine data_override_init
 !! This subroutine deallocates any data override domains that have been set.
 subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
                                       unset_Ice, unset_Land, must_be_set)
-  logical, intent(in), optional :: unset_Atm, unset_Ocean, unset_Ice, unset_Land
-  logical, intent(in), optional :: must_be_set
-
+  logical, intent(in), optional :: unset_Atm, unset_Ocean, unset_Ice, unset_Land !< Set to true to unset the
+                                                                                 !! respective domain
+  logical, intent(in), optional :: must_be_set !< Set to false to suppress the error when attempting to unset
+                                               !! an uninitialized domain
   logical :: fail_if_not_set
 
   fail_if_not_set = .true. ; if (present(must_be_set)) fail_if_not_set = must_be_set
@@ -189,42 +196,6 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
     ice_mode = 0
   endif ; endif
 end subroutine data_override_unset_domains
-
-!> @brief Data override for 1D unstructured grids
-subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
-  character(len=3),   intent(in) :: gridname !< model grid ID
-  character(len=*),   intent(in) :: fieldname !< field to override
-  class(*), dimension(:), intent(inout) :: data !< data returned by this call
-  type(time_type),    intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
-
-  select type(data)
-    type is (real(r4_kind))
-      call data_override_UG_1d_r4(gridname,fieldname,data,time,override)
-    type is (real(r8_kind))
-      call data_override_UG_1d_r8(gridname,fieldname,data,time,override)
-    class default
-      call mpp_error(FATAL, "data_override_UG_1d: Unsupported data type")
-  end select
-end subroutine data_override_UG_1d
-
-!> @brief Data override for 2D unstructured grids
-subroutine data_override_UG_2d(gridname,fieldname,data,time,override)
-  character(len=3),     intent(in) :: gridname !< model grid ID
-  character(len=*),     intent(in) :: fieldname !< field to override
-  class(*), dimension(:,:), intent(inout) :: data !< data returned by this call
-  type(time_type),      intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
-
-  select type(data)
-    type is (real(r4_kind))
-      call data_override_UG_2d_r4(gridname,fieldname,data,time,override)
-    type is (real(r8_kind))
-      call data_override_UG_2d_r8(gridname,fieldname,data,time,override)
-    class default
-      call mpp_error(FATAL, "data_override_UG_2d: Unsupported data type")
-  end select
-end subroutine data_override_UG_2d
 
 end module data_override_mod
 !> @}
