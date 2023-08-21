@@ -57,9 +57,12 @@ private
 !! for more information.
 !> @ingroup data_override_mod
 interface data_override
-     module procedure data_override_0d
-     module procedure data_override_2d
-     module procedure data_override_3d
+     module procedure data_override_0d_r4
+     module procedure data_override_0d_r8
+     module procedure data_override_2d_r4
+     module procedure data_override_2d_r8
+     module procedure data_override_3d_r4
+     module procedure data_override_3d_r8
 end interface
 
 !> Version of @ref data_override for unstructured grids
@@ -186,65 +189,6 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
     ice_mode = 0
   endif ; endif
 end subroutine data_override_unset_domains
-
-!> @brief Routine to perform data override for scalar fields
-subroutine data_override_0d(gridname,fieldname_code,data,time,override,data_index)
-  character(len=3), intent(in) :: gridname !< model grid ID (ocn,ice,atm,lnd)
-  character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
-                                                 !! different from the name in NetCDF data file)
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
-  type(time_type), intent(in) :: time !< (target) model time
-  class(*),             intent(out) :: data !< output data array returned by this call
-  integer, intent(in), optional :: data_index
-
-  select type(data)
-    type is (real(r4_kind))
-      call data_override_0d_r4(gridname,fieldname_code,data,time,override,data_index)
-    type is (real(r8_kind))
-      call data_override_0d_r8(gridname,fieldname_code,data,time,override,data_index)
-    class default
-      call mpp_error(FATAL, "data_override_0d: Unsupported data type")
-  end select
-end subroutine data_override_0d
-
-!> @brief This routine performs data override for 2D fields; for usage, see data_override_3d.
-subroutine data_override_2d(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
-  character(len=3), intent(in) :: gridname !< model grid ID
-  character(len=*), intent(in) :: fieldname !< field to override
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
-  type(time_type), intent(in) :: time !<  model time
-  class(*), dimension(:,:), intent(inout) :: data_2D !< data returned by this call
-  integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
-
-  select type(data_2D)
-    type is (real(r4_kind))
-      call data_override_2d_r4(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
-    type is (real(r8_kind))
-      call data_override_2d_r8(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
-    class default
-      call mpp_error(FATAL, "data_override_2d: Unsupported data type")
-  end select
-end subroutine data_override_2d
-
-!> @brief This routine performs data override for 3D fields
-subroutine data_override_3d(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
-  character(len=3),             intent(in) :: gridname !< model grid ID
-  character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
-  logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
-  type(time_type),              intent(in) :: time !< (target) model time
-  integer,           optional,  intent(in) :: data_index
-  class(*), dimension(:,:,:),    intent(inout) :: data !< data returned by this call
-  integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
-
-  select type(data)
-    type is (real(r4_kind))
-      call data_override_3d_r4(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
-    type is (real(r8_kind))
-      call data_override_3d_r8(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
-    class default
-      call mpp_error(FATAL, "data_override_3d: Unsupported data type")
-  end select
-end subroutine data_override_3d
 
 !> @brief Data override for 1D unstructured grids
 subroutine data_override_UG_1d(gridname,fieldname,data,time,override)
