@@ -58,13 +58,13 @@ program check_time_none
   nw = 2
 
   if (.not. open_file(fileobj, "test_none.nc", "read")) &
-    call mpp_error(FATAL, "unable to open file")
+    call mpp_error(FATAL, "unable to open test_none.nc")
 
   if (.not. open_file(fileobj1, "test_none_regional.nc.0004", "read")) &
-    call mpp_error(FATAL, "unable to open file")
+    call mpp_error(FATAL, "unable to open test_none_regional.nc.0004")
 
   if (.not. open_file(fileobj2, "test_none_regional.nc.0005", "read")) &
-    call mpp_error(FATAL, "unable to open file")
+    call mpp_error(FATAL, "unable to open test_none_regional.nc.0005")
 
   cdata_out = allocate_buffer(1, nx, 1, ny, nz, nw)
 
