@@ -495,9 +495,9 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
   class(fmsDiagObject_type),TARGET,      INTENT(inout)          :: this          !< Diaj_obj to fill
   INTEGER,                               INTENT(in)             :: diag_field_id !< The ID of the diag field
   CLASS(*), DIMENSION(:,:,:,:),          INTENT(in)             :: field_data    !< The data for the diag_field
-  LOGICAL,  DIMENSION(:,:,:,:), pointer, INTENT(in)             :: mask          !< Logical mask indicating the grid
+  LOGICAL,  allocatable,                 INTENT(in)             :: mask(:,:,:,:) !< Logical mask indicating the grid
                                                                                  !! points to mask (null if no mask)
-  CLASS(*), DIMENSION(:,:,:,:), pointer, INTENT(in)             :: rmask         !< real mask indicating the grid
+  CLASS(*), allocatable,                 INTENT(in)             :: rmask(:,:,:,:)!< real mask indicating the grid
                                                                                  !! points to mask (null if no mask)
   CLASS(*),                              INTENT(in),   OPTIONAL :: weight        !< The weight used for averaging
   TYPE (time_type),                      INTENT(in),   OPTIONAL :: time          !< The current time
@@ -547,13 +547,13 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !< If the field has `mask_variant=.true.`, check that mask OR rmask are present
   if (this%FMS_diag_fields(diag_field_id)%is_mask_variant()) then
-    if (.not. associated(mask) .and. .not. associated(rmask)) call mpp_error(FATAL, &
+    if (.not. allocated(mask) .and. .not. allocated(rmask)) call mpp_error(FATAL, &
       "The field was registered with mask_variant, but mask or rmask are not present in the send_data call. "//&
       trim(field_info))
   endif
 
   !< Check that mask and rmask are not both present
-  if (associated(mask) .and. associated(rmask)) call mpp_error(FATAL, &
+  if (allocated(mask) .and. allocated(rmask)) call mpp_error(FATAL, &
     "mask and rmask are both present in the send_data call. "//&
     trim(field_info))
 
@@ -815,6 +815,8 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
           ending=eindex-compute_idx(1)+1
           if (using_blocking) then
             block_in_subregion = determine_if_block_is_in_region(starting, ending, bounds, i)
+            if (.not. block_in_subregion) cycle
+
             !< Set bounds_in so that you can the correct section of the data for the block (starting at 1)
             call bounds_in%rebase_input(bounds, starting, ending, i)
 

@@ -1676,9 +1676,9 @@ END FUNCTION register_static_field
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-    class(*), pointer, dimension(:,:,:,:) :: field_remap !< 4d remapped pointer
-    logical,  pointer, dimension(:,:,:,:) :: mask_remap  !< 4d remapped pointer
-    class(*), pointer, dimension(:,:,:,:) :: rmask_remap !< 4d remapped pointer
+    class(*), allocatable, dimension(:,:,:,:) :: field_remap !< 4d remapped pointer
+    logical,  allocatable, dimension(:,:,:,:) :: mask_remap  !< 4d remapped pointer
+    class(*), allocatable, dimension(:,:,:,:) :: rmask_remap !< 4d remapped pointer
     REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 !< A pointer to r4 type of rmask
     REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 !<A pointer to r8 type of rmask
 
@@ -1719,15 +1719,13 @@ END FUNCTION register_static_field
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
     if (use_modern_diag) then !> Set up array lengths for remapping
-      field_remap => null()
-      mask_remap  => null()
-      rmask_remap => null()
-      ie = SIZE(field,1)
-      je = SIZE(field,2)
-      ke = SIZE(field,3)
-      field_remap(1:ie,1:je,1:ke,1:1) => field
-      if (present(mask)) mask_remap(1:ie,1:je,1:ke,1:1) => mask
-      if (present(rmask)) rmask_remap(1:ie,1:je,1:ke,1:1) => rmask
+
+      field_remap = copy_3d_to_4d(field)
+      if (present(rmask)) rmask_remap = copy_3d_to_4d(rmask)
+      if (present(mask)) then
+         allocate(mask_remap(1:size(mask,1), 1:size(mask,2), 1:size(mask,3), 1))
+         mask_remap(:,:,:,1) = mask
+      endif
     endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
@@ -1744,7 +1742,9 @@ END FUNCTION register_static_field
     diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_remap, mask_remap, rmask_remap, &
                                                           time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
                                                           err_msg)
-    nullify (field_remap)
+    deallocate (field_remap)
+    if (allocated(mask_remap)) deallocate(mask_remap)
+    if (allocated(rmask_remap)) deallocate(rmask_remap)
   elSE ! modern_if
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
@@ -4479,6 +4479,29 @@ END FUNCTION register_static_field
        END DO
     END IF
   END SUBROUTINE diag_field_add_cell_measures
+
+  !> @brief Copies a 3d buffer to a 4d buffer
+  !> @return a 4d buffer
+  function copy_3d_to_4d(data_in) &
+    result(data_out)
+    class (*), intent(in) :: data_in(:,:,:) !< Data to copy
+    class (*), allocatable :: data_out(:,:,:,:)
+
+    select type(data_in)
+    type is (real(kind=r8_kind))
+      allocate(real(kind=r8_kind) :: data_out(1:size(data_in,1), 1:size(data_in,2), 1:size(data_in,3), 1))
+      select type (data_out)
+      type is (real(kind=r8_kind))
+        data_out(:,:,:,1) = data_in
+      end select
+    type is (real(kind=r4_kind))
+      allocate(real(kind=r4_kind) :: data_out(1:size(data_in,1), 1:size(data_in,2), 1:size(data_in,3), 1))
+      select type (data_out)
+      type is (real(kind=r4_kind))
+        data_out(:,:,:,1) = data_in
+      end select
+    end select
+  end function
 
 END MODULE diag_manager_mod
 !> @}

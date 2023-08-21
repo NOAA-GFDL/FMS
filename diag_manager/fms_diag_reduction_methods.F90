@@ -91,8 +91,8 @@ module fms_diag_reduction_methods_mod
   !> @return logical mask
   function init_mask(rmask, mask, field) &
   result(oor_mask)
-    LOGICAL,  DIMENSION(:,:,:,:), pointer, INTENT(in) :: mask  !< The location of the mask
-    CLASS(*), DIMENSION(:,:,:,:), pointer, INTENT(in) :: rmask !< The masking values
+    LOGICAL,  DIMENSION(:,:,:,:), allocatable, INTENT(in) :: mask  !< The location of the mask
+    CLASS(*), DIMENSION(:,:,:,:), allocatable, INTENT(in) :: rmask !< The masking values
     CLASS(*), DIMENSION(:,:,:,:),          intent(in) :: field !< Field_data
 
     logical, allocatable, dimension(:,:,:,:) :: oor_mask !< mask
@@ -100,9 +100,9 @@ module fms_diag_reduction_methods_mod
     ALLOCATE(oor_mask(SIZE(field, 1), SIZE(field, 2), SIZE(field, 3), SIZE(field, 4)))
     oor_mask = .true.
 
-    if (associated(mask)) then
+    if (allocated(mask)) then
       oor_mask = mask
-    elseif (associated(rmask)) then
+    elseif (allocated(rmask)) then
       select type (rmask)
       type is (real(kind=r8_kind))
         WHERE (rmask < 0.5_r8_kind) oor_mask = .FALSE.

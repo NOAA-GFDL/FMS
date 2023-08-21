@@ -491,14 +491,14 @@ end function
 
    select case (dimension)
    case (xdimension)
-      bounds_in%imin = min(starting-bounds%imin+1, starting)
-      bounds_in%imax = bounds_in%imin + (ending-starting)
+      bounds_in%imin = min(abs(starting-bounds%imin+1), starting)
+      bounds_in%imax = min(bounds_in%imax, (bounds_in%imin + ending-starting))
    case (ydimension)
-      bounds_in%jmin = min(starting-bounds%jmin+1, starting)
-      bounds_in%jmax = bounds_in%jmin + (ending-starting)
+      bounds_in%jmin = min(abs(starting-bounds%jmin+1), starting)
+      bounds_in%jmax = min(bounds_in%jmax, (bounds_in%jmin + ending-starting))
    case (zdimension)
-      bounds_in%kmin = min(starting-bounds%kmin+1, starting)
-      bounds_in%kmax = bounds_in%kmin + (ending-starting)
+      bounds_in%kmin = min(abs(starting-bounds%kmin+1), starting)
+      bounds_in%kmax = min(bounds_in%kmax, (bounds_in%kmin + ending-starting))
    end select
  end subroutine
 
