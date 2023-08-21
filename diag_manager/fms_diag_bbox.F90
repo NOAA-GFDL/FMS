@@ -55,9 +55,8 @@ MODULE fms_diag_bbox_mod
       procedure :: reset_bounds_from_array_5D
       procedure :: update_bounds
       procedure :: set_bounds
-      procedure :: reset_bounds_to_write
-      procedure :: rebase
-      procedure :: rebase_more
+      procedure :: rebase_input
+      procedure :: rebase_output
       procedure :: get_imin
       procedure :: get_imax
       procedure :: get_jmin
@@ -97,14 +96,17 @@ MODULE fms_diag_bbox_mod
 
 CONTAINS
 
-logical function determine_if_block_is_in_region(subregion_start, subregion_end, bounds, dimension)
-  integer, intent(in) :: subregion_start
-  integer, intent(in) :: subregion_end
-  type(fmsDiagIbounds_type), intent(in) :: bounds
-  integer, intent(in) :: dimension
+!> @brief The PEs grid points are divided further into "blocks". This function determines if a block
+! has data for a given subregion and dimension
+!! @return .true. if the a subergion is inside a block
+logical pure function determine_if_block_is_in_region(subregion_start, subregion_end, bounds, dimension)
+  integer,                   intent(in) :: subregion_start !< Begining of the subregion
+  integer,                   intent(in) :: subregion_end   !< Ending of the subregion
+  type(fmsDiagIbounds_type), intent(in) :: bounds          !< Starting and ending of the subregion
+  integer,                   intent(in) :: dimension       !< Dimension to check
 
-  integer :: block_start
-  integer :: block_end
+  integer :: block_start !< Begining index of the block
+  integer :: block_end   !< Ending index of the block
 
   determine_if_block_is_in_region = .true.
   select case (dimension)
@@ -175,14 +177,21 @@ end function
       rslt = this%kmax
    end function get_kmax
 
+   !> @brief Updates the starting and ending index of a given dimension
    subroutine update_index(this, starting_index, ending_index, dimension, ignore_halos)
-     class (fmsDiagIbounds_type), intent(inout) :: this !< The !< ibounds instance
-     integer, intent(in) :: starting_index
-     integer, intent(in) :: ending_index
-     integer, intent(in) :: dimension
-     logical, intent(in) :: ignore_halos
+     class (fmsDiagIbounds_type), intent(inout) :: this           !< The bounding box to update
+     integer,                     intent(in)    :: starting_index !< Starting index to update to
+     integer,                     intent(in)    :: ending_index   !< Ending index to update to
+     integer,                     intent(in)    :: dimension      !< Dimension to update
+     logical,                     intent(in)    :: ignore_halos   !< If .true. halos will be ignored
+                                                                  !! i.e output buffers can ignore halos as
+                                                                  !! they do not get updates. The indices of the
+                                                                  !! Input buffers need to add the number of halos
+                                                                  !! so math is done only on the compute domain
 
-     integer :: nhalox, nhaloy
+     integer :: nhalox !< Number of halos in x
+     integer :: nhaloy !< Number of halos in y
+
      if (ignore_halos) then
       nhalox = 0
       nhaloy = 0
@@ -277,44 +286,25 @@ end function
       this%kmax = MAX(this%kmax, upper_k)
    END SUBROUTINE update_bounds
 
-   subroutine reset_bounds_to_write(this, field_data)
-     CLASS  (fmsDiagIbounds_type), intent(inout) :: this !<The bounding box of the output field buffer inindex space.
-     class(*), intent(in) :: field_data(:,:,:,:)
-
-     write((mpp_pe()+1)*100, *) "WUT:", this%imin, this%imax, this%jmin, this%jmax, this%kmin, this%kmax
-     write((mpp_pe()+1)*100, *) "WUTTT:", shape(field_data)
-     if (size(field_data, 1) .eq. (this%imax-this%imin + 1)) then
-       this%imin = lbound(field_data, 1)
-       this%imax = ubound(field_data, 1)
-     endif
-
-     if (size(field_data, 2) .eq. (this%jmax-this%jmin + 1)) then
-       this%jmin = lbound(field_data, 2)
-       this%jmax = ubound(field_data, 2)
-     endif
-
-     if (size(field_data, 3) .eq. (this%kmax-this%kmin + 1)) then
-      this%kmin = lbound(field_data, 3)
-      this%kmax = ubound(field_data, 3)
-     endif
-   end subroutine
-
+   !> @brief Sets the bounds of a bounding region
+   !! @return empty string if sucessful or error message if unsucessful
    function set_bounds(this, field_data, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k, has_halos) &
       result(error_msg)
-      CLASS  (fmsDiagIbounds_type), intent(inout) :: this !<The bounding box of the output field buffer inindex space.
-      class(*), intent(in) :: field_data(:,:,:,:)
-      INTEGER, INTENT(in) :: lower_i !< Lower i bound.
-      INTEGER, INTENT(in) :: upper_i !< Upper i bound.
-      INTEGER, INTENT(in) :: lower_j !< Lower j bound.
-      INTEGER, INTENT(in) :: upper_j !< Upper j bound.
-      INTEGER, INTENT(in) :: lower_k !< Lower k bound.
-      INTEGER, INTENT(in) :: upper_k !< Upper k bound.
-      LOGICAL, INTENT(in) :: has_halos
+      CLASS  (fmsDiagIbounds_type), intent(inout) :: this                !< The bounding box of the field
+      class(*),                     intent(in)    :: field_data(:,:,:,:) !< Field data
+      INTEGER,                      INTENT(in)    :: lower_i             !< Lower i bound.
+      INTEGER,                      INTENT(in)    :: upper_i             !< Upper i bound.
+      INTEGER,                      INTENT(in)    :: lower_j             !< Lower j bound.
+      INTEGER,                      INTENT(in)    :: upper_j             !< Upper j bound.
+      INTEGER,                      INTENT(in)    :: lower_k             !< Lower k bound.
+      INTEGER,                      INTENT(in)    :: upper_k             !< Upper k bound.
+      LOGICAL,                      INTENT(in)    :: has_halos           !< .true. if the field has halos
 
       character(len=150) :: error_msg
 
-      integer :: nhalos_2
-      integer :: nhalox, nhaloy
+      integer :: nhalos_2 !< 2 times the number of halo points
+      integer :: nhalox   !< Number of halos in x
+      integer :: nhaloy   !< Number of halos in y
 
       error_msg = ""
       this%kmin = lower_k
@@ -327,7 +317,7 @@ end function
          !ubound(field_data,1) is the size of the data domain
          nhalos_2 = ubound(field_data,1)-(upper_i-lower_i+1)
          if (mod(nhalos_2, 2) .ne. 0) then
-           error_msg = "Not even bounds in x"
+           error_msg = "There are non-symmetric halos in the first dimension"
            return
          endif
          nhalox = nhalos_2/2
@@ -335,7 +325,7 @@ end function
 
          nhalos_2 = ubound(field_data,2)-(upper_j-lower_j + 1)
          if (mod(nhalos_2, 2) .ne. 0) then
-           error_msg = "Not even bounds in y"
+           error_msg = "There are non-symmetric halos in the second dimension"
            return
          endif
          nhaloy = nhalos_2/2
@@ -470,31 +460,34 @@ end function
    indices%fje = fje
  end function recondition_indices
 
- subroutine rebase_more(bounds_in, starting, ending, dimension)
-   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in
-   integer, intent(in) :: starting
-   integer, intent(in) :: ending
-   integer, intent(in) :: dimension
+ !> @brief Rebase the ouput bounds for a given dimension based on the starting and ending indices
+ subroutine rebase_output(bounds_out, starting, ending, dimension)
+   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_out !< Bounds to rebase
+   integer,                     intent(in)    :: starting   !< Starting index of the dimension
+   integer,                     intent(in)    :: ending     !< Ending index of the dimension
+   integer,                     intent(in)    :: dimension  !< Dimension to update
 
    select case (dimension)
    case (xdimension)
-      bounds_in%imin = max(starting, bounds_in%imin)-starting+1
-      bounds_in%imax = min(bounds_in%imax, bounds_in%imin + ending-starting)
+      bounds_out%imin = max(starting, bounds_out%imin)-starting+1
+      bounds_out%imax = min(bounds_out%imax, bounds_out%imin + ending-starting)
    case (ydimension)
-      bounds_in%jmin =  max(starting, bounds_in%jmin)-starting+1
-      bounds_in%jmax = min(bounds_in%jmax, bounds_in%jmin + ending-starting)
+      bounds_out%jmin =  max(starting, bounds_out%jmin)-starting+1
+      bounds_out%jmax = min(bounds_out%jmax, bounds_out%jmin + ending-starting)
    case (zdimension)
-      bounds_in%kmin =max(starting, bounds_in%kmin)-starting+1
-      bounds_in%kmax = min(bounds_in%kmax, bounds_in%kmin + ending-starting)
+      bounds_out%kmin =max(starting, bounds_out%kmin)-starting+1
+      bounds_out%kmax = min(bounds_out%kmax, bounds_out%kmin + ending-starting)
    end select
  end subroutine
 
- subroutine rebase(bounds_in, bounds, starting, ending, dimension)
-   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in
-   CLASS (fmsDiagIbounds_type), INTENT(in) :: bounds
-   integer, intent(in) :: ending
-   integer, intent(in) :: starting
-   integer, intent(in) :: dimension
+ !> @brief Rebase the input bounds for a given dimension based on the starting and ending indices
+ subroutine rebase_input(bounds_in, bounds, starting, ending, dimension)
+   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in  !< Bounds to rebase
+   CLASS (fmsDiagIbounds_type), INTENT(in)    :: bounds     !< Original indices (i.e is_in, ie_in,
+                                                            !! passed into diag_manager)
+   integer,                     intent(in)    :: starting   !< Starting index of the dimension
+   integer,                     intent(in)    :: ending     !< Ending index of the dimension
+   integer,                     intent(in)    :: dimension  !< Dimension to update
 
    select case (dimension)
    case (xdimension)

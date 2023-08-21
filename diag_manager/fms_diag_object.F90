@@ -17,7 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 module fms_diag_object_mod
-  use fms_mod, only: string
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
@@ -781,7 +780,7 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
     buffer_ptr     => this%FMS_diag_output_buffers(buffer_id)
     file_ptr       => this%FMS_diag_files(file_id)
 
-    !< Leave if the current PE does not contain any data
+    !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. file_ptr%writing_on_this_pe()) cycle
 
     bounds_out = bounds
@@ -817,10 +816,10 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
           if (using_blocking) then
             block_in_subregion = determine_if_block_is_in_region(starting, ending, bounds, i)
             !< Set bounds_in so that you can the correct section of the data for the block (starting at 1)
-            call bounds_in%rebase(bounds, starting, ending, i)
+            call bounds_in%rebase_input(bounds, starting, ending, i)
 
             !< Set bounds_out to be the correct section relative to the block starting and ending indices
-            call bounds_out%rebase_more(starting, ending, i)
+            call bounds_out%rebase_output(starting, ending, i)
           else
             !< Set bounds_in so that only the subregion section of the data will be used (starting at 1)
             call bounds_in%update_index(starting, ending, i, .false.)
@@ -1129,8 +1128,8 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(*), allocatable :: missing_value !< Missing value to initialize the data to
   character(len=128), allocatable :: var_name !< Field name to initialize output buffers
   logical :: is_scalar !< Flag indicating that the variable is a scalar
-  integer :: yaml_id
-  integer :: file_id
+  integer :: yaml_id !< Yaml id for the buffer
+  integer :: file_id !< File id for the buffer
 
   if (this%FMS_diag_fields(field_id)%buffer_allocated) return
 
@@ -1171,6 +1170,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
     file_id = this%FMS_diag_fields(field_id)%file_ids(i)
 
+    !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. this%FMS_diag_files(file_id)%writing_on_this_pe()) cycle
 
     ndims = 0
