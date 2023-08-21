@@ -35,7 +35,6 @@ libdata_override_la_SOURCES = \
   include/get_grid_version_r4.fh \
   include/get_grid_version_r8.fh \
   include/get_grid_version.inc \
-  data_override_impl.F90 \
   include/data_override_impl_r4.fh \
   include/data_override_impl_r8.fh \
   include/data_override_impl.inc \

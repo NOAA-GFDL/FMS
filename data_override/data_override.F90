@@ -17,6 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+#include "data_override_impl_r4.fh"
+#include "data_override_impl_r8.fh"
+
 !> @defgroup data_override_mod data_override_mod
 !> @ingroup data_override
 !! @brief Routines to get data in a file whose path is described in a user-provided data_table
