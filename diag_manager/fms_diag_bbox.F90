@@ -99,17 +99,17 @@ CONTAINS
 !> @brief The PEs grid points are divided further into "blocks". This function determines if a block
 ! has data for a given subregion and dimension
 !! @return .true. if the a subergion is inside a block
-logical pure function determine_if_block_is_in_region(subregion_start, subregion_end, bounds, dimension)
+logical pure function determine_if_block_is_in_region(subregion_start, subregion_end, bounds, dim)
   integer,                   intent(in) :: subregion_start !< Begining of the subregion
   integer,                   intent(in) :: subregion_end   !< Ending of the subregion
   type(fmsDiagIbounds_type), intent(in) :: bounds          !< Starting and ending of the subregion
-  integer,                   intent(in) :: dimension       !< Dimension to check
+  integer,                   intent(in) :: dim             !< Dimension to check
 
   integer :: block_start !< Begining index of the block
   integer :: block_end   !< Ending index of the block
 
   determine_if_block_is_in_region = .true.
-  select case (dimension)
+  select case (dim)
   case (xdimension)
     block_start = bounds%imin
     block_end = bounds%imax
@@ -178,11 +178,11 @@ end function
    end function get_kmax
 
    !> @brief Updates the starting and ending index of a given dimension
-   subroutine update_index(this, starting_index, ending_index, dimension, ignore_halos)
+   subroutine update_index(this, starting_index, ending_index, dim, ignore_halos)
      class (fmsDiagIbounds_type), intent(inout) :: this           !< The bounding box to update
      integer,                     intent(in)    :: starting_index !< Starting index to update to
      integer,                     intent(in)    :: ending_index   !< Ending index to update to
-     integer,                     intent(in)    :: dimension      !< Dimension to update
+     integer,                     intent(in)    :: dim            !< Dimension to update
      logical,                     intent(in)    :: ignore_halos   !< If .true. halos will be ignored
                                                                   !! i.e output buffers can ignore halos as
                                                                   !! they do not get updates. The indices of the
@@ -199,7 +199,7 @@ end function
       nhalox= this%nhalo_I
       nhaloy= this%nhalo_J
      endif
-     select case(dimension)
+     select case(dim)
      case (xdimension)
       this%imin = starting_index + nhalox
       this%imax = ending_index + nhalox
@@ -461,13 +461,13 @@ end function
  end function recondition_indices
 
  !> @brief Rebase the ouput bounds for a given dimension based on the starting and ending indices
- subroutine rebase_output(bounds_out, starting, ending, dimension)
+ subroutine rebase_output(bounds_out, starting, ending, dim)
    CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_out !< Bounds to rebase
    integer,                     intent(in)    :: starting   !< Starting index of the dimension
    integer,                     intent(in)    :: ending     !< Ending index of the dimension
-   integer,                     intent(in)    :: dimension  !< Dimension to update
+   integer,                     intent(in)    :: dim        !< Dimension to update
 
-   select case (dimension)
+   select case (dim)
    case (xdimension)
       bounds_out%imin = max(starting, bounds_out%imin)-starting+1
       bounds_out%imax = min(bounds_out%imax, bounds_out%imin + ending-starting)
@@ -481,15 +481,15 @@ end function
  end subroutine
 
  !> @brief Rebase the input bounds for a given dimension based on the starting and ending indices
- subroutine rebase_input(bounds_in, bounds, starting, ending, dimension)
+ subroutine rebase_input(bounds_in, bounds, starting, ending, dim)
    CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in  !< Bounds to rebase
    CLASS (fmsDiagIbounds_type), INTENT(in)    :: bounds     !< Original indices (i.e is_in, ie_in,
                                                             !! passed into diag_manager)
    integer,                     intent(in)    :: starting   !< Starting index of the dimension
    integer,                     intent(in)    :: ending     !< Ending index of the dimension
-   integer,                     intent(in)    :: dimension  !< Dimension to update
+   integer,                     intent(in)    :: dim        !< Dimension to update
 
-   select case (dimension)
+   select case (dim)
    case (xdimension)
       bounds_in%imin = min(abs(starting-bounds%imin+1), starting)
       bounds_in%imax = min(bounds_in%imax, (bounds_in%imin + ending-starting))
