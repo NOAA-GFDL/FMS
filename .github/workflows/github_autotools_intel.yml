@@ -2,16 +2,13 @@ on: pull_request
 jobs:
   build-dependencies:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
         CC: mpiicc
         FC: mpiifort
         CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback ${{ matrix.io-flag }}"
+        FCFLAGS: "-I/libs/include -g -traceback"
         LDFLAGS: "-L/libs/lib"
     steps:
     - name: Cache dependencies
@@ -19,7 +16,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: /libs
-        key: ${{ runner.os }}-intel-libs
+        key: ${{ runner.os }}-intel-libs${{ matrix.io-flag }}
     - name: Install packages for building
       run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
@@ -49,6 +46,7 @@ jobs:
       matrix:
         FC: ["ifx", "ifort"]
         CC: ["icx", "icc"]
+        io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
         exclude:
           - FC: "ifx"
             CC: "icc"
@@ -63,7 +61,8 @@ jobs:
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
         # intel bug causes some failures with shm option(required in container)
-        SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23"
+        # test without skips
+        #SKIP_TESTS: "test_mpp_update_domains.1 test_update_domains_performance.1 test_diag_manager2.23"
     steps:
     - name: Get dependencies from cache
       id: cache
@@ -72,12 +71,12 @@ jobs:
         path: /libs
         key: ${{ runner.os }}-intel-libs
     - name: Install packages for building
-      run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
+      run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev zip
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
-      run: autoreconf -if ./configure.ac && ./configure --with-yaml
+      run: autoreconf -if ./configure.ac && ./configure --with-yaml ${{ matrix.io-flag }}
     - name: Compile
       run: make -j || make
     - name: Run test suite
-      run: make check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" TEST_VERBOSE=1
+      run: make distcheck LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" TEST_VERBOSE=1
