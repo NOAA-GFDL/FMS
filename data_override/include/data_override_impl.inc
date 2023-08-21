@@ -642,7 +642,7 @@ subroutine DATA_OVERRIDE_0D_IMPL_(gridname,fieldname_code,data,time,override,dat
 
 end subroutine DATA_OVERRIDE_0D_IMPL_
 
-!> @brief This routine performs data override for 2D fields; for usage, see data_override_3d.
+!> @brief This routine performs data override for 2D fields.
 subroutine DATA_OVERRIDE_2D_IMPL_(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
   character(len=3), intent(in) :: gridname !< model grid ID
   character(len=*), intent(in) :: fieldname !< field to override
