@@ -106,6 +106,16 @@ use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 
   contains
 
+!> @brief Assign default values for default_table, get domain of component models,
+!! get global grids of component models.
+!! Users should call data_override_init before calling data_override
+!!
+!! This subroutine should be called by data_override_init.
+!!
+!! Data_table is initialized here with default values. Users should provide "real" values
+!! that will override the default values. Real values can be specified in either data_table
+!! or data_table.yaml. Each line of data_table contains one data_entry. Items of data_entry
+!! are comma-separated.
 subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
   type (domain2d), intent(in), optional :: Atm_domain_in
   type (domain2d), intent(in), optional :: Ocean_domain_in, Ice_domain_in
