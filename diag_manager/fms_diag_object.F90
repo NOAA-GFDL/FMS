@@ -743,14 +743,13 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
                                                                          !! in blocks
   type(time_type),           intent(in), optional :: time                !< Current time
 
+  character(len=50)         :: error_msg          !< Error message to check
   !TODO Mostly everything
 #ifdef use_yaml
   type(fmsDiagField_type),          pointer :: field_ptr      !< Pointer to the field's object
   type(fmsDiagOutputBuffer_type),   pointer :: buffer_ptr     !< Pointer to the field's buffer
   class(fmsDiagFileContainer_type), pointer :: file_ptr       !< Pointer to the field's file
   type(diagYamlFilesVar_type),      pointer :: field_yaml_ptr !< Pointer to the field's yaml
-
-  character(len=50)         :: error_msg          !< Error message to check
 
   integer                   :: reduction_method   !< Integer representing a reduction method
   integer                   :: ids                !< For looping through buffer ids
