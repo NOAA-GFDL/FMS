@@ -122,10 +122,10 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
       call mpp_error(FATAL, "data_override_init: unsupported mode argument")
   end select
 
-  if (present(Atm_domain_in))   atm_mode = mode
-  if (present(Ocean_domain_in)) ocn_mode = mode
-  if (present(Ice_domain_in))   ice_mode = mode
-  if (present(Land_domain_in))  lnd_mode = mode
+  if (present(Atm_domain_in))   atm_mode = mode_selector
+  if (present(Ocean_domain_in)) ocn_mode = mode_selector
+  if (present(Ice_domain_in))   ice_mode = mode_selector
+  if (present(Land_domain_in))  lnd_mode = mode_selector
 end subroutine data_override_init
 
 !> @brief Unset domains that had previously been set for use by data_override.
