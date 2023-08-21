@@ -1067,7 +1067,8 @@ module fms_diag_axis_object_mod
     integer :: lat_indices(2)         !< Starting and ending latitude indices of the subRegion
     integer :: lon_indices(2)         !< Starting and ending longitude indices of the subRegion
     integer :: compute_idx(2)         !< Compute domain of the current axis
-    integer :: starting_index(2)      !< Starting index of the subRegion for the current PE for the "x" and "y" direction
+    integer :: starting_index(2)      !< Starting index of the subRegion for the current PE for the "x" and "y"
+                                      !! direction
     integer :: ending_index(2)        !< Ending index of the subRegion for the current PE for the "x" and "y" direction
     logical :: need_to_define_axis(2) !< .true. if it is needed to define the subaxis for the "x" and "y" direction
     integer :: i                      !< For do loops

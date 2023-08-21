@@ -491,11 +491,9 @@ end function
 
    select case (dimension)
    case (xdimension)
-      print *, string(mpp_pe()), " is x ", starting-bounds_in%imin+1, starting
       bounds_in%imin = min(starting-bounds%imin+1, starting)
       bounds_in%imax = bounds_in%imin + (ending-starting)
    case (ydimension)
-      print *, string(mpp_pe()), " is x ", starting-bounds_in%jmin+1, starting
       bounds_in%jmin = min(starting-bounds%jmin+1, starting)
       bounds_in%jmax = bounds_in%jmin + (ending-starting)
    case (zdimension)
