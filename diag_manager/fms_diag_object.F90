@@ -608,8 +608,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
 
     call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
-    fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, field_weight, &
+    error_string = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, field_weight, &
       bounds, using_blocking, Time=Time)
+    if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     return
   end if main_if
@@ -728,9 +729,10 @@ end subroutine fms_diag_do_io
 
 !> @brief Computes average, min, max, rms error, etc.
 !! based on the specified reduction method for the field.
-!> @return .True. if no error occurs.
-logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
-  bounds, using_blocking, time)
+!> @return Empty string if successful, error message if it fails
+function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
+  bounds, using_blocking, time) &
+  result(error_msg)
   class(fmsDiagObject_type), intent(in), target   :: this                !< Diag Object
   class(*),                  intent(in)           :: field_data(:,:,:,:) !< Field data
   integer,                   intent(in)           :: diag_field_id       !< ID of the input field
@@ -748,11 +750,12 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
   class(fmsDiagFileContainer_type), pointer :: file_ptr       !< Pointer to the field's file
   type(diagYamlFilesVar_type),      pointer :: field_yaml_ptr !< Pointer to the field's yaml
 
+  character(len=50)         :: error_msg          !< Error message to check
+
   integer                   :: reduction_method   !< Integer representing a reduction method
   integer                   :: ids                !< For looping through buffer ids
   integer                   :: buffer_id          !< Id of the buffer
   integer                   :: file_id            !< File id
-  character(len=50)         :: error_msg          !< Error message to check
   integer, allocatable      :: axis_ids(:)        !< Axis ids for the buffer
   logical                   :: is_subregional     !< .True. if the buffer is subregional
   logical                   :: reduced_k_range    !< .True. is the field is only outputing a section
@@ -841,6 +844,9 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
     select case(reduction_method)
     case (time_none)
       error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, bounds_in, bounds_out)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_min)
     case (time_max)
     case (time_sum)
@@ -849,9 +855,8 @@ logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask
     case (time_diurnal)
     end select
   enddo buffer_loop
-  fms_diag_do_reduction = .true.
 #else
-  fms_diag_do_reduction = .false.
+  error_msg = ""
   CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end function fms_diag_do_reduction

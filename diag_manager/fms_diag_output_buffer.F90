@@ -456,14 +456,14 @@ function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out) &
       type is (real(kind=r8_kind))
         call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
       class default
-        err_msg="output buffer the buffer send in are not of the same type (r8_kind)"
+        err_msg="the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
     type is (real(kind=r4_kind))
       select type (field_data)
       type is (real(kind=r4_kind))
         call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
       class default
-        err_msg="output buffer the buffer send in are not of the same type (r4_kind)"
+        err_msg="the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
   end select
 end function do_time_none_wrapper
