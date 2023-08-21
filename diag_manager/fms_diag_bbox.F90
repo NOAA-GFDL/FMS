@@ -46,9 +46,9 @@ MODULE fms_diag_bbox_mod
       INTEGER :: jmax !< Upper j bound.
       INTEGER :: kmin !< Lower k bound.
       INTEGER :: kmax !< Upper k bound.
-      logical :: has_halos
-      integer :: nhalo_I
-      integer :: nhalo_J
+      logical :: has_halos !< .True. if the buffer has halos
+      integer :: nhalo_I !< Number of halos in i
+      integer :: nhalo_J !< Number of halos in j
    contains
       procedure :: reset => reset_bounds
       procedure :: reset_bounds_from_array_4D

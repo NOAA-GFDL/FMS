@@ -115,7 +115,7 @@ module fms_diag_axis_object_mod
     INTEGER                        , private  :: ending_index   !< Ending index of the subaxis relative to the
                                                                 !! parent axis
     INTEGER                        , private  :: parent_axis_id !< Id of the parent_axis
-    INTEGER                        , private  :: compute_idx(2)
+    INTEGER                        , private  :: compute_idx(2) !< Starting and ending index of the compute domain
     real(kind=r4_kind), allocatable, private  :: zbounds(:)     !< Bounds of the Z axis
     contains
       procedure :: fill_subaxis
@@ -740,14 +740,16 @@ module fms_diag_axis_object_mod
 
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Fills in the information needed to define a subaxis
-  subroutine fill_subaxis(this, starting_index, ending_index, axis_id, parent_id, parent_axis_name, compute_idx, zbounds)
+  subroutine fill_subaxis(this, starting_index, ending_index, axis_id, parent_id, parent_axis_name, compute_idx, &
+                          zbounds)
     class(fmsDiagSubAxis_type)  , INTENT(INOUT) :: this             !< diag_sub_axis obj
     integer                     , intent(in)    :: starting_index   !< Starting index of the subRegion for the PE
     integer                     , intent(in)    :: ending_index     !< Ending index of the subRegion for the PE
     integer                     , intent(in)    :: axis_id          !< Axis id to assign to the subaxis
-    integer                     , intent(in)    :: parent_id        !< The id of the parent axis, the subaxis belongs to
+    integer                     , intent(in)    :: parent_id        !< The id of the parent axis the subaxis belongs to
     character(len=*)            , intent(in)    :: parent_axis_name !< Name of the parent_axis
-    integer                     , intent(in)    :: compute_idx(2)
+    integer                     , intent(in)    :: compute_idx(2)   !< Starting and ending index of
+                                                                    !! the axis's compute domain
     real(kind=r4_kind), optional, intent(in)    :: zbounds(2)       !< Bounds of the z-axis
 
     this%axis_id = axis_id
@@ -1060,18 +1062,18 @@ module fms_diag_axis_object_mod
     logical,                                  intent(out)   :: write_on_this_pe !< .true. if the subregion
                                                                                 !! is on this PE
 
-    real    :: lat(2)              !< Starting and ending lattiude of the subRegion
-    real    :: lon(2)              !< Starting and ending longitude or the subRegion
-    integer :: lat_indices(2)      !< Starting and ending latitude indices of the subRegion
-    integer :: lon_indices(2)      !< Starting and ending longitude indices of the subRegion
-    integer :: compute_idx(2)      !< Compute domain of the current axis
-    integer :: starting_index(2)      !< Starting index of the subRegion for the current PE
-    integer :: ending_index(2)        !< Ending index of the subRegion for the current PE
-    logical :: need_to_define_axis(2) !< .true. if it is needed to define the subaxis
-    integer :: i                   !< For do loops
-    integer :: parent_axis_ids(2)
-    logical :: is_x_y_axis
-    integer :: compute_idx_2(2, 2)
+    real    :: lat(2)                 !< Starting and ending lattiude of the subRegion
+    real    :: lon(2)                 !< Starting and ending longitude or the subRegion
+    integer :: lat_indices(2)         !< Starting and ending latitude indices of the subRegion
+    integer :: lon_indices(2)         !< Starting and ending longitude indices of the subRegion
+    integer :: compute_idx(2)         !< Compute domain of the current axis
+    integer :: starting_index(2)      !< Starting index of the subRegion for the current PE for the "x" and "y" direction
+    integer :: ending_index(2)        !< Ending index of the subRegion for the current PE for the "x" and "y" direction
+    logical :: need_to_define_axis(2) !< .true. if it is needed to define the subaxis for the "x" and "y" direction
+    integer :: i                      !< For do loops
+    integer :: parent_axis_ids(2)     !< The axis id of the parent axis for the "x" and "y" direction
+    logical :: is_x_y_axis            !< .true. if the axis is x or y
+    integer :: compute_idx_2(2, 2)    !< Starting and ending indices of the compute domain for the "x" and "y" direction
 
     !< Get the rectangular coordinates of the subRegion
     !! If the subRegion is not rectangular, the points outside of the subRegion will be masked
@@ -1175,7 +1177,8 @@ module fms_diag_axis_object_mod
     integer,                                  intent(in)    :: parent_id        !< Id of the parent axis
     integer,                                  intent(in)    :: starting_index   !< PE's Starting index
     integer,                                  intent(in)    :: ending_index     !< PE's Ending index
-    integer,                                  intent(in)    :: compute_idx(2)
+    integer,                                  intent(in)    :: compute_idx(2)   !< Starting and ending index of
+                                                                                !! the axis's compute domain
     integer,                        optional, intent(out)   :: new_axis_id      !< Axis id of the axis this is creating
     real(kind=r4_kind),             optional, intent(in)    :: zbounds(2)       !< Bounds of the Z axis
 
