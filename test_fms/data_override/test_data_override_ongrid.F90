@@ -36,26 +36,26 @@ use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_endde
 
 implicit none
 
-integer, parameter                    :: lkind = DO_TEST_KIND_
-integer, dimension(2)                 :: layout = (/2,3/) !< Domain layout
-integer                               :: nlon             !< Number of points in x axis
-integer                               :: nlat             !< Number of points in y axis
-type(domain2d)                        :: Domain           !< Domain with mask table
-real(DO_TEST_KIND_), allocatable, dimension(:,:)     :: runoff           !< Data to be written
-integer                               :: is               !< Starting x index
-integer                               :: ie               !< Ending x index
-integer                               :: js               !< Starting y index
-integer                               :: je               !< Ending y index
-type(time_type)                       :: Time             !< Time
-integer                               :: i                !< Helper indices
-integer                               :: ncid             !< Netcdf file id
-integer                               :: err              !< Error Code
-integer                               :: dim1d, dim2d, dim3d, dim4d    !< Dimension ids
-integer                               :: varid, varid2, varid3, varid4 !< Variable ids
-real(DO_TEST_KIND_), allocatable, dimension(:,:,:)   :: runoff_in        !< Data to be written to file
-real(DO_TEST_KIND_)                                  :: expected_result  !< Expected result from data_override
-integer                               :: nhalox=2, nhaloy=2
-integer                               :: io_status
+integer, parameter                         :: lkind = DO_TEST_KIND_
+integer, dimension(2)                      :: layout = (/2,3/) !< Domain layout
+integer                                    :: nlon             !< Number of points in x axis
+integer                                    :: nlat             !< Number of points in y axis
+type(domain2d)                             :: Domain           !< Domain with mask table
+real(lkind), allocatable, dimension(:,:)   :: runoff           !< Data to be written
+integer                                    :: is               !< Starting x index
+integer                                    :: ie               !< Ending x index
+integer                                    :: js               !< Starting y index
+integer                                    :: je               !< Ending y index
+type(time_type)                            :: Time             !< Time
+integer                                    :: i                !< Helper indices
+integer                                    :: ncid             !< Netcdf file id
+integer                                    :: err              !< Error Code
+integer                                    :: dim1d, dim2d, dim3d, dim4d    !< Dimension ids
+integer                                    :: varid, varid2, varid3, varid4 !< Variable ids
+real(lkind), allocatable, dimension(:,:,:) :: runoff_in        !< Data to be written to file
+real(lkind)                                :: expected_result  !< Expected result from data_override
+integer                                    :: nhalox=2, nhaloy=2
+integer                                    :: io_status
 
 namelist / test_data_override_ongrid_nml / nhalox, nhaloy
 
@@ -69,7 +69,7 @@ if (io_status > 0) call mpp_error(FATAL,'=>test_data_override_ongrid: Error read
 if (mpp_pe() .eq. mpp_root_pe()) then
    allocate(runoff_in(1440, 1080, 10))
    do i = 1, 10
-       runoff_in(:,:,i) = real(i, DO_TEST_KIND_)
+       runoff_in(:,:,i) = real(i, lkind)
    enddo
 
    err = nf90_create('INPUT/grid_spec.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
@@ -148,7 +148,7 @@ allocate(runoff(is:ie,js:je))
 runoff = 999.
 
 !< Initiliaze data_override
-call data_override_init(Ocean_domain_in=Domain)
+call data_override_init(Ocean_domain_in=Domain, mode=lkind)
 
 !< Run it when time=3
 Time = set_date(1,1,4,0,0,0)
@@ -174,15 +174,14 @@ call mpp_exit
 contains
 
 subroutine compare_data(Domain, actual_result, expected_result)
-type(domain2d), intent(in)            :: Domain           !< Domain with mask table
-real(DO_TEST_KIND_), intent(in)                      :: expected_result  !< Expected result from data_override
-real(DO_TEST_KIND_), dimension(:,:), intent(in)      :: actual_result    !< Result from data_override
-
-integer                               :: xsizec, ysizec   !< Size of the compute domain
-integer                               :: xsized, ysized   !< Size of the data domain
-integer                               :: nx, ny           !< Size of acual_result
-integer                               :: nhalox, nhaloy   !< Size of the halos
-integer                               :: i, j             !< Helper indices
+type(domain2d), intent(in)              :: Domain           !< Domain with mask table
+real(lkind), intent(in)                 :: expected_result  !< Expected result from data_override
+real(lkind), dimension(:,:), intent(in) :: actual_result    !< Result from data_override
+integer                                 :: xsizec, ysizec   !< Size of the compute domain
+integer                                 :: xsized, ysized   !< Size of the data domain
+integer                                 :: nx, ny           !< Size of acual_result
+integer                                 :: nhalox, nhaloy   !< Size of the halos
+integer                                 :: i, j             !< Helper indices
 
 !< Data is only expected to be overriden for the compute domain -not at the halos.
 call mpp_get_compute_domain(Domain, xsize=xsizec, ysize=ysizec)
