@@ -145,7 +145,7 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
    integer :: i1, i2, j1, j2, ioff, joff
    integer :: my_ind(4), gind(4,size(pelist))
    type array3D
-     MPP_TYPE_, dimension(:,:,:), allocatable :: data
+     MPP_TYPE_, dimension(:,:,:), allocatable :: data3D_type
    endtype array3D
    type(array3d), dimension(:), allocatable :: temp
 
@@ -216,8 +216,8 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
          j1 = gind(3,i)
          j2 = gind(4,i)
          msgsize = (i2-i1+1)*(j2-j1+1)*nk
-         allocate(temp(i)%data(i1:i2,j1:j2,1:nk))
-         call mpp_recv(temp(i)%data(i1:i2,j1:j2,1:nk), msgsize, pelist(i), .FALSE., COMM_TAG_2)
+         allocate(temp(i)%data3D_type(i1:i2,j1:j2,1:nk))
+         call mpp_recv(temp(i)%data3D_type(i1:i2,j1:j2,1:nk), msgsize, pelist(i), .FALSE., COMM_TAG_2)
        endif
      enddo
      call mpp_sync_self(check=EVENT_RECV)
@@ -231,8 +231,8 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
          i2 = gind(2,i)
          j1 = gind(3,i)
          j2 = gind(4,i)
-         gather_data(i1:i2,j1:j2,1:nk)=temp(i)%data(i1:i2,j1:j2,1:nk)
-         deallocate(temp(i)%data)
+         gather_data(i1:i2,j1:j2,1:nk)=temp(i)%data3D_type(i1:i2,j1:j2,1:nk)
+         deallocate(temp(i)%data3D_type)
        endif
      enddo
      deallocate(temp)
