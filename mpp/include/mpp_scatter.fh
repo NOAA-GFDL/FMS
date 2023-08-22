@@ -61,7 +61,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
    integer :: i1, i2, j1, j2, ioff, joff
    integer :: my_ind(4), gind(4,size(pelist))
    type array3D
-     MPP_TYPE_, dimension(:,:,:), allocatable :: data
+     MPP_TYPE_, dimension(:,:,:), allocatable :: data3D_type
    endtype array3D
    type(array3d), dimension(size(pelist)) :: temp
 
@@ -132,9 +132,9 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
          j2 = gind(4,i)
          msgsize = (i2-i1+1)*(j2-j1+1)*nk
 ! allocate and copy data into a contiguous memory space
-         allocate(temp(i)%data(i1:i2,j1:j2,1:nk))
-         temp(i)%data(i1:i2,j1:j2,1:nk)=input_data(i1:i2,j1:j2,1:nk)
-         call mpp_send(temp(i)%data, msgsize, pelist(i), COMM_TAG_2)
+         allocate(temp(i)%data3D_type(i1:i2,j1:j2,1:nk))
+         temp(i)%data3D_type(i1:i2,j1:j2,1:nk)=input_data(i1:i2,j1:j2,1:nk)
+         call mpp_send(temp(i)%data3D_type, msgsize, pelist(i), COMM_TAG_2)
        else
 !        data copy - no send to self
          array_seg(is:ie,js:je,1:nk) = input_data(is+ioff:ie+ioff,js+joff:je+joff,1:nk)
@@ -143,7 +143,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
      call mpp_sync_self(check=EVENT_SEND)
 ! deallocate the temporary array used for the send
      do i = 1, size(pelist)
-       if (allocated(temp(i)%data)) deallocate(temp(i)%data)
+       if (allocated(temp(i)%data3D_type)) deallocate(temp(i)%data3D_type)
      enddo
    else
 !    non root_pe's recv data from root_pe
