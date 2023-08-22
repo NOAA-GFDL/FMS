@@ -317,7 +317,8 @@ foreach(kind ${kinds})
                                                  field_manager/include
                                                  time_interp/include
                                                  tracer_manager/include
-                                                 interpolator/include)
+                                                 interpolator/include
+                                                 data_override/include)
 
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
