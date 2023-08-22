@@ -43,7 +43,7 @@ test_expect_failure "bad checksum" '
 '
 
 # run test 3 - test for ignoring a bad checksum
-printf "&test_bc_restart_nml\n bad_checksum=.true.\n ignore_checksum=.true./" | cat > input.nml
+printf "&test_bc_restart_nml\n bad_checksum=.true.\n ignore_checksum=.true.\n /" | cat > input.nml
 test_expect_success "ignore bad checksum" '
   mpirun -n 16 ../test_bc_restart
 '

@@ -419,6 +419,13 @@ end subroutine init_nonblock_type
       field2(isd:ied, jsd:jed) = field_in(:,:)
     endif
 
+!  allocate field1 on pelist1
+!  if field1 is left unallocated, the code will try to access unallocated memory
+!  when field1 is set to 0 in mpp_redistribute
+    if(any(pelist1 == pe)) then
+      allocate(field1(1,1))
+    endif
+
 !  broadcast domain
     call mpp_broadcast_domain(domain1)
     call mpp_broadcast_domain(domain2)
@@ -442,6 +449,8 @@ end subroutine init_nonblock_type
     endif
 
     if(any(pelist2 == pe))    deallocate(field1, field2)
+
+    if(any(pelist1 == pe))    deallocate(field1)
 
     call mpp_sync()
 

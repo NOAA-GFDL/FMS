@@ -60,6 +60,7 @@
 !> @addtogroup drifters_mod
 !> @{
 module drifters_mod
+#ifdef use_drifters
 
 #ifdef _SERIAL
 
@@ -947,7 +948,7 @@ contains
     endif
 
   end subroutine drifters_reset_rk4
-
+#endif
 end module drifters_mod
 !> @}
 ! close documentation grouping
