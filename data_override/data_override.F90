@@ -110,7 +110,8 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   type (domain2d), intent(in), optional :: Ice_domain_in !< Ice domain
   type (domain2d), intent(in), optional :: Land_domain_in !< Land domain
   type(domainUG) , intent(in), optional :: Land_domainUG_in !< Land domain, unstructured grid
-  integer, intent(in), optional :: mode !< Real precision of initialized domains. Possible values are r4_kind or r8_kind.
+  integer, intent(in), optional :: mode !< Real precision of initialized domains. Possible values are r4_kind or
+                                        !! r8_kind.
   integer :: mode_selector
 
   if (present(mode)) then

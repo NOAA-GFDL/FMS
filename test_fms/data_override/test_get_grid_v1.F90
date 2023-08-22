@@ -91,8 +91,10 @@ call get_grid_version_1("grid_spec.nc", "atm", Domain, is, ie, js, je, lon, lat,
                         min_lon, max_lon)
 
 !< Error checking:
-if (lon(1,1) .ne. lon_in(1)*real(DEG_TO_RAD, lkind)) call mpp_error(FATAL,'test_get_grid_v1: lon is not the expected result')
-if (lat(1,1) .ne. lat_in(1)*real(DEG_TO_RAD, lkind)) call mpp_error(FATAL,'test_get_grid_v1: lat is not the expected result')
+if (lon(1,1) .ne. lon_in(1)*real(DEG_TO_RAD, lkind)) &
+  & call mpp_error(FATAL,'test_get_grid_v1: lon is not the expected result')
+if (lat(1,1) .ne. lat_in(1)*real(DEG_TO_RAD, lkind)) &
+  & call mpp_error(FATAL,'test_get_grid_v1: lat is not the expected result')
 
 !< Try again with ocean
 lat = 0.
