@@ -23,6 +23,7 @@
 !> @brief Routines and types to update drifter positions across processor domains
 
 module drifters_comm_mod
+#ifdef use_drifters
 
 #ifdef _SERIAL
 
@@ -769,7 +770,7 @@ contains
 
   end subroutine drifters_comm_gather
 
-
+#endif
 end module drifters_comm_mod
 
 !===============================================================================
