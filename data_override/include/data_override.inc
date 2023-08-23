@@ -117,10 +117,11 @@ use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 !! or data_table.yaml. Each line of data_table contains one data_entry. Items of data_entry
 !! are comma-separated.
 subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
-  type (domain2d), intent(in), optional :: Atm_domain_in
-  type (domain2d), intent(in), optional :: Ocean_domain_in, Ice_domain_in
-  type (domain2d), intent(in), optional :: Land_domain_in
-  type(domainUG) , intent(in), optional :: Land_domainUG_in
+  type (domain2d), intent(in), optional :: Atm_domain_in    !> Atmosphere domain
+  type (domain2d), intent(in), optional :: Ocean_domain_in  !> Ocean domain
+  type (domain2d), intent(in), optional :: Ice_domain_in    !> Ice domain
+  type (domain2d), intent(in), optional :: Land_domain_in   !> Land domain
+  type(domainUG) , intent(in), optional :: Land_domainUG_in !> Land domain, unstructured grid
 
   character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,use_get_grid_version
