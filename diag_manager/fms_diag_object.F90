@@ -849,9 +849,13 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     case (time_min)
     case (time_max)
     case (time_sum)
+    case (time_average)
     case (time_power)
     case (time_rms)
     case (time_diurnal)
+    case default
+      error_msg = "The reduction method is not supported. "//&
+        "Only none, min, max, sum, average, power, rms, and diurnal are supported."
     end select
   enddo buffer_loop
 #else

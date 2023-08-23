@@ -1676,9 +1676,9 @@ END FUNCTION register_static_field
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-    class(*), allocatable, dimension(:,:,:,:) :: field_remap !< 4d remapped pointer
-    logical,  allocatable, dimension(:,:,:,:) :: mask_remap  !< 4d remapped pointer
-    class(*), allocatable, dimension(:,:,:,:) :: rmask_remap !< 4d remapped pointer
+    class(*), allocatable, dimension(:,:,:,:) :: field_remap !< 4d remapped array
+    logical,  allocatable, dimension(:,:,:,:) :: mask_remap  !< 4d remapped array
+    class(*), allocatable, dimension(:,:,:,:) :: rmask_remap !< 4d remapped array
     REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 !< A pointer to r4 type of rmask
     REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 !<A pointer to r8 type of rmask
 

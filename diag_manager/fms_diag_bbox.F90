@@ -31,7 +31,6 @@
 MODULE fms_diag_bbox_mod
 
    USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler, string
-   use mpp_mod
 
    implicit none
 
@@ -90,9 +89,9 @@ MODULE fms_diag_bbox_mod
 
    public :: recondition_indices, determine_if_block_is_in_region
 
-   integer, parameter :: xdimension = 1
-   integer, parameter :: ydimension = 2
-   integer, parameter :: zdimension = 3
+   integer, parameter :: xdimension = 1 !< Parameter defining the x dimension
+   integer, parameter :: ydimension = 2 !< Parameter defining the y dimension
+   integer, parameter :: zdimension = 3 !< Parameter defininf the z dimension
 
 CONTAINS
 
@@ -132,7 +131,7 @@ logical pure function determine_if_block_is_in_region(subregion_start, subregion
   endif
 
   determine_if_block_is_in_region = .true.
-end function
+end function determine_if_block_is_in_region
 
    !> @brief Gets imin of fmsDiagIbounds_type
    !! @return copy of integer member imin
@@ -300,7 +299,7 @@ end function
       INTEGER,                      INTENT(in)    :: upper_k             !< Upper k bound.
       LOGICAL,                      INTENT(in)    :: has_halos           !< .true. if the field has halos
 
-      character(len=150) :: error_msg
+      character(len=150) :: error_msg !< Error message to output
 
       integer :: nhalos_2 !< 2 times the number of halo points
       integer :: nhalox   !< Number of halos in x
@@ -460,13 +459,22 @@ end function
    indices%fje = fje
  end function recondition_indices
 
- !> @brief Rebase the ouput bounds for a given dimension based on the starting and ending indices
+ !> @brief Rebase the ouput bounds for a given dimension based on the starting and ending indices of
+ !! a subregion. This is for when blocking is used.
  subroutine rebase_output(bounds_out, starting, ending, dim)
    CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_out !< Bounds to rebase
    integer,                     intent(in)    :: starting   !< Starting index of the dimension
    integer,                     intent(in)    :: ending     !< Ending index of the dimension
    integer,                     intent(in)    :: dim        !< Dimension to update
 
+   !> The starting index is going to be either "starting" if only a section of the
+   !! block is in the subregion or bounds_out%[]min if the whole section of the block is in the
+   !! subregion. The -starting+1 s needed so that indices start as 1 since the output buffer has
+   !! indices 1:size of a subregion
+
+   !> The ending index is going to be either bounds_out%[]max if the whole section of the block
+   !! is in the subregion or bounds_out%[]min + size of the subregion if only a section of the
+   !! block is in the susbregion
    select case (dim)
    case (xdimension)
       bounds_out%imin = max(starting, bounds_out%imin)-starting+1
@@ -481,6 +489,7 @@ end function
  end subroutine
 
  !> @brief Rebase the input bounds for a given dimension based on the starting and ending indices
+ !! of a subregion. This is for when blocking is used
  subroutine rebase_input(bounds_in, bounds, starting, ending, dim)
    CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in  !< Bounds to rebase
    CLASS (fmsDiagIbounds_type), INTENT(in)    :: bounds     !< Original indices (i.e is_in, ie_in,
@@ -489,6 +498,13 @@ end function
    integer,                     intent(in)    :: ending     !< Ending index of the dimension
    integer,                     intent(in)    :: dim        !< Dimension to update
 
+   !> The starting index is going to be either "starting" if only a section of the
+   !! block is in the subregion or starting-bounds%imin+1 if the whole section of the block is in the
+   !! subregion.
+
+   !> The ending index is going to be either bounds_out%[]max if the whole section of the block
+   !! is in the subregion or bounds%[]min + size of the subregion if only a section of the
+   !! block is in the susbregion
    select case (dim)
    case (xdimension)
       bounds_in%imin = min(abs(starting-bounds%imin+1), starting)

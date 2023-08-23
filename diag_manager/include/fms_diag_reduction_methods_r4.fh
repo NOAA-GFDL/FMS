@@ -1,3 +1,6 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
 !* FMS is free software: you can redistribute it and/or modify it under
