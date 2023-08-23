@@ -1128,9 +1128,12 @@ module fms_diag_axis_object_mod
           !< Get the starting and ending indices of the subregion relative to the global grid
           if (parent_axis%cart_name .eq. "X") then
             select type(adata=>parent_axis%axis_data)
-            type is (real)
-              lon_indices(1) = nearest_index(lon(1), adata)
-              lon_indices(2) = nearest_index(lon(2), adata) + 1
+            type is (real(kind=r8_kind))
+              lon_indices(1) = nearest_index(real(lon(1), kind=r8_kind), adata)
+              lon_indices(2) = nearest_index(real(lon(2), kind=r8_kind), adata) + 1
+            type is (real(kind=r4_kind))
+              lon_indices(1) = nearest_index(real(lon(1), kind=r4_kind), adata)
+              lon_indices(2) = nearest_index(real(lon(2), kind=r4_kind), adata) + 1
             end select
             call parent_axis%get_indices(compute_idx, lon_indices, starting_index(1), ending_index(1), &
               need_to_define_axis(1))
@@ -1138,9 +1141,12 @@ module fms_diag_axis_object_mod
               compute_idx_2(1,:) = compute_idx
           else if (parent_axis%cart_name .eq. "Y") then
             select type(adata=>parent_axis%axis_data)
-            type is (real)
-              lat_indices(1) = nearest_index(lat(1), adata)
-              lat_indices(2) = nearest_index(lat(2), adata) + 1
+            type is (real(kind=r8_kind))
+              lat_indices(1) = nearest_index(real(lat(1), kind=r8_kind), adata)
+              lat_indices(2) = nearest_index(real(lat(2), kind=r8_kind), adata) + 1
+            type is (real(kind=r4_kind))
+              lat_indices(1) = nearest_index(real(lat(1), kind=r4_kind), adata)
+              lat_indices(2) = nearest_index(real(lat(2), kind=r4_kind), adata) + 1
             end select
             call parent_axis%get_indices(compute_idx, lat_indices, starting_index(2), ending_index(2), &
               need_to_define_axis(2))
