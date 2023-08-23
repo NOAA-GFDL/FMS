@@ -45,8 +45,8 @@ program test_atmos_ocean_fluxes
   character(50), dimension(num_bcs) :: flux_name !< flux name
   character(50), dimension(num_bcs) :: flux_type !< flux_type for the given flux name
   character(50), dimension(num_bcs) :: impl !< implementation type for a given flux_type
-  real, dimension(num_bcs) :: mol_wt      !< value of mol_wt
-  real, dimension(num_bcs) :: param_array !< parameter array
+  real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: mol_wt      !< value of mol_wt
+  real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: param_array !< parameter array
 
   !> The flux names are made up.
   flux_name=["vampires", &
@@ -103,7 +103,7 @@ contains
     implicit none
 
     character(100) :: cresults, thelist
-    real :: rresults, rresults2(num_bcs)
+    real(FMS_CP_TEST_KIND_) :: rresults, rresults2(num_bcs)
     integer :: i, success, n
 
     write(*,*) "*** TEST_AOF_SET_COUPLER_FLUX ***"
@@ -114,8 +114,8 @@ contains
                                              flux_type=flux_type(i), &
                                              implementation=impl(i), &
                                              atm_tr_index=atm_tr_index(i), &
-                                             param=param_array(1:nparameter(i)), &
-                                             mol_wt=mol_wt(i))
+                                             param=real(param_array(1:nparameter(i)), r8_kind), &
+                                             mol_wt=real(mol_wt(i), r8_kind))
     end do
 
     !> check answers

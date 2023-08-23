@@ -60,8 +60,12 @@ test_expect_success "coupler register restart 3D (r8_kind)" '
   mpirun -n 1 ./test_coupler_3d_r8
 '
 
-test_expect_success "test atmos_ocean_fluxes" '
-  mpirun -n 1 ./test_atmos_ocean_fluxes
+test_expect_success "test atmos_ocean_fluxes (r4_kind)" '
+  mpirun -n 1 ./test_atmos_ocean_fluxes_r4
+'
+
+test_expect_success "test atmos_ocean_fluxes (r8_kind)" '
+  mpirun -n 1 ./test_atmos_ocean_fluxes_r8
 '
 
 rm -rf RESTART
