@@ -150,7 +150,7 @@ contains
     character(len=*), intent(inout), optional :: bnd_name
     character(len=*), intent(out), optional :: err_msg
 
-    real, dimension(:), allocatable :: axis_data, tmp
+    real, dimension(:), allocatable :: data, tmp
 
     integer :: i, len
     character(len=128) :: name, units
@@ -165,9 +165,9 @@ contains
     call mpp_get_atts(axis,units=units,longname=longname,&
             cartesian=cartesian, len=len)
     if(len .LE. 0) return
-    allocate(axis_data(len+1))
+    allocate(data(len+1))
 
-    bounds_found = mpp_get_axis_bounds(axis, axis_data, name=name)
+    bounds_found = mpp_get_axis_bounds(axis, data, name=name)
     longname = trim(longname)//' bounds'
 
     if(.not.bounds_found .and. len>1 ) then
@@ -177,13 +177,13 @@ contains
        allocate(tmp(len))
        call mpp_get_axis_data(axis,tmp)
        do i=2,len
-          axis_data(i)= tmp(i-1)+fp5*(tmp(i)-tmp(i-1))
+          data(i)= tmp(i-1)+fp5*(tmp(i)-tmp(i-1))
        enddo
-       axis_data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
-       if (abs(axis_data(1)) < epsln) axis_data(1) = 0.0
-       axis_data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))
-       if (axis_data(1) == 0.0) then
-          if (abs(axis_data(len+1)-360.) > epsln) axis_data(len+1)=360.0
+       data(1)= tmp(1)- fp5*(tmp(2)-tmp(1))
+       if (abs(data(1)) < epsln) data(1) = 0.0
+       data(len+1)= tmp(len)+ fp5*(tmp(len)-tmp(len-1))
+       if (data(1) == 0.0) then
+          if (abs(data(len+1)-360.) > epsln) data(len+1)=360.0
        endif
     endif
     if(bounds_found .OR. len>1) then
@@ -191,7 +191,7 @@ contains
                  longname,cartesian=cartesian,data=data)
     endif
     if(allocated(tmp)) deallocate(tmp)
-    deallocate(axis_data)
+    deallocate(data)
 
     return
   end subroutine get_axis_bounds
