@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#include "data_override_impl_r4.fh"
-#include "data_override_impl_r8.fh"
+#include "data_override_r4.fh"
+#include "data_override_r8.fh"
 
 !> @defgroup data_override_mod data_override_mod
 !> @ingroup data_override

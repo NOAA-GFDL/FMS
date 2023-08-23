@@ -35,9 +35,9 @@ libdata_override_la_SOURCES = \
   include/get_grid_version_r4.fh \
   include/get_grid_version_r8.fh \
   include/get_grid_version.inc \
-  include/data_override_impl_r4.fh \
-  include/data_override_impl_r8.fh \
-  include/data_override_impl.inc \
+  include/data_override_r4.fh \
+  include/data_override_r8.fh \
+  include/data_override.inc \
   data_override.F90
 
 # Some mods are dependent on other mods in this dir.
