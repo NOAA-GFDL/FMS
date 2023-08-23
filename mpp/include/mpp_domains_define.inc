@@ -3267,8 +3267,8 @@ end subroutine check_message_size
           !--- Now calculate the overlapping for fold-edge.
           !--- only position at NORTH and CORNER need to be considered
           if( ( position == NORTH .OR. position == CORNER) ) then
-             if( domain%y(tMe)%domain_data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%domain_data%end+jshift )then !fold
-                                                                                                    !! is within domain
+             !fold is within domain
+             if( domain%y(tMe)%domain_data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%domain_data%end+jshift )then
                 dir = 3
                 !--- calculate the overlapping for sending
                 if( domain%x(tMe)%pos .LT. (size(domain%x(tMe)%list(:))+1)/2 )then

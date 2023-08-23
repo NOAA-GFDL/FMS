@@ -3678,7 +3678,8 @@ end subroutine test_halosize_update
   end subroutine test_unstruct_update
   !#################################################################################
 
-  subroutine fill_halo_zero(halo_data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+  subroutine fill_halo_zero(halo_data, whalo, ehalo, shalo, nhalo, xshift, yshift, &
+                            isc, iec, jsc, jec, isd, ied, jsd, jed)
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
     real, dimension(isd:,jsd:,:), intent(inout) :: halo_data
@@ -5377,11 +5378,11 @@ end subroutine test_halosize_update
                                                   & data1_all(1+ioff:ehalo+ioff, 1:nj(le)+joff, :, le) ! east
        end if
        if(ni(tile) == ni(ls) ) then
-          halo_data(1:ni(tile)+ioff, 1-shalo:0, :)     = data1_all(1:ni(ls)+ioff, nj(ls)-shalo+1:nj(ls), :, ls) ! south
+          halo_data(1:ni(tile)+ioff, 1-shalo:0, :)    = data1_all(1:ni(ls)+ioff, nj(ls)-shalo+1:nj(ls), :, ls) ! south
        end if
        if(ni(tile) == nj(ln) ) then
           do i = 1, nhalo
-             halo_data(1:ni(tile)+ioff, nj(tile)+i+joff, :)    = sign2*data2_all(i+joff, nj(ln)+ioff:1:-1, :, ln) ! north
+             halo_data(1:ni(tile)+ioff, nj(tile)+i+joff, :) = sign2*data2_all(i+joff, nj(ln)+ioff:1:-1, :, ln) ! north
           end do
        end if
     end if

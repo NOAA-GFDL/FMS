@@ -4035,7 +4035,8 @@ CONTAINS
     WRITE (name,'(a,i2.2)') 'time_of_day_', n_samples
     init_diurnal_axis = get_axis_num(name, 'diurnal')
     IF ( init_diurnal_axis <= 0 ) THEN
-       init_diurnal_axis = diag_axis_init(name, center_data, units, 'N', 'time of day', set_name='diurnal', edges=edges_id)
+       init_diurnal_axis = diag_axis_init(name, center_data, units, 'N', 'time of day', &
+                           set_name='diurnal', edges=edges_id)
     END IF
   END FUNCTION init_diurnal_axis
 

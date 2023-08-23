@@ -1101,7 +1101,7 @@
          ! NOTE: symmetry is assumed for fold-west boundary
          i = domain%x(1)%global%end+shift
          !fold is within domain
-         if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE.domain%x(1)%domain_data%end+shift )then 
+         if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE.domain%x(1)%domain_data%end+shift )then
             midpoint = (domain%y(1)%global%begin+domain%y(1)%global%end-1+shift)/2
             !poles set to 0: BGRID only
             if( gridtype.EQ.BGRID_NE )then
