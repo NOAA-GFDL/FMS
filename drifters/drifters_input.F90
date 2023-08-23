@@ -23,6 +23,7 @@
 !> @addtogroup drifters_input_mod
 !> @{
 module drifters_input_mod
+#ifdef use_drifters
   implicit none
   private
 
@@ -444,7 +445,7 @@ module drifters_input_mod
          & //nf_strerror(ier)
 
   end subroutine drifters_input_save
-
+#endif
 end module drifters_input_mod
 !> @}
 ! close documentation grouping
