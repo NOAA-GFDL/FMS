@@ -92,7 +92,7 @@ contains
     implicit none
 
     write(*,*) "*** TEST_ATMOS_OCEAN_FLUXES_INIT ***"
-    call atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice)
+    call atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, use_r4_kind= FMS_CP_TEST_KIND_ .eq. r4_kind)
 
   end subroutine test_atmos_ocean_fluxes_init
   !--------------------------------------
@@ -160,24 +160,24 @@ contains
 
     do i=1, num_bcs
        !> check fluxes name
-       call check_answers(flux_name(i), gas_fluxes%bc(i)%name, 'gas_fluxes flux name')
-       call check_answers(flux_name(i), gas_fields_atm%bc(i)%name, 'gas_fields_atms flux name')
-       call check_answers(flux_name(i), gas_fields_ice%bc(i)%name, 'gas_fields_ice flux name')
+       call check_answers(flux_name(i), gas_fluxes%FMS_TEST_BC_TYPE_(i)%name, 'gas_fluxes flux name')
+       call check_answers(flux_name(i), gas_fields_atm%FMS_TEST_BC_TYPE_(i)%name, 'gas_fields_atms flux name')
+       call check_answers(flux_name(i), gas_fields_ice%FMS_TEST_BC_TYPE_(i)%name, 'gas_fields_ice flux name')
 
        !> check implementation
-       call check_answers(impl(i), gas_fluxes%bc(i)%implementation, 'gas_fluxes impl')
-       call check_answers(impl(i), gas_fields_atm%bc(i)%implementation, 'gas_fields_atm impl')
-       call check_answers(impl(i), gas_fields_ice%bc(i)%implementation, 'gas_fields_ice impl')
+       call check_answers(impl(i), gas_fluxes%FMS_TEST_BC_TYPE_(i)%implementation, 'gas_fluxes impl')
+       call check_answers(impl(i), gas_fields_atm%FMS_TEST_BC_TYPE_(i)%implementation, 'gas_fields_atm impl')
+       call check_answers(impl(i), gas_fields_ice%FMS_TEST_BC_TYPE_(i)%implementation, 'gas_fields_ice impl')
 
        !> check param
        do n=1, nparameter(i)
-          call check_answers(param_array(n), gas_fluxes%bc(i)%param(n), 'gas_fluxes param')
+          call check_answers(param_array(n), gas_fluxes%FMS_TEST_BC_TYPE_(i)%param(n), 'gas_fluxes param')
        end do
 
        !> check mol_wt
-       call check_answers(mol_wt(i), gas_fluxes%bc(i)%mol_wt, 'gas_fluxes mol_wt')
-       call check_answers(mol_wt(i), gas_fields_atm%bc(i)%mol_wt, 'gas_fields_atm mol_wt')
-       call check_answers(mol_wt(i), gas_fields_ice%bc(i)%mol_wt, 'gas_fields_ice mol_wt')
+       call check_answers(mol_wt(i), gas_fluxes%FMS_TEST_BC_TYPE_(i)%mol_wt, 'gas_fluxes mol_wt')
+       call check_answers(mol_wt(i), gas_fields_atm%FMS_TEST_BC_TYPE_(i)%mol_wt, 'gas_fields_atm mol_wt')
+       call check_answers(mol_wt(i), gas_fields_ice%FMS_TEST_BC_TYPE_(i)%mol_wt, 'gas_fields_ice mol_wt')
 
     end do
 
