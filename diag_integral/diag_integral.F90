@@ -45,6 +45,7 @@ use fms2_io_mod,      only:  file_exists
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init
 use ensemble_manager_mod, only : get_ensemble_id, get_ensemble_size
+use platform_mod,     only:  r4_kind, r8_kind
 
 !-------------------------------------------------------------------------------
 
@@ -100,12 +101,11 @@ public      &
 !!
 !! @ingroup diag_integral_mod
 interface sum_diag_integral_field
-   module procedure sum_field_2d,      &
-                    sum_field_2d_hemi, &
-                    sum_field_3d,      &
-                    sum_field_wght_3d
-end interface
-
+   module procedure sum_field_2d_r4,      sum_field_2d_r8
+   module procedure sum_field_2d_hemi_r4, sum_field_2d_hemi_r8
+   module procedure sum_field_3d_r4,      sum_field_3d_r8
+   module procedure sum_field_wght_3d_r4, sum_field_wght_3d_r8
+end interface sum_diag_integral_field
 
 !> @addtogroup diag_integral_mod
 !> @{
@@ -138,9 +138,9 @@ private         &
 integer, parameter  ::    &
                       mxch = 64    !< maximum number of characters in
                                    !! the optional output file name
-real                ::    &
-         output_interval = -1.0    !< time interval at which integrals
-                                   !! are to be output
+real(r8_kind)       ::    &
+         output_interval = -1.0_r8_kind !< time interval at which integrals
+                                        !! are to be output
 character(len=8)    ::    &
             time_units = 'hours'   !< time units associated with
                                    !! output_interval
@@ -176,11 +176,11 @@ type (time_type) :: Time_init_save !< initial time associated with experiment;
 !    variables used in determining weights associated with each
 !    contribution to the integrand.
 !-------------------------------------------------------------------------------
-real, allocatable, dimension(:,:) :: area !< area of each grid box
+real(r8_kind), allocatable, dimension(:,:) :: area !< area of each grid box
 integer                           :: idim !< x dimension of grid on local processor
 integer                           :: jdim !< y dimension of grid on local processor
 integer                           :: field_size !< number of columns on global domain
-real                              :: sum_area !< surface area of globe
+real(r8_kind)                     :: sum_area !< surface area of globe
 
 !-------------------------------------------------------------------------------
 !    variables used to define the integral fields:
@@ -190,7 +190,7 @@ integer, parameter          :: max_num_field = 32 !< maximum number of integrals
 integer                     :: num_field = 0 !< number of integrals that have been activated
 character(len=max_len_name) :: field_name   (max_num_field) !< name associated with integral i
 character(len=16)           :: field_format (max_num_field) !< output format for integral i
-real                        :: field_sum    (max_num_field) !< integrand for integral i
+real(r8_kind)               :: field_sum    (max_num_field) !< integrand for integral i
 integer                     :: field_count  (max_num_field) !< number of values in integrand i
 
 !-------------------------------------------------------------------------------
@@ -220,9 +220,6 @@ logical :: module_is_initialized = .false. !< module is initialized ?
 !
 !###############################################################################
 
-
-
-!###############################################################################
 !> @brief diag_integral_init is the constructor for diag_integral_mod.
 !!
 !! <b> Template: </b>
@@ -247,9 +244,9 @@ subroutine diag_integral_init (Time_init, Time, blon, blat, area_in)
 
 type (time_type),  intent(in), optional :: Time_init !< Initial time to start the integral
 type (time_type),  intent(in), optional :: Time !< current time
-real,dimension(:,:), intent(in), optional :: blon !< array of model latitudes at cell boundaries [radians]
-real,dimension(:,:), intent(in), optional :: blat !< array of model longitudes at cell boundaries [radians]
-real,dimension(:,:), intent(in), optional :: area_in
+class(*),dimension(:,:), intent(in), optional :: blon !< array of model latitudes at cell boundaries [radians]
+class(*),dimension(:,:), intent(in), optional :: blat !< array of model longitudes at cell boundaries [radians]
+class(*),dimension(:,:), intent(in), optional :: area_in
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -262,10 +259,10 @@ real,dimension(:,:), intent(in), optional :: area_in
 !       nc
 !       i,j
 !-------------------------------------------------------------------------------
-      real    :: rsize
+      real(r8_kind) :: rsize
       integer :: io, ierr, nc, logunit
       integer :: field_size_local
-      real    :: sum_area_local
+      real(r8_kind) :: sum_area_local
       integer :: ensemble_size(6)
 !-------------------------------------------------------------------------------
 !    if routine has already been executed, exit.
@@ -316,7 +313,7 @@ real,dimension(:,:), intent(in), optional :: area_in
       idim = size(blon,1) - 1
       jdim = size(blon,2) - 1
       field_size_local = idim*jdim
-      rsize = real(field_size_local)
+      rsize = real(field_size_local,r8_kind)
       call mpp_sum (rsize)
       field_size = nint(rsize)
 
@@ -328,7 +325,11 @@ real,dimension(:,:), intent(in), optional :: area_in
 !-------------------------------------------------------------------------------
       allocate (area(idim,jdim))
 
-      area = area_in
+      select type(area_in)
+         type is (real(r4_kind)) ; area = real(area_in,r8_kind)
+         type is (real(r8_kind)) ; area = area_in
+         class default ; call error_mesg('diag_inetgral_mod::diag_integral_init', 'unknown area_in type', FATAL)
+      end select
 
       sum_area_local = sum(area)
       sum_area = sum_area_local
@@ -355,8 +356,8 @@ real,dimension(:,:), intent(in), optional :: area_in
 !    output_interval from now.
 !-------------------------------------------------------------------------------
       Zero_time = set_time (0,0)
-      if (output_interval >= -0.01) then
-        Alarm_interval = set_axis_time (output_interval, time_units)
+      if (output_interval >= -0.01_r8_kind) then
+         Alarm_interval = set_axis_time (output_interval, time_units)
         Next_alarm_time = Time + Alarm_interval
       else
         Alarm_interval = Zero_time
@@ -370,6 +371,7 @@ real,dimension(:,:), intent(in), optional :: area_in
    endif  ! (present optional arguments)
 
 end subroutine diag_integral_init
+
 
 
 
@@ -441,387 +443,10 @@ character(len=*), intent(in) :: format !< Output format of the field to be integ
 !-------------------------------------------------------------------------------
       field_name   (num_field) = name
       field_format (num_field) = format
-      field_sum    (num_field) = 0.0
+      field_sum    (num_field) = 0.0_r8_kind
       field_count  (num_field) = 0
 
 end subroutine diag_integral_field_init
-
-
-
-!###############################################################################
-!> @brief Perform a 2 dimensional summation of named field
-!!
-!! @implements sum_diag_integral_field
-!!
-!! <b> Template: </b>
-!!
-!! @code{.f90}
-!! call sum_field_2d (name, data, is, js)
-!! @endcode
-!!
-!! <b> Parameters: </b>
-!!
-!! @code{.f90}
-!! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:)
-!! integer, optional, intent(in) :: is, js
-!! @endcode
-!!
-!! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
-!! @param [in] <is, js> starting i,j indices over which summation is to occur
-!!
-subroutine sum_field_2d (name, data, is, js)
-
-character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:) !< field of integrands to be summed over
-integer, optional, intent(in) :: is !< starting i indices over which summation is to occur
-integer, optional, intent(in) :: js !< starting j indices over which summation is to occur
-
-!-------------------------------------------------------------------------------
-! local variables:
-!-------------------------------------------------------------------------------
-      integer :: field           !< index of desired integral
-      integer :: i1  !< location indices of current data in
-                                 !! processor-global coordinates
-      integer :: j1  !< location indices of current data in
-                                 !! processor-global coordinates
-      integer :: i2  !< location indices of current data in
-                                 !! processor-global coordinates
-      integer :: j2  !< location indices of current data in
-                                 !! processor-global coordinates
-
-
-!-------------------------------------------------------------------------------
-!    be sure module has been initialized.
-!-------------------------------------------------------------------------------
-      if (.not. module_is_initialized ) then
-        call error_mesg ('diag_integral_mod',   &
-              'module has not been initialized', FATAL )
-      endif
-
-!-------------------------------------------------------------------------------
-!    obtain the index of the current integral. make certain it is valid.
-!-------------------------------------------------------------------------------
-      field = get_field_index (name)
-      if (field == 0)  then
-        call error_mesg ('diag_integral_mod', &
-                                    'field does not exist', FATAL)
-      endif
-
-!-------------------------------------------------------------------------------
-!   define the processor-global indices of the current data. use the
-!   value 1 for the initial grid points, if is and js are not input.
-!-------------------------------------------------------------------------------
-     i1 = 1;  if (present(is)) i1 = is
-     j1 = 1;  if (present(js)) j1 = js
-     i2 = i1 + size(data,1) - 1
-     j2 = j1 + size(data,2) - 1
-
-!-------------------------------------------------------------------------------
-!    increment the count of points toward this integral and add the
-!    values at this set of grid points to the accumulation array.
-!-------------------------------------------------------------------------------
-!$OMP CRITICAL
-      field_count (field) = field_count(field) +   &
-                            size(data,1)*size(data,2)
-      field_sum   (field) = field_sum   (field) +  &
-                            sum (data * area(i1:i2,j1:j2))
-
-!$OMP END CRITICAL
-
-end subroutine sum_field_2d
-
-
-
-!###############################################################################
-!> @brief Perform a 3 dimensional summation of named field
-!!
-!! @implements sum_diag_integral_field
-!!
-!! <b> Template: </b>
-!!
-!! @code{.f90}
-!! call sum_field_3d (name, data, is, js)
-!! @endcode
-!!
-!! <b> Parameters: </b>
-!!
-!! @code{.f90}
-!! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:,:)
-!! integer, optional, intent(in) :: is, js
-!! @endcode
-!!
-!! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
-!! @param [in] <is, js> starting i,j indices over which summation is to occur
-!!
-subroutine sum_field_3d (name, data, is, js)
-
-character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:,:) !< field of integrands to be summed over
-integer, optional, intent(in) :: is !< starting i,j indices over which summation is to occur
-integer, optional, intent(in) :: js !< starting i,j indices over which summation is to occur
-
-!-------------------------------------------------------------------------------
-! local variables:
-!     data2
-!     field           ! index of desired integral
-!     i1, j1, i2, j2  ! location indices of current data in
-!                       processor-global coordinates
-!-------------------------------------------------------------------------------
-      real, dimension (size(data,1),  &
-                       size(data,2)) :: data2
-
-      integer :: field !< index of desired integral
-      integer :: i1 !< location indices of current data in
-                                !! processor-global coordinates
-      integer :: j1 !< location indices of current data in
-                                !! processor-global coordinates
-      integer :: i2 !< location indices of current data in
-                                !! processor-global coordinates
-      integer :: j2 !< location indices of current data in
-                                !! processor-global coordinates
-
-
-!-------------------------------------------------------------------------------
-!    be sure module has been initialized.
-!-------------------------------------------------------------------------------
-      if (.not. module_is_initialized ) then
-        call error_mesg ('diag_integral_mod',   &
-              'module has not been initialized', FATAL )
-      endif
-
-!-------------------------------------------------------------------------------
-!    obtain the index of the current integral. make certain it is valid.
-!-------------------------------------------------------------------------------
-      field = get_field_index (name)
-      if (field == 0)   then
-        call error_mesg ('diag_integral_mod', &
-                               'field does not exist', FATAL)
-      endif
-
-!-------------------------------------------------------------------------------
-!   define the processor-global indices of the current data. use the
-!   value 1 for the initial grid points, if is and js are not input.
-!-------------------------------------------------------------------------------
-      i1 = 1;  if (present(is)) i1 = is
-      j1 = 1;  if (present(js)) j1 = js
-      i2 = i1 + size(data,1) - 1
-      j2 = j1 + size(data,2) - 1
-
-!-------------------------------------------------------------------------------
-!    increment the count of points toward this integral. sum first
-!    in the vertical and then add the values at this set of grid points
-!    to the accumulation array.
-!-------------------------------------------------------------------------------
-!$OMP CRITICAL
-      field_count (field) = field_count (field) +   &
-                            size(data,1)*size(data,2)
-      data2 = sum(data,3)
-      field_sum   (field) = field_sum   (field) +  &
-                            sum (data2 * area(i1:i2,j1:j2))
-
-!$OMP END CRITICAL
-
-end subroutine sum_field_3d
-
-
-
-!###############################################################################
-!> @brief Perform a 3 dimensional weighted summation of named field
-!!
-!! @implements sum_diag_integral_field
-!!
-!! <b> Template: </b>
-!!
-!! @code{.f90}
-!! call sum_field_wght_3d (name, data, wt, is, js)
-!! @endcode
-!!
-!! <b> Parameters: </b>
-!!
-!! @code{.f90}
-!! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:,:), wt(:,:,:)
-!! integer, optional, intent(in) :: is, js
-!! @endcode
-!!
-!! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
-!! @param [in] <wt> the weight function to be evaluated at summation
-!! @param [in] <is, js> starting i,j indices over which summation is to occur
-!!
-subroutine sum_field_wght_3d (name, data, wt, is, js)
-
-character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:,:) !< field of integrands to be summed over
-real,              intent(in) :: wt(:,:,:) !< the weight function to be evaluated at summation
-integer, optional, intent(in) :: is !< starting i indices over which summation is to occur
-integer, optional, intent(in) :: js !< starting j indices over which summation is to occur
-
-!-------------------------------------------------------------------------------
-! local variables:
-!     data2
-!     field           ! index of desired integral
-!     i1, j1, i2, j2  ! location indices of current data in
-!                       processor-global coordinates
-!-------------------------------------------------------------------------------
-      real, dimension (size(data,1),size(data,2)) :: data2
-      integer :: field !< index of desired integral
-      integer :: i1 !< location indices of current data in
-                                       !! processor-global coordinates
-      integer :: j1 !< location indices of current data in
-                                       !! processor-global coordinates
-      integer :: i2 !< location indices of current data in
-                                       !! processor-global coordinates
-      integer :: j2 !< location indices of current data in
-                                       !! processor-global coordinates
-
-!-------------------------------------------------------------------------------
-!    be sure module has been initialized.
-!-------------------------------------------------------------------------------
-      if (.not. module_is_initialized ) then
-        call error_mesg ('diag_integral_mod',   &
-              'module has not been initialized', FATAL )
-      endif
-
-!-------------------------------------------------------------------------------
-!    obtain the index of the current integral. make certain it is valid.
-!-------------------------------------------------------------------------------
-      field = get_field_index (name)
-      if (field == 0)   then
-        call error_mesg ('diag_integral_mod', &
-                               'field does not exist', FATAL)
-      endif
-
-!-------------------------------------------------------------------------------
-!   define the processor-global indices of the current data. use the
-!   value 1 for the initial grid points, if is and js are not input.
-!-------------------------------------------------------------------------------
-      i1 = 1;  if (present(is)) i1 = is
-      j1 = 1;  if (present(js)) j1 = js
-      i2 = i1 + size(data,1) - 1
-      j2 = j1 + size(data,2) - 1
-
-!-------------------------------------------------------------------------------
-!    increment the count of points toward this integral. sum first
-!    in the vertical (including a vertical weighting factor) and then
-!    add the values at this set of grid points to the accumulation
-!    array.
-!-------------------------------------------------------------------------------
-!$OMP CRITICAL
-      field_count (field) = field_count (field) +   &
-                            size(data,1)*size(data,2)
-      data2 = vert_diag_integral (data, wt)
-      field_sum(field) = field_sum   (field) +  &
-                         sum (data2 * area(i1:i2,j1:j2))
-
-!$OMP END CRITICAL
-
-end subroutine sum_field_wght_3d
-
-
-
-!###############################################################################
-!> @brief Perform a 2 dimensional hemispherical summation of named field
-!!
-!! @implements sum_diag_integral_field
-!!
-!! <b> Template: </b>
-!!
-!! @code{.f90}
-!! call sum_field_2d_hemi (name, data, is, ie, js, je)
-!! @endcode
-!!
-!! <b> Parameters: </b>
-!!
-!! @code{.f90}
-!! character(len=*),  intent(in) :: name
-!! real,              intent(in) :: data(:,:)
-!! integer,           intent(in) :: is, js, ie, je
-!! @endcode
-!!
-!! @param [in] <name> Name of the field to be integrated
-!! @param [in] <data> field of integrands to be summed over
-!! @param [in] <is, js, ie, je> starting/ending i,j indices over which summation
-!!        is to occur
-!!
-subroutine sum_field_2d_hemi (name, data, is, ie, js, je)
-
-character(len=*),  intent(in) :: name !< Name of the field to be integrated
-real,              intent(in) :: data(:,:) !< field of integrands to be summed over
-integer,           intent(in) :: is !< starting/ending i,j indices over which summation
-                                                !! is to occur
-integer,           intent(in) :: js !< starting/ending i,j indices over which summation
-                                                !! is to occur
-integer,           intent(in) :: ie !< starting/ending i,j indices over which summation
-                                                !! is to occur
-integer,           intent(in) :: je !< starting/ending i,j indices over which summation
-                                                !! is to occur
-
-!-------------------------------------------------------------------------------
-! local variables:
-!     field           ! index of desired integral
-!     i1, j1, i2, j2  ! location indices of current data in
-!                       processor-global coordinates
-!-------------------------------------------------------------------------------
-   integer :: field !< index of desired integral
-   integer :: i1 !< location indices of current data in
-                             !! processor-global coordinates
-   integer :: j1 !< location indices of current data in
-                             !! processor-global coordinates
-   integer :: i2 !< location indices of current data in
-                             !! processor-global coordinates
-   integer :: j2 !< location indices of current data in
-                             !! processor-global coordinates
-
-!-------------------------------------------------------------------------------
-!    be sure module has been initialized.
-!-------------------------------------------------------------------------------
-      if (.not. module_is_initialized ) then
-        call error_mesg ('diag_integral_mod',   &
-              'module has not been initialized', FATAL )
-      endif
-
-!-------------------------------------------------------------------------------
-!    obtain the index of the current integral. make certain it is valid.
-!-------------------------------------------------------------------------------
-      field = get_field_index (name)
-      if (field == 0)    then
-        call error_mesg ('diag_integral_mod', &
-                               'field does not exist', FATAL)
-      endif
-
-!-------------------------------------------------------------------------------
-!    define the processor-global indices of the current data. this form
-!    is needed to handle case of 2d domain decomposition with physics
-!    window smaller than processor domain size.
-!-------------------------------------------------------------------------------
-      i1 = mod ( (is-1), size(data,1) ) + 1
-      i2 = i1 + size(data,1) - 1
-
-!-------------------------------------------------------------------------------
-!    for a hemispheric sum, sum one jrow at a time in case a processor
-!    has data from both hemispheres.
-!-------------------------------------------------------------------------------
-      j1 = mod ( (js-1) ,size(data,2) ) + 1
-      j2 = j1
-
-!-------------------------------------------------------------------------------
-!    increment the count of points toward this integral. include hemi-
-!    spheric factor of 2 in field_count. add the data values at this
-!    set of grid points to the accumulation array.
-!-------------------------------------------------------------------------------
-!$OMP CRITICAL
-      field_count (field) = field_count (field) + 2* (i2-i1+1)*(j2-j1+1)
-      field_sum   (field) = field_sum   (field) +  &
-                            sum (data(i1:i2,j1:j2)*area(is:ie,js:je))
-
-!$OMP END CRITICAL
-
-end subroutine sum_field_2d_hemi
 
 
 
@@ -860,7 +485,6 @@ type (time_type), intent(in) :: Time
 !    see if integral output is desired at this time.
 !-------------------------------------------------------------------------------
       if ( diag_integral_alarm(Time) ) then
-
 !-------------------------------------------------------------------------------
 !    write the integrals by calling write_field_averages. upon return
 !    reset the alarm to the next diagnostics time.
@@ -959,7 +583,7 @@ end subroutine diag_integral_end
 !!
 function set_axis_time (atime, units) result (Time)
 
-real,             intent(in) :: atime !< integral time stamp at the current time
+real(r8_kind),    intent(in) :: atime !< integral time stamp at the current time
 character(len=*), intent(in) :: units !< input units, not used
 type(time_type)  :: Time
 
@@ -1085,8 +709,8 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
 !      i
 !      kount
 !-------------------------------------------------------------------------------
-      real    :: field_avg(max_num_field)
-      real    :: xtime, rcount
+      real(r8_kind) :: field_avg(max_num_field)
+      real(r8_kind) :: xtime, rcount
       integer :: nn, ninc, nst, nend, fields_to_print
       integer :: i, kount
       integer(i8_kind) :: icount
@@ -1103,7 +727,7 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
 !    number of data points contributing to it over all processors.
 !-------------------------------------------------------------------------------
         fields_to_print = fields_to_print + 1
-        rcount = real(field_count(i))
+        rcount = real(field_count(i),r8_kind)
         call mpp_sum (rcount)
         call mpp_sum (field_sum(i))
         icount = int(rcount, i8_kind)
@@ -1128,8 +752,8 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
 !    and data accumulators.
 !-------------------------------------------------------------------------------
         field_avg(fields_to_print) = field_sum(i)/  &
-                                     (sum_area*float(kount))
-        field_sum  (i) = 0.0
+                                     (sum_area*real(kount,r8_kind))
+        field_sum  (i) = 0.0_r8_kind
         field_count(i) = 0
       end do
 
@@ -1329,7 +953,6 @@ integer, intent(in), optional :: nend_in !< starting/ending integral index which
 end subroutine format_data_init
 
 
-
 !###############################################################################
 !> @brief Function to convert the time_type input variable into units of
 !!    units and returns it in atime.
@@ -1357,7 +980,7 @@ function get_axis_time (Time, units) result (atime)
 
 type(time_type),  intent(in) :: Time !< integral time stamp
 character(len=*), intent(in) :: units !< input units of time_type
-real                         :: atime
+real(r8_kind)                :: atime
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1366,13 +989,13 @@ real                         :: atime
 
       call get_time (Time, sec, day)
       if (units(1:3) == 'sec') then
-         atime = float(sec) + 86400.*float(day)
+         atime = real(sec,r8_kind) + 86400._r8_kind*real(day,r8_kind)
       else if (units(1:3) == 'min') then
-         atime = float(sec)/60. + 1440.*float(day)
+         atime = real(sec,r8_kind)/60._r8_kind + 1440._r8_kind*real(day,r8_kind)
       else if (units(1:3) == 'hou') then
-         atime = float(sec)/3600. + 24.*float(day)
+         atime = real(sec,r8_kind)/3600._r8_kind + 24._r8_kind*real(day,r8_kind)
       else if (units(1:3) == 'day') then
-         atime = float(sec)/86400. + float(day)
+         atime = real(sec,r8_kind)/86400._r8_kind + real(day,r8_kind)
       endif
 
 end function get_axis_time
@@ -1435,10 +1058,9 @@ end function diag_integral_alarm
 !! @param [out] <data2>
 !! @return real array data2
 function vert_diag_integral (data, wt) result (data2)
-
-real, dimension (:,:,:),         intent(in) :: data !< integral field data arrays
-real, dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
-real, dimension (size(data,1),size(data,2)) :: data2
+real(r8_kind), dimension (:,:,:),         intent(in) :: data !< integral field data arrays
+real(r8_kind), dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
+real(r8_kind), dimension (size(data,1),size(data,2)) :: data2
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -1448,7 +1070,7 @@ real, dimension (size(data,1),size(data,2)) :: data2
 
 !-------------------------------------------------------------------------------
       wt2 = sum(wt,3)
-      if (count(wt2 == 0.) > 0)  then
+      if (count(wt2 == 0._r8_kind) > 0)  then
         call error_mesg ('diag_integral_mod',  &
                              'vert sum of weights equals zero', FATAL)
       endif
@@ -1493,7 +1115,8 @@ function ensemble_file_name(fname) result(updated_file_name)
           updated_file_name = trim(fname)//trim(ensemble_suffix)
 end function ensemble_file_name
 
-
+#include "diag_integral_r4.fh"
+#include "diag_integral_r8.fh"
 
                     end module diag_integral_mod
 !> @}
