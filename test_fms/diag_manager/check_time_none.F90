@@ -25,6 +25,8 @@ program check_time_none
   use platform_mod,      only: r4_kind, r8_kind
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
 
+  implicit none
+
   type(FmsNetcdfFile_t)              :: fileobj            !< FMS2 fileobj
   type(FmsNetcdfFile_t)              :: fileobj1           !< FMS2 fileobj for subregional file 1
   type(FmsNetcdfFile_t)              :: fileobj2           !< FMS2 fileobj for subregional file 2
@@ -58,20 +60,20 @@ program check_time_none
   nw = 2
 
   if (.not. open_file(fileobj, "test_none.nc", "read")) &
-    call mpp_error(FATAL, "unable to open file")
+    call mpp_error(FATAL, "unable to open test_none.nc")
 
   if (.not. open_file(fileobj1, "test_none_regional.nc.0004", "read")) &
-    call mpp_error(FATAL, "unable to open file")
+    call mpp_error(FATAL, "unable to open test_none_regional.nc.0004")
 
   if (.not. open_file(fileobj2, "test_none_regional.nc.0005", "read")) &
-    call mpp_error(FATAL, "unable to open file")
+    call mpp_error(FATAL, "unable to open test_none_regional.nc.0005")
 
   cdata_out = allocate_buffer(1, nx, 1, ny, nz, nw)
 
   do i = 1, 8
     cdata_out = -999_r4_kind
     print *, "Checking answers for var0_none - time_level:", string(i)
-    call read_data(fileobj, "var0_none", cdata_out(1:1,1,1,1), unlim_dim_level=i) !eyeroll
+    call read_data(fileobj, "var0_none", cdata_out(1,1,1,1), unlim_dim_level=i)
     call check_data_0d(cdata_out(1,1,1,1), i)
 
     cdata_out = -999_r4_kind
@@ -120,7 +122,7 @@ contains
       real(time_level*6, kind=r8_kind)/100_r8_kind, kind=r4_kind)
 
     if (abs(buffer - buffer_exp) > 0) then
-      print *, mpp_pe(), time_level, buffer_exp
+      print *, mpp_pe(), time_level, buffer_exp, buffer
       call mpp_error(FATAL, "Check_time_none::check_data_0d:: Data is not correct")
     endif
   end subroutine check_data_0d

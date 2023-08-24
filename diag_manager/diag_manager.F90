@@ -1665,9 +1665,9 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     CHARACTER(len=128) :: error_string, error_string1
 
     REAL, ALLOCATABLE, DIMENSION(:,:,:) :: field_out !< Local copy of field
-    class(*), pointer, dimension(:,:,:,:) :: field_remap !< 4d remapped pointer
-    logical,  pointer, dimension(:,:,:,:) :: mask_remap  !< 4d remapped pointer
-    class(*), pointer, dimension(:,:,:,:) :: rmask_remap !< 4d remapped pointer
+    class(*), allocatable, dimension(:,:,:,:) :: field_remap !< 4d remapped array
+    logical,  allocatable, dimension(:,:,:,:) :: mask_remap  !< 4d remapped array
+    class(*), allocatable, dimension(:,:,:,:) :: rmask_remap !< 4d remapped array
     REAL(kind=r4_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r4 !< A pointer to r4 type of rmask
     REAL(kind=r8_kind), POINTER, DIMENSION(:,:,:) :: rmask_ptr_r8 !<A pointer to r8 type of rmask
 
@@ -1677,7 +1677,12 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     REAL :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
                             !! needed to be passed to the math/buffer update functions.
+<<<<<<< HEAD
     class(*), pointer, dimension(:,:,:,:) :: field_modern => null() !< i8 4d remapped pointer
+=======
+    character(len=:), allocatable :: field_name !< Name of the field
+
+>>>>>>> 07ff0679 (Implement time_none (#1347))
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        diag_send_data = .FALSE.
@@ -1708,15 +1713,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
     if (use_modern_diag) then !> Set up array lengths for remapping
-      field_remap => null()
-      mask_remap  => null()
-      rmask_remap => null()
-      ie = SIZE(field,1)
-      je = SIZE(field,2)
-      ke = SIZE(field,3)
-      field_remap(1:ie,1:je,1:ke,1:1) => field
-      if (present(mask)) mask_remap(1:ie,1:je,1:ke,1:1) => mask
-      if (present(rmask)) rmask_remap(1:ie,1:je,1:ke,1:1) => rmask
+
+
     endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
@@ -1730,10 +1728,19 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     END SELECT
   ! Split old and modern2023 here
   modern_if: iF (use_modern_diag) then
+    field_name = fms_diag_object%fms_get_field_name_from_id(diag_field_id)
+    field_remap = copy_3d_to_4d(field, trim(field_name)//"'s data")
+    if (present(rmask)) rmask_remap = copy_3d_to_4d(rmask, trim(field_name)//"'s mask")
+    if (present(mask)) then
+      allocate(mask_remap(1:size(mask,1), 1:size(mask,2), 1:size(mask,3), 1))
+      mask_remap(:,:,:,1) = mask
+    endif
     diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_remap, mask_remap, rmask_remap, &
                                                           time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
                                                           err_msg)
-    nullify (field_remap)
+    deallocate (field_remap)
+    if (allocated(mask_remap)) deallocate(mask_remap)
+    if (allocated(rmask_remap)) deallocate(rmask_remap)
   elSE ! modern_if
     ! oor_mask is only used for checking out of range values.
     ALLOCATE(oor_mask(SIZE(field,1),SIZE(field,2),SIZE(field,3)), STAT=status)
@@ -4473,6 +4480,40 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
        END DO
     END IF
   END SUBROUTINE diag_field_add_cell_measures
+
+  !> @brief Copies a 3d buffer to a 4d buffer
+  !> @return a 4d buffer
+  function copy_3d_to_4d(data_in, field_name) &
+    result(data_out)
+    class (*),        intent(in) :: data_in(:,:,:) !< Data to copy
+    character(len=*), intent(in) :: field_name     !< Name of the field copying (for error messages)
+    class (*), allocatable :: data_out(:,:,:,:)
+
+    !TODO this should be extended to integers
+    select type(data_in)
+    type is (real(kind=r8_kind))
+      allocate(real(kind=r8_kind) :: data_out(1:size(data_in,1), 1:size(data_in,2), 1:size(data_in,3), 1))
+      select type (data_out)
+      type is (real(kind=r8_kind))
+        data_out(:,:,:,1) = data_in
+      class default
+        call mpp_error(FATAL, "The copy of "//trim(field_name)//&
+          " was not allocated to the correct type (r8_kind). This shouldn't have happened")
+      end select
+    type is (real(kind=r4_kind))
+      allocate(real(kind=r4_kind) :: data_out(1:size(data_in,1), 1:size(data_in,2), 1:size(data_in,3), 1))
+      select type (data_out)
+      type is (real(kind=r4_kind))
+        data_out(:,:,:,1) = data_in
+      class default
+        call mpp_error(FATAL, "The copy of "//trim(field_name)//&
+          " was not allocated to the correct type (r4_kind). This shouldn't have happened")
+      end select
+    class default
+      call mpp_error(FATAL, "The data for "//trim(field_name)//&
+        &" is not a valid type. Currently only r4 and r8 are supported")
+    end select
+  end function copy_3d_to_4d
 
 END MODULE diag_manager_mod
 !> @}

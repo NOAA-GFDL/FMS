@@ -29,10 +29,19 @@
 !> @{
 module fms_diag_reduction_methods_mod
   use platform_mod, only: r8_kind, r4_kind
+  use fms_diag_bbox_mod, only: fmsDiagIbounds_type
+  use mpp_mod
   implicit none
   private
 
   public :: check_indices_order, init_mask, set_weight
+  public :: do_time_none
+
+  !> @brief Does the time_none reduction method. See include/fms_diag_reduction_methods.inc
+  !TODO This needs to be extended to integers
+  interface do_time_none
+    module procedure do_time_none_r4, do_time_none_r8
+  end interface do_time_none
 
   contains
 
@@ -82,8 +91,8 @@ module fms_diag_reduction_methods_mod
   !> @return logical mask
   function init_mask(rmask, mask, field) &
   result(oor_mask)
-    LOGICAL,  DIMENSION(:,:,:,:), pointer, INTENT(in) :: mask  !< The location of the mask
-    CLASS(*), DIMENSION(:,:,:,:), pointer, INTENT(in) :: rmask !< The masking values
+    LOGICAL,  DIMENSION(:,:,:,:), allocatable, INTENT(in) :: mask  !< The location of the mask
+    CLASS(*), DIMENSION(:,:,:,:), allocatable, INTENT(in) :: rmask !< The masking values
     CLASS(*), DIMENSION(:,:,:,:),          intent(in) :: field !< Field_data
 
     logical, allocatable, dimension(:,:,:,:) :: oor_mask !< mask
@@ -91,9 +100,9 @@ module fms_diag_reduction_methods_mod
     ALLOCATE(oor_mask(SIZE(field, 1), SIZE(field, 2), SIZE(field, 3), SIZE(field, 4)))
     oor_mask = .true.
 
-    if (associated(mask)) then
+    if (allocated(mask)) then
       oor_mask = mask
-    elseif (associated(rmask)) then
+    elseif (allocated(rmask)) then
       select type (rmask)
       type is (real(kind=r8_kind))
         WHERE (rmask < 0.5_r8_kind) oor_mask = .FALSE.
@@ -123,6 +132,9 @@ module fms_diag_reduction_methods_mod
       end select
     endif
   end function set_weight
+
+#include "fms_diag_reduction_methods_r4.fh"
+#include "fms_diag_reduction_methods_r8.fh"
 
 end module fms_diag_reduction_methods_mod
 !> @}

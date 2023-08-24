@@ -25,6 +25,8 @@ program check_time_max
   use platform_mod,      only: r4_kind, r8_kind
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
 
+  implicit none
+
   type(FmsNetcdfFile_t)              :: fileobj            !< FMS2 fileobj
   type(FmsNetcdfFile_t)              :: fileobj1           !< FMS2 fileobj for subregional file 1
   type(FmsNetcdfFile_t)              :: fileobj2           !< FMS2 fileobj for subregional file 2
