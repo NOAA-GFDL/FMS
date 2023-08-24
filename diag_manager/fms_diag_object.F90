@@ -948,8 +948,11 @@ function fms_get_field_name_from_id (this, field_id) &
   class(fmsDiagObject_type), intent (in) :: this     !< The diag object, the caller
   integer,                   intent (in) :: field_id !< Field id to get the name for
   character(len=:), allocatable :: field_name
-
+#ifndef use_yaml
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
   field_name = this%FMS_diag_fields(field_id)%get_varname()
+#endif
 end function fms_get_field_name_from_id
 
 !> \brief Gets the diag field ID from the module name and field name.
