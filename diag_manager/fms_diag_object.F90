@@ -83,6 +83,7 @@ private
     procedure :: fms_get_domain2d
     procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
+    procedure :: fms_get_field_name_from_id
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
@@ -938,6 +939,18 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   end select
 #endif
 end subroutine fms_diag_axis_add_attribute
+
+!> \brief Gets the field_name from the diag_field
+!> \returns a copy of the field_name
+function fms_get_field_name_from_id (this, field_id) &
+  result(field_name)
+
+  class(fmsDiagObject_type), intent (in) :: this     !< The diag object, the caller
+  integer,                   intent (in) :: field_id !< Field id to get the name for
+  character(len=:), allocatable :: field_name
+
+  field_name = this%FMS_diag_fields(field_id)%get_varname()
+end function fms_get_field_name_from_id
 
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
