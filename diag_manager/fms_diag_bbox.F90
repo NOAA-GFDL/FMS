@@ -30,7 +30,7 @@
 !> @{
 MODULE fms_diag_bbox_mod
 
-   USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler
+   USE fms_mod, ONLY: error_mesg, FATAL, fms_error_handler, string
 
    implicit none
 
@@ -39,24 +39,30 @@ MODULE fms_diag_bbox_mod
 !! array index bounds of the spatial component a diag_manager field output
 !! buffer array.
    TYPE, public :: fmsDiagIbounds_type
-      PRIVATE
       INTEGER :: imin !< Lower i bound.
       INTEGER :: imax !< Upper i bound.
       INTEGER :: jmin !< Lower j bound.
       INTEGER :: jmax !< Upper j bound.
       INTEGER :: kmin !< Lower k bound.
       INTEGER :: kmax !< Upper k bound.
+      logical :: has_halos !< .True. if the buffer has halos
+      integer :: nhalo_I !< Number of halos in i
+      integer :: nhalo_J !< Number of halos in j
    contains
       procedure :: reset => reset_bounds
       procedure :: reset_bounds_from_array_4D
       procedure :: reset_bounds_from_array_5D
       procedure :: update_bounds
+      procedure :: set_bounds
+      procedure :: rebase_input
+      procedure :: rebase_output
       procedure :: get_imin
       procedure :: get_imax
       procedure :: get_jmin
       procedure :: get_jmax
       procedure :: get_kmin
       procedure :: get_kmax
+      procedure :: update_index
    END TYPE fmsDiagIbounds_type
 
    !> @brief Data structure holding starting and ending indices in the I, J, and
@@ -81,9 +87,51 @@ MODULE fms_diag_bbox_mod
       procedure :: get_fje
    end type fmsDiagBoundsHalos_type
 
-   public :: recondition_indices
+   public :: recondition_indices, determine_if_block_is_in_region
+
+   integer, parameter :: xdimension = 1 !< Parameter defining the x dimension
+   integer, parameter :: ydimension = 2 !< Parameter defining the y dimension
+   integer, parameter :: zdimension = 3 !< Parameter defininf the z dimension
 
 CONTAINS
+
+!> @brief The PEs grid points are divided further into "blocks". This function determines if a block
+! has data for a given subregion and dimension
+!! @return .true. if the a subergion is inside a block
+logical pure function determine_if_block_is_in_region(subregion_start, subregion_end, bounds, dim)
+  integer,                   intent(in) :: subregion_start !< Begining of the subregion
+  integer,                   intent(in) :: subregion_end   !< Ending of the subregion
+  type(fmsDiagIbounds_type), intent(in) :: bounds          !< Starting and ending of the subregion
+  integer,                   intent(in) :: dim             !< Dimension to check
+
+  integer :: block_start !< Begining index of the block
+  integer :: block_end   !< Ending index of the block
+
+  determine_if_block_is_in_region = .true.
+  select case (dim)
+  case (xdimension)
+    block_start = bounds%imin
+    block_end = bounds%imax
+  case (ydimension)
+    block_start = bounds%jmin
+    block_end = bounds%jmax
+  case (zdimension)
+    block_start = bounds%kmin
+    block_end = bounds%kmax
+  end select
+
+  if (block_start < subregion_start .and. block_end < subregion_start) then
+    determine_if_block_is_in_region = .false.
+    return
+  endif
+
+  if (block_start > subregion_end   .and. block_end > subregion_end) then
+    determine_if_block_is_in_region = .false.
+    return
+  endif
+
+  determine_if_block_is_in_region = .true.
+end function determine_if_block_is_in_region
 
    !> @brief Gets imin of fmsDiagIbounds_type
    !! @return copy of integer member imin
@@ -127,6 +175,41 @@ CONTAINS
       class (fmsDiagIbounds_type), intent(in) :: this !< The !< ibounds instance
       rslt = this%kmax
    end function get_kmax
+
+   !> @brief Updates the starting and ending index of a given dimension
+   subroutine update_index(this, starting_index, ending_index, dim, ignore_halos)
+     class (fmsDiagIbounds_type), intent(inout) :: this           !< The bounding box to update
+     integer,                     intent(in)    :: starting_index !< Starting index to update to
+     integer,                     intent(in)    :: ending_index   !< Ending index to update to
+     integer,                     intent(in)    :: dim            !< Dimension to update
+     logical,                     intent(in)    :: ignore_halos   !< If .true. halos will be ignored
+                                                                  !! i.e output buffers can ignore halos as
+                                                                  !! they do not get updates. The indices of the
+                                                                  !! Input buffers need to add the number of halos
+                                                                  !! so math is done only on the compute domain
+
+     integer :: nhalox !< Number of halos in x
+     integer :: nhaloy !< Number of halos in y
+
+     if (ignore_halos) then
+      nhalox = 0
+      nhaloy = 0
+     else
+      nhalox= this%nhalo_I
+      nhaloy= this%nhalo_J
+     endif
+     select case(dim)
+     case (xdimension)
+      this%imin = starting_index + nhalox
+      this%imax = ending_index + nhalox
+     case (ydimension)
+      this%jmin = starting_index + nhaloy
+      this%jmax = ending_index + nhaloy
+     case (zdimension)
+      this%kmin = starting_index
+      this%kmax = ending_index
+     end select
+   end subroutine
 
    !> @brief Gets the halo size of fmsDiagBoundsHalos_type in the I dimension
    !! @return copy of integer member hi
@@ -202,11 +285,68 @@ CONTAINS
       this%kmax = MAX(this%kmax, upper_k)
    END SUBROUTINE update_bounds
 
+   !> @brief Sets the bounds of a bounding region
+   !! @return empty string if sucessful or error message if unsucessful
+   function set_bounds(this, field_data, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k, has_halos) &
+      result(error_msg)
+      CLASS  (fmsDiagIbounds_type), intent(inout) :: this                !< The bounding box of the field
+      class(*),                     intent(in)    :: field_data(:,:,:,:) !< Field data
+      INTEGER,                      INTENT(in)    :: lower_i             !< Lower i bound.
+      INTEGER,                      INTENT(in)    :: upper_i             !< Upper i bound.
+      INTEGER,                      INTENT(in)    :: lower_j             !< Lower j bound.
+      INTEGER,                      INTENT(in)    :: upper_j             !< Upper j bound.
+      INTEGER,                      INTENT(in)    :: lower_k             !< Lower k bound.
+      INTEGER,                      INTENT(in)    :: upper_k             !< Upper k bound.
+      LOGICAL,                      INTENT(in)    :: has_halos           !< .true. if the field has halos
+
+      character(len=150) :: error_msg !< Error message to output
+
+      integer :: nhalos_2 !< 2 times the number of halo points
+      integer :: nhalox   !< Number of halos in x
+      integer :: nhaloy   !< Number of halos in y
+
+      error_msg = ""
+      this%kmin = lower_k
+      this%kmax = upper_k
+      this%has_halos = has_halos
+      this%nhalo_I = 0
+      this%nhalo_J = 0
+      if (has_halos) then
+         !upper_i-lower_i+1 is the size of the compute domain
+         !ubound(field_data,1) is the size of the data domain
+         nhalos_2 = ubound(field_data,1)-(upper_i-lower_i+1)
+         if (mod(nhalos_2, 2) .ne. 0) then
+           error_msg = "There are non-symmetric halos in the first dimension"
+           return
+         endif
+         nhalox = nhalos_2/2
+         this%nhalo_I = nhalox
+
+         nhalos_2 = ubound(field_data,2)-(upper_j-lower_j + 1)
+         if (mod(nhalos_2, 2) .ne. 0) then
+           error_msg = "There are non-symmetric halos in the second dimension"
+           return
+         endif
+         nhaloy = nhalos_2/2
+         this%nhalo_J = nhaloy
+
+         this%imin = 1 + nhalox
+         this%imax = ubound(field_data,1) - nhalox
+         this%jmin = 1 + nhaloy
+         this%jmax = ubound(field_data,2) - nhaloy
+      else
+         this%imin = lower_i
+         this%imax = upper_i
+         this%jmin = lower_j
+         this%jmax = upper_j
+      endif
+
+   end function set_bounds
    !> @brief Reset the instance bounding box with the bounds determined from the
    !! first three dimensions of the 5D "array" argument
    SUBROUTINE reset_bounds_from_array_4D(this, array)
       CLASS (fmsDiagIbounds_type), INTENT(inout) :: this !< The instance of the bounding box.
-      REAL, INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
+      class(*), INTENT( in), DIMENSION(:,:,:,:) :: array !< The 4D input array.
       this%imin = LBOUND(array,1)
       this%imax = UBOUND(array,1)
       this%jmin = LBOUND(array,2)
@@ -318,6 +458,65 @@ CONTAINS
    indices%fjs = fjs
    indices%fje = fje
  end function recondition_indices
+
+ !> @brief Rebase the ouput bounds for a given dimension based on the starting and ending indices of
+ !! a subregion. This is for when blocking is used.
+ subroutine rebase_output(bounds_out, starting, ending, dim)
+   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_out !< Bounds to rebase
+   integer,                     intent(in)    :: starting   !< Starting index of the dimension
+   integer,                     intent(in)    :: ending     !< Ending index of the dimension
+   integer,                     intent(in)    :: dim        !< Dimension to update
+
+   !> The starting index is going to be either "starting" if only a section of the
+   !! block is in the subregion or bounds_out%[]min if the whole section of the block is in the
+   !! subregion. The -starting+1 s needed so that indices start as 1 since the output buffer has
+   !! indices 1:size of a subregion
+
+   !> The ending index is going to be either bounds_out%[]max if the whole section of the block
+   !! is in the subregion or bounds_out%[]min + size of the subregion if only a section of the
+   !! block is in the susbregion
+   select case (dim)
+   case (xdimension)
+      bounds_out%imin = max(starting, bounds_out%imin)-starting+1
+      bounds_out%imax = min(bounds_out%imax, bounds_out%imin + ending-starting)
+   case (ydimension)
+      bounds_out%jmin =  max(starting, bounds_out%jmin)-starting+1
+      bounds_out%jmax = min(bounds_out%jmax, bounds_out%jmin + ending-starting)
+   case (zdimension)
+      bounds_out%kmin =max(starting, bounds_out%kmin)-starting+1
+      bounds_out%kmax = min(bounds_out%kmax, bounds_out%kmin + ending-starting)
+   end select
+ end subroutine
+
+ !> @brief Rebase the input bounds for a given dimension based on the starting and ending indices
+ !! of a subregion. This is for when blocking is used
+ subroutine rebase_input(bounds_in, bounds, starting, ending, dim)
+   CLASS (fmsDiagIbounds_type), INTENT(inout) :: bounds_in  !< Bounds to rebase
+   CLASS (fmsDiagIbounds_type), INTENT(in)    :: bounds     !< Original indices (i.e is_in, ie_in,
+                                                            !! passed into diag_manager)
+   integer,                     intent(in)    :: starting   !< Starting index of the dimension
+   integer,                     intent(in)    :: ending     !< Ending index of the dimension
+   integer,                     intent(in)    :: dim        !< Dimension to update
+
+   !> The starting index is going to be either "starting" if only a section of the
+   !! block is in the subregion or starting-bounds%imin+1 if the whole section of the block is in the
+   !! subregion.
+
+   !> The ending index is going to be either bounds_out%[]max if the whole section of the block
+   !! is in the subregion or bounds%[]min + size of the subregion if only a section of the
+   !! block is in the susbregion
+   select case (dim)
+   case (xdimension)
+      bounds_in%imin = min(abs(starting-bounds%imin+1), starting)
+      bounds_in%imax = min(bounds_in%imax, (bounds_in%imin + ending-starting))
+   case (ydimension)
+      bounds_in%jmin = min(abs(starting-bounds%jmin+1), starting)
+      bounds_in%jmax = min(bounds_in%jmax, (bounds_in%jmin + ending-starting))
+   case (zdimension)
+      bounds_in%kmin = min(abs(starting-bounds%kmin+1), starting)
+      bounds_in%kmax = min(bounds_in%kmax, (bounds_in%kmin + ending-starting))
+   end select
+ end subroutine
 
   END MODULE fms_diag_bbox_mod
   !> @}
