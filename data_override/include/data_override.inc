@@ -287,8 +287,22 @@ endif
  end if
 end subroutine DATA_OVERRIDE_INIT_IMPL_
 
+!> @brief Implementation of the following truth table:
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! Arg 1    Arg 2    Arg 3   | Result  !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! .true.   .true.   .true.  | .true.  !!
+!! .true.   .true.   .false. | .true.  !!
+!! .true.   .false.  .true.  | .true.  !!
+!! .true.   .false.  .false. | .false. !!
+!! .false.  .true.   .true.  | .true.  !!
+!! .false.  .true.   .false. | .false. !!
+!! .false.  .false.  .true.  | .false. !!
+!! .false.  .false.  .false. | .true.  !!
 function count_ne_1(in_1, in_2, in_3)
-  logical, intent(in)  :: in_1, in_2, in_3
+  logical, intent(in)  :: in_1 !< Argument 1
+  logical, intent(in)  :: in_2 !< Argument 2
+  logical, intent(in)  :: in_3 !< Argument 3
   logical :: count_ne_1
 
   count_ne_1 = .not.(in_1.NEQV.in_2.NEQV.in_3) .OR. (in_1.AND.in_2.AND.in_3)
