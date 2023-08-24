@@ -67,6 +67,7 @@ type :: fmsDiagFile_type
   TYPE(time_type) :: next_output      !< Time of the next write
   TYPE(time_type) :: next_next_output !< Time of the next next write
   TYPE(time_type) :: no_more_data     !< Time to stop receiving data for this file
+  logical         :: done_writing_data!< .True. if finished writing data
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_close       !< Time to close the file
@@ -129,6 +130,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
+ procedure, public :: is_done_writing_data
  procedure, public :: has_file_fname
  procedure, public :: has_file_frequnit
  procedure, public :: has_file_freq
@@ -233,6 +235,7 @@ logical function fms_diag_files_object_init (files_array)
      obj%number_of_axis = 0
 
      !> Set the start_time of the file to the base_time and set up the *_output variables
+     obj%done_writing_data = .false.
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
@@ -558,6 +561,14 @@ pure function get_file_global_meta (this) result(res)
  character (len=MAX_STR_LEN), allocatable, dimension(:,:) :: res
   res = this%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
+
+!> \brief Determines if done writing data
+!! \return .True. if done writing data
+pure function is_done_writing_data (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+ logical :: res
+  res = this%done_writing_data
+end function is_done_writing_data
 
 !> \brief Checks if file_fname is allocated in the yaml object
 !! \return true if file_fname is allocated
@@ -1261,6 +1272,7 @@ subroutine update_current_new_file_freq_index(this, time_step)
                                           diag_file%get_file_duration_units())
     else
       !< At this point you are done writing data
+       diag_file%done_writing_data = .true.
        diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
        diag_file%next_output = diag_file%no_more_data
        diag_file%next_next_output = diag_file%no_more_data

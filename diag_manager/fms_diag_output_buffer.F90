@@ -27,13 +27,15 @@ module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
 use iso_c_binding
-use time_manager_mod, only: time_type
+use time_manager_mod, only: time_type, operator(==)
 use mpp_mod, only: mpp_error, FATAL
-use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8
+use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
+                         time_min, time_max
 use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 use fms_diag_yaml_mod, only: diag_yaml
 use fms_diag_bbox_mod, only: fmsDiagIbounds_type
 use fms_diag_reduction_methods_mod, only: do_time_none
+use fms_diag_time_utils_mod, only: diag_time_inc
 
 implicit none
 
@@ -53,6 +55,9 @@ type :: fmsDiagOutputBuffer_type
   integer,  allocatable :: axis_ids(:)        !< Axis ids for the buffer
   integer               :: field_id           !< The id of the field the buffer belongs to
   integer               :: yaml_id            !< The id of the yaml id the buffer belongs to
+  integer               :: time_step_count    !< The number of times that have been sent in this time_period
+  type(time_type)       :: time_period_end    !< The time that the current math period ends
+  logical               :: done_with_math     !< .True. if done doing the math
 
   contains
   procedure :: add_axis_ids
@@ -61,6 +66,12 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_field_id
   procedure :: set_yaml_id
   procedure :: get_yaml_id
+  procedure :: set_time_period_end
+  procedure :: get_time_period_end
+  procedure :: is_done_with_math
+  procedure :: set_done_with_math
+  procedure :: get_time_step_count
+  procedure :: increase_time_step_count
   procedure :: write_buffer
   !! These are needed because otherwise the write_data calls will go into the wrong interface
   procedure :: write_buffer_wrapper_netcdf
@@ -233,47 +244,51 @@ subroutine get_buffer (this, buff_out, field_name)
   end select
 end subroutine
 
-!> @brief Initializes a buffer to a given fill value.
-subroutine initialize_buffer (this, fillval, field_name)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this       !< allocated 5D buffer object
-  class(*),                        intent(in)    :: fillval    !< fill value, must be same type as the allocated buffer
-  character(len=*),                intent(in)    :: field_name !< field name for error output
+!> @brief Initializes a buffer based on the reduction method
+subroutine initialize_buffer (this, reduction_method, field_name)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this             !< allocated 5D buffer object
+  integer,                         intent(in)    :: reduction_method !< The reduction method for the field
+  character(len=*),                intent(in)    :: field_name       !< field name for error output
 
   if(.not. allocated(this%buffer)) call mpp_error(FATAL, 'initialize_buffer: field:'// field_name // &
       'buffer not yet allocated, allocate_buffer() must be called on this object first.')
-  ! have to check fill value and buffer types match
+
   select type(buff => this%buffer)
   type is(real(r8_kind))
-    select type(fillval)
-    type is(real(r8_kind))
-      buff = fillval
-    class default
-      call mpp_error(FATAL, 'initialize_buffer: fillval does not match up with allocated buffer type(r8_kind)' // &
-                            ' for field' // field_name )
+    select case (reduction_method)
+    case (time_min)
+      buff = real(MIN_VALUE, kind=r8_kind)
+    case (time_max)
+      buff = real(MAX_VALUE, kind=r8_kind)
+    case default
+      buff = real(EMPTY, kind=r8_kind)
     end select
   type is(real(r4_kind))
-    select type(fillval)
-    type is(real(r4_kind))
-      buff = fillval
-    class default
-      call mpp_error(FATAL, 'initialize_buffer: fillval does not match up with allocated buffer type(r4_kind)' // &
-                            ' for field' // field_name )
+    select case (reduction_method)
+    case (time_min)
+      buff = real(MIN_VALUE, kind=r4_kind)
+    case (time_max)
+      buff = real(MAX_VALUE, kind=r4_kind)
+    case default
+      buff = real(EMPTY, kind=r4_kind)
     end select
   type is(integer(i8_kind))
-    select type(fillval)
-    type is(integer(i8_kind))
-      buff = fillval
-    class default
-      call mpp_error(FATAL, 'initialize_buffer: fillval does not match up with allocated buffer type(i8_kind)' // &
-                            ' for field' // field_name )
+    select case (reduction_method)
+    case (time_min)
+      buff = int(MIN_VALUE, kind=i8_kind)
+    case (time_max)
+      buff = int(MAX_VALUE, kind=i8_kind)
+    case default
+      buff = int(EMPTY, kind=i8_kind)
     end select
   type is(integer(i4_kind))
-    select type(fillval)
-    type is(integer(i4_kind))
-      buff = fillval
-    class default
-      call mpp_error(FATAL, 'initialize_buffer: fillval does not match up with allocated buffer type(i4_kind)' // &
-                            ' for field' // field_name )
+    select case (reduction_method)
+    case (time_min)
+      buff = int(MIN_VALUE, kind=i4_kind)
+    case (time_max)
+      buff = int(MAX_VALUE, kind=i4_kind)
+    case default
+      buff = int(EMPTY, kind=i4_kind)
     end select
   class default
     call mpp_error(FATAL, 'initialize buffer_5d: buffer allocated to invalid data type, this shouldnt happen')
@@ -330,6 +345,77 @@ subroutine set_yaml_id(this, yaml_id)
 
   this%yaml_id = yaml_id
 end subroutine set_yaml_id
+
+!> @brief Set the time_period_end based on the frequency
+subroutine set_time_period_end(this, is_static, freq, freq_units, init_time)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  logical,                         intent(in)    :: is_static   !< .true. if the field is static
+  integer,                         intent(in)    :: freq        !< Frequency of the output
+  integer,                         intent(in)    :: freq_units  !< Units of the frequency of the output
+  type(time_type), optional,       intent(in)    :: init_time   !< The time to start receving data
+
+  type(time_type) :: local_time_init !< The time to start receving data (local to this subroutine)
+
+  if (present(init_time)) then
+    local_time_init = init_time
+  else
+    local_time_init = get_base_time()
+  endif
+
+  if (is_static) then
+    this%time_period_end = init_time
+  else
+    this%time_period_end = diag_time_inc(local_time_init, freq, freq_units)
+  endif
+
+  this%time_step_count = 0
+  this%done_with_math = .false.
+end subroutine
+
+!> @brief Get the time_period_end
+!! @return a copy of the time_period_end
+function get_time_period_end(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
+  type(time_type) :: res
+
+  res = this%time_period_end
+end function
+
+!> @brief Determine if finished with math
+!! @return this%done_with_math
+function is_done_with_math(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
+  logical :: res
+
+  res = this%done_with_math
+end function is_done_with_math
+
+!> @brief Set done_with_math to .true.
+subroutine set_done_with_math(this)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  integer :: res
+
+  this%done_with_math = .true.
+end subroutine set_done_with_math
+
+!> @brief Get the time_step_count
+!! @return A copy of time_step_count
+function get_time_step_count(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
+  integer :: res
+
+  res = this%time_step_count
+end function get_time_step_count
+
+!> @brief Increate the time_step count by 1
+subroutine increase_time_step_count(this)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+
+  this%time_step_count = this%time_step_count + 1
+end subroutine increase_time_step_count
 
 !> @brief Get the yaml id of the buffer
 !! @return the yaml id of the buffer
@@ -438,13 +524,14 @@ end subroutine write_buffer_wrapper_u
 
 !> @brief Does the time_none reduction method on the buffer object
 !! @return Error message if the math was not successful
-function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out) &
+function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out, missing_value) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
   type(fmsDiagIbounds_type),       intent(in)    :: bounds_in           !< Indicies for the buffer passed in
   type(fmsDiagIbounds_type),       intent(in)    :: bounds_out          !< Indicies for the output buffer
   logical,                         intent(in)    :: mask(:,:,:,:)       !< Mask for the field
+  real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   character(len=50) :: err_msg
 
   !TODO This does not need to be done for every time step
@@ -454,14 +541,14 @@ function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out) &
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
-        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
+        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out, missing_value)
       class default
         err_msg="the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
     type is (real(kind=r4_kind))
       select type (field_data)
       type is (real(kind=r4_kind))
-        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out)
+        call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out, real(missing_value, kind=r4_kind))
       class default
         err_msg="the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
