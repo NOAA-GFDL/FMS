@@ -35,23 +35,18 @@ libdata_override_la_SOURCES = \
   include/get_grid_version_r4.fh \
   include/get_grid_version_r8.fh \
   include/get_grid_version.inc \
+  data_override.F90 \
   include/data_override_r4.fh \
   include/data_override_r8.fh \
-  include/data_override.inc \
-  data_override.F90
+  include/data_override.inc
 
 # Some mods are dependent on other mods in this dir.
-data_override_r4.$(FC_MODEXT): get_grid_version_mod.$(FC_MODEXT)
-data_override_r8.$(FC_MODEXT): get_grid_version_mod.$(FC_MODEXT)
-data_override_mod.$(FC_MODEXT): \
-  data_override_r4.$(FC_MODEXT) \
-  data_override_r8.$(FC_MODEXT)
+data_override_mod.$(FC_MODEXT): get_grid_version_mod.$(FC_MODEXT)
+data_override_mod.$(FC_MODEXT): get_grid_version_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
   data_override_mod.$(FC_MODEXT) \
-  data_override_r4.$(FC_MODEXT) \
-  data_override_r8.$(FC_MODEXT) \
   get_grid_version_mod.$(FC_MODEXT)
 
 nodist_include_HEADERS = $(MODFILES)
