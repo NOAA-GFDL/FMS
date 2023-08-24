@@ -21,10 +21,6 @@
 !> @brief This module contains type declarations for the coupler.
 !> @author Richard Slater, John Dunne
                            
-!! TODO:
-!!     - comments for if (associated) sections
-!!     - add check for only one kind associated to all routines
-
 !> @addtogroup coupler_types_mod
 !> @{
 module coupler_types_mod
@@ -566,6 +562,9 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "copy_type_1d_2d: var_in has invalid bc type kinds, only one of bc or bc_r4 should be allocated")
+
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_1d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
 
@@ -601,6 +600,9 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "copy_type_1d_3d: var_in has invalid bc type kinds, either bc or bc_r4 must be allocated")
+
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_1d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
@@ -633,6 +635,9 @@ contains
       ! type has already been populated.
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "copy_type_2d_2d: var_in has invalid bc type kinds, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_2d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
@@ -668,6 +673,9 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "copy_type_2d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_2d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
@@ -700,6 +708,9 @@ contains
       ! type has already been populated.
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "copy_type_3d_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_3d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
@@ -735,6 +746,9 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "copy_type_3d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_3d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
@@ -767,6 +781,9 @@ contains
         & '==>Error from coupler_types_mod (CT_spawn_1d_2d):'
     character(len=400)      :: error_msg
     integer                 :: m, n
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
       if (as_needed) then
@@ -910,6 +927,9 @@ contains
         & '==>Error from coupler_types_mod (CT_spawn_1d_3d):'
     character(len=400)      :: error_msg
     integer                 :: m, n
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
       if (as_needed) then
@@ -1057,6 +1077,9 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (present(as_needed)) then
       if (as_needed) then
         if ((var%set) .or. (.not.var_in%set)) return
@@ -1200,6 +1223,9 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
     logical                 :: is_kind_8
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
       if (as_needed) then
@@ -1348,6 +1374,9 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (present(as_needed)) then
       if (as_needed) then
         if ((var%set) .or. (.not.var_in%set)) return
@@ -1491,6 +1520,9 @@ contains
         & '==>Error from coupler_types_mod (CT_spawn_3d_3d):'
     character(len=400)      :: error_msg
     integer                 :: m, n
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
       if (as_needed) then
@@ -1643,6 +1675,9 @@ contains
     logical :: copy_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "CT_copy_data_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
           & call mpp_error(FATAL, "CT_copy_data_2d: bc_index is present and exceeds var_in%num_bcs.")
@@ -1775,6 +1810,9 @@ contains
                                                            !! value of pass_through ice matches this
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "CT_copy_data_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs) &
@@ -1921,6 +1959,9 @@ contains
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, ks, ke
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
           & call mpp_error(FATAL, "CT_copy_data_2d_3d: bc_index is present and exceeds var_in%num_bcs.")
@@ -2047,6 +2088,9 @@ contains
     real(r8_kind), pointer, dimension(:,:) :: null_ptr2D_r8 => NULL()
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "CT_redistribute_data_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     do_complete = .true.
     if (present(complete)) do_complete = complete
@@ -2211,6 +2255,9 @@ contains
     real(r8_kind), pointer, dimension(:,:,:) :: null_ptr3D_r8 => NULL()
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
+
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "CT_redistribute_data_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     do_complete = .true.
     if (present(complete)) do_complete = complete
@@ -2404,6 +2451,9 @@ contains
     logical :: increment_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     scale = 1.0
     if (present(scale_factor)) scale = scale_factor
     sc_prev = 1.0
@@ -2544,6 +2594,9 @@ contains
     logical :: increment_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
+    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     scale = 1.0
     if (present(scale_factor)) scale = scale_factor
     sc_prev = 1.0
@@ -2670,6 +2723,9 @@ contains
 
     integer :: m, n
 
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_set_diags_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (diag_name == ' ') return
 
     if (size(axes) < 2) then
@@ -2712,6 +2768,9 @@ contains
 
     integer :: m, n
 
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_set_diags_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if (diag_name == ' ') return
 
     if (size(axes) < 3) then
@@ -2750,6 +2809,9 @@ contains
     integer :: m, n
     logical :: used
 
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_send_data_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -2779,6 +2841,9 @@ contains
 
     integer :: m, n
     logical :: used
+
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_send_data_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
@@ -2822,6 +2887,9 @@ contains
     character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
+
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_register_restarts_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
@@ -3093,6 +3161,9 @@ contains
     character(len=20)                          :: dir       !< Directory where to open the file
     integer                                    :: nz        !< Length of the z direction of each file
 
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_register_restarts_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
 
@@ -3268,6 +3339,9 @@ contains
     character(len=80) :: unset_varname
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
 
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_register_restarts_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     any_set = .false.
     all_set = .true.
     num_fld = 0
@@ -3363,6 +3437,9 @@ contains
     character(len=80) :: unset_varname
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
 
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_restore_state_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     any_set = .false.
     all_set = .true.
     num_fld = 0
@@ -3447,8 +3524,11 @@ contains
     type(time_type),          intent(in)    :: time !< The current model time
     !! TODO remove this when data_override is merged in
     real(r8_kind), allocatable :: r8_field_values(:,:)
-
     integer :: m, n
+
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_data_override_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -3478,6 +3558,9 @@ contains
     real(r8_kind), allocatable :: r8_field_values(:,:,:)
 
     integer :: m, n
+
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_data_override_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
@@ -3510,6 +3593,9 @@ contains
     character(len=120) :: var_name
     integer :: m, n
     integer(kind=int64) :: chks ! A checksum for the field
+
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_write_chksums_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
@@ -3549,6 +3635,9 @@ contains
     character(len=120) :: var_name
     integer :: m, n
     integer(kind=int64) :: chks ! A checksum for the field
+
+    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+      call mpp_error(FATAL, "CT_write_chksums_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
