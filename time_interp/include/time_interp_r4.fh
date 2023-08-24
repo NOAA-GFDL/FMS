@@ -16,23 +16,28 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup platform_mod platform_mod
-!> @ingroup platform
-!> @brief Uses @ref fms_platform.h to define byte sizes for variable kinds
-!! to be used in fms.
+#undef FMS_TI_KIND_
+#define FMS_TI_KIND_ r4_kind
 
-!> @addtogroup platform_mod
-!> @{
-module platform_mod
-!platform-dependent settings
-#include <fms_platform.h>
-  public
-  integer, parameter :: r16_kind=QUAD_KIND, r8_kind=DOUBLE_KIND, r4_kind=FLOAT_KIND, &
-                        c8_kind=DOUBLE_KIND, c4_kind=FLOAT_KIND, &
-                        l8_kind=LONG_KIND, l4_kind=INT_KIND, &
-                        i8_kind=LONG_KIND, i4_kind=INT_KIND, i2_kind=SHORT_KIND, &
-                        ptr_kind=POINTER_KIND
-!could additionally define things like OS, compiler...: useful?
-end module platform_mod
-!> @}
-! close documentation grouping
+#undef TIME_INTERP_FRAC_
+#define TIME_INTERP_FRAC_ time_interp_frac_r4
+
+#undef TIME_INTERP_DAY_
+#define TIME_INTERP_DAY_ time_interp_day_r4
+
+#undef TIME_INTERP_MONTH_
+#define TIME_INTERP_MONTH_ time_interp_month_r4
+
+#undef TIME_INTERP_YEAR_
+#define TIME_INTERP_YEAR_ time_interp_year_r4
+
+#undef TIME_INTERP_LIST_
+#define TIME_INTERP_LIST_ time_interp_list_r4
+
+#undef TIME_INTERP_MODULO_
+#define TIME_INTERP_MODULO_ time_interp_modulo_r4
+
+#undef FRACTION_OF_YEAR_
+#define FRACTION_OF_YEAR_ fraction_of_year_r4
+
+#include "time_interp.inc"
