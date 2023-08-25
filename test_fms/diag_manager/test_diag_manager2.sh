@@ -460,6 +460,7 @@ test_expect_success "Unstructured grid (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager
 '
 
+my_test_count=24
 # test_diag_manager_time
 cat <<_EOF > diag_table
 test_diag_manager
@@ -478,6 +479,7 @@ test_diag_manager
  "test_diag_manager_mod", "sst", "sst", "ocn_end%4yr%2mo%2dy%2hr",  "all", .true., "none", 2
 _EOF
 
+my_test_count=25
 rm -f input.nml && touch input.nml
 test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
@@ -501,7 +503,7 @@ test_expect_success "diurnal test (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 setup_test
-my_test_count=`expr $my_test_count + 1`
+my_test_count=26
 test_expect_success "Test the diag update_buffer (test $my_test_count)" '
   mpirun -n 1 ../test_diag_update_buffer
 '

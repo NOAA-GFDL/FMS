@@ -831,7 +831,7 @@ type(time_type), intent(in) :: time !< time (1 year = 2*pi) since autumnal equin
 real(kind=r8_kind)    :: t
 
     t = (time - autumnal_eq_ref)//period_time_type
-    t = twopi*(t - real(t, r8_kind))
+    t = twopi*(t - real(floor(t), r8_kind))
     if (time < autumnal_eq_ref) t = twopi - t
 
 end function orbital_time
