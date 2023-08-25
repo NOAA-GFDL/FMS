@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#undef GET_GRID_VERSION_KIND_
-#define GET_GRID_VERSION_KIND_ r8_kind
+#undef FMS_GET_GRID_VERSION_KIND_
+#define FMS_GET_GRID_VERSION_KIND_ r8_kind
 
 #undef GET_GRID_VERSION_1_
 #define GET_GRID_VERSION_1_ get_grid_version_1_r8
@@ -28,6 +28,6 @@
 
 #include "get_grid_version.inc"
 
-#undef GET_GRID_VERSION_KIND_
+#undef FMS_GET_GRID_VERSION_KIND_
 #undef GET_GRID_VERSION_1_
 #undef GET_GRID_VERSION_2_

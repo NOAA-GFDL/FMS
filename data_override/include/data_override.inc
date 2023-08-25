@@ -57,8 +57,8 @@ type data_type
    character(len=128) :: fieldname_file  !< fieldname used in the netcdf data file
    character(len=512) :: file_name       !< name of netCDF data file
    character(len=128) :: interpol_method !< interpolation method (default "bilinear")
-   real(DATA_OVERRIDE_KIND_)        :: factor          !< For unit conversion, default=1, see OVERVIEW above
-   real(DATA_OVERRIDE_KIND_)        :: lon_start, lon_end, lat_start, lat_end
+   real(FMS_DATA_OVERRIDE_KIND_)        :: factor          !< For unit conversion, default=1, see OVERVIEW above
+   real(FMS_DATA_OVERRIDE_KIND_)        :: lon_start, lon_end, lat_start, lat_end
    integer            :: region_type
 end type data_type
 
@@ -72,15 +72,15 @@ type override_type
    integer                          :: dims(4)            !< dimensions(x,y,z,t) of the field in filename
    integer                          :: comp_domain(4)     !< istart,iend,jstart,jend for compute domain
    integer                          :: numthreads
-   real(DATA_OVERRIDE_KIND_), allocatable :: lon_in(:)
-   real(DATA_OVERRIDE_KIND_), allocatable :: lat_in(:)
+   real(FMS_DATA_OVERRIDE_KIND_), allocatable :: lon_in(:)
+   real(FMS_DATA_OVERRIDE_KIND_), allocatable :: lat_in(:)
    logical, allocatable             :: need_compute(:)
    integer                          :: numwindows
    integer                          :: window_size(2)
    integer                          :: is_src, ie_src, js_src, je_src
 end type override_type
 
-integer, parameter :: lkind = DATA_OVERRIDE_KIND_
+integer, parameter :: lkind = FMS_DATA_OVERRIDE_KIND_
 integer, parameter :: max_table=100, max_array=100
 
 integer            :: table_size !< actual size of data table
@@ -89,14 +89,14 @@ logical            :: module_is_initialized = .FALSE.
 type(domain2D) :: ocn_domain,atm_domain,lnd_domain, ice_domain
 type(domainUG) :: lnd_domainUG
 
-real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ocn, lat_local_ocn
-real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_atm, lat_local_atm
-real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ice, lat_local_ice
-real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_lnd, lat_local_lnd
-real(DATA_OVERRIDE_KIND_) :: min_glo_lon_ocn, max_glo_lon_ocn
-real(DATA_OVERRIDE_KIND_) :: min_glo_lon_atm, max_glo_lon_atm
-real(DATA_OVERRIDE_KIND_) :: min_glo_lon_lnd, max_glo_lon_lnd
-real(DATA_OVERRIDE_KIND_) :: min_glo_lon_ice, max_glo_lon_ice
+real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ocn, lat_local_ocn
+real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_atm, lat_local_atm
+real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ice, lat_local_ice
+real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_lnd, lat_local_lnd
+real(FMS_DATA_OVERRIDE_KIND_) :: min_glo_lon_ocn, max_glo_lon_ocn
+real(FMS_DATA_OVERRIDE_KIND_) :: min_glo_lon_atm, max_glo_lon_atm
+real(FMS_DATA_OVERRIDE_KIND_) :: min_glo_lon_lnd, max_glo_lon_lnd
+real(FMS_DATA_OVERRIDE_KIND_) :: min_glo_lon_ice, max_glo_lon_ice
 integer :: num_fields = 0 !< number of fields in override_array already processed
 
 #ifdef use_yaml
@@ -605,7 +605,7 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data,time,override,data_ind
                                                  !! different from the name in NetCDF data file)
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   type(time_type), intent(in) :: time !< (target) model time
-  real(DATA_OVERRIDE_KIND_), intent(out) :: data !< output data array returned by this call
+  real(FMS_DATA_OVERRIDE_KIND_), intent(out) :: data !< output data array returned by this call
   integer, intent(in), optional :: data_index
 
   character(len=512) :: filename !< file containing source data
@@ -614,7 +614,7 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data,time,override,data_ind
   integer :: id_time !< index for time interp in override array
   integer :: curr_position !< position of the field currently processed in override_array
   integer :: i
-  real(DATA_OVERRIDE_KIND_) :: factor
+  real(FMS_DATA_OVERRIDE_KIND_) :: factor
 
   if(.not.module_is_initialized) &
        call mpp_error(FATAL,'Error: need to call data_override_init first')
@@ -691,9 +691,9 @@ subroutine DATA_OVERRIDE_2D_(gridname,fieldname,data_2D,time,override, is_in, ie
   character(len=*), intent(in) :: fieldname !< field to override
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   type(time_type), intent(in) :: time !<  model time
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data_2D !< data returned by this call
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data_2D !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
-  real(DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_3D
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_3D
   integer       :: index1
   integer       :: i
 
@@ -724,7 +724,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,data,time,override,data_ind
   logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
   type(time_type),              intent(in) :: time !< (target) model time
   integer,           optional,  intent(in) :: data_index
-  real(DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: data !< data returned by this call
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: data !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
@@ -737,15 +737,15 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,data,time,override,data_ind
   integer            :: id_time !< index for time interp in override array
   integer            :: axis_sizes(4)
   character(len=32)  :: axis_names(4)
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lon_local =>NULL() !< of output (target) grid cells
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lat_local =>NULL() !< of output (target) grid cells
-  real(DATA_OVERRIDE_KIND_), dimension(:), allocatable :: lon_tmp, lat_tmp
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lon_local =>NULL() !< of output (target) grid cells
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lat_local =>NULL() !< of output (target) grid cells
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:), allocatable :: lon_tmp, lat_tmp
 
   logical :: data_file_is_2D = .false.  !< data in netCDF file is 2D
   logical :: ongrid, use_comp_domain
   type(domain2D) :: domain
   integer :: curr_position !< position of the field currently processed in override_array
-  real(DATA_OVERRIDE_KIND_) :: factor
+  real(FMS_DATA_OVERRIDE_KIND_) :: factor
   integer, dimension(4) :: comp_domain = 0  !< istart,iend,jstart,jend for compute domain
   integer :: nxd, nyd, nxc, nyc, nwindows
   integer :: nwindows_x, ipos, jpos, window_size(2)
@@ -753,7 +753,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,data,time,override,data_ind
   integer :: isw, iew, jsw, jew
   integer :: omp_get_num_threads, window_id
   logical :: need_compute
-  real(DATA_OVERRIDE_KIND_) :: lat_min, lat_max
+  real(FMS_DATA_OVERRIDE_KIND_) :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src
   logical :: exists
   type(FmsNetcdfFile_t) :: fileobj
@@ -1167,11 +1167,11 @@ end subroutine DATA_OVERRIDE_3D_
 subroutine DATA_OVERRIDE_UG_1D_(gridname,fieldname,data,time,override)
   character(len=3),   intent(in) :: gridname !< model grid ID
   character(len=*),   intent(in) :: fieldname !< field to override
-  real(DATA_OVERRIDE_KIND_), dimension(:), intent(inout) :: data !< data returned by this call
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:), intent(inout) :: data !< data returned by this call
   type(time_type),    intent(in) :: time !<  model time
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   !local vars
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), allocatable ::  data_SG
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), allocatable ::  data_SG
   type(domainUG) :: UG_domain
   integer       :: index1
   integer       :: i
@@ -1202,12 +1202,12 @@ end subroutine DATA_OVERRIDE_UG_1D_
 subroutine DATA_OVERRIDE_UG_2D_(gridname,fieldname,data,time,override)
   character(len=3),     intent(in) :: gridname !< model grid ID
   character(len=*),     intent(in) :: fieldname !< field to override
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data !< data returned by this call
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data !< data returned by this call
   type(time_type),      intent(in) :: time !<  model time
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
   !local vars
-  real(DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_SG
-  real(DATA_OVERRIDE_KIND_), dimension(:,:),   allocatable ::  data_UG
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_SG
+  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:),   allocatable ::  data_UG
   type(domainUG) :: UG_domain
   integer       :: index1
   integer       :: i, nlevel, nlevel_max

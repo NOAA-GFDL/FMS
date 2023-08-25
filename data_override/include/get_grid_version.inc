@@ -19,7 +19,7 @@
 
 !> Get global lon and lat of three model (target) grids, with a given file name
 subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  integer, parameter :: lkind = GET_GRID_VERSION_KIND_
+  integer, parameter :: lkind = FMS_GET_GRID_VERSION_KIND_
 
   character(len=*), intent(in) :: grid_file !< name of grid file
   character(len=*), intent(in) :: mod_name !< module name
@@ -144,7 +144,7 @@ end subroutine GET_GRID_VERSION_1_
 !> Get global lon and lat of three model (target) grids from mosaic.nc.
 !! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
 subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
-  integer, parameter :: lkind = GET_GRID_VERSION_KIND_
+  integer, parameter :: lkind = FMS_GET_GRID_VERSION_KIND_
 
   type(FmsNetcdfFile_t), intent(in) :: fileobj !< file object for grid file
   character(len=*),      intent(in) :: mod_name !< module name

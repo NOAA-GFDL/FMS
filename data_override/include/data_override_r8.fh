@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#undef DATA_OVERRIDE_KIND_
-#define DATA_OVERRIDE_KIND_ r8_kind
+#undef FMS_DATA_OVERRIDE_KIND_
+#define FMS_DATA_OVERRIDE_KIND_ r8_kind
 
 #undef DATA_OVERRIDE_INIT_IMPL_
 #define DATA_OVERRIDE_INIT_IMPL_ data_override_init_r8
@@ -54,7 +54,7 @@ module data_override_r8
 #include "data_override.inc"
 end module data_override_r8
 
-#undef DATA_OVERRIDE_KIND_
+#undef FMS_DATA_OVERRIDE_KIND_
 #undef DATA_OVERRIDE_INIT_IMPL_
 #undef DATA_OVERRIDE_UNSET_ATM_
 #undef DATA_OVERRIDE_UNSET_OCN_
