@@ -118,9 +118,9 @@ logical                                    :: reproduce_null_char_bug = .false. 
 namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug
 
 public :: DATA_OVERRIDE_INIT_IMPL_, DATA_OVERRIDE_UNSET_ATM_, DATA_OVERRIDE_UNSET_OCN_, &
-        & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_IMPL_, &
-        & DATA_OVERRIDE_2D_IMPL_, DATA_OVERRIDE_3D_IMPL_, DATA_OVERRIDE_UG_1D_IMPL_, &
-        & DATA_OVERRIDE_UG_2D_IMPL_
+        & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_, &
+        & DATA_OVERRIDE_2D_, DATA_OVERRIDE_3D_, DATA_OVERRIDE_UG_1D_, &
+        & DATA_OVERRIDE_UG_2D_
 
 contains
 
@@ -599,7 +599,7 @@ end subroutine get_domainUG
 !===============================================================================================
 
 !> @brief Routine to perform data override for scalar fields
-subroutine DATA_OVERRIDE_0D_IMPL_(gridname,fieldname_code,data,time,override,data_index)
+subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data,time,override,data_index)
   character(len=3), intent(in) :: gridname !< model grid ID (ocn,ice,atm,lnd)
   character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
                                                  !! different from the name in NetCDF data file)
@@ -683,10 +683,10 @@ subroutine DATA_OVERRIDE_0D_IMPL_(gridname,fieldname_code,data,time,override,dat
 
   if(PRESENT(override)) override = .true.
 
-end subroutine DATA_OVERRIDE_0D_IMPL_
+end subroutine DATA_OVERRIDE_0D_
 
 !> @brief This routine performs data override for 2D fields.
-subroutine DATA_OVERRIDE_2D_IMPL_(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
+subroutine DATA_OVERRIDE_2D_(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
   character(len=3), intent(in) :: gridname !< model grid ID
   character(len=*), intent(in) :: fieldname !< field to override
   logical, intent(out), optional :: override !< true if the field has been overriden succesfully
@@ -710,15 +710,15 @@ subroutine DATA_OVERRIDE_2D_IMPL_(gridname,fieldname,data_2D,time,override, is_i
 
   allocate(data_3D(size(data_2D,1),size(data_2D,2),1))
   data_3D(:,:,1) = data_2D
-  call DATA_OVERRIDE_3D_IMPL_(gridname,fieldname,data_3D,time,override,data_index=index1,&
+  call DATA_OVERRIDE_3D_(gridname,fieldname,data_3D,time,override,data_index=index1,&
                        is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in)
 
   data_2D(:,:) = data_3D(:,:,1)
   deallocate(data_3D)
-end subroutine DATA_OVERRIDE_2D_IMPL_
+end subroutine DATA_OVERRIDE_2D_
 
 !> @brief This routine performs data override for 3D fields
-subroutine DATA_OVERRIDE_3D_IMPL_(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
+subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
   character(len=3),             intent(in) :: gridname !< model grid ID
   character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
   logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
@@ -1161,10 +1161,10 @@ subroutine DATA_OVERRIDE_3D_IMPL_(gridname,fieldname_code,data,time,override,dat
   endif
 
   if(PRESENT(override)) override = .true.
-end subroutine DATA_OVERRIDE_3D_IMPL_
+end subroutine DATA_OVERRIDE_3D_
 
 !> @brief Data override for 1D unstructured grids
-subroutine DATA_OVERRIDE_UG_1D_IMPL_(gridname,fieldname,data,time,override)
+subroutine DATA_OVERRIDE_UG_1D_(gridname,fieldname,data,time,override)
   character(len=3),   intent(in) :: gridname !< model grid ID
   character(len=*),   intent(in) :: fieldname !< field to override
   real(DATA_OVERRIDE_KIND_), dimension(:), intent(inout) :: data !< data returned by this call
@@ -1191,15 +1191,15 @@ subroutine DATA_OVERRIDE_UG_1D_IMPL_(gridname,fieldname,data,time,override)
   call get_domainUG(gridname,UG_domain,comp_domain)
   allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4)))
 
-  call DATA_OVERRIDE_2D_IMPL_(gridname,fieldname,data_SG,time,override)
+  call DATA_OVERRIDE_2D_(gridname,fieldname,data_SG,time,override)
 
   call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:), data(:))
 
   deallocate(data_SG)
-end subroutine DATA_OVERRIDE_UG_1D_IMPL_
+end subroutine DATA_OVERRIDE_UG_1D_
 
 !> @brief Data override for 2D unstructured grids
-subroutine DATA_OVERRIDE_UG_2D_IMPL_(gridname,fieldname,data,time,override)
+subroutine DATA_OVERRIDE_UG_2D_(gridname,fieldname,data,time,override)
   character(len=3),     intent(in) :: gridname !< model grid ID
   character(len=*),     intent(in) :: fieldname !< field to override
   real(DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data !< data returned by this call
@@ -1232,10 +1232,10 @@ subroutine DATA_OVERRIDE_UG_2D_IMPL_(gridname,fieldname,data,time,override)
   allocate(data_SG(comp_domain(1):comp_domain(2),comp_domain(3):comp_domain(4),nlevel_max))
   allocate(data_UG(size(data,1), nlevel_max))
   data_SG = 0._lkind
-  call DATA_OVERRIDE_3D_IMPL_(gridname,fieldname,data_SG,time,override)
+  call DATA_OVERRIDE_3D_(gridname,fieldname,data_SG,time,override)
 
   call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:,:), data_UG(:,:))
   data(:,1:nlevel) = data_UG(:,1:nlevel)
 
   deallocate(data_SG, data_UG)
-end subroutine DATA_OVERRIDE_UG_2D_IMPL_
+end subroutine DATA_OVERRIDE_UG_2D_

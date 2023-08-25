@@ -35,34 +35,33 @@
 #undef DATA_OVERRIDE_UNSET_ICE_
 #define DATA_OVERRIDE_UNSET_ICE_ data_override_unset_ice_r8
 
-#undef DATA_OVERRIDE_0D_IMPL_
-#define DATA_OVERRIDE_0D_IMPL_ data_override_0d_r8
+#undef DATA_OVERRIDE_0D_
+#define DATA_OVERRIDE_0D_ data_override_0d_r8
 
-#undef DATA_OVERRIDE_2D_IMPL_
-#define DATA_OVERRIDE_2D_IMPL_ data_override_2d_r8
+#undef DATA_OVERRIDE_2D_
+#define DATA_OVERRIDE_2D_ data_override_2d_r8
 
-#undef DATA_OVERRIDE_3D_IMPL_
-#define DATA_OVERRIDE_3D_IMPL_ data_override_3d_r8
+#undef DATA_OVERRIDE_3D_
+#define DATA_OVERRIDE_3D_ data_override_3d_r8
 
-#undef DATA_OVERRIDE_UG_1D_IMPL_
-#define DATA_OVERRIDE_UG_1D_IMPL_ data_override_ug_1d_r8
+#undef DATA_OVERRIDE_UG_1D_
+#define DATA_OVERRIDE_UG_1D_ data_override_ug_1d_r8
 
-#undef DATA_OVERRIDE_UG_2D_IMPL_
-#define DATA_OVERRIDE_UG_2D_IMPL_ data_override_ug_2d_r8
+#undef DATA_OVERRIDE_UG_2D_
+#define DATA_OVERRIDE_UG_2D_ data_override_ug_2d_r8
 
 module data_override_r8
 #include "data_override.inc"
 end module data_override_r8
 
 #undef DATA_OVERRIDE_KIND_
-#undef DATA_OVERRIDE_IMPL_
 #undef DATA_OVERRIDE_INIT_IMPL_
 #undef DATA_OVERRIDE_UNSET_ATM_
 #undef DATA_OVERRIDE_UNSET_OCN_
 #undef DATA_OVERRIDE_UNSET_LND_
 #undef DATA_OVERRIDE_UNSET_ICE_
-#undef DATA_OVERRIDE_0D_IMPL_
-#undef DATA_OVERRIDE_2D_IMPL_
-#undef DATA_OVERRIDE_3D_IMPL_
-#undef DATA_OVERRIDE_UG_1D_IMPL_
-#undef DATA_OVERRIDE_UG_2D_IMPL_
+#undef DATA_OVERRIDE_0D_
+#undef DATA_OVERRIDE_2D_
+#undef DATA_OVERRIDE_3D_
+#undef DATA_OVERRIDE_UG_1D_
+#undef DATA_OVERRIDE_UG_2D_
