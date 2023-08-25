@@ -92,7 +92,8 @@ contains
     implicit none
 
     write(*,*) "*** TEST_ATMOS_OCEAN_FLUXES_INIT ***"
-    call atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, use_r4_kind= FMS_CP_TEST_KIND_ .eq. r4_kind)
+    call atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, &
+                                 use_r4_kind= FMS_CP_TEST_KIND_ .eq. r4_kind)
 
   end subroutine test_atmos_ocean_fluxes_init
   !--------------------------------------

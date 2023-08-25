@@ -95,7 +95,7 @@
           & do_bc = (pass_through_ice .eqv. var%FMS_CP_BC_TYPE_(n)%pass_through_ice)
       if (.not.do_bc) cycle
 
-      print *, n, n1, n2, SIZE(var%FMS_CP_BC_TYPE_) 
+      print *, n, n1, n2, SIZE(var%FMS_CP_BC_TYPE_)
       do m = 1, var%FMS_CP_BC_TYPE_(n)%num_fields
         if (present(field_index)) then
           if (m /= field_index) cycle
@@ -238,18 +238,20 @@
   subroutine CT_INCREMENT_DATA_2D_3D_(var_in, weights, var, halo_size, bc_index, field_index,&
       & scale_factor, scale_prev, exclude_flux_type, only_flux_type, pass_through_ice)
     type(coupler_3d_bc_type),   intent(in)    :: var_in  !< BC_type structure with the data to add to the other type
-    real(FMS_CP_KIND_), dimension(:,:,:),     intent(in)    :: weights !< An array of normalized weights for the 3d-data to
-                                                         !! increment the 2d-data.  There is no renormalization,
-                                                         !! so if the weights do not sum to 1 in the 3rd dimension
-                                                         !! there may be adverse consequences!
+    real(FMS_CP_KIND_), dimension(:,:,:),     intent(in)    :: weights !< An array of normalized weights for the 3d-data
+                                                        !! to increment the 2d-data.  There is no renormalization,
+                                                        !! so if the weights do not sum to 1 in the 3rd dimension
+                                                        !! there may be adverse consequences!
     type(coupler_2d_bc_type),   intent(inout) :: var !< The BC_type structure whose fields are being incremented
     integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
     integer,          optional, intent(in)    :: bc_index  !< The index of the boundary condition
                                                          !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                          !! boundary condition that is being copied
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_prev    !< A scaling factor for the data that is already here
+    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that
+                                                                             !! is being added
+    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_prev    !< A scaling factor for the data that
+                                                                      !! is already here and is being added
     character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
                                                          !! of fluxes to exclude from this increment.
     character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types
@@ -389,7 +391,7 @@
     real(FMS_CP_KIND_), dimension(1:,1:),     intent(out)   :: array_out !< The recipient array for the field; its size
                                                            !! must match the size of the data being copied
                                                            !! unless idim and jdim are supplied.
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
+    real(FMS_CP_KIND_), optional, intent(in) :: scale_factor !< A scaling factor for the data that is being added
     integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
     integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
                                                            !! the first dimension of the output array
@@ -528,7 +530,7 @@
     real(FMS_CP_KIND_), dimension(1:,1:),     intent(out)   :: array_out !< The recipient array for the field; its size
                                                            !! must match the size of the data being copied
                                                            !! unless idim and jdim are supplied.
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
+    real(FMS_CP_KIND_), optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
     integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
     integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
                                                            !! the first dimension of the output array
@@ -671,7 +673,7 @@
     real(FMS_CP_KIND_), dimension(1:,1:,1:),  intent(out)   :: array_out !< The recipient array for the field; its size
                                                            !! must match the size of the data being copied
                                                            !! unless idim and jdim are supplied.
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
+    real(FMS_CP_KIND_), optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
     integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
     integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
                                                            !! the first dimension of the output array
@@ -818,7 +820,7 @@
     integer,                    intent(in)    :: field_index !< The index of the field in the
                                                            !! boundary condition that is being copied
     type(coupler_2d_bc_type),   intent(inout) :: var       !< BC_type structure with the data to set
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
+    real(FMS_CP_KIND_), optional, intent(in)  :: scale_factor !< A scaling factor for the data that is being added
     integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
     integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
                                                            !! the first dimension of the output array
@@ -954,7 +956,7 @@
                                                            !! boundary condition that is being copied
     integer,                    intent(in)    :: k_out     !< The k-index to set
     type(coupler_3d_bc_type),   intent(inout) :: var       !< BC_type structure with the data to be set
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
+    real(FMS_CP_KIND_), optional, intent(in)  :: scale_factor !< A scaling factor for the data that is being added
     integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
     integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
                                                            !! the first dimension of the output array
@@ -1095,7 +1097,7 @@
     integer,                    intent(in)    :: field_index !< The index of the field in the
                                                            !! boundary condition that is being copied
     type(coupler_3d_bc_type),   intent(inout) :: var       !< BC_type structure with the data to be set
-    real(FMS_CP_KIND_),             optional, intent(in)    :: scale_factor !< A scaling factor for the data that is being added
+    real(FMS_CP_KIND_), optional, intent(in)  :: scale_factor !< A scaling factor for the data that is being added
     integer,          optional, intent(in)    :: halo_size !< The extent of the halo to copy; 0 by default
     integer, dimension(4), optional, intent(in) :: idim    !< The data and computational domain extents of
                                                            !! the first dimension of the output array
@@ -1110,7 +1112,7 @@
 
     real(FMS_CP_KIND_) :: scale
     integer :: i, j, k, halo, i_off, j_off, k_off
-    integer, parameter :: kindl = FMS_CP_KIND_ 
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if (bc_index <= 0) return
 

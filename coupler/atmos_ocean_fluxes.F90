@@ -524,7 +524,7 @@ contains
       allocate (gas_fluxes%bc_r4(gas_fluxes%num_bcs))
       allocate (gas_fields_atm%bc_r4(gas_fields_atm%num_bcs))
       allocate (gas_fields_ice%bc_r4(gas_fields_ice%num_bcs))
-    endif  
+    endif
 
     ! Loop over the input fields, setting the values in the flux_type.
     n = 0
@@ -691,7 +691,7 @@ contains
             call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
           elseif (size(gas_fluxes%bc(n)%flag(:)) .ne. num_flags) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%flag(:)), ' given, need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name)//trim(error_string))
           endif
         elseif (num_flags .eq. 0) then
           if (associated(gas_fluxes%bc(n)%flag)) then
@@ -799,12 +799,14 @@ contains
         do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
           gas_fields_atm%bc_r4(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-long_name')
-          gas_fields_atm%bc_r4(n)%field(m)%long_name = trim(gas_fields_atm%bc_r4(n)%field(m)%long_name) // ' for ' // name
+          gas_fields_atm%bc_r4(n)%field(m)%long_name = trim(gas_fields_atm%bc_r4(n)%field(m)%long_name)// &
+                                                       ' for '// name
         enddo
         do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
           gas_fields_ice%bc_r4(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-long_name')
-          gas_fields_ice%bc_r4(n)%field(m)%long_name = trim(gas_fields_ice%bc_r4(n)%field(m)%long_name) // ' for ' // name
+          gas_fields_ice%bc_r4(n)%field(m)%long_name = trim(gas_fields_ice%bc_r4(n)%field(m)%long_name) // &
+                                                       ' for ' // name
         enddo
 
         ! Save the atm_tr_index.
@@ -860,7 +862,7 @@ contains
             call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
           elseif (size(gas_fluxes%bc_r4(n)%flag(:)) .ne. num_flags) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc_r4(n)%flag(:)), ' given, need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for '//trim(name)//trim(error_string))
           endif
         elseif (num_flags .eq. 0) then
           if (associated(gas_fluxes%bc_r4(n)%flag)) then
