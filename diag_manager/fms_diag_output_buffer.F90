@@ -55,7 +55,6 @@ type :: fmsDiagOutputBuffer_type
   integer,  allocatable :: axis_ids(:)        !< Axis ids for the buffer
   integer               :: field_id           !< The id of the field the buffer belongs to
   integer               :: yaml_id            !< The id of the yaml id the buffer belongs to
-  type(time_type)       :: time_period_end    !< The time that the current math period ends
   logical               :: done_with_math     !< .True. if done doing the math
 
   contains
@@ -65,8 +64,6 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_field_id
   procedure :: set_yaml_id
   procedure :: get_yaml_id
-  procedure :: set_time_period_end
-  procedure :: get_time_period_end
   procedure :: is_done_with_math
   procedure :: set_done_with_math
   procedure :: write_buffer
@@ -343,41 +340,6 @@ subroutine set_yaml_id(this, yaml_id)
   this%yaml_id = yaml_id
 end subroutine set_yaml_id
 
-!> @brief Set the time_period_end based on the frequency
-subroutine set_time_period_end(this, is_static, freq, freq_units, init_time)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
-  logical,                         intent(in)    :: is_static   !< .true. if the field is static
-  integer,                         intent(in)    :: freq        !< Frequency of the output
-  integer,                         intent(in)    :: freq_units  !< Units of the frequency of the output
-  type(time_type), optional,       intent(in)    :: init_time   !< The time to start receving data
-
-  type(time_type) :: local_time_init !< The time to start receving data (local to this subroutine)
-
-  if (present(init_time)) then
-    local_time_init = init_time
-  else
-    local_time_init = get_base_time()
-  endif
-
-  if (is_static) then
-    this%time_period_end = init_time
-  else
-    this%time_period_end = diag_time_inc(local_time_init, freq, freq_units)
-  endif
-
-  this%done_with_math = .false.
-end subroutine
-
-!> @brief Get the time_period_end
-!! @return a copy of the time_period_end
-function get_time_period_end(this) &
-  result(res)
-  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
-  type(time_type) :: res
-
-  res = this%time_period_end
-end function
-
 !> @brief Determine if finished with math
 !! @return this%done_with_math
 function is_done_with_math(this) &
@@ -409,9 +371,9 @@ end function get_yaml_id
 
 !> @brief Write the buffer to the file
 subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level)
-  class(fmsDiagOutputBuffer_type), intent(in) :: this            !< buffer object to write
-  class(FmsNetcdfFile_t),          intent(in) :: fms2io_fileobj  !< fileobj to write to
-  integer, optional,               intent(in) :: unlim_dim_level !< unlimited dimension
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
+  class(FmsNetcdfFile_t),          intent(in)    :: fms2io_fileobj  !< fileobj to write to
+  integer, optional,               intent(in)    :: unlim_dim_level !< unlimited dimension
 
   select type(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
@@ -424,6 +386,10 @@ subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level)
     call mpp_error(FATAL, "The file "//trim(fms2io_fileobj%path)//" is not one of the accepted types"//&
       " only FmsNetcdfFile_t, FmsNetcdfDomainFile_t, and FmsNetcdfUnstructuredDomainFile_t are accepted.")
   end select
+
+  call this%initialize_buffer(diag_yaml%diag_fields(this%yaml_id)%get_var_reduction(), &
+    diag_yaml%diag_fields(this%yaml_id)%get_var_outname())
+  !TODO Set the counters back to 0
 end subroutine write_buffer
 
 !> @brief Write the buffer to the FmsNetcdfFile_t fms2io_fileobj

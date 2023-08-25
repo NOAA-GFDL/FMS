@@ -1133,9 +1133,9 @@ end subroutine write_time_metadata
 
 !> \brief Write out the field data to the file
 subroutine write_field_data(this, field_obj, buffer_obj)
-  class(fmsDiagFileContainer_type),        intent(in), target :: this           !< The diag file object to write to
-  type(fmsDiagField_type),                 intent(in), target :: field_obj(:)   !< The field object to write from
-  type(fmsDiagOutputBuffer_type),          intent(in), target :: buffer_obj(:)  !< The buffer object with the data
+  class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
+  type(fmsDiagField_type),                 intent(in),    target :: field_obj(:)   !< The field object to write from
+  type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj(:)  !< The buffer object with the data
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to

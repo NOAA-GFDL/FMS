@@ -239,8 +239,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
 
     fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
-    call bufferptr%set_time_period_end(fieldptr%is_static(), fileptr%get_file_freq(), fileptr%get_file_frequnit(), &
-      init_time=init_time)
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
@@ -808,15 +806,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Go away if finished doing math for this buffer
     if (buffer_ptr%is_done_with_math()) cycle
-
-    if (present(time)) then
-      if (time .ge. buffer_ptr%get_time_period_end()) then
-        call buffer_ptr%set_time_period_end(.false., &
-          file_ptr%FMS_diag_file%get_file_freq(), file_ptr%FMS_diag_file%get_file_frequnit(), &
-          init_time=time)
-        call buffer_ptr%initialize_buffer(reduction_method, field_ptr%get_varname())
-      endif
-    endif
 
     bounds_out = bounds
     if (.not. using_blocking) then
