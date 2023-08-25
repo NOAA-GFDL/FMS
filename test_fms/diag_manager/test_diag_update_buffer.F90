@@ -282,12 +282,12 @@ CONTAINS
          DO k = 1, NZ
             DO j = 1, NY
                DO i = 1, NX
+                  itemp = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
                   SELECT TYPE ( field)
                    TYPE IS (real(kind=r4_kind))
-                     itemp = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
-                     field(i,j,k,l) = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
-1                  TYPE IS (integer(kind=i8_kind))
-                     field(i,j,k,l) = get_array_index_from_4D(i,j,k,l,NX,NY,NZ)
+                     field(i,j,k,l) = real(itemp, kind=r4_kind)
+                   TYPE IS (integer(kind=i8_kind))
+                     field(i,j,k,l) = int(itemp, kind=i8_kind)
                   END SELECT
                END DO
             END DO

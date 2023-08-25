@@ -950,15 +950,15 @@ program test_mpp_nesting
     !--- loop over nest level
     do l = 1, num_nest_level
        npes_my_level = mpp_get_nest_npes(nest_domain, l)
-       npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
        allocate(my_pelist(npes_my_level))
-       allocate(my_pelist_fine(npes_my_fine))
        call mpp_get_nest_pelist(nest_domain, l, my_pelist)
 
        call mpp_declare_pelist(my_pelist(:))
        write(type2, '(a,I2)')trim(type)//" nest_level = ",l
        if(ANY(my_pelist(:)==mpp_pe())) then
 
+          npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
+          allocate(my_pelist_fine(npes_my_fine))
           call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
 
           call mpp_set_current_pelist(my_pelist)
@@ -2625,7 +2625,8 @@ program test_mpp_nesting
           deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
        endif
        endif
-       deallocate(my_pelist, my_pelist_fine)
+       if(ANY(my_pelist(:)==mpp_pe())) deallocate(my_pelist_fine)
+       deallocate(my_pelist)
        call mpp_set_current_pelist()
 
     enddo
@@ -2984,15 +2985,15 @@ program test_mpp_nesting
     !--- loop over nest level
     do l = 1, num_nest_level
        npes_my_level = mpp_get_nest_npes(nest_domain, l)
-       npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
        allocate(my_pelist(npes_my_level))
-       allocate(my_pelist_fine(npes_my_fine))
        call mpp_get_nest_pelist(nest_domain, l, my_pelist)
 
        call mpp_declare_pelist(my_pelist(:))
        write(type2, '(a,I2)')trim(type)//" nest_level = ",l
        if(ANY(my_pelist(:) == mpp_pe())) then
 
+          npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
+          allocate(my_pelist_fine(npes_my_fine))
           call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
 
           call mpp_set_current_pelist(my_pelist)
@@ -4655,7 +4656,8 @@ program test_mpp_nesting
        endif
        endif
 
-       deallocate(my_pelist, my_pelist_fine)
+       if(ANY(my_pelist(:)==mpp_pe())) deallocate(my_pelist_fine)
+       deallocate(my_pelist)
        call mpp_set_current_pelist()
 
     enddo
