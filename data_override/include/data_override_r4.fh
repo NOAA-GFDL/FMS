@@ -20,9 +20,6 @@
 #undef DATA_OVERRIDE_KIND_
 #define DATA_OVERRIDE_KIND_ r4_kind
 
-#undef DATA_OVERRIDE_IMPL_
-#define DATA_OVERRIDE_IMPL_ data_override_r4
-
 #undef DATA_OVERRIDE_INIT_IMPL_
 #define DATA_OVERRIDE_INIT_IMPL_ data_override_init_r4
 
@@ -53,7 +50,9 @@
 #undef DATA_OVERRIDE_UG_2D_IMPL_
 #define DATA_OVERRIDE_UG_2D_IMPL_ data_override_ug_2d_r4
 
+module data_override_r4
 #include "data_override.inc"
+end module data_override_r4
 
 #undef DATA_OVERRIDE_KIND_
 #undef DATA_OVERRIDE_IMPL_

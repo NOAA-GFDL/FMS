@@ -17,113 +17,112 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-module DATA_OVERRIDE_IMPL_
-  use platform_mod, only: r4_kind, r8_kind
-  use yaml_parser_mod
-  use constants_mod, only: DEG_TO_RAD
-  use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
-  use mpp_mod, only : input_nml_file
-  use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
-                               assignment(=)
-  use time_interp_external2_mod, only: time_interp_external_init, &
-                                       time_interp_external, &
-                                       init_external_field, &
-                                       get_external_field_size, &
-                                       set_override_region, &
-                                       reset_src_data_region, &
-                                       NO_REGION, INSIDE_REGION, OUTSIDE_REGION, &
-                                       get_external_fileobj
-  use fms_mod, only: write_version_number, lowercase, check_nml_error
-  use axis_utils2_mod,  only : nearest_index, axis_edges
-  use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
-  use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
-  use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
-  use time_manager_mod, only: time_type
-  use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
-                              read_data, fms2_io_init, variable_exists, &
-                              get_mosaic_tile_file
+use platform_mod, only: r4_kind, r8_kind
+use yaml_parser_mod
+use constants_mod, only: DEG_TO_RAD
+use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
+use mpp_mod, only : input_nml_file
+use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
+                             assignment(=)
+use time_interp_external2_mod, only: time_interp_external_init, &
+                                     time_interp_external, &
+                                     init_external_field, &
+                                     get_external_field_size, &
+                                     set_override_region, &
+                                     reset_src_data_region, &
+                                     NO_REGION, INSIDE_REGION, OUTSIDE_REGION, &
+                                     get_external_fileobj
+use fms_mod, only: write_version_number, lowercase, check_nml_error
+use axis_utils2_mod,  only : nearest_index, axis_edges
+use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, NULL_DOMAIN2D,operator(.NE.),operator(.EQ.)
+use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
+use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, NULL_DOMAINUG
+use time_manager_mod, only: time_type
+use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
+                            read_data, fms2_io_init, variable_exists, &
+                            get_mosaic_tile_file
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 
-  implicit none
-  private
+implicit none
+private
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-  !> Private type for holding field and grid information from a data table
-  !> @ingroup data_override_mod
-  type data_type
-     character(len=3)   :: gridname
-     character(len=128) :: fieldname_code  !< fieldname used in user's code (model)
-     character(len=128) :: fieldname_file  !< fieldname used in the netcdf data file
-     character(len=512) :: file_name       !< name of netCDF data file
-     character(len=128) :: interpol_method !< interpolation method (default "bilinear")
-     real(DATA_OVERRIDE_KIND_)        :: factor          !< For unit conversion, default=1, see OVERVIEW above
-     real(DATA_OVERRIDE_KIND_)        :: lon_start, lon_end, lat_start, lat_end
-     integer            :: region_type
-  end type data_type
+!> Private type for holding field and grid information from a data table
+!> @ingroup data_override_mod
+type data_type
+   character(len=3)   :: gridname
+   character(len=128) :: fieldname_code  !< fieldname used in user's code (model)
+   character(len=128) :: fieldname_file  !< fieldname used in the netcdf data file
+   character(len=512) :: file_name       !< name of netCDF data file
+   character(len=128) :: interpol_method !< interpolation method (default "bilinear")
+   real(DATA_OVERRIDE_KIND_)        :: factor          !< For unit conversion, default=1, see OVERVIEW above
+   real(DATA_OVERRIDE_KIND_)        :: lon_start, lon_end, lat_start, lat_end
+   integer            :: region_type
+end type data_type
 
-  !> Private type for holding various data fields for performing data overrides
-  !> @ingroup data_override_mod
-  type override_type
-     character(len=3)                 :: gridname
-     character(len=128)               :: fieldname
-     integer                          :: t_index            !< index for time interp
-     type(horiz_interp_type), allocatable :: horz_interp(:) !< index for horizontal spatial interp
-     integer                          :: dims(4)            !< dimensions(x,y,z,t) of the field in filename
-     integer                          :: comp_domain(4)     !< istart,iend,jstart,jend for compute domain
-     integer                          :: numthreads
-     real(DATA_OVERRIDE_KIND_), allocatable :: lon_in(:)
-     real(DATA_OVERRIDE_KIND_), allocatable :: lat_in(:)
-     logical, allocatable             :: need_compute(:)
-     integer                          :: numwindows
-     integer                          :: window_size(2)
-     integer                          :: is_src, ie_src, js_src, je_src
-  end type override_type
+!> Private type for holding various data fields for performing data overrides
+!> @ingroup data_override_mod
+type override_type
+   character(len=3)                 :: gridname
+   character(len=128)               :: fieldname
+   integer                          :: t_index            !< index for time interp
+   type(horiz_interp_type), allocatable :: horz_interp(:) !< index for horizontal spatial interp
+   integer                          :: dims(4)            !< dimensions(x,y,z,t) of the field in filename
+   integer                          :: comp_domain(4)     !< istart,iend,jstart,jend for compute domain
+   integer                          :: numthreads
+   real(DATA_OVERRIDE_KIND_), allocatable :: lon_in(:)
+   real(DATA_OVERRIDE_KIND_), allocatable :: lat_in(:)
+   logical, allocatable             :: need_compute(:)
+   integer                          :: numwindows
+   integer                          :: window_size(2)
+   integer                          :: is_src, ie_src, js_src, je_src
+end type override_type
 
-  integer, parameter :: lkind = DATA_OVERRIDE_KIND_
-  integer, parameter :: max_table=100, max_array=100
+integer, parameter :: lkind = DATA_OVERRIDE_KIND_
+integer, parameter :: max_table=100, max_array=100
 
-  integer            :: table_size !< actual size of data table
-  logical            :: module_is_initialized = .FALSE.
+integer            :: table_size !< actual size of data table
+logical            :: module_is_initialized = .FALSE.
 
-  type(domain2D) :: ocn_domain,atm_domain,lnd_domain, ice_domain
-  type(domainUG) :: lnd_domainUG
+type(domain2D) :: ocn_domain,atm_domain,lnd_domain, ice_domain
+type(domainUG) :: lnd_domainUG
 
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ocn, lat_local_ocn
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_atm, lat_local_atm
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ice, lat_local_ice
-  real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_lnd, lat_local_lnd
-  real(DATA_OVERRIDE_KIND_) :: min_glo_lon_ocn, max_glo_lon_ocn
-  real(DATA_OVERRIDE_KIND_) :: min_glo_lon_atm, max_glo_lon_atm
-  real(DATA_OVERRIDE_KIND_) :: min_glo_lon_lnd, max_glo_lon_lnd
-  real(DATA_OVERRIDE_KIND_) :: min_glo_lon_ice, max_glo_lon_ice
-  integer :: num_fields = 0 !< number of fields in override_array already processed
+real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ocn, lat_local_ocn
+real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_atm, lat_local_atm
+real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_ice, lat_local_ice
+real(DATA_OVERRIDE_KIND_), dimension(:,:), target, allocatable :: lon_local_lnd, lat_local_lnd
+real(DATA_OVERRIDE_KIND_) :: min_glo_lon_ocn, max_glo_lon_ocn
+real(DATA_OVERRIDE_KIND_) :: min_glo_lon_atm, max_glo_lon_atm
+real(DATA_OVERRIDE_KIND_) :: min_glo_lon_lnd, max_glo_lon_lnd
+real(DATA_OVERRIDE_KIND_) :: min_glo_lon_ice, max_glo_lon_ice
+integer :: num_fields = 0 !< number of fields in override_array already processed
 
 #ifdef use_yaml
-  type(data_type), dimension(:), allocatable :: data_table !< user-provided data table
+type(data_type), dimension(:), allocatable :: data_table !< user-provided data table
 #else
-  type(data_type), dimension(max_table)      :: data_table !< user-provided data table
+type(data_type), dimension(max_table)      :: data_table !< user-provided data table
 #endif
 
-  type(data_type)                            :: default_table
-  type(override_type), dimension(max_array)  :: override_array !< to store processed fields
-  type(override_type)                        :: default_array
-  logical                                    :: debug_data_override
-  logical                                    :: grid_center_bug = .false.
-  logical                                    :: reproduce_null_char_bug = .false. !> Flag indicating
-                                                !! to reproduce the mpp_io bug where lat/lon_bnd were
-                                                !! not read correctly if null characters are present in
-                                                !! the netcdf file
+type(data_type)                            :: default_table
+type(override_type), dimension(max_array)  :: override_array !< to store processed fields
+type(override_type)                        :: default_array
+logical                                    :: debug_data_override
+logical                                    :: grid_center_bug = .false.
+logical                                    :: reproduce_null_char_bug = .false. !> Flag indicating
+                                              !! to reproduce the mpp_io bug where lat/lon_bnd were
+                                              !! not read correctly if null characters are present in
+                                              !! the netcdf file
 
-  namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug
+namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug
 
-  public :: DATA_OVERRIDE_INIT_IMPL_, DATA_OVERRIDE_UNSET_ATM_, DATA_OVERRIDE_UNSET_OCN_, &
-          & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_IMPL_, &
-          & DATA_OVERRIDE_2D_IMPL_, DATA_OVERRIDE_3D_IMPL_, DATA_OVERRIDE_UG_1D_IMPL_, &
-          & DATA_OVERRIDE_UG_2D_IMPL_
+public :: DATA_OVERRIDE_INIT_IMPL_, DATA_OVERRIDE_UNSET_ATM_, DATA_OVERRIDE_UNSET_OCN_, &
+        & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_IMPL_, &
+        & DATA_OVERRIDE_2D_IMPL_, DATA_OVERRIDE_3D_IMPL_, DATA_OVERRIDE_UG_1D_IMPL_, &
+        & DATA_OVERRIDE_UG_2D_IMPL_
 
-  contains
+contains
 
 !> @brief Assign default values for default_table, get domain of component models,
 !! get global grids of component models.
@@ -1162,7 +1161,6 @@ subroutine DATA_OVERRIDE_3D_IMPL_(gridname,fieldname_code,data,time,override,dat
   endif
 
   if(PRESENT(override)) override = .true.
-
 end subroutine DATA_OVERRIDE_3D_IMPL_
 
 !> @brief Data override for 1D unstructured grids
@@ -1198,7 +1196,6 @@ subroutine DATA_OVERRIDE_UG_1D_IMPL_(gridname,fieldname,data,time,override)
   call mpp_pass_SG_to_UG(UG_domain, data_SG(:,:), data(:))
 
   deallocate(data_SG)
-
 end subroutine DATA_OVERRIDE_UG_1D_IMPL_
 
 !> @brief Data override for 2D unstructured grids
@@ -1241,7 +1238,4 @@ subroutine DATA_OVERRIDE_UG_2D_IMPL_(gridname,fieldname,data,time,override)
   data(:,1:nlevel) = data_UG(:,1:nlevel)
 
   deallocate(data_SG, data_UG)
-
 end subroutine DATA_OVERRIDE_UG_2D_IMPL_
-
-end module DATA_OVERRIDE_IMPL_
