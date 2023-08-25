@@ -50,6 +50,7 @@
 
     logical :: do_bc
     integer :: i, j, m, n, n1, n2, halo
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if(associated(var%bc)) print *, 'r8 size=', SIZE(var%bc)
     if(associated(var%bc_r4)) print *, 'r4 size=', SIZE(var%bc_r4)
@@ -100,15 +101,15 @@
           if (m /= field_index) cycle
         endif
         if ( associated(var%FMS_CP_BC_TYPE_(n)%field(m)%values) ) then
-          if (scale == 0.0) then
+          if (scale == 0.0_kindl) then
             if (present(halo_size)) then
               do j=var%jsc-halo,var%jec+halo
                 do i=var%isc-halo,var%iec+halo
-                  var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j) = 0.0
+                  var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j) = 0.0_kindl
                 enddo
               enddo
             else
-              var%FMS_CP_BC_TYPE_(n)%field(m)%values(:,:) = 0.0
+              var%FMS_CP_BC_TYPE_(n)%field(m)%values(:,:) = 0.0_kindl
             endif
           else
             do j=var%jsc-halo,var%jec+halo
@@ -145,6 +146,7 @@
 
     logical :: do_bc
     integer :: i, j, k, m, n, n1, n2, halo
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if (present(bc_index)) then
       if (bc_index > var%num_bcs)&
@@ -190,17 +192,17 @@
           if (m /= field_index) cycle
         endif
         if ( associated(var%FMS_CP_BC_TYPE_(n)%field(m)%values) ) then
-          if (scale == 0.0) then
+          if (scale == 0.0_kindl) then
             if (present(halo_size)) then
               do k=var%ks,var%ke
                 do j=var%jsc-halo,var%jec+halo
                   do i=var%isc-halo,var%iec+halo
-                    var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j,k) = 0.0
+                    var%FMS_CP_BC_TYPE_(n)%field(m)%values(i,j,k) = 0.0_kindl
                   enddo
                 enddo
               enddo
             else
-              var%FMS_CP_BC_TYPE_(n)%field(m)%values(:,:,:) = 0.0
+              var%FMS_CP_BC_TYPE_(n)%field(m)%values(:,:,:) = 0.0_kindl
             endif
           else
             do k=var%ks,var%ke
@@ -259,10 +261,11 @@
     logical :: increment_bc
     integer :: i, j, k, m, n, n1, n2, halo
     integer :: io1, jo1, iow, jow, kow  ! Offsets to account for different index conventions.
+    integer, parameter :: kindl = FMS_CP_KIND_
 
-    scale = 1.0
+    scale = 1.0_kindl
     if (present(scale_factor)) scale = scale_factor
-    sc_prev = 1.0
+    sc_prev = 1.0_kindl
     if (present(scale_prev)) sc_prev = scale_prev
 
     if (present(bc_index)) then
@@ -401,15 +404,16 @@
 
     real(FMS_CP_KIND_) :: scale
     integer :: i, j, halo, i_off, j_off
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if (bc_index <= 0) then
-      array_out(:,:) = 0.0
+      array_out(:,:) = 0.0_kindl
       return
     endif
 
     halo = 0
     if (present(halo_size)) halo = halo_size
-    scale = 1.0
+    scale = 1.0_kindl
     if (present(scale_factor)) scale = scale_factor
 
     if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
@@ -538,15 +542,16 @@
 
     real(FMS_CP_KIND_) :: scale
     integer :: i, j, halo, i_off, j_off
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if (bc_index <= 0) then
-      array_out(:,:) = 0.0
+      array_out(:,:) = 0.0_kindl
       return
     endif
 
     halo = 0
     if (present(halo_size)) halo = halo_size
-    scale = 1.0
+    scale = 1.0_kindl
     if (present(scale_factor)) scale = scale_factor
 
     if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
@@ -681,15 +686,16 @@
 
     real(FMS_CP_KIND_) :: scale
     integer :: i, j, k, halo, i_off, j_off, k_off
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if (bc_index <= 0) then
-      array_out(:,:,:) = 0.0
+      array_out(:,:,:) = 0.0_kindl
       return
     endif
 
     halo = 0
     if (present(halo_size)) halo = halo_size
-    scale = 1.0
+    scale = 1.0_kindl
     if (present(scale_factor)) scale = scale_factor
 
     if ((var_in%isc-var_in%isd < halo) .or. (var_in%ied-var_in%iec < halo))&
@@ -826,12 +832,13 @@
 
     real(FMS_CP_KIND_) :: scale
     integer :: i, j, halo, i_off, j_off
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if (bc_index <= 0) return
 
     halo = 0
     if (present(halo_size)) halo = halo_size
-    scale = 1.0
+    scale = 1.0_kindl
     if (present(scale_factor)) scale = scale_factor
 
     if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo))&
@@ -962,12 +969,13 @@
 
     real(FMS_CP_KIND_) :: scale
     integer :: i, j, halo, i_off, j_off
+    integer, parameter :: kindl = FMS_CP_KIND_
 
     if (bc_index <= 0) return
 
     halo = 0
     if (present(halo_size)) halo = halo_size
-    scale = 1.0
+    scale = 1.0_kindl
     if (present(scale_factor)) scale = scale_factor
 
     if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo))&
@@ -1102,12 +1110,13 @@
 
     real(FMS_CP_KIND_) :: scale
     integer :: i, j, k, halo, i_off, j_off, k_off
+    integer, parameter :: kindl = FMS_CP_KIND_ 
 
     if (bc_index <= 0) return
 
     halo = 0
     if (present(halo_size)) halo = halo_size
-    scale = 1.0
+    scale = 1.0_kindl
     if (present(scale_factor)) scale = scale_factor
 
     if ((var%isc-var%isd < halo) .or. (var%ied-var%iec < halo))&

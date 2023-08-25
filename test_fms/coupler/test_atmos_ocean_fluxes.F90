@@ -42,27 +42,27 @@ program test_atmos_ocean_fluxes
   integer, dimension(num_bcs) :: coupler_index !< coupler_index; index returned after calling aof_set_coupler_flux
   integer, dimension(num_bcs) :: atm_tr_index  !< tracer_index
   integer, dimension(num_bcs) :: nparameter    !< number of parameters for a given flux_type/implementation
-  character(50), dimension(num_bcs) :: flux_name !< flux name
-  character(50), dimension(num_bcs) :: flux_type !< flux_type for the given flux name
-  character(50), dimension(num_bcs) :: impl !< implementation type for a given flux_type
+  character(8), dimension(num_bcs) :: flux_name !< flux name
+  character(24), dimension(num_bcs) :: flux_type !< flux_type for the given flux name
+  character(6), dimension(num_bcs) :: impl !< implementation type for a given flux_type
   real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: mol_wt      !< value of mol_wt
   real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: param_array !< parameter array
 
   !> The flux names are made up.
   flux_name=["vampires", &
-             "eric",     &
-             "grapes",   &
-             "coffee"]
+             "eric    ", &
+             "grapes  ", &
+             "coffee  "]
   !> Flux types
   flux_type=["air_sea_gas_flux_generic", &
-             "air_sea_gas_flux",         &
-             "air_sea_deposition",       &
-             "land_sea_runoff"]
+             "air_sea_gas_flux        ", &
+             "air_sea_deposition      ", &
+             "land_sea_runoff         "]
   !> Implmentation type for the corresponding flux type
   impl=["ocmip2", &
-       "linear",  &
-       "dry",     &
-       "river"]
+        "linear", &
+        "dry   ", &
+        "river "]
   !> made up parameters
   param_array =[1.0, 2.0, 3.0, 4.0]
   !> made up atm_tr_index

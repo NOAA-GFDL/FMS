@@ -40,9 +40,7 @@ module coupler_types_mod
   use data_override_mod, only: data_override
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
-  use platform_mod,      only: r4_kind, r8_kind
-
-  use iso_fortran_env, only : int32, int64  !To get mpp_chksum value
+  use platform_mod,      only: r4_kind, r8_kind, i8_kind
 
   implicit none
   private
@@ -116,7 +114,7 @@ module coupler_types_mod
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
     real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    real(r8_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_3d_real8_field_type
  
   !> Coupler data for 3D values
@@ -162,7 +160,7 @@ module coupler_types_mod
     !! fm_util_get_real_array which only returns a r8_kind
     !! Might be able to change to allocatable(?) to do a conversion 
     real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    real(r4_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_3d_real4_field_type
 
   !> Coupler data for 3D boundary conditions
@@ -219,7 +217,7 @@ module coupler_types_mod
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
-    real(r8_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_2d_real8_field_type
 
   !> Coupler data for 2D values
@@ -265,7 +263,7 @@ module coupler_types_mod
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
-    real(r4_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_2d_real4_field_type
 
   !> Coupler data for 2D boundary conditions
@@ -318,7 +316,7 @@ module coupler_types_mod
     !> precision has been explicitly defined
     !! to be r8_kind during mixedmode update to field_manager
     !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
-    real(r8_kind)                  :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                  :: mol_wt = 0.0_r8_kind !< mol_wt
 
  end type coupler_1d_real8_field_type
 
@@ -357,7 +355,7 @@ module coupler_types_mod
     logical                        :: use_10m_wind_speed !< use_10m_wind_speed
     logical                        :: pass_through_ice !< pass_through_ice
     !> This is also read in r8 from the field manager, but since its not a pointer the conversion is allowed 
-    real(r4_kind)                  :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                  :: mol_wt = 0.0_r8_kind !< mol_wt
 
  end type coupler_1d_real4_field_type
 
@@ -562,7 +560,7 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "copy_type_1d_2d: var_in has invalid bc type kinds, only one of bc or bc_r4 should be allocated")
 
     if (var_in%num_bcs >= 0)&
@@ -600,7 +598,7 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "copy_type_1d_3d: var_in has invalid bc type kinds, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
@@ -636,7 +634,7 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "copy_type_2d_2d: var_in has invalid bc type kinds, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
@@ -673,7 +671,7 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "copy_type_2d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
@@ -709,7 +707,7 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "copy_type_3d_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
@@ -746,7 +744,7 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "copy_type_3d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
@@ -782,7 +780,7 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
@@ -850,7 +848,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc(n)%field(m)%values(:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:) = 0.0_r8_kind
           enddo
         enddo
       else if( associated(var_in%bc_r4)) then
@@ -892,7 +890,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc_r4(n)%field(m)%values(:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:) = 0.0_r4_kind
           enddo
         enddo
       else
@@ -928,7 +926,7 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
@@ -1001,7 +999,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc(n)%field(m)%values(:,:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:,:) = 0.0_r8_kind
           enddo
         enddo
       else if(associated(var_in%bc_r4)) then
@@ -1042,7 +1040,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0_r4_kind
           enddo
         enddo
       else
@@ -1077,7 +1075,7 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
@@ -1145,7 +1143,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc(n)%field(m)%values(:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:) = 0.0_r8_kind
           enddo
         enddo
       else if (associated(var_in%bc_r4)) then
@@ -1186,7 +1184,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc_r4(n)%field(m)%values(:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:) = 0.0_r4_kind
           enddo
         enddo
       else
@@ -1224,7 +1222,7 @@ contains
     integer                 :: m, n
     logical                 :: is_kind_8
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
@@ -1299,7 +1297,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc(n)%field(m)%values(:,:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:,:) = 0.0_r8_kind
           enddo
         enddo
       else if(associated(var_in%bc_r4)) then
@@ -1340,7 +1338,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0_r4_kind
           enddo
         enddo
       else
@@ -1374,7 +1372,7 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
@@ -1442,7 +1440,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc(n)%field(m)%values(:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:) = 0.0_r8_kind
           enddo
         enddo
       ! if using r4_kind reals (same logic)
@@ -1484,7 +1482,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc_r4(n)%field(m)%values(:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:) = 0.0_r4_kind
           enddo
         enddo
       else
@@ -1521,7 +1519,7 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, error_header//"var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(as_needed)) then
@@ -1594,7 +1592,7 @@ contains
 
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc(n)%field(m)%values(:,:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:,:) = 0.0_r8_kind
           enddo
         enddo
       else if(associated(var_in%bc_r4)) then
@@ -1636,7 +1634,7 @@ contains
 
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0_r4_kind
           enddo
         enddo
       else
@@ -1675,7 +1673,7 @@ contains
     logical :: copy_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "CT_copy_data_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(bc_index)) then
@@ -1811,7 +1809,7 @@ contains
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "CT_copy_data_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(bc_index)) then
@@ -1959,7 +1957,7 @@ contains
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, ks, ke
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (present(bc_index)) then
@@ -2089,7 +2087,7 @@ contains
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "CT_redistribute_data_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     do_complete = .true.
@@ -2256,7 +2254,7 @@ contains
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "CT_redistribute_data_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     do_complete = .true.
@@ -2438,8 +2436,8 @@ contains
                                                          !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                          !! boundary condition that is being copied
-    real,             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
-    real,             optional, intent(in)    :: scale_prev    !< A scaling factor for the data that is already here
+    real(r8_kind),             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
+    real(r8_kind),             optional, intent(in)    :: scale_prev    !< A scaling factor for the data that is already here
     character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
                                                          !! of fluxes to exclude from this increment.
     character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types
@@ -2447,16 +2445,16 @@ contains
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only increment BCs whose
                                                          !! value of pass_through ice matches this
 
-    real :: scale, sc_prev
+    real(r8_kind) :: scale, sc_prev
     logical :: increment_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
-    scale = 1.0
+    scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
-    sc_prev = 1.0
+    sc_prev = 1.0_r8_kind
     if (present(scale_prev)) sc_prev = scale_prev
    
     if (present(bc_index)) then
@@ -2545,8 +2543,8 @@ contains
           if ( associated(var%bc_r4(n)%field(m)%values) ) then
             do j=var%jsc-halo,var%jec+halo
               do i=var%isc-halo,var%iec+halo
-                var%bc_r4(n)%field(m)%values(i,j) = sc_prev * var%bc_r4(n)%field(m)%values(i,j) +&
-                    & scale * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off)
+                var%bc_r4(n)%field(m)%values(i,j) = real(sc_prev,r4_kind) * var%bc_r4(n)%field(m)%values(i,j) +&
+                    & real(scale,r4_kind) * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off)
               enddo
             enddo
           endif
@@ -2581,8 +2579,8 @@ contains
                                                          !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                          !! boundary condition that is being copied
-    real,             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
-    real,             optional, intent(in)    :: scale_prev !< A scaling factor for the data that is already here
+    real(r8_kind),    optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
+    real(r8_kind),    optional, intent(in)    :: scale_prev !< A scaling factor for the data that is already here
     character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
                                                          !! of fluxes to exclude from this increment.
     character(len=*), optional, intent(in)    :: only_flux_type !< A string describing which types of
@@ -2590,16 +2588,16 @@ contains
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only increment BCs whose
                                                          !! value of pass_through ice matches this
 
-    real :: scale, sc_prev
+    real(r8_kind) :: scale, sc_prev
     logical :: increment_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-    if(associated(var_in%bc) .eq. associated(var_in%bc_r4)) &
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
       call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in has invalid associated field_type, either bc or bc_r4 must be allocated")
 
-    scale = 1.0
+    scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
-    sc_prev = 1.0
+    sc_prev = 1.0_r8_kind
     if (present(scale_prev)) sc_prev = scale_prev
 
     if (present(bc_index)) then
@@ -2698,8 +2696,8 @@ contains
             do k=var%ks,var%ke
               do j=var%jsc-halo,var%jec+halo
                 do i=var%isc-halo,var%iec+halo
-                  var%bc_r4(n)%field(m)%values(i,j,k) = sc_prev * var%bc_r4(n)%field(m)%values(i,j,k) +&
-                      & scale * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off,k+k_off)
+                  var%bc_r4(n)%field(m)%values(i,j,k) = real(sc_prev,r4_kind) * var%bc_r4(n)%field(m)%values(i,j,k) +&
+                      & real(scale,r4_kind) * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off,k+k_off)
                 enddo
               enddo
             enddo
@@ -2723,7 +2721,7 @@ contains
 
     integer :: m, n
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_set_diags_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (diag_name == ' ') return
@@ -2768,7 +2766,7 @@ contains
 
     integer :: m, n
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_set_diags_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if (diag_name == ' ') return
@@ -2809,7 +2807,7 @@ contains
     integer :: m, n
     logical :: used
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_send_data_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
@@ -2842,7 +2840,7 @@ contains
     integer :: m, n
     logical :: used
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_send_data_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
@@ -2888,7 +2886,7 @@ contains
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_register_restarts_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     ocn_rest = .true.
@@ -3161,7 +3159,7 @@ contains
     character(len=20)                          :: dir       !< Directory where to open the file
     integer                                    :: nz        !< Length of the z direction of each file
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_register_restarts_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     ocn_rest = .true.
@@ -3339,7 +3337,7 @@ contains
     character(len=80) :: unset_varname
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_register_restarts_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     any_set = .false.
@@ -3437,7 +3435,7 @@ contains
     character(len=80) :: unset_varname
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_restore_state_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     any_set = .false.
@@ -3526,7 +3524,7 @@ contains
     real(r8_kind), allocatable :: r8_field_values(:,:)
     integer :: m, n
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_data_override_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
@@ -3559,7 +3557,7 @@ contains
 
     integer :: m, n
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_data_override_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
@@ -3592,9 +3590,9 @@ contains
 
     character(len=120) :: var_name
     integer :: m, n
-    integer(kind=int64) :: chks ! A checksum for the field
+    integer(i8_kind) :: chks ! A checksum for the field
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_write_chksums_2d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then
@@ -3634,9 +3632,9 @@ contains
 
     character(len=120) :: var_name
     integer :: m, n
-    integer(kind=int64) :: chks ! A checksum for the field
+    integer(i8_kind) :: chks ! A checksum for the field
 
-    if(associated(var%bc) .eq. associated(var%bc_r4)) &
+    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
       call mpp_error(FATAL, "CT_write_chksums_3d: var has invalid associated field_type, either bc or bc_r4 must be allocated")
 
     if(associated(var%bc)) then

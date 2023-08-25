@@ -72,7 +72,7 @@ module  atmos_ocean_fluxes_mod
   public :: aof_set_coupler_flux
 
   character(len=*), parameter :: mod_name = 'atmos_ocean_fluxes_mod'
-  real, parameter :: epsln=1.0e-30
+  real(r8_kind), parameter :: epsln=1.0e-30_r8_kind
 
 
   ! Include variable "version" to be written to log file.
@@ -298,7 +298,7 @@ contains
     if (present(mol_wt)) then
       call fm_util_set_value('mol_wt', mol_wt)
     else
-      call fm_util_set_value('mol_wt', 0.0)
+      call fm_util_set_value('mol_wt', 0.0_r8_kind)
     endif
 
     if (present(ice_restart_file)) then
