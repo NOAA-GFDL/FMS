@@ -16,23 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup platform_mod platform_mod
-!> @ingroup platform
-!> @brief Uses @ref fms_platform.h to define byte sizes for variable kinds
-!! to be used in fms.
+#undef FMS_TI_KIND_
+#define FMS_TI_KIND_ r4_kind
 
-!> @addtogroup platform_mod
-!> @{
-module platform_mod
-!platform-dependent settings
-#include <fms_platform.h>
-  public
-  integer, parameter :: r16_kind=QUAD_KIND, r8_kind=DOUBLE_KIND, r4_kind=FLOAT_KIND, &
-                        c8_kind=DOUBLE_KIND, c4_kind=FLOAT_KIND, &
-                        l8_kind=LONG_KIND, l4_kind=INT_KIND, &
-                        i8_kind=LONG_KIND, i4_kind=INT_KIND, i2_kind=SHORT_KIND, &
-                        ptr_kind=POINTER_KIND
-!could additionally define things like OS, compiler...: useful?
-end module platform_mod
-!> @}
-! close documentation grouping
+#undef TIME_INTERP_EXTERNAL_0D_
+#define TIME_INTERP_EXTERNAL_0D_ time_interp_external_0d_r4
+
+#undef TIME_INTERP_EXTERNAL_2D_
+#define TIME_INTERP_EXTERNAL_2D_ time_interp_external_2d_r4
+
+#undef TIME_INTERP_EXTERNAL_3D_
+#define TIME_INTERP_EXTERNAL_3D_ time_interp_external_3d_r4
+
+#include "time_interp_external2.inc"

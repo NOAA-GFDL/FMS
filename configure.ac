@@ -475,6 +475,7 @@ AC_CONFIG_FILES([
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
+  test_fms/astronomy/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
   test_fms/exchange/Makefile
@@ -496,8 +497,10 @@ AC_CONFIG_FILES([
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
   test_fms/sat_vapor_pres/Makefile
+  test_fms/diag_integral/Makefile
   test_fms/tracer_manager/Makefile
   test_fms/random_numbers/Makefile
+
   FMS.pc
   ])
 
