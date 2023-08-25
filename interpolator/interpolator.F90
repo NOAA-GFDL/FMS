@@ -3427,8 +3427,10 @@ if (allocated (clim_type%has_level))  deallocate(clim_type%has_level)
 if (allocated (clim_type%field_name)) deallocate(clim_type%field_name)
 if (allocated (clim_type%time_init )) deallocate(clim_type%time_init)
 if (allocated (clim_type%mr        )) deallocate(clim_type%mr)
-if (allocated (clim_type%data_array5d)) then
-  deallocate(clim_type%data_array5d)
+if (allocated (clim_type%out_of_bounds )) deallocate(clim_type%out_of_bounds)
+if (allocated (clim_type%vert_interp )) deallocate(clim_type%vert_interp)
+if (allocated (clim_type%data)) then
+  deallocate(clim_type%data)
 endif
 if (allocated (clim_type%pmon_pyear)) then
   deallocate(clim_type%pmon_pyear)
@@ -3436,6 +3438,10 @@ if (allocated (clim_type%pmon_pyear)) then
   deallocate(clim_type%nmon_nyear)
   deallocate(clim_type%nmon_pyear)
 endif
+if (allocated(clim_type%indexm)) deallocate(clim_type%indexm)
+if (allocated(clim_type%indexp)) deallocate(clim_type%indexp)
+if (allocated(clim_type%climatology)) deallocate(clim_type%climatology)
+if (allocated(clim_type%clim_times)) deallocate(clim_type%clim_times)
 
 !! RSH mod
 if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &
