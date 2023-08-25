@@ -117,9 +117,9 @@ contains
     character(len=*), intent(in)                :: flux_type !< flux_type
     character(len=*), intent(in)                :: implementation !< implementation
     integer, intent(in), optional               :: atm_tr_index !< atm_tr_index
-    real(r8_kind), intent(in), dimension(:), optional    :: param !< param
+    class(*), intent(in), dimension(:), optional    :: param !< param
     logical, intent(in), dimension(:), optional :: flag !< flag
-    real(r8_kind), intent(in), optional                  :: mol_wt !< mol_wt
+    class(*), intent(in), optional                  :: mol_wt !< mol_wt
     character(len=*), intent(in), optional      :: ice_restart_file !< ice_restart_file
     character(len=*), intent(in), optional      :: ocean_restart_file !< ocean_restart_file
     character(len=*), intent(in), optional      :: units !< units
@@ -296,7 +296,13 @@ contains
     endif
 
     if (present(mol_wt)) then
-      call fm_util_set_value('mol_wt', mol_wt)
+
+      select type(mol_wt)
+      type is (real(r8_kind))
+        call fm_util_set_value('mol_wt', mol_wt)
+      type is (real(r4_kind))
+        call fm_util_set_value('mol_wt', mol_wt)
+      end select
     else
       call fm_util_set_value('mol_wt', 0.0_r8_kind)
     endif
@@ -326,7 +332,12 @@ contains
         write (outunit,*) 'overridden by the field table input'
       endif
       if (length .gt. 0) then
-        call fm_util_set_value('param', param(1:length), length)
+        select type (param)
+        type is (real(r4_kind))
+          call fm_util_set_value('param', param(1:length), length)
+        type is (real(r8_kind))
+          call fm_util_set_value('param', param(1:length), length)
+        end select
       else
         call fm_util_set_value('param', 'null', index = 0)
       endif
