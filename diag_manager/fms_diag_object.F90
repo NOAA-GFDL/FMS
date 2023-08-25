@@ -891,8 +891,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
         "Only none, min, max, sum, average, power, rms, and diurnal are supported."
     end select
 
-    call buffer_ptr%increase_time_step_count()
-
     if (field_ptr%is_static() .or. file_ptr%FMS_diag_file%is_done_writing_data()) then
       call buffer_ptr%set_done_with_math()
     endif

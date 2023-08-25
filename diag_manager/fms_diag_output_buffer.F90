@@ -55,7 +55,6 @@ type :: fmsDiagOutputBuffer_type
   integer,  allocatable :: axis_ids(:)        !< Axis ids for the buffer
   integer               :: field_id           !< The id of the field the buffer belongs to
   integer               :: yaml_id            !< The id of the yaml id the buffer belongs to
-  integer               :: time_step_count    !< The number of times that have been sent in this time_period
   type(time_type)       :: time_period_end    !< The time that the current math period ends
   logical               :: done_with_math     !< .True. if done doing the math
 
@@ -70,8 +69,6 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_time_period_end
   procedure :: is_done_with_math
   procedure :: set_done_with_math
-  procedure :: get_time_step_count
-  procedure :: increase_time_step_count
   procedure :: write_buffer
   !! These are needed because otherwise the write_data calls will go into the wrong interface
   procedure :: write_buffer_wrapper_netcdf
@@ -368,7 +365,6 @@ subroutine set_time_period_end(this, is_static, freq, freq_units, init_time)
     this%time_period_end = diag_time_inc(local_time_init, freq, freq_units)
   endif
 
-  this%time_step_count = 0
   this%done_with_math = .false.
 end subroutine
 
@@ -399,23 +395,6 @@ subroutine set_done_with_math(this)
 
   this%done_with_math = .true.
 end subroutine set_done_with_math
-
-!> @brief Get the time_step_count
-!! @return A copy of time_step_count
-function get_time_step_count(this) &
-  result(res)
-  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
-  integer :: res
-
-  res = this%time_step_count
-end function get_time_step_count
-
-!> @brief Increate the time_step count by 1
-subroutine increase_time_step_count(this)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
-
-  this%time_step_count = this%time_step_count + 1
-end subroutine increase_time_step_count
 
 !> @brief Get the yaml id of the buffer
 !! @return the yaml id of the buffer
