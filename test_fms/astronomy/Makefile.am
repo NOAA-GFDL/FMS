@@ -17,38 +17,39 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/interpolator directory of the FMS
-# package.
+# This is an automake file for the test_fms/astronomy directory of the
+# FMS package.
 
-# uramirez, Ed Hartnett
+# Caitlyn McAllister
 
-# Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
+# Find the fms and mpp mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_interpolator test_interpolator2_r4 test_interpolator2_r8
+check_PROGRAMS = \
+  test_astronomy_r4 \
+  test_astronomy_r8
 
 # This is the source code for the test.
-test_interpolator_SOURCES = test_interpolator.F90
-test_interpolator2_r4_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
-test_interpolator2_r8_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
+test_astronomy_r4_SOURCES = test_astronomy.F90
+test_astronomy_r8_SOURCES = test_astronomy.F90
 
-test_interpolator2_r4_CPPFLAGS=-DTEST_INTP_KIND_=4 -I$(MODDIR)
-test_interpolator2_r8_CPPFLAGS=-DTEST_INTP_KIND_=8 -I$(MODDIR)
+# Set r4_kind and r8_kind
+test_astronomy_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
+test_astronomy_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
 
 # Run the test program.
-TESTS = test_interpolator2.sh
+TESTS = test_astronomy.sh
+
+# Copy over other needed files to the srcdir
+EXTRA_DIST = test_astronomy.sh
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
-									$(abs_top_srcdir)/test_fms/tap-driver.sh
-TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
-
-# These files are also included in the distribution.
-EXTRA_DIST = test_interpolator2.sh
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Clean up
-CLEANFILES = input.nml diag_table *.dpi *.spi *.dyn *.spl *.out
+CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl

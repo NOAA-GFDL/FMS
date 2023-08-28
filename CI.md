@@ -8,24 +8,30 @@ Required CI for pull requests are listed first.
 ## Pull Request CI and checks
 
 ### Build libFMS with autotools
+
 Required GNU build test for all pull requests/pushes.
 Runs `make distcheck` after configuring via GNU autotools.
 
+Runs on a container image with spack installed dependencies, on top a rocky linux base.
+
+Dockerfile for image is stored at .github/workflows/Dockerfile.gnu for more specific information on the CI environment.
+
 Container environment:
-gcc            v7.3.0
-mpich          v3.3a2
-netcdf         v4.6.0
-netcdf-fortran v4.4.4
+gcc            v12.3.0
+mpich          v4.0.2
+netcdf         v4.9.0
+netcdf-fortran v4.6.0
 autoconf       v2.69
+libyaml        v0.2.5
 
-container hosted at [noaagfdl/ubuntu_libfms_gnu:latest](https://hub.docker.com/r/noaagfdl/ubuntu_libfms_gnu)
-
-`./configure` flags:
-- `--enable-openmp`
+`./configure` flags tested:
 - `--disable-openmp`
 - `--enable-mixed-mode`
+- `--with-mpi=no` (disables unit testing)
 - `--disable-setting-flags`
 - `--with-yaml`
+- `--enable-test-input=/home/unit_tests_input`
+
 
 ### Build libfms with cmake
 Required GNU build test for all pull requests/pushes.

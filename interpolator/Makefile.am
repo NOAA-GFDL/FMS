@@ -23,14 +23,17 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/interpolator/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libinterpolator.la
 
 # The convenience library depends on its source.
-libinterpolator_la_SOURCES = interpolator.F90
+libinterpolator_la_SOURCES = interpolator.F90 \
+														 include/interpolator.inc \
+														 include/interpolator_r4.fh \
+														 include/interpolator_r8.fh
 
 BUILT_SOURCES = interpolator_mod.$(FC_MODEXT)
 nodist_include_HEADERS = interpolator_mod.$(FC_MODEXT)
