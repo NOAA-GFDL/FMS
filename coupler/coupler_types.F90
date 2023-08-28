@@ -570,9 +570,6 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL,error_header//err_msg_var_in_kind)
-
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_1d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
 
@@ -608,9 +605,6 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "copy_type_1d_3d: var_in has invalid bc type kinds, either bc or bc_r4 must be allocated")
-
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_1d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
@@ -643,9 +637,6 @@ contains
       ! type has already been populated.
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
-
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "copy_type_2d_2d: var_in has invalid bc type kinds, either bc or bc_r4 must be allocated")
 
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_2d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
@@ -681,9 +672,6 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_2d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
@@ -716,9 +704,6 @@ contains
       ! type has already been populated.
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
-
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_3d_2d(var_in, var_out, (/ is, is, ie, ie /), (/ js, js, je, je /), suffix)
@@ -754,9 +739,6 @@ contains
       call mpp_error(FATAL, trim(error_header) // ' Number of output fields exceeds zero')
     endif
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     if (var_in%num_bcs >= 0)&
         & call CT_spawn_3d_3d(var_in, var_out,  (/ is, is, ie, ie /), (/ js, js, je, je /), (/1, kd/), suffix)
 
@@ -790,9 +772,6 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     if (present(as_needed)) then
       if (as_needed) then
         if ((var%set) .or. (.not.var_in%set)) return
@@ -803,6 +782,10 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -936,9 +919,6 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     if (present(as_needed)) then
       if (as_needed) then
         if ((var%set) .or. (.not.var_in%set)) return
@@ -949,6 +929,9 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1085,9 +1068,6 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     if (present(as_needed)) then
       if (as_needed) then
         if ((var%set) .or. (.not.var_in%set)) return
@@ -1098,6 +1078,9 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1230,10 +1213,6 @@ contains
         & '==>Error from coupler_types_mod (CT_spawn_2d_3d):'
     character(len=400)      :: error_msg
     integer                 :: m, n
-    logical                 :: is_kind_8
-
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     if (present(as_needed)) then
       if (as_needed) then
@@ -1246,7 +1225,8 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    is_kind_8 = associated(var_in%bc)
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1382,9 +1362,6 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     if (present(as_needed)) then
       if (as_needed) then
         if ((var%set) .or. (.not.var_in%set)) return
@@ -1395,6 +1372,9 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1529,9 +1509,6 @@ contains
     character(len=400)      :: error_msg
     integer                 :: m, n
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     if (present(as_needed)) then
       if (as_needed) then
         if ((var%set) .or. (.not.var_in%set)) return
@@ -1542,6 +1519,9 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1683,8 +1663,10 @@ contains
     logical :: copy_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_var_in_kind)
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_var_in_kind)
+    endif
 
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
@@ -1819,8 +1801,10 @@ contains
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "CT_copy_data_3d:"//err_msg_var_in_kind)
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_3d:"//err_msg_var_in_kind)
+    endif
 
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs) &
@@ -1967,8 +1951,10 @@ contains
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, ks, ke
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "CT_copy_data_2d_3d:"//err_msg_var_in_kind)
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_2d_3d:"//err_msg_var_in_kind)
+    endif
 
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
@@ -2097,8 +2083,10 @@ contains
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "CT_redistribute_data_2d"//err_msg_var_in_kind)
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_redistribute_data_2d"//err_msg_var_in_kind)
+    endif
 
     do_complete = .true.
     if (present(complete)) do_complete = complete
@@ -2264,8 +2252,10 @@ contains
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_var_in_kind)
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_var_in_kind)
+    endif
 
     do_complete = .true.
     if (present(complete)) do_complete = complete
@@ -2459,8 +2449,10 @@ contains
     logical :: increment_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_var_in_kind)
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_var_in_kind)
+    endif
 
     scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
@@ -2475,6 +2467,10 @@ contains
           if (field_index > var_in%bc(bc_index)%num_fields)&
               & call mpp_error(FATAL, "CT_increment_data_2d_2d: field_index is present and exceeds num_fields for" //&
               & trim(var_in%bc(bc_index)%name) )
+        else
+          if (field_index > var_in%bc_r4(bc_index)%num_fields)&
+              & call mpp_error(FATAL, "CT_increment_data_2d_2d: field_index is present and exceeds num_fields for" //&
+              & trim(var_in%bc_r4(bc_index)%name) )
         endif
       endif
     elseif (present(field_index)) then
@@ -2602,8 +2598,10 @@ contains
     logical :: increment_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_var_in_kind)
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_var_in_kind)
+    endif
 
     scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
@@ -2731,8 +2729,10 @@ contains
 
     integer :: m, n
 
-    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-      call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_var_kind)
+    if(var%set) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_var_kind)
+    endif
 
     if (diag_name == ' ') return
 
@@ -2776,8 +2776,10 @@ contains
 
     integer :: m, n
 
-    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-      call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_var_kind)
+    if(var%set) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_var_kind)
+    endif
 
     if (diag_name == ' ') return
 
@@ -2817,8 +2819,10 @@ contains
     integer :: m, n
     logical :: used
 
-    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-      call mpp_error(FATAL, "CT_send_data_2d:"//err_msg_var_kind)
+    if(var%set) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_send_data_2d:"//err_msg_var_kind)
+    endif
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
@@ -2850,8 +2854,10 @@ contains
     integer :: m, n
     logical :: used
 
-    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-      call mpp_error(FATAL, "CT_send_data_3d:"//err_msg_var_kind)
+    if(var%set) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_send_data_3d:"//err_msg_var_kind)
+    endif
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
@@ -2896,8 +2902,10 @@ contains
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
 
-    if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-      call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_var_kind)
+    if(var%set) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_var_kind)
+    endif
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
