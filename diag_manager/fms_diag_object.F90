@@ -237,8 +237,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
     call bufferptr%set_field_id(this%registered_variables)
     call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
-
-    fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
