@@ -783,8 +783,6 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
 
     var%num_bcs = var_in%num_bcs
@@ -802,6 +800,9 @@ contains
     var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
     if (var%num_bcs > 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
       if (associated(var_in%bc)) then
         if (associated(var%bc)) then
           call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
@@ -930,9 +931,6 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     var%num_bcs = var_in%num_bcs
     var%set = .true.
 
@@ -954,6 +952,9 @@ contains
         write (error_msg, *) trim(error_header), ' Disordered k-dimension index bound list  ', kdim
         call mpp_error(FATAL, trim(error_msg))
       endif
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
       if( associated(var_in%bc)) then
         if (associated(var%bc)) then
           call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
@@ -1079,9 +1080,6 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     var%num_bcs = var_in%num_bcs
     var%set = .true.
 
@@ -1097,6 +1095,9 @@ contains
     var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
     if (var%num_bcs > 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
       if(associated(var_in%bc)) then
         if (associated(var%bc)) then
@@ -1225,9 +1226,6 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     var%num_bcs = var_in%num_bcs
     var%set = .true.
 
@@ -1249,6 +1247,10 @@ contains
     var%ks  = kdim(1) ; var%ke = kdim(2)
 
     if (var%num_bcs > 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+
       if( associated(var_in%bc)) then
         if (associated(var%bc)) then
           call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
@@ -1373,8 +1375,6 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1391,6 +1391,10 @@ contains
     var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
     if (var%num_bcs > 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+
       ! if using r8_kind reals
       if( associated(var_in%bc)) then
         if (associated(var%bc)) then
@@ -1520,9 +1524,6 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-      call mpp_error(FATAL, error_header//err_msg_var_in_kind)
-
     var%num_bcs = var_in%num_bcs
     var%set = .true.
 
@@ -1543,6 +1544,10 @@ contains
     var%ks  = kdim(1) ; var%ke  = kdim(2)
 
     if (var%num_bcs > 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+
       if(associated(var_in%bc)) then
         if (associated(var%bc)) then
           call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
@@ -1663,10 +1668,6 @@ contains
     logical :: copy_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-    if(var_in%set) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_var_in_kind)
-    endif
 
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
@@ -1715,6 +1716,10 @@ contains
       j_off = var_in%jsc - var%jsc
     endif
 
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_var_in_kind)
+    endif
 
     if (associated(var_in%bc)) then
       do n = n1, n2
@@ -1801,11 +1806,6 @@ contains
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-    if(var_in%set) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_copy_data_3d:"//err_msg_var_in_kind)
-    endif
-
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs) &
           call mpp_error(FATAL, "CT_copy_data_3d: bc_index is present and exceeds var_in%num_bcs.")
@@ -1856,6 +1856,10 @@ contains
       k_off = var_in%ks - var%ks
     endif
 
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_3d:"//err_msg_var_in_kind)
+    endif
 
     if (associated(var_in%bc)) then
       do n = n1, n2
@@ -1951,11 +1955,6 @@ contains
     logical :: copy_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, ks, ke
 
-    if(var_in%set) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_copy_data_2d_3d:"//err_msg_var_in_kind)
-    endif
-
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
           & call mpp_error(FATAL, "CT_copy_data_2d_3d: bc_index is present and exceeds var_in%num_bcs.")
@@ -1995,6 +1994,11 @@ contains
 
     i_off = var_in%isc - var%isc
     j_off = var_in%jsc - var%jsc
+
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_2d_3d:"//err_msg_var_in_kind)
+    endif
 
     ! if using r8_kind
     if (associated(var_in%bc)) then
@@ -2083,17 +2087,17 @@ contains
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
 
-    if(var_in%set) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_redistribute_data_2d"//err_msg_var_in_kind)
-    endif
-
     do_complete = .true.
     if (present(complete)) do_complete = complete
 
     ! Figure out whether this PE has valid input or output fields or both.
     do_in = var_in%set
     do_out = var_out%set
+
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_redistribute_data_2d"//err_msg_var_in_kind)
+    endif
 
     ! mixed precision, checks input var for kind
     if(associated(var_in%bc)) then
@@ -2252,19 +2256,8 @@ contains
     logical :: do_in, do_out, do_complete
     integer :: m, n, fc, fc_in, fc_out
 
-    if(var_in%set) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_var_in_kind)
-    endif
-
     do_complete = .true.
     if (present(complete)) do_complete = complete
-
-    ! ensure only one kind was allocated
-    if( associated(var_in%bc) .and. associated(var_in%bc_r4)) then
-      call mpp_error(fatal, "ct_: passed in coupler type var_in has both r4 and r8 bc types initialized," // &
-                            "only one kind per type should be used")
-    endif
 
     ! Figure out whether this PE has valid input or output fields or both.
     do_in = var_in%set
@@ -2272,6 +2265,11 @@ contains
 
     fc_in = 0
     fc_out = 0
+
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_var_in_kind)
+    endif
 
     ! if using r8_kind, bc will be associated
     if( associated(var_in%bc)) then
@@ -2449,11 +2447,6 @@ contains
     logical :: increment_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-    if(var_in%set) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_var_in_kind)
-    endif
-
     scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
     sc_prev = 1.0_r8_kind
@@ -2504,6 +2497,12 @@ contains
 
       i_off = var_in%isc - var%isc
       j_off = var_in%jsc - var%jsc
+    endif
+
+    ! check only one kind used
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_var_in_kind)
     endif
 
     if(associated(var_in%bc)) then
@@ -2598,11 +2597,6 @@ contains
     logical :: increment_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-    if(var_in%set) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_var_in_kind)
-    endif
-
     scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
     sc_prev = 1.0_r8_kind
@@ -2656,6 +2650,12 @@ contains
       i_off = var_in%isc - var%isc
       j_off = var_in%jsc - var%jsc
       k_off = var_in%ks - var%ks
+    endif
+
+    ! check only one kind used
+    if(var_in%set) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_var_in_kind)
     endif
 
     if(associated(var_in%bc)) then
@@ -2729,16 +2729,16 @@ contains
 
     integer :: m, n
 
-    if(var%set) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_var_kind)
-    endif
-
     if (diag_name == ' ') return
 
     if (size(axes) < 2) then
       call mpp_error(FATAL, '==>Error from coupler_types_mod' //&
           & '(coupler_types_set_diags_3d): axes has less than 2 elements')
+    endif
+
+    if(var%set) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_var_kind)
     endif
 
     if(associated(var%bc)) then
@@ -2776,16 +2776,16 @@ contains
 
     integer :: m, n
 
-    if(var%set) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_var_kind)
-    endif
-
     if (diag_name == ' ') return
 
     if (size(axes) < 3) then
       call mpp_error(FATAL, '==>Error from coupler_types_mod' //&
           & '(coupler_types_set_diags_3d): axes has less than 3 elements')
+    endif
+
+    if(var%set) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_var_kind)
     endif
 
     if(associated(var%bc)) then
