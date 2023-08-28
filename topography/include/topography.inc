@@ -465,7 +465,7 @@ integer, parameter                    :: lkind = FMS_TOP_KIND_
 
    js = 1
    do j = 1, size(ydat(:))-1
-      if (ybeg >= ydat(j) .and. ybeg <= ydat(real(j,FMS_TOP_KIND_)+1.0_lkind)) then
+      if (ybeg >= ydat(j) .and. ybeg <= ydat(j+1)) then
          js = j
          exit
       endif
@@ -473,7 +473,7 @@ integer, parameter                    :: lkind = FMS_TOP_KIND_
 
    je = size(ydat(:))-1
    do j = js, size(ydat(:))-1
-      if (yend >= ydat(j) .and. yend <= ydat(real(j,FMS_TOP_KIND_)+1.0_lkind)) then
+      if (yend >= ydat(j) .and. yend <= ydat(j+1)) then
          je = j
          exit
       endif
