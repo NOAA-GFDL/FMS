@@ -193,6 +193,7 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   allocate(this%num_elements(n_samples))
   this%num_elements = 0
   this%count_0d   = 0
+  this%done_with_math = .false.
   allocate(this%buffer_dims(5))
   this%buffer_dims(1) = buff_sizes(1)
   this%buffer_dims(2) = buff_sizes(2)
