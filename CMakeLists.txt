@@ -26,7 +26,7 @@ set(CMAKE_Fortran_FLAGS_DEBUG)
 
 # Define the CMake project
 project(FMS
-  VERSION 2023.01.0
+  VERSION 2023.02.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -312,8 +312,9 @@ foreach(kind ${kinds})
                                                  random_numbers/include
                                                  diag_manager/include
                                                  constants4
-                                                 constants
                                                  axis_utils/include
+                                                 constants
+                                                 astronomy/include
                                                  field_manager/include
                                                  time_interp/include
                                                  tracer_manager/include
@@ -354,6 +355,7 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/astronomy/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monin_obukhov/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>

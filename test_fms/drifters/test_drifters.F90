@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program test_drifters
+#ifdef use_drifters
 
 !* contents of input file: drifters_inp_test_3d.nc
 !!$netcdf drifters_inp_test_3d {
@@ -336,7 +337,7 @@ program test_drifters
 !#ifndef _SERIAL
   call mpp_exit
 !#endif
-
+#endif
 end program test_drifters
 
 subroutine my_error_handler(mesg)
