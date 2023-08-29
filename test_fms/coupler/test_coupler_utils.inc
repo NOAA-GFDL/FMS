@@ -19,16 +19,20 @@
 !> Include file to hold common routines for the coupler tests
 !! Uses the FMS_TEST_BC_TYPE_ macro to test both r4/r8 
 
+!! constants used for test
+#define BCNUM_ 2
+#define FLDNUM_ 2
+
 subroutine set_up_1d_coupler_type(bc_type, data_grid)
    type(coupler_1d_bc_type), intent(inout) :: bc_type    !< Coupler 2d restart types
-   integer, dimension(4), intent(in)       :: data_grid  !< Starting and ending indexes of data_domain
+   integer, dimension(2), intent(in)       :: data_grid  !< Starting and ending indexes of data_domain
    integer :: nfiles, nfields, i, j
    character(len=1) :: field_num, file_num
 
    !bc_type%isc = data_grid(1); bc_type%iec = data_grid(2)
    !bc_type%isd = data_grid(1); bc_type%ied = data_grid(2)
    bc_type%set = .true.
-   bc_type%num_bcs = 2
+   bc_type%num_bcs = BCNUM_ 
    nfiles = bc_type%num_bcs
    allocate(bc_type%FMS_TEST_BC_TYPE_(nfiles))
 
@@ -36,7 +40,7 @@ subroutine set_up_1d_coupler_type(bc_type, data_grid)
       write(file_num,'(i1)') i
       bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file="default_"//file_num//"_ice_restart_2d.nc"
 
-      bc_type%FMS_TEST_BC_TYPE_(i)%num_fields=2
+      bc_type%FMS_TEST_BC_TYPE_(i)%num_fields=FLDNUM_
       nfields = bc_type%FMS_TEST_BC_TYPE_(i)%num_fields
       allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(nfields))
 
@@ -67,9 +71,9 @@ subroutine set_up_2d_coupler_type(bc_type, data_grid, appendix, to_read)
 
    bc_type%set = .true.
    if (to_read) then
-       bc_type%num_bcs = 3
+       bc_type%num_bcs = BCNUM_ + 1
    else
-       bc_type%num_bcs = 2
+       bc_type%num_bcs = BCNUM_
    endif
 
    bc_type%isc = data_grid(1); bc_type%iec = data_grid(2)
@@ -88,7 +92,7 @@ subroutine set_up_2d_coupler_type(bc_type, data_grid, appendix, to_read)
           bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_2d.nc"
       endif
 
-      bc_type%FMS_TEST_BC_TYPE_(i)%num_fields=2
+      bc_type%FMS_TEST_BC_TYPE_(i)%num_fields=FLDNUM_
       nfields = bc_type%FMS_TEST_BC_TYPE_(i)%num_fields
       allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(nfields))
 
@@ -175,9 +179,9 @@ subroutine set_up_3d_coupler_type(bc_type, data_grid, appendix, to_read)
 
    bc_type%set = .true.
    if (to_read) then
-       bc_type%num_bcs = 3
+       bc_type%num_bcs = BCNUM_ + 1 
    else
-       bc_type%num_bcs = 2
+       bc_type%num_bcs = BCNUM_
    endif
 
    nfiles = bc_type%num_bcs
@@ -193,7 +197,7 @@ subroutine set_up_3d_coupler_type(bc_type, data_grid, appendix, to_read)
           bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file=appendix//"_"//file_num//"_ice_restart_3d.nc"
       endif
 
-      bc_type%FMS_TEST_BC_TYPE_(i)%num_fields=2
+      bc_type%FMS_TEST_BC_TYPE_(i)%num_fields=FLDNUM_
       nfields = bc_type%FMS_TEST_BC_TYPE_(i)%num_fields
       allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(nfields))
 

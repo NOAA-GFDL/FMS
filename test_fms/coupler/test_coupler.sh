@@ -31,16 +31,22 @@
 # Run the ongrid test case with 2 halos in x and y
 touch input.nml
 
+# 2 bcs * 2 fields = 4 for both dimensions = 8 variables to register
 cat <<_EOF > diag_table
 test_coupler
 1 1 1 0 0 0
-
 #output files
- "coupler_types_test",  1, "days", 1, "days", "time"
-
+ "coupler_types_bc2",  1, "days", 1, "days", "time"
+ "coupler_types_bc1",  1, "days", 1, "days", "time"
 #output variables
- "test_coupler", "dat1", "dat1", "coupler_types_test", "all", .false., "none", 2
- "test_coupler", "dat2", "dat2", "coupler_types_test", "all", .false., "none", 2
+ "test_coupler_types", "bc1_var2d_1", "bc1_variable_2d_1_min", "coupler_types_bc1", "all", "min", "none", 2
+ "test_coupler_types", "bc1_var2d_2", "bc1_variable_2d_2_max", "coupler_types_bc1", "all", "max", "none", 2
+ "test_coupler_types", "bc1_var3d_1", "bc1_variable_3d_1", "coupler_types_bc1", "all", "rms", "none", 2
+ "test_coupler_types", "bc1_var3d_2", "bc1_variable_3d_2", "coupler_types_bc1", "all", "avg", "none", 2
+ "test_coupler_types", "bc2_var2d_1", "bc2_variable_2d_1_min", "coupler_types_bc2", "all", "min", "none", 2
+ "test_coupler_types", "bc2_var2d_2", "bc2_variable_2d_2_max", "coupler_types_bc2", "all", "max", "none", 2
+ "test_coupler_types", "bc2_var3d_1", "bc2_variable_3d_1", "coupler_types_bc2", "all", "rms", "none", 2
+ "test_coupler_types", "bc2_var3d_2", "bc2_variable_3d_2", "coupler_types_bc2", "all", "avg", "none", 2
 _EOF
 
 mkdir RESTART

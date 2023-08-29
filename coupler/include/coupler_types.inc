@@ -51,10 +51,6 @@
     logical :: do_bc
     integer :: i, j, m, n, n1, n2, halo
 
-    if(associated(var%bc)) print *, 'r8 size=', SIZE(var%bc)
-    if(associated(var%bc_r4)) print *, 'r4 size=', SIZE(var%bc_r4)
-    print *, associated(var%FMS_CP_BC_TYPE_)
-
     if (present(bc_index)) then
       if (bc_index > var%num_bcs)&
           & call mpp_error(FATAL, "CT_rescale_data_2d: bc_index is present and exceeds var%num_bcs.")
@@ -94,7 +90,6 @@
           & do_bc = (pass_through_ice .eqv. var%FMS_CP_BC_TYPE_(n)%pass_through_ice)
       if (.not.do_bc) cycle
 
-      print *, n, n1, n2, SIZE(var%FMS_CP_BC_TYPE_) 
       do m = 1, var%FMS_CP_BC_TYPE_(n)%num_fields
         if (present(field_index)) then
           if (m /= field_index) cycle

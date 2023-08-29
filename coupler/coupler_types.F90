@@ -2663,7 +2663,7 @@ contains
   !! @throw FATAL, "axes has less than 2 elements"
   subroutine CT_set_diags_2d(var, diag_name, axes, time)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+    character(len=*),         intent(in)    :: diag_name !< Module name for diagnostic file--if blank, then
                                                          !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
@@ -2705,7 +2705,7 @@ contains
   !! @throw FATAL, "axes has less than 3 elements"
   subroutine CT_set_diags_3d(var, diag_name, axes, time)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+    character(len=*),         intent(in)    :: diag_name !< Module name for diagnostic file--if blank, then
                                                          !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
