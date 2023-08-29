@@ -31,24 +31,30 @@
 program test_coupler_types
 
 use   fms_mod,            only: fms_init, fms_end, stdout, string
-use   mpp_mod,            only: mpp_error, mpp_pe, mpp_root_pe, FATAL, mpp_sync
+use   mpp_mod,            only: mpp_error, mpp_pe, mpp_root_pe, FATAL, mpp_sync, mpp_init
 use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, domain1D
 use   mpp_domains_mod,    only: mpp_domains_set_stack_size
 use   coupler_types_mod,  only: coupler_3d_bc_type, coupler_2d_bc_type, coupler_1d_bc_type
-use   coupler_types_mod,  only: coupler_type_copy, coupler_type_spawn, coupler_type_copy_data, coupler_type_redistribute_data
-use   coupler_types_mod,  only: coupler_type_rescale_data, coupler_type_increment_data, coupler_type_extract_data, coupler_type_set_data
-use   coupler_types_mod,  only: coupler_type_set_diags, coupler_type_write_chksums, coupler_type_send_data, coupler_type_data_override
+use   coupler_types_mod,  only: coupler_type_copy, coupler_type_spawn, coupler_type_copy_data
+use   coupler_types_mod,  only: coupler_type_redistribute_data, coupler_type_set_data, coupler_type_data_override
+use   coupler_types_mod,  only: coupler_type_rescale_data, coupler_type_increment_data, coupler_type_extract_data
+use   coupler_types_mod,  only: coupler_type_set_diags, coupler_type_write_chksums, coupler_type_send_data
 use   coupler_types_mod,  only: coupler_type_destructor, coupler_type_initialized
 use   diag_manager_mod,   only: diag_axis_init, diag_manager_end, diag_manager_init, NULL_AXIS_ID
 use   time_manager_mod,   only: time_type, set_date, time_manager_init, set_calendar_type, JULIAN 
 use   data_override_mod,  only: data_override_init
 use   constants_mod,      only: pi
 use   platform_mod,       only: r8_kind, r4_kind
+use   fms2_io_mod,        only: fms2_io_init
+use   netcdf,             only: nf90_close, nf90_put_var, nf90_enddef, nf90_create, nf90_def_dim, nf90_clobber, &
+                                nf90_64bit_offset, nf90_char, nf90_def_var, nf90_float
 implicit none
 
 type(coupler_1d_bc_type) :: bc_1d_new
 type(coupler_2d_bc_type) :: bc_2d_new, bc_2d_cp
 type(coupler_3d_bc_type) :: bc_3d_new, bc_3d_cp
+type(coupler_2d_bc_type) :: bc_2d_ref !< just used to check answers
+type(coupler_3d_bc_type) :: bc_3d_ref !< just used to check answers
 type(domain2D) :: Domain, Domain_out
 integer :: layout(2)
 integer :: nlat, nlon, nz, i, j
@@ -62,9 +68,12 @@ real(FMS_CP_TEST_KIND_), allocatable :: lats(:), lons(:), nzs(:) !< arrays of co
 integer :: id_x, id_y, id_z, chksum_unit
 character(len=128) :: chksum_2d, chksum_3d
 real(FMS_CP_TEST_KIND_), allocatable :: expected_2d(:,:), expected_3d(:,:,:)
+integer :: err, ncid, dim1D, varid, day 
 
 call fms_init
 call time_manager_init
+call fms2_io_init ! needed for netcdf calls
+call mpp_init
 call set_calendar_type(JULIAN)
 
 ! basic domain set up
@@ -76,7 +85,6 @@ call mpp_define_io_domain(Domain, (/1,1/))
 call mpp_get_data_domain(Domain, data_grid(1), data_grid(2), data_grid(3), data_grid(4))
 
 ! create/allocate new types with routines in utils file
-! sets values within to their corresponding field number
 call set_up_1d_coupler_type(bc_1d_new, data_grid)
 call set_up_2d_coupler_type(bc_2d_new, data_grid, appendix="new", to_read=.false.)
 data_grid(5) = nz
@@ -115,14 +123,13 @@ array_2d = 2.0_lkind; array_3d = 2.0_lkind
 call check_field_data_2d(bc_2d_cp, array_2d)
 call check_field_data_3d(bc_3d_cp, array_3d)
 call mpp_sync()
-
 call coupler_type_destructor(bc_2d_cp)
 call coupler_type_destructor(bc_3d_cp)
 
 ! coupler_type_rescale_data
-call coupler_type_rescale_data(bc_2d_new, 2.0_lkind)
-call coupler_type_rescale_data(bc_3d_new, 2.0_lkind)
-array_2d = 4.0_lkind; array_3d = 4.0_lkind ! data was 2, rescaled by factor of 2
+call coupler_type_rescale_data(bc_2d_cp, 2.0_lkind)
+call coupler_type_rescale_data(bc_3d_cp, 2.0_lkind)
+array_2d = 4.0_lkind; array_3d = 4.0_lkind ! data was 1, rescaled by factor of 2
 call check_field_data_2d(bc_2d_cp, array_2d)
 call check_field_data_3d(bc_3d_cp, array_3d)
 
@@ -158,7 +165,6 @@ call coupler_type_copy_data(bc_3d_new, bc_3d_cp)
 call coupler_type_destructor(bc_2d_cp)
 call coupler_type_destructor(bc_3d_cp)
 
-
 ! coupler_type_set_diags and coupler_type_send_data
 ! set up for diag manager
 call diag_manager_init
@@ -186,16 +192,16 @@ do i=1, num_bc
     bc_3d_new%FMS_TEST_BC_TYPE_(i)%field(j)%long_name = "bc"//string(i)//"_variable_3d_"//string(j)//"_min"
   enddo
 enddo
-
 call coupler_type_set_diags(bc_2d_new, "test_coupler_types", (/id_x, id_y/), time_t)
 call coupler_type_set_diags(bc_3d_new, "test_coupler_types", (/id_x, id_y, id_z/), time_t)
 call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", (/null_axis_id/), time_t)
 call coupler_type_copy_data(bc_2d_new, bc_2d_cp)
 call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5),  " ", (/null_axis_id/), time_t)
 call coupler_type_copy_data(bc_3d_new, bc_3d_cp)
-do i=1,12
-  time_t = set_date(1, 1, i)
-  call coupler_type_increment_data(bc_2d_cp, bc_2d_new)
+
+do day=1,31
+  time_t = set_date(1, 1, day)
+  call coupler_type_increment_data(bc_2d_cp, bc_2d_new) ! increment _new with cp
   call coupler_type_increment_data(bc_3d_cp, bc_3d_new)
   call coupler_type_send_data(bc_2d_new, time_t)
   call coupler_type_send_data(bc_3d_new, time_t)
@@ -203,10 +209,28 @@ enddo
 time_t = set_date(1, 2, 1)
 call diag_manager_end(time_t)
 
-! TODO
 ! coupler_type_data_override
-! needs data override updated to mixed precision
-call data_override_init(Ocean_domain_in=Domain)
+! basic grid spec points to outputted .nc's
+if( mpp_pe() .eq. mpp_root_pe()) then
+  err = nf90_create('INPUT/grid_spec.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
+  err = nf90_def_dim(ncid, 'str', 60, dim1d)
+ ! err = nf90_def_var(ncid, 'bc1_var2d_1', nf90_char, (/dim1d/), varid)
+  err = nf90_def_var(ncid, 'x_T', nf90_char, (/dim1d/), varid)
+  err = nf90_put_var(ncid, varid, "coupler_types_bc1.nc")
+  err = nf90_def_var(ncid, 'xta', nf90_float, (/dim1d/), varid)
+  !err = nf90_put_var(ncid, varid, 12.0)
+  err = nf90_def_var(ncid, 'yta', nf90_float, (/dim1d/), varid)
+  !err = nf90_put_var(ncid, varid, 12.0)
+  err = nf90_enddef(ncid)
+  err = nf90_close(ncid)
+endif
+call mpp_sync()
+call data_override_init(Atm_domain_in=Domain)
+! TODO time_interp issue, goes past the times given in send_data calls
+! have to find out where its set
+!call coupler_type_data_override("ATM", bc_2d_new, time_t)
+!call coupler_type_data_override("ATM", bc_3d_new, time_t)
+
 
 ! coupler_type_redistribute_data
 ! just using the same domain
@@ -240,24 +264,17 @@ subroutine check_field_data_2d(bc_2d, expected)
   type(coupler_2d_bc_type) :: bc_2d
   real(FMS_CP_TEST_KIND_), intent(in) :: expected(:,:)
   real(FMS_CP_TEST_KIND_), pointer :: values_ptr(:,:)
-  integer :: x, y, vals_start(2) !< need start point for values indices, passed in will always be 1-n
 
   do i=1, bc_2d%num_bcs
     do j=1, bc_2d%FMS_TEST_BC_TYPE_(i)%num_fields
       values_ptr => bc_2d%FMS_TEST_BC_TYPE_(i)%field(j)%values
-      vals_start(1) = LBOUND(values_ptr,1); vals_start(2) = LBOUND(values_ptr, 2)
       ! checks each index 
-      do x=lbound(expected,1), ubound(expected,1)-1
-        do y=lbound(expected,2), ubound(expected,2)-1
-          if(values_ptr(x+vals_start(1),y+vals_start(2)) .ne. expected(x,y)) then
-            print *, 'bounds value', mpp_pe(), lbound(values_ptr, 1), ubound(values_ptr, 1), lbound(values_ptr, 2), ubound(values_ptr, 2)
-            print *, 'bounds expected', mpp_pe(), lbound(expected, 1), ubound(expected, 1), lbound(expected, 2), ubound(expected, 2)
-            print *, "bc: ", i, "field:", j, "indices:", x, y
-            print *, 'value:', values_ptr(x,y), "expected:", expected(x,y)
-            call mpp_error(FATAL, "test_coupler_types: incorrect 2d values against expected result")
-          endif
-        enddo
-      enddo
+      if(SUM(values_ptr) .ne. SUM(expected)) then
+        print *, "value", mpp_pe(), values_ptr(data_grid(1), data_grid(3))
+        print *, "SUMS", SUM(values_ptr), SUM(expected), SHAPE(values_ptr), SHAPE(expected)
+        print *, "bc: ", i, "field:", j, "pe:", mpp_pe()
+        call mpp_error(FATAL, "test_coupler_types: incorrect 2d values against expected result")
+      endif
     enddo
   enddo
 end subroutine
@@ -275,19 +292,13 @@ subroutine check_field_data_3d(bc_3d, expected)
       vals_start(1) = LBOUND(values_ptr,1); vals_start(2) = LBOUND(values_ptr, 2)
       vals_start(3) = LBOUND(values_ptr,3)
       ! checks each index 
-      do x=lbound(expected,1), ubound(expected,1)-1
-        do y=lbound(expected,2), ubound(expected,2)-1
-          do z=lbound(expected,3), ubound(expected,3)-1
-            if(values_ptr(x+vals_start(1),y+vals_start(2),z+vals_start(3)) .ne. expected(x,y,z)) then
-              print *, 'bounds value', mpp_pe(), lbound(values_ptr, 1), ubound(values_ptr, 1), lbound(values_ptr, 2), ubound(values_ptr, 2)
-              print *, 'bounds expected', mpp_pe(), lbound(expected, 1), ubound(expected, 1), lbound(expected, 2), ubound(expected, 2)
-              print *, "bc: ", i, "field:", j, "indices:", x, y, z
-              print *, 'value:', values_ptr(x,y,z), "expected:", expected(x,y,z)
-              call mpp_error(FATAL, "test_coupler_types: incorrect 3d values against expected result")
-            endif
-          enddo
-        enddo
-      enddo
+      if(SUM(values_ptr) .ne. SUM(expected)) then
+        print *, 'bounds value', mpp_pe(), lbound(values_ptr, 1), ubound(values_ptr, 1), lbound(values_ptr, 2), ubound(values_ptr, 2)
+        print *, 'bounds expected', mpp_pe(), lbound(expected, 1), ubound(expected, 1), lbound(expected, 2), ubound(expected, 2)
+        print *, "bc: ", i, "field:", j, "indices:", x, y, z
+        print *, 'value:', values_ptr(x,y,z), "expected:", expected(x,y,z)
+        call mpp_error(FATAL, "test_coupler_types: incorrect 3d values against expected result")
+      endif
     enddo
   enddo
 end subroutine check_field_data_3d

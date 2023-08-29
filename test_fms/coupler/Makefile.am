@@ -31,6 +31,7 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 # Build this test program.
 check_PROGRAMS = test_coupler_2d_r4 test_coupler_2d_r8 \
                  test_coupler_3d_r4 test_coupler_3d_r8 \
+                 test_coupler_types_r4 test_coupler_types_r8 \
                  test_atmos_ocean_fluxes_r4 test_atmos_ocean_fluxes_r8
 
 # This is the source code for the test.
@@ -38,6 +39,8 @@ test_coupler_2d_r4_SOURCES = test_coupler_2d.F90 test_coupler_utils.inc
 test_coupler_2d_r8_SOURCES = test_coupler_2d.F90 test_coupler_utils.inc
 test_coupler_3d_r4_SOURCES = test_coupler_3d.F90 test_coupler_utils.inc
 test_coupler_3d_r8_SOURCES = test_coupler_3d.F90 test_coupler_utils.inc
+test_coupler_types_r4_SOURCES = test_coupler_types.F90 test_coupler_utils.inc
+test_coupler_types_r8_SOURCES = test_coupler_types.F90 test_coupler_utils.inc
 test_atmos_ocean_fluxes_r4_SOURCES = test_atmos_ocean_fluxes.F90
 test_atmos_ocean_fluxes_r8_SOURCES = test_atmos_ocean_fluxes.F90
 
@@ -46,6 +49,8 @@ test_coupler_2d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r
 test_coupler_2d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
 test_coupler_3d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
 test_coupler_3d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_types_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_types_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
 test_atmos_ocean_fluxes_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
 test_atmos_ocean_fluxes_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
 
