@@ -2,7 +2,7 @@
 # image created off dockerfile in repo, compile/link flags are set there
 name: Build libFMS test with autotools
 
-on: [push, pull_request]
+on: pull_request
 
 jobs:
   build:
