@@ -33,10 +33,12 @@
 #undef FMS_TOP_KIND_
 #define FMS_TOP_KIND_ r4_kind
 
+#undef GAUSSIAN_TOPOG_INIT_
+#define GAUSSIAN_TOPOG_INIT_ gaussian_topog_init_r4
+
 #undef GET_GAUSSIAN_TOPOG_
 #define GET_GAUSSIAN_TOPOG_ get_gaussian_topog_r4
 
 #include "gaussian_topog.inc"
 !> @}
 ! close documentation grouping
-
