@@ -17,13 +17,13 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!! defaults to ensure compilation 
+!! defaults to ensure compilation
 #ifndef FMS_CP_TEST_KIND_
 #define FMS_CP_TEST_KIND_ r8_kind
 #endif
 
 #ifndef FMS_TEST_BC_TYPE_
-#define FMS_TEST_BC_TYPE_ bc 
+#define FMS_TEST_BC_TYPE_ bc
 #endif
 
 !> @brief  This programs tests the functionality in
@@ -38,7 +38,8 @@ use   fms_mod,            only: fms_init, fms_end
 use   mpp_mod,            only: mpp_error, mpp_pe, mpp_root_pe, FATAL
 use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
                                 & mpp_domains_set_stack_size
-use   coupler_types_mod,  only: coupler_3d_bc_type, coupler_2d_bc_type, coupler_type_register_restarts, coupler_type_restore_state
+use   coupler_types_mod,  only: coupler_3d_bc_type, coupler_2d_bc_type, coupler_type_register_restarts, &
+                                coupler_type_restore_state
 use   coupler_types_mod,  only: coupler_1d_bc_type
 use   platform_mod,       only: FMS_CP_TEST_KIND_
 

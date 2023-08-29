@@ -72,7 +72,7 @@ module  atmos_ocean_fluxes_mod
   public :: aof_set_coupler_flux
 
   character(len=*), parameter :: mod_name = 'atmos_ocean_fluxes_mod'
-  real, parameter :: epsln=1.0e-30
+  real(r8_kind), parameter :: epsln=1.0e-30_r8_kind
 
 
   ! Include variable "version" to be written to log file.
@@ -117,9 +117,9 @@ contains
     character(len=*), intent(in)                :: flux_type !< flux_type
     character(len=*), intent(in)                :: implementation !< implementation
     integer, intent(in), optional               :: atm_tr_index !< atm_tr_index
-    real(r8_kind), intent(in), dimension(:), optional    :: param !< param
+    class(*), intent(in), dimension(:), optional    :: param !< param
     logical, intent(in), dimension(:), optional :: flag !< flag
-    real(r8_kind), intent(in), optional                  :: mol_wt !< mol_wt
+    class(*), intent(in), optional                  :: mol_wt !< mol_wt
     character(len=*), intent(in), optional      :: ice_restart_file !< ice_restart_file
     character(len=*), intent(in), optional      :: ocean_restart_file !< ocean_restart_file
     character(len=*), intent(in), optional      :: units !< units
@@ -296,9 +296,15 @@ contains
     endif
 
     if (present(mol_wt)) then
-      call fm_util_set_value('mol_wt', mol_wt)
+
+      select type(mol_wt)
+      type is (real(r8_kind))
+        call fm_util_set_value('mol_wt', mol_wt)
+      type is (real(r4_kind))
+        call fm_util_set_value('mol_wt', mol_wt)
+      end select
     else
-      call fm_util_set_value('mol_wt', 0.0)
+      call fm_util_set_value('mol_wt', 0.0_r8_kind)
     endif
 
     if (present(ice_restart_file)) then
@@ -326,7 +332,12 @@ contains
         write (outunit,*) 'overridden by the field table input'
       endif
       if (length .gt. 0) then
-        call fm_util_set_value('param', param(1:length), length)
+        select type (param)
+        type is (real(r4_kind))
+          call fm_util_set_value('param', param(1:length), length)
+        type is (real(r8_kind))
+          call fm_util_set_value('param', param(1:length), length)
+        end select
       else
         call fm_util_set_value('param', 'null', index = 0)
       endif
@@ -524,7 +535,7 @@ contains
       allocate (gas_fluxes%bc_r4(gas_fluxes%num_bcs))
       allocate (gas_fields_atm%bc_r4(gas_fields_atm%num_bcs))
       allocate (gas_fields_ice%bc_r4(gas_fields_ice%num_bcs))
-    endif  
+    endif
 
     ! Loop over the input fields, setting the values in the flux_type.
     n = 0
@@ -691,7 +702,7 @@ contains
             call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
           elseif (size(gas_fluxes%bc(n)%flag(:)) .ne. num_flags) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%flag(:)), ' given, need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name)//trim(error_string))
           endif
         elseif (num_flags .eq. 0) then
           if (associated(gas_fluxes%bc(n)%flag)) then
@@ -799,12 +810,14 @@ contains
         do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
           gas_fields_atm%bc_r4(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-long_name')
-          gas_fields_atm%bc_r4(n)%field(m)%long_name = trim(gas_fields_atm%bc_r4(n)%field(m)%long_name) // ' for ' // name
+          gas_fields_atm%bc_r4(n)%field(m)%long_name = trim(gas_fields_atm%bc_r4(n)%field(m)%long_name)// &
+                                                       ' for '// name
         enddo
         do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
           gas_fields_ice%bc_r4(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-long_name')
-          gas_fields_ice%bc_r4(n)%field(m)%long_name = trim(gas_fields_ice%bc_r4(n)%field(m)%long_name) // ' for ' // name
+          gas_fields_ice%bc_r4(n)%field(m)%long_name = trim(gas_fields_ice%bc_r4(n)%field(m)%long_name) // &
+                                                       ' for ' // name
         enddo
 
         ! Save the atm_tr_index.
@@ -860,7 +873,7 @@ contains
             call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
           elseif (size(gas_fluxes%bc_r4(n)%flag(:)) .ne. num_flags) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc_r4(n)%flag(:)), ' given, need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for '//trim(name)//trim(error_string))
           endif
         elseif (num_flags .eq. 0) then
           if (associated(gas_fluxes%bc_r4(n)%flag)) then

@@ -20,10 +20,6 @@
 !> @ingroup coupler
 !> @brief This module contains type declarations for the coupler.
 !> @author Richard Slater, John Dunne
-                           
-!! TODO:
-!!     - comments for if (associated) sections
-!!     - add check for only one kind associated to all routines
 
 !> @addtogroup coupler_types_mod
 !> @{
@@ -44,9 +40,7 @@ module coupler_types_mod
   use data_override_mod, only: data_override
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
-  use platform_mod,      only: r4_kind, r8_kind
-
-  use iso_fortran_env, only : int32, int64  !To get mpp_chksum value
+  use platform_mod,      only: r4_kind, r8_kind, i8_kind
 
   implicit none
   private
@@ -68,6 +62,16 @@ module coupler_types_mod
   public coupler_type_copy_1d_3d
 
   character(len=*), parameter :: mod_name = 'coupler_types_mod'
+
+  ! strings for repeated error messages
+  character(len=128), parameter :: err_msg_var_in_kind = &
+                                   "var_in has invalid bc type kinds, only one of bc or bc_r4 should be allocated"
+  character(len=128), parameter :: err_msg_var_kind =    &
+                                   "var has invalid bc type kinds, only one of bc or bc_r4 should be allocated"
+  character(len=128), parameter :: err_msg_no_assoc = &
+                                   "passed in type has unassociated coupler_field_type pointers for both kinds"
+
+
 
 !> @}
 
@@ -120,9 +124,9 @@ module coupler_types_mod
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
     real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    real(r8_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_3d_real8_field_type
- 
+
   !> Coupler data for 3D values
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real4_values_type
@@ -164,9 +168,9 @@ module coupler_types_mod
     logical                           :: pass_through_ice !< pass_through_ice
     !> precision needs to be r8_kind since this array is retrieved from the field_manager routine
     !! fm_util_get_real_array which only returns a r8_kind
-    !! Might be able to change to allocatable(?) to do a conversion 
+    !! Might be able to change to allocatable(?) to do a conversion
     real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    real(r4_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_3d_real4_field_type
 
   !> Coupler data for 3D boundary conditions
@@ -223,7 +227,7 @@ module coupler_types_mod
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
-    real(r8_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_2d_real8_field_type
 
   !> Coupler data for 2D values
@@ -254,7 +258,7 @@ module coupler_types_mod
     character(len=124)                :: implementation = ' ' !< implementation
     !> precision needs to be r8_kind since this array is retrieved from the field_manager routine
     !! fm_util_get_real_array which only returns a r8_kind
-    !! Might be able to change to allocatable(?) to do a conversion 
+    !! Might be able to change to allocatable(?) to do a conversion
     real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
     integer                           :: atm_tr_index = 0 !< atm_tr_index
@@ -269,7 +273,7 @@ module coupler_types_mod
     logical                           :: use_atm_pressure !< use_atm_pressure
     logical                           :: use_10m_wind_speed !< use_10m_wind_speed
     logical                           :: pass_through_ice !< pass_through_ice
-    real(r4_kind)                              :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
   end type coupler_2d_real4_field_type
 
   !> Coupler data for 2D boundary conditions
@@ -322,7 +326,7 @@ module coupler_types_mod
     !> precision has been explicitly defined
     !! to be r8_kind during mixedmode update to field_manager
     !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
-    real(r8_kind)                  :: mol_wt = 0.0 !< mol_wt
+    real(r8_kind)                  :: mol_wt = 0.0_r8_kind !< mol_wt
 
  end type coupler_1d_real8_field_type
 
@@ -351,7 +355,7 @@ module coupler_types_mod
     character(len=128)             :: implementation = ' ' !< implementation
     !> precision needs to be r8_kind since this array is retrieved from the field_manager routine
     !! fm_util_get_real_array which only returns a r8_kind
-    !! Might be able to change to allocatable(?) to do a conversion 
+    !! Might be able to change to allocatable(?) to do a conversion
     real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
@@ -360,8 +364,8 @@ module coupler_types_mod
     logical                        :: use_atm_pressure !< use_atm_pressure
     logical                        :: use_10m_wind_speed !< use_10m_wind_speed
     logical                        :: pass_through_ice !< pass_through_ice
-    !> This is also read in r8 from the field manager, but since its not a pointer the conversion is allowed 
-    real(r4_kind)                  :: mol_wt = 0.0 !< mol_wt
+    !> This is also read in r8 from the field manager, but since its not a pointer the conversion is allowed
+    real(r8_kind)                  :: mol_wt = 0.0_r8_kind !< mol_wt
 
  end type coupler_1d_real4_field_type
 
@@ -779,6 +783,12 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
+    ! check only one kind is used
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+    endif
+
     var%num_bcs = var_in%num_bcs
     var%set = .true.
 
@@ -833,7 +843,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc(n)%field(m)%values(:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:) = 0.0_r8_kind
           enddo
         enddo
       else if( associated(var_in%bc_r4)) then
@@ -875,11 +885,11 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc_r4(n)%field(m)%values(:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:) = 0.0_r4_kind
           enddo
         enddo
       else
-        call mpp_error(FATAL, "CT_spawn_1d_2d: passed var_in has unassociated coupler_1d_field_type pointers for both kinds")
+        call mpp_error(FATAL, error_header//err_msg_no_assoc)
       endif
     endif
   end subroutine  CT_spawn_1d_2d
@@ -921,6 +931,12 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    ! check only one kind is used
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+    endif
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -981,7 +997,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc(n)%field(m)%values(:,:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:,:) = 0.0_r8_kind
           enddo
         enddo
       else if(associated(var_in%bc_r4)) then
@@ -1022,11 +1038,11 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0_r4_kind
           enddo
         enddo
       else
-        call mpp_error(FATAL, "CT_spawn_1d_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, error_header//err_msg_no_assoc)
       endif
     endif
   end subroutine  CT_spawn_1d_3d
@@ -1068,6 +1084,12 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
+    ! check only one kind is used
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+    endif
+
     var%num_bcs = var_in%num_bcs
     var%set = .true.
 
@@ -1083,7 +1105,6 @@ contains
     var%jsd = jdim(1) ; var%jsc = jdim(2) ; var%jec = jdim(3) ; var%jed = jdim(4)
 
     if (var%num_bcs > 0) then
-
       if(associated(var_in%bc)) then
         if (associated(var%bc)) then
           call mpp_error(FATAL, trim(error_header) // ' var%bc already associated')
@@ -1122,7 +1143,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc(n)%field(m)%values(:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:) = 0.0_r8_kind
           enddo
         enddo
       else if (associated(var_in%bc_r4)) then
@@ -1163,11 +1184,11 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc_r4(n)%field(m)%values(:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:) = 0.0_r4_kind
           enddo
         enddo
       else
-        call mpp_error(FATAL, "CT_spawn_2d_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, error_header//err_msg_no_assoc)
       endif
     endif
   end subroutine  CT_spawn_2d_2d
@@ -1199,7 +1220,6 @@ contains
         & '==>Error from coupler_types_mod (CT_spawn_2d_3d):'
     character(len=400)      :: error_msg
     integer                 :: m, n
-    logical                 :: is_kind_8
 
     if (present(as_needed)) then
       if (as_needed) then
@@ -1212,7 +1232,11 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    is_kind_8 = associated(var_in%bc)
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+    endif
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1273,7 +1297,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc(n)%field(m)%values(:,:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:,:) = 0.0_r8_kind
           enddo
         enddo
       else if(associated(var_in%bc_r4)) then
@@ -1314,11 +1338,11 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0_r4_kind
           enddo
         enddo
       else
-        call mpp_error(FATAL, "CT_spawn_2d_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, error_header//err_msg_no_assoc)
       endif
     endif
   end subroutine  CT_spawn_2d_3d
@@ -1358,6 +1382,12 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+    endif
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1413,7 +1443,7 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc(n)%field(m)%values(:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:) = 0.0_r8_kind
           enddo
         enddo
       ! if using r4_kind reals (same logic)
@@ -1455,11 +1485,11 @@ contains
             endif
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed) )
-            var%bc_r4(n)%field(m)%values(:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:) = 0.0_r4_kind
           enddo
         enddo
       else
-        call mpp_error(FATAL, "CT_spawn_3d_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, error_header//err_msg_no_assoc)
       endif
     endif
   end subroutine  CT_spawn_3d_2d
@@ -1502,6 +1532,12 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The output type has already been initialized.')
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
+
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      ! check only one kind is used
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+    endif
 
     var%num_bcs = var_in%num_bcs
     var%set = .true.
@@ -1562,7 +1598,7 @@ contains
 
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc(n)%field(m)%values(:,:,:) = 0.0
+            var%bc(n)%field(m)%values(:,:,:) = 0.0_r8_kind
           enddo
         enddo
       else if(associated(var_in%bc_r4)) then
@@ -1604,11 +1640,11 @@ contains
 
             ! Note that this may be allocating a zero-sized array, which is legal in Fortran.
             allocate ( var%bc_r4(n)%field(m)%values(var%isd:var%ied,var%jsd:var%jed,var%ks:var%ke) )
-            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0
+            var%bc_r4(n)%field(m)%values(:,:,:) = 0.0_r4_kind
           enddo
         enddo
       else
-        call mpp_error(FATAL, "CT_spawn_3d_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, error_header//err_msg_no_assoc)
       endif
     endif
   end subroutine  CT_spawn_3d_3d
@@ -1642,6 +1678,7 @@ contains
                                                            !! value of pass_through ice matches this
     logical :: copy_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
+
 
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
@@ -1690,6 +1727,10 @@ contains
       j_off = var_in%jsc - var%jsc
     endif
 
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_var_in_kind)
+    endif
 
     if (associated(var_in%bc)) then
       do n = n1, n2
@@ -1740,7 +1781,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_copy_data_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_no_assoc)
     endif
   end subroutine CT_copy_data_2d
 
@@ -1826,6 +1867,10 @@ contains
       k_off = var_in%ks - var%ks
     endif
 
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_3d:"//err_msg_var_in_kind)
+    endif
 
     if (associated(var_in%bc)) then
       do n = n1, n2
@@ -1880,7 +1925,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_copy_data_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_copy_data_3d"//err_msg_no_assoc)
     endif
   end subroutine CT_copy_data_3d
 
@@ -1961,6 +2006,11 @@ contains
     i_off = var_in%isc - var%isc
     j_off = var_in%jsc - var%jsc
 
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_copy_data_2d_3d:"//err_msg_var_in_kind)
+    endif
+
     ! if using r8_kind
     if (associated(var_in%bc)) then
       do n = n1, n2
@@ -2024,7 +2074,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_copy_data_2d_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_copy_data_2d_3d"//err_msg_no_assoc)
     endif
   end subroutine CT_copy_data_2d_3d
 
@@ -2054,7 +2104,12 @@ contains
     ! Figure out whether this PE has valid input or output fields or both.
     do_in = var_in%set
     do_out = var_out%set
-   
+
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_redistribute_data_2d"//err_msg_var_in_kind)
+    endif
+
     ! mixed precision, checks input var for kind
     if(associated(var_in%bc)) then
       fc_in = 0 ; fc_out = 0
@@ -2192,7 +2247,7 @@ contains
         enddo
       endif
     else
-      call mpp_error(FATAL, "CT_copy_data_2d_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_redistribute_data_2d:"//err_msg_no_assoc)
     endif
   end subroutine CT_redistribute_data_2d
 
@@ -2215,18 +2270,17 @@ contains
     do_complete = .true.
     if (present(complete)) do_complete = complete
 
-    ! ensure only one kind was allocated
-    if( associated(var_in%bc) .and. associated(var_in%bc_r4)) then
-      call mpp_error(fatal, "ct_: passed in coupler type var_in has both r4 and r8 bc types initialized," // &
-                            "only one kind per type should be used")
-    endif
-
     ! Figure out whether this PE has valid input or output fields or both.
     do_in = var_in%set
     do_out = var_out%set
 
     fc_in = 0
     fc_out = 0
+
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_var_in_kind)
+    endif
 
     ! if using r8_kind, bc will be associated
     if( associated(var_in%bc)) then
@@ -2363,7 +2417,7 @@ contains
         enddo
       endif
     else
-      call mpp_error(FATAL, "CT_copy_data_2d_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_no_assoc)
     endif
   end subroutine CT_redistribute_data_3d
 
@@ -2391,8 +2445,8 @@ contains
                                                          !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                          !! boundary condition that is being copied
-    real,             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
-    real,             optional, intent(in)    :: scale_prev    !< A scaling factor for the data that is already here
+    real(r8_kind),    optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
+    real(r8_kind),    optional, intent(in)    :: scale_prev    !< A scaling factor for the data that is already here
     character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
                                                          !! of fluxes to exclude from this increment.
     character(len=*), optional, intent(in)    :: only_flux_type    !< A string describing which types
@@ -2400,15 +2454,15 @@ contains
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only increment BCs whose
                                                          !! value of pass_through ice matches this
 
-    real :: scale, sc_prev
+    real(r8_kind) :: scale, sc_prev
     logical :: increment_bc
     integer :: i, j, m, n, n1, n2, halo, i_off, j_off
 
-    scale = 1.0
+    scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
-    sc_prev = 1.0
+    sc_prev = 1.0_r8_kind
     if (present(scale_prev)) sc_prev = scale_prev
-   
+
     if (present(bc_index)) then
       if (bc_index > var_in%num_bcs)&
           & call mpp_error(FATAL, "CT_increment_data_2d_2d: bc_index is present and exceeds var_in%num_bcs.")
@@ -2417,6 +2471,10 @@ contains
           if (field_index > var_in%bc(bc_index)%num_fields)&
               & call mpp_error(FATAL, "CT_increment_data_2d_2d: field_index is present and exceeds num_fields for" //&
               & trim(var_in%bc(bc_index)%name) )
+        else
+          if (field_index > var_in%bc_r4(bc_index)%num_fields)&
+              & call mpp_error(FATAL, "CT_increment_data_2d_2d: field_index is present and exceeds num_fields for" //&
+              & trim(var_in%bc_r4(bc_index)%name) )
         endif
       endif
     elseif (present(field_index)) then
@@ -2450,6 +2508,12 @@ contains
 
       i_off = var_in%isc - var%isc
       j_off = var_in%jsc - var%jsc
+    endif
+
+    ! check only one kind used
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_var_in_kind)
     endif
 
     if(associated(var_in%bc)) then
@@ -2495,15 +2559,15 @@ contains
           if ( associated(var%bc_r4(n)%field(m)%values) ) then
             do j=var%jsc-halo,var%jec+halo
               do i=var%isc-halo,var%iec+halo
-                var%bc_r4(n)%field(m)%values(i,j) = sc_prev * var%bc_r4(n)%field(m)%values(i,j) +&
-                    & scale * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off)
+                var%bc_r4(n)%field(m)%values(i,j) = real(sc_prev,r4_kind) * var%bc_r4(n)%field(m)%values(i,j) +&
+                    & real(scale,r4_kind) * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off)
               enddo
             enddo
           endif
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_increment_data_2d_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_no_assoc)
     endif
   end subroutine CT_increment_data_2d_2d
 
@@ -2531,8 +2595,8 @@ contains
                                                          !! that is being copied
     integer,          optional, intent(in)    :: field_index !< The index of the field in the
                                                          !! boundary condition that is being copied
-    real,             optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
-    real,             optional, intent(in)    :: scale_prev !< A scaling factor for the data that is already here
+    real(r8_kind),    optional, intent(in)    :: scale_factor  !< A scaling factor for the data that is being added
+    real(r8_kind),    optional, intent(in)    :: scale_prev !< A scaling factor for the data that is already here
     character(len=*), optional, intent(in)    :: exclude_flux_type !< A string describing which types
                                                          !! of fluxes to exclude from this increment.
     character(len=*), optional, intent(in)    :: only_flux_type !< A string describing which types of
@@ -2540,13 +2604,13 @@ contains
     logical,          optional, intent(in)    :: pass_through_ice !< If true, only increment BCs whose
                                                          !! value of pass_through ice matches this
 
-    real :: scale, sc_prev
+    real(r8_kind) :: scale, sc_prev
     logical :: increment_bc
     integer :: i, j, k, m, n, n1, n2, halo, i_off, j_off, k_off
 
-    scale = 1.0
+    scale = 1.0_r8_kind
     if (present(scale_factor)) scale = scale_factor
-    sc_prev = 1.0
+    sc_prev = 1.0_r8_kind
     if (present(scale_prev)) sc_prev = scale_prev
 
     if (present(bc_index)) then
@@ -2599,6 +2663,12 @@ contains
       k_off = var_in%ks - var%ks
     endif
 
+    ! check only one kind used
+    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
+        call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_var_in_kind)
+    endif
+
     if(associated(var_in%bc)) then
       do n = n1, n2
         increment_bc = .true.
@@ -2645,8 +2715,8 @@ contains
             do k=var%ks,var%ke
               do j=var%jsc-halo,var%jec+halo
                 do i=var%isc-halo,var%iec+halo
-                  var%bc_r4(n)%field(m)%values(i,j,k) = sc_prev * var%bc_r4(n)%field(m)%values(i,j,k) +&
-                      & scale * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off,k+k_off)
+                  var%bc_r4(n)%field(m)%values(i,j,k) = real(sc_prev,r4_kind) * var%bc_r4(n)%field(m)%values(i,j,k) +&
+                      & real(scale,r4_kind) * var_in%bc_r4(n)%field(m)%values(i+i_off,j+j_off,k+k_off)
                 enddo
               enddo
             enddo
@@ -2654,7 +2724,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_increment_data_3d_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_no_assoc)
     endif
   end subroutine CT_increment_data_3d_3d
 
@@ -2677,6 +2747,11 @@ contains
           & '(coupler_types_set_diags_3d): axes has less than 2 elements')
     endif
 
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_var_kind)
+    endif
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -2694,7 +2769,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_set_diags_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_no_assoc)
     endif
 
 
@@ -2719,6 +2794,11 @@ contains
           & '(coupler_types_set_diags_3d): axes has less than 3 elements')
     endif
 
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_var_kind)
+    endif
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -2736,7 +2816,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_set_diags_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_no_assoc)
     endif
   end subroutine CT_set_diags_3d
 
@@ -2750,6 +2830,11 @@ contains
     integer :: m, n
     logical :: used
 
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_send_data_2d:"//err_msg_var_kind)
+    endif
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -2767,7 +2852,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_send_data_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_send_data_2d:"//err_msg_no_assoc)
     endif
   end subroutine CT_send_data_2d
 
@@ -2780,6 +2865,11 @@ contains
     integer :: m, n
     logical :: used
 
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_send_data_3d:"//err_msg_var_kind)
+    endif
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -2797,7 +2887,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_send_data_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_send_data_3d:"//err_msg_no_assoc)
     endif
   end subroutine CT_send_data_3d
 
@@ -2822,6 +2912,11 @@ contains
     character(len=20)                          :: io_type   !< flag indicating io type: "read" "overwrite"
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
+
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_var_kind)
+    endif
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
@@ -2965,7 +3060,7 @@ contains
         enddo !< num_fields
       enddo !< num_bcs
     else
-      call mpp_error(FATAL, "CT_register_restarts_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_no_assoc)
     endif ! associated(var%bc/r4)
 
   end subroutine CT_register_restarts_2d
@@ -3092,6 +3187,11 @@ contains
     logical, dimension(max(1,var%num_bcs))     :: file_is_open !< Flag indicating if file is open
     character(len=20)                          :: dir       !< Directory where to open the file
     integer                                    :: nz        !< Length of the z direction of each file
+
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_register_restarts_3d:"//err_msg_var_kind)
+    endif
 
     ocn_rest = .true.
     if (present(ocean_restart)) ocn_rest = ocean_restart
@@ -3246,7 +3346,7 @@ contains
         enddo !< num_fields
       enddo !< num_bcs
     else
-      call mpp_error(FATAL, "CT_register_restarts_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_no_assoc)
     endif
   end subroutine CT_register_restarts_3d
 
@@ -3267,6 +3367,11 @@ contains
     integer :: n, m, num_fld
     character(len=80) :: unset_varname
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
+
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_register_restarts_3d:"//err_msg_var_kind)
+    endif
 
     any_set = .false.
     all_set = .true.
@@ -3324,7 +3429,7 @@ contains
         endif
       enddo
     else
-      call mpp_error(FATAL, "CT_restore_state_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_restore_state_2d:"//err_msg_no_assoc)
     endif
 
     if ((num_fld > 0) .and. present(all_or_nothing)) then
@@ -3362,6 +3467,11 @@ contains
     integer :: n, m, num_fld
     character(len=80) :: unset_varname
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
+
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_restore_state_3d:"//err_msg_var_kind)
+    endif
 
     any_set = .false.
     all_set = .true.
@@ -3421,7 +3531,7 @@ contains
         endif
       enddo
     else
-      call mpp_error(FATAL, "CT_restore_state_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_restore_state_3d:"//err_msg_no_assoc)
     endif
 
 
@@ -3447,8 +3557,13 @@ contains
     type(time_type),          intent(in)    :: time !< The current model time
     !! TODO remove this when data_override is merged in
     real(r8_kind), allocatable :: r8_field_values(:,:)
-
     integer :: m, n
+
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_data_override_2d:"//err_msg_var_kind)
+    endif
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -3465,7 +3580,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_data_override_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_data_override_2d:"//err_msg_no_assoc)
     endif
   end subroutine CT_data_override_2d
 
@@ -3479,6 +3594,11 @@ contains
 
     integer :: m, n
 
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_data_override_3d:"//err_msg_var_kind)
+    endif
+
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
@@ -3495,7 +3615,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_data_override_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_data_override_3d:"//err_msg_no_assoc)
     endif
 
   end subroutine CT_data_override_3d
@@ -3509,7 +3629,12 @@ contains
 
     character(len=120) :: var_name
     integer :: m, n
-    integer(kind=int64) :: chks ! A checksum for the field
+    integer(i8_kind) :: chks ! A checksum for the field
+
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_write_chksums_2d:"//err_msg_var_kind)
+    endif
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
@@ -3536,7 +3661,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_write_chksums_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_write_chksums_2d:"//err_msg_no_assoc)
     endif
   end subroutine CT_write_chksums_2d
 
@@ -3548,7 +3673,12 @@ contains
 
     character(len=120) :: var_name
     integer :: m, n
-    integer(kind=int64) :: chks ! A checksum for the field
+    integer(i8_kind) :: chks ! A checksum for the field
+
+    if(var%set .and. var%num_bcs .gt. 0) then
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
+        call mpp_error(FATAL, "CT_write_chksums_3d:"//err_msg_var_kind)
+    endif
 
     if(associated(var%bc)) then
       do n = 1, var%num_bcs
@@ -3575,7 +3705,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_write_chksums_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+      call mpp_error(FATAL, "CT_write_chksums_2d:"//err_msg_no_assoc)
     endif
 
   end subroutine CT_write_chksums_3d
@@ -3628,7 +3758,7 @@ contains
         enddo
         deallocate ( var%bc_r4 )
       else
-        call mpp_error(FATAL, "CT_destructor_1d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, "CT_destructor_1d:"//err_msg_no_assoc)
       endif
     endif
 
@@ -3660,7 +3790,7 @@ contains
         enddo
         deallocate ( var%bc_r4 )
       else
-        call mpp_error(FATAL, "CT_destructor_2d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, "CT_destructor_2d:"//err_msg_no_assoc)
       endif
     endif
 
@@ -3692,9 +3822,9 @@ contains
         enddo
         deallocate ( var%bc_r4 )
       else
-        call mpp_error(FATAL, "CT_destructor_3d: passed in type has unassociated coupler_2d_field_type pointers for both kinds")
+        call mpp_error(FATAL, "CT_destructor_3d:"//err_msg_no_assoc)
       endif
-      
+
     endif
 
     var%num_bcs = 0
