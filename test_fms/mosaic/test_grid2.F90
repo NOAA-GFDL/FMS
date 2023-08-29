@@ -78,11 +78,11 @@ contains
 
     !---- 2d ---!
     !> answers.  Only testing for tile 1
-    answer_lon_2d(1,1)=305.0 ; answer_lon_2d(2,1)=35.0
-    answer_lon_2d(1,2)=305.0 ; answer_lon_2d(2,2)=35.0
+    answer_lon_2d(1,1)=x(1,1) ; answer_lon_2d(2,1)=x(3,1)
+    answer_lon_2d(1,2)=x(1,3) ; answer_lon_2d(2,2)=x(3,3)
 
-    answer_lat_2d(1,1)=-35.2643896827547 ; answer_lat_2d(2,1)=-35.2643896827547
-    answer_lat_2d(1,2)=35.2643896827547  ; answer_lat_2d(2,2)=35.2643896827547
+    answer_lat_2d(1,1)=y(1,1) ; answer_lat_2d(2,1)=y(3,1)
+    answer_lat_2d(1,2)=y(1,3) ; answer_lat_2d(2,2)=y(3,3)
 
     call get_grid_cell_vertices('ATM',1,lonb_2d,latb_2d)
     !> check
@@ -123,8 +123,8 @@ contains
 
     !--- 2d ---!
     !> assign answers for 2d
-    answer_glon_2d(1,1)=350.0
-    answer_glat_2d(1,1)=0.0
+    answer_glon_2d(1,1)=x(2,2)
+    answer_glat_2d(1,1)=y(2,2)
 
     call get_grid_cell_centers('ATM', 1, glon_2d, glat_2d)
     do i=1, npt_x

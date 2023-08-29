@@ -42,11 +42,22 @@ call write_all()
 !! In this case, the grid_version is VERSION_OCN_MOSAIC_FILE.
 call fms_init()
 
+write(*,*) 'TEST GET_MOSAIC_GRID_SIZES'
 call test_get_mosaic_grid_sizes()
+
+write(*,*) 'TEST GET_MOSAIC_CONTACT'
 call test_get_mosaic_contact()
+
+write(*,*) 'TEST GET_GRID_GREAT_CIRCLE_AREA'
 call test_get_grid_great_circle_area()
+
+write(*,*) 'TEST GET_GRID_AREA'
 call test_get_grid_area()
+
+write(*,*) 'TEST GET_MOSAIC_XGRID'
 call test_get_mosaic_xgrid()
+
+write(*,*) 'TEST IS_INSIDE_POLYGON'
 call test_is_inside_polygon()
 
 call fms_end()
@@ -62,14 +73,10 @@ subroutine test_get_mosaic_grid_sizes
   integer, allocatable :: nx_out(:), ny_out(:)
 
   type(FmsNetcdfFile_t):: fileobj
-  integer, allocatable :: pes(:)
 
   !-- ocean --!
-  allocate(pes(mpp_npes()))
-  call mpp_get_current_pelist(pes)
-  if( .not. open_file(fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read', pelist=pes) ) &
+  if( .not. open_file(fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read') ) &
        call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(ocn_mosaic_file))
-
 
   allocate( nx_out(ocn_ntiles), ny_out(ocn_ntiles) )
   !> get_mosaic_grid_sizes reads in the grid file
@@ -82,7 +89,7 @@ subroutine test_get_mosaic_grid_sizes
   call close_file(fileobj)
 
   !-- atm --!
-  if( .not. open_file(fileobj, 'INPUT/'//trim(c1_mosaic_file), 'read', pelist=pes) ) &
+  if( .not. open_file(fileobj, 'INPUT/'//trim(c1_mosaic_file), 'read') ) &
        call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(c1_mosaic_file))
 
   allocate( nx_out(c1_ntiles), ny_out(c1_ntiles) )
@@ -112,11 +119,8 @@ subroutine test_get_mosaic_contact
   integer              :: answers(2, 8)  !< Expected results
 
   type(FmsNetcdfFile_t):: ocn_fileobj
-  integer, allocatable :: pes(:)
 
-  allocate(pes(mpp_npes()))
-  call mpp_get_current_pelist(pes)
-  if( .not. open_file(ocn_fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read', pelist=pes) ) &
+  if( .not. open_file(ocn_fileobj, 'INPUT/'//trim(ocn_mosaic_file), 'read') ) &
        call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(ocn_mosaic_file))
 
   answers(1,:) = (/1440, 1440, 1, 1080, 1, 1, 1, 1080 /)
@@ -172,76 +176,18 @@ subroutine test_get_grid_area
   implicit none
 
   type(FmsNetcdfFile_t):: c1_fileobj
-  integer, allocatable :: pes(:)
 
-  real :: x_rad(c1_nxp, c1_nyp), y_rad(c1_nxp, c1_nyp)
-  real :: area_out(c1_nx,c1_ny), area_answer(c1_nx, c1_ny), area_w_pole_answer(c1_nx, c1_ny)
+  real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
+  real :: area_out(1,1)
 
   integer :: i,j
 
   !> get answers.  Tile 1 will be the reference/benchmark data
-  x_rad = x1 * DEG_TO_RAD
-  y_rad = y1 * DEG_TO_RAD
-  call calc_mosaic_grid_area(x_rad, y_rad, area_answer)
-  write(*,*) area_answer
-  write(*,*)'***'
+  x_rad = x(1:2, 1:2) * DEG_TO_RAD
+  y_rad = y(1:2, 1:2) * DEG_TO_RAD
 
-  !> Tile 2 area should be the same as tile 1 area
-  x_rad = x2 * DEG_TO_RAD
-  y_rad = y2 * DEG_TO_RAD
   call calc_mosaic_grid_area(x_rad, y_rad, area_out)
-  !> check answers
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 2 ')
-     end do
-  end do
-  write(*,*) area_out
-  write(*,*)'***'
-
-  !> Tile 3 area should be the same as tile 1 area
-  x_rad = x3 * DEG_TO_RAD
-  y_rad = y3 * DEG_TO_RAD
-  call calc_mosaic_grid_area(x_rad, y_rad, area_w_pole_answer)
-  write(*,*) area_w_pole_answer
-  write(*,*)'***'
-
-  !> Tile 4 area should be the same as tile 1 area
-  x_rad = x4 * DEG_TO_RAD
-  y_rad = y4 * DEG_TO_RAD
-  call calc_mosaic_grid_area(x_rad, y_rad, area_out)
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 4')
-     end do
-  end do
-  write(*,*) area_out
-  write(*,*)'***'
-
-  !> Tile 5 area should be the same as tile 1 area
-  x_rad = x5 * DEG_TO_RAD
-  y_rad = y5 * DEG_TO_RAD
-  call calc_mosaic_grid_area(x_rad, y_rad, area_out)
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 5')
-     end do
-  end do
-  write(*,*) area_out
-  write(*,*)'***'
-
-  !> Tile 6 area should be the same as tile 3 area
-  x_rad = x6 * DEG_TO_RAD
-  y_rad = y6 * DEG_TO_RAD
-  call calc_mosaic_grid_area(x_rad, y_rad, area_out)
-  !> check answers
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_w_pole_answer(i,j), area_out(i,j), 'test_grid_area tile 6')
-     end do
-  end do
-  write(*,*) area_out
-  write(*,*)'***'
+  call check_answer(area_out(1,1), area(1,1), 'TEST_GET_GRID_AREA')
 
 end subroutine test_get_grid_area
 !------------------------------------------------------!
@@ -259,70 +205,16 @@ subroutine test_get_grid_great_circle_area
   type(FmsNetcdfFile_t):: c1_fileobj
   integer, allocatable :: pes(:)
 
-  real :: x_rad(c1_nxp, c1_nyp), y_rad(c1_nxp, c1_nyp)
-  real :: area_out(c1_nx,c1_ny), area_answer(c1_nx, c1_ny)
+  real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
+  real :: area_out(1,1)
 
   integer :: i,j
 
   !> get answers.  Tile 1 will be the reference/benchmark data
-  x_rad = x1 * DEG_TO_RAD
-  y_rad = y1 * DEG_TO_RAD
-  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_answer)
-
-  !> Tile 2 areas should be the same as tile 1 area
-  x_rad = x2 * DEG_TO_RAD
-  y_rad = y2 * DEG_TO_RAD
+  x_rad = x(1:2, 1:2) * DEG_TO_RAD
+  y_rad = y(1:2, 1:2) * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  !> check answers
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 2 ')
-     end do
-  end do
-
-  !> Tile 3 area should be the same as tile 1 area
-  x_rad = x3 * DEG_TO_RAD
-  y_rad = y3 * DEG_TO_RAD
-  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  !> check answers
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 3')
-     end do
-  end do
-
-  !> Tile 4 area should be the same as tile 1 area
-  x_rad = x4 * DEG_TO_RAD
-  y_rad = y4 * DEG_TO_RAD
-  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  !> check answers
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 4')
-     end do
-  end do
-
-  !> Tile 5 area should be the same as tile 1 area
-  x_rad = x5 * DEG_TO_RAD
-  y_rad = y5 * DEG_TO_RAD
-  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  !> check answers
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 5')
-     end do
-  end do
-
-  !> Tile 6 area should be the same as tile 1 area
-  x_rad = x6 * DEG_TO_RAD
-  y_rad = y6 * DEG_TO_RAD
-  call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  !> check answers
-  do j=1, c1_ny
-     do i=1, c1_nx
-        call check_answer_w_tol(area_answer(i,j), area_out(i,j), 'test_grid_area tile 6')
-     end do
-  end do
+  call check_answer(area_out(1,1), area(1,1), 'TEST_GET_GRID_AREA')
 
 end subroutine test_get_grid_great_circle_area
 !------------------------------------------------------!
