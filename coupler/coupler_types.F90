@@ -1732,7 +1732,8 @@ contains
         call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_var_in_kind)
     endif
 
-    if (associated(var_in%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if (associated(var_in%bc) .or. var_in%num_bcs .lt. 1) then
       do n = n1, n2
         copy_bc = .true.
         if (copy_bc .and. present(exclude_flux_type))&
@@ -1872,7 +1873,8 @@ contains
         call mpp_error(FATAL, "CT_copy_data_3d:"//err_msg_var_in_kind)
     endif
 
-    if (associated(var_in%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if (associated(var_in%bc) .or. var_in%num_bcs .lt. 1) then
       do n = n1, n2
         copy_bc = .true.
         if (copy_bc .and. present(exclude_flux_type))&
@@ -2012,7 +2014,8 @@ contains
     endif
 
     ! if using r8_kind
-    if (associated(var_in%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if (associated(var_in%bc) .or. var_in%num_bcs .lt. 1) then
       do n = n1, n2
         copy_bc = .true.
         if (copy_bc .and. present(exclude_flux_type))&
@@ -2110,8 +2113,8 @@ contains
         call mpp_error(FATAL, "CT_redistribute_data_2d"//err_msg_var_in_kind)
     endif
 
-    ! mixed precision, checks input var for kind
-    if(associated(var_in%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if(associated(var_in%bc) .or. associated(var_out%bc) .or. var_in%num_bcs .lt. 1) then
       fc_in = 0 ; fc_out = 0
       if (do_in) then
         do n = 1, var_in%num_bcs
@@ -2179,7 +2182,7 @@ contains
         enddo
       endif
     ! same logic just uses r4_kind
-    else if( associated(var_in%bc_r4)) then
+    else if( associated(var_in%bc_r4) .or. associated(var_out%bc_r4)) then
       fc_in = 0 ; fc_out = 0
       if (do_in) then
         do n = 1, var_in%num_bcs
@@ -2282,8 +2285,8 @@ contains
         call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_var_in_kind)
     endif
 
-    ! if using r8_kind, bc will be associated
-    if( associated(var_in%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if( associated(var_in%bc) .or. associated(var_out%bc) .or. var_in%num_bcs .lt. 1) then
       if (do_in) then
         do n = 1, var_in%num_bcs
           do m = 1, var_in%bc(n)%num_fields
@@ -2350,7 +2353,7 @@ contains
         enddo
       endif
     ! if using r4_kind, bc_r4 will be associated
-    else if(associated(var_in%bc_r4)) then
+    else if(associated(var_in%bc_r4) .or. associated(var_out%bc_r4)) then
       if (do_in) then
         do n = 1, var_in%num_bcs
           do m = 1, var_in%bc_r4(n)%num_fields
@@ -2516,7 +2519,8 @@ contains
         call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_var_in_kind)
     endif
 
-    if(associated(var_in%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if(associated(var_in%bc) .or. var_in%num_bcs .lt. 1) then
       do n = n1, n2
         increment_bc = .true.
         if (increment_bc .and. present(exclude_flux_type))&
@@ -2669,7 +2673,8 @@ contains
         call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_var_in_kind)
     endif
 
-    if(associated(var_in%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if(associated(var_in%bc) .or. var_in%num_bcs .lt. 1) then
       do n = n1, n2
         increment_bc = .true.
         if (increment_bc .and. present(exclude_flux_type))&
@@ -2752,7 +2757,8 @@ contains
         call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           var%bc(n)%field(m)%id_diag = register_diag_field(diag_name,&
@@ -2799,7 +2805,8 @@ contains
         call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           var%bc(n)%field(m)%id_diag = register_diag_field(diag_name,&
@@ -2835,7 +2842,8 @@ contains
         call mpp_error(FATAL, "CT_send_data_2d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
@@ -2870,7 +2878,8 @@ contains
         call mpp_error(FATAL, "CT_send_data_3d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
@@ -2933,7 +2942,7 @@ contains
 
     num_rest_files = 0
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       ! Determine the number and names of the restart files
       do n = 1, var%num_bcs
         if (var%bc(n)%num_fields <= 0) cycle
@@ -3209,7 +3218,7 @@ contains
     nz = var%ke - var%ks + 1 !< NOTE: This assumes that the z dimension is the same for every variable
     num_rest_files = 0
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       ! Determine the number and names of the restart files
       do n = 1, var%num_bcs
         if (var%bc(n)%num_fields <= 0) cycle
@@ -3378,7 +3387,7 @@ contains
     num_fld = 0
     unset_varname = ""
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         any_var_set = .false.
         all_var_set = .true.
@@ -3478,7 +3487,7 @@ contains
     num_fld = 0
     unset_varname = ""
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         any_var_set = .false.
         all_var_set = .true.
@@ -3564,7 +3573,7 @@ contains
         call mpp_error(FATAL, "CT_data_override_2d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           call data_override(gridname, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, Time)
@@ -3599,7 +3608,7 @@ contains
         call mpp_error(FATAL, "CT_data_override_3d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           call data_override(gridname, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, Time)
@@ -3636,7 +3645,7 @@ contains
         call mpp_error(FATAL, "CT_write_chksums_2d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (present(name_lead)) then
@@ -3680,7 +3689,7 @@ contains
         call mpp_error(FATAL, "CT_write_chksums_3d:"//err_msg_var_kind)
     endif
 
-    if(associated(var%bc)) then
+    if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (present(name_lead)) then
