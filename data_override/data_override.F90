@@ -17,8 +17,17 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+! data_override_r4 and data_override_r8 are not intended to be used directly -
+! they should be used through the data_override_mod API. The body of
+! data_override_r4 and data_override_r8 is contained in data_override.inc.
+
+module data_override_r4
 #include "data_override_r4.fh"
+end module data_override_r4
+
+module data_override_r8
 #include "data_override_r8.fh"
+end module data_override_r8
 
 !> @defgroup data_override_mod data_override_mod
 !> @ingroup data_override

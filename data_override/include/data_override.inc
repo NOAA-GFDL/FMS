@@ -17,6 +17,10 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+! This file contains the body of the data_override_r4 and data_override_r8
+! modules. These modules are not intended to be used directly - they should be
+! used through the data_override_mod API. See data_override.F90 for details.
+
 use platform_mod, only: r4_kind, r8_kind
 use yaml_parser_mod
 use constants_mod, only: DEG_TO_RAD
