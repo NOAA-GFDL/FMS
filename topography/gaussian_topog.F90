@@ -46,6 +46,11 @@ private
 
 public :: gaussian_topog_init, get_gaussian_topog
 
+interface gaussian_topog_init
+   module procedure gaussian_topog_init_r4
+   module procedure gaussian_topog_init_r8
+end interface gaussian_topog_init
+
 interface get_gaussian_topog
     module procedure get_gaussian_topog_r4, get_gaussian_topog_r8
 end interface get_gaussian_topog
@@ -98,45 +103,6 @@ logical :: module_is_initialized = .FALSE.
 !-----------------------------------------------------------------------
 
 contains
-
-!#######################################################################
-
-!> Returns a surface height field that consists
-!! of the sum of one or more Gaussian-shaped mountains.
-!!
-!> Returns a land surface topography that consists of a "set" of
-!! simple Gaussian-shaped mountains.  The height, position,
-!! width, and elongation of the mountains can be controlled
-!! by variables in the namelist.
-subroutine gaussian_topog_init ( lon, lat, zsurf )
-
-real(kind=r8_kind), intent(in)  :: lon(:) !< The mean grid box longitude in radians
-real(kind=r8_kind), intent(in)  :: lat(:) !< The mean grid box latitude in radians
-real(kind=r8_kind), intent(out) :: zsurf(:,:) !< The surface height (meters). Size must be size(lon) by size(lat)
-
-integer :: n
-
-  if (.not.module_is_initialized) then
-     call write_version_number("GAUSSIAN_TOPOG_MOD", version)
-  endif
-
-  if(any(shape(zsurf) /= (/size(lon(:)),size(lat(:))/))) then
-    call error_mesg ('get_gaussian_topog in topography_mod', &
-     'shape(zsurf) is not equal to (/size(lon),size(lat)/)', FATAL)
-  endif
-
-  if (do_nml) call read_namelist
-
-! compute sum of all non-zero mountains
-  zsurf(:,:) = 0.0_r8_kind
-  do n = 1, maxmts
-    if ( height(n) == 0.0_r8_kind ) cycle
-    zsurf = zsurf + get_gaussian_topog ( lon, lat, height(n), &
-                olon(n), olat(n), wlon(n), wlat(n), rlon(n), rlat(n))
-  enddo
- module_is_initialized = .TRUE.
-
-end subroutine gaussian_topog_init
 
 !#######################################################################
 

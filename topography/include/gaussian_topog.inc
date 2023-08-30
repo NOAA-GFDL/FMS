@@ -60,6 +60,45 @@
 !! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
 !!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
 
+!> Returns a surface height field that consists
+!! of the sum of one or more Gaussian-shaped mountains.
+!!
+!> Returns a land surface topography that consists of a "set" of
+!! simple Gaussian-shaped mountains.  The height, position,
+!! width, and elongation of the mountains can be controlled
+!! by variables in the namelist.
+subroutine GAUSSIAN_TOPOG_INIT_ ( lon, lat, zsurf )
+
+real(kind=FMS_TOP_KIND_), intent(in)  :: lon(:) !< The mean grid box longitude in radians
+real(kind=FMS_TOP_KIND_), intent(in)  :: lat(:) !< The mean grid box latitude in radians
+real(kind=FMS_TOP_KIND_), intent(out) :: zsurf(:,:) !< The surface height (meters). Size must be size(lon) by size(lat)
+
+integer :: n
+integer, parameter :: lkind=FMS_TOP_KIND_ !local FMS_TOP_KIND_ kind
+
+  if (.not.module_is_initialized) then
+     call write_version_number("GAUSSIAN_TOPOG_MOD", version)
+  endif
+
+  if(any(shape(zsurf) /= (/size(lon(:)),size(lat(:))/))) then
+    call error_mesg ('get_gaussian_topog in topography_mod', &
+     'shape(zsurf) is not equal to (/size(lon),size(lat)/)', FATAL)
+  endif
+
+  if (do_nml) call read_namelist
+
+! compute sum of all non-zero mountains
+  zsurf(:,:) = 0.0_lkind
+  do n = 1, maxmts
+    if ( height(n) == 0.0_r8_kind ) cycle
+    zsurf = zsurf + get_gaussian_topog ( lon, lat, real(height(n),lkind), &
+                real(olon(n),lkind), real(olat(n),lkind), real(wlon(n),lkind), &
+                real(wlat(n),lkind), real(rlon(n),lkind), real(rlat(n),lkind))
+  enddo
+ module_is_initialized = .TRUE.
+
+end subroutine GAUSSIAN_TOPOG_INIT_
+!#######################################################################
 function GET_GAUSSIAN_TOPOG_(lon, lat, height,                         &
                             olond, olatd, wlond, wlatd, rlond, rlatd ) &
                      result (zsurf )
@@ -86,22 +125,22 @@ integer, parameter     :: lkind = FMS_TOP_KIND_
   dtr = tpi/360.0_lkind
 
 ! defaults and convert degrees to radians (dtr)
-  olon = 90.0_lkind*dtr;  if (present(olond)) olon=olond*dtr
-  olat = 45.0_lkind*dtr;  if (present(olatd)) olat=olatd*dtr
-  wlon = 15.0_lkind*dtr;  if (present(wlond)) wlon=wlond*dtr
-  wlat = 15.0_lkind*dtr;  if (present(wlatd)) wlat=wlatd*dtr
-  rlon = 0.0_lkind     ;  if (present(rlond)) rlon=rlond*dtr
-  rlat = 0.0_lkind     ;  if (present(rlatd)) rlat=rlatd*dtr
+  olon = 90.0_lkind*dtr;  if (present(olond)) olon=real(olond*dtr,r8_kind)
+  olat = 45.0_lkind*dtr;  if (present(olatd)) olat=real(olatd*dtr,r8_kind)
+  wlon = 15.0_lkind*dtr;  if (present(wlond)) wlon=real(wlond*dtr,r8_kind)
+  wlat = 15.0_lkind*dtr;  if (present(wlatd)) wlat=real(wlatd*dtr,r8_kind)
+  rlon = 0.0_lkind     ;  if (present(rlond)) rlon=real(rlond*dtr,r8_kind)
+  rlat = 0.0_lkind     ;  if (present(rlatd)) rlat=real(rlatd*dtr,r8_kind)
 
 ! compute gaussian-shaped mountain
     do j=1,size(lat(:))
-      dy = abs(lat(j) - olat)   ! dist from y origin
-      yy = max(0.0_lkind, dy-rlat)/wlat
+      dy = abs(lat(j) - real(olat,lkind))   ! dist from y origin
+      yy = max(0.0_lkind, dy-real(rlat,lkind))/real(wlat,lkind)
       do i=1,size(lon(:))
-        dx = abs(lon(i) - olon) ! dist from x origin
+        dx = abs(lon(i) - real(olon,lkind)) ! dist from x origin
         dx = min(dx, abs(dx-tpi))  ! To ensure that: -pi <= dx <= pi
-        xx = max(0.0_lkind, dx-rlon)/wlon
-        zsurf(i,j) = height*exp(-xx**2 - yy**2)
+        xx = max(0.0_lkind, dx-real(rlon,lkind))/real(wlon,lkind)
+        zsurf(i,j) = real(height,lkind)*exp(-xx**2 - yy**2)
       enddo
     enddo
 
