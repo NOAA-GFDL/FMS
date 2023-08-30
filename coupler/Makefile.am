@@ -46,6 +46,7 @@ MODFILES = \
   coupler_types_mod.$(FC_MODEXT) \
   ensemble_manager_mod.$(FC_MODEXT) \
   atmos_ocean_fluxes_mod.$(FC_MODEXT)
+
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
