@@ -175,19 +175,15 @@ subroutine test_get_grid_area
 
   implicit none
 
-  type(FmsNetcdfFile_t):: c1_fileobj
-
   real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
   real :: area_out(1,1)
-
-  integer :: i,j
 
   !> get answers.  Tile 1 will be the reference/benchmark data
   x_rad = x(1:2, 1:2) * DEG_TO_RAD
   y_rad = y(1:2, 1:2) * DEG_TO_RAD
 
   call calc_mosaic_grid_area(x_rad, y_rad, area_out)
-  call check_answer(area_out(1,1), area(1,1), 'TEST_GET_GRID_AREA')
+  call check_answer(area(1,1), area_out(1,1), 'TEST_GET_GRID_AREA')
 
 end subroutine test_get_grid_area
 !------------------------------------------------------!
@@ -202,19 +198,14 @@ subroutine test_get_grid_great_circle_area
 
   implicit none
 
-  type(FmsNetcdfFile_t):: c1_fileobj
-  integer, allocatable :: pes(:)
-
   real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
   real :: area_out(1,1)
-
-  integer :: i,j
 
   !> get answers.  Tile 1 will be the reference/benchmark data
   x_rad = x(1:2, 1:2) * DEG_TO_RAD
   y_rad = y(1:2, 1:2) * DEG_TO_RAD
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
-  call check_answer(area_out(1,1), area(1,1), 'TEST_GET_GRID_AREA')
+  call check_answer(area(1,1), area_out(1,1), 'TEST_GET_GRID_AREA')
 
 end subroutine test_get_grid_great_circle_area
 !------------------------------------------------------!
@@ -228,14 +219,11 @@ subroutine test_get_mosaic_xgrid
   integer :: i
   real :: garea, get_global_area
 
-  integer, allocatable :: pes(:)
   type(FmsNetcdfFile_t) x_fileobj
 
   garea = get_global_area()
 
-  allocate(pes(mpp_npes()))
-  call mpp_get_current_pelist(pes)
-  if( .not. open_file(x_fileobj, 'INPUT/'//trim(exchange_file), 'read', pelist=pes)) &
+  if( .not. open_file(x_fileobj, 'INPUT/'//trim(exchange_file), 'read')) &
        call mpp_error(FATAL, 'test_mosaic: error in opening file '//'INPUT/'//trim(exchange_file))
 
   call get_mosaic_xgrid(x_fileobj, i1, j1, i2, j2, area)
@@ -243,16 +231,14 @@ subroutine test_get_mosaic_xgrid
   !> check answers
   do i=1, ncells
      call check_answer( xgrid_area(i)/garea, area(i),"TEST_GET_MOSAIC_XGRID area")
+     call check_answer(tile1_cell(1,i), i1(i), "TEST_GET_MOSAIC_XGRID i1")
+     call check_answer(tile2_cell(1,i), i2(i), "TEST_GET_MOSAIC_XGRID i2")
+     call check_answer(tile1_cell(1,i), j1(i), "TEST_GET_MOSAIC_XGRID j1")
+     call check_answer(tile2_cell(1,i), j2(i), "TEST_GET_MOSAIC_XGRID j2")
   end do
 
   call close_file(x_fileobj)
 
-  do i=1, ncells
-     call check_answer(tile1_cell(1,1), i1(1), "TEST_GET_MOSAIC_XGRID i1")
-     call check_answer(tile2_cell(1,1), i2(1), "TEST_GET_MOSAIC_XGRID i2")
-     call check_answer(tile1_cell(1,2), j1(1), "TEST_GET_MOSAIC_XGRID j1")
-     call check_answer(tile2_cell(1,2), j2(1), "TEST_GET_MOSAIC_XGRID j2")
-  end do
 
 end subroutine test_get_mosaic_xgrid
 !------------------------------------------------------!
