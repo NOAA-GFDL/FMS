@@ -41,8 +41,6 @@ libcoupler_la_SOURCES = \
 # Some mods are dependant on other mods in this dir.
 atmos_ocean_fluxes_mod.$(FC_MODEXT): coupler_types_mod.$(FC_MODEXT)
 
-coupler_types_mod
-
 # Mod files are built and then installed as headers.
 MODFILES = \
   coupler_types_mod.$(FC_MODEXT) \
