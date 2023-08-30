@@ -1,4 +1,80 @@
 program test_top
 
+  use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
+  use topography_mod,     only: topography_init, get_topog_mean, get_topog_stdev, &
+                                get_ocean_frac, get_ocean_mask, get_water_frac, &
+                                get_water_mask
+  use fms_mod,            only: fms_init, fms_end
+  use fms2_io_mod,        only: fms2_io_init, FmsNetcdfFile_t, open_file, close_file, register_axis, register_field, &
+                                register_variable_attribute, write_data, read_data, unlimited
+  use mpp_mod,            only: mpp_error, FATAL, stdout, mpp_init, mpp_exit
+  use mpp_mod,            only: mpp_pe, mpp_root_pe, mpp_sync, input_nml_file
+  use horiz_interp_mod,   only: horiz_interp_type, horiz_interp_new, &
+                                horiz_interp, horiz_interp_del
+  use constants_mod,      only: pi
+  use platform_mod,       only: r4_kind, r8_kind
+  
+  implicit none
+  
+  type(FmsNetcdfFile_t)     :: top_fileobj                 ! fileobj for fms2_io
+  character(len=128)        :: topog_file, water_file      ! filenames needed for topography_mod
+  real(kind=TEST_TOP_KIND_) :: xdat(3), ydat(3), zdat(2,2) ! specifc data topog_mod looks for
+  integer                   :: ipts, jpts                  ! axis for files
+  integer                   :: iptsp1, jptsp1              ! serves as a counter for data
+  integer                   :: ipts_r, jpts_r              ! sub axis
+  integer, parameter        :: lkind = TEST_TOP_KIND_      ! kind parameter for mixed precision
+
+  real(kind=TEST_TOP_KIND_), parameter :: deg2rad = real(pi, TEST_TOP_KIND_)/180.0_lkind
+  real(kind=TEST_TOP_KIND_), parameter :: tol = 1.0_lkind/4.0_lkind
+
+  call fms_init
+  call topography_init
+
+  ! name files
+  topog_file = "topography.data.nc"
+  water_file = "water.data.nc"
+
+  ! create data for both topog and water files
+  ipts_r = 1 ; ipts = 2  ; iptsp1 = 3
+  jpts_r = 1 ; jpts = 2  ; jptsp1 = 3
+
+
+  xdat = (/1.0_lkind*deg2rad, 2.0_lkind*deg2rad, 3.0_lkind*deg2rad/)   !size of iptsp1, in radians
+  ydat = (/1.0_lkind*deg2rad, 2.0_lkind*deg2rad, 3.0_lkind*deg2rad/)   !size of jptsp1, in radians
+
+  zdat(1,1) = 2.0_lkind ; zdat(1,2) = 4.0_lkind
+  zdat(2,1) = 6.0_lkind ; zdat(2,2) = 8.0_lkind   !size of (ipts, jpts)
+
+  ! write topog file
+  if (open_file(top_fileobj, topog_file, "overwrite")) then
+    call register_axis(top_fileobj, "i_zdat", ipts)   !first index dimension in zdat
+    call register_axis(top_fileobj, "j_zdat", jpts)   !second index dimension in zdat
+    call register_axis(top_fileobj, "ipts_r", ipts_r)
+    call register_axis(top_fileobj, "jpts_r", jpts_r)
+    call register_axis(top_fileobj, "i_xdat", iptsp1) !# of points in xdat variable
+    call register_axis(top_fileobj, "j_ydat", jptsp1) !# of point in ydat variable
+
+    call register_field(top_fileobj, "ipts",   "double", dimensions=(/"ipts_r"/))
+    call register_field(top_fileobj, "jpts",   "double", dimensions=(/"jpts_r"/))
+    call register_field(top_fileobj, "xdat",   "double", dimensions=(/"i_xdat"/))
+    call register_field(top_fileobj, "ydat",   "double", dimensions=(/"j_ydat"/))
+    call register_field(top_fileobj, "zdat",   "double", dimensions=(/"i_zdat", "j_zdat"/))
+
+    call write_data(top_fileobj, "ipts",   real(ipts, TEST_TOP_KIND_))
+    call write_data(top_fileobj, "jpts",   real(jpts, TEST_TOP_KIND_))
+    call write_data(top_fileobj, "xdat",   xdat)
+    call write_data(top_fileobj, "ydat",   ydat)
+    call write_data(top_fileobj, "zdat",   zdat)
+
+    call close_file(top_fileobj)
+
+  else
+    call mpp_error(FATAL, "test_topography: error opening topog_file")
+  end if
+
+  !call test_topog_mean
+  !call test_topog_stdev
+
+  call fms_end
 
 end program test_top
