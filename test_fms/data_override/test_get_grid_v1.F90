@@ -131,11 +131,11 @@ call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat,
                         min_lon, max_lon)
 
 !< Error checking:
-if (lon(1,1) .ne. sum(lon_vert_in)/4*real(DEG_TO_RAD, lkind) ) then
+if (lon(1,1) .ne. sum(lon_vert_in)/4._lkind * real(DEG_TO_RAD, lkind) ) then
      call mpp_error(FATAL,'test_get_grid_v1: ocn, new grid, lon is not the expected result')
 endif
 
-if (lat(1,1) .ne. sum(lat_vert_in)/4*real(DEG_TO_RAD, lkind) ) then
+if (lat(1,1) .ne. sum(lat_vert_in)/4._lkind * real(DEG_TO_RAD, lkind) ) then
      call mpp_error(FATAL,'test_get_grid_v1: ocn, new grid, lat is not the expected result')
 endif
 

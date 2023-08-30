@@ -907,8 +907,8 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,data,time,override,data_ind
            call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
         end if
 ! convert lon_in and lat_in from deg to radian
-        override_array(curr_position)%lon_in = override_array(curr_position)%lon_in * DEG_TO_RAD
-        override_array(curr_position)%lat_in = override_array(curr_position)%lat_in * DEG_TO_RAD
+        override_array(curr_position)%lon_in = override_array(curr_position)%lon_in * real(DEG_TO_RAD, lkind)
+        override_array(curr_position)%lat_in = override_array(curr_position)%lat_in * real(DEG_TO_RAD, lkind)
 
         !--- find the region of the source grid that cover the local model grid.
         !--- currently we only find the index range for j-direction because
