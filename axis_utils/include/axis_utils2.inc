@@ -177,7 +177,6 @@
   !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 3
   !!    ==> lon = 3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
   !!
-
   subroutine TRANLON_(lon, lon_start, istrt)
     real(kind=FMS_AU_KIND_), intent(inout), dimension(:) :: lon
     real(kind=FMS_AU_KIND_), intent(in)                  :: lon_start
