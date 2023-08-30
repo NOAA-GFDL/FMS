@@ -67,7 +67,6 @@
             & equal to (/size(blon)-1,size(blat)-1/))', FATAL)
 
    GET_TOPOG_MEAN_1D_ = open_topog_file()
-   print *, GET_TOPOG_MEAN_1D_
 
    if (GET_TOPOG_MEAN_1D_) call interp_topog(blon, blat, zmean)
 
