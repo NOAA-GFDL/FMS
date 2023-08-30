@@ -25,7 +25,7 @@ program test_mosaic
 use mosaic2_mod
 use grid2_mod
 use write_files
-use mpp_mod,       only : mpp_init, mpp_error, FATAL, mpp_sync, mpp_npes, mpp_get_current_pelist
+use mpp_mod,       only : mpp_init, mpp_error, FATAL
 use fms2_io_mod,   only : open_file, close_file, FmsNetcdfFile_t, fms2_io_init, read_data
 use fms_mod,       only : fms_init, fms_end
 use constants_mod, only : DEG_TO_RAD
