@@ -784,7 +784,7 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
     ! check only one kind is used
-    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+    if(var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
         call mpp_error(FATAL, error_header//err_msg_var_in_kind)
     endif
@@ -933,7 +933,7 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
     ! check only one kind is used
-    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+    if(var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
         call mpp_error(FATAL, error_header//err_msg_var_in_kind)
     endif
@@ -1085,7 +1085,7 @@ contains
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
     ! check only one kind is used
-    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+    if(var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
         call mpp_error(FATAL, error_header//err_msg_var_in_kind)
     endif
@@ -1232,7 +1232,7 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+    if(var_in%num_bcs .gt. 0) then
       ! check only one kind is used
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
         call mpp_error(FATAL, error_header//err_msg_var_in_kind)
@@ -1383,7 +1383,7 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+    if(var_in%num_bcs .gt. 0) then
       ! check only one kind is used
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
         call mpp_error(FATAL, error_header//err_msg_var_in_kind)
@@ -1533,7 +1533,7 @@ contains
     if (.not.var_in%set)&
         & call mpp_error(FATAL, trim(error_header) // ' The parent type has not been initialized.')
 
-    if(var_in%set .and. var_in%num_bcs .gt. 0) then
+    if(var_in%num_bcs .gt. 0) then
       ! check only one kind is used
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
         call mpp_error(FATAL, error_header//err_msg_var_in_kind)
