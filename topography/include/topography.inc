@@ -567,7 +567,7 @@ do
        do j = 1, n
          do i = 1, m
             if (.not.ocean(i,j) .and. pctwater(i,j) > ocean_pct_crit) then
-                 im = i-1; ip = i+1; jm = j-1; jp = j+1
+                im = i-1; ip = i+1; jm = j-1; jp = j+1
                 if (im == 0)   im = m
                 if (ip == m+1) ip = 1
                 if (jm == 0)   jm = 1
