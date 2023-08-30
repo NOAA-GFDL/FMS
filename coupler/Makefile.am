@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/topography/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/coupler/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -40,6 +40,8 @@ libcoupler_la_SOURCES = \
 
 # Some mods are dependant on other mods in this dir.
 atmos_ocean_fluxes_mod.$(FC_MODEXT): coupler_types_mod.$(FC_MODEXT)
+
+coupler_types_mod
 
 # Mod files are built and then installed as headers.
 MODFILES = \
