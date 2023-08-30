@@ -3840,8 +3840,8 @@ contains
     var%set = .false.
   end subroutine CT_destructor_3d
 
-#include "include/coupler_types_r4.fh"
-#include "include/coupler_types_r8.fh"
+#include "coupler_types_r4.fh"
+#include "coupler_types_r8.fh"
 
   !! @brief Register the fields in a coupler_2d_bc_type to be saved in restart files
   !!
