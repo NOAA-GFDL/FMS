@@ -25,7 +25,7 @@ program test_mosaic
 use mosaic2_mod
 use grid2_mod
 use write_files
-use mpp_mod,       only : mpp_init, mpp_error, FATAL
+use mpp_mod,       only : mpp_init, mpp_error, FATAL, mpp_pe, mpp_root_pe
 use fms2_io_mod,   only : open_file, close_file, FmsNetcdfFile_t, fms2_io_init, read_data
 use fms_mod,       only : fms_init, fms_end
 use constants_mod, only : DEG_TO_RAD
@@ -37,27 +37,26 @@ implicit none
 !! In orderr to create the mosaic and grid files, fms2_io needs to be initialized first
 call fms2_io_init()
 call write_all()
-
 !< fms_init calls grid_init which reads in the grid_spec file
 !! In this case, the grid_version is VERSION_OCN_MOSAIC_FILE.
 call fms_init()
 
-write(*,*) 'TEST GET_MOSAIC_GRID_SIZES'
+if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_MOSAIC_GRID_SIZES'
 call test_get_mosaic_grid_sizes()
 
-write(*,*) 'TEST GET_MOSAIC_CONTACT'
+if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_MOSAIC_CONTACT'
 call test_get_mosaic_contact()
 
-write(*,*) 'TEST GET_GRID_GREAT_CIRCLE_AREA'
+if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_GRID_GREAT_CIRCLE_AREA'
 call test_get_grid_great_circle_area()
 
-write(*,*) 'TEST GET_GRID_AREA'
+if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_GRID_AREA'
 call test_get_grid_area()
 
-write(*,*) 'TEST GET_MOSAIC_XGRID'
+if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_MOSAIC_XGRID'
 call test_get_mosaic_xgrid()
 
-write(*,*) 'TEST IS_INSIDE_POLYGON'
+if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST IS_INSIDE_POLYGON'
 call test_is_inside_polygon()
 
 call fms_end()
@@ -68,10 +67,9 @@ subroutine test_get_mosaic_grid_sizes
 
   !> test get_mosaic_grid_sizes
 
-  integer              :: ntiles
-  integer              :: n
-  integer, allocatable :: nx_out(:), ny_out(:)
-
+  integer              :: ntiles !< number of tiles
+  integer              :: n      !< counter
+  integer, allocatable :: nx_out(:), ny_out(:) !< number of grid points for each tile
   type(FmsNetcdfFile_t):: fileobj
 
   !-- ocean --!
@@ -162,25 +160,14 @@ end subroutine test_get_mosaic_contact
 subroutine test_get_grid_area
 
   !> This subroutine tests get_grid_area
-  !! This subroutine does not check the correctness of the computed area.
-  !! Rather, this subroutine only checks the consistency of the areas
-  !! given different grid points.  Since each tile is a C1 grid,
-  !! the areas of grid cells in tile 1 should equal those of tile 2, etc.
-  !! This subroutine only tests calc_mosaic_grid_great_circle_area_2d
-  !! For reasons that haven't been figured out, areas of tile 3 do not equal
-  !! those of tile 1.  Instead, areas of tile 3 equal those of tile 6.  Tile 3
-  !! and tile 6 are unique in that they contain the North and South Poles.  As
-  !! to why this should give rise to different areas is to be determined
-  !! by FMS in the future.  It may be due to the inaccuracy of the method.
 
   implicit none
 
   real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
   real :: area_out(1,1)
 
-  !> get answers.  Tile 1 will be the reference/benchmark data
-  x_rad = x(1:2, 1:2) * DEG_TO_RAD
-  y_rad = y(1:2, 1:2) * DEG_TO_RAD
+  x_rad = x(1:2, 1:2) * DEG_TO_RAD !< set coordinates
+  y_rad = y(1:2, 1:2) * DEG_TO_RAD !< set coordinates
 
   call calc_mosaic_grid_area(x_rad, y_rad, area_out)
   call check_answer(area(1,1), area_out(1,1), 'TEST_GET_GRID_AREA')
@@ -190,26 +177,22 @@ end subroutine test_get_grid_area
 subroutine test_get_grid_great_circle_area
 
   !> This subroutine tests calc_mosaic_grid_great_circle_area
-  !! This subroutine does not check the correctness of the computed area.
-  !! Rather, this subroutine only checks the consistency of the areas
-  !! given different grid points.  Since each tile is a C1 grid,
-  !! the areas of grid cells in tile 1 should equal those of tile 2, etc.
-  !! This subroutine only tests calc_mosaic_grid_great_circle_area_2d
 
   implicit none
 
   real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
   real :: area_out(1,1)
 
-  !> get answers.  Tile 1 will be the reference/benchmark data
-  x_rad = x(1:2, 1:2) * DEG_TO_RAD
-  y_rad = y(1:2, 1:2) * DEG_TO_RAD
+  x_rad = x(1:2, 1:2) * DEG_TO_RAD !< set coordinates
+  y_rad = y(1:2, 1:2) * DEG_TO_RAD !< set coordinates
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
   call check_answer(area(1,1), area_out(1,1), 'TEST_GET_GRID_AREA')
 
 end subroutine test_get_grid_great_circle_area
 !------------------------------------------------------!
 subroutine test_get_mosaic_xgrid
+
+  !> Test get_mosaic_xgrid
 
   implicit none
 
@@ -328,22 +311,5 @@ subroutine check_answer(answer, myvalue, whoami)
   end select
 
 end subroutine check_answer
-!------------------------------------------------------!
-subroutine check_answer_w_tol(answer, myvalue, whoami)
-
-  implicit none
-
-  real, parameter :: tol=1.e-6
-  real :: answer
-  real :: myvalue
-  character(*) :: whoami
-
-  if( abs(answer-myvalue) .gt. myvalue ) then
-     write(*,*) '*************************************'
-     write(*,*) 'EXPECTED ', answer, 'but got ', myvalue
-     call mpp_error( FATAL,'failed'//trim(whoami) )
-  end if
-
-end subroutine check_answer_w_tol
 !------------------------------------------------------!
 end program test_mosaic

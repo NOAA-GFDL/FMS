@@ -11,8 +11,8 @@ module write_files
   character(23), parameter :: grid_spec_file="grid_spec.nc"
   character(23), parameter :: c1_mosaic_file="C1_mosaic.nc"
   character(30), parameter :: ocn_mosaic_file="ocean_mosaic.nc"
-  character(30), parameter :: ocn_tile_file="ocean_hgrid.nc"
   character(50), parameter :: exchange_file="C96_mosaic_tile1Xocean_mosaic_tile1.nc"
+  character(30), parameter :: ocn_tile_file="ocean_hgrid.nc"
   character(23), parameter :: tile1_file="C1_grid.tile1.nc"
   character(23), parameter :: tile2_file="C1_grid.tile2.nc"
   character(23), parameter :: tile3_file="C1_grid.tile3.nc"
@@ -35,7 +35,7 @@ module write_files
   integer, parameter :: ocn_ncontacts=2
 
   !exchange
-  integer, parameter :: ncells=10
+  integer, parameter :: ncells=2
 
   ! variables for tile1
   character(5) :: tile
@@ -154,6 +154,9 @@ contains
   !---------------------------------!
   subroutine write_c1_tiles
 
+    !> These are made up numbers, numbers chosen
+    !! for computational convenience
+
     implicit none
 
     character(5) :: tile
@@ -162,9 +165,9 @@ contains
     x(1,2)=0.0 ; x(2,2)=90.0 ; x(3,2)=180.0
     x(1,3)=0.0 ; x(2,3)=90.0 ; x(3,3)=180.0
 
-    y(1,1)=0.0   ; y(2,1)=0.0    ; y(3,1)=0.0
-    y(1,2)=90.0  ; y(2,2)=90.0   ; y(3,2)=90.0
-    y(1,3)=180.0 ; y(2,3)=180.0  ; y(3,3)=180.0
+    y(1,1)=-90.0 ; y(2,1)=-90.0 ; y(3,1)=-90.0
+    y(1,2)=0.0   ; y(2,2)=0.0   ; y(3,2)=0.0
+    y(1,3)=90.0  ; y(2,3)=90.0  ; y(3,3)=9.0
 
     area(1,1)=PI*RADIUS*RADIUS/2.0 ; area(2,1)=PI*RADIUS*RADIUS/2.0
     area(1,2)=PI*RADIUS*RADIUS/2.0 ; area(2,2)=PI*RADIUS*RADIUS/2.0
@@ -188,8 +191,12 @@ contains
     real, dimension(c1_nx,c1_ny),   intent(in) :: area_in
 
     type(FmsNetcdfFile_t) :: fileobj
+    integer, allocatable :: pes(:)
 
-    if( open_file(fileobj, 'INPUT/'//trim(filename), 'overwrite') ) then
+    allocate(pes(mpp_npes()))
+    call mpp_get_current_pelist(pes)
+
+    if( open_file(fileobj, 'INPUT/'//trim(filename), 'overwrite', pelist=pes) ) then
 
        call register_axis(fileobj, "nx", c1_nx)
        call register_axis(fileobj, "ny", c1_ny)
@@ -264,18 +271,20 @@ contains
     type(FmsNetcdfFile_t):: fileobj        !< Fileobj for the files written by the test
     integer, allocatable :: pes(:)
     integer :: i, j, k
+    real :: get_global_area
 
-    !< made up numbers
+    !> These are made up numbers, numbers chosen
+    !! for computational convenience
+
     do i=1,ncells
-       tile1_cell(1,i) = i*10
-       tile1_cell(2,i) = i*100
-       tile2_cell(1,i) = i*1000
-       tile2_cell(2,i) = i*5
+       tile1_cell(1,i) = i
+       tile1_cell(2,i) = i
+       tile2_cell(1,i) = i
+       tile2_cell(2,i) = i
     end do
 
-    !< made up numbers
     do i=1, ncells
-       xgrid_area(i) = real(i) * PI
+       xgrid_area(i) = get_global_area()
     end do
 
     allocate(pes(mpp_npes()))
