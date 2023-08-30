@@ -15,7 +15,7 @@ program test_top
   use platform_mod,       only: r4_kind, r8_kind
   
   implicit none
-  
+
   type(FmsNetcdfFile_t)     :: top_fileobj                 ! fileobj for fms2_io
   character(len=128)        :: topog_file, water_file      ! filenames needed for topography_mod
   real(kind=TEST_TOP_KIND_) :: xdat(3), ydat(3), zdat(2,2) ! specifc data topog_mod looks for
@@ -72,9 +72,72 @@ program test_top
     call mpp_error(FATAL, "test_topography: error opening topog_file")
   end if
 
-  !call test_topog_mean
+  call test_topog_mean
   !call test_topog_stdev
 
   call fms_end
+
+  contains
+
+  subroutine test_topog_mean
+
+    implicit none
+    real(kind=TEST_TOP_KIND_), dimension(2,2)              :: lon2d, lat2d ! need to be in radians
+    real(kind=TEST_TOP_KIND_), dimension(4)                :: lon1d, lat1d ! need to be in radians
+    real(kind=TEST_TOP_KIND_), dimension(:,:), allocatable :: zmean        ! calculated by module
+    logical                                                :: get_mean_answer
+    integer                                                :: ix, iy
+
+    !---------------------------------------- test topog mean 2d ---------------------------------------------!
+    lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
+    lon2d(2,1) = 2.5_lkind*deg2rad ; lat2d(2,1) = 1.5_lkind*deg2rad
+    lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
+    lon2d(2,2) = 2.5_lkind*deg2rad ; lat2d(2,2) = 2.5_lkind*deg2rad
+
+    ix = size(lon2d,1) - 1 ; iy = size(lat2d,2) - 1
+    allocate (zmean(ix, iy))
+
+    get_mean_answer = get_topog_mean(lon2d, lat2d, zmean)
+    zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
+
+    !if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild was not created properly")
+    call check_answers(zmean(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
+
+    deallocate (zmean)
+
+    !---------------------------------------- test topog mean 1d ---------------------------------------------!
+    lon1d(1) = 1.5_lkind*deg2rad ; lat1d(1) = 1.5_lkind*deg2rad
+    lon1d(2) = 2.5_lkind*deg2rad ; lat1d(2) = 1.5_lkind*deg2rad
+    lon1d(3) = 1.5_lkind*deg2rad ; lat1d(3) = 2.5_lkind*deg2rad
+    lon1d(4) = 2.5_lkind*deg2rad ; lat1d(4) = 2.5_lkind*deg2rad
+
+    ix = size(lon1d) - 1 ; iy = size(lat1d) - 1
+    allocate (zmean(ix, iy))
+
+    get_mean_answer = get_topog_mean(lon1d, lat1d, zmean)
+    zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
+
+    !if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild was not created properly")
+    call check_answers(zmean(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
+
+    deallocate (zmean)
+
+
+  end subroutine test_topog_mean
+
+  subroutine check_answers(result, answer, what_error)
+    
+    implicit none
+    real(kind=TEST_TOP_KIND_) :: result       ! value calculated from script
+    real(kind=TEST_TOP_KIND_) :: answer       ! expected answer
+    character(*)              :: what_error   ! error message to print
+
+    if (result .ne. answer) then
+      write(*,*) 'Expected ', answer, ' but computed ', result
+      call mpp_error(FATAL, trim(what_error))
+    end if
+
+  end subroutine check_answers
+
 
 end program test_top
