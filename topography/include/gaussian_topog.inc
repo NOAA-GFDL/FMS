@@ -125,12 +125,12 @@ integer, parameter     :: lkind = FMS_TOP_KIND_
   dtr = tpi/360.0_lkind
 
 ! defaults and convert degrees to radians (dtr)
-  olon = 90.0_lkind*dtr;  if (present(olond)) olon=real(olond*dtr,r8_kind)
-  olat = 45.0_lkind*dtr;  if (present(olatd)) olat=real(olatd*dtr,r8_kind)
-  wlon = 15.0_lkind*dtr;  if (present(wlond)) wlon=real(wlond*dtr,r8_kind)
-  wlat = 15.0_lkind*dtr;  if (present(wlatd)) wlat=real(wlatd*dtr,r8_kind)
-  rlon = 0.0_lkind     ;  if (present(rlond)) rlon=real(rlond*dtr,r8_kind)
-  rlat = 0.0_lkind     ;  if (present(rlatd)) rlat=real(rlatd*dtr,r8_kind)
+  olon = 90.0_r8_kind*dtr;  if (present(olond)) olon=real(olond*dtr,r8_kind)
+  olat = 45.0_r8_kind*dtr;  if (present(olatd)) olat=real(olatd*dtr,r8_kind)
+  wlon = 15.0_r8_kind*dtr;  if (present(wlond)) wlon=real(wlond*dtr,r8_kind)
+  wlat = 15.0_r8_kind*dtr;  if (present(wlatd)) wlat=real(wlatd*dtr,r8_kind)
+  rlon = 0.0_r8_kind     ;  if (present(rlond)) rlon=real(rlond*dtr,r8_kind)
+  rlat = 0.0_r8_kind     ;  if (present(rlatd)) rlat=real(rlatd*dtr,r8_kind)
 
 ! compute gaussian-shaped mountain
     do j=1,size(lat(:))
