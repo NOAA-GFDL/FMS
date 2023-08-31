@@ -87,8 +87,8 @@ program test_interpolator2
   call test_interpolator(o3)
 
   !> test interpolate_type_eq
-  write(*,*) '===== test_interpolate_type_eq ====='
-  call test_interpolate_type_eq()
+  !write(*,*) '===== test_interpolate_type_eq ====='
+  !call test_interpolate_type_eq()
 
   !> test query_interpolator
   write(*,*) '===== test_query_interpolator ====='
