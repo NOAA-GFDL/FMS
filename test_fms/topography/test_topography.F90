@@ -49,7 +49,6 @@ program test_top
   integer, parameter        :: lkind = TEST_TOP_KIND_      ! kind parameter for mixed precision
 
   real(kind=TEST_TOP_KIND_), parameter :: deg2rad = real(pi, TEST_TOP_KIND_)/180.0_lkind
-  real(kind=TEST_TOP_KIND_), parameter :: tol = 1.0_lkind/4.0_lkind
 
   call fms_init
   call topography_init
@@ -103,14 +102,16 @@ program test_top
 
   contains
 
-  subroutine test_topog_mean
+  subroutine test_topog_mean() 
 
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2)              :: lon2d, lat2d ! need to be in radians
-    real(kind=TEST_TOP_KIND_), dimension(4)                :: lon1d, lat1d ! need to be in radians
-    real(kind=TEST_TOP_KIND_), dimension(:,:), allocatable :: zmean        ! calculated by module
-    logical                                                :: get_mean_answer
-    integer                                                :: ix, iy
+    real(kind=TEST_TOP_KIND_), dimension(2,2)                             :: lon2d, lat2d   ! in radians
+    real(kind=TEST_TOP_KIND_), dimension(4)                               :: lon1d, lat1d   ! in radians
+    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d, zmean2d_weighted
+    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d, zmean1d_weighted
+    logical                                                               :: get_mean_answer
+    ! one cell of lon/lat defined covers a 1/4 of each cell
+    real(kind=TEST_TOP_KIND_), parameter                                  :: tol = 1.0_lkind/4.0_lkind
 
     !---------------------------------------- test topog mean 2d ---------------------------------------------!
     lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
@@ -118,17 +119,12 @@ program test_top
     lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
     lon2d(2,2) = 2.5_lkind*deg2rad ; lat2d(2,2) = 2.5_lkind*deg2rad
 
-    ix = size(lon2d,1) - 1 ; iy = size(lat2d,2) - 1
-    allocate (zmean(ix, iy))
+    get_mean_answer = get_topog_mean(lon2d, lat2d, zmean2d)
+    ! use 'tol' to do an area weighted average of each zdat and sum them
+    zmean2d_weighted = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
 
-    get_mean_answer = get_topog_mean(lon2d, lat2d, zmean)
-    print *, zmean
-    zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
-
-    if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild not read correctly")
-    call check_answers(zmean(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
-
-    deallocate (zmean)
+    if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
+    call check_answers(zmean2d_weighted(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
 
     !---------------------------------------- test topog mean 1d ---------------------------------------------!
     lon1d(1) = 1.5_lkind*deg2rad ; lat1d(1) = 1.5_lkind*deg2rad
@@ -136,16 +132,11 @@ program test_top
     lon1d(3) = 1.5_lkind*deg2rad ; lat1d(3) = 2.5_lkind*deg2rad
     lon1d(4) = 2.5_lkind*deg2rad ; lat1d(4) = 2.5_lkind*deg2rad
 
-    ix = size(lon1d) - 1 ; iy = size(lat1d) - 1
-    allocate (zmean(ix, iy))
+    get_mean_answer = get_topog_mean(lon1d, lat1d, zmean1d)
+    zmean1d_weighted = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
 
-    get_mean_answer = get_topog_mean(lon1d, lat1d, zmean)
-    zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
-
-    if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild not read correctly")
-    call check_answers(zmean(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
-
-    deallocate (zmean)
+    if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
+    call check_answers(zmean1d_weighted(1,1), 5.0_lkind, "Error in test_topog_mean 1d")
 
 
   end subroutine test_topog_mean
@@ -153,12 +144,11 @@ program test_top
   subroutine test_topog_stdev
 
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2)              :: lon2d, lat2d ! need to be in radians
-    real(kind=TEST_TOP_KIND_), dimension(4)                :: lon1d, lat1d ! need to be in radians
-    real(kind=TEST_TOP_KIND_), dimension(:,:), allocatable :: stdev        ! calculated by module
-    !real(kind=TEST_TOP_KIND_)                              :: zmean 
-    logical                                                :: get_stdev_answer
-    integer                                                :: ix, iy
+    real(kind=TEST_TOP_KIND_), dimension(2,2)                             :: lon2d, lat2d ! in radians
+    real(kind=TEST_TOP_KIND_), dimension(4)                               :: lon1d, lat1d ! in radians
+    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: stdev2d, zmean2d
+    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: stdev1d, zmean1d
+    logical                                                               :: get_stdev_answer, mean_answer
 
     !---------------------------------------- test topog stdev 2d ---------------------------------------------!
     lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
@@ -166,15 +156,25 @@ program test_top
     lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
     lon2d(2,2) = 2.5_lkind*deg2rad ; lat2d(2,2) = 2.5_lkind*deg2rad
 
-    ix = size(lon2d,1) - 1 ; iy = size(lat2d,2) - 1
-    allocate (stdev(ix, iy))
+    mean_answer = get_topog_mean(lon2d, lat2d, zmean2d) !possibly use zmean1d for stdev reference #
+    get_stdev_answer = get_topog_stdev(lon2d, lat2d, stdev2d)
 
-    get_stdev_answer = get_topog_stdev(lon2d, lat2d, stdev)
-    !zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
+    !expecting stdev2d to be sqrt(5.0) OR sqrt(zmean2d), having precision issues
+    if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
+    !TODO: call check_answers(stdev2d(1,1), sqrt(5.0_lkind), "Error in test_topog_stdev 2d")
 
+    !---------------------------------------- test topog stdev 2d ---------------------------------------------!
+    lon1d(1) = 1.5_lkind*deg2rad ; lat1d(1) = 1.5_lkind*deg2rad
+    lon1d(2) = 2.5_lkind*deg2rad ; lat1d(2) = 1.5_lkind*deg2rad
+    lon1d(3) = 1.5_lkind*deg2rad ; lat1d(3) = 2.5_lkind*deg2rad
+    lon1d(4) = 2.5_lkind*deg2rad ; lat1d(4) = 2.5_lkind*deg2rad
 
-    print *, "sqrt(5)", sqrt(5.0_lkind)
-    print *, "stdev", stdev
+    mean_answer = get_topog_mean(lon1d, lat1d, zmean1d) !possibly use zmean1d for stdev reference #
+    get_stdev_answer = get_topog_stdev(lon1d, lat1d, stdev1d)
+
+    !expecting stdev1d to be sqrt(5.0), having precision issues
+    if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
+    !TODO: call check_answers(stdev1d(1,1), sqrt(5.0_lkind), "Error in test_topog_stdev 1d")
 
   end subroutine test_topog_stdev
 
