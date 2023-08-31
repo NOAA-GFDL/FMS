@@ -16,9 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @brief  This programs tests calls to get_mosaic_ntiles, get_mosaic_ncontacts,
-!! get_mosaic_grid_sizes, get_mosaic_contact
+!! get_mosaic_grid_sizes, get_mosaic_contact.  All subroutines here are tested
+!! with C1 tiles where tiles 1-6 are identical.  The tile points are made up with
+!! values that result in simple answers.  See write_files module for grid details.
+
 program test_mosaic
 
 use mpp_mod,      only : mpp_init, mpp_error, FATAL, mpp_npes, mpp_pe, mpp_root_pe
@@ -32,7 +34,8 @@ use write_files
 
 implicit none
 
-!> write out netcdf files, written out in test_mosaic, hence commented out here
+!> write out netcdf files
+!! write_all sets up the grids
 call fms2_io_init()
 call write_all()
 call fms_init()
@@ -59,17 +62,8 @@ contains
   !------------------------------------------!
   subroutine test_get_cell_vertices
 
-    !> This subroutine tests get_cell_verticees.  The vertices
-    !! are those points marked as 'e' in the cell below.  This
-    !! subroutine only tests for vertices in tile 1.  The answer
-    !! values for tile 1 can be found in write_files.F90 or in
-    !! INPUT/C1_grid.tile1.nc
-
-    !e---x----e
-    !|        |
-    !x   x    x  grid_size = 3 x 3 (nxp by nyp)
-    !|        |  number of edges in the x direction:  2 (marked by 'e')
-    !e---x----e  number of edges in the y direction:  2 (marked by 'e')
+    !> This subroutine tests get_cell_verticees. This
+    !! subroutine only tests for vertices in tile 1.
 
     implicit none
 
@@ -99,11 +93,8 @@ contains
   !------------------------------------------!
   subroutine test_get_cell_centers
 
-    !> This subroutine tests get_cell_centers.  The cell
-    !! center is the middle point in the cell depicted above.
-    !! There is only one cell center point in a C1 tile.  This
-    !! subroutine only tests for tile 1.  The answer values
-    !! can be found in write_files.F90 or in INPUT/C1_grid.tile1.nc
+    !> This subroutine tests get_cell_centers.
+    !! There is only one cell center point in a C1 tile.
 
     implicit none
 
@@ -148,9 +139,11 @@ contains
     !> The area computed by get_grid_cell_area is for the entire cell
     !! The array area, set in write_files.F90, is the area for 1/4th of the cell
 
+    !> Test withtout SG_domain
     call get_grid_cell_area('ATM',2, area_out2)
     call check_answer(4.0*area(1,1), area_out2(1,1), 'TEST_GRID_CELL_AREA_SG')
 
+    !> Test with SG_domain
     call get_grid_cell_area('ATM',2, area_out2, SG_domain)
     call check_answer(4.0*area(1,1), area_out2(1,1), 'TEST_GRID_CELL_AREA_SG with SG_domain')
 
@@ -176,7 +169,8 @@ contains
 
     !> The unstructured grid is the same as the structured grid; there's only one center point in the tile.
     call mpp_define_domains((/1,1,1,1/), (/1,1/), SG_domain)
-    call mpp_define_unstruct_domain(UG_domain, SG_domain,npts_tile,grid_nlevel,mpp_npes(),ndivs,grid_index,name='immadeup')
+    call mpp_define_unstruct_domain(UG_domain, SG_domain,npts_tile,grid_nlevel,&
+                                    mpp_npes(),ndivs,grid_index,name='immadeup')
 
     !> The area computed by get_grid_cell_area is for the entire cell
     !! The array area, set in write_files.F90, is the area for 1/4th of the cell
@@ -198,12 +192,14 @@ contains
     call mpp_define_domains((/1,1,1,1/), (/1,1/), SG_domain)
 
     !> The area computed by get_grid_cell_area is for the entire cell
-    !! The array area, set in write_files.F90, is the area for 1/4th of the cell\
+    !! The array area, set in write_files.F90, is the area for 1/4th of the cell
+    !! Test without SG_domain
     call get_grid_comp_area('ATM', 1, area_out2)
     call check_answer(area(1,1)*4.0, area_out2(1,1), 'TEST_GRID_COMP_AREA_SG')
 
     !> The area computed by get_grid_cell_area is for the entire cell
     !! The array area, set in write_files.F90, is the area for 1/4th of the cell
+    !! Test with SG_domain
     call get_grid_comp_area('ATM', 1, area_out2, SG_domain)
     call check_answer(area(1,1)*4.0, area_out2(1,1), 'TEST_GRID_COMP_AREA_SG with SG_domain')
 

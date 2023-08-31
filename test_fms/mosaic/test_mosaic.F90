@@ -18,7 +18,8 @@
 !***********************************************************************
 
 !> @brief  This programs tests calls to get_mosaic_ntiles, get_mosaic_ncontacts,
-!! get_mosaic_grid_sizes, get_mosaic_contact
+!! get_mosaic_grid_sizes, get_mosaic_contact.  The subroutines are tested with
+!! made up C1 grids and exchange grids.  See write_files mod for grid details.
 
 program test_mosaic
 
@@ -163,9 +164,12 @@ subroutine test_get_grid_area
 
   implicit none
 
-  real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
-  real :: area_out(1,1)
+  real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny) !< x and y in radians
+  real :: area_out(1,1) !< area to be computed
 
+  !> x_rad and y_rad can be set to be be the entire cell
+  !! x_rad = x(1:3:2, 1:3:2) and y_rad = y(1:3:2, 1:3:2)
+  !! The answer will then be 4.0*area(1,1)
   x_rad = x(1:2, 1:2) * DEG_TO_RAD !< set coordinates
   y_rad = y(1:2, 1:2) * DEG_TO_RAD !< set coordinates
 
@@ -180,9 +184,12 @@ subroutine test_get_grid_great_circle_area
 
   implicit none
 
-  real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny)
-  real :: area_out(1,1)
+  real :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny) !< x and y in radians
+  real :: area_out(1,1) !< area to be computed
 
+  !> x_rad and y_rad can be set to be be the entire cell
+  !! x_rad = x(1:3:2, 1:3:2) and y_rad = y(1:3:2, 1:3:2)
+  !! The answer will then be 4.0*area(1,1)
   x_rad = x(1:2, 1:2) * DEG_TO_RAD !< set coordinates
   y_rad = y(1:2, 1:2) * DEG_TO_RAD !< set coordinates
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
@@ -196,11 +203,10 @@ subroutine test_get_mosaic_xgrid
 
   implicit none
 
-  integer, dimension(ncells) :: i1, j1, i2, j2
-  real, dimension(ncells) :: area
-
-  integer :: i
-  real :: garea, get_global_area
+  integer, dimension(ncells) :: i1, j1, i2, j2 !< indices of parent cells
+  real, dimension(ncells) :: area !< area to be returned
+  real :: garea, get_global_area !< global area
+  integer :: i !< counter
 
   type(FmsNetcdfFile_t) x_fileobj
 

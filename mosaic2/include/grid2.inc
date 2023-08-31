@@ -28,13 +28,10 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
 
   ! local vars
   integer :: nlon, nlat
-  real(kind=FMS_MOS_KIND_), allocatable :: glonb(:,:), glatb(:,:)
+  real(kind=r8_kind), allocatable :: glonb(:,:), glatb(:,:)
+  real(kind=r8_kind), allocatable :: cellarea8(:,:)
 
-  integer, parameter :: lkind=FMS_MOS_KIND_
-  real(kind=FMS_MOS_KIND_), parameter :: v180 = 180.0_lkind
-  real(kind=FMS_MOS_KIND_) :: pi_loc
-
-  pi_loc = real(PI,FMS_MOS_KIND_)
+  allocate(cellarea8(size(cellarea,1),size(cellarea,2)))
 
   select case(grid_version)
   case(VERSION_GEOLON_T,VERSION_X_T)
@@ -43,15 +40,15 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
      end if
      select case(trim(component))
      case('LND')
-        call read_data(gridfileobj, 'AREA_LND_CELL', cellarea)
+        call read_data(gridfileobj, 'AREA_LND_CELL', cellarea8)
      case('ATM','OCN')
-        call read_data(gridfileobj, 'AREA_'//trim(uppercase(component)),cellarea)
+        call read_data(gridfileobj, 'AREA_'//trim(uppercase(component)),cellarea8)
      case default
         call mpp_error(FATAL, module_name//'/get_grid_cell_area'//&
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! convert area to m2
-     cellarea = cellarea*4.0_lkind*pi_loc*real(radius,FMS_MOS_KIND_)**2
+     cellarea = real( cellarea8*4.0_r8_kind*PI*RADIUS**2, FMS_MOS_KIND_)
   case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES)
      if (present(domain)) then
         call mpp_get_compute_domain(domain,xsize=nlon,ysize=nlat)
@@ -61,12 +58,16 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
      allocate(glonb(nlon+1,nlat+1),glatb(nlon+1,nlat+1))
      call get_grid_cell_vertices(component, tile, glonb, glatb, domain)
      if (great_circle_algorithm) then
-        call calc_mosaic_grid_great_circle_area(glonb*pi_loc/v180, glatb*pi_loc/v180, cellarea)
+        call calc_mosaic_grid_great_circle_area(glonb*PI/180.0_r8_kind, glatb*PI/180_r8_kind, cellarea8)
+        cellarea=real(cellarea8,FMS_MOS_KIND_)
      else
-        call calc_mosaic_grid_area(glonb*pi_loc/v180, glatb*pi_loc/v180, cellarea)
+        call calc_mosaic_grid_area(glonb*PI/180.0_r8_kind, glatb*PI/180_r8_kind, cellarea8)
+        cellarea=real(cellarea8,FMS_MOS_KIND_)
      end if
      deallocate(glonb,glatb)
   end select
+
+  deallocate(cellarea8)
 
 end subroutine GET_GRID_CELL_AREA_SG_
 
@@ -81,8 +82,8 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
   integer :: siz(2), nxgrid
   integer :: i,j,m,n
   integer, allocatable :: i1(:), j1(:), i2(:), j2(:)
-  real(kind=FMS_MOS_KIND_), allocatable :: xgrid_area(:)
-  real(kind=FMS_MOS_KIND_), allocatable :: rmask(:,:)
+  real(kind=r8_kind), allocatable :: xgrid_area(:)
+  real(kind=r8_kind), allocatable :: rmask(:,:)
   character(len=MAX_NAME) :: &
      xgrid_name, & ! name of the variable holding xgrid names
      tile_name,  & ! name of the tile
@@ -100,7 +101,9 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
   integer :: ibegin, iend, bsize, l
   type(FmsNetcdfFile_t) :: tilefileobj, xgrid_fileobj
 
-  integer, parameter :: lkind=FMS_MOS_KIND_
+  real(r8_kind),allocatable :: area8(:,:)
+
+  allocate(area8(size(area,1),size(area,2)))
 
   select case (grid_version   )
   case(VERSION_GEOLON_T,VERSION_X_T)
@@ -109,15 +112,15 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
      end if
      select case(component)
      case('ATM')
-        call read_data(gridfileobj,'AREA_ATM',area)
+        call read_data(gridfileobj,'AREA_ATM',area8)
      case('OCN')
-        allocate(rmask(size(area,1),size(area,2)))
-        call read_data(gridfileobj,'AREA_OCN',area)
+        allocate(rmask(size(area8,1),size(area8,2)))
+        call read_data(gridfileobj,'AREA_OCN',area8)
         call read_data(gridfileobj,'wet',     rmask)
-        area = area*rmask
+        area = real(area8*rmask, FMS_MOS_KIND_)
         deallocate(rmask)
      case('LND')
-        call read_data(gridfileobj,'AREA_LND',area)
+        call read_data(gridfileobj,'AREA_LND',area8)
      case default
         call mpp_error(FATAL, module_name//'/get_grid_comp_area'//&
              'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
@@ -126,7 +129,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
      select case (component)
      case ('ATM')
         ! just read the grid cell area and return
-        call get_grid_cell_area(component,tile,area)
+        call get_grid_cell_area(component,tile,area8)
         return
      case ('LND')
         xgrid_name = 'aXl_file'
@@ -155,7 +158,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
         is = 1 ; i0 = 0
         js = 1 ; j0 = 0
      endif
-     if (size(area,1)/=ie-is+1.or.size(area,2)/=je-js+1) &
+     if (size(area8,1)/=ie-is+1.or.size(area8,2)/=je-js+1) &
           call mpp_error(FATAL, module_name//'/get_grid_comp_area '//&
           'size of the output argument "area" is not consistent with the domain')
 
@@ -182,7 +185,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
         end if
         call close_file(tilefileobj)
      end do
-     area(:,:) = 0.0_lkind
+     area8(:,:) = 0.0_r8_kind
      if (.not. grid_spec_exists) then
         call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
      end if
@@ -230,7 +233,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
                  i = i2(m); j = j2(m)
                  if (i<is.or.i>ie) cycle
                  if (j<js.or.j>je) cycle
-                 area(i+i0,j+j0) = area(i+i0,j+j0) + xgrid_area(m)
+                 area8(i+i0,j+j0) = area8(i+i0,j+j0) + xgrid_area(m)
               end do
               ibegin = iend + 1
            enddo
@@ -245,7 +248,10 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
      deallocate(nest_tile_name)
   end select ! version
   ! convert area to m2
-  area = area*4.0_lkind*real(PI,kind=FMS_MOS_KIND_)*real(radius,FMS_MOS_KIND_)**2
+  area = real(area8*4.0_r8_kind*PI*RADIUS**2, FMS_MOS_KIND_)
+
+  deallocate(area8)
+
 end subroutine GET_GRID_COMP_AREA_SG_
 
 !> @brief return grid cell area for the specified model component and tile on an
