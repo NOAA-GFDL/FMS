@@ -1,3 +1,27 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @file
+!> @author Caitlyn McAllister
+!> @brief Unit test for astronomy/test_topography
+!> @email gfdl.climate.model.info@noaa.gov
+!> @description FILL THIS OUT
+
 program test_top
 
   use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
@@ -73,7 +97,7 @@ program test_top
   end if
 
   call test_topog_mean
-  !call test_topog_stdev
+  call test_topog_stdev
 
   call fms_end
 
@@ -98,9 +122,10 @@ program test_top
     allocate (zmean(ix, iy))
 
     get_mean_answer = get_topog_mean(lon2d, lat2d, zmean)
+    print *, zmean
     zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
 
-    !if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild was not created properly")
+    if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild not read correctly")
     call check_answers(zmean(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
 
     deallocate (zmean)
@@ -117,13 +142,41 @@ program test_top
     get_mean_answer = get_topog_mean(lon1d, lat1d, zmean)
     zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
 
-    !if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild was not created properly")
+    if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog feild not read correctly")
     call check_answers(zmean(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
 
     deallocate (zmean)
 
 
   end subroutine test_topog_mean
+
+  subroutine test_topog_stdev
+
+    implicit none
+    real(kind=TEST_TOP_KIND_), dimension(2,2)              :: lon2d, lat2d ! need to be in radians
+    real(kind=TEST_TOP_KIND_), dimension(4)                :: lon1d, lat1d ! need to be in radians
+    real(kind=TEST_TOP_KIND_), dimension(:,:), allocatable :: stdev        ! calculated by module
+    !real(kind=TEST_TOP_KIND_)                              :: zmean 
+    logical                                                :: get_stdev_answer
+    integer                                                :: ix, iy
+
+    !---------------------------------------- test topog stdev 2d ---------------------------------------------!
+    lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
+    lon2d(2,1) = 2.5_lkind*deg2rad ; lat2d(2,1) = 1.5_lkind*deg2rad
+    lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
+    lon2d(2,2) = 2.5_lkind*deg2rad ; lat2d(2,2) = 2.5_lkind*deg2rad
+
+    ix = size(lon2d,1) - 1 ; iy = size(lat2d,2) - 1
+    allocate (stdev(ix, iy))
+
+    get_stdev_answer = get_topog_stdev(lon2d, lat2d, stdev)
+    !zmean = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
+
+
+    print *, "sqrt(5)", sqrt(5.0_lkind)
+    print *, "stdev", stdev
+
+  end subroutine test_topog_stdev
 
   subroutine check_answers(result, answer, what_error)
     
@@ -138,6 +191,7 @@ program test_top
     end if
 
   end subroutine check_answers
+
 
 
 end program test_top
