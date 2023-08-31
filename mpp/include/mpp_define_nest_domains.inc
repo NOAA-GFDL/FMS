@@ -196,6 +196,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   allocate(nest_domain%jstart_coarse(num_nest), nest_domain%jend_coarse(num_nest) )
 
   !---Added to enable moving nests
+  if (associated(nest_domain%nest_level)) deallocate(nest_domain%nest_level) !< Check if allocated
   allocate(nest_domain%nest_level(num_nest))
 
   nest_domain%tile_fine = tile_fine(1:num_nest)
@@ -253,6 +254,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
   enddo
 
   nest_domain%num_level = nlevels
+  if (associated(nest_domain%nest)) deallocate(nest_domain%nest) !< Check if allocated
   allocate(nest_domain%nest(nlevels))
   allocate(pelist_level(mpp_npes()))
   allocate(is_nest_fine(nlevels))
@@ -297,6 +299,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
         endif
      enddo
 
+     if (associated(nest_domain%nest(l)%pelist)) deallocate(nest_domain%nest(l)%pelist) !< Check if allocated
      allocate(nest_domain%nest(l)%pelist(npes_level))
      nest_domain%nest(l)%pelist(:) = pelist_level(1:npes_level)
 
@@ -490,7 +493,9 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
      endif
   enddo
 
+  if (associated(nest_domain%pelist_fine)) deallocate(nest_domain%pelist_fine) !< Check if allocated
   allocate(nest_domain%pelist_fine(npes_fine))
+  if (associated(nest_domain%pelist_coarse)) deallocate(nest_domain%pelist_coarse) !< Check if allocated
   allocate(nest_domain%pelist_coarse(npes_coarse))
   nest_domain%pelist_fine = pes_fine
   nest_domain%pelist_coarse = pes_coarse
@@ -564,11 +569,19 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
   nest_domain%x_refine = x_refine
   nest_domain%y_refine = y_refine
 
+  if (associated(nest_domain%C2F_T)) deallocate(nest_domain%C2F_T) !< Check if allocated
+  if (associated(nest_domain%C2F_C)) deallocate(nest_domain%C2F_C) !< Check if allocated
+  if (associated(nest_domain%C2F_E)) deallocate(nest_domain%C2F_E) !< Check if allocated
+  if (associated(nest_domain%C2F_N)) deallocate(nest_domain%C2F_N) !< Check if allocated
   allocate( nest_domain%C2F_T, nest_domain%C2F_C, nest_domain%C2F_E, nest_domain%C2F_N )
   nest_domain%C2F_T%next => NULL()
   nest_domain%C2F_C%next => NULL()
   nest_domain%C2F_N%next => NULL()
   nest_domain%C2F_E%next => NULL()
+  if (associated(nest_domain%F2C_T)) deallocate(nest_domain%F2C_T) !< Check if allocated
+  if (associated(nest_domain%F2C_C)) deallocate(nest_domain%F2C_C) !< Check if allocated
+  if (associated(nest_domain%F2C_E)) deallocate(nest_domain%F2C_E) !< Check if allocated
+  if (associated(nest_domain%F2C_N)) deallocate(nest_domain%F2C_N) !< Check if allocated
   allocate( nest_domain%F2C_T, nest_domain%F2C_C, nest_domain%F2C_E, nest_domain%F2C_N )
 
   call compute_overlap_fine_to_coarse(nest_domain, nest_domain%F2C_T, CENTER, "F2C T-cell")
@@ -1029,6 +1042,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
   !--- copy the overlapping into nest_domain data.
   overlap%nrecv = nrecv
   if( nrecv > 0 ) then
+   if (associated(overlap%recv)) deallocate(overlap%recv) !< Check if allocated
      allocate(overlap%recv(nrecv))
      do n = 1, nrecv
         call copy_nest_overlap( overlap%recv(n), overLaplist(n) )
@@ -1039,6 +1053,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
 
   overlap%nsend = nsend
   if( nsend > 0 ) then
+   if (associated(overlap%send)) deallocate(overlap%send) !< Check if allocated
      allocate(overlap%send(nsend))
      do n = 1, nsend
         call copy_nest_overlap( overlap%send(n), overLaplist(n) )
@@ -1256,6 +1271,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
      enddo
      overlap%nsend = nsend
      if(nsend > 0) then
+      if (associated(overlap%send)) deallocate(overlap%send) !< Check if allocated
         allocate(overlap%send(nsend))
         do n = 1, nsend
            call copy_nest_overlap(overlap%send(n), overlaplist(n) )

@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program test_drifters_io
+#ifdef use_drifters
 
   use drifters_io_mod
   use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
@@ -156,4 +157,5 @@ program test_drifters_io
       call mpp_error(FATAL, ermesg)
   endif
   call mpp_exit()
+#endif
 end program test_drifters_io

@@ -19,6 +19,7 @@
 !***********************************************************************
 
 program test_drifters_input
+#ifdef use_drifters
   use drifters_input_mod
   use fms_mod, only : fms_init, fms_end
   use mpp_mod, only : mpp_error, FATAL, stdout
@@ -54,4 +55,5 @@ program test_drifters_input
   call drifters_input_del(obj, ermesg)
 
   call fms_end()
+#endif
 end program test_drifters_input

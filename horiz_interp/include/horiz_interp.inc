@@ -47,7 +47,6 @@
 
     method = 'conservative'
     if(present(interp_method)) method = interp_method
-    if(allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
 
     select case (trim(method))
     case ("conservative")
@@ -146,6 +145,7 @@
     end select
 
     !-----------------------------------------------------------------------
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp%I_am_initialized = .true.
 
   end subroutine HORIZ_INTERP_NEW_1D_
@@ -181,8 +181,6 @@
 
    method = 'conservative'
    if(present(interp_method)) method = interp_method
-
-   if( .not. allocated(Interp % HI_KIND_TYPE_)) allocate (Interp % HI_KIND_TYPE_)
 
    select case (trim(method))
    case ("conservative")
@@ -265,6 +263,7 @@
    end select
 
    !-----------------------------------------------------------------------
+   Interp% HI_KIND_TYPE_ % is_allocated = .true.
    Interp%I_am_initialized = .true.
 
  end subroutine HORIZ_INTERP_NEW_1D_SRC_
@@ -293,8 +292,6 @@
 
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
-
-   if( .not. allocated(Interp % HI_KIND_TYPE_)) allocate (Interp % HI_KIND_TYPE_)
 
    select case (trim(method))
    case ("conservative")
@@ -343,7 +340,7 @@
       call mpp_error(FATAL,'when source grid are 2d, interp_method should be spherical or bilinear')
    end select
 
-!-----------------------------------------------------------------------
+   Interp% HI_KIND_TYPE_ % is_allocated = .true.
    Interp%I_am_initialized = .true.
 
  end subroutine HORIZ_INTERP_NEW_2D_
@@ -374,8 +371,6 @@
 
    method = 'bilinear'
    if(present(interp_method)) method = interp_method
-
-   if( .not. allocated(Interp % HI_KIND_TYPE_)) allocate (Interp % HI_KIND_TYPE_)
 
    nlon_out = size(lon_out(:)); nlat_out = size(lat_out(:))
    allocate(lon_dst(nlon_out,nlat_out), lat_dst(nlon_out,nlat_out))
@@ -423,7 +418,7 @@
 
    deallocate(lon_dst,lat_dst)
 
-   !-----------------------------------------------------------------------
+   Interp% HI_KIND_TYPE_ % is_allocated = .true.
    Interp%I_am_initialized = .true.
 
  end subroutine HORIZ_INTERP_NEW_1D_DST_

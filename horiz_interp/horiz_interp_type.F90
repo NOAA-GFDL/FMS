@@ -80,7 +80,8 @@ type horizInterpReals8_type
    real(kind=r8_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
    real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
    real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in
-   real(kind=r8_kind)                               :: max_src_dist
+   real(kind=r8_kind)                                   :: max_src_dist
+   logical                                              :: is_allocated = .false. !< set to true upon field allocation
 
 end type horizInterpReals8_type
 
@@ -106,7 +107,8 @@ type horizInterpReals4_type
    real(kind=r4_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
    real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
    real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in
-   real(kind=r4_kind)                               :: max_src_dist
+   real(kind=r4_kind)                                   :: max_src_dist
+   logical                                              :: is_allocated = .false. !< set to true upon field allocation
 
 end type horizInterpReals4_type
 
@@ -142,11 +144,10 @@ end type horizInterpReals4_type
    integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
    integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
    integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
-   type(horizInterpReals8_type), allocatable :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
+   type(horizInterpReals8_type) :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
                                                                     !! if compiled with r8_kind
-   type(horizInterpReals4_type), allocatable :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
+   type(horizInterpReals4_type) :: horizInterpReals4_type !< derived type holding kind 4 real data pointers
                                                                     !! if compiled with r8_kind
-
  end type
 
 !> @addtogroup horiz_interp_type_mod
@@ -180,9 +181,7 @@ contains
     horiz_interp_out%i_dst           = horiz_interp_in%i_dst
     horiz_interp_out%j_dst           = horiz_interp_in%j_dst
 
-    if(allocated(horiz_interp_in%horizInterpReals8_type)) then
-      if(.not. allocated(horiz_interp_out%horizInterpReals8_type)) &
-        allocate(horiz_interp_out%horizInterpReals8_type)
+    if(horiz_interp_in%horizInterpReals8_type%is_allocated) then
       horiz_interp_out%horizInterpReals8_type%faci            = horiz_interp_in%horizInterpReals8_type%faci
       horiz_interp_out%horizInterpReals8_type%facj            = horiz_interp_in%horizInterpReals8_type%facj
       horiz_interp_out%horizInterpReals8_type%area_src        = horiz_interp_in%horizInterpReals8_type%area_src
@@ -196,12 +195,11 @@ contains
       horiz_interp_out%horizInterpReals8_type%lat_in          = horiz_interp_in%horizInterpReals8_type%lat_in
       horiz_interp_out%horizInterpReals8_type%area_frac_dst   = horiz_interp_in%horizInterpReals8_type%area_frac_dst
       horiz_interp_out%horizInterpReals8_type%max_src_dist    =  horiz_interp_in%horizInterpReals8_type%max_src_dist
+      horiz_interp_out%horizInterpReals8_type%is_allocated    = .true.
       ! this was left out previous to mixed mode
       horiz_interp_out%horizInterpReals8_type%mask_in         = horiz_interp_in%horizInterpReals8_type%mask_in
 
-    else if (allocated(horiz_interp_in%horizInterpReals4_type)) then
-      if(.not. allocated(horiz_interp_out%horizInterpReals4_type)) &
-        allocate(horiz_interp_out%horizInterpReals4_type)
+    else if (horiz_interp_in%horizInterpReals4_type%is_allocated) then
       horiz_interp_out%horizInterpReals4_type%faci            = horiz_interp_in%horizInterpReals4_type%faci
       horiz_interp_out%horizInterpReals4_type%facj            = horiz_interp_in%horizInterpReals4_type%facj
       horiz_interp_out%horizInterpReals4_type%area_src        = horiz_interp_in%horizInterpReals4_type%area_src
@@ -215,6 +213,7 @@ contains
       horiz_interp_out%horizInterpReals4_type%lat_in          = horiz_interp_in%horizInterpReals4_type%lat_in
       horiz_interp_out%horizInterpReals4_type%area_frac_dst   = horiz_interp_in%horizInterpReals4_type%area_frac_dst
       horiz_interp_out%horizInterpReals4_type%max_src_dist    =  horiz_interp_in%horizInterpReals4_type%max_src_dist
+      horiz_interp_out%horizInterpReals4_type%is_allocated    = .true.
       ! this was left out previous to mixed mode
       horiz_interp_out%horizInterpReals4_type%mask_in         = horiz_interp_in%horizInterpReals4_type%mask_in
 

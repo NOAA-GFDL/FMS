@@ -290,11 +290,26 @@ end subroutine mosaic_init
 
     ntiles = get_mosaic_ntiles(fileobj)
     allocate(gridtiles(ntiles))
+    if(mpp_pe()==mpp_root_pe()) then
+      do n = 1, ntiles
+        do m = 1,MAX_NAME
+          gridtiles(n)(m:m) = " "
+        enddo
+      enddo
+    endif
     call read_data(fileobj, 'gridtiles', gridtiles)
 
     ncontacts = get_mosaic_ncontacts(fileobj)
     if(ncontacts>0) then
        allocate(contacts(ncontacts), contacts_index(ncontacts))
+       if(mpp_pe()==mpp_root_pe()) then
+         do n = 1, ncontacts
+           do m = 1,MAX_NAME
+             contacts(n)(m:m) = " "
+             contacts_index(n)(m:m) = " "
+           enddo
+         enddo
+       endif
        call read_data(fileobj, "contacts", contacts)
        call read_data(fileobj, "contact_index", contacts_index)
     endif

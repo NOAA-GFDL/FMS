@@ -251,7 +251,7 @@ implicit none
     if( .not. test_solo) then
         do j=1, nj_src-1
             do i=1, ni_src-1
-                if(allocated(interp%horizInterpReals8_type)) then
+                if(interp%horizInterpReals8_type%is_allocated) then
                     if( interp%horizInterpReals8_type%wtj(i,j,1).ne.1.0_r8_kind ) then
                         write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%horizInterpReals8_type%wtj(i,j,1)
                         call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d1d with wtj1")
@@ -325,7 +325,7 @@ implicit none
     if(.not. test_solo) then
         do j=1, nj_src-1
             do i=1, ni_src-1
-                if(allocated(interp%horizInterpReals8_type)) then
+                if(interp%horizInterpReals8_type%is_allocated) then
                     if( interp%horizInterpReals8_type%wtj(i,j,1).ne.1.0_r8_kind ) then
                         write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', interp%horizInterpReals8_type%wtj(i,j,1)
                         call mpp_error(FATAL, "failed at horiz_interp_bilinear_1d2d with wtj1")
@@ -401,7 +401,7 @@ implicit none
     !j=1,i=1 is a special case; see subroutine find_neighbor
     if(.not. test_solo) then
         i=1 ; j=1
-        if(allocated(interp%horizInterpReals8_type)) then
+        if(interp%horizInterpReals8_type%is_allocated) then
             if( interp%horizInterpReals8_type%wtj(i,j,1).ne.1.0_r8_kind ) then
                 write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%horizInterpReals8_type%wtj(i,j,1)
                 call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d1d with wtj(1,1,1)")
@@ -438,7 +438,7 @@ implicit none
         endif
         do j=2, nj_src
             do i=2, ni_src
-                if(allocated(interp%horizInterpReals8_type)) then
+                if(interp%horizInterpReals8_type%is_allocated) then
                     if( interp%horizInterpReals8_type%wtj(i,j,1).ne.0.0_r8_kind ) then
                         write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j, &
                                     interp%horizInterpReals8_type%wtj(i,j,1)
@@ -509,7 +509,7 @@ implicit none
     if(.not. test_solo) then
         !j=1,i=1 is a special case; see subroutine find_neighbor
         i=1 ; j=1
-        if(allocated(interp%horizInterpReals8_type)) then
+        if(interp%horizInterpReals8_type%is_allocated) then
             if( interp%horizInterpReals8_type%wtj(i,j,1).ne.1.0_r8_kind ) then
                 write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j,interp%horizInterpReals8_type%wtj(i,j,1)
                 call mpp_error(FATAL, "failed at horiz_interp_bilinear_2d2d wtj(1,1,1)")
@@ -546,7 +546,7 @@ implicit none
         endif
         do j=2, nj_src
             do i=2, ni_src
-                if(allocated(interp%horizInterpReals8_type)) then
+                if(interp%horizInterpReals8_type%is_allocated) then
                     if( interp%horizInterpReals8_type%wtj(i,j,1).ne.0.0_r8_kind ) then
                         write(*,*) 'expected ', 1.0_r8_kind, ' but computed ', i,j, &
                                     interp%horizInterpReals8_type%wtj(i,j,1)
@@ -688,7 +688,7 @@ implicit none
     if( .not. test_solo) then
         do i=1, ni_src-1
             do j=1, nj_src-1
-                if( allocated(interp_t%horizInterpReals4_type)) then
+                if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
                         interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
@@ -731,7 +731,7 @@ implicit none
     if( .not. test_solo) then
         do i=1, ni_src-1
             do j=1, nj_src-1
-                if( allocated(interp_t%horizInterpReals4_type)) then
+                if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
                         interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
@@ -1165,7 +1165,7 @@ implicit none
     subroutine check_type_eq(interp_1, interp_2)
         type(horiz_interp_type), intent(in) :: interp_1, interp_2
         integer :: k
-        if(allocated(interp_1%horizInterpReals4_type)) then
+        if(interp_1%horizInterpReals4_type%is_allocated) then
             if(allocated(interp_1%horizInterpReals4_type%faci)) then
                 if( ANY(interp_2%horizInterpReals4_type%faci .ne. interp_1%horizInterpReals4_type%faci)) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: faci")
@@ -1225,7 +1225,7 @@ implicit none
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
             endif
 
-        else if(allocated(interp_1%horizInterpReals8_type)) then
+        else if(interp_1%horizInterpReals8_type%is_allocated) then
             !!
             if(allocated(interp_1%horizInterpReals8_type%faci)) then
                 if( ANY(interp_2%horizInterpReals8_type%faci .ne. interp_1%horizInterpReals8_type%faci)) &
@@ -1355,10 +1355,10 @@ implicit none
     subroutine check_dealloc(hi_type)
         type(horiz_interp_type), intent(in) :: hi_type
         !! can only check the encapsulating real types, inner fields are inaccessible after deallocation
-        if(allocated(hi_type%horizInterpReals4_type)) then
+        if(hi_type%horizInterpReals4_type%is_allocated) then
             call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: horizInterpReals4_type")
         endif
-        if(allocated(hi_type%horizInterpReals8_type)) then
+        if(hi_type%horizInterpReals8_type%is_allocated) then
             call mpp_error(FATAL, "horiz_interp_test: field left allocated after type deletion: horizInterpReals8_type")
         endif
         !! non reals

@@ -62,7 +62,6 @@
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
 !   use wti(:,:,1) for x-derivative, wti(:,:,2) for y-derivative, wti(:,:,3) for xy-derivative
-    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
     allocate ( Interp%HI_KIND_TYPE_%wti    (nlon_in, nlat_in, 3) )
     allocate ( Interp%HI_KIND_TYPE_%lon_in (nlon_in) )
     allocate ( Interp%HI_KIND_TYPE_%lat_in (nlat_in) )
@@ -223,7 +222,6 @@
     nlon_out = size(lon_out); nlat_out = size(lat_out)
     Interp%nlon_src = nlon_in;  Interp%nlat_src = nlat_in
     Interp%nlon_dst = nlon_out; Interp%nlat_dst = nlat_out
-    if( .not. allocated(Interp%HI_KIND_TYPE_)) allocate(Interp%HI_KIND_TYPE_)
     allocate ( Interp%HI_KIND_TYPE_%wti     (nlon_in, nlat_in, 3) )
     allocate ( Interp%HI_KIND_TYPE_%lon_in  (nlon_in) )
     allocate ( Interp%HI_KIND_TYPE_%lat_in  (nlat_in) )

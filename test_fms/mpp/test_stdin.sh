@@ -26,6 +26,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 test_expect_success "correct STDIN writes" '
     mpirun -n 1 ./test_stdin
 '

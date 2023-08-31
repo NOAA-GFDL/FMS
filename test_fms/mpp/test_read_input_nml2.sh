@@ -31,11 +31,11 @@
 # create and enter directory for in/output
 output_dir
 
-touch input.nml
 touch test_numb_base.nml
 echo "&test_read_input_nml_nml" > test_numb_base.nml
 echo "test_numb = 0" >> test_numb_base.nml
 echo "/" >> test_numb_base.nml
+cp test_numb_base.nml input.nml
 
 # Test 1
 sed "s/test_numb = [0-9]/test_numb = 1/" test_numb_base.nml > test_numb.nml
@@ -45,7 +45,7 @@ test_expect_success "read input nml" '
 
 # Test 2
 sed "s/test_numb = [0-9]/test_numb = 2/" test_numb_base.nml > test_numb.nml
-sed "s/1/2/" $top_srcdir/test_fms/mpp/input_base.nml > input_alternative.nml
+cp input.nml input_alternative.nml
 test_expect_success "read input nml with file name" '
     mpirun -n 1 ../test_read_input_nml
 '
