@@ -31,40 +31,12 @@
 !> @{
 
 !#######################################################################
-
-
-!> The height, position, width, and elongation of the mountain
-!! is controlled by optional arguments.
-!! @param real lon The mean grid box longitude in radians.
-!! @param real lat The mean grid box latitude in radians.
-!! @param real height Maximum surface height in meters.
-!! @param real olond, olatd Position/origin of mountain in degrees longitude and latitude.
-!! This is the location of the maximum height.
-!! @param real wlond, wlatd Gaussian half-width of mountain in degrees longitude and latitude.
-!! @param real rlond, rlatd Ridge half-width of mountain in degrees longitude and latitude.
-!! This is the elongation of the maximum height.
-!! @param real zsurf The surface height (in meters).
-!! The size of the returned field is size(lon) by size(lat).
-!!   </OUT>
+!> @brief Returns a simple surface height field that consists of a single
+!! Gaussian-shaped mountain.
 !!
-!! @throws FATAL shape(zsurf) is not equal to (/size(lon),size(lat)/)
-!!     Check the input grid size and output field size.
-!!     The input grid is defined at the midpoint of grid boxes.
-!!
-!! @note
-!!     Mountains do not wrap around the poles.
-!
-!! <br>Example usage:
-!! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
-!!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
-
 !> Returns a surface height field that consists
 !! of the sum of one or more Gaussian-shaped mountains.
 !!
-!> Returns a land surface topography that consists of a "set" of
-!! simple Gaussian-shaped mountains.  The height, position,
-!! width, and elongation of the mountains can be controlled
-!! by variables in the namelist.
 subroutine GAUSSIAN_TOPOG_INIT_ ( lon, lat, zsurf )
 
 real(kind=FMS_TOP_KIND_), intent(in)  :: lon(:) !< The mean grid box longitude in radians
@@ -97,9 +69,34 @@ integer, parameter :: lkind=FMS_TOP_KIND_ !local FMS_TOP_KIND_ kind
 
 end subroutine GAUSSIAN_TOPOG_INIT_
 !#######################################################################
-!> @brief Returns a simple surface height field that consists of a single
-!! Gaussian-shaped mountain.
+!> The height, position, width, and elongation of the mountain
+!! is controlled by optional arguments.
+!! @param real lon The mean grid box longitude in radians.
+!! @param real lat The mean grid box latitude in radians.
+!! @param real height Maximum surface height in meters.
+!! @param real olond, olatd Position/origin of mountain in degrees longitude and latitude.
+!! This is the location of the maximum height.
+!! @param real wlond, wlatd Gaussian half-width of mountain in degrees longitude and latitude.
+!! @param real rlond, rlatd Ridge half-width of mountain in degrees longitude and latitude.
+!! This is the elongation of the maximum height.
+!! @param real zsurf The surface height (in meters).
+!! The size of the returned field is size(lon) by size(lat).
+!!   </OUT>
 !!
+!! @throws FATAL shape(zsurf) is not equal to (/size(lon),size(lat)/)
+!!     Check the input grid size and output field size.
+!!     The input grid is defined at the midpoint of grid boxes.
+!!
+!! @note
+!!     Mountains do not wrap around the poles.
+!
+!! <br>Example usage:
+!! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
+!!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
+!> Returns a land surface topography that consists of a "set" of
+!! simple Gaussian-shaped mountains.  The height, position,
+!! width, and elongation of the mountains can be controlled
+!! by variables in the namelist.
 function GET_GAUSSIAN_TOPOG_(lon, lat, height,                         &
                             olond, olatd, wlond, wlatd, rlond, rlatd ) &
                      result (zsurf )
