@@ -85,6 +85,7 @@ character(len=yaml_len) :: yaml_reference
 character(len=yaml_len) :: yaml_output_read
 character(len=string_len_parameter) :: tmpstr
 integer :: i, io_status !< for looping
+integer :: unum
 call fms_init
 call mpp_init
 
@@ -210,6 +211,8 @@ else
   call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/))
 endif
 
+call mpp_sync()
+
 !> Check yaml output against reference
 if (mpp_pe() == mpp_root_pe() ) then
   do i = 1,yaml_len
@@ -217,13 +220,13 @@ if (mpp_pe() == mpp_root_pe() ) then
     yaml_output_read(i:i) = " "
   enddo
  write (6,*) "open "//ref_yaml_name
-  open(unit=29, file=ref_yaml_name, status="old", access="stream")
+  open(newunit=unum, file=ref_yaml_name, status="old", access="stream")
  write (6,*) "read "//ref_yaml_name
-  read(29,iostat=i) yaml_reference
+  read(unum,iostat=i) yaml_reference
  write (6,*) "open "//filename
-  open(unit=28, file=filename, status="old", access="stream")
+  open(newunit=unum, file=filename, status="old", access="stream")
  write (6,*) "read "//filename
-  read(28,iostat=i) yaml_output_read
+  read(unum,iostat=i) yaml_output_read
   write(6,*) yaml_reference
   write(6,*) yaml_output_read
   if (trim(yaml_reference) .ne. trim (yaml_output_read)) then
