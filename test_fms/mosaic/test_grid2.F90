@@ -21,6 +21,8 @@
 !! with C1 tiles where tiles 1-6 are identical.  The tile points are made up with
 !! values that result in simple answers.  See write_files module for grid details.
 
+#include "write_files.inc" !> including write_files.mod because I don't know how to compile when write_files.mod is
+                           !! in a separate file.
 program test_mosaic
 
 use mpp_mod,      only : mpp_init, mpp_error, FATAL, mpp_npes, mpp_pe, mpp_root_pe
@@ -67,14 +69,12 @@ contains
 
     implicit none
 
-    real :: lonb_2d(c1_nx,c1_ny)       !< returned values for lon 2d
-    real :: latb_2d(c1_nx,c1_ny)       !< returned values for lat 2d
-    real :: answer_lon_2d(c1_nx,c1_ny) !< answers for lon 2d
-    real :: answer_lat_2d(c1_nx,c1_ny) !< answers for lat 2d
+    real(TEST_MOS_KIND_) :: lonb_2d(c1_nx,c1_ny)       !< returned values for lon 2d
+    real(TEST_MOS_KIND_) :: latb_2d(c1_nx,c1_ny)       !< returned values for lat 2d
+    real(TEST_MOS_KIND_) :: answer_lon_2d(c1_nx,c1_ny) !< answers for lon 2d
+    real(TEST_MOS_KIND_) :: answer_lat_2d(c1_nx,c1_ny) !< answers for lat 2d
 
-    type(FmsNetcdfFile_t) :: fileobj
-    integer, allocatable :: pes(:)
-    integer :: i,j,itile
+    integer :: i,j
 
     !> answers
     answer_lon_2d=x(1:c1_nxp:2, 1:c1_nxp:2)
@@ -101,10 +101,10 @@ contains
     integer, parameter :: nx = c1_nx/2 !< number of center points
     integer, parameter :: ny = c1_ny/2 !< number of center points
 
-    real :: glon_2d(nx,ny) !< results from grid_cell_centers
-    real :: glat_2d(nx,ny) !< results from grid_cell_centers
-    real :: answer_glon_2d(nx,ny) !< answers for glon
-    real :: answer_glat_2d(nx,ny) !< answers for glat
+    real(TEST_MOS_KIND_) :: glon_2d(nx,ny) !< results from grid_cell_centers
+    real(TEST_MOS_KIND_) :: glat_2d(nx,ny) !< results from grid_cell_centers
+    real(TEST_MOS_KIND_) :: answer_glon_2d(nx,ny) !< answers for glon
+    real(TEST_MOS_KIND_) :: answer_glat_2d(nx,ny) !< answers for glat
 
     integer :: i, j
 
@@ -131,7 +131,10 @@ contains
     implicit none
 
     type(domain2D) :: SG_domain
-    real :: area_out2(1,1)
+    real(TEST_MOS_KIND_) :: area_out2(1,1)
+    real(TEST_MOS_KIND_) :: answer
+
+    answer = real( 4.0_r8_kind * area(1,1), TEST_MOS_KIND_)
 
     !> total of 1 domain with 1 (center) point in the domain
     call mpp_define_domains((/1,1,1,1/), (/1,1/), SG_domain)
@@ -141,11 +144,11 @@ contains
 
     !> Test withtout SG_domain
     call get_grid_cell_area('ATM',2, area_out2)
-    call check_answer(4.0*area(1,1), area_out2(1,1), 'TEST_GRID_CELL_AREA_SG')
+    call check_answer(answer, area_out2(1,1), 'TEST_GRID_CELL_AREA_SG')
 
     !> Test with SG_domain
     call get_grid_cell_area('ATM',2, area_out2, SG_domain)
-    call check_answer(4.0*area(1,1), area_out2(1,1), 'TEST_GRID_CELL_AREA_SG with SG_domain')
+    call check_answer(answer, area_out2(1,1), 'TEST_GRID_CELL_AREA_SG with SG_domain')
 
   end subroutine test_get_grid_cell_area_sg
   !------------------------------------------!
@@ -156,9 +159,8 @@ contains
     implicit none
     type(domain2D) :: SG_domain
     type(domainUG) :: UG_domain !< UG_domain is the same as SG_domain
-
-    real :: area_out1(1)
-
+    real(TEST_MOS_KIND_) :: area_out1(1)
+    real(TEST_MOS_KIND_) :: answer
     integer :: i
     integer :: npts_tile(1),grid_nlevel(1), ndivs, grid_index(1)
 
@@ -166,6 +168,8 @@ contains
     grid_nlevel=1
     ndivs=1
     grid_index=1
+
+    answer = real( 4.0_r8_kind * area(1,1), TEST_MOS_KIND_)
 
     !> The unstructured grid is the same as the structured grid; there's only one center point in the tile.
     call mpp_define_domains((/1,1,1,1/), (/1,1/), SG_domain)
@@ -175,7 +179,7 @@ contains
     !> The area computed by get_grid_cell_area is for the entire cell
     !! The array area, set in write_files.F90, is the area for 1/4th of the cell
     call get_grid_cell_area('ATM',1, area_out1, SG_domain, UG_domain)
-    call check_answer(area(1,1)*4.0, area_out1(1), 'TEST_GRID_CELL_AREA_UG')
+    call check_answer(answer, area_out1(1), 'TEST_GRID_CELL_AREA_UG')
 
   end subroutine test_get_grid_cell_area_ug
   !------------------------------------------!
@@ -187,7 +191,10 @@ contains
 
     implicit none
     type(domain2D) :: SG_domain
-    real :: area_out2(1,1)
+    real(TEST_MOS_KIND_) :: area_out2(1,1)
+    real(TEST_MOS_KIND_) :: answer
+
+    answer = real( 4.0_r8_kind * area(1,1), TEST_MOS_KIND_)
 
     call mpp_define_domains((/1,1,1,1/), (/1,1/), SG_domain)
 
@@ -195,13 +202,13 @@ contains
     !! The array area, set in write_files.F90, is the area for 1/4th of the cell
     !! Test without SG_domain
     call get_grid_comp_area('ATM', 1, area_out2)
-    call check_answer(area(1,1)*4.0, area_out2(1,1), 'TEST_GRID_COMP_AREA_SG')
+    call check_answer(answer, area_out2(1,1), 'TEST_GRID_COMP_AREA_SG')
 
     !> The area computed by get_grid_cell_area is for the entire cell
     !! The array area, set in write_files.F90, is the area for 1/4th of the cell
     !! Test with SG_domain
     call get_grid_comp_area('ATM', 1, area_out2, SG_domain)
-    call check_answer(area(1,1)*4.0, area_out2(1,1), 'TEST_GRID_COMP_AREA_SG with SG_domain')
+    call check_answer(answer, area_out2(1,1), 'TEST_GRID_COMP_AREA_SG with SG_domain')
 
   end subroutine test_get_grid_comp_area_sg
   !------------------------------------------!
@@ -213,12 +220,13 @@ contains
     type(domain2D) :: SG_domain
     type(domainUG) :: UG_domain !< UG_domain is the same as SG_domain
     integer :: npts_tile(1), ntiles_grid(1), grid_index(1)
-
-    real :: area_out1(1)
+    real(TEST_MOS_KIND_) :: answer
+    real(TEST_MOS_KIND_) :: area_out1(1)
 
     npts_tile=1
     ntiles_grid=1
     grid_index(1)=1
+    answer = real( 4.0_r8_kind * area(1,1), TEST_MOS_KIND_)
 
     !> the unstructured grid is the same as the structured grid
     call mpp_define_domains((/1,1,1,1/), (/1,1/), SG_domain)
@@ -227,20 +235,21 @@ contains
     !> The area computed by get_grid_cell_area is for the entire cell
     !! The array area, set in write_files.F90, is the area for 1/4th of the cell
     call get_grid_comp_area('ATM',3,area_out1,SG_domain, UG_domain)
-    call check_answer(area(1,1)*4.0, area_out1(1), 'TEST_GRID_CELL_AREA_UG')
+    call check_answer(answer, area_out1(1), 'TEST_GRID_CELL_AREA_UG')
 
   end subroutine test_get_grid_comp_area_ug
   !------------------------------------------!
   subroutine check_answer(answer, myvalue, whoami)
 
     implicit none
-    real :: answer
-    real :: myvalue
+    real(TEST_MOS_KIND_) :: answer
+    real(TEST_MOS_KIND_) :: myvalue
     character(*) :: whoami
 
     if( answer .ne. myvalue ) then
        write(*,*) '*************************************'
        write(*,*) 'EXPECTED ', answer, 'but got ', myvalue
+       write(*,*) 'difference of', abs(answer-myvalue)
        call mpp_error( FATAL,'failed '//trim(whoami) )
     end if
 

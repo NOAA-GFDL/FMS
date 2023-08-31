@@ -31,8 +31,11 @@
 touch input.nml
 rm -rf INPUT
 mkdir INPUT
-test_expect_success "test mosaic2" 'mpirun -n 1 ./test_mosaic'
-test_expect_success "test grid2" 'mpirun -n 1 ./test_grid2'
+test_expect_success "test mosaic2 r4" 'mpirun -n 1 ./test_mosaic2_r4'
+test_expect_success "test grid2   r4" 'mpirun -n 1 ./test_grid2_r4'
+
+test_expect_success "test mosaic2 r8" 'mpirun -n 1 ./test_mosaic2_r8'
+test_expect_success "test grid2   r8" 'mpirun -n 1 ./test_grid2_r8'
 
 #rm -rf INPUT
 test_done

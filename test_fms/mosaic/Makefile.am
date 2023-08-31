@@ -23,25 +23,29 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and include files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR) -I./INPUT -I$(top_srcdir)/mosaic
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR) -I./INPUT -I$(top_srcdir)/mosaic -I./
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_mosaic test_grid2
+check_PROGRAMS = test_mosaic2_r4 test_mosaic2_r8 test_grid2_r4 test_grid2_r8
 
 # This is the source code for the test
-test_mosaic_SOURCES = test_mosaic.F90 write_files.F90
-test_grid2_SOURCES = test_grid2.F90 write_files.F90
+test_mosaic2_r4_SOURCES = test_mosaic2.F90 write_files.inc
+test_grid2_r4_SOURCES   = test_grid2.F90 write_files.inc
+
+test_mosaic2_r8_SOURCES = test_mosaic2.F90 write_files.inc
+test_grid2_r8_SOURCES   = test_grid2.F90 write_files.inc
+
+test_mosaic2_r4_CPPFLAGS=-DTEST_MOS_KIND_=4 $(AM_CPPFLAGS)
+test_grid2_r4_CPPFLAGS  =-DTEST_MOS_KIND_=4 $(AM_CPPFLAGS)
+
+test_mosaic2_r8_CPPFLAGS=-DTEST_MOS_KIND_=8 $(AM_CPPFLAGS)
+test_grid2_r8_CPPFLAGS  =-DTEST_MOS_KIND_=8 $(AM_CPPFLAGS)
 
 # These files are also included in the distribution.
 EXTRA_DIST = test_mosaic2.sh
-
-%.o: %.mod
-write_files.mod: write_files.$(OBJEXT)
-test_mosaic.$(OBJEXT): write_files.mod
-test_grid2.$(OBJEXT): write_files.mod
 
 # Run the test program.
 TESTS = test_mosaic2.sh
@@ -51,4 +55,4 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 									$(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc *.out *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.nc *.out *.dpi *.spi *.dyn *.spl *.mod

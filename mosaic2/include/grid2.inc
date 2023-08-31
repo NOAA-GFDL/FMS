@@ -130,6 +130,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
      case ('ATM')
         ! just read the grid cell area and return
         call get_grid_cell_area(component,tile,area8)
+        area = real(area8, FMS_MOS_KIND_)
         return
      case ('LND')
         xgrid_name = 'aXl_file'
