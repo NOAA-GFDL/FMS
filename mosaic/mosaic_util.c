@@ -504,9 +504,12 @@ double great_circle_area(int n, const double *x, const double *y, const double *
 
     /* compute angle for pnt1 */
     sum += spherical_angle(pnt1, pnt2, pnt0);
-
+    printf("sum=%f\n",sum);
   }
+  printf("n=%d\n",n);
+  printf("%f\n",(n-2.)*M_PI);
   area = (sum - (n-2.)*M_PI) * RADIUS* RADIUS;
+  printf("%f\n", area);
   return area;
 }
 

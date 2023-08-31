@@ -452,7 +452,7 @@ module mpp_domains_mod
   type :: nest_domain_type
      character(len=NAME_LENGTH)     :: name
      integer                        :: num_level
-     integer,               pointer :: nest_level(:)    !< Added for moving nest functionality
+     integer,               pointer :: nest_level(:) => NULL() !< Added for moving nest functionality
      type(nest_level_type), pointer :: nest(:) => NULL()
      integer                        :: num_nest
      integer,               pointer :: tile_fine(:), tile_coarse(:)
