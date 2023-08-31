@@ -1,4 +1,4 @@
-on: push
+on: [push, pull_request]
 jobs:
   build-dependencies:
     runs-on: ubuntu-latest

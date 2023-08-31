@@ -10,10 +10,8 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
       env:
-        CC: mpicc
-        FC: mpif90
-        CPPFLAGS: '-I/opt/view/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500'
-        FCFLAGS: '-fallow-argument-mismatch -fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check -I/opt/view/include'
+        CPPFLAGS: '-I/opt/view/include'
+        FFLAGS: '-fallow-argument-mismatch' # mkmf uses FFLAGS instead of FC
         LDFLAGS: '-L/opt/view/lib'
         VERBOSE: 1
     steps:

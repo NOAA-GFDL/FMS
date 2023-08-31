@@ -363,7 +363,7 @@ void write_yaml_from_struct_3 (char *yamlname, int asize, struct fmsyamloutkeys 
 
   // trim any trailing whitespace
   int ws_ind = strlen(yamlname)-1;
-  while(*(yamlname+ws_ind) == ' ') ws_ind--;
+  while(!isalnum(yamlname[ws_ind])) ws_ind--;
   if( ws_ind != strlen(yamlname)-1) yamlname[ws_ind+1] = '\0';
 
   /* open the yaml output file. Only 1 core should do this */
