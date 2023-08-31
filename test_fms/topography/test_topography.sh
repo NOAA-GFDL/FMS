@@ -28,7 +28,13 @@
 . ../test-lib.sh
 
 # Prepare the directory to run the tests.
-touch input.nml
+cat <<EOF > input.nml
+&topography_nml
+  topog_file = "topography.data.nc",
+  water_file = "water.data.nc"
+/
+
+EOF
 
 # Run the test.
 
