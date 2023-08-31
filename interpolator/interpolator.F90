@@ -444,7 +444,6 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
-     Out%fileobj = In%fileobj
      if (allocated(In%has_level    )) Out%has_level     =  In%has_level
      if (allocated(In%field_name   )) Out%field_name    =  In%field_name
      if (allocated(In%time_init    )) Out%time_init     =  In%time_init
