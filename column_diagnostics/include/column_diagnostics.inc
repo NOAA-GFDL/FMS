@@ -178,7 +178,7 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       do nn = 1, num_diag_pts_ij
         global_lat(nn+num_diag_pts_latlon) =    &
                          ( (-0.5_lkind*acos(-1.0_lkind) + 0.5_lkind*dellat) + &
-                            real(global_j(nn)-1,FMS_CD_KIND_)*dellat )*real(RADIAN,FMS_CD_KIND_)
+                         real(global_j(nn)-1,FMS_CD_KIND_)*dellat )*real(RADIAN,FMS_CD_KIND_)
         global_lon(nn+num_diag_pts_latlon) = ( 0.5_lkind*dellon + &
                           real(global_i(nn)-1,FMS_CD_KIND_)*dellon )*real(RADIAN,FMS_CD_KIND_)
       end do
