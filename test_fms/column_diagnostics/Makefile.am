@@ -47,4 +47,4 @@ TESTS = test_column_diagnostics.sh
 EXTRA_DIST = test_column_diagnostics.sh
 
 # Clean up
-CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl
+CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl fort.*
