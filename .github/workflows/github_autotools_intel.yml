@@ -46,11 +46,16 @@ jobs:
       matrix:
         FC: ["ifx", "ifort"]
         CC: ["icx", "icc"]
-        target-flags: [ "-O3 -debug minimal -fp-model source", "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv" ] # prod, debug
+        target-fcflags: [ "-O3 -debug minimal -fp-model source", "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv" ] # prod, debug
+        target-cflags: [ "-O2 -debug minimal", "-O0 -g -ftrapuv" ] # prod, debug
         io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
         exclude:
           - FC: "ifx"
             CC: "icc"
+          - target-fcflags: "-O3 -debug minimal -fp-model source"
+            target-cflags: "-O0 -g -ftrapuv"
+          - target-fcflags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv"
+            target-cflags: "-O2 -debug minimal"
           #- FC: "ifx" # bug with ifx will cause ICE if using -check flag (issue #1348)
           #  target-flags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv"
     container:
@@ -58,8 +63,8 @@ jobs:
       env:
         CC: mpicc -cc=${{ matrix.CC }}
         FC: mpifc -fc=${{ matrix.FC }}
-        CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback"
+        CFLAGS:  "-I/libs/include ${{ matrix.target-cflags }}"
+        FCFLAGS: "-I/libs/include ${{ matrix.target-fcflags }}"
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
