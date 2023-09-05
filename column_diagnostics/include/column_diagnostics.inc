@@ -105,6 +105,7 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       integer            ::  io
 
       integer, parameter :: lkind=FMS_CD_KIND_
+      real(FMS_CD_KIND_) :: tmp
 !--------------------------------------------------------------------
 !    local variables:
 !
@@ -124,8 +125,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !    save the input lat and lon fields. define the delta of latitude
 !    and longitude.
 !--------------------------------------------------------------------
-      latb_deg = latb_in*real(RADIAN,FMS_CD_KIND_)
-      lonb_deg = lonb_in*real(RADIAN,FMS_CD_KIND_)
+      latb_deg = real( real(latb_in,r8_kind)*RADIAN, FMS_CD_KIND_)  !< unit conversion in r8_kind
+      lonb_deg = real( real(lonb_in,r8_kind)*RADIAN, FMS_CD_KIND_ ) !< unit conversion in r8_kind
       dellat = latb_in(1,2) - latb_in(1,1)
       dellon = lonb_in(2,1) - lonb_in(1,1)
       latb_max = MAXVAL (latb_deg(:,:))
@@ -176,11 +177,10 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       end do
 
       do nn = 1, num_diag_pts_ij
-        global_lat(nn+num_diag_pts_latlon) =    &
-                         ( (-0.5_lkind*acos(-1.0_lkind) + 0.5_lkind*dellat) + &
-                         real(global_j(nn)-1,FMS_CD_KIND_)*dellat )*real(RADIAN,FMS_CD_KIND_)
-        global_lon(nn+num_diag_pts_latlon) = ( 0.5_lkind*dellon + &
-                          real(global_i(nn)-1,FMS_CD_KIND_)*dellon )*real(RADIAN,FMS_CD_KIND_)
+        tmp = (-0.5_lkind*acos(-1.0_lkind) + 0.5_lkind*dellat) + real(global_j(nn)-1,FMS_CD_KIND_)*dellat
+        global_lat(nn+num_diag_pts_latlon) = real( real(tmp,r8_kind)*RADIAN, FMS_CD_KIND_ )
+        tmp = 0.5_lkind*dellon + real(global_i(nn)-1,FMS_CD_KIND_)*dellon
+        tmp = real( real(tmp,r8_kind)*RADIAN, FMS_CD_KIND_ )
       end do
 
 !----------------------------------------------------------------------
@@ -220,13 +220,9 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
               do i=1,size(lonb_deg,1) - 1
                 distance_y(i,j) = ABS(global_lat(nn) - latb_deg(i,j))
                 distance_x(i,j) = ABS(global_lon(nn) - lonb_deg(i,j))
-                distance_x2(i,j) = ABS((global_lon(nn)-360.0_lkind) -  &
-                                                       lonb_deg(i,j))
-                distance(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
-                                (global_lon(nn) - lonb_deg(i,j))**2
-                distance2(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
-                                 ((global_lon(nn)-360.0_lkind) -    &
-                                                   lonb_deg(i,j))**2
+                distance_x2(i,j) = ABS((global_lon(nn)-360.0_lkind) - lonb_deg(i,j))
+                distance(i,j) = (global_lat(nn)-latb_deg(i,j))**2 + (global_lon(nn)-lonb_deg(i,j))**2
+                distance2(i,j) = (global_lat(nn)-latb_deg(i,j))**2 + ((global_lon(nn)-360.0_lkind) - lonb_deg(i,j))**2
               end do
             end do
 
