@@ -61,7 +61,7 @@ program test_column_diagnostics
   call time_manager_init()
   call initialize_variables(0.0_lkind) !< set up input arrays
   call column_diagnostics_init() !< initialize diagnostics column
-  call initialize_variables(1.0_lkind) !< set up input arrays;
+  call initialize_variables(0.01_lkind) !< set up input arrays;
   call test_initialize_diagnostic_columns !< initialize diagnostics column
   call test_column_diagnostics_header
 
@@ -82,8 +82,8 @@ contains
     dlat=15.0_lkind !< randomly chosen value
     dlon=15.0_lkind !< randomly chosen value
     do i=1, nlatlon
-       lonb_in(i,:)=real(i,lkind)*dlat - 0.5_lkind*dlat + dlatlon
-       latb_in(:,i)=-90._lkind + real(i,lkind)*dlon -0.5_lkind*dlat + dlatlon
+       lonb_in(i,:)=real(i,lkind)*dlat - 0.5_lkind*dlat
+       latb_in(:,i)=-90._lkind + real(i,lkind)*dlon -0.5_lkind*dlat
     end do
 
     !> initialize_diagnostic_columns coordinates expects these values to be in degrees
@@ -95,8 +95,8 @@ contains
     global_j(1)=4 ; global_j(2)=5
 
     !> intialize_diagnostic_columns expects these values to be in radians
-    lonb_in=lonb_in*DEG_TO_RAD
-    latb_in=latb_in*DEG_TO_RAD
+    lonb_in=(lonb_in+dlatlon)*DEG_TO_RAD
+    latb_in=(latb_in+dlatlon)*DEG_TO_RAD
 
 
   end subroutine initialize_variables

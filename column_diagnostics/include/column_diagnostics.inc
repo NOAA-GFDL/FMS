@@ -180,8 +180,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
         tmp = (-0.5_lkind*acos(-1.0_lkind) + 0.5_lkind*dellat) + real(global_j(nn)-1,FMS_CD_KIND_)*dellat
         global_lat(nn+num_diag_pts_latlon) = real( real(tmp,r8_kind)*RADIAN, FMS_CD_KIND_ )
         tmp = 0.5_lkind*dellon + real(global_i(nn)-1,FMS_CD_KIND_)*dellon
-        tmp = real( real(tmp,r8_kind)*RADIAN, FMS_CD_KIND_ )
-      end do
+        global_lon(nn+num_diag_pts_latlon) = real( real(tmp,r8_kind)*RADIAN, FMS_CD_KIND_ )
+     end do
 
 !----------------------------------------------------------------------
 !    loop over all diagnostic points to check for their presence on

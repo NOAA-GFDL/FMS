@@ -24,6 +24,6 @@ EOF
 
 
 #####
-#test_expect_success "test_column_diagnostics r4" 'mpirun -n 1 ./test_column_diagnostics_r4'
+test_expect_success "test_column_diagnostics r4" 'mpirun -n 1 ./test_column_diagnostics_r4'
 test_expect_success "test_column_diagnostics r8" 'mpirun -n 1 ./test_column_diagnostics_r8'
 test_done
