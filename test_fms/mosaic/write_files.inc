@@ -164,14 +164,19 @@ contains
 
     character(5) :: tile
     real(TEST_MOS_KIND_), parameter :: area_value = real(PI*RADIUS*RADIUS/2.0_r8_kind, TEST_MOS_KIND_)
+    real(r8_kind) :: xtmp(c1_nxp, c1_nyp), ytmp(c1_nxp, c1_nyp)
 
-    x(1,1)=0.0_lkind ; x(2,1)=90.0_lkind ; x(3,1)=180.0_lkind
-    x(1,2)=0.0_lkind ; x(2,2)=90.0_lkind ; x(3,2)=180.0_lkind
-    x(1,3)=0.0_lkind ; x(2,3)=90.0_lkind ; x(3,3)=180.0_lkind
+    xtmp(1,1)=0.0_r8_kind ; xtmp(2,1)=90.0_r8_kind ; xtmp(3,1)=180.0_r8_kind
+    xtmp(1,2)=0.0_r8_kind ; xtmp(2,2)=90.0_r8_kind ; xtmp(3,2)=180.0_r8_kind
+    xtmp(1,3)=0.0_r8_kind ; xtmp(2,3)=90.0_r8_kind ; xtmp(3,3)=180.0_r8_kind
 
-    y(1,1)=-90.0_lkind ; y(2,1)=-90.0_lkind ; y(3,1)=-90.0_lkind
-    y(1,2)=  0.0_lkind ; y(2,2)=  0.0_lkind ; y(3,2)=  0.0_lkind
-    y(1,3)= 90.0_lkind ; y(2,3)= 90.0_lkind ; y(3,3)= 90.0_lkind
+    x = real(xtmp,lkind)
+
+    ytmp(1,1)=-90.0_r8_kind ; ytmp(2,1)=-90.0_r8_kind ; ytmp(3,1)=-90.0_r8_kind
+    ytmp(1,2)=  0.0_r8_kind ; ytmp(2,2)=  0.0_r8_kind ; ytmp(3,2)=  0.0_r8_kind
+    ytmp(1,3)= 90.0_r8_kind ; ytmp(2,3)= 90.0_r8_kind ; ytmp(3,3)= 90.0_r8_kind
+
+    y = real(ytmp,lkind)
 
     area(1,1)=area_value ; area(2,1)=area_value
     area(1,2)=area_value ; area(2,2)=area_value

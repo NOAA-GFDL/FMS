@@ -134,7 +134,7 @@ contains
     real(TEST_MOS_KIND_) :: area_out2(1,1)
     real(TEST_MOS_KIND_) :: answer
 
-    answer = real( 4.0_r8_kind * area(1,1), TEST_MOS_KIND_)
+    answer = real(2.0_r8_kind*PI*RADIUS*RADIUS,lkind)
 
     !> total of 1 domain with 1 (center) point in the domain
     call mpp_define_domains((/1,1,1,1/), (/1,1/), SG_domain)

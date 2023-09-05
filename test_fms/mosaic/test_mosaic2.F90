@@ -54,8 +54,8 @@ call test_get_mosaic_contact()
 !if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_GRID_GREAT_CIRCLE_AREA'
 !call test_get_grid_great_circle_area()
 
-if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_GRID_AREA'
-call test_get_grid_area()
+if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST CALC_MOSAIC_GRID_AREA'
+call test_calc_mosaic_grid_area()
 
 if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_MOSAIC_XGRID'
 call test_get_mosaic_xgrid()
@@ -161,7 +161,7 @@ subroutine test_get_mosaic_contact
 
 end subroutine test_get_mosaic_contact
 !------------------------------------------------------!
-subroutine test_get_grid_area
+subroutine test_calc_mosaic_grid_area
 
   !> This subroutine tests get_grid_area
 
@@ -177,9 +177,9 @@ subroutine test_get_grid_area
   y_rad = real( real(y(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_MOS_KIND_) !< set coordinates
 
   call calc_mosaic_grid_area(x_rad, y_rad, area_out)
-  call check_answer(area(1,1), area_out(1,1), 'TEST_GET_GRID_AREA')
+  call check_answer(area(1,1), area_out(1,1), 'TEST_CALC_MOSAIC_GRID_AREA')
 
-end subroutine test_get_grid_area
+end subroutine test_calc_mosaic_grid_area
 !------------------------------------------------------!
 subroutine test_get_grid_great_circle_area
 
