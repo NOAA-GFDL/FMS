@@ -22,8 +22,7 @@
 !! @email gfdl.climate.model.info@noaa.gov
 !! @description This program mainly tests initialize_diagnostics_columns.
 !! TODO:  The current test only tests with 1 processor.  A test that uses
-!! more than one processor where the global domain is not the smae as the local pe domain
-!! is needed.
+!! domain decomposition is needed.
 program test_column_diagnostics
 
   use column_diagnostics_mod
