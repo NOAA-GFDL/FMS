@@ -296,6 +296,13 @@ else
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
 fi
 
+# disable mosaic unit tests if FMS is compiled in r4
+if test $enable_mixed_mode = yes ; then
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
+else
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
+fi
+
 # Set any required compile flags.  This will not be done if the user wants to
 # define all their own flags.
 if test $enable_setting_flags = yes; then
@@ -313,11 +320,9 @@ if test $enable_setting_flags = yes; then
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
     AC_DEFINE([OVERLOAD_R4], [1], [Set to overload the R4 Fortran routines])
     AC_DEFINE([OVERLOAD_R8], [1], [Set to overload the R8 Fortran routines])
-    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
   else
     GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
-    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
   fi
   # individual mixed precision overloads
   if test $enable_overload_r4 = yes; then
