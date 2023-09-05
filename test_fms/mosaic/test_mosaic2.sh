@@ -31,11 +31,15 @@
 touch input.nml
 rm -rf INPUT
 mkdir INPUT
-test_expect_success "test mosaic2 r4" 'mpirun -n 1 ./test_mosaic2_r4'
-test_expect_success "test grid2   r4" 'mpirun -n 1 ./test_grid2_r4'
 
-test_expect_success "test mosaic2 r8" 'mpirun -n 1 ./test_mosaic2_r8'
-test_expect_success "test grid2   r8" 'mpirun -n 1 ./test_grid2_r8'
+# The tests are skipped if FMS is compiled in r4 via ./configure --enable-mixedmode
+# because answers differ when FMS is compiled in r4.
+if test ! -z "$mosaic_skip" ; then
+    test_expect_success "test mosaic2 r4" 'mpirun -n 1 ./test_mosaic2_r4'
+    test_expect_success "test grid2   r4" 'mpirun -n 1 ./test_grid2_r4'
+    test_expect_success "test mosaic2 r8" 'mpirun -n 1 ./test_mosaic2_r8'
+    test_expect_success "test grid2   r8" 'mpirun -n 1 ./test_grid2_r8'
+fi
 
-#rm -rf INPUT
+rm -rf INPUT
 test_done

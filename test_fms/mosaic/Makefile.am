@@ -50,9 +50,16 @@ EXTRA_DIST = test_mosaic2.sh
 # Run the test program.
 TESTS = test_mosaic2.sh
 
+if SKIP_MOSAIC_TESTS
+skipflag="skip"
+else
+skipflag=""
+endif
+
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 									$(abs_top_srcdir)/test_fms/tap-driver.sh
+TESTS_ENVIRONMENT = srcdir="$(abs_top_srcdir)" mosaic_skip=${skipflag}
 
 # Clean up
 CLEANFILES = input.nml *.nc *.out *.dpi *.spi *.dyn *.spl *.mod
