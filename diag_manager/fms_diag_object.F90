@@ -20,7 +20,9 @@ module fms_diag_object_mod
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe, stdout
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
-                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered
+                         &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
+                         &time_none, time_max, time_min, time_sum, time_average, time_diurnal, &
+                         &time_power, time_rms
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -39,6 +41,7 @@ use fms_mod, only: fms_error_handler
 use fms_diag_reduction_methods_mod, only: check_indices_order, init_mask, set_weight
 use constants_mod, only: SECONDS_PER_DAY
 #endif
+USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type, determine_if_block_is_in_region
 #if defined(_OPENMP)
 use omp_lib
 #endif
@@ -80,6 +83,7 @@ private
     procedure :: fms_get_domain2d
     procedure :: fms_get_axis_length
     procedure :: fms_get_diag_field_id_from_name
+    procedure :: fms_get_field_name_from_id
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
@@ -492,9 +496,9 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
   class(fmsDiagObject_type),TARGET,      INTENT(inout)          :: this          !< Diaj_obj to fill
   INTEGER,                               INTENT(in)             :: diag_field_id !< The ID of the diag field
   CLASS(*), DIMENSION(:,:,:,:),          INTENT(in)             :: field_data    !< The data for the diag_field
-  LOGICAL,  DIMENSION(:,:,:,:), pointer, INTENT(in)             :: mask          !< Logical mask indicating the grid
+  LOGICAL,  allocatable,                 INTENT(in)             :: mask(:,:,:,:) !< Logical mask indicating the grid
                                                                                  !! points to mask (null if no mask)
-  CLASS(*), DIMENSION(:,:,:,:), pointer, INTENT(in)             :: rmask         !< real mask indicating the grid
+  CLASS(*), allocatable,                 INTENT(in)             :: rmask(:,:,:,:)!< real mask indicating the grid
                                                                                  !! points to mask (null if no mask)
   CLASS(*),                              INTENT(in),   OPTIONAL :: weight        !< The weight used for averaging
   TYPE (time_type),                      INTENT(in),   OPTIONAL :: time          !< The current time
@@ -504,7 +508,6 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
 
   integer                                  :: is, js, ks      !< Starting indicies of the field_data
   integer                                  :: ie, je, ke      !< Ending indicies of the field_data
-  integer                                  :: n1, n2, n3      !< Size of the 3 indicies of the field data
   integer                                  :: omp_num_threads !< Number of openmp threads
   integer                                  :: omp_level       !< The openmp active level
   logical                                  :: buffer_the_data !< True if the user selects to buffer the data and run
@@ -516,7 +519,9 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
   logical, allocatable, dimension(:,:,:,:) :: oor_mask        !< Out of range mask
   real(kind=r8_kind)                       :: field_weight    !< Weight to use when averaging (it will be converted
                                                               !! based on the type of field_data when doing the math)
-
+  type(fmsDiagIbounds_type)                :: bounds          !< Bounds (starting ending indices) for the field
+  logical                                  :: has_halos       !< .True. if field_data contains halos
+  logical                                  :: using_blocking  !< .True. if field_data is passed in blocks
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
@@ -533,15 +538,23 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
   if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
 
+  using_blocking = .false.
+  if ((present(is_in) .and. .not. present(ie_in)) .or. (present(js_in) .and. .not. present(je_in))) &
+    using_blocking = .true.
+
+  has_halos = .false.
+  if ((present(is_in) .and. present(ie_in)) .or. (present(js_in) .and. present(je_in))) &
+    has_halos = .true.
+
   !< If the field has `mask_variant=.true.`, check that mask OR rmask are present
   if (this%FMS_diag_fields(diag_field_id)%is_mask_variant()) then
-    if (.not. associated(mask) .and. .not. associated(rmask)) call mpp_error(FATAL, &
+    if (.not. allocated(mask) .and. .not. allocated(rmask)) call mpp_error(FATAL, &
       "The field was registered with mask_variant, but mask or rmask are not present in the send_data call. "//&
       trim(field_info))
   endif
 
   !< Check that mask and rmask are not both present
-  if (associated(mask) .and. associated(rmask)) call mpp_error(FATAL, &
+  if (allocated(mask) .and. allocated(rmask)) call mpp_error(FATAL, &
     "mask and rmask are both present in the send_data call. "//&
     trim(field_info))
 
@@ -560,26 +573,23 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   buffer_the_data = (omp_num_threads > 1 .AND. omp_level > 0)
 #endif
 
+  !> Calculate the i,j,k start and end
+  ! If is, js, or ks not present default them to 1
+  is = 1
+  js = 1
+  ks = 1
+  IF ( PRESENT(is_in) ) is = is_in
+  IF ( PRESENT(js_in) ) js = js_in
+  IF ( PRESENT(ks_in) ) ks = ks_in
+  ie = is+SIZE(field_data, 1)-1
+  je = js+SIZE(field_data, 2)-1
+  ke = ks+SIZE(field_data, 3)-1
+  IF ( PRESENT(ie_in) ) ie = ie_in
+  IF ( PRESENT(je_in) ) je = je_in
+  IF ( PRESENT(ke_in) ) ke = ke_in
+
   !If this is true, buffer data
   main_if: if (buffer_the_data) then
-    !> Calculate the i,j,k start and end
-    ! If is, js, or ks not present default them to 1
-    is = 1
-    js = 1
-    ks = 1
-    IF ( PRESENT(is_in) ) is = is_in
-    IF ( PRESENT(js_in) ) js = js_in
-    IF ( PRESENT(ks_in) ) ks = ks_in
-    n1 = SIZE(field_data, 1)
-    n2 = SIZE(field_data, 2)
-    n3 = SIZE(field_data, 3)
-    ie = is+n1-1
-    je = js+n2-1
-    ke = ks+n3-1
-    IF ( PRESENT(ie_in) ) ie = ie_in
-    IF ( PRESENT(je_in) ) je = je_in
-    IF ( PRESENT(ke_in) ) ke = ke_in
-
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
 !$omp critical
     if (.not. this%FMS_diag_fields(diag_field_id)%is_data_buffer_allocated()) then
@@ -595,9 +605,13 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_diag_accept_data = .TRUE.
     return
   else
+    error_string = bounds%set_bounds(field_data, is, ie, js, je, ks, ke, has_halos)
+    if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
+
     call this%allocate_diag_field_output_buffers(field_data, diag_field_id)
-    fms_diag_accept_data = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, field_weight, &
-      time, is, js, ks, ie, je, ke)
+    error_string = this%fms_diag_do_reduction(field_data, diag_field_id, oor_mask, field_weight, &
+      bounds, using_blocking, Time=Time)
+    if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     return
   end if main_if
@@ -714,22 +728,141 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 #endif
 end subroutine fms_diag_do_io
 
- !> @brief Computes average, min, max, rms error, etc.
-  !! based on the specified reduction method for the field.
-  !> @return .True. if no error occurs.
-logical function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
-  time, is_in, js_in, ks_in, ie_in, je_in, ke_in)
+!> @brief Computes average, min, max, rms error, etc.
+!! based on the specified reduction method for the field.
+!> @return Empty string if successful, error message if it fails
+function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight, &
+  bounds, using_blocking, time) &
+  result(error_msg)
   class(fmsDiagObject_type), intent(in), target   :: this                !< Diag Object
   class(*),                  intent(in)           :: field_data(:,:,:,:) !< Field data
   integer,                   intent(in)           :: diag_field_id       !< ID of the input field
   logical,                   intent(in), target   :: oor_mask(:,:,:,:)   !< mask
   real(kind=r8_kind),        intent(in)           :: weight              !< Must be a updated weight
+  type(fmsDiagIbounds_type), intent(in)           :: bounds              !< Bounds for the field
+  logical,                   intent(in)           :: using_blocking      !< .True. if field data is passed
+                                                                         !! in blocks
   type(time_type),           intent(in), optional :: time                !< Current time
-  integer,                   intent(in), optional :: is_in, js_in, ks_in !< Starting indices of the variable
-  integer,                   intent(in), optional :: ie_in, je_in, ke_in !< Ending indices of the variable
 
-  !TODO Everything
-  fms_diag_do_reduction = .true.
+  character(len=50)         :: error_msg          !< Error message to check
+  !TODO Mostly everything
+#ifdef use_yaml
+  type(fmsDiagField_type),          pointer :: field_ptr      !< Pointer to the field's object
+  type(fmsDiagOutputBuffer_type),   pointer :: buffer_ptr     !< Pointer to the field's buffer
+  class(fmsDiagFileContainer_type), pointer :: file_ptr       !< Pointer to the field's file
+  type(diagYamlFilesVar_type),      pointer :: field_yaml_ptr !< Pointer to the field's yaml
+
+  integer                   :: reduction_method   !< Integer representing a reduction method
+  integer                   :: ids                !< For looping through buffer ids
+  integer                   :: buffer_id          !< Id of the buffer
+  integer                   :: file_id            !< File id
+  integer, allocatable      :: axis_ids(:)        !< Axis ids for the buffer
+  logical                   :: is_subregional     !< .True. if the buffer is subregional
+  logical                   :: reduced_k_range    !< .True. is the field is only outputing a section
+                                                  !! of the z dimension
+  type(fmsDiagIbounds_type) :: bounds_in          !< Starting and ending indices of the input field_data
+  type(fmsDiagIbounds_type) :: bounds_out         !< Starting and ending indices of the output buffer
+  integer                   :: i                  !< For looping through axid ids
+  integer                   :: sindex             !< Starting index of a subregion
+  integer                   :: eindex             !< Ending index of a subregion
+  integer                   :: compute_idx(2)     !< Starting and Ending of the compute domain
+  character(len=1)          :: cart_axis          !< Cartesian axis of the axis
+  logical                   :: block_in_subregion !< .True. if the current block is part of the subregion
+  integer                   :: starting           !< Starting index of the subregion relative to the compute domain
+  integer                   :: ending             !< Ending index of the subregion relative to the compute domain
+
+  !TODO mostly everything
+  field_ptr => this%FMS_diag_fields(diag_field_id)
+  buffer_loop: do ids = 1, size(field_ptr%buffer_ids)
+    error_msg = ""
+    buffer_id = this%FMS_diag_fields(diag_field_id)%buffer_ids(ids)
+    file_id = this%FMS_diag_fields(diag_field_id)%file_ids(ids)
+
+    !< Gather all the objects needed for the buffer
+    field_yaml_ptr => field_ptr%diag_field(ids)
+    buffer_ptr     => this%FMS_diag_output_buffers(buffer_id)
+    file_ptr       => this%FMS_diag_files(file_id)
+
+    !< Go away if the file is a subregional file and the current PE does not have any data for it
+    if (.not. file_ptr%writing_on_this_pe()) cycle
+
+    bounds_out = bounds
+    if (.not. using_blocking) then
+      !< Set output bounds to start at 1:size(buffer_ptr%buffer)
+      call bounds_out%reset_bounds_from_array_4D(buffer_ptr%buffer(:,:,:,:,1))
+    endif
+
+    bounds_in = bounds
+    if (.not. bounds%has_halos) then
+      !< If field_data does not contain halos, set bounds_in to start at 1:size(field_data)
+      call bounds_in%reset_bounds_from_array_4D(field_data)
+    endif
+
+    is_subregional = file_ptr%is_regional()
+    reduced_k_range = field_yaml_ptr%has_var_zbounds()
+
+    !< Reset the bounds based on the reduced k range and subregional
+    is_subregional_reduced_k_range: if (is_subregional .or. reduced_k_range) then
+      axis_ids = buffer_ptr%get_axis_ids()
+      block_in_subregion = .true.
+      axis_loops: do i = 1, size(axis_ids)
+        !< Move on if the block does not have any data for the subregion
+        if (.not. block_in_subregion) cycle
+
+        select type (diag_axis => this%diag_axis(axis_ids(i))%axis)
+        type is (fmsDiagSubAxis_type)
+          sindex = diag_axis%get_starting_index()
+          eindex = diag_axis%get_ending_index()
+          compute_idx = diag_axis%get_compute_indices()
+          starting=sindex-compute_idx(1)+1
+          ending=eindex-compute_idx(1)+1
+          if (using_blocking) then
+            block_in_subregion = determine_if_block_is_in_region(starting, ending, bounds, i)
+            if (.not. block_in_subregion) cycle
+
+            !< Set bounds_in so that you can the correct section of the data for the block (starting at 1)
+            call bounds_in%rebase_input(bounds, starting, ending, i)
+
+            !< Set bounds_out to be the correct section relative to the block starting and ending indices
+            call bounds_out%rebase_output(starting, ending, i)
+          else
+            !< Set bounds_in so that only the subregion section of the data will be used (starting at 1)
+            call bounds_in%update_index(starting, ending, i, .false.)
+
+            !< Set bounds_out to 1:size(subregion) for the PE
+            call bounds_out%update_index(1, ending-starting+1, i, .true.)
+          endif
+        end select
+      enddo axis_loops
+      deallocate(axis_ids)
+      !< Move on to the next buffer if the block does not have any data for the subregion
+      if (.not. block_in_subregion) cycle
+    endif is_subregional_reduced_k_range
+
+    !< Determine the reduction method for the buffer
+    reduction_method = field_yaml_ptr%get_var_reduction()
+    select case(reduction_method)
+    case (time_none)
+      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, bounds_in, bounds_out)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
+    case (time_min)
+    case (time_max)
+    case (time_sum)
+    case (time_average)
+    case (time_power)
+    case (time_rms)
+    case (time_diurnal)
+    case default
+      error_msg = "The reduction method is not supported. "//&
+        "Only none, min, max, sum, average, power, rms, and diurnal are supported."
+    end select
+  enddo buffer_loop
+#else
+  error_msg = ""
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#endif
 end function fms_diag_do_reduction
 
 !> @brief Adds the diag ids of the Area and or Volume of the diag_field_object
@@ -806,6 +939,21 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   end select
 #endif
 end subroutine fms_diag_axis_add_attribute
+
+!> \brief Gets the field_name from the diag_field
+!> \returns a copy of the field_name
+function fms_get_field_name_from_id (this, field_id) &
+  result(field_name)
+
+  class(fmsDiagObject_type), intent (in) :: this     !< The diag object, the caller
+  integer,                   intent (in) :: field_id !< Field id to get the name for
+  character(len=:), allocatable :: field_name
+#ifndef use_yaml
+  CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
+  field_name = this%FMS_diag_fields(field_id)%get_varname()
+#endif
+end function fms_get_field_name_from_id
 
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
@@ -1006,7 +1154,8 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   class(*), allocatable :: missing_value !< Missing value to initialize the data to
   character(len=128), allocatable :: var_name !< Field name to initialize output buffers
   logical :: is_scalar !< Flag indicating that the variable is a scalar
-  integer :: yaml_id
+  integer :: yaml_id !< Yaml id for the buffer
+  integer :: file_id !< File id for the buffer
 
   if (this%FMS_diag_fields(field_id)%buffer_allocated) return
 
@@ -1045,6 +1194,10 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   ! Loop over a number of fields/buffers where this variable occurs
   do i = 1, size(this%FMS_diag_fields(field_id)%buffer_ids)
     buffer_id = this%FMS_diag_fields(field_id)%buffer_ids(i)
+    file_id = this%FMS_diag_fields(field_id)%file_ids(i)
+
+    !< Go away if the file is a subregional file and the current PE does not have any data for it
+    if (.not. this%FMS_diag_files(file_id)%writing_on_this_pe()) cycle
 
     ndims = 0
     if (.not. is_scalar) then
