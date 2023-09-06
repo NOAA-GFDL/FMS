@@ -41,7 +41,7 @@ use   coupler_types_mod,  only: coupler_type_rescale_data, coupler_type_incremen
 use   coupler_types_mod,  only: coupler_type_set_diags, coupler_type_write_chksums, coupler_type_send_data
 use   coupler_types_mod,  only: coupler_type_destructor, coupler_type_initialized
 use   diag_manager_mod,   only: diag_axis_init, diag_manager_end, diag_manager_init, NULL_AXIS_ID
-use   time_manager_mod,   only: time_type, set_date, time_manager_init, set_calendar_type, JULIAN 
+use   time_manager_mod,   only: time_type, set_date, time_manager_init, set_calendar_type, JULIAN
 use   data_override_mod,  only: data_override_init
 use   constants_mod,      only: pi
 use   platform_mod,       only: r8_kind, r4_kind
@@ -68,11 +68,11 @@ real(FMS_CP_TEST_KIND_), allocatable :: lats(:), lons(:), nzs(:) !< arrays of co
 integer :: id_x, id_y, id_z, chksum_unit
 character(len=128) :: chksum_2d, chksum_3d
 real(FMS_CP_TEST_KIND_), allocatable :: expected_2d(:,:), expected_3d(:,:,:)
-integer :: err, ncid, dim1D, varid, day 
+integer :: err, ncid, dim1D, varid, day
 
 call fms_init
 call time_manager_init
-call fms2_io_init ! needed for netcdf calls
+call fms2_io_init
 call mpp_init
 call set_calendar_type(JULIAN)
 
@@ -122,16 +122,15 @@ call coupler_type_increment_data(bc_3d_new, bc_3d_cp)
 array_2d = 2.0_lkind; array_3d = 2.0_lkind
 call check_field_data_2d(bc_2d_cp, array_2d)
 call check_field_data_3d(bc_3d_cp, array_3d)
-call mpp_sync()
-call coupler_type_destructor(bc_2d_cp)
-call coupler_type_destructor(bc_3d_cp)
 
 ! coupler_type_rescale_data
 call coupler_type_rescale_data(bc_2d_cp, 2.0_lkind)
 call coupler_type_rescale_data(bc_3d_cp, 2.0_lkind)
-array_2d = 4.0_lkind; array_3d = 4.0_lkind ! data was 1, rescaled by factor of 2
+array_2d = 4.0_lkind; array_3d = 4.0_lkind ! data was 2, rescaled by factor of 2
 call check_field_data_2d(bc_2d_cp, array_2d)
 call check_field_data_3d(bc_3d_cp, array_3d)
+call coupler_type_destructor(bc_2d_cp)
+call coupler_type_destructor(bc_3d_cp)
 
 ! coupler_type_extract_data
 do i=1, num_bc
@@ -184,7 +183,7 @@ id_z  = diag_axis_init('z',  nzs,  'point_Z', 'z', long_name='point_Z')
 ! registers field with data in type
 ! reset the time and assign names to each field
 time_t = set_date(1, 1, 1)
-do i=1, num_bc 
+do i=1, num_bc
   do j=1, num_fields
     bc_2d_new%FMS_TEST_BC_TYPE_(i)%field(j)%name = "bc"//string(i)//"_var2d_"//string(j)
     bc_3d_new%FMS_TEST_BC_TYPE_(i)%field(j)%name = "bc"//string(i)//"_var3d_"//string(j)
@@ -228,9 +227,16 @@ call mpp_sync()
 call data_override_init(Atm_domain_in=Domain)
 ! TODO time_interp issue, goes past the times given in send_data calls
 ! have to find out where its set
-!call coupler_type_data_override("ATM", bc_2d_new, time_t)
-!call coupler_type_data_override("ATM", bc_3d_new, time_t)
 
+time_t = set_date(1, 1, 15)
+call coupler_type_data_override("ATM", bc_2d_new, time_t)
+call coupler_type_data_override("ATM", bc_3d_new, time_t)
+call coupler_type_data_override("OCN", bc_2d_new, time_t)
+call coupler_type_data_override("OCN", bc_3d_new, time_t)
+call coupler_type_data_override("ICE", bc_2d_new, time_t)
+call coupler_type_data_override("ICE", bc_3d_new, time_t)
+call coupler_type_data_override("LND", bc_2d_new, time_t)
+call coupler_type_data_override("LND", bc_3d_new, time_t)
 
 ! coupler_type_redistribute_data
 ! just using the same domain
@@ -259,7 +265,6 @@ contains
 
 #include "test_coupler_utils.inc"
 
-! check field data matches expected result, will check scalar values if single value array is passed in
 subroutine check_field_data_2d(bc_2d, expected)
   type(coupler_2d_bc_type) :: bc_2d
   real(FMS_CP_TEST_KIND_), intent(in) :: expected(:,:)
@@ -268,18 +273,15 @@ subroutine check_field_data_2d(bc_2d, expected)
   do i=1, bc_2d%num_bcs
     do j=1, bc_2d%FMS_TEST_BC_TYPE_(i)%num_fields
       values_ptr => bc_2d%FMS_TEST_BC_TYPE_(i)%field(j)%values
-      ! checks each index 
+      ! checks each index
       if(SUM(values_ptr) .ne. SUM(expected)) then
-        print *, "value", mpp_pe(), values_ptr(data_grid(1), data_grid(3))
         print *, "SUMS", SUM(values_ptr), SUM(expected), SHAPE(values_ptr), SHAPE(expected)
-        print *, "bc: ", i, "field:", j, "pe:", mpp_pe()
         call mpp_error(FATAL, "test_coupler_types: incorrect 2d values against expected result")
       endif
     enddo
   enddo
 end subroutine
 
-! check field data matches expected result, will check scalar values if single value array is passed in
 subroutine check_field_data_3d(bc_3d, expected)
   type(coupler_3d_bc_type) :: bc_3d
   real(FMS_CP_TEST_KIND_), intent(in) :: expected(:,:,:)
@@ -289,14 +291,8 @@ subroutine check_field_data_3d(bc_3d, expected)
   do i=1, bc_3d%num_bcs
     do j=1, bc_3d%FMS_TEST_BC_TYPE_(i)%num_fields
       values_ptr => bc_3d%FMS_TEST_BC_TYPE_(i)%field(j)%values
-      vals_start(1) = LBOUND(values_ptr,1); vals_start(2) = LBOUND(values_ptr, 2)
-      vals_start(3) = LBOUND(values_ptr,3)
-      ! checks each index 
       if(SUM(values_ptr) .ne. SUM(expected)) then
-        print *, 'bounds value', mpp_pe(), lbound(values_ptr, 1), ubound(values_ptr, 1), lbound(values_ptr, 2), ubound(values_ptr, 2)
-        print *, 'bounds expected', mpp_pe(), lbound(expected, 1), ubound(expected, 1), lbound(expected, 2), ubound(expected, 2)
-        print *, "bc: ", i, "field:", j, "indices:", x, y, z
-        print *, 'value:', values_ptr(x,y,z), "expected:", expected(x,y,z)
+        print *, "SUMS", SUM(values_ptr), SUM(expected), SHAPE(values_ptr), SHAPE(expected)
         call mpp_error(FATAL, "test_coupler_types: incorrect 3d values against expected result")
       endif
     enddo
