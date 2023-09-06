@@ -235,7 +235,7 @@ if( mpp_pe() .eq. mpp_root_pe()) then
   err = nf90_close(ncid)
 endif
 call mpp_sync()
-call data_override_init(Atm_domain_in=Domain)
+call data_override_init(Atm_domain_in=Domain, mode=FMS_CP_TEST_KIND_)
 
 time_t = set_date(1, 1, 15)
 call coupler_type_data_override("ATM", bc_2d_new, time_t)
