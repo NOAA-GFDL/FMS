@@ -67,7 +67,10 @@ type :: fmsDiagFile_type
   TYPE(time_type) :: next_output      !< Time of the next write
   TYPE(time_type) :: next_next_output !< Time of the next next write
   TYPE(time_type) :: no_more_data     !< Time to stop receiving data for this file
-  logical         :: done_writing_data!< .True. if finished writing data
+  logical         :: done_writing_data!< Set to .True. if finished writing data
+                                      !! This is be initialized to .false. and set to true for
+                                      !! static files after the first write and for
+                                      !! files that are using the file_duration functionality
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_close       !< Time to close the file
