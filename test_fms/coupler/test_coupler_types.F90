@@ -154,13 +154,16 @@ call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_gri
 call coupler_type_copy(bc_2d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", (/ NULL_AXIS_ID /), time_t )
 call coupler_type_copy_data(bc_2d_new, bc_2d_cp)
 call coupler_type_copy_data(bc_2d_new, bc_3d_cp)
-call check_field_data_2d(bc_2d_cp, bc_2d_new%FMS_TEST_BC_TYPE_(1)%field(1)%values)
+array_2d = 1.0; array_3d = 1.0
+call check_field_data_2d(bc_2d_cp, array_2d) 
+call check_field_data_3d(bc_3d_cp, array_3d) 
 call coupler_type_destructor(bc_2d_cp)
 call coupler_type_destructor(bc_3d_cp)
 ! 3d -> 2d, 3d
 call coupler_type_copy(bc_3d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", (/ NULL_AXIS_ID /), time_t )
 call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", (/ NULL_AXIS_ID /), time_t )
 call coupler_type_copy_data(bc_3d_new, bc_3d_cp)
+call check_field_data_3d(bc_3d_cp, array_3d) 
 call coupler_type_destructor(bc_2d_cp)
 call coupler_type_destructor(bc_3d_cp)
 
@@ -213,20 +216,15 @@ call diag_manager_end(time_t)
 if( mpp_pe() .eq. mpp_root_pe()) then
   err = nf90_create('INPUT/grid_spec.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
   err = nf90_def_dim(ncid, 'str', 60, dim1d)
- ! err = nf90_def_var(ncid, 'bc1_var2d_1', nf90_char, (/dim1d/), varid)
   err = nf90_def_var(ncid, 'x_T', nf90_char, (/dim1d/), varid)
   err = nf90_put_var(ncid, varid, "coupler_types_bc1.nc")
   err = nf90_def_var(ncid, 'xta', nf90_float, (/dim1d/), varid)
-  !err = nf90_put_var(ncid, varid, 12.0)
   err = nf90_def_var(ncid, 'yta', nf90_float, (/dim1d/), varid)
-  !err = nf90_put_var(ncid, varid, 12.0)
   err = nf90_enddef(ncid)
   err = nf90_close(ncid)
 endif
 call mpp_sync()
 call data_override_init(Atm_domain_in=Domain)
-! TODO time_interp issue, goes past the times given in send_data calls
-! have to find out where its set
 
 time_t = set_date(1, 1, 15)
 call coupler_type_data_override("ATM", bc_2d_new, time_t)
