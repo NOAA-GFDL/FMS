@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/coupler/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -46,6 +46,7 @@ MODFILES = \
   coupler_types_mod.$(FC_MODEXT) \
   ensemble_manager_mod.$(FC_MODEXT) \
   atmos_ocean_fluxes_mod.$(FC_MODEXT)
+
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

@@ -16,38 +16,29 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup gaussian_topog_mod gaussian_topog_mod
+!> @ingroup topography
+!> @brief Routines for creating Gaussian-shaped land surface topography
+!! for latitude-longitude grids.
+!> @author Bruce Wyman
+!!
+!! Interfaces generate simple Gaussian-shaped mountains from
+!! parameters specified by either argument list or namelist input.
+!! The mountain shapes are controlled by the height, half-width,
+!! and ridge-width parameters.
 
-#undef FMS_CP_KIND_
-#define FMS_CP_KIND_ r4_kind
+!> @addtogroup gaussian_topog_mod
+!> @{
 
-#undef FMS_CP_BC_TYPE_
-#define FMS_CP_BC_TYPE_ bc_r4
+#undef FMS_TOP_KIND_
+#define FMS_TOP_KIND_ r4_kind
 
-#undef CT_RESCALE_DATA_2D_
-#define CT_RESCALE_DATA_2D_ CT_rescale_data_2d_r4
+#undef GAUSSIAN_TOPOG_INIT_
+#define GAUSSIAN_TOPOG_INIT_ gaussian_topog_init_r4
 
-#undef CT_RESCALE_DATA_3D_
-#define CT_RESCALE_DATA_3D_ CT_rescale_data_3d_r4
+#undef GET_GAUSSIAN_TOPOG_
+#define GET_GAUSSIAN_TOPOG_ get_gaussian_topog_r4
 
-#undef CT_INCREMENT_DATA_2D_3D_
-#define CT_INCREMENT_DATA_2D_3D_ CT_increment_data_2d_3d_r4
-
-#undef CT_EXTRACT_DATA_2D_
-#define CT_EXTRACT_DATA_2D_ CT_extract_data_2d_r4
-
-#undef CT_EXTRACT_DATA_3D_
-#define CT_EXTRACT_DATA_3D_ CT_extract_data_3d_r4
-
-#undef CT_EXTRACT_DATA_3D_2D_
-#define CT_EXTRACT_DATA_3D_2D_ CT_extract_data_3d_2d_r4
-
-#undef CT_SET_DATA_2D_
-#define CT_SET_DATA_2D_ CT_set_data_2d_r4
-
-#undef CT_SET_DATA_2D_3D_
-#define CT_SET_DATA_2D_3D_ CT_set_data_2d_3d_r4
-
-#undef CT_SET_DATA_3D_
-#define CT_SET_DATA_3D_ CT_set_data_3d_r4
-
-#include "coupler_types.inc"
+#include "gaussian_topog.inc"
+!> @}
+! close documentation grouping

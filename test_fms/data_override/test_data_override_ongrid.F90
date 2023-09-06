@@ -22,38 +22,40 @@ program test_data_override_ongrid
 !> @brief  This programs tests data_override ability to override data for an
 !! on grid case
 
-use   mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
-                               mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
-use   mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL, &
-                               input_nml_file, mpp_sync
-use   data_override_mod, only: data_override_init, data_override
-use   fms2_io_mod,       only: fms2_io_init
-use   time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
-use   netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
-                               nf90_close, nf90_put_att, nf90_clobber, nf90_64bit_offset, nf90_char, &
-                               nf90_double, nf90_unlimited
+use platform_mod,      only: r4_kind, r8_kind
+use mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
+                             mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
+use mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL, &
+                             input_nml_file, mpp_sync
+use data_override_mod, only: data_override_init, data_override
+use fms2_io_mod,       only: fms2_io_init
+use time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
+use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
+                             nf90_close, nf90_put_att, nf90_clobber, nf90_64bit_offset, nf90_char, &
+                             nf90_double, nf90_unlimited
 
 implicit none
 
-integer, dimension(2)                 :: layout = (/2,3/) !< Domain layout
-integer                               :: nlon             !< Number of points in x axis
-integer                               :: nlat             !< Number of points in y axis
-type(domain2d)                        :: Domain           !< Domain with mask table
-real, allocatable, dimension(:,:)     :: runoff           !< Data to be written
-integer                               :: is               !< Starting x index
-integer                               :: ie               !< Ending x index
-integer                               :: js               !< Starting y index
-integer                               :: je               !< Ending y index
-type(time_type)                       :: Time             !< Time
-integer                               :: i                !< Helper indices
-integer                               :: ncid             !< Netcdf file id
-integer                               :: err              !< Error Code
-integer                               :: dim1d, dim2d, dim3d, dim4d    !< Dimension ids
-integer                               :: varid, varid2, varid3, varid4 !< Variable ids
-real, allocatable, dimension(:,:,:)   :: runoff_in        !< Data to be written to file
-real                                  :: expected_result  !< Expected result from data_override
-integer                               :: nhalox=2, nhaloy=2
-integer                               :: io_status
+integer, parameter                         :: lkind = DO_TEST_KIND_
+integer, dimension(2)                      :: layout = (/2,3/) !< Domain layout
+integer                                    :: nlon             !< Number of points in x axis
+integer                                    :: nlat             !< Number of points in y axis
+type(domain2d)                             :: Domain           !< Domain with mask table
+real(lkind), allocatable, dimension(:,:)   :: runoff           !< Data to be written
+integer                                    :: is               !< Starting x index
+integer                                    :: ie               !< Ending x index
+integer                                    :: js               !< Starting y index
+integer                                    :: je               !< Ending y index
+type(time_type)                            :: Time             !< Time
+integer                                    :: i                !< Helper indices
+integer                                    :: ncid             !< Netcdf file id
+integer                                    :: err              !< Error Code
+integer                                    :: dim1d, dim2d, dim3d, dim4d    !< Dimension ids
+integer                                    :: varid, varid2, varid3, varid4 !< Variable ids
+real(lkind), allocatable, dimension(:,:,:) :: runoff_in        !< Data to be written to file
+real(lkind)                                :: expected_result  !< Expected result from data_override
+integer                                    :: nhalox=2, nhaloy=2
+integer                                    :: io_status
 
 namelist / test_data_override_ongrid_nml / nhalox, nhaloy
 
@@ -67,7 +69,7 @@ if (io_status > 0) call mpp_error(FATAL,'=>test_data_override_ongrid: Error read
 if (mpp_pe() .eq. mpp_root_pe()) then
    allocate(runoff_in(1440, 1080, 10))
    do i = 1, 10
-       runoff_in(:,:,i) = real(i)
+       runoff_in(:,:,i) = real(i, lkind)
    enddo
 
    err = nf90_create('INPUT/grid_spec.nc', ior(nf90_clobber, nf90_64bit_offset), ncid)
@@ -146,14 +148,14 @@ allocate(runoff(is:ie,js:je))
 runoff = 999.
 
 !< Initiliaze data_override
-call data_override_init(Ocean_domain_in=Domain)
+call data_override_init(Ocean_domain_in=Domain, mode=lkind)
 
 !< Run it when time=3
 Time = set_date(1,1,4,0,0,0)
 call data_override('OCN','runoff',runoff, Time)
 !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
 !! equal to the data at time=3, which is 3.
-expected_result = real(3.)
+expected_result = 3._lkind
 call compare_data(Domain, runoff, expected_result)
 
 !< Run it when time=4
@@ -162,7 +164,7 @@ Time = set_date(1,1,5,0,0,0)
 call data_override('OCN','runoff',runoff, Time)
 !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
 !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
-expected_result = (real(3.)+ real(4.))/2
+expected_result = (3._lkind + 4._lkind) / 2._lkind
 call compare_data(Domain, runoff, expected_result)
 
 deallocate(runoff)
@@ -172,15 +174,14 @@ call mpp_exit
 contains
 
 subroutine compare_data(Domain, actual_result, expected_result)
-type(domain2d), intent(in)            :: Domain           !< Domain with mask table
-real, intent(in)                      :: expected_result  !< Expected result from data_override
-real, dimension(:,:), intent(in)      :: actual_result    !< Result from data_override
-
-integer                               :: xsizec, ysizec   !< Size of the compute domain
-integer                               :: xsized, ysized   !< Size of the data domain
-integer                               :: nx, ny           !< Size of acual_result
-integer                               :: nhalox, nhaloy   !< Size of the halos
-integer                               :: i, j             !< Helper indices
+type(domain2d), intent(in)              :: Domain           !< Domain with mask table
+real(lkind), intent(in)                 :: expected_result  !< Expected result from data_override
+real(lkind), dimension(:,:), intent(in) :: actual_result    !< Result from data_override
+integer                                 :: xsizec, ysizec   !< Size of the compute domain
+integer                                 :: xsized, ysized   !< Size of the data domain
+integer                                 :: nx, ny           !< Size of acual_result
+integer                                 :: nhalox, nhaloy   !< Size of the halos
+integer                                 :: i, j             !< Helper indices
 
 !< Data is only expected to be overriden for the compute domain -not at the halos.
 call mpp_get_compute_domain(Domain, xsize=xsizec, ysize=ysizec)
