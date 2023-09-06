@@ -34,10 +34,10 @@
     integer                 :: start(4), nread(4), istart
     real(kind=FMS_MOS_KIND_),  dimension(2, size(i1(:))) :: tile1_cell, tile2_cell
     integer                 :: nxgrid, n
-    real(kind=FMS_MOS_KIND_) :: garea
-    real(kind=FMS_MOS_KIND_) :: get_global_area
+    real(kind=r8_kind) :: garea
+    real(kind=r8_kind) :: get_global_area
 
-    garea = real( get_global_area(), FMS_MOS_KIND_) !< get_global_area returns a r8_kind
+    garea = get_global_area() !< get_global_area returns a r8_kind
 
     ! When start and nread present, make sure nread(1) is the same as the size of the data
     if(present(ibegin) .and. present(iend)) then
@@ -70,7 +70,7 @@
        j1(n) = int(tile1_cell(2,n))
        i2(n) = int(tile2_cell(1,n))
        j2(n) = int(tile2_cell(2,n))
-       area(n) = area(n)/garea
+       area(n) = real( real(area(n),r8_kind)/garea, FMS_MOS_KIND_ )
     end do
 
     return

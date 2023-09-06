@@ -208,7 +208,7 @@ subroutine test_get_mosaic_xgrid
 
   integer, dimension(ncells) :: i1, j1, i2, j2 !< indices of parent cells
   real(TEST_MOS_KIND_), dimension(ncells) :: area !< area to be returned
-  real(TEST_MOS_KIND_) :: garea, get_global_area !< global area
+  real(r8_kind) :: garea, get_global_area !< global area
   integer :: i !< counter
 
   type(FmsNetcdfFile_t) x_fileobj
@@ -222,7 +222,7 @@ subroutine test_get_mosaic_xgrid
 
   !> check answers
   do i=1, ncells
-     call check_answer( xgrid_area(i)/garea, area(i),"TEST_GET_MOSAIC_XGRID area")
+     call check_answer( real(real(xgrid_area(i),r8_kind)/garea,lkind), area(i),"TEST_GET_MOSAIC_XGRID area")
      call check_answer(tile1_cell(1,i), i1(i), "TEST_GET_MOSAIC_XGRID i1")
      call check_answer(tile2_cell(1,i), i2(i), "TEST_GET_MOSAIC_XGRID i2")
      call check_answer(tile1_cell(1,i), j1(i), "TEST_GET_MOSAIC_XGRID j1")
