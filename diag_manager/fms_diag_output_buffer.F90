@@ -46,9 +46,9 @@ type :: fmsDiagOutputBuffer_type
   class(*), allocatable :: buffer(:,:,:,:,:)  !< 5D numeric data array
   integer               :: ndim               !< Number of dimensions for each variable
   integer,  allocatable :: buffer_dims(:)     !< holds the size of each dimension in the buffer
-  class(*), allocatable :: counter(:,:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
+  real(r8_kind), allocatable :: counter(:,:,:,:,:) !< (x,y,z, time-of-day) used in the time averaging functions
   integer,  allocatable :: num_elements(:)    !< used in time-averaging
-  class(*), allocatable :: count_0d(:)        !< used in time-averaging along with
+  real(r8_kind), allocatable :: count_0d(:)        !< used in time-averaging along with
                                               !! counter which is stored in the child types (bufferNd)
   integer,  allocatable :: axis_ids(:)        !< Axis ids for the buffer
   integer               :: field_id           !< The id of the field the buffer belongs to
@@ -147,36 +147,36 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
                                                   & buff_sizes(5)))
-      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
+      allocate(this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                    & buff_sizes(5)))
-      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
+      allocate(this%count_0d(n_samples))
       this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                   & buff_sizes(5)))
-      allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
+      allocate(this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                   & buff_sizes(5)))
-      allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
+      allocate(this%count_0d(n_samples))
       this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
                                                & buff_sizes(5)))
-      allocate(real(kind=r4_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
+      allocate(this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
-      allocate(real(kind=r4_kind) :: this%count_0d(n_samples))
+      allocate(this%count_0d(n_samples))
       this%counter = 0.0_r4_kind
       this%count_0d = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                & buff_sizes(5)))
-      allocate(real(kind=r8_kind) :: this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
+      allocate(this%counter(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
                                                 & buff_sizes(5)))
-      allocate(real(kind=r8_kind) :: this%count_0d(n_samples))
+      allocate(this%count_0d(n_samples))
       this%counter = 0.0_r8_kind
       this%count_0d = 0.0_r8_kind
       this%buffer_type = r8
