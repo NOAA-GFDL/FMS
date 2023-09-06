@@ -208,7 +208,7 @@ call coupler_type_set_diags(bc_3d_new, "test_coupler_types", (/id_x, id_y, id_z/
 call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", &
                        (/null_axis_id/), time_t)
 call coupler_type_copy_data(bc_2d_new, bc_2d_cp)
-call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5),  " ", &
+call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5),  " ",&
                        (/null_axis_id/), time_t)
 call coupler_type_copy_data(bc_3d_new, bc_3d_cp)
 

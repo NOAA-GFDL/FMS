@@ -65,4 +65,4 @@ TESTS = test_coupler.sh
 EXTRA_DIST = test_coupler.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl diag_table*
+CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc
