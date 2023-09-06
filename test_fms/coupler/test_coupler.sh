@@ -46,7 +46,7 @@ test_coupler
  "test_coupler_types", "bc2_var3d_2", "bc2_variable_3d_2", "coupler_types_bc2", "all", "avg", "none", 2
 _EOF
 # we'll just make both in case compiled with yaml support
-cat <<_EOF > diag_table.yaml 
+cat <<_EOF > diag_table.yaml
 title: test_coupler
 base_date: 1 1 1 0 0 0
 diag_files:
@@ -67,11 +67,11 @@ diag_files:
   - module: test_coupler_types
     var_name: bc1_var3d_1
     output_name: bc1_variable_3d_1
-    reduction: rms 
+    reduction: rms
   - module: test_coupler_types
     var_name: bc1_var3d_2
     output_name: bc1_variable_3d_2
-    reduction: avg 
+    reduction: avg
 - file_name: coupler_types_bc1
   filename_time: end
   freq: 1 days
@@ -89,11 +89,11 @@ diag_files:
   - module: test_coupler_types
     var_name: bc2_var3d_1
     output_name: bc2_variable_3d_1
-    reduction: rms 
+    reduction: rms
   - module: test_coupler_types
     var_name: bc2_var3d_2
     output_name: bc2_variable_3d_2
-    reduction: avg 
+    reduction: avg
 _EOF
 
 cat <<_EOF > data_table

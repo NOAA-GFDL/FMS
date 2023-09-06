@@ -64,7 +64,8 @@ type(time_type) :: time_t
 integer, parameter :: lkind = FMS_CP_TEST_KIND_
 real(FMS_CP_TEST_KIND_), allocatable :: array_2d(:,:), array_3d(:,:,:)
 integer, parameter :: num_bc = 2, num_fields = 2 !< these are set in set_up_coupler_type routines
-real(FMS_CP_TEST_KIND_), allocatable :: lats(:), lons(:), nzs(:) !< arrays of coordinate values for diag_axis initalization
+real(FMS_CP_TEST_KIND_), allocatable :: lats(:), lons(:), nzs(:) !< arrays of coordinate values for diag_axis
+                                                                 !! initalization
 integer :: id_x, id_y, id_z, chksum_unit
 character(len=128) :: chksum_2d, chksum_3d
 real(FMS_CP_TEST_KIND_), allocatable :: expected_2d(:,:), expected_3d(:,:,:)
@@ -112,9 +113,11 @@ call coupler_type_write_chksums(bc_3d_new, stdout())
 
 ! coupler_type_increment_data
 ! creates copies to increment into original
-call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", (/ 0 /), time_t )
+call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", &
+                       (/ 0 /), time_t )
 call coupler_type_copy_data(bc_2d_new, bc_2d_cp)
-call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", (/ 0 /), time_t )
+call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", &
+                       (/ 0 /), time_t )
 call coupler_type_copy_data(bc_3d_new, bc_3d_cp)
 call coupler_type_increment_data(bc_2d_new, bc_2d_cp)
 call coupler_type_increment_data(bc_3d_new, bc_3d_cp)
@@ -145,25 +148,31 @@ call check_field_data_3d(bc_3d_new, array_3d)
 ! test coupler_type_copy, coupler_type_copy_data and coupler_type_destructor
 time_t = set_date(1, 1, 1)
 ! 1d -> 2d, 3d
-call coupler_type_copy(bc_1d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", (/ NULL_AXIS_ID /), time_t )
-call coupler_type_copy(bc_1d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", (/ NULL_AXIS_ID /), time_t )
+call coupler_type_copy(bc_1d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", &
+                       (/ NULL_AXIS_ID /), time_t )
+call coupler_type_copy(bc_1d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5)," ",&
+                       (/ NULL_AXIS_ID /), time_t )
 call coupler_type_destructor(bc_2d_cp)
 call coupler_type_destructor(bc_3d_cp)
 ! 2d -> 2d, 3d
-call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", (/ NULL_AXIS_ID /), time_t )
-call coupler_type_copy(bc_2d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", (/ NULL_AXIS_ID /), time_t )
+call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", &
+                       (/ NULL_AXIS_ID /), time_t )
+call coupler_type_copy(bc_2d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", &
+                       (/ NULL_AXIS_ID /), time_t )
 call coupler_type_copy_data(bc_2d_new, bc_2d_cp)
 call coupler_type_copy_data(bc_2d_new, bc_3d_cp)
 array_2d = 1.0; array_3d = 1.0
-call check_field_data_2d(bc_2d_cp, array_2d) 
-call check_field_data_3d(bc_3d_cp, array_3d) 
+call check_field_data_2d(bc_2d_cp, array_2d)
+call check_field_data_3d(bc_3d_cp, array_3d)
 call coupler_type_destructor(bc_2d_cp)
 call coupler_type_destructor(bc_3d_cp)
 ! 3d -> 2d, 3d
-call coupler_type_copy(bc_3d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", (/ NULL_AXIS_ID /), time_t )
-call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", (/ NULL_AXIS_ID /), time_t )
+call coupler_type_copy(bc_3d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", &
+                       (/ NULL_AXIS_ID /), time_t )
+call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5), " ", &
+                       (/ NULL_AXIS_ID /), time_t )
 call coupler_type_copy_data(bc_3d_new, bc_3d_cp)
-call check_field_data_3d(bc_3d_cp, array_3d) 
+call check_field_data_3d(bc_3d_cp, array_3d)
 call coupler_type_destructor(bc_2d_cp)
 call coupler_type_destructor(bc_3d_cp)
 
@@ -196,9 +205,11 @@ do i=1, num_bc
 enddo
 call coupler_type_set_diags(bc_2d_new, "test_coupler_types", (/id_x, id_y/), time_t)
 call coupler_type_set_diags(bc_3d_new, "test_coupler_types", (/id_x, id_y, id_z/), time_t)
-call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", (/null_axis_id/), time_t)
+call coupler_type_copy(bc_2d_new, bc_2d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), " ", &
+                       (/null_axis_id/), time_t)
 call coupler_type_copy_data(bc_2d_new, bc_2d_cp)
-call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5),  " ", (/null_axis_id/), time_t)
+call coupler_type_copy(bc_3d_new, bc_3d_cp, data_grid(1), data_grid(2), data_grid(3), data_grid(4), data_grid(5),  " ", &
+                       (/null_axis_id/), time_t)
 call coupler_type_copy_data(bc_3d_new, bc_3d_cp)
 
 do day=1,31

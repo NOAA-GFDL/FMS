@@ -32,7 +32,7 @@ subroutine set_up_1d_coupler_type(bc_type, data_grid)
    !bc_type%isc = data_grid(1); bc_type%iec = data_grid(2)
    !bc_type%isd = data_grid(1); bc_type%ied = data_grid(2)
    bc_type%set = .true.
-   bc_type%num_bcs = BCNUM_ 
+   bc_type%num_bcs = BCNUM_
    nfiles = bc_type%num_bcs
    allocate(bc_type%FMS_TEST_BC_TYPE_(nfiles))
 
@@ -185,7 +185,7 @@ subroutine set_up_3d_coupler_type(bc_type, data_grid, appendix, to_read)
 
    bc_type%set = .true.
    if (to_read) then
-       bc_type%num_bcs = BCNUM_ + 1 
+       bc_type%num_bcs = BCNUM_ + 1
    else
        bc_type%num_bcs = BCNUM_
    endif
