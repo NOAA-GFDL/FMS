@@ -81,7 +81,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
     - name: Configure
-      run: autoreconf -if ./configure.ac && ./configure --with-yaml ${{ matrix.io-flag }}
+      run: autoreconf -if ./configure.ac && ./configure --with-yaml ${{ matrix.io-flag }} || cat config.log
     - name: Compile
       run: make -j || make
     - name: Run test suite
