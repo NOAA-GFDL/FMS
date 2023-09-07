@@ -121,7 +121,9 @@ subroutine write_yaml_from_struct_3 (yamlname, a1size, keys, vals, a2size, key2,
                        key3, val3, lvl2keyeach) bind(C, name="write_yaml_from_struct_3")
 use iso_c_binding
 import fmsYamlOutKeys_type, fmsYamlOutValues_type, lvl2_key_parameter
-character (c_char) :: yamlname !< The output yaml file name
+character (c_char) :: yamlname !< The output yaml file name, type is a c char for the binding
+                               !! but seems to only work with a fortran string.
+                               !! Input string should be trimmed to prevent any unwanted characters sneaking in.
 integer (c_int), value :: a1size !< The size of the first yaml array
 type (fmsYamlOutKeys_type) :: keys(a1size) !< Top level yaml keys
 type (fmsYamlOutValues_type) :: vals(a1size) !< Values corresponding to keys
