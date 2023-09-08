@@ -602,8 +602,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
 !$omp end critical
-    !TODO Save the field_weight and the oor_mask to use later in the calculations
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data,&
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, oor_mask, field_weight, &
                                                              is, js, ks, ie, je, ke)
     fms_diag_accept_data = .TRUE.
     return
@@ -643,6 +642,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   logical :: math !< True if the math functions need to be called using the data buffer,
   !! False if the math functions were done in accept_data
   integer, dimension(:), allocatable :: file_field_ids !< Array of field IDs for a file
+  class(*), pointer :: input_data_buffer(:,:,:,:)
+  character(len=128) :: error_string
+  type(fmsDiagIbounds_type) :: bounds
 
   !< Update the current model time by adding the time_step
   this%current_model_time = this%current_model_time + time_step
@@ -662,8 +664,14 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
         !> Check if math needs to be done
         math = diag_field%get_math_needs_to_be_done()
         calling_math: if (math) then
-          call this%allocate_diag_field_output_buffers(diag_field%get_data_buffer(), file_field_ids(ifield))
-          !!TODO: call math functions !!
+          input_data_buffer => diag_field%get_data_buffer()
+          call bounds%reset_bounds_from_array_4D(input_data_buffer)
+          call this%allocate_diag_field_output_buffers(input_data_buffer, file_field_ids(ifield))
+          error_string = this%fms_diag_do_reduction(input_data_buffer, file_field_ids(ifield), &
+            diag_field%get_mask(), diag_field%get_weight(), &
+            bounds, .False., Time=this%current_model_time)
+          if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
+            " -"//trim(error_string)))
         endif calling_math
         !> Clean up, clean up, everybody everywhere
         if (associated(diag_field)) nullify(diag_field)

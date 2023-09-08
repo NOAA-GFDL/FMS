@@ -23,6 +23,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
 use time_manager_mod, ONLY: time_type
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
                        register_variable_attribute
+use fms_diag_input_buffer_mod, only: fmsDiagInputBuffer_t
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
 !!!       & get_ticks_per_second
@@ -70,7 +71,8 @@ type fmsDiagField_type
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
-     class(*), allocatable, dimension(:,:,:,:), private :: data_buffer     !< Buffer for field data
+     type(fmsDiagInputBuffer_t), allocatable          :: input_data_buffer !< Input buffer object for when buffering
+                                                                           !! data
      logical, allocatable, private                    :: data_buffer_is_allocated !< True if the buffer has
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
@@ -124,7 +126,6 @@ type fmsDiagField_type
      procedure :: has_volume
      procedure :: has_missing_value
      procedure :: has_data_RANGE
-     procedure :: has_data_buffer
 ! Get functions
      procedure :: get_attributes
      procedure :: get_static
@@ -147,6 +148,8 @@ type fmsDiagField_type
      procedure :: get_data_RANGE
      procedure :: get_axis_id
      procedure :: get_data_buffer
+     procedure :: get_mask
+     procedure :: get_weight
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
@@ -388,42 +391,23 @@ subroutine set_vartype(objin , var)
 end subroutine set_vartype
 
 !> @brief Adds the input data to the buffered data.
-subroutine set_data_buffer (this, input_data, is, js, ks, ie, je, ke)
-  class (fmsDiagField_type) , intent(inout):: this !< The field object
-  class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
-  integer :: is, js, ks !< Starting indicies of the field_data relative to the global domain
-  integer :: ie, je, ke !< Ending indicies of the field_data relative to the global domain
+subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
+  class (fmsDiagField_type) , intent(inout):: this                !< The field object
+  class(*),                   intent(in)   :: input_data(:,:,:,:) !< The input array
+  logical,                    intent(in)   :: mask(:,:,:,:)       !< The field mask
+  real(kind=r8_kind),         intent(in)   :: weight              !< The field weight
+  integer,                    intent(in)   :: is, js, ks          !< Starting indicies of the field_data relative
+                                                                  !! to the compute domain (1 based)
+  integer,                    intent(in)   :: ie, je, ke          !< Ending indicies of the field_data relative
+                                                                  !! to the compute domain (1 based)
 
+  character(len=128) :: err_msg !< Error msg
   if (.not.this%data_buffer_is_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
+  err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, mask, is, js, ks, ie, je, ke)
+  if (trim(err_msg) .ne. "") call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
 
-!> Buffer a copy of the data
-  select type (input_data)
-    type is (real(kind=r4_kind))
-      select type (db => this%data_buffer)
-        type is (real(kind=r4_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
-      end select
-    type is (real(kind=r8_kind))
-      select type (db => this%data_buffer)
-        type is (real(kind=r8_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
-      end select
-    type is (integer(kind=i4_kind))
-      select type (db => this%data_buffer)
-        type is (integer(kind=i4_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
-      end select
-    type is (integer(kind=i8_kind))
-      select type (db => this%data_buffer)
-        type is (integer(kind=i8_kind))
-          db(is:ie, js:je, ks:ke, :) = input_data
-      end select
-    class default
-        call mpp_error ("set_data_buffer", "The data input to set_data_buffer for "//&
-          trim(this%varname)//" does not match the buffer for the field object",  FATAL)
-  end select
 end subroutine set_data_buffer
 !> Allocates the global data buffer for a given field using a single thread. Returns true when the
 !! buffer is allocated
@@ -431,55 +415,18 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
   class (fmsDiagField_type), target, intent(inout):: this !< The field object
   class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
   class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:) !< Array of diag_axis
-  integer :: naxes !< The number of axes in the field
-  integer, parameter :: ndims = 4
-  integer, dimension (ndims) :: length !< The length of an axis
-  integer :: a !< For looping through axes
-  integer, pointer :: axis_id !< The axis ID
 
-!! Use the axis to get the size
-!> Initialize the axis lengths to 1.  Any dimension that does not have an axis will have a length
-!! of 1.
-  length = 1
-  naxes = size(this%axis_ids)
-  axis_loop: do a = 1,naxes
-    axis_id => this%axis_ids(a)
-    select type (axis => diag_axis(axis_id)%axis)
-      type is (fmsDiagFullAxis_type)
-        length(a) = axis%axis_length()
-    end select
-  enddo axis_loop
+  character(len=128) :: err_msg !< Error msg
+  err_msg = ""
 
-  select type (input_data)
-    type is (real(r4_kind))
-      if (.not.allocated(this%data_buffer)) allocate(real(kind=r4_kind) :: this%data_buffer( &
-                                                     length(1),&
-                                                     length(2),&
-                                                     length(3),&
-                                                     length(4)))
-    type is (real(r8_kind))
-      if (.not.allocated(this%data_buffer)) allocate(real(kind=r8_kind) :: this%data_buffer( &
-                                                      length(1),&
-                                                      length(2),&
-                                                      length(3),&
-                                                      length(4)))
-    type is (integer(i4_kind))
-      if (.not.allocated(this%data_buffer)) allocate(integer(kind=i4_kind) :: this%data_buffer( &
-                                                      length(1),&
-                                                      length(2),&
-                                                      length(3),&
-                                                      length(4)))
-    type is (integer(i8_kind))
-      if (.not.allocated(this%data_buffer)) allocate(integer(kind=i8_kind) :: this%data_buffer( &
-                                                      length(1),&
-                                                      length(2),&
-                                                      length(3),&
-                                                      length(4)))
-    class default
-      call mpp_error ("allocate_data_buffer","The data input to set_data_buffer for "//&
-        trim(this%varname)//" is not a supported type",  FATAL)
-  end select
-  allocate_data_buffer = allocated(this%data_buffer)
+  allocate(this%input_data_buffer)
+  err_msg = this%input_data_buffer%init(input_data, this%axis_ids, diag_axis)
+  if (trim(err_msg) .ne. "") then
+    call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
+    return
+  endif
+
+  allocate_data_buffer = .true.
 end function allocate_data_buffer
 !> Sets the flag saying that the math functions need to be done
 subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
@@ -1270,16 +1217,45 @@ end subroutine write_coordinate_attribute
 !> @brief Gets a fields data buffer
 !! @return a pointer to the data buffer
 function get_data_buffer (this) &
-result(rslt)
+  result(rslt)
   class (fmsDiagField_type), target, intent(in) :: this  !< diag field
   class(*),dimension(:,:,:,:), pointer      :: rslt !< The field's data buffer
 
-  if (allocated(this%data_buffer)) then
-    rslt => this%data_buffer
-  else
-    rslt => null()
-  endif
+  if (.not. this%data_buffer_is_allocated) &
+  call mpp_error(FATAL, "The input data buffer for the field:"&
+    //trim(this%varname)//" was never allocated.")
+
+  rslt => this%input_data_buffer%get_buffer()
 end function get_data_buffer
+
+!> @brief Gets a fields mask buffer
+!! @return a pointer to the mask buffer
+function get_mask (this) &
+  result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  logical, dimension(:,:,:,:), pointer :: rslt
+
+  if (.not. this%data_buffer_is_allocated) &
+  call mpp_error(FATAL, "The input data buffer for the field:"&
+    //trim(this%varname)//" was never allocated.")
+
+  rslt => this%input_data_buffer%get_mask()
+end function get_mask
+
+!> @brief Gets a fields weight buffer
+!! @return a pointer to the weight buffer
+function get_weight (this) &
+  result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  type(real(kind=r8_kind)), pointer :: rslt
+
+  if (.not. this%data_buffer_is_allocated) &
+  call mpp_error(FATAL, "The input data buffer for the field:"&
+    //trim(this%varname)//" was never allocated.")
+
+  rslt => this%input_data_buffer%get_weight()
+end function get_weight
+
 !> Gets the flag telling if the math functions need to be done
 !! \return Copy of math_needs_to_be_done flag
 pure logical function get_math_needs_to_be_done(this)
@@ -1442,12 +1418,6 @@ pure logical function has_data_RANGE (this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
   has_data_RANGE = allocated(this%data_RANGE)
 end function has_data_RANGE
-!> @brief Checks if obj%data_buffer is allocated
-!! @return true if obj%data_buffer is allocated
-pure logical function has_data_buffer (this)
-  class (fmsDiagField_type), intent(in) :: this !< diag object
-  has_data_buffer = allocated(this%data_buffer)
-end function has_data_buffer
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine diag_field_add_attribute(this, att_name, att_value)
   class (fmsDiagField_type), intent (inout) :: this !< The field object
