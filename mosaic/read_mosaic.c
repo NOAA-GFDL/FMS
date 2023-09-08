@@ -258,11 +258,7 @@ void get_var_data(const char *file, const char *name, void *data)
 
   switch (vartype) {
     case NC_DOUBLE:case NC_FLOAT:
-#ifdef OVERLOAD_R4
-      status = nc_get_var_float(ncid, varid, (float *)data);
-#else
       status = nc_get_var_double(ncid, varid, (double *)data);
-#endif
       break;
     case NC_INT:
       status = nc_get_var_int(ncid, varid, (int *)data);
@@ -318,11 +314,7 @@ void get_var_data_region(const char *file, const char *name, const size_t *start
 
   switch (vartype) {
     case NC_DOUBLE:case NC_FLOAT:
-#ifdef OVERLOAD_R4
-      status = nc_get_vara_float(ncid, varid, start, nread, (float *)data);
-#else
       status = nc_get_vara_double(ncid, varid, start, nread, (double *)data);
-#endif
       break;
     case NC_INT:
       status = nc_get_vara_int(ncid, varid, start, nread, (int *)data);
@@ -400,59 +392,35 @@ int read_mosaic_xgrid_size( const char *xgrid_file )
   return ncells;
 }
 
-#ifdef OVERLOAD_R4
-float get_global_area(void)
-{
-  float garea;
-#else
   double get_global_area(void)
   {
     double garea;
-#endif
     garea = 4*M_PI*RADIUS*RADIUS;
 
     return garea;
   }
 
-#ifdef OVERLOAD_R4
-  float get_global_area_(void)
+  double get_global_area_(void)
   {
-    float garea;
-#else
-    double get_global_area_(void)
-    {
-      double garea;
-#endif
-      garea = 4*M_PI*RADIUS*RADIUS;
+    double garea;
+    garea = 4*M_PI*RADIUS*RADIUS;
 
-      return garea;
-    }
+    return garea;
+  }
 
 
     /****************************************************************************/
-#ifdef OVERLOAD_R4
-    void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area )
-#else
-        void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
-#endif
+  void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
     {
       read_mosaic_xgrid_order1(xgrid_file, i1, j1, i2, j2, area);
 
     }
 
-#ifdef OVERLOAD_R4
-    void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area )
-#else
-        void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
-#endif
+  void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area )
     {
       int    ncells, n;
       int    *tile1_cell, *tile2_cell;
-#ifdef OVERLOAD_R4
-      float garea;
-#else
       double garea;
-#endif
 
       ncells = get_dimlen(xgrid_file, "ncells");
 
@@ -479,30 +447,18 @@ float get_global_area(void)
     } /* read_mosaic_xgrid_order1 */
 
 
-#ifdef OVERLOAD_R4
-    void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, int *isc, int *iec )
-#else
-        void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec )
-#endif
+  void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec )
     {
       read_mosaic_xgrid_order1_region(xgrid_file, i1, j1, i2, j2, area, isc, iec);
 
     }
 
-#ifdef OVERLOAD_R4
-    void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, int *isc, int *iec )
-#else
-        void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec )
-#endif
+  void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec )
     {
       int    ncells, n, i;
       int    *tile1_cell, *tile2_cell;
       size_t start[4], nread[4];
-#ifdef OVERLOAD_R4
-      float garea;
-#else
       double garea;
-#endif
 
       ncells = *iec-*isc+1;
 
@@ -540,30 +496,17 @@ float get_global_area(void)
 
     /* NOTE: di, dj is for tile1, */
     /****************************************************************************/
-#ifdef OVERLOAD_R4
-    void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, float *di, float *dj )
-#else
-        void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
-#endif
-    {
+  void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
+  {
       read_mosaic_xgrid_order2(xgrid_file, i1, j1, i2, j2, area, di, dj);
 
     }
-#ifdef OVERLOAD_R4
-    void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, float *di, float *dj )
-#else
-        void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
-#endif
-
+  void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj )
     {
       int    ncells, n;
       int    *tile1_cell, *tile2_cell;
       double *tile1_distance;
-#ifdef OVERLOAD_R4
-      float garea;
-#else
       double garea;
-#endif
       ncells = get_dimlen(xgrid_file, "ncells");
 
       tile1_cell       = (int    *)malloc(ncells*2*sizeof(int   ));
