@@ -25,7 +25,7 @@ program test_diag_buffer
     use platform_mod,               only: r8_kind, r4_kind, i8_kind, i4_kind
     use fms_mod,                    only: string, fms_init, fms_end
     use mpp_mod,                    only: mpp_error, FATAL
-    use diag_data_mod,              only: i4, i8, r4, r8
+    use diag_data_mod,              only: i4, i8, r4, r8, time_none, EMPTY
 
     implicit none
 
@@ -46,11 +46,11 @@ program test_diag_buffer
     do i=0, 5
         if (i < 5) buff_sizes(i+1) = i+5
         call buffobj(i+1)%allocate_buffer(r8_data, i, buff_sizes, fname)
-        call buffobj(i+1)%initialize_buffer( real(i, kind=r8_kind) , fname)
+        call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)
         type is (real(kind=r8_kind))
-          if (any(p_val .ne. real(i, kind=r8_kind))) &
+          if (any(p_val .ne. real(EMPTY, kind=r8_kind))) &
             call mpp_error(FATAL, "r8_buffer:: The "//string(i)//"d buffer was not initialized to the correct value")
         do j = 1, 5
           if (size(p_val, j) .ne. buff_sizes(j)) &
@@ -68,11 +68,11 @@ program test_diag_buffer
     do i=0, 5
         if (i < 5) buff_sizes(i+1) = i+5
         call buffobj(i+1)%allocate_buffer(r4_data, i, buff_sizes, fname)
-        call buffobj(i+1)%initialize_buffer( real(i, kind=r4_kind) , fname)
+        call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)
         type is (real(kind=r4_kind))
-          if (any(p_val .ne. real(i, kind=r4_kind))) &
+          if (any(p_val .ne. real(EMPTY, kind=r4_kind))) &
             call mpp_error(FATAL, "r4_buffer:: The "//string(i)//"d buffer was not initialized to the correct value")
         do j = 1, 5
           if (size(p_val, j) .ne. buff_sizes(j)) &
@@ -90,11 +90,11 @@ program test_diag_buffer
     do i=0, 5
         if (i < 5) buff_sizes(i+1) = i+5
         call buffobj(i+1)%allocate_buffer(i8_data, i, buff_sizes, fname)
-        call buffobj(i+1)%initialize_buffer( int(i, kind=i8_kind) , fname)
+        call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)
         type is (integer(kind=i8_kind))
-          if (any(p_val .ne. int(i, kind=i8_kind))) &
+          if (any(p_val .ne. int(EMPTY, kind=i8_kind))) &
             call mpp_error(FATAL, "i8_buffer:: The "//string(i)//"d buffer was not initialized to the correct value")
         do j = 1, 5
           if (size(p_val, j) .ne. buff_sizes(j)) &
@@ -112,11 +112,11 @@ program test_diag_buffer
     do i=0, 5
         if (i < 5) buff_sizes(i+1) = i+5
         call buffobj(i+1)%allocate_buffer(i4_data, i, buff_sizes, fname)
-        call buffobj(i+1)%initialize_buffer( int(i, kind=i4_kind) , fname)
+        call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)
         type is (integer(kind=i4_kind))
-          if (any(p_val .ne. int(i, kind=i4_kind))) &
+          if (any(p_val .ne. int(EMPTY, kind=i4_kind))) &
             call mpp_error(FATAL, "i4_buffer:: The "//string(i)//"d buffer was not initialized to the correct value")
         do j = 1, 5
           if (size(p_val, j) .ne. buff_sizes(j)) &
