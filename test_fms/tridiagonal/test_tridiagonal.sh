@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,16 +19,21 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/time_manager directory.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Ed Hartnett 11/29/19
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic interpolator fms mpp mpp_io time_interp time_manager \
-horiz_interp field_manager axis_utils affinity fms2_io parser string_utils tridiagonal
+# Set common test settings.
+. ../test-lib.sh
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+touch input.nml
+
+test_expect_success "test tridiagonal 32 bit reals" '
+    mpirun -n 6 ./test_tridiagonal4
+'
+test_expect_success "test tridiagonal 64 bit reals" '
+    mpirun -n 6 ./test_tridiagonal8
+'
+
+test_done

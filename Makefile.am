@@ -35,8 +35,8 @@ endif
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = \
   platform \
-  tridiagonal \
   mpp \
+  tridiagonal \
   constants \
   memutils \
   string_utils \
