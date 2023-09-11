@@ -103,6 +103,7 @@ module tridiagonal_mod
 
     !> @brief Releases memory used by the solver
     subroutine close_tridiagonal
+        !$OMP SINGLE
         if(.not. init_tridiagonal) return
         if(allocated(tridiag_r4%e)) deallocate(tridiag_r4%e)
         if(allocated(tridiag_r4%g)) deallocate(tridiag_r4%g)
@@ -114,6 +115,7 @@ module tridiagonal_mod
         if(allocated(tridiag_r8%bb)) deallocate(tridiag_r8%bb)
         if(allocated(tridiag_r4)) deallocate(tridiag_r4)
         if(allocated(tridiag_r8)) deallocate(tridiag_r8)
+        !$OMP END SINGLE
         return
     end subroutine close_tridiagonal
 

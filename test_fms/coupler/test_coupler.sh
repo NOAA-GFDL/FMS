@@ -31,15 +31,43 @@
 # Run the ongrid test case with 2 halos in x and y
 touch input.nml
 
+cat <<_EOF > diag_table
+test_coupler
+1 1 1 0 0 0
+
+#output files
+ "coupler_types_test",  1, "days", 1, "days", "time"
+
+#output variables
+ "test_coupler", "dat1", "dat1", "coupler_types_test", "all", .false., "none", 2
+ "test_coupler", "dat2", "dat2", "coupler_types_test", "all", .false., "none", 2
+_EOF
+
 mkdir RESTART
 
-test_expect_success "2D coupler" '
-  mpirun -n 1 ./test_coupler_2d
+test_expect_success "coupler register restart 2D(r4_kind)" '
+  mpirun -n 1 ./test_coupler_2d_r4
+'
+test_expect_success "coupler register restart 2D(r8_kind)" '
+  mpirun -n 1 ./test_coupler_2d_r8
 '
 
-test_expect_success "3D coupler" '
-  mpirun -n 1 ./test_coupler_3d
+test_expect_success "coupler register restart 3D (r4_kind)" '
+  mpirun -n 1 ./test_coupler_3d_r4
 '
+
+test_expect_success "coupler register restart 3D (r8_kind)" '
+  mpirun -n 1 ./test_coupler_3d_r8
+'
+
+test_expect_success "test atmos_ocean_fluxes (r4_kind)" '
+  mpirun -n 1 ./test_atmos_ocean_fluxes_r4
+'
+
+test_expect_success "test atmos_ocean_fluxes (r8_kind)" '
+  mpirun -n 1 ./test_atmos_ocean_fluxes_r8
+'
+
 rm -rf RESTART
 
 test_done

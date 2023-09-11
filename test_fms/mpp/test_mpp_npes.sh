@@ -28,6 +28,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# ensure input.nml file present
+touch input.nml
+
 export NUM_PES=1
 test_expect_success "get number of PEs single processor" '
     mpirun -n 1 ./test_mpp_npes

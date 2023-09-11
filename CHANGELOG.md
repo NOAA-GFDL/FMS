@@ -6,6 +6,97 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2023.02] - 2023-07-27
+### Known Issues
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+- GCC 10 and greater causing io issues when compiled using O2 optimization flags
+- GNU compilers prior to the GCC 9.0 release are unsupported for this release due to lack of support for the findloc intrinsic function. This will result in an error saying 'findloc' has no IMPLICIT type and can be resolved by compiling with gcc version 9.0 or greater.
+
+### Added
+- MPP/EXCHANGE: Adds association checks before pointer deallocations in mpp includes and xgrid
+
+### Changed
+- LIBFMS: The libFMS.F90 file (module name `fms`) meant to provide global access has been updated to include 'fms' and it's module/subdirectory name as prefixes for all names. This will only affect external codes that are already using the global module (via `use fms`) and not individual modules.
+- MIXED PRECISION: Updates the axis_utils2, horiz_interp, sat_vapor_pressure, and axis_utils subdirectories to support mixed precision real values.
+- FMS2_IO: Added in mpp_scatter and mpp_gather performance changes from the 2023.01.01 patch. See below for more details.
+- FMS2_IO: Improved error messages to give more debugging information
+- FMS_MOD: Changed fms_init to include a system call to set the stack size to unlimited, removed previously added stack size fixes
+- MONIN_OBUKHOV: Restructures the subroutines in `stable_mix` interface so that 1d calls the underlying implementation, and 2 and 3d call it on 1d slices of the data as opposed to passing in mismatched arrays.
+- MPP: Updates from JEDI for ajoint version the mpp halo filling (mpp_do_update_ad.fh), adds checkpoint for forward buffer information.
+
+### Fixed
+- MPP: mpp_broadcast causing an unintended error message due to checking the wrong pe value
+- MPP: Added workaround for GCC 12 issues causing errors with string lengths in fms2_io
+- FMS2_IO: Fixed support for 'packed' data when using NF_SHORT variables. Scale_factor and add_offset attributes will now be applied if present.
+- DOCS: Improved doxygen comments for tranlon, updated deployment action for site
+- TESTS: Workaround added for ICE coming from mpp_alltoall test with intel 2022.3, and fixes for any test scripts missing input.nml creation. Fixes for mpp/test_global_array failures.
+- TIME_INTERP: Fixes crashes when calling with a non-existant field
+- DIAG_MANAGER: Fixes a module dependency issue causing failures during parallel builds
+- AXIS_UTILS2: Fixes an out of bounds memory index
+
+### Removed
+- FMS_IO/MPP_IO: The two older io modules, fms_io_mod and mpp_io_mod, have been deprecated and will not be compiled by default. If you wish to compile these modules, you must use the -Duse_deprecated_io CPP flag or the --enable-deprecated-io configure option if building with autotools.
+
+### Tag Commit Hashes
+- 2023.02-beta1  2be8aa452ad3e5f43e92c38a64f12d1ae6c43fb8
+- 2023.02-alpha3 8c73bd18dc1d580f2ee524c37cf903ff54d40501
+- 2023.02-alpha2 783019fdec89a8db2b26247c2f63d4782e1495c0
+- 2023.02-alpga1 419c66be31f82ebb13a91ea5e837c707eb54473b
+
+
+## [2023.01.01] - 2023-06-06
+### Changed
+- FMS2_IO: Performance changes for domain_reads_2d and domain_reads_3d:
+  - Root pe reads the data
+  - Uses mpp_scatter to send the data to the other pes
+  - Added unit tests to test all of the domain_read/domain_write interfaces
+
+- FMS2_IO: Performance changes for compressed_writes_1d/2d/3d
+  - Uses mpp_gather to get data for write
+  - Added unit tests to test all of the compressed writes interfaces
+  - Compressed_writes_4d/5d were unchanged
+
+- FMS2_IO: Extended mpp_scatter and mpp_gather to work for int8; added a kludge for scatter since the data is assumed to be (x,y,z)
+
+
+## [2023.01] - 2023-04-03
+### Known Issues
+- If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).
+- GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
+- When outputting sub-region diagnostics, the current diag_manager does not add "tileX" to the filename when using a cube sphere. This leads to trouble when trying to combine the files and regrid them (if the region is in two different tiles)
+
+### Added
+- DIAG_MANAGER: Added code refactored as part of larger diag_manager rewrite for the send_data routines. The refactored code is disabled by default and enabled by setting  `use_refactored_send` to true in the diag_manager_nml, and should mirror current behaviour.
+- FMS2_IO: Added the ability to set deflate_level and shuffle netcdf options in `fms2_io_nml`. Also added functionality for registering dimensions as unlimited compressed.
+- YAML_PARSER: Added support for emitting multiple tabbed section keys to allow diag manager yaml output
+
+### Changed
+- STRING_UTILS: Extended the `string` interface in fms_string_utils_mod to accept reals of 4 or 8 kind, as well as 1, 2, and 3 dimensional real arrays
+- DIAG_MANAGER: Changed the `log_diag_field_info` routine to allow for specifying seperator
+- INTERPOLATOR(s): In horiz_interp, amip_interp and interpolator, changed pointers arrays into allocatables
+
+### Fixed
+- TRIDIAGONAL: Added OMP directives to prevent race conditions
+- DIAG_MANAGER: Added `diag_send_data` routine to fix class(\*) related compiler issues from the refactor update
+- SAT_VAPOR_PRES_K: Removed implied saves causing issues with class(\*) type checking
+- TIME_INTERP: Fixed naming conflicts between module level and local variables
+- YAML_PARSER: Fixed typo in variable name, rename variables to avoid fortran keywords
+- DOCS: Fixed incorrect serial build instructions
+- COMPILER SUPPORT: Fixed compilation errors with Intel's llvm-based compiler and added support for the CMake build. Also fixed mpp_checksum unit test failures with openmpi and nvhpc compilation issues.
+- TIME_MANAGER: Fixed an bug from PR #1169 that was causing answer changes in land models
+
+### Tag Commit Hashes
+- 2023.01-beta4		(63626578cb8ed4bed1ce670b88acd6a1ec438e32)
+- 2023.01-beta3		(0ff254e409b74d7d17ab234abe5ecd985967256c)
+- 2023.01-beta2		(74d8e734bd43b0ce043003da74896e5d747afc2f)
+- 2023.01-beta1		(6255971af28381fad22547bdc2c538fc3ea2e8bf)
+- 2023.01-alpha4	(4526cc94a3e19fe8fa151f54b0db432e1fb2f7d0)
+- 2023.01-alpha3	(f0e8cab3d8e58195f7c2663b84fd0bed12fa8b64)
+- 2023.01-alpha2	(91e732473f7cffce070f9ce239f8ffa22c081261)
+- 2023.01-alpha1	(203c8bf464ff26fe0fe39b1451caedd026bbce55)
+
+
 ## [2022.04] - 2022-10-13
 ### Known Issues
 - If using GCC 10 or higher as well as MPICH, compilation errors will occur unless `-fallow-argument-mismatch` is included in the Fortran compiler flags(the flag will now be added automatically if building with autotools or CMake).

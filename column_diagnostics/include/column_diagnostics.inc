@@ -16,160 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup column_diagnostics_mod column_diagnostics_mod
-!> @ingroup column_diagnostics
-!! @brief Module to locate and mark desired diagnostic columns
-
-!> @addtogroup column_diagnostics_mod
-!> @{
-module column_diagnostics_mod
-
-use fms_mod,                only:  fms_init, mpp_pe, mpp_root_pe, &
-                                   mpp_npes, check_nml_error, &
-                                   error_mesg, FATAL, NOTE, WARNING, &
-                                   stdlog, write_version_number
-use time_manager_mod,       only:  time_manager_init, month_name, &
-                                   get_date, time_type
-use constants_mod,          only:  constants_init, PI, RADIAN
-use mpp_mod,                only:  input_nml_file
-
-!-------------------------------------------------------------------
-
-implicit none
-private
-
-!---------------------------------------------------------------------
-!      module to locate and mark desired diagnostic columns
-!
-!
-!--------------------------------------------------------------------
-
-
-
-
-!---------------------------------------------------------------------
-!----------- ****** VERSION NUMBER ******* ---------------------------
-
-
-! Include variable "version" to be written to log file.
-#include<file_version.h>
-
-
-
-!---------------------------------------------------------------------
-!-------  interfaces --------
-
-public    column_diagnostics_init,  &
-          initialize_diagnostic_columns,  &
-          column_diagnostics_header,   &
-          close_column_diagnostics_units
-
-!private
-
-!--------------------------------------------------------------------
-!----    namelist -----
-
-real          :: crit_xdistance = 4.0 !< model grid points must be within crit_xdistance in
-                                      !! longitude of the requested diagnostics point
-                                      !! coordinates in order to be flagged as the desired
-                                      !! point
-                                      !! [ degrees ]
-real          :: crit_ydistance = 4.0 !< model grid points must be within crit_ydistance in
-                                      !! latitude of the requested diagnostics point
-                                      !! coordinates in order to be flagged as the desired
-                                      !! point
-                                      !! [ degrees ]
-
-namelist / column_diagnostics_nml /              &
-                                      crit_xdistance, &
-                                      crit_ydistance
-
-!--------------------------------------------------------------------
-!-------- public data  -----
-
-
-!--------------------------------------------------------------------
-!------ private data ------
-
-
-logical    :: module_is_initialized = .false.
-
-!-------------------------------------------------------------------
-!-------------------------------------------------------------------
-
-
-
-                        contains
-
-
-
-!####################################################################
-
-!> @brief Initialization routine for column_diagnostics_mod.
-!!
-!> Reads namelist and writes to log.
-subroutine column_diagnostics_init
-
-!--------------------------------------------------------------------
-!    column_diagnostics_init is the constructor for
-!    column_diagnostics_mod.
-!--------------------------------------------------------------------
-
-!--------------------------------------------------------------------
-!    local variables:
-!
-      integer    :: unit !< unit number for nml file
-      integer    :: ierr !< error return flag
-      integer    :: io   !< error return code
-
-!--------------------------------------------------------------------
-!   local variables:
-!
-!       unit       unit number for nml file
-!       ierr       error return flag
-!       io         error return code
-!
-!---------------------------------------------------------------------
-
-!--------------------------------------------------------------------
-!    if routine has already been executed, return.
-!--------------------------------------------------------------------
-      if (module_is_initialized) return
-
-!---------------------------------------------------------------------
-!    verify that all modules used by this module have been initialized.
-!----------------------------------------------------------------------
-      call fms_init
-      call time_manager_init
-      call constants_init
-
-!---------------------------------------------------------------------
-!    read namelist.
-!---------------------------------------------------------------------
-      read (input_nml_file, column_diagnostics_nml, iostat=io)
-      ierr = check_nml_error (io, 'column_diagnostics_nml')
-!---------------------------------------------------------------------
-!    write version number and namelist to logfile.
-!---------------------------------------------------------------------
-      call write_version_number("COLUMN_DIAGNOSTICS_MOD", version)
-      if (mpp_pe() == mpp_root_pe())    then
-                    unit = stdlog()
-                    write (unit, nml=column_diagnostics_nml)
-      endif
-!--------------------------------------------------------------------
-      module_is_initialized = .true.
-
-
-end subroutine column_diagnostics_init
-
-
-
-!####################################################################
+!> @file
 
 !> @brief initialize_diagnostic_columns returns the (i, j, lat, lon) coord-
 !!    inates of any diagnostic columns that are located on the current
 !!    processor.
-subroutine initialize_diagnostic_columns     &
+subroutine INITIALIZE_DIAGNOSTIC_COLUMNS_     &
                    (module, num_diag_pts_latlon, num_diag_pts_ij,  &
                     global_i , global_j , global_lat_latlon,   &
                     global_lon_latlon, lonb_in, latb_in,  &
@@ -190,14 +42,14 @@ integer,               intent(in)    :: num_diag_pts_ij       !< number of diagn
                                                               !! by global (i,j) coordinates
 integer, dimension(:), intent(in)    :: global_i              !< specified global i coordinates
 integer, dimension(:), intent(in)    :: global_j              !< specified global j coordinates
-real   , dimension(:), intent(in)    :: global_lat_latlon     !< specified global lat coordinates
-real   , dimension(:), intent(in)    :: global_lon_latlon     !< specified global lon coordinates
-real,    dimension(:,:), intent(in)  :: lonb_in, latb_in
+real(FMS_CD_KIND_), dimension(:), intent(in)   :: global_lat_latlon     !< specified global lat coordinates
+real(FMS_CD_KIND_), dimension(:), intent(in)   :: global_lon_latlon     !< specified global lon coordinates
+real(FMS_CD_KIND_), dimension(:,:), intent(in) :: lonb_in, latb_in
 logical, dimension(:,:), intent(out) :: do_column_diagnostics !< is a diagnostic column in this jrow ?
 integer, dimension(:), intent(inout) :: diag_i                !< processor i indices of diagnstic columns
 integer, dimension(:), intent(inout) :: diag_j                !< processor j indices of diagnstic columns
-real   , dimension(:), intent(out)   :: diag_lat              !< latitudes of diagnostic columns [ degrees ]
-real   , dimension(:), intent(out)   :: diag_lon              !< longitudes of diagnostic columns [ degrees ]
+real(FMS_CD_KIND_), dimension(:), intent(out) :: diag_lat              !< latitudes of diagnostic columns [ degrees ]
+real(FMS_CD_KIND_), dimension(:), intent(out) :: diag_lon              !< longitudes of diagnostic columns [ degrees ]
 integer, dimension(:), intent(out)   :: diag_units            !< unit number for each diagnostic column
 !---------------------------------------------------------------------
 
@@ -230,27 +82,30 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !--------------------------------------------------------------------
 !    local variables:
 
-      real, dimension(size(diag_i,1))     :: global_lat !< latitudes for all diagnostic columns [ degrees ]
-      real, dimension(size(diag_i,1))     :: global_lon !< longitudes for all diagnostic columns [ degrees ]
-      real, dimension(size(latb_in,1)-1, size(latb_in,2)-1) ::  &
+      real(FMS_CD_KIND_), dimension(size(diag_i,1)) :: global_lat !< latitudes for all diagnostic columns [ degrees ]
+      real(FMS_CD_KIND_), dimension(size(diag_i,1)) :: global_lon !< longitudes for all diagnostic columns [ degrees ]
+      real(FMS_CD_KIND_), dimension(size(latb_in,1)-1, size(latb_in,2)-1) ::  &
                                   distance, distance_x, distance_y, &
-                                   distance_x2, distance2
-      real, dimension(size(latb_in,1), size(latb_in,2)) :: latb_deg
-      real, dimension(size(lonb_in,1), size(lonb_in,2)) :: lonb_deg
-      real       :: dellat, dellon
-      real       :: latb_max, latb_min, lonb_max, lonb_min
+                                  distance_x2, distance2
+      real(FMS_CD_KIND_), dimension(size(latb_in,1), size(latb_in,2)) :: latb_deg
+      real(FMS_CD_KIND_), dimension(size(lonb_in,1), size(lonb_in,2)) :: lonb_deg
+      real(FMS_CD_KIND_) :: dellat, dellon
+      real(FMS_CD_KIND_) :: latb_max, latb_min, lonb_max, lonb_min
 
       integer            ::  num_diag_pts !< total number of diagnostic columns
       integer            ::  i            !< do loop indices
       integer            ::  j            !< do loop indices
       integer            ::  nn           !< do loop indices
-      real               ::  ref_lat
-      real               ::  current_distance
+      real(FMS_CD_KIND_) ::  ref_lat
+      real(FMS_CD_KIND_) ::  current_distance
       character(len=8)   ::  char         !< character string for diaganostic column index
       character(len=32)  ::  filename     !< filename for output file for diagnostic column
       logical            ::  allow_ij_input
       logical            ::  open_file
       integer            ::  io
+
+      integer, parameter :: lkind=FMS_CD_KIND_
+      real(FMS_CD_KIND_) :: tmp
 !--------------------------------------------------------------------
 !    local variables:
 !
@@ -270,17 +125,17 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !    save the input lat and lon fields. define the delta of latitude
 !    and longitude.
 !--------------------------------------------------------------------
-      latb_deg = latb_in*RADIAN
-      lonb_deg = lonb_in*RADIAN
+      latb_deg = real( real(latb_in,r8_kind)*RADIAN, FMS_CD_KIND_)  !< unit conversion in r8_kind
+      lonb_deg = real( real(lonb_in,r8_kind)*RADIAN, FMS_CD_KIND_ ) !< unit conversion in r8_kind
       dellat = latb_in(1,2) - latb_in(1,1)
       dellon = lonb_in(2,1) - lonb_in(1,1)
       latb_max = MAXVAL (latb_deg(:,:))
       latb_min = MINVAL (latb_deg(:,:))
       lonb_max = MAXVAL (lonb_deg(:,:))
       lonb_min = MINVAL (lonb_deg(:,:))
-      if (lonb_min < 10.0 .or. lonb_max > 350.) then
-        lonb_min = 0.
-        lonb_max = 360.0
+      if (lonb_min < 10.0_lkind .or. lonb_max > 350.0_lkind) then
+        lonb_min = 0.0_lkind
+        lonb_max = 360.0_lkind
       endif
 
       allow_ij_input = .true.
@@ -300,6 +155,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       endif
 
 !----------------------------------------------------------------------
+
+!----------------------------------------------------------------------
 !    initialize column_diagnostics flag and diag unit numbers. define
 !    total number of diagnostic columns.
 !----------------------------------------------------------------------
@@ -307,8 +164,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       diag_units(:) = -1
       diag_i(:) = -99
       diag_j(:) = -99
-      diag_lat(:) = -999.
-      diag_lon(:) = -999.
+      diag_lat(:) = -999.0_lkind
+      diag_lon(:) = -999.0_lkind
       num_diag_pts = size(diag_i(:))
 
 !--------------------------------------------------------------------
@@ -320,12 +177,11 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       end do
 
       do nn = 1, num_diag_pts_ij
-        global_lat(nn+num_diag_pts_latlon) =    &
-                         ((-0.5*acos(-1.0) + 0.5*dellat) + &
-                         (global_j (nn)-1) *dellat)*RADIAN
-        global_lon(nn+num_diag_pts_latlon) = (0.5*dellon +     &
-                          (global_i (nn)-1)*dellon)*RADIAN
-      end do
+        tmp = (-0.5_lkind*acos(-1.0_lkind) + 0.5_lkind*dellat) + real(global_j(nn)-1,FMS_CD_KIND_)*dellat
+        global_lat(nn+num_diag_pts_latlon) = real( real(tmp,r8_kind)*RADIAN, FMS_CD_KIND_ )
+        tmp = 0.5_lkind*dellon + real(global_i(nn)-1,FMS_CD_KIND_)*dellon
+        global_lon(nn+num_diag_pts_latlon) = real( real(tmp,r8_kind)*RADIAN, FMS_CD_KIND_ )
+     end do
 
 !----------------------------------------------------------------------
 !    loop over all diagnostic points to check for their presence on
@@ -337,12 +193,14 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !----------------------------------------------------------------------
 !    verify that the values of lat and lon are valid.
 !----------------------------------------------------------------------
-        if (global_lon(nn) >= 0. .and. global_lon(nn) <= 360.0) then
+        if (global_lon(nn) >= 0.0_lkind .and. &
+            global_lon(nn) <= 360.0_lkind) then
         else
           call error_mesg ('column_diagnostics_mod', &
                ' invalid longitude', FATAL)
         endif
-        if (global_lat(nn) >= -90.0 .and. global_lat(nn) <= 90.0) then
+        if (global_lat(nn) >= -90.0_lkind .and. &
+            global_lat(nn) <=  90.0_lkind) then
         else
           call error_mesg ('column_diagnostics_mod', &
                ' invalid latitude', FATAL)
@@ -362,13 +220,9 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
               do i=1,size(lonb_deg,1) - 1
                 distance_y(i,j) = ABS(global_lat(nn) - latb_deg(i,j))
                 distance_x(i,j) = ABS(global_lon(nn) - lonb_deg(i,j))
-                distance_x2(i,j) = ABS((global_lon(nn)-360.) -  &
-                                                       lonb_deg(i,j))
-                distance(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
-                                (global_lon(nn) - lonb_deg(i,j))**2
-                distance2(i,j) = (global_lat(nn) - latb_deg(i,j))**2 + &
-                                 ((global_lon(nn)-360.) -    &
-                                                   lonb_deg(i,j))**2
+                distance_x2(i,j) = ABS((global_lon(nn)-360.0_lkind) - lonb_deg(i,j))
+                distance(i,j) = (global_lat(nn)-latb_deg(i,j))**2 + (global_lon(nn)-lonb_deg(i,j))**2
+                distance2(i,j) = (global_lat(nn)-latb_deg(i,j))**2 + ((global_lon(nn)-360.0_lkind) - lonb_deg(i,j))**2
               end do
             end do
 
@@ -382,8 +236,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
             current_distance = distance(1,1)
             do j=1,size(latb_deg,2) - 1
               do i=1,size(lonb_deg,1) - 1
-                if (distance_x(i,j) <= crit_xdistance .and. &
-                    distance_y(i,j) <= crit_ydistance ) then
+                if (distance_x(i,j) <= real(crit_xdistance,FMS_CD_KIND_) .and. &
+                    distance_y(i,j) <= real(crit_ydistance,FMS_CD_KIND_)) then
                   if (distance(i,j) < current_distance) then
                     current_distance = distance(i,j)
                     do_column_diagnostics(i,j) = .true.
@@ -398,8 +252,8 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !---------------------------------------------------------------------
 !    check needed because of the 0.0 / 360.0 longitude periodicity.
 !---------------------------------------------------------------------
-                if (distance_x2(i,j) <= crit_xdistance .and. &
-                    distance_y(i,j) <= crit_ydistance ) then
+                if (distance_x2(i,j)<= real(crit_xdistance,FMS_CD_KIND_) .and. &
+                    distance_y(i,j) <= real(crit_ydistance,FMS_CD_KIND_)) then
                   if (distance2(i,j) < current_distance) then
                     current_distance = distance2(i,j)
                     do_column_diagnostics(i,j) = .true.
@@ -436,7 +290,7 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
 !---------------------------------------------------------------------
 
 
-end subroutine initialize_diagnostic_columns
+end subroutine INITIALIZE_DIAGNOSTIC_COLUMNS_
 
 
 
@@ -445,7 +299,7 @@ end subroutine initialize_diagnostic_columns
 !> @brief column_diagnostics_header writes out information concerning
 !!    time and location of following data into the column_diagnostics
 !!    output file.
-subroutine column_diagnostics_header     &
+subroutine COLUMN_DIAGNOSTICS_HEADER_     &
                               (module, diag_unit, Time, nn, diag_lon, &
                                diag_lat, diag_i, diag_j)
 
@@ -460,8 +314,8 @@ character(len=*),      intent(in)  :: module    !< module name calling this subr
 type(time_type),       intent(in)  :: Time      !< current model time [ time_type ]
 integer,               intent(in)  :: diag_unit !< unit number for column_diagnostics output
 integer,               intent(in)  :: nn        !< index of diagnostic column currently active
-real,    dimension(:), intent(in)  :: diag_lon  !< longitude of current diagnostic column [ degrees ]
-real,    dimension(:), intent(in)  :: diag_lat  !< latitude of current diagnostic column [ degrees ]
+real(FMS_CD_KIND_),    dimension(:), intent(in)  :: diag_lon  !< longitude of current diagnostic column [ degrees ]
+real(FMS_CD_KIND_),    dimension(:), intent(in)  :: diag_lat  !< latitude of current diagnostic column [ degrees ]
 integer, dimension(:), intent(in)  :: diag_i    !< i coordinate of current diagnostic column
 integer, dimension(:), intent(in)  :: diag_j    !< j coordinate of current diagnostic column
 
@@ -478,6 +332,7 @@ integer, dimension(:), intent(in)  :: diag_j    !< j coordinate of current diagn
 !       diag_j     j coordinate of current diagnostic column
 !
 !---------------------------------------------------------------------
+
 
 !--------------------------------------------------------------------
 !     local variables:
@@ -538,59 +393,5 @@ integer, dimension(:), intent(in)  :: diag_j    !< j coordinate of current diagn
 
 !---------------------------------------------------------------------
 
-
-
-end subroutine column_diagnostics_header
-
-
-
-!######################################################################
-!> @brief close_column_diagnostics_units closes any open column_diagnostics
-!!    files associated with the calling module.
-subroutine close_column_diagnostics_units (diag_units)
-
-!---------------------------------------------------------------------
-!    close_column_diagnostics_units closes any open column_diagnostics
-!    files associated with the calling module.
-!----------------------------------------------------------------------
-
-!----------------------------------------------------------------------
-integer, dimension(:), intent(in)  :: diag_units !< array of column diagnostic unit numbers
-!----------------------------------------------------------------------
-
-!--------------------------------------------------------------------
-!    intent(in) variable:
-!
-!      diag_units    array of column diagnostic unit numbers
-!
-!--------------------------------------------------------------------
-
-!--------------------------------------------------------------------
-!    local variable
-
-      integer   :: nn    !< do loop index
-      integer   :: io
-!--------------------------------------------------------------------
-!    close the unit associated with each diagnostic column.
-!--------------------------------------------------------------------
-      do nn=1, size(diag_units(:))
-        if (diag_units(nn) /= -1) then
-          close(diag_units(nn), iostat=io )
-          if(io/=0) call error_mesg('column_diagnostics_mod', 'Error in closing file ', FATAL)
-        endif
-      end do
-
-!---------------------------------------------------------------------
-
-
-end subroutine close_column_diagnostics_units
-
-
-!#####################################################################
-
-
-
-
-               end module column_diagnostics_mod
+end subroutine COLUMN_DIAGNOSTICS_HEADER_
 !@}
-! close documentation grouping

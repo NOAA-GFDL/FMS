@@ -137,6 +137,7 @@
         pe_end(n) = te
         ioff = ioff+ npts_tile(n)
      enddo
+     if (associated(UG_domain%list)) deallocate(UG_domain%list) !< Check if allocated
      allocate(UG_domain%list(0:ndivs-1))
      do p = 0, ndivs-1
         UG_domain%list(p)%compute%begin = ibegin(p)
@@ -185,12 +186,14 @@
      UG_domain%global%begin_index = grid_index(pos+1)
      UG_domain%global%end_index = grid_index(pos+npts_tile(n))
 
+     if (associated(UG_domain%grid_index)) deallocate(UG_domain%grid_index) !< Check if allocated
      allocate(UG_domain%grid_index(UG_domain%compute%size))
      do n = 1, UG_domain%compute%size
         UG_domain%grid_index(n) = grid_index(pos+UG_domain%compute%begin+n-1)
      enddo
 
      !--- define io_domain
+     if (associated(UG_domain%io_domain)) deallocate(UG_domain%io_domain) !< Check if allocated
      allocate(UG_domain%io_domain)
      tile_id = UG_domain%tile_id
      UG_domain%io_domain%pe = UG_domain%pe
@@ -230,6 +233,7 @@
      UG_domain%io_domain%global%size        = UG_domain%io_domain%global%end -  UG_domain%io_domain%global%begin + 1
 
      npes_in_group = iend(group_id) - ibegin(group_id) + 1
+     if (associated(UG_domain%io_domain%list)) deallocate(UG_domain%io_domain%list) !< Check if allocated
      allocate(UG_domain%io_domain%list(0:npes_in_group-1))
      do n = 0, npes_in_group-1
         pos = UG_domain%io_domain%tile_root_pe - mpp_root_pe() + n
@@ -307,6 +311,7 @@
 
      nrecv = count( recv_cnt > 0 )
      UG_domain%SG2UG%nrecv = nrecv
+     if (associated(UG_domain%SG2UG%recv)) deallocate(UG_domain%SG2UG%recv) !< Check if allocated
      allocate(UG_domain%SG2UG%recv(nrecv))
      nrecv = 0
      pos = 0
@@ -351,6 +356,7 @@
 
      nsend = count( recv_cnt(:) > 0 )
      UG_domain%SG2UG%nsend = nsend
+     if (associated(UG_domain%SG2UG%send)) deallocate(UG_domain%SG2UG%send) !< Check if allocated
      allocate(UG_domain%SG2UG%send(nsend))
      nsend = 0
      isc = SG_domain%x(1)%compute%begin
@@ -610,6 +616,7 @@ return
 
       if( .NOT.native )then
 !initialize domain%list and set null values in message
+         if (associated(domain%list)) deallocate(domain%list) !< Check if allocated
           allocate( domain%list(0:listsize-1) )
           domain%pe = NULL_PE
           domain%pos = -1
@@ -815,7 +822,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r8_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r8_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
@@ -827,7 +834,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
@@ -839,7 +846,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_i4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_i4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(i4_kind)
@@ -851,7 +858,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_l4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_l4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r8_2d
@@ -863,7 +870,7 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r8_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i8_2d
@@ -875,7 +882,7 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i8_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i8_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r4_2d
@@ -887,7 +894,7 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i4_2d
@@ -899,5 +906,5 @@ end subroutine mpp_deallocate_domainUG
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i4_5d
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
-#include <mpp_global_field_ug.h>
+#include <mpp_global_field_ug.fh>
 !> @}

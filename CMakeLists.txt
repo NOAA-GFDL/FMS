@@ -26,7 +26,7 @@ set(CMAKE_Fortran_FLAGS_DEBUG)
 
 # Define the CMake project
 project(FMS
-  VERSION 2022.04.0
+  VERSION 2023.02.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -41,12 +41,12 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
   set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang)$")
+if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang|IntelLLVM)$")
   message(
     WARNING "Compiler not officially supported: ${CMAKE_C_COMPILER_ID}")
 endif()
 
-if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel|GNU)$")
+if(NOT CMAKE_Fortran_COMPILER_ID MATCHES "^(Intel|GNU|IntelLLVM)$")
   message(
     WARNING "Compiler not officially supported: ${CMAKE_Fortran_COMPILER_ID}")
 endif()
@@ -66,6 +66,7 @@ option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
+option(USE_DEPRECATED_IO     "Enable compiler definition -Duse_deprecated_io (compile with fms_io/mpp_io)"   OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -109,6 +110,8 @@ list(APPEND fms_fortran_src_files
   column_diagnostics/column_diagnostics.F90
   constants/constants.F90
   constants/fmsconstants.F90
+  constants4/constantsr4.F90
+  constants4/fmsconstantsr4.F90
   coupler/atmos_ocean_fluxes.F90
   coupler/coupler_types.F90
   coupler/ensemble_manager.F90
@@ -122,6 +125,11 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_output.F90
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
+  diag_manager/fms_diag_time_reduction.F90
+  diag_manager/fms_diag_outfield.F90
+  diag_manager/fms_diag_elem_weight_procs.F90
+  diag_manager/fms_diag_fieldbuff_update.F90
+  diag_manager/fms_diag_bbox.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90
@@ -188,6 +196,7 @@ list(APPEND fms_fortran_src_files
 # Collect FMS C source files
 list(APPEND fms_c_src_files
   affinity/affinity.c
+  fms/fms_stacksize.c
   mosaic/create_xgrid.c
   mosaic/gradient_c2l.c
   mosaic/interp.c
@@ -239,6 +248,10 @@ if(WITH_YAML)
   list(APPEND fms_defs use_yaml)
 endif()
 
+if(USE_DEPRECATED_IO)
+  list(APPEND fms_defs use_deprecated_io)
+endif()
+
 if(INTERNAL_FILE_NML)
   list(APPEND fms_defs INTERNAL_FILE_NML)
 endif()
@@ -288,9 +301,30 @@ foreach(kind ${kinds})
 
   target_include_directories(${libTgt}_f PRIVATE include
                                                  fms
+                                                 fms/include
                                                  fms2_io/include
+                                                 string_utils/include
                                                  mpp/include
-                                                 constants)
+                                                 column_diagnostics/include
+                                                 monin_obukhov/include
+                                                 sat_vapor_pres/include
+                                                 horiz_interp/include
+                                                 diag_integral/include
+                                                 random_numbers/include
+                                                 diag_manager/include
+                                                 constants4
+                                                 topography/include
+                                                 axis_utils/include
+                                                 mosaic2/include
+                                                 constants
+                                                 astronomy/include
+                                                 field_manager/include
+                                                 time_interp/include
+                                                 tracer_manager/include
+                                                 interpolator/include
+                                                 coupler/include
+                                                 data_override/include)
+
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
@@ -324,8 +358,28 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/column_diagnostics/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/astronomy/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monin_obukhov/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/horiz_interp/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/topography/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/random_numbers/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_integral/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tracer_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interpolator/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/coupler/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/data_override/include>)
 
   target_include_directories(${libTgt} INTERFACE
     $<BUILD_INTERFACE:${moduleDir}>

@@ -43,6 +43,7 @@ subroutine TRI_INVERT_(x,d,a,b,c)
     integer :: k
 
     if(present(a)) then
+        !$OMP SINGLE
         init_tridiagonal = .true.
         if(allocated(TRID_REAL_TYPE%e))     deallocate(TRID_REAL_TYPE%e)
         if(allocated(TRID_REAL_TYPE%g))     deallocate(TRID_REAL_TYPE%g)
@@ -54,6 +55,7 @@ subroutine TRI_INVERT_(x,d,a,b,c)
         allocate(TRID_REAL_TYPE%g (size(x,1),size(x,2),size(x,3)))
         allocate(TRID_REAL_TYPE%bb(size(x,1),size(x,2)))
         allocate(TRID_REAL_TYPE%cc(size(x,1),size(x,2),size(x,3)))
+        !$OMP END SINGLE
 
         TRID_REAL_TYPE%e(:,:,1) = - a(:,:,1) / b(:,:,1)
         a(:,:,size(x,3)) = real(0.0, FMS_TRID_KIND_)

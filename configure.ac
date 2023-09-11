@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2022.04.00-dev],
+  [2023.02.00-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -109,6 +109,13 @@ AC_ARG_ENABLE([8byte-int],
 AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
+
+AC_ARG_ENABLE([deprecated-io],
+  [AS_HELP_STRING([--enable-deprecated-io],
+    [Enables compilation of deprecated mpp_io and fms_io modules in addition to the updated fms2_io modules (default no)])])
+AS_IF([test ${enable_deprecated_io:-no} = yes],
+  [enable_deprecated_io=yes],
+  [enable_deprecated_io=no])
 
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
@@ -203,11 +210,18 @@ AC_MSG_CHECKING([if netCDF was built with HDF5])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
 #include <netcdf_meta.h>
 #if !(NC_HAS_NC4)
-      choke me
 #endif]])], [nc_has_nc4=yes], [nc_has_nc4=no])
 AC_MSG_RESULT([$nc_has_nc4])
 if test $nc_has_nc4 = no; then
   AC_MSG_ERROR([NetCDF must be built with HDF5.])
+fi
+
+# Check if ncdump is avaiable
+AC_CHECK_PROG([USE_NCDUMP],[ncdump], [yes], [no])
+if test $USE_NCDUMP = yes; then
+  AM_CONDITIONAL([SKIP_NCDUMP_CHECKS], true )
+else
+  AM_CONDITIONAL([SKIP_NCDUMP_CHECKS], false )
 fi
 
 # Check if Linux gettid is avaiable
@@ -271,6 +285,22 @@ AC_LANG_POP(Fortran)
 AC_DEFINE([use_netCDF], [1], [This is required for the library to build])
 if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
+fi
+
+# check if compiling old io
+if test $enable_deprecated_io = yes; then
+  #If the test pass, define use_deprecated_io macro and skip it's unit tests
+  AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
+  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
+else
+  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
+fi
+
+# disable mosaic unit tests if FMS is compiled in r4
+if test $enable_mixed_mode = yes ; then
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
+else
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
 fi
 
 # Set any required compile flags.  This will not be done if the user wants to
@@ -418,6 +448,7 @@ AC_CONFIG_FILES([
   time_interp/Makefile
   time_manager/Makefile
   constants/Makefile
+  constants4/Makefile
   platform/Makefile
   fms/Makefile
   fms2_io/Makefile
@@ -451,6 +482,7 @@ AC_CONFIG_FILES([
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
+  test_fms/astronomy/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
   test_fms/exchange/Makefile
@@ -472,6 +504,11 @@ AC_CONFIG_FILES([
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
   test_fms/tridiagonal/Makefile
+  test_fms/sat_vapor_pres/Makefile
+  test_fms/diag_integral/Makefile
+  test_fms/tracer_manager/Makefile
+  test_fms/random_numbers/Makefile
+  test_fms/column_diagnostics/Makefile
   FMS.pc
   ])
 

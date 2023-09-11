@@ -1,0 +1,31 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @defgroup fm_util_mod fm_util_mod
+!> @ingroup field_manager
+
+#undef  FMS_FM_KIND_
+#define FMS_FM_KIND_ r8_kind
+
+#undef  FM_UTIL_SET_VALUE_REAL_ARRAY_
+#define FM_UTIL_SET_VALUE_REAL_ARRAY_ fm_util_set_value_real_array_r8
+
+#undef  FM_UTIL_SET_VALUE_REAL_
+#define FM_UTIL_SET_VALUE_REAL_ fm_util_set_value_real_r8
+
+#include "fm_util.inc"

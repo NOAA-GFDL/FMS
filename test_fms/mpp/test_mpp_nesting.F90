@@ -19,7 +19,9 @@
 !> Tests nested domain operations and routines in mpp_domains
 program test_mpp_nesting
 
-  use fms
+  use fms_mod
+  use mpp_domains_mod
+  use mpp_mod
   use compare_data_checksums
   use test_domains_utility_mod
   use platform_mod
@@ -948,15 +950,15 @@ program test_mpp_nesting
     !--- loop over nest level
     do l = 1, num_nest_level
        npes_my_level = mpp_get_nest_npes(nest_domain, l)
-       npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
        allocate(my_pelist(npes_my_level))
-       allocate(my_pelist_fine(npes_my_fine))
        call mpp_get_nest_pelist(nest_domain, l, my_pelist)
 
        call mpp_declare_pelist(my_pelist(:))
        write(type2, '(a,I2)')trim(type)//" nest_level = ",l
        if(ANY(my_pelist(:)==mpp_pe())) then
 
+          npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
+          allocate(my_pelist_fine(npes_my_fine))
           call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
 
           call mpp_set_current_pelist(my_pelist)
@@ -1406,10 +1408,10 @@ program test_mpp_nesting
 
           if( isw_f .NE. isw_f2 .OR. iew_f .NE. iew_f2 .OR. jsw_f .NE. jsw_f2 .OR. jew_f .NE. jew_f2 .OR. &
                isw_c .NE. isw_c2 .OR. iew_c .NE. iew_c2 .OR. jsw_c .NE. jsw_c2 .OR. jew_c .NE. jew_c2 ) then
-             write(5000+mpp_pe(),*), "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
-             write(5000+mpp_pe(),*), "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
-             write(5000+mpp_pe(),*), "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
-             write(5000+mpp_pe(),*), "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
+             write(5000+mpp_pe(),*) "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
+             write(5000+mpp_pe(),*) "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
+             write(5000+mpp_pe(),*) "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
+             write(5000+mpp_pe(),*) "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
              call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine scalar")
           endif
           if( ise_f .NE. ise_f2 .OR. iee_f .NE. iee_f2 .OR. jse_f .NE. jse_f2 .OR. jee_f .NE. jee_f2 .OR. &
@@ -2623,7 +2625,8 @@ program test_mpp_nesting
           deallocate(wbuffery2, ebuffery2, sbuffery2, nbuffery2)
        endif
        endif
-       deallocate(my_pelist, my_pelist_fine)
+       if(ANY(my_pelist(:)==mpp_pe())) deallocate(my_pelist_fine)
+       deallocate(my_pelist)
        call mpp_set_current_pelist()
 
     enddo
@@ -2982,15 +2985,15 @@ program test_mpp_nesting
     !--- loop over nest level
     do l = 1, num_nest_level
        npes_my_level = mpp_get_nest_npes(nest_domain, l)
-       npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
        allocate(my_pelist(npes_my_level))
-       allocate(my_pelist_fine(npes_my_fine))
        call mpp_get_nest_pelist(nest_domain, l, my_pelist)
 
        call mpp_declare_pelist(my_pelist(:))
        write(type2, '(a,I2)')trim(type)//" nest_level = ",l
        if(ANY(my_pelist(:) == mpp_pe())) then
 
+          npes_my_fine = mpp_get_nest_fine_npes(nest_domain,l)
+          allocate(my_pelist_fine(npes_my_fine))
           call mpp_get_nest_fine_pelist(nest_domain, l, my_pelist_fine)
 
           call mpp_set_current_pelist(my_pelist)
@@ -3433,10 +3436,10 @@ program test_mpp_nesting
 
           if( isw_f .NE. isw_f2 .OR. iew_f .NE. iew_f2 .OR. jsw_f .NE. jsw_f2 .OR. jew_f .NE. jew_f2 .OR. &
                isw_c .NE. isw_c2 .OR. iew_c .NE. iew_c2 .OR. jsw_c .NE. jsw_c2 .OR. jew_c .NE. jew_c2 ) then
-             write(5000+mpp_pe(),*), "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
-             write(5000+mpp_pe(),*), "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
-             write(5000+mpp_pe(),*), "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
-             write(5000+mpp_pe(),*), "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
+             write(5000+mpp_pe(),*) "west buffer fine index = ", isw_f, iew_f, jsw_f, jew_f
+             write(5000+mpp_pe(),*) "west buffer fine index2 = ", isw_f2, iew_f2, jsw_f2, jew_f2
+             write(5000+mpp_pe(),*) "west buffer coarse index = ", isw_c, iew_c, jsw_c, jew_c
+             write(5000+mpp_pe(),*) "west buffer coarse index2 = ", isw_c2, iew_c2, jsw_c2, jew_c2
              call mpp_error(FATAL, "test_mpp_domains: west buffer index mismatch for coarse to fine scalar")
           endif
           if( ise_f .NE. ise_f2 .OR. iee_f .NE. iee_f2 .OR. jse_f .NE. jse_f2 .OR. jee_f .NE. jee_f2 .OR. &
@@ -4653,7 +4656,8 @@ program test_mpp_nesting
        endif
        endif
 
-       deallocate(my_pelist, my_pelist_fine)
+       if(ANY(my_pelist(:)==mpp_pe())) deallocate(my_pelist_fine)
+       deallocate(my_pelist)
        call mpp_set_current_pelist()
 
     enddo

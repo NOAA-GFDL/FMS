@@ -18,6 +18,7 @@
 !***********************************************************************
 
 program test_cloud_interpolator
+#ifdef use_drifters
   use cloud_interpolator_mod
   use mpp_mod, only : mpp_error, FATAL, stdout, mpp_init, mpp_exit
 
@@ -215,4 +216,5 @@ CONTAINS
 
 end subroutine test_get_node_values
 
+#endif
   end program test_cloud_interpolator
