@@ -19,7 +19,8 @@ Additional information for this module and others can be found in the Doxygen ge
 - amip_interp_del
 - ASSIGNMENT(=) of amip_interp_types
 ##### Types
-- amip_interp_type
+- amip_interp_type(r4_kind)
+- amip_interp_type(r8_kind)
 
 ### astronomy
 ##### Interfaces

@@ -323,7 +323,8 @@ foreach(kind ${kinds})
                                                  tracer_manager/include
                                                  interpolator/include
                                                  coupler/include
-                                                 data_override/include)
+                                                 data_override/include
+                                                 amip_interp/include)
 
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
