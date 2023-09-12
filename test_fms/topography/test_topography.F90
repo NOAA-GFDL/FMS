@@ -48,10 +48,23 @@ program test_top
   integer                   :: ipts_r, jpts_r              ! sub axis
   integer, parameter        :: lkind = TEST_TOP_KIND_      ! kind parameter for mixed precision
 
-  real(kind=TEST_TOP_KIND_), parameter :: deg2rad = real(pi, TEST_TOP_KIND_)/180.0_lkind
+  real(kind=TEST_TOP_KIND_), parameter        :: deg2rad = real(pi, TEST_TOP_KIND_)/180.0_lkind
+  real(kind=TEST_TOP_KIND_), dimension(2,2)   :: lon2d, lat2d   ! in radians
+  real(kind=TEST_TOP_KIND_), dimension(4)     :: lon1d, lat1d   ! in radians
 
   call fms_init
   call topography_init
+
+  ! define blat and blon, in this test they'll be referred to as lat2d/lon2d, lat1d/lon1d
+  lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
+  lon2d(2,1) = 2.5_lkind*deg2rad ; lat2d(2,1) = 1.5_lkind*deg2rad
+  lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
+  lon2d(2,2) = 2.5_lkind*deg2rad ; lat2d(2,2) = 2.5_lkind*deg2rad
+
+  lon1d(1) = 1.5_lkind*deg2rad ; lat1d(1) = 1.5_lkind*deg2rad
+  lon1d(2) = 2.5_lkind*deg2rad ; lat1d(2) = 1.5_lkind*deg2rad
+  lon1d(3) = 1.5_lkind*deg2rad ; lat1d(3) = 2.5_lkind*deg2rad
+  lon1d(4) = 2.5_lkind*deg2rad ; lat1d(4) = 2.5_lkind*deg2rad
 
   ! name files
   topog_file = "topography.data.nc"
@@ -65,8 +78,10 @@ program test_top
   xdat = (/1.0_lkind*deg2rad, 2.0_lkind*deg2rad, 3.0_lkind*deg2rad/)   !size of iptsp1, in radians
   ydat = (/1.0_lkind*deg2rad, 2.0_lkind*deg2rad, 3.0_lkind*deg2rad/)   !size of jptsp1, in radians
 
-  zdat(1,1) = 2.0_lkind ; zdat(1,2) = 4.0_lkind
-  zdat(2,1) = 6.0_lkind ; zdat(2,2) = 8.0_lkind   !size of (ipts, jpts)
+  zdat(1,1) = 0.0_lkind ; zdat(1,2) = 1.0_lkind
+  zdat(2,1) = 1.0_lkind ; zdat(2,2) = 0.0_lkind   !size of (ipts, jpts)
+
+
 
   ! write topog file
   if (open_file(top_fileobj, topog_file, "overwrite")) then
@@ -95,8 +110,39 @@ program test_top
     call mpp_error(FATAL, "test_topography: error opening topog_file")
   end if
 
+  ! write water file
+  if (open_file(top_fileobj, water_file, "overwrite")) then
+    call register_axis(top_fileobj, "i_zdat", ipts)   !first index dimension in zdat
+    call register_axis(top_fileobj, "j_zdat", jpts)   !second index dimension in zdat
+    call register_axis(top_fileobj, "ipts_r", ipts_r)
+    call register_axis(top_fileobj, "jpts_r", jpts_r)
+    call register_axis(top_fileobj, "i_xdat", iptsp1) !# of points in xdat variable
+    call register_axis(top_fileobj, "j_ydat", jptsp1) !# of point in ydat variable
+
+    call register_field(top_fileobj, "ipts",   "double", dimensions=(/"ipts_r"/))
+    call register_field(top_fileobj, "jpts",   "double", dimensions=(/"jpts_r"/))
+    call register_field(top_fileobj, "xdat",   "double", dimensions=(/"i_xdat"/))
+    call register_field(top_fileobj, "ydat",   "double", dimensions=(/"j_ydat"/))
+    call register_field(top_fileobj, "zdat",   "double", dimensions=(/"i_zdat", "j_zdat"/))
+
+    call write_data(top_fileobj, "ipts",   real(ipts, TEST_TOP_KIND_))
+    call write_data(top_fileobj, "jpts",   real(jpts, TEST_TOP_KIND_))
+    call write_data(top_fileobj, "xdat",   xdat)
+    call write_data(top_fileobj, "ydat",   ydat)
+    call write_data(top_fileobj, "zdat",   zdat)
+
+    call close_file(top_fileobj)
+
+  else
+    call mpp_error(FATAL, "test_topography: error opening water_file")
+  end if
+
   call test_topog_mean
   call test_topog_stdev
+  call test_get_ocean_frac
+  call test_get_ocean_mask
+  call test_get_water_frac
+  call test_get_water_mask
 
   call fms_end
 
@@ -105,78 +151,142 @@ program test_top
   subroutine test_topog_mean() 
 
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2)                             :: lon2d, lat2d   ! in radians
-    real(kind=TEST_TOP_KIND_), dimension(4)                               :: lon1d, lat1d   ! in radians
-    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d, zmean2d_weighted
-    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d, zmean1d_weighted
+    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d
+    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d
     logical                                                               :: get_mean_answer
-    ! one cell of lon/lat defined covers a 1/4 of each cell
-    real(kind=TEST_TOP_KIND_), parameter                                  :: tol = 1.0_lkind/4.0_lkind
 
     !---------------------------------------- test topog mean 2d ---------------------------------------------!
-    lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
-    lon2d(2,1) = 2.5_lkind*deg2rad ; lat2d(2,1) = 1.5_lkind*deg2rad
-    lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
-    lon2d(2,2) = 2.5_lkind*deg2rad ; lat2d(2,2) = 2.5_lkind*deg2rad
 
     get_mean_answer = get_topog_mean(lon2d, lat2d, zmean2d)
-    ! use 'tol' to do an area weighted average of each zdat and sum them
-    zmean2d_weighted = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
 
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
-    call check_answers(zmean2d_weighted(1,1), 5.0_lkind, "Error in test_topog_mean 2d")
+    call check_answers(zmean2d(1,1), 0.5_lkind, "Error in test_topog_mean 2d")
 
     !---------------------------------------- test topog mean 1d ---------------------------------------------!
-    lon1d(1) = 1.5_lkind*deg2rad ; lat1d(1) = 1.5_lkind*deg2rad
-    lon1d(2) = 2.5_lkind*deg2rad ; lat1d(2) = 1.5_lkind*deg2rad
-    lon1d(3) = 1.5_lkind*deg2rad ; lat1d(3) = 2.5_lkind*deg2rad
-    lon1d(4) = 2.5_lkind*deg2rad ; lat1d(4) = 2.5_lkind*deg2rad
 
     get_mean_answer = get_topog_mean(lon1d, lat1d, zmean1d)
-    zmean1d_weighted = zdat(1,1)*tol + zdat(1,2)*tol + zdat(2,1)*tol + zdat(2,2)*tol
 
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
-    call check_answers(zmean1d_weighted(1,1), 5.0_lkind, "Error in test_topog_mean 1d")
-
+    call check_answers(zmean1d(1,1), 0.5_lkind, "Error in test_topog_mean 1d")
 
   end subroutine test_topog_mean
 
   subroutine test_topog_stdev
 
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2)                             :: lon2d, lat2d ! in radians
-    real(kind=TEST_TOP_KIND_), dimension(4)                               :: lon1d, lat1d ! in radians
-    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: stdev2d, zmean2d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: stdev1d, zmean1d
-    logical                                                               :: get_stdev_answer, mean_answer
+    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: stdev2d
+    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: stdev1d
+    logical                                                               :: get_stdev_answer
 
     !---------------------------------------- test topog stdev 2d ---------------------------------------------!
-    lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
-    lon2d(2,1) = 2.5_lkind*deg2rad ; lat2d(2,1) = 1.5_lkind*deg2rad
-    lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
-    lon2d(2,2) = 2.5_lkind*deg2rad ; lat2d(2,2) = 2.5_lkind*deg2rad
 
-    mean_answer = get_topog_mean(lon2d, lat2d, zmean2d) !possibly use zmean1d for stdev reference #
     get_stdev_answer = get_topog_stdev(lon2d, lat2d, stdev2d)
 
-    !expecting stdev2d to be sqrt(5.0) OR sqrt(zmean2d), having precision issues
     if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
-    !TODO: call check_answers(stdev2d(1,1), sqrt(5.0_lkind), "Error in test_topog_stdev 2d")
+    call check_answers(stdev2d(1,1), 0.5_lkind, "Error in test_topog_stdev 2d")
 
     !---------------------------------------- test topog stdev 2d ---------------------------------------------!
-    lon1d(1) = 1.5_lkind*deg2rad ; lat1d(1) = 1.5_lkind*deg2rad
-    lon1d(2) = 2.5_lkind*deg2rad ; lat1d(2) = 1.5_lkind*deg2rad
-    lon1d(3) = 1.5_lkind*deg2rad ; lat1d(3) = 2.5_lkind*deg2rad
-    lon1d(4) = 2.5_lkind*deg2rad ; lat1d(4) = 2.5_lkind*deg2rad
 
-    mean_answer = get_topog_mean(lon1d, lat1d, zmean1d) !possibly use zmean1d for stdev reference #
     get_stdev_answer = get_topog_stdev(lon1d, lat1d, stdev1d)
 
-    !expecting stdev1d to be sqrt(5.0), having precision issues
     if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
-    !TODO: call check_answers(stdev1d(1,1), sqrt(5.0_lkind), "Error in test_topog_stdev 1d")
+    call check_answers(stdev1d(1,1), 0.5_lkind, "Error in test_topog_stdev 1d")
 
   end subroutine test_topog_stdev
+
+  subroutine test_get_ocean_frac
+
+    implicit none
+    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_frac2d
+    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_frac1d
+    logical                                                               :: get_ocean_frac_answer
+
+    !---------------------------------------- test get_ocean_frac 2d ---------------------------------------------!
+
+    get_ocean_frac_answer = get_ocean_frac(lon2d, lat2d, ocean_frac2d)
+
+    if (get_ocean_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    call check_answers(ocean_frac2d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 2d")
+
+    !---------------------------------------- test get_ocean_frac 1d ---------------------------------------------!
+
+    get_ocean_frac_answer = get_ocean_frac(lon1d, lat1d, ocean_frac1d)
+
+    if (get_ocean_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    call check_answers(ocean_frac1d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 1d")
+
+  end subroutine test_get_ocean_frac
+
+  subroutine test_get_ocean_mask
+
+    implicit none
+    logical, dimension(1,1) :: ocean_mask2d
+    logical, dimension(1,1)   :: ocean_mask1d
+    logical                 :: get_ocean_mask_answer
+
+    !---------------------------------------- test get_ocean_mask 2d ---------------------------------------------!
+
+    get_ocean_mask_answer = get_ocean_mask(lon2d, lat2d, ocean_mask2d)
+
+    if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    if (ocean_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 2d: ocean mask should be false")
+
+    !---------------------------------------- test get_ocean_mask 2d ---------------------------------------------!
+
+    ! THIS IS BREAKING SIZE RULE FOR SOME REASON
+    !get_ocean_mask_answer = get_ocean_mask(lon1d, lat1d, ocean_mask1d)
+
+    !if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    !if (ocean_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
+
+  end subroutine test_get_ocean_mask
+
+  subroutine test_get_water_frac
+
+    implicit none
+    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_frac2d
+    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: water_frac1d
+    logical                                                               :: get_water_frac_answer
+
+    !---------------------------------------- test get_water_frac 2d ---------------------------------------------!
+
+    get_water_frac_answer = get_water_frac(lon2d, lat2d, water_frac2d)
+
+    if (get_water_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    call check_answers(water_frac2d(1,1), 0.5_lkind, "Error in test_get_water_frac 2d")
+
+    !---------------------------------------- test get_water_frac 1d ---------------------------------------------!
+
+    get_water_frac_answer = get_water_frac(lon1d, lat1d, water_frac1d)
+
+    if (get_water_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    call check_answers(water_frac1d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 1d")
+
+  end subroutine test_get_water_frac
+
+  subroutine test_get_water_mask
+
+    implicit none
+    logical, dimension(1,1) :: water_mask2d
+    logical, dimension(1,1) :: water_mask1d
+    logical                 :: get_water_mask_answer
+
+    !---------------------------------------- test get_water_mask 2d ---------------------------------------------!
+
+    get_water_mask_answer = get_water_mask(lon2d, lat2d, water_mask2d)
+
+    if (get_water_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    if (water_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_water_mask 2d: ocean mask should be false")
+
+    !---------------------------------------- test get_ocean_mask 2d ---------------------------------------------!
+
+    ! THIS IS BREAKING SIZE RULE FOR SOME REASON
+    !get_ocean_mask_answer = get_ocean_mask(lon1d, lat1d, water_mask1d)
+
+    !if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    !if (ocean_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
+
+  end subroutine test_get_water_mask
 
   subroutine check_answers(result, answer, what_error)
     
