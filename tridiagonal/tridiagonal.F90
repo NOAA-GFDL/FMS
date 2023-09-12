@@ -76,7 +76,7 @@
 !> @{
 module tridiagonal_mod
 
-    use platform_mod, only: r4_kind, r8_kind 
+    use platform_mod, only: r4_kind, r8_kind
     use mpp_mod,      only: mpp_error, FATAL
     implicit none
 
@@ -90,8 +90,8 @@ module tridiagonal_mod
         real(r8_kind), private, allocatable, dimension(:,:)   :: bb
     end type
 
-    type(tridiag_reals_r4) :: tridiag_r4 
-    type(tridiag_reals_r8) :: tridiag_r8 
+    type(tridiag_reals_r4) :: tridiag_r4
+    type(tridiag_reals_r8) :: tridiag_r8
 
     !! allocated when a,b,c are passed to tri_invert
     logical, private :: init_tridiagonal_r4 = .false.

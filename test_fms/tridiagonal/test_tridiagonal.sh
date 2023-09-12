@@ -27,7 +27,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-rm input.nml && touch input.nml
+rm -f input.nml && touch input.nml
 
 test_expect_success "test tridiagonal functionality 32 bit reals" '
     mpirun -n 1 ./test_tridiagonal_r4
@@ -35,7 +35,7 @@ test_expect_success "test tridiagonal functionality 32 bit reals" '
 test_expect_success "test tridiagonal functionality 64 bit reals" '
     mpirun -n 1 ./test_tridiagonal_r8
 '
-# tries to call without a,b,c args provided or preciously set
+# tries to call without a,b,c args provided or preciously set 
 cat <<_EOF > input.nml
 &test_tridiagonal_nml
 do_error_check = .true.
