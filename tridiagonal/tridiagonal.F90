@@ -90,12 +90,11 @@ module tridiagonal_mod
         real(r8_kind), private, allocatable, dimension(:,:)   :: bb
     end type
 
-    type(tridiag_reals_r4) :: tridiag_r4
-    type(tridiag_reals_r8) :: tridiag_r8
+    type(tridiag_reals_r4) :: tridiag_r4 !< holds reals stored from r4_kind calls to tri_invert
+    type(tridiag_reals_r8) :: tridiag_r8 !< holds reals stored from r8_kind calls to tri_invert
 
-    !! allocated when a,b,c are passed to tri_invert
-    logical, private :: init_tridiagonal_r4 = .false.
-    logical, private :: init_tridiagonal_r8 = .false.
+    logical, private :: init_tridiagonal_r4 = .false. !< true when fields in tridiag_r4 are allocated
+    logical, private :: init_tridiagonal_r8 = .false. !< true when fields in tridiag_r8 are allocated
 
     !> Interface to solve tridiagonal systems of equations for either kind value.
     !! Since this relies on the state of module variables (unless A,B,C are specified)

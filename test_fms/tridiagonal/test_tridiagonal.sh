@@ -22,7 +22,7 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/time_manager directory.
 
-# Ed Hartnett 11/29/19
+# Ryan Mulhall 9/2023
 
 # Set common test settings.
 . ../test-lib.sh
@@ -35,17 +35,17 @@ test_expect_success "test tridiagonal functionality 32 bit reals" '
 test_expect_success "test tridiagonal functionality 64 bit reals" '
     mpirun -n 1 ./test_tridiagonal_r8
 '
-# tries to call without a,b,c args provided or preciously set 
+# tries to call without a,b,c args provided or previously set
 cat <<_EOF > input.nml
 &test_tridiagonal_nml
 do_error_check = .true.
 /
 _EOF
-test_expect_failure "test error out on incorrect kind input" '
-    mpirun -n 1 ./test_tridiagonal_r8
-'
-test_expect_failure "test error out on incorrect kind input" '
+test_expect_failure "error out if passed in incorrect real size (r4_kind)" '
     mpirun -n 1 ./test_tridiagonal_r4
+'
+test_expect_failure "error out if passed in incorrect real size (r8_kind)" '
+    mpirun -n 1 ./test_tridiagonal_r8
 '
 
 test_done

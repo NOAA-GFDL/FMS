@@ -35,7 +35,7 @@ subroutine TRI_INVERT_(x,d,a,b,c, store_both_kinds)
 
     real(FMS_TRID_KIND_), intent(out), dimension(:,:,:) :: x !< Solution to the tridiagonal system of equations
     real(FMS_TRID_KIND_), intent(in),  dimension(:,:,:) :: d !< The right-hand side term, see the schematic above.
-    real(FMS_TRID_KIND_), optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schematic above).
+    real(FMS_TRID_KIND_), optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schematic on module page).
                                                 !! If not provided, values from last call are used
     logical, optional                                   :: store_both_kinds !< Will save module state
                                                          !! variables for both kind types in order to be used in
