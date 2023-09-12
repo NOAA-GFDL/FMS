@@ -42,6 +42,7 @@ subroutine TRI_INVERT_(x,d,a,b,c, store_both_kinds)
                                                          !! subsequent calls with either kind.
 
     real(FMS_TRID_KIND_), dimension(size(x,1),size(x,2),size(x,3)) :: f
+    integer, parameter :: kindl = FMS_TRID_KIND_
 
     integer :: k
 
@@ -59,14 +60,14 @@ subroutine TRI_INVERT_(x,d,a,b,c, store_both_kinds)
         !$OMP END SINGLE
 
         TRID_REAL_TYPE%e(:,:,1) = - a(:,:,1) / b(:,:,1)
-        a(:,:,size(x,3)) = real(0.0, FMS_TRID_KIND_)
+        a(:,:,size(x,3)) = 0.0_kindl
 
         do  k= 2,size(x,3)
-            TRID_REAL_TYPE%g(:,:,k) = real(1.0, FMS_TRID_KIND_)/(b(:,:,k)+c(:,:,k)*TRID_REAL_TYPE%e(:,:,k-1))
+            TRID_REAL_TYPE%g(:,:,k) = 1.0_kindl/(b(:,:,k)+c(:,:,k)*TRID_REAL_TYPE%e(:,:,k-1))
             TRID_REAL_TYPE%e(:,:,k) = - a(:,:,k)* TRID_REAL_TYPE%g(:,:,k)
         end do
         TRID_REAL_TYPE%cc = c
-        TRID_REAL_TYPE%bb = 1.0/b(:,:,1)
+        TRID_REAL_TYPE%bb = 1.0_kindl/b(:,:,1)
 
     end if
 
