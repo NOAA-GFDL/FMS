@@ -31,22 +31,143 @@ program test_tridiagonal
 
     implicit none
 
-    integer, parameter :: IN_LEN = 16 !< length of input arrays
-    integer, parameter :: TEST_KIND = TEST_TRIDIAG_KIND !< kind value for all reals in this test
+    integer, parameter :: IN_LEN = 8 !< length of input arrays
+    integer, parameter :: kindl = TEST_TRIDIAG_KIND !< kind value for all reals in this test
                                                 !! set by TEST_TRIDIAG_KIND cpp macro
+    real(TEST_TRIDIAG_KIND), allocatable :: d(:,:,:), x(:,:,:), ref_array(:,:,:)
+    real(TEST_TRIDIAG_KIND), allocatable :: a(:,:,:), b(:,:,:), c(:,:,:)
+    real(r4_kind), allocatable :: d_r4(:,:,:), x_r4(:,:,:)
+    real(r4_kind), allocatable :: a_r4(:,:,:), b_r4(:,:,:), c_r4(:,:,:)
+    real(r8_kind), allocatable :: d_r8(:,:,:), x_r8(:,:,:)
+    real(r8_kind), allocatable :: a_r8(:,:,:), b_r8(:,:,:), c_r8(:,:,:)
+    integer :: i, end, ierr, io
+    real(TEST_TRIDIAG_KIND) :: k
+    ! nml
+    logical :: do_error_check = .false.
+    namelist / test_tridiagonal_nml/ do_error_check
 
     call mpp_init
-    call test_tri_invert
+
+    read (input_nml_file, test_tridiagonal_nml, iostat=io)
+    ierr = check_nml_error (io, 'test_tridiagonal_nml')
+
+    ! allocate input and output arrays
+    allocate(d(1,1,IN_LEN))
+    allocate(a(1,1,IN_LEN))
+    allocate(b(1,1,IN_LEN))
+    allocate(c(1,1,IN_LEN))
+    allocate(x(1,1,IN_LEN))
+
+    !! simple test with only 1 coeff
+    a = 0.0_kindl
+    b = 1.0_kindl
+    c = 0.0_kindl
+    d = 5.0_kindl
+    call tri_invert(x, d, a, b, c)
+    if(any(x .ne. 5.0_kindl)) call mpp_error(FATAL, "test_tridiagonal: invalid results for 1 coefficient check")
+    !! check with stored data arrays
+    d = -5.0_kindl
+    call tri_invert(x, d)
+    if(any(x .ne. -5.0_kindl)) call mpp_error(FATAL, "test_tridiagonal: invalid results for 1 coefficient check")
+
+    ! test with a,b,c
+    ! 0.5x(n-2) + x(n-1) + 0.5x(n) = 1
+    !
+    ! x(n) = k * [4, 1, 3, 2, 2, 3, 1, 4]
+    !        k * [8 , 1, 7, 2, 6, .. ] = k *(-n/2 + ((n%2)*arr_length/2))
+    a = 0.5_kindl
+    b = 1.0_kindl
+    c = 0.5_kindl
+    d = 1.0_kindl
+    call tri_invert(x, d, a, b, c)
+    ! set up reference answers
+    k = 1.0/(IN_LEN+1.0) * 2.0
+    allocate(ref_array(1,1,IN_LEN))
+    do i=1, IN_LEN/2
+      end=IN_LEN-i+1
+      if(mod(i, 2) .eq. 1) then
+        ref_array(1,1,i) = -(i/2) + (mod(i,2)* IN_LEN/2)
+        ref_array(1,1,end) = -(i/2) + (mod(i,2)* IN_LEN/2)
+      else
+        ref_array(1,1,i) = i/2
+        ref_array(1,1,end) = i/2
+      endif
+    enddo
+    ref_array = ref_array * k
+    ! check
+    do i=1, IN_LEN
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+        print *, i, x(1,1,i), ref_array(1,1,i)
+        call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert")
+      endif
+    enddo
+    !! check with stored data arrays
+    d = -1.0_kindl
+    ref_array = ref_array * -1.0_kindl
+    call tri_invert(x, d)
+    do i=1, IN_LEN
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+        print *, i, x(1,1,i), ref_array(1,1,i)
+        call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert with saved values")
+      endif
+    enddo
+    call close_tridiagonal()
+
+    !! tests for module state across kinds
+    !! default keeps stored values separate depending on kind
+    !! store_both_kinds argument can be specified to store both r4 and r8 kinds
+    if(kindl .eq. r8_kind) then
+      allocate(a_r4(1,1,IN_LEN), b_r4(1,1,IN_LEN), c_r4(1,1,IN_LEN))
+      allocate(d_r4(1,1,IN_LEN), x_r4(1,1,IN_LEN))
+      a_r4 = 0.0_r4_kind; b_r4 = 1.0_r4_kind; c_r4 = 0.0_r4_kind
+      d_r4 = 5.0_r4_kind; x_r4 = 0.0_r4_kind
+      a = 0.0_kindl; b = 2.0_kindl; c = 0.0_kindl
+      d = 5.0_kindl
+      ! default, module variables distinct per kind
+      call tri_invert(x_r4, d_r4, a_r4, b_r4, c_r4)
+      ! conditionally errors here for calling with unallocated a/b/c for kind
+      if( do_error_check ) call tri_invert(x, d)
+      call tri_invert(x, d, a, b, c)
+      ! check both values are correct from prior state
+      call tri_invert(x_r4, d_r4)
+      call tri_invert(x, d)
+      if(any(x_r4 .ne. 5.0_r4_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r4 kind result")
+      if(any(x .ne. 2.5_r8_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r8 kind result")
+      call close_tridiagonal()
+      ! run with storing for both kinds
+      call tri_invert(x_r4, d_r4, a_r4, b_r4, c_r4, store_both_kinds=.true.)
+      call tri_invert(x_r4, d_r4)
+      call tri_invert(x, d)
+      if(any(x_r4 .ne. 5.0_r4_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r4 kind result")
+      if(any(x .ne. 5.0_r8_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r8 kind result")
+    else
+      allocate(a_r8(1,1,IN_LEN), b_r8(1,1,IN_LEN), c_r8(1,1,IN_LEN))
+      allocate(d_r8(1,1,IN_LEN), x_r8(1,1,IN_LEN))
+      a_r8 = 0.0_r8_kind; b_r8 = 1.0_r8_kind; c_r8 = 0.0_r8_kind
+      d_r8 = 5.0_r8_kind; x_r8 = 0.0_r8_kind
+      a = 0.0_kindl; b = 2.0_kindl; c = 0.0_kindl
+      d = 5.0_kindl
+      ! default, module variables distinct per kind
+      call tri_invert(x_r8, d_r8, a_r8, b_r8, c_r8)
+      ! conditionally errors here for calling with unallocated a/b/c for kind
+      if( do_error_check ) call tri_invert(x, d)
+      call tri_invert(x, d, a, b, c)
+      ! check both values are correct from prior state
+      call tri_invert(x_r8, d_r8)
+      call tri_invert(x, d)
+      if(any(x_r8 .ne. 5.0_r8_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r8 kind result")
+      if(any(x .ne. 2.5_r8_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r8 kind result")
+      call close_tridiagonal()
+      ! run with storing for both kinds
+      call tri_invert(x_r8, d_r8, a_r8, b_r8, c_r8, store_both_kinds=.true.)
+      call tri_invert(x_r8, d_r8)
+      call tri_invert(x, d)
+      if(any(x_r8 .ne. 5.0_r8_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r8 kind result")
+      if(any(x .ne. 5.0_r8_kind)) call mpp_error(FATAL, "test_tridiagonal: invalid r8 kind result")
+    endif
+
+    call close_tridiagonal()
+
     call mpp_exit
-
-    contains
-
-    !> tests init and subsequent calls to tri_invert routine
-    subroutine test_tri_invert
-        real(TEST_TRIDIAG_KIND), allocatable :: a(:,:,:), b(:,:,:), c(:,:)
-        allocate(a(4,4,4))
-        print *, 'kind size:', KIND(a(1,1,1))
-        print *, ''
-    end subroutine
 
 end program

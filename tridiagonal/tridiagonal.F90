@@ -80,18 +80,27 @@ module tridiagonal_mod
     use mpp_mod,      only: mpp_error, FATAL
     implicit none
 
-    type :: tridiag_reals(k)
-        integer, kind :: k
-        real(k), private, allocatable, dimension(:,:,:) :: e, g, cc
-        real(k), private, allocatable, dimension(:,:)   :: bb
+    type :: tridiag_reals_r4
+        real(r4_kind), private, allocatable, dimension(:,:,:) :: e, g, cc
+        real(r4_kind), private, allocatable, dimension(:,:)   :: bb
     end type
 
-    type(tridiag_reals(4)), allocatable :: tridiag_r4 
-    type(tridiag_reals(8)), allocatable :: tridiag_r8 
+    type :: tridiag_reals_r8
+        real(r8_kind), private, allocatable, dimension(:,:,:) :: e, g, cc
+        real(r8_kind), private, allocatable, dimension(:,:)   :: bb
+    end type
+
+    type(tridiag_reals_r4) :: tridiag_r4 
+    type(tridiag_reals_r8) :: tridiag_r8 
 
     !! allocated when a,b,c are passed to tri_invert
-    logical, private :: init_tridiagonal = .false.
+    logical, private :: init_tridiagonal_r4 = .false.
+    logical, private :: init_tridiagonal_r8 = .false.
 
+    !> Interface to solve tridiagonal systems of equations for either kind value.
+    !! Since this relies on the state of module variables (unless A,B,C are specified)
+    !! the values stored are distinct for each kind call unless the added optional argument store_both_kinds
+    !! is true
     interface tri_invert
         module procedure tri_invert_r4
         module procedure tri_invert_r8
@@ -104,7 +113,7 @@ module tridiagonal_mod
     !> @brief Releases memory used by the solver
     subroutine close_tridiagonal
         !$OMP SINGLE
-        if(.not. init_tridiagonal) return
+        if(.not. init_tridiagonal_r4 .and. .not. init_tridiagonal_r8) return
         if(allocated(tridiag_r4%e)) deallocate(tridiag_r4%e)
         if(allocated(tridiag_r4%g)) deallocate(tridiag_r4%g)
         if(allocated(tridiag_r4%cc)) deallocate(tridiag_r4%cc)
@@ -113,8 +122,7 @@ module tridiagonal_mod
         if(allocated(tridiag_r8%g)) deallocate(tridiag_r8%g)
         if(allocated(tridiag_r8%cc)) deallocate(tridiag_r8%cc)
         if(allocated(tridiag_r8%bb)) deallocate(tridiag_r8%bb)
-        if(allocated(tridiag_r4)) deallocate(tridiag_r4)
-        if(allocated(tridiag_r8)) deallocate(tridiag_r8)
+        init_tridiagonal_r4 = .false.; init_tridiagonal_r8 = .false.
         !$OMP END SINGLE
         return
     end subroutine close_tridiagonal

@@ -26,4 +26,7 @@
 #undef TRI_INVERT_
 #define TRI_INVERT_ tri_invert_r8
 
+#undef INIT_VAR
+#define INIT_VAR init_tridiagonal_r8
+
 #include "tridiagonal.inc"

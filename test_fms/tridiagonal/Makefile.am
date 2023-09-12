@@ -20,7 +20,7 @@
 # This is an automake file for the test_fms/tridiagonal directory of the FMS
 # package.
 
-# Ryan Mulhall 
+# Ryan Mulhall
 
 # Find the .mod directory
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
@@ -29,18 +29,14 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_tridiagonal4 test_tridiagonal8
+check_PROGRAMS = test_tridiagonal_r4 test_tridiagonal_r8
 
 # compiles test file with both kind sizes via macro
-test_tridiagonal4.o:
-	$(FC) $(AM_FCFLAGS) $(AM_CPPFLAGS) -DTEST_TRIDIAG_KIND=4 \
-	    	-c $(top_srcdir)/test_fms/tridiagonal/test_tridiagonal.F90 \
-			-o $@ $(AM_LDFLAGS) 
+test_tridiagonal_r4_SOURCES=test_tridiagonal.F90
+test_tridiagonal_r8_SOURCES=test_tridiagonal.F90
 
-test_tridiagonal8.o:
-	$(FC) $(AM_FCFLAGS) $(AM_CPPFLAGS) -DTEST_TRIDIAG_KIND=8 \
-	    	-c $(top_srcdir)/test_fms/tridiagonal/test_tridiagonal.F90 \
-			-o $@ $(AM_LDFLAGS) 
+test_tridiagonal_r4_CPPFLAGS=-DTRID_REAL_TYPE=tridiag_r4 -DTEST_TRIDIAG_REAL=r4_kind -I$(MODDIR)
+test_tridiagonal_r8_CPPFLAGS=-DTRID_REAL_TYPE=tridiag_r8 -DTEST_TRIDIAG_REAL=r8_kind -I$(MODDIR)
 
 # Run the test program.
 TESTS = test_tridiagonal.sh
