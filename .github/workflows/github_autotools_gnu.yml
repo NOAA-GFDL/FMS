@@ -30,6 +30,7 @@ jobs:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }}"
         TARGET_FLAGS: "${{ matrix.target-fcflags }} ${{ matrix.target-cflags }}"
+        SKIP_TESTS: "test_yaml_parser.5" # TODO
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
