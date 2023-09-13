@@ -267,6 +267,12 @@ call coupler_type_redistribute_data(bc_3d_new, Domain, bc_3d_cp, domain_out, com
 call coupler_type_destructor(bc_1d_new)
 call coupler_type_destructor(bc_2d_new)
 call coupler_type_destructor(bc_3d_new)
+! check deallocation
+! both should be deallocated regardless of kind
+if( associated(bc_1d_new%bc) .or. associated(bc_2d_new%bc) .or. associated(bc_3d_new%bc)) &
+  call mpp_error(FATAL, "test_coupler_types: bc type still associated after destructor called")
+if( associated(bc_1d_new%bc_r4) .or. associated(bc_2d_new%bc_r4) .or. associated(bc_3d_new%bc_r4)) &
+  call mpp_error(FATAL, "test_coupler_types: bc_r4 type still associated after destructor called")
 
 call fms_end
 
