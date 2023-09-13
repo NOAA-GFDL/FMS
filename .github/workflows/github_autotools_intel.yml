@@ -18,7 +18,7 @@ jobs:
         path: /libs
         key: ${{ runner.os }}-intel-libs${{ matrix.io-flag }}
     - name: Install packages for building
-      run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
+      run: apt-get update && apt-get install -y autoconf libtool automake
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
