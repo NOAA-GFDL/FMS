@@ -28,7 +28,7 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
 mosaic interpolator fms mpp mpp_io time_interp time_manager horiz_interp topography \
 field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral
+random_numbers diag_integral column_diagnostics
 
 
 # testing utility scripts to distribute

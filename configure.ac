@@ -296,6 +296,13 @@ else
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
 fi
 
+# disable mosaic unit tests if FMS is compiled in r4
+if test $enable_mixed_mode = yes ; then
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
+else
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
+fi
+
 # Set any required compile flags.  This will not be done if the user wants to
 # define all their own flags.
 if test $enable_setting_flags = yes; then
@@ -501,6 +508,7 @@ AC_CONFIG_FILES([
   test_fms/tracer_manager/Makefile
   test_fms/random_numbers/Makefile
   test_fms/topography/Makefile
+  test_fms/column_diagnostics/Makefile
 
   FMS.pc
   ])
