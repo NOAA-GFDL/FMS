@@ -126,6 +126,7 @@ type fmsDiagField_type
      procedure :: has_volume
      procedure :: has_missing_value
      procedure :: has_data_RANGE
+     procedure :: has_input_data_buffer
 ! Get functions
      procedure :: get_attributes
      procedure :: get_static
@@ -1418,6 +1419,14 @@ pure logical function has_data_RANGE (this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
   has_data_RANGE = allocated(this%data_RANGE)
 end function has_data_RANGE
+
+!> @brief Checks if obj%input_data_buffer is allocated
+!! @return true if obj%input_data_buffer is allocated
+pure logical function has_input_data_buffer (this)
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+  has_input_data_buffer = allocated(this%input_data_buffer)
+end function has_input_data_buffer
+
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine diag_field_add_attribute(this, att_name, att_value)
   class (fmsDiagField_type), intent (inout) :: this !< The field object
