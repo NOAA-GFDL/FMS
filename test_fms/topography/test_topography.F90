@@ -18,9 +18,12 @@
 !***********************************************************************
 !> @file
 !> @author Caitlyn McAllister
-!> @brief Unit test for astronomy/test_topography
+!> @brief Unit tests for topography_mod
 !> @email gfdl.climate.model.info@noaa.gov
-!> @description FILL THIS OUT
+!> @description This suit includes testing for all public functions available
+!! in the topography module
+!! TODO: More intricate data with larger arrays for lat, lon, and 'zdat' should
+!!  be added and included
 
 program test_top
 
@@ -37,7 +40,7 @@ program test_top
                                 horiz_interp, horiz_interp_del
   use constants_mod,      only: pi
   use platform_mod,       only: r4_kind, r8_kind
-  
+
   implicit none
 
   type(FmsNetcdfFile_t)     :: top_fileobj                 ! fileobj for fms2_io
@@ -55,7 +58,10 @@ program test_top
   call fms_init
   call topography_init
 
+  !-------------------------------------------------------------------------------------------------------------!
+
   ! define blat and blon, in this test they'll be referred to as lat2d/lon2d, lat1d/lon1d
+  ! these ordered pair for lon and lat create a perfect square for calculation purposes
   lon2d(1,1) = 1.5_lkind*deg2rad ; lat2d(1,1) = 1.5_lkind*deg2rad
   lon2d(2,1) = 2.5_lkind*deg2rad ; lat2d(2,1) = 1.5_lkind*deg2rad
   lon2d(1,2) = 1.5_lkind*deg2rad ; lat2d(1,2) = 2.5_lkind*deg2rad
@@ -71,7 +77,7 @@ program test_top
   water_file = "water.data.nc"
 
   ! create data for both topog and water files
-  ipts_r = 1 ; ipts = 2  ; iptsp1 = 3
+  ipts_r = 1 ; ipts = 2  ; iptsp1 = 3   ! axes an sub-axes sizes
   jpts_r = 1 ; jpts = 2  ; jptsp1 = 3
 
 
@@ -80,8 +86,7 @@ program test_top
 
   zdat(1,1) = 0.0_lkind ; zdat(1,2) = 1.0_lkind
   zdat(2,1) = 1.0_lkind ; zdat(2,2) = 0.0_lkind   !size of (ipts, jpts)
-
-
+  !-------------------------------------------------------------------------------------------------------------!
 
   ! write topog file
   if (open_file(top_fileobj, topog_file, "overwrite")) then
@@ -109,6 +114,7 @@ program test_top
   else
     call mpp_error(FATAL, "test_topography: error opening topog_file")
   end if
+  !-------------------------------------------------------------------------------------------------------------!
 
   ! write water file
   if (open_file(top_fileobj, water_file, "overwrite")) then
@@ -136,19 +142,17 @@ program test_top
   else
     call mpp_error(FATAL, "test_topography: error opening water_file")
   end if
+  !-------------------------------------------------------------------------------------------------------------!
 
-  call test_topog_mean
-  call test_topog_stdev
-  call test_get_ocean_frac
-  call test_get_ocean_mask
-  call test_get_water_frac
-  call test_get_water_mask
+  call test_topog_mean     ; call test_topog_stdev
+  call test_get_ocean_frac ; call test_get_ocean_mask
+  call test_get_water_frac ;call test_get_water_mask
 
   call fms_end
 
   contains
 
-  subroutine test_topog_mean() 
+  subroutine test_topog_mean()
 
     implicit none
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d
@@ -288,7 +292,7 @@ program test_top
   end subroutine test_get_water_mask
 
   subroutine check_answers(result, answer, what_error)
-    
+
     implicit none
     real(kind=TEST_TOP_KIND_) :: result       ! value calculated from script
     real(kind=TEST_TOP_KIND_) :: answer       ! expected answer
