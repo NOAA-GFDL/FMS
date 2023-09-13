@@ -228,6 +228,16 @@ program test_reduction_methods
           mask=dlmask(:,:,:,1))
       end select
     case (test_openmp)
+      select case(mask_case)
+      case (no_mask)
+        used=send_data(id_var1, cdata(:, 1, 1, 1), time)
+      case (logical_mask)
+        used=send_data(id_var1, cdata(:, 1, 1, 1), time, &
+            mask=clmask(:, 1, 1, 1))
+      case (real_mask)
+        used=send_data(id_var1, cdata(:, 1, 1, 1), time, &
+            rmask=crmask(:, 1, 1, 1))
+      end select
 !$OMP parallel do default(shared) private(iblock, isw, iew, jsw, jew, is1, ie1, js1, je1)
       do iblock=1, 4
         isw = my_block%ibs(iblock)
@@ -243,19 +253,14 @@ program test_reduction_methods
 
         select case (mask_case)
         case (no_mask)
-          used=send_data(id_var1, cdata(is1:ie1, 1, 1, 1), time, is_in=is1, ie_in=ie1)
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
         case (real_mask)
-          used=send_data(id_var1, cdata(is1:ie1, 1, 1, 1), time, is_in=is1, ie_in=ie1, &
-            rmask=crmask(is1:ie1, 1, 1, 1))
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, :, 1))
         case (logical_mask)
-          used=send_data(id_var1, cdata(is1:ie1, 1, 1, 1), time, is_in=is1, ie_in=ie1, &
-            mask=clmask(is1:ie1, 1, 1, 1))
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
@@ -263,7 +268,6 @@ program test_reduction_methods
         end select
       enddo
     end select
-
     call diag_send_complete(Time_step)
   enddo
 

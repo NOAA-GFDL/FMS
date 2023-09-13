@@ -140,6 +140,7 @@ list(APPEND fms_fortran_src_files
   diag_manager/fms_diag_object_container.F90
   diag_manager/fms_diag_buffer.F90
   diag_manager/fms_diag_output_buffer.F90
+  diag_manager/fms_diag_input_buffer.F90
   diag_manager/fms_diag_time_reduction.F90
   diag_manager/fms_diag_outfield.F90
   diag_manager/fms_diag_elem_weight_procs.F90
