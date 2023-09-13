@@ -8,7 +8,7 @@ jobs:
         CC: mpiicc
         FC: mpiifort
         CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback"
+        FCFLAGS: "-I/libs/include"
         LDFLAGS: "-L/libs/lib"
     steps:
     - name: Cache dependencies
@@ -46,7 +46,7 @@ jobs:
       matrix:
         FC: ["ifx", "ifort"]
         CC: ["icx", "icc"]
-        target-fcflags: [ "-O3 -debug minimal -fp-model source", "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv" ] # prod, debug
+        target-fcflags: [ "-O3 -debug minimal -fp-model source", "-g -O0 -check -check noarg_temp_created -check nopointer -warn noerrors -fpe0 -ftrapuv" ] # prod, debug
         target-cflags: [ "-O2 -debug minimal", "-O0 -g" ] # prod, debug (-ftrapuv was removed since its incompatible with icx)
         io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
         exclude:
@@ -54,7 +54,7 @@ jobs:
             CC: "icc"
           - target-fcflags: "-O3 -debug minimal -fp-model source"
             target-cflags: "-O0 -g -ftrapuv"
-          - target-fcflags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv"
+          - target-fcflags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn noerrors -fpe0 -ftrapuv"
             target-cflags: "-O2 -debug minimal"
           - FC: "ifx" # bug with ifx will cause ICE if using -check flag (issue #1348)
             target-fcflags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn noerrors -fpe0 -ftrapuv"
