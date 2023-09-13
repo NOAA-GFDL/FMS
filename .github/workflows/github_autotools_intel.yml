@@ -3,7 +3,7 @@ jobs:
   build-dependencies:
     runs-on: ubuntu-latest
     container:
-      image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
+      image: intel/oneapi:2023.1.0-devel-ubuntu22.04
       env:
         CC: mpiicc
         FC: mpiifort
@@ -47,7 +47,7 @@ jobs:
         FC: ["ifx", "ifort"]
         CC: ["icx", "icc"]
         target-fcflags: [ "-O3 -debug minimal -fp-model source", "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv" ] # prod, debug
-        target-cflags: [ "-O2 -debug minimal", "-O0 -g -ftrapuv" ] # prod, debug
+        target-cflags: [ "-O2 -debug minimal", "-O0 -g" ] # prod, debug (-ftrapuv was removed since its incompatible with icx)
         io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
         exclude:
           - FC: "ifx"
