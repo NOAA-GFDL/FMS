@@ -321,6 +321,7 @@ foreach(kind ${kinds})
                                                  field_manager/include
                                                  time_interp/include
                                                  tracer_manager/include
+                                                 tridiagonal/include
                                                  interpolator/include
                                                  coupler/include
                                                  data_override/include)
