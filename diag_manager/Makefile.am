@@ -47,6 +47,7 @@ libdiag_manager_la_SOURCES = \
   fms_diag_object_container.F90 \
   fms_diag_dlinked_list.F90 \
   fms_diag_output_buffer.F90 \
+  fms_diag_input_buffer.F90 \
   fms_diag_time_reduction.F90 \
   fms_diag_outfield.F90 \
   fms_diag_elem_weight_procs.F90 \
@@ -72,9 +73,11 @@ fms_diag_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_file_objec
                                   fms_diag_time_utils_mod.$(FC_MODEXT) \
                                   fms_diag_output_buffer_mod.$(FC_MODEXT) \
                                   fms_diag_reduction_methods_mod.$(FC_MODEXT) \
-                                  fms_diag_bbox_mod.$(FC_MODEXT)
+                                  fms_diag_bbox_mod.$(FC_MODEXT) \
+                                  fms_diag_input_buffer_mod.$(FC_MODEXT)
+fms_diag_input_buffer_mod.$(FC_MODEXT): fms_diag_axis_object_mod.$(FC_MODEXT)
 fms_diag_field_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) \
-                                        fms_diag_axis_object_mod.$(FC_MODEXT)
+                                        fms_diag_axis_object_mod.$(FC_MODEXT) fms_diag_input_buffer_mod.$(FC_MODEXT)
 fms_diag_file_object_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_yaml_mod.$(FC_MODEXT) fms_diag_field_object_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) \
                                        fms_diag_axis_object_mod.$(FC_MODEXT) fms_diag_output_buffer_mod.$(FC_MODEXT)
 fms_diag_object_container_mod.$(FC_MODEXT): fms_diag_object_mod.$(FC_MODEXT) fms_diag_dlinked_list_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT)
@@ -115,6 +118,7 @@ MODFILES = \
   fms_diag_dlinked_list_mod.$(FC_MODEXT) \
   fms_diag_object_container_mod.$(FC_MODEXT) \
   fms_diag_output_buffer_mod.$(FC_MODEXT) \
+  fms_diag_input_buffer_mod.$(FC_MODEXT) \
   diag_manager_mod.$(FC_MODEXT) \
   fms_diag_time_reduction_mod.$(FC_MODEXT) \
   fms_diag_outfield_mod.$(FC_MODEXT) \
