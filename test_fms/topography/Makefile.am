@@ -31,8 +31,8 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 # Build this test program.
 check_PROGRAMS = \
   test_topography_r4 \
-  test_topography_r8 
-  
+  test_topography_r8
+
 # This is the source code for the test.
 test_topography_r4_SOURCES = test_topography.F90
 test_topography_r8_SOURCES = test_topography.F90
