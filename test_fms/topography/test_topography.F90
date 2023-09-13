@@ -220,24 +220,24 @@ program test_top
   subroutine test_get_ocean_mask
 
     implicit none
-    logical, dimension(1,1) :: ocean_mask2d
-    logical, dimension(1,1)   :: ocean_mask1d
-    logical                 :: get_ocean_mask_answer
+    logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_mask2d
+    logical, dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_mask1d
+    logical                                             :: get_ocean_mask_answer
 
     !---------------------------------------- test get_ocean_mask 2d ---------------------------------------------!
 
     get_ocean_mask_answer = get_ocean_mask(lon2d, lat2d, ocean_mask2d)
 
+
     if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (ocean_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 2d: ocean mask should be false")
 
-    !---------------------------------------- test get_ocean_mask 2d ---------------------------------------------!
+    !---------------------------------------- test get_ocean_mask 1d ---------------------------------------------!
 
-    ! THIS IS BREAKING SIZE RULE FOR SOME REASON
-    !get_ocean_mask_answer = get_ocean_mask(lon1d, lat1d, ocean_mask1d)
+    get_ocean_mask_answer = get_ocean_mask(lon1d, lat1d, ocean_mask1d)
 
-    !if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
-    !if (ocean_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
+    if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    if (ocean_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
 
   end subroutine test_get_ocean_mask
 
@@ -267,9 +267,9 @@ program test_top
   subroutine test_get_water_mask
 
     implicit none
-    logical, dimension(1,1) :: water_mask2d
-    logical, dimension(1,1) :: water_mask1d
-    logical                 :: get_water_mask_answer
+    logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_mask2d
+    logical, dimension(size(lon1d)-1,size(lat1d)-1)     :: water_mask1d
+    logical                                             :: get_water_mask_answer
 
     !---------------------------------------- test get_water_mask 2d ---------------------------------------------!
 
@@ -278,13 +278,12 @@ program test_top
     if (get_water_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (water_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_water_mask 2d: ocean mask should be false")
 
-    !---------------------------------------- test get_ocean_mask 2d ---------------------------------------------!
+    !---------------------------------------- test get_water_mask 1d ---------------------------------------------!
 
-    ! THIS IS BREAKING SIZE RULE FOR SOME REASON
-    !get_ocean_mask_answer = get_ocean_mask(lon1d, lat1d, water_mask1d)
+    get_water_mask_answer = get_ocean_mask(lon1d, lat1d, water_mask1d)
 
-    !if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
-    !if (ocean_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
+    if (get_water_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
+    if (water_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
 
   end subroutine test_get_water_mask
 
