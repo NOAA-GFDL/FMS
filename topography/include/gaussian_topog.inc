@@ -32,39 +32,12 @@
 
 !#######################################################################
 
-
-!> The height, position, width, and elongation of the mountain
-!! is controlled by optional arguments.
-!! @param real lon The mean grid box longitude in radians.
-!! @param real lat The mean grid box latitude in radians.
-!! @param real height Maximum surface height in meters.
-!! @param real olond, olatd Position/origin of mountain in degrees longitude and latitude.
-!! This is the location of the maximum height.
-!! @param real wlond, wlatd Gaussian half-width of mountain in degrees longitude and latitude.
-!! @param real rlond, rlatd Ridge half-width of mountain in degrees longitude and latitude.
-!! This is the elongation of the maximum height.
-!! @param real zsurf The surface height (in meters).
-!! The size of the returned field is size(lon) by size(lat).
-!!   </OUT>
+!> @brief Returns a simple surface height field that consists of a single
+!! Gaussian-shaped mountain.
 !!
-!! @throws FATAL shape(zsurf) is not equal to (/size(lon),size(lat)/)
-!!     Check the input grid size and output field size.
-!!     The input grid is defined at the midpoint of grid boxes.
-!!
-!! @note
-!!     Mountains do not wrap around the poles.
-!
-!! <br>Example usage:
-!! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
-!!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
-
 !> Returns a surface height field that consists
 !! of the sum of one or more Gaussian-shaped mountains.
 !!
-!> Returns a land surface topography that consists of a "set" of
-!! simple Gaussian-shaped mountains.  The height, position,
-!! width, and elongation of the mountains can be controlled
-!! by variables in the namelist.
 subroutine GAUSSIAN_TOPOG_INIT_ ( lon, lat, zsurf )
 
 real(kind=FMS_TOP_KIND_), intent(in)  :: lon(:) !< The mean grid box longitude in radians
@@ -97,9 +70,36 @@ integer, parameter :: lkind=FMS_TOP_KIND_ !local FMS_TOP_KIND_ kind
 
 end subroutine GAUSSIAN_TOPOG_INIT_
 !#######################################################################
-!> @brief Returns a simple surface height field that consists of a single
-!! Gaussian-shaped mountain.
+
+!> The height, position, width, and elongation of the mountain
+!! is controlled by optional arguments.
+!! @param real lon The mean grid box longitude in radians.
+!! @param real lat The mean grid box latitude in radians.
+!! @param real height Maximum surface height in meters.
+!! @param real olond, olatd Position/origin of mountain in degrees longitude and latitude.
+!! This is the location of the maximum height.
+!! @param real wlond, wlatd Gaussian half-width of mountain in degrees longitude and latitude.
+!! @param real rlond, rlatd Ridge half-width of mountain in degrees longitude and latitude.
+!! This is the elongation of the maximum height.
+!! @param real zsurf The surface height (in meters).
+!! The size of the returned field is size(lon) by size(lat).
+!!   </OUT>
 !!
+!! @throws FATAL shape(zsurf) is not equal to (/size(lon),size(lat)/)
+!!     Check the input grid size and output field size.
+!!     The input grid is defined at the midpoint of grid boxes.
+!!
+!! @note
+!!     Mountains do not wrap around the poles.
+!
+!! <br>Example usage:
+!! @code{.F90} zsurf = <B>get_gaussian_topog</B> ( lon, lat, height
+!!                    [, olond, olatd, wlond, wlatd, rlond, rlatd ] )@endcode
+!> Returns a land surface topography that consists of a "set" of
+!! simple Gaussian-shaped mountains.  The height, position,
+!! width, and elongation of the mountains can be controlled
+!! by variables in the namelist.
+
 function GET_GAUSSIAN_TOPOG_(lon, lat, height,                         &
                             olond, olatd, wlond, wlatd, rlond, rlatd ) &
                      result (zsurf )
@@ -126,10 +126,10 @@ integer, parameter     :: lkind = FMS_TOP_KIND_
   dtr = tpi/360.0_lkind
 
 ! defaults and convert degrees to radians (dtr)
-  olon = 90.0_r8_kind*dtr;  if (present(olond)) olon=real(olond*dtr,r8_kind)
-  olat = 45.0_r8_kind*dtr;  if (present(olatd)) olat=real(olatd*dtr,r8_kind)
-  wlon = 15.0_r8_kind*dtr;  if (present(wlond)) wlon=real(wlond*dtr,r8_kind)
-  wlat = 15.0_r8_kind*dtr;  if (present(wlatd)) wlat=real(wlatd*dtr,r8_kind)
+  olon = 90.0_r8_kind*real(dtr, r8_kind);  if (present(olond)) olon=real(olond*dtr,r8_kind)
+  olat = 45.0_r8_kind*real(dtr, r8_kind);  if (present(olatd)) olat=real(olatd*dtr,r8_kind)
+  wlon = 15.0_r8_kind*real(dtr, r8_kind);  if (present(wlond)) wlon=real(wlond*dtr,r8_kind)
+  wlat = 15.0_r8_kind*real(dtr, r8_kind);  if (present(wlatd)) wlat=real(wlatd*dtr,r8_kind)
   rlon = 0.0_r8_kind     ;  if (present(rlond)) rlon=real(rlond*dtr,r8_kind)
   rlat = 0.0_r8_kind     ;  if (present(rlatd)) rlat=real(rlatd*dtr,r8_kind)
 
