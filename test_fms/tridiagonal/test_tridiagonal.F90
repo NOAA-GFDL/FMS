@@ -86,11 +86,11 @@ program test_tridiagonal
     do i=1, IN_LEN/2
       end=IN_LEN-i+1
       if(mod(i, 2) .eq. 1) then
-        ref_array(1,1,i) = -(i/2) + (mod(i,2)* IN_LEN/2)
-        ref_array(1,1,end) = -(i/2) + (mod(i,2)* IN_LEN/2)
+        ref_array(1,1,i) = real(-(i/2) + (mod(i,2)* IN_LEN/2), kindl)
+        ref_array(1,1,end) = real(-(i/2) + (mod(i,2)* IN_LEN/2), kindl)
       else
-        ref_array(1,1,i) = i/2
-        ref_array(1,1,end) = i/2
+        ref_array(1,1,i) = real(i/2, kindl)
+        ref_array(1,1,end) = real(i/2, kindl)
       endif
     enddo
     ref_array = ref_array * k

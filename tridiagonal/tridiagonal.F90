@@ -97,9 +97,10 @@ module tridiagonal_mod
     logical, private :: init_tridiagonal_r8 = .false. !< true when fields in tridiag_r8 are allocated
 
     !> Interface to solve tridiagonal systems of equations for either kind value.
+    !! Module level variables will be deallocated and allocated for every
     !! Since this relies on the state of module variables (unless A,B,C are specified)
     !! the values stored are distinct for each kind call unless the added optional argument store_both_kinds
-    !! is true
+    !! is true.
     interface tri_invert
         module procedure tri_invert_r4
         module procedure tri_invert_r8
@@ -126,8 +127,8 @@ module tridiagonal_mod
         return
     end subroutine close_tridiagonal
 
-#include "tridiagonal_r4.fh"
-#include "tridiagonal_r8.fh"
+#include "include/tridiagonal_r4.fh"
+#include "include/tridiagonal_r8.fh"
 
 end module tridiagonal_mod
 
