@@ -435,8 +435,8 @@ type(interpolate_type), intent(inout) :: Out
 
      Out%interph = In%interph
      if (allocated(In%time_slice)) Out%time_slice =  In%time_slice
-     Out%file_name  = In%file_name
-     Out%time_flag  = In%time_flag
+     Out%file_name = In%file_name
+     Out%time_flag = In%time_flag
      Out%level_type = In%level_type
      Out%is = In%is
      Out%ie = In%ie
@@ -708,6 +708,10 @@ else if(clim_type%r8_type%is_allocated) then
       deallocate(clim_type%r8_type%nmon_pyear)
    end if
 endif
+if (allocated(clim_type%indexm)) deallocate(clim_type%indexm)
+if (allocated(clim_type%indexp)) deallocate(clim_type%indexp)
+if (allocated(clim_type%climatology)) deallocate(clim_type%climatology)
+if (allocated(clim_type%clim_times)) deallocate(clim_type%clim_times)
 
 clim_type%r4_type%is_allocated=.false.
 clim_type%r8_type%is_allocated=.false.
