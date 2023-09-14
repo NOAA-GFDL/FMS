@@ -795,6 +795,14 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       call mpp_error(FATAl, "The missing value for the field:"//trim(field_ptr%get_varname())//&
         &" was not allocated to the correct type. This shouldn't have happened")
     end select
+  else
+    select type (missing_val => get_default_missing_value(r8))
+    type is (real(kind=r8_kind))
+      missing_value = missing_val
+    class default
+      call mpp_error(FATAl, "The missing value for the field:"//trim(field_ptr%get_varname())//&
+        &" was not allocated to the correct type. This shouldn't have happened")
+    end select
   endif
 
   buffer_loop: do ids = 1, size(field_ptr%buffer_ids)
@@ -875,7 +883,15 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
         return
       endif
     case (time_min)
+      error_msg = buffer_ptr%do_time_min_wrapper(field_data, oor_mask, bounds_in, bounds_out, missing_value)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_max)
+      error_msg = buffer_ptr%do_time_max_wrapper(field_data, oor_mask, bounds_in, bounds_out, missing_value)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_sum)
     case (time_average)
     case (time_power)

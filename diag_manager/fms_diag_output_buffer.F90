@@ -34,7 +34,7 @@ use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_bas
 use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 use fms_diag_yaml_mod, only: diag_yaml
 use fms_diag_bbox_mod, only: fmsDiagIbounds_type
-use fms_diag_reduction_methods_mod, only: do_time_none
+use fms_diag_reduction_methods_mod, only: do_time_none, do_time_min, do_time_max
 use fms_diag_time_utils_mod, only: diag_time_inc
 
 implicit none
@@ -76,6 +76,8 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_buffer
   procedure :: flush_buffer
   procedure :: do_time_none_wrapper
+  procedure :: do_time_min_wrapper
+  procedure :: do_time_max_wrapper
 
 end type fmsDiagOutputBuffer_type
 
@@ -489,16 +491,82 @@ function do_time_none_wrapper(this, field_data, mask, bounds_in, bounds_out, mis
       type is (real(kind=r8_kind))
         call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out, missing_value)
       class default
-        err_msg="the output buffer and the buffer send in are not of the same type (r8_kind)"
+        err_msg="do_time_none_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
     type is (real(kind=r4_kind))
       select type (field_data)
       type is (real(kind=r4_kind))
         call do_time_none(output_buffer, field_data, mask, bounds_in, bounds_out, real(missing_value, kind=r4_kind))
       class default
-        err_msg="the output buffer and the buffer send in are not of the same type (r4_kind)"
+        err_msg="do_time_none_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
   end select
 end function do_time_none_wrapper
+
+!> @brief Does the time_min reduction method on the buffer object
+!! @return Error message if the math was not successful
+function do_time_min_wrapper(this, field_data, mask, bounds_in, bounds_out, missing_value) &
+  result(err_msg)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
+  class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
+  type(fmsDiagIbounds_type),       intent(in)    :: bounds_in           !< Indicies for the buffer passed in
+  type(fmsDiagIbounds_type),       intent(in)    :: bounds_out          !< Indicies for the output buffer
+  logical,                         intent(in)    :: mask(:,:,:,:)       !< Mask for the field
+  real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  character(len=50) :: err_msg
+
+  !TODO This does not need to be done for every time step
+  !TODO This will be expanded for integers
+  err_msg = ""
+  select type (output_buffer => this%buffer)
+    type is (real(kind=r8_kind))
+      select type (field_data)
+      type is (real(kind=r8_kind))
+        call do_time_min(output_buffer, field_data, mask, bounds_in, bounds_out, missing_value)
+      class default
+        err_msg="do_time_min_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
+      end select
+    type is (real(kind=r4_kind))
+      select type (field_data)
+      type is (real(kind=r4_kind))
+        call do_time_min(output_buffer, field_data, mask, bounds_in, bounds_out, real(missing_value, kind=r4_kind))
+      class default
+        err_msg="do_time_min_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
+      end select
+  end select
+end function do_time_min_wrapper
+
+!> @brief Does the time_min reduction method on the buffer object
+!! @return Error message if the math was not successful
+function do_time_max_wrapper(this, field_data, mask, bounds_in, bounds_out, missing_value) &
+  result(err_msg)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
+  class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
+  type(fmsDiagIbounds_type),       intent(in)    :: bounds_in           !< Indicies for the buffer passed in
+  type(fmsDiagIbounds_type),       intent(in)    :: bounds_out          !< Indicies for the output buffer
+  logical,                         intent(in)    :: mask(:,:,:,:)       !< Mask for the field
+  real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  character(len=50) :: err_msg
+
+  !TODO This does not need to be done for every time step
+  !TODO This will be expanded for integers
+  err_msg = ""
+  select type (output_buffer => this%buffer)
+    type is (real(kind=r8_kind))
+      select type (field_data)
+      type is (real(kind=r8_kind))
+        call do_time_max(output_buffer, field_data, mask, bounds_in, bounds_out, missing_value)
+      class default
+        err_msg="do_time_max_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
+      end select
+    type is (real(kind=r4_kind))
+      select type (field_data)
+      type is (real(kind=r4_kind))
+        call do_time_max(output_buffer, field_data, mask, bounds_in, bounds_out, real(missing_value, kind=r4_kind))
+      class default
+        err_msg="do_time_max_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
+      end select
+  end select
+end function do_time_max_wrapper
 #endif
 end module fms_diag_output_buffer_mod

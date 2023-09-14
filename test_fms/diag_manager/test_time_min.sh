@@ -29,25 +29,62 @@ if [ -z "${skipflag}" ]; then
 output_dir
 
 #TODO replace with yaml diag_table and set diag_manager_nml::use_modern_diag=.true.
-cat <<_EOF > diag_table
-test_min
-2 1 1 0 0 0
-
-"test_min",      6,  "hours", 1, "hours", "time"
-"test_min_regional",      6,  "hours", 1, "hours", "time"
-
-"ocn_mod", "var0", "var0_min", "test_min", "all", "min", "none", 2
-"ocn_mod", "var1", "var1_min", "test_min", "all", "min", "none", 2
-"ocn_mod", "var2", "var2_min", "test_min", "all", "min", "none", 2
-"ocn_mod", "var3", "var3_min", "test_min", "all", "min", "none", 2
-
-"ocn_mod", "var3", "var3_Z", "test_min", "all", "min", "-1 -1 -1 -1 2. 3.", 2
-
-"ocn_mod", "var3", "var3_min", "test_min_regional", "all", "min", "78. 81. 78. 81. 2. 3.", 2 #chosen by MKL
+cat <<_EOF > diag_table.yaml
+title: test_min
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_min
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var0
+    output_name: var0_min
+    reduction: min
+    kind: r4
+  - module: ocn_mod
+    var_name: var1
+    output_name: var1_min
+    reduction: min
+    kind: r4
+  - module: ocn_mod
+    var_name: var2
+    output_name: var2_min
+    reduction: min
+    kind: r4
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_min
+    reduction: min
+    kind: r4
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_Z_min
+    reduction: min
+    zbounds: 2. 3.
+    kind: r4
+- file_name: test_min_regional
+  time_units: hours
+  unlimdim: time
+  sub_region:
+  - grid_type: latlon
+    corner1: 78. 78.
+    corner2: 78. 78.
+    corner3: 81. 81.
+    corner4: 81. 81.
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_min
+    reduction: min
+    zbounds: 2. 3.
+    kind: r4
 _EOF
 
 my_test_count=1
-printf "&test_reduction_methods_nml \n test_case = 0 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -56,7 +93,7 @@ test_expect_success "Checking answers for the "min" reduction method (test $my_t
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 0 \n mask_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n &test_reduction_methods_nml \n test_case = 0 \n mask_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method, logical mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -65,7 +102,7 @@ test_expect_success "Checking answers for the "min" reduction method, logical ma
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 0 \n mask_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n &test_reduction_methods_nml \n test_case = 0 \n mask_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method, real mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -75,7 +112,7 @@ test_expect_success "Checking answers for the "min" reduction method, real mask 
 
 export OMP_NUM_THREADS=2
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method with openmp (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -84,7 +121,7 @@ test_expect_success "Checking answers for the "min" reduction method with openmp
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 1 \n mask_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n mask_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method with openmp, logical mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -93,7 +130,7 @@ test_expect_success "Checking answers for the "min" reduction method with openmp
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 1 \n mask_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n mask_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method with openmp, real mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -103,7 +140,7 @@ test_expect_success "Checking answers for the "min" reduction method with openmp
 export OMP_NUM_THREADS=1
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method with halo output (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -112,7 +149,7 @@ test_expect_success "Checking answers for the "min" reduction method with halo o
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 2 \n mask_case = 1 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n mask_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method with halo output with logical mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
@@ -121,7 +158,7 @@ test_expect_success "Checking answers for the "min" reduction method with halo o
 '
 
 my_test_count=`expr $my_test_count + 1`
-printf "&test_reduction_methods_nml \n test_case = 2 \n mask_case = 2 \n \n/" | cat > input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n mask_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "min" reduction method with halo output with real mask (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '

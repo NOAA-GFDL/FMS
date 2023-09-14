@@ -55,3 +55,106 @@ subroutine DO_TIME_NONE_ (data_out, data_in, mask, bounds_in, bounds_out, missin
   end where
 
 end subroutine DO_TIME_NONE_
+
+!> @brief Do the time_min reduction method (i.e maintain the minimum value of the averaging time)
+subroutine DO_TIME_MIN_ (data_out, data_in, mask, bounds_in, bounds_out, missing_value)
+  real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
+  real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
+  logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
+                                                                  !! of the input buffer
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
+                                                                  !! of the output buffer
+  real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
+
+  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
+                                                            !! the input buffer
+  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
+                                                            !! the output buffer
+
+  integer :: i, j, k, l !< For looping
+
+  is_out = bounds_out%get_imin()
+  ie_out = bounds_out%get_imax()
+  js_out = bounds_out%get_jmin()
+  je_out = bounds_out%get_jmax()
+  ks_out = bounds_out%get_kmin()
+  ke_out = bounds_out%get_kmax()
+
+  is_in = bounds_in%get_imin()
+  ie_in = bounds_in%get_imax()
+  js_in = bounds_in%get_jmin()
+  je_in = bounds_in%get_jmax()
+  ks_in = bounds_in%get_kmin()
+  ke_in = bounds_in%get_kmax()
+
+  do i = 0, ie_out - is_out
+    do j = 0, je_out - js_out
+      do k = 0, ke_out - ks_out
+        do l = 0, size(data_out, 4) - 1
+          if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
+            if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .gt. &
+              data_in(is_in + i, js_in + j, ks_in + k, l + 1) ) then
+                data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
+                  data_in(is_in +i, js_in + j, ks_in + k, l + 1)
+            endif
+          else
+            data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
+          endif
+        enddo
+      enddo
+    enddo
+  enddo
+
+end subroutine DO_TIME_MIN_
+
+!> @brief Do the time_max reduction method (i.e maintain the maximum value of the averaging time)
+subroutine DO_TIME_MAX_ (data_out, data_in, mask, bounds_in, bounds_out, missing_value)
+  real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
+  real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
+  logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
+                                                                  !! of the input buffer
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
+                                                                  !! of the output buffer
+  real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
+
+  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
+                                                            !! the input buffer
+  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
+                                                            !! the output buffer
+
+  integer :: i, j, k, l !< For looping
+
+  is_out = bounds_out%get_imin()
+  ie_out = bounds_out%get_imax()
+  js_out = bounds_out%get_jmin()
+  je_out = bounds_out%get_jmax()
+  ks_out = bounds_out%get_kmin()
+  ke_out = bounds_out%get_kmax()
+
+  is_in = bounds_in%get_imin()
+  ie_in = bounds_in%get_imax()
+  js_in = bounds_in%get_jmin()
+  je_in = bounds_in%get_jmax()
+  ks_in = bounds_in%get_kmin()
+  ke_in = bounds_in%get_kmax()
+
+  do i = 0, ie_out - is_out
+    do j = 0, je_out - js_out
+      do k = 0, ke_out - ks_out
+        do l = 0, size(data_out, 4) - 1
+          if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
+            if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .lt. &
+              data_in(is_in + i, js_in + j, ks_in + k, l + 1) ) then
+                data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
+                  data_in(is_in +i, js_in + j, ks_in + k, l + 1)
+            endif
+          else
+            data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
+          endif
+        enddo
+      enddo
+    enddo
+  enddo
+end subroutine DO_TIME_MAX_
