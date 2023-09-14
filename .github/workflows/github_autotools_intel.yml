@@ -3,7 +3,7 @@ jobs:
   build-dependencies:
     runs-on: ubuntu-latest
     container:
-      image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu22.04
+      image: intel/oneapi-hpckit:2023.2.0-devel-ubuntu22.04
       env:
         CC: mpiicc
         FC: mpiifort
@@ -56,8 +56,8 @@ jobs:
             target-cflags: "-O0 -g"
           - target-fcflags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn noerrors -fpe0 -ftrapuv"
             target-cflags: "-O2 -debug minimal"
-          #- FC: "ifx" # bug with ifx will cause ICE if using -check flag (issue #1348)
-          #  target-fcflags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn noerrors -fpe0 -ftrapuv"
+          - FC: "ifx" # bug with ifx will cause ICE if using -check flag (issue #1348)
+            target-fcflags: "-g -O0 -check -check noarg_temp_created -check nopointer -warn noerrors -fpe0 -ftrapuv"
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu22.04
       env:
