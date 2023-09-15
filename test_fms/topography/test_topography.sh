@@ -42,10 +42,10 @@ test_expect_success "Test topography: r4_kind" '
   mpirun -n 2 ./test_topography_r4
 '
 
+rm -f *.nc
+
 test_expect_success "Test topography: r8_kind" '
   mpirun -n 2 ./test_topography_r8
 '
-
-ls
 
 test_done
