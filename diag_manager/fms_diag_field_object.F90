@@ -96,6 +96,7 @@ type fmsDiagField_type
      procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
      procedure :: add_attribute => diag_field_add_attribute
      procedure :: vartype_inq => what_is_vartype
+     procedure :: set_mask_variant
 ! Check functions
      procedure :: is_static => diag_obj_is_static
      procedure :: is_scalar
@@ -435,6 +436,14 @@ subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
   logical, intent (in) :: math_needs_to_be_done !< Flag saying that the math functions need to be done
   this%math_needs_to_be_done = math_needs_to_be_done
 end subroutine set_math_needs_to_be_done
+
+!> @brief Set the mask_variant to .true.
+subroutine set_mask_variant(this, is_masked)
+  class (fmsDiagField_type) , intent(inout):: this      !< The diag field object
+  logical,                    intent (in)  :: is_masked !< .True. if the field is masked
+
+  this%mask_variant = is_masked
+end subroutine set_mask_variant
 
 !> @brief Sets the flag saying that the data buffer is allocated
 subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)

@@ -18,10 +18,11 @@
 !***********************************************************************
 
 !> @brief Do the time_none reduction method (i.e copy the correct portion of the input data)
-subroutine DO_TIME_NONE_ (data_out, data_in, mask, bounds_in, bounds_out, missing_value)
+subroutine DO_TIME_NONE_ (data_out, data_in, mask, is_masked, bounds_in, bounds_out, missing_value)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
   logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  logical,                   intent(in)    :: is_masked           !< .True. if the field is using a mask
   type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
                                                                   !! of the input buffer
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
@@ -47,20 +48,26 @@ subroutine DO_TIME_NONE_ (data_out, data_in, mask, bounds_in, bounds_out, missin
   ks_in = bounds_in%get_kmin()
   ke_in = bounds_in%get_kmax()
 
-  where (mask(is_in:ie_in, js_in:je_in, ks_in:ke_in, :))
+  if (is_masked) then
+    where (mask(is_in:ie_in, js_in:je_in, ks_in:ke_in, :))
+      data_out(is_out:ie_out, js_out:je_out, ks_out:ke_out, :, 1) = &
+      data_in(is_in:ie_in, js_in:je_in, ks_in:ke_in, :)
+    elsewhere
+      data_out(is_out:ie_out, js_out:je_out, ks_out:ke_out, :, 1) = missing_value
+    end where
+  else
     data_out(is_out:ie_out, js_out:je_out, ks_out:ke_out, :, 1) = &
-    data_in(is_in:ie_in, js_in:je_in, ks_in:ke_in, :)
-  elsewhere
-    data_out(is_out:ie_out, js_out:je_out, ks_out:ke_out, :, 1) = missing_value
-  end where
+      data_in(is_in:ie_in, js_in:je_in, ks_in:ke_in, :)
+  endif
 
 end subroutine DO_TIME_NONE_
 
 !> @brief Do the time_min reduction method (i.e maintain the minimum value of the averaging time)
-subroutine DO_TIME_MIN_ (data_out, data_in, mask, bounds_in, bounds_out, missing_value)
+subroutine DO_TIME_MIN_ (data_out, data_in, mask, is_masked, bounds_in, bounds_out, missing_value)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
   logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  logical,                   intent(in)    :: is_masked           !< .True. if the field is using a mask
   type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
                                                                   !! of the input buffer
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
@@ -88,31 +95,50 @@ subroutine DO_TIME_MIN_ (data_out, data_in, mask, bounds_in, bounds_out, missing
   ks_in = bounds_in%get_kmin()
   ke_in = bounds_in%get_kmax()
 
-  do i = 0, ie_out - is_out
-    do j = 0, je_out - js_out
+  !> Seperated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
+  !! then mask will always be .True. so the if (mask) is redudant.
+  if (is_masked) then
+    do l = 0, size(data_out, 4) - 1
       do k = 0, ke_out - ks_out
-        do l = 0, size(data_out, 4) - 1
-          if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
+        do j = 0, je_out - js_out
+          do i = 0, ie_out - is_out
+            if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
+              if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .gt. &
+                data_in(is_in + i, js_in + j, ks_in + k, l + 1) ) then
+                  data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
+                    data_in(is_in +i, js_in + j, ks_in + k, l + 1)
+              endif
+            else
+              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
+            endif
+          enddo
+        enddo
+      enddo
+    enddo
+  else
+    do l = 0, size(data_out, 4) - 1
+      do k = 0, ke_out - ks_out
+        do j = 0, je_out - js_out
+          do i = 0, ie_out - is_out
             if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .gt. &
               data_in(is_in + i, js_in + j, ks_in + k, l + 1) ) then
                 data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
                   data_in(is_in +i, js_in + j, ks_in + k, l + 1)
             endif
-          else
-            data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
-          endif
+          enddo
         enddo
       enddo
     enddo
-  enddo
+  endif
 
 end subroutine DO_TIME_MIN_
 
 !> @brief Do the time_max reduction method (i.e maintain the maximum value of the averaging time)
-subroutine DO_TIME_MAX_ (data_out, data_in, mask, bounds_in, bounds_out, missing_value)
+subroutine DO_TIME_MAX_ (data_out, data_in, mask, is_masked, bounds_in, bounds_out, missing_value)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
   logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  logical,                   intent(in)    :: is_masked           !< .True. if the field is using a mask
   type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
                                                                   !! of the input buffer
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
@@ -140,21 +166,39 @@ subroutine DO_TIME_MAX_ (data_out, data_in, mask, bounds_in, bounds_out, missing
   ks_in = bounds_in%get_kmin()
   ke_in = bounds_in%get_kmax()
 
-  do i = 0, ie_out - is_out
-    do j = 0, je_out - js_out
+  !> Seperated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
+  !! then mask will always be .True. so the if (mask) is redudant.
+  if (is_masked) then
+    do l = 0, size(data_out, 4) - 1
       do k = 0, ke_out - ks_out
-        do l = 0, size(data_out, 4) - 1
-          if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
+        do j = 0, je_out - js_out
+          do i = 0, ie_out - is_out
+            if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
+              if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .lt. &
+                data_in(is_in + i, js_in + j, ks_in + k, l + 1) ) then
+                  data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
+                    data_in(is_in +i, js_in + j, ks_in + k, l + 1)
+              endif
+            else
+              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
+            endif
+          enddo
+        enddo
+      enddo
+    enddo
+  else
+    do l = 0, size(data_out, 4) - 1
+      do k = 0, ke_out - ks_out
+        do j = 0, je_out - js_out
+          do i = 0, ie_out - is_out
             if (data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) .lt. &
               data_in(is_in + i, js_in + j, ks_in + k, l + 1) ) then
                 data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
                   data_in(is_in +i, js_in + j, ks_in + k, l + 1)
             endif
-          else
-            data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
-          endif
+          enddo
         enddo
       enddo
     enddo
-  enddo
+  endif
 end subroutine DO_TIME_MAX_

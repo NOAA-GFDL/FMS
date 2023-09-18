@@ -554,6 +554,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (.not. allocated(mask) .and. .not. allocated(rmask)) call mpp_error(FATAL, &
       "The field was registered with mask_variant, but mask or rmask are not present in the send_data call. "//&
       trim(field_info))
+  else
+    if (allocated(mask) .or. allocated(rmask)) &
+      call this%FMS_diag_fields(diag_field_id)%set_mask_variant(.True.)
   endif
 
   !< Check that mask and rmask are not both present
@@ -878,17 +881,20 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     reduction_method = field_yaml_ptr%get_var_reduction()
     select case(reduction_method)
     case (time_none)
-      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, bounds_in, bounds_out, missing_value)
+      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_min)
-      error_msg = buffer_ptr%do_time_min_wrapper(field_data, oor_mask, bounds_in, bounds_out, missing_value)
+      error_msg = buffer_ptr%do_time_min_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_max)
-      error_msg = buffer_ptr%do_time_max_wrapper(field_data, oor_mask, bounds_in, bounds_out, missing_value)
+      error_msg = buffer_ptr%do_time_max_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
