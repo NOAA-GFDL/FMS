@@ -127,8 +127,8 @@ module tridiagonal_mod
         return
     end subroutine close_tridiagonal
 
-#include "include/tridiagonal_r4.fh"
-#include "include/tridiagonal_r8.fh"
+#include "tridiagonal_r4.fh"
+#include "tridiagonal_r8.fh"
 
 end module tridiagonal_mod
 
