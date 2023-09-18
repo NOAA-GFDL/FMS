@@ -20,24 +20,24 @@
 ! modified by JHC
 !> Retrieve sea surface temperature data and interpolated grid
 subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
-   type (time_type),         intent(in)    :: Time !< Time to interpolate
-   type (AMIP_INTERP_TYPE_),  intent(inout) :: Interp !< Holds data for interpolation
-   real(AMIP_INTERP_KIND_),                     intent(out)   ::  sst(:,:) !< Sea surface temperature data
-   character(len=*), optional, intent(out) :: err_msg !< Holds error message string if present
+   type (time_type),            intent(in)    :: Time !< Time to interpolate
+   type (AMIP_INTERP_TYPE_),    intent(inout) :: Interp !< Holds data for interpolation
+   real(FMS_AMIP_INTERP_KIND_), intent(out)   :: sst(:,:) !< Sea surface temperature data
+   character(len=*), optional,  intent(out)   :: err_msg !< Holds error message string if present
 
-   real(AMIP_INTERP_KIND_), dimension(mobs,nobs) :: sice
-   real(AMIP_INTERP_KIND_), allocatable:: temp1(:,:), temp2(:,:)
+   real(FMS_AMIP_INTERP_KIND_), dimension(mobs,nobs) :: sice
+   real(FMS_AMIP_INTERP_KIND_), allocatable:: temp1(:,:), temp2(:,:)
 
     integer :: year1, year2, month1, month2
-    real(AMIP_INTERP_KIND_)    :: fmonth
+    real(FMS_AMIP_INTERP_KIND_) :: fmonth
     type (date_type) :: Date1, Date2, Udate1, Udate2
 
     type(time_type) :: Amip_Time
     integer :: tod(3),dum(3)
 
 ! add by JHC
-    real(AMIP_INTERP_KIND_),    intent(in), dimension(:,:), optional :: lon_model, lat_model
-    real(AMIP_INTERP_KIND_) :: pert
+    real(FMS_AMIP_INTERP_KIND_), intent(in), dimension(:,:), optional :: lon_model, lat_model
+    real(FMS_AMIP_INTERP_KIND_) :: pert
     integer :: i, j, mobs_sst, nobs_sst
     integer :: jhctod(6)
     type (time_type) :: Udate
@@ -45,7 +45,7 @@ subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
     integer :: nrecords, ierr, k, yr, mo, dy
     integer, dimension(:), allocatable :: ryr, rmo, rdy
     character(len=30) :: time_unit
-    real(AMIP_INTERP_KIND_), dimension(:), allocatable :: timeval
+    real(FMS_AMIP_INTERP_KIND_), dimension(:), allocatable :: timeval
     character(len=maxc) :: ncfilename
     type(FmsNetcdfFile_t) :: fileobj
     logical :: the_file_exists
@@ -53,7 +53,7 @@ subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
     logical, parameter :: DEBUG = .false. !> switch for debugging output
     !> These are fms_io specific
     integer :: unit
-    integer, parameter :: lkind = AMIP_INTERP_KIND_
+    integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
     if(present(err_msg)) err_msg = ''
     if(.not.Interp%I_am_initialized) then
@@ -242,12 +242,12 @@ else
      if (the_file_exists) then
           call fms2_io_read_data(fileobj, 'SST', TEMPAMIP_, unlim_dim_level=k)
           call close_file(fileobj)
-          TEMPAMIP_ = TEMPAMIP_ + real(TFREEZE, AMIP_INTERP_KIND_)
+          TEMPAMIP_ = TEMPAMIP_ + real(TFREEZE, FMS_AMIP_INTERP_KIND_)
 
 !!! DEBUG CODE
           if(DEBUG) then
             if (mpp_pe() == 0) then
-              print*, 'JHC: TFREEZE = ', real(TFREEZE, AMIP_INTERP_KIND_)
+              print*, 'JHC: TFREEZE = ', real(TFREEZE, FMS_AMIP_INTERP_KIND_)
               print*, lbound(sst)
               print*, ubound(sst)
               print*, lbound(TEMPAMIP_)
@@ -280,7 +280,7 @@ endif
  if ( do_sst_pert ) then
 
       if ( trim(sst_pert_type) == 'fixed' ) then
-          sst = sst + real(sst_pert, AMIP_INTERP_KIND_)
+          sst = sst + real(sst_pert, FMS_AMIP_INTERP_KIND_)
       else if ( trim(sst_pert_type) == 'random' ) then
           call random_seed()
 
@@ -296,7 +296,7 @@ endif
           do i = 1, size(sst,1)
           do j = 1, size(sst,2)
              call random_number(pert)
-             sst (i,j) = sst (i,j) + real(sst_pert, AMIP_INTERP_KIND_)*((pert-0.5_lkind)*2)
+             sst (i,j) = sst (i,j) + real(sst_pert, FMS_AMIP_INTERP_KIND_)*((pert-0.5_lkind)*2)
           end do
           end do
       endif
@@ -307,20 +307,20 @@ endif
 
 !> AMIP interpolation for ice
 subroutine GET_AMIP_ICE_ (Time, Interp, ice, err_msg)
-   type (time_type),         intent(in)    :: Time !< Time to interpolate
-   type (AMIP_INTERP_TYPE_),  intent(inout) :: Interp !< Holds data for interpolation
-   real(AMIP_INTERP_KIND_),                     intent(out)   :: ice(:,:) !< ice data
-   character(len=*), optional, intent(out) :: err_msg !< Holds error message string if present
+   type (time_type),            intent(in)    :: Time !< Time to interpolate
+   type (AMIP_INTERP_TYPE_),    intent(inout) :: Interp !< Holds data for interpolation
+   real(FMS_AMIP_INTERP_KIND_), intent(out)   :: ice(:,:) !< ice data
+   character(len=*), optional,  intent(out)   :: err_msg !< Holds error message string if present
 
-    real(AMIP_INTERP_KIND_), dimension(mobs,nobs) :: sice, temp
+    real(FMS_AMIP_INTERP_KIND_), dimension(mobs,nobs) :: sice, temp
 
     integer :: year1, year2, month1, month2
-    real(AMIP_INTERP_KIND_)    :: fmonth
+    real(FMS_AMIP_INTERP_KIND_)    :: fmonth
     type (date_type) :: Date1, Date2, Udate1, Udate2
 
     type(time_type) :: Amip_Time
     integer :: tod(3),dum(3)
-    integer, parameter :: lkind = AMIP_INTERP_KIND_
+    integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
     if(present(err_msg)) err_msg = ''
     if(.not.Interp%I_am_initialized) then
@@ -382,7 +382,7 @@ else
 ! Can NOT use ncep_sst to determine sea_ice For seasonal forecast
 ! Use climo sea ice for seasonal runs
             if ( use_ncep_sst .and. use_ncep_ice ) then
-               where ( SST_NCEP_ <= (real(TFREEZE, AMIP_INTERP_KIND_)+real(tice_crit, AMIP_INTERP_KIND_)) )
+               where ( SST_NCEP_ <= (real(TFREEZE, FMS_AMIP_INTERP_KIND_)+real(tice_crit, FMS_AMIP_INTERP_KIND_)) )
                    sice = 1._lkind
                elsewhere
                    sice = 0._lkind
@@ -403,7 +403,7 @@ else
 
 !-- SJL -------------------------------------------------------------
             if ( use_ncep_sst .and. use_ncep_ice ) then
-               where ( SST_NCEP_ <= (real(TFREEZE, AMIP_INTERP_KIND_)+real(tice_crit, AMIP_INTERP_KIND_)) )
+               where ( SST_NCEP_ <= (real(TFREEZE, FMS_AMIP_INTERP_KIND_)+real(tice_crit, FMS_AMIP_INTERP_KIND_)) )
                    sice = 1._lkind
                elsewhere
                    sice = 0._lkind
@@ -430,10 +430,10 @@ endif
  !> @return A newly created @ref amip_interp_type
  function AMIP_INTERP_NEW_1D_ ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
- real(AMIP_INTERP_KIND_),    intent(in), dimension(:)   :: lon, lat
+ real(FMS_AMIP_INTERP_KIND_), intent(in), dimension(:)   :: lon, lat
  logical, intent(in), dimension(:,:) :: mask
- character(len=*), intent(in), optional       :: interp_method
- logical, intent(in), optional       :: use_climo, use_annual
+ character(len=*), intent(in), optional :: interp_method
+ logical, intent(in), optional :: use_climo, use_annual
 
    type (AMIP_INTERP_TYPE_) :: Interp
 
@@ -468,10 +468,10 @@ endif
  !> @return A newly created @ref amip_interp_type
  function AMIP_INTERP_NEW_2D_ ( lon , lat , mask , use_climo, use_annual, &
                                 interp_method ) result (Interp)
- real(AMIP_INTERP_KIND_),    intent(in), dimension(:,:)   :: lon, lat
+ real(FMS_AMIP_INTERP_KIND_), intent(in), dimension(:,:)   :: lon, lat
  logical, intent(in), dimension(:,:) :: mask
  character(len=*), intent(in), optional :: interp_method
- logical, intent(in), optional       :: use_climo, use_annual
+ logical, intent(in), optional :: use_climo, use_annual
 
    type (AMIP_INTERP_TYPE_) :: Interp
 
@@ -600,11 +600,11 @@ endif
              mobs = i_sst;  nobs = j_sst
             if (.not. allocated (SST_NCEP_)) then
                 allocate (SST_NCEP_ (i_sst,j_sst))
-                SST_NCEP_ (:,:) = real(big_number, AMIP_INTERP_KIND_)
+                SST_NCEP_ (:,:) = real(big_number, FMS_AMIP_INTERP_KIND_)
             endif
             if (.not. allocated (SST_ANOM_)) then
                 allocate (SST_ANOM_ (i_sst,j_sst))
-                SST_ANOM_ (:,:) = real(big_number, AMIP_INTERP_KIND_)
+                SST_ANOM_ (:,:) = real(big_number, FMS_AMIP_INTERP_KIND_)
             endif
         else
              mobs = 360;    nobs = 180
@@ -648,11 +648,13 @@ endif
 !> @param[inout] Interp A defined data type variable initialized by amip_interp_new and used
 !! when calling get_amip_sst and get_amip_ice.
    subroutine AMIP_INTERP_DEL_ (Interp)
-   type (AMIP_INTERP_TYPE_), intent(inout) :: Interp
+     type (AMIP_INTERP_TYPE_), intent(inout) :: Interp
+
      if(allocated(Interp%data1)) deallocate(Interp%data1)
      if(allocated(Interp%data2)) deallocate(Interp%data2)
-     if(allocated(LON_BND_))   deallocate(LON_BND_)
-     if(allocated(LAT_BND_))   deallocate(LAT_BND_)
+     if(allocated(LON_BND_))     deallocate(LON_BND_)
+     if(allocated(LAT_BND_))     deallocate(LAT_BND_)
+
      call horiz_interp_del ( Interp%Hintrp )
 
      Interp%I_am_initialized = .false.
@@ -660,33 +662,33 @@ endif
 
    subroutine SET_SST_GRID_EDGES_AMIP1_
    integer :: i, j
-   real(AMIP_INTERP_KIND_) :: hpie, dlon, dlat, wb, sb
-   integer, parameter :: lkind = AMIP_INTERP_KIND_
+   real(FMS_AMIP_INTERP_KIND_) :: hpie, dlon, dlat, wb, sb
+   integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
       allocate(LON_BND_ (mobs+1))
       allocate(LAT_BND_ (nobs+1))
 
 ! ---- compute grid edges (do only once) -----
 
-      hpie = 0.5_lkind*real(pi, AMIP_INTERP_KIND_)
+      hpie = 0.5_lkind*real(pi, FMS_AMIP_INTERP_KIND_)
 
-      dlon = 4._lkind*hpie/real(mobs, AMIP_INTERP_KIND_);  wb = -0.5_lkind*dlon
+      dlon = 4._lkind*hpie/real(mobs, FMS_AMIP_INTERP_KIND_);  wb = -0.5_lkind*dlon
       do i = 1, mobs+1
-          LON_BND_ (i) = wb + dlon * real(i-1, AMIP_INTERP_KIND_)
+          LON_BND_ (i) = wb + dlon * real(i-1, FMS_AMIP_INTERP_KIND_)
       enddo
           LON_BND_ (mobs+1) = LON_BND_ (1) + 4._lkind*hpie
 
-      dlat = 2._lkind*hpie/real(nobs-1, AMIP_INTERP_KIND_);  sb = -hpie + 0.5_lkind*dlat
+      dlat = 2._lkind*hpie/real(nobs-1, FMS_AMIP_INTERP_KIND_);  sb = -hpie + 0.5_lkind*dlat
       LAT_BND_ (1) = -hpie;  LAT_BND_ (nobs+1) = hpie
       do j = 2, nobs
-          LAT_BND_ (j) = sb + dlat * real(j-2, AMIP_INTERP_KIND_)
+          LAT_BND_ (j) = sb + dlat * real(j-2, FMS_AMIP_INTERP_KIND_)
       enddo
    end subroutine SET_SST_GRID_EDGES_AMIP1_
 
    subroutine SET_SST_GRID_EDGES_OI_
    integer :: i, j
-   real(AMIP_INTERP_KIND_)    :: hpie, dlon, dlat, wb, sb
-   integer, parameter :: lkind = AMIP_INTERP_KIND_
+   real(FMS_AMIP_INTERP_KIND_) :: hpie, dlon, dlat, wb, sb
+   integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
 ! add by JHC
       if(allocated(LON_BND_))       deallocate(LON_BND_)
@@ -697,27 +699,27 @@ endif
 
 ! ---- compute grid edges (do only once) -----
 
-      hpie = 0.5_lkind*real(pi, AMIP_INTERP_KIND_)
+      hpie = 0.5_lkind*real(pi, FMS_AMIP_INTERP_KIND_)
 
-      dlon = 4._lkind*hpie/real(mobs, AMIP_INTERP_KIND_);  wb = 0.0_lkind
+      dlon = 4._lkind*hpie/real(mobs, FMS_AMIP_INTERP_KIND_);  wb = 0.0_lkind
           LON_BND_ (1) = wb
       do i = 2, mobs+1
-          LON_BND_ (i) = wb + dlon * real(i-1, AMIP_INTERP_KIND_)
+          LON_BND_ (i) = wb + dlon * real(i-1, FMS_AMIP_INTERP_KIND_)
       enddo
           LON_BND_ (mobs+1) = LON_BND_ (1) + 4._lkind*hpie
 
-      dlat = 2._lkind*hpie/real(nobs, AMIP_INTERP_KIND_);  sb = -hpie
+      dlat = 2._lkind*hpie/real(nobs, FMS_AMIP_INTERP_KIND_);  sb = -hpie
       LAT_BND_ (1) = sb;  LAT_BND_ (nobs+1) = hpie
       do j = 2, nobs
-          LAT_BND_ (j) = sb + dlat * real(j-1, AMIP_INTERP_KIND_)
+          LAT_BND_ (j) = sb + dlat * real(j-1, FMS_AMIP_INTERP_KIND_)
       enddo
    end subroutine SET_SST_GRID_EDGES_OI_
 
 ! add by JHC
    subroutine SET_SST_GRID_EDGES_DAILY_ (mobs_sst, nobs_sst)
    integer :: i, j, mobs_sst, nobs_sst
-   real(AMIP_INTERP_KIND_)    :: hpie, dlon, dlat, wb, sb
-   integer, parameter :: lkind = AMIP_INTERP_KIND_
+   real(FMS_AMIP_INTERP_KIND_) :: hpie, dlon, dlat, wb, sb
+   integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
       if(allocated(LON_BND_))       deallocate(LON_BND_)
       if(allocated(LAT_BND_))       deallocate(LAT_BND_)
@@ -726,38 +728,38 @@ endif
 
 ! ---- compute grid edges (do only once) -----
 
-      hpie = 0.5_lkind*real(pi, AMIP_INTERP_KIND_)
+      hpie = 0.5_lkind*real(pi, FMS_AMIP_INTERP_KIND_)
 
-      dlon = 4._lkind*hpie/real(mobs_sst, AMIP_INTERP_KIND_);  wb = 0.0_lkind
+      dlon = 4._lkind*hpie/real(mobs_sst, FMS_AMIP_INTERP_KIND_);  wb = 0.0_lkind
           LON_BND_ (1) = wb
       do i = 2, mobs_sst+1
-          LON_BND_ (i) = wb + dlon * real(i-1, AMIP_INTERP_KIND_)
+          LON_BND_ (i) = wb + dlon * real(i-1, FMS_AMIP_INTERP_KIND_)
       enddo
           LON_BND_ (mobs_sst+1) = LON_BND_ (1) + 4._lkind*hpie
 
-      dlat = 2._lkind*hpie/real(nobs_sst, AMIP_INTERP_KIND_);  sb = -hpie
+      dlat = 2._lkind*hpie/real(nobs_sst, FMS_AMIP_INTERP_KIND_);  sb = -hpie
       LAT_BND_ (1) = sb;  LAT_BND_ (nobs_sst+1) = hpie
       do j = 2, nobs_sst
-          LAT_BND_ (j) = sb + dlat * real(j-1, AMIP_INTERP_KIND_)
+          LAT_BND_ (j) = sb + dlat * real(j-1, FMS_AMIP_INTERP_KIND_)
       enddo
    end subroutine SET_SST_GRID_EDGES_DAILY_
 ! end add by JHC
 
    subroutine A2A_BILINEAR_ (nx, ny, dat1, n1, n2, dat2)
-   integer, intent(in):: nx, ny
-   integer, intent(in):: n1, n2
-   real(AMIP_INTERP_KIND_), intent(in) :: dat1(nx,ny)
-   real(AMIP_INTERP_KIND_), intent(out):: dat2(n1,n2)      !> output interpolated data
+   integer, intent(in) :: nx, ny
+   integer, intent(in) :: n1, n2
+   real(FMS_AMIP_INTERP_KIND_), intent(in)  :: dat1(nx,ny)
+   real(FMS_AMIP_INTERP_KIND_), intent(out) :: dat2(n1,n2) !> output interpolated data
 
 ! local:
-  real(AMIP_INTERP_KIND_):: lon1(nx), lat1(ny)
-  real(AMIP_INTERP_KIND_):: lon2(n1), lat2(n2)
-  real(AMIP_INTERP_KIND_):: dx1, dy1, dx2, dy2
-  real(AMIP_INTERP_KIND_):: xc, yc
-  real(AMIP_INTERP_KIND_):: a1, b1, c1, c2, c3, c4
-  integer i1, i2, jc, i0, j0, it, jt
-  integer i,j
-  integer, parameter :: lkind = AMIP_INTERP_KIND_
+  real(FMS_AMIP_INTERP_KIND_) :: lon1(nx), lat1(ny)
+  real(FMS_AMIP_INTERP_KIND_) :: lon2(n1), lat2(n2)
+  real(FMS_AMIP_INTERP_KIND_) :: dx1, dy1, dx2, dy2
+  real(FMS_AMIP_INTERP_KIND_) :: xc, yc
+  real(FMS_AMIP_INTERP_KIND_) :: a1, b1, c1, c2, c3, c4
+  integer :: i1, i2, jc, i0, j0, it, jt
+  integer :: i, j
+  integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
 
 !-----------------------------------------------------------
@@ -766,24 +768,24 @@ endif
 !                     lat: -89.5, -88.5, ... , 88.5, 89.5
 !-----------------------------------------------------------
 
-  dx1 = 360._lkind/real(nx, AMIP_INTERP_KIND_) !> INput Grid
-  dy1 = 180._lkind/real(ny, AMIP_INTERP_KIND_) !> INput Grid
+  dx1 = 360._lkind/real(nx, FMS_AMIP_INTERP_KIND_) !> INput Grid
+  dy1 = 180._lkind/real(ny, FMS_AMIP_INTERP_KIND_) !> INput Grid
 
   do i=1,nx
-     lon1(i) = 0.5_lkind*dx1 + real(i-1, AMIP_INTERP_KIND_)*dx1
+     lon1(i) = 0.5_lkind*dx1 + real(i-1, FMS_AMIP_INTERP_KIND_)*dx1
   enddo
   do j=1,ny
-     lat1(j) = -90._lkind + 0.5_lkind*dy1 + real(j-1, AMIP_INTERP_KIND_)*dy1
+     lat1(j) = -90._lkind + 0.5_lkind*dy1 + real(j-1, FMS_AMIP_INTERP_KIND_)*dy1
   enddo
 
-  dx2 = 360._lkind/real(n1, AMIP_INTERP_KIND_) !> OutPut Grid:
-  dy2 = 180._lkind/real(n2, AMIP_INTERP_KIND_) !> OutPut Grid:
+  dx2 = 360._lkind/real(n1, FMS_AMIP_INTERP_KIND_) !> OutPut Grid:
+  dy2 = 180._lkind/real(n2, FMS_AMIP_INTERP_KIND_) !> OutPut Grid:
 
   do i=1,n1
-     lon2(i) = 0.5_lkind*dx2 + real(i-1, AMIP_INTERP_KIND_)*dx2
+     lon2(i) = 0.5_lkind*dx2 + real(i-1, FMS_AMIP_INTERP_KIND_)*dx2
   enddo
   do j=1,n2
-     lat2(j) = -90._lkind + 0.5_lkind*dy2 + real(j-1, AMIP_INTERP_KIND_)*dy2
+     lat2(j) = -90._lkind + 0.5_lkind*dy2 + real(j-1, FMS_AMIP_INTERP_KIND_)*dy2
   enddo
 
   jt = 1
@@ -849,18 +851,18 @@ endif
    end subroutine A2A_BILINEAR_
 
    subroutine READ_RECORD_ (type, Date, Adate, dat)
-     character(len=*), intent(in)  :: type
-     type (date_type), intent(in)  :: Date
+     character(len=*), intent(in) :: type
+     type (date_type), intent(in) :: Date
      type (date_type), intent(inout) :: Adate
-     real(AMIP_INTERP_KIND_), intent(out) :: dat(mobs,nobs)
-     real(AMIP_INTERP_KIND_) :: tmp_dat(360,180)
+     real(FMS_AMIP_INTERP_KIND_), intent(out) :: dat(mobs,nobs)
+     real(FMS_AMIP_INTERP_KIND_) :: tmp_dat(360,180)
 
      integer(I2_KIND) :: idat(mobs,nobs)
      integer :: nrecords, yr, mo, dy, ierr, k
      integer, dimension(:), allocatable :: ryr, rmo, rdy
      character(len=maxc) :: ncfilename, ncfieldname
      type(FmsNetcdfFile_t), pointer :: fileobj
-     integer, parameter :: lkind = AMIP_INTERP_KIND_
+     integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
     !---- set file and field name for NETCDF data sets ----
 
@@ -955,7 +957,7 @@ endif
      else if (type(1:3) == 'sst') then
         !---- unpack sst ----
         if (lowercase(trim(data_set)) /= 'amip2' .and. lowercase(trim(data_set)) /= 'hurrell') then
-               dat = real(idat, AMIP_INTERP_KIND_)*0.01_lkind + real(TFREEZE, AMIP_INTERP_KIND_)
+               dat = real(idat, FMS_AMIP_INTERP_KIND_)*0.01_lkind + real(TFREEZE, FMS_AMIP_INTERP_KIND_)
         endif
      endif
 
@@ -963,23 +965,23 @@ endif
    end subroutine READ_RECORD_
 
    subroutine CLIP_DATA_ (type, dat)
-   character(len=*), intent(in)    :: type
-   real(AMIP_INTERP_KIND_), intent(inout) :: dat(:,:)
-   integer, parameter :: lkind = AMIP_INTERP_KIND_
+   character(len=*), intent(in) :: type
+   real(FMS_AMIP_INTERP_KIND_), intent(inout) :: dat(:,:)
+   integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
    if (type(1:3) == 'ice') then
        dat = min(max(dat,0.0_lkind), 1.0_lkind)
    else if (type(1:3) == 'sst') then
-       dat = max(real(tice_crit_k, AMIP_INTERP_KIND_),dat)
+       dat = max(real(tice_crit_k, FMS_AMIP_INTERP_KIND_),dat)
    endif
    end subroutine CLIP_DATA_
 
 subroutine ZONAL_SST_ (Time, ice, sst)
-   type (time_type), intent(in)  :: Time
-   real(AMIP_INTERP_KIND_), intent(out) :: ice(mobs,nobs), sst(mobs,nobs)
-   real(AMIP_INTERP_KIND_) :: tpi, fdate, eps, ph, sph, sph2, ts
+   type (time_type), intent(in) :: Time
+   real(FMS_AMIP_INTERP_KIND_), intent(out) :: ice(mobs,nobs), sst(mobs,nobs)
+   real(FMS_AMIP_INTERP_KIND_) :: tpi, fdate, eps, ph, sph, sph2, ts
    integer :: j
-   integer, parameter :: lkind = AMIP_INTERP_KIND_
+   integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
 ! namelist needed
 !
@@ -989,11 +991,11 @@ subroutine ZONAL_SST_ (Time, ice, sst)
 !  tlag = offset for time of year (for annual cycle)
 !
 
-    tpi = 2.0_lkind*real(pi, AMIP_INTERP_KIND_)
+    tpi = 2.0_lkind*real(pi, FMS_AMIP_INTERP_KIND_)
 
     fdate = fraction_of_year (Time)
 
-    eps = sin( tpi*(fdate-real(tlag, AMIP_INTERP_KIND_)) ) * real(tann, AMIP_INTERP_KIND_)
+    eps = sin( tpi*(fdate-real(tlag, FMS_AMIP_INTERP_KIND_)) ) * real(tann, FMS_AMIP_INTERP_KIND_)
 
     do j = 1, nobs
 
@@ -1001,15 +1003,15 @@ subroutine ZONAL_SST_ (Time, ice, sst)
        sph  = sin(ph)
        sph2 = sph*sph
 
-       ts = real(teq, AMIP_INTERP_KIND_) - real(tdif, AMIP_INTERP_KIND_)*sph2 - eps*sph
+       ts = real(teq, FMS_AMIP_INTERP_KIND_) - real(tdif, FMS_AMIP_INTERP_KIND_)*sph2 - eps*sph
 
        sst(:,j) = ts
 
     enddo
 
-    where ( sst < real(tice_crit_k, AMIP_INTERP_KIND_) )
+    where ( sst < real(tice_crit_k, FMS_AMIP_INTERP_KIND_) )
        ice = 1.0_lkind
-       sst = real(tice_crit_k, AMIP_INTERP_KIND_)
+       sst = real(tice_crit_k, FMS_AMIP_INTERP_KIND_)
     elsewhere
        ice  = 0.0_lkind
     endwhere

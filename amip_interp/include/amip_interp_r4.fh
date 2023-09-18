@@ -1,4 +1,4 @@
-#undef AMIP_INTERP_KIND_
+#undef FMS_AMIP_INTERP_KIND_
 #undef AMIP_INTERP_TYPE_
 #undef SST_NCEP_
 #undef SST_ANOM_
@@ -22,7 +22,7 @@
 #undef AMIP_INTERP_TYPE_EQ_
 
 
-#define AMIP_INTERP_KIND_ r4_kind
+#define FMS_AMIP_INTERP_KIND_ r4_kind
 #define AMIP_INTERP_TYPE_ amip_interp_type_r4
 #define SST_NCEP_ sst_ncep_r4
 #define SST_ANOM_ sst_anom_r4
@@ -47,7 +47,7 @@
 
 #include "amip_interp.inc"
 
-#undef AMIP_INTERP_KIND_
+#undef FMS_AMIP_INTERP_KIND_
 #undef AMIP_INTERP_TYPE_
 #undef SST_NCEP_
 #undef SST_ANOM_
