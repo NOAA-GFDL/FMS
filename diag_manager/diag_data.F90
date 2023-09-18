@@ -52,13 +52,15 @@ use platform_mod
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
   USE fms_mod, ONLY: write_version_number
+  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
   use mpp_mod, ONLY: mpp_error, FATAL, WARNING, mpp_pe, mpp_root_pe, stdlog
+
 #ifdef use_netCDF
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
 #endif
   use fms2_io_mod
-  use  iso_c_binding
+
   IMPLICIT NONE
 
   PUBLIC
@@ -123,6 +125,10 @@ use platform_mod
   INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
   CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
   CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
+  INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds
+  INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds
+  INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds
+  INTEGER, PARAMETER :: MAX_STR_LEN = 255 !< Max length for a string
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
@@ -158,6 +164,8 @@ use platform_mod
      INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
   END TYPE diag_atttype
 
+  !!TODO: coord_type deserves a better name, like coord_interval_type or coord_bbox_type.
+  !!  additionally, consider using a 2D array.
   !> @brief Define the region for field output
   !> @ingroup diag_data_mod
   TYPE coord_type
@@ -283,7 +291,7 @@ use platform_mod
      TYPE(diag_grid) :: output_grid
      LOGICAL :: local_output, need_compute, phys_window, written_once
      LOGICAL :: reduced_k_range
-     INTEGER :: imin, imax, jmin, jmax, kmin, kmax
+     TYPE(fmsDiagIbounds_type) :: buff_bounds
      TYPE(time_type) :: Time_of_prev_field_data
      TYPE(diag_atttype), allocatable, dimension(:) :: attributes
      INTEGER :: num_attributes
@@ -328,6 +336,7 @@ use platform_mod
     character(len=:), allocatable :: att_name     !< Name of the attribute
     contains
       procedure :: add => fms_add_attribute
+      procedure :: write_metadata
   end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -377,6 +386,8 @@ use platform_mod
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
+  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
+  LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
                                          !! For example, if doing daily averages and your start the simulation in
@@ -392,7 +403,15 @@ use platform_mod
   REAL :: FILL_VALUE = 9.9692099683868690e+36
 #endif
 
+  !! @note `pack_size` and `pack_size_str` are set in diag_manager_init depending on how FMS was compiled
+  !! if FMS was compiled with default reals as 64bit, it will be set to 1 and "double",
+  !! if FMS was compiled with default reals as 32bit, it will set to 2 and "float"
+  !! The time variables will written in the precision defined by `pack_size_str`
+  !! This is to reproduce previous diag manager behavior.
+  !TODO This may not be mixed precision friendly
   INTEGER :: pack_size = 1 !< 1 for double and 2 for float
+  CHARACTER(len=6) :: pack_size_str="double" !< Pack size as a string to be used in fms2_io register call
+                                             !! set to "double" or "float"
 
   ! <!-- REAL public variables -->
   REAL :: EMPTY = 0.0
@@ -545,8 +564,9 @@ CONTAINS
     res = base_second
   end function get_base_second
 
+  !> @brief Adds an attribute to the attribute type
   subroutine fms_add_attribute(this, att_name, att_value)
-    class(fmsDiagAttribute_type), intent(inout) :: this          !< Diag attribute type
+    class(fmsDiagAttribute_type), intent(inout) :: this         !< Diag attribute type
     character(len=*),             intent(in)    :: att_name     !< Name of the attribute
     class(*),                     intent(in)    :: att_value(:) !< The attribute value to add
 
@@ -572,6 +592,62 @@ CONTAINS
       this%att_value = att_value
     end select
   end subroutine fms_add_attribute
+
+  !> @brief gets the type of a variable
+  !> @return the type of the variable (r4,r8,i4,i8,string)
+  function get_var_type(var) &
+  result(var_type)
+    class(*), intent(in) :: var      !< Variable to get the type for
+    integer              :: var_type !< The variable's type
+
+    select type(var)
+    type is (real(r4_kind))
+      var_type = r4
+    type is (real(r8_kind))
+      var_type = r8
+    type is (integer(i4_kind))
+      var_type = i4
+    type is (integer(i8_kind))
+      var_type = i8
+    type is (character(len=*))
+      var_type = string
+    class default
+      call mpp_error(FATAL, "get_var_type:: The variable does not have a supported type. "&
+                           &"The supported types are r4, r8, i4, i8 and string.")
+    end select
+  end function get_var_type
+
+  !> @brief Writes out the attributes from an fmsDiagAttribute_type
+  subroutine write_metadata(this, fileobj, var_name, cell_methods)
+    class(fmsDiagAttribute_type),      intent(inout) :: this          !< Diag attribute type
+    class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+    character(len=*),                  intent(in)    :: var_name      !< The name of the variable to write to
+    character(len=*),        optional, intent(inout) :: cell_methods  !< The cell methods attribute
+
+    select type (att_value =>this%att_value)
+    type is (character(len=*))
+      !< If the attribute is cell methods append to the current cell_methods attribute value
+      !! This will be writen once all of the cell_methods attributes are gathered ...
+      if (present(cell_methods)) then
+        if (trim(this%att_name) .eq. "cell_methods") then
+          cell_methods = trim(cell_methods)//" "//trim(att_value(1))
+          return
+        endif
+      endif
+
+      call register_variable_attribute(fileobj, var_name, this%att_name, trim(att_value(1)), &
+                                       str_len=len_trim(att_value(1)))
+    type is (real(kind=r8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r8_kind))
+    type is (real(kind=r4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r4_kind))
+    type is (integer(kind=i4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i4_kind))
+    type is (integer(kind=i8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i8_kind))
+    end select
+
+  end subroutine write_metadata
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping

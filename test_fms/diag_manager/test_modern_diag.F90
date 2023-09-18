@@ -26,15 +26,28 @@ use   mpp_domains_mod,  only: domain2d, mpp_domains_set_stack_size, mpp_define_d
                               mpp_get_UG_compute_domain
 use   diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                               diag_axis_add_attribute, diag_field_add_attribute, diag_send_complete, &
-                              diag_manager_set_time_end
+                              diag_manager_set_time_end, send_data, register_static_field, &
+                              diag_field_add_cell_measures
+use   platform_mod,     only: r8_kind, r4_kind
 use   fms_mod,          only: fms_init, fms_end
-use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast
-use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time
+use   mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file
+use   time_manager_mod, only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+)
 use fms_diag_object_mod,only: dump_diag_obj
 
 implicit none
 
+!> @brief Type to hold all the dummy data variables
+type data_type
+  real(kind=r8_kind), allocatable   :: var1(:,:)        !< Dummy data for var1
+  real(kind=r8_kind), allocatable   :: var2(:,:)        !< Dummy data for var2
+  real(kind=r8_kind), allocatable   :: var3(:,:)        !< Dummy data for var3
+  real(kind=r8_kind), allocatable   :: var4(:,:,:)      !< Dummy data for var4
+  real(kind=r8_kind), allocatable   :: var5(:)          !< Dummy data for var5
+  real(kind=r8_kind), allocatable   :: var6(:)          !< Dummy data for var6
+end type data_type
+
 type(time_type)                   :: Time             !< Time of the simulation
+type(time_type)                   :: Time_step        !< Time_step of the simulation
 integer, dimension(2)             :: layout           !< Layout to use when setting up the domain
 integer, dimension(2)             :: io_layout        !< io layout to use when setting up the io domain
 integer                           :: nx               !< Number of x points
@@ -55,17 +68,29 @@ integer                           :: id_y             !< axis id for the y dimen
 integer                           :: id_y3            !< axis id for the y dimension in the cube sphere domain
 integer                           :: id_UG            !< axis id for the unstructured dimension
 integer                           :: id_z             !< axis id for the z dimention
+integer                           :: id_z2            !< axis id for the z dimention
 integer                           :: id_var1          !< diag_field id for var in lon/lat grid
 integer                           :: id_var2          !< diag_field id for var in lat/lon grid
 integer                           :: id_var3          !< diag_field id for var in cube sphere grid
 integer                           :: id_var4          !< diag_field id for 3d var in cube sphere grid
 integer                           :: id_var5          !< diag_field id for var in UG grid
 integer                           :: id_var6          !< diag_field id for var that is not domain decomposed
-integer                           :: id_var7          !< Scalar var
+integer                           :: id_var7          !< 1D var
+integer                           :: id_var8          !< Scalar var
+type(data_type)                   :: var_data         !< Dummy variable data to send to diag_manager
+logical                           :: used             !< Used for send_data call
+integer                           :: io_status        !< Status after reading the namelist
+logical                           :: debug = .false.  !< Flag used to ignore the axis/field_ids checks in the test.
+                                                      !! Useful when using a portion or a different diag_table.yaml
+
+namelist / test_modern_diag_nml / debug
 
 call fms_init
 call set_calendar_type(JULIAN)
 call diag_manager_init
+
+read (input_nml_file, test_modern_diag_nml, iostat=io_status)
+if (io_status > 0) call mpp_error(FATAL,'=>test_modern_diag: Error reading input.nml')
 
 nx = 96
 ny = 96
@@ -108,19 +133,25 @@ id_y3 = diag_axis_init('y3', y, 'point_E', 'y', Domain2=Domain_cube_sph)
 id_ug = diag_axis_init("grid_index",  real(ug_dim_data), "none", "U", long_name="grid indices", &
                          set_name="land", DomainU=land_domain, aux="geolon_t geolat_t")
 
-id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z')
-!TODO call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+id_z2 = diag_axis_init('z_edge',  z,  'point_Z', 'z', long_name='point_Z')
+id_z  = diag_axis_init('z',  z,  'point_Z', 'z', long_name='point_Z', edges = id_z2)
+
+call diag_axis_add_attribute (id_z, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
 call diag_axis_add_attribute (id_z, 'integer', 10)
 call diag_axis_add_attribute (id_z, '1d integer', (/10, 10/))
 call diag_axis_add_attribute (id_z, 'real', 10.)
 call diag_axis_add_attribute (id_x, '1d real', (/10./))
+call diag_axis_add_attribute (id_ug, 'compress', 'x y')
 
-if (id_x  .ne. 1) call mpp_error(FATAL, "The x axis does not have the expected id")
-if (id_y  .ne. 2) call mpp_error(FATAL, "The y axis does not have the expected id")
-if (id_x3 .ne. 3) call mpp_error(FATAL, "The x3 axis does not have the expected id")
-if (id_y3 .ne. 4) call mpp_error(FATAL, "The y3 axis does not have the expected id")
-if (id_ug .ne. 5) call mpp_error(FATAL, "The ug axis does not have the expected id")
-if (id_z  .ne. 6) call mpp_error(FATAL, "The z axis does not have the expected id")
+if (.not. debug) then
+  if (id_x  .ne. 1) call mpp_error(FATAL, "The x axis does not have the expected id")
+  if (id_y  .ne. 2) call mpp_error(FATAL, "The y axis does not have the expected id")
+  if (id_x3 .ne. 3) call mpp_error(FATAL, "The x3 axis does not have the expected id")
+  if (id_y3 .ne. 4) call mpp_error(FATAL, "The y3 axis does not have the expected id")
+  if (id_ug .ne. 5) call mpp_error(FATAL, "The ug axis does not have the expected id")
+  if (id_z2 .ne. 6) call mpp_error(FATAL, "The z2 axis does not have the expected id")
+  if (id_z  .ne. 7) call mpp_error(FATAL, "The z axis does not have the expected id")
+endif
 
 ! Register the variables
 id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x, id_y/), Time, 'Var in a lon/lat domain', 'mullions')
@@ -135,14 +166,20 @@ id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not doma
 !< This has the same name as var1, but it should have a different id because the module is different
 !! so it should have its own diag_obj
 id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions')
+id_var8 = register_static_field ('atm_mod', 'var7', (/id_z/), "Be static!", "none")
 
-if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
-if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")
-if (id_var3  .ne. 3) call mpp_error(FATAL, "var3 does not have the expected id")
-if (id_var4  .ne. 4) call mpp_error(FATAL, "var4 does not have the expected id")
-if (id_var5  .ne. 5) call mpp_error(FATAL, "var5 does not have the expected id")
-if (id_var6  .ne. 6) call mpp_error(FATAL, "var6 does not have the expected id")
-if (id_var7  .ne. 7) call mpp_error(FATAL, "var7 does not have the expected id")
+if (.not. debug) then
+  if (id_var1  .ne. 1) call mpp_error(FATAL, "var1 does not have the expected id")
+  if (id_var2  .ne. 2) call mpp_error(FATAL, "var2 does not have the expected id")
+  if (id_var3  .ne. 3) call mpp_error(FATAL, "var3 does not have the expected id")
+  if (id_var4  .ne. 4) call mpp_error(FATAL, "var4 does not have the expected id")
+  if (id_var5  .ne. 5) call mpp_error(FATAL, "var5 does not have the expected id")
+  if (id_var6  .ne. 6) call mpp_error(FATAL, "var6 does not have the expected id")
+  if (id_var7  .ne. 7) call mpp_error(FATAL, "var7 does not have the expected id")
+  if (id_var8  .ne. 8) call mpp_error(FATAL, "var8 does not have the expected id")
+endif
+
+call diag_field_add_cell_measures(id_var6, area=id_var8, volume=id_var8)
 
 call diag_field_add_attribute (id_var1, "some string", "this is a string")
 call diag_field_add_attribute (id_var1, "integer", 10)
@@ -150,6 +187,7 @@ call diag_field_add_attribute (id_var1, "1d_integer", (/10, 10/))
 call diag_field_add_attribute (id_var1, "real", 10.)
 call diag_field_add_attribute (id_var2, '1d_real', (/10./))
 call diag_field_add_attribute (id_var2, 'formula', 'p(n,k,j,i) = ap(k) + b(k)*ps(n,j,i)')
+call diag_field_add_attribute (id_var2, 'cell_methods', 'area: mullions')
 
 !! test dump routines
 !! prints fields from objects for debugging to log if name is provided, othwerise goes to stdout
@@ -159,9 +197,25 @@ call dump_diag_obj()
 call diag_manager_set_time_end(Time)
 call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
+call allocate_dummy_data(var_data, domain, Domain_cube_sph, land_domain, nz)
+Time_step = set_time (3600,0) !< 1 hour
 do i=1,23
-  call diag_send_complete(set_date(2,1,1,i,0,0))
+  Time = Time + Time_step
+  call set_dummy_data(var_data, i)
+  used = send_data(id_var1, var_data%var1, Time)
+  used = send_data(id_var2, var_data%var2, Time)
+  used = send_data(id_var3, var_data%var3, Time)
+  used = send_data(id_var4, var_data%var4, Time)
+  used = send_data(id_var5, var_data%var5, Time)
+  used = send_data(id_var6, var_data%var6, Time)
+  used = send_data(id_var7, var_data%var6, Time)
+
+  !TODO I don't know about this (scalar field) or how this is suppose to work #WUT
+  used = send_data(id_var8, var_data%var6, Time)
+
+  call diag_send_complete(Time_step)
 enddo
+call deallocate_dummy_data(var_data)
 
 call diag_manager_end(Time)
 call fms_end
@@ -171,6 +225,57 @@ contains
 include "../fms2_io/create_atmosphere_domain.inc"
 include "../fms2_io/create_land_domain.inc"
 
+!> @brief Allocates the dummy data to send to send_data
+subroutine allocate_dummy_data(var, lat_lon_domain, cube_sphere, lnd_domain, nz)
+  type(data_type), intent(inout) :: var             !< Data var to allocate
+  type(domain2d),  intent(in)    :: lat_lon_domain  !< Lat/Lon domain
+  type(domain2d),  intent(in)    :: cube_sphere     !< Cube sphere domain
+  type(domainug),  intent(in)    :: lnd_domain      !< Land domain
+  integer,         intent(in)    :: nz              !< Number of Z points
+
+  integer :: nland !< Size of the unstructured grid per PE
+  integer :: is    !< Starting x compute index
+  integer :: ie    !< Ending x compute index
+  integer :: js    !< Starting y compute index
+  integer :: je    !< Ending y compute index
+
+  call mpp_get_compute_domain(lat_lon_domain, is, ie, js, je)
+  allocate(var%var1(is:ie, js:je)) !< Variable in a lat/lon domain
+  allocate(var%var2(js:je, is:ie)) !< Variable in a lat/lon domain with flipped dimensions
+
+  call mpp_get_compute_domain(cube_sphere, is, ie, js, je)
+  allocate(var%var3(is:ie, js:je)) !< Variable in a cube sphere domain
+  allocate(var%var4(is:ie, js:je, nz)) !< Variable in a 3D cube sphere domain
+
+  call mpp_get_UG_compute_domain(lnd_domain, size=nland)
+  allocate(var%var5(nz)) !< Variable in the land unstructured domain
+
+  allocate(var%var6(nz)) !< 1D variable not domain decomposed
+
+end subroutine allocate_dummy_data
+
+!> @brief Allocates the dummy data to send to send_data
+subroutine deallocate_dummy_data(var)
+  type(data_type), intent(inout) :: var             !< Data var to deallocate
+
+  deallocate(var%var1, var%var2, var%var3, var%var4, var%var5, var%var6)
+end subroutine deallocate_dummy_data
+
+!> @brief Sets the dummy_data to use in send_data
+subroutine set_dummy_data(var, data_value)
+  type(data_type), intent(inout) :: var        !< Data type to set
+  integer,         intent(in)    :: data_value !< Value to send the data as
+
+  var%var1 = real(data_value, kind=r8_kind)
+  var%var2 = real(data_value + 1, kind=r8_kind)
+  var%var3 = real(data_value + 2, kind=r8_kind)
+  var%var4 = real(data_value + 3, kind=r8_kind)
+  var%var5 = real(data_value + 4, kind=r8_kind)
+  var%var6 = real(data_value + 5, kind=r8_kind)
+
+end subroutine set_dummy_data
+
+!> @brief Sets up a lat/lon domain
 subroutine set_up_2D_domain(Domain, layout, nx, ny, io_layout)
   type(domain2d), intent(out)              :: Domain       !< 2D domain
   integer,        intent(in)               :: layout(:)    !< Layout to use when setting up the domain
@@ -183,6 +288,7 @@ subroutine set_up_2D_domain(Domain, layout, nx, ny, io_layout)
   call mpp_define_io_domain(Domain, io_layout)
 end subroutine set_up_2D_domain
 
+!> @brief Sets up a cube sphere domain
 subroutine set_up_cube_sph_domain(Domain_cube_sph, nx, ny, io_layout)
   type(domain2d), intent(out)              :: Domain_cube_sph  !< 2D domain
   integer,        intent(in)               :: nx               !< Number of x points

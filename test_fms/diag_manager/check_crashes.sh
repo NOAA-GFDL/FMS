@@ -30,32 +30,32 @@ test_expect_failure "Missing tile when using the 'index' grid type" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed '/new_file_freq_units/d' diag_table.yaml_base > diag_table.yaml
+sed '/new_file_freq: 6 hours/new_file_freq: 6/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "Missing new_file_freq_units when using new_file_freq_units" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed 's/new_file_freq_units: hours/new_file_freq_units: mullions/g' diag_table.yaml_base > diag_table.yaml
+sed 's/new_file_freq: 6 hours/new_file_freq: 6 mullions/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "new_file_freq_units is not valid" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed '/file_duration_units/d' diag_table.yaml_base > diag_table.yaml
+sed '/file_duration: 12 hours/file_duration: 12/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "Missing file_duration_units when using file_duration" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed 's/file_duration_units: hours/file_duration_units: mullions/g' diag_table.yaml_base > diag_table.yaml
+sed 's/file_duration: 12 hours/file_duration: 12 mullions/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "file_duration_units is not valid" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed 's/freq_units: hours/freq_units: mullions/g' diag_table.yaml_base > diag_table.yaml
+sed 's/freq: 6 hours/freq: 6 mullions/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "freq units is not valid" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed 's/freq: 6/freq: 6 6/g' diag_table.yaml_base > diag_table.yaml
+sed 's/freq: 6 hours/freq: -6 hours/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "freq is less than -1" '
   mpirun -n 1 ../test_diag_yaml
 '

@@ -1,0 +1,39 @@
+# 'main' required ci, does a distcheck (builds, tests, check install)
+# image created off dockerfile in repo, compile/link flags are set there
+name: Build libFMS test with autotools
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        conf-flag: [ --disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
+        input-flag: [--with-yaml, --enable-test-input=/home/unit_tests_input]
+        exclude:
+          - conf-flag: --with-mpi=no
+            input-flag: --enable-test-input=/home/unit_tests_input
+    container:
+      image: noaagfdl/fms-ci-rocky-gnu:12.3.0
+      env:
+        TEST_VERBOSE: 1
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
+        SKIP_TESTS: "test_mpp_domains2.14 test_horiz_interp2.9 test_horiz_interp2.10 test_yaml_parser.5" # temporary till fixes are in
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Prepare GNU autoconf for build
+      run: autoreconf -if
+    - name: Configure the build
+      if: ${{ matrix.conf-flag != '--disable-setting-flags' }}
+      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} || cat config.log
+    - name: Configure the build with compiler flags
+      if: ${{ matrix.conf-flag == '--disable-setting-flags' }}
+      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include $FCFLAGS" || cat config.log
+    - name: Build the library
+      run: make distcheck
+      if: ${{ matrix.conf-flag != '--with-mpi=no' }}
+    - name: Build the library (without test suite for serial build)
+      run: make
+      if: ${{ matrix.conf-flag == '--with-mpi=no' }}

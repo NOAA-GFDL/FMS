@@ -8,17 +8,22 @@ module fms_diag_field_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 #ifdef use_yaml
-use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string
+use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
-                         &DIAG_FIELD_NOT_FOUND
+                         &DIAG_FIELD_NOT_FOUND, avg_name, time_average, time_min, time_max, &
+                         &time_none, time_diurnal, time_power, time_rms, time_sum
+use fms_string_utils_mod, only: int2str=>string
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
-  & find_diag_field, get_num_unique_fields
+  & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
-  & fmsDiagAxisContainer_type
+  & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type
 use time_manager_mod, ONLY: time_type
+use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
+                       register_variable_attribute
+use fms_diag_input_buffer_mod, only: fmsDiagInputBuffer_t
 !!!set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
 !!!       & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
 !!!       & get_ticks_per_second
@@ -40,6 +45,7 @@ type fmsDiagField_type
      type(fmsDiagAttribute_type), allocatable         :: attributes(:)     !< attributes for the variable
      integer,              private                    :: num_attributes    !< Number of attributes currently added
      logical, allocatable, private                    :: static            !< true if this is a static var
+     logical, allocatable, private                    :: scalar            !< .True. if the variable is a scalar
      logical, allocatable, private                    :: registered        !< true when registered
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
      logical, allocatable, private                    :: do_not_log        !< .true. if no need to log the diag_field
@@ -65,7 +71,16 @@ type fmsDiagField_type
      integer, allocatable, private                    :: area, volume      !< The Area and Volume
      class(*), allocatable, private                   :: missing_value     !< The missing fill value
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
-    contains
+     type(fmsDiagInputBuffer_t), allocatable          :: input_data_buffer !< Input buffer object for when buffering
+                                                                           !! data
+     logical, allocatable, private                    :: data_buffer_is_allocated !< True if the buffer has
+                                                                           !! been allocated
+     logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
+                                                                           !! functions. False when done.
+     logical, allocatable                             :: buffer_allocated  !< True if a buffer pointed by
+                                                                           !! the corresponding index in
+                                                                           !! buffer_ids(:) is allocated.
+  contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
      procedure :: get_id => fms_diag_get_id
@@ -74,10 +89,16 @@ type fmsDiagField_type
      procedure :: register => fms_register_diag_field_obj !! Merely initialize fields.
      procedure :: setID => set_diag_id
      procedure :: set_type => set_vartype
+     procedure :: set_data_buffer => set_data_buffer
+     procedure :: set_data_buffer_is_allocated
+     procedure :: is_data_buffer_allocated
+     procedure :: allocate_data_buffer
+     procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
      procedure :: add_attribute => diag_field_add_attribute
      procedure :: vartype_inq => what_is_vartype
 ! Check functions
      procedure :: is_static => diag_obj_is_static
+     procedure :: is_scalar
      procedure :: is_registered => get_registered
      procedure :: is_registeredB => diag_obj_is_registered
      procedure :: is_mask_variant => get_mask_variant
@@ -100,10 +121,12 @@ type fmsDiagField_type
      procedure :: has_interp_method
      procedure :: has_frequency
      procedure :: has_tile_count
+     procedure :: has_axis_ids
      procedure :: has_area
      procedure :: has_volume
      procedure :: has_missing_value
      procedure :: has_data_RANGE
+     procedure :: has_input_data_buffer
 ! Get functions
      procedure :: get_attributes
      procedure :: get_static
@@ -125,9 +148,21 @@ type fmsDiagField_type
      procedure :: get_missing_value
      procedure :: get_data_RANGE
      procedure :: get_axis_id
+     procedure :: get_data_buffer
+     procedure :: get_mask
+     procedure :: get_weight
      procedure :: dump_field_obj
      procedure :: get_domain
      procedure :: get_type_of_domain
+     procedure :: set_file_ids
+     procedure :: get_dimnames
+     procedure :: get_var_skind
+     procedure :: get_longname_to_write
+     procedure :: write_field_metadata
+     procedure :: write_coordinate_attribute
+     procedure :: get_math_needs_to_be_done
+     procedure :: add_area_volume
+     procedure :: append_time_cell_methods
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -140,6 +175,7 @@ public :: fmsDiagField_type
 public :: fms_diag_fields_object_init
 public :: null_ob
 public :: fms_diag_field_object_end
+public :: get_default_missing_value
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  CONTAINS
@@ -209,10 +245,12 @@ subroutine fms_register_diag_field_obj &
 
 !> Add axis and domain information
   if (present(axes)) then
+    this%scalar = .false.
     this%axis_ids = axes
     call get_domain_and_domain_type(diag_axis, this%axis_ids, this%type_of_domain, this%domain, this%varname)
   else
-     !> The variable is a scalar
+    !> The variable is a scalar
+    this%scalar = .true.
     this%type_of_domain = NO_DOMAIN
     this%domain => null()
   endif
@@ -220,9 +258,14 @@ subroutine fms_register_diag_field_obj &
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname))      this%longname      = trim(longname)
   if (present(standname))     this%standname     = trim(standname)
-  if (present(units))         this%units         = trim(units)
+
+  !> Ignore the units if they are set to "none". This is to reproduce previous diag_manager behavior
+  if (present(units)) then
+    if (trim(units) .ne. "none") this%units = trim(units)
+  endif
   if (present(realm))         this%realm         = trim(realm)
   if (present(interp_method)) this%interp_method = trim(interp_method)
+
   if (present(tile_count)) then
     allocate(this%tile_count)
     this%tile_count = tile_count
@@ -242,22 +285,16 @@ subroutine fms_register_diag_field_obj &
              allocate(integer(kind=i8_kind) :: this%missing_value)
              this%missing_value = missing_value
      type is (real(kind=r4_kind))
-             allocate(integer(kind=r4_kind) :: this%missing_value)
+             allocate(real(kind=r4_kind) :: this%missing_value)
              this%missing_value = missing_value
      type is (real(kind=r8_kind))
-             allocate(integer(kind=r8_kind) :: this%missing_value)
+             allocate(real(kind=r8_kind) :: this%missing_value)
              this%missing_value = missing_value
      class default
              call mpp_error("fms_register_diag_field_obj", &
                      "The missing value passed to register a diagnostic is not a r8, r4, i8, or i4",&
                      FATAL)
     end select
-  else
-      allocate(real :: this%missing_value)
-      select type (miss => this%missing_value)
-       type is (real)
-        miss = real(CMOR_MISSING_VALUE)
-      end select
   endif
 
   if (present(varRANGE)) then
@@ -279,12 +316,6 @@ subroutine fms_register_diag_field_obj &
                      "The varRange passed to register a diagnostic is not a r8, r4, i8, or i4",&
                      FATAL)
     end select
-  else
-      allocate(real :: this%data_RANGE(2))
-      select type (varRANGE => this%data_RANGE)
-       type is (real)
-        varRANGE = real(CMOR_MISSING_VALUE)
-      end select
   endif
 
   if (present(area)) then
@@ -360,6 +391,68 @@ subroutine set_vartype(objin , var)
  end select
 end subroutine set_vartype
 
+!> @brief Adds the input data to the buffered data.
+subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
+  class (fmsDiagField_type) , intent(inout):: this                !< The field object
+  class(*),                   intent(in)   :: input_data(:,:,:,:) !< The input array
+  logical,                    intent(in)   :: mask(:,:,:,:)       !< The field mask
+  real(kind=r8_kind),         intent(in)   :: weight              !< The field weight
+  integer,                    intent(in)   :: is, js, ks          !< Starting indicies of the field_data relative
+                                                                  !! to the compute domain (1 based)
+  integer,                    intent(in)   :: ie, je, ke          !< Ending indicies of the field_data relative
+                                                                  !! to the compute domain (1 based)
+
+  character(len=128) :: err_msg !< Error msg
+  if (.not.this%data_buffer_is_allocated) &
+    call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
+      "allocated.", FATAL)
+  err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, mask, is, js, ks, ie, je, ke)
+  if (trim(err_msg) .ne. "") call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
+
+end subroutine set_data_buffer
+!> Allocates the global data buffer for a given field using a single thread. Returns true when the
+!! buffer is allocated
+logical function allocate_data_buffer(this, input_data, diag_axis)
+  class (fmsDiagField_type), target, intent(inout):: this !< The field object
+  class(*), dimension(:,:,:,:), intent(in) :: input_data !< The input array
+  class(fmsDiagAxisContainer_type),intent(in)   :: diag_axis(:) !< Array of diag_axis
+
+  character(len=128) :: err_msg !< Error msg
+  err_msg = ""
+
+  allocate(this%input_data_buffer)
+  err_msg = this%input_data_buffer%init(input_data, this%axis_ids, diag_axis)
+  if (trim(err_msg) .ne. "") then
+    call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
+    return
+  endif
+
+  allocate_data_buffer = .true.
+end function allocate_data_buffer
+!> Sets the flag saying that the math functions need to be done
+subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
+  class (fmsDiagField_type) , intent(inout):: this
+  logical, intent (in) :: math_needs_to_be_done !< Flag saying that the math functions need to be done
+  this%math_needs_to_be_done = math_needs_to_be_done
+end subroutine set_math_needs_to_be_done
+
+!> @brief Sets the flag saying that the data buffer is allocated
+subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)
+  class (fmsDiagField_type) , intent(inout) :: this                     !< The field object
+  logical,                    intent (in)   :: data_buffer_is_allocated !< .true. if the
+                                                                        !! data buffer is allocated
+  this%data_buffer_is_allocated = data_buffer_is_allocated
+end subroutine set_data_buffer_is_allocated
+
+!> @brief Determine if the data_buffer is allocated
+!! @return logical indicating if the data_buffer is allocated
+pure logical function is_data_buffer_allocated (this)
+  class (fmsDiagField_type) , intent(in) :: this                     !< The field object
+
+  is_data_buffer_allocated = .false.
+  if (allocated(this%data_buffer_is_allocated)) is_data_buffer_allocated = this%data_buffer_is_allocated
+
+end function
 !> \brief Prints to the screen what type the diag variable is
 subroutine what_is_vartype(this)
  class (fmsDiagField_type) , intent(inout):: this
@@ -485,8 +578,17 @@ end function diag_obj_is_registered
 function diag_obj_is_static (this) result (rslt)
     class(fmsDiagField_type), intent(in) :: this
     logical :: rslt
-    rslt = this%static
+    rslt = .false.
+    if (allocated(this%static)) rslt = this%static
 end function diag_obj_is_static
+
+!> @brief Determine if the field is a scalar
+!! @return .True. if the field is a scalar
+function is_scalar (this) result (rslt)
+  class(fmsDiagField_type), intent(in) :: this !< diag_field object
+  logical                              :: rslt
+  rslt = this%scalar
+end function is_scalar
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Get functions
@@ -526,7 +628,8 @@ pure function get_mask_variant (this) &
 result(rslt)
      class (fmsDiagField_type), intent(in) :: this !< diag object
      logical :: rslt
-     rslt = this%mask_variant
+     rslt = .false.
+     if (allocated(this%mask_variant)) rslt = this%mask_variant
 end function get_mask_variant
 
 !> @brief Gets local
@@ -549,11 +652,21 @@ end function get_vartype
 
 !> @brief Gets varname
 !! @return copy of the variable name
-pure function get_varname (this) &
+pure function get_varname (this, to_write) &
 result(rslt)
-     class (fmsDiagField_type), intent(in) :: this !< diag object
-     character(len=:), allocatable :: rslt
-     rslt = this%varname
+  class (fmsDiagField_type), intent(in) :: this     !< diag object
+  logical, optional,         intent(in) :: to_write !< .true. if getting the varname that will be writen to the file
+  character(len=:), allocatable :: rslt
+  rslt = this%varname
+
+  !< If writing the varname can be the outname which is defined in the yaml
+  if (present(to_write)) then
+    if (to_write) then
+    !TODO this is wrong
+    rslt = this%diag_field(1)%get_var_outname()
+    endif
+  endif
+
 end function get_varname
 
 !> @brief Gets longname
@@ -690,64 +803,104 @@ end function get_volume
 
 !> @brief Gets missing_value
 !! @return copy of The missing value
-function get_missing_value (this) &
+!! @note Netcdf requires the type of the variable and the type of the missing_value and _Fillvalue to be the same
+!! var_type is the type of the variable which may not be in the same type as the missing_value in the register call
+!! For example, if compiling with r8 but the in diag_table.yaml the kind is r4
+function get_missing_value (this, var_type) &
 result(rslt)
-     class (fmsDiagField_type), intent(in) :: this !< diag object
-     class(*),allocatable :: rslt
-     if (allocated(this%missing_value)) then
-       select type (miss => this%missing_value)
-         type is (integer(kind=i4_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
-             rslt = miss
-         type is (integer(kind=i8_kind))
-             allocate (integer(kind=i8_kind) :: rslt)
-             rslt = miss
-         type is (real(kind=r4_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
-             rslt = miss
-         type is (real(kind=r8_kind))
-             allocate (integer(kind=i4_kind) :: rslt)
-             rslt = miss
-         class default
-             call mpp_error ("get_missing_value", &
-                     "The missing value is not a r8, r4, i8, or i4",&
-                     FATAL)
-         end select
-       else
-         call mpp_error ("get_missing_value", &
+  class (fmsDiagField_type), intent(in) :: this     !< diag object
+  integer,                   intent(in) :: var_type !< The type of the variable as it will writen to the netcdf file
+                                                    !! and the missing value is return as
+
+  class(*),allocatable :: rslt
+
+  if (.not. allocated(this%missing_value)) then
+    call mpp_error ("get_missing_value", &
                  "The missing value is not allocated", FATAL)
-       endif
+  endif
+
+  !< The select types are needed so that the missing_value can be correctly converted and copied as the needed variable
+  !! type
+  select case (var_type)
+  case (r4)
+    allocate (real(kind=r4_kind) :: rslt)
+    select type (miss => this%missing_value)
+    type is (real(kind=r4_kind))
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(miss, kind=r4_kind)
+      end select
+    type is (real(kind=r8_kind))
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(miss, kind=r4_kind)
+      end select
+    end select
+  case (r8)
+    allocate (real(kind=r8_kind) :: rslt)
+    select type (miss => this%missing_value)
+    type is (real(kind=r4_kind))
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(miss, kind=r8_kind)
+      end select
+    type is (real(kind=r8_kind))
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(miss, kind=r8_kind)
+      end select
+    end select
+  end select
+
 end function get_missing_value
 
 !> @brief Gets data_range
 !! @return copy of the data range
-function get_data_RANGE (this) &
+!! @note Netcdf requires the type of the variable and the type of the range to be the same
+!! var_type is the type of the variable which may not be in the same type as the range in the register call
+!! For example, if compiling with r8 but the in diag_table.yaml the kind is r4
+function get_data_RANGE (this, var_type) &
 result(rslt)
-     class (fmsDiagField_type), intent(in) :: this !< diag object
-     class(*),allocatable :: rslt(:)
-     if (allocated(this%data_RANGE)) then
-       select type (r => this%data_RANGE)
-         type is (integer(kind=i4_kind))
-             allocate (integer(kind=i4_kind) :: rslt(2))
-             rslt = r
-         type is (integer(kind=i8_kind))
-             allocate (integer(kind=i8_kind) :: rslt(2))
-             rslt = r
-         type is (real(kind=r4_kind))
-             allocate (integer(kind=i4_kind) :: rslt(2))
-             rslt = r
-         type is (real(kind=r8_kind))
-             allocate (integer(kind=i4_kind) :: rslt(2))
-             rslt = r
-         class default
-             call mpp_error ("get_data_RANGE", &
-                     "The data_RANGE value is not a r8, r4, i8, or i4",&
-                     FATAL)
-         end select
-       else
-         call mpp_error ("get_data_RANGE", &
-                 "The data_RANGE value is not allocated", FATAL)
-       endif
+  class (fmsDiagField_type), intent(in) :: this      !< diag object
+  integer,                   intent(in) :: var_type  !< The type of the variable as it will writen to the netcdf file
+                                                     !! and the data_range is returned as
+  class(*),allocatable :: rslt(:)
+
+  if ( .not. allocated(this%data_RANGE)) call mpp_error ("get_data_RANGE", &
+    "The data_RANGE value is not allocated", FATAL)
+
+  !< The select types are needed so that the range can be correctly converted and copied as the needed variable
+  !! type
+  select case (var_type)
+  case (r4)
+    allocate (real(kind=r4_kind) :: rslt(2))
+    select type (r => this%data_RANGE)
+    type is (real(kind=r4_kind))
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(r, kind=r4_kind)
+      end select
+    type is (real(kind=r8_kind))
+      select type (rslt)
+      type is (real(kind=r4_kind))
+        rslt = real(r, kind=r4_kind)
+      end select
+    end select
+  case (r8)
+    allocate (real(kind=r8_kind) :: rslt(2))
+    select type (r => this%data_RANGE)
+    type is (real(kind=r4_kind))
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(r, kind=r8_kind)
+      end select
+    type is (real(kind=r8_kind))
+      select type (rslt)
+      type is (real(kind=r8_kind))
+        rslt = real(r, kind=r8_kind)
+      end select
+    end select
+  end select
 end function get_data_RANGE
 
 !> @brief Gets axis_ids
@@ -788,6 +941,329 @@ result(rslt)
 
   rslt = this%type_of_domain
 end function get_type_of_domain
+
+!> @brief Set the file ids of the files that the field belongs to
+subroutine set_file_ids(this, file_ids)
+  class (fmsDiagField_type), intent(inout) :: this        !< diag field
+  integer,                   intent(in)    :: file_ids(:) !< File_ids to add
+
+  allocate(this%file_ids(size(file_ids)))
+  this%file_ids = file_ids
+end subroutine set_file_ids
+
+!> @brief Get the kind of the variable based on the yaml
+!! @return A string indicating the kind of the variable (as it is used in fms2_io)
+pure function get_var_skind(this, field_yaml) &
+result(rslt)
+  class (fmsDiagField_type),   intent(in) :: this       !< diag field
+  type(diagYamlFilesVar_type), intent(in) :: field_yaml !< The corresponding yaml of the field
+
+  character(len=:), allocatable :: rslt
+
+  integer :: var_kind !< The integer corresponding to the kind of the variable (i4, i8, r4, r8)
+
+  var_kind = field_yaml%get_var_kind()
+  select case (var_kind)
+  case (r4)
+    rslt = "float"
+  case (r8)
+    rslt = "double"
+  case (i4)
+    rslt = "int"
+  case (i8)
+    rslt = "int64"
+  end select
+
+end function get_var_skind
+
+!> @brief Determine the long name to write for the field
+!! @return Long name to write
+pure function get_longname_to_write(this, field_yaml) &
+result(rslt)
+  class (fmsDiagField_type),   intent(in) :: this       !< diag field
+  type(diagYamlFilesVar_type), intent(in) :: field_yaml !< The corresponding yaml of the field
+
+  character(len=:), allocatable :: rslt
+
+  rslt = field_yaml%get_var_longname() !! This is the long name defined in the yaml
+  if (rslt .eq. "") then !! If the long name is not defined in the yaml, use the long name in the
+                         !! register_diag_field
+    rslt = this%get_longname()
+  else
+    return
+  endif
+  if (rslt .eq. "") then !! If the long name is not defined in the yaml and in the register_diag_field
+                         !! use the variable name
+    rslt = field_yaml%get_var_outname()
+  endif
+end function get_longname_to_write
+
+!> @brief Determine the dimension names to use when registering the field to fms2_io
+subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
+  class (fmsDiagField_type),        target, intent(inout) :: this          !< diag field
+  class(fmsDiagAxisContainer_type), target, intent(in)    :: diag_axis(:)  !< Diag_axis object
+  type(diagYamlFilesVar_type),              intent(in)    :: field_yaml    !< Field info from diag_table yaml
+  character(len=*),                         intent(in)    :: unlim_dimname !< The name of unlimited dimension
+  character(len=120), allocatable,          intent(out)   :: dimnames(:)   !< Array of the dimension names
+                                                                           !! for the field
+  logical,                                  intent(in)    :: is_regional   !< Flag indicating if the field is regional
+
+  integer                                   :: i     !< For do loops
+  integer                                   :: naxis !< Number of axis for the field
+  class(fmsDiagAxisContainer_type), pointer :: axis_ptr !diag_axis(this%axis_ids(i), for convenience
+
+  if (this%is_static()) then
+    naxis = size(this%axis_ids)
+  else
+    naxis = size(this%axis_ids) + 1 !< Adding 1 more dimension for the unlimited dimension
+  endif
+
+  if (field_yaml%has_n_diurnal()) then
+    naxis = naxis + 1 !< Adding 1 more dimension for the diurnal axis
+  endif
+
+  allocate(dimnames(naxis))
+
+  !< Duplicated do loops for performance
+  if (field_yaml%has_var_zbounds()) then
+    do i = 1, size(this%axis_ids)
+      axis_ptr => diag_axis(this%axis_ids(i))
+      if (axis_ptr%axis%is_z_axis()) then
+        dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)//"_sub01"
+      else
+        dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
+      endif
+    enddo
+  else
+    do i = 1, size(this%axis_ids)
+      axis_ptr => diag_axis(this%axis_ids(i))
+      dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
+    enddo
+  endif
+
+  !< The second to last dimension is always the diurnal axis
+  if (field_yaml%has_n_diurnal()) then
+    dimnames(naxis - 1) = 'time_of_day_'//int2str(field_yaml%get_n_diurnal())
+  endif
+
+  !< The last dimension is always the unlimited dimensions
+  if (.not. this%is_static()) dimnames(naxis) = unlim_dimname
+
+end subroutine get_dimnames
+
+!> @brief Wrapper for the register_field call. The select types are needed so that the code can go
+!! in the correct interface
+subroutine register_field_wrap(fms2io_fileobj, varname, vartype, dimensions)
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write to
+  character(len=*),                  INTENT(IN)    :: varname       !< Name of the variable
+  character(len=*),                  INTENT(IN)    :: vartype       !< The type of the variable
+  character(len=*), optional,        INTENT(IN)    :: dimensions(:) !< The dimension names of the field
+
+  select type(fms2io_fileobj)
+  type is (FmsNetcdfFile_t)
+    call register_field(fms2io_fileobj, varname, vartype, dimensions)
+  type is (FmsNetcdfDomainFile_t)
+    call register_field(fms2io_fileobj, varname, vartype, dimensions)
+  type is (FmsNetcdfUnstructuredDomainFile_t)
+    call register_field(fms2io_fileobj, varname, vartype, dimensions)
+  end select
+end subroutine register_field_wrap
+
+!> @brief Write the field's metadata to the file
+subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional, &
+                                cell_measures)
+  class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write to
+  integer,                           intent(in)    :: file_id       !< File id of the file to write to
+  integer,                           intent(in)    :: yaml_id       !< Yaml id of the yaml entry of this field
+  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:)  !< Diag_axis object
+  character(len=*),                  intent(in)    :: unlim_dimname !< The name of the unlimited dimension
+  logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
+  character(len=*),                  intent(in)    :: cell_measures !< The cell measures attribute to write
+
+  type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
+  character(len=:),            allocatable :: var_name    !< Variable name
+  character(len=:),            allocatable :: long_name   !< Longname to write
+  character(len=:),            allocatable :: units       !< Units of the field to write
+  character(len=120),          allocatable :: dimnames(:) !< Dimension names of the field
+  character(len=120)                       :: cell_methods!< Cell methods attribute to write
+  integer                                  :: i           !< For do loops
+  character (len=MAX_STR_LEN), allocatable :: yaml_field_attributes(:,:) !< Variable attributes defined in the yaml
+
+  field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+  var_name = field_yaml%get_var_outname()
+
+  if (allocated(this%axis_ids)) then
+    call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
+    call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
+  else
+    if (this%is_static()) then
+      call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml))
+    else
+      !< In this case, the scalar variable is a function of time, so we need to pass in the
+      !! unlimited dimension as a dimension
+      call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), (/unlim_dimname/))
+    endif
+  endif
+
+  long_name = this%get_longname_to_write(field_yaml)
+  call register_variable_attribute(fms2io_fileobj, var_name, "long_name", long_name, str_len=len_trim(long_name))
+
+  units = this%get_units()
+  if (units .ne. diag_null_string) &
+    call register_variable_attribute(fms2io_fileobj, var_name, "units", units, str_len=len_trim(units))
+
+  if (this%has_missing_value()) then
+    call register_variable_attribute(fms2io_fileobj, var_name, "missing_value", &
+      this%get_missing_value(field_yaml%get_var_kind()))
+    call register_variable_attribute(fms2io_fileobj, var_name, "_FillValue", &
+      this%get_missing_value(field_yaml%get_var_kind()))
+  else
+    call register_variable_attribute(fms2io_fileobj, var_name, "missing_value", &
+      get_default_missing_value(field_yaml%get_var_kind()))
+      call register_variable_attribute(fms2io_fileobj, var_name, "_FillValue", &
+      get_default_missing_value(field_yaml%get_var_kind()))
+  endif
+
+  if (this%has_data_RANGE()) then
+    call register_variable_attribute(fms2io_fileobj, var_name, "valid_range", &
+      this%get_data_range(field_yaml%get_var_kind()))
+  endif
+
+  if (this%has_interp_method()) then
+    call register_variable_attribute(fms2io_fileobj, var_name, "interp_method", this%get_interp_method(), &
+      str_len=len_trim(this%get_interp_method()))
+  endif
+
+  if (.not. this%static) then
+    select case (field_yaml%get_var_reduction())
+    case (time_average, time_max, time_min, time_diurnal, time_power, time_rms, time_sum)
+      call register_variable_attribute(fms2io_fileobj, var_name, "time_avg_info", &
+        trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
+        str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
+    end select
+  endif
+
+  cell_methods = ""
+  !< Check if any of the attributes defined via a "diag_field_add_attribute" call
+  !! are the cell_methods, if so add to the "cell_methods" variable:
+  do i = 1, this%num_attributes
+    call this%attributes(i)%write_metadata(fms2io_fileobj, var_name, &
+      cell_methods=cell_methods)
+  enddo
+
+  !< Append the time cell methods based on the variable's reduction
+  call this%append_time_cell_methods(cell_methods, field_yaml)
+  if (trim(cell_methods) .ne. "") &
+    call register_variable_attribute(fms2io_fileobj, var_name, "cell_methods", &
+      trim(adjustl(cell_methods)), str_len=len_trim(adjustl(cell_methods)))
+
+  !< Write out the cell_measures attribute (i.e Area, Volume)
+  !! The diag field ids for the Area and Volume are sent in the register call
+  !! This was defined in file object and passed in here
+  if (trim(cell_measures) .ne. "") &
+    call register_variable_attribute(fms2io_fileobj, var_name, "cell_measures", &
+      trim(adjustl(cell_measures)), str_len=len_trim(adjustl(cell_measures)))
+
+  !< Write out the standard_name (this was defined in the register call)
+  if (this%has_standname()) &
+  call register_variable_attribute(fms2io_fileobj, var_name, "standard_name", &
+    trim(this%get_standname()), str_len=len_trim(this%get_standname()))
+
+  call this%write_coordinate_attribute(fms2io_fileobj, var_name, diag_axis)
+
+  if (field_yaml%has_var_attributes()) then
+    yaml_field_attributes = field_yaml%get_var_attributes()
+    do i = 1, size(yaml_field_attributes,1)
+      call register_variable_attribute(fms2io_fileobj, var_name, trim(yaml_field_attributes(i,1)), &
+      trim(yaml_field_attributes(i,2)), str_len=len_trim(yaml_field_attributes(i,2)))
+    enddo
+    deallocate(yaml_field_attributes)
+  endif
+end subroutine write_field_metadata
+
+!> @brief Writes the coordinate attribute of a field if any of the field's axis has an
+!! auxiliary axis
+subroutine write_coordinate_attribute (this, fms2io_fileobj, var_name, diag_axis)
+  CLASS(fmsDiagField_type),          intent(in)    :: this         !< The field object
+  class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write to
+  character(len=*),                  intent(in)    :: var_name     !< Variable name
+  class(fmsDiagAxisContainer_type),  intent(in)    :: diag_axis(:) !< Diag_axis object
+
+  integer              :: i         !< For do loops
+  character(len = 252) :: aux_coord !< Auxuliary axis name
+
+  !> If the variable is a scalar, go away
+  if (.not. allocated(this%axis_ids)) return
+
+  !> Determine if any of the field's axis has an auxiliary axis and the
+  !! axis_names as a variable attribute
+  aux_coord = ""
+  do i = 1, size(this%axis_ids)
+    select type (obj => diag_axis(this%axis_ids(i))%axis)
+    type is (fmsDiagFullAxis_type)
+      if (obj%has_aux()) then
+        aux_coord = trim(aux_coord)//" "//obj%get_aux()
+      endif
+    end select
+  enddo
+
+  if (trim(aux_coord) .eq. "") return
+
+  call register_variable_attribute(fms2io_fileobj, var_name, "coordinates", &
+    trim(adjustl(aux_coord)), str_len=len_trim(adjustl(aux_coord)))
+
+end subroutine write_coordinate_attribute
+
+!> @brief Gets a fields data buffer
+!! @return a pointer to the data buffer
+function get_data_buffer (this) &
+  result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  class(*),dimension(:,:,:,:), pointer      :: rslt !< The field's data buffer
+
+  if (.not. this%data_buffer_is_allocated) &
+  call mpp_error(FATAL, "The input data buffer for the field:"&
+    //trim(this%varname)//" was never allocated.")
+
+  rslt => this%input_data_buffer%get_buffer()
+end function get_data_buffer
+
+!> @brief Gets a fields mask buffer
+!! @return a pointer to the mask buffer
+function get_mask (this) &
+  result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  logical, dimension(:,:,:,:), pointer :: rslt
+
+  if (.not. this%data_buffer_is_allocated) &
+  call mpp_error(FATAL, "The input data buffer for the field:"&
+    //trim(this%varname)//" was never allocated.")
+
+  rslt => this%input_data_buffer%get_mask()
+end function get_mask
+
+!> @brief Gets a fields weight buffer
+!! @return a pointer to the weight buffer
+function get_weight (this) &
+  result(rslt)
+  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
+  type(real(kind=r8_kind)), pointer :: rslt
+
+  if (.not. this%data_buffer_is_allocated) &
+  call mpp_error(FATAL, "The input data buffer for the field:"&
+    //trim(this%varname)//" was never allocated.")
+
+  rslt => this%input_data_buffer%get_weight()
+end function get_weight
+
+!> Gets the flag telling if the math functions need to be done
+!! \return Copy of math_needs_to_be_done flag
+pure logical function get_math_needs_to_be_done(this)
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+  get_math_needs_to_be_done = .false.
+  if (allocated(this%math_needs_to_be_done)) get_math_needs_to_be_done = this%math_needs_to_be_done
+end function get_math_needs_to_be_done
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!! Allocation checks
 
@@ -909,6 +1385,13 @@ pure logical function has_tile_count (this)
   has_tile_count = allocated(this%tile_count)
 end function has_tile_count
 
+!> @brief Checks if axis_ids of the object is allocated
+!! @return true if it is allocated
+pure logical function has_axis_ids (this)
+  class (fmsDiagField_type), intent(in) :: this !< diag field object
+  has_axis_ids = allocated(this%axis_ids)
+end function has_axis_ids
+
 !> @brief Checks if obj%area is allocated
 !! @return true if obj%area is allocated
 pure logical function has_area (this)
@@ -937,6 +1420,13 @@ pure logical function has_data_RANGE (this)
   has_data_RANGE = allocated(this%data_RANGE)
 end function has_data_RANGE
 
+!> @brief Checks if obj%input_data_buffer is allocated
+!! @return true if obj%input_data_buffer is allocated
+pure logical function has_input_data_buffer (this)
+  class (fmsDiagField_type), intent(in) :: this !< diag object
+  has_input_data_buffer = allocated(this%input_data_buffer)
+end function has_input_data_buffer
+
 !> @brief Add a attribute to the diag_obj using the diag_field_id
 subroutine diag_field_add_attribute(this, att_name, att_value)
   class (fmsDiagField_type), intent (inout) :: this !< The field object
@@ -950,6 +1440,25 @@ subroutine diag_field_add_attribute(this, att_name, att_value)
 
   call this%attributes(this%num_attributes)%add(att_name, att_value)
 end subroutine diag_field_add_attribute
+
+!> @brief Determine the default missing value to use based on the requested variable type
+!! @return The missing value
+function get_default_missing_value(var_type) &
+  result(rslt)
+
+  integer, intent(in) :: var_type !< The type of the variable to return the missing value as
+  class(*),allocatable :: rslt
+
+  select case(var_type)
+  case (r4)
+    allocate(real(kind=r4_kind) :: rslt)
+    rslt = real(CMOR_MISSING_VALUE, kind=r4_kind)
+  case (r8)
+    allocate(real(kind=r8_kind) :: rslt)
+    rslt = real(CMOR_MISSING_VALUE, kind=r8_kind)
+  case default
+  end select
+end function
 
 !> @brief Determines the diag_obj id corresponding to a module name and field_name
 !> @return diag_obj id
@@ -967,6 +1476,65 @@ PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
         diag_field_id = this%get_id()
   endif
 end function diag_field_id_from_name
+
+!> @brief Adds the area and volume id to a field object
+subroutine add_area_volume(this, area, volume)
+  CLASS(fmsDiagField_type),          intent(inout) :: this   !< The field object
+  INTEGER,                 optional, INTENT(in)    :: area   !< diag ids of area
+  INTEGER,                 optional, INTENT(in)    :: volume !< diag ids of volume
+
+  if (present(area)) then
+    if (area > 0) then
+      this%area = area
+    else
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the area id is not valid. "&
+                           &"Verify that the area_id passed in to the field:"//this%varname//&
+                           &" is valid and that the field is registered and in the diag_table.yaml")
+    endif
+  endif
+
+  if (present(volume)) then
+    if (volume > 0) then
+      this%volume = volume
+    else
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the volume id is not valid. "&
+                           &"Verify that the volume_id passed in to the field:"//this%varname//&
+                           &" is valid and that the field is registered and in the diag_table.yaml")
+    endif
+  endif
+
+end subroutine add_area_volume
+
+!> @brief Append the time cell meathods based on the variable's reduction
+subroutine append_time_cell_methods(this, cell_methods, field_yaml)
+  class (fmsDiagField_type),   target, intent(inout) :: this          !< diag field
+  character(len=*),                    intent(inout) :: cell_methods  !< The cell methods var to append to
+  type(diagYamlFilesVar_type),         intent(in)    :: field_yaml    !< The field's yaml
+
+  if (this%static) then
+    cell_methods = trim(cell_methods)//" time: point "
+    return
+  endif
+
+  select case (field_yaml%get_var_reduction())
+  case (time_none)
+    cell_methods = trim(cell_methods)//" time: point "
+  case (time_diurnal)
+    cell_methods = trim(cell_methods)//" time: mean"
+  case (time_power)
+    cell_methods = trim(cell_methods)//" time: mean_pow"//int2str(field_yaml%get_pow_value())
+  case (time_rms)
+    cell_methods = trim(cell_methods)//" time: root_mean_square"
+  case (time_max)
+    cell_methods = trim(cell_methods)//" time: max"
+  case (time_min)
+    cell_methods = trim(cell_methods)//" time: min"
+  case (time_average)
+    cell_methods = trim(cell_methods)//" time: mean"
+  case (time_sum)
+    cell_methods = trim(cell_methods)//" time: sum"
+  end select
+end subroutine append_time_cell_methods
 
 !> Dumps any data from a given fmsDiagField_type object
 subroutine dump_field_obj (this, unit_num)
@@ -1039,6 +1607,28 @@ subroutine dump_field_obj (this, unit_num)
   endif
 
 end subroutine
+
+!< @brief Get the starting compute domain indices for a set of axis
+!! @return compute domain starting indices
+function get_starting_compute_domain(axis_ids, diag_axis) &
+result(compute_domain)
+  integer,                         intent(in) :: axis_ids(:)  !< Array of axis ids
+  class(fmsDiagAxisContainer_type),intent(in) :: diag_axis(:) !< Array of axis object
+
+  integer :: compute_domain(4)
+  integer :: a              !< For looping through axes
+  integer :: compute_idx(2) !< Compute domain indices (starting, ending)
+  logical :: dummy          !< Dummy variable for the `get_compute_domain` subroutine
+
+  compute_domain = 1
+  axis_loop: do a = 1,size(axis_ids)
+    select type (axis => diag_axis(axis_ids(a))%axis)
+      type is (fmsDiagFullAxis_type)
+        call axis%get_compute_domain(compute_idx, dummy)
+        if ( compute_idx(1) .ne. diag_null) compute_domain(a) = compute_idx(1)
+    end select
+  enddo axis_loop
+end function get_starting_compute_domain
 
 #endif
 end module fms_diag_field_object_mod

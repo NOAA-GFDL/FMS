@@ -698,16 +698,20 @@ private
   interface mpp_gather
      module procedure mpp_gather_logical_1d
      module procedure mpp_gather_int4_1d
+     module procedure mpp_gather_int8_1d
      module procedure mpp_gather_real4_1d
      module procedure mpp_gather_real8_1d
      module procedure mpp_gather_logical_1dv
      module procedure mpp_gather_int4_1dv
+     module procedure mpp_gather_int8_1dv
      module procedure mpp_gather_real4_1dv
      module procedure mpp_gather_real8_1dv
      module procedure mpp_gather_pelist_logical_2d
      module procedure mpp_gather_pelist_logical_3d
      module procedure mpp_gather_pelist_int4_2d
      module procedure mpp_gather_pelist_int4_3d
+     module procedure mpp_gather_pelist_int8_2d
+     module procedure mpp_gather_pelist_int8_3d
      module procedure mpp_gather_pelist_real4_2d
      module procedure mpp_gather_pelist_real4_3d
      module procedure mpp_gather_pelist_real8_2d
@@ -734,6 +738,8 @@ private
   interface mpp_scatter
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
+     module procedure mpp_scatter_pelist_int8_2d
+     module procedure mpp_scatter_pelist_int8_3d
      module procedure mpp_scatter_pelist_real4_2d
      module procedure mpp_scatter_pelist_real4_3d
      module procedure mpp_scatter_pelist_real8_2d
@@ -1341,7 +1347,7 @@ private
   namelist /mpp_nml/ etc_unit_is_stderr, request_multiply, mpp_record_timing_data, sync_all_clocks
 
   contains
-#include <system_clock.h>
+#include <system_clock.fh>
 #include <mpp_util.inc>
 #include <mpp_comm.inc>
 

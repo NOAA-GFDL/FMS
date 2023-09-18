@@ -27,12 +27,14 @@ module fms_diag_file_object_mod
 #ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
                        get_instance_filename, open_file, close_file, get_mosaic_tile_file, unlimited, &
-                       register_axis, register_field, register_variable_attribute, write_data
+                       register_axis, register_field, register_variable_attribute, write_data, &
+                       dimension_exists, register_global_attribute
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
-                         time_diurnal, time_power, time_none, avg_name, no_units
+                         time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
+                         middle_time, begin_time, end_time, MAX_STR_LEN
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -40,7 +42,10 @@ use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
-                                    fmsDiagFullAxis_type, define_subaxis
+                                    fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
+                                    fmsDiagDiurnalAxis_type, create_new_z_subaxis
+use fms_diag_field_object_mod, only: fmsDiagField_type
+use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase
 
@@ -62,12 +67,13 @@ type :: fmsDiagFile_type
   TYPE(time_type) :: next_output      !< Time of the next write
   TYPE(time_type) :: next_next_output !< Time of the next next write
   TYPE(time_type) :: no_more_data     !< Time to stop receiving data for this file
+  logical         :: done_writing_data!< .True. if finished writing data
 
   !< This will be used when using the new_file_freq keys in the diag_table.yaml
   TYPE(time_type) :: next_close       !< Time to close the file
   logical         :: is_file_open     !< .True. if the file is opened
 
-  class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object for this history file
+  class(FmsNetcdfFile_t), allocatable :: fms2io_fileobj !< fms2_io file object for this history file
   type(diagYamlFiles_type), pointer :: diag_yaml_file => null() !< Pointer to the diag_yaml_file data
   integer                                      :: type_of_domain !< The type of domain to use to open the file
                                                                  !! NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, SUB_REGIONAL
@@ -76,20 +82,25 @@ type :: fmsDiagFile_type
   character(len=:) , dimension(:), allocatable :: file_metadata_from_model !< File metadata that comes from
                                                                            !! the model.
   integer, dimension(:), allocatable :: field_ids !< Variable IDs corresponding to file_varlist
+  integer, dimension(:), allocatable :: yaml_ids !< IDs corresponding to the yaml field section
   logical, dimension(:), private, allocatable :: field_registered   !< Array corresponding to `field_ids`, .true.
                                                                  !! if the variable has been registered and
                                                                  !! `field_id` has been set for the variable
   integer, allocatable                         :: num_registered_fields !< The number of fields registered
                                                                         !! to the file
   integer, dimension(:), allocatable :: axis_ids !< Array of axis ids in the file
-  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_axis !< Number of axis in the file
+  integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
+  integer :: number_of_buffers !< Number of buffers that have been added to the file
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
-  integer :: unlimited_dimension !< The unlimited dimension currently being written
+  integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: is_static !< .True. if the frequency is -1
 
  contains
-  procedure, public :: add_field_id
+  procedure, public :: add_field_and_yaml_id
+  procedure, public :: add_buffer_id
+  procedure, public :: is_field_registered
+  procedure, public :: init_diurnal_axis
   procedure, public :: has_file_metadata_from_model
   procedure, public :: has_fileobj
   procedure, public :: has_diag_yaml_file
@@ -112,12 +123,14 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_unlimdim
  procedure, public :: get_file_sub_region
  procedure, public :: get_file_new_file_freq
+ procedure, public :: get_filename_time
  procedure, public :: get_file_new_file_freq_units
  procedure, public :: get_file_start_time
  procedure, public :: get_file_duration
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
+ procedure, public :: is_done_writing_data
  procedure, public :: has_file_fname
  procedure, public :: has_file_frequnit
  procedure, public :: has_file_freq
@@ -145,9 +158,14 @@ type fmsDiagFileContainer_type
   class (fmsDiagFile_type),allocatable :: FMS_diag_file !< The individual file object
 
   contains
+  procedure :: is_regional
+  procedure :: is_file_static
   procedure :: open_diag_file
+  procedure :: write_global_metadata
   procedure :: write_time_metadata
+  procedure :: write_field_data
   procedure :: write_axis_metadata
+  procedure :: write_field_metadata
   procedure :: write_axis_data
   procedure :: writing_on_this_pe
   procedure :: is_time_to_write
@@ -155,7 +173,8 @@ type fmsDiagFileContainer_type
   procedure :: write_time_data
   procedure :: update_next_write
   procedure :: update_current_new_file_freq_index
-  procedure :: increase_unlimited_dimension
+  procedure :: increase_unlim_dimension_level
+  procedure :: get_unlim_dimension_level
   procedure :: close_diag_file
 end type fmsDiagFileContainer_type
 
@@ -196,11 +215,16 @@ logical function fms_diag_files_object_init (files_array)
      obj%diag_yaml_file => diag_yaml%diag_files(i)
      obj%id = i
      allocate(obj%field_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%buffer_ids(diag_yaml%diag_files(i)%size_file_varlist()))
+     allocate(obj%yaml_ids(diag_yaml%diag_files(i)%size_file_varlist()))
      allocate(obj%field_registered(diag_yaml%diag_files(i)%size_file_varlist()))
      !! Initialize the integer arrays
      obj%field_ids = DIAG_NOT_REGISTERED
+     obj%yaml_ids = DIAG_NOT_REGISTERED
+     obj%buffer_ids = DIAG_NOT_REGISTERED
      obj%field_registered = .FALSE.
      obj%num_registered_fields = 0
+     obj%number_of_buffers = 0
 
      !> These will be set in a set_file_domain
      obj%type_of_domain = NO_DOMAIN
@@ -211,6 +235,7 @@ logical function fms_diag_files_object_init (files_array)
      obj%number_of_axis = 0
 
      !> Set the start_time of the file to the base_time and set up the *_output variables
+     obj%done_writing_data = .false.
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
@@ -232,7 +257,7 @@ logical function fms_diag_files_object_init (files_array)
      endif
 
      obj%time_ops = .false.
-     obj%unlimited_dimension = 0
+     obj%unlim_dimension_level = 0
      obj%is_static = obj%get_file_freq() .eq. -1
 
      nullify(obj)
@@ -245,25 +270,88 @@ logical function fms_diag_files_object_init (files_array)
   endif
 end function fms_diag_files_object_init
 
-!> \brief Adds a field ID to the file
-subroutine add_field_id (this, new_field_id)
-  class(fmsDiagFile_type), intent(inout) :: this !< The file object
-  integer, intent(in) :: new_field_id !< The field ID to be added to field_ids
+!< @brief Determine if the field corresponding to the field_id was registered to the file
+!! @return .True. if the field was registed to the file
+pure logical function is_field_registered(this, field_id)
+  class(fmsDiagFile_type), intent(in)    :: this         !< The file object
+  integer,                 intent(in)    :: field_id     !< Id of the field to check
+
+  is_field_registered = this%field_registered(field_id)
+end function is_field_registered
+
+!> \brief Adds a field and yaml ID to the file
+subroutine add_field_and_yaml_id (this, new_field_id, yaml_id)
+  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  integer,                 intent(in)    :: new_field_id !< The field ID to be added to field_ids
+  integer,                 intent(in)    :: yaml_id      !< The yaml_id
+
   this%num_registered_fields = this%num_registered_fields + 1
   if (this%num_registered_fields .le. size(this%field_ids)) then
     this%field_ids( this%num_registered_fields ) = new_field_id
+    this%yaml_ids( this%num_registered_fields ) = yaml_id
     this%field_registered( this%num_registered_fields ) = .true.
   else
     call mpp_error(FATAL, "The file: "//this%get_file_fname()//" has already been assigned its maximum "//&
                  "number of fields.")
   endif
-end subroutine add_field_id
+end subroutine add_field_and_yaml_id
+
+!> \brief Adds a buffer_id to the file object
+subroutine add_buffer_id (this, buffer_id)
+  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  integer,                 intent(in)    :: buffer_id    !< Buffer id to add to the file
+
+  this%number_of_buffers = this%number_of_buffers + 1
+  this%buffer_ids(this%number_of_buffers) = buffer_id
+
+end subroutine add_buffer_id
+
+!> \brief Initializes a diurnal axis for a fileobj
+!! \note This is going to be called for every variable in the file, if the variable is not a diurnal variable
+!! it will do nothing. It only defined a diurnal axis once.
+subroutine init_diurnal_axis(this, diag_axis, naxis, yaml_id)
+  class(fmsDiagFile_type),          intent(inout) :: this         !< The file object
+  class(fmsDiagAxisContainer_type), intent(inout) :: diag_axis(:) !< Array of diag_axis object
+  integer,                          intent(inout) :: naxis        !< Number of diag_axis that heve been defined
+  integer,                          intent(in)    :: yaml_id      !< The ID to the variable's yaml
+
+  integer                              :: i           !< For do loops
+  type(diagYamlFilesVar_type), pointer :: field_yaml  !< pointer to the yaml entry
+
+  field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+
+  !< Go away if the file does not need a diurnal axis
+  if (.not. field_yaml%has_n_diurnal()) return
+
+  !< Check if the diurnal axis is already defined for this number of diurnal samples
+  do i = 1, this%number_of_axis
+    select type(axis=>diag_axis(this%axis_ids(i))%axis)
+    type is (fmsDiagDiurnalAxis_type)
+      if(field_yaml%get_n_diurnal() .eq. axis%get_diurnal_axis_samples()) return
+    end select
+  end do
+
+  !< If it is not already defined, define it
+  call define_diurnal_axis(diag_axis, naxis, field_yaml%get_n_diurnal(), .true.)
+  call define_diurnal_axis(diag_axis, naxis, field_yaml%get_n_diurnal(), .False.)
+
+  !< Add it to the list of axis for the file
+  this%number_of_axis = this%number_of_axis + 1
+  this%axis_ids(this%number_of_axis) = naxis !< This is the diurnal axis edges
+
+  this%number_of_axis = this%number_of_axis + 1
+  this%axis_ids(this%number_of_axis) = naxis - 1 !< This the diurnal axis
+
+end subroutine init_diurnal_axis
 
 !> \brief Set the time_ops variable in the diag_file object
 subroutine set_file_time_ops(this, VarYaml, is_static)
   class(fmsDiagFile_type),      intent(inout) :: this      !< The file object
   type (diagYamlFilesVar_type), intent(in)    :: VarYaml   !< The variable's yaml file
   logical,                      intent(in)    :: is_static !< Flag indicating if variable is static
+
+  !< Go away if the file is static
+  if (this%is_static) return
 
   if (this%time_ops) then
     if (is_static) return
@@ -291,7 +379,7 @@ end function has_file_metadata_from_model
 !! \return .True. if fileobj exists .False. if fileobj has not been set
 pure logical function has_fileobj (this)
   class(fmsDiagFile_type), intent(in) :: this !< The file object
-  has_fileobj = allocated(this%fileobj)
+  has_fileobj = allocated(this%fms2io_fileobj)
 end function has_fileobj
 
 !> \brief Logical function to determine if the variable diag_yaml_file has been allocated or associated
@@ -300,6 +388,23 @@ pure logical function has_diag_yaml_file (this)
   class(fmsDiagFile_type), intent(in) :: this !< The file object
   has_diag_yaml_file = associated(this%diag_yaml_file)
 end function has_diag_yaml_file
+
+!> \brief Get the time to use to determine the filename, if using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr)
+!! \return The time to use when determining the filename
+function get_filename_time(this) &
+  result(res)
+    class(fmsDiagFile_type), intent(in) :: this !< The file object
+    type(time_type) :: res
+
+    select case (this%diag_yaml_file%get_filename_time())
+    case (begin_time)
+      res = this%last_output
+    case (middle_time)
+      res = (this%last_output + this%next_close)/2
+    case (end_time)
+      res = this%next_close
+    end select
+end function get_filename_time
 
 !> \brief Logical function to determine if the variable field_ids has been allocated or associated
 !! \return .True. if field_ids exists .False. if field_ids has not been set
@@ -453,9 +558,17 @@ end function get_file_varlist
 !! \return Copy of file_global_meta
 pure function get_file_global_meta (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
- character (len=:), allocatable, dimension(:,:) :: res
+ character (len=MAX_STR_LEN), allocatable, dimension(:,:) :: res
   res = this%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
+
+!> \brief Determines if done writing data
+!! \return .True. if done writing data
+pure function is_done_writing_data (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+ logical :: res
+  res = this%done_writing_data
+end function is_done_writing_data
 
 !> \brief Checks if file_fname is allocated in the yaml object
 !! \return true if file_fname is allocated
@@ -603,16 +716,37 @@ subroutine set_file_domain(this, domain, type_of_domain)
 end subroutine set_file_domain
 
 !> @brief Loops through a variable's axis_ids and adds them to the FMSDiagFile object if they don't exist
-subroutine add_axes(this, axis_ids, diag_axis, naxis)
-  class(fmsDiagFile_type),          intent(inout)       :: this          !< The file object
-  integer,                          INTENT(in)          :: axis_ids(:)   !< Array of axes_ids
-  class(fmsDiagAxisContainer_type), intent(inout)       :: diag_axis(:)  !< Diag_axis object
-  integer,                          intent(inout)       :: naxis         !< Number of axis that have been registered
+subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output_buffers)
+  class(fmsDiagFile_type),                 intent(inout) :: this              !< The file object
+  integer,                                 INTENT(in)    :: axis_ids(:)       !< Array of axes_ids
+  class(fmsDiagAxisContainer_type),        intent(inout) :: diag_axis(:)      !< Diag_axis object
+  integer,                                 intent(inout) :: naxis             !< Number of axis that have been
+                                                                              !! registered
+  integer,                                 intent(in)    :: yaml_id           !< Yaml id of the field section for
+                                                                              !! this var
+  integer,                                 intent(in)    :: buffer_id        !< ID of the buffer
+  type(fmsDiagOutputBuffer_type),          intent(inout) :: output_buffers(:) !< Array of output buffers
 
-  integer :: i, j !< For do loops
-  logical :: is_cube_sphere !< Flag indicating if the file's domain is a cubesphere
+  type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
+
+  integer              :: i, j             !< For do loops
+  logical              :: is_cube_sphere   !< Flag indicating if the file's domain is a cubesphere
+  logical              :: axis_found       !< Flag indicating that the axis was already to the file obj
+  integer, allocatable :: var_axis_ids(:)  !< Array of the variable's axis ids
 
   is_cube_sphere = .false.
+
+  field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+  !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
+  !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
+  !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
+  !! which is why the copy was needed)
+  var_axis_ids = axis_ids
+
+  if (field_yaml%has_var_zbounds()) then
+    call create_new_z_subaxis(field_yaml%get_var_zbounds(), var_axis_ids, diag_axis, naxis, &
+                              this%axis_ids, this%number_of_axis)
+  endif
 
   select type(this)
   type is (subRegionalFile_type)
@@ -621,41 +755,55 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis)
         if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
       endif
 
-      call define_subaxis(diag_axis, axis_ids, naxis, this%get_file_sub_region(), &
+      call define_subaxis(diag_axis, var_axis_ids, naxis, this%get_file_sub_region(), &
         is_cube_sphere, this%write_on_this_pe)
       this%is_subaxis_defined = .true.
 
       !> add the axis to the list of axis in the file
       if (this%write_on_this_pe) then
-        do i = 1, size(axis_ids)
+        do i = 1, size(var_axis_ids)
           this%number_of_axis = this%number_of_axis + 1 !< This is the current number of axis in the file
-          this%axis_ids(this%number_of_axis) = diag_axis(axis_ids(i))%axis%get_subaxes_id()
+          this%axis_ids(this%number_of_axis) = diag_axis(var_axis_ids(i))%axis%get_subaxes_id()
+
+          !< Change the variable axis ids to the subaxis that was just created
+          var_axis_ids(i) = this%axis_ids(this%number_of_axis)
         enddo
       else
         this%axis_ids = diag_null
       endif
     endif
-    return
   type is (fmsDiagFile_type)
-    do i = 1, size(axis_ids)
+    do i = 1, size(var_axis_ids)
+      axis_found = .false.
       do j = 1, this%number_of_axis
-        !> Check if the axis already exists, return
-        if (axis_ids(i) .eq. this%axis_ids(j)) return
+        !> Check if the axis already exists, move on
+        if (var_axis_ids(i) .eq. this%axis_ids(j)) then
+          axis_found = .true.
+          cycle
+        endif
       enddo
 
-      !> If the axis does not exist add it to the list
-      this%number_of_axis = this%number_of_axis + 1
-      this%axis_ids(this%number_of_axis) = axis_ids(i)
+      if (.not. axis_found) then
+        !> If the axis does not exist add it to the list
+        this%number_of_axis = this%number_of_axis + 1
+        this%axis_ids(this%number_of_axis) = var_axis_ids(i)
+      endif
     enddo
   end select
+
+  !> Add the axis to the buffer object
+  call output_buffers(buffer_id)%add_axis_ids(var_axis_ids)
 end subroutine add_axes
 
 !> @brief adds the start time to the fileobj
 !! @note This should be called from the register field calls. It can be called multiple times (one for each variable)
 !! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
-subroutine add_start_time(this, start_time)
-  class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
+subroutine add_start_time(this, start_time, model_time)
+  class(fmsDiagFile_type), intent(inout)       :: this           !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
+  TYPE(time_type),         intent(out)         :: model_time     !< The current model time
+                                                                 !! this will be set to the start_time
+                                                                 !! at the begining of the run
 
   !< If the start_time sent in is equal to the base_time return because
   !! this%start_time was already set to the base_time
@@ -670,6 +818,7 @@ subroutine add_start_time(this, start_time)
   else
     !> If the this%start_time is equal to the base_time,
     !! simply update it with the start_time and set up the *_output variables
+    model_time = start_time
     this%start_time = start_time
     this%last_output = start_time
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
@@ -704,7 +853,7 @@ subroutine dump_file_obj(this, unit_num)
   write( unit_num, *)'next_next_output', date_to_string(this%next_next_output)
   write( unit_num, *)'next_close', date_to_string(this%next_close)
 
-  if( allocated(this%fileobj)) write( unit_num, *)'fileobj path', this%fileobj%path
+  if( allocated(this%fms2io_fileobj)) write( unit_num, *)'fileobj path', this%fms2io_fileobj%path
 
   write( unit_num, *)'type_of_domain', this%type_of_domain
   if( allocated(this%file_metadata_from_model)) write( unit_num, *) 'file_metadata_from_model', &
@@ -715,6 +864,34 @@ subroutine dump_file_obj(this, unit_num)
   if( allocated(this%axis_ids)) write( unit_num, *)'axis_ids', this%axis_ids(1:this%number_of_axis)
 
 end subroutine
+
+!> @brief Determine if a file is regional
+!! @return Flag indicating if the file is regional or not
+logical pure function is_regional(this)
+  class(fmsDiagFileContainer_type), intent(in) :: this            !< The file object
+
+  select type (wut=>this%FMS_diag_file)
+  type is (subRegionalFile_type)
+    is_regional = .true.
+  type is (fmsDiagFile_type)
+    is_regional = .false.
+  end select
+
+end function is_regional
+
+!> @brief Determine if a file is static
+!! @return Flag indicating if the file is static or not
+logical pure function is_file_static(this)
+class(fmsDiagFileContainer_type), intent(in) :: this            !< The file object
+
+is_file_static = .false.
+
+select type (fileptr=>this%FMS_diag_file)
+type is (fmsDiagFile_type)
+  is_file_static = fileptr%is_static
+end select
+
+end function is_file_static
 
 !< @brief Opens the diag_file if it is time to do so
 subroutine open_diag_file(this, time_step, file_is_opened)
@@ -753,22 +930,22 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   if (diag_file%is_file_open) return
 
   is_regional = .false.
-  !< Figure out what fileobj to use!
-  if (.not. allocated(diag_file%fileobj)) then
+  !< Figure out what fms2io_fileobj to use!
+  if (.not. allocated(diag_file%fms2io_fileobj)) then
     select type (diag_file)
     type is (subRegionalFile_type)
       !< In this case each PE is going to write its own file
-      allocate(FmsNetcdfFile_t :: diag_file%fileobj)
+      allocate(FmsNetcdfFile_t :: diag_file%fms2io_fileobj)
       is_regional = .true.
     type is (fmsDiagFile_type)
-      !< Use the type_of_domain to get the correct fileobj
+      !< Use the type_of_domain to get the correct fms2io_fileobj
       select case (diag_file%type_of_domain)
       case (NO_DOMAIN)
-        allocate(FmsNetcdfFile_t :: diag_file%fileobj)
+        allocate(FmsNetcdfFile_t :: diag_file%fms2io_fileobj)
       case (TWO_D_DOMAIN)
-        allocate(FmsNetcdfDomainFile_t :: diag_file%fileobj)
+        allocate(FmsNetcdfDomainFile_t :: diag_file%fms2io_fileobj)
       case (UG_DOMAIN)
-        allocate(FmsNetcdfUnstructuredDomainFile_t :: diag_file%fileobj)
+        allocate(FmsNetcdfUnstructuredDomainFile_t :: diag_file%fms2io_fileobj)
       end select
     end select
   endif
@@ -781,7 +958,7 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     !< If using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr), get the basename (i.e ocn)
     pos = INDEX(diag_file_name, '%')
     if (pos > 0) base_name = diag_file_name(1:pos-1)
-    suffix = get_time_string(trim(diag_file_name), time_step) !TODO fname_time?
+    suffix = get_time_string(trim(diag_file_name), diag_file%get_filename_time())
     base_name = trim(base_name)//trim(suffix)
   else
     base_name = trim(diag_file_name)
@@ -818,28 +995,29 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   endif
 
   !< Open the file!
-  select type (fileobj => diag_file%fileobj)
+  select type (fms2io_fileobj => diag_file%fms2io_fileobj)
   type is (FmsNetcdfFile_t)
     if (is_regional) then
-      if (.not. open_file(fileobj, file_name, "overwrite", pelist=(/mpp_pe()/))) &
+      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", pelist=(/mpp_pe()/))) &
       &call mpp_error(FATAL, "Error opening the file:"//file_name)
+      call register_global_attribute(fms2io_fileobj, "is_subregional", "True", str_len=4)
    else
       allocate(pes(mpp_npes()))
       call mpp_get_current_pelist(pes)
 
-      if (.not. open_file(fileobj, file_name, "overwrite", pelist=pes)) &
+      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", pelist=pes)) &
       &call mpp_error(FATAL, "Error opening the file:"//file_name)
    endif
   type is (FmsNetcdfDomainFile_t)
     select type (domain)
     type is (diagDomain2d_t)
-      if (.not. open_file(fileobj, file_name, "overwrite", domain%Domain2)) &
+      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", domain%Domain2)) &
         &call mpp_error(FATAL, "Error opening the file:"//file_name)
     end select
   type is (FmsNetcdfUnstructuredDomainFile_t)
     select type (domain)
     type is (diagDomainUg_t)
-      if (.not. open_file(fileobj, file_name, "overwrite", domain%DomainUG)) &
+      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", domain%DomainUG)) &
         &call mpp_error(FATAL, "Error opening the file:"//file_name)
     end select
   end select
@@ -850,20 +1028,42 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   diag_file => null()
 end subroutine open_diag_file
 
+!< @brief Write global attributes in the diag_file
+subroutine write_global_metadata(this)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this !< The file object
+
+  class(FmsNetcdfFile_t),  pointer  :: fms2io_fileobj !< The fileobj to write to
+  integer                           :: i              !< For do loops
+  character (len=MAX_STR_LEN), allocatable :: yaml_file_attributes(:,:) !< Global attributes defined in the yaml
+
+  type(diagYamlFiles_type), pointer :: diag_file_yaml !< The diag_file yaml
+
+  diag_file_yaml => this%FMS_diag_file%diag_yaml_file
+  fms2io_fileobj => this%FMS_diag_file%fms2io_fileobj
+
+  if (diag_file_yaml%has_file_global_meta()) then
+    yaml_file_attributes = diag_file_yaml%get_file_global_meta()
+    do i = 1, size(yaml_file_attributes,1)
+      call register_global_attribute(fms2io_fileobj, trim(yaml_file_attributes(i,1)), &
+      trim(yaml_file_attributes(i,2)), str_len=len_trim(yaml_file_attributes(i,2)))
+    enddo
+    deallocate(yaml_file_attributes)
+  endif
+end subroutine write_global_metadata
+
 !< @brief Writes a variable's metadata in the netcdf file
-subroutine write_var_metadata(fileobj, variable_name, dimensions, long_name, units)
-  class(FmsNetcdfFile_t), intent(inout) :: fileobj        !< The file object to write into
+subroutine write_var_metadata(fms2io_fileobj, variable_name, dimensions, long_name, units)
+  class(FmsNetcdfFile_t), intent(inout) :: fms2io_fileobj !< The file object to write into
   character(len=*)      , intent(in)    :: variable_name  !< The name of the time variables
   character(len=*)      , intent(in)    :: dimensions(:)  !< The dimensions of the variable
   character(len=*)      , intent(in)    :: long_name      !< The long_name of the variable
   character(len=*)      , intent(in)    :: units          !< The units of the variable
 
-  !TODO harcodded double
-  call register_field(fileobj, variable_name, "double", dimensions)
-  call register_variable_attribute(fileobj, variable_name, "long_name", &
+  call register_field(fms2io_fileobj, variable_name, pack_size_str, dimensions)
+  call register_variable_attribute(fms2io_fileobj, variable_name, "long_name", &
                                   trim(long_name), str_len=len_trim(long_name))
   if (trim(units) .ne. no_units) &
-    call register_variable_attribute(fileobj, variable_name, "units", &
+    call register_variable_attribute(fms2io_fileobj, variable_name, "units", &
                                     trim(units), str_len=len_trim(units))
 end subroutine write_var_metadata
 
@@ -872,7 +1072,7 @@ subroutine write_time_metadata(this)
   class(fmsDiagFileContainer_type), intent(inout), target :: this !< The file object
 
   class(fmsDiagFile_type), pointer  :: diag_file      !< Diag_file object to open
-  class(FmsNetcdfFile_t),  pointer  :: fileobj        !< The fileobj to write to
+  class(FmsNetcdfFile_t),  pointer  :: fms2io_fileobj !< The fileobj to write to
   character(len=50)                 :: time_units_str !< Time units written as a string
   character(len=50)                 :: calendar       !< The calendar name
 
@@ -880,10 +1080,10 @@ subroutine write_time_metadata(this)
   character(len=50)             :: dimensions(2) !< Array of dimensions names for the variable
 
   diag_file => this%FMS_diag_file
-  fileobj => diag_file%fileobj
+  fms2io_fileobj => diag_file%fms2io_fileobj
 
   time_var_name = diag_file%get_file_unlimdim()
-  call register_axis(fileobj, time_var_name, unlimited)
+  call register_axis(fms2io_fileobj, time_var_name, unlimited)
 
   WRITE(time_units_str, 11)  &
     TRIM(time_unit_list(diag_file%get_file_timeunit())), get_base_year(),&
@@ -893,40 +1093,80 @@ subroutine write_time_metadata(this)
   dimensions(1) = "nv"
   dimensions(2) = trim(time_var_name)
 
-  call write_var_metadata(fileobj, time_var_name, dimensions(2:2), &
+  call write_var_metadata(fms2io_fileobj, time_var_name, dimensions(2:2), &
     time_var_name, time_units_str)
 
   !< Add additional variables to the time variable
-  call register_variable_attribute(fileobj, time_var_name, "axis", "T", str_len=1 )
+  call register_variable_attribute(fms2io_fileobj, time_var_name, "axis", "T", str_len=1 )
 
   !TODO no need to have both attributes, probably?
   calendar = valid_calendar_types(get_calendar_type())
-  call register_variable_attribute(fileobj, time_var_name, "calendar_type", &
+  call register_variable_attribute(fms2io_fileobj, time_var_name, "calendar_type", &
     uppercase(trim(calendar)), str_len=len_trim(calendar))
-  call register_variable_attribute(fileobj, time_var_name, "calendar", &
+  call register_variable_attribute(fms2io_fileobj, time_var_name, "calendar", &
     lowercase(trim(calendar)), str_len=len_trim(calendar))
 
   if (diag_file%time_ops) then
-    call register_variable_attribute(fileobj, time_var_name, "bounds", &
-      trim(time_var_name)//"_bounds", str_len=len_trim(time_var_name//"_bounds"))
+    call register_variable_attribute(fms2io_fileobj, time_var_name, "bounds", &
+      trim(time_var_name)//"_bnds", str_len=len_trim(time_var_name//"_bnds"))
 
     !< Write out the "average_*" variables metadata
-    call write_var_metadata(fileobj, avg_name//"_T1", dimensions(2:2), &
+    call write_var_metadata(fms2io_fileobj, avg_name//"_T1", dimensions(2:2), &
       "Start time for average period", time_units_str)
-    call write_var_metadata(fileobj, avg_name//"_T2", dimensions(2:2), &
+    call write_var_metadata(fms2io_fileobj, avg_name//"_T2", dimensions(2:2), &
       "End time for average period", time_units_str)
-    call write_var_metadata(fileobj, avg_name//"_DT", dimensions(2:2), &
-      "Length time for average period", time_units_str)
+    call write_var_metadata(fms2io_fileobj, avg_name//"_DT", dimensions(2:2), &
+      "Length of average period", time_unit_list(diag_file%get_file_timeunit()))
 
-    !< Write out the *_bounds variable metadata
-    call register_axis(fileobj, "nv", 2) !< Time bounds need a vertex number
-    call write_var_metadata(fileobj, "nv", dimensions(1:1), &
-      "vertex number", no_units)
-    call write_var_metadata(fileobj, time_var_name//"_bounds", dimensions, &
+    !< It is possible that the "nv" "axis" was registered via "diag_axis_init" call
+    !! so only adding it if it doesn't exist already
+    if ( .not. dimension_exists(fms2io_fileobj, "nv")) then
+      call register_axis(fms2io_fileobj, "nv", 2) !< Time bounds need a vertex number
+      call write_var_metadata(fms2io_fileobj, "nv", dimensions(1:1), &
+        "vertex number", no_units)
+    endif
+    call write_var_metadata(fms2io_fileobj, time_var_name//"_bnds", dimensions, &
       trim(time_var_name)//" axis boundaries", time_units_str)
   endif
 
 end subroutine write_time_metadata
+
+!> \brief Write out the field data to the file
+subroutine write_field_data(this, field_obj, buffer_obj)
+  class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
+  type(fmsDiagField_type),                 intent(in),    target :: field_obj(:)   !< The field object to write from
+  type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj(:)  !< The buffer object with the data
+
+  class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
+  class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
+  integer                              :: i              !< For do loops
+  integer                              :: field_id       !< The id of the field writing the data from
+
+  diag_file => this%FMS_diag_file
+  fms2io_fileobj => diag_file%fms2io_fileobj
+
+  !TODO This may be offloaded in the future
+  if (diag_file%is_static) then
+    !< Here the file is static so there is no need for the unlimited dimension
+    !! as a variables are static
+    do i = 1, diag_file%number_of_buffers
+      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
+    enddo
+  else
+    do i = 1, diag_file%number_of_buffers
+      field_id = buffer_obj(diag_file%buffer_ids(i))%get_field_id()
+      if (field_obj(field_id)%is_static()) then
+        !< If the variable is static, only write it the first time
+        if (diag_file%unlim_dimension_level .eq. 1) &
+        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
+      else
+        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
+                        unlim_dim_level=diag_file%unlim_dimension_level)
+      endif
+    enddo
+  endif
+
+end subroutine write_field_data
 
 !> \brief Determine if it is time to close the file
 !! \return .True. if it is time to close the file
@@ -977,7 +1217,7 @@ subroutine write_time_data(this)
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
+  class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< The fileobj to write to
   TYPE(time_type)                      :: middle_time    !< The middle time of the averaging period
 
   real :: T1 !< The beginning time of the averaging period
@@ -985,7 +1225,7 @@ subroutine write_time_data(this)
   real :: DT !< The difference between the ending and beginning time of the averaging period
 
   diag_file => this%FMS_diag_file
-  fileobj => diag_file%fileobj
+  fms2io_fileobj => diag_file%fms2io_fileobj
 
   if (diag_file%time_ops) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2
@@ -994,22 +1234,22 @@ subroutine write_time_data(this)
     dif = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
   endif
 
-  call write_data(fileobj, diag_file%get_file_unlimdim(), dif, &
-    unlim_dim_level=diag_file%unlimited_dimension)
+  call write_data(fms2io_fileobj, diag_file%get_file_unlimdim(), dif, &
+    unlim_dim_level=diag_file%unlim_dimension_level)
 
   if (diag_file%time_ops) then
     T1 = get_date_dif(diag_file%last_output, get_base_time(), diag_file%get_file_timeunit())
     T2 = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
     DT = T2 - T1
 
-    call write_data(fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlimited_dimension)
-    call write_data(fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlimited_dimension)
-    call write_data(fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlimited_dimension)
-    call write_data(fileobj, trim(diag_file%get_file_unlimdim())//"_bounds", &
-                    (/T1, T2/), unlim_dim_level=diag_file%unlimited_dimension)
+    call write_data(fms2io_fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlim_dimension_level)
+    call write_data(fms2io_fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlim_dimension_level)
+    call write_data(fms2io_fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlim_dimension_level)
+    call write_data(fms2io_fileobj, trim(diag_file%get_file_unlimdim())//"_bnds", &
+                    (/T1, T2/), unlim_dim_level=diag_file%unlim_dimension_level)
 
-    if (diag_file%unlimited_dimension .eq. 1) then
-      call write_data(fileobj, "nv", (/1, 2/))
+    if (diag_file%unlim_dimension_level .eq. 1) then
+      call write_data(fms2io_fileobj, "nv", (/1, 2/))
     endif
   endif
 
@@ -1032,6 +1272,7 @@ subroutine update_current_new_file_freq_index(this, time_step)
                                           diag_file%get_file_duration_units())
     else
       !< At this point you are done writing data
+       diag_file%done_writing_data = .true.
        diag_file%no_more_data = diag_time_inc(diag_file%no_more_data, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
        diag_file%next_output = diag_file%no_more_data
        diag_file%next_next_output = diag_file%no_more_data
@@ -1063,38 +1304,112 @@ subroutine update_next_write(this, time_step)
 
 end subroutine update_next_write
 
-!> \brief Increase the unlimited dimension variable that the file is currently being written to
-subroutine increase_unlimited_dimension(this)
+!> \brief Increase the unlimited dimension level that the file is currently being written to
+subroutine increase_unlim_dimension_level(this)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
 
-  this%FMS_diag_file%unlimited_dimension = this%FMS_diag_file%unlimited_dimension + 1
-end subroutine increase_unlimited_dimension
+  this%FMS_diag_file%unlim_dimension_level = this%FMS_diag_file%unlim_dimension_level + 1
+end subroutine increase_unlim_dimension_level
+
+!> \brief Get the unlimited dimension level that is in the file
+!! \return The unlimited dimension
+pure function get_unlim_dimension_level(this) &
+result(res)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  integer :: res
+
+  res = this%FMS_diag_file%unlim_dimension_level
+end function
 
 !< @brief Writes the axis metadata for the file
 subroutine write_axis_metadata(this, diag_axis)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
-  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
+  class(fmsDiagAxisContainer_type), intent(in),    target :: diag_axis(:)    !< Diag_axis object
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  integer                              :: i              !< For do loops
-  integer                              :: j              !< diag_file%axis_ids(i) (for less typing)
+  class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< The fileobj to write to
+  integer                              :: i,k            !< For do loops
   integer                              :: parent_axis_id !< Id of the parent_axis
+  integer                              :: structured_ids(2) !< Ids of the uncompress axis
+  integer                              :: edges_id       !< Id of the axis edge
+
+  class(fmsDiagAxisContainer_type), pointer :: axis_ptr      !< pointer to the axis object currently writing
+  logical                                   :: edges_in_file !< .true. if the edges are already in the file
 
   diag_file => this%FMS_diag_file
-  fileobj => diag_file%fileobj
+  fms2io_fileobj => diag_file%fms2io_fileobj
 
   do i = 1, diag_file%number_of_axis
-    j = diag_file%axis_ids(i)
-    parent_axis_id = diag_axis(j)%axis%get_parent_axis_id()
-    if (parent_axis_id .eq. DIAG_NULL) then
-      call diag_axis(j)%axis%write_axis_metadata(fileobj)
-    else
-      call diag_axis(j)%axis%write_axis_metadata(fileobj, diag_axis(parent_axis_id)%axis)
+    edges_in_file = .false.
+    axis_ptr => diag_axis(diag_file%axis_ids(i))
+    parent_axis_id = axis_ptr%axis%get_parent_axis_id()
+
+    edges_id = axis_ptr%axis%get_edges_id()
+    if (edges_id .ne. diag_null) then
+      !< write the edges if is not in the list of axis in the file, otherwrise ignore
+      if (any(diag_file%axis_ids(1:diag_file%number_of_axis) .eq. edges_id)) then
+        edges_in_file = .true.
+     else
+        call diag_axis(edges_id)%axis%write_axis_metadata(fms2io_fileobj, .true.)
+      endif
     endif
+
+    if (parent_axis_id .eq. DIAG_NULL) then
+      call axis_ptr%axis%write_axis_metadata(fms2io_fileobj, edges_in_file)
+    else
+      call axis_ptr%axis%write_axis_metadata(fms2io_fileobj, edges_in_file, diag_axis(parent_axis_id)%axis)
+    endif
+
+    if (axis_ptr%axis%is_unstructured_grid()) then
+      structured_ids = axis_ptr%axis%get_structured_axis()
+      do k = 1, size(structured_ids)
+        call diag_axis(structured_ids(k))%axis%write_axis_metadata(fms2io_fileobj, .false.)
+      enddo
+    endif
+
   enddo
 
 end subroutine write_axis_metadata
+
+!< @brief Writes the field metadata for the file
+subroutine write_field_metadata(this, diag_field, diag_axis)
+  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+  class(fmsDiagField_type)        , intent(inout), target :: diag_field(:)   !<
+  class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
+
+  class(FmsNetcdfFile_t),           pointer :: fms2io_fileobj !< The fileobj to write to
+  class(fmsDiagFile_type),          pointer :: diag_file  !< Diag_file object to open
+  class(fmsDiagField_type),         pointer :: field_ptr  !< diag_field(diag_file%field_ids(i)), for convenience
+
+  integer            :: i             !< For do loops
+  logical            :: is_regional   !< Flag indicating if the field is in a regional file
+  character(len=255) :: cell_measures !< cell_measures attributes for the field
+
+  is_regional = this%is_regional()
+
+  diag_file => this%FMS_diag_file
+  fms2io_fileobj => diag_file%fms2io_fileobj
+
+  do i = 1, size(diag_file%field_ids)
+    if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
+    field_ptr => diag_field(diag_file%field_ids(i))
+
+    !TODO I think if the area and the volume field are no in the same file, a global attribute containing the
+    !the file that the fields are in needs to be added
+    cell_measures = ""
+    if (field_ptr%has_area()) then
+      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
+    endif
+
+    if (field_ptr%has_volume()) then
+      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(to_write=.true.)
+    endif
+
+    call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
+      this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures)
+  enddo
+
+end subroutine write_field_metadata
 
 !< @brief Writes the axis data for the file
 subroutine write_axis_data(this, diag_axis)
@@ -1102,21 +1417,29 @@ subroutine write_axis_data(this, diag_axis)
   class(fmsDiagAxisContainer_type), intent(in)            :: diag_axis(:)    !< Diag_axis object
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
-  class(FmsNetcdfFile_t),  pointer     :: fileobj        !< The fileobj to write to
-  integer                              :: i              !< For do loops
+  class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< The fileobj to write to
+  integer                              :: i, k           !< For do loops
   integer                              :: j              !< diag_file%axis_ids(i) (for less typing)
   integer                              :: parent_axis_id !< Id of the parent_axis
+  integer                              :: structured_ids(2) !< Ids of the uncompress axis
 
   diag_file => this%FMS_diag_file
-  fileobj => diag_file%fileobj
+  fms2io_fileobj => diag_file%fms2io_fileobj
 
   do i = 1, diag_file%number_of_axis
     j = diag_file%axis_ids(i)
     parent_axis_id = diag_axis(j)%axis%get_parent_axis_id()
     if (parent_axis_id .eq. DIAG_NULL) then
-      call diag_axis(j)%axis%write_axis_data(fileobj)
+      call diag_axis(j)%axis%write_axis_data(fms2io_fileobj)
     else
-      call diag_axis(j)%axis%write_axis_data(fileobj, diag_axis(parent_axis_id)%axis)
+      call diag_axis(j)%axis%write_axis_data(fms2io_fileobj, diag_axis(parent_axis_id)%axis)
+    endif
+
+    if (diag_axis(j)%axis%is_unstructured_grid()) then
+      structured_ids = diag_axis(j)%axis%get_structured_axis()
+      do k = 1, size(structured_ids)
+        call diag_axis(structured_ids(k))%axis%write_axis_data(fms2io_fileobj)
+      enddo
     endif
   enddo
 
@@ -1130,17 +1453,17 @@ subroutine close_diag_file(this)
 
   !< The select types are needed here because otherwise the code will go to the
   !! wrong close_file routine and things will not close propertly
-  select type( fileobj => this%FMS_diag_file%fileobj)
+  select type( fms2io_fileobj => this%FMS_diag_file%fms2io_fileobj)
   type is (FmsNetcdfDomainFile_t)
-    call close_file(fileobj)
+    call close_file(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
-    call close_file(fileobj)
+    call close_file(fms2io_fileobj)
   type is (FmsNetcdfUnstructuredDomainFile_t)
-    call close_file(fileobj)
+    call close_file(fms2io_fileobj)
   end select
 
-  !< Reset the unlimited dimension back to 0, in case the fileobj is re-used
-  this%FMS_diag_file%unlimited_dimension = 0
+  !< Reset the unlimited dimension level back to 0, in case the fms2io_fileobj is re-used
+  this%FMS_diag_file%unlim_dimension_level = 0
   this%FMS_diag_file%is_file_open = .false.
 
   if (this%FMS_diag_file%has_file_new_file_freq()) then
