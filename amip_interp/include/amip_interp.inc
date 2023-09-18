@@ -26,7 +26,7 @@ subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
    character(len=*), optional,  intent(out)   :: err_msg !< Holds error message string if present
 
    real(FMS_AMIP_INTERP_KIND_), dimension(mobs,nobs) :: sice
-   real(FMS_AMIP_INTERP_KIND_), allocatable:: temp1(:,:), temp2(:,:)
+   real(FMS_AMIP_INTERP_KIND_), allocatable, save :: temp1(:,:), temp2(:,:)
 
     integer :: year1, year2, month1, month2
     real(FMS_AMIP_INTERP_KIND_) :: fmonth
