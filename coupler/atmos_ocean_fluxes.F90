@@ -62,6 +62,7 @@ module  atmos_ocean_fluxes_mod
   use fm_util_mod,       only: fm_util_check_for_bad_fields, fm_util_get_string
   use fm_util_mod,       only: fm_util_get_real_array, fm_util_get_real, fm_util_get_integer
   use fm_util_mod,       only: fm_util_get_logical, fm_util_get_logical_array
+  use fms_string_utils_mod, only: string
   use platform_mod,      only: r4_kind, r8_kind
 
   implicit none
@@ -302,6 +303,9 @@ contains
         call fm_util_set_value('mol_wt', mol_wt)
       type is (real(r4_kind))
         call fm_util_set_value('mol_wt', mol_wt)
+      class default
+        call mpp_error(FATAL, "aof_set_coupler_flux: invalid type for passed in mol_wt, type should be" // &
+                              "real(r4_kind) or real(r8_kind). Passed in kind:"//string(kind(mol_wt)))
       end select
     else
       call fm_util_set_value('mol_wt', 0.0_r8_kind)
@@ -337,6 +341,9 @@ contains
           call fm_util_set_value('param', param(1:length), length)
         type is (real(r8_kind))
           call fm_util_set_value('param', param(1:length), length)
+        class default
+          call mpp_error(FATAL, "aof_set_coupler_flux: invalid type for passed in param, type should be" // &
+                                "real(r4_kind) or real(r8_kind). Passed in kind:"//string(kind(param)))
         end select
       else
         call fm_util_set_value('param', 'null', index = 0)

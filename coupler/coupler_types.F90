@@ -40,6 +40,7 @@ module coupler_types_mod
   use data_override_mod, only: data_override
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
+  use fms_string_utils_mod,  only: string
   use platform_mod,      only: r4_kind, r8_kind, i8_kind
 
   implicit none
@@ -64,12 +65,8 @@ module coupler_types_mod
   character(len=*), parameter :: mod_name = 'coupler_types_mod'
 
   ! strings for repeated error messages
-  character(len=128), parameter :: err_msg_var_in_kind = &
-                                   "var_in has invalid bc type kinds, only one of bc or bc_r4 should be allocated"
   character(len=128), parameter :: err_msg_var_kind =    &
                                    "var has invalid bc type kinds, only one of bc or bc_r4 should be allocated"
-  character(len=128), parameter :: err_msg_no_assoc = &
-                                   "passed in type has unassociated coupler_field_type pointers for both kinds"
 
 
 
@@ -785,8 +782,15 @@ contains
 
     ! check only one kind is used
     if(var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"//&
+                         " only one should be associated per type.")
+        else
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both uninitialized,"//&
+                               " one must be associated to copy field data.")
+        endif
+      endif
     endif
 
     var%num_bcs = var_in%num_bcs
@@ -889,7 +893,7 @@ contains
           enddo
         enddo
       else
-        call mpp_error(FATAL, error_header//err_msg_no_assoc)
+        call mpp_error(FATAL, error_header//"passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
   end subroutine  CT_spawn_1d_2d
@@ -934,8 +938,15 @@ contains
 
     ! check only one kind is used
     if(var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc)) then
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+                                " one must be associated to copy field data")
+        endif
+      endif
     endif
 
     var%num_bcs = var_in%num_bcs
@@ -1042,7 +1053,7 @@ contains
           enddo
         enddo
       else
-        call mpp_error(FATAL, error_header//err_msg_no_assoc)
+        call mpp_error(FATAL, error_header//"passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
   end subroutine  CT_spawn_1d_3d
@@ -1086,8 +1097,15 @@ contains
 
     ! check only one kind is used
     if(var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+                                " one must be associated to copy field data")
+        endif
+      endif
     endif
 
     var%num_bcs = var_in%num_bcs
@@ -1188,7 +1206,7 @@ contains
           enddo
         enddo
       else
-        call mpp_error(FATAL, error_header//err_msg_no_assoc)
+        call mpp_error(FATAL, error_header//"passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
   end subroutine  CT_spawn_2d_2d
@@ -1234,8 +1252,15 @@ contains
 
     if(var_in%num_bcs .gt. 0) then
       ! check only one kind is used
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+                                " one must be associated to copy field data")
+        endif
+      endif
     endif
 
     var%num_bcs = var_in%num_bcs
@@ -1342,7 +1367,7 @@ contains
           enddo
         enddo
       else
-        call mpp_error(FATAL, error_header//err_msg_no_assoc)
+        call mpp_error(FATAL, error_header//"passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
   end subroutine  CT_spawn_2d_3d
@@ -1385,8 +1410,15 @@ contains
 
     if(var_in%num_bcs .gt. 0) then
       ! check only one kind is used
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+                                " one must be associated to copy field data")
+        endif
+      endif
     endif
 
     var%num_bcs = var_in%num_bcs
@@ -1489,7 +1521,7 @@ contains
           enddo
         enddo
       else
-        call mpp_error(FATAL, error_header//err_msg_no_assoc)
+        call mpp_error(FATAL, error_header//"passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
   end subroutine  CT_spawn_3d_2d
@@ -1535,8 +1567,15 @@ contains
 
     if(var_in%num_bcs .gt. 0) then
       ! check only one kind is used
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, error_header//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
+        if( associated(var_in%bc)) then
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both initialized,"//&
+                                "only one should be allocated per type")
+        else
+          call mpp_error(FATAL, error_header//"var_in%bc and var%bc_r4 are both uninitialized,"//&
+                                " one must be associated to copy field data")
+        endif
+      endif
     endif
 
     var%num_bcs = var_in%num_bcs
@@ -1644,7 +1683,7 @@ contains
           enddo
         enddo
       else
-        call mpp_error(FATAL, error_header//err_msg_no_assoc)
+        call mpp_error(FATAL, error_header//"passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
   end subroutine  CT_spawn_3d_3d
@@ -1728,8 +1767,15 @@ contains
     endif
 
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, "CT_copy_data_2d var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_copy_data_2d var_in%bc and var_in%bc_r4 are both unintialized,"//&
+                                " one must be associated to copy field data.")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -1782,7 +1828,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_copy_data_2d"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_copy_data_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_copy_data_2d
 
@@ -1869,8 +1915,15 @@ contains
     endif
 
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_copy_data_3d:"//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, "CT_copy_data_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_copy_data_3d: var_in%bc and var_in%bc_r4 are both unintialized,"//&
+                                " one must be associated to copy field data.")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -1927,7 +1980,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_copy_data_3d"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_copy_data_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_copy_data_3d
 
@@ -2009,8 +2062,15 @@ contains
     j_off = var_in%jsc - var%jsc
 
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_copy_data_2d_3d:"//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in%bc and var_in%bc_r4 are both unintialized,"//&
+                                " one must be associated to copy field data.")
+        endif
+      endif
     endif
 
     ! if using r8_kind
@@ -2077,7 +2137,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_copy_data_2d_3d"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_copy_data_2d_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_copy_data_2d_3d
 
@@ -2109,8 +2169,15 @@ contains
     do_out = var_out%set
 
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_redistribute_data_2d"//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, "CT_redistribute_data_2d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_redistribute_data_2d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                " only one must be associated per type to redistribute field data.")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2149,7 +2216,8 @@ contains
             if ( associated(var_in%bc(n)%field(m)%values) .neqv.&
                 & associated(var_out%bc(n)%field(m)%values) ) &
                 call mpp_error(FATAL,&
-                & "Mismatch in which fields are associated in CT_redistribute_data_2d.")
+                & "CT_redistribute_data_2d: Mismatch in which var_in and var_out fields are associated"// &
+                & "Boundary condition:"//string(n)//" Field:"//string(m))
             if ( associated(var_in%bc(n)%field(m)%values) ) then
               fc = fc + 1
               call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values,&
@@ -2217,7 +2285,8 @@ contains
             if ( associated(var_in%bc_r4(n)%field(m)%values) .neqv.&
                 & associated(var_out%bc_r4(n)%field(m)%values) ) &
                 call mpp_error(FATAL,&
-                & "Mismatch in which fields are associated in CT_redistribute_data_2d.")
+                & "CT_redistribute_data_2d: Mismatch in which var_in and var_out fields are associated"// &
+                & "Boundary condition:"//string(n)//" Field:"//string(m))
             if ( associated(var_in%bc_r4(n)%field(m)%values) ) then
               fc = fc + 1
               call mpp_redistribute(domain_in, var_in%bc_r4(n)%field(m)%values,&
@@ -2250,7 +2319,7 @@ contains
         enddo
       endif
     else
-      call mpp_error(FATAL, "CT_redistribute_data_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_redistribute_data_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_redistribute_data_2d
 
@@ -2281,8 +2350,15 @@ contains
     fc_out = 0
 
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, "CT_redistribute_data_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_redistribute_data_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                " only one must be associated per type to redistribute field data.")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2320,7 +2396,8 @@ contains
             if ( associated(var_in%bc(n)%field(m)%values) .neqv.&
                 & associated(var_out%bc(n)%field(m)%values) )&
                 & call mpp_error(FATAL,&
-                & "Mismatch in which fields are associated in CT_redistribute_data_3d.")
+                & "CT_redistribute_data_3d: Mismatch in which var_in and var_out fields are associated"// &
+                & "Boundary condition:"//string(n)//" Field:"//string(m))
             if ( associated(var_in%bc(n)%field(m)%values) ) then
               fc = fc + 1
               call mpp_redistribute(domain_in, var_in%bc(n)%field(m)%values,&
@@ -2387,7 +2464,8 @@ contains
             if ( associated(var_in%bc_r4(n)%field(m)%values) .neqv.&
                 & associated(var_out%bc_r4(n)%field(m)%values) )&
                 & call mpp_error(FATAL,&
-                & "Mismatch in which fields are associated in CT_redistribute_data_3d.")
+                & "CT_redistribute_data_3d: Mismatch in which var_in and var_out fields are associated"// &
+                & "Boundary condition:"//string(n)//" Field:"//string(m))
             if ( associated(var_in%bc_r4(n)%field(m)%values) ) then
               fc = fc + 1
               call mpp_redistribute(domain_in, var_in%bc_r4(n)%field(m)%values,&
@@ -2420,7 +2498,7 @@ contains
         enddo
       endif
     else
-      call mpp_error(FATAL, "CT_redistribute_data_3d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_redistribute_data_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_redistribute_data_3d
 
@@ -2515,8 +2593,15 @@ contains
 
     ! check only one kind used
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in%bc and var_in%bc_r4 are both intialized,"// &
+                                " only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in%bc and var_in%bc_r4 are both intialized,"// &
+                                " only one must be associated per type to increment field data.")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2571,7 +2656,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_increment_data_2d_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_increment_data_2d_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_increment_data_2d_2d
 
@@ -2669,8 +2754,15 @@ contains
 
     ! check only one kind used
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
-      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) &
-        call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_var_in_kind)
+      if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then 
+        if( associated(var_in%bc) ) then
+          call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in%bc and var_in%bc_r4 are both unintialized,"//&
+                                " only one must be associated per type to increment field data.")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2729,7 +2821,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_increment_data_3d_3d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_increment_data_3d_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_increment_data_3d_3d
 
@@ -2753,8 +2845,15 @@ contains
     endif
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_set_diags_2d: var%bc and var%bc_r4 are both intialized,"//&
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_set_diags_2d: var%bc and var%bc_r4 are both intialized,"//&
+                                "one should be associated per type to register fields with diag manager")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2775,7 +2874,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_set_diags_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_set_diags_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
 
 
@@ -2801,8 +2900,15 @@ contains
     endif
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_set_diags_3d: var%bc and var%bc_r4 are both intialized,"//&
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_set_diags_3d: var%bc and var%bc_r4 are both unintialized,"//&
+                                "one should be associated per type to register fields with diag manager")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2823,7 +2929,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_set_diags_3d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_set_diags_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_set_diags_3d
 
@@ -2838,8 +2944,15 @@ contains
     logical :: used
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_send_data_2d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_send_data_2d: var%bc and var%bc_r4 are both intialized,"//&
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_send_data_2d: var%bc and var%bc_r4 are both unintialized,"//&
+                                "one should be associated per type to send data to diag fields")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2860,7 +2973,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_send_data_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_send_data_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_send_data_2d
 
@@ -2874,8 +2987,15 @@ contains
     logical :: used
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_send_data_3d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_send_data_3d: var%bc and var%bc_r4 are both intialized,"//&
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_send_data_3d: var%bc and var%bc_r4 are both unintialized,"//&
+                                "one should be associated per type to send data to diag fields")
+        endif
+      endif
     endif
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
@@ -2896,7 +3016,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_send_data_3d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_send_data_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_send_data_3d
 
@@ -2923,8 +3043,15 @@ contains
     character(len=20)                          :: dir       !< Directory where to open the file
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_register_restarts_2d: var%bc and var%bc_r4 are both intialized,"//&
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_register_restarts_2d: var%bc and var%bc_r4 are both unintialized,"//&
+                                "one should be associated per type to register restart fields")
+        endif
+      endif
     endif
 
     ocn_rest = .true.
@@ -3069,7 +3196,7 @@ contains
         enddo !< num_fields
       enddo !< num_bcs
     else
-      call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_register_restarts_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif ! associated(var%bc/r4)
 
   end subroutine CT_register_restarts_2d
@@ -3198,8 +3325,15 @@ contains
     integer                                    :: nz        !< Length of the z direction of each file
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_register_restarts_3d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_register_restarts_3d: var%bc and var%bc_r4 are both intialized,"//&
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_register_restarts_3d: var%bc and var%bc_r4 are both unintialized,"//&
+                                "one should be associated per type to register restart fields")
+        endif
+      endif
     endif
 
     ocn_rest = .true.
@@ -3355,7 +3489,7 @@ contains
         enddo !< num_fields
       enddo !< num_bcs
     else
-      call mpp_error(FATAL, "CT_register_restarts_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_register_restarts_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_register_restarts_3d
 
@@ -3378,8 +3512,15 @@ contains
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_register_restarts_3d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then 
+          call mpp_error(FATAL, "CT_restore_state_2d: var%bc and var%bc_r4 are both initialized," // &
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_restore_state_2d: var%bc and var%bc_r4 are both uninitialized," // &
+                                "one should be associated per type to restore state from restart")
+        endif
+      endif
     endif
 
     any_set = .false.
@@ -3438,7 +3579,7 @@ contains
         endif
       enddo
     else
-      call mpp_error(FATAL, "CT_restore_state_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_restore_state_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
 
     if ((num_fld > 0) .and. present(all_or_nothing)) then
@@ -3478,8 +3619,15 @@ contains
     logical :: any_set, all_set, all_var_set, any_var_set, var_set
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_restore_state_3d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_restore_state_3d: var%bc and var%bc_r4 are both initialized," // &
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_restore_state_3d: var%bc and var%bc_r4 are both uninitialized," // &
+                                "one should be associated per type to restore state from restart")
+        endif
+      endif
     endif
 
     any_set = .false.
@@ -3540,7 +3688,7 @@ contains
         endif
       enddo
     else
-      call mpp_error(FATAL, "CT_restore_state_3d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_restore_state_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
 
 
@@ -3569,8 +3717,15 @@ contains
     integer :: m, n
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_data_override_2d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_data_override_2d: var%bc and var%bc_r4 are both initialized," // &
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_data_override_2d: var%bc and var%bc_r4 are both uninitialized," // &
+                                "one should be associated per type to perform data override")
+        endif
+      endif
     endif
 
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
@@ -3589,7 +3744,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_data_override_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_data_override_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_data_override_2d
 
@@ -3604,8 +3759,15 @@ contains
     integer :: m, n
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_data_override_3d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_data_override_3d: var%bc and var%bc_r4 are both initialized," // &
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_data_override_3d: var%bc and var%bc_r4 are both uninitialized," // &
+                                "one should be associated per type to perform data override")
+        endif
+      endif
     endif
 
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
@@ -3624,7 +3786,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_data_override_3d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_data_override_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
 
   end subroutine CT_data_override_3d
@@ -3641,8 +3803,15 @@ contains
     integer(i8_kind) :: chks ! A checksum for the field
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_write_chksums_2d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_write_chksums_2d: var%bc and var%bc_r4 are both initialized," // &
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_write_chksums_2d: var%bc and var%bc_r4 are both uninitialized," // &
+                                "one should be associated per type to write checksums for fields")
+        endif
+      endif
     endif
 
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
@@ -3670,7 +3839,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_write_chksums_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_write_chksums_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
   end subroutine CT_write_chksums_2d
 
@@ -3685,8 +3854,15 @@ contains
     integer(i8_kind) :: chks ! A checksum for the field
 
     if(var%set .and. var%num_bcs .gt. 0) then
-      if(associated(var%bc) .eqv. associated(var%bc_r4)) &
-        call mpp_error(FATAL, "CT_write_chksums_3d:"//err_msg_var_kind)
+      if(associated(var%bc) .eqv. associated(var%bc_r4)) then 
+        if( associated(var%bc) ) then
+          call mpp_error(FATAL, "CT_write_chksums_3d: var%bc and var%bc_r4 are both initialized," // &
+                                "only one should be associated per type")
+        else
+          call mpp_error(FATAL, "CT_write_chksums_3d: var%bc and var%bc_r4 are both uninitialized," // &
+           "one should be associated per type to write checksums for fields")
+        endif
+      endif
     endif
 
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
@@ -3714,7 +3890,7 @@ contains
         enddo
       enddo
     else
-      call mpp_error(FATAL, "CT_write_chksums_2d:"//err_msg_no_assoc)
+      call mpp_error(FATAL, "CT_write_chksums_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
     endif
 
   end subroutine CT_write_chksums_3d
@@ -3767,7 +3943,7 @@ contains
         enddo
         deallocate ( var%bc_r4 )
       else
-        call mpp_error(FATAL, "CT_destructor_1d:"//err_msg_no_assoc)
+        call mpp_error(FATAL, "CT_destructor_1d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
 
@@ -3799,7 +3975,7 @@ contains
         enddo
         deallocate ( var%bc_r4 )
       else
-        call mpp_error(FATAL, "CT_destructor_2d:"//err_msg_no_assoc)
+        call mpp_error(FATAL, "CT_destructor_2d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
     endif
 
@@ -3831,7 +4007,7 @@ contains
         enddo
         deallocate ( var%bc_r4 )
       else
-        call mpp_error(FATAL, "CT_destructor_3d:"//err_msg_no_assoc)
+        call mpp_error(FATAL, "CT_destructor_3d: passed in type has unassociated coupler_field_type pointers for both bc and bc_r4")
       endif
 
     endif

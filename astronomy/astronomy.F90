@@ -42,6 +42,7 @@ module astronomy_mod
                                  operator( // ), operator(<)
     use constants_mod,     only: constants_init, PI
     use mpp_mod,           only: input_nml_file
+    use fms_string_utils_mod,  only: string
     use platform_mod,      only: r4_kind, r8_kind, i4_kind, i8_kind
 
     !--------------------------------------------------------------------
@@ -523,11 +524,15 @@ integer :: unit, ierr, io, seconds, days, jd, id
           select type (lonb)
           type is (real(r4_kind))
              is_valid = .true.
+          class default
+             call error_mesg('astronomy_mod', 'kind mismatch, argument latb is real(r4_kind) but lonb has kind: ' // string(kind(lonb)), FATAL)
           end select
        type is (real(r8_kind))
           select type (lonb)
           type is (real(r8_kind))
              is_valid = .true.
+          class default
+             call error_mesg('astronomy_mod', 'kind mismatch, argument latb is real(r8_kind) but lonb has kind: ' // string(kind(lonb)), FATAL)
           end select
        end select
        if( is_valid ) then
@@ -538,11 +543,10 @@ integer :: unit, ierr, io, seconds, days, jd, id
           allocate (fracday_ann(id, jd))
           total_pts = jd*id
        else
-          call error_mesg('astronomy_mod', 'latb and/or lonb are not valid types', FATAL)
+          call error_mesg('astronomy_mod', 'latb has unsupported kind size.' // &
+                          'latb and lonb should both be real(r4_kind) or real(r8_kind)', FATAL)
        end if
-    elseif (present(latb) .and. .not. present(lonb)) then
-       call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
-    elseif (present(lonb) .and. .not. present(latb)) then
+    elseif ( (present(latb) .and. .not. present(lonb)) .or. (present(lonb) .and. .not. present(latb)) ) then
        call error_mesg ('astronomy_mod', 'lat and lon must both be present', FATAL)
     endif
 
