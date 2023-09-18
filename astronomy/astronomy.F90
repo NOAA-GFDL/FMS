@@ -40,9 +40,9 @@ module astronomy_mod
                                  time_manager_init, &
                                  operator(-), operator(+), &
                                  operator( // ), operator(<)
+    use fms_io_utils_mod,       only: get_data_type_string
     use constants_mod,     only: constants_init, PI
     use mpp_mod,           only: input_nml_file
-    use fms_string_utils_mod,  only: string
     use platform_mod,      only: r4_kind, r8_kind, i4_kind, i8_kind
 
     !--------------------------------------------------------------------
@@ -438,6 +438,7 @@ logical :: is_valid
 !  local variables:
 !-------------------------------------------------------------------
 integer :: unit, ierr, io, seconds, days, jd, id
+character(len=17) :: err_str
 
 !-------------------------------------------------------------------
 !    if module has already been initialized, exit.
@@ -525,14 +526,18 @@ integer :: unit, ierr, io, seconds, days, jd, id
           type is (real(r4_kind))
              is_valid = .true.
           class default
-             call error_mesg('astronomy_mod', 'kind mismatch, argument latb is real(r4_kind) but lonb has kind: ' // string(kind(lonb)), FATAL)
+             call get_data_type_string(lonb, err_str)
+             call error_mesg('astronomy_mod', 'kind mismatch, argument latb is real(r4_kind) but lonb has type: '// &
+                                               err_str, FATAL)
           end select
        type is (real(r8_kind))
           select type (lonb)
           type is (real(r8_kind))
              is_valid = .true.
           class default
-             call error_mesg('astronomy_mod', 'kind mismatch, argument latb is real(r8_kind) but lonb has kind: ' // string(kind(lonb)), FATAL)
+             call get_data_type_string(lonb, err_str)
+             call error_mesg('astronomy_mod', 'kind mismatch, argument latb is real(r8_kind) but lonb has type: '//&
+                                               err_str, FATAL)
           end select
        end select
        if( is_valid ) then
