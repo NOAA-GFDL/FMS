@@ -147,7 +147,8 @@ private
 !----------------- Public interfaces -----------------------------------
 
 public amip_interp_init, amip_interp_init_r4, amip_interp_init_r8, get_amip_sst, &
-     & get_amip_ice, amip_interp_new, amip_interp_del, amip_interp_type, assignment(=)
+     & get_amip_ice, amip_interp_new, amip_interp_del, amip_interp_type_r4, &
+     & amip_interp_type_r8, assignment(=)
 
 !-----------------------------------------------------------------------
 !----------------- Public Data -----------------------------------
@@ -296,17 +297,28 @@ end interface amip_interp_del
 !----- public data type ------
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
-!! data. Real precision is determined by the rkind parameter, which defaults to r8_kind.
+!! data (r4_kind flavor).
 !> @ingroup amip_interp_mod
-type amip_interp_type(rkind)
-   integer, kind            :: rkind = r8_kind ! Real kind for data1 and data2
+type amip_interp_type_r4
    private
    type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
-   real(rkind), allocatable :: data1(:,:), data2(:,:)
+   real(r4_kind), allocatable :: data1(:,:), data2(:,:)
    type (date_type)         :: Date1, Date2
    logical                  :: use_climo, use_annual
    logical                  :: I_am_initialized=.false.
-end type amip_interp_type
+end type amip_interp_type_r4
+
+!> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
+!! data (r8_kind flavor).
+!> @ingroup amip_interp_mod
+type amip_interp_type_r8
+   private
+   type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
+   real(r8_kind), allocatable :: data1(:,:), data2(:,:)
+   type (date_type)         :: Date1, Date2
+   logical                  :: use_climo, use_annual
+   logical                  :: I_am_initialized=.false.
+end type amip_interp_type_r8
 
 !> @addtogroup amip_interp_mod
 !> @{

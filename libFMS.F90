@@ -75,11 +75,12 @@ module fms
   use amip_interp_mod, only: fms_amip_interp_init         => amip_interp_init, &
                              fms_amip_interp_init_r4      => amip_interp_init_r4, &
                              fms_amip_interp_init_r8      => amip_interp_init_r8, &
-                             fms_amip_interp_get_amip_sst             => get_amip_sst, &
-                             fms_amip_interp_get_amip_ice             => get_amip_ice, &
+                             fms_amip_interp_get_amip_sst => get_amip_sst, &
+                             fms_amip_interp_get_amip_ice => get_amip_ice, &
                              fms_amip_interp_new          => amip_interp_new, &
                              fms_amip_interp_del          => amip_interp_del, &
-                             FmsAmipInterp_type => amip_interp_type, &
+                             FmsAmipInterp_type_r4        => amip_interp_type_r4, &
+                             FmsAmipInterp_type_r8        => amip_interp_type_r8, &
                              assignment(=)
 
   !> astronomy
