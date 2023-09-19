@@ -55,17 +55,17 @@ program test_time_interp
  Time(5) = set_date(1,12,16)
  Time(6) = Time_end
 
- ref_weights(1) = 0.0 ! on 'edge' (timeList value)
+ ref_weights(1) = 0.0_kindl ! on 'edge' (timeList value)
  ref_weights(2) = midpoint ! rough midpoint of a month ie. jan 16
- ref_weights(3) = 0.0
- ref_weights(4) = 0.0
+ ref_weights(3) = 0.0_kindl
+ ref_weights(4) = 0.0_kindl
  ref_weights(5) = midpoint
- ref_weights(6) = 0.0
+ ref_weights(6) = 0.0_kindl
 
- ref_weights_leap(1) = 0.0 ! on 'edge' (timeList value)
+ ref_weights_leap(1) = 0.0_kindl ! on 'edge' (timeList value)
  ref_weights_leap(2) = day_before_leap_day ! feb 28th
  ref_weights_leap(3) = midpoint
- ref_weights_leap(4) = 0.0
+ ref_weights_leap(4) = 0.0_kindl
  ref_weights_leap(5) = day_before_leap_day
  ref_weights_leap(6) = day_before_leap_day ! checks that 29th gives same result
 
@@ -221,10 +221,10 @@ program test_time_interp
  ! swap around ref numbers for different data set
  ref_weights_leap(1) = day_before_leap_day
  ref_weights_leap(2) = day_before_leap_day ! feb 28th
- ref_weights_leap(3) = 0.0
+ ref_weights_leap(3) = 0.0_kindl
  ref_weights_leap(4) = day_before_leap_day_with_ly
- ref_weights_leap(5) = 0.0
- ref_weights_leap(6) = 0.0
+ ref_weights_leap(5) = 0.0_kindl
+ ref_weights_leap(6) = 0.0_kindl
 ! Tests of modulo time and leap year inconsistency
  Time_beg = set_date(1978, 1, 1)
  Time_end = set_date(1981, 1, 1)
