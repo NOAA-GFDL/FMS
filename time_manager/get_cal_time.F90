@@ -295,13 +295,13 @@ if(lowercase(units(1:10)) == 'days since') then
   increment_days = floor(time_increment)
   increment_seconds = int(spd_real*(time_increment - real(increment_days, r8_kind)))
 else if(lowercase(units(1:11)) == 'hours since') then
-  increment_days = floor(time_increment/24)
+  increment_days = floor(time_increment/24.0_r8_kind)
   increment_seconds = int(spd_real*(time_increment/24.0_r8_kind - real(increment_days, r8_kind)))
 else if(lowercase(units(1:13)) == 'minutes since') then
-  increment_days = floor(time_increment/1440)
+  increment_days = floor(time_increment/1440.0_r8_kind)
   increment_seconds = int(spd_real*(time_increment/1440.0_r8_kind - real(increment_days, r8_kind)))
 else if(lowercase(units(1:13)) == 'seconds since') then
-  increment_days = floor(time_increment/spd_int)
+  increment_days = floor(time_increment/spd_real)
   increment_seconds = int(spd_real*(time_increment/spd_real - real(increment_days, r8_kind)))
 else if(lowercase(units(1:11)) == 'years since') then
 ! The time period between between (base_time + time_increment) and
@@ -316,12 +316,12 @@ else if(lowercase(units(1:11)) == 'years since') then
   increment_seconds = int(dt - real(increment_days*spd_int, r8_kind))
 else if(lowercase(units(1:12)) == 'months since') then
   month_fraction = time_increment - real(floor(time_increment), r8_kind)
-  increment_years  = floor(time_increment/12)
+  increment_years  = floor(time_increment/12.0_r8_kind)
   increment_months = floor(time_increment) - 12*increment_years
   call get_date(base_time, year,month,day,hour,minute,second)
   base_time = set_date(year+increment_years,month+increment_months  ,day,hour,minute,second)
   dt = real( spd_int*days_in_month(base_time), r8_kind) * month_fraction
-  increment_days = floor(dt/spd_int)
+  increment_days = floor(dt/spd_real)
   increment_seconds = int(dt - real(increment_days, r8_kind)*spd_real)
 else
   call error_mesg('get_calendar_time','"'//trim(units)//'" is not an acceptable units attribute of time.'// &
