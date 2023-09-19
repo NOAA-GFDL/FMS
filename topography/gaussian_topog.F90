@@ -55,39 +55,54 @@ interface get_gaussian_topog
     module procedure get_gaussian_topog_r4, get_gaussian_topog_r8
 end interface get_gaussian_topog
 
-!-----------------------------------------------------------------------
-! <NAMELIST NAME="gaussian_topog_nml">
-!   <DATA NAME="height" UNITS="meter" TYPE="real" DIM="(mxmtns)" DEFAULT="0.">
-!     Height in meters of the Gaussian mountains.
-!    </DATA>
-!   <DATA NAME="olon, olat" UNITS="degree" TYPE="real" DIM="(mxmtns)" DEFAULT="0.">
-!     The longitude and latitude of mountain origins (in degrees).
-!    </DATA>
-!   <DATA NAME="wlon, wlat" UNITS="degree" TYPE="real" DIM="(mxmtns)" DEFAULT="0.">
-!     The longitude and latitude half-width of mountain tails (in degrees).
-!    </DATA>
-!   <DATA NAME="rlon, rlat" UNITS="degree" TYPE="real" DIM="(mxmtns)" DEFAULT="0.">
-!     The longitude and latitude half-width of mountain ridges (in degrees).  For a
-!     "standard" Gaussian mountain set rlon=rlat=0.
-!    </DATA>
-!
-!    <DATA NAME="NOTE">
-!     The variables in this namelist are only used when routine
-!     <TT>gaussian_topog_init</TT> is called.  The namelist variables
-!     are dimensioned (by 10), so that multiple mountains can be generated.
-!
-!     Internal parameter mxmtns = 10. By default no mountains are generated.
-!    </DATA>
-
+!! Namelist information for gaussian_topog_nml
+!!
+!!     The variables in this namelist are only used when routine
+!!     <TT>gaussian_topog_init</TT> is called.  The namelist variables
+!!     are dimensioned (by 10), so that multiple mountains can be generated.
+!!
+!!     Internal parameter mxmtns = 10. By default no mountains are generated.
+!!    </DATA>
+!!
+!!     NAMELIST FOR GENERATING GAUSSIAN MOUNTAINS
+!!
+!!  * multiple mountains can be generated
+!!  * the final mountains are the sum of all
+!!
+!!       height = height in meters
+!!       olon, olat = longitude,latitude origin              (degrees)
+!!       rlon, rlat = longitude,latitude half-width of ridge (degrees)
+!!       wlon, wlat = longitude,latitude half-width of tail  (degrees)
+!!
+!!       Note: For the standard gaussian mountain
+!!             set rlon = rlat = 0 .
+!!
+!! <PRE>
+!!
+!!       height -->   ___________________________
+!!                   /                           \
+!!                  /              |              \
+!!    gaussian     /               |               \
+!!      sides --> /                |                \
+!!               /               olon                \
+!!         _____/                olat                 \______
+!!
+!!              |    |             |
+!!              |<-->|<----------->|
+!!              |wlon|    rlon     |
+!!               wlat     rlat
+!!
    integer, parameter :: maxmts = 10
 
-   real(kind=r8_kind), dimension(maxmts) :: height = 0.0_r8_kind
-   real(kind=r8_kind), dimension(maxmts) ::  olon  = 0.0_r8_kind
-   real(kind=r8_kind), dimension(maxmts) ::  olat  = 0.0_r8_kind
-   real(kind=r8_kind), dimension(maxmts) ::  wlon  = 0.0_r8_kind
-   real(kind=r8_kind), dimension(maxmts) ::  wlat  = 0.0_r8_kind
-   real(kind=r8_kind), dimension(maxmts) ::  rlon  = 0.0_r8_kind
-   real(kind=r8_kind), dimension(maxmts) ::  rlat  = 0.0_r8_kind
+   real(kind=r8_kind), dimension(maxmts) :: height = 0.0_r8_kind !< height in meters of the gaussian mountiains
+   real(kind=r8_kind), dimension(maxmts) ::  olon  = 0.0_r8_kind !< longitude of mountain origins (degrees)
+   real(kind=r8_kind), dimension(maxmts) ::  olat  = 0.0_r8_kind !< Latitude  of mountain origins (degrees)
+   real(kind=r8_kind), dimension(maxmts) ::  wlon  = 0.0_r8_kind !< Longitude of half-width mountain trails (degrees)
+   real(kind=r8_kind), dimension(maxmts) ::  wlat  = 0.0_r8_kind !< Latitude of half-width mountain trails (degrees)
+   real(kind=r8_kind), dimension(maxmts) ::  rlon  = 0.0_r8_kind !< Longitude of half-width mountain ridges (degrees)
+                                                                !! for "standard" gaussian mountain set, rlon/rlat = 0
+   real(kind=r8_kind), dimension(maxmts) ::  rlat  = 0.0_r8_kind !< Latitude of half-width mountain ridges (degrees)
+                                                                !! for "standard" gaussian mountain set, rlon/rlat = 0
 
    namelist /gaussian_topog_nml/ height, olon, olat, wlon, wlat, rlon, rlat
 ! </NAMELIST>
@@ -133,40 +148,5 @@ end subroutine read_namelist
 
 end module gaussian_topog_mod
 
-! <INFO>
-!   <NOTE>
-!     NAMELIST FOR GENERATING GAUSSIAN MOUNTAINS
-!
-!  * multiple mountains can be generated
-!  * the final mountains are the sum of all
-!
-!       height = height in meters
-!       olon, olat = longitude,latitude origin              (degrees)
-!       rlon, rlat = longitude,latitude half-width of ridge (degrees)
-!       wlon, wlat = longitude,latitude half-width of tail  (degrees)
-!
-!       Note: For the standard gaussian mountain
-!             set rlon = rlat = 0 .
-!
-! <PRE>
-!
-!       height -->   ___________________________
-!                   /                           \
-!                  /              |              \
-!    gaussian     /               |               \
-!      sides --> /                |                \
-!               /               olon                \
-!         _____/                olat                 \______
-!
-!              |    |             |
-!              |<-->|<----------->|
-!              |wlon|    rlon     |
-!               wlat     rlat
-!
-! </PRE>
-!
-!See the <LINK SRC="topography.html#TEST PROGRAM">topography </LINK>module documentation for a test program.
-!   </NOTE>
-! </INFO>
 !> @}
 ! close documentation grouping
