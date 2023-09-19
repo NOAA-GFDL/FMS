@@ -828,9 +828,9 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
               enddo
            endif
         endif
-        !! added for mixed mode. if existing horiz_interp_type was initialized in r4, needs to cast down in order
-        !! to match up with saved values in horiz_interp_type.
-        !! creates some temporary arrays since intent(out) vars can't get passed in diretory
+        !! added for mixed mode. Data is always read in as r8 (via ext_fieldtype). if existing horiz_interp_type was
+        !! initialized in r4, needs to cast down in order to match up with saved values in horiz_interp_type.
+        !! creates some temporary arrays since intent(out) vars can't get passed in directly
         if (interp%horizInterpReals4_type%is_allocated) then
             ! allocate (there may be a better way to do this, had issues with gnu)
             allocate(hi_tmp_msk_out(isw:iew,jsw:jew, SIZE(field%src_data,3)))
