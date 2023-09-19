@@ -73,7 +73,7 @@ program check_time_max
   do i = 1, 8
     cdata_out = -999_r4_kind
     print *, "Checking answers for var0_max - time_level:", string(i)
-    call read_data(fileobj, "var0_max", cdata_out(1:1,1,1,1), unlim_dim_level=i) !eyeroll
+    call read_data(fileobj, "var0_max", cdata_out(1,1,1,1), unlim_dim_level=i)
     call check_data_0d(cdata_out(1,1,1,1), i)
 
     cdata_out = -999_r4_kind
