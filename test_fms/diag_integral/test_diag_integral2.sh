@@ -34,6 +34,6 @@ test_expect_success "test_diag_integral r8" 'mpirun -n 1 ./test_diag_integral_r8
 
 rm input.nml
 rm -rf INPUT
-
+rm diag_integral.out
 
 test_done
