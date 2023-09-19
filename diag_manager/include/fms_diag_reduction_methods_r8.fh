@@ -29,6 +29,12 @@
 #undef DO_TIME_NONE_
 #define DO_TIME_NONE_ do_time_none_r8
 
+#undef DO_TIME_MIN_
+#define DO_TIME_MIN_ do_time_min_r8
+
+#undef DO_TIME_MAX_
+#define DO_TIME_MAX_ do_time_max_r8
+
 #include "fms_diag_reduction_methods.inc"
 
 !> @}
