@@ -24,8 +24,8 @@
 !! in the topography module
 !! TODO: More intricate data with larger arrays for lat, lon, and 'zdat' should
 !!  be added and included
-!! TODO: More tests to check a wider range of indeces for zmean1d, stdev1d, ocean_mask1d,
-!!  ocean_frac1d, ocean_mask1d, water_frac1d, and water_mask1d
+!! TODO: More tests to check a wider range of indices for zmean2d/1d, stdev2d/1d, ocean_mask2d/1d,
+!!  ocean_frac2d/1d, ocean_mask2d/1d, water_frac2d/1d, and water_mask2d/1d
 
 program test_top
 
@@ -55,7 +55,7 @@ program test_top
 
   real(kind=TEST_TOP_KIND_), parameter        :: deg2rad = real(pi, TEST_TOP_KIND_)/180.0_lkind
   real(kind=TEST_TOP_KIND_), dimension(2,2)   :: lon2d, lat2d   ! in radians
-  real(kind=TEST_TOP_KIND_), dimension(4)     :: lon1d, lat1d   ! in radians
+  real(kind=TEST_TOP_KIND_), dimension(2)     :: lon1d, lat1d   ! in radians
 
   call fms_init
   call topography_init
@@ -71,8 +71,6 @@ program test_top
 
   lon1d(1) = 1.5_lkind*deg2rad ; lat1d(1) = 1.5_lkind*deg2rad
   lon1d(2) = 2.5_lkind*deg2rad ; lat1d(2) = 1.5_lkind*deg2rad
-  lon1d(3) = 1.5_lkind*deg2rad ; lat1d(3) = 2.5_lkind*deg2rad
-  lon1d(4) = 2.5_lkind*deg2rad ; lat1d(4) = 2.5_lkind*deg2rad
 
   ! name files
   topog_file = "topography.data.nc"
@@ -161,13 +159,13 @@ program test_top
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d, expected_answer
+    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d
     logical                                                               :: get_mean_answer
-    integer :: i
 
     !---------------------------------------- test topog mean 2d ---------------------------------------------!
 
     get_mean_answer = get_topog_mean(lon2d, lat2d, zmean2d)
+    this = 0.5_lkind
 
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(zmean2d(1,1), 0.5_lkind, "Error in test_topog_mean 2d")
@@ -177,11 +175,11 @@ program test_top
     !---------------------------------------- test topog mean 1d ---------------------------------------------!
 
     get_mean_answer = get_topog_mean(lon1d, lat1d, zmean1d)
-    expected_answer = 0.5_lkind
 
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(zmean1d(1,1), 0.5_lkind, "Error in test_topog_mean 1d")
-    ! TODO: more checks needed for other indicies
+    ! in the case of this simplistic test, size(zmean1d) = 1, more tests should be created
+    ! with a larger zmean1d array size
 
   end subroutine test_topog_mean
 
@@ -211,7 +209,8 @@ program test_top
 
     if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(stdev1d(1,1), 0.5_lkind, "Error in test_topog_stdev 1d")
-    ! TODO: more checks needed for other indicies
+    ! in the case of this simplistic test, size(stdev1d) = 1, more tests should be created
+    ! with a larger stdev1d array size
 
   end subroutine test_topog_stdev
 
@@ -241,8 +240,8 @@ program test_top
 
     if (get_ocean_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(ocean_frac1d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 1d")
-    ! TODO: more checks needed for other indicies
-
+    ! in the case of this simplistic test, size(ocean_frac1d) = 1, more tests should be created
+    ! with a larger ocean_frac1d array size
   end subroutine test_get_ocean_frac
 
   subroutine test_get_ocean_mask
@@ -272,7 +271,8 @@ program test_top
 
     if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (ocean_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
-    ! TODO: more checks needed for other indicies
+    ! ! in the case of this simplistic test, size(ocean_mask1d) = 1, more tests should be created
+    ! with a larger ocean_mask1d array size
 
   end subroutine test_get_ocean_mask
 
@@ -301,7 +301,8 @@ program test_top
 
     if (get_water_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(water_frac1d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 1d")
-    ! TODO: more checks needed for other indicies
+    ! in the case of this simplistic test, size(water_frac1d) = 1, more tests should be created
+    ! with a larger water_frac1d array size
 
   end subroutine test_get_water_frac
 
@@ -331,7 +332,8 @@ program test_top
 
     if (get_water_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (water_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
-    ! TODO: more checks needed for other indicies
+    ! in the case of this simplistic test, size(water_mask1d) = 1, more tests should be created
+    ! with a larger water_mask1d array size
 
   end subroutine test_get_water_mask
 
