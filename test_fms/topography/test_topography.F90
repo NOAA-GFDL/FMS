@@ -146,14 +146,17 @@ program test_top
 
   call test_topog_mean     ; call test_topog_stdev
   call test_get_ocean_frac ; call test_get_ocean_mask
-  call test_get_water_frac ;call test_get_water_mask
+  call test_get_water_frac ; call test_get_water_mask
 
   call fms_end
 
   contains
 
   subroutine test_topog_mean()
-
+    !! The naming convention of zmean2d/1d in this routine does not relate to their
+    !! dimensions but correlates with what dimensions of lat and lon they are being
+    !! tested with. In this case, the sizes of both zmean2d and zmean1d are both the
+    !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d
@@ -162,9 +165,10 @@ program test_top
     !---------------------------------------- test topog mean 2d ---------------------------------------------!
 
     get_mean_answer = get_topog_mean(lon2d, lat2d, zmean2d)
-
+    
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(zmean2d(1,1), 0.5_lkind, "Error in test_topog_mean 2d")
+    ! in the case of this simplistic test, size(zmean2d) = 1
 
     !---------------------------------------- test topog mean 1d ---------------------------------------------!
 
@@ -172,11 +176,16 @@ program test_top
 
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(zmean1d(1,1), 0.5_lkind, "Error in test_topog_mean 1d")
+    ! in the case of this simplistic test, size(zmean1d) = 1
 
   end subroutine test_topog_mean
 
   subroutine test_topog_stdev
 
+    !! The naming convention of stdev2d/1d in this routine does not relate to their
+    !! dimensions but correlates with what dimensions of lat and lon they are being
+    !! tested with. In this case, the sizes of both stdev2d and stdev1d are both the
+    !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: stdev2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: stdev1d
@@ -188,6 +197,7 @@ program test_top
 
     if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(stdev2d(1,1), 0.5_lkind, "Error in test_topog_stdev 2d")
+    ! in the case of this simplistic test, size(stdev2d) = 1
 
     !---------------------------------------- test topog stdev 2d ---------------------------------------------!
 
@@ -195,11 +205,16 @@ program test_top
 
     if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(stdev1d(1,1), 0.5_lkind, "Error in test_topog_stdev 1d")
+    ! in the case of this simplistic test, size(stdev1d) = 1
 
   end subroutine test_topog_stdev
 
   subroutine test_get_ocean_frac
 
+    !! The naming convention of ocean_frac2d/1d in this routine does not relate to their
+    !! dimensions but correlates with what dimensions of lat and lon they are being
+    !! tested with. In this case, the sizes of both ocean_frac2d and ocean_frac1d are both the
+    !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_frac2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_frac1d
@@ -211,6 +226,7 @@ program test_top
 
     if (get_ocean_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(ocean_frac2d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 2d")
+    ! in the case of this simplistic test, size(ocean_frac2d) = 1
 
     !---------------------------------------- test get_ocean_frac 1d ---------------------------------------------!
 
@@ -218,11 +234,16 @@ program test_top
 
     if (get_ocean_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(ocean_frac1d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 1d")
+    ! in the case of this simplistic test, size(ocean_frac1d) = 1
 
   end subroutine test_get_ocean_frac
 
   subroutine test_get_ocean_mask
 
+    !! The naming convention of ocean_mask2d/1d in this routine does not relate to their
+    !! dimensions but correlates with what dimensions of lat and lon they are being
+    !! tested with. In this case, the sizes of both ocean_mask2d and ocean_mask1d are both the
+    !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
     logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_mask2d
     logical, dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_mask1d
@@ -235,6 +256,7 @@ program test_top
 
     if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (ocean_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 2d: ocean mask should be false")
+    ! in the case of this simplistic test, size(ocean_mask2d) = 1
 
     !---------------------------------------- test get_ocean_mask 1d ---------------------------------------------!
 
@@ -242,11 +264,15 @@ program test_top
 
     if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (ocean_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
+    ! in the case of this simplistic test, size(ocean_mask1d) = 1
 
   end subroutine test_get_ocean_mask
 
   subroutine test_get_water_frac
-
+    !! The naming convention of water_frac2d/1d in this routine does not relate to their
+    !! dimensions but correlates with what dimensions of lat and lon they are being
+    !! tested with. In this case, the sizes of both water_frac2d and water_frac1d are both the
+    !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_frac2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: water_frac1d
@@ -258,6 +284,7 @@ program test_top
 
     if (get_water_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(water_frac2d(1,1), 0.5_lkind, "Error in test_get_water_frac 2d")
+    ! in the case of this simplistic test, size(water_frac2d) = 1
 
     !---------------------------------------- test get_water_frac 1d ---------------------------------------------!
 
@@ -265,11 +292,16 @@ program test_top
 
     if (get_water_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(water_frac1d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 1d")
+    ! in the case of this simplistic test, size(water_frac1d) = 1
 
   end subroutine test_get_water_frac
 
   subroutine test_get_water_mask
 
+    !! The naming convention of water_mask2d/1d in this routine does not relate to their
+    !! dimensions but correlates with what dimensions of lat and lon they are being
+    !! tested with. In this case, the sizes of both water_mask2d and water_mask1d are both the
+    !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
     logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_mask2d
     logical, dimension(size(lon1d)-1,size(lat1d)-1)     :: water_mask1d
@@ -281,6 +313,7 @@ program test_top
 
     if (get_water_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (water_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_water_mask 2d: ocean mask should be false")
+    ! in the case of this simplistic test, size(water_mask2d) = 1
 
     !---------------------------------------- test get_water_mask 1d ---------------------------------------------!
 
@@ -288,7 +321,8 @@ program test_top
 
     if (get_water_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (water_mask1d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 1d: ocean mask should be false")
-
+    ! in the case of this simplistic test, size(water_mask1d) = 1
+    
   end subroutine test_get_water_mask
 
   subroutine check_answers(calculated_answer, expected_answer, what_error)
