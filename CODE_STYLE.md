@@ -1,4 +1,4 @@
-11;rgb:eeee/eeee/ecec># Coding Style
+# Coding Style
 
 ## General
 
