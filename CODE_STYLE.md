@@ -71,8 +71,8 @@
 * All macro names end with an underscore "_"
 * All precision related macro names start with the letters "FMS"
 * Macro names should be unique to each module.  For example,
-  `FMS_AU_KIND_` is used in the axis_utils_mod.  `FMS_HI_KIND_` is used
-  in the horiz_interp_mod
+  `FMS_AU_KIND_` is used in the axis_utils_mod.
+  `FMS_HI_KIND_` is used in the horiz_interp_mod
 
 ## .fh files
 * The .fh header files contain macro definitions.
@@ -116,6 +116,12 @@ module example_mod
 
   public :: sub1
   public :: func1
+  public :: ex_subroutine
+
+  interface ex_subroutine
+    module procedure ex_subroutine_r4
+    module procedure ex_subroutine_r8
+  end interface ex_subroutine
 
   !> @brief Doxygen description of type.
   type,public :: CustomType
@@ -182,8 +188,8 @@ end module example_mod
 #undef   FMS_EX_KIND_
 #define  FMS_EX_KIND_ r4_kind
 
-#undef  FMS_EX_SUBROUTINE_
-#define FMS_EX_SUBROUTINE_ fms_ex_subroutine_r4
+#undef  EX_SUBROUTINE_
+#define EX_SUBROUTINE_ ex_subroutine_r4
 
 #include "example.inc"
 ```
@@ -215,8 +221,8 @@ end module example_mod
 #undef   FMS_EX_KIND_
 #define  FMS_EX_KIND_ r8_kind
 
-#undef  FMS_EX_SUBROUTINE_
-#define FMS_EX_SUBROUTINE_ fms_ex_subroutine_r8
+#undef  EX_SUBROUTINE_
+#define EX_SUBROUTINE_ ex_subroutine_r8
 
 #include "example.inc"
 ```
@@ -244,14 +250,14 @@ end module example_mod
 !! @author <developer>
 !! @email gfdl.climate.model.info@noaa.gov
 
-subroutine FMS_EX_SUBROUTINE_(arg1, arg2, arg3)
+subroutine EX_SUBROUTINE_(arg1, arg2, arg3)
   real(FMS_EX_KIND_) :: arg1, arg2
   integer(i4_kind) :: arg3
   integer, parameter :: lkind=FMS_EX_KIND_
 
   arg1 = arg2 / 4.0_lkind
 
-end subroutine FMS_EX_SUBROUTINE_
+end subroutine EX_SUBROUTINE_
 ```
 
 ## C/C++
