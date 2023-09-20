@@ -79,8 +79,7 @@ module fms
                              fms_amip_interp_get_amip_ice => get_amip_ice, &
                              fms_amip_interp_new          => amip_interp_new, &
                              fms_amip_interp_del          => amip_interp_del, &
-                             FmsAmipInterp_type_r4        => amip_interp_type_r4, &
-                             FmsAmipInterp_type_r8        => amip_interp_type_r8, &
+                             FmsAmipInterp_type           => amip_interp_type, &
                              assignment(=)
 
   !> astronomy

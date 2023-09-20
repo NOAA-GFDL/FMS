@@ -147,20 +147,16 @@ private
 !----------------- Public interfaces -----------------------------------
 
 public amip_interp_init, amip_interp_init_r4, amip_interp_init_r8, get_amip_sst, &
-     & get_amip_ice, amip_interp_new, amip_interp_del, amip_interp_type_r4, &
-     & amip_interp_type_r8, assignment(=)
+     & get_amip_ice, amip_interp_new, amip_interp_del, amip_interp_type, assignment(=)
 
 !-----------------------------------------------------------------------
 !----------------- Public Data -----------------------------------
 integer :: i_sst = 1200
 integer :: j_sst = 600
-real(r8_kind), parameter:: big_number = 1.E30
+real(r8_kind), parameter:: big_number = 1.E30_r8_kind
 logical :: forecast_mode = .false.
-real(r4_kind), allocatable, dimension(:,:)         ::  sst_ncep_r4, sst_anom_r4
-real(r8_kind), allocatable, dimension(:,:), target ::  sst_ncep_r8, sst_anom_r8
-
-real(r8_kind), dimension(:,:), pointer :: sst_ncep => sst_ncep_r8
-real(r8_kind), dimension(:,:), pointer :: sst_anom => sst_anom_r8
+real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep,    sst_anom
+real(r4_kind), allocatable, dimension(:,:) ::  sst_ncep_r4, sst_anom_r4 
 
 public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 
@@ -191,8 +187,7 @@ end type
 !> Assignment overload to allow native assignment between amip_interp_type variables.
 !> @ingroup amip_interp_mod
 interface assignment(=)
-  module procedure  amip_interp_type_eq_r4
-  module procedure  amip_interp_type_eq_r8
+  module procedure amip_interp_type_eq
 end interface
 
 !> Private logical equality overload for amip_interp_type
@@ -291,39 +286,19 @@ interface amip_interp_init
   module procedure amip_interp_init_r8
 end interface
 
-!> Frees data associated with a amip_interp_type variable. Should be used for any
-!! variables initialized via @ref amip_interp_new.
-!> @param[inout] Interp A defined data type variable initialized by amip_interp_new and used
-!! when calling get_amip_sst and get_amip_ice.
-interface amip_interp_del
-  module procedure amip_interp_del_r4, amip_interp_del_r8
-end interface amip_interp_del
-
 !----- public data type ------
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
 !! data (r4_kind flavor).
 !> @ingroup amip_interp_mod
-type amip_interp_type_r4
+type amip_interp_type
    private
-   type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
-   real(r4_kind), allocatable :: data1(:,:), data2(:,:)
-   type (date_type)         :: Date1, Date2
-   logical                  :: use_climo, use_annual
-   logical                  :: I_am_initialized=.false.
-end type amip_interp_type_r4
-
-!> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
-!! data (r8_kind flavor).
-!> @ingroup amip_interp_mod
-type amip_interp_type_r8
-   private
-   type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
-   real(r8_kind), allocatable :: data1(:,:), data2(:,:)
-   type (date_type)         :: Date1, Date2
-   logical                  :: use_climo, use_annual
-   logical                  :: I_am_initialized=.false.
-end type amip_interp_type_r8
+   type (horiz_interp_type)              :: Hintrp, Hintrp2 ! add by JHC
+   class(*), dimension(:,:), allocatable :: data1, data2
+   type (date_type)                      :: Date1, Date2
+   logical                               :: use_climo, use_annual
+   logical                               :: I_am_initialized=.false.
+end type amip_interp_type
 
 !> @addtogroup amip_interp_mod
 !> @{
@@ -399,6 +374,25 @@ end type amip_interp_type_r8
 
 contains
 
+!> Frees data associated with a amip_interp_type variable. Should be used for any
+!! variables initialized via @ref amip_interp_new.
+!> @param[inout] Interp A defined data type variable initialized by amip_interp_new and used
+!! when calling get_amip_sst and get_amip_ice.
+   subroutine amip_interp_del (Interp)
+     type (amip_interp_type), intent(inout) :: Interp
+
+     if(allocated(Interp%data1)) deallocate(Interp%data1)
+     if(allocated(Interp%data2)) deallocate(Interp%data2)
+     if(allocated(lon_bnd_r4))   deallocate(lon_bnd_r4)
+     if(allocated(lon_bnd_r8))   deallocate(lon_bnd_r8)
+     if(allocated(lat_bnd_r4))   deallocate(lat_bnd_r4)
+     if(allocated(lat_bnd_r8))   deallocate(lat_bnd_r8)
+
+     call horiz_interp_del ( Interp%Hintrp )
+
+     Interp%I_am_initialized = .false.
+   end subroutine amip_interp_del
+
 !> @brief Returns the size (i.e., number of longitude and latitude
 !!         points) of the observed data grid.
 !! @throws FATAL have not called amip_interp_new
@@ -461,6 +455,27 @@ integer :: i, dif(3)
      endif
    enddo
 end function date_gt
+
+subroutine amip_interp_type_eq (amip_interp_out, amip_interp_in)
+    type(amip_interp_type), intent(inout) :: amip_interp_out
+    type(amip_interp_type), intent(in)    :: amip_interp_in
+
+    if(.not.amip_interp_in%I_am_initialized) then
+      call mpp_error(FATAL,'amip_interp_type_eq: amip_interp_type variable on right hand side is unassigned')
+    endif
+
+    amip_interp_out%Hintrp     =  amip_interp_in%Hintrp
+    amip_interp_out%Hintrp2    =  amip_interp_in%Hintrp2 !< missing assignment statement; added by GPP
+    amip_interp_out%data1      =  amip_interp_in%data1
+    amip_interp_out%data2      =  amip_interp_in%data2
+    amip_interp_out%Date1      =  amip_interp_in%Date1
+    amip_interp_out%Date2      =  amip_interp_in%Date2
+    amip_interp_out%Date1      =  amip_interp_in%Date1
+    amip_interp_out%Date2      =  amip_interp_in%Date2
+    amip_interp_out%use_climo  =  amip_interp_in%use_climo
+    amip_interp_out%use_annual =  amip_interp_in%use_annual
+    amip_interp_out%I_am_initialized = .true.
+end subroutine amip_interp_type_eq
 
 #include "amip_interp_r4.fh"
 #include "amip_interp_r8.fh"

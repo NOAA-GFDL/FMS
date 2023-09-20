@@ -1,5 +1,4 @@
 #undef FMS_AMIP_INTERP_KIND_
-#undef AMIP_INTERP_TYPE_
 #undef SST_NCEP_
 #undef SST_ANOM_
 #undef LON_BND_
@@ -11,7 +10,6 @@
 #undef AMIP_INTERP_NEW_1D_
 #undef AMIP_INTERP_NEW_2D_
 #undef AMIP_INTERP_INIT_
-#undef AMIP_INTERP_DEL_
 #undef SET_SST_GRID_EDGES_AMIP1_
 #undef SET_SST_GRID_EDGES_OI_
 #undef SET_SST_GRID_EDGES_DAILY_
@@ -19,11 +17,8 @@
 #undef READ_RECORD_
 #undef CLIP_DATA_
 #undef ZONAL_SST_
-#undef AMIP_INTERP_TYPE_EQ_
-
 
 #define FMS_AMIP_INTERP_KIND_ r4_kind
-#define AMIP_INTERP_TYPE_ amip_interp_type_r4
 #define SST_NCEP_ sst_ncep_r4
 #define SST_ANOM_ sst_anom_r4
 #define LON_BND_ lon_bnd_r4
@@ -35,7 +30,6 @@
 #define AMIP_INTERP_NEW_1D_ amip_interp_new_1d_r4
 #define AMIP_INTERP_NEW_2D_ amip_interp_new_2d_r4
 #define AMIP_INTERP_INIT_ amip_interp_init_r4
-#define AMIP_INTERP_DEL_ amip_interp_del_r4
 #define SET_SST_GRID_EDGES_AMIP1_ set_sst_grid_edges_amip1_r4
 #define SET_SST_GRID_EDGES_OI_ set_sst_grid_edges_oi_r4
 #define SET_SST_GRID_EDGES_DAILY_ set_sst_grid_edges_daily_r4
@@ -43,12 +37,10 @@
 #define READ_RECORD_ read_record_r4
 #define CLIP_DATA_ clip_data_r4
 #define ZONAL_SST_ zonal_sst_r4
-#define AMIP_INTERP_TYPE_EQ_ amip_interp_type_eq_r4
 
 #include "amip_interp.inc"
 
 #undef FMS_AMIP_INTERP_KIND_
-#undef AMIP_INTERP_TYPE_
 #undef SST_NCEP_
 #undef SST_ANOM_
 #undef LON_BND_
@@ -60,7 +52,6 @@
 #undef AMIP_INTERP_NEW_1D_
 #undef AMIP_INTERP_NEW_2D_
 #undef AMIP_INTERP_INIT_
-#undef AMIP_INTERP_DEL_
 #undef SET_SST_GRID_EDGES_AMIP1_
 #undef SET_SST_GRID_EDGES_OI_
 #undef SET_SST_GRID_EDGES_DAILY_
@@ -68,4 +59,3 @@
 #undef READ_RECORD_
 #undef CLIP_DATA_
 #undef ZONAL_SST_
-#undef AMIP_INTERP_TYPE_EQ_

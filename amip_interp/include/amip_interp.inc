@@ -21,7 +21,7 @@
 !> Retrieve sea surface temperature data and interpolated grid
 subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
    type (time_type),            intent(in)    :: Time !< Time to interpolate
-   type (AMIP_INTERP_TYPE_),    intent(inout) :: Interp !< Holds data for interpolation
+   type (amip_interp_type), target,    intent(inout) :: Interp !< Holds data for interpolation
    real(FMS_AMIP_INTERP_KIND_), intent(out)   :: sst(:,:) !< Sea surface temperature data
    character(len=*), optional,  intent(out)   :: err_msg !< Holds error message string if present
 
@@ -53,6 +53,7 @@ subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
     logical, parameter :: DEBUG = .false. !> switch for debugging output
     !> These are fms_io specific
     integer :: unit
+    real(FMS_AMIP_INTERP_KIND_), dimension(:,:), pointer :: data1, data2 !< Typed pointers to class(*) arrays
     integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
     if(present(err_msg)) err_msg = ''
@@ -106,20 +107,33 @@ if ( .not.use_daily ) then
      unit = -1
 !-----------------------------------------------------------------------
 
+      select type (data1_generic => Interp%data1)
+        type is (real(FMS_AMIP_INTERP_KIND_))
+          data1 => data1_generic
+        class default
+          call error_mesg("get_amip_sst", "Called with amip_interp_type of incompatible real kind", FATAL)
+      end select
+
+      select type (data2_generic => Interp%data2)
+        type is (real(FMS_AMIP_INTERP_KIND_))
+          data2 => data2_generic
+        class default
+          call error_mesg("get_amip_sst", "Called with amip_interp_type of incompatible real kind", FATAL)
+      end select
 
       if (Date1 /= Interp % Date1) then
 !       ---- use Date2 for Date1 ----
           if (Date1 == Interp % Date2) then
               Interp % Date1 = Interp % Date2
-              Interp % data1 = Interp % data2
+              data1 = data2
               temp1(:,:) = temp2(:,:)   ! SJL BUG fix: June 24, 2011
           else
               call READ_RECORD_ ('sst', Date1, Udate1, temp1)
               if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
                    temp1(:,:) = temp1(:,:) + SST_ANOM_ (:,:)
               endif
-              call horiz_interp ( Interp%Hintrp, temp1, Interp%data1 )
-              call CLIP_DATA_ ('sst', Interp%data1)
+              call horiz_interp ( Interp%Hintrp, temp1, data1)
+              call CLIP_DATA_ ('sst', data1)
              Interp % Date1 = Date1
           endif
       endif
@@ -131,15 +145,15 @@ if ( .not.use_daily ) then
           if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
                temp2(:,:) = temp2(:,:) + SST_ANOM_ (:,:)
           endif
-          call horiz_interp ( Interp%Hintrp, temp2, Interp%data2 )
-          call CLIP_DATA_ ('sst', Interp%data2)
+          call horiz_interp ( Interp%Hintrp, temp2, data2)
+          call CLIP_DATA_ ('sst', data2)
           Interp % Date2 = Date2
       endif
 
 !-----------------------------------------------------------------------
 !---------- time interpolation (between months) of sst's ---------------
 !-----------------------------------------------------------------------
-    sst = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
+    sst = data1 + fmonth * (data2 - data1)
 
 !-------------------------------------------------------------------------------
 ! SJL mods for NWP and TCSF ---
@@ -308,7 +322,7 @@ endif
 !> AMIP interpolation for ice
 subroutine GET_AMIP_ICE_ (Time, Interp, ice, err_msg)
    type (time_type),            intent(in)    :: Time !< Time to interpolate
-   type (AMIP_INTERP_TYPE_),    intent(inout) :: Interp !< Holds data for interpolation
+   type (amip_interp_type), target,    intent(inout) :: Interp !< Holds data for interpolation
    real(FMS_AMIP_INTERP_KIND_), intent(out)   :: ice(:,:) !< ice data
    character(len=*), optional,  intent(out)   :: err_msg !< Holds error message string if present
 
@@ -320,6 +334,7 @@ subroutine GET_AMIP_ICE_ (Time, Interp, ice, err_msg)
 
     type(time_type) :: Amip_Time
     integer :: tod(3),dum(3)
+    real(FMS_AMIP_INTERP_KIND_), dimension(:,:), pointer :: data1, data2 !< Typed pointers to class(*) arrays
     integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
     if(present(err_msg)) err_msg = ''
@@ -372,11 +387,25 @@ else
    unit = -1
 !-----------------------------------------------------------------------
 
+      select type (data1_generic => Interp%data1)
+        type is (real(FMS_AMIP_INTERP_KIND_))
+          data1 => data1_generic
+        class default
+          call error_mesg("get_amip_ice", "Called with amip_interp_type of incompatible real kind", FATAL)
+      end select
+
+      select type (data2_generic => Interp%data2)
+        type is (real(FMS_AMIP_INTERP_KIND_))
+          data2 => data2_generic
+        class default
+          call error_mesg("get_amip_ice", "Called with amip_interp_type of incompatible real kind", FATAL)
+      end select
+
     if (Date1 /= Interp % Date1) then
 !       ---- use Date2 for Date1 ----
         if (Date1 == Interp % Date2) then
             Interp % Date1 = Interp % Date2
-            Interp % data1 = Interp % data2
+            data1 = data2
         else
 !-- SJL -------------------------------------------------------------
 ! Can NOT use ncep_sst to determine sea_ice For seasonal forecast
@@ -391,8 +420,8 @@ else
                call READ_RECORD_ ('ice', Date1, Udate1, sice)
             endif
 !--------------------------------------------------------------------
-            call horiz_interp ( Interp%Hintrp, sice, Interp%data1 )
-            call CLIP_DATA_ ('ice', Interp%data1)
+            call horiz_interp ( Interp%Hintrp, sice, data1)
+            call CLIP_DATA_ ('ice', data1)
             Interp % Date1 = Date1
         endif
     endif
@@ -412,8 +441,8 @@ else
                call READ_RECORD_ ('ice', Date2, Udate2, sice)
             endif
 !--------------------------------------------------------------------
-        call horiz_interp ( Interp%Hintrp, sice, Interp%data2 )
-        call CLIP_DATA_ ('ice', Interp%data2)
+        call horiz_interp ( Interp%Hintrp, sice, data2)
+        call CLIP_DATA_ ('ice', data2)
         Interp % Date2 = Date2
 
     endif
@@ -422,7 +451,7 @@ else
 !---------- time interpolation (between months) ------------------------
 !-----------------------------------------------------------------------
 
-   ice = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
+   ice = data1 + fmonth * (data2 - data1)
 
 endif
  end subroutine GET_AMIP_ICE_
@@ -435,7 +464,7 @@ endif
  character(len=*), intent(in), optional :: interp_method
  logical, intent(in), optional :: use_climo, use_annual
 
-   type (AMIP_INTERP_TYPE_) :: Interp
+   type (amip_interp_type) :: Interp
 
    if(.not.module_is_initialized) call AMIP_INTERP_INIT_
 
@@ -459,8 +488,8 @@ endif
     call horiz_interp_new ( Interp%Hintrp, LON_BND_, LAT_BND_, &
                              lon, lat, interp_method= interp_method )
 
-    allocate(Interp % data1 (size(lon(:))-1,size(lat(:))-1))
-    allocate(Interp % data2 (size(lon(:))-1,size(lat(:))-1))
+    allocate(real(FMS_AMIP_INTERP_KIND_) :: Interp%data1(size(lon(:))-1,size(lat(:))-1))
+    allocate(real(FMS_AMIP_INTERP_KIND_) :: Interp%data2(size(lon(:))-1,size(lat(:))-1))
 
     Interp%I_am_initialized = .true.
    end function AMIP_INTERP_NEW_1D_
@@ -473,7 +502,7 @@ endif
  character(len=*), intent(in), optional :: interp_method
  logical, intent(in), optional :: use_climo, use_annual
 
-   type (AMIP_INTERP_TYPE_) :: Interp
+   type (amip_interp_type) :: Interp
 
    if(.not.module_is_initialized) call AMIP_INTERP_INIT_
 
@@ -497,8 +526,8 @@ endif
    call horiz_interp_new ( Interp%Hintrp, LON_BND_, LAT_BND_, &
                            lon, lat, interp_method = interp_method)
 
-   allocate(Interp % data1 (size(lon,1),size(lat,2)))
-   allocate(Interp % data2 (size(lon,1),size(lat,2)))
+   allocate(real(FMS_AMIP_INTERP_KIND_) :: Interp%data1(size(lon,1),size(lat,2)))
+   allocate(real(FMS_AMIP_INTERP_KIND_) :: Interp%data2(size(lon,1),size(lat,2)))
 
    Interp%I_am_initialized = .true.
    end function AMIP_INTERP_NEW_2D_
@@ -642,23 +671,6 @@ endif
         call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_ice), FATAL)
     module_is_initialized = .true.
  end subroutine AMIP_INTERP_INIT_
-
-!> Frees data associated with a amip_interp_type variable. Should be used for any
-!! variables initialized via @ref amip_interp_new.
-!> @param[inout] Interp A defined data type variable initialized by amip_interp_new and used
-!! when calling get_amip_sst and get_amip_ice.
-   subroutine AMIP_INTERP_DEL_ (Interp)
-     type (AMIP_INTERP_TYPE_), intent(inout) :: Interp
-
-     if(allocated(Interp%data1)) deallocate(Interp%data1)
-     if(allocated(Interp%data2)) deallocate(Interp%data2)
-     if(allocated(LON_BND_))     deallocate(LON_BND_)
-     if(allocated(LAT_BND_))     deallocate(LAT_BND_)
-
-     call horiz_interp_del ( Interp%Hintrp )
-
-     Interp%I_am_initialized = .false.
-   end subroutine AMIP_INTERP_DEL_
 
    subroutine SET_SST_GRID_EDGES_AMIP1_
    integer :: i, j
@@ -1016,24 +1028,3 @@ subroutine ZONAL_SST_ (Time, ice, sst)
        ice  = 0.0_lkind
     endwhere
 end subroutine ZONAL_SST_
-
-subroutine AMIP_INTERP_TYPE_EQ_ (amip_interp_out, amip_interp_in)
-    type(AMIP_INTERP_TYPE_), intent(inout) :: amip_interp_out
-    type(AMIP_INTERP_TYPE_), intent(in)    :: amip_interp_in
-
-    if(.not.amip_interp_in%I_am_initialized) then
-      call mpp_error(FATAL,'amip_interp_type_eq: amip_interp_type variable on right hand side is unassigned')
-    endif
-
-    amip_interp_out%Hintrp     =  amip_interp_in%Hintrp
-    amip_interp_out%Hintrp2    =  amip_interp_in%Hintrp2 !< missing assignment statement; added by GPP
-    amip_interp_out%data1      =  amip_interp_in%data1
-    amip_interp_out%data2      =  amip_interp_in%data2
-    amip_interp_out%Date1      =  amip_interp_in%Date1
-    amip_interp_out%Date2      =  amip_interp_in%Date2
-    amip_interp_out%Date1      =  amip_interp_in%Date1
-    amip_interp_out%Date2      =  amip_interp_in%Date2
-    amip_interp_out%use_climo  =  amip_interp_in%use_climo
-    amip_interp_out%use_annual =  amip_interp_in%use_annual
-    amip_interp_out%I_am_initialized = .true.
-end subroutine AMIP_INTERP_TYPE_EQ_
