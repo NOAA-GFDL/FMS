@@ -156,8 +156,8 @@ integer :: i_sst = 1200
 integer :: j_sst = 600
 real(r8_kind), parameter:: big_number = 1.E30
 logical :: forecast_mode = .false.
-real(r4_kind), allocatable, dimension(:,:) ::  sst_ncep_r4, sst_anom_r4
-real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep_r8, sst_anom_r8
+real(r4_kind), allocatable, dimension(:,:)         ::  sst_ncep_r4, sst_anom_r4
+real(r8_kind), allocatable, dimension(:,:), target ::  sst_ncep_r8, sst_anom_r8
 
 real(r8_kind), dimension(:,:), pointer :: sst_ncep => sst_ncep_r8
 real(r8_kind), dimension(:,:), pointer :: sst_anom => sst_anom_r8
