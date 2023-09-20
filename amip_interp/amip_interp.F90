@@ -159,6 +159,11 @@ logical :: forecast_mode = .false.
 real(r4_kind), allocatable, dimension(:,:) ::  sst_ncep_r4, sst_anom_r4
 real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep_r8, sst_anom_r8
 
+real(r8_kind), dimension(:,:), pointer :: sst_ncep => sst_ncep_r8
+real(r8_kind), dimension(:,:), pointer :: sst_anom => sst_anom_r8
+
+public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
+
 !-----------------------------------------------------------------------
 !--------------------- private below here ------------------------------
 
