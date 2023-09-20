@@ -171,7 +171,7 @@ program test_top
 
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(zmean2d(1,1), 0.5_lkind, "Error in test_topog_mean 2d")
-    ! in the case of this simplistic test, size(zmean2d) = 1, more tests should be created 
+    ! in the case of this simplistic test, size(zmean2d) = 1, more tests should be created
     ! with a larger zmean2d array size
 
     !---------------------------------------- test topog mean 1d ---------------------------------------------!
@@ -202,7 +202,7 @@ program test_top
 
     if (get_stdev_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(stdev2d(1,1), 0.5_lkind, "Error in test_topog_stdev 2d")
-    ! in the case of this simplistic test, size(stdev2d) = 1, more tests should be created 
+    ! in the case of this simplistic test, size(stdev2d) = 1, more tests should be created
     ! with a larger stdev2d array size
 
     !---------------------------------------- test topog stdev 2d ---------------------------------------------!
@@ -232,7 +232,7 @@ program test_top
 
     if (get_ocean_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(ocean_frac2d(1,1), 0.5_lkind, "Error in test_get_ocean_frac 2d")
-    ! in the case of this simplistic test, size(ocean_frac2d) = 1, more tests should be created 
+    ! in the case of this simplistic test, size(ocean_frac2d) = 1, more tests should be created
     ! with a larger ocean_frac2d array size
 
     !---------------------------------------- test get_ocean_frac 1d ---------------------------------------------!
@@ -263,7 +263,7 @@ program test_top
 
     if (get_ocean_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (ocean_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_ocean_mask 2d: ocean mask should be false")
-    ! in the case of this simplistic test, size(ocean_mask2d) = 1, more tests should be created 
+    ! in the case of this simplistic test, size(ocean_mask2d) = 1, more tests should be created
     ! with a larger ocean_mask2d array size
 
     !---------------------------------------- test get_ocean_mask 1d ---------------------------------------------!
@@ -292,7 +292,7 @@ program test_top
 
     if (get_water_frac_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     call check_answers(water_frac2d(1,1), 0.5_lkind, "Error in test_get_water_frac 2d")
-    ! in the case of this simplistic test, size(water_frac2d) = 1, more tests should be created 
+    ! in the case of this simplistic test, size(water_frac2d) = 1, more tests should be created
     ! with a larger water_frac2d array size
 
     !---------------------------------------- test get_water_frac 1d ---------------------------------------------!
@@ -322,7 +322,7 @@ program test_top
 
     if (get_water_mask_answer .neqv. .true.) call mpp_error(FATAL, "ocean field not read correctly")
     if (water_mask2d(1,1) .neqv. .false.) call mpp_error(FATAL, "test_get_water_mask 2d: ocean mask should be false")
-    ! in the case of this simplistic test, size(water_mask2d) = 1, more tests should be created 
+    ! in the case of this simplistic test, size(water_mask2d) = 1, more tests should be created
     ! with a larger water_mask2d array size
 
     !---------------------------------------- test get_water_mask 1d ---------------------------------------------!
