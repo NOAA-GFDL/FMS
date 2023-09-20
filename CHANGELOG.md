@@ -20,7 +20,7 @@ sequential patch number (starting from `01`).
 - LIBFMS: The libFMS.F90 file (module name `fms`) meant to provide global access has been updated to include 'fms' and it's module/subdirectory name as prefixes for all names. This will only affect external codes that are already using the global module (via `use fms`) and not individual modules.
 - MIXED PRECISION: Updates the axis_utils2, horiz_interp, sat_vapor_pressure, and axis_utils subdirectories to support mixed precision real values.
 - FMS2_IO: Added in mpp_scatter and mpp_gather performance changes from the 2023.01.01 patch. See below for more details.
-- FMS2_IO: Improved error messages to give more debugging information 
+- FMS2_IO: Improved error messages to give more debugging information
 - FMS_MOD: Changed fms_init to include a system call to set the stack size to unlimited, removed previously added stack size fixes
 - MONIN_OBUKHOV: Restructures the subroutines in `stable_mix` interface so that 1d calls the underlying implementation, and 2 and 3d call it on 1d slices of the data as opposed to passing in mismatched arrays.
 - MPP: Updates from JEDI for ajoint version the mpp halo filling (mpp_do_update_ad.fh), adds checkpoint for forward buffer information.
