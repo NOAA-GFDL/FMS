@@ -1,4 +1,4 @@
-# Coding Style
+11;rgb:eeee/eeee/ecec># Coding Style
 
 ## General
 
@@ -256,7 +256,8 @@ end module example_mod
 !! as ex_subroutine r8 (as defined in the example_r8.fh file)
 
 subroutine EX_SUBROUTINE_(arg1, arg2, arg3)
-  real(FMS_EX_KIND_) :: arg1, arg2  !< FMS_EX_KIND_ gets replaced by the preprocessor
+  real(FMS_EX_KIND_), intent(in)  :: arg2 !< FMS_EX_KIND_ gets replaced by the preprocessor
+  real(FMS_EX_KIND_), intent(out) :: arg1 !< FMS_EX_KIND_ gets replaced by the preprocessor
   integer(i4_kind) :: arg3
   integer, parameter :: lkind=FMS_EX_KIND_
 
