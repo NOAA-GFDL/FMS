@@ -291,15 +291,15 @@ program test_top
 
   end subroutine test_get_water_mask
 
-  subroutine check_answers(result, answer, what_error)
+  subroutine check_answers(calculated_answer, expected_answer, what_error)
 
     implicit none
-    real(kind=TEST_TOP_KIND_) :: result       ! value calculated from script
-    real(kind=TEST_TOP_KIND_) :: answer       ! expected answer
-    character(*)              :: what_error   ! error message to print
+    real(kind=TEST_TOP_KIND_) :: calculated_answer   ! value calculated from script
+    real(kind=TEST_TOP_KIND_) :: expected_answer     ! expected answer
+    character(*)              :: what_error          ! error message to print
 
-    if (result .ne. answer) then
-      write(*,*) 'Expected ', answer, ' but computed ', result
+    if (calculated_answer.ne. expected_answer) then
+      write(*,*) 'Expected ', expected_answer, ' but computed ', calculated_answer
       call mpp_error(FATAL, trim(what_error))
     end if
 
