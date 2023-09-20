@@ -118,10 +118,10 @@ module example_mod
   public :: func1
   public :: ex_subroutine
 
-  interface ex_subroutine
-    module procedure ex_subroutine_r4
-    module procedure ex_subroutine_r8
-  end interface ex_subroutine
+  interface ex_subroutine             !< generic interface block.  When the user
+    module procedure ex_subroutine_r4 !! calls ex_subroutine, the compiler checks
+    module procedure ex_subroutine_r8 !! the input arguments and invokes either
+  end interface ex_subroutine         !! ex_subroutine_r4 or ex_subroutine_r8
 
   !> @brief Doxygen description of type.
   type,public :: CustomType
@@ -155,9 +155,9 @@ module example_mod
     res=real(arg1,r8_kind) * 3.14_r8_kind
   end function func1
 
-#include "example_r4.fh"
-#include "example_r8.fh"
-
+#include "example_r4.fh" !< These two header file contains the macro definition
+#include "example_r8.fh" !! and an "#include example.inc" where the procedure
+                         !! is defined.  See below.
 end module example_mod
 ```
 ```Fortran example_r4.fh file
@@ -191,7 +191,7 @@ end module example_mod
 #undef  EX_SUBROUTINE_
 #define EX_SUBROUTINE_ ex_subroutine_r4
 
-#include "example.inc"
+#include "example.inc" !< example.inc file contains the procedure definition
 ```
 ```Fortran example_r8.fh file
 !***********************************************************************
@@ -224,7 +224,7 @@ end module example_mod
 #undef  EX_SUBROUTINE_
 #define EX_SUBROUTINE_ ex_subroutine_r8
 
-#include "example.inc"
+#include "example.inc" !< example.inc file contains the procedure definition
 ```
 ``` Fortran example.inc file
 !***********************************************************************
@@ -250,12 +250,17 @@ end module example_mod
 !! @author <developer>
 !! @email gfdl.climate.model.info@noaa.gov
 
+!> The macro EX_SUBROUTINE_ gets replaced by the preprocessor
+!! as ex_subroutine_r4 (as defined in the example_r4.fh file) and
+!! as ex_subroutine r8 (as defined in the example_r8.fh file)
+
 subroutine EX_SUBROUTINE_(arg1, arg2, arg3)
-  real(FMS_EX_KIND_) :: arg1, arg2
+  real(FMS_EX_KIND_) :: arg1, arg2  !< FMS_EX_KIND_ gets replaced by the preprocessor
   integer(i4_kind) :: arg3
   integer, parameter :: lkind=FMS_EX_KIND_
 
-  arg1 = arg2 / 4.0_lkind
+  arg1 = arg2 / 4.0_lkind !< GCC does not like 4.0_FMS_EX_KIND_.  Thus, the
+                          !! parameter lkind is declared and used.
 
 end subroutine EX_SUBROUTINE_
 ```
