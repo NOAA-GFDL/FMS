@@ -259,7 +259,7 @@ subroutine EX_SUBROUTINE_(arg1, arg2, arg3)
   real(FMS_EX_KIND_), intent(in)  :: arg2 !< FMS_EX_KIND_ gets replaced by the preprocessor
   real(FMS_EX_KIND_), intent(out) :: arg1 !< FMS_EX_KIND_ gets replaced by the preprocessor
   integer(i4_kind) :: arg3
-  integer, parameter :: lkind=FMS_EX_KIND_
+  integer, parameter :: lkind=FMS_EX_KIND_ !< kind parameter local to the subroutine
 
   arg1 = arg2 / 4.0_lkind !< GCC does not like 4.0_FMS_EX_KIND_.  Thus, the
                           !! parameter lkind is declared and used.
