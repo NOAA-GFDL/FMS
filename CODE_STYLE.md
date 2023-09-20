@@ -60,7 +60,7 @@
 * All critical sections must have a unique name.
 
 ## Precision
-* Precision of all real arguments should be explicitly defined as r4_kind, r8_kind,
+* Precision of all real arguments are explicitly defined as r4_kind, r8_kind,
   or as any other precision parameters defined in platform_mod.
 * The precision of real numerical values should be consistent with the precision
   of the associated variable.  For example, if the variable `a` has been declared
