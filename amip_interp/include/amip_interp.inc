@@ -20,10 +20,10 @@
 ! modified by JHC
 !> Retrieve sea surface temperature data and interpolated grid
 subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
-   type (time_type),            intent(in)    :: Time !< Time to interpolate
-   type (amip_interp_type), target,    intent(inout) :: Interp !< Holds data for interpolation
-   real(FMS_AMIP_INTERP_KIND_), intent(out)   :: sst(:,:) !< Sea surface temperature data
-   character(len=*), optional,  intent(out)   :: err_msg !< Holds error message string if present
+   type (time_type),                intent(in)    :: Time !< Time to interpolate
+   type (amip_interp_type), target, intent(inout) :: Interp !< Holds data for interpolation
+   real(FMS_AMIP_INTERP_KIND_),     intent(out)   :: sst(:,:) !< Sea surface temperature data
+   character(len=*), optional,      intent(out)   :: err_msg !< Holds error message string if present
 
    real(FMS_AMIP_INTERP_KIND_), dimension(mobs,nobs) :: sice
    real(FMS_AMIP_INTERP_KIND_), allocatable, save :: temp1(:,:), temp2(:,:)
@@ -321,10 +321,10 @@ endif
 
 !> AMIP interpolation for ice
 subroutine GET_AMIP_ICE_ (Time, Interp, ice, err_msg)
-   type (time_type),            intent(in)    :: Time !< Time to interpolate
-   type (amip_interp_type), target,    intent(inout) :: Interp !< Holds data for interpolation
-   real(FMS_AMIP_INTERP_KIND_), intent(out)   :: ice(:,:) !< ice data
-   character(len=*), optional,  intent(out)   :: err_msg !< Holds error message string if present
+   type (time_type),                intent(in)    :: Time !< Time to interpolate
+   type (amip_interp_type), target, intent(inout) :: Interp !< Holds data for interpolation
+   real(FMS_AMIP_INTERP_KIND_),     intent(out)   :: ice(:,:) !< ice data
+   character(len=*), optional,      intent(out)   :: err_msg !< Holds error message string if present
 
     real(FMS_AMIP_INTERP_KIND_), dimension(mobs,nobs) :: sice, temp
 
