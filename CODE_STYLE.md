@@ -74,12 +74,13 @@
   `FMS_AU_KIND_` is used in the axis_utils_mod.
   `FMS_HI_KIND_` is used in the horiz_interp_mod
 
-## .fh files
+## .fh and .inc files
 * The .fh header files contain macro definitions.
-* .fh files containing precision related macro definitions should be named
-  with `_r4.fh` and `_r8.fh` extensions in the include subdirectory found
-  in the module directory.
-
+* If the .fh files contain mainly precision related macro definitions, the files
+  should be named with `_r4.fh` and `_r8.fh` extensions in the include subdirectory found
+  in the module directory.  The .inc file is `#include`-ed at the end of both
+  `_r4.fh` and `_f8.fh` files where the .inc file contains the procedure definitions.
+  This .inc file is located in the same include subdirectory as the .fh files
 ## Fortran Example
 
 ```Fortran example.F90 file
