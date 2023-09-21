@@ -5,14 +5,16 @@ jobs:
   coupler-build:
     runs-on: ubuntu-latest
     container:
-      image: ryanmulhall/hpc-me.ubuntu-minimal:coupler
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:12.3.0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
       env:
         CC: mpicc
         FC: mpif90
-        CPPFLAGS: '-I/usr/include -Duse_LARGEFILE -DMAXFIELDMETHODS_=500'
-        FCFLAGS: '-fcray-pointer -fdefault-double-8 -fdefault-real-8 -Waliasing -ffree-line-length-none -fno-range-check -I/usr/include'
-        LDFLAGS: '-L/usr/lib'
-        VERBOSE: 1
+        CPPFLAGS: '-I/opt/view/include'
+        FFLAGS: '-fallow-argument-mismatch' # mkmf uses FFLAGS instead of FC
+        LDFLAGS: '-L/opt/view/lib'
     steps:
     - name: Checkout FMS
       uses: actions/checkout@v2
