@@ -165,7 +165,6 @@ program test_top
     !---------------------------------------- test topog mean 2d ---------------------------------------------!
 
     get_mean_answer = get_topog_mean(lon2d, lat2d, zmean2d)
-    this = 0.5_lkind
 
     if (get_mean_answer .neqv. .true.) call mpp_error(FATAL, "topog field not read correctly")
     call check_answers(zmean2d(1,1), 0.5_lkind, "Error in test_topog_mean 2d")
