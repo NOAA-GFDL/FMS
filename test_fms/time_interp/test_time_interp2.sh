@@ -22,7 +22,7 @@
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/mpp directory.
 
-# Ed Hartnett 11/29/19
+# Ed Hartnett 11/49/19
 
 # Set common test settings.
 . ../test-lib.sh
@@ -33,14 +33,36 @@ touch input.nml
 rm -rf INPUT
 mkdir INPUT
 # Run the test.
-test_expect_success "test time interpolation" '
-  mpirun -n 2 ./test_time_interp
+test_expect_success "test time interpolation with r8_kind" '
+  mpirun -n 4 ./test_time_interp_r8
 '
+test_expect_success "test time interpolation with r4_kind" '
+  mpirun -n 4 ./test_time_interp_r4
+'
+
 rm -rf INPUT
 mkdir INPUT
 
-test_expect_success "test time interpolation external" '
-  mpirun -n 2 ./test_time_interp_external
+# nml for calender type
+cat <<_EOF > input.nml
+&test_time_interp_external_nml
+cal_type="julian"
+/
+_EOF
+
+test_expect_success "test time interpolation external with r8_kind (julian)" '
+  mpirun -n 4 ./test_time_interp_external_r8
+'
+test_expect_success "test time interpolation external with r4_kind (julian)" '
+  mpirun -n 4 ./test_time_interp_external_r4
+'
+sed -i 's/julian/no_leap/' input.nml
+
+test_expect_success "test time interpolation external with r8_kind (no_leap)" '
+  mpirun -n 4 ./test_time_interp_external_r8
+'
+test_expect_success "test time interpolation external with r4_kind (no_leap)" '
+  mpirun -n 4 ./test_time_interp_external_r4
 '
 
 test_done
