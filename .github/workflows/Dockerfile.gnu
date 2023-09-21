@@ -49,7 +49,7 @@ RUN sed -i 's/connect_timeout: 10/connect_timeout: 600/' /opt/spack/etc/spack/de
 FROM rockylinux:9
 
 COPY --from=builder /opt/view/ /opt/view/
-COPY --from=builder /opt/deps/linux-rocky9-haswell/gcc-12.3.0/ /opt/deps/linux-rocky9-haswell/gcc-12.3.0/ 
+COPY --from=builder /opt/deps/linux-rocky9-haswell/gcc-12.3.0/ /opt/deps/linux-rocky9-haswell/gcc-12.3.0/
 
 # leaving this out due to storage constraints
 #
