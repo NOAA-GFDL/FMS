@@ -1057,10 +1057,10 @@ end function diag_integral_alarm
 !! @param [in] <wt> integral field weighting functions
 !! @param [out] <data2>
 !! @return real array data2
-function vert_diag_integral (data, wt) result (data2)
-real(r8_kind), dimension (:,:,:),         intent(in) :: data !< integral field data arrays
+function vert_diag_integral (field_data, wt) result (data2)
+real(r8_kind), dimension (:,:,:),         intent(in) :: field_data !< integral field data arrays
 real(r8_kind), dimension (:,:,:),         intent(in) :: wt !< integral field weighting functions
-real(r8_kind), dimension (size(data,1),size(data,2)) :: data2
+real(r8_kind), dimension (size(field_data,1),size(field_data,2)) :: data2
 
 !-------------------------------------------------------------------------------
 ! local variables:
