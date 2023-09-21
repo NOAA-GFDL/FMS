@@ -35,8 +35,8 @@
 #undef DO_TIME_MAX_
 #define DO_TIME_MAX_ do_time_max_r4
 
-#undef DO_TIME_AVG_
-#define DO_TIME_AVG_ do_time_avg_r4
+#undef DO_TIME_SUM_
+#define DO_TIME_SUM_ do_time_sum_r4
 
 #include "fms_diag_reduction_methods.inc"
 

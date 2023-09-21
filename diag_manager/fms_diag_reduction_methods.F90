@@ -35,7 +35,7 @@ module fms_diag_reduction_methods_mod
   private
 
   public :: check_indices_order, init_mask, set_weight
-  public :: do_time_none, do_time_min, do_time_max
+  public :: do_time_none, do_time_min, do_time_max, do_time_sum
 
   !> @brief Does the time_none reduction method. See include/fms_diag_reduction_methods.inc
   !TODO This needs to be extended to integers
@@ -55,8 +55,10 @@ module fms_diag_reduction_methods_mod
     module procedure do_time_max_r4, do_time_max_r8
   end interface do_time_max
 
-  interface do_time_avg
-    module procedure do_time_avg_r4, do_time_avg_r8
+  !> @brief Does the time_sum reduction method. See include/fms_diag_reduction_methods.inc
+  !TODO This needs to be extended to integers
+  interface do_time_sum
+    module procedure do_time_sum_r4, do_time_sum_r8
   end interface
 
   contains

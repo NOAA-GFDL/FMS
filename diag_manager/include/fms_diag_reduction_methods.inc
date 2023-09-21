@@ -205,13 +205,9 @@ end subroutine DO_TIME_MAX_
 
 !> Update the output buffer and counter for the time_sum reduction
 !! Updates elements of the running field output buffer (data_out)
-!! and counter (argument ofc) based on the input field data array (argument field_d).
-!! For time_sum, the formulas are :
-!! A) data_out(l) = data_out(l) + (weight * data_in(l))
-!! B) ofc(l) = ofc(l) + weight
-subroutine DO_TIME_SUM_(data_out, counter, data_in, mask, is_masked, bounds_in, bounds_out, missing_value, weight)
+!! For time_sum, just sums passed field data into the output buffer
+subroutine DO_TIME_SUM_(data_out, data_in, mask, is_masked, bounds_in, bounds_out, missing_value )
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
-  real(FMS_TRM_KIND_),       intent(inout) :: counter(:,:,:,:,:)  !< counter to sum weights
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
   logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
   logical,                   intent(in)    :: is_masked           !< .True. if the field is using a mask
@@ -220,7 +216,6 @@ subroutine DO_TIME_SUM_(data_out, counter, data_in, mask, is_masked, bounds_in, 
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
                                                                   !! of the output buffer
   real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
-  real(FMS_TRM_KIND_),       intent(in)    :: weight              !< Weight if doing weighted averages (1 for normal average)
 
   integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
                                                             !! the input buffer
@@ -251,13 +246,9 @@ subroutine DO_TIME_SUM_(data_out, counter, data_in, mask, is_masked, bounds_in, 
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
-              ! weighted sum for output buffer
               data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
                          data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
-                       + data_in(is_in +i, js_in + j, ks_in + k, l + 1) * weight 
-              ! counter is incremented by weights
-              counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
-                      counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) + weight
+                       + data_in(is_in +i, js_in + j, ks_in + k, l + 1)
             else
               data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
             endif
@@ -270,94 +261,16 @@ subroutine DO_TIME_SUM_(data_out, counter, data_in, mask, is_masked, bounds_in, 
       do k = 0, ke_out - ks_out
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
-            data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
-                       data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
-                     + data_in(is_in +i, js_in + j, ks_in + k, l + 1) * weight 
-            counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
-                      counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) + weight
+              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
+                         data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
+                       + data_in(is_in +i, js_in + j, ks_in + k, l + 1)
+               ! TODO use slices, keeping loops same for now
+               !data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =          &
+               !data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
+               !+ data_in(is_in +i, js_in + j, ks_in + k, :)
           enddo
         enddo
       enddo
     enddo
   endif
 end subroutine DO_TIME_SUM_
-
-!> Do the time_avg reduction
-!! Updates elements of the running field output buffer (data_out)
-!! and counter (argument ofc) based on the input field data array (argument field_d).
-!! For time_sum, the formulas are :
-!! A) data_out(l) = data_out(l) + (weight * data_in(l))
-!! B) ofc(l) = ofc(l) + weight
-subroutine DO_TIME_AVG_(data_out, counter, data_in, mask, is_masked, bounds_in, bounds_out, missing_value, weight)
-  real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
-  real(FMS_TRM_KIND_),       intent(inout) :: counter(:,:,:,:,:)  !< counter to sum weights
-  real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
-  logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
-  logical,                   intent(in)    :: is_masked           !< .True. if the field is using a mask
-  type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
-                                                                  !! of the input buffer
-  type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
-                                                                  !! of the output buffer
-  real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
-  real(FMS_TRM_KIND_),       intent(in)    :: weight              !< Weight if doing weighted averages (1 for normal average)
-
-  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
-                                                            !! the input buffer
-  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
-                                                            !! the output buffer
-  integer :: i, j, k, l !< For looping
-
-
-  is_out = bounds_out%get_imin()
-  ie_out = bounds_out%get_imax()
-  js_out = bounds_out%get_jmin()
-  je_out = bounds_out%get_jmax()
-  ks_out = bounds_out%get_kmin()
-  ke_out = bounds_out%get_kmax()
-
-  is_in = bounds_in%get_imin()
-  ie_in = bounds_in%get_imax()
-  js_in = bounds_in%get_jmin()
-  je_in = bounds_in%get_jmax()
-  ks_in = bounds_in%get_kmin()
-  ke_in = bounds_in%get_kmax()
-
-  !> Seperated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
-  !! then mask will always be .True. so the if (mask) is redudant.
-  if (is_masked) then
-    do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
-        do j = 0, je_out - js_out
-          do i = 0, ie_out - is_out
-            if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
-              ! weighted sum for output buffer
-              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
-                         data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
-                       + data_in(is_in +i, js_in + j, ks_in + k, l + 1) * weight 
-              ! counter is incremented by weights
-              counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
-                      counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) + weight
-            else
-              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
-            endif
-          enddo
-        enddo
-      enddo
-    enddo
-  else
-    do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
-        do j = 0, je_out - js_out
-          do i = 0, ie_out - is_out
-            data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
-                       data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
-                     + data_in(is_in +i, js_in + j, ks_in + k, l + 1) * weight 
-            counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) = &
-                      counter(is_out + i, js_out + j, ks_out + k, l + 1, 1) + weight
-          enddo
-        enddo
-      enddo
-    enddo
-  endif
-
-end subroutine DO_TIME_AVG_
