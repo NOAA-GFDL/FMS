@@ -60,11 +60,16 @@
 * All critical sections must have a unique name.
 
 ## Precision
-* Precision of all real arguments are explicitly defined as r4_kind, r8_kind,
-  or as any other precision parameters defined in platform_mod.
+* Precision of all real arguments are explicitly defined as `real(kind=r4_kind)`,
+  `real(kind=r8_kind)`, or as any other precision parameters defined in platform_mod.
 * The precision of real numerical values should be consistent with the precision
   of the associated variable.  For example, if the variable `a` has been declared
-  as r4_kind, then `a=1.4_r4_kind`, not a=1.4.
+  as r8_kind, then `a=1.4_r8_kind` is acceptable. The following, a=1.4 and a=(1.4,kind=r8_kind),
+  are not acceptable since the numerical value of 1.4 will be represented in the default precision
+  set by the compiler.
+* The precision of integers do not need to be explicitly defined and can be determined at compile time.
+* If the precision of integers are explicitly defined, they are defined with the precision parameters,
+  _e.g._ i4_kind, i8_kind, found in platform_mod.
 
 ## Macros
 * All letters in the macro names are capitalized
@@ -78,9 +83,10 @@
 * The .fh header files contain macro definitions.
 * If the .fh files contain mainly precision related macro definitions, the files
   should be named with `_r4.fh` and `_r8.fh` extensions in the include subdirectory found
-  in the module directory.  The .inc file is `#include`-ed at the end of both
-  `_r4.fh` and `_f8.fh` files.  The .inc file contains the procedure definitions
-  and is located in the same include subdirectory as the .fh files
+  in the module directory.  These .fh files are `#include`-ed at the end of the .F90 module files.
+* For precision related .inc files, the .inc files contain the procedure definitions and are
+  `#include`-ed at the end of both *_r4.fh and *_f8.fh files.  These .inc files are located in the
+  same include subdirectory as the .fh files.  See below for details.
 ## Fortran Example
 
 ```Fortran ./example.F90 file
