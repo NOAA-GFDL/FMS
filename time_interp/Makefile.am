@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/time_interp/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -33,7 +33,13 @@ noinst_LTLIBRARIES = libtime_interp.la
 libtime_interp_la_SOURCES = \
   time_interp.F90 \
   time_interp_external.F90 \
-  time_interp_external2.F90
+  time_interp_external2.F90 \
+  include/time_interp_r4.fh \
+  include/time_interp_r8.fh \
+  include/time_interp.inc \
+  include/time_interp_external2_r4.fh \
+  include/time_interp_external2_r8.fh \
+  include/time_interp_external2.inc
 
 # Some mods are dependant on other mods in this dir.
 time_interp_external_mod.$(FC_MODEXT): time_interp_mod.$(FC_MODEXT)
