@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         conf-flag: [ --disable-openmp, --enable-mixed-mode, --disable-setting-flags, --with-mpi=no]
-        input-flag: [--with-yaml, --enable-test-input=/home/unit_tests_input]
+        input-flag: [--with-yaml, ""]
         target-fcflags: [ "-O2 -fno-expensive-optimizations", "-O0 -g -W -fbounds-check -ffpe-trap=invalid,zero,overflow"] # prod, debug
         target-cflags: [ "-O2", "-O0"] # prod, debug
         exclude:

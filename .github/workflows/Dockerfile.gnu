@@ -49,11 +49,13 @@ RUN sed -i 's/connect_timeout: 10/connect_timeout: 600/' /opt/spack/etc/spack/de
 FROM rockylinux:9
 
 COPY --from=builder /opt/view/ /opt/view/
-COPY --from=builder /opt/deps/ /opt/deps/
+COPY --from=builder /opt/deps/linux-rocky9-haswell/gcc-12.3.0/ /opt/deps/linux-rocky9-haswell/gcc-12.3.0/ 
 
+# leaving this out due to storage constraints
+#
 # input files used with --enable-input-tests
 # need to be on the dev boxes if building
-COPY ./fms_test_input /home/unit_tests_input
+#COPY ./fms_test_input /home/unit_tests_input
 
 RUN dnf install -y autoconf make automake m4 libtool pkg-config zip cmake git
 
