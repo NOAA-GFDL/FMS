@@ -837,9 +837,11 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
      override_array(curr_position)%numthreads = omp_get_num_threads()
 #endif
 !--- data_override may be called from physics windows. The following are possible situations
-!--- 1. size(return_data,1) == nxd and size(return_data,2) == nyd   ( on return_data domain and there is only one window).
+!--- 1. size(return_data,1) == nxd and size(return_data,2) == nyd
+!---    (on return_data domain and there is only one window).
 !--- 2. nxc is divisible by size(return_data,1), nyc is divisible by size(return_data,2),
-!---    nwindow = (nxc/size(return_data(1))*(nyc/size(return_data,2)), also we require nwindows is divisible by nthreads.
+!---    nwindow = (nxc/size(return_data(1))*(nyc/size(return_data,2)),
+!---    also we require nwindows is divisible by nthreads.
 !---    The another restrition is that size(return_data,1) == ie_in - is_in + 1,
 !---                                   size(return_data,2) == je_in - js_in + 1
      nwindows = 1
