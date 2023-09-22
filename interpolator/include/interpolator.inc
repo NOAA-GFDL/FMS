@@ -809,14 +809,14 @@ endif
 
 end subroutine FMS2IO_INTERPOLATOR_INIT_
 
-subroutine GET_AXIS_LATLON_DATA_(fileobj, name, data)
+subroutine GET_AXIS_LATLON_DATA_(fileobj, name, latlon_data)
    type(FmsNetcdfFile_t), intent(in) :: fileobj
    character(len=*),      intent(in) :: name
-   real(FMS_INTP_KIND_), dimension(:),   intent(out) :: data
+   real(FMS_INTP_KIND_), dimension(:),   intent(out) :: latlon_data
 
 
    if(variable_exists(fileobj, name)) then
-      call fms2_io_read_data(fileobj, name, data)
+      call fms2_io_read_data(fileobj, name, latlon_data)
    else
       call mpp_error(FATAL,'get_axis_latlon_data: variable '// &
                      & trim(name)//' does not exist in file '//trim(fileobj%path) )
@@ -824,7 +824,7 @@ subroutine GET_AXIS_LATLON_DATA_(fileobj, name, data)
    call get_variable_units(fileobj, name, units)
    select case(units(1:6))
    case('degree')
-      data = data*real(DTR,FMS_INTP_KIND_)
+      latlon_data = latlon_data*real(DTR,FMS_INTP_KIND_)
    case('radian')
    case default
       call mpp_error(FATAL, "get_axis_latlon_data : Units for '// &
