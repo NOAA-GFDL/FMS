@@ -1135,7 +1135,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                  mask_out   =mask_out(:,:,1), &
                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
            where(mask_out(:,:,1))
-              reuturn_data(:,:,1) = return_data(:,:,1)*factor
+              return_data(:,:,1) = return_data(:,:,1)*factor
            end where
            do i = 2, size(return_data,3)
               where(mask_out(:,:,1))
