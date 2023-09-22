@@ -135,7 +135,7 @@ contains
 
    ! 0d answer is:
    !    (1011 * frequency sum'd over )
-   !  + ( 1/100 * sum of time step increments ) 
+   !  + ( 1/100 * sum of time step increments )
     buffer_exp = real((1000_r8_kind+10_r8_kind+1_r8_kind) * file_freq + &
                       real(step_sum,r8_kind)/100_r8_kind, kind=r4_kind)
 
