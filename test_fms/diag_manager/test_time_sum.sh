@@ -19,8 +19,6 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# Copyright (c) 2019-2020 Ed Hartnett, Seth Underwood
-
 # Set common test settings.
 . ../test-lib.sh
 
@@ -28,7 +26,6 @@ if [ -z "${skipflag}" ]; then
 # create and enter directory for in/output files
 output_dir
 
-#TODO replace with yaml diag_table and set diag_manager_nml::use_modern_diag=.true.
 cat <<_EOF > diag_table.yaml
 title: test_sum
 base_date: 2 1 1 0 0 0
@@ -91,8 +88,6 @@ test_expect_success "Running diag_manager with "sum" reduction method (test $my_
 test_expect_success "Checking answers for the "sum" reduction method (test $my_test_count)" '
   mpirun -n 1 ../check_time_sum
 '
-#test_done
-#exit
 
 my_test_count=`expr $my_test_count + 1`
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n &test_reduction_methods_nml \n test_case = 0 \n mask_case = 1 \n \n/" | cat > input.nml

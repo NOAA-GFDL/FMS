@@ -25,7 +25,7 @@ program check_time_sum
   use platform_mod,      only: r4_kind, r8_kind
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
 
-  implicit none 
+  implicit none
 
   type(FmsNetcdfFile_t)              :: fileobj            !< FMS2 fileobj
   type(FmsNetcdfFile_t)              :: fileobj1           !< FMS2 fileobj for subregional file 1
@@ -35,7 +35,7 @@ program check_time_sum
   integer                            :: ny                 !< Number of points in the y direction
   integer                            :: nz                 !< Number of points in the z direction
   integer                            :: nw                 !< Number of points in the 4th dimension
-  integer                            :: i                  !< For looping
+  integer                            :: ti                  !< For looping through time levels
   integer                            :: io_status          !< Io status after reading the namelist
   logical                            :: use_mask           !< .true. if using masks
   integer, parameter :: file_freq = 6 !< file frequency as set in diag_table.yaml
@@ -71,42 +71,41 @@ program check_time_sum
 
   cdata_out = allocate_buffer(1, nx, 1, ny, nz, nw)
 
-  do i = 1, 8
+  do ti = 1, 8
     cdata_out = -999_r4_kind
-    print *, "Checking answers for var0_sum - time_level:", string(i)
-    call read_data(fileobj, "var0_sum", cdata_out(1,1,1,1), unlim_dim_level=i)
-    call check_data_0d(cdata_out(1,1,1,1), i)
+    print *, "Checking answers for var0_sum - time_level:", string(ti)
+    call read_data(fileobj, "var0_sum", cdata_out(1,1,1,1), unlim_dim_level=ti)
+    call check_data_0d(cdata_out(1,1,1,1), ti)
 
     cdata_out = -999_r4_kind
-    print *, "Checking answers for var1_sum - time_level:", string(i)
-    call read_data(fileobj, "var1_sum", cdata_out(:,1,1,1), unlim_dim_level=i)
-    call check_data_1d(cdata_out(:,1,1,1), i)
+    print *, "Checking answers for var1_sum - time_level:", string(ti)
+    call read_data(fileobj, "var1_sum", cdata_out(:,1,1,1), unlim_dim_level=ti)
+    call check_data_1d(cdata_out(:,1,1,1), ti)
 
     cdata_out = -999_r4_kind
-    print *, "Checking answers for var2_sum - time_level:", string(i)
-    call read_data(fileobj, "var2_sum", cdata_out(:,:,1,1), unlim_dim_level=i)
-    call check_data_2d(cdata_out(:,:,1,1), i)
+    print *, "Checking answers for var2_sum - time_level:", string(ti)
+    call read_data(fileobj, "var2_sum", cdata_out(:,:,1,1), unlim_dim_level=ti)
+    call check_data_2d(cdata_out(:,:,1,1), ti)
 
     cdata_out = -999_r4_kind
-    print *, "Checking answers for var3_sum - time_level:", string(i)
-    call read_data(fileobj, "var3_sum", cdata_out(:,:,:,1), unlim_dim_level=i)
-    call check_data_3d(cdata_out(:,:,:,1), i, .false.)
-
-    ! TODO slightly off, probably affected by offset indices
-    !cdata_out = -999_r4_kind
-    !print *, "Checking answers for var3_Z - time_level:", string(i)
-    !call read_data(fileobj, "var3_Z", cdata_out(:,:,1:2,1), unlim_dim_level=i)
-    !call check_data_3d(cdata_out(:,:,1:2,1), i, .true., nz_offset=1)
+    print *, "Checking answers for var3_sum - time_level:", string(ti)
+    call read_data(fileobj, "var3_sum", cdata_out(:,:,:,1), unlim_dim_level=ti)
+    call check_data_3d(cdata_out(:,:,:,1), ti, .false.)
 
     cdata_out = -999_r4_kind
-    print *, "Checking answers for var3_sum in the first regional file- time_level:", string(i)
-    call read_data(fileobj1, "var3_sum", cdata_out(1:4,1:3,1:2,1), unlim_dim_level=i)
-    call check_data_3d(cdata_out(1:4,1:3,1:2,1), i, .true., nx_offset=77, ny_offset=77, nz_offset=1)
+    print *, "Checking answers for var3_Z - time_level:", string(ti)
+    call read_data(fileobj, "var3_Z", cdata_out(:,:,1:2,1), unlim_dim_level=ti)
+    call check_data_3d(cdata_out(:,:,1:2,1), ti, .true., nz_offset=1)
 
     cdata_out = -999_r4_kind
-    print *, "Checking answers for var3_sum in the second regional file- time_level:", string(i)
-    call read_data(fileobj2, "var3_sum", cdata_out(1:4,1:1,1:2,1), unlim_dim_level=i)
-    call check_data_3d(cdata_out(1:4,1:1,1:2,1), i, .true., nx_offset=77, ny_offset=80, nz_offset=1)
+    print *, "Checking answers for var3_sum in the first regional file- time_level:", string(ti)
+    call read_data(fileobj1, "var3_sum", cdata_out(1:4,1:3,1:2,1), unlim_dim_level=ti)
+    call check_data_3d(cdata_out(1:4,1:3,1:2,1), ti, .true., nx_offset=77, ny_offset=77, nz_offset=1)
+
+    cdata_out = -999_r4_kind
+    print *, "Checking answers for var3_sum in the second regional file- time_level:", string(ti)
+    call read_data(fileobj2, "var3_sum", cdata_out(1:4,1:1,1:2,1), unlim_dim_level=ti)
+    call check_data_3d(cdata_out(1:4,1:1,1:2,1), ti, .true., nx_offset=77, ny_offset=80, nz_offset=1)
   enddo
 
   call fms_end()
@@ -125,7 +124,7 @@ contains
 
     real(kind=r4_kind)                :: buffer_exp    !< Expected result
     integer :: i, step_sum = 0 !< sum of time step increments to use in generating reference data
-    
+
     ! sums integers for decimal part of field input
     ! ie. level 1 = 1+2+..+6
     !           2 = 7+8+..+12
@@ -133,8 +132,10 @@ contains
     do i=(time_level-1)*file_freq+1, time_level*file_freq
       step_sum = step_sum + i
     enddo
-    
-   ! answer should be (1011 * frequency to sum over) + (sum of incremented time steps for current step => (n+1)*n/2 - previous_sum)
+
+   ! answer should be:
+   !    (1011 * frequency to sum over)
+   !  + ( 1/100 * sum of time step increments )
     buffer_exp = real((1000_r8_kind+10_r8_kind+1_r8_kind) * file_freq + &
                       real(step_sum,r8_kind)/100_r8_kind, kind=r4_kind)
 

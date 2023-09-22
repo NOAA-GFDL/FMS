@@ -257,18 +257,13 @@ subroutine DO_TIME_SUM_(data_out, data_in, mask, is_masked, bounds_in, bounds_ou
       enddo
     enddo
   else
-    do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
-        do j = 0, je_out - js_out
-          do i = 0, ie_out - is_out
-              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
-                         data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
-                       + data_in(is_in +i, js_in + j, ks_in + k, l + 1)
-               ! TODO use slices, keeping loops same for now
-               !data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =          &
-               !data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
-               !+ data_in(is_in +i, js_in + j, ks_in + k, :)
-          enddo
+    ! doesn't need to loop through l if no mask, just sums the 1d slices
+    do k = 0, ke_out - ks_out
+      do j = 0, je_out - js_out
+        do i = 0, ie_out - is_out
+          data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =   &
+             data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
+            + data_in(is_in +i, js_in + j, ks_in + k, :)
         enddo
       enddo
     enddo
