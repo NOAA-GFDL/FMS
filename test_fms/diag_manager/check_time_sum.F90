@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  Checks the output file after running test_reduction_methods using the "sum" reduction method
+!> @brief  Checks the output file after running test_reduction_methods using the "time_sum" reduction method
 program check_time_sum
   use fms_mod,           only: fms_init, fms_end, string
   use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file
@@ -133,9 +133,9 @@ contains
       step_sum = step_sum + i
     enddo
 
-   ! answer should be:
-   !    (1011 * frequency to sum over)
-   !  + ( 1/100 * sum of time step increments )
+   ! 0d answer is:
+   !    (1011 * frequency sum'd over )
+   !  + ( 1/100 * sum of time step increments ) 
     buffer_exp = real((1000_r8_kind+10_r8_kind+1_r8_kind) * file_freq + &
                       real(step_sum,r8_kind)/100_r8_kind, kind=r4_kind)
 
@@ -159,6 +159,8 @@ contains
       step_sum = step_sum + i
     enddo
 
+    ! 1d answer is
+    !  ((i * 1000 + 11) * frequency) + (sum of time steps)
     do ii = 1, size(buffer, 1)
       buffer_exp = real(real(ii, kind=r8_kind)*6000_r8_kind +60_r8_kind+6_r8_kind + &
                    real(step_sum, kind=r8_kind)/100_r8_kind, kind=r4_kind)
@@ -184,6 +186,8 @@ contains
       step_sum = step_sum + i
     enddo
 
+    ! 2d answer is
+    !  ((i * 1000 + j * 10 + 1) * frequency) + (sum of time steps)
     do ii = 1, size(buffer, 1)
       do j = 1, size(buffer, 2)
         buffer_exp = real(real(ii, kind=r8_kind)* 6000_r8_kind+ &
@@ -228,6 +232,8 @@ contains
     nz_oset = 0
     if (present(nz_offset)) nz_oset = nz_offset
 
+    ! 3d answer is
+    !  ((i * 1000 + j * 10 + k) * frequency) + (sum of time steps)
     do ii = 1, size(buffer, 1)
       do j = 1, size(buffer, 2)
         do k = 1, size(buffer, 3)
