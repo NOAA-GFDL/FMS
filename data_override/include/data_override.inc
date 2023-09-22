@@ -722,452 +722,450 @@ subroutine DATA_OVERRIDE_2D_(gridname,fieldname,data_2D,time,override, is_in, ie
 end subroutine DATA_OVERRIDE_2D_
 
 !> @brief This routine performs data override for 3D fields
-subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,data_index, is_in, ie_in, js_in, je_in)
-  character(len=3),             intent(in) :: gridname !< model grid ID
-  character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
-  logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
-  type(time_type),              intent(in) :: time !< (target) model time
-  integer,           optional,  intent(in) :: data_index
-  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: return_data !< data returned by this call
-  integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
-  logical, dimension(:,:,:),   allocatable :: mask_out
-
-  character(len=512) :: filename !< file containing source data
-  character(len=512) :: filename2 !< file containing source data
-  character(len=128) :: fieldname !< fieldname used in the data file
-  integer            :: i,j
-  integer            :: dims(4)
-  integer            :: index1 !< field index in data_table
-  integer            :: id_time !< index for time interp in override array
-  integer            :: axis_sizes(4)
-  character(len=32)  :: axis_names(4)
-  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lon_local =>NULL() !< of output (target) grid cells
-  real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lat_local =>NULL() !< of output (target) grid cells
-  real(FMS_DATA_OVERRIDE_KIND_), dimension(:), allocatable :: lon_tmp, lat_tmp
-
-  logical :: data_file_is_2D = .false.  !< data in netCDF file is 2D
-  logical :: ongrid, use_comp_domain
-  type(domain2D) :: domain
-  integer :: curr_position !< position of the field currently processed in override_array
-  real(FMS_DATA_OVERRIDE_KIND_) :: factor
-  integer, dimension(4) :: comp_domain = 0  !< istart,iend,jstart,jend for compute domain
-  integer :: nxd, nyd, nxc, nyc, nwindows
-  integer :: nwindows_x, ipos, jpos, window_size(2)
-  integer :: istart, iend, jstart, jend
-  integer :: isw, iew, jsw, jew
-  integer :: omp_get_num_threads, window_id
-  logical :: need_compute
-  real(FMS_DATA_OVERRIDE_KIND_) :: lat_min, lat_max
-  integer :: is_src, ie_src, js_src, je_src
-  logical :: exists
-  type(FmsNetcdfFile_t) :: fileobj
-  integer :: startingi !< Starting x index for the compute domain relative to the input buffer
-  integer :: endingi !< Ending x index for the compute domain relative to the input buffer
-  integer :: startingj !< Starting y index for the compute domain relative to the input buffer
-  integer :: endingj !< Ending y index for the compute domain relative to the input buffer
-  integer :: nhalox !< Number of halos in the x direction
-  integer :: nhaloy !< Number of halos in the y direction
-
-  use_comp_domain = .false.
-  if(.not.module_is_initialized) &
-       call mpp_error(FATAL,'Error: need to call data_override_init first')
-
-!1  Look  for the data file in data_table
-  if(PRESENT(override)) override = .false.
-  if (present(data_index)) then
-    index1 = data_index
-  else
-    index1 = -1
-    do i = 1, table_size
-       if( trim(gridname) /= trim(data_table(i)%gridname)) cycle
-       if( trim(fieldname_code) /= trim(data_table(i)%fieldname_code)) cycle
-       index1 = i                               ! field found
-       exit
-    enddo
-    if(index1 .eq. -1) then
-       if(debug_data_override) &
-         call mpp_error(WARNING,'this field is NOT found in data_table: '//trim(fieldname_code))
-       return  ! NO override was performed
-    endif
-  endif
-
-  fieldname = data_table(index1)%fieldname_file ! fieldname in netCDF data file
-  factor = data_table(index1)%factor
-
-  if(fieldname == "") then
-     return_data = factor
-     if(PRESENT(override)) override = .true.
-     return
-  else
-     filename = data_table(index1)%file_name
-     if (filename == "") call mpp_error(FATAL,'data_override: filename not given in data_table')
-  endif
-
-  ongrid = (data_table(index1)%interpol_method == 'none')
-
-!3 Check if fieldname has been previously processed
-!$OMP CRITICAL
-  curr_position = -1
-  if(num_fields > 0 ) then
-     do i = 1, num_fields
-        if(trim(override_array(i)%gridname) /= trim(gridname))   cycle
-        if(trim(override_array(i)%fieldname) /= trim(fieldname_code)) cycle
-        curr_position = i
+subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,data,time,override,data_index, is_in, ie_in, js_in, je_in)
+   character(len=3),             intent(in) :: gridname !< model grid ID
+   character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
+   logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
+   type(time_type),              intent(in) :: time !< (target) model time
+   integer,           optional,  intent(in) :: data_index
+   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: data !< data returned by this call
+   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
+   logical, dimension(:,:,:),   allocatable :: mask_out
+ 
+   character(len=512) :: filename !< file containing source data
+   character(len=512) :: filename2 !< file containing source data
+   character(len=128) :: fieldname !< fieldname used in the data file
+   integer            :: i,j
+   integer            :: dims(4)
+   integer            :: index1 !< field index in data_table
+   integer            :: id_time !< index for time interp in override array
+   integer            :: axis_sizes(4)
+   character(len=32)  :: axis_names(4)
+   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lon_local =>NULL() !< of output (target) grid cells
+   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lat_local =>NULL() !< of output (target) grid cells
+   real(FMS_DATA_OVERRIDE_KIND_), dimension(:), allocatable :: lon_tmp, lat_tmp
+ 
+   logical :: data_file_is_2D = .false.  !< data in netCDF file is 2D
+   logical :: ongrid, use_comp_domain
+   type(domain2D) :: domain
+   integer :: curr_position !< position of the field currently processed in override_array
+   real(FMS_DATA_OVERRIDE_KIND_) :: factor
+   integer, dimension(4) :: comp_domain = 0  !< istart,iend,jstart,jend for compute domain
+   integer :: nxd, nyd, nxc, nyc, nwindows
+   integer :: nwindows_x, ipos, jpos, window_size(2)
+   integer :: istart, iend, jstart, jend
+   integer :: isw, iew, jsw, jew
+   integer :: omp_get_num_threads, window_id
+   logical :: need_compute
+   real(FMS_DATA_OVERRIDE_KIND_) :: lat_min, lat_max
+   integer :: is_src, ie_src, js_src, je_src
+   logical :: exists
+   type(FmsNetcdfFile_t) :: fileobj
+   integer :: startingi !< Starting x index for the compute domain relative to the input buffer
+   integer :: endingi !< Ending x index for the compute domain relative to the input buffer
+   integer :: startingj !< Starting y index for the compute domain relative to the input buffer
+   integer :: endingj !< Ending y index for the compute domain relative to the input buffer
+   integer :: nhalox !< Number of halos in the x direction
+   integer :: nhaloy !< Number of halos in the y direction
+ 
+   use_comp_domain = .false.
+   if(.not.module_is_initialized) &
+        call mpp_error(FATAL,'Error: need to call data_override_init first')
+ 
+ !1  Look  for the data file in data_table
+   if(PRESENT(override)) override = .false.
+   if (present(data_index)) then
+     index1 = data_index
+   else
+     index1 = -1
+     do i = 1, table_size
+        if( trim(gridname) /= trim(data_table(i)%gridname)) cycle
+        if( trim(fieldname_code) /= trim(data_table(i)%fieldname_code)) cycle
+        index1 = i                               ! field found
         exit
      enddo
-  endif
-
-  if(curr_position < 0) then ! the field has not been processed previously
-     num_fields = num_fields + 1
-     curr_position = num_fields
-
-! Get working domain from model's gridname
-     call get_domain(gridname,domain,comp_domain)
-     call mpp_get_data_domain(domain, xsize=nxd, ysize=nyd)
-     nxc = comp_domain(2)-comp_domain(1) + 1
-     nyc = comp_domain(4)-comp_domain(3) + 1
-
-! record fieldname, gridname in override_array
-     override_array(curr_position)%fieldname = fieldname_code
-     override_array(curr_position)%gridname = gridname
-     override_array(curr_position)%comp_domain = comp_domain
-! get number of threads
-     override_array(curr_position)%numthreads = 1
-#if defined(_OPENMP)
-     override_array(curr_position)%numthreads = omp_get_num_threads()
-#endif
-!--- data_override may be called from physics windows. The following are possible situations
-!--- 1. size(return_data,1) == nxd and size(return_data,2) == nyd
-!---    (on return_data domain and there is only one window).
-!--- 2. nxc is divisible by size(return_data,1), nyc is divisible by size(return_data,2),
-!---    nwindow = (nxc/size(return_data(1))*(nyc/size(return_data,2)),
-!---    also we require nwindows is divisible by nthreads.
-!---    The another restrition is that size(return_data,1) == ie_in - is_in + 1,
-!---                                   size(return_data,2) == je_in - js_in + 1
-     nwindows = 1
-     if( nxd == size(return_data,1) .AND. nyd == size(return_data,2) ) then  !
-        use_comp_domain = .false.
-     else if ( mod(nxc, size(return_data,1)) ==0 .AND. mod(nyc, size(return_data,2)) ==0 ) then
-        use_comp_domain = .true.
-        nwindows = (nxc/size(return_data,1))*(nyc/size(return_data,2))
-     else
-        call mpp_error(FATAL, &
-                     & "data_override: data is not on data domain and compute domain is not divisible by size(data)")
+     if(index1 .eq. -1) then
+        if(debug_data_override) &
+          call mpp_error(WARNING,'this field is NOT found in data_table: '//trim(fieldname_code))
+        return  ! NO override was performed
      endif
-     override_array(curr_position)%window_size(1) = size(return_data,1)
-     override_array(curr_position)%window_size(2) = size(return_data,2)
-
-     window_size = override_array(curr_position)%window_size
-     override_array(curr_position)%numwindows = nwindows
-     if( mod(nwindows, override_array(curr_position)%numthreads) .NE. 0 ) then
-        call mpp_error(FATAL, "data_override: nwindow is not divisible by nthreads")
-     endif
-     allocate(override_array(curr_position)%need_compute(nwindows))
-     override_array(curr_position)%need_compute = .true.
-
-!4 get index for time interp
-     if(ongrid) then
-        if( data_table(index1)%region_type .NE. NO_REGION ) then
-           call mpp_error(FATAL,'data_override: ongrid must be false when region_type .NE. NO_REGION')
-        endif
-
-!  Allow on-grid data_overrides on cubed sphere grid
-        inquire(file=trim(filename),EXIST=exists)
-        if (.not. exists) then
-           call get_mosaic_tile_file(filename,filename2,.false.,domain)
-           filename = filename2
-        endif
-
-        !--- we always only pass data on compute domain
-        id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
-                                    use_comp_domain=use_comp_domain, nwindows=nwindows, ongrid=ongrid)
-        dims = get_external_field_size(id_time)
-        override_array(curr_position)%dims = dims
-        if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
-        override_array(curr_position)%t_index = id_time
-     else !ongrid=false
-        id_time = init_external_field(filename,fieldname,domain=domain, axis_names=axis_names,&
-            axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
-            nwindows = nwindows)
-        dims = get_external_field_size(id_time)
-        override_array(curr_position)%dims = dims
-        if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 2')
-        override_array(curr_position)%t_index = id_time
-
-        !  get lon and lat of the input (source) grid, assuming that axis%data contains
-        !  lat and lon of the input grid (in degrees)
-
-        allocate(override_array(curr_position)%horz_interp(nwindows))
-        allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
-        allocate(override_array(curr_position)%lat_in(axis_sizes(2)+1))
-        if(get_external_fileobj(filename, fileobj)) then
-           call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in, &
-              reproduce_null_char_bug_flag=reproduce_null_char_bug)
-           call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in, &
-              reproduce_null_char_bug_flag=reproduce_null_char_bug)
-        else
-           call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
-        end if
-! convert lon_in and lat_in from deg to radian
-        override_array(curr_position)%lon_in = override_array(curr_position)%lon_in * real(DEG_TO_RAD, lkind)
-        override_array(curr_position)%lat_in = override_array(curr_position)%lat_in * real(DEG_TO_RAD, lkind)
-
-        !--- find the region of the source grid that cover the local model grid.
-        !--- currently we only find the index range for j-direction because
-        !--- of the cyclic condition in i-direction. The purpose of this is to
-        !--- decrease the memory usage and increase the IO performance.
-        select case(gridname)
-        case('OCN')
-           lon_local => lon_local_ocn; lat_local => lat_local_ocn
-        case('ICE')
-           lon_local => lon_local_ice; lat_local => lat_local_ice
-        case('ATM')
-           lon_local => lon_local_atm; lat_local => lat_local_atm
-        case('LND')
-           lon_local => lon_local_lnd; lat_local => lat_local_lnd
-        case default
-           call mpp_error(FATAL,'error: gridname not recognized in data_override')
-        end select
-
-        lat_min = minval(lat_local)
-        lat_max = maxval(lat_local)
-        is_src = 1
-        ie_src = axis_sizes(1)
-        js_src = 1
-        je_src = axis_sizes(2)
-        do j = 1, axis_sizes(2)+1
-           if( override_array(curr_position)%lat_in(j) > lat_min ) exit
-           js_src = j
-        enddo
-        do j = 1, axis_sizes(2)+1
-           je_src = j
-           if( override_array(curr_position)%lat_in(j) > lat_max ) exit
-        enddo
-
-        !--- bicubic interpolation need one extra point in each direction. Also add
-        !--- one more point for because lat_in is in the corner but the interpolation
-        !--- use center points.
-        select case (data_table(index1)%interpol_method)
-        case ('bilinear')
-           js_src = max(1, js_src-1)
-           je_src = min(axis_sizes(2), je_src+1)
-        case ('bicubic')
-           js_src = max(1, js_src-2)
-           je_src = min(axis_sizes(2), je_src+2)
-        end select
-        override_array(curr_position)%is_src = is_src
-        override_array(curr_position)%ie_src = ie_src
-        override_array(curr_position)%js_src = js_src
-        override_array(curr_position)%je_src = je_src
-        call reset_src_data_region(id_time, is_src, ie_src, js_src, je_src)
-
-!       Find the index of lon_start, lon_end, lat_start and lat_end in the input grid (nearest points)
-        if( data_table(index1)%region_type .NE. NO_REGION ) then
-           allocate( lon_tmp(axis_sizes(1)), lat_tmp(axis_sizes(2)) )
-           call read_data(fileobj, axis_names(1), lon_tmp)
-           call read_data(fileobj, axis_names(2), lat_tmp)
-           ! limit lon_start, lon_end are inside lon_in
-           !       lat_start, lat_end are inside lat_in
-           if(data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1)))&
-              call mpp_error(FATAL, "data_override: lon_start is outside lon_T")
-           if( data_table(index1)%lon_end < lon_tmp(1) .OR. data_table(index1)%lon_end .GT. lon_tmp(axis_sizes(1))) &
-              call mpp_error(FATAL, "data_override: lon_end is outside lon_T")
-           if(data_table(index1)%lat_start < lat_tmp(1) .OR. data_table(index1)%lat_start .GT. lat_tmp(axis_sizes(2)))&
-              call mpp_error(FATAL, "data_override: lat_start is outside lat_T")
-           if( data_table(index1)%lat_end < lat_tmp(1) .OR. data_table(index1)%lat_end .GT. lat_tmp(axis_sizes(2))) &
-              call mpp_error(FATAL, "data_override: lat_end is outside lat_T")
-           istart = nearest_index(data_table(index1)%lon_start, lon_tmp)
-           iend   = nearest_index(data_table(index1)%lon_end,   lon_tmp)
-           jstart = nearest_index(data_table(index1)%lat_start, lat_tmp)
-           jend   = nearest_index(data_table(index1)%lat_end,   lat_tmp)
-           ! adjust the index according to is_src and js_src
-           istart = istart - is_src + 1
-           iend   = iend   - is_src + 1
-           jstart = jstart - js_src + 1
-           jend   = jend   - js_src + 1
-           call set_override_region(id_time, data_table(index1)%region_type, istart, iend, jstart, jend)
-           deallocate(lon_tmp, lat_tmp)
-        endif
-
-     endif
-  else !curr_position >0
-     dims = override_array(curr_position)%dims
-     comp_domain = override_array(curr_position)%comp_domain
-     nxc = comp_domain(2)-comp_domain(1) + 1
-     nyc = comp_domain(4)-comp_domain(3) + 1
-     is_src      = override_array(curr_position)%is_src
-     ie_src      = override_array(curr_position)%ie_src
-     js_src      = override_array(curr_position)%js_src
-     je_src      = override_array(curr_position)%je_src
-     window_size = override_array(curr_position)%window_size
-     !---make sure data size match window_size
-     if( window_size(1) .NE. size(return_data,1) .OR. window_size(2) .NE. size(return_data,2) ) then
-        call mpp_error(FATAL, "data_override: window_size does not match size(data)")
-     endif
-!9 Get id_time  previously stored in override_array
-     id_time = override_array(curr_position)%t_index
-  endif
-!$OMP END CRITICAL
-
-  if( override_array(curr_position)%numwindows > 1 ) then
-      if( .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(is_in) ) then
-          call mpp_error(FATAL, "data_override: is_in, ie_in, js_in, je_in must be present when nwindows > 1")
+   endif
+ 
+   fieldname = data_table(index1)%fieldname_file ! fieldname in netCDF data file
+   factor = data_table(index1)%factor
+ 
+   if(fieldname == "") then
+      data = factor
+      if(PRESENT(override)) override = .true.
+      return
+   else
+      filename = data_table(index1)%file_name
+      if (filename == "") call mpp_error(FATAL,'data_override: filename not given in data_table')
+   endif
+ 
+   ongrid = (data_table(index1)%interpol_method == 'none')
+ 
+ !3 Check if fieldname has been previously processed
+ !$OMP CRITICAL
+   curr_position = -1
+   if(num_fields > 0 ) then
+      do i = 1, num_fields
+         if(trim(override_array(i)%gridname) /= trim(gridname))   cycle
+         if(trim(override_array(i)%fieldname) /= trim(fieldname_code)) cycle
+         curr_position = i
+         exit
+      enddo
+   endif
+ 
+   if(curr_position < 0) then ! the field has not been processed previously
+      num_fields = num_fields + 1
+      curr_position = num_fields
+ 
+ ! Get working domain from model's gridname
+      call get_domain(gridname,domain,comp_domain)
+      call mpp_get_data_domain(domain, xsize=nxd, ysize=nyd)
+      nxc = comp_domain(2)-comp_domain(1) + 1
+      nyc = comp_domain(4)-comp_domain(3) + 1
+ 
+ ! record fieldname, gridname in override_array
+      override_array(curr_position)%fieldname = fieldname_code
+      override_array(curr_position)%gridname = gridname
+      override_array(curr_position)%comp_domain = comp_domain
+ ! get number of threads
+      override_array(curr_position)%numthreads = 1
+ #if defined(_OPENMP)
+      override_array(curr_position)%numthreads = omp_get_num_threads()
+ #endif
+ !--- data_override may be called from physics windows. The following are possible situations
+ !--- 1. size(data,1) == nxd and size(data,2) == nyd   ( on data domain and there is only one window).
+ !--- 2. nxc is divisible by size(data,1), nyc is divisible by size(data,2),
+ !---    nwindow = (nxc/size(data(1))*(nyc/size(data,2)), also we require nwindows is divisible by nthreads.
+ !---    The another restrition is that size(data,1) == ie_in - is_in + 1,
+ !---                                   size(data,2) == je_in - js_in + 1
+      nwindows = 1
+      if( nxd == size(data,1) .AND. nyd == size(data,2) ) then  !
+         use_comp_domain = .false.
+      else if ( mod(nxc, size(data,1)) ==0 .AND. mod(nyc, size(data,2)) ==0 ) then
+         use_comp_domain = .true.
+         nwindows = (nxc/size(data,1))*(nyc/size(data,2))
+      else
+         call mpp_error(FATAL, &
+                      & "data_override: data is not on data domain and compute domain is not divisible by size(data)")
       endif
-  endif
-
-  isw = comp_domain(1)
-  iew = comp_domain(2)
-  jsw = comp_domain(3)
-  jew = comp_domain(4)
-  window_id = 1
-  if( override_array(curr_position)%numwindows > 1 ) then
-     nxc = comp_domain(2) - comp_domain(1) + 1
-     nwindows_x = nxc/window_size(1)
-     ipos = (is_in-1)/window_size(1) + 1
-     jpos = (js_in-1)/window_size(2)
-
-     window_id = jpos*nwindows_x + ipos
-     isw = isw + is_in - 1
-     iew = isw + ie_in - is_in
-     jsw = jsw + js_in - 1
-     jew = jsw + je_in - js_in
-  endif
-
-  if( ongrid ) then
-     need_compute = .false.
-  else
-     !--- find the index for windows.
-     need_compute=override_array(curr_position)%need_compute(window_id)
-  endif
-
-  !--- call horiz_interp_new is not initialized
-
-  if( need_compute ) then
-     select case(gridname)
-     case('OCN')
-        lon_local => lon_local_ocn; lat_local => lat_local_ocn
-     case('ICE')
-        lon_local => lon_local_ice; lat_local => lat_local_ice
-     case('ATM')
-        lon_local => lon_local_atm; lat_local => lat_local_atm
-     case('LND')
-        lon_local => lon_local_lnd; lat_local => lat_local_lnd
-     case default
-        call mpp_error(FATAL,'error: gridname not recognized in data_override')
-     end select
-
-     select case (data_table(index1)%interpol_method)
-     case ('bilinear')
-        call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
-             override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
-             override_array(curr_position)%lat_in(js_src:je_src+1),                  &
-             lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bilinear")
-     case ('bicubic')
-        call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
-             override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
-             override_array(curr_position)%lat_in(js_src:je_src+1),                  &
-             lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bicubic")
-     end select
-     override_array(curr_position)%need_compute(window_id) = .false.
-  endif
-
-  ! Determine if  data in netCDF file is 2D or not
-  data_file_is_2D = .false.
-  if((dims(3) == 1) .and. (size(return_data,3)>1)) data_file_is_2D = .true.
-
-  if(dims(3) .NE. 1 .and. (size(return_data,3) .NE. dims(3))) &
-      call mpp_error(FATAL, "data_override: dims(3) .NE. 1 and size(return_data,3) .NE. dims(3)")
-
-  if(ongrid) then
-    if (.not. use_comp_domain) then
-        !< Determine the size of the halox and the part of `data` that is in the compute domain
-        nhalox = (size(return_data,1) - nxc)/2
-        nhaloy = (size(return_data,2) - nyc)/2
-        startingi = lbound(return_data,1) + nhalox
-        startingj = lbound(return_data,2) + nhaloy
-        endingi   = ubound(return_data,1) - nhalox
-        endingj   = ubound(return_data,2) - nhaloy
-    end if
-
-!10 do time interp to get data in compute_domain
-    if(data_file_is_2D) then
-      if (use_comp_domain) then
-        call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
-                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-      else
-        !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
-        !! size
-        call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,1),verbose=.false., &
-                               is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-      end if
-      return_data(:,:,1) = return_data(:,:,1)*factor
-      do i = 2, size(return_data,3)
-        return_data(:,:,i) = return_data(:,:,1)
-      end do
-    else
-      if (use_comp_domain) then
-        call time_interp_external(id_time,time,return_data,verbose=.false., &
-                                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-      else
-        !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
-        !! size
-        call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,:),verbose=.false., &
-                               is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-      end if
-      return_data = return_data*factor
-    endif
-  else  ! off grid case
-! do time interp to get global data
+      override_array(curr_position)%window_size(1) = size(data,1)
+      override_array(curr_position)%window_size(2) = size(data,2)
+ 
+      window_size = override_array(curr_position)%window_size
+      override_array(curr_position)%numwindows = nwindows
+      if( mod(nwindows, override_array(curr_position)%numthreads) .NE. 0 ) then
+         call mpp_error(FATAL, "data_override: nwindow is not divisible by nthreads")
+      endif
+      allocate(override_array(curr_position)%need_compute(nwindows))
+      override_array(curr_position)%need_compute = .true.
+ 
+ !4 get index for time interp
+      if(ongrid) then
+         if( data_table(index1)%region_type .NE. NO_REGION ) then
+            call mpp_error(FATAL,'data_override: ongrid must be false when region_type .NE. NO_REGION')
+         endif
+ 
+ !  Allow on-grid data_overrides on cubed sphere grid
+         inquire(file=trim(filename),EXIST=exists)
+         if (.not. exists) then
+            call get_mosaic_tile_file(filename,filename2,.false.,domain)
+            filename = filename2
+         endif
+ 
+         !--- we always only pass data on compute domain
+         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
+                                     use_comp_domain=use_comp_domain, nwindows=nwindows, ongrid=ongrid)
+         dims = get_external_field_size(id_time)
+         override_array(curr_position)%dims = dims
+         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 1')
+         override_array(curr_position)%t_index = id_time
+      else !ongrid=false
+         id_time = init_external_field(filename,fieldname,domain=domain, axis_names=axis_names,&
+             axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
+             nwindows = nwindows)
+         dims = get_external_field_size(id_time)
+         override_array(curr_position)%dims = dims
+         if(id_time<0) call mpp_error(FATAL,'data_override:field not found in init_external_field 2')
+         override_array(curr_position)%t_index = id_time
+ 
+         !  get lon and lat of the input (source) grid, assuming that axis%data contains
+         !  lat and lon of the input grid (in degrees)
+ 
+         allocate(override_array(curr_position)%horz_interp(nwindows))
+         allocate(override_array(curr_position)%lon_in(axis_sizes(1)+1))
+         allocate(override_array(curr_position)%lat_in(axis_sizes(2)+1))
+         if(get_external_fileobj(filename, fileobj)) then
+            call axis_edges(fileobj, axis_names(1), override_array(curr_position)%lon_in, &
+               reproduce_null_char_bug_flag=reproduce_null_char_bug)
+            call axis_edges(fileobj, axis_names(2), override_array(curr_position)%lat_in, &
+               reproduce_null_char_bug_flag=reproduce_null_char_bug)
+         else
+            call mpp_error(FATAL,'data_override: file '//trim(filename)//' is not opened in time_interp_external')
+         end if
+ ! convert lon_in and lat_in from deg to radian
+         override_array(curr_position)%lon_in = override_array(curr_position)%lon_in * real(DEG_TO_RAD, lkind)
+         override_array(curr_position)%lat_in = override_array(curr_position)%lat_in * real(DEG_TO_RAD, lkind)
+ 
+         !--- find the region of the source grid that cover the local model grid.
+         !--- currently we only find the index range for j-direction because
+         !--- of the cyclic condition in i-direction. The purpose of this is to
+         !--- decrease the memory usage and increase the IO performance.
+         select case(gridname)
+         case('OCN')
+            lon_local => lon_local_ocn; lat_local => lat_local_ocn
+         case('ICE')
+            lon_local => lon_local_ice; lat_local => lat_local_ice
+         case('ATM')
+            lon_local => lon_local_atm; lat_local => lat_local_atm
+         case('LND')
+            lon_local => lon_local_lnd; lat_local => lat_local_lnd
+         case default
+            call mpp_error(FATAL,'error: gridname not recognized in data_override')
+         end select
+ 
+         lat_min = minval(lat_local)
+         lat_max = maxval(lat_local)
+         is_src = 1
+         ie_src = axis_sizes(1)
+         js_src = 1
+         je_src = axis_sizes(2)
+         do j = 1, axis_sizes(2)+1
+            if( override_array(curr_position)%lat_in(j) > lat_min ) exit
+            js_src = j
+         enddo
+         do j = 1, axis_sizes(2)+1
+            je_src = j
+            if( override_array(curr_position)%lat_in(j) > lat_max ) exit
+         enddo
+ 
+         !--- bicubic interpolation need one extra point in each direction. Also add
+         !--- one more point for because lat_in is in the corner but the interpolation
+         !--- use center points.
+         select case (data_table(index1)%interpol_method)
+         case ('bilinear')
+            js_src = max(1, js_src-1)
+            je_src = min(axis_sizes(2), je_src+1)
+         case ('bicubic')
+            js_src = max(1, js_src-2)
+            je_src = min(axis_sizes(2), je_src+2)
+         end select
+         override_array(curr_position)%is_src = is_src
+         override_array(curr_position)%ie_src = ie_src
+         override_array(curr_position)%js_src = js_src
+         override_array(curr_position)%je_src = je_src
+         call reset_src_data_region(id_time, is_src, ie_src, js_src, je_src)
+ 
+ !       Find the index of lon_start, lon_end, lat_start and lat_end in the input grid (nearest points)
+         if( data_table(index1)%region_type .NE. NO_REGION ) then
+            allocate( lon_tmp(axis_sizes(1)), lat_tmp(axis_sizes(2)) )
+            call read_data(fileobj, axis_names(1), lon_tmp)
+            call read_data(fileobj, axis_names(2), lat_tmp)
+            ! limit lon_start, lon_end are inside lon_in
+            !       lat_start, lat_end are inside lat_in
+            if(data_table(index1)%lon_start < lon_tmp(1) .OR. data_table(index1)%lon_start .GT. lon_tmp(axis_sizes(1)))&
+               call mpp_error(FATAL, "data_override: lon_start is outside lon_T")
+            if( data_table(index1)%lon_end < lon_tmp(1) .OR. data_table(index1)%lon_end .GT. lon_tmp(axis_sizes(1))) &
+               call mpp_error(FATAL, "data_override: lon_end is outside lon_T")
+            if(data_table(index1)%lat_start < lat_tmp(1) .OR. data_table(index1)%lat_start .GT. lat_tmp(axis_sizes(2)))&
+               call mpp_error(FATAL, "data_override: lat_start is outside lat_T")
+            if( data_table(index1)%lat_end < lat_tmp(1) .OR. data_table(index1)%lat_end .GT. lat_tmp(axis_sizes(2))) &
+               call mpp_error(FATAL, "data_override: lat_end is outside lat_T")
+            istart = nearest_index(data_table(index1)%lon_start, lon_tmp)
+            iend   = nearest_index(data_table(index1)%lon_end,   lon_tmp)
+            jstart = nearest_index(data_table(index1)%lat_start, lat_tmp)
+            jend   = nearest_index(data_table(index1)%lat_end,   lat_tmp)
+            ! adjust the index according to is_src and js_src
+            istart = istart - is_src + 1
+            iend   = iend   - is_src + 1
+            jstart = jstart - js_src + 1
+            jend   = jend   - js_src + 1
+            call set_override_region(id_time, data_table(index1)%region_type, istart, iend, jstart, jend)
+            deallocate(lon_tmp, lat_tmp)
+         endif
+ 
+      endif
+   else !curr_position >0
+      dims = override_array(curr_position)%dims
+      comp_domain = override_array(curr_position)%comp_domain
+      nxc = comp_domain(2)-comp_domain(1) + 1
+      nyc = comp_domain(4)-comp_domain(3) + 1
+      is_src      = override_array(curr_position)%is_src
+      ie_src      = override_array(curr_position)%ie_src
+      js_src      = override_array(curr_position)%js_src
+      je_src      = override_array(curr_position)%je_src
+      window_size = override_array(curr_position)%window_size
+      !---make sure data size match window_size
+      if( window_size(1) .NE. size(data,1) .OR. window_size(2) .NE. size(data,2) ) then
+         call mpp_error(FATAL, "data_override: window_size does not match size(data)")
+      endif
+ !9 Get id_time  previously stored in override_array
+      id_time = override_array(curr_position)%t_index
+   endif
+ !$OMP END CRITICAL
+ 
+   if( override_array(curr_position)%numwindows > 1 ) then
+       if( .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(is_in) .OR. .NOT. PRESENT(is_in) ) then
+           call mpp_error(FATAL, "data_override: is_in, ie_in, js_in, je_in must be present when nwindows > 1")
+       endif
+   endif
+ 
+   isw = comp_domain(1)
+   iew = comp_domain(2)
+   jsw = comp_domain(3)
+   jew = comp_domain(4)
+   window_id = 1
+   if( override_array(curr_position)%numwindows > 1 ) then
+      nxc = comp_domain(2) - comp_domain(1) + 1
+      nwindows_x = nxc/window_size(1)
+      ipos = (is_in-1)/window_size(1) + 1
+      jpos = (js_in-1)/window_size(2)
+ 
+      window_id = jpos*nwindows_x + ipos
+      isw = isw + is_in - 1
+      iew = isw + ie_in - is_in
+      jsw = jsw + js_in - 1
+      jew = jsw + je_in - js_in
+   endif
+ 
+   if( ongrid ) then
+      need_compute = .false.
+   else
+      !--- find the index for windows.
+      need_compute=override_array(curr_position)%need_compute(window_id)
+   endif
+ 
+   !--- call horiz_interp_new is not initialized
+ 
+   if( need_compute ) then
+      select case(gridname)
+      case('OCN')
+         lon_local => lon_local_ocn; lat_local => lat_local_ocn
+      case('ICE')
+         lon_local => lon_local_ice; lat_local => lat_local_ice
+      case('ATM')
+         lon_local => lon_local_atm; lat_local => lat_local_atm
+      case('LND')
+         lon_local => lon_local_lnd; lat_local => lat_local_lnd
+      case default
+         call mpp_error(FATAL,'error: gridname not recognized in data_override')
+      end select
+ 
+      select case (data_table(index1)%interpol_method)
+      case ('bilinear')
+         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
+              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
+              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
+              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bilinear")
+      case ('bicubic')
+         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
+              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
+              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
+              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bicubic")
+      end select
+      override_array(curr_position)%need_compute(window_id) = .false.
+   endif
+ 
+   ! Determine if  data in netCDF file is 2D or not
+   data_file_is_2D = .false.
+   if((dims(3) == 1) .and. (size(data,3)>1)) data_file_is_2D = .true.
+ 
+   if(dims(3) .NE. 1 .and. (size(data,3) .NE. dims(3))) &
+       call mpp_error(FATAL, "data_override: dims(3) .NE. 1 and size(data,3) .NE. dims(3)")
+ 
+   if(ongrid) then
+     if (.not. use_comp_domain) then
+         !< Determine the size of the halox and the part of `data` that is in the compute domain
+         nhalox = (size(data,1) - nxc)/2
+         nhaloy = (size(data,2) - nyc)/2
+         startingi = lbound(data,1) + nhalox
+         startingj = lbound(data,2) + nhaloy
+         endingi   = ubound(data,1) - nhalox
+         endingj   = ubound(data,2) - nhaloy
+     end if
+ 
+ !10 do time interp to get data in compute_domain
      if(data_file_is_2D) then
-        if( data_table(index1)%region_type == NO_REGION ) then
-           call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
-                 horz_interp=override_array(curr_position)%horz_interp(window_id), &
-                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           return_data(:,:,1) = return_data(:,:,1)*factor
-           do i = 2, size(return_data,3)
-             return_data(:,:,i) = return_data(:,:,1)
-           enddo
-        else
-           allocate(mask_out(size(return_data,1), size(return_data,2),1))
-           mask_out = .false.
-           call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
-                 horz_interp=override_array(curr_position)%horz_interp(window_id),      &
-                 mask_out   =mask_out(:,:,1), &
-                 is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           where(mask_out(:,:,1))
-              return_data(:,:,1) = return_data(:,:,1)*factor
-           end where
-           do i = 2, size(return_data,3)
-              where(mask_out(:,:,1))
-              return_data(:,:,i) = return_data(:,:,1)
-              end where
-           enddo
-           deallocate(mask_out)
-        endif
+       if (use_comp_domain) then
+         call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+       else
+         !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+         !! size
+         call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,1),verbose=.false., &
+                                is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+       end if
+       data(:,:,1) = data(:,:,1)*factor
+       do i = 2, size(data,3)
+         data(:,:,i) = data(:,:,1)
+       end do
      else
-        if( data_table(index1)%region_type == NO_REGION ) then
-           call time_interp_external(id_time,time,return_data,verbose=.false.,      &
-              horz_interp=override_array(curr_position)%horz_interp(window_id), &
-              is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-              return_data = return_data*factor
-        else
-           allocate(mask_out(size(return_data,1), size(return_data,2), size(return_data,3)) )
-           mask_out = .false.
-           call time_interp_external(id_time,time,return_data,verbose=.false.,      &
-              horz_interp=override_array(curr_position)%horz_interp(window_id),    &
-              mask_out   =mask_out, &
-              is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           where(mask_out)
-           return_data = return_data*factor
-           end where
-           deallocate(mask_out)
-        endif
+       if (use_comp_domain) then
+         call time_interp_external(id_time,time,data,verbose=.false., &
+                                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+       else
+         !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
+         !! size
+         call time_interp_external(id_time,time,data(startingi:endingi,startingj:endingj,:),verbose=.false., &
+                                is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+       end if
+       data = data*factor
      endif
-
-  endif
-
-  if(PRESENT(override)) override = .true.
-end subroutine DATA_OVERRIDE_3D_
+   else  ! off grid case
+ ! do time interp to get global data
+      if(data_file_is_2D) then
+         if( data_table(index1)%region_type == NO_REGION ) then
+            call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+                  horz_interp=override_array(curr_position)%horz_interp(window_id), &
+                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+            data(:,:,1) = data(:,:,1)*factor
+            do i = 2, size(data,3)
+              data(:,:,i) = data(:,:,1)
+            enddo
+         else
+            allocate(mask_out(size(data,1), size(data,2),1))
+            mask_out = .false.
+            call time_interp_external(id_time,time,data(:,:,1),verbose=.false., &
+                  horz_interp=override_array(curr_position)%horz_interp(window_id),      &
+                  mask_out   =mask_out(:,:,1), &
+                  is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+            where(mask_out(:,:,1))
+               data(:,:,1) = data(:,:,1)*factor
+            end where
+            do i = 2, size(data,3)
+               where(mask_out(:,:,1))
+                 data(:,:,i) = data(:,:,1)
+               end where
+            enddo
+            deallocate(mask_out)
+         endif
+      else
+         if( data_table(index1)%region_type == NO_REGION ) then
+            call time_interp_external(id_time,time,data,verbose=.false.,      &
+               horz_interp=override_array(curr_position)%horz_interp(window_id), &
+               is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+            data = data*factor
+         else
+            allocate(mask_out(size(data,1), size(data,2), size(data,3)) )
+            mask_out = .false.
+            call time_interp_external(id_time,time,data,verbose=.false.,      &
+               horz_interp=override_array(curr_position)%horz_interp(window_id),    &
+               mask_out   =mask_out, &
+               is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
+            where(mask_out)
+               data = data*factor
+            end where
+            deallocate(mask_out)
+         endif
+      endif
+ 
+   endif
+ 
+   if(PRESENT(override)) override = .true.
+ end subroutine DATA_OVERRIDE_3D_
 
 !> @brief Data override for 1D unstructured grids
 subroutine DATA_OVERRIDE_UG_1D_(gridname,fieldname,return_data,time,override)
