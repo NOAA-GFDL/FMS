@@ -226,11 +226,11 @@
 !</SUBROUTINE> NAME="time_interp_external"
 
     !> @brief Scalar interpolation for @ref time_interp_external
-    subroutine TIME_INTERP_EXTERNAL_0D_(index, time, data, verbose)
+    subroutine TIME_INTERP_EXTERNAL_0D_(index, time, time_data, verbose)
 
       integer, intent(in) :: index
       type(time_type), intent(in) :: time
-      real(FMS_TI_KIND_), intent(inout) :: data
+      real(FMS_TI_KIND_), intent(inout) :: time_data
       logical, intent(in), optional :: verbose
 
       integer :: t1, t2
@@ -254,7 +254,7 @@
          ! only one record in the file => time-independent loaded_fields
          call load_record_0d(loaded_fields(index),1)
          i1 = find_buf_index(1,loaded_fields(index)%ibuf)
-         data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)
+         time_data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)
       else
         if(loaded_fields(index)%have_modulo_times) then
           call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, &
@@ -292,7 +292,7 @@
 
          if(i1<0.or.i2<0) &
               call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-         data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)*w1 &
+         time_data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)*w1 &
               & + real(loaded_fields(index)%domain_data(1,1,1,i2), FMS_TI_KIND_)*w2
          if (verb) then
             write(outunit,*) 'ibuf= ',loaded_fields(index)%ibuf
