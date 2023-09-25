@@ -141,14 +141,14 @@
             i1 = find_buf_index(1,loaded_fields(index)%ibuf)
             if( loaded_fields(index)%region_type == NO_REGION ) then
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1))
-                  data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
+                  data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
                 elsewhere
     !               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
                   data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, FMS_TI_KIND_)
                 end where
             else
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1))
-                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
+                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
                 end where
             endif
             if(PRESENT(mask_out)) mask_out(isw:iew,jsw:jew,:) = loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1)
@@ -201,8 +201,8 @@
             if( loaded_fields(index)%region_type == NO_REGION ) then
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1) .and. &
                       loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
-                        real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
+                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
+                        real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 elsewhere
     !               data(isw:iew,jsw:jew,:) = time_interp_missing !loaded_fields(index)%missing? Balaji
                 data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, kindl)
@@ -210,8 +210,8 @@
             else
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1) .and. &
                       loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
-                        real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
+                data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
+                        real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 end where
             endif
             if(PRESENT(mask_out)) &
@@ -252,7 +252,7 @@
          ! only one record in the file => time-independent loaded_fields
          call load_record_0d(loaded_fields(index),1)
          i1 = find_buf_index(1,loaded_fields(index)%ibuf)
-         data = real(loaded_fields(index)%data(1,1,1,i1), FMS_TI_KIND_)
+         data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)
       else
         if(loaded_fields(index)%have_modulo_times) then
           call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, &
@@ -290,8 +290,8 @@
 
          if(i1<0.or.i2<0) &
               call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-         data = real(loaded_fields(index)%data(1,1,1,i1), FMS_TI_KIND_)*w1 &
-              & + real(loaded_fields(index)%data(1,1,1,i2), FMS_TI_KIND_)*w2
+         data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)*w1 &
+              & + real(loaded_fields(index)%domain_data(1,1,1,i2), FMS_TI_KIND_)*w2
          if (verb) then
             write(outunit,*) 'ibuf= ',loaded_fields(index)%ibuf
             write(outunit,*) 'i1,i2= ',i1, i2
