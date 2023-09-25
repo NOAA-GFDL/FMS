@@ -4,6 +4,8 @@
 #undef LON_BND_
 #undef LAT_BND_
 #undef TEMPAMIP_
+#undef DATA1_
+#undef DATA2_
 
 #undef GET_AMIP_SST_
 #undef GET_AMIP_ICE_
@@ -24,6 +26,8 @@
 #define LON_BND_ lon_bnd_r8
 #define LAT_BND_ lat_bnd_r8
 #define TEMPAMIP_ tempamip_r8
+#define DATA1_ data1_r8
+#define DATA2_ data2_r8
 
 #define GET_AMIP_SST_ get_amip_sst_r8
 #define GET_AMIP_ICE_ get_amip_ice_r8
@@ -46,6 +50,8 @@
 #undef LON_BND_
 #undef LAT_BND_
 #undef TEMPAMIP_
+#undef DATA1_
+#undef DATA2_
 
 #undef GET_AMIP_SST_
 #undef GET_AMIP_ICE_
