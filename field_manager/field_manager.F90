@@ -2277,11 +2277,11 @@ end function  fm_get_type
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_integer(name, value, index)                 &
+function  fm_get_value_integer(name, get_ival, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-integer,          intent(out)          :: value !< The value associated with the named field.
+integer,          intent(out)          :: get_ival !< The value associated with the named field.
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2295,7 +2295,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = 0
+  get_ival = 0
   success = .false.
   return
 endif
@@ -2313,20 +2313,20 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. integer_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or index too large
-      value = 0
+      get_ival = 0
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%i_value(index_t)
+      get_ival = temp_field_p%i_value(index_t)
       success = .true.
     endif
   else
 !        Field not corrcet type
-    value = 0
+    get_ival = 0
     success = .false.
   endif
 else
-  value = 0
+  get_ival = 0
   success = .false.
 endif
 
