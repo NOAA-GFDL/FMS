@@ -1512,16 +1512,16 @@ character(len=*), intent(out) :: values(:) !< The value or values that have been
 include 'parse.inc'
 end function parse_strings
 
-function parse_integer ( text, label, value ) result (parse)
+function parse_integer ( text, label, parse_ival ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-integer,          intent(out) :: value !< The value or values that have been decoded.
+integer,          intent(out) :: parse_ival !< The value or values that have been decoded.
 integer :: parse
 
 integer :: values(1)
 
    parse = parse_integers ( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_ival = values(1)
 end function parse_integer
 
 function parse_string ( text, label, value ) result (parse)
