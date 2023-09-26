@@ -2334,11 +2334,11 @@ end function  fm_get_value_integer
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_logical(name, value, index)                 &
+function  fm_get_value_logical(name, get_lval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-logical,          intent(out)          :: value !< The value associated with the named field
+logical,          intent(out)          :: get_lval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2352,7 +2352,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = .false.
+  get_lval = .false.
   success = .false.
   return
 endif
@@ -2371,20 +2371,20 @@ if (associated(temp_field_p)) then
 
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or too large
-      value = .false.
+      get_lval = .false.
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%l_value(index_t)
+      get_lval = temp_field_p%l_value(index_t)
       success = .true.
     endif
   else
 !        Field not correct type
-    value = .false.
+    get_lval = .false.
     success = .false.
   endif
 else
-  value = .false.
+  get_lval = .false.
   success = .false.
 endif
 
