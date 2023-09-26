@@ -2392,11 +2392,11 @@ end function  fm_get_value_logical
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_string(name, value, index)                 &
+function  fm_get_value_string(name, get_sval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-character(len=*), intent(out)          :: value !< The value associated with the named field
+character(len=*), intent(out)          :: get_sval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2410,7 +2410,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = ''
+  get_sval = ''
   success = .false.
   return
 endif
@@ -2428,20 +2428,20 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. string_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or is too large
-      value = ''
+      get_sval = ''
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%s_value(index_t)
+      get_sval = temp_field_p%s_value(index_t)
         success = .true.
     endif
   else
 !        Field not correct type
-    value = ''
+    get_sval = ''
     success = .false.
   endif
 else
-  value = ''
+  get_sval = ''
   success = .false.
 endif
 
