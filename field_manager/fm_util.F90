@@ -1242,7 +1242,7 @@ end function fm_util_get_integer  !}
 
 !> Get a logical value from the Field Manager tree.
 function fm_util_get_logical(name, caller, index, default_value, scalar)            &
-         result (value)  !{
+         result (lval)  !{
 
 implicit none
 
@@ -1250,7 +1250,7 @@ implicit none
 !       Return type
 !
 
-logical :: value
+logical :: lval
 
 !
 !       arguments
@@ -1336,11 +1336,11 @@ endif  !}
 
 fm_type = fm_get_type(name)
 if (fm_type .eq. 'logical') then  !{
-  if (.not. fm_get_value(name, value, index = index_t)) then  !{
+  if (.not. fm_get_value(name, lval, index = index_t)) then  !{
     call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
-  value = default_value
+  lval = default_value
 elseif (fm_type .eq. ' ') then  !}{
   call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
 else  !}{
