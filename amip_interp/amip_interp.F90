@@ -155,8 +155,7 @@ integer :: i_sst = 1200
 integer :: j_sst = 600
 real(r8_kind), parameter:: big_number = 1.E30_r8_kind
 logical :: forecast_mode = .false.
-real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep,    sst_anom    !< r8 versions of sst_ncep and sst_anom
-real(r4_kind), allocatable, dimension(:,:) ::  sst_ncep_r4, sst_anom_r4 !< r4 versions of sst_ncep and sst_anom
+real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep, sst_anom
 
 public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 

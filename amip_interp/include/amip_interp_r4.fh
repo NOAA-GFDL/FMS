@@ -21,8 +21,8 @@
 #undef ZONAL_SST_
 
 #define FMS_AMIP_INTERP_KIND_ r4_kind
-#define SST_NCEP_ sst_ncep_r4
-#define SST_ANOM_ sst_anom_r4
+#define SST_NCEP_ real(sst_ncep, r4_kind)
+#define SST_ANOM_ real(sst_anom, r4_kind)
 #define LON_BND_ lon_bnd_r4
 #define LAT_BND_ lat_bnd_r4
 #define TEMPAMIP_ tempamip_r4

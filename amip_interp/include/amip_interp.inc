@@ -115,7 +115,7 @@ if ( .not.use_daily ) then
           else
               call READ_RECORD_ ('sst', Date1, Udate1, temp1)
               if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-                   temp1(:,:) = temp1(:,:) + SST_ANOM_ (:,:)
+                   temp1 = temp1 + SST_ANOM_
               endif
               call horiz_interp ( Interp%Hintrp, temp1, Interp%DATA1_)
               call CLIP_DATA_ ('sst', Interp%DATA1_)
@@ -128,7 +128,7 @@ if ( .not.use_daily ) then
       if (Date2 /= Interp%Date2) then
           call READ_RECORD_ ('sst', Date2, Udate2, temp2)
           if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-               temp2(:,:) = temp2(:,:) + SST_ANOM_ (:,:)
+               temp2 = temp2 + SST_ANOM_
           endif
           call horiz_interp ( Interp%Hintrp, temp2, Interp%DATA2_)
           call CLIP_DATA_ ('sst', Interp%DATA2_)
@@ -146,8 +146,8 @@ if ( .not.use_daily ) then
 !      Compute SST anomaly from global SST datasets for subsequent forecast runs
 !-------------------------------------------------------------------------------
     if ( use_ncep_sst .and. no_anom_sst ) then
-         SST_ANOM_ (:,:) = SST_NCEP_ (:,:) - (temp1(:,:) + fmonth*(temp2(:,:) - temp1(:,:)) )
-         call horiz_interp ( Interp%Hintrp, SST_NCEP_, sst )
+         sst_anom = SST_NCEP_ - (temp1 + fmonth*(temp2 - temp1))
+         call horiz_interp (Interp%Hintrp, SST_NCEP_, sst)
          call CLIP_DATA_ ('sst', sst)
     endif
 
@@ -597,13 +597,13 @@ endif
 !--- Added by SJL ----------------------------------------------
         if ( use_ncep_sst ) then
              mobs = i_sst;  nobs = j_sst
-            if (.not. allocated (SST_NCEP_)) then
-                allocate (SST_NCEP_ (i_sst,j_sst))
-                SST_NCEP_ (:,:) = real(big_number, FMS_AMIP_INTERP_KIND_)
+            if (.not. allocated (sst_ncep)) then
+                allocate (sst_ncep(i_sst,j_sst))
+                sst_ncep(:,:) = big_number
             endif
-            if (.not. allocated (SST_ANOM_)) then
-                allocate (SST_ANOM_ (i_sst,j_sst))
-                SST_ANOM_ (:,:) = real(big_number, FMS_AMIP_INTERP_KIND_)
+            if (.not. allocated (sst_anom)) then
+                allocate (sst_anom(i_sst,j_sst))
+                sst_anom(:,:) = big_number
             endif
         else
              mobs = 360;    nobs = 180
