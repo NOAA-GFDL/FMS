@@ -1524,16 +1524,16 @@ integer :: values(1)
    if (parse > 0) parse_ival = values(1)
 end function parse_integer
 
-function parse_string ( text, label, value ) result (parse)
+function parse_string ( text, label, parse_sval ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-character(len=*), intent(out) :: value !< The value or values that have been decoded.
+character(len=*), intent(out) :: parse_sval !< The value or values that have been decoded.
 integer :: parse
 
-character(len=len(value)) :: values(1)
+character(len=len(parse_sval)) :: values(1)
 
    parse = parse_strings ( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_sval = values(1)
 end function parse_string
 
 !> @brief A function to create a field as a child of parent_p. This will return
