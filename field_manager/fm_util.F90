@@ -1903,7 +1903,7 @@ end subroutine fm_util_set_value_logical_array  !}
 !#######################################################################
 
 !> Set a string array in the Field Manager tree.
-subroutine fm_util_set_value_string_array(name, value, length, caller, no_overwrite, good_name_list)  !{
+subroutine fm_util_set_value_string_array(name, sval, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
 
@@ -1913,7 +1913,7 @@ implicit none
 
 character(len=*), intent(in)                            :: name
 integer, intent(in)                                     :: length
-character(len=*), intent(in)                            :: value(length)
+character(len=*), intent(in)                            :: sval(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
 character(len=fm_path_name_len), intent(in), optional   :: good_name_list
@@ -2012,19 +2012,19 @@ else  !}{
       call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
     endif  !}
     do n = field_length + 1, length  !{
-      field_index = fm_new_value(name, value(n), index = n)
+      field_index = fm_new_value(name, sval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
         call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
       endif  !}
     enddo  !} n
   else  !}{
-    field_index = fm_new_value(name, value(1))
+    field_index = fm_new_value(name, sval(1))
     if (field_index .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name))
     endif  !}
     do n = 2, length  !{
-      field_index = fm_new_value(name, value(n), index = n)
+      field_index = fm_new_value(name, sval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
         call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
