@@ -99,12 +99,12 @@ end function  FM_GET_VALUE_REAL_
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  FM_NEW_VALUE_REAL_(name, value, create, index, append) &
+function  FM_NEW_VALUE_REAL_(name, new_rval, create, index, append) &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-real(FMS_FM_KIND_),    intent(in)      :: value !< The value that the user wishes to apply to the
+real(FMS_FM_KIND_),    intent(in)      :: new_rval !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -226,7 +226,7 @@ if (associated(temp_list_p)) then
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
        ! all real field values are stored as r8_kind
-      temp_field_p%r_value(index_t) = real(value,r8_kind)
+      temp_field_p%r_value(index_t) = real(new_rval,r8_kind)
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
