@@ -41,11 +41,11 @@ real(FMS_FM_KIND_) :: values(1)
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  FM_GET_VALUE_REAL_(name, value, index)                 &
+function  FM_GET_VALUE_REAL_(name, get_rval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name  !< The name of a field that the user wishes to get a value for.
-real(FMS_FM_KIND_), intent(out)        :: value !< The value associated with the named field
+real(FMS_FM_KIND_), intent(out)        :: get_rval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -61,7 +61,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = 0.0_lkind
+  get_rval = 0.0_lkind
   success = .false.
   return
 endif
@@ -79,19 +79,19 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. real_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or is too large
-       value = 0.0_lkind
+       get_rval = 0.0_lkind
       success = .false.
     else
 !        extract the value; the value is stored as r8_kind
-      value = real(temp_field_p%r_value(index_t),lkind)
+      get_rval = real(temp_field_p%r_value(index_t),lkind)
       success = .true.
     endif
   else
-    value = 0.0_lkind
+    get_rval = 0.0_lkind
     success = .false.
   endif
 else
-  value = 0.0_lkind
+  get_rval = 0.0_lkind
   success = .false.
 endif
 
