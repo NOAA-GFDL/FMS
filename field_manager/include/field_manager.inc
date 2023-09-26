@@ -27,16 +27,16 @@ real(FMS_FM_KIND_), intent(out) :: values(:) !< The value or values that have be
 include 'parse.inc'
 end function PARSE_REALS_
 
-function PARSE_REAL_ ( text, label, value ) result (parse)
+function PARSE_REAL_ ( text, label, parse_rval ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-real(FMS_FM_KIND_), intent(out) :: value !< The value or values that have been decoded.
+real(FMS_FM_KIND_), intent(out) :: parse_rval !< The value or values that have been decoded.
 integer :: parse
 
 real(FMS_FM_KIND_) :: values(1)
 
    parse = PARSE_REALS_( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_rval = values(1)
  end function PARSE_REAL_
 
 !> @returns A flag to indicate whether the function operated with (false) or without
