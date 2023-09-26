@@ -218,10 +218,10 @@
   end subroutine TRANLON_
 
 
-  function FRAC_INDEX_(value, array)
+  function FRAC_INDEX_(frac_value, array)
 
     integer                               :: ia, i, ii, unit
-    real(kind=FMS_AU_KIND_)               :: value !< arbitrary data...same units as elements in "array"
+    real(kind=FMS_AU_KIND_)               :: frac_value !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_)               :: FRAC_INDEX_
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical                               :: keep_going
@@ -232,7 +232,7 @@
        if (array(i) < array(i-1)) then
           unit = stdout()
           write (unit,*) '=> Error: "frac_index" array must be monotonically' &
-          & // 'increasing when searching for nearest value to ', value
+          & // 'increasing when searching for nearest value to ', frac_value
           write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
@@ -242,17 +242,17 @@
        endif
     enddo
 
-    if (value < array(1) .or. value > array(ia)) then
- !       if (value < array(1))  frac_index = 1.
- !       if (value > array(ia)) frac_index = float(ia)
+    if (frac_value < array(1) .or. frac_value > array(ia)) then
+ !       if (frac_value < array(1))  frac_index = 1.
+ !       if (frac_value > array(ia)) frac_index = float(ia)
         FRAC_INDEX_ = -1.0_lkind
     else
        i = 1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
-          if (value <= array(i)) then
-             FRAC_INDEX_ = real((i-1), lkind) + (value-array(i-1)) / (array(i) - array(i-1))
+          if (frac_value <= array(i)) then
+             FRAC_INDEX_ = real((i-1), lkind) + (frac_value-array(i-1)) / (array(i) - array(i-1))
              keep_going  = .false.
           endif
        enddo
