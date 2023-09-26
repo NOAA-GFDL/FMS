@@ -2898,12 +2898,12 @@ end function  fm_new_value_logical
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_string(name, value, create, index, append) &
+function  fm_new_value_string(name, new_sval, create, index, append) &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-character(len=*), intent(in)           :: value !< The value that the user wishes to apply to the
+character(len=*), intent(in)           :: new_sval !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -3014,7 +3014,7 @@ if (associated(temp_list_p)) then
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%s_value(index_t) = value
+      temp_field_p%s_value(index_t) = new_sval
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
