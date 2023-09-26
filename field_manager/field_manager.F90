@@ -2624,12 +2624,12 @@ end function  fm_new_list
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_integer(name, value, create, index, append)     &
+function  fm_new_value_integer(name, new_ival, create, index, append)     &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-integer,          intent(in)           :: value !< The value that the user wishes to apply to the
+integer,          intent(in)           :: new_ival !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -2698,7 +2698,7 @@ if (associated(temp_list_p)) then
     if (temp_field_p%field_type == real_type ) then
        ! promote integer input to real
        ! all real field values are stored as r8_kind
-       field_index = fm_new_value(name, real(value,r8_kind), create, index, append)
+       field_index = fm_new_value(name, real(new_ival,r8_kind), create, index, append)
        return
     else if (temp_field_p%field_type /= integer_type ) then
       !  slm: why would we reset index? Is it not an error to have a "list" defined
@@ -2746,7 +2746,7 @@ if (associated(temp_list_p)) then
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%i_value(index_t) = value
+      temp_field_p%i_value(index_t) = new_ival
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
