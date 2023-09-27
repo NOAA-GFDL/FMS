@@ -489,10 +489,10 @@ subroutine diag_yaml_object_end()
 end subroutine diag_yaml_object_end
 
 !> @brief Fills in a diagYamlFiles_type with the contents of a file block in diag_table.yaml
-subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
+subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
   integer,                    intent(in)    :: diag_yaml_id !< Id of the diag_table.yaml
   integer,                    intent(in)    :: diag_file_id !< Id of the file block to read
-  type(diagYamlFiles_type), intent(inout) :: fileobj      !< diagYamlFiles_type obj to read the contents into
+  type(diagYamlFiles_type), intent(inout) :: yaml_fileobj   !< diagYamlFiles_type obj to read the contents into
 
   integer :: nsubregion       !< Flag indicating of there any regions (0 or 1)
   integer :: sub_region_id(1) !< Id of the sub_region block
@@ -505,28 +505,29 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   character(len=:), ALLOCATABLE :: grid_type !< grid_type as it is read in from the yaml
   character(len=:), ALLOCATABLE :: buffer      !< buffer to store any *_units as it is read from the yaml
 
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", fileobj%file_fname)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", yaml_fileobj%file_fname)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq", buffer)
-  call parse_key(fileobj%file_fname, buffer, fileobj%file_freq, fileobj%file_frequnit, "freq")
+  call parse_key(yaml_fileobj%file_fname, buffer, yaml_fileobj%file_freq, yaml_fileobj%file_frequnit, "freq")
   deallocate(buffer)
 
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "unlimdim", fileobj%file_unlimdim)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "unlimdim", yaml_fileobj%file_unlimdim)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "time_units", buffer)
-  call set_file_time_units(fileobj, buffer)
+  call set_file_time_units(yaml_fileobj, buffer)
   deallocate(buffer)
 
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "new_file_freq", buffer, is_optional=.true.)
-  call parse_key(fileobj%file_fname, buffer, fileobj%file_new_file_freq, fileobj%file_new_file_freq_units, &
-    "new_file_freq")
+  call parse_key(yaml_fileobj%file_fname, buffer, yaml_fileobj%file_new_file_freq, &
+       yaml_fileobj%file_new_file_freq_units, "new_file_freq")
   deallocate(buffer)
 
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "filename_time", buffer, is_optional=.true.)
-  call set_filename_time(fileobj, buffer)
+  call set_filename_time(yaml_fileobj, buffer)
   deallocate(buffer)
 
-  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", fileobj%file_start_time, is_optional=.true.)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "start_time", &
+       yaml_fileobj%file_start_time, is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_duration", buffer, is_optional=.true.)
-  call parse_key(fileobj%file_fname, buffer, fileobj%file_duration, fileobj%file_duration_units, &
+  call parse_key(yaml_fileobj%file_fname, buffer, yaml_fileobj%file_duration, yaml_fileobj%file_duration_units, &
     "file_duration")
 
   nsubregion = 0
@@ -534,11 +535,12 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
   if (nsubregion .eq. 1) then
     call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=diag_file_id)
     call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", grid_type)
-    call get_sub_region(diag_yaml_id, sub_region_id(1), fileobj%file_sub_region, grid_type, fileobj%file_fname)
+    call get_sub_region(diag_yaml_id, sub_region_id(1), yaml_fileobj%file_sub_region, grid_type, &
+         yaml_fileobj%file_fname)
   elseif (nsubregion .eq. 0) then
-    fileobj%file_sub_region%grid_type = null_gridtype
+    yaml_fileobj%file_sub_region%grid_type = null_gridtype
   else
-    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(fileobj%file_fname)//" has multiple region blocks")
+    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(yaml_fileobj%file_fname)//" has multiple region blocks")
   endif
 
   natt = 0
@@ -549,14 +551,14 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, fileobj)
     allocate(key_ids(nkeys))
     call get_key_ids(diag_yaml_id, global_att_id(1), key_ids)
 
-    allocate(fileobj%file_global_meta(nkeys, 2))
+    allocate(yaml_fileobj%file_global_meta(nkeys, 2))
     do j = 1, nkeys
-      call get_key_name(diag_yaml_id,  key_ids(j), fileobj%file_global_meta(j, 1))
-      call get_key_value(diag_yaml_id, key_ids(j), fileobj%file_global_meta(j, 2))
+      call get_key_name(diag_yaml_id,  key_ids(j), yaml_fileobj%file_global_meta(j, 1))
+      call get_key_value(diag_yaml_id, key_ids(j), yaml_fileobj%file_global_meta(j, 2))
     enddo
     deallocate(key_ids)
   elseif (natt .ne. 0) then
-    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(fileobj%file_fname)//&
+    call mpp_error(FATAL, "diag_yaml_object_init: file "//trim(yaml_fileobj%file_fname)//&
                          &" has multiple global_meta blocks")
   endif
 
@@ -753,31 +755,31 @@ subroutine parse_key(filename, buffer, file_freq, file_frequnit, var)
 end subroutine parse_key
 
 !> @brief This checks if the time unit in a diag file is valid and sets the integer equivalent
-subroutine set_file_time_units (fileobj, file_timeunit)
-  type(diagYamlFiles_type), intent(inout) :: fileobj       !< diagYamlFiles_type obj to checK
+subroutine set_file_time_units (yaml_fileobj, file_timeunit)
+  type(diagYamlFiles_type), intent(inout) :: yaml_fileobj  !< diagYamlFiles_type obj to checK
   character(len=*),         intent(in)    :: file_timeunit !< file_timeunit as it is read from the diag_table
 
- fileobj%file_timeunit = set_valid_time_units(file_timeunit, "timeunit for file:"//trim(fileobj%file_fname))
+ yaml_fileobj%file_timeunit = set_valid_time_units(file_timeunit, "timeunit for file:"//trim(yaml_fileobj%file_fname))
 end subroutine set_file_time_units
 
 !> @brief This checks if the filename_time in a diag file is correct and sets the integer equivalent
-subroutine set_filename_time(fileobj, filename_time)
-  type(diagYamlFiles_type), intent(inout) :: fileobj             !< diagYamlFiles_type obj to check
+subroutine set_filename_time(yaml_fileobj, filename_time)
+  type(diagYamlFiles_type), intent(inout) :: yaml_fileobj        !< diagYamlFiles_type obj to check
   character(len=*),         intent(in)    :: filename_time       !< filename_time as it is read from the yaml
 
   select case (trim(filename_time))
   case ("")
-    fileobj%filename_time = middle_time !< This is the default
+    yaml_fileobj%filename_time = middle_time !< This is the default
   case ("begin")
-    fileobj%filename_time = begin_time
+    yaml_fileobj%filename_time = begin_time
   case ("middle")
-    fileobj%filename_time = middle_time
+    yaml_fileobj%filename_time = middle_time
   case ("end")
-    fileobj%filename_time = end_time
+    yaml_fileobj%filename_time = end_time
   case default
     call mpp_error(FATAL, trim(filename_time)//" is an invalid filename_time &
     &The acceptable values are begin, middle, and end. &
-    &Check your entry for file "//trim(fileobj%file_fname))
+    &Check your entry for file "//trim(yaml_fileobj%file_fname))
   end select
 end subroutine set_filename_time
 
