@@ -42,6 +42,7 @@ program check_time_sum
 
   integer :: test_case = test_normal !< Indicates which test case to run
   integer :: mask_case = no_mask     !< Indicates which masking option to run
+  integer, parameter :: kindl = KIND(0.0) !< compile-time default kind size
 
   namelist / test_reduction_methods_nml / test_case, mask_case
 
@@ -136,8 +137,8 @@ contains
    ! 0d answer is:
    !    (1011 * frequency sum'd over )
    !  + ( 1/100 * sum of time step increments )
-    buffer_exp = real((1000_r8_kind+10_r8_kind+1_r8_kind) * file_freq + &
-                      real(step_sum,r8_kind)/100_r8_kind, kind=r4_kind)
+    buffer_exp = real((1000.0_kindl+10.0_kindl+1.0_kindl) * file_freq + &
+                      real(step_sum,kindl)/100.0_kindl, kind=r4_kind)
 
     if (abs(buffer - buffer_exp) > 0) then
       print *, mpp_pe(), time_level, buffer_exp, buffer
@@ -162,11 +163,11 @@ contains
     ! 1d answer is
     !  ((i * 1000 + 11) * frequency) + (sum of time steps)
     do ii = 1, size(buffer, 1)
-      buffer_exp = real(real(ii, kind=r8_kind)*6000_r8_kind +60_r8_kind+6_r8_kind + &
-                   real(step_sum, kind=r8_kind)/100_r8_kind, kind=r4_kind)
+      buffer_exp = real(real(ii, kind=kindl)*6000.0_kindl +60.0_kindl+6.0_kindl + &
+                   real(step_sum, kind=kindl)/100.0_kindl, kind=r4_kind)
       if (use_mask .and. ii .eq. 1) buffer_exp = -666_r4_kind
       if (abs(buffer(ii) - buffer_exp) > 0) then
-        print *, mpp_pe(), ii, buffer(ii), buffer_exp
+        print *, mpp_pe(), ii, buffer(ii), buffer_exp, step_sum
         call mpp_error(FATAL, "Check_time_sum::check_data_1d:: Data is not correct")
       endif
     enddo
@@ -190,8 +191,8 @@ contains
     !  ((i * 1000 + j * 10 + 1) * frequency) + (sum of time steps)
     do ii = 1, size(buffer, 1)
       do j = 1, size(buffer, 2)
-        buffer_exp = real(real(ii, kind=r8_kind)* 6000_r8_kind+ &
-                     60_r8_kind*real(j, kind=r8_kind)+6_r8_kind + &
+        buffer_exp = real(real(ii, kind=r8_kind)* 6000.0_kindl+ &
+                     60.0_kindl*real(j, kind=r8_kind)+6.0_kindl + &
                      real(step_sum, kind=r8_kind)/100_r8_kind, kind=r4_kind)
         if (use_mask .and. ii .eq. 1 .and. j .eq. 1) buffer_exp = -666_r4_kind
         if (abs(buffer(ii, j) - buffer_exp) > 0) then
@@ -237,10 +238,10 @@ contains
     do ii = 1, size(buffer, 1)
       do j = 1, size(buffer, 2)
         do k = 1, size(buffer, 3)
-          buffer_exp = real(real(ii+nx_oset, kind=r8_kind)* 6000_r8_kind + &
-                       60_r8_kind*real(j+ny_oset, kind=r8_kind) + &
-                       6_r8_kind*real(k+nz_oset, kind=r8_kind) + &
-                       real(step_sum, kind=r8_kind)/100_r8_kind, kind=r4_kind)
+          buffer_exp = real(real(ii+nx_oset, kind=r8_kind)* 6000.0_kindl + &
+                       60.0_kindl*real(j+ny_oset, kind=r8_kind) + &
+                       6.0_kindl*real(k+nz_oset, kind=r8_kind) + &
+                       real(step_sum, kind=r8_kind)/100.0_kindl, kind=r4_kind)
           if (use_mask .and. ii .eq. 1 .and. j .eq. 1 .and. k .eq. 1 .and. .not. is_regional) buffer_exp = -666_r4_kind
           if (abs(buffer(ii, j, k) - buffer_exp) > 0) then
             print *, mpp_pe(), ii, j, k, buffer(ii, j, k), buffer_exp
