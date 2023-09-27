@@ -235,13 +235,13 @@ else
 
 
    !---- read NETCDF data ----
-     if ( .not. allocated(TEMPAMIP_) ) &
-     & allocate (TEMPAMIP_ (mobs_sst,nobs_sst))
+     if ( .not. allocated(tempamip) ) &
+     & allocate (tempamip(mobs_sst,nobs_sst))
 
      if (the_file_exists) then
-          call fms2_io_read_data(fileobj, 'SST', TEMPAMIP_, unlim_dim_level=k)
+          call fms2_io_read_data(fileobj, 'SST', tempamip, unlim_dim_level=k)
           call close_file(fileobj)
-          TEMPAMIP_ = TEMPAMIP_ + real(TFREEZE, FMS_AMIP_INTERP_KIND_)
+          tempamip = tempamip + TFREEZE
 
 !!! DEBUG CODE
           if(DEBUG) then
@@ -249,9 +249,9 @@ else
               print*, 'JHC: TFREEZE = ', real(TFREEZE, FMS_AMIP_INTERP_KIND_)
               print*, lbound(sst)
               print*, ubound(sst)
-              print*, lbound(TEMPAMIP_)
-              print*, ubound(TEMPAMIP_)
-              write(*,300) 'JHC: tempamip : ', TEMPAMIP_ (100,100), TEMPAMIP_ (200,200), TEMPAMIP_ (300,300)
+              print*, lbound(tempamip)
+              print*, ubound(tempamip)
+              write(*,300) 'JHC: tempamip : ', tempamip(100,100), tempamip(200,200), tempamip(300,300)
             endif
           endif
 
@@ -502,227 +502,37 @@ endif
    Interp%I_am_initialized = .true.
    end function AMIP_INTERP_NEW_2D_
 
- !> initialize @ref amip_interp_mod for use
- subroutine AMIP_INTERP_INIT_
-   integer :: unit,io,ierr
-
-!-----------------------------------------------------------------------
-
-    call horiz_interp_init
-
-!   ---- read namelist ----
-
-    read (input_nml_file, amip_interp_nml, iostat=io)
-    ierr = check_nml_error(io,'amip_interp_nml')
-
-!  ----- write namelist/version info -----
-    call write_version_number("AMIP_INTERP_MOD", version)
-
-    unit = stdlog ( )
-    if (mpp_pe() == 0) then
-        write (unit,nml=amip_interp_nml)
-    endif
-
-    if (use_mpp_io) then
-            !! USE_MPP_IO_WARNING
-            call mpp_error ('amip_interp_mod', &
-             'MPP_IO is no longer supported.  Please remove use_mpp_io from amip_interp_nml',&
-              FATAL)
-    endif
-    if ( .not. use_ncep_sst ) interp_oi_sst = .false.
-
-!   ---- freezing point of sea water in deg K ---
-
-    tice_crit_k = tice_crit
-    if ( tice_crit_k < 200._r8_kind ) then
-      tice_crit_k = tice_crit_k + TFREEZE
-    endif
-    ice_crit = nint((tice_crit_k-TFREEZE)*100._r8_kind, I2_KIND)
-
-!   ---- set up file dependent variable ----
-!   ----   global file name   ----
-!   ----   grid box edges     ----
-!   ---- initialize zero size grid if not pe 0 ------
-
-    if (lowercase(trim(data_set)) == 'amip1') then
-        file_name_sst = 'INPUT/' // 'amip1_sst.data'
-        file_name_ice = 'INPUT/' // 'amip1_sst.data'
-        mobs = 180;  nobs = 91
-        call SET_SST_GRID_EDGES_AMIP1_
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using AMIP 1 sst', NOTE)
-        Date_end = date_type( 1989, 1, 0 )
-    else if (lowercase(trim(data_set)) == 'amip2') then
-        file_name_sst = 'INPUT/' // 'amip2_sst.data'
-        file_name_ice = 'INPUT/' // 'amip2_ice.data'
-        mobs = 360;  nobs = 180
-        call SET_SST_GRID_EDGES_OI_
-!       --- specfied min for amip2 ---
-        tice_crit_k = 271.38_r8_kind
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using AMIP 2 sst', NOTE)
-        Date_end = date_type( 1996, 3, 0 )
-    else if (lowercase(trim(data_set)) == 'hurrell') then
-        file_name_sst = 'INPUT/' // 'hurrell_sst.data'
-        file_name_ice = 'INPUT/' // 'hurrell_ice.data'
-        mobs = 360;  nobs = 180
-        call SET_SST_GRID_EDGES_OI_
-!       --- specfied min for hurrell ---
-        tice_crit_k = 271.38_r8_kind
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using HURRELL sst', NOTE)
-        Date_end = date_type( 2011, 8, 16 ) ! updated by JHC
-! add by JHC
-    else if (lowercase(trim(data_set)) == 'daily') then
-        file_name_sst = 'INPUT/' // 'hurrell_sst.data'
-        file_name_ice = 'INPUT/' // 'hurrell_ice.data'
-        mobs = 360;  nobs = 180
-        call SET_SST_GRID_EDGES_OI_
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using AVHRR daily sst', NOTE)
-        Date_end = date_type( 2011, 8, 16 )
-! end add by JHC
-    else if (lowercase(trim(data_set)) == 'reynolds_eof') then
-        file_name_sst = 'INPUT/' // 'reynolds_sst.data'
-        file_name_ice = 'INPUT/' // 'reynolds_sst.data'
-        mobs = 180;  nobs = 90
-        call SET_SST_GRID_EDGES_OI_
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init',  &
-             'using NCEP Reynolds Historical Reconstructed SST', NOTE)
-        Date_end = date_type( 1998, 12, 0 )
-    else if (lowercase(trim(data_set)) == 'reynolds_oi') then
-        file_name_sst = 'INPUT/' // 'reyoi_sst.data'
-        file_name_ice = 'INPUT/' // 'reyoi_sst.data'
-!--- Added by SJL ----------------------------------------------
-        if ( use_ncep_sst ) then
-             mobs = i_sst;  nobs = j_sst
-            if (.not. allocated (sst_ncep)) then
-                allocate (sst_ncep(i_sst,j_sst))
-                sst_ncep(:,:) = big_number
-            endif
-            if (.not. allocated (sst_anom)) then
-                allocate (sst_anom(i_sst,j_sst))
-                sst_anom(:,:) = big_number
-            endif
-        else
-             mobs = 360;    nobs = 180
-        endif
-!--- Added by SJL ----------------------------------------------
-        call SET_SST_GRID_EDGES_OI_
-        if (mpp_pe() == 0) &
-        call error_mesg ('amip_interp_init', 'using Reynolds OI SST', &
-                                                                NOTE)
-        Date_end = date_type( 1999, 1, 0 )
-    else
-        call error_mesg ('amip_interp_init', 'the value of the &
-        &namelist parameter DATA_SET being used is not allowed', FATAL)
-    endif
-
-    if (verbose > 1 .and. mpp_pe() == 0) &
-              print *, 'ice_crit,tice_crit_k=',ice_crit,tice_crit_k
-
-!  --- check existence of sst data file ??? ---
-    file_name_sst = trim(file_name_sst)//'.nc'
-    file_name_ice = trim(file_name_ice)//'.nc'
-
-    if (.not. fms2_io_file_exists(trim(file_name_sst)) ) then
-        call error_mesg ('amip_interp_init', &
-             'file '//trim(file_name_sst)//' does not exist', FATAL)
-    endif
-    if (.not. fms2_io_file_exists(trim(file_name_ice)) ) then
-        call error_mesg ('amip_interp_init', &
-             'file '//trim(file_name_ice)//' does not exist', FATAL)
-    endif
-
-    if (.not. open_file(fileobj_sst, trim(file_name_sst), 'read')) &
-        call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_sst), FATAL)
-    if (.not. open_file(fileobj_ice, trim(file_name_ice), 'read')) &
-        call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_ice), FATAL)
-    module_is_initialized = .true.
- end subroutine AMIP_INTERP_INIT_
-
-   subroutine SET_SST_GRID_EDGES_AMIP1_
-   integer :: i, j
-   real(FMS_AMIP_INTERP_KIND_) :: hpie, dlon, dlat, wb, sb
-   integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
-
-      allocate(LON_BND_ (mobs+1))
-      allocate(LAT_BND_ (nobs+1))
-
-! ---- compute grid edges (do only once) -----
-
-      hpie = 0.5_lkind*real(pi, FMS_AMIP_INTERP_KIND_)
-
-      dlon = 4._lkind*hpie/real(mobs, FMS_AMIP_INTERP_KIND_);  wb = -0.5_lkind*dlon
-      do i = 1, mobs+1
-          LON_BND_ (i) = wb + dlon * real(i-1, FMS_AMIP_INTERP_KIND_)
-      enddo
-          LON_BND_ (mobs+1) = LON_BND_ (1) + 4._lkind*hpie
-
-      dlat = 2._lkind*hpie/real(nobs-1, FMS_AMIP_INTERP_KIND_);  sb = -hpie + 0.5_lkind*dlat
-      LAT_BND_ (1) = -hpie;  LAT_BND_ (nobs+1) = hpie
-      do j = 2, nobs
-          LAT_BND_ (j) = sb + dlat * real(j-2, FMS_AMIP_INTERP_KIND_)
-      enddo
-   end subroutine SET_SST_GRID_EDGES_AMIP1_
-
-   subroutine SET_SST_GRID_EDGES_OI_
-   integer :: i, j
-   real(FMS_AMIP_INTERP_KIND_) :: hpie, dlon, dlat, wb, sb
-   integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
-
-! add by JHC
-      if(allocated(LON_BND_))       deallocate(LON_BND_)
-      if(allocated(LAT_BND_))       deallocate(LAT_BND_)
-! end add by JHC
-      allocate(LON_BND_ (mobs+1))
-      allocate(LAT_BND_ (nobs+1))
-
-! ---- compute grid edges (do only once) -----
-
-      hpie = 0.5_lkind*real(pi, FMS_AMIP_INTERP_KIND_)
-
-      dlon = 4._lkind*hpie/real(mobs, FMS_AMIP_INTERP_KIND_);  wb = 0.0_lkind
-          LON_BND_ (1) = wb
-      do i = 2, mobs+1
-          LON_BND_ (i) = wb + dlon * real(i-1, FMS_AMIP_INTERP_KIND_)
-      enddo
-          LON_BND_ (mobs+1) = LON_BND_ (1) + 4._lkind*hpie
-
-      dlat = 2._lkind*hpie/real(nobs, FMS_AMIP_INTERP_KIND_);  sb = -hpie
-      LAT_BND_ (1) = sb;  LAT_BND_ (nobs+1) = hpie
-      do j = 2, nobs
-          LAT_BND_ (j) = sb + dlat * real(j-1, FMS_AMIP_INTERP_KIND_)
-      enddo
-   end subroutine SET_SST_GRID_EDGES_OI_
-
 ! add by JHC
    subroutine SET_SST_GRID_EDGES_DAILY_ (mobs_sst, nobs_sst)
    integer :: i, j, mobs_sst, nobs_sst
    real(FMS_AMIP_INTERP_KIND_) :: hpie, dlon, dlat, wb, sb
    integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
-      if(allocated(LON_BND_))       deallocate(LON_BND_)
-      if(allocated(LAT_BND_))       deallocate(LAT_BND_)
-      allocate(LON_BND_ (mobs_sst+1))
-      allocate(LAT_BND_ (nobs_sst+1))
+      if(allocated(lon_bnd)) deallocate(lon_bnd)
+      if(allocated(lat_bnd)) deallocate(lat_bnd)
+
+      allocate(lon_bnd(mobs_sst+1))
+      allocate(lat_bnd(nobs_sst+1))
 
 ! ---- compute grid edges (do only once) -----
 
-      hpie = 0.5_lkind*real(pi, FMS_AMIP_INTERP_KIND_)
+      hpie = pi / 2._r8_kind
+      dlon = 4._r8_kind*hpie/real(mobs_sst, r8_kind)
+      wb = 0.0_r8_kind
 
-      dlon = 4._lkind*hpie/real(mobs_sst, FMS_AMIP_INTERP_KIND_);  wb = 0.0_lkind
-          LON_BND_ (1) = wb
+      lon_bnd(1) = wb
       do i = 2, mobs_sst+1
-          LON_BND_ (i) = wb + dlon * real(i-1, FMS_AMIP_INTERP_KIND_)
+          lon_bnd(i) = wb + dlon * real(i-1, r8_kind)
       enddo
-          LON_BND_ (mobs_sst+1) = LON_BND_ (1) + 4._lkind*hpie
+      lon_bnd(mobs_sst+1) = lon_bnd(1) + 4._r8_kind*hpie
 
-      dlat = 2._lkind*hpie/real(nobs_sst, FMS_AMIP_INTERP_KIND_);  sb = -hpie
-      LAT_BND_ (1) = sb;  LAT_BND_ (nobs_sst+1) = hpie
+      dlat = 2._r8_kind*hpie/real(nobs_sst, r8_kind)
+      sb = -hpie
+
+      lat_bnd(1) = sb
+      lat_bnd(nobs_sst+1) = hpie
       do j = 2, nobs_sst
-          LAT_BND_ (j) = sb + dlat * real(j-1, FMS_AMIP_INTERP_KIND_)
+          lat_bnd(j) = sb + dlat * real(j-1, r8_kind)
       enddo
    end subroutine SET_SST_GRID_EDGES_DAILY_
 ! end add by JHC
@@ -981,7 +791,7 @@ subroutine ZONAL_SST_ (Time, ice, sst)
 
     do j = 1, nobs
 
-        ph  = 0.5_lkind*(LAT_BND_ (j)+LAT_BND_ (j+1))
+        ph  = 0.5_lkind * real(lat_bnd(j)+lat_bnd(j+1), FMS_AMIP_INTERP_KIND_)
        sph  = sin(ph)
        sph2 = sph*sph
 

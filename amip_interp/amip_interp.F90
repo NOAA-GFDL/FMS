@@ -146,8 +146,8 @@ private
 !-----------------------------------------------------------------------
 !----------------- Public interfaces -----------------------------------
 
-public amip_interp_init, amip_interp_init_r4, amip_interp_init_r8, get_amip_sst, &
-     & get_amip_ice, amip_interp_new, amip_interp_del, amip_interp_type, assignment(=)
+public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
+     & amip_interp_del, amip_interp_type, assignment(=)
 
 !-----------------------------------------------------------------------
 !----------------- Public Data -----------------------------------
@@ -168,8 +168,7 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 #include<file_version.h>
 
 ! add by JHC
-   real(r4_kind), allocatable, dimension(:,:) :: tempamip_r4
-   real(r8_kind), allocatable, dimension(:,:) :: tempamip_r8
+   real(r8_kind), allocatable, dimension(:,:) :: tempamip
 ! end add by JHC
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -278,13 +277,6 @@ interface amip_interp_new
    module procedure amip_interp_new_2d_r4, amip_interp_new_2d_r8
 end interface
 
-!> Initialize amip_interp. To explicitly initialize the module in r4 mode or r8 mode,
-!! call either amip_interp_init_r4 or amip_interp_init_r8. amip_interp_init is an
-!! alias for amip_interp_init_r8.
-interface amip_interp_init
-  module procedure amip_interp_init_r8
-end interface
-
 !----- public data type ------
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
@@ -306,8 +298,7 @@ end type amip_interp_type
 !  ---- resolution/grid variables ----
 
    integer :: mobs, nobs
-   real(r4_kind), allocatable, dimension(:) :: lon_bnd_r4, lat_bnd_r4
-   real(r8_kind), allocatable, dimension(:) :: lon_bnd_r8, lat_bnd_r8
+   real(r8_kind), allocatable, dimension(:) :: lon_bnd, lat_bnd
 
 !  ---- global unit & date ----
 
@@ -374,6 +365,209 @@ end type amip_interp_type
 
 contains
 
+ !> initialize @ref amip_interp_mod for use
+ subroutine amip_interp_init
+   integer :: unit,io,ierr
+
+!-----------------------------------------------------------------------
+
+    call horiz_interp_init
+
+!   ---- read namelist ----
+
+    read (input_nml_file, amip_interp_nml, iostat=io)
+    ierr = check_nml_error(io,'amip_interp_nml')
+
+!  ----- write namelist/version info -----
+    call write_version_number("AMIP_INTERP_MOD", version)
+
+    unit = stdlog ( )
+    if (mpp_pe() == 0) then
+        write (unit,nml=amip_interp_nml)
+    endif
+
+    if (use_mpp_io) then
+            !! USE_MPP_IO_WARNING
+            call mpp_error ('amip_interp_mod', &
+             'MPP_IO is no longer supported.  Please remove use_mpp_io from amip_interp_nml',&
+              FATAL)
+    endif
+    if ( .not. use_ncep_sst ) interp_oi_sst = .false.
+
+!   ---- freezing point of sea water in deg K ---
+
+    tice_crit_k = tice_crit
+    if ( tice_crit_k < 200._r8_kind ) then
+      tice_crit_k = tice_crit_k + TFREEZE
+    endif
+    ice_crit = nint((tice_crit_k-TFREEZE)*100._r8_kind, I2_KIND)
+
+!   ---- set up file dependent variable ----
+!   ----   global file name   ----
+!   ----   grid box edges     ----
+!   ---- initialize zero size grid if not pe 0 ------
+
+    if (lowercase(trim(data_set)) == 'amip1') then
+        file_name_sst = 'INPUT/' // 'amip1_sst.data'
+        file_name_ice = 'INPUT/' // 'amip1_sst.data'
+        mobs = 180;  nobs = 91
+        call set_sst_grid_edges_amip1
+        if (mpp_pe() == 0) &
+        call error_mesg ('amip_interp_init', 'using AMIP 1 sst', NOTE)
+        Date_end = date_type( 1989, 1, 0 )
+    else if (lowercase(trim(data_set)) == 'amip2') then
+        file_name_sst = 'INPUT/' // 'amip2_sst.data'
+        file_name_ice = 'INPUT/' // 'amip2_ice.data'
+        mobs = 360;  nobs = 180
+        call set_sst_grid_edges_oi
+!       --- specfied min for amip2 ---
+        tice_crit_k = 271.38_r8_kind
+        if (mpp_pe() == 0) &
+        call error_mesg ('amip_interp_init', 'using AMIP 2 sst', NOTE)
+        Date_end = date_type( 1996, 3, 0 )
+    else if (lowercase(trim(data_set)) == 'hurrell') then
+        file_name_sst = 'INPUT/' // 'hurrell_sst.data'
+        file_name_ice = 'INPUT/' // 'hurrell_ice.data'
+        mobs = 360;  nobs = 180
+        call set_sst_grid_edges_oi
+!       --- specfied min for hurrell ---
+        tice_crit_k = 271.38_r8_kind
+        if (mpp_pe() == 0) &
+        call error_mesg ('amip_interp_init', 'using HURRELL sst', NOTE)
+        Date_end = date_type( 2011, 8, 16 ) ! updated by JHC
+! add by JHC
+    else if (lowercase(trim(data_set)) == 'daily') then
+        file_name_sst = 'INPUT/' // 'hurrell_sst.data'
+        file_name_ice = 'INPUT/' // 'hurrell_ice.data'
+        mobs = 360;  nobs = 180
+        call set_sst_grid_edges_oi
+        if (mpp_pe() == 0) &
+        call error_mesg ('amip_interp_init', 'using AVHRR daily sst', NOTE)
+        Date_end = date_type( 2011, 8, 16 )
+! end add by JHC
+    else if (lowercase(trim(data_set)) == 'reynolds_eof') then
+        file_name_sst = 'INPUT/' // 'reynolds_sst.data'
+        file_name_ice = 'INPUT/' // 'reynolds_sst.data'
+        mobs = 180;  nobs = 90
+        call set_sst_grid_edges_oi
+        if (mpp_pe() == 0) &
+        call error_mesg ('amip_interp_init',  &
+             'using NCEP Reynolds Historical Reconstructed SST', NOTE)
+        Date_end = date_type( 1998, 12, 0 )
+    else if (lowercase(trim(data_set)) == 'reynolds_oi') then
+        file_name_sst = 'INPUT/' // 'reyoi_sst.data'
+        file_name_ice = 'INPUT/' // 'reyoi_sst.data'
+!--- Added by SJL ----------------------------------------------
+        if ( use_ncep_sst ) then
+             mobs = i_sst;  nobs = j_sst
+            if (.not. allocated (sst_ncep)) then
+                allocate (sst_ncep(i_sst,j_sst))
+                sst_ncep(:,:) = big_number
+            endif
+            if (.not. allocated (sst_anom)) then
+                allocate (sst_anom(i_sst,j_sst))
+                sst_anom(:,:) = big_number
+            endif
+        else
+             mobs = 360;    nobs = 180
+        endif
+!--- Added by SJL ----------------------------------------------
+        call set_sst_grid_edges_oi
+        if (mpp_pe() == 0) &
+        call error_mesg ('amip_interp_init', 'using Reynolds OI SST', &
+                                                                NOTE)
+        Date_end = date_type( 1999, 1, 0 )
+    else
+        call error_mesg ('amip_interp_init', 'the value of the &
+        &namelist parameter DATA_SET being used is not allowed', FATAL)
+    endif
+
+    if (verbose > 1 .and. mpp_pe() == 0) &
+              print *, 'ice_crit,tice_crit_k=',ice_crit,tice_crit_k
+
+!  --- check existence of sst data file ??? ---
+    file_name_sst = trim(file_name_sst)//'.nc'
+    file_name_ice = trim(file_name_ice)//'.nc'
+
+    if (.not. fms2_io_file_exists(trim(file_name_sst)) ) then
+        call error_mesg ('amip_interp_init', &
+             'file '//trim(file_name_sst)//' does not exist', FATAL)
+    endif
+    if (.not. fms2_io_file_exists(trim(file_name_ice)) ) then
+        call error_mesg ('amip_interp_init', &
+             'file '//trim(file_name_ice)//' does not exist', FATAL)
+    endif
+
+    if (.not. open_file(fileobj_sst, trim(file_name_sst), 'read')) &
+        call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_sst), FATAL)
+    if (.not. open_file(fileobj_ice, trim(file_name_ice), 'read')) &
+        call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_ice), FATAL)
+    module_is_initialized = .true.
+ end subroutine amip_interp_init
+
+   subroutine set_sst_grid_edges_amip1
+   integer :: i, j
+   real(r8_kind) :: hpie, dlon, dlat, wb, sb
+
+      allocate(lon_bnd(mobs+1))
+      allocate(lat_bnd(nobs+1))
+
+! ---- compute grid edges (do only once) -----
+
+      hpie = pi / 2._r8_kind
+
+      dlon = 4._r8_kind*hpie/real(mobs, r8_kind)
+      wb = -0.5_r8_kind*dlon
+
+      do i = 1, mobs+1
+          lon_bnd(i) = wb + dlon*real(i-1, r8_kind)
+      enddo
+      lon_bnd(mobs+1) = lon_bnd(1) + 4._r8_kind*hpie
+
+      dlat = 2._r8_kind*hpie/real(nobs-1, r8_kind)
+      sb = -hpie + 0.5_r8_kind*dlat
+
+      lat_bnd(1) = -hpie
+      lat_bnd(nobs+1) = hpie
+      do j = 2, nobs
+          lat_bnd(j) = sb + dlat * real(j-2, r8_kind)
+      enddo
+   end subroutine set_sst_grid_edges_amip1
+
+   subroutine set_sst_grid_edges_oi
+   integer :: i, j
+   real(r8_kind) :: hpie, dlon, dlat, wb, sb
+
+! add by JHC
+      if(allocated(lon_bnd)) deallocate(lon_bnd)
+      if(allocated(lat_bnd)) deallocate(lat_bnd)
+! end add by JHC
+
+      allocate(lon_bnd(mobs+1))
+      allocate(lat_bnd(nobs+1))
+
+! ---- compute grid edges (do only once) -----
+
+      hpie = pi / 2._r8_kind
+      dlon = 4._r8_kind*hpie/real(mobs, r8_kind)
+      wb = 0.0_r8_kind
+
+      lon_bnd(1) = wb
+      do i = 2, mobs+1
+          lon_bnd(i) = wb + dlon * real(i-1, r8_kind)
+      enddo
+      lon_bnd(mobs+1) = lon_bnd(1) + 4._r8_kind*hpie
+
+      dlat = 2._r8_kind*hpie/real(nobs, r8_kind)
+      sb = -hpie
+
+      lat_bnd(1) = sb
+      lat_bnd(nobs+1) = hpie
+      do j = 2, nobs
+          lat_bnd(j) = sb + dlat * real(j-1, r8_kind)
+      enddo
+   end subroutine set_sst_grid_edges_oi
+
 !> Frees data associated with a amip_interp_type variable. Should be used for any
 !! variables initialized via @ref amip_interp_new.
 !> @param[inout] Interp A defined data type variable initialized by amip_interp_new and used
@@ -386,10 +580,8 @@ contains
      if(allocated(Interp%data2_r4)) deallocate(Interp%data2_r4)
      if(allocated(Interp%data2_r8)) deallocate(Interp%data2_r8)
 
-     if(allocated(lon_bnd_r4))   deallocate(lon_bnd_r4)
-     if(allocated(lon_bnd_r8))   deallocate(lon_bnd_r8)
-     if(allocated(lat_bnd_r4))   deallocate(lat_bnd_r4)
-     if(allocated(lat_bnd_r8))   deallocate(lat_bnd_r8)
+     if(allocated(lon_bnd))   deallocate(lon_bnd)
+     if(allocated(lat_bnd))   deallocate(lat_bnd)
 
      call horiz_interp_del ( Interp%Hintrp )
 
