@@ -81,7 +81,7 @@ program test_tridiagonal
     d = 1.0_kindl
     call tri_invert(x, d, a, b, c)
     ! set up reference answers
-    k = 1.0/(IN_LEN+1.0) * 2.0
+    k = 1.0_kindl/(IN_LEN+1.0_kindl) * 2.0_kindl
     allocate(ref_array(1,1,IN_LEN))
     do i=1, IN_LEN/2
       end=IN_LEN-i+1
