@@ -218,10 +218,10 @@
   end subroutine TRANLON_
 
 
-  function FRAC_INDEX_(frac_value, array)
+  function FRAC_INDEX_(rval, array)
 
     integer                               :: ia, i, ii, unit
-    real(kind=FMS_AU_KIND_)               :: frac_value !< arbitrary data...same units as elements in "array"
+    real(kind=FMS_AU_KIND_)               :: rval !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_)               :: FRAC_INDEX_
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical                               :: keep_going
@@ -232,7 +232,7 @@
        if (array(i) < array(i-1)) then
           unit = stdout()
           write (unit,*) '=> Error: "frac_index" array must be monotonically' &
-          & // 'increasing when searching for nearest value to ', frac_value
+          & // 'increasing when searching for nearest value to ', rval
           write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
@@ -242,7 +242,7 @@
        endif
     enddo
 
-    if (frac_value < array(1) .or. frac_value > array(ia)) then
+    if (rval < array(1) .or. rval > array(ia)) then
  !       if (frac_value < array(1))  frac_index = 1.
  !       if (frac_value > array(ia)) frac_index = float(ia)
         FRAC_INDEX_ = -1.0_lkind
@@ -251,8 +251,8 @@
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
-          if (frac_value <= array(i)) then
-             FRAC_INDEX_ = real((i-1), lkind) + (frac_value-array(i-1)) / (array(i) - array(i-1))
+          if (rval <= array(i)) then
+             FRAC_INDEX_ = real((i-1), lkind) + (rval-array(i-1)) / (array(i) - array(i-1))
              keep_going  = .false.
           endif
        enddo
@@ -266,7 +266,7 @@
   !!
   !!     inputs:
   !!
-  !!     near_value  = arbitrary data...same units as elements in "array"
+  !!     rval   = arbitrary data...same units as elements in "array"
   !!     array  = array of data points  (must be monotonically increasing)
   !!     ia     = dimension of "array"
   !!
@@ -298,12 +298,12 @@
 
 
 
-  function NEAREST_INDEX_(near_value, array)
+  function NEAREST_INDEX_(rval, array)
 
     integer                               :: NEAREST_INDEX_
     integer                               :: ia !< dimension of "array"
     integer                               :: i, ii, unit
-    real(kind=FMS_AU_KIND_)               :: near_value !< arbitrary data...same units as elements in "array"
+    real(kind=FMS_AU_KIND_)               :: rval !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical                               :: keep_going
 
@@ -313,7 +313,7 @@
        if (array(i) < array(i-1)) then
           unit = stdout()
           write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing' &
-                         & // 'when searching for nearest value to ', near_value
+                         & // 'when searching for nearest value to ', rval
           write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
@@ -323,17 +323,17 @@
        endif
     enddo
 
-    if (near_value < array(1) .or. near_value > array(ia)) then
-       if (near_value < array(1))  NEAREST_INDEX_ = 1
-       if (near_value > array(ia)) NEAREST_INDEX_ = ia
+    if (rval < array(1) .or. rval > array(ia)) then
+       if (rval < array(1))  NEAREST_INDEX_ = 1
+       if (rval > array(ia)) NEAREST_INDEX_ = ia
     else
        i = 1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
-          if (near_value <= array(i)) then
+          if (rval <= array(i)) then
              NEAREST_INDEX_ = i
-             if (array(i)-near_value > near_value-array(i-1)) NEAREST_INDEX_ = i-1
+             if (array(i)-rval > rval-array(i-1)) NEAREST_INDEX_ = i-1
              keep_going = .false.
           endif
        enddo
