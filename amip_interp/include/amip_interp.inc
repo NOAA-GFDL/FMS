@@ -436,7 +436,7 @@ endif
 
    type (amip_interp_type) :: Interp
 
-   if(.not.module_is_initialized) call AMIP_INTERP_INIT_
+   if(.not.module_is_initialized) call amip_interp_init
 
    Interp%use_climo  = .false.
    if (present(use_climo)) Interp%use_climo  = use_climo
@@ -474,7 +474,7 @@ endif
 
    type (amip_interp_type) :: Interp
 
-   if(.not.module_is_initialized) call AMIP_INTERP_INIT_
+   if(.not.module_is_initialized) call amip_interp_init
 
    Interp%use_climo  = .false.
    if (present(use_climo)) Interp%use_climo  = use_climo
