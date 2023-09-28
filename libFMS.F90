@@ -73,13 +73,18 @@ module fms
 
   !> amip_interp
   use amip_interp_mod, only: fms_amip_interp_init         => amip_interp_init, &
-                             fms_amip_interp_get_amip_sst => get_amip_sst, &
-                             fms_amip_interp_get_amip_ice => get_amip_ice, &
+                             fms_amip_interp_get_amip_sst             => get_amip_sst, &
+                             fms_amip_interp_get_amip_ice             => get_amip_ice, &
                              fms_amip_interp_new          => amip_interp_new, &
                              fms_amip_interp_del          => amip_interp_del, &
-                             FmsAmipInterp_type           => amip_interp_type, &
-                             assignment(=)
-
+                             FmsAmipInterp_type => amip_interp_type, &
+                             assignment(=), &
+                             fms_amip_interp_i_sst        => i_sst, &
+                             fms_amip_interp_j_sst        => j_sst, &
+                             fms_amip_interp_sst_ncep     => sst_ncep, &
+                             fms_amip_interp_sst_anom     => sst_anom, &
+                             fms_amip_interp_forecast_mode=> forecast_mode, &
+                             fms_amip_interp_use_ncep_sst => use_ncep_sst
   !> astronomy
   use astronomy_mod, only: fms_astronomy_init                   => astronomy_init, &
                            fms_astronomy_get_period             => get_period, &
