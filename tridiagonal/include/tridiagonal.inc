@@ -16,58 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!> @defgroup tridiagonal_mod tridiagonal_mod
-!> @ingroup tridiagonal
-!> @brief Solves a tridiagonal system of equations.
-!!
-!> The following schematic represents the system of equations solved,
-!! where X is the solution.
-!! <PRE>
-!!     | B(1)  A(1)   0     0                .......            0    |  |X(1)|   |D(1)|
-!!     | C(2)  B(2)  A(2)   0                .......            0    |  |X(2)|   |D(2)|
-!!     |  0    C(3)  B(3)  A(3)  0           .......            0    |  | .. |   | .. |
-!!     |  ..........................................                 |  | .. | = | .. |
-!!     |  ..........................................                 |  | .. |   | .. |
-!!     |                                  C(N-2) B(N-2) A(N-2)  0    |  | .. |   | .. |
-!!     |                                    0    C(N-1) B(N-1) A(N-1)|  | .. |   | .. |
-!!     |                                    0      0    C(N)   B(N)  |  |X(N)|   |D(N)|
-!!
-!! </PRE>
-!!  To solve this system
-!! <PRE>
-!!   call tri_invert(X,D,A,B,C)
-!!
-!!       real, intent(out), dimension(:,:,:) :: X
-!!       real, intent(in),  dimension(:,:,:) :: D
-!!       real, optional,    dimension(:,:,:) :: A,B,C
-!! </PRE>
-!! For simplicity (?), A and C are assumed to be dimensioned the same size
-!! as B, D, and X, although any input values for A(N) and C(1) are ignored.
-!! (some checks are needed here)
-!!
-!! If A is not present, it is assumed that the matrix (A,B.C) has not been changed
-!! since the last call to tri_invert.
-!!
-!! To release memory,
-!! <PRE>
-!!    call close_tridiagonal
-!! </PRE>
-!! Arguments A, B, and C are optional, and are saved as module variables
-!! if one recalls tri_invert without changing (A,B,C)
 
 !> @addtogroup tridiagonal_mod
 !> @{
-module tridiagonal_mod
-
-!--------------------------------------------------------------------------
-real,    private, allocatable, dimension(:,:,:) :: e,g,cc
-real,    private, allocatable, dimension(:,:)   :: bb
-logical, private :: init_tridiagonal = .false.
-!--------------------------------------------------------------------------
-
-contains
-
-!--------------------------------------------------------------------------
 
 !> @brief Sets up and solves the tridiagonal system of equations
 !!
@@ -76,104 +27,80 @@ contains
 !! There are no checks to make sure the sizes agree.
 !!
 !! The value of A(N) is modified on output, and B and C are unchanged.
-subroutine tri_invert(x,d,a,b,c)
+!!
+!! For mixed precision, this routine uses the kind size macro(FMS_TRID_KIND_) to determine
+!! which module variables are used/stored. This means a,b, and c values will only be stored for calls
+!! of the same real kind value unless store_both_kinds is present and .true..
+subroutine TRI_INVERT_(x,d,a,b,c, store_both_kinds)
 
-implicit none
+    real(FMS_TRID_KIND_), intent(out), dimension(:,:,:) :: x !< Solution to the tridiagonal system of equations
+    real(FMS_TRID_KIND_), intent(in),  dimension(:,:,:) :: d !< The right-hand side term, see the schematic above.
+    real(FMS_TRID_KIND_), optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schematic on module page).
+                                                !! If not provided, values from last call are used
+    logical, optional                                   :: store_both_kinds !< Will save module state
+                                                         !! variables for both kind types in order to be used in
+                                                         !! subsequent calls with either kind.
 
-real, intent(out), dimension(:,:,:) :: x !< Solution to the tridiagonal system of equations
-real, intent(in),  dimension(:,:,:) :: d !< The right-hand side term, see the schematic above.
-real, optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schematic above).
-                                             !! If not provided, values from last call are used
+    real(FMS_TRID_KIND_), dimension(size(x,1),size(x,2),size(x,3)) :: f
+    integer, parameter :: kindl = FMS_TRID_KIND_
 
-real, dimension(size(x,1),size(x,2),size(x,3)) :: f
-integer :: k
+    integer :: k
 
-if(present(a)) then
+    if(present(a)) then
+        !$OMP SINGLE
+        INIT_VAR = .true.
+        if(allocated(TRID_REAL_TYPE%e))     deallocate(TRID_REAL_TYPE%e)
+        if(allocated(TRID_REAL_TYPE%g))     deallocate(TRID_REAL_TYPE%g)
+        if(allocated(TRID_REAL_TYPE%bb))    deallocate(TRID_REAL_TYPE%bb)
+        if(allocated(TRID_REAL_TYPE%cc))    deallocate(TRID_REAL_TYPE%cc)
+        allocate(TRID_REAL_TYPE%e (size(x,1),size(x,2),size(x,3)))
+        allocate(TRID_REAL_TYPE%g (size(x,1),size(x,2),size(x,3)))
+        allocate(TRID_REAL_TYPE%bb(size(x,1),size(x,2)))
+        allocate(TRID_REAL_TYPE%cc(size(x,1),size(x,2),size(x,3)))
+        !$OMP END SINGLE
 
-  !< Check if module variables are allocated
-  !$OMP SINGLE
-  init_tridiagonal = .true.
-  if(allocated(e))     deallocate(e)
-  if(allocated(g))     deallocate(g)
-  if(allocated(bb))    deallocate(bb)
-  if(allocated(cc))    deallocate(cc)
-  allocate(e (size(x,1),size(x,2),size(x,3)))
-  allocate(g (size(x,1),size(x,2),size(x,3)))
-  allocate(bb(size(x,1),size(x,2)))
-  allocate(cc(size(x,1),size(x,2),size(x,3)))
-  !$OMP END SINGLE !< There is an implicit barrier.
+        TRID_REAL_TYPE%e(:,:,1) = - a(:,:,1) / b(:,:,1)
+        a(:,:,size(x,3)) = 0.0_kindl
 
-  e(:,:,1) = - a(:,:,1)/b(:,:,1)
-  a(:,:,size(x,3)) = 0.0
+        do  k= 2,size(x,3)
+            TRID_REAL_TYPE%g(:,:,k) = 1.0_kindl/(b(:,:,k)+c(:,:,k)*TRID_REAL_TYPE%e(:,:,k-1))
+            TRID_REAL_TYPE%e(:,:,k) = - a(:,:,k)* TRID_REAL_TYPE%g(:,:,k)
+        end do
+        TRID_REAL_TYPE%cc = c
+        TRID_REAL_TYPE%bb = 1.0_kindl/b(:,:,1)
 
-  do  k= 2,size(x,3)
-    g(:,:,k) = 1.0/(b(:,:,k)+c(:,:,k)*e(:,:,k-1))
-    e(:,:,k) = - a(:,:,k)*g(:,:,k)
-  end do
-  cc = c
-  bb = 1.0/b(:,:,1)
+    end if
 
-end if
+    if(.not.INIT_VAR) call mpp_error(FATAL, 'tri_invert: a,b,and c args not provided or previously calculated.')
 
-! if(.not.init_tridiagonal) error
+    f(:,:,1) =  d(:,:,1)*TRID_REAL_TYPE%bb
+    do k= 2, size(x,3)
+        f(:,:,k) = (d(:,:,k) - TRID_REAL_TYPE%cc(:,:,k)*f(:,:,k-1))*TRID_REAL_TYPE%g(:,:,k)
+    end do
 
-f(:,:,1) =  d(:,:,1)*bb
-do k= 2, size(x,3)
-  f(:,:,k) = (d(:,:,k) - cc(:,:,k)*f(:,:,k-1))*g(:,:,k)
-end do
+    x(:,:,size(x,3)) = f(:,:,size(x,3))
+    do k = size(x,3)-1,1,-1
+        x(:,:,k) = TRID_REAL_TYPE%e(:,:,k)*x(:,:,k+1)+f(:,:,k)
+    end do
 
-x(:,:,size(x,3)) = f(:,:,size(x,3))
-do k = size(x,3)-1,1,-1
-  x(:,:,k) = e(:,:,k)*x(:,:,k+1)+f(:,:,k)
-end do
+    ! stores both kind values for subsequent calculations if running with option
+    if( present(store_both_kinds)) then
+      if( store_both_kinds ) then
+        if( FMS_TRID_KIND_ .eq. r8_kind) then
+          tridiag_r4%e = real(TRID_REAL_TYPE%e, r4_kind)
+          tridiag_r4%g = real(TRID_REAL_TYPE%g, r4_kind)
+          tridiag_r4%cc = real(TRID_REAL_TYPE%cc, r4_kind)
+          tridiag_r4%bb = real(TRID_REAL_TYPE%bb, r4_kind)
+          init_tridiagonal_r4 = .true.
+        else
+          tridiag_r8%e = real(TRID_REAL_TYPE%e, r8_kind)
+          tridiag_r8%g = real(TRID_REAL_TYPE%g, r8_kind)
+          tridiag_r8%cc = real(TRID_REAL_TYPE%cc, r8_kind)
+          tridiag_r8%bb = real(TRID_REAL_TYPE%bb, r8_kind)
+          init_tridiagonal_r8 = .true.
+        endif
+      endif
+    endif
 
-return
-end subroutine tri_invert
-
-!-----------------------------------------------------------------
-
-!> @brief Releases memory used by the solver
-subroutine close_tridiagonal
-
-  implicit none
-
-  !< Check if module variables are allocated
-  !$OMP SINGLE
-  if(allocated(e)) deallocate(e)
-  if(allocated(g)) deallocate(g)
-  if(allocated(bb)) deallocate(bb)
-  if(allocated(cc)) deallocate(cc)
-  !$OMP END SINGLE !< There is an implicit barrier.
-
-return
-end subroutine close_tridiagonal
-
-!----------------------------------------------------------------
-
-end module tridiagonal_mod
-
-! <INFO>
-
-!   <BUG>
-!     Optional arguments A,B,C have no intent declaration,
-!     so the default intent is inout. The value of A(N) is modified
-!     on output, and B and C are unchanged.
-!   </BUG>
-!   <NOTE>
-!       The following private allocatable arrays save the relevant information
-!  if one recalls tri_invert without changing (A,B,C):
-!  <PRE>
-!        allocate ( e  (size(x,1), size(x,2), size(x,3)) )
-!        allocate ( g  (size(x,1), size(x,2), size(x,3)) )
-!        allocate ( cc (size(x,1), size(x,2), size(x,3)) )
-!        allocate ( bb (size(x,1), size(x,2)) )
-! </PRE>
-!  This storage is deallocated when close_tridiagonal is called.
-!   </NOTE>
-!   <FUTURE>
-!     Maybe a cleaner version?
-!   </FUTURE>
-
-! </INFO>
-!> @}
-! close documentation grouping
+    return
+end subroutine TRI_INVERT_
