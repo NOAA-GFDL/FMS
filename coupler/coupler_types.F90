@@ -2738,7 +2738,7 @@ contains
   !! @throw FATAL, "axes has less than 2 elements"
   subroutine CT_set_diags_2d(var, diag_name, axes, time)
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+    character(len=*),         intent(in)    :: diag_name !< Module name for diagnostic file--if blank, then
                                                          !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
@@ -2786,7 +2786,7 @@ contains
   !! @throw FATAL, "axes has less than 3 elements"
   subroutine CT_set_diags_3d(var, diag_name, axes, time)
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure for which to register diagnostics
-    character(len=*),         intent(in)    :: diag_name !< name for diagnostic file--if blank, then
+    character(len=*),         intent(in)    :: diag_name !< Module name for diagnostic file--if blank, then
                                                          !! don't register the fields
     integer, dimension(:),    intent(in)    :: axes !< array of axes identifiers for diagnostic variable registration
     type(time_type),          intent(in)    :: time !< model time variable for registering diagnostic field
@@ -3564,8 +3564,6 @@ contains
     character(len=3),         intent(in)    :: gridname !< 3-character long model grid ID
     type(coupler_2d_bc_type), intent(inout) :: var  !< BC_type structure to override
     type(time_type),          intent(in)    :: time !< The current model time
-    !! TODO remove this when data_override is merged in
-    real(r8_kind), allocatable :: r8_field_values(:,:)
     integer :: m, n
 
     if(var%set .and. var%num_bcs .gt. 0) then
@@ -3582,10 +3580,7 @@ contains
     else if(associated(var%bc_r4)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
-          !! this should be removed when data override is updated
-          r8_field_values = real(var%bc_r4(n)%field(m)%values, r8_kind)
-          call data_override(gridname, var%bc_r4(n)%field(m)%name, r8_field_values, Time)
-          var%bc_r4(n)%field(m)%values = real(r8_field_values, r4_kind)
+          call data_override(gridname, var%bc_r4(n)%field(m)%name, var%bc_r4(n)%field(m)%values, Time)
         enddo
       enddo
     else
@@ -3598,8 +3593,6 @@ contains
     character(len=3),         intent(in)    :: gridname !< 3-character long model grid ID
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to override
     type(time_type),          intent(in)    :: time !< The current model time
-    !! TODO remove this when data_override is merged in
-    real(r8_kind), allocatable :: r8_field_values(:,:,:)
 
     integer :: m, n
 
@@ -3617,10 +3610,7 @@ contains
     else if(associated(var%bc_r4)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
-          !! this should be removed when data override is updated
-          r8_field_values = real(var%bc_r4(n)%field(m)%values, r8_kind)
-          call data_override(gridname, var%bc_r4(n)%field(m)%name, r8_field_values, Time)
-          var%bc_r4(n)%field(m)%values = real(r8_field_values, r4_kind)
+          call data_override(gridname, var%bc_r4(n)%field(m)%name, var%bc_r4(n)%field(m)%values, Time)
         enddo
       enddo
     else
