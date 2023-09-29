@@ -84,7 +84,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & prepend_attribute, attribute_init, diag_util_init,&
        & update_bounds, check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & fms_diag_check_out_of_bounds, &
-       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static
+       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static, get_file_start_time
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
@@ -2753,6 +2753,12 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
   END SUBROUTINE prepend_attribute_file
 
+  subroutine get_file_start_time(file_num, start_time)
+   integer, intent(in) :: file_num
+   TYPE(time_type), intent(out) :: start_time
+
+   start_time = files(file_num)%start_time
+  end subroutine
 END MODULE diag_util_mod
 !> @}
 ! close documentation grouping
