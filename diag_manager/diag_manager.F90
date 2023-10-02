@@ -445,7 +445,7 @@ CONTAINS
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
-    TYPE(time_type) :: init_time2
+    TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -579,10 +579,10 @@ CONTAINS
           END IF
 
           freq = files(file_num)%output_freq
-          call get_file_start_time(file_num, init_time2)
+          diag_file_init_time = get_file_start_time(file_num)
           output_units = files(file_num)%output_units
-          output_fields(ind)%last_output = init_time2
-          output_fields(ind)%next_output = diag_time_inc(init_time2, freq, output_units, err_msg=msg)
+          output_fields(ind)%last_output = diag_file_init_time
+          output_fields(ind)%next_output = diag_time_inc(diag_file_init_time, freq, output_units, err_msg=msg)
           IF ( msg /= '' ) THEN
              IF ( fms_error_handler('diag_manager_mod::register_diag_field',&
                   & ' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg)) RETURN

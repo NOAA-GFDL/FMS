@@ -2753,12 +2753,16 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
   END SUBROUTINE prepend_attribute_file
 
-  subroutine get_file_start_time(file_num, start_time)
-   integer, intent(in) :: file_num
-   TYPE(time_type), intent(out) :: start_time
+  !> @brief Get the a diag_file's start_time as it is defined in the diag_table
+  !! @return the start_time for the file
+  function get_file_start_time(file_num) &
+   result (start_time)
+   integer,         intent(in)  :: file_num   !< File number of the file to get the start_time from
+
+   TYPE(time_type) :: start_time !< The start_time to return
 
    start_time = files(file_num)%start_time
-  end subroutine
+  end function get_file_start_time
 END MODULE diag_util_mod
 !> @}
 ! close documentation grouping
