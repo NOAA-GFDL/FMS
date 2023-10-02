@@ -103,11 +103,7 @@ real(FMS_DATA_OVERRIDE_KIND_) :: min_glo_lon_lnd, max_glo_lon_lnd
 real(FMS_DATA_OVERRIDE_KIND_) :: min_glo_lon_ice, max_glo_lon_ice
 integer :: num_fields = 0 !< number of fields in override_array already processed
 
-#ifdef use_yaml
 type(data_type), dimension(:), allocatable :: data_table !< user-provided data table
-#else
-type(data_type), dimension(max_table)      :: data_table !< user-provided data table
-#endif
 
 type(data_type)                            :: default_table
 type(override_type), dimension(max_array)  :: override_array !< to store processed fields
@@ -118,8 +114,9 @@ logical                                    :: reproduce_null_char_bug = .false. 
                                               !! to reproduce the mpp_io bug where lat/lon_bnd were
                                               !! not read correctly if null characters are present in
                                               !! the netcdf file
+logical					   :: use_yaml = .false.
 
-namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug
+namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_yaml
 
 public :: DATA_OVERRIDE_INIT_IMPL_, DATA_OVERRIDE_UNSET_ATM_, DATA_OVERRIDE_UNSET_OCN_, &
         & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_, &
@@ -166,6 +163,14 @@ if (grid_center_bug) then
      "that is no longer supported. Please remove this namelist variable.")
 endif
 
+if (use_yaml) then
+   call mpp_error(NOTE, "You are using YAML.")
+   return
+else
+   call mpp_error(NOTE, "You are using the legacy table.")
+   return
+end if
+
   atm_on = PRESENT(Atm_domain_in)
   ocn_on = PRESENT(Ocean_domain_in)
   lnd_on = PRESENT(Land_domain_in)
@@ -199,10 +204,11 @@ endif
 #ifdef use_yaml
     call read_table_yaml(data_table)
 #else
-    do i = 1,max_table
-       data_table(i) = default_table
-    enddo
-    call read_table(data_table)
+    if (use_yaml) then
+       call mpp_error(FATAL, "compilation error, need to compile with `-Duse_yaml`")       
+    else
+       allocate(data_table(max_table))
+    end if
 #endif
 
 !  Initialize override array
