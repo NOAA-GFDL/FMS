@@ -31,6 +31,7 @@ program test_time_manager
  use time_manager_mod, only: operator(-), operator(+),  operator(*),  operator(/),  &
                              operator(>), operator(>=), operator(==), operator(/=), &
                              operator(<), operator(<=), operator(//), assignment(=)
+ use platform_mod, only: r4_kind, r8_kind
 
  implicit none
 
@@ -598,12 +599,19 @@ program test_time_manager
 
   if(test19) then
     write(outunit,'(/,a)') '#################################  test19  #################################'
-    call print_time(real_to_time_type(86401.1), 'real_to_time_type(86401.1):', unit=outunit)
-    Time = real_to_time_type(-1.0, err_msg)
+    call print_time(real_to_time_type(86401.1_r8_kind), 'real_to_time_type(86401.1):', unit=outunit)
+    Time = real_to_time_type(-1.0_r8_kind, err_msg)
     if(err_msg == '') then
-       call mpp_error(FATAL, 'test19.3 fails: did not get the expected error message')
+       call mpp_error(FATAL, 'test19.3 fails: did not get the expected error message for r8')
     else
-      write(outunit,'(a)') 'test successful: '//trim(err_msg)
+      write(outunit,'(a)') 'r8 test successful: '//trim(err_msg)
+    endif
+    call print_time(real_to_time_type(86401.1_r4_kind), 'real_to_time_type(86401.1):', unit=outunit)
+    Time = real_to_time_type(-1.0_r4_kind, err_msg)
+    if(err_msg == '') then
+       call mpp_error(FATAL, 'test19.3 fails: did not get the expected error message for r4')
+    else
+      write(outunit,'(a)') 'r4 test successful: '//trim(err_msg)
     endif
   endif
  !==============================================================================================

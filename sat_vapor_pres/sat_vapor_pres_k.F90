@@ -48,7 +48,7 @@
 ! benefit and could be done as a second step anyway, if necessary.
 
  use fms_mod, only: error_mesg, FATAL
- use platform_mod, only: r4_kind, r8_kind
+ use platform_mod, only : r4_kind, r8_kind
 
  implicit none
  private

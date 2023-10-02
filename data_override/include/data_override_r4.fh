@@ -1,0 +1,65 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+#undef FMS_DATA_OVERRIDE_KIND_
+#define FMS_DATA_OVERRIDE_KIND_ r4_kind
+
+#undef DATA_OVERRIDE_INIT_IMPL_
+#define DATA_OVERRIDE_INIT_IMPL_ data_override_init_r4
+
+#undef DATA_OVERRIDE_UNSET_ATM_
+#define DATA_OVERRIDE_UNSET_ATM_ data_override_unset_atm_r4
+
+#undef DATA_OVERRIDE_UNSET_OCN_
+#define DATA_OVERRIDE_UNSET_OCN_ data_override_unset_ocn_r4
+
+#undef DATA_OVERRIDE_UNSET_LND_
+#define DATA_OVERRIDE_UNSET_LND_ data_override_unset_lnd_r4
+
+#undef DATA_OVERRIDE_UNSET_ICE_
+#define DATA_OVERRIDE_UNSET_ICE_ data_override_unset_ice_r4
+
+#undef DATA_OVERRIDE_0D_
+#define DATA_OVERRIDE_0D_ data_override_0d_r4
+
+#undef DATA_OVERRIDE_2D_
+#define DATA_OVERRIDE_2D_ data_override_2d_r4
+
+#undef DATA_OVERRIDE_3D_
+#define DATA_OVERRIDE_3D_ data_override_3d_r4
+
+#undef DATA_OVERRIDE_UG_1D_
+#define DATA_OVERRIDE_UG_1D_ data_override_ug_1d_r4
+
+#undef DATA_OVERRIDE_UG_2D_
+#define DATA_OVERRIDE_UG_2D_ data_override_ug_2d_r4
+
+#include "data_override.inc"
+
+#undef FMS_DATA_OVERRIDE_KIND_
+#undef DATA_OVERRIDE_INIT_IMPL_
+#undef DATA_OVERRIDE_UNSET_ATM_
+#undef DATA_OVERRIDE_UNSET_OCN_
+#undef DATA_OVERRIDE_UNSET_LND_
+#undef DATA_OVERRIDE_UNSET_ICE_
+#undef DATA_OVERRIDE_0D_
+#undef DATA_OVERRIDE_2D_
+#undef DATA_OVERRIDE_3D_
+#undef DATA_OVERRIDE_UG_1D_
+#undef DATA_OVERRIDE_UG_2D_

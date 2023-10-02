@@ -16,6 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+
 !> @defgroup random_numbers_mod random_numbers_mod
 !> @ingroup random_numbers
 !> @brief Generic module to wrap random number generators.
@@ -30,6 +31,8 @@ module random_numbers_mod
   use MersenneTwister_mod, only: randomNumberSequence, & ! The random number engine.
                                  new_RandomNumberSequence, getRandomReal
   use time_manager_mod, only: time_type, get_date
+  use platform_mod, only: r4_kind, r8_kind
+
   implicit none
   private
 
@@ -45,7 +48,9 @@ module random_numbers_mod
   !> @param[out] number output number(s)
   !> @ingroup random_numbers_mod
   interface getRandomNumbers
-    module procedure getRandomNumber_Scalar, getRandomNumber_1D, getRandomNumber_2D
+    module procedure :: get_random_number_0d_r4, get_random_number_0d_r8
+    module procedure :: get_random_number_1d_r4, get_random_number_1d_r8
+    module procedure :: get_random_number_2d_r4, get_random_number_2d_r8
   end interface getRandomNumbers
 
   !> Initializes stream for generating random numbers.
@@ -57,10 +62,12 @@ module random_numbers_mod
   public :: randomNumberStream,                             &
             initializeRandomNumberStream, getRandomNumbers, &
             constructSeed
+
 !> @addtogroup random_numbers_mod
 !> @{
+
 contains
-  ! ---------------------------------------------------------
+
   !> Initialization
   function initializeRandomNumberStream_S(seed) result(new)
     integer, intent( in)     :: seed
@@ -69,49 +76,14 @@ contains
     new%theNumbers = new_RandomNumberSequence(seed)
 
   end function initializeRandomNumberStream_S
-  ! ---------------------------------------------------------
+
   function initializeRandomNumberStream_V(seed) result(new)
     integer, dimension(:), intent( in) :: seed
     type(randomNumberStream)           :: new
 
     new%theNumbers = new_RandomNumberSequence(seed)
-
   end function initializeRandomNumberStream_V
-  ! ---------------------------------------------------------
-  !> Draws random scalar
-  subroutine getRandomNumber_Scalar(stream, number)
-    type(randomNumberStream), intent(inout) :: stream
-    real,                     intent(  out) :: number
 
-    number = real(getRandomReal(stream%theNumbers))
-  end subroutine getRandomNumber_Scalar
-  ! ---------------------------------------------------------
-  !> Draws random 1D array
-  subroutine getRandomNumber_1D(stream, numbers)
-    type(randomNumberStream), intent(inout) :: stream
-    real, dimension(:),       intent(  out) :: numbers
-
-    ! Local variables
-    integer :: i
-
-    do i = 1, size(numbers)
-      numbers(i) = real(getRandomReal(stream%theNumbers))
-    end do
-  end subroutine getRandomNumber_1D
-  ! ---------------------------------------------------------
-  !> Draws random 2D array
-  subroutine getRandomNumber_2D(stream, numbers)
-    type(randomNumberStream), intent(inout) :: stream
-    real, dimension(:, :),    intent(  out) :: numbers
-
-    ! Local variables
-    integer :: i
-
-    do i = 1, size(numbers, 2)
-      call getRandomNumber_1D(stream, numbers(:, i))
-    end do
-  end subroutine getRandomNumber_2D
-  ! ---------------------------------------------------------
   !> Constructs a unique seed from grid cell index and model date/time
   !!   The perm is supplied we generate a different seed by
   !!   circularly shifting the bits of the seed - this is useful
@@ -133,6 +105,11 @@ contains
     seed = (/ i, j, year, month, day, hour, minute, second /)
     if(present(perm)) seed = ishftc(seed, perm)
   end function constructSeed
+
+#include "random_numbers_r4.fh"
+#include "random_numbers_r8.fh"
+
 end module random_numbers_mod
+
 !> @}
 ! close documentation grouping
