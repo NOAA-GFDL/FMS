@@ -32,7 +32,7 @@ use netcdf
 use mpp_mod
 use fms_io_utils_mod
 use platform_mod
-use mpi, only: MPI_COMM_WORLD, MPI_INFO_NULL
+use mpi, only: MPI_INFO_NULL
 implicit none
 private
 
@@ -651,7 +651,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
          string_compare(trim(fileobj%path), "INPUT/C3463_grid.tile7.nc"      , .true.) .or. &
          string_compare(trim(fileobj%path), "INPUT/C3463_grid.tile7.halo3.nc", .true.) .or. &
          string_compare(trim(fileobj%path), "INPUT/fv_core.res.tile1.nc"  , .true.) ) then
-        err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=MPI_COMM_WORLD, info=MPI_INFO_NULL)
+        err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=mpp_comm_private, info=MPI_INFO_NULL)
       else
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
       endif
