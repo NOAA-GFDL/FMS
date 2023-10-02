@@ -1,0 +1,107 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @defgroup astronomy_mod astronomy_mod
+!> @ingroup astronomy
+!> @brief Provides astronomical variables for use
+!!        by other modules within fms. The only currently used interface is
+!!        for determination of astronomical values needed by the shortwave
+!!        radiation packages.
+!> @author Fei Liu
+
+!> @addtogroup astronomy_mod
+!> @{
+
+#undef FMS_AST_KIND_
+#define FMS_AST_KIND_ r4_kind
+
+#undef SET_ORBITAL_PARAMETERS_
+#define SET_ORBITAL_PARAMETERS_ set_orbital_parameters_r4
+
+#undef GET_ORBITAL_PARAMETERS_
+#define GET_ORBITAL_PARAMETERS_ get_orbital_parameters_r4
+
+#undef DIURNAL_SOLAR_2D_
+#define DIURNAL_SOLAR_2D_ diurnal_solar_2d_r4
+
+#undef DIURNAL_SOLAR_1D_
+#define DIURNAL_SOLAR_1D_ diurnal_solar_1d_r4
+
+#undef DIURNAL_SOLAR_0D_
+#define DIURNAL_SOLAR_0D_ diurnal_solar_0d_r4
+
+#undef DIURNAL_SOLAR_CAL_2D_
+#define DIURNAL_SOLAR_CAL_2D_ diurnal_solar_cal_2d_r4
+
+#undef DIURNAL_SOLAR_CAL_1D_
+#define DIURNAL_SOLAR_CAL_1D_ diurnal_solar_cal_1d_r4
+
+#undef DIURNAL_SOLAR_CAL_0D_
+#define DIURNAL_SOLAR_CAL_0D_ diurnal_solar_cal_0d_r4
+
+#undef DAILY_MEAN_SOLAR_2D_
+#define DAILY_MEAN_SOLAR_2D_ daily_mean_solar_2d_r4
+
+#undef DAILY_MEAN_SOLAR_1D_
+#define DAILY_MEAN_SOLAR_1D_ daily_mean_solar_1d_r4
+
+#undef DAILY_MEAN_SOLAR_2LEVEL_
+#define DAILY_MEAN_SOLAR_2LEVEL_ daily_mean_solar_2level_r4
+
+#undef DAILY_MEAN_SOLAR_0D_
+#define DAILY_MEAN_SOLAR_0D_ daily_mean_solar_0d_r4
+
+#undef DAILY_MEAN_SOLAR_CAL_2D_
+#define DAILY_MEAN_SOLAR_CAL_2D_ daily_mean_solar_cal_2d_r4
+
+#undef DAILY_MEAN_SOLAR_CAL_1D_
+#define DAILY_MEAN_SOLAR_CAL_1D_ daily_mean_solar_cal_1d_r4
+
+#undef DAILY_MEAN_SOLAR_CAL_2LEVEL_
+#define DAILY_MEAN_SOLAR_CAL_2LEVEL_ daily_mean_solar_cal_2level_r4
+
+#undef DAILY_MEAN_SOLAR_CAL_0D_
+#define DAILY_MEAN_SOLAR_CAL_0D_ daily_mean_solar_cal_0d_r4
+
+#undef ANNUAL_MEAN_SOLAR_2D_
+#define ANNUAL_MEAN_SOLAR_2D_ annual_mean_solar_2d_r4
+
+#undef ANNUAL_MEAN_SOLAR_1D_
+#define ANNUAL_MEAN_SOLAR_1D_ annual_mean_solar_1d_r4
+
+#undef ANNUAL_MEAN_SOLAR_2LEVEL_
+#define ANNUAL_MEAN_SOLAR_2LEVEL_ annual_mean_solar_2level_r4
+
+#undef R_INV_SQUARED_
+#define R_INV_SQUARED_ r_inv_squared_r4
+
+#undef ANGLE_
+#define ANGLE_ angle_r4
+
+#undef DECLINATION_
+#define DECLINATION_ declination_r4
+
+#undef HALF_DAY_2D_
+#define HALF_DAY_2D_ half_day_2d_r4
+
+#undef HALF_DAY_0D_
+#define HALF_DAY_0D_ half_day_0d_r4
+
+#include "astronomy.inc"
+!> @}
+! close documentation grouping
