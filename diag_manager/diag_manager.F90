@@ -1917,7 +1917,6 @@ CONTAINS
        if (present(time)) then
          !! If the last_output is greater than the time passed in, it is not time to start averaging the data
          if (output_fields(out_num)%last_output > time) CYCLE
-         endif
        endif
 
        IF ( .NOT.output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
