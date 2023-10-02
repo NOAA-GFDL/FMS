@@ -165,10 +165,8 @@ endif
 
 if (use_yaml) then
    call mpp_error(NOTE, "You are using YAML.")
-   return
 else
    call mpp_error(NOTE, "You are using the legacy table.")
-   return
 end if
 
   atm_on = PRESENT(Atm_domain_in)
