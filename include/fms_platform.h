@@ -70,8 +70,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 !DEC$ MESSAGE:'Using allocatable derived type array members.'
 #endif
 
-
-!Control use of cray pointers.
+!Control use of cray pointers within mpp_peset
+!Other cray pointer usage in mpp routines is compiled regardless
 #ifdef NO_CRAY_POINTERS
 #undef use_CRI_pointers
 !DEC$ MESSAGE:'Not using cray pointers.'
@@ -81,39 +81,8 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #endif
 
 
-!Control size of integers that will hold address values.
-!Appears for legacy reasons, but seems rather dangerous.
-#ifdef _32bits
-#define POINTER_KIND 4
-!DEC$ MESSAGE:'Using 4-byte addressing'
-#endif
-
-
-!If you do not want to use 64-bit integers.
-#ifdef no_8byte_integers
-#define LONG_KIND INT_KIND
-#endif
-
-
-!If you do not want to use 32-bit floats.
-#ifdef no_4byte_reals
-#define FLOAT_KIND DOUBLE_KIND
-#define NF_GET_VAR_REAL nf_get_var_double
-#define NF_GET_VARA_REAL nf_get_vara_double
-#define NF_GET_ATT_REAL nf_get_att_double
-#undef OVERLOAD_R4
-#undef OVERLOAD_C4
-#endif
-
-
 !If you want to use quad-precision.
-! The NO_QUAD_PRECISION macro will be deprecated and removed at some future time.
-! Model code will rely solely upon the ENABLE_QUAD_PRECISION macro thereafer.
-#if defined(ENABLE_QUAD_PRECISION)
-#undef NO_QUAD_PRECISION
-#else
-#define NO_QUAD_PRECISION
-#undef QUAD_KIND
+#ifndef ENABLE_QUAD_PRECISION
 #define QUAD_KIND DOUBLE_KIND
 #endif
 
