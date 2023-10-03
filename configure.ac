@@ -278,6 +278,8 @@ fi
 if test $enable_deprecated_io = yes; then
   #If the test pass, define use_deprecated_io macro and skip it's unit tests
   AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
+  # this macro was only removed from non-deprecated code so still needs to be set
+  AC_DEFINE([use_netCDF], [1], [This has been removed elsewhere but is still required to build with deprecated io])
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
 else
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
@@ -294,7 +296,7 @@ if test $enable_setting_flags = yes; then
   # necessary fortran flags.
   AC_FC_LINE_LENGTH([unlimited])
 
-  # Always build with r8_kind default  
+  # Always build with r8_kind default
   GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
     FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
 
