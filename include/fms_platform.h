@@ -61,16 +61,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #define LONG_KIND INT_KIND
 #endif
 
-!If you do not want to use 32-bit floats.
-#ifdef no_4byte_reals
-#define FLOAT_KIND DOUBLE_KIND
-#define NF_GET_VAR_REAL nf_get_var_double
-#define NF_GET_VARA_REAL nf_get_vara_double
-#define NF_GET_ATT_REAL nf_get_att_double
-#undef OVERLOAD_R4
-#undef OVERLOAD_C4
-#endif
-
 !If you want to use quad-precision.
 #ifndef ENABLE_QUAD_PRECISION
 #define QUAD_KIND DOUBLE_KIND
