@@ -46,30 +46,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 !DEC$ MESSAGE:'Using 8-byte addressing'
 #endif
 
-
-!Control "pure" functions.
-#ifdef NO_F95
-#define _PURE
-!DEC$ MESSAGE:'Not using pure routines.'
-#else
-#define _PURE pure
-!DEC$ MESSAGE:'Using pure routines.'
-#endif
-
-
-!Control array members of derived types.
-#ifdef NO_F2000
-#define _ALLOCATABLE pointer
-#define _NULL =>null()
-#define _ALLOCATED associated
-!DEC$ MESSAGE:'Using pointer derived type array members.'
-#else
-#define _ALLOCATABLE allocatable
-#define _NULL
-#define _ALLOCATED allocated
-!DEC$ MESSAGE:'Using allocatable derived type array members.'
-#endif
-
 !Control use of cray pointers within mpp_peset
 !Other cray pointer usage in mpp routines is compiled regardless
 #ifdef NO_CRAY_POINTERS
@@ -80,6 +56,20 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 !DEC$ MESSAGE:'Using cray pointers.'
 #endif
 
+ !If you do not want to use 64-bit integers.
+#ifdef no_8byte_integers
+#define LONG_KIND INT_KIND
+#endif
+
+!If you do not want to use 32-bit floats.
+#ifdef no_4byte_reals
+#define FLOAT_KIND DOUBLE_KIND
+#define NF_GET_VAR_REAL nf_get_var_double
+#define NF_GET_VARA_REAL nf_get_vara_double
+#define NF_GET_ATT_REAL nf_get_att_double
+#undef OVERLOAD_R4
+#undef OVERLOAD_C4
+#endif
 
 !If you want to use quad-precision.
 #ifndef ENABLE_QUAD_PRECISION
