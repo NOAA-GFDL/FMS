@@ -206,6 +206,10 @@ end if
        call mpp_error(FATAL, "compilation error, need to compile with `-Duse_yaml`")       
     else
        allocate(data_table(max_table))
+       do i = 1, max_table
+          data_table(i) = default_table
+       enddo
+       call read_table(data_table)
     end if
 #endif
 
