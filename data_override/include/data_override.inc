@@ -114,9 +114,9 @@ logical                                    :: reproduce_null_char_bug = .false. 
                                               !! to reproduce the mpp_io bug where lat/lon_bnd were
                                               !! not read correctly if null characters are present in
                                               !! the netcdf file
-logical					   :: use_yaml = .false.
+logical					   :: use_data_table_yaml = .false.
 
-namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_yaml
+namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_data_table_yaml
 
 public :: DATA_OVERRIDE_INIT_IMPL_, DATA_OVERRIDE_UNSET_ATM_, DATA_OVERRIDE_UNSET_OCN_, &
         & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_, &
@@ -202,7 +202,7 @@ end if
 #ifdef use_yaml
     call read_table_yaml(data_table)
 #else
-    if (use_yaml) then
+    if (use_data_table_yaml) then
        call mpp_error(FATAL, "compilation error, need to compile with `-Duse_yaml`")       
     else
        allocate(data_table(max_table))
