@@ -115,16 +115,14 @@ _EOF
   rm -rf INPUT *.nc # remove any leftover files to reduce size
 fi
 
-data_override_init
+done
 
 cat <<_EOF > data_table
-"ICE", :sst_obs", "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+"ICE", "sst_obs", "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
 _EOF
 
-test _expect_success "data_override_init with the default table"'
-mpirun -n 1 ./test_data_override_init
+test_expect_success "data_override_init with the default table"'
+ mpirun -n 1 ./test_data_override_init
 '
-
-done
 
 test_done
