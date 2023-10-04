@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,26 +19,33 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the amip_interp directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/time_manager directory.
 
-# Ed Hartnett 2/22/19
+# Ryan Mulhall 9/2023
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/amip_interp/include
-AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
+# Set common test settings.
+. ../test-lib.sh
 
-# Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libamip_interp.la
+rm -f input.nml && touch input.nml
 
-# The convenience library depends on its source.
-libamip_interp_la_SOURCES = \
-  amip_interp.F90 \
-  include/amip_interp.inc \
-  include/amip_interp_r4.fh \
-  include/amip_interp_r8.fh
+test_expect_success "test tridiagonal functionality 32 bit reals" '
+    mpirun -n 1 ./test_tridiagonal_r4
+'
+test_expect_success "test tridiagonal functionality 64 bit reals" '
+    mpirun -n 1 ./test_tridiagonal_r8
+'
+# tries to call without a,b,c args provided or previously set
+cat <<_EOF > input.nml
+&test_tridiagonal_nml
+do_error_check = .true.
+/
+_EOF
+test_expect_failure "error out if passed in incorrect real size (r4_kind)" '
+    mpirun -n 1 ./test_tridiagonal_r4
+'
+test_expect_failure "error out if passed in incorrect real size (r8_kind)" '
+    mpirun -n 1 ./test_tridiagonal_r8
+'
 
-BUILT_SOURCES = amip_interp_mod.$(FC_MODEXT)
-nodist_include_HEADERS = amip_interp_mod.$(FC_MODEXT)
-
-include $(top_srcdir)/mkmods.mk
+test_done

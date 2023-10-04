@@ -52,128 +52,85 @@
 !! <PRE>
 !!    call close_tridiagonal
 !! </PRE>
+!!
+!!
 !! Arguments A, B, and C are optional, and are saved as module variables
 !! if one recalls tri_invert without changing (A,B,C)
+!!
+!! @note
+!!     Optional arguments A,B,C have no intent declaration,
+!!     so the default intent is inout. The value of A(N) is modified
+!!     on output, and B and C are unchanged.
+!!
+!!  The following private allocatable arrays save the relevant information
+!!  if one recalls tri_invert without changing (A,B,C):
+!!  <PRE>
+!!        allocate ( e  (size(x,1), size(x,2), size(x,3)) )
+!!        allocate ( g  (size(x,1), size(x,2), size(x,3)) )
+!!        allocate ( cc (size(x,1), size(x,2), size(x,3)) )
+!!        allocate ( bb (size(x,1), size(x,2)) )
+!! </PRE>
+!!  This storage is deallocated when close_tridiagonal is called.
 
 !> @addtogroup tridiagonal_mod
 !> @{
 module tridiagonal_mod
 
-!--------------------------------------------------------------------------
-real,    private, allocatable, dimension(:,:,:) :: e,g,cc
-real,    private, allocatable, dimension(:,:)   :: bb
-logical, private :: init_tridiagonal = .false.
-!--------------------------------------------------------------------------
+    use platform_mod, only: r4_kind, r8_kind
+    use mpp_mod,      only: mpp_error, FATAL
+    implicit none
 
-contains
+    type :: tridiag_reals_r4
+        real(r4_kind), private, allocatable, dimension(:,:,:) :: e, g, cc
+        real(r4_kind), private, allocatable, dimension(:,:)   :: bb
+    end type
 
-!--------------------------------------------------------------------------
+    type :: tridiag_reals_r8
+        real(r8_kind), private, allocatable, dimension(:,:,:) :: e, g, cc
+        real(r8_kind), private, allocatable, dimension(:,:)   :: bb
+    end type
 
-!> @brief Sets up and solves the tridiagonal system of equations
-!!
-!> For simplicity, A and C are assumed to be dimensioned the same size
-!! as B, D, and X, although any input values for A(N) and C(1) are ignored.
-!! There are no checks to make sure the sizes agree.
-!!
-!! The value of A(N) is modified on output, and B and C are unchanged.
-subroutine tri_invert(x,d,a,b,c)
+    type(tridiag_reals_r4) :: tridiag_r4 !< holds reals stored from r4_kind calls to tri_invert
+    type(tridiag_reals_r8) :: tridiag_r8 !< holds reals stored from r8_kind calls to tri_invert
 
-implicit none
+    logical, private :: init_tridiagonal_r4 = .false. !< true when fields in tridiag_r4 are allocated
+    logical, private :: init_tridiagonal_r8 = .false. !< true when fields in tridiag_r8 are allocated
 
-real, intent(out), dimension(:,:,:) :: x !< Solution to the tridiagonal system of equations
-real, intent(in),  dimension(:,:,:) :: d !< The right-hand side term, see the schematic above.
-real, optional,    dimension(:,:,:) :: a,b,c !< Left hand side terms(see schematic above).
-                                             !! If not provided, values from last call are used
+    !> Interface to solve tridiagonal systems of equations for either kind value.
+    !! Module level variables will be deallocated and allocated for every
+    !! Since this relies on the state of module variables (unless A,B,C are specified)
+    !! the values stored are distinct for each kind call unless the added optional argument store_both_kinds
+    !! is true.
+    interface tri_invert
+        module procedure tri_invert_r4
+        module procedure tri_invert_r8
+    end interface
 
-real, dimension(size(x,1),size(x,2),size(x,3)) :: f
-integer :: k
+    public :: tri_invert
 
-if(present(a)) then
+    contains
 
-  !< Check if module variables are allocated
-  !$OMP SINGLE
-  init_tridiagonal = .true.
-  if(allocated(e))     deallocate(e)
-  if(allocated(g))     deallocate(g)
-  if(allocated(bb))    deallocate(bb)
-  if(allocated(cc))    deallocate(cc)
-  allocate(e (size(x,1),size(x,2),size(x,3)))
-  allocate(g (size(x,1),size(x,2),size(x,3)))
-  allocate(bb(size(x,1),size(x,2)))
-  allocate(cc(size(x,1),size(x,2),size(x,3)))
-  !$OMP END SINGLE !< There is an implicit barrier.
+    !> @brief Releases memory used by the solver
+    subroutine close_tridiagonal
+        if(.not. init_tridiagonal_r4 .and. .not. init_tridiagonal_r8) return
+        !$OMP SINGLE
+        if(allocated(tridiag_r4%e)) deallocate(tridiag_r4%e)
+        if(allocated(tridiag_r4%g)) deallocate(tridiag_r4%g)
+        if(allocated(tridiag_r4%cc)) deallocate(tridiag_r4%cc)
+        if(allocated(tridiag_r4%bb)) deallocate(tridiag_r4%bb)
+        if(allocated(tridiag_r8%e)) deallocate(tridiag_r8%e)
+        if(allocated(tridiag_r8%g)) deallocate(tridiag_r8%g)
+        if(allocated(tridiag_r8%cc)) deallocate(tridiag_r8%cc)
+        if(allocated(tridiag_r8%bb)) deallocate(tridiag_r8%bb)
+        init_tridiagonal_r4 = .false.; init_tridiagonal_r8 = .false.
+        !$OMP END SINGLE
+        return
+    end subroutine close_tridiagonal
 
-  e(:,:,1) = - a(:,:,1)/b(:,:,1)
-  a(:,:,size(x,3)) = 0.0
-
-  do  k= 2,size(x,3)
-    g(:,:,k) = 1.0/(b(:,:,k)+c(:,:,k)*e(:,:,k-1))
-    e(:,:,k) = - a(:,:,k)*g(:,:,k)
-  end do
-  cc = c
-  bb = 1.0/b(:,:,1)
-
-end if
-
-! if(.not.init_tridiagonal) error
-
-f(:,:,1) =  d(:,:,1)*bb
-do k= 2, size(x,3)
-  f(:,:,k) = (d(:,:,k) - cc(:,:,k)*f(:,:,k-1))*g(:,:,k)
-end do
-
-x(:,:,size(x,3)) = f(:,:,size(x,3))
-do k = size(x,3)-1,1,-1
-  x(:,:,k) = e(:,:,k)*x(:,:,k+1)+f(:,:,k)
-end do
-
-return
-end subroutine tri_invert
-
-!-----------------------------------------------------------------
-
-!> @brief Releases memory used by the solver
-subroutine close_tridiagonal
-
-  implicit none
-
-  !< Check if module variables are allocated
-  !$OMP SINGLE
-  if(allocated(e)) deallocate(e)
-  if(allocated(g)) deallocate(g)
-  if(allocated(bb)) deallocate(bb)
-  if(allocated(cc)) deallocate(cc)
-  !$OMP END SINGLE !< There is an implicit barrier.
-
-return
-end subroutine close_tridiagonal
-
-!----------------------------------------------------------------
+#include "tridiagonal_r4.fh"
+#include "tridiagonal_r8.fh"
 
 end module tridiagonal_mod
 
-! <INFO>
-
-!   <BUG>
-!     Optional arguments A,B,C have no intent declaration,
-!     so the default intent is inout. The value of A(N) is modified
-!     on output, and B and C are unchanged.
-!   </BUG>
-!   <NOTE>
-!       The following private allocatable arrays save the relevant information
-!  if one recalls tri_invert without changing (A,B,C):
-!  <PRE>
-!        allocate ( e  (size(x,1), size(x,2), size(x,3)) )
-!        allocate ( g  (size(x,1), size(x,2), size(x,3)) )
-!        allocate ( cc (size(x,1), size(x,2), size(x,3)) )
-!        allocate ( bb (size(x,1), size(x,2)) )
-! </PRE>
-!  This storage is deallocated when close_tridiagonal is called.
-!   </NOTE>
-!   <FUTURE>
-!     Maybe a cleaner version?
-!   </FUTURE>
-
-! </INFO>
 !> @}
 ! close documentation grouping

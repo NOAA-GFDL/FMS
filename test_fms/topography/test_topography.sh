@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,26 +19,35 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the amip_interp directory of the FMS
-# package.
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/astronomy directory.
 
-# Ed Hartnett 2/22/19
+# Caitlyn McAllister
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/amip_interp/include
-AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
+# Set common test settings.
+. ../test-lib.sh
 
-# Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libamip_interp.la
+# Prepare the directory to run the tests.
+cat <<EOF > input.nml
+&topography_nml
+  topog_file = "topography.data.nc",
+  water_file = "water.data.nc"
+/
 
-# The convenience library depends on its source.
-libamip_interp_la_SOURCES = \
-  amip_interp.F90 \
-  include/amip_interp.inc \
-  include/amip_interp_r4.fh \
-  include/amip_interp_r8.fh
+EOF
 
-BUILT_SOURCES = amip_interp_mod.$(FC_MODEXT)
-nodist_include_HEADERS = amip_interp_mod.$(FC_MODEXT)
+# Run the test.
 
-include $(top_srcdir)/mkmods.mk
+test_expect_success "Test topography: r4_kind" '
+  mpirun -n 2 ./test_topography_r4
+'
+
+sync; rm -f *.nc
+
+test_expect_success "Test topography: r8_kind" '
+  mpirun -n 2 ./test_topography_r8
+'
+
+rm -f *.nc
+
+test_done
