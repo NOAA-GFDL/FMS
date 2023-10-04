@@ -243,8 +243,6 @@
     enddo
 
     if (rval < array(1) .or. rval > array(ia)) then
- !       if (rval < array(1))  frac_index = 1.
- !       if (rval > array(ia)) frac_index = float(ia)
         FRAC_INDEX_ = -1.0_lkind
     else
        i = 1
