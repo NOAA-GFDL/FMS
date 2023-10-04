@@ -517,7 +517,7 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
                                                               !! the calculationslater.  \note This is experimental
   character(len=128)                       :: error_string    !< Store error text
   logical                                  :: data_buffer_is_allocated !< .true. if the data buffer is allocated
-  character(len=128)                       :: field_info      !< String holding info about the field to append to the
+  character(len=256)                       :: field_info      !< String holding info about the field to append to the
                                                               !! error message
   logical, allocatable, dimension(:,:,:,:) :: oor_mask        !< Out of range mask
   real(kind=r8_kind)                       :: field_weight    !< Weight to use when averaging (it will be converted

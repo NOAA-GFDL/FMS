@@ -17,6 +17,11 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+! for any debug prints
+#ifndef DEBUG_REDUCT
+#define DEBUG_REDUCT .true.
+#endif
+
 !> @brief Do the time_none reduction method (i.e copy the correct portion of the input data)
 subroutine DO_TIME_NONE_ (data_out, data_in, mask, is_masked, bounds_in, bounds_out, missing_value)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
@@ -263,7 +268,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
 
   !> Seperated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
   !! then mask will always be .True. so the if (mask) is redudant.
-  ! TODO check if performance gain by not doing weight and pow if not needed (prob optimized out anyway?)
+  ! TODO check if performance gain by not doing weight and pow if not needed
   if (is_masked) then
     do l = 0, size(data_out, 4) - 1
       do k = 0, ke_out - ks_out

@@ -583,6 +583,8 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
+    class default
+      err_msg="do_time_sum_wrapper::the output buffer is not a valid type, must be real(r8_kind) or real(r4_kind)"
   end select
 end function do_time_sum_wrapper
 #endif

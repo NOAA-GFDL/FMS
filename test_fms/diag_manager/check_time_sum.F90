@@ -140,7 +140,7 @@ contains
     buffer_exp = real((1000.0_kindl+10.0_kindl+1.0_kindl) * file_freq + &
                       real(step_sum,kindl)/100.0_kindl, kind=r4_kind)
 
-    if (abs(buffer - buffer_exp) > 0) then
+    if (abs(buffer - buffer_exp) > 0.0) then
       print *, mpp_pe(), time_level, buffer_exp, buffer
       call mpp_error(FATAL, "Check_time_sum::check_data_0d:: Data is not correct")
     endif
@@ -152,8 +152,8 @@ contains
     integer,            intent(in)    :: time_level    !< Time level read in
     real(kind=r4_kind)                :: buffer_exp    !< Expected result
     integer :: step_sum !< sum of time step increments to use in generating reference data
-
     integer :: ii, i, j, k, l !< For looping
+    integer :: n
 
     step_sum = 0
     do i=(time_level-1)*file_freq+1, time_level*file_freq
@@ -163,11 +163,22 @@ contains
     ! 1d answer is
     !  ((i * 1000 + 11) * frequency) + (sum of time steps)
     do ii = 1, size(buffer, 1)
-      buffer_exp = real(real(ii, kind=kindl)*6000.0_kindl +60.0_kindl+6.0_kindl + &
-                   real(step_sum, kind=kindl)/100.0_kindl, kind=r4_kind)
+      buffer_exp = 0.0
+      ! fails with both precisions
+      !do n=(time_level-1)*file_freq+1, time_level*file_freq
+      !  buffer_exp = real(buffer_exp + 1000.0_r8_kind * ii + 11.0_r8_kind + (n/100.0_r8_kind), r4_kind)
+      !enddo
+      ! passes with r8 defaults, fails with r4
+      buffer_exp =  real( &
+                        file_freq * (real(ii, kind=r4_kind)*1000.0_r4_kind +10.0_r4_kind+1.0_r4_kind) + &
+                        real(step_sum, kind=r4_kind)/100.0_r4_kind &
+                    , kind=r4_kind)
+
+      print *, 'asdf i:', ii, 'ref', buffer_exp 
       if (use_mask .and. ii .eq. 1) buffer_exp = -666_r4_kind
-      if (abs(buffer(ii) - buffer_exp) > 0) then
-        print *, mpp_pe(), ii, buffer(ii), buffer_exp, step_sum
+      if (abs(buffer(ii) - buffer_exp) > 0.0) then
+        print *, "i:", ii, "read in:", buffer(ii), "expected:", buffer_exp, "sum of time steps:", step_sum
+        print *, "diff:", abs(buffer(ii) - buffer_exp)
         call mpp_error(FATAL, "Check_time_sum::check_data_1d:: Data is not correct")
       endif
     enddo
@@ -195,7 +206,7 @@ contains
                      60.0_kindl*real(j, kind=r8_kind)+6.0_kindl + &
                      real(step_sum, kind=r8_kind)/100_r8_kind, kind=r4_kind)
         if (use_mask .and. ii .eq. 1 .and. j .eq. 1) buffer_exp = -666_r4_kind
-        if (abs(buffer(ii, j) - buffer_exp) > 0) then
+        if (abs(buffer(ii, j) - buffer_exp) > 0.0) then
           print *, mpp_pe(), ii, j, buffer(ii, j), buffer_exp
           call mpp_error(FATAL, "Check_time_sum::check_data_2d:: Data is not correct")
         endif
@@ -243,7 +254,7 @@ contains
                        6.0_kindl*real(k+nz_oset, kind=r8_kind) + &
                        real(step_sum, kind=r8_kind)/100.0_kindl, kind=r4_kind)
           if (use_mask .and. ii .eq. 1 .and. j .eq. 1 .and. k .eq. 1 .and. .not. is_regional) buffer_exp = -666_r4_kind
-          if (abs(buffer(ii, j, k) - buffer_exp) > 0) then
+          if (abs(buffer(ii, j, k) - buffer_exp) > 0.0) then
             print *, mpp_pe(), ii, j, k, buffer(ii, j, k), buffer_exp
             call mpp_error(FATAL, "Check_time_sum::check_data_3d:: Data is not correct")
           endif
