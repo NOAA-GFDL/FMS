@@ -39,13 +39,13 @@ EOF
 # Run the test.
 
 test_expect_success "Test topography: r4_kind" '
-  mpirun -n 2 ./test_topography_r4
+  mpirun -n 1 ./test_topography_r4
 '
 
 sync; rm -f *.nc
 
 test_expect_success "Test topography: r8_kind" '
-  mpirun -n 2 ./test_topography_r8
+  mpirun -n 1 ./test_topography_r8
 '
 
 rm -f *.nc
