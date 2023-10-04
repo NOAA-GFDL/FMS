@@ -31,7 +31,6 @@
 !> @{
 
 !#######################################################################
-
 !> @brief Returns a simple surface height field that consists of a single
 !! Gaussian-shaped mountain.
 !!
@@ -70,7 +69,6 @@ integer, parameter :: lkind=FMS_TOP_KIND_ !local FMS_TOP_KIND_ kind
 
 end subroutine GAUSSIAN_TOPOG_INIT_
 !#######################################################################
-
 !> The height, position, width, and elongation of the mountain
 !! is controlled by optional arguments.
 !! @param real lon The mean grid box longitude in radians.
@@ -99,7 +97,6 @@ end subroutine GAUSSIAN_TOPOG_INIT_
 !! simple Gaussian-shaped mountains.  The height, position,
 !! width, and elongation of the mountains can be controlled
 !! by variables in the namelist.
-
 function GET_GAUSSIAN_TOPOG_(lon, lat, height,                         &
                             olond, olatd, wlond, wlatd, rlond, rlatd ) &
                      result (zsurf )

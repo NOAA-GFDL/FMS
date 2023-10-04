@@ -3764,6 +3764,8 @@ contains
     character(len=3),         intent(in)    :: gridname !< 3-character long model grid ID
     type(coupler_3d_bc_type), intent(inout) :: var  !< BC_type structure to override
     type(time_type),          intent(in)    :: time !< The current model time
+    !! TODO remove this when data_override is merged in
+    real(r8_kind), allocatable :: r8_field_values(:,:,:)
 
     integer :: m, n
 
