@@ -214,7 +214,8 @@ end subroutine DO_TIME_MAX_
 !!    buffer(l) = buffer(l) + (weight * field(l)) ^ pow
 !!
 !! Where l are the indices passed in through the bounds_in/out
-subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, missing_value, weight, pow)
+subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, &
+                               missing_value, weight, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(r8_kind),       intent(inout) :: weight_sum          !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with

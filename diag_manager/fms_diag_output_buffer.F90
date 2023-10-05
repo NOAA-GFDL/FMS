@@ -571,7 +571,8 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
-        call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, bounds_in, bounds_out, missing_value)
+        call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, &
+                                bounds_in, bounds_out, missing_value)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
