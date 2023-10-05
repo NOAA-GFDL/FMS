@@ -1601,7 +1601,7 @@ END FUNCTION register_static_field
          type is (real(r4_kind))
            field_out(:, :, 1) = field
          class default
-           call error_mesg('diag_manager_mod::send_data_1d', &
+           call error_mesg('diag_manager_mod::send_data_2d', &
                & 'Error allocating field out as real(r4_kind)', FATAL)
        end select
     TYPE IS (real(kind=r8_kind))
@@ -1610,11 +1610,11 @@ END FUNCTION register_static_field
          type is (real(r8_kind))
            field_out(:, :, 1) = field
          class default
-           call error_mesg('diag_manager_mod::send_data_1d', &
+           call error_mesg('diag_manager_mod::send_data_2d', &
                & 'Error allocating field out as real(r8_kind)', FATAL)
        end select
     CLASS DEFAULT
-       CALL error_mesg ('diag_manager_mod::send_data_1d',&
+       CALL error_mesg ('diag_manager_mod::send_data_2d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
     END SELECT
 
