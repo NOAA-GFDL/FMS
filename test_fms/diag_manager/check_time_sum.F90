@@ -137,8 +137,8 @@ contains
    ! 0d answer is:
    !    (1011 * frequency sum'd over )
    !  + ( 1/100 * sum of time step increments )
-    buffer_exp = real((1000.0_kindl+10.0_kindl+1.0_kindl) * file_freq + &
-                      real(step_sum,kindl)/100.0_kindl, kind=r4_kind)
+    buffer_exp = real((1000.0_r8_kind+10.0_r8_kind+1.0_r8_kind) * file_freq + &
+                      real(step_sum,r8_kind)/100.0_r8_kind, kind=r4_kind)
 
     if (abs(buffer - buffer_exp) > 0.0) then
       print *, mpp_pe(), time_level, buffer_exp, buffer
@@ -170,11 +170,10 @@ contains
       !enddo
       ! passes with r8 defaults, fails with r4
       buffer_exp =  real( &
-                        file_freq * (real(ii, kind=r4_kind)*1000.0_r4_kind +10.0_r4_kind+1.0_r4_kind) + &
-                        real(step_sum, kind=r4_kind)/100.0_r4_kind &
+                        file_freq * (real(ii, kind=r8_kind)*1000.0_r8_kind +10.0_r8_kind+1.0_r8_kind) + &
+                        real(step_sum, kind=r8_kind)/100.0_r8_kind &
                     , kind=r4_kind)
 
-      print *, 'asdf i:', ii, 'ref', buffer_exp 
       if (use_mask .and. ii .eq. 1) buffer_exp = -666_r4_kind
       if (abs(buffer(ii) - buffer_exp) > 0.0) then
         print *, "i:", ii, "read in:", buffer(ii), "expected:", buffer_exp, "sum of time steps:", step_sum

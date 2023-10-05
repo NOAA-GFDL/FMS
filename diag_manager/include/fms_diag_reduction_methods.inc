@@ -242,7 +242,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   else
     weight_loc = 1.0_kindl
   endif
-  
+
   if(present(pow)) then
     pow_loc = weight
   else
@@ -277,7 +277,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
             if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
               data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
                          data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
-                       + (data_in(is_in +i, js_in + j, ks_in + k, l + 1) * weight_loc) ** pow_loc 
+                       + (data_in(is_in +i, js_in + j, ks_in + k, l + 1) * weight_loc) ** pow_loc
             else
               data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
             endif
