@@ -47,12 +47,12 @@ test_grid2_r8_CPPFLAGS  =-DTEST_MOS_KIND_=8 $(AM_CPPFLAGS)
 # These files are also included in the distribution.
 EXTRA_DIST = test_mosaic2.sh
 
-if SKIP_MOSAIC_TESTS
-TESTS_ENVIRONMENT = SKIP_TESTS="test_mosaic2.1 test_mosaic2.2 test_mosaic2.3 test_mosaic2.4"
-endif
-
 # Run the test program.
 TESTS = test_mosaic2.sh
+
+if SKIP_MOSAIC_TESTS
+  TESTS_ENVIRONMENT = SKIP_TESTS="test_mosaic2.1 test_mosaic2.2 test_mosaic2.3 test_mosaic2.4"
+endif
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
