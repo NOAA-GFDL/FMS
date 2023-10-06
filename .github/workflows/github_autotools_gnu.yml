@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        conf-flag: [ --disable-openmp, --disable-setting-flags, --with-mpi=no]
+        conf-flag: [ --disable-openmp, --disable-setting-flags, --with-mpi=no, --disable-r8-defaults]
         input-flag: [--with-yaml, --enable-test-input=/home/unit_tests_input]
         exclude:
           - conf-flag: --with-mpi=no

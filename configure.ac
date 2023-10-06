@@ -307,6 +307,10 @@ if test $enable_setting_flags = yes; then
   if test $enable_r8_default = yes; then
     GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
+  else
+    # disable mosaic unit tests if FMS is compiled in r4
+    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
   fi
 
   # individual mixed precision overloads
