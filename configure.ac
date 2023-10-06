@@ -292,6 +292,13 @@ else
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
 fi
 
+# Builds with r8 default unless disable flag is given
+if test $enable_r8_default = yes; then
+  AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
+else
+  AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
+fi
+
 # Set any required compile flags.  This will not be done if the user wants to
 # define all their own flags.
 if test $enable_setting_flags = yes; then
@@ -307,10 +314,6 @@ if test $enable_setting_flags = yes; then
   if test $enable_r8_default = yes; then
     GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
-    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
-  else
-    # disable mosaic unit tests if FMS is compiled in r4
-    AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
   fi
 
   # individual mixed precision overloads
