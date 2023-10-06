@@ -498,7 +498,7 @@ AC_CONFIG_FILES([
   test_fms/horiz_interp/Makefile
   test_fms/field_manager/Makefile
   test_fms/axis_utils/Makefile
-  test_fms/mosaic/Makefile
+  test_fms/mosaic2/Makefile
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
