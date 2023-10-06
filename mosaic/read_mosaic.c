@@ -23,9 +23,7 @@
 #include "read_mosaic.h"
 #include "constant.h"
 #include "mosaic_util.h"
-#ifdef use_netCDF
 #include <netcdf.h>
-#endif
 
 /** \file
  *  \ingroup mosaic
