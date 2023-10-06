@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,17 +19,25 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/mosaic directory.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Ed Hartnett 11/29/19
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp mpp_io time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal
+# Set common test settings.
+. ../test-lib.sh
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# Copy files for test.
+touch input.nml
+rm -rf INPUT
+mkdir INPUT
+
+# The tests are skipped if FMS is compiled in r4 via ./configure --enable-mixedmode
+# because answers differ when FMS is compiled in r4.
+test_expect_success "test mosaic2 r4" 'mpirun -n 1 ./test_mosaic2_r4'
+test_expect_success "test grid2   r4" 'mpirun -n 1 ./test_grid2_r4'
+test_expect_success "test mosaic2 r8" 'mpirun -n 1 ./test_mosaic2_r8'
+test_expect_success "test grid2   r8" 'mpirun -n 1 ./test_grid2_r8'
+
+rm -rf INPUT
+test_done

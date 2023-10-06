@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -17,17 +19,35 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/astronomy directory.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Caitlyn McAllister
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp mpp_io time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal
+# Set common test settings.
+. ../test-lib.sh
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# Prepare the directory to run the tests.
+cat <<EOF > input.nml
+&topography_nml
+  topog_file = "topography.data.nc",
+  water_file = "water.data.nc"
+/
+
+EOF
+
+# Run the test.
+
+test_expect_success "Test topography: r4_kind" '
+  mpirun -n 1 ./test_topography_r4
+'
+
+sync; rm -f *.nc
+
+test_expect_success "Test topography: r8_kind" '
+  mpirun -n 1 ./test_topography_r8
+'
+
+rm -f *.nc
+
+test_done
