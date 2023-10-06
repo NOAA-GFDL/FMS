@@ -105,6 +105,13 @@ AS_IF([test ${enable_deprecated_io:-no} = yes],
   [enable_deprecated_io=yes],
   [enable_deprecated_io=no])
 
+AC_ARG_ENABLE([r8-default],
+  [AS_HELP_STRING([--disable-r8-default],
+    [Disables the build from adding the 8 byte default real kind flag during compilation (default no)])])
+AS_IF([test ${enable_r8_default:-yes} = yes],
+  [enable_r8_default=yes],
+  [enable_r8_default=no])
+
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
 AC_ARG_ENABLE([test-input],
@@ -296,9 +303,11 @@ if test $enable_setting_flags = yes; then
   # necessary fortran flags.
   AC_FC_LINE_LENGTH([unlimited])
 
-  # Always build with r8_kind default
-  GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
-    FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
+  # Builds with r8 default unless disable flag is given
+  if test $enable_r8_default = yes; then
+    GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
+      FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
+  fi
 
   # individual mixed precision overloads
   if test $enable_overload_c4 = yes; then
