@@ -20,19 +20,32 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/field_manager directory.
+# execute tests in the test_fms/time_manager directory.
 
-# Ed Hartnett 11/29/19
+# Ryan Mulhall 9/2023
 
 # Set common test settings.
 . ../test-lib.sh
 
-# Copy files for test.
-touch input.nml
-rm -rf INPUT
-mkdir INPUT
-test_expect_success "test mosaic" '
-  mpirun -n 2 ./test_mosaic
+rm -f input.nml && touch input.nml
+
+test_expect_success "test tridiagonal functionality 32 bit reals" '
+    mpirun -n 1 ./test_tridiagonal_r4
 '
-rm -rf INPUT
+test_expect_success "test tridiagonal functionality 64 bit reals" '
+    mpirun -n 1 ./test_tridiagonal_r8
+'
+# tries to call without a,b,c args provided or previously set
+cat <<_EOF > input.nml
+&test_tridiagonal_nml
+do_error_check = .true.
+/
+_EOF
+test_expect_failure "error out if passed in incorrect real size (r4_kind)" '
+    mpirun -n 1 ./test_tridiagonal_r4
+'
+test_expect_failure "error out if passed in incorrect real size (r8_kind)" '
+    mpirun -n 1 ./test_tridiagonal_r8
+'
+
 test_done

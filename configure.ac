@@ -480,15 +480,18 @@ AC_CONFIG_FILES([
   test_fms/horiz_interp/Makefile
   test_fms/field_manager/Makefile
   test_fms/axis_utils/Makefile
-  test_fms/mosaic/Makefile
+  test_fms/mosaic2/Makefile
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
+  test_fms/tridiagonal/Makefile
   test_fms/sat_vapor_pres/Makefile
   test_fms/diag_integral/Makefile
   test_fms/tracer_manager/Makefile
   test_fms/random_numbers/Makefile
+  test_fms/topography/Makefile
+  test_fms/column_diagnostics/Makefile
   FMS.pc
   ])
 
