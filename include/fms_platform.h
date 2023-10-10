@@ -46,6 +46,28 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 !DEC$ MESSAGE:'Using 8-byte addressing'
 #endif
 
+!Control "pure" functions.
+#ifdef NO_F95
+#define _PURE
+!DEC$ MESSAGE:'Not using pure routines.'
+#else
+#define _PURE pure
+!DEC$ MESSAGE:'Using pure routines.'
+#endif
+
+!Control array members of derived types.
+#ifdef NO_F2000
+#define _ALLOCATABLE pointer
+#define _NULL =>null()
+#define _ALLOCATED associated
+!DEC$ MESSAGE:'Using pointer derived type array members.'
+#else
+#define _ALLOCATABLE allocatable
+#define _NULL
+#define _ALLOCATED allocated
+!DEC$ MESSAGE:'Using allocatable derived type array members.'
+#endif
+
 !Control use of cray pointers within mpp_peset
 !Other cray pointer usage in mpp routines is compiled regardless
 #ifdef NO_CRAY_POINTERS
