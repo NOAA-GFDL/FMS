@@ -107,7 +107,7 @@ use platform_mod
                                            !! to indicate to use the full axis instead of a sub-axis
   INTEGER, PARAMETER :: GLO_REG_VAL_ALT = -1 !< Alternate value used in the region specification of the
                                              !! diag_table to indicate to use the full axis instead of a sub-axis
-  REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
+  REAL(r8_kind), PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
   INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1 !< Return value for a diag_field that isn't found in the diag_table
   INTEGER, PARAMETER :: latlon_gridtype = 1
   INTEGER, PARAMETER :: index_gridtype = 2
@@ -390,9 +390,13 @@ use platform_mod
                                          !! the default behavior will do the average between day1 hour3 to day2 hour3
   ! <!-- netCDF variable -->
 
-  REAL :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
+#ifdef use_netCDF
+  REAL(r8_kind) :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
                                     !! netCDF module, otherwise will be 9.9692099683868690e+36.
                                     ! from file /usr/local/include/netcdf.inc
+#else
+  REAL(r8_kind) :: FILL_VALUE = 9.9692099683868690e+36
+#endif
 
   !! @note `pack_size` and `pack_size_str` are set in diag_manager_init depending on how FMS was compiled
   !! if FMS was compiled with default reals as 64bit, it will be set to 1 and "double",
@@ -405,8 +409,8 @@ use platform_mod
                                              !! set to "double" or "float"
 
   ! <!-- REAL public variables -->
-  REAL :: EMPTY = 0.0
-  REAL :: MAX_VALUE, MIN_VALUE
+  REAL(r8_kind) :: EMPTY = 0.0
+  REAL(r8_kind) :: MAX_VALUE, MIN_VALUE
 
   ! <!-- Global data for all files -->
   TYPE(time_type) :: diag_init_time !< Time diag_manager_init called.  If init_time not included in
