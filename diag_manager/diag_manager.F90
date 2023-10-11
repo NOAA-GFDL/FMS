@@ -1453,7 +1453,7 @@ END FUNCTION register_static_field
     TYPE(time_type), INTENT(in), OPTIONAL :: time
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL :: field_out(1, 1, 1) !< Local copy of field
+    CLASS(*), allocatable :: field_out(:, :, :) !< Local copy of field
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
@@ -1464,9 +1464,23 @@ END FUNCTION register_static_field
     ! First copy the data to a three d array with last element 1
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
-       field_out(1, 1, 1) = field
+       allocate(real(r4_kind) :: field_out(1,1,1))
+       select type(field_out)
+         type is (real(r4_kind))
+           field_out(1, 1, 1) = field
+         class default
+           call error_mesg('diag_manager_mod::send_data_0d', &
+               & 'Error allocating field out as real(r4_kind)', FATAL)
+       end select
     TYPE IS (real(kind=r8_kind))
-       field_out(1, 1, 1) = real(field)
+       allocate(real(r8_kind) :: field_out(1,1,1))
+       select type(field_out)
+         type is (real(r8_kind))
+           field_out(1, 1, 1) = field
+         class default
+           call error_mesg('diag_manager_mod::send_data_0d', &
+               & 'Error allocating field out as real(r8_kind)', FATAL)
+       end select
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_0d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1486,7 +1500,7 @@ END FUNCTION register_static_field
     LOGICAL, INTENT(in), DIMENSION(:), OPTIONAL :: mask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL, DIMENSION(SIZE(field(:)), 1, 1) :: field_out !< Local copy of field
+    CLASS(*), ALLOCATABLE :: field_out(:,:,:) !< Local copy of field
     LOGICAL, DIMENSION(SIZE(field(:)), 1, 1) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
@@ -1496,11 +1510,26 @@ END FUNCTION register_static_field
     END IF
 
     ! First copy the data to a three d array with last element 1
+    ! type checking done in diag_send_data
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
-       field_out(:, 1, 1) = field
+       allocate(real(r4_kind) :: field_out(SIZE(field),1,1))
+       select type(field_out)
+         type is (real(r4_kind))
+           field_out(:, 1, 1) = field
+         class default
+           call error_mesg('diag_manager_mod::send_data_1d', &
+               & 'Error allocating field out as real(r4_kind)', FATAL)
+       end select
     TYPE IS (real(kind=r8_kind))
-       field_out(:, 1, 1) = real(field)
+       allocate(real(r8_kind) :: field_out(SIZE(field),1,1))
+       select type(field_out)
+         type is (real(r8_kind))
+           field_out(:, 1, 1) = field
+         class default
+           call error_mesg('diag_manager_mod::send_data_1d', &
+               & 'Error allocating field out as real(r8_kind)', FATAL)
+       end select
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_1d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -1555,7 +1584,7 @@ END FUNCTION register_static_field
     CLASS(*), INTENT(in), DIMENSION(:,:),OPTIONAL :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
-    REAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) :: field_out !< Local copy of field
+    CLASS(*), ALLOCATABLE :: field_out(:,:,:) !< Local copy of field
     LOGICAL, DIMENSION(SIZE(field,1),SIZE(field,2),1) ::  mask_out !< Local copy of mask
 
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
@@ -1567,9 +1596,23 @@ END FUNCTION register_static_field
     ! First copy the data to a three d array with last element 1
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
-       field_out(:, :, 1) = field
+       allocate(real(r4_kind) :: field_out(SIZE(field,1),SIZE(field,2),1))
+       select type(field_out)
+         type is (real(r4_kind))
+           field_out(:, :, 1) = field
+         class default
+           call error_mesg('diag_manager_mod::send_data_2d', &
+               & 'Error allocating field out as real(r4_kind)', FATAL)
+       end select
     TYPE IS (real(kind=r8_kind))
-       field_out(:, :, 1) = real(field)
+       allocate(real(r8_kind) :: field_out(SIZE(field,1),SIZE(field,2),1))
+       select type(field_out)
+         type is (real(r8_kind))
+           field_out(:, :, 1) = field
+         class default
+           call error_mesg('diag_manager_mod::send_data_2d', &
+               & 'Error allocating field out as real(r8_kind)', FATAL)
+       end select
     CLASS DEFAULT
        CALL error_mesg ('diag_manager_mod::send_data_2d',&
             & 'The field is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)

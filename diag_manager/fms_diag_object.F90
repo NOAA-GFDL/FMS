@@ -517,7 +517,7 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
                                                               !! the calculationslater.  \note This is experimental
   character(len=128)                       :: error_string    !< Store error text
   logical                                  :: data_buffer_is_allocated !< .true. if the data buffer is allocated
-  character(len=128)                       :: field_info      !< String holding info about the field to append to the
+  character(len=256)                       :: field_info      !< String holding info about the field to append to the
                                                               !! error message
   logical, allocatable, dimension(:,:,:,:) :: oor_mask        !< Out of range mask
   real(kind=r8_kind)                       :: field_weight    !< Weight to use when averaging (it will be converted
@@ -899,6 +899,11 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
         return
       endif
     case (time_sum)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_average)
     case (time_power)
     case (time_rms)
