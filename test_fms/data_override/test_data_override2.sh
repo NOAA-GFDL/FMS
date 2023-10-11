@@ -142,9 +142,6 @@ data_table:
    factor            : 1.0
 _EOF
 
-#test_expect_success "data_override_init with the yaml table" '
-# mpirun -n 1 ./test_data_override_init
-#'
 if [ ! -z $parser_skip ]; then
   test_expect_failure "data_override_init with the yaml table" '
     mpirun -n 1 ./test_data_override_init
