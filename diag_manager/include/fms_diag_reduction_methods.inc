@@ -271,18 +271,16 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   !! then mask will always be .True. so the if (mask) is redudant.
   ! TODO check if performance gain by not doing weight and pow if not needed
   if (is_masked) then
-    do l = 0, size(data_out, 4) - 1
-      do k = 0, ke_out - ks_out
-        do j = 0, je_out - js_out
-          do i = 0, ie_out - is_out
-            if (mask(is_in + i, js_in + j, ks_in + k, l + 1)) then
-              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) =           &
-                         data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1)  &
-                       + (data_in(is_in +i, js_in + j, ks_in + k, l + 1) * weight_loc) ** pow_loc
-            else
-              data_out(is_out + i, js_out + j, ks_out + k, l + 1, 1) = missing_value
-            endif
-          enddo
+    do k = 0, ke_out - ks_out
+      do j = 0, je_out - js_out
+        do i = 0, ie_out - is_out
+          where (mask(is_in + i, js_in + j, ks_in + k, :))
+            data_out(is_out + i, js_out + j, ks_out + k, :, 1) =           &
+                       data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
+                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
+          elsewhere
+            data_out(is_out + i, js_out + j, ks_out + k, :, 1) = missing_value
+          endwhere
         enddo
       enddo
     enddo
