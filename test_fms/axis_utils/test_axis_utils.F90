@@ -394,11 +394,11 @@ subroutine test_nearest_index(increasing_array)
   real(k) :: arr(5)
   integer :: ans(12)
 
-  arr = [5._k, 12._k, 20._k, 40._k, 100._k]
   if (increasing_array) then
+    arr = [5._k, 12._k, 20._k, 40._k, 100._k]
     ans=(/1, 5, 1, 2, 3, 4, 5, 1, 2, 2, 3, 3/)
   else
-    arr = arr(ubound(arr,dim=1)::-1)
+    arr = [100._k, 40._k, 20._k, 12._k, 5._k]
     ans=(/5, 1, 5, 4, 3, 2, 1, 5, 4, 4, 3, 3/)
   endif
 
