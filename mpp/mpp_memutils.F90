@@ -53,9 +53,9 @@ contains
   !#######################################################################
   !> End the memory collection, and report on total memory used during the
   !! execution of the model run.
-  subroutine mpp_memuse_end(text, unit)
+  subroutine mpp_memuse_end(text, iunit)
     character(len=*), intent(in) :: text !< Text to include in memory use statement
-    integer, intent(in), optional :: unit !< Fortran unit number where memory report should go.
+    integer, intent(in), optional :: iunit !< Fortran unit number where memory report should go.
                                           !! Default is stderr.
     real    :: m, mmin, mmax, mavg, mstd, end_memuse
     integer :: mu
@@ -67,7 +67,7 @@ contains
 
     call mpp_mem_dump(end_memuse)
 
-    mu = stderr(); if( PRESENT(unit) )mu = unit
+    mu = stderr(); if( PRESENT(iunit) )mu = iunit
     m = end_memuse - begin_memuse
     mmin = m; call mpp_min(mmin)
     mmax = m; call mpp_max(mmax)
@@ -82,14 +82,14 @@ contains
   !#######################################################################
   !> Print the current memory high water mark to stderr, or the unit
   !! specified.
-  subroutine mpp_print_memuse_stats(text, unit)
+  subroutine mpp_print_memuse_stats(text, iunit)
     character(len=*), intent(in) :: text !< Text to include in memory print statement
-    integer, intent(in), optional :: unit !< Fortran unit number where print statement should go.
+    integer, intent(in), optional :: iunit !< Fortran unit number where print statement should go.
                                           !! Default is stderr.
     real :: m, mmin, mmax, mavg, mstd
     integer :: mu
 
-    mu = stderr(); if( PRESENT(unit) )mu = unit
+    mu = stderr(); if( PRESENT(iunit) )mu = iunit
     call mpp_mem_dump(m)
 
     mmin = m; call mpp_min(mmin)
