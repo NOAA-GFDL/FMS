@@ -163,7 +163,7 @@ if (grid_center_bug) then
      "that is no longer supported. Please remove this namelist variable.")
 endif
 
-if (use_yaml) then
+if (use_data_table_yaml) then
    call mpp_error(NOTE, "You are using YAML.")
 else
    call mpp_error(NOTE, "You are using the legacy table.")
@@ -200,7 +200,15 @@ end if
     default_table%interpol_method = 'bilinear'
 
 #ifdef use_yaml
-    call read_table_yaml(data_table)
+    if (use_data_table_yaml) then
+       call read_table_yaml(data_table)
+    else
+       allocate(data_table(max_table))
+       do i = 1, max_table
+          data_table(i) = default_table
+       enddo
+       call read_table(data_table)
+    end if
 #else
     if (use_data_table_yaml) then
        call mpp_error(FATAL, "compilation error, need to compile with `-Duse_yaml`")       

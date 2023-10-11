@@ -142,12 +142,27 @@ data_table:
    factor            : 1.0
 _EOF
 
-test_expect_success "data_override_init with the yaml table" '
- mpirun -n 1 ./test_data_override_init
-'
+#test_expect_success "data_override_init with the yaml table" '
+# mpirun -n 1 ./test_data_override_init
+#'
+if [ ! -z $parser_skip ]; then
+  test_expect_failure "data_override_init with the yaml table" '
+    mpirun -n 1 ./test_data_override_init
+  '
+else
+  test_expect_success "data_override_init with the yaml table" '
+    mpirun -n 1 ./test_data_override_init
+  '
+fi
 #data_override with default table (setting namelist to .True.)
 cat <<_EOF > data_table
 "ICE", "sst_obs", "SST", "INPUT/sst_ice_clim.nc", .true., 300.0
+_EOF
+
+cat <<_EOF > input.nml
+&data_override_nml
+use_data_table_yaml=.false.
+/
 _EOF
 
 test_expect_success "data_override_init with the default table" '
