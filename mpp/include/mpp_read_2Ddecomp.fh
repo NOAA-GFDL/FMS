@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-    subroutine READ_RECORD_CORE_(unit, field, num_words, data, start, axsiz)
-      integer,         intent(in)    :: unit
+    subroutine READ_RECORD_CORE_(iunit, field, num_words, data, start, axsiz)
+      integer,         intent(in)    :: iunit
       type(fieldtype), intent(in)    :: field
       integer,         intent(in)    :: num_words
       MPP_TYPE_,        intent(inout) :: data(num_words)
@@ -46,8 +46,8 @@
                 call mpp_error( FATAL, 'MPP_READ: does not support NF_BYTE packing' )
              case(NF_SHORT)
                 ptr1 = LOC(mpp_io_stack(1))
-                error = NF_GET_VARA_INT2  ( mpp_file(unit)%ncid, field%id, start, axsiz, i2vals )
-                call netcdf_err( error, mpp_file(unit), field=field )
+                error = NF_GET_VARA_INT2  ( mpp_file(iunit)%ncid, field%id, start, axsiz, i2vals )
+                call netcdf_err( error, mpp_file(iunit), field=field )
                 if(field%scale == 1.0 .and. field%add == 0.0) then
                    data(:)=i2vals(:)
                 else
@@ -57,8 +57,8 @@
 
                 ptr2 = LOC(mpp_io_stack(1))
 
-                error = NF_GET_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, ivals  )
-                call netcdf_err( error, mpp_file(unit), field=field )
+                error = NF_GET_VARA_INT   ( mpp_file(iunit)%ncid, field%id, start, axsiz, ivals  )
+                call netcdf_err( error, mpp_file(iunit), field=field )
                 if(field%scale == 1.0 .and. field%add == 0.0) then
                    data(:)=ivals(:)
                 else
@@ -67,14 +67,14 @@
              case(NF_FLOAT)
                 ptr3 = LOC(mpp_io_stack(1))
                 if (size(transfer(rvals(1),one_byte)) .eq. word_sz) then
-                  error = NF90_GET_VAR  ( mpp_file(unit)%ncid, field%id, data, start=start, count=axsiz )
-                  call netcdf_err( error, mpp_file(unit), field=field )
+                  error = NF90_GET_VAR  ( mpp_file(iunit)%ncid, field%id, data, start=start, count=axsiz )
+                  call netcdf_err( error, mpp_file(iunit), field=field )
                   if(field%scale /= 1.0 .or. field%add /= 0.0) then
                      data(:)=data(:)*field%scale + field%add
                   end if
                 else
-                  error = NF_GET_VARA_REAL  ( mpp_file(unit)%ncid, field%id, start, axsiz, rvals )
-                  call netcdf_err( error, mpp_file(unit), field=field )
+                  error = NF_GET_VARA_REAL  ( mpp_file(iunit)%ncid, field%id, start, axsiz, rvals )
+                  call netcdf_err( error, mpp_file(iunit), field=field )
                   if(field%scale == 1.0 .and. field%add == 0.0) then
                      data(:)=rvals(:)
                   else
@@ -84,14 +84,14 @@
              case(NF_DOUBLE)
                 ptr4 = LOC(mpp_io_stack(1))
                 if (size(transfer(r8vals(1),one_byte)) .eq. word_sz) then
-                  error = NF90_GET_VAR( mpp_file(unit)%ncid, field%id, data, start=start, count=axsiz )
-                  call netcdf_err( error, mpp_file(unit), field=field )
+                  error = NF90_GET_VAR( mpp_file(iunit)%ncid, field%id, data, start=start, count=axsiz )
+                  call netcdf_err( error, mpp_file(iunit), field=field )
                   if(field%scale /= 1.0 .or. field%add /= 0.0) then
                      data(:)=data(:)*field%scale + field%add
                   end if
                 else
-                  error = NF_GET_VARA_DOUBLE( mpp_file(unit)%ncid, field%id, start, axsiz, r8vals )
-                  call netcdf_err( error, mpp_file(unit), field=field )
+                  error = NF_GET_VARA_DOUBLE( mpp_file(iunit)%ncid, field%id, start, axsiz, r8vals )
+                  call netcdf_err( error, mpp_file(iunit), field=field )
                   if(field%scale == 1.0 .and. field%add == 0.0) then
                      data(:)=r8vals(:)
                   else
@@ -108,7 +108,7 @@
     end subroutine READ_RECORD_CORE_
 
 
-    subroutine READ_RECORD_( unit, field, num_words, data, time_level, &
+    subroutine READ_RECORD_( iunit, field, num_words, data, time_level, &
     & domain, position, tile_count, start_in, axsiz_in )
 !routine that is finally called by all mpp_read routines to perform the read
 !a non-netCDF record contains:
@@ -126,7 +126,7 @@
 !   with a timestamp of NULLTIME. There is no check in the code to prevent
 !   the user from repeatedly writing a static field.
 
-      integer,         intent(in)             :: unit, num_words
+      integer,         intent(in)             :: iunit, num_words
       type(fieldtype), intent(in)             :: field
       MPP_TYPE_,      intent(inout)           :: data(num_words)
       integer,        intent(in),    optional :: time_level
@@ -148,11 +148,11 @@
       endif
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'READ_RECORD: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
-      if( .NOT.mpp_file(unit)%read_on_this_pe )return
+      if( .NOT.mpp_file(iunit)%opened )call mpp_error( FATAL, 'READ_RECORD: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%read_on_this_pe )return
 
-      if( .NOT.mpp_file(unit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
-      if( mpp_file(unit)%format .NE. MPP_NETCDF ) &
+      if( .NOT.mpp_file(iunit)%initialized ) call mpp_error( FATAL, 'MPP_READ: must first call mpp_read_meta.' )
+      if( mpp_file(iunit)%format .NE. MPP_NETCDF ) &
          call mpp_error( FATAL, 'Currently dont support non-NetCDF mpp read' )
 
       if (.not.PRESENT(time_level)) then
@@ -162,7 +162,7 @@
       endif
 
       if( verbose )print '(a,2i6,2i5)', 'MPP_READ: PE, unit, %id, %time_level =',&
-           pe, unit, mpp_file(unit)%id, tlevel
+           pe, iunit, mpp_file(iunit)%id, tlevel
       if( PRESENT(start_in) .AND. PRESENT(axsiz_in) ) then
          if(size(start(:)) > size(start_in(:)) )call mpp_error( FATAL, 'MPP_READ: size(start_in) < size(start)')
          if(size(axsiz(:)) > size(axsiz_in(:)) )call mpp_error( FATAL, 'MPP_READ: size(axsiz_in) < size(axsiz)')
@@ -201,7 +201,7 @@
               call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
               axsiz(1) = ie-is+1
               axsiz(2) = je-js+1
-              if( mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
+              if( mpp_file(iunit)%fileset.EQ.MPP_SINGLE )then
                  if( npes.GT.1 )then
                     start(1) = is - isg + 1
                     start(2) = js - jsg + 1
@@ -215,7 +215,7 @@
                        axsiz(2) = je - js + 1
                     end if
                  end if
-              else if( mpp_file(unit)%io_domain_exist ) then
+              else if( mpp_file(iunit)%io_domain_exist ) then
                  io_domain=>mpp_get_io_domain(domain)
                  call mpp_get_compute_domain(io_domain, is,  ie,  js,  je, tile_count=tile_count, position=position)
                  call mpp_get_global_domain (io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position)
@@ -226,15 +226,15 @@
           end if
       endif
       if( verbose )print '(a,2i6,i6,12i4)', 'READ_RECORD: PE, unit, num_words, start, axsiz=', &
-                          & pe, unit, num_words, start, axsiz
+                          & pe, iunit, num_words, start, axsiz
 
-      call READ_RECORD_CORE_(unit, field, num_words, data, start, axsiz)
+      call READ_RECORD_CORE_(iunit, field, num_words, data, start, axsiz)
 
       return
     end subroutine READ_RECORD_
 
-    subroutine MPP_READ_2DDECOMP_2D_( unit, field, domain, data, tindex, tile_count )
-      integer, intent(in) :: unit
+    subroutine MPP_READ_2DDECOMP_2D_( iunit, field, domain, data, tindex, tile_count )
+      integer, intent(in) :: iunit
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(in) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:)
@@ -242,13 +242,13 @@
       MPP_TYPE_ :: data3D(size(data,1),size(data,2),1)
       pointer( ptr, data3D )
       ptr = LOC(data)
-      call mpp_read( unit, field, domain, data3D, tindex, tile_count)
+      call mpp_read( iunit, field, domain, data3D, tindex, tile_count)
       return
     end subroutine MPP_READ_2DDECOMP_2D_
 
-    subroutine MPP_READ_2DDECOMP_3D_( unit, field, domain, data, tindex, tile_count )
+    subroutine MPP_READ_2DDECOMP_3D_( iunit, field, domain, data, tindex, tile_count )
 !mpp_read reads <data> which has the domain decomposition <domain>
-      integer,           intent(in) :: unit
+      integer,           intent(in) :: iunit
       type(fieldtype),   intent(in) :: field
       type(domain2D),    intent(in) :: domain
       MPP_TYPE_,      intent(inout) :: data(:,:,:)
@@ -264,11 +264,11 @@
 
       call mpp_clock_begin(mpp_read_clock)
 
-      if (.NOT. present(tindex) .AND. mpp_file(unit)%time_level .ne. -1) &
+      if (.NOT. present(tindex) .AND. mpp_file(iunit)%time_level .ne. -1) &
       call mpp_error(FATAL, 'MPP_READ: need to specify a time level for data with time axis')
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_READ: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%opened )call mpp_error( FATAL, 'MPP_READ: invalid unit number.' )
 
       call mpp_get_compute_domain( domain, is,  ie,  js,  je, tile_count=tile_count )
       call mpp_get_data_domain   ( domain, isd, ied, jsd, jed, x_is_global=x_is_global, &
@@ -321,9 +321,9 @@
          end if
       endif
       halos_are_global = x_is_global .AND. y_is_global
-      if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then
+      if( npes.GT.1 .AND. mpp_file(iunit)%threading.EQ.MPP_SINGLE )then
           if( halos_are_global )then !you can read directly into data array
-              if( pe.EQ.0 )call READ_RECORD_( unit, field, size(data(:,:,:)), data, tindex )
+              if( pe.EQ.0 )call READ_RECORD_( iunit, field, size(data(:,:,:)), data, tindex )
           else
               lenx=size(data,1)
               leny=size(data,2)
@@ -331,7 +331,7 @@
               len=lenx*leny*lenz
               allocate(gdata(len))
 ! read field on pe 0 and pass to all pes
-              if( pe.EQ.0 ) call READ_RECORD_( unit, field, len, gdata, tindex )
+              if( pe.EQ.0 ) call READ_RECORD_( iunit, field, len, gdata, tindex )
 ! broadcasting global array, this can be expensive!
               call mpp_transmit( put_data=gdata(1), plen=len, to_pe=ALL_PES, &
                                  get_data=gdata(1), glen=len, from_pe=0 )
@@ -355,12 +355,12 @@
 ! read compute domain as contiguous data
 
           allocate( cdata(is:ie,js:je,size(data,3)) )
-          call READ_RECORD_(unit,field,size(cdata(:,:,:)),cdata,tindex,domain,position,tile_count)
+          call READ_RECORD_(iunit,field,size(cdata(:,:,:)),cdata,tindex,domain,position,tile_count)
 
           data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:) = cdata(:,:,:)
           deallocate(cdata)
       else
-          call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,domain,position,tile_count)
+          call READ_RECORD_(iunit,field,size(data(:,:,:)),data,tindex,domain,position,tile_count)
       end if
 
       call mpp_clock_end(mpp_read_clock)
@@ -369,8 +369,8 @@
     end subroutine MPP_READ_2DDECOMP_3D_
 
 
-    subroutine MPP_READ_2DDECOMP_4D_( unit, field, domain, data, tindex, tile_count )
-      integer, intent(in) :: unit
+    subroutine MPP_READ_2DDECOMP_4D_( iunit, field, domain, data, tindex, tile_count )
+      integer, intent(in) :: iunit
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(in) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:,:,:)
@@ -378,6 +378,6 @@
       MPP_TYPE_ :: data3D(size(data,1),size(data,2),size(data,3)*size(data,4))
       pointer( ptr, data3D )
       ptr = LOC(data)
-      call mpp_read( unit, field, domain, data3D, tindex, tile_count)
+      call mpp_read( iunit, field, domain, data3D, tindex, tile_count)
       return
     end subroutine MPP_READ_2DDECOMP_4D_
