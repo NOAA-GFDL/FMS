@@ -147,7 +147,7 @@ subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_i
 
   character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,use_get_grid_version
-  integer               :: i, unit, io_status, ierr
+  integer               :: i, iunit, io_status, ierr
   logical               :: atm_on, ocn_on, lnd_on, ice_on, lndUG_on
   logical               :: file_open
   type(FmsNetcdfFile_t) :: fileobj
@@ -156,8 +156,8 @@ subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_i
 
   read (input_nml_file, data_override_nml, iostat=io_status)
   ierr = check_nml_error(io_status, 'data_override_nml')
-  unit = stdlog()
-  write(unit, data_override_nml)
+  iunit = stdlog()
+  write(iunit, data_override_nml)
 
 ! grid_center_bug is no longer supported.
 if (grid_center_bug) then
