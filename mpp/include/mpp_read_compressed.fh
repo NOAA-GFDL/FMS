@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-    subroutine MPP_READ_COMPRESSED_1D_(unit, field, domain, data, tindex)
-      integer, intent(in) :: unit
+    subroutine MPP_READ_COMPRESSED_1D_(iunit, field, domain, data, tindex)
+      integer, intent(in) :: iunit
       type(fieldtype), intent(in) :: field
       type(domain2D),  intent(in) :: domain
       MPP_TYPE_, intent(inout) :: data(:)
@@ -27,12 +27,12 @@
       pointer( ptr, data2D )
       ptr = LOC(data)
 
-      call mpp_read(unit, field, domain, data2D, tindex)
+      call mpp_read(iunit, field, domain, data2D, tindex)
       return
     end subroutine MPP_READ_COMPRESSED_1D_
 
-    subroutine MPP_READ_COMPRESSED_2D_(unit, field, domain, data, tindex, start, nread, threading)
-      integer,           intent(in)           :: unit
+    subroutine MPP_READ_COMPRESSED_2D_(iunit, field, domain, data, tindex, start, nread, threading)
+      integer,           intent(in)           :: iunit
       type(fieldtype),   intent(in)           :: field
       type(domain2D),    intent(in)           :: domain
       MPP_TYPE_,         intent(inout)        :: data(:,:)
@@ -49,7 +49,7 @@
       call mpp_clock_begin(mpp_read_clock)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_2D_: invalid unit number.' )
 
       print_compressed_chksum = .FALSE.
 
@@ -58,7 +58,7 @@
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
       if( threading_flag == MPP_MULTI ) then
-        call READ_RECORD_(unit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
+        call READ_RECORD_(iunit,field,size(data(:,:)),data,tindex,start_in=start, axsiz_in=nread)
       else if( threading_flag == MPP_SINGLE ) then
 
         io_domain=>mpp_get_io_domain(domain)
@@ -67,7 +67,7 @@
         allocate(pelist(npes))
         call mpp_get_pelist(io_domain,pelist)
 
-        if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:)),data,tindex,start_in=start, &
+        if(mpp_pe() == pelist(1)) call READ_RECORD_(iunit,field,size(data(:,:)),data,tindex,start_in=start, &
           &  axsiz_in=nread)
 
         !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
@@ -126,8 +126,8 @@
       return
     end subroutine MPP_READ_COMPRESSED_2D_
 
-    subroutine MPP_READ_COMPRESSED_3D_(unit, field, domain, data, tindex, start, nread, threading)
-      integer, intent(in)      :: unit
+    subroutine MPP_READ_COMPRESSED_3D_(iunit, field, domain, data, tindex, start, nread, threading)
+      integer, intent(in)      :: iunit
       type(fieldtype), intent(in)      :: field
       type(domain2D), intent(in)      :: domain
       MPP_TYPE_, intent(inout)      :: data(:,:,:)
@@ -146,13 +146,13 @@
       data = 0 !! zero out data so other tiles do not contribute junk to chksum
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%valid )call mpp_error( FATAL, 'MPP_READ_COMPRESSED_3D_: invalid unit number.' )
 
       print_compressed_chksum = .FALSE.
       threading_flag = MPP_SINGLE
       if( PRESENT(threading) )threading_flag = threading
       if( threading_flag == MPP_MULTI ) then
-         call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
+         call READ_RECORD_(iunit,field,size(data(:,:,:)),data,tindex,start_in=start, axsiz_in=nread)
       else if( threading_flag == MPP_SINGLE ) then
 
          io_domain=>mpp_get_io_domain(domain)
@@ -161,7 +161,7 @@
          allocate(pelist(npes))
          call mpp_get_pelist(io_domain,pelist)
 
-         if(mpp_pe() == pelist(1)) call READ_RECORD_(unit,field,size(data(:,:,:)),data,tindex,start_in=start, &
+         if(mpp_pe() == pelist(1)) call READ_RECORD_(iunit,field,size(data(:,:,:)),data,tindex,start_in=start, &
            &  axsiz_in=nread)
 
          !--- z1l replace mpp_broadcast with mpp_send/mpp_recv to avoid hang in calling MPI_COMM_CREATE
