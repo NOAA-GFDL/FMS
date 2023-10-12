@@ -44,14 +44,14 @@
     subroutine mpp_domains_init(flags)
       integer, intent(in), optional :: flags
       integer                       :: n
-      integer                       :: io_status, unit
+      integer                       :: io_status, iunit
 
       if( module_is_initialized )return
       call mpp_init(flags)           !this is a no-op if already initialized
       module_is_initialized = .TRUE.
       pe = mpp_root_pe()
-      unit = stdlog()
-      if( mpp_pe() .EQ.mpp_root_pe() ) write( unit,'(/a)' )'MPP_DOMAINS module '//trim(version)
+      iunit = stdlog()
+      if( mpp_pe() .EQ.mpp_root_pe() ) write( iunit,'(/a)' )'MPP_DOMAINS module '//trim(version)
 
       if( PRESENT(flags) )then
           debug   = flags.EQ.MPP_DEBUG
@@ -164,11 +164,11 @@ end subroutine init_nonblock_type
     !! Serves no particular purpose, but is provided should you require to
     !! re-initialize <TT>mpp_domains_mod</TT>, for some odd reason.
     subroutine mpp_domains_exit()
-      integer :: unit
+      integer :: iunit
       if( .NOT.module_is_initialized )return
       call mpp_max(mpp_domains_stack_hwm)
-      unit = stdout()
-      if( mpp_pe().EQ.mpp_root_pe() )write( unit,* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
+      iunit = stdout()
+      if( mpp_pe().EQ.mpp_root_pe() )write( iunit,* )'MPP_DOMAINS_STACK high water mark=', mpp_domains_stack_hwm
       module_is_initialized = .FALSE.
       return
     end subroutine mpp_domains_exit
