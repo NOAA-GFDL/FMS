@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-    subroutine WRITE_RECORD_( unit, field, num_words, data, time_in, domain, tile_count)
+    subroutine WRITE_RECORD_( iunit, field, num_words, data, time_in, domain, tile_count)
 !routine that is finally called by all mpp_write routines to perform the write
 !a non-netCDF record contains:
 !      field ID
@@ -33,7 +33,7 @@
 !   with a timestamp of NULLTIME. There is no check in the code to prevent
 !   the user from repeatedly writing a static field.
 
-      integer,           intent(in)           :: unit, num_words
+      integer,           intent(in)           :: iunit, num_words
       type(fieldtype),   intent(in)           :: field
       MPP_TYPE_,         intent(in)           :: data(num_words)
       MPP_TYPE_,         intent(in), optional :: time_in
@@ -54,30 +54,30 @@
       if (mpp_io_stack_size < num_words) call mpp_io_set_stack_size(num_words)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%write_on_this_pe) return
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
-      if( .NOT.mpp_file(unit)%initialized )then
+      if( .NOT.mpp_file(iunit)%write_on_this_pe) return
+      if( .NOT.mpp_file(iunit)%opened )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%initialized )then
 !this is the first call to mpp_write
 !we now declare the file to be initialized
 !if this is netCDF we switch file from DEFINE mode to DATA mode
-          if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
+          if( mpp_file(iunit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
 !NOFILL is probably required for parallel: any circumstances in which not advisable?
-              error = NF_SET_FILL( mpp_file(unit)%ncid, NF_NOFILL, i ); call netcdf_err( error, mpp_file(unit) )
-              if( mpp_file(unit)%action.EQ.MPP_WRONLY )then
+              error = NF_SET_FILL( mpp_file(iunit)%ncid, NF_NOFILL, i ); call netcdf_err( error, mpp_file(iunit) )
+              if( mpp_file(iunit)%action.EQ.MPP_WRONLY )then
                  if(header_buffer_val>0) then
-                    error = NF__ENDDEF(mpp_file(unit)%ncid,header_buffer_val,4,0,4)
+                    error = NF__ENDDEF(mpp_file(iunit)%ncid,header_buffer_val,4,0,4)
                  else
-                    error = NF_ENDDEF(mpp_file(unit)%ncid)
+                    error = NF_ENDDEF(mpp_file(iunit)%ncid)
                  endif
               endif
-              call netcdf_err( error, mpp_file(unit) )
+              call netcdf_err( error, mpp_file(iunit) )
 #endif
           else
-              call mpp_write_meta( unit, 'END', cval='metadata' )
+              call mpp_write_meta( iunit, 'END', cval='metadata' )
           end if
-          mpp_file(unit)%initialized = .TRUE.
-          if( verbose )print '(a,i6,a)', 'MPP_WRITE: PE=', pe, ' initialized file '//trim(mpp_file(unit)%name)//'.'
+          mpp_file(iunit)%initialized = .TRUE.
+          if( verbose )print '(a,i6,a)', 'MPP_WRITE: PE=', pe, ' initialized file '//trim(mpp_file(iunit)%name)//'.'
       end if
 
 !initialize time: by default assume NULLTIME
@@ -86,15 +86,15 @@
       newtime = .FALSE.
       if( PRESENT(time_in) )time = time_in
 !increment time level if new time
-      if( time.GT.mpp_file(unit)%time+EPSILON(time) )then !new time
-          mpp_file(unit)%time_level = mpp_file(unit)%time_level + 1
-          mpp_file(unit)%time = time
+      if( time.GT.mpp_file(iunit)%time+EPSILON(time) )then !new time
+          mpp_file(iunit)%time_level = mpp_file(iunit)%time_level + 1
+          mpp_file(iunit)%time = time
           newtime = .TRUE.
       end if
       if( verbose )print '(a,2i6,2i5,es13.5)', 'MPP_WRITE: PE, unit, %id, %time_level, %time=',&
-           pe, unit, mpp_file(unit)%id, mpp_file(unit)%time_level, mpp_file(unit)%time
+           pe, iunit, mpp_file(iunit)%id, mpp_file(iunit)%time_level, mpp_file(iunit)%time
 
-      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
+      if( mpp_file(iunit)%format.EQ.MPP_NETCDF )then
           ptr2 = LOC(mpp_io_stack(1))
 !define netCDF data block to be written:
 !  time axis: START = time level
@@ -121,31 +121,31 @@
           start = 1
           do i = 1,size(field%axes(:))
              axsiz(i) = field%size(i)
-             if( i.EQ.field%time_axis_index )start(i) = mpp_file(unit)%time_level
+             if( i.EQ.field%time_axis_index )start(i) = mpp_file(iunit)%time_level
              start(i) = max(start(i),1)
           end do
 
-          if( debug )print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, unit, start, axsiz
+          if( debug )print '(a,2i6,12i6)', 'WRITE_RECORD: PE, unit, start, axsiz=', pe, iunit, start, axsiz
 #ifdef use_netCDF
 !write time information if new time
           if( newtime )then
               if( KIND(time).EQ.r8_kind )then
-                  error = NF_PUT_VAR1_DOUBLE( mpp_file(unit)%ncid, mpp_file(unit)%id, mpp_file(unit:unit)%time_level,&
+                  error = NF_PUT_VAR1_DOUBLE( mpp_file(iunit)%ncid, mpp_file(iunit)%id, mpp_file(iunit:iunit)%time_level,&
                                             & time )
               else if( KIND(time).EQ.r4_kind )then
-                 error = NF90_PUT_VAR ( mpp_file(unit)%ncid, mpp_file(unit)%id, time)
+                 error = NF90_PUT_VAR ( mpp_file(iunit)%ncid, mpp_file(iunit)%id, time)
               end if
           end if
           if( field%pack == 0 )then
               packed_data = CEILING(data)
-              error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
+              error = NF_PUT_VARA_INT   ( mpp_file(iunit)%ncid, field%id, start, axsiz, packed_data )
           elseif( field%pack.GT.0 .and. field%pack.LE.2 )then
-              error = NF90_PUT_VAR      ( mpp_file(unit)%ncid, field%id, data, start=start, count=axsiz )
+              error = NF90_PUT_VAR      ( mpp_file(iunit)%ncid, field%id, data, start=start, count=axsiz )
           else              !convert to integer using scale and add: no error check on packed data representation
               packed_data = nint((data-field%add)/field%scale)
-              error = NF_PUT_VARA_INT   ( mpp_file(unit)%ncid, field%id, start, axsiz, packed_data )
+              error = NF_PUT_VARA_INT   ( mpp_file(iunit)%ncid, field%id, start, axsiz, packed_data )
           end if
-          call netcdf_err( error, mpp_file(unit), field=field )
+          call netcdf_err( error, mpp_file(iunit), field=field )
 #endif
       else                      !non-netCDF
           ptr1 = LOC(mpp_io_stack(1))
@@ -156,34 +156,34 @@
           else
               subdomain(:) = -1    ! -1 means use global value from axis metadata
           end if
-          if( mpp_file(unit)%format.EQ.MPP_ASCII )then
+          if( mpp_file(iunit)%format.EQ.MPP_ASCII )then
 !implies sequential access
-              write( unit,* )field%id, subdomain, time_level, time, data
+              write( iunit,* )field%id, subdomain, time_level, time, data
           else                      !MPP_IEEE32 or MPP_NATIVE
-              if( mpp_file(unit)%access.EQ.MPP_SEQUENTIAL )then
-                  write(unit)field%id, subdomain, time_level, time, data
+              if( mpp_file(iunit)%access.EQ.MPP_SEQUENTIAL )then
+                  write(iunit)field%id, subdomain, time_level, time, data
               else                  !MPP_DIRECT
-                  write( unit, rec=mpp_file(unit)%record )field%id, subdomain, time_level, time, data
-                  if( debug )print '(a,i6,a,i6)', 'MPP_WRITE: PE=', pe, ' wrote record ', mpp_file(unit)%record
+                  write( iunit, rec=mpp_file(iunit)%record )field%id, subdomain, time_level, time, data
+                  if( debug )print '(a,i6,a,i6)', 'MPP_WRITE: PE=', pe, ' wrote record ', mpp_file(iunit)%record
               end if
           end if
       end if
 
 !recompute current record for direct access I/O
-      if( mpp_file(unit)%access.EQ.MPP_DIRECT )then
-          if( mpp_file(unit)%fileset.EQ.MPP_SINGLE )then
+      if( mpp_file(iunit)%access.EQ.MPP_DIRECT )then
+          if( mpp_file(iunit)%fileset.EQ.MPP_SINGLE )then
 !assumes all PEs participate in I/O: modify later
-              mpp_file(unit)%record = mpp_file(unit)%record + records_per_pe*npes
+              mpp_file(iunit)%record = mpp_file(iunit)%record + records_per_pe*npes
           else
-              mpp_file(unit)%record = mpp_file(unit)%record + records_per_pe
+              mpp_file(iunit)%record = mpp_file(iunit)%record + records_per_pe
           end if
       end if
 
       return
     end subroutine WRITE_RECORD_
 
-    subroutine MPP_WRITE_2DDECOMP_2D_( unit, field, domain, data, tstamp, tile_count, default_data)
-      integer, intent(in) :: unit
+    subroutine MPP_WRITE_2DDECOMP_2D_( iunit, field, domain, data, tstamp, tile_count, default_data)
+      integer, intent(in) :: iunit
       type(fieldtype), intent(in) :: field
       type(domain2D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:)
@@ -195,13 +195,13 @@
       pointer( ptr, data3D )
       ptr = LOC(data)
 
-      call mpp_write( unit, field, domain, data3D, tstamp, tile_count, default_data)
+      call mpp_write( iunit, field, domain, data3D, tstamp, tile_count, default_data)
       return
     end subroutine MPP_WRITE_2DDECOMP_2D_
 
-    subroutine MPP_WRITE_2DDECOMP_3D_( unit, field, domain, data, tstamp, tile_count, default_data)
+    subroutine MPP_WRITE_2DDECOMP_3D_( iunit, field, domain, data, tstamp, tile_count, default_data)
 !mpp_write writes <data> which has the domain decomposition <domain>
-      integer,           intent(in)           :: unit
+      integer,           intent(in)           :: iunit
       type(fieldtype),   intent(in)           :: field
       type(domain2D),    intent(inout)        :: domain
       MPP_TYPE_,         intent(inout)        :: data(:,:,:)
@@ -222,7 +222,7 @@
 
       errunit = stderr()
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%valid )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
 
       position = field%position
 
@@ -242,17 +242,17 @@
           call mpp_error( FATAL, 'MPP_WRITE: data must be either on compute domain or data domain.' )
       end if
       halos_are_global = x_is_global .AND. y_is_global
-      if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then
+      if( npes.GT.1 .AND. mpp_file(iunit)%threading.EQ.MPP_SINGLE )then
           if( halos_are_global )then
               call mpp_update_domains( data, domain, position = position )
 !all non-0 PEs have passed their data to PE 0 and may now exit
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(data(:,:,:)), data, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(data(:,:,:)), data, tstamp)
               endif
           else
 !put field onto global domain
               call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
-              if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
+              if(mpp_file(iunit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
                   allocate( gdata(isg:ieg,jsg:jeg,size(data,3)) )
               else
                   allocate( gdata(1,1,1))
@@ -266,21 +266,21 @@
                                         default_data=default_data)
               endif
 !all non-0 PEs have passed their data to PE 0 and may now exit
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(gdata(:,:,:)), gdata, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(gdata(:,:,:)), gdata, tstamp)
               endif
               deallocate(gdata)
           end if
-      else if(mpp_file(unit)%io_domain_exist ) then
+      else if(mpp_file(iunit)%io_domain_exist ) then
           if( halos_are_global )then
               call mpp_update_domains( data, domain, position = position )
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(data(:,:,:)), data, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(data(:,:,:)), data, tstamp)
               endif
           else
-              io_domain=>mpp_get_io_domain(mpp_file(unit)%domain)
+              io_domain=>mpp_get_io_domain(mpp_file(iunit)%domain)
               call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
-              if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
+              if(mpp_file(iunit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
                  allocate( gdata(isg:ieg,jsg:jeg,size(data,3)) )
               else
                  allocate( gdata(1,1,1))
@@ -294,8 +294,8 @@
                                         default_data=default_data)
               endif
               io_domain => NULL()
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(gdata(:,:,:)), gdata, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(gdata(:,:,:)), gdata, tstamp)
               endif
               deallocate( gdata )
           endif
@@ -303,10 +303,10 @@
 !store compute domain as contiguous data and pass to write_record
           allocate( cdata(is:ie,js:je,size(data,3)) )
           cdata(:,:,:) = data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:)
-          call WRITE_RECORD_( unit, field, size(cdata(:,:,:)), cdata, tstamp, domain, tile_count )
+          call WRITE_RECORD_( iunit, field, size(cdata(:,:,:)), cdata, tstamp, domain, tile_count )
       else
 !data is already contiguous
-          call WRITE_RECORD_( unit, field, size(data(:,:,:)), data, tstamp, domain, tile_count )
+          call WRITE_RECORD_( iunit, field, size(data(:,:,:)), data, tstamp, domain, tile_count )
       end if
 
       call mpp_clock_end(mpp_write_clock)
@@ -314,9 +314,9 @@
       return
     end subroutine MPP_WRITE_2DDECOMP_3D_
 
-    subroutine MPP_WRITE_2DDECOMP_4D_( unit, field, domain, data, tstamp, tile_count, default_data)
+    subroutine MPP_WRITE_2DDECOMP_4D_( iunit, field, domain, data, tstamp, tile_count, default_data)
 !mpp_write writes <data> which has the domain decomposition <domain>
-      integer,           intent(in)           :: unit
+      integer,           intent(in)           :: iunit
       type(fieldtype),   intent(in)           :: field
       type(domain2D),    intent(inout)        :: domain
       MPP_TYPE_,         intent(inout)        :: data(:,:,:,:)
@@ -337,7 +337,7 @@
       call mpp_clock_begin(mpp_write_clock)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%valid )call mpp_error( FATAL, 'MPP_WRITE: invalid unit number.' )
 
       position = field%position
 
@@ -357,17 +357,17 @@
           call mpp_error( FATAL, 'MPP_WRITE: data must be either on compute domain or data domain.' )
       end if
       halos_are_global = x_is_global .AND. y_is_global
-      if( npes.GT.1 .AND. mpp_file(unit)%threading.EQ.MPP_SINGLE )then
+      if( npes.GT.1 .AND. mpp_file(iunit)%threading.EQ.MPP_SINGLE )then
           if( halos_are_global )then
               call mpp_update_domains( data, domain, position = position )
 !all non-0 PEs have passed their data to PE 0 and may now exit
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(data(:,:,:,:)), data, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(data(:,:,:,:)), data, tstamp)
               endif
           else
 !put field onto global domain
               call mpp_get_global_domain ( domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
-              if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
+              if(mpp_file(iunit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
                   allocate( gdata(isg:ieg,jsg:jeg,size(data,3),size(data,4)) )
               else
                   allocate( gdata(1,1,1,1))
@@ -381,21 +381,21 @@
                                         default_data=default_data)
               endif
 !all non-0 PEs have passed their data to PE 0 and may now exit
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(gdata(:,:,:,:)), gdata, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(gdata(:,:,:,:)), gdata, tstamp)
               endif
               deallocate(gdata)
           end if
-      else if(mpp_file(unit)%io_domain_exist ) then
+      else if(mpp_file(iunit)%io_domain_exist ) then
           if( halos_are_global )then
               if(npes .GT. 1) call mpp_update_domains( data, domain, position = position )
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(data(:,:,:,:)), data, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(data(:,:,:,:)), data, tstamp)
               endif
           else
-              io_domain=>mpp_get_io_domain(mpp_file(unit)%domain)
+              io_domain=>mpp_get_io_domain(mpp_file(iunit)%domain)
               call mpp_get_global_domain ( io_domain, isg, ieg, jsg, jeg, tile_count=tile_count, position=position )
-              if(mpp_file(unit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
+              if(mpp_file(iunit)%write_on_this_pe .OR. .NOT. global_field_on_root_pe) then
                  allocate( gdata(isg:ieg,jsg:jeg,size(data,3),size(data,4)) )
               else
                  allocate( gdata(1,1,1,1))
@@ -409,8 +409,8 @@
                                         default_data=default_data)
               endif
               io_domain => NULL()
-              if(mpp_file(unit)%write_on_this_pe ) then
-                 call WRITE_RECORD_( unit, field, size(gdata(:,:,:,:)), gdata, tstamp)
+              if(mpp_file(iunit)%write_on_this_pe ) then
+                 call WRITE_RECORD_( iunit, field, size(gdata(:,:,:,:)), gdata, tstamp)
               endif
               deallocate( gdata )
           endif
@@ -418,10 +418,10 @@
 !store compute domain as contiguous data and pass to write_record
           allocate( cdata(is:ie,js:je,size(data,3),size(data,4)) )
           cdata(:,:,:,:) = data(is-isd+1:ie-isd+1,js-jsd+1:je-jsd+1,:,:)
-          call WRITE_RECORD_( unit, field, size(cdata(:,:,:,:)), cdata, tstamp, domain, tile_count )
+          call WRITE_RECORD_( iunit, field, size(cdata(:,:,:,:)), cdata, tstamp, domain, tile_count )
       else
 !data is already contiguous
-          call WRITE_RECORD_( unit, field, size(data(:,:,:,:)), data, tstamp, domain, tile_count )
+          call WRITE_RECORD_( iunit, field, size(data(:,:,:,:)), data, tstamp, domain, tile_count )
       end if
 
       call mpp_clock_end(mpp_write_clock)
