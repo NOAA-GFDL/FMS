@@ -1607,7 +1607,7 @@ end subroutine check_message_size
     type(overlap_type),  pointer     :: checkList(:)=>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
-    integer                          :: unit
+    integer                          :: iunit
     logical                          :: set_check
 
     !--- since we restrict that if multiple tiles on one pe, all the tiles are limited to this pe.
@@ -2140,15 +2140,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nsend
-          write(unit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) flush(unit)
+       if(nsend >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain data structure
@@ -2719,15 +2719,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nrecv
-          write(unit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain
@@ -3017,7 +3017,7 @@ end subroutine check_message_size
     type(overlapSpec),   pointer     :: check =>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
-    integer                          :: unit
+    integer                          :: iunit
 
     !--- since we restrict that if multiple tiles on one pe, all the tiles are limited to this pe.
     !--- In this case, if ntiles on this pe is greater than 1, no overlapping between processor within each tile
@@ -3312,15 +3312,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nsend
-          write(unit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if( nsend > 0) flush(unit)
+       if( nsend > 0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain data structure
@@ -3585,15 +3585,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nrecv
-          write(unit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain
@@ -3662,7 +3662,7 @@ end subroutine check_message_size
     type(overlapSpec),   pointer     :: check =>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
-    integer                          :: unit
+    integer                          :: iunit
 
     !--- since we restrict that if multiple tiles on one pe, all the tiles are limited to this pe.
     !--- In this case, if ntiles on this pe is greater than 1, no overlapping between processor within each tile
@@ -3950,15 +3950,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nsend
-          write(unit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) flush(unit)
+       if(nsend >0) flush(iunit)
     endif
 
    ! copy the overlapping information into domain data structure
@@ -4216,15 +4216,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nrecv
-          write(unit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain
@@ -5319,7 +5319,7 @@ end subroutine check_message_size
     integer                           :: nsend, nrecv, nsend2, nrecv2
     type(contact_type), dimension(domain%ntiles)            :: eCont, wCont, sCont, nCont
     type(overlap_type), dimension(0:size(domain%list(:))-1) :: overlapSend, overlapRecv
-    integer                                                 :: unit
+    integer                                                 :: iunit
 
     if( position .NE. CENTER )  call mpp_error(FATAL,  "mpp_domains_define.inc: " //&
          "routine define_contact_point can only be used to calculate overlapping for cell center.")
@@ -5753,17 +5753,17 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do list = 0, nlist-1
           m = mod( domain%pos+list, nlist )
           if(overlapSend(m)%count==0) cycle
-          write(unit, *) "********to_pe = " ,overlapSend(m)%pe, " count = ",overlapSend(m)%count
+          write(iunit, *) "********to_pe = " ,overlapSend(m)%pe, " count = ",overlapSend(m)%count
           do n = 1, overlapSend(m)%count
-             write(unit, *) overlapSend(m)%is(n), overlapSend(m)%ie(n), overlapSend(m)%js(n), overlapSend(m)%je(n), &
+             write(iunit, *) overlapSend(m)%is(n), overlapSend(m)%ie(n), overlapSend(m)%js(n), overlapSend(m)%je(n), &
                   overlapSend(m)%dir(n), overlapSend(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) flush(unit)
+       if(nsend >0) flush(iunit)
     endif
 
     dirlist(1) = 1; dirlist(2) = 3; dirlist(3) = 5; dirlist(4) = 7
@@ -5827,13 +5827,13 @@ end subroutine check_message_size
        do list = 0, nlist-1
           m = mod( domain%pos+list, nlist )
           if(overlapRecv(m)%count==0) cycle
-          write(unit, *) "********from_pe = " ,overlapRecv(m)%pe, " count = ",overlapRecv(m)%count
+          write(iunit, *) "********from_pe = " ,overlapRecv(m)%pe, " count = ",overlapRecv(m)%count
           do n = 1, overlapRecv(m)%count
-             write(unit, *) overlapRecv(m)%is(n), overlapRecv(m)%ie(n), overlapRecv(m)%js(n), overlapRecv(m)%je(n), &
+             write(iunit, *) overlapRecv(m)%is(n), overlapRecv(m)%ie(n), overlapRecv(m)%js(n), overlapRecv(m)%je(n), &
                   overlapRecv(m)%dir(n), overlapRecv(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     if(nrecv >0) then
