@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-    subroutine MPP_WRITE_COMPRESSED_1D_(unit, field, domain, data, nelems_io, tstamp, default_data)
-      integer, intent(in) :: unit
+    subroutine MPP_WRITE_COMPRESSED_1D_(iunit, field, domain, data, nelems_io, tstamp, default_data)
+      integer, intent(in) :: iunit
       type(fieldtype), intent(inout) :: field
       type(domain2D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:)
@@ -29,12 +29,12 @@
       pointer( ptr, data2D )
       ptr = LOC(data)
 
-      call mpp_write_compressed(unit, field, domain, data2D, nelems_io, tstamp, default_data)
+      call mpp_write_compressed(iunit, field, domain, data2D, nelems_io, tstamp, default_data)
       return
     end subroutine MPP_WRITE_COMPRESSED_1D_
 
-    subroutine MPP_WRITE_COMPRESSED_3D_(unit, field, domain, data, nelems_io, tstamp, default_data)
-      integer, intent(in) :: unit
+    subroutine MPP_WRITE_COMPRESSED_3D_(iunit, field, domain, data, nelems_io, tstamp, default_data)
+      integer, intent(in) :: iunit
       type(fieldtype), intent(inout) :: field
       type(domain2D), intent(inout) :: domain
       MPP_TYPE_, intent(inout) :: data(:,:,:)
@@ -46,12 +46,12 @@
       pointer( ptr, data2D )
       ptr = LOC(data)
 
-      call mpp_write_compressed(unit, field, domain, data2D, nelems_io, tstamp, default_data)
+      call mpp_write_compressed(iunit, field, domain, data2D, nelems_io, tstamp, default_data)
       return
     end subroutine MPP_WRITE_COMPRESSED_3D_
 
-    subroutine MPP_WRITE_COMPRESSED_2D_(unit, field, domain, data, nelems_io, tstamp, default_data)
-      integer,           intent(in)           :: unit
+    subroutine MPP_WRITE_COMPRESSED_2D_(iunit, field, domain, data, nelems_io, tstamp, default_data)
+      integer,           intent(in)           :: iunit
       type(fieldtype),   intent(inout)        :: field
       type(domain2D),    intent(inout)        :: domain
       MPP_TYPE_,         intent(inout)        :: data(:,:)
@@ -77,7 +77,7 @@
       call mpp_clock_begin(mpp_write_clock)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_WRITE_COMPRESSED_2D_: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%valid )call mpp_error( FATAL, 'MPP_WRITE_COMPRESSED_2D_: invalid unit number.' )
+      if( .NOT.mpp_file(iunit)%valid )call mpp_error( FATAL, 'MPP_WRITE_COMPRESSED_2D_: invalid unit number.' )
 
       fill = 0
       if(PRESENT(default_data)) fill = default_data
@@ -94,13 +94,13 @@
       ! Check that nz is consistent across all PEs in io_domain
       allocate(nz_gather(npes))
       call mpp_gather((/nz/), nz_gather, pelist)
-      if ( mpp_file(unit)%write_on_this_pe.and.maxloc(nz_gather,1).ne.minloc(nz_gather,1) ) then
+      if ( mpp_file(iunit)%write_on_this_pe.and.maxloc(nz_gather,1).ne.minloc(nz_gather,1) ) then
          call mpp_error( FATAL, &
                         &  'MPP_WRITE_COMPRESSED_2D_: size(data,2) must be consistent across all PEs in io_domain' )
       end if
       deallocate(nz_gather)
 
-      if(mpp_file(unit)%write_on_this_pe ) allocate(rbuff(nz,nelems))
+      if(mpp_file(iunit)%write_on_this_pe ) allocate(rbuff(nz,nelems))
       allocate(sbuff(nz,mynelems))
 
       ! this matrix inversion makes for easy gather to the IO root
@@ -113,10 +113,10 @@
    !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size
       sptr = LOC(sbuff)
       rptr = 0
-      if(mpp_file(unit)%write_on_this_pe ) rptr = LOC(rbuff)
+      if(mpp_file(iunit)%write_on_this_pe ) rptr = LOC(rbuff)
       call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*nelems_io(:),pelist)
 
-      if(mpp_file(unit)%write_on_this_pe ) then
+      if(mpp_file(iunit)%write_on_this_pe ) then
          allocate(cdata(nelems,nz))
          cdata = fill
          do j=1,nz
@@ -125,7 +125,7 @@
          enddo; enddo
          ! cludge for now; need resizing accessor
          field%size(1) = nelems
-         call WRITE_RECORD_( unit, field, nelems*nz, cdata, tstamp)
+         call WRITE_RECORD_( iunit, field, nelems*nz, cdata, tstamp)
          deallocate(rbuff,cdata)
       endif
 
