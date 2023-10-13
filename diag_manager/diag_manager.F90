@@ -218,7 +218,8 @@ use platform_mod
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
        & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init, diag_util_init, field_log_separator
+       & prepend_attribute, attribute_init, diag_util_init, field_log_separator, &
+       & get_file_start_time
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -444,6 +445,7 @@ CONTAINS
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
+    TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -559,7 +561,6 @@ CONTAINS
           ind = input_fields(field)%output_fields(j)
           output_fields(ind)%static = .FALSE.
           ! Set up times in output_fields
-          output_fields(ind)%last_output = init_time
           ! Get output frequency from for the appropriate output file
           file_num = output_fields(ind)%output_file
           IF ( file_num == max_files ) CYCLE
@@ -578,8 +579,10 @@ CONTAINS
           END IF
 
           freq = files(file_num)%output_freq
+          diag_file_init_time = get_file_start_time(file_num)
           output_units = files(file_num)%output_units
-          output_fields(ind)%next_output = diag_time_inc(init_time, freq, output_units, err_msg=msg)
+          output_fields(ind)%last_output = diag_file_init_time
+          output_fields(ind)%next_output = diag_time_inc(diag_file_init_time, freq, output_units, err_msg=msg)
           IF ( msg /= '' ) THEN
              IF ( fms_error_handler('diag_manager_mod::register_diag_field',&
                   & ' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg)) RETURN
@@ -1910,6 +1913,11 @@ CONTAINS
           END IF  !.not.output_fields(out_num)%static .and. freq /= END_OF_RUN
           ! Finished output of previously buffered data, now deal with buffering new data
        END IF
+
+       if (present(time)) then
+         !! If the last_output is greater than the time passed in, it is not time to start averaging the data
+         if (output_fields(out_num)%last_output > time) CYCLE
+       endif
 
        IF ( .NOT.output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
