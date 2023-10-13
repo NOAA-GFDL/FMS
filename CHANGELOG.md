@@ -6,6 +6,11 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2023.02.01] - 2023-10-13
+### Fixed
+- DIAG_MANAGER: Fixes issue with incorrect start_time functionality
+
+
 ## [2023.02] - 2023-07-27
 ### Known Issues
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
