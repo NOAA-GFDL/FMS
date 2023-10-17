@@ -68,7 +68,7 @@ program test_io_mosaic_R4_R8
   integer        :: pe, npes, io_status
   type(domain2D) :: domain
   integer            :: tks_per_sec
-  integer            :: i,j,k, unit=7
+  integer            :: i,j,k, iunit=7
   logical            :: opened
   character(len=64)  :: varname
   real(r8_kind)      :: time8
@@ -197,64 +197,64 @@ program test_io_mosaic_R4_R8
   output_file = type
   select case(type)
   case("Single_tile_single_file_R4")
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, fileset=MPP_SINGLE )
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, fileset=MPP_SINGLE )
   case("Single_tile_mult_file_R4")
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R4")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
                   &  is_root_pe=is_root_pe )
   case("Single_tile_with_group_R4")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
                   &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group_R4")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
                   &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select
   ! write data
-  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', 'X', domain=xdom, data=(/(i-1.,i=1,nlon)/) )
-  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', 'Y', domain=ydom, data=(/(i-1.,i=1,nlat)/) )
-  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance', 'Z', data=(/(i-1.,i=1,nz)/) )
-  call mpp_write_meta( unit, t, 'T', 'sec', 'Time', 'T' )
-  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data', pack=pack_size )
-  call mpp_write( unit, x )
-  call mpp_write( unit, y )
-  call mpp_write( unit, z )
+  call mpp_write_meta( iunit, x, 'X', 'km', 'X distance', 'X', domain=xdom, data=(/(i-1.,i=1,nlon)/) )
+  call mpp_write_meta( iunit, y, 'Y', 'km', 'Y distance', 'Y', domain=ydom, data=(/(i-1.,i=1,nlat)/) )
+  call mpp_write_meta( iunit, z, 'Z', 'km', 'Z distance', 'Z', data=(/(i-1.,i=1,nz)/) )
+  call mpp_write_meta( iunit, t, 'T', 'sec', 'Time', 'T' )
+  call mpp_write_meta( iunit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data', pack=pack_size )
+  call mpp_write( iunit, x )
+  call mpp_write( iunit, y )
+  call mpp_write( iunit, z )
   do i = 0,nt-1
      time4 = i*10.
-     call mpp_write( unit, f, domain, data, time4 )
+     call mpp_write( iunit, f, domain, data, time4 )
   end do
-  call mpp_close(unit)
+  call mpp_close(iunit)
 
   call mpp_sync()               !wait for previous write to complete
   ! reopen file and check results
   select case(type)
   case("Single_tile_single_file_R4")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
   case("Single_tile_mult_file_R4")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R4")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group_R4", "Mult_tile_with_group_R4")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
                   &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select
 
-  call mpp_get_info( unit, ndim, nvar, natt, ntime )
-  call mpp_get_fields ( unit, vars(:) )
+  call mpp_get_info( iunit, ndim, nvar, natt, ntime )
+  call mpp_get_fields ( iunit, vars(:) )
   call mpp_get_atts(vars(1),name=varname)
 
   if( varname.NE.'Data' )call mpp_error( FATAL, 'File being read is not the expected one.' )
   do i = 0,nt-1
-     call mpp_read( unit, vars(1), domain, rdata, 1 )
+     call mpp_read( iunit, vars(1), domain, rdata, 1 )
   enddo
   ! compare read and stored data to validate successful write/read
   rchk = mpp_chksum(rdata)
@@ -339,64 +339,64 @@ program test_io_mosaic_R4_R8
   output_file = type
   select case(type)
   case("Single_tile_single_file_R8")
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, fileset=MPP_SINGLE )
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, fileset=MPP_SINGLE )
   case("Single_tile_mult_file_R8")
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R8")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
                   &  is_root_pe=is_root_pe )
   case("Single_tile_with_group_R8")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
                   &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group_R8")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
                   &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select
   ! write data
-  call mpp_write_meta( unit, x, 'X', 'km', 'X distance', 'X', domain=xdom, data=(/(i-1.,i=1,nlon)/) )
-  call mpp_write_meta( unit, y, 'Y', 'km', 'Y distance', 'Y', domain=ydom, data=(/(i-1.,i=1,nlat)/) )
-  call mpp_write_meta( unit, z, 'Z', 'km', 'Z distance', 'Z', data=(/(i-1.,i=1,nz)/) )
-  call mpp_write_meta( unit, t, 'T', 'sec', 'Time', 'T' )
-  call mpp_write_meta( unit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data', pack=pack_size )
-  call mpp_write( unit, x )
-  call mpp_write( unit, y )
-  call mpp_write( unit, z )
+  call mpp_write_meta( iunit, x, 'X', 'km', 'X distance', 'X', domain=xdom, data=(/(i-1.,i=1,nlon)/) )
+  call mpp_write_meta( iunit, y, 'Y', 'km', 'Y distance', 'Y', domain=ydom, data=(/(i-1.,i=1,nlat)/) )
+  call mpp_write_meta( iunit, z, 'Z', 'km', 'Z distance', 'Z', data=(/(i-1.,i=1,nz)/) )
+  call mpp_write_meta( iunit, t, 'T', 'sec', 'Time', 'T' )
+  call mpp_write_meta( iunit, f, (/x,y,z,t/), 'Data', 'metres', 'Random data', pack=pack_size )
+  call mpp_write( iunit, x )
+  call mpp_write( iunit, y )
+  call mpp_write( iunit, z )
   do i = 0,nt-1
      time8 = i*10.
-     call mpp_write( unit, f, domain, data, time8 )
+     call mpp_write( iunit, f, domain, data, time8 )
   end do
-  call mpp_close(unit)
+  call mpp_close(iunit)
 
   call mpp_sync()               !wait for previous write to complete
   ! reopen file and check results
   select case(type)
   case("Single_tile_single_file_R8")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_SINGLE )
   case("Single_tile_mult_file_R8")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile_R8")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group_R8", "Mult_tile_with_group_R8")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+     call mpp_open( iunit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
                   &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_io_mosaic_R4_R8: invaid value of type="//type)
   end select
 
-  call mpp_get_info( unit, ndim, nvar, natt, ntime )
-  call mpp_get_fields ( unit, vars(:) )
+  call mpp_get_info( iunit, ndim, nvar, natt, ntime )
+  call mpp_get_fields ( iunit, vars(:) )
   call mpp_get_atts(vars(1),name=varname)
 
   if( varname.NE.'Data' )call mpp_error( FATAL, 'File being read is not the expected one.' )
   do i = 0,nt-1
-     call mpp_read( unit, vars(1), domain, rdata, 1 )
+     call mpp_read( iunit, vars(1), domain, rdata, 1 )
   enddo
   ! compare read and stored data to validate successful write/read
   rchk = mpp_chksum(rdata)

@@ -123,19 +123,19 @@ program test_time_manager
     write(outunit,'(/,a)') '#################################  test3  #################################'
  !  Test of function time_plus
     call print_time(set_time(seconds=0, days=2, ticks=5) + set_time(seconds=0, days=2, ticks=6), 'test3.1:', &
-                   &  unit=outunit)
+                   &  iunit=outunit)
 
  !  Test of function time_minus
  !  The minus operator for time ensures a positive result. In effect is does this: abs(time1-time2)
     call print_time(set_time(seconds=0, days=2, ticks=5) - set_time(seconds=0, days=2, ticks=6), 'test3.2:', &
-                   &  unit=outunit)
+                   &  iunit=outunit)
 
  !  Test of function time_scalar_mult.  Note that 25000*86399 is greater than huge = 2**31 - 1
-    call print_time(2*set_time(seconds=0, days=2, ticks=6), 'test3.3:', unit=outunit)
-    call print_time(25000*set_time(seconds=86399, days=0, ticks=0), 'test3.4:', unit=outunit)
+    call print_time(2*set_time(seconds=0, days=2, ticks=6), 'test3.3:', iunit=outunit)
+    call print_time(25000*set_time(seconds=86399, days=0, ticks=0), 'test3.4:', iunit=outunit)
 
  !  Test of function time_scalar_divide
-    call print_time(set_time(seconds=0, days=60000, ticks=2)/2, 'test3.5:', unit=outunit)
+    call print_time(set_time(seconds=0, days=60000, ticks=2)/2, 'test3.5:', iunit=outunit)
 
  !  Test of function time_real_divide
     xx = set_time(seconds=0, days=60000, ticks=2)//set_time(seconds=86400)
@@ -195,7 +195,7 @@ program test_time_manager
      write(test_name(7:8),'(i2.2)') nr
      Time = set_time(trim(test_time(nr)), err_msg=err_msg, allow_rounding=.false.)
      if(err_msg == '') then
-       call print_time(Time, test_name//':', unit=outunit)
+       call print_time(Time, test_name//':', iunit=outunit)
      else
        out_msg = test_name // ' fails: ' // trim(err_msg)
        call mpp_error(FATAL, out_msg)
@@ -221,9 +221,9 @@ program test_time_manager
  if(test5) then
    write(outunit,'(/,a)') '#################################  test5  #################################'
    call set_calendar_type(JULIAN)
-   call print_time(set_date(1980, 1, 1, 0, 0, 0),' test5.1:', unit=outunit)
-   call print_time(set_date(1980, 1, 2, 3, 4, 5, 6),' test5.2:', unit=outunit)
-   call print_time(set_date(1980, 1, 2, tick=6),' test5.3:', unit=outunit)
+   call print_time(set_date(1980, 1, 1, 0, 0, 0),' test5.1:', iunit=outunit)
+   call print_time(set_date(1980, 1, 2, 3, 4, 5, 6),' test5.2:', iunit=outunit)
+   call print_time(set_date(1980, 1, 2, tick=6),' test5.3:', iunit=outunit)
    Time = set_date(1980, 1, 2, tick=10, err_msg=err_msg)
    if(err_msg == '') then
      call mpp_error(FATAL, 'Test5.4 fails: did not get expected error')
@@ -245,14 +245,14 @@ program test_time_manager
      write(test_name(7:8),'(i2.2)') nr
      Time = set_date(trim(test_date(nr)), err_msg=err_msg, allow_rounding=.true., zero_year_warning=.true.)
      if(err_msg == '') then
-       call print_time(Time,test_name//' successful:', unit=outunit)
+       call print_time(Time,test_name//' successful:', iunit=outunit)
      else
        out_msg = test_name // ' fails: ' // trim(err_msg)
        call mpp_error(FATAL, out_msg)
      endif
    enddo
    call set_calendar_type(THIRTY_DAY_MONTHS)
-   call print_time(set_date('1900-02-30 00:00:00'),'test6.7:', unit=outunit)
+   call print_time(set_date('1900-02-30 00:00:00'),'test6.7:', iunit=outunit)
    Time = set_date('1900-01-31 00:00:00', err_msg=err_msg)
    if(err_msg == '') then
      call mpp_error(FATAL, 'Test6.8 fails: did not get expected error')
@@ -332,7 +332,7 @@ program test_time_manager
     call set_calendar_type(THIRTY_DAY_MONTHS)
     Time = set_date('1904-02-29 00:00:00', err_msg=err_msg)
     if(err_msg == '') then
-      call print_time(Time, 'test8.1 successful', unit=outunit)
+      call print_time(Time, 'test8.1 successful', iunit=outunit)
     else
        out_msg = 'test8.1 fails: ' // trim(err_msg)
        call mpp_error(FATAL, out_msg)
@@ -412,24 +412,24 @@ program test_time_manager
 
   if(test11) then
     write(outunit,'(/,a)') '#################################  test11  #################################'
-    call print_time(increment_time(set_time(seconds=0, days=2), seconds=0, days=1),'test11.1:', unit=outunit)
-    call print_time(decrement_time(set_time(seconds=0, days=2), seconds=0, days=1),'test11.2:', unit=outunit)
+    call print_time(increment_time(set_time(seconds=0, days=2), seconds=0, days=1),'test11.1:', iunit=outunit)
+    call print_time(decrement_time(set_time(seconds=0, days=2), seconds=0, days=1),'test11.2:', iunit=outunit)
     call print_time(increment_time(set_time(seconds=0, days=2, ticks=5), seconds=400, days=1, ticks=14), &
-                   & 'test11.3:', unit=outunit)
+                   & 'test11.3:', iunit=outunit)
     call print_time(decrement_time(set_time(seconds=0, days=2, ticks=5), seconds=400, days=1, ticks=14), &
-                   & 'test11.4:', unit=outunit)
+                   & 'test11.4:', iunit=outunit)
   endif
  !==============================================================================================
  !  Tests of negative increments in increment_time and decrement_time
 
   if(test12) then
     write(outunit,'(/,a)') '#################################  test12  #################################'
-    call print_time(increment_time(set_time(seconds=0, days=2), seconds=0, days=-1),'test12.1:', unit=outunit)
-    call print_time(decrement_time(set_time(seconds=0, days=2), seconds=0, days=-1),'test12.2:', unit=outunit)
+    call print_time(increment_time(set_time(seconds=0, days=2), seconds=0, days=-1),'test12.1:', iunit=outunit)
+    call print_time(decrement_time(set_time(seconds=0, days=2), seconds=0, days=-1),'test12.2:', iunit=outunit)
     call print_time(increment_time(set_time(seconds=0, days=2, ticks=5),seconds=-400,days=-1,ticks=-14), &
-                   & 'test12.3:',unit=outunit)
+                   & 'test12.3:',iunit=outunit)
     call print_time(decrement_time(set_time(seconds=0, days=2, ticks=5),seconds=-400,days=-1,ticks=-14), &
-                   & 'test12.4:',unit=outunit)
+                   & 'test12.4:',iunit=outunit)
   endif
  !==============================================================================================
  !  Test of trap for negative time
@@ -448,9 +448,9 @@ program test_time_manager
 
   if(test14) then
     write(outunit,'(/,a)') '#################################  test14  #################################'
-    call print_time(set_time(seconds=-86399, days=2, ticks=-10),'test14.1:', unit=outunit)
-    call print_time(set_time(seconds=-86390, days=2, ticks=-95),'test14.2:', unit=outunit)
-    call print_time(set_time(seconds= 86400, days=2, ticks= 95),'test14.3:', unit=outunit)
+    call print_time(set_time(seconds=-86399, days=2, ticks=-10),'test14.1:', iunit=outunit)
+    call print_time(set_time(seconds=-86390, days=2, ticks=-95),'test14.2:', iunit=outunit)
+    call print_time(set_time(seconds= 86400, days=2, ticks= 95),'test14.3:', iunit=outunit)
   endif
  !==============================================================================================
  !  Tests of consistency of day numbering between calendars
@@ -586,27 +586,27 @@ program test_time_manager
   if(test18) then
     write(outunit,'(/,a)') '#################################  test18  #################################'
     call set_calendar_type(THIRTY_DAY_MONTHS)
-    call print_time(length_of_year(), 'length_of_year for THIRTY_DAY_MONTHS:', unit=outunit)
+    call print_time(length_of_year(), 'length_of_year for THIRTY_DAY_MONTHS:', iunit=outunit)
     call set_calendar_type(NOLEAP)
-    call print_time(length_of_year(), 'length_of_year for NOLEAP:', unit=outunit)
+    call print_time(length_of_year(), 'length_of_year for NOLEAP:', iunit=outunit)
     call set_calendar_type(JULIAN)
-    call print_time(length_of_year(), 'length_of_year for JULIAN:', unit=outunit)
+    call print_time(length_of_year(), 'length_of_year for JULIAN:', iunit=outunit)
     call set_calendar_type(GREGORIAN)
-    call print_time(length_of_year(), 'length_of_year for GREGORIAN:', unit=outunit)
+    call print_time(length_of_year(), 'length_of_year for GREGORIAN:', iunit=outunit)
   endif
  !==============================================================================================
  !  Tests of real_to_time_type
 
   if(test19) then
     write(outunit,'(/,a)') '#################################  test19  #################################'
-    call print_time(real_to_time_type(86401.1_r8_kind), 'real_to_time_type(86401.1):', unit=outunit)
+    call print_time(real_to_time_type(86401.1_r8_kind), 'real_to_time_type(86401.1):', iunit=outunit)
     Time = real_to_time_type(-1.0_r8_kind, err_msg)
     if(err_msg == '') then
        call mpp_error(FATAL, 'test19.3 fails: did not get the expected error message for r8')
     else
       write(outunit,'(a)') 'r8 test successful: '//trim(err_msg)
     endif
-    call print_time(real_to_time_type(86401.1_r4_kind), 'real_to_time_type(86401.1):', unit=outunit)
+    call print_time(real_to_time_type(86401.1_r4_kind), 'real_to_time_type(86401.1):', iunit=outunit)
     Time = real_to_time_type(-1.0_r4_kind, err_msg)
     if(err_msg == '') then
        call mpp_error(FATAL, 'test19.3 fails: did not get the expected error message for r4')
