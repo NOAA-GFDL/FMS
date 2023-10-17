@@ -33,7 +33,7 @@
 
    if (present(end)) end = .false.
 
-   if (do_read()) read (unit,end=10) gdata
+   if (do_read()) read (iunit,end=10) gdata
    if (.not.read_all_pe) then
          ! did not read on all PEs need to broadcast data
       len = size(gdata,1)*size(gdata,2)*size(gdata,3)*size(gdata,4)
