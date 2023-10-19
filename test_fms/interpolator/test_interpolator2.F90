@@ -73,19 +73,22 @@ program test_interpolator2
   real(TEST_INTP_KIND_), allocatable :: latb_mod(:,:) !< model coordinates
   real(TEST_INTP_KIND_), allocatable :: lonb_mod(:,:) !< model coordinates
 
+  !> array holding model times
   type(time_type), allocatable :: model_time_julian(:), model_time_noleap(:)
 
   type(interpolate_type) :: o3 !< recyclable interpolate_type
 
-  logical :: yearly, daily, noleap
+  !> whether the file input is yearly, daily data
+  logical :: yearly, daily
+  logical :: noleap
 
-  logical :: test_daily_julian=.true., test_daily_noleap=.false.
-  logical :: test_yearly_noleap=.false., test_yearly_julian=.false.
-  logical :: test_no_time=.false.
+  logical :: test_file_daily_julian=.true.,   test_file_daily_noleap=.false.
+  logical :: test_file_yearly_noleap=.false., test_file_yearly_julian=.false.
+  logical :: test_file_no_time=.false.
   integer :: nml_unit_var=99
   character(*), parameter :: nml_file='test_interpolator.nml'
-  NAMELIST / test_interpolator_nml / test_daily_noleap, test_daily_julian, &
-                                     test_yearly_noleap, test_yearly_julian, test_no_time
+  NAMELIST / test_interpolator_nml / test_file_daily_noleap, test_file_daily_julian, &
+                                     test_file_yearly_noleap, test_file_yearly_julian, test_file_no_time
 
   if(lkind==r4_kind) tol=1.e-4_r8_kind
   if(lkind==r8_kind) tol=1.e-6_r8_kind
@@ -94,69 +97,40 @@ program test_interpolator2
   read(unit=nml_unit_var, nml=test_interpolator_nml)
   close(nml_unit_var)
 
-  if(test_daily_noleap) &
-       write(*,"(////10x,a,i0////)") &
-       " ** DAILY FILE CAL NOLEAP ** DAILY FILE CAL NOLEAP ** DAILY FILE CAL NOLEAP ** ", lkind
-  if(test_daily_julian)  &
-       write(*,"(////10x,a,i0/////)") &
-       ' ** DAILY FILE CAL JULIAN ** DAILY FILE CAL JULIAN ** DAILY FILE CAL JULIAN ** ', lkind
-  if(test_yearly_noleap) &
-       write(*,"(////10x,a,i0/////)") &
-       ' ** YEARLY FILE CAL NOLEAP ** YEARLY FILE CAL NOLEAP ** YEARLY FILE CAL NOLEAP ** ', lkind
-  if(test_yearly_julian) &
-       write(*,"(////10x,a,i0/////)") &
-       ' ** YEARLY FILE CAL JULIAN ** YEARLY FILE CAL JULIAN ** YEARLY FILE CAL JULIAN ** ', lkind
-  if(test_no_time) &
-       write(*,"(////10x,a/////)") " ** NO TIME AXIS ** NO TIME AXIS ** NO TIME AXIS **"
-
-
   call fms_init
   call time_manager_init
+  call write_header
 
   !> set data
-  if(test_daily_noleap)  then
-     call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
-          daily_in=.true., yearly_in=.false., noleap_in=.true.)
-  else if(test_daily_julian) then
-     call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
-                         daily_in=.true., yearly_in=.false., noleap_in=.false.)
-  else if(test_yearly_noleap) then
-     call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
-                         daily_in=.false., yearly_in=.true., noleap_in=.true.)
-  else if(test_yearly_julian) then
-     call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
-                         daily_in=.false., yearly_in=.true., noleap_in=.false.)
-  else if(test_no_time) then
-     call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=0, npfull_in=3, &
-                         daily_in=.true., yearly_in=.false., noleap_in=.false.)
-  end if
+  call set_parameters_wrapper
   call set_and_write_data
 
-  !> test interpolator_init with model JULIAN calendar
-  if(.not.test_no_time) then
-     calendar_type=2  !< JULIAN calendar for model
+  if(.not.test_file_no_time) then
+     !> test interpolator when  model calendar is JULIAN
+     calendar_type=2
      call set_calendar_type(calendar_type)
      call run_test_set
      !---------------------------------------------------------
-     !> test interpolator_init with model NOLEAP calendar
-     calendar_type=4  !< NOLEAP calendar for model
+     !> test interpolator when model calendar is NOLEAP
+     calendar_type=4
      call set_calendar_type(calendar_type)
      call run_test_set
   end if
 
-  !----------------------------------------------------------------------------------
-  !> Need to deallocate arrays because a new NetCDF File will be written out
   !> test interpolator_no_time_axis
-  if(test_no_time) then
-     calendar_type=2  !< JULIAN calendar for model
+  if(test_file_no_time) then
+     write(*,*) 'test_intepolator_no_time_axis'
+     calendar_type=2  !< still need to set model calendar
      call set_calendar_type(calendar_type)
      call test_interpolator_init(o3)
-     write(*,*) 'test_intepolator_no_time_axis'
      call test_interpolator_no_time_axis(o3)
      call test_interpolator_end(o3)
   end if
 
 contains
+
+#include "test_interpolator_write_climatology.inc"
+
   !===============================================!
   subroutine test_interpolator_init(clim_type)
 
@@ -183,28 +157,25 @@ contains
 
     type(interpolate_type), intent(inout) :: clim_type
     type(time_type), dimension(ntime), intent(in) :: model_time
-    type(time_type) :: tmp_time
+    type(time_type) :: test_time
     real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod,npfull,1) :: interp_data !<only 1 field
-    real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod,nphalf) :: phalf
+    real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod,nphalf) :: phalf_in
     integer :: itime, i, j, k, l
 
     real(TEST_INTP_KIND_) :: answer
 
-    phalf(:,:,1)=0.0000_lkind
-    phalf(:,:,2)=0.0002_lkind
-    phalf(:,:,3)=0.0004_lkind
-    phalf(:,:,4)=0.0005_lkind
+
+    do i=1, nphalf
+       phalf_in(:,:,i)=phalf(i)
+    end do
 
     do itime=2, ntime-1
 
-       answer=real(itime,TEST_INTP_KIND_)-0.5_lkind
-       !answer=real(itime,TEST_INTP_KIND_)
-
-       tmp_time=model_time(itime-1)+ (model_time(itime)-model_time(itime-1))/2
-       !tmp_time=model_time(itime)
+       answer=0.5_lkind*ozone(1,1,1,itime-1)+0.5_lkind*ozone(1,1,1,itime)
+       test_time=model_time(itime-1) + (model_time(itime)-model_time(itime-1))/2
 
        !> test interpolator_4D_r4/8
-       call interpolator(clim_type, tmp_time, phalf, interp_data, 'ozone')
+       call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone')
        do i=1, npfull
           do j=1, nlonlat_mod
              do k=1, nlonlat_mod
@@ -214,7 +185,7 @@ contains
        end do
 
        !> test interpolator_3_r4/8
-       call interpolator(clim_type, tmp_time, phalf, interp_data(:,:,:,1), 'ozone')
+       call interpolator(clim_type, test_time, phalf_in, interp_data(:,:,:,1), 'ozone')
        do i=1, npfull
           do j=1, nlonlat_mod
              do k=1, nlonlat_mod
@@ -224,7 +195,7 @@ contains
        end do
 
        !> test interpolator_2D_r4/8
-       call interpolator(clim_type, tmp_time, interp_data(:,:,1,1), 'ozone')
+       call interpolator(clim_type, test_time, interp_data(:,:,1,1), 'ozone')
        do j=1, nlonlat_mod
           do k=1, nlonlat_mod
              call check_answers(interp_data(k,j,1,1), answer, tol, 'test interpolator_2D')
@@ -232,8 +203,8 @@ contains
        end do
 
        !> Test obtain_interpolator_time_slices
-       call obtain_interpolator_time_slices(clim_type,tmp_time)
-       call interpolator(clim_type, tmp_time, interp_data(:,:,1,1), 'ozone')
+       call obtain_interpolator_time_slices(clim_type,test_time)
+       call interpolator(clim_type, test_time, interp_data(:,:,1,1), 'ozone')
        call unset_interpolator_time_flag(clim_type)
        do j=1, nlonlat_mod
           do k=1, nlonlat_mod
@@ -265,18 +236,17 @@ contains
 
     type(interpolate_type) :: clim_type
 
-    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf-1,1) :: interp_data !< last column, there is only one field
-    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,npfull,1) :: interp_data !< last column, there is only one field
+    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf_in
     integer :: i, j, k
 
-    phalf(:,:,1)=0.0000_lkind
-    phalf(:,:,2)=0.0002_lkind
-    phalf(:,:,3)=0.0004_lkind
-    phalf(:,:,4)=0.0005_lkind
+    do i=1, nphalf
+       phalf_in(:,:,i)=phalf(i)
+    end do
 
     !> test interpolator_4D_no_time_axis_r4/8
-    call interpolator(clim_type, phalf, interp_data, 'ozone')
-    do i=1, nphalf-1
+    call interpolator(clim_type, phalf_in, interp_data, 'ozone')
+    do i=1, nphalf
        do j=1, nlonlat
           do k=1, nlonlat
              call check_answers(interp_data(k,j,i,1), ozone(k,j,i,1), tol, 'test interpolator_4D_no_time_axis')
@@ -285,8 +255,8 @@ contains
     end do
 
     !> test interpolator_3D_no_time_axis_r4/8
-    call interpolator(clim_type, phalf, interp_data(:,:,:,1), 'ozone')
-    do i=1, nphalf-1
+    call interpolator(clim_type, phalf_in, interp_data(:,:,:,1), 'ozone')
+    do i=1, nphalf
        do j=1, nlonlat
           do k=1, nlonlat
              call check_answers(interp_data(k,j,i,1), ozone(k,j,i,1), tol, 'test interpolator_3D_no_time_axis')
@@ -371,7 +341,6 @@ contains
     write(*,*) '5.  interpolator_end'
     call test_interpolator_end(o3)
 
-
   end subroutine run_test_set
   !===============================================!
   subroutine check_answers(results, answers, tol, whoami)
@@ -389,6 +358,45 @@ contains
 
   end subroutine check_answers
   !===============================================!
-#include "test_interpolator_write_climatology.inc"
+  subroutine write_header
 
+
+    if(test_file_daily_noleap) &
+         write(*,"(////10x,a,i0////)") &
+         " ** DAILY FILE CAL NOLEAP ** DAILY FILE CAL NOLEAP ** DAILY FILE CAL NOLEAP ** ", lkind
+    if(test_file_daily_julian)  &
+         write(*,"(////10x,a,i0/////)") &
+         ' ** DAILY FILE CAL JULIAN ** DAILY FILE CAL JULIAN ** DAILY FILE CAL JULIAN ** ', lkind
+    if(test_file_yearly_noleap) &
+         write(*,"(////10x,a,i0/////)") &
+         ' ** YEARLY FILE CAL NOLEAP ** YEARLY FILE CAL NOLEAP ** YEARLY FILE CAL NOLEAP ** ', lkind
+    if(test_file_yearly_julian) &
+         write(*,"(////10x,a,i0/////)") &
+         ' ** YEARLY FILE CAL JULIAN ** YEARLY FILE CAL JULIAN ** YEARLY FILE CAL JULIAN ** ', lkind
+    if(test_file_no_time) &
+         write(*,"(////10x,a/////)") " ** NO TIME AXIS ** NO TIME AXIS ** NO TIME AXIS **"
+
+  end subroutine write_header
+  !===============================================!
+  subroutine set_parameters_wrapper
+
+    if(test_file_daily_noleap)  then
+       call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
+            daily_in=.true., yearly_in=.false., noleap_in=.true.)
+    else if(test_file_daily_julian) then
+       call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
+            daily_in=.true., yearly_in=.false., noleap_in=.false.)
+    else if(test_file_yearly_noleap) then
+       call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
+            daily_in=.false., yearly_in=.true., noleap_in=.true.)
+    else if(test_file_yearly_julian) then
+       call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=240, npfull_in=3, &
+            daily_in=.false., yearly_in=.true., noleap_in=.false.)
+    else if(test_file_no_time) then
+       call set_parameters(nlonlat_in=10, nlonlat_mod_in=10, ntime_in=0, npfull_in=3, &
+            daily_in=.true., yearly_in=.false., noleap_in=.false.)
+    end if
+
+  end subroutine set_parameters_wrapper
+  !===============================================!
 end program test_interpolator2

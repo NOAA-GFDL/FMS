@@ -189,8 +189,9 @@ subroutine set_clim_time()
 
   hr = 1 ; mn = 1 ; sc = 1
 
-  if(test_daily_noleap) then
-     base_time=set_date_no_leap(1849,1,1,1,1,1)
+  if(test_file_daily_noleap) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_no_leap(1849,1,1,hr,mn,sc)
      yr = 1849 ; mo = 1 ; dy = 15
      do i=1, ntime
         yr = yr + 1
@@ -201,8 +202,9 @@ subroutine set_clim_time()
         clim_time(i)=time_type_to_real(model_time_noleap(i)-base_time)/86400._r8_kind
         !call print_time(model_time_noleap(i))
      end do
-  else if(test_daily_julian) then
-     base_time=set_date_julian(1849,1,1,1,1,1)
+  else if(test_file_daily_julian) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_julian(1849,1,1,hr,mn,sc)
      yr = 1849 ; mo = 1 ; dy = 15
      do i=1, ntime
         yr = yr + 1
@@ -213,8 +215,9 @@ subroutine set_clim_time()
         clim_time(i)=time_type_to_real(model_time_julian(i)-base_time)/86400._r8_kind
         !call print_time(model_time_julian(i))
      end do
-  else if(test_yearly_noleap) then
-     base_time=set_date_no_leap(1849,1,1,1,1,1)
+  else if(test_file_yearly_noleap) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_no_leap(1849,1,1,hr,mn,sc)
      yr = 1849 ; mo = 1 ; dy = 15
      do i=1, ntime
         yr = yr + 1
@@ -233,8 +236,9 @@ subroutine set_clim_time()
         clim_time(i) = clim_time(i) + real(dy-1,r8_kind)/365._r8_kind
         !call print_time(model_time_noleap(i))
      end do
-  else if(test_yearly_julian) then
-     base_time=set_date_julian(1849,1,1,1,1,1)
+  else if(test_file_yearly_julian) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_julian(1849,1,1,hr,mn,sc)
      yr = 1849 ; mo = 1 ; dy = 15
      call set_calendar_type(2)
      do i=1, ntime
