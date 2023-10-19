@@ -100,7 +100,7 @@ module time_interp_external_mod
 
   !> @ingroup time_interp_external_mod
   type, private :: ext_fieldtype
-     integer :: iunit ! keep unit open when not reading all records
+     integer :: unit ! keep unit open when not reading all records
      character(len=128) :: name, units
      integer :: siz(4), ndim
      type(domain2d) :: domain
@@ -133,7 +133,7 @@ module time_interp_external_mod
   !> @ingroup time_interp_external_mod
   type, private :: filetype
      character(len=128) :: filename = ''
-     integer :: iunit = -1
+     integer :: unit = -1
   end type filetype
 
   !> Provide data from external file interpolated to current model time.
@@ -297,7 +297,7 @@ module time_interp_external_mod
       type(atttype), allocatable, dimension(:) :: global_atts
 
       real(DOUBLE_KIND) :: slope, intercept
-      integer :: form, thread, fset, iunit,ndim,nvar,natt,ntime,i,j
+      integer :: form, thread, fset, unit,ndim,nvar,natt,ntime,i,j
       integer :: iscomp,iecomp,jscomp,jecomp,isglobal,ieglobal,jsglobal,jeglobal
       integer :: isdata,iedata,jsdata,jedata, dxsize, dysize,dxsize_max,dysize_max
       logical :: verb, transpose_xy,use_comp_domain1
@@ -337,7 +337,7 @@ module time_interp_external_mod
           units = desired_units
           call mpp_error(FATAL,'==> Unit conversion via time_interp_external &
                &has been temporarily deprecated.  Previous versions of&
-               &this module used udunits_mod to perform iunit conversion.&
+               &this module used udunits_mod to perform unit conversion.&
                &  Udunits_mod is in the process of being replaced since &
                &there were portability issues associated with this code.&
                & Please remove the desired_units argument from calls to &
@@ -351,7 +351,7 @@ module time_interp_external_mod
          endif
       enddo
       if(nfile == 0) then
-         call mpp_open(iunit,trim(file),MPP_RDONLY,form,threading=thread,&
+         call mpp_open(unit,trim(file),MPP_RDONLY,form,threading=thread,&
               fileset=fset)
          num_files = num_files + 1
          if(num_files > max_files) then ! not enough space in the file table, reallocate it
@@ -364,12 +364,12 @@ module time_interp_external_mod
                                       "increase time_interp_external_nml max_files")
          endif
          opened_files(num_files)%filename = trim(file)
-         opened_files(num_files)%iunit = iunit
+         opened_files(num_files)%unit = unit
       else
-         iunit = opened_files(nfile)%iunit
+         unit = opened_files(nfile)%unit
       endif
 
-      call mpp_get_info(iunit,ndim,nvar,natt,ntime)
+      call mpp_get_info(unit,ndim,nvar,natt,ntime)
 
       if (ntime < 1) then
           write(msg,'(a15,a,a58)') 'external field ',trim(fieldname),&
@@ -377,13 +377,13 @@ module time_interp_external_mod
           call mpp_error(FATAL,trim(msg))
       endif
       allocate(global_atts(natt))
-      call mpp_get_atts(iunit, global_atts)
+      call mpp_get_atts(unit, global_atts)
       allocate(axes(ndim))
-      call mpp_get_axes(iunit, axes, time_axis)
+      call mpp_get_axes(unit, axes, time_axis)
       allocate(flds(nvar))
-      call mpp_get_fields(iunit,flds)
+      call mpp_get_fields(unit,flds)
       allocate(tstamp(ntime),tstart(ntime),tend(ntime),tavg(ntime))
-      call mpp_get_times(iunit,tstamp)
+      call mpp_get_times(unit,tstamp)
       transpose_xy = .false.
       isdata=1; iedata=1; jsdata=1; jedata=1
       gxsize=1; gysize=1
@@ -404,7 +404,7 @@ module time_interp_external_mod
 
       do i=1,nvar
          call mpp_get_atts(flds(i),name=name,units=fld_units,ndim=ndim,siz=siz_in)
-         call mpp_get_tavg_info(iunit,flds(i),flds,tstamp,tstart,tend,tavg)
+         call mpp_get_tavg_info(unit,flds(i),flds,tstamp,tstart,tend,tavg)
          call mpp_get_atts(flds(i),missing=missing)
          ! why does it convert case of the field name?
          if (trim(lowercase(name)) /= trim(lowercase(fieldname))) cycle
@@ -422,7 +422,7 @@ module time_interp_external_mod
          endif
 
          init_external_field = num_fields
-         field(num_fields)%iunit = iunit
+         field(num_fields)%unit = unit
          field(num_fields)%name = trim(name)
          field(num_fields)%units = trim(fld_units)
          field(num_fields)%field = flds(i)
@@ -851,7 +851,7 @@ module time_interp_external_mod
           call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
                           w2, t1, t2, field(index)%correct_leap_year_inconsistency, err_msg=err_msg)
           if(err_msg .NE. '') then
-             filename = mpp_get_file_name(field(index)%iunit)
+             filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
           endif
@@ -863,7 +863,7 @@ module time_interp_external_mod
           endif
           call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
           if(err_msg .NE. '') then
-             filename = mpp_get_file_name(field(index)%iunit)
+             filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
           endif
@@ -945,7 +945,7 @@ module time_interp_external_mod
           call time_interp(time,field(index)%modulo_time_beg, field(index)%modulo_time_end, field(index)%time(:), &
                           w2, t1, t2, field(index)%correct_leap_year_inconsistency, err_msg=err_msg)
           if(err_msg .NE. '') then
-             filename = mpp_get_file_name(field(index)%iunit)
+             filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 3:"//trim(err_msg)//&
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
           endif
@@ -957,7 +957,7 @@ module time_interp_external_mod
           endif
           call time_interp(time,field(index)%time(:),w2,t1,t2,modtime=mod_time, err_msg=err_msg)
           if(err_msg .NE. '') then
-             filename = mpp_get_file_name(field(index)%iunit)
+             filename = mpp_get_file_name(field(index)%unit)
              call mpp_error(FATAL,"time_interp_external 4:"//trim(err_msg)// &
                     ",file="//trim(filename)//",field="//trim(field(index)%name) )
           endif
@@ -1042,7 +1042,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
      if (field%domain_present .and. .not.PRESENT(interp)) then
         if (debug_this_module) write(outunit,*) 'reading record with domain for field ',trim(field%name)
-        call mpp_read(field%iunit,field%field,field%domain,field%src_data(:,:,:,ib),rec)
+        call mpp_read(field%unit,field%field,field%domain,field%src_data(:,:,:,ib),rec)
      else
         if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
         start = 1; nread = 1
@@ -1050,7 +1050,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         start(2) = field%js_src; nread(2) = field%je_src - field%js_src + 1
         start(3) = 1;            nread(3) = size(field%src_data,3)
         start(field%tdim) = rec; nread(field%tdim) = 1
-        call mpp_read(field%iunit,field%field,field%src_data(:,:,:,ib),start,nread)
+        call mpp_read(field%unit,field%field,field%src_data(:,:,:,ib),start,nread)
      endif
   endif
 !$OMP END CRITICAL
@@ -1140,7 +1140,7 @@ subroutine load_record_0d(field, rec)
      start = 1; nread = 1
      start(3) = 1;            nread(3) = size(field%src_data,3)
      start(field%tdim) = rec; nread(field%tdim) = 1
-     call mpp_read(field%iunit,field%field,field%src_data(:,:,:,ib),start,nread)
+     call mpp_read(field%unit,field%field,field%src_data(:,:,:,ib),start,nread)
      if ( field%region_type .NE. NO_REGION ) then
         call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when field is scalar")
      endif
@@ -1206,7 +1206,7 @@ subroutine realloc_files(n)
   allocate(ptr(n))
   do i = 1, size(ptr)
      ptr(i)%filename = ''
-     ptr(i)%iunit = -1
+     ptr(i)%unit = -1
   enddo
 
   if (associated(opened_files))then
@@ -1231,7 +1231,7 @@ subroutine realloc_fields(n)
 
   allocate(ptr(n))
   do i=1,size(ptr)
-     ptr(i)%iunit=-1
+     ptr(i)%unit=-1
      ptr(i)%name=''
      ptr(i)%units=''
      ptr(i)%siz=-1

@@ -868,7 +868,7 @@
                deallocate(mpp_file(iunit)%var(i)%size)
                nullify(mpp_file(iunit)%var(i)%size)
             end if
-            if ( associated(mpp_file(iunit)%vzzzar(i)%Att) ) then
+            if ( associated(mpp_file(iunit)%var(i)%Att) ) then
                do j=1, mpp_file(iunit)%var(i)%natt
                   if ( associated(mpp_file(iunit)%var(i)%Att(j)%fatt) ) then
                      deallocate(mpp_file(iunit)%var(i)%Att(j)%fatt)

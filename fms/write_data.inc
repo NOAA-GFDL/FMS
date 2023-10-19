@@ -24,4 +24,4 @@
 
  ! get the global data and write only on root pe
    call mpp_global_field ( Current_domain, data, gdata )
-   if ( mpp_pe() == mpp_root_pe() ) write (iunit) gdata
+   if ( mpp_pe() == mpp_root_pe() ) write (unit) gdata
