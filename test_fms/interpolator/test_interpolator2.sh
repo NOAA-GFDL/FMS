@@ -52,7 +52,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-# Run test (skipped)
+# Run test
 test_expect_success "test interpolator" 'mpirun -n 1 ./test_interpolator'
 
 

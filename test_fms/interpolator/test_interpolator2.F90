@@ -246,9 +246,10 @@ contains
 
     !> test interpolator_4D_no_time_axis_r4/8
     call interpolator(clim_type, phalf_in, interp_data, 'ozone')
-    do i=1, nphalf
+    do i=1, npfull
        do j=1, nlonlat
           do k=1, nlonlat
+             write(*,*) interp_data(k,j,i,1)
              call check_answers(interp_data(k,j,i,1), ozone(k,j,i,1), tol, 'test interpolator_4D_no_time_axis')
           end do
        end do
@@ -256,7 +257,7 @@ contains
 
     !> test interpolator_3D_no_time_axis_r4/8
     call interpolator(clim_type, phalf_in, interp_data(:,:,:,1), 'ozone')
-    do i=1, nphalf
+    do i=1, npfull
        do j=1, nlonlat
           do k=1, nlonlat
              call check_answers(interp_data(k,j,i,1), ozone(k,j,i,1), tol, 'test interpolator_3D_no_time_axis')

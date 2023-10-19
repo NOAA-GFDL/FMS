@@ -716,8 +716,8 @@ clim_type%r4_type%is_allocated=.false.
 clim_type%r8_type%is_allocated=.false.
 
 !! RSH mod
-if( .not.(clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) .and. &
-    (clim_type%TIME_FLAG.ne.NOTIME) ) then
+if( .not.(clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) &
+   .and. (clim_type%TIME_FLAG.ne.NOTIME) ) then
 !     read_all_on_init)) .or. clim_type%TIME_FLAG .eq. BILINEAR  ) then
      call close_file(clim_type%fileobj)
 endif
