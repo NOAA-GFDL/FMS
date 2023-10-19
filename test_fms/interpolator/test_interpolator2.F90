@@ -249,7 +249,6 @@ contains
     do i=1, npfull
        do j=1, nlonlat
           do k=1, nlonlat
-             write(*,*) interp_data(k,j,i,1)
              call check_answers(interp_data(k,j,i,1), ozone(k,j,i,1), tol, 'test interpolator_4D_no_time_axis')
           end do
        end do
