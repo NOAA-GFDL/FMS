@@ -19,6 +19,7 @@
 !**********************************************************************
 
 program test_drifters_comm
+#ifdef use_drifters
 
   use drifters_core_mod
   use drifters_comm_mod
@@ -143,4 +144,5 @@ program test_drifters_comm
   call mpp_domains_exit
   call mpp_exit
 
+#endif
 end program test_drifters_comm
