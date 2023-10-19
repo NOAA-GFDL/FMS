@@ -157,8 +157,8 @@ real(FMS_INTP_KIND_), parameter :: lPI=real(PI,FMS_INTP_KIND_)
 logical :: yearly !< flags to indicate if time data is in units of months or years
 integer :: num_years !< number of years
 integer :: base_year, base_month, base_day, base_hour, base_minute, base_second
-integer :: nn
-logical :: no_leap_in_calendar
+integer :: nn !< counter
+logical :: noleap_file_calendar !< is the file calendar noleap or julian
 real(r8_kind) :: num_days, frac_year !< variables for yearly=.true.
 type(time_type) :: n_time !< temporary time
 
@@ -401,35 +401,35 @@ if(dimension_exists(fileobj, "time")) then
       !    if file date has a non-zero year in the base time, determine that
       !    base_time based on the netcdf info.
       !----------------------------------------------------------------------
-      no_leap_in_calendar=.false.
+      noleap_file_calendar=.false.
       if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
          call mpp_error (NOTE, 'interpolator_mod: Model and file&
               & calendars are the same for file ' //   &
               & trim(file_name) // '; no calendar conversion  &
               &needed')
          base_time = set_date (fileyr, filemon, fileday, filehr,filemin,filesec)
-         no_leap_in_calendar=.false.
+         noleap_file_calendar=.false.
       else if((model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
          call mpp_error (NOTE, 'interpolator_mod: Model and file&
               & calendars are the same for file ' //   &
               & trim(file_name) // '; no calendar conversion  &
               &needed')
          base_time = set_date (fileyr, filemon, fileday, filehr,filemin,filesec)
-         no_leap_in_calendar=.true.
+         noleap_file_calendar=.true.
       else if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
          call mpp_error (NOTE, 'interpolator_mod: Using julian &
                           &model calendar and noleap file calendar&
                           & for file ' // trim(file_name) //   &
                           &'; calendar conversion needed')
         base_time = set_date_no_leap (fileyr, filemon, fileday,filehr, filemin, filesec)
-        no_leap_in_calendar=.true.
+        noleap_file_calendar=.true.
       else if ( (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
         call mpp_error (NOTE, 'interpolator_mod: Using noleap &
                           &model calendar and julian file calendar&
                           & for file ' // trim(file_name) //  &
                           &'; calendar conversion needed')
         base_time = set_date_julian (fileyr, filemon, fileday,filehr, filemin, filesec)
-        no_leap_in_calendar=.false.
+        noleap_file_calendar=.false.
       else
         call mpp_error (FATAL , 'interpolator_mod: Model and file&
              & calendars ( ' // trim(file_calendar) // ' ) differ  &
@@ -462,7 +462,7 @@ if(dimension_exists(fileobj, "time")) then
       !> convert the number of years passed to days if yearly=.true.
       if(yearly) then
          do n = 1, ntime
-            if(.not.no_leap_in_calendar) then
+            if(.not.noleap_file_calendar) then
                ! Julian calendar
                num_years  = int(time_in(n))
                frac_year = time_in(n) - real(num_years, r8_kind)
