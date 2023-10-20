@@ -130,7 +130,7 @@
 !write time information if new time
           if( newtime )then
               if( KIND(time).EQ.r8_kind )then
-                  error = NF_PUT_VAR1_DOUBLE( mpp_file(iunit)%ncid, mpp_file(iunit)%id, & 
+                  error = NF_PUT_VAR1_DOUBLE( mpp_file(iunit)%ncid, mpp_file(iunit)%id, &
                                             & mpp_file(iunit:iunit)%time_level, time )
               else if( KIND(time).EQ.r4_kind )then
                  error = NF90_PUT_VAR ( mpp_file(iunit)%ncid, mpp_file(iunit)%id, time)
