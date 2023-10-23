@@ -46,6 +46,7 @@
                                               !! indicating to reproduce the mpp_io bug where
                                               !! the null characters were not removed after reading a string attribute
   integer, parameter                                   :: lkind = FMS_AU_KIND_
+  integer :: edge_index(2)
 
   ndims = get_variable_num_dimensions(fileobj, name)
   allocate(dim_sizes(ndims))
@@ -108,8 +109,10 @@
 
       allocate(r2d(dim_sizes(1), dim_sizes(2)))
       call read_data(fileobj, buffer, r2d)
-      edge_data(1:dim_sizes(2)) = r2d(1,:)
-      edge_data(dim_sizes(2)+1) = r2d(2,dim_sizes(2))
+      edge_index = (/1, 2/)
+      if (r2d(1,1) .gt. r2d(1,2)) edge_index = (/2, 1 /)
+      edge_data(1:dim_sizes(2)) = r2d(edge_index(1),:)
+      edge_data(dim_sizes(2)+1) = r2d(edge_index(2),dim_sizes(2))
       deallocate(r2d)
     endif
     deallocate(dim_sizes)
