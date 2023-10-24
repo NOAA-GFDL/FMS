@@ -88,9 +88,13 @@ do i=1,command_argument_count()
       print "(A)", "Testing nearest_index (FAILURE)"
       call test_nearest_index_fail
 
-    case ('--axis-edges')
-      print "(A)", "Testing axis_edges"
-      call test_axis_edges
+    case ('--axis-edges-increasing')
+      print "(A)", "Testing axis_edges-increasing"
+      call test_axis_edges(.true.)
+
+    case ('--axis-edges-decreasing')
+      print "(A)", "Testing axis_edges-decreasing"
+      call test_axis_edges(.false.)
 
     case ('--tranlon')
       print "(A)", "Testing tranlon"
@@ -445,24 +449,42 @@ subroutine test_nearest_index_fail
   ret_test = nearest_index(5._k, arr)
 end subroutine
 
-subroutine test_axis_edges
+subroutine test_axis_edges(increasing_array)
+  logical, intent(in) :: increasing_array !< .True. if test using an increasing array
   real(k) :: data_in_var(10)
   real(k) :: data_in_var_edges(2,10)
   real(k) :: data_in_answers(11)
   type(FmsNetcdfFile_t) :: fileobj
   real(k)    :: answers(11)
-  integer :: i
+  integer :: count
+  integer :: count_factor
+  integer :: factor
+
+  if (increasing_array) then
+    count = 0
+    factor = 1
+    count_factor = -1
+  else
+    count = 11
+    factor = -1
+    count_factor = 0
+  endif
 
   do i=1,10
-     data_in_var(i) = real(i, k) - 0.5_k
+     count = count + factor
+     data_in_var(i) = real(count, k) - 0.5_k
 
-     data_in_var_edges(1,i) = real(i-1, k)
-     data_in_var_edges(2,i) = real(i, k)
+     data_in_var_edges(1,i) = real(count-1, k)
+     data_in_var_edges(2,i) = real(count, k)
 
-     data_in_answers(i) = real(i-1, k)
+     data_in_answers(i) = real(count + count_factor, k)
   enddo
 
-  data_in_answers(11) = 10._k
+  if (increasing_array) then
+    data_in_answers(11) = real(count, k)
+  else
+    data_in_answers(11) = real(count + factor, k)
+  endif
 
   call open_netcdf_w(fileobj)
 
