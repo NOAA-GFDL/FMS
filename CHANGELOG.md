@@ -6,10 +6,10 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
-## [2023.03] - 2023-10-20
+## [2023.03] - 2023-10-27
 ### Known Issues
 - GCC 9 and below as well as GCC 11.1.0 are unsupported due to compilation issues. See prior releases for more details.
-- `NO_QUAD_PRECISION` is no longer set by FMS, the `-DNO_QUAD_PRECISION` flag may need to be added to xml's in order to compile component code
+- `NO_QUAD_PRECISION` macro is no longer set by FMS, the `ENABLE_QUAD_PRECISION` macro has replaced prior usage of `NO_QUAD_PRECISION`. `-DENABLE_QUAD_PRECISION` should be set if quad precision is to be used, otherwise FMS will not use quad precision reals.
 
 ### Added
 - UNIT_TESTS: New unit tests have been created or and existing ones expanded on for any modules utilizing mixed precision support.
