@@ -6,6 +6,42 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2023.03] - 2023-10-27
+### Known Issues
+- GCC 9 and below as well as GCC 11.1.0 are unsupported due to compilation issues. See prior releases for more details.
+- `NO_QUAD_PRECISION` macro is no longer set by FMS, the `ENABLE_QUAD_PRECISION` macro has replaced prior usage of `NO_QUAD_PRECISION`. `-DENABLE_QUAD_PRECISION` should be set if quad precision is to be used, otherwise FMS will not use quad precision reals where applicable.
+
+### Added
+- UNIT_TESTS: New unit tests have been created or and existing ones expanded on for any modules utilizing mixed precision support.
+
+### Changed
+- MIXED PRECISION: Most subroutines and functions in FMS have been updated to simultaneously accept both 4 byte and 8 byte reals as arguments. This deprecates the `--enable-mixed-mode` option, which enabled similar functionality but was limited to certain directories and was not enabled by default. To facilitate easier testing of these code changes, the CMake precision options for default real size were left in (along with an equivalent `--disable-r8-default` flag for autotools). The resulting libraries will support mixed-precision real kinds regardless of default real size. It should also be noted that many routines that accept real arguments have been moved to include files along with headers in order to be compiled with both kinds. Most module level variables were explicitly declared as r8_kind for these updates.
+- Some type/module changes were made to facilitate mixed precision support. They are **intended** to have minimal impact to other codebases:
+  - COUPLER_TYPES: In coupler_types.F90,  `coupler_nd_field_type` and `coupler_nd_values_type` have been renamed to indicate real kind value: `coupler_nd_real4/8_field_type` and `coupler_nd_real4/8_values_type`. The `bc` field within `coupler_nd_bc_type` was modified to use r8_kind within the value and field types, and an additional field added `bc_r4` to use r4_kind values.
+  - TRIDIAGONAL: Module state between r4 and r8 calls are distinct (ie. subsequent calls will only be affected by calls of the same precision). This behaviour can be changed via the `save_both_kinds` optional argument to `tri_invert`.
+- CODE_STYLE: has been updated to reflect the formatting used for the mixed precision support updates.
+
+### Fixed
+- DIAG_MANAGER: Tile number (ie. tileX) will now be added to filenames for sub-regional diagnostics.
+- MPP: Bug affecting non-intel compilers coming from uninitialized pointer in the `nest_domain_type`
+- MPP: Bug fix for unallocated field causing seg faults in `mpp_check_field`
+- FMS2_IO: Fixed segfault occuring from use of cray pointer remapping along with mpp_scatter/gather
+- TEST_FMS: Added various fixes for different compilers within test programs for fms2_io, mpp, diag_manager, parser, and sat_vapor_pres.
+- INTERPOLATOR: Deallocates fields in the type that were previously left out in `interpolator_end`
+
+### Removed
+- CPP MACROS:
+  - `no_4byte_reals` was removed and will not set any additional macros if used. `no_8byte_integers` is still functional.
+  - `NO_QUAD_PRECISION` was removed. It was conditionally set if ENABLE_QUAD_PRECISION was undefined. ENABLE_QUAD_PRECISION should be used in model components instead (logic is flipped)
+  - `use_netCDF` was set by autotools previously but wasn't consistently used in the code. FMS should always be compiled with netcdf installed so this was removed with the exception of its use in deprecated IO modules.
+- DRIFTERS: The drifters subdirectory has been deprecated. It will only be compiled if using the `-Duse_drifters` CPP flag.
+
+### Tag Commit Hashes
+- 2023.03-beta1  06b94a7f574e7794684b8584391744ded68e2989
+- 2023.03-alpha3 b25a7c52a27dfd52edc10bc0ebe12776af0f03df
+- 2023.03-alpha2 9983ce308e62e9f7215b04c227cebd30fd75e784
+- 2023.03-alpha1 a46bd94fd8dd1f6f021501e29179003ff28180ec
+
 ## [2023.02] - 2023-07-27
 ### Known Issues
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
