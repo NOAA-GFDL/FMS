@@ -348,6 +348,7 @@ use platform_mod
      MODULE PROCEDURE send_data_1d
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
+     MODULE PROCEDURE send_data_4d
   END INTERFACE
 
   !> @brief Register a diagnostic field for a given module
@@ -3473,6 +3474,56 @@ END FUNCTION register_static_field
     DEALLOCATE(oor_mask)
   endIF modern_if
   END FUNCTION diag_send_data
+
+  !> @brief Updates the output buffer for a field based on the data for current time step
+  !! @return true if send is successful
+  LOGICAL FUNCTION send_data_4d(diag_field_id, field, time, is_in, js_in, ks_in, &
+    & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    INTEGER,          INTENT(in)            :: diag_field_id  !< The field id returned from the register call
+    CLASS(*),         INTENT(in)            :: field(:,:,:,:) !< The field data for the current time step
+    CLASS(*),         INTENT(in),  OPTIONAL :: weight         !< The weight to multiply the data by when averaging
+    TYPE (time_type), INTENT(in),  OPTIONAL :: time           !< The current model time
+    INTEGER,          INTENT(in),  OPTIONAL :: is_in          !< Starting i index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: js_in          !< Starting j index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: ks_in          !< Starting k index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: ie_in          !< Ending i index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: je_in          !< Ending j index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: ke_in          !< Ending k index of the data
+    LOGICAL,          INTENT(in),  OPTIONAL :: mask(:,:,:,:)  !< Logical mask indicating the points to not average
+    CLASS(*),         INTENT(in),  OPTIONAL :: rmask(:,:,:,:) !< Real mask indicating the points to not averafe
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg        !< If some errors occurs, send_data will return the
+                                                              !! error message instead of crashing
+
+    class(*), allocatable :: rmask_local(:,:,:,:) !< Real version of the mask variable
+    logical,  allocatable :: mask_local(:,:,:,:)  !< Local version of the mask variable
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+      send_data_4d = .FALSE.
+      RETURN
+    ENDIF
+
+    if (.not. use_modern_diag) &
+      call mpp_error(FATAL, "Send_data_4d is only supported when diag_manager_nml::use_modern_diag=.true.")
+
+    !< The error checking is done in accept_data
+    if (present(mask)) mask_local = mask
+    if (present(rmask)) rmask_local = rmask
+
+    send_data_4d = fms_diag_object%fms_diag_accept_data(diag_field_id, field, mask_local, rmask_local, &
+                                                          time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
+                                                          err_msg)
+
+    if (present(err_msg)) then
+      if (err_msg .ne. "") then
+        send_data_4d = .false.
+        return
+      endif
+    endif
+
+    if (allocated(rmask_local)) deallocate(rmask_local)
+    if (allocated(mask_local))  deallocate(mask_local)
+  end function send_data_4d
 
   !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )

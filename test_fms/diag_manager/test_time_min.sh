@@ -59,6 +59,11 @@ diag_files:
     reduction: min
     kind: r4
   - module: ocn_mod
+    var_name: var4
+    output_name: var4_min
+    reduction: min
+    kind: r4
+  - module: ocn_mod
     var_name: var3
     output_name: var3_Z_min
     reduction: min

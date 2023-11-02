@@ -56,6 +56,11 @@ diag_files:
     reduction: sum
     kind: r4
   - module: ocn_mod
+    var_name: var4
+    output_name: var4_sum
+    reduction: sum
+    kind: r4
+  - module: ocn_mod
     var_name: var3
     output_name: var3_Z
     reduction: sum
@@ -107,7 +112,7 @@ test_expect_success "Checking answers for the "sum" reduction method, real mask 
   mpirun -n 1 ../check_time_sum
 '
 
-export OMP_NUM_THREADS=1
+export OMP_NUM_THREADS=2
 my_test_count=`expr $my_test_count + 1`
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "sum" reduction method with openmp (test $my_test_count)" '
@@ -134,7 +139,7 @@ test_expect_success "Running diag_manager with "sum" reduction method with openm
 test_expect_success "Checking answers for the "sum" reduction method with openmp, real mask (test $my_test_count)" '
   mpirun -n 1 ../check_time_sum
 '
-export OMP_NUM_THREADS=2
+export OMP_NUM_THREADS=1
 
 my_test_count=`expr $my_test_count + 1`
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n \n/" | cat > input.nml
