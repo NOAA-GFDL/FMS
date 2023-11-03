@@ -1,6 +1,6 @@
 program test
   use mpp_mod
-  use fms_mod, only: fms_init, fms_end
+  use fms_mod, only: fms_init, fms_end, string
   use mpp_domains_mod
   use offloading_io_mod
   use platform_mod
@@ -55,16 +55,26 @@ program test
     call mpp_set_current_pelist( model_pes )
     model_domain = create_lat_lon_domain(nx, ny)
     var_r4_model = create_dummy_data(model_domain, is_model_pe)
+    call print_out_var_data(var_r4_model)
+    call mpp_define_null_domain(offload_domain)
   endif
 
   if (is_offload_pe) then
     call mpp_set_current_pelist(offload_pes)
     offload_domain = create_lat_lon_domain(nx, ny)
     var_r4_offload = create_dummy_data(offload_domain, is_model_pe)
+    var_r4_offload = -666_r4_kind
+    call mpp_define_null_domain(model_domain)
   endif
 
   call mpp_set_current_pelist(og_pes)
-  call mpp_redistribute( model_domain, var_r4_model,  offload_domain, var_r4_offload)
+  call mpp_redistribute( model_domain, var_r4_model,  &
+    offload_domain, var_r4_offload &
+    )
+
+  if (is_offload_pe) then
+    call print_out_var_data(var_r4_offload)
+  endif
 
   call fms_end()
 
@@ -102,4 +112,16 @@ program test
       enddo
     enddo
   end function
+
+  subroutine print_out_var_data(var_data)
+    real(kind=r4_kind), intent(in) :: var_data(:,:)
+
+    integer :: a, b
+
+    do a = 1, size(var_data,1)
+      do b = 1, size(var_data,2)
+        write(mpp_pe()+ 100, *) "i = ", string(a), " j = ", string(b), " data=", string(var_data(a,b))
+      enddo
+    enddo
+  end subroutine
 end program test
