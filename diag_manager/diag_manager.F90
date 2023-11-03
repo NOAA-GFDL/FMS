@@ -3516,6 +3516,7 @@ END FUNCTION register_static_field
 
     if (present(err_msg)) then
       if (err_msg .ne. "") then
+        call mpp_error(NOTE, trim(err_msg))
         send_data_4d = .false.
         return
       endif
