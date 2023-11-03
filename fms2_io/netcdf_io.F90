@@ -123,6 +123,17 @@ type, private :: dimension_information
                                        !! cur_dim_len(3) : z dimensions
 endtype dimension_information
 
+type, public :: fmsOffloadingIn_type
+  integer, private, allocatable :: offloading_out_ids(:)
+  integer, private, allocatable :: offloading_pes(:)
+  !TODO global metdata object
+  !TODO variable metada object
+  logical, private :: metadata_written
+
+  contains
+    procedure :: init
+endtype fmsOffloadingIn_type
+
 !> @brief Netcdf file type.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
@@ -149,6 +160,7 @@ type, public :: FmsNetcdfFile_t
   character (len=20) :: time_name
   type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
                                                !! restart variables
+  type(fmsOffloadingIn_type) :: offloading_obj_in
 
 endtype FmsNetcdfFile_t
 
@@ -2356,6 +2368,10 @@ subroutine flush_file(fileobj)
     call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
   endif
 end subroutine flush_file
+
+subroutine init(this)
+  class(fmsOffloadingIn_type), intent(inout) :: this
+end subroutine
 
 end module netcdf_io_mod
 !> @}

@@ -173,11 +173,11 @@ program test
  end if
 
 
- call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_data_override')
- call mpp_define_io_domain(Domain, (/1,1/))
- call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain, mode=lkind)
- call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain, mode=lkind)
- call mpp_get_compute_domain(Domain, is, ie, js, je)
+ call mpp_define_domains( (/1,nlon,1,nlat/), layout, model_domain, name='test_data_override')
+ call mpp_define_io_domain(model_domain, (/1,1/))
+ call data_override_init(Ice_domain_in=model_domain, Ocean_domain_in=model_domain, mode=lkind)
+ call data_override_init(Ice_domain_in=model_domain, Ocean_domain_in=model_domain, mode=lkind)
+ call mpp_get_compute_domain(model_domain, is, ie, js, je)
  call get_grid
 
  allocate(x(nlon), y(nlat))
@@ -195,8 +195,8 @@ program test
  sst = 0
  ice = 0
 
- id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=Domain)
- id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Domain)
+ id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=model_domain)
+ id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=model_domain)
 
  Time = Time + set_time(0,1)
 
