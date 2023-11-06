@@ -6,6 +6,11 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2023.02.02] - 2023-11-06
+### Fixed
+- FMS2_IO: Fixes seg fault errors occuring in mpp_gather and scatter routines when using GNU compilers and O2 optimization flags.
+
+
 ## [2023.02.01] - 2023-10-13
 ### Fixed
 - DIAG_MANAGER: Fixes issue with incorrect start_time functionality
