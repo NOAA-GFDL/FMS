@@ -61,6 +61,10 @@ integer, private :: fms2_deflate_level = default_deflate_level !< Netcdf deflate
 logical, private :: fms2_shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
 logical, private :: fms2_is_netcdf4 = .false. !< Flag indicating whether the default netcdf file format is netcdf4
 
+integer :: fms2_num_collective=0 !< The number of files targetted for MPIIO collective treatment
+character (len=NF90_MAX_NAME), allocatable :: fn_collective(:)
+namelist / fms2_io_collective_nml / fn_collective
+
 !> @}
 
 !> @brief information needed fr regional restart variables
@@ -150,6 +154,7 @@ type, public :: FmsNetcdfFile_t
   character (len=20) :: time_name
   type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
                                                !! restart variables
+  logical :: use_collective = .false. !< Flag telling if we should open the file for collective input
 
 endtype FmsNetcdfFile_t
 
@@ -338,19 +343,23 @@ end interface is_valid
 contains
 
 !> @brief Accepts the namelist fms2_io_nml variables relevant to netcdf_io_mod
-subroutine netcdf_io_init (chksz, header_buffer_val, netcdf_default_format, deflate_level, shuffle)
+subroutine netcdf_io_init (chksz, header_buffer_val, netcdf_default_format, deflate_level, shuffle, num_collective)
 integer,              intent(in) :: chksz                 !< Chunksize (bytes) used in nc_open and nc_create
 character (len = 10), intent(in) :: netcdf_default_format !< Netcdf format type param used in nc_create
 integer,              intent(in) :: header_buffer_val     !< Value used in NF__ENDDEF
 integer,              intent(in) :: deflate_level         !< Netcdf deflate level to use in nf90_def_var
                                                           !! (integer between 1 to 9)
 logical,              intent(in) :: shuffle               !< Flag indicating whether to use the netcdf shuffle filter
+integer,              intent(in) :: num_collective        !< The number of files targetted for MPIIO collective treatment
+integer :: mystat
 
  fms2_ncchksz = chksz
  fms2_deflate_level = deflate_level
  fms2_shuffle = shuffle
  fms2_is_netcdf4 = .false.
  fms2_header_buffer_val = header_buffer_val
+ fms2_num_collective = num_collective
+
  if (string_compare(netcdf_default_format, "64bit", .true.)) then
      fms2_nc_format_param = nf90_64bit_offset
      call string_copy(fms2_nc_format, "64bit")
@@ -364,6 +373,12 @@ logical,              intent(in) :: shuffle               !< Flag indicating whe
  else
      call error("unrecognized netcdf file format "//trim(netcdf_default_format)// &
      '. The acceptable values are "64bit", "classic", "netcdf4". Check fms2_io_nml: netcdf_default_format')
+ endif
+
+ if (fms2_num_collective .gt. 0) then
+   allocate(fn_collective(fms2_num_collective))
+   READ (input_nml_file, NML=fms2_io_collective_nml, IOSTAT=mystat)
+   !print*,'netcdf_io_init: ',fn_collective
  endif
 
 end subroutine netcdf_io_init
@@ -562,7 +577,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   logical :: success
 
   integer :: nc_format_param
-  integer :: err
+  integer :: i,err
   character(len=256) :: buf !< Filename with .res in the filename if it is a restart
   character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
@@ -645,12 +660,11 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     endif
 
     if (string_compare(mode, "read", .true.)) then
-      if(string_compare(trim(fileobj%path), "INPUT/phy_data.nc"           , .true.) .or. &
-         string_compare(trim(fileobj%path), "INPUT/fv_tracer.res.tile1.nc", .true.) .or. &
-         string_compare(trim(fileobj%path), "INPUT/sfc_data.nc"              , .true.) .or. &
-         string_compare(trim(fileobj%path), "INPUT/C3463_grid.tile7.nc"      , .true.) .or. &
-         string_compare(trim(fileobj%path), "INPUT/C3463_grid.tile7.halo3.nc", .true.) .or. &
-         string_compare(trim(fileobj%path), "INPUT/fv_core.res.tile1.nc"  , .true.) ) then
+      !print*,'netcdf_file_open: ',trim(fileobj%path)
+      do i=1,fms2_num_collective
+        if(string_compare(trim(fileobj%path), trim(fn_collective(i)), .true.)) fileobj%use_collective = .true.
+      enddo
+      if(fileobj%use_collective) then
         err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=mpp_comm_private, info=MPI_INFO_NULL)
       else
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)

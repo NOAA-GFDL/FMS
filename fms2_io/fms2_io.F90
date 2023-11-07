@@ -386,8 +386,11 @@ integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size(in
 integer :: deflate_level = default_deflate_level !< Netcdf deflate level to use in nf90_def_var
                                                  !! (integer between 1 to 9)
 logical :: shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
+
+integer :: num_collective=0 !< The number of files targetted for MPIIO collective treatment
+
 namelist / fms2_io_nml / &
-                      ncchksz, netcdf_default_format, header_buffer_val, deflate_level, shuffle
+                      ncchksz, netcdf_default_format, header_buffer_val, deflate_level, shuffle, num_collective
 
 contains
 
@@ -413,7 +416,12 @@ subroutine fms2_io_init ()
     call mpp_error(FATAL, &
       "deflate_level in fms2_io_nml must be a positive number between 1 and 9 as it is required by NetCDF")
   endif
-  call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format, deflate_level, shuffle)
+  if (num_collective .lt. 0) then
+    call mpp_error(FATAL, &
+      "num_collective in fms2_io_nml must be a positive number (0+)")
+  endif
+
+  call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format, deflate_level, shuffle, num_collective)
   call blackboxio_init (ncchksz)
 !> Mark the fms2_io as initialized
   fms2_io_is_initialized = .true.

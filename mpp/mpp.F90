@@ -1266,7 +1266,7 @@ private
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0
   integer(i8_kind)     :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
-  integer              :: mpp_comm_private
+  integer,public       :: mpp_comm_private
   logical              :: first_call_system_clock_mpi=.TRUE.
   real(r8_kind)        :: mpi_count0=0  !< use to prevent integer overflow
   real(r8_kind)        :: mpi_tick_rate=0.d0  !< clock rate for mpi_wtick()
