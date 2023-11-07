@@ -114,7 +114,7 @@ logical                                    :: reproduce_null_char_bug = .false. 
                                               !! to reproduce the mpp_io bug where lat/lon_bnd were
                                               !! not read correctly if null characters are present in
                                               !! the netcdf file
-logical					   :: use_data_table_yaml = .false.
+logical                                    :: use_data_table_yaml = .false.
 
 namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_data_table_yaml
 
@@ -211,7 +211,7 @@ end if
     end if
 #else
     if (use_data_table_yaml) then
-       call mpp_error(FATAL, "compilation error, need to compile with `-Duse_yaml`")       
+       call mpp_error(FATAL, "compilation error, need to compile with `-Duse_yaml`")
     else
        allocate(data_table(max_table))
        do i = 1, max_table
@@ -346,7 +346,6 @@ function count_ne_1(in_1, in_2, in_3)
   count_ne_1 = .not.(in_1.NEQV.in_2.NEQV.in_3) .OR. (in_1.AND.in_2.AND.in_3)
 end function count_ne_1
 
-#ifndef use_yaml
 subroutine read_table(data_table)
     type(data_type), dimension(max_table), intent(inout) :: data_table
 
@@ -491,7 +490,7 @@ subroutine read_table(data_table)
     if(io_status/=0) call mpp_error(FATAL, 'data_override_mod: Error in closing file data_table')
 end subroutine read_table
 
-#else
+#ifdef use_yaml
 subroutine read_table_yaml(data_table)
     type(data_type), dimension(:), allocatable, intent(out) :: data_table
 

@@ -30,7 +30,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = \
-  test_data_override_init \		 
+  test_data_override_init \
   test_get_grid_v1_r4 \
   test_get_grid_v1_r8 \
   test_data_override_r4 \
