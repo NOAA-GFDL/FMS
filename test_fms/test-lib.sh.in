@@ -96,8 +96,10 @@ mpirun () {
 # Set the name of the mpi launcher for use in test scripts.
   local mpi_launcher='@MPI_LAUNCHER@'
   local oversubscribe='@OVERSUBSCRIBE@'
+  # need to strip off any args that may be included with MPI_LAUNCHER arg for check below to work
+  local mpi_cmd="`echo $mpi_launcher | awk '{print $1;}'`"
   # Check if running with MPI: if so, the mpi_launcher will point to a command
-  command -v "$mpi_launcher" 2>&1 > /dev/null
+  command -v "$mpi_cmd" 2>&1 > /dev/null
   if test $? -eq 0
   then
     # use `command` to keep from reusing this function
