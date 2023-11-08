@@ -660,10 +660,13 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     endif
 
     if (string_compare(mode, "read", .true.)) then
-      !print*,'netcdf_file_open: ',trim(fileobj%path)
+      ! Compare the current file against the list provided by the user in the fms2_io_collective_nml section of input.nml
       do i=1,fms2_num_collective
         if(string_compare(trim(fileobj%path), trim(fn_collective(i)), .true.)) fileobj%use_collective = .true.
       enddo
+      ! Open the file for collective reads if the user requested that treatment
+      ! NetCDF does not have the ability to specify collective I/O at the file basis
+      ! so we must activate at the variable level in netcdf_read_data_2d() and netcdf_read_data_3d()
       if(fileobj%use_collective) then
         err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=mpp_comm_private, info=MPI_INFO_NULL)
       else

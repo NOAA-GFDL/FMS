@@ -355,7 +355,6 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    !write(6,'("netcdf_read_data_2d:"3A)') trim(fileobj%path), '   ', trim(variable_name)
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -363,6 +362,8 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (integer(kind=i8_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=r4_kind))
+        ! NetCDF does not have the ability to specify collective I/O at the file basis
+        ! so we must activate at the variable level
         if(fileobj%use_collective) err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=r8_kind))
@@ -450,7 +451,6 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
     c(unlim_dim_index) = unlim_dim_level
   endif
   if (fileobj%is_root) then
-    !write(6,'("netcdf_read_data_3d:"3A)') trim(fileobj%path),'  ',trim(variable_name)
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -458,6 +458,8 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
       type is (integer(kind=i8_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=r4_kind))
+        ! NetCDF does not have the ability to specify collective I/O at the file basis
+        ! so we must activate at the variable level
         if(fileobj%use_collective) err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
       type is (real(kind=r8_kind))
