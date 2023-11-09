@@ -117,4 +117,53 @@ fi
 
 done
 
+# data_override with the default table (not setting namelist)
+cat <<_EOF > data_table
+"ICE", "sst_obs", "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+_EOF
+
+test_expect_success "data_override_init with the default table" '
+ mpirun -n 1 ./test_data_override_init
+'
+# data_override with yaml table (setting namelist to .True.)
+cat <<_EOF > input.nml
+&data_override_nml
+use_data_table_yaml=.true.
+/
+_EOF
+
+cat <<_EOF > data_table.yaml
+data_table:
+ - gridname          : OCN
+   fieldname_code    : runoff
+   fieldname_file    : runoff
+   file_name         : INPUT/runoff.daitren.clim.1440x1080.v20180328.nc
+   interpol_method   : none
+   factor            : 1.0
+_EOF
+
+if [ ! -z $parser_skip ]; then
+  test_expect_failure "data_override_init with the yaml table" '
+    mpirun -n 1 ./test_data_override_init
+  '
+else
+  test_expect_success "data_override_init with the yaml table" '
+    mpirun -n 1 ./test_data_override_init
+  '
+fi
+#data_override with default table (setting namelist to .True.)
+cat <<_EOF > data_table
+"ICE", "sst_obs", "SST", "INPUT/sst_ice_clim.nc", .true., 300.0
+_EOF
+
+cat <<_EOF > input.nml
+&data_override_nml
+use_data_table_yaml=.false.
+/
+_EOF
+
+test_expect_success "data_override_init with the default table" '
+ mpirun -n 1 ./test_data_override_init
+'
+
 test_done
