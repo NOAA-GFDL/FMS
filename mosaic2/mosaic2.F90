@@ -553,14 +553,14 @@ end function transfer_to_model_index
 
   end function is_inside_polygon
 
-  function parse_string(string, set, sval)
+  function parse_string(string, set, value)
   character(len=*),  intent(in) :: string
   character(len=*),  intent(in) :: set
-  character(len=*), intent(out) :: sval(:)
+  character(len=*), intent(out) :: value(:)
   integer                       :: parse_string
   integer :: nelem, length, first, last
 
-     nelem = size(sval(:))
+     nelem = size(value(:))
      length = len_trim(string)
 
      first = 1; last = 0
@@ -573,13 +573,13 @@ end function transfer_to_model_index
        endif
        last = first - 1 + scan(string(first:length), set)
        if(last == first-1 ) then  ! not found, end of string
-         sval(parse_string) = string(first:length)
+         value(parse_string) = string(first:length)
          exit
        else
          if(last <= first) then
            call mpp_error(FATAL, "mosaic_mod(parse_string) : last <= first")
          endif
-         sval(parse_string) = string(first:(last-1))
+         value(parse_string) = string(first:(last-1))
          first = last + 1
          ! scan to make sure the next is not the character in the set
          do while (first == last+1)
