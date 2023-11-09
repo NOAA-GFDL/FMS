@@ -396,7 +396,7 @@ function parse_string(string, set, sval)
       endif
       last = first - 1 + scan(string(first:length), set)
       if(last == first-1 ) then  ! not found, end of string
-         value(parse_string) = string(first:length)
+         sval(parse_string) = string(first:length)
          exit
       else
          if(last <= first) then
