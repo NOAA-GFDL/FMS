@@ -29,47 +29,47 @@
     !! @code{.F90}
     !! call mpp_get_info( unit, ndim, nvar, natt, ntime )
     !! @endcode
-    subroutine mpp_get_info( iunit, ndim, nvar, natt, ntime )
+    subroutine mpp_get_info( unit, ndim, nvar, natt, ntime )
 
-      integer, intent(in) :: iunit
+      integer, intent(in) :: unit
       integer, intent(out) :: ndim, nvar, natt, ntime
 
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%opened )&
-           call mpp_error(FATAL, 'MPP_GET_INFO: invalid iunit number, file '//trim(mpp_file(iunit)%name))
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error(FATAL, 'MPP_GET_INFO: invalid unit number, file '//trim(mpp_file(unit)%name))
 
-      ndim = mpp_file(iunit)%ndim
-      nvar = mpp_file(iunit)%nvar
-      natt = mpp_file(iunit)%natt
-      ntime = mpp_file(iunit)%time_level
+      ndim = mpp_file(unit)%ndim
+      nvar = mpp_file(unit)%nvar
+      natt = mpp_file(unit)%natt
+      ntime = mpp_file(unit)%time_level
 
       return
 
     end subroutine mpp_get_info
 
     !> @brief Copy global file attributes for use by user
-    subroutine mpp_get_global_atts( iunit, global_atts )
+    subroutine mpp_get_global_atts( unit, global_atts )
 
-      integer,       intent(in)    :: iunit
+      integer,       intent(in)    :: unit
       type(atttype), intent(inout) :: global_atts(:) !< an attribute type which is allocated from the
                                                      !!  calling routine
 
       integer :: natt,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%opened )&
-           call mpp_error( FATAL, 'MPP_GET_INFO: invalid iunit number,file '//trim(mpp_file(iunit)%name))
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error( FATAL, 'MPP_GET_INFO: invalid unit number,file '//trim(mpp_file(unit)%name))
 
-      if (size(global_atts(:)).lt.mpp_file(iunit)%natt) &
+      if (size(global_atts(:)).lt.mpp_file(unit)%natt) &
            call mpp_error(FATAL, 'MPP_GET_ATTS: atttype not dimensioned properly in calling routine, file '// &
-           trim(mpp_file(iunit)%name))
+           trim(mpp_file(unit)%name))
 
-      natt = mpp_file(iunit)%natt
+      natt = mpp_file(unit)%natt
       global_atts = default_att
 
       do i=1,natt
-         global_atts(i) = mpp_file(iunit)%Att(i)
+         global_atts(i) = mpp_file(unit)%Att(i)
       enddo
 
       return
@@ -191,23 +191,23 @@
 
   !#####################################################################
     !> @brief Copy variable information from file (excluding data)
-    subroutine mpp_get_fields( iunit, variables )
-      integer,         intent(in)    :: iunit
+    subroutine mpp_get_fields( unit, variables )
+      integer,         intent(in)    :: unit
       type(fieldtype), intent(inout) :: variables(:)
 
       integer :: nvar,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_FIELDS: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%opened )call mpp_error( FATAL, 'MPP_GET_FIELDS: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_FIELDS: invalid unit number.' )
 
-      if (size(variables(:)).ne.mpp_file(iunit)%nvar) &
+      if (size(variables(:)).ne.mpp_file(unit)%nvar) &
           call mpp_error(FATAL,'MPP_GET_FIELDS: fieldtype not dimensioned properly in calling routine, file '//&
-          trim(mpp_file(iunit)%name))
+          trim(mpp_file(unit)%name))
 
-      nvar = mpp_file(iunit)%nvar
+      nvar = mpp_file(unit)%nvar
 
       do i=1,nvar
-         variables(i) = mpp_file(iunit)%Var(i)
+         variables(i) = mpp_file(unit)%Var(i)
       enddo
 
       return
@@ -217,31 +217,31 @@
 
   !#####################################################################
     !> @brief Copy variable information from file (excluding data)
-    subroutine mpp_get_axes( iunit, axes, time_axis )
-      integer, intent(in) :: iunit
+    subroutine mpp_get_axes( unit, axes, time_axis )
+      integer, intent(in) :: unit
       type(axistype), intent(inout) :: axes(:)
       type(axistype), intent(inout), optional :: time_axis
       integer :: ndim,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_AXES: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%opened )&
-           call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number, file '//trim(mpp_file(iunit)%name))
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number, file '//trim(mpp_file(unit)%name))
 
-      if (size(axes(:)).ne.mpp_file(iunit)%ndim) &
+      if (size(axes(:)).ne.mpp_file(unit)%ndim) &
            call mpp_error(FATAL, 'MPP_GET_AXES: axistype not dimensioned properly in calling routine, file '//&
-           trim(mpp_file(iunit)%name))
+           trim(mpp_file(unit)%name))
 
 
       if (PRESENT(time_axis)) time_axis = default_axis
-      ndim = mpp_file(iunit)%ndim
+      ndim = mpp_file(unit)%ndim
 
       do i=1,ndim
-         axes(i)=mpp_file(iunit)%Axis(i)
+         axes(i)=mpp_file(unit)%Axis(i)
 
          if (PRESENT(time_axis) &
-             .AND. .NOT. ASSOCIATED(mpp_file(iunit)%Axis(i)%data) &
-             .AND. mpp_file(iunit)%Axis(i)%type /= -1) then
-            time_axis = mpp_file(iunit)%Axis(i)
+             .AND. .NOT. ASSOCIATED(mpp_file(unit)%Axis(i)%data) &
+             .AND. mpp_file(unit)%Axis(i)%type /= -1) then
+            time_axis = mpp_file(unit)%Axis(i)
          endif
       enddo
 
@@ -250,8 +250,8 @@
 
   !#####################################################################
    !> @brief Copy variable information from file (excluding data)
-   function mpp_get_dimension_length(iunit, dimname, found)
-     integer,           intent(in)  :: iunit
+   function mpp_get_dimension_length(unit, dimname, found)
+     integer,           intent(in)  :: unit
      character(len=*),  intent(in)  :: dimname
      logical, optional, intent(out) :: found
      integer                        :: mpp_get_dimension_length
@@ -261,13 +261,13 @@
 
      if( .NOT.module_is_initialized ) &
        call mpp_error( FATAL, 'mpp_get_dimension_length: must first call mpp_io_init.' )
-     if( .NOT.mpp_file(iunit)%opened )&
-       call mpp_error( FATAL, 'mpp_get_dimension_length: invalid unit number, file '//trim(mpp_file(iunit)%name))
+     if( .NOT.mpp_file(unit)%opened )&
+       call mpp_error( FATAL, 'mpp_get_dimension_length: invalid unit number, file '//trim(mpp_file(unit)%name))
      found_dim = .false.
      mpp_get_dimension_length = -1
-     do i = 1, mpp_file(iunit)%ndim
-        if(trim(dimname) == trim(mpp_file(iunit)%Axis(i)%name)) then
-          mpp_get_dimension_length = mpp_file(iunit)%Axis(i)%len
+     do i = 1, mpp_file(unit)%ndim
+        if(trim(dimname) == trim(mpp_file(unit)%Axis(i)%name)) then
+          mpp_get_dimension_length = mpp_file(unit)%Axis(i)%len
           found_dim = .true.
           exit
         endif
@@ -279,15 +279,15 @@
 
    !#####################################################################
     !> @brief Copy variable information from file (excluding data)
-    subroutine mpp_get_time_axis( iunit, time_axis )
-      integer, intent(in) :: iunit
+    subroutine mpp_get_time_axis( unit, time_axis )
+      integer, intent(in) :: unit
       type(axistype), intent(inout) :: time_axis
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_AXES: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%opened )&
-           call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number, file '//trim(mpp_file(iunit)%name))
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error( FATAL, 'MPP_GET_AXES: invalid unit number, file '//trim(mpp_file(unit)%name))
 
-      time_axis = mpp_file(iunit)%Axis(mpp_file(iunit)%recdimid)
+      time_axis = mpp_file(unit)%Axis(mpp_file(unit)%recdimid)
 
       return
    end subroutine mpp_get_time_axis
@@ -308,32 +308,32 @@
    !! @code{.F90}
    !! call mpp_get_times( unit, time_values)
    !! @endcode
-   subroutine mpp_get_times( iunit, time_values )
-      integer, intent(in) :: iunit
+   subroutine mpp_get_times( unit, time_values )
+      integer, intent(in) :: unit
       real, intent(inout) :: time_values(:)
 
       integer :: ntime,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_TIMES: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%opened )&
-           call mpp_error(FATAL, 'MPP_GET_TIMES: invalid unit number, file '//trim(mpp_file(iunit)%name))
+      if( .NOT.mpp_file(unit)%opened )&
+           call mpp_error(FATAL, 'MPP_GET_TIMES: invalid unit number, file '//trim(mpp_file(unit)%name))
 
 ! NF_INQ_DIM returns -1 for the length of a record dimension if
 ! it does not exist
 
-      if (mpp_file(iunit)%time_level == -1) then
+      if (mpp_file(unit)%time_level == -1) then
           time_values = 0.0
           return
       endif
 
-      if (size(time_values(:)).ne.mpp_file(iunit)%time_level) &
+      if (size(time_values(:)).ne.mpp_file(unit)%time_level) &
          call mpp_error(FATAL,'MPP_GET_TIMES: time_values not dimensioned properly in calling routine, file '//&
-         trim(mpp_file(iunit)%name))
+         trim(mpp_file(unit)%name))
 
-      ntime = mpp_file(iunit)%time_level
+      ntime = mpp_file(unit)%time_level
 
       do i=1,ntime
-         time_values(i) = mpp_file(iunit)%time_values(i)
+         time_values(i) = mpp_file(unit)%time_values(i)
       enddo
 
       return
@@ -382,9 +382,9 @@
    end function mpp_get_axis_index
 
   !#####################################################################
-   function mpp_get_axis_by_name(iunit,axisname)
+   function mpp_get_axis_by_name(unit,axisname)
 
-     integer          :: iunit
+     integer          :: unit
      character(len=*) :: axisname
      type(axistype)   :: mpp_get_axis_by_name
 
@@ -392,9 +392,9 @@
 
      mpp_get_axis_by_name = default_axis
 
-     do n=1,size(mpp_file(iunit)%Axis(:))
-        if (lowercase(mpp_file(iunit)%Axis(n)%name) == lowercase(axisname)) then
-           mpp_get_axis_by_name = mpp_file(iunit)%Axis(n)
+     do n=1,size(mpp_file(unit)%Axis(:))
+        if (lowercase(mpp_file(unit)%Axis(n)%name) == lowercase(axisname)) then
+           mpp_get_axis_by_name = mpp_file(unit)%Axis(n)
            exit
         endif
      enddo
@@ -471,16 +471,16 @@
 
 
   !#####################################################################
-   function mpp_get_recdimid(iunit)
+   function mpp_get_recdimid(unit)
 !
-      integer, intent(in) :: iunit
+      integer, intent(in) :: unit
       integer  :: mpp_get_recdimid
 
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_RECDIMID: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%opened )call mpp_error( FATAL, 'MPP_GET_RECDIMID: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_RECDIMID: invalid unit number.' )
 
-      mpp_get_recdimid = mpp_file(iunit)%recdimid
+      mpp_get_recdimid = mpp_file(unit)%recdimid
 
       return
    end function mpp_get_recdimid
@@ -508,11 +508,11 @@
     !! <TT>unit</TT>. It is used in the instance that the user desires to
     !! perform netCDF calls upon the file that are not provided by the
     !! <TT>mpp_io_mod</TT> API itself.
-    function mpp_get_ncid(iunit)
+    function mpp_get_ncid(unit)
       integer :: mpp_get_ncid
-      integer, intent(in) :: iunit
+      integer, intent(in) :: unit
 
-      mpp_get_ncid = mpp_file(iunit)%ncid
+      mpp_get_ncid = mpp_file(unit)%ncid
       return
     end function mpp_get_ncid
 
@@ -766,30 +766,30 @@
 
    !#####################################################################
    !> @brief return the  file name of corresponding unit
-   function mpp_get_file_name(iunit)
-      integer,                  intent(in) :: iunit
+   function mpp_get_file_name(unit)
+      integer,                  intent(in) :: unit
       character(len=len(mpp_file(1)%name)) :: mpp_get_file_name
 
-      mpp_get_file_name = mpp_file(iunit)%name
+      mpp_get_file_name = mpp_file(unit)%name
       return
 
    end function mpp_get_file_name
 
    !####################################################################
    !> @brief return if certain file with unit is opened or not
-   function mpp_file_is_opened(iunit)
-      integer,  intent(in) :: iunit
+   function mpp_file_is_opened(unit)
+      integer,  intent(in) :: unit
       logical              :: mpp_file_is_opened
 
-      mpp_file_is_opened = mpp_file(iunit)%opened
+      mpp_file_is_opened = mpp_file(unit)%opened
       return
 
    end function mpp_file_is_opened
 
    !####################################################################
    !> @brief return the attribute value of given field name
-   subroutine mpp_get_field_att_text(iunit, fieldname, attname, attvalue)
-     integer,           intent(in) :: iunit
+   subroutine mpp_get_field_att_text(unit, fieldname, attname, attvalue)
+     integer,           intent(in) :: unit
      character(len=*),  intent(in) :: fieldname, attname
      character(len=*), intent(out) :: attvalue
      logical                       :: found_field,  found_att
@@ -797,16 +797,16 @@
 
      found_field = .false.
      found_att = .false.
-     do i=1,mpp_file(iunit)%nvar
-        if( trim(mpp_file(iunit)%Var(i)%name) == trim(fieldname)) then
+     do i=1,mpp_file(unit)%nvar
+        if( trim(mpp_file(unit)%Var(i)%name) == trim(fieldname)) then
            found_field = .true.
-           do j=1, size(mpp_file(iunit)%Var(i)%Att(:))
-              if( trim(mpp_file(iunit)%Var(i)%Att(j)%name) == trim(attname) ) then
+           do j=1, size(mpp_file(unit)%Var(i)%Att(:))
+              if( trim(mpp_file(unit)%Var(i)%Att(j)%name) == trim(attname) ) then
                  found_att = .true.
-                 length = mpp_file(iunit)%Var(i)%Att(j)%len
+                 length = mpp_file(unit)%Var(i)%Att(j)%len
                  if(len(attvalue) .LE. length ) call mpp_error(FATAL, &
                       'mpp_io_util.inc: length of attvalue is less than the length of catt')
-                 attvalue = trim(mpp_file(iunit)%Var(i)%Att(j)%catt(1:length))
+                 attvalue = trim(mpp_file(unit)%Var(i)%Att(j)%catt(1:length))
                  exit
               end if
            end do
@@ -815,9 +815,9 @@
      end do
 
      if(.NOT. found_field) call mpp_error(FATAL,"mpp_io_util.inc: field "//trim(fieldname)// &
-               " does not exist in the file "//trim(mpp_file(iunit)%name) )
+               " does not exist in the file "//trim(mpp_file(unit)%name) )
      if(.NOT. found_att) call mpp_error(FATAL,"mpp_io_util.inc: attribute "//trim(attname)//" of field "&
-               //trim(fieldname)// " does not exist in the file "//trim(mpp_file(iunit)%name) )
+               //trim(fieldname)// " does not exist in the file "//trim(mpp_file(unit)%name) )
 
      return
 

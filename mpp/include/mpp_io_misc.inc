@@ -51,7 +51,7 @@
 
     subroutine mpp_io_init( flags, maxunit )
       integer, intent(in), optional :: flags, maxunit
-      integer                       :: io_status, iunit
+      integer                       :: io_status, unit
       integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
       real(r8_kind)             :: doubledata = 0
@@ -175,11 +175,11 @@
       if (errunit > NULLUNIT .AND. errunit < 2*maxunits) mpp_file(errunit)%opened = .TRUE.
 
       if( pe.EQ.mpp_root_pe() )then
-          iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
-          write( iunit,'(/a)' )'MPP_IO module '//trim(version)
+          unit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
+          write( unit,'(/a)' )'MPP_IO module '//trim(version)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
-          write( iunit,'(/a)' )'Using netCDF library version '//trim(text)
+          write( unit,'(/a)' )'Using netCDF library version '//trim(text)
 #endif
       endif
 
@@ -213,7 +213,7 @@
 
     subroutine mpp_io_exit(string)
       character(len=*), optional :: string
-      integer :: iunit,istat
+      integer :: unit,istat
       logical :: dosync
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_IO_EXIT: must first call mpp_io_init.' )
@@ -222,17 +222,17 @@
           dosync = .NOT.( trim(string).EQ.'NOSYNC' )
       end if
 !close all open fortran units
-      do iunit = unit_begin,unit_end
-         if( mpp_file(iunit)%opened )FLUSH(iunit)
+      do unit = unit_begin,unit_end
+         if( mpp_file(unit)%opened )FLUSH(unit)
       end do
       if( dosync )call mpp_sync()
-      do iunit = unit_begin,unit_end
-         if( mpp_file(iunit)%opened )close(iunit)
+      do unit = unit_begin,unit_end
+         if( mpp_file(unit)%opened )close(unit)
       end do
 #ifdef use_netCDF
 !close all open netCDF units
-      do iunit = maxunits+1,2*maxunits
-         if( mpp_file(iunit)%opened )error = NF_CLOSE(mpp_file(iunit)%ncid)
+      do unit = maxunits+1,2*maxunits
+         if( mpp_file(unit)%opened )error = NF_CLOSE(mpp_file(unit)%ncid)
       end do
 #endif
 
@@ -272,22 +272,22 @@
     end subroutine netcdf_err
 
 
-    subroutine mpp_flush(iunit)
+    subroutine mpp_flush(unit)
 !flush the output on a unit, syncing with disk
-      integer, intent(in) :: iunit
+      integer, intent(in) :: unit
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_FLUSH: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(iunit)%write_on_this_pe) return
-      if( .NOT.mpp_file(iunit)%opened ) call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
-      if( .NOT.mpp_file(iunit)%initialized )call mpp_error( FATAL, &
+      if( .NOT.mpp_file(unit)%write_on_this_pe) return
+      if( .NOT.mpp_file(unit)%opened ) call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
+      if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, &
          &  'MPP_FLUSH: cannot flush a file during writing of metadata.' )
 
-      if( mpp_file(iunit)%format.EQ.MPP_NETCDF )then
+      if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
-          error = NF_SYNC(mpp_file(iunit)%ncid); call netcdf_err( error, mpp_file(iunit) )
+          error = NF_SYNC(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
 #endif
       else
-          FLUSH(iunit)
+          FLUSH(unit)
       end if
       return
     end subroutine mpp_flush

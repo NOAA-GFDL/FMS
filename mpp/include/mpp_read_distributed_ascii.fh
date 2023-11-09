@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-subroutine MPP_READ_DISTRIBUTED_ASCII_1D_ (iunit,fmt,ssize,data,iostat)
-  integer, intent(in)               :: iunit
+subroutine MPP_READ_DISTRIBUTED_ASCII_1D_ (unit,fmt,ssize,data,iostat)
+  integer, intent(in)               :: unit
   character(*), intent(in)          :: fmt
   integer, intent(in)               :: ssize
   MPP_TYPE_, dimension(:), intent(inout) :: data
@@ -35,9 +35,9 @@ subroutine MPP_READ_DISTRIBUTED_ASCII_1D_ (iunit,fmt,ssize,data,iostat)
   is_ioroot = mpp_is_dist_ioroot(ssize)
   if(is_ioroot) then
     if(trim(fmt)=='*')then
-       read(iunit,*,iostat=iostat) data
+       read(unit,*,iostat=iostat) data
     else
-       read(iunit,fmt=trim(fmt),iostat=iostat) data
+       read(unit,fmt=trim(fmt),iostat=iostat) data
     endif
     if(iostat /= 0) return  ! Calling routine must handle error
   endif

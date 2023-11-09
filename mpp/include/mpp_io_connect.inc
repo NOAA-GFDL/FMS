@@ -159,14 +159,14 @@
 !  pelist is the list of I/O PEs (currently ALL)                             !
 !                                                                            !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine mpp_open( iunit, file, action, form, access, threading, &
+    subroutine mpp_open( unit, file, action, form, access, threading, &
                          fileset, iospec, nohdrs, recl,               &
                          iostat, is_root_pe, domain, &
 !----------
 !ug support
                          domain_ug)
 !----------
-      integer,         intent(out)           :: iunit
+      integer,         intent(out)           :: unit
       character(len=*), intent(in)           :: file
       integer,          intent(in), optional :: action, form, access
       integer,          intent(in), optional :: threading, fileset, recl
@@ -297,40 +297,40 @@
       if( action_flag == MPP_RDONLY) write_on_this_pe = .false.
       !get a unit number
       if( .NOT. write_on_this_pe .AND. action_flag.NE.MPP_RDONLY .AND. .NOT. io_domain_exist)then
-            iunit = NULLUNIT           !PEs not participating in IO from this mpp_open() will return this value for unit
+            unit = NULLUNIT           !PEs not participating in IO from this mpp_open() will return this value for unit
          call mpp_clock_end(mpp_open_clock)
          return
       end if
       if( form_flag.EQ.MPP_NETCDF )then
-          do iunit = maxunits+1,2*maxunits
-             if( .NOT.mpp_file(iunit)%valid )exit
+          do unit = maxunits+1,2*maxunits
+             if( .NOT.mpp_file(unit)%valid )exit
           end do
-          if( iunit.GT.2*maxunits ) then
+          if( unit.GT.2*maxunits ) then
             write(mesg,*) 'all the units between ',maxunits+1,' and ',2*maxunits,' are used'
             call mpp_error( FATAL, 'MPP_OPEN: too many open netCDF files.'//trim(mesg) )
           endif
       else
-          do iunit = unit_begin, unit_end
-             inquire( iunit,OPENED=mpp_file(iunit)%opened )
-             if( .NOT.mpp_file(iunit)%opened )exit
+          do unit = unit_begin, unit_end
+             inquire( unit,OPENED=mpp_file(unit)%opened )
+             if( .NOT.mpp_file(unit)%opened )exit
           end do
-          if( iunit.GT.unit_end ) then
+          if( unit.GT.unit_end ) then
             write(mesg,*) 'all the units between ',unit_begin,' and ',unit_end,' are used'
             call mpp_error( FATAL, 'MPP_OPEN: no available units.'//trim(mesg) )
           endif
       end if
-      mpp_file(iunit)%valid            = .true.
-      mpp_file(iunit)%write_on_this_pe = write_on_this_pe
-      mpp_file(iunit)%read_on_this_pe  = read_on_this_pe
-      mpp_file(iunit)%io_domain_exist  = io_domain_exist
+      mpp_file(unit)%valid            = .true.
+      mpp_file(unit)%write_on_this_pe = write_on_this_pe
+      mpp_file(unit)%read_on_this_pe  = read_on_this_pe
+      mpp_file(unit)%io_domain_exist  = io_domain_exist
       if( PRESENT(domain) ) then
-         allocate(mpp_file(iunit)%domain)
-         mpp_file(iunit)%domain = domain
+         allocate(mpp_file(unit)%domain)
+         mpp_file(unit)%domain = domain
 
 !----------
 !ug support
       elseif (present(domain_ug)) then
-          mpp_file(iunit)%domain_ug => domain_ug
+          mpp_file(unit)%domain_ug => domain_ug
 !----------
 
       endif
@@ -423,9 +423,9 @@
             write( text,'(a,i4.4)' )trim(text)//'.', pe-mpp_root_pe()
          endif
       endif
-      mpp_file(iunit)%name = text
+      mpp_file(unit)%name = text
       if(verbose) print '(a,2i6,x,a,5i5)','MPP_OPEN: PE, unit, filename, action, format, access, threading, fileset=',&
-           & pe, iunit, trim(mpp_file(iunit)%name), action_flag, form_flag, access_flag, threading_flag, fileset_flag
+           & pe, unit, trim(mpp_file(unit)%name), action_flag, form_flag, access_flag, threading_flag, fileset_flag
 
 !action: read, write, overwrite, append: act and pos are ignored by netCDF
       if( action_flag.EQ.MPP_RDONLY )then
@@ -441,8 +441,8 @@
           call mpp_error( FATAL, 'MPP_OPEN: action must be one of MPP_WRONLY, MPP_APPEND or MPP_RDONLY.' )
       end if
 
-      mpp_file(iunit)%threading = threading_flag
-      mpp_file(iunit)%fileset = fileset_flag
+      mpp_file(unit)%threading = threading_flag
+      mpp_file(unit)%fileset = fileset_flag
 
       if( .NOT. write_on_this_pe .AND. action_flag.NE.MPP_RDONLY ) then
          call mpp_clock_end(mpp_open_clock)
@@ -460,7 +460,7 @@
               if( .NOT.PRESENT(recl) ) &
                    call mpp_error( FATAL, &
                                  & 'MPP_OPEN: recl (record length in bytes) must be specified with access=MPP_DIRECT.')
-              mpp_file(iunit)%record = 1
+              mpp_file(unit)%record = 1
               records_per_pe = 1 !each PE writes 1 record per mpp_write
           else
               call mpp_error( FATAL, 'MPP_OPEN: access must be one of MPP_SEQUENTIAL or MPP_DIRECT.' )
@@ -517,8 +517,8 @@
 
                  !get regular nc_blksz...
                  !build env var for check
-                 !write (*,*) 'hello', trim(mpp_file(iunit)%name)
-                 nc_name = 'NC_BLKSZ_'//trim(mpp_file(iunit)%name)
+                 !write (*,*) 'hello', trim(mpp_file(unit)%name)
+                 nc_name = 'NC_BLKSZ_'//trim(mpp_file(unit)%name)
                  !write (*,*) 'nc_name: ', nc_name,  ' bcblk: ', ncblk
 
 
@@ -544,148 +544,148 @@
 
                  !set or convert the chunksize
 
-                  call file_size(ncblk, mpp_file(iunit)%name, fsize)
+                  call file_size(ncblk, mpp_file(unit)%name, fsize)
                  !write (*,*) 'this is fsize after: ', fsize
 
 
-                  if(debug) write(*,*) 'Blocksize for ', trim(mpp_file(iunit)%name),' is ', fsize
+                  if(debug) write(*,*) 'Blocksize for ', trim(mpp_file(unit)%name),' is ', fsize
                  !ends addition from fmi - oct.22.2008
 #endif
 
 #ifdef use_netCDF
 #ifdef use_netCDF3
           if( action_flag.EQ.MPP_WRONLY )then
-              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(iunit)%name),' is ', fsize
-              error = NF__CREATE( trim(mpp_file(iunit)%name), NF_NOCLOBBER, inital, fsize, mpp_file(iunit)%ncid )
-              call netcdf_err( error, mpp_file(iunit) )
-              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: new netCDF file: pe, ncid=', pe, mpp_file(iunit)%ncid
+              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(unit)%name),' is ', fsize
+              error = NF__CREATE( trim(mpp_file(unit)%name), NF_NOCLOBBER, inital, fsize, mpp_file(unit)%ncid )
+              call netcdf_err( error, mpp_file(unit) )
+              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: new netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
           else if( action_flag.EQ.MPP_OVERWR )then
-              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(iunit)%name),' is ', fsize
-              error = NF__CREATE( trim(mpp_file(iunit)%name),NF_CLOBBER, inital, fsize, mpp_file(iunit)%ncid )
-              call netcdf_err( error, mpp_file(iunit) )
+              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(unit)%name),' is ', fsize
+              error = NF__CREATE( trim(mpp_file(unit)%name),NF_CLOBBER, inital, fsize, mpp_file(unit)%ncid )
+              call netcdf_err( error, mpp_file(unit) )
               action_flag = MPP_WRONLY !after setting clobber, there is no further distinction btwn MPP_WRONLY
                                        !! and MPP_OVERWR
-              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, mpp_file(iunit)%ncid
+              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
           else if( action_flag.EQ.MPP_APPEND )then
-              inquire(file=trim(mpp_file(iunit)%name),EXIST=exists)
+              inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
-                   &//trim(mpp_file(iunit)%name)//' does not exist.')
-              error=NF__OPEN(trim(mpp_file(iunit)%name),NF_WRITE,fsize,mpp_file(iunit)%ncid)
-              call netcdf_err(error, mpp_file(iunit))
+                   &//trim(mpp_file(unit)%name)//' does not exist.')
+              error=NF__OPEN(trim(mpp_file(unit)%name),NF_WRITE,fsize,mpp_file(unit)%ncid)
+              call netcdf_err(error, mpp_file(unit))
 !get the current time level of the file: writes to this file will be at next time level
-              error = NF_INQ_UNLIMDIM( mpp_file(iunit)%ncid, unlim%did )
+              error = NF_INQ_UNLIMDIM( mpp_file(unit)%ncid, unlim%did )
               if( error.EQ.NF_NOERR )then
-                  error = NF_INQ_DIM( mpp_file(iunit)%ncid, unlim%did, unlim%name, mpp_file(iunit)%time_level )
-                  call netcdf_err( error, mpp_file(iunit) )
-                  error = NF_INQ_VARID( mpp_file(iunit)%ncid, unlim%name, mpp_file(iunit)%id )
-                  call netcdf_err( error, mpp_file(iunit), unlim )
+                  error = NF_INQ_DIM( mpp_file(unit)%ncid, unlim%did, unlim%name, mpp_file(unit)%time_level )
+                  call netcdf_err( error, mpp_file(unit) )
+                  error = NF_INQ_VARID( mpp_file(unit)%ncid, unlim%name, mpp_file(unit)%id )
+                  call netcdf_err( error, mpp_file(unit), unlim )
               end if
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: append to existing netCDF file: pe, ncid, time_axis_id=',&
-                   pe, mpp_file(iunit)%ncid, mpp_file(iunit)%id
-              mpp_file(iunit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(iunit, read_time=.FALSE.)
+                   pe, mpp_file(unit)%ncid, mpp_file(unit)%id
+              mpp_file(unit)%format=form_flag ! need this for mpp_read
+              call mpp_read_meta(unit, read_time=.FALSE.)
           else if( action_flag.EQ.MPP_RDONLY )then
-               inquire(file=trim(mpp_file(iunit)%name),EXIST=exists)
+               inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
-                   &//trim(mpp_file(iunit)%name)//' does not exist.')
-              error=NF__OPEN(trim(mpp_file(iunit)%name),NF_NOWRITE,fsize,mpp_file(iunit)%ncid)
-              call netcdf_err(error, mpp_file(iunit))
+                   &//trim(mpp_file(unit)%name)//' does not exist.')
+              error=NF__OPEN(trim(mpp_file(unit)%name),NF_NOWRITE,fsize,mpp_file(unit)%ncid)
+              call netcdf_err(error, mpp_file(unit))
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: opening existing netCDF file: pe, ncid, time_axis_id=',&
-                   pe, mpp_file(iunit)%ncid, mpp_file(iunit)%id
-              mpp_file(iunit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(iunit, read_time=.TRUE.)
+                   pe, mpp_file(unit)%ncid, mpp_file(unit)%id
+              mpp_file(unit)%format=form_flag ! need this for mpp_read
+              call mpp_read_meta(unit, read_time=.TRUE.)
           end if
-          mpp_file(iunit)%opened = .TRUE.
+          mpp_file(unit)%opened = .TRUE.
 #elif use_LARGEFILE
           if( action_flag.EQ.MPP_WRONLY )then
-              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(iunit)%name),' is ', fsize
-              error = NF__CREATE( trim(mpp_file(iunit)%name),IOR(NF_64BIT_OFFSET,NF_NOCLOBBER),inital,fsize, &
-                                & mpp_file(iunit)%ncid )
-              call netcdf_err( error, mpp_file(iunit) )
-              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: new netCDF file: pe, ncid=', pe, mpp_file(iunit)%ncid
+              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(unit)%name),' is ', fsize
+              error = NF__CREATE( trim(mpp_file(unit)%name),IOR(NF_64BIT_OFFSET,NF_NOCLOBBER),inital,fsize, &
+                                & mpp_file(unit)%ncid )
+              call netcdf_err( error, mpp_file(unit) )
+              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: new netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
           else if( action_flag.EQ.MPP_OVERWR )then
-              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(iunit)%name),' is ', fsize
-              error = NF__CREATE( trim(mpp_file(iunit)%name),IOR(NF_64BIT_OFFSET,NF_CLOBBER), inital, fsize, &
-                                & mpp_file(iunit)%ncid )
-              call netcdf_err( error, mpp_file(iunit) )
+              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(unit)%name),' is ', fsize
+              error = NF__CREATE( trim(mpp_file(unit)%name),IOR(NF_64BIT_OFFSET,NF_CLOBBER), inital, fsize, &
+                                & mpp_file(unit)%ncid )
+              call netcdf_err( error, mpp_file(unit) )
               action_flag = MPP_WRONLY !after setting clobber, there is no further distinction btwn MPP_WRONLY
                                        !! and MPP_OVERWR
-              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, mpp_file(iunit)%ncid
+              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
           else if( action_flag.EQ.MPP_APPEND )then
-              inquire(file=trim(mpp_file(iunit)%name),EXIST=exists)
+              inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
-                   &//trim(mpp_file(iunit)%name)//' does not exist.')
-              error=NF__OPEN(trim(mpp_file(iunit)%name),NF_WRITE,fsize,mpp_file(iunit)%ncid)
-              call netcdf_err(error, mpp_file(iunit))
+                   &//trim(mpp_file(unit)%name)//' does not exist.')
+              error=NF__OPEN(trim(mpp_file(unit)%name),NF_WRITE,fsize,mpp_file(unit)%ncid)
+              call netcdf_err(error, mpp_file(unit))
 !get the current time level of the file: writes to this file will be at next time level
-              error = NF_INQ_UNLIMDIM( mpp_file(iunit)%ncid, unlim%did )
+              error = NF_INQ_UNLIMDIM( mpp_file(unit)%ncid, unlim%did )
               if( error.EQ.NF_NOERR )then
-                  error = NF_INQ_DIM( mpp_file(iunit)%ncid, unlim%did, unlim%name, mpp_file(iunit)%time_level )
-                  call netcdf_err( error, mpp_file(iunit) )
-                  error = NF_INQ_VARID( mpp_file(iunit)%ncid, unlim%name, mpp_file(iunit)%id )
-                  call netcdf_err( error, mpp_file(iunit), unlim )
+                  error = NF_INQ_DIM( mpp_file(unit)%ncid, unlim%did, unlim%name, mpp_file(unit)%time_level )
+                  call netcdf_err( error, mpp_file(unit) )
+                  error = NF_INQ_VARID( mpp_file(unit)%ncid, unlim%name, mpp_file(unit)%id )
+                  call netcdf_err( error, mpp_file(unit), unlim )
               end if
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: append to existing netCDF file: pe, ncid, time_axis_id=',&
-                   pe, mpp_file(iunit)%ncid, mpp_file(iunit)%id
-              mpp_file(iunit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(iunit, read_time=.FALSE.)
+                   pe, mpp_file(unit)%ncid, mpp_file(unit)%id
+              mpp_file(unit)%format=form_flag ! need this for mpp_read
+              call mpp_read_meta(unit, read_time=.FALSE.)
           else if( action_flag.EQ.MPP_RDONLY )then
-               inquire(file=trim(mpp_file(iunit)%name),EXIST=exists)
+               inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
-                   &//trim(mpp_file(iunit)%name)//' does not exist.')
-              error=NF__OPEN(trim(mpp_file(iunit)%name),NF_NOWRITE,fsize,mpp_file(iunit)%ncid)
-              call netcdf_err(error, mpp_file(iunit))
+                   &//trim(mpp_file(unit)%name)//' does not exist.')
+              error=NF__OPEN(trim(mpp_file(unit)%name),NF_NOWRITE,fsize,mpp_file(unit)%ncid)
+              call netcdf_err(error, mpp_file(unit))
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: opening existing netCDF file: pe, ncid, time_axis_id=',&
-                   pe, mpp_file(iunit)%ncid, mpp_file(iunit)%id
-              mpp_file(iunit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(iunit, read_time=.TRUE.)
+                   pe, mpp_file(unit)%ncid, mpp_file(unit)%id
+              mpp_file(unit)%format=form_flag ! need this for mpp_read
+              call mpp_read_meta(unit, read_time=.TRUE.)
           end if
-          mpp_file(iunit)%opened = .TRUE.
+          mpp_file(unit)%opened = .TRUE.
 #else
           if( action_flag.EQ.MPP_WRONLY )then
-              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(iunit)%name),' is ', fsize
-              error=NF__CREATE( trim(mpp_file(iunit)%name), IOR(NF_NETCDF4,NF_CLASSIC_MODEL), inital, fsize, &
-                              & mpp_file(iunit)%ncid )
-              call netcdf_err( error, mpp_file(iunit) )
-              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: new netCDF file: pe, ncid=', pe, mpp_file(iunit)%ncid
+              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(unit)%name),' is ', fsize
+              error=NF__CREATE( trim(mpp_file(unit)%name), IOR(NF_NETCDF4,NF_CLASSIC_MODEL), inital, fsize, &
+                              & mpp_file(unit)%ncid )
+              call netcdf_err( error, mpp_file(unit) )
+              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: new netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
           else if( action_flag.EQ.MPP_OVERWR )then
-              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(iunit)%name),' is ', fsize
-              error=NF__CREATE( trim(mpp_file(iunit)%name), IOR(NF_NETCDF4,NF_CLASSIC_MODEL), inital, fsize, &
-                              & mpp_file(iunit)%ncid )
-              call netcdf_err( error, mpp_file(iunit) )
+              if(debug) write(*,*) 'Blocksize for create of ', trim(mpp_file(unit)%name),' is ', fsize
+              error=NF__CREATE( trim(mpp_file(unit)%name), IOR(NF_NETCDF4,NF_CLASSIC_MODEL), inital, fsize, &
+                              & mpp_file(unit)%ncid )
+              call netcdf_err( error, mpp_file(unit) )
               action_flag = MPP_WRONLY !after setting clobber, there is no further distinction btwn MPP_WRONLY
                                        !! and MPP_OVERWR
-              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, mpp_file(iunit)%ncid
+              if( verbose )print '(a,i6,i16)', 'MPP_OPEN: overwrite netCDF file: pe, ncid=', pe, mpp_file(unit)%ncid
           else if( action_flag.EQ.MPP_APPEND )then
-              inquire(file=trim(mpp_file(iunit)%name),EXIST=exists)
+              inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
-                   &//trim(mpp_file(iunit)%name)//' does not exist.')
-              error=NF__OPEN(trim(mpp_file(iunit)%name),NF_WRITE,fsize,mpp_file(iunit)%ncid)
-              call netcdf_err(error,mpp_file(iunit))
+                   &//trim(mpp_file(unit)%name)//' does not exist.')
+              error=NF__OPEN(trim(mpp_file(unit)%name),NF_WRITE,fsize,mpp_file(unit)%ncid)
+              call netcdf_err(error,mpp_file(unit))
 !get the current time level of the file: writes to this file will be at next time level
-              error = NF_INQ_UNLIMDIM( mpp_file(iunit)%ncid, unlim%did )
+              error = NF_INQ_UNLIMDIM( mpp_file(unit)%ncid, unlim%did )
               if( error.EQ.NF_NOERR )then
-                  error = NF_INQ_DIM( mpp_file(iunit)%ncid, unlim%did, unlim%name, mpp_file(iunit)%time_level )
-                  call netcdf_err( error, mpp_file(iunit) )
-                  error = NF_INQ_VARID( mpp_file(iunit)%ncid, unlim%name, mpp_file(iunit)%id )
-                  call netcdf_err( error, mpp_file(iunit), unlim )
+                  error = NF_INQ_DIM( mpp_file(unit)%ncid, unlim%did, unlim%name, mpp_file(unit)%time_level )
+                  call netcdf_err( error, mpp_file(unit) )
+                  error = NF_INQ_VARID( mpp_file(unit)%ncid, unlim%name, mpp_file(unit)%id )
+                  call netcdf_err( error, mpp_file(unit), unlim )
               end if
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: append to existing netCDF file: pe, ncid, time_axis_id=',&
-                   pe, mpp_file(iunit)%ncid, mpp_file(iunit)%id
-              mpp_file(iunit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(iunit, read_time=.FALSE.)
+                   pe, mpp_file(unit)%ncid, mpp_file(unit)%id
+              mpp_file(unit)%format=form_flag ! need this for mpp_read
+              call mpp_read_meta(unit, read_time=.FALSE.)
           else if( action_flag.EQ.MPP_RDONLY )then
-               inquire(file=trim(mpp_file(iunit)%name),EXIST=exists)
+               inquire(file=trim(mpp_file(unit)%name),EXIST=exists)
               if (.NOT.exists) call mpp_error(FATAL,'MPP_OPEN:'&
-                   &//trim(mpp_file(iunit)%name)//' does not exist.')
-              error=NF__OPEN(trim(mpp_file(iunit)%name),NF_NOWRITE,fsize,mpp_file(iunit)%ncid)
-              call netcdf_err(error,mpp_file(iunit))
+                   &//trim(mpp_file(unit)%name)//' does not exist.')
+              error=NF__OPEN(trim(mpp_file(unit)%name),NF_NOWRITE,fsize,mpp_file(unit)%ncid)
+              call netcdf_err(error,mpp_file(unit))
               if( verbose )print '(a,i6,i16,i4)', 'MPP_OPEN: opening existing netCDF file: pe, ncid, time_axis_id=',&
-                   pe, mpp_file(iunit)%ncid, mpp_file(iunit)%id
-              mpp_file(iunit)%format=form_flag ! need this for mpp_read
-              call mpp_read_meta(iunit, read_time=.TRUE.)
+                   pe, mpp_file(unit)%ncid, mpp_file(unit)%id
+              mpp_file(unit)%format=form_flag ! need this for mpp_read
+              call mpp_read_meta(unit, read_time=.TRUE.)
           end if
-          mpp_file(iunit)%opened = .TRUE.
+          mpp_file(unit)%opened = .TRUE.
 
 #endif
 #endif
@@ -700,46 +700,46 @@
           else
               call mpp_error( FATAL, 'MPP_OPEN: form must be one of MPP_ASCII, MPP_NATIVE, MPP_IEEE32 or MPP_NETCDF.' )
           end if
-          inquire( file=trim(mpp_file(iunit)%name), EXIST=exists )
+          inquire( file=trim(mpp_file(unit)%name), EXIST=exists )
           if( exists .AND. action_flag.EQ.MPP_WRONLY ) &
-               call mpp_error( WARNING, 'MPP_OPEN: File '//trim(mpp_file(iunit)%name)//' opened WRONLY already exists!')
+               call mpp_error( WARNING, 'MPP_OPEN: File '//trim(mpp_file(unit)%name)//' opened WRONLY already exists!')
           if( action_flag.EQ.MPP_OVERWR )action_flag = MPP_WRONLY
 !perform the OPEN here
           ios = 0
           if( PRESENT(recl) )then
               if( verbose )print '(2(x,a,i6),5(x,a),a,i8)', 'MPP_OPEN: PE=', pe, &
-                   'unit=', iunit, trim(mpp_file(iunit)%name), 'attributes=', trim(acc), trim(for), trim(act), &
+                   'unit=', unit, trim(mpp_file(unit)%name), 'attributes=', trim(acc), trim(for), trim(act), &
                                       &  ' RECL=', recl
-              open( iunit, file=trim(mpp_file(iunit)%name), access=acc, form=for, action=act, recl=recl,iostat=ios )
+              open( unit, file=trim(mpp_file(unit)%name), access=acc, form=for, action=act, recl=recl,iostat=ios )
           else
               if( verbose )print '(2(x,a,i6),6(x,a))',      'MPP_OPEN: PE=', pe, &
-                   'unit=', iunit, trim(mpp_file(iunit)%name), 'attributes=', trim(acc), trim(for), trim(pos), trim(act)
-              open( iunit, file=trim(mpp_file(iunit)%name), access=acc, form=for, action=act, position=pos, iostat=ios)
+                   'unit=', unit, trim(mpp_file(unit)%name), 'attributes=', trim(acc), trim(for), trim(pos), trim(act)
+              open( unit, file=trim(mpp_file(unit)%name), access=acc, form=for, action=act, position=pos, iostat=ios)
           end if
 !check if OPEN worked
-          inquire( iunit,OPENED=mpp_file(iunit)%opened )
+          inquire( unit,OPENED=mpp_file(unit)%opened )
           if (ios/=0) then
               if (PRESENT(iostat)) then
                   iostat=ios
-                  call mpp_error( WARNING, 'MPP_OPEN: error in OPEN for '//trim(mpp_file(iunit)%name)//'.' )
+                  call mpp_error( WARNING, 'MPP_OPEN: error in OPEN for '//trim(mpp_file(unit)%name)//'.' )
                   call mpp_clock_end(mpp_open_clock)
                   return
               else
-                  call mpp_error( FATAL, 'MPP_OPEN: error in OPEN for '//trim(mpp_file(iunit)%name)//'.' )
+                  call mpp_error( FATAL, 'MPP_OPEN: error in OPEN for '//trim(mpp_file(unit)%name)//'.' )
               endif
           endif
-          if( .NOT.mpp_file(iunit)%opened )call mpp_error( FATAL, 'MPP_OPEN: error in OPEN() statement.' )
+          if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_OPEN: error in OPEN() statement.' )
       end if
-      mpp_file(iunit)%action = action_flag
-      mpp_file(iunit)%format = form_flag
-      mpp_file(iunit)%access = access_flag
-      if( PRESENT(nohdrs) )mpp_file(iunit)%nohdrs = nohdrs
+      mpp_file(unit)%action = action_flag
+      mpp_file(unit)%format = form_flag
+      mpp_file(unit)%access = access_flag
+      if( PRESENT(nohdrs) )mpp_file(unit)%nohdrs = nohdrs
 
       if( action_flag.EQ.MPP_WRONLY )then
-          if( form_flag.NE.MPP_NETCDF .AND. access_flag.EQ.MPP_DIRECT )call mpp_write_meta( iunit, &
+          if( form_flag.NE.MPP_NETCDF .AND. access_flag.EQ.MPP_DIRECT )call mpp_write_meta( unit, &
             &  'record_length', ival=recl )
 !actual file name
-          call mpp_write_meta( iunit, 'filename', cval=mpp_file(iunit)%name)
+          call mpp_write_meta( unit, 'filename', cval=mpp_file(unit)%name)
 !MPP_IO package version
 !          call mpp_write_meta( unit, 'MPP_IO_VERSION', cval=trim(version) )
 !filecount for multifileset.
@@ -762,7 +762,7 @@
              else
                 nfiles = mpp_npes()
              endif
-             call mpp_write_meta( iunit, 'NumFilesInSet', ival=nfiles)
+             call mpp_write_meta( unit, 'NumFilesInSet', ival=nfiles)
           end if
       end if
 
@@ -798,8 +798,8 @@
 !   <IN NAME="action" TYPE="integer"> </IN>
 ! </SUBROUTINE>
 
-    subroutine mpp_close( iunit, action )
-      integer, intent(in) :: iunit
+    subroutine mpp_close( unit, action )
+      integer, intent(in) :: unit
       integer, intent(in), optional :: action
       character(len=8) :: status
       logical :: collect
@@ -807,7 +807,7 @@
 
       call mpp_clock_begin(mpp_close_clock)
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOSE: must first call mpp_io_init.' )
-      if( iunit.EQ.NULLUNIT .OR. iunit .EQ. stderr() ) then
+      if( unit.EQ.NULLUNIT .OR. unit .EQ. stderr() ) then
          call mpp_clock_end(mpp_close_clock)
          return !nothing was actually opened on this unit
       endif
@@ -817,7 +817,7 @@
       collect = .FALSE.
       if( PRESENT(action) )then
           if( action.EQ.MPP_DELETE )then
-              if( pe.EQ.mpp_root_pe() .OR. mpp_file(iunit)%fileset.EQ.MPP_MULTI )status = 'DELETE'
+              if( pe.EQ.mpp_root_pe() .OR. mpp_file(unit)%fileset.EQ.MPP_MULTI )status = 'DELETE'
           else if( action.EQ.MPP_COLLECT )then
               collect = .FALSE.         !should be TRUE but this is not yet ready
               call mpp_error( WARNING, 'MPP_CLOSE: the COLLECT operation is not yet implemented.' )
@@ -825,109 +825,109 @@
               call mpp_error( FATAL, 'MPP_CLOSE: action must be one of MPP_DELETE or MPP_COLLECT.' )
           end if
       end if
-      if( mpp_file(iunit)%fileset.NE.MPP_MULTI )collect = .FALSE.
-      if( mpp_file(iunit)%opened) then
-         if( mpp_file(iunit)%format.EQ.MPP_NETCDF )then
+      if( mpp_file(unit)%fileset.NE.MPP_MULTI )collect = .FALSE.
+      if( mpp_file(unit)%opened) then
+         if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
-            error = NF_CLOSE(mpp_file(iunit)%ncid); call netcdf_err( error, mpp_file(iunit) )
+            error = NF_CLOSE(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
 #endif
          else
-            close(iunit,status=status)
+            close(unit,status=status)
          end if
       endif
-      if ( associated(mpp_file(iunit)%Axis) ) then
-         do i=1, mpp_file(iunit)%ndim
-            if ( associated(mpp_file(iunit)%Axis(i)%data) ) then
-               deallocate(mpp_file(iunit)%Axis(i)%data)
-               nullify(mpp_file(iunit)%Axis(i)%data)
+      if ( associated(mpp_file(unit)%Axis) ) then
+         do i=1, mpp_file(unit)%ndim
+            if ( associated(mpp_file(unit)%Axis(i)%data) ) then
+               deallocate(mpp_file(unit)%Axis(i)%data)
+               nullify(mpp_file(unit)%Axis(i)%data)
             end if
 
-            if ( associated(mpp_file(iunit)%Axis(i)%Att) ) then
-               do j=1, mpp_file(iunit)%Axis(i)%natt
-                  if ( associated(mpp_file(iunit)%Axis(i)%Att(j)%fatt) ) then
-                     deallocate(mpp_file(iunit)%Axis(i)%Att(j)%fatt)
-                     nullify(mpp_file(iunit)%Axis(i)%Att(j)%fatt)
+            if ( associated(mpp_file(unit)%Axis(i)%Att) ) then
+               do j=1, mpp_file(unit)%Axis(i)%natt
+                  if ( associated(mpp_file(unit)%Axis(i)%Att(j)%fatt) ) then
+                     deallocate(mpp_file(unit)%Axis(i)%Att(j)%fatt)
+                     nullify(mpp_file(unit)%Axis(i)%Att(j)%fatt)
                   end if
                end do
-               deallocate(mpp_file(iunit)%Axis(i)%Att)
-               nullify(mpp_file(iunit)%Axis(i)%Att)
+               deallocate(mpp_file(unit)%Axis(i)%Att)
+               nullify(mpp_file(unit)%Axis(i)%Att)
             end if
          end do
-         deallocate(mpp_file(iunit)%Axis)
-         nullify(mpp_file(iunit)%Axis)
+         deallocate(mpp_file(unit)%Axis)
+         nullify(mpp_file(unit)%Axis)
       end if
 
-      if ( associated(mpp_file(iunit)%var) ) then
-         do i=1, mpp_file(iunit)%nvar
-            if ( associated(mpp_file(iunit)%var(i)%Axes) ) then
+      if ( associated(mpp_file(unit)%var) ) then
+         do i=1, mpp_file(unit)%nvar
+            if ( associated(mpp_file(unit)%var(i)%Axes) ) then
                ! Do not need to deallocate/nullify child pointers, handled above with mpp_file(unit)%Axis(:)%*
-               deallocate(mpp_file(iunit)%var(i)%Axes)
-               nullify(mpp_file(iunit)%var(i)%Axes)
+               deallocate(mpp_file(unit)%var(i)%Axes)
+               nullify(mpp_file(unit)%var(i)%Axes)
             end if
-            if ( associated(mpp_file(iunit)%var(i)%size) ) then
-               deallocate(mpp_file(iunit)%var(i)%size)
-               nullify(mpp_file(iunit)%var(i)%size)
+            if ( associated(mpp_file(unit)%var(i)%size) ) then
+               deallocate(mpp_file(unit)%var(i)%size)
+               nullify(mpp_file(unit)%var(i)%size)
             end if
-            if ( associated(mpp_file(iunit)%var(i)%Att) ) then
-               do j=1, mpp_file(iunit)%var(i)%natt
-                  if ( associated(mpp_file(iunit)%var(i)%Att(j)%fatt) ) then
-                     deallocate(mpp_file(iunit)%var(i)%Att(j)%fatt)
-                     nullify(mpp_file(iunit)%var(i)%Att(j)%fatt)
+            if ( associated(mpp_file(unit)%var(i)%Att) ) then
+               do j=1, mpp_file(unit)%var(i)%natt
+                  if ( associated(mpp_file(unit)%var(i)%Att(j)%fatt) ) then
+                     deallocate(mpp_file(unit)%var(i)%Att(j)%fatt)
+                     nullify(mpp_file(unit)%var(i)%Att(j)%fatt)
                   end if
               end do
-               deallocate(mpp_file(iunit)%var(i)%Att)
-               nullify(mpp_file(iunit)%var(i)%Att)
+               deallocate(mpp_file(unit)%var(i)%Att)
+               nullify(mpp_file(unit)%var(i)%Att)
             end if
          end do
-         deallocate(mpp_file(iunit)%var)
-         nullify(mpp_file(iunit)%var)
+         deallocate(mpp_file(unit)%var)
+         nullify(mpp_file(unit)%var)
       end if
 
-      if ( associated(mpp_file(iunit)%att) ) then
-         do i=1, mpp_file(iunit)%natt
-            if ( associated(mpp_file(iunit)%att(i)%fatt) ) then
-               deallocate(mpp_file(iunit)%att(i)%fatt)
-               nullify(mpp_file(iunit)%att(i)%fatt)
+      if ( associated(mpp_file(unit)%att) ) then
+         do i=1, mpp_file(unit)%natt
+            if ( associated(mpp_file(unit)%att(i)%fatt) ) then
+               deallocate(mpp_file(unit)%att(i)%fatt)
+               nullify(mpp_file(unit)%att(i)%fatt)
             end if
          end do
-         deallocate(mpp_file(iunit)%att)
-         nullify(mpp_file(iunit)%att)
+         deallocate(mpp_file(unit)%att)
+         nullify(mpp_file(unit)%att)
       end if
 
-      if ( associated(mpp_file(iunit)%time_values) ) then
-         deallocate(mpp_file(iunit)%time_values)
-         nullify(mpp_file(iunit)%time_values)
+      if ( associated(mpp_file(unit)%time_values) ) then
+         deallocate(mpp_file(unit)%time_values)
+         nullify(mpp_file(unit)%time_values)
       end if
 
-      mpp_file(iunit)%name = ' '
-      mpp_file(iunit)%action    = -1
-      mpp_file(iunit)%format    = -1
-      mpp_file(iunit)%access    = -1
-      mpp_file(iunit)%threading = -1
-      mpp_file(iunit)%fileset   = -1
-      mpp_file(iunit)%record    = -1
-      mpp_file(iunit)%ncid      = -1
-      mpp_file(iunit)%opened = .FALSE.
-      mpp_file(iunit)%initialized = .FALSE.
-      mpp_file(iunit)%id = -1
-      mpp_file(iunit)%ndim = -1
-      mpp_file(iunit)%nvar = -1
-      mpp_file(iunit)%time_level = 0
-      mpp_file(iunit)%time = NULLTIME
-      mpp_file(iunit)%valid = .false.
-      mpp_file(iunit)%io_domain_exist = .false.
-      mpp_file(iunit)%write_on_this_pe = .false.
+      mpp_file(unit)%name = ' '
+      mpp_file(unit)%action    = -1
+      mpp_file(unit)%format    = -1
+      mpp_file(unit)%access    = -1
+      mpp_file(unit)%threading = -1
+      mpp_file(unit)%fileset   = -1
+      mpp_file(unit)%record    = -1
+      mpp_file(unit)%ncid      = -1
+      mpp_file(unit)%opened = .FALSE.
+      mpp_file(unit)%initialized = .FALSE.
+      mpp_file(unit)%id = -1
+      mpp_file(unit)%ndim = -1
+      mpp_file(unit)%nvar = -1
+      mpp_file(unit)%time_level = 0
+      mpp_file(unit)%time = NULLTIME
+      mpp_file(unit)%valid = .false.
+      mpp_file(unit)%io_domain_exist = .false.
+      mpp_file(unit)%write_on_this_pe = .false.
 
 !----------
 !ug support
      !<There was a memory leak here.  The mpp_file(unit)%domain was set
      !!to point to null without begin deallocated first (it is allocated
      !!in mpp_open above).
-      if (associated(mpp_file(iunit)%domain)) then
-          deallocate(mpp_file(iunit)%domain)
-          mpp_file(iunit)%domain => null()
-      elseif (associated(mpp_file(iunit)%domain_ug)) then
-          mpp_file(iunit)%domain_ug => null()
+      if (associated(mpp_file(unit)%domain)) then
+          deallocate(mpp_file(unit)%domain)
+          mpp_file(unit)%domain => null()
+      elseif (associated(mpp_file(unit)%domain_ug)) then
+          mpp_file(unit)%domain_ug => null()
       endif
 !----------
 
