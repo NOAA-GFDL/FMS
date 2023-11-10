@@ -487,6 +487,14 @@ end function rarray_to_char
   end function mpp_get_current_pelist_name
 
   !#####################################################################
+  function mpp_get_current_pelist_comm()
+   ! Simply return the current pelist communicator
+   integer :: mpp_get_current_pelist_comm
+
+   mpp_get_current_pelist_comm = peset(current_peset_num)%id
+  end function mpp_get_current_pelist_comm
+
+  !#####################################################################
     !this is created for use by mpp_define_domains within a pelist
     !will be published but not publicized
   subroutine mpp_get_current_pelist( pelist, name, commID )
