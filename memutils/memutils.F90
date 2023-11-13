@@ -67,9 +67,9 @@ contains
 !! default behavior can be modified passing in the optional `always` (logical)
 !! parameter.  If `always.eqv..TRUE.`, print_memuse_stats() will print the memory
 !! statistics.
-  subroutine print_memuse_stats( text, iunit, always )
+  subroutine print_memuse_stats( text, unit, always )
     character(len=*), intent(in) :: text !< Text to be printed before the memory statistics
-    integer, intent(in), optional :: iunit !< Fortran file unit to where memory statistics should be recorded
+    integer, intent(in), optional :: unit !< Fortran file unit to where memory statistics should be recorded
     logical, intent(in), optional :: always !< If `.TRUE.`, force memory statistics to be printed
 
     if( PRESENT(always) )then
@@ -77,7 +77,7 @@ contains
     else
       if( .NOT.print_memory_usage )return
     end if
-    call mpp_print_memuse_stats(text, iunit)
+    call mpp_print_memuse_stats(text, unit)
     return
   end subroutine print_memuse_stats
 end module memutils_mod

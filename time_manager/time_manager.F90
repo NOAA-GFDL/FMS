@@ -2521,10 +2521,10 @@ end subroutine time_manager_init
 !> @brief Prints the given time_type argument as a time (using days, seconds and ticks)
 !!
 !> @note There is no check for PE number.
-subroutine print_time (Time,str,iunit)
+subroutine print_time (Time,str,unit)
 type(time_type)  , intent(in) :: Time !< Time that will be printed
 character (len=*), intent(in), optional :: str !< Character string that precedes the printed time
-integer          , intent(in), optional :: iunit !< Unit number for printed output, defaults to stdout
+integer          , intent(in), optional :: unit !< Unit number for printed output, defaults to stdout
 integer :: s,d,ticks, ns,nd,nt, unit_in
 character(len=19) :: fmt
 
@@ -2532,7 +2532,7 @@ character(len=19) :: fmt
 ! NOTE: there is no check for PE number
 
   unit_in = stdout()
-  if (present(iunit)) unit_in = iunit
+  if (present(unit)) unit_in = unit
 
   call get_time (Time,s,d,ticks)
 
@@ -2556,10 +2556,10 @@ end subroutine print_time
 !!
 !! Prints the given time_type argument as a date (using year, month, day,
 !! hour, minutes, seconds and ticks). NOTE: there is no check for PE number.
-subroutine print_date (Time,str,iunit)
+subroutine print_date (Time,str,unit)
 type(time_type)  , intent(in) :: Time !< Time that will be printed
 character (len=*), intent(in), optional :: str !< Character string that precedes the printed time
-integer          , intent(in), optional :: iunit !< Unit number for printed output, defaults to stdout
+integer          , intent(in), optional :: unit !< Unit number for printed output, defaults to stdout
 integer :: y,mo,d,h,m,s, unit_in
 character(len=9) :: mon
 
@@ -2567,7 +2567,7 @@ character(len=9) :: mon
 ! NOTE: there is no check for PE number
 
   unit_in = stdout()
-  if (present(iunit)) unit_in = iunit
+  if (present(unit)) unit_in = unit
 
   call get_date (Time,y,mo,d,h,m,s)
   mon = month_name(mo)
