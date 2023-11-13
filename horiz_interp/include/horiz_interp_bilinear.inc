@@ -1187,11 +1187,11 @@
   !! if "value" is outside the domain of "array" then INDP_ = 1
   !! or "ia" depending on whether array(1) or array(ia) is
   !! closest to "value"
-  function INDP_ (value, array)
+  function INDP_ (rval, array)
     integer                        :: INDP_ !< index of nearest data point within "array"
                                            !! corresponding to "value".
     real(FMS_HI_KIND_), dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
-    real(FMS_HI_KIND_), intent(in)               :: value !< arbitrary data, same units as elements in 'array'
+    real(FMS_HI_KIND_), intent(in)               :: rval !< arbitrary data, same units as elements in 'array'
 
     !=======================================================================
 
@@ -1204,23 +1204,23 @@
           iunit = stdout()
           write (iunit,*) &
                ' => Error: array must be monotonically increasing in "INDP_"' , &
-               '           when searching for nearest element to value=',value
+               '           when searching for nearest element to value=',rval
           write (iunit,*) '           array(i) < array(i-1) for i=',i
           write (iunit,*) '           array(i) for i=1..ia follows:'
           call mpp_error()
        endif
     enddo
-    if (value .lt. array(1) .or. value .gt. array(ia)) then
-       if (value .lt. array(1))  INDP_ = 1
-       if (value .gt. array(ia)) INDP_ = ia
+    if (rval .lt. array(1) .or. rval .gt. array(ia)) then
+       if (rval .lt. array(1))  INDP_ = 1
+       if (rval .gt. array(ia)) INDP_ = ia
     else
        i=1
        keep_going = .true.
        do while (i .le. ia .and. keep_going)
           i = i+1
-          if (value .le. array(i)) then
+          if (rval .le. array(i)) then
              INDP_ = i
-             if (array(i)-value .gt. value-array(i-1)) INDP_ = i-1
+             if (array(i)-rval .gt. rval-array(i-1)) INDP_ = i-1
              keep_going = .false.
           endif
        enddo

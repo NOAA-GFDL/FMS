@@ -23,7 +23,7 @@
 !#######################################################################
 
 !> Set a real array in the Field Manager tree.
-subroutine FM_UTIL_SET_VALUE_REAL_ARRAY_(name, value, length, caller, no_overwrite, good_name_list)  !{
+subroutine FM_UTIL_SET_VALUE_REAL_ARRAY_(name, rval, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
 
@@ -33,7 +33,7 @@ implicit none
 
 character(len=*), intent(in)                            :: name
 integer, intent(in)                                     :: length
-real(FMS_FM_KIND_), intent(in)                          :: value(length)
+real(FMS_FM_KIND_), intent(in)                          :: rval(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
 character(len=fm_path_name_len), intent(in), optional   :: good_name_list
@@ -134,19 +134,19 @@ else  !}{
       call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
     endif  !}
     do n = field_length + 1, length  !{
-      field_index = fm_new_value(name, value(n), index = n)
+      field_index = fm_new_value(name, rval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
         call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
       endif  !}
     enddo  !} n
   else  !}{
-    field_index = fm_new_value(name, value(1))
+    field_index = fm_new_value(name, rval(1))
     if (field_index .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name))
     endif  !}
     do n = 2, length  !{
-      field_index = fm_new_value(name, value(n), index = n)
+      field_index = fm_new_value(name, rval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
         call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
@@ -182,7 +182,7 @@ end subroutine FM_UTIL_SET_VALUE_REAL_ARRAY_  !}
 !#######################################################################
 
 !> Set a real value in the Field Manager tree.
-subroutine FM_UTIL_SET_VALUE_REAL_(name, value, caller, index, append, no_create,        &
+subroutine FM_UTIL_SET_VALUE_REAL_(name, rval, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
 implicit none
@@ -192,7 +192,7 @@ implicit none
 !
 
 character(len=*), intent(in)            :: name
-real(FMS_FM_KIND_), intent(in)          :: value
+real(FMS_FM_KIND_), intent(in)          :: rval
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
 logical, intent(in), optional           :: append
@@ -292,21 +292,21 @@ if (present(index)) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
     endif  !}
     if (.not. (no_overwrite_use .and. field_length .ge. index)) then  !{
-      field_index = fm_new_value(name, value, index = index)
+      field_index = fm_new_value(name, rval, index = index)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', index
         call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name) // trim(str_error))
       endif  !}
     endif  !}
   else  !}{
-    field_index = fm_new_value(name, value, index = index)
+    field_index = fm_new_value(name, rval, index = index)
     if (field_index .le. 0) then  !{
       write (str_error,*) ' with index = ', index
       call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
     endif  !}
   endif  !}
 elseif (present(append)) then  !}{
-  field_index = fm_new_value(name, value, append = append)
+  field_index = fm_new_value(name, rval, append = append)
   if (field_index .le. 0) then  !{
     write (str_error,*) ' with append = ', append
     call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
@@ -314,13 +314,13 @@ elseif (present(append)) then  !}{
 else  !}{
   if (fm_exists(name)) then  !{
     if (.not. no_overwrite_use) then  !{
-      field_index = fm_new_value(name, value)
+      field_index = fm_new_value(name, rval)
       if (field_index .le. 0) then  !{
         call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name))
       endif  !}
     endif  !}
   elseif (create) then  !}{
-    field_index = fm_new_value(name, value)
+    field_index = fm_new_value(name, rval)
     if (field_index .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
     endif  !}
