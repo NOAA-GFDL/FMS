@@ -1512,28 +1512,28 @@ character(len=*), intent(out) :: values(:) !< The value or values that have been
 include 'parse.inc'
 end function parse_strings
 
-function parse_integer ( text, label, value ) result (parse)
+function parse_integer ( text, label, parse_ival ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-integer,          intent(out) :: value !< The value or values that have been decoded.
+integer,          intent(out) :: parse_ival !< The value or values that have been decoded.
 integer :: parse
 
 integer :: values(1)
 
    parse = parse_integers ( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_ival = values(1)
 end function parse_integer
 
-function parse_string ( text, label, value ) result (parse)
+function parse_string ( text, label, parse_sval ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-character(len=*), intent(out) :: value !< The value or values that have been decoded.
+character(len=*), intent(out) :: parse_sval !< The value or values that have been decoded.
 integer :: parse
 
-character(len=len(value)) :: values(1)
+character(len=len(parse_sval)) :: values(1)
 
    parse = parse_strings ( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_sval = values(1)
 end function parse_string
 
 !> @brief A function to create a field as a child of parent_p. This will return
@@ -2277,11 +2277,11 @@ end function  fm_get_type
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_integer(name, value, index)                 &
+function  fm_get_value_integer(name, get_ival, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-integer,          intent(out)          :: value !< The value associated with the named field.
+integer,          intent(out)          :: get_ival !< The value associated with the named field.
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2295,7 +2295,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = 0
+  get_ival = 0
   success = .false.
   return
 endif
@@ -2313,20 +2313,20 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. integer_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or index too large
-      value = 0
+      get_ival = 0
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%i_value(index_t)
+      get_ival = temp_field_p%i_value(index_t)
       success = .true.
     endif
   else
 !        Field not corrcet type
-    value = 0
+    get_ival = 0
     success = .false.
   endif
 else
-  value = 0
+  get_ival = 0
   success = .false.
 endif
 
@@ -2334,11 +2334,11 @@ end function  fm_get_value_integer
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_logical(name, value, index)                 &
+function  fm_get_value_logical(name, get_lval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-logical,          intent(out)          :: value !< The value associated with the named field
+logical,          intent(out)          :: get_lval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2352,7 +2352,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = .false.
+  get_lval = .false.
   success = .false.
   return
 endif
@@ -2371,20 +2371,20 @@ if (associated(temp_field_p)) then
 
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or too large
-      value = .false.
+      get_lval = .false.
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%l_value(index_t)
+      get_lval = temp_field_p%l_value(index_t)
       success = .true.
     endif
   else
 !        Field not correct type
-    value = .false.
+    get_lval = .false.
     success = .false.
   endif
 else
-  value = .false.
+  get_lval = .false.
   success = .false.
 endif
 
@@ -2392,11 +2392,11 @@ end function  fm_get_value_logical
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_string(name, value, index)                 &
+function  fm_get_value_string(name, get_sval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-character(len=*), intent(out)          :: value !< The value associated with the named field
+character(len=*), intent(out)          :: get_sval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2410,7 +2410,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = ''
+  get_sval = ''
   success = .false.
   return
 endif
@@ -2428,20 +2428,20 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. string_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or is too large
-      value = ''
+      get_sval = ''
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%s_value(index_t)
+      get_sval = temp_field_p%s_value(index_t)
         success = .true.
     endif
   else
 !        Field not correct type
-    value = ''
+    get_sval = ''
     success = .false.
   endif
 else
-  value = ''
+  get_sval = ''
   success = .false.
 endif
 
@@ -2624,12 +2624,12 @@ end function  fm_new_list
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_integer(name, value, create, index, append)     &
+function  fm_new_value_integer(name, new_ival, create, index, append)     &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-integer,          intent(in)           :: value !< The value that the user wishes to apply to the
+integer,          intent(in)           :: new_ival !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -2698,7 +2698,7 @@ if (associated(temp_list_p)) then
     if (temp_field_p%field_type == real_type ) then
        ! promote integer input to real
        ! all real field values are stored as r8_kind
-       field_index = fm_new_value(name, real(value,r8_kind), create, index, append)
+       field_index = fm_new_value(name, real(new_ival,r8_kind), create, index, append)
        return
     else if (temp_field_p%field_type /= integer_type ) then
       !  slm: why would we reset index? Is it not an error to have a "list" defined
@@ -2746,7 +2746,7 @@ if (associated(temp_list_p)) then
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%i_value(index_t) = value
+      temp_field_p%i_value(index_t) = new_ival
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
@@ -2764,12 +2764,12 @@ end function  fm_new_value_integer
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_logical(name, value, create, index, append) &
+function  fm_new_value_logical(name, new_lval, create, index, append) &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-logical,          intent(in)           :: value !< The value that the user wishes to apply to the
+logical,          intent(in)           :: new_lval !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -2881,7 +2881,7 @@ if (associated(temp_list_p)) then
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%l_value(index_t) = value
+      temp_field_p%l_value(index_t) = new_lval
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
@@ -2898,12 +2898,12 @@ end function  fm_new_value_logical
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_string(name, value, create, index, append) &
+function  fm_new_value_string(name, new_sval, create, index, append) &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-character(len=*), intent(in)           :: value !< The value that the user wishes to apply to the
+character(len=*), intent(in)           :: new_sval !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -3014,7 +3014,7 @@ if (associated(temp_list_p)) then
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%s_value(index_t) = value
+      temp_field_p%s_value(index_t) = new_sval
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif

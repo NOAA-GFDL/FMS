@@ -156,20 +156,20 @@ subroutine mpp_error_noargs()
 end subroutine mpp_error_noargs
 
 !#####################################################################
-subroutine mpp_error_Is(errortype, errormsg1, value, errormsg2)
+subroutine mpp_error_Is(errortype, errormsg1, mpp_ival, errormsg2)
   integer,          intent(in) :: errortype
-  INTEGER,          intent(in) :: value
+  INTEGER,          intent(in) :: mpp_ival
   character(len=*), intent(in) :: errormsg1
   character(len=*),      intent(in), optional :: errormsg2
-  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+  call mpp_error( errortype, errormsg1, (/mpp_ival/), errormsg2)
 end subroutine mpp_error_Is
 !#####################################################################
-subroutine mpp_error_Rs(errortype, errormsg1, value, errormsg2)
+subroutine mpp_error_Rs(errortype, errormsg1, mpp_rval, errormsg2)
   integer,          intent(in) :: errortype
-  REAL,             intent(in) :: value
+  REAL,             intent(in) :: mpp_rval
   character(len=*), intent(in) :: errormsg1
   character(len=*),      intent(in), optional :: errormsg2
-  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+  call mpp_error( errortype, errormsg1, (/mpp_rval/), errormsg2)
 end subroutine mpp_error_Rs
 !#####################################################################
 subroutine mpp_error_Ia(errortype, errormsg1, array, errormsg2)
