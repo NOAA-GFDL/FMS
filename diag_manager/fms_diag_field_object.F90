@@ -164,6 +164,7 @@ type fmsDiagField_type
      procedure :: get_math_needs_to_be_done
      procedure :: add_area_volume
      procedure :: append_time_cell_methods
+     procedure :: get_file_ids
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -1638,6 +1639,13 @@ result(compute_domain)
     end select
   enddo axis_loop
 end function get_starting_compute_domain
+
+!> Get list of field ids
+pure function get_file_ids(this)
+  class(fmsDiagField_type), intent(in) :: this
+  integer, allocatable :: get_file_ids(:) !< Ids of the FMS_diag_files the variable
+  get_file_ids = this%file_ids
+end function
 
 #endif
 end module fms_diag_field_object_mod
