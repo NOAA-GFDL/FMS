@@ -523,7 +523,7 @@ subroutine xgrid_init(remap_method)
   integer, intent(out) :: remap_method !< exchange grid interpolation method. It has four possible values:
                                        !! FIRST_ORDER (=1), SECOND_ORDER(=2).
 
-  integer :: unit, ierr, io, out_unit
+  integer :: iunit, ierr, io, out_unit
 
   if (module_is_initialized) return
   module_is_initialized = .TRUE.
@@ -534,9 +534,9 @@ subroutine xgrid_init(remap_method)
 !--------- write version number and namelist ------------------
   call write_version_number("XGRID_MOD", version)
 
-  unit = stdlog ( )
+  iunit = stdlog ( )
   out_unit = stdout()
-  if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
+  if ( mpp_pe() == mpp_root_pe() ) write (iunit,nml=xgrid_nml)
 
   if (use_mpp_io) then
           ! FATAL error if trying to use mpp_io

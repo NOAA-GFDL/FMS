@@ -220,7 +220,7 @@
 
   function FRAC_INDEX_(rval, array)
 
-    integer                               :: ia, i, ii, unit
+    integer                               :: ia, i, ii, iunit
     real(kind=FMS_AU_KIND_)               :: rval !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_)               :: FRAC_INDEX_
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
@@ -230,13 +230,13 @@
 
     do i = 2, ia
        if (array(i) < array(i-1)) then
-          unit = stdout()
-          write (unit,*) '=> Error: "frac_index" array must be monotonically' &
+          iunit = stdout()
+          write (iunit,*) '=> Error: "frac_index" array must be monotonically' &
           & // 'increasing when searching for nearest value to ', rval
-          write (unit,*) '          array(i) < array(i-1) for i=',i
-          write (unit,*) '          array(i) for i=1..ia follows:'
+          write (iunit,*) '          array(i) < array(i-1) for i=',i
+          write (iunit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
-             write (unit,*) 'i=',ii, ' array(i)=',array(ii)
+             write (iunit,*) 'i=',ii, ' array(i)=',array(ii)
           enddo
           call mpp_error(FATAL,' "frac_index" array must be monotonically increasing.')
        endif
@@ -300,7 +300,7 @@
 
     integer                               :: NEAREST_INDEX_
     integer                               :: ia !< dimension of "array"
-    integer                               :: i, ii, unit
+    integer                               :: i, ii, iunit
     real(kind=FMS_AU_KIND_)               :: rval !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical                               :: keep_going
@@ -309,13 +309,13 @@
 
     do i = 2, ia
        if (array(i) < array(i-1)) then
-          unit = stdout()
-          write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing' &
+          iunit = stdout()
+          write (iunit,*) '=> Error: "nearest_index" array must be monotonically increasing' &
                          & // 'when searching for nearest value to ', rval
-          write (unit,*) '          array(i) < array(i-1) for i=',i
-          write (unit,*) '          array(i) for i=1..ia follows:'
+          write (iunit,*) '          array(i) < array(i-1) for i=',i
+          write (iunit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
-             write (unit,*) 'i=',ii, ' array(i)=', array(ii)
+             write (iunit,*) 'i=',ii, ' array(i)=', array(ii)
           enddo
           call mpp_error(FATAL,' "nearest_index" array must be monotonically increasing.')
        endif

@@ -437,7 +437,7 @@ logical :: is_valid
 !-------------------------------------------------------------------
 !  local variables:
 !-------------------------------------------------------------------
-integer :: unit, ierr, io, seconds, days, jd, id
+integer :: iunit, ierr, io, seconds, days, jd, id
 character(len=17) :: err_str
 
 !-------------------------------------------------------------------
@@ -463,8 +463,8 @@ character(len=17) :: err_str
 !---------------------------------------------------------------------
     call write_version_number("ASTRONOMY_MOD", version)
     if (mpp_pe() == mpp_root_pe() ) then
-       unit = stdlog()
-       write (unit, nml=astronomy_nml)
+       iunit = stdlog()
+       write (iunit, nml=astronomy_nml)
     endif
 !--------------------------------------------------------------------
 !>    Be sure input values are within valid ranges.

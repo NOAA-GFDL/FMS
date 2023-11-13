@@ -123,7 +123,7 @@ contains
 
 subroutine read_namelist
 
-   integer :: unit, ierr, io
+   integer :: iunit, ierr, io
 
 !>  read namelist
 
@@ -133,8 +133,8 @@ subroutine read_namelist
 !>  write version and namelist to log file
 
    if (mpp_pe() == mpp_root_pe()) then
-      unit = stdlog()
-      write (unit, nml=gaussian_topog_nml)
+      iunit = stdlog()
+      write (iunit, nml=gaussian_topog_nml)
    endif
 
    do_nml = .false.
