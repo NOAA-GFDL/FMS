@@ -47,7 +47,7 @@ module time_interp_external2_mod
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file, mpp_npes, mpp_root_pe, mpp_broadcast, mpp_get_current_pelist
   use time_manager_mod, only : time_type, get_date, set_date, operator ( >= ) , operator ( + ) , days_in_month, &
-                            operator( - ), operator ( / ) , days_in_year, increment_time, &
+                            operator( - ), operator ( / ), operator ( // ) , days_in_year, increment_time, &
                             set_time, get_time, operator( > ), get_calendar_type, NO_CALENDAR
   use get_cal_time_mod, only : get_cal_time
   use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, mpp_get_data_domain, &
@@ -85,6 +85,7 @@ module time_interp_external2_mod
        time_interp_external_exit, get_external_field_size, get_time_axis, get_external_field_missing
   public set_override_region, reset_src_data_region
   public get_external_fileobj
+  public time_interp_external_bridge
 
   private find_buf_index,&
          set_time_modulo
@@ -148,6 +149,15 @@ module time_interp_external2_mod
       module procedure time_interp_external_0d_r8
       module procedure time_interp_external_2d_r8
       module procedure time_interp_external_3d_r8
+  end interface
+
+  interface time_interp_external_bridge
+     module procedure time_interp_external_bridge_0d_r4
+     module procedure time_interp_external_bridge_2d_r4
+     module procedure time_interp_external_bridge_3d_r4
+     module procedure time_interp_external_bridge_0d_r8
+     module procedure time_interp_external_bridge_2d_r8
+     module procedure time_interp_external_bridge_3d_r8
   end interface
 
   !> @addtogroup time_interp_external2_mod
@@ -1128,6 +1138,9 @@ end subroutine time_interp_external_exit
 
 #include "time_interp_external2_r4.fh"
 #include "time_interp_external2_r8.fh"
+
+#include "time_interp_external2_bridge_r4.fh"
+#include "time_interp_external2_bridge_r8.fh"
 
 end module time_interp_external2_mod
 !> @}
