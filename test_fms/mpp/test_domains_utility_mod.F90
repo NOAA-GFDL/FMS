@@ -38,11 +38,11 @@ module test_domains_utility_mod
 
   contains
 
-subroutine fill_coarse_data_r8(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c, nz, isd, jsd, nx, ny, &
+subroutine fill_coarse_data_r8(coarse_data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c, nz, isd, jsd, nx, ny, &
                               ishift, jshift, x_add, y_add, sign1, sign2, x_cyclic, y_cyclic, ieg, jeg)
     integer, intent(in)    :: rotate, is_c, ie_c, js_c, je_c, nz, isd, jsd, iadd, jadd, nx, ny, ishift, jshift
     integer, intent(in)    :: sign1, sign2
-    real(kind=r8_kind),    intent(inout) :: data(isd:, jsd:, :)
+    real(kind=r8_kind),    intent(inout) :: coarse_data(isd:, jsd:, :)
     real(kind=r8_kind),    intent(in)    :: x_add, y_add
     logical, intent(in)    :: x_cyclic, y_cyclic
     integer, intent(in)    :: ieg, jeg
@@ -54,7 +54,7 @@ subroutine fill_coarse_data_r8(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
        do k = 1, nz
           do j = js_c, je_c+jshift
              do i = is_c, ie_c+ishift
-                data(i,j,k) = dble(i+iadd)*1.d+6 + dble(j+jadd)*1.d+3 + dble(k) + x_add
+               coarse_data(i,j,k) = dble(i+iadd)*1.d+6 + dble(j+jadd)*1.d+3 + dble(k) + x_add
              enddo
           enddo
        enddo
@@ -63,7 +63,7 @@ subroutine fill_coarse_data_r8(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
        do k = 1, nz
           do j = js_c, je_c+jshift
              do i = is_c, ie_c+ishift
-                data(i,j,k) = sign1*( dble(nx-j+1+iadd+jshift)*1.d+6 + dble(i+jadd)*1.d+3 + dble(k) + y_add)
+               coarse_data(i,j,k) = sign1*( dble(nx-j+1+iadd+jshift)*1.d+6 + dble(i+jadd)*1.d+3 + dble(k) + y_add)
              enddo
           enddo
        enddo
@@ -72,7 +72,7 @@ subroutine fill_coarse_data_r8(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
        do k = 1, nz
           do j = js_c, je_c+jshift
              do i = is_c, ie_c+ishift
-                data(i,j,k) = sign2*( dble(j+iadd)*1.d+6 + dble(ny-i+1+jadd+ishift)*1.d+3 + dble(k) + y_add)
+               coarse_data(i,j,k) = sign2*( dble(j+iadd)*1.d+6 + dble(ny-i+1+jadd+ishift)*1.d+3 + dble(k) + y_add)
              enddo
           enddo
        enddo
@@ -86,7 +86,7 @@ subroutine fill_coarse_data_r8(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
           i = ie_c+ishift
           do k = 1, nz
              do j = js_c, je_c+jshift
-                data(i,j,k) = dble(i)*1.d+6 + dble(j+jadd)*1.d+3 + dble(k) + x_add
+               coarse_data(i,j,k) = dble(i)*1.d+6 + dble(j+jadd)*1.d+3 + dble(k) + x_add
              enddo
           enddo
        endif
@@ -98,7 +98,7 @@ subroutine fill_coarse_data_r8(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
           j = je_c+jshift
           do k = 1, nz
              do j = js_c, je_c+jshift
-                data(i,j,k) = dble(i+iadd)*1.d+6 + j*1.d+3 + dble(k) + x_add
+               coarse_data(i,j,k) = dble(i+iadd)*1.d+6 + j*1.d+3 + dble(k) + x_add
              enddo
           enddo
        endif
@@ -107,11 +107,11 @@ subroutine fill_coarse_data_r8(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
   end subroutine fill_coarse_data_r8
 
 
-subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c, nz, isd, jsd, nx, ny, &
+subroutine fill_coarse_data_r4(coarse_data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c, nz, isd, jsd, nx, ny, &
                               ishift, jshift, x_add, y_add, sign1, sign2, x_cyclic, y_cyclic, ieg, jeg)
     integer, intent(in)    :: rotate, is_c, ie_c, js_c, je_c, nz, isd, jsd, iadd, jadd, nx, ny, ishift, jshift
     integer, intent(in)    :: sign1, sign2
-    real(kind=r4_kind),    intent(inout) :: data(isd:, jsd:, :)
+    real(kind=r4_kind),    intent(inout) :: coarse_data(isd:, jsd:, :)
     real(kind=r4_kind),    intent(in)    :: x_add, y_add
     logical, intent(in)    :: x_cyclic, y_cyclic
     integer, intent(in)    :: ieg, jeg
@@ -123,7 +123,7 @@ subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
        do k = 1, nz
           do j = js_c, je_c+jshift
              do i = is_c, ie_c+ishift
-                data(i,j,k) = (i+iadd)*1.e+6 + (j+jadd)*1.e+3 + k + x_add
+               coarse_data(i,j,k) = (i+iadd)*1.e+6 + (j+jadd)*1.e+3 + k + x_add
              enddo
           enddo
        enddo
@@ -132,7 +132,7 @@ subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
        do k = 1, nz
           do j = js_c, je_c+jshift
              do i = is_c, ie_c+ishift
-                data(i,j,k) = sign1*((nx-j+1+iadd+jshift)*1.e+6 + (i+jadd)*1.e+3 + k + y_add)
+               coarse_data(i,j,k) = sign1*((nx-j+1+iadd+jshift)*1.e+6 + (i+jadd)*1.e+3 + k + y_add)
              enddo
           enddo
        enddo
@@ -141,7 +141,7 @@ subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
        do k = 1, nz
           do j = js_c, je_c+jshift
              do i = is_c, ie_c+ishift
-                data(i,j,k) = sign2*((j+iadd)*1.e+6 + (ny-i+1+jadd+ishift)*1.e+3 + k + y_add)
+               coarse_data(i,j,k) = sign2*((j+iadd)*1.e+6 + (ny-i+1+jadd+ishift)*1.e+3 + k + y_add)
              enddo
           enddo
        enddo
@@ -155,7 +155,7 @@ subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
           i = ie_c+ishift
           do k = 1, nz
              do j = js_c, je_c+jshift
-                data(i,j,k) = i*1.e+6 + (j+jadd)*1.e+3 + k + x_add
+               coarse_data(i,j,k) = i*1.e+6 + (j+jadd)*1.e+3 + k + x_add
              enddo
           enddo
        endif
@@ -167,7 +167,7 @@ subroutine fill_coarse_data_r4(data, rotate, iadd, jadd, is_c, ie_c, js_c, je_c,
           j = je_c+jshift
           do k = 1, nz
              do j = js_c, je_c+jshift
-                data(i,j,k) = (i+iadd)*1.e+6 + j*1.e+3 + k + x_add
+               coarse_data(i,j,k) = (i+iadd)*1.e+6 + j*1.e+3 + k + x_add
              enddo
           enddo
        endif

@@ -254,7 +254,7 @@ real(r4_kind), allocatable :: latb(:)              !< No description
 real(r4_kind), allocatable :: lonb(:)              !< No description
 real(r4_kind), allocatable :: levs(:)              !< No description
 real(r4_kind), allocatable :: halflevs(:)          !< No description
-real(r4_kind), allocatable :: data(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
+real(r4_kind), allocatable :: data5d(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
 real(r4_kind), allocatable :: pmon_pyear(:,:,:,:)           !< No description
 real(r4_kind), allocatable :: pmon_nyear(:,:,:,:)           !< No description
 real(r4_kind), allocatable :: nmon_nyear(:,:,:,:)           !< No description
@@ -273,7 +273,7 @@ real(r8_kind), allocatable :: latb(:)              !< No description
 real(r8_kind), allocatable :: lonb(:)              !< No description
 real(r8_kind), allocatable :: levs(:)              !< No description
 real(r8_kind), allocatable :: halflevs(:)          !< No description
-real(r8_kind), allocatable :: data(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
+real(r8_kind), allocatable :: data5d(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
 real(r8_kind), allocatable :: pmon_pyear(:,:,:,:)           !< No description
 real(r8_kind), allocatable :: pmon_nyear(:,:,:,:)           !< No description
 real(r8_kind), allocatable :: nmon_nyear(:,:,:,:)           !< No description
@@ -451,13 +451,13 @@ type(interpolate_type), intent(inout) :: Out
      if (allocated(In%out_of_bounds)) Out%out_of_bounds =  In%out_of_bounds
      if (allocated(In%vert_interp  )) Out%vert_interp   =  In%vert_interp
      if(In%r4_type%is_allocated) then
-        if (allocated(In%r4_type%data         )) Out%r4_type%data          =  In%r4_type%data
+        if (allocated(In%r4_type%data5d       )) Out%r4_type%data5d        =  In%r4_type%data5d
         if (allocated(In%r4_type%pmon_pyear   )) Out%r4_type%pmon_pyear    =  In%r4_type%pmon_pyear
         if (allocated(In%r4_type%pmon_nyear   )) Out%r4_type%pmon_nyear    =  In%r4_type%pmon_nyear
         if (allocated(In%r4_type%nmon_nyear   )) Out%r4_type%nmon_nyear    =  In%r4_type%nmon_nyear
         if (allocated(In%r4_type%nmon_pyear   )) Out%r4_type%nmon_pyear    =  In%r4_type%nmon_pyear
      else if(In%r8_type%is_allocated) then
-        if (allocated(In%r8_type%data         )) Out%r8_type%data          =  In%r8_type%data
+        if (allocated(In%r8_type%data5d       )) Out%r8_type%data5d        =  In%r8_type%data5d
         if (allocated(In%r8_type%pmon_pyear   )) Out%r8_type%pmon_pyear    =  In%r8_type%pmon_pyear
         if (allocated(In%r8_type%pmon_nyear   )) Out%r8_type%pmon_nyear    =  In%r8_type%pmon_nyear
         if (allocated(In%r8_type%nmon_nyear   )) Out%r8_type%nmon_nyear    =  In%r8_type%nmon_nyear
@@ -668,7 +668,7 @@ if(clim_type%r4_type%is_allocated) then
    if (allocated (clim_type%r4_type%lonb    )) deallocate(clim_type%r4_type%lonb)
    if (allocated (clim_type%r4_type%levs    )) deallocate(clim_type%r4_type%levs)
    if (allocated (clim_type%r4_type%halflevs)) deallocate(clim_type%r4_type%halflevs)
-   if (allocated (clim_type%r4_type%data))     deallocate(clim_type%r4_type%data)
+   if (allocated (clim_type%r4_type%data5d  )) deallocate(clim_type%r4_type%data5d)
 else if(clim_type%r8_type%is_allocated) then
    if (allocated (clim_type%r8_type%lat     )) deallocate(clim_type%r8_type%lat)
    if (allocated (clim_type%r8_type%lon     )) deallocate(clim_type%r8_type%lon)
@@ -676,7 +676,7 @@ else if(clim_type%r8_type%is_allocated) then
    if (allocated (clim_type%r8_type%lonb    )) deallocate(clim_type%r8_type%lonb)
    if (allocated (clim_type%r8_type%levs    )) deallocate(clim_type%r8_type%levs)
    if (allocated (clim_type%r8_type%halflevs)) deallocate(clim_type%r8_type%halflevs)
-   if (allocated (clim_type%r8_type%data))     deallocate(clim_type%r8_type%data)
+   if (allocated (clim_type%r8_type%data5d))   deallocate(clim_type%r8_type%data5d)
 end if
 
 if (allocated (clim_type%time_slice)) deallocate(clim_type%time_slice)

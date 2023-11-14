@@ -3678,63 +3678,64 @@ end subroutine test_halosize_update
   end subroutine test_unstruct_update
   !#################################################################################
 
-  subroutine fill_halo_zero(data, whalo, ehalo, shalo, nhalo, xshift, yshift, isc, iec, jsc, jec, isd, ied, jsd, jed)
+  subroutine fill_halo_zero(halo_data, whalo, ehalo, shalo, nhalo, xshift, yshift, &
+                            isc, iec, jsc, jec, isd, ied, jsd, jed)
     integer,                         intent(in) :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer,                         intent(in) :: whalo, ehalo, shalo, nhalo, xshift, yshift
-    real, dimension(isd:,jsd:,:), intent(inout) :: data
+    real, dimension(isd:,jsd:,:), intent(inout) :: halo_data
 
     if(whalo >=0) then
-       data(iec+ehalo+1+xshift:ied+xshift,jsd:jed+yshift,:) = 0
-       data(isd:isc-whalo-1,jsd:jed+yshift,:) = 0
+       halo_data(iec+ehalo+1+xshift:ied+xshift,jsd:jed+yshift,:) = 0
+       halo_data(isd:isc-whalo-1,jsd:jed+yshift,:) = 0
     else
-       data(iec+1+xshift:iec-ehalo+xshift,jsc+shalo:jec-nhalo+yshift,:) = 0
-       data(isc+whalo:isc-1,jsc+shalo:jec-nhalo+yshift,:) = 0
+       halo_data(iec+1+xshift:iec-ehalo+xshift,jsc+shalo:jec-nhalo+yshift,:) = 0
+       halo_data(isc+whalo:isc-1,jsc+shalo:jec-nhalo+yshift,:) = 0
     end if
 
     if(shalo>=0) then
-       data(isd:ied+xshift, jec+nhalo+1+yshift:jed+yshift,:) = 0
-       data(isd:ied+xshift, jsd:jsc-shalo-1,:) = 0
+       halo_data(isd:ied+xshift, jec+nhalo+1+yshift:jed+yshift,:) = 0
+       halo_data(isd:ied+xshift, jsd:jsc-shalo-1,:) = 0
     else
-       data(isc+whalo:iec-ehalo+xshift,jec+1+yshift:jec-nhalo+yshift,:) = 0
-       data(isc+whalo:iec-ehalo+xshift,jsc+shalo:jsc-1,:) = 0
+       halo_data(isc+whalo:iec-ehalo+xshift,jec+1+yshift:jec-nhalo+yshift,:) = 0
+       halo_data(isc+whalo:iec-ehalo+xshift,jsc+shalo:jsc-1,:) = 0
     end if
 
   end subroutine fill_halo_zero
 
   !##############################################################################
   ! this routine fill the halo points for the regular mosaic.
-  subroutine fill_regular_mosaic_halo(data, data_all, te, tse, ts, tsw, tw, tnw, tn, tne)
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_regular_mosaic_halo(halo_data, data_all, te, tse, ts, tsw, tw, tnw, tn, tne)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     real, dimension(:,:,:,:),             intent(in)    :: data_all
     integer,                              intent(in)    :: te, tse, ts, tsw, tw, tnw, tn, tne
 
-       data(nx+1:nx+ehalo, 1:ny,          :) = data_all(1:ehalo,       1:ny,          :, te) ! east
-       data(1:nx,          1-shalo:0,     :) = data_all(1:nx,          ny-shalo+1:ny, :, ts) ! south
-       data(1-whalo:0,     1:ny,          :) = data_all(nx-whalo+1:nx, 1:ny,          :, tw) ! west
-       data(1:nx,          ny+1:ny+nhalo, :) = data_all(1:nx,          1:nhalo,       :, tn) ! north
-       data(nx+1:nx+ehalo, 1-shalo:0,     :) = data_all(1:ehalo,       ny-shalo+1:ny, :,tse) ! southeast
-       data(1-whalo:0,     1-shalo:0,     :) = data_all(nx-whalo+1:nx, ny-shalo+1:ny, :,tsw) ! southwest
-       data(nx+1:nx+ehalo, ny+1:ny+nhalo, :) = data_all(1:ehalo,       1:nhalo,       :,tnw) ! northeast
-       data(1-whalo:0,     ny+1:ny+nhalo, :) = data_all(nx-whalo+1:nx, 1:nhalo,       :,tne) ! northwest
+       halo_data(nx+1:nx+ehalo, 1:ny,          :) = data_all(1:ehalo,       1:ny,          :, te) ! east
+       halo_data(1:nx,          1-shalo:0,     :) = data_all(1:nx,          ny-shalo+1:ny, :, ts) ! south
+       halo_data(1-whalo:0,     1:ny,          :) = data_all(nx-whalo+1:nx, 1:ny,          :, tw) ! west
+       halo_data(1:nx,          ny+1:ny+nhalo, :) = data_all(1:nx,          1:nhalo,       :, tn) ! north
+       halo_data(nx+1:nx+ehalo, 1-shalo:0,     :) = data_all(1:ehalo,       ny-shalo+1:ny, :,tse) ! southeast
+       halo_data(1-whalo:0,     1-shalo:0,     :) = data_all(nx-whalo+1:nx, ny-shalo+1:ny, :,tsw) ! southwest
+       halo_data(nx+1:nx+ehalo, ny+1:ny+nhalo, :) = data_all(1:ehalo,       1:nhalo,       :,tnw) ! northeast
+       halo_data(1-whalo:0,     ny+1:ny+nhalo, :) = data_all(nx-whalo+1:nx, 1:nhalo,       :,tne) ! northwest
 
 
 
   end subroutine fill_regular_mosaic_halo
 
-  subroutine fill_folded_north_halo(data, ioff, joff, ishift, jshift, sign)
-    class(*), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_folded_north_halo(halo_data, ioff, joff, ishift, jshift, sign)
+    class(*), dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign
 
-    select type(data)
+    select type(halo_data)
       type is (real(r4_kind))
-        call fill_folded_north_halo_r4(data, ioff, joff, ishift, jshift, sign)
+        call fill_folded_north_halo_r4(halo_data, ioff, joff, ishift, jshift, sign)
       type is (real(r8_kind))
-        call fill_folded_north_halo_r8(data, ioff, joff, ishift, jshift, sign)
+        call fill_folded_north_halo_r8(halo_data, ioff, joff, ishift, jshift, sign)
     end select
   end subroutine
   !################################################################################
-  subroutine fill_folded_north_halo_r4(data, ioff, joff, ishift, jshift, sign)
-    real(r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_folded_north_halo_r4(halo_data, ioff, joff, ishift, jshift, sign)
+    real(r4_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign
     integer  :: nxp, nyp, m1, m2
 
@@ -3743,17 +3744,19 @@ end subroutine test_halosize_update
     m1 = ishift - ioff
     m2 = 2*ishift - ioff
 
-    data(1-whalo:0,                  1:nyp,:) =      data(nx-whalo+1:nx,        1:ny+jshift,:) ! west
-    data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      data(1:ehalo+ishift,       1:ny+jshift,:) ! east
-    if(m1 .GE. 1-whalo) data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*data(whalo+m2:1+ishift:-1, &
+    halo_data(1-whalo:0,                  1:nyp,:) =      halo_data(nx-whalo+1:nx,        1:ny+jshift,:) ! west
+    halo_data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      halo_data(1:ehalo+ishift,       1:ny+jshift,:) ! east
+    if(m1 .GE. 1-whalo) halo_data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*halo_data(whalo+m2:1+ishift:-1, &
       &  nyp-joff:nyp-nhalo-joff+1:-1,:)
-    data(m1+1:nx+m2,       nyp+1:nyp+nhalo,:) = sign*data(nx+ishift:1:-1,       nyp-joff:nyp-nhalo-joff+1:-1,:)
-    data(nx+m2+1:nxp+ehalo,nyp+1:nyp+nhalo,:) = sign*data(nx:nx-ehalo+m1+1:-1,  nyp-joff:nyp-nhalo-joff+1:-1,:)
+    halo_data(m1+1:nx+m2,       nyp+1:nyp+nhalo,:) = &
+      sign*halo_data(nx+ishift:1:-1,       nyp-joff:nyp-nhalo-joff+1:-1,:)
+    halo_data(nx+m2+1:nxp+ehalo,nyp+1:nyp+nhalo,:) = &
+      sign*halo_data(nx:nx-ehalo+m1+1:-1,  nyp-joff:nyp-nhalo-joff+1:-1,:)
 
   end subroutine fill_folded_north_halo_r4
   ! r8 version needed for mixed mode
-  subroutine fill_folded_north_halo_r8(data, ioff, joff, ishift, jshift, sign)
-    real(r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_folded_north_halo_r8(halo_data, ioff, joff, ishift, jshift, sign)
+    real(r8_kind), dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign
     integer  :: nxp, nyp, m1, m2
 
@@ -3762,18 +3765,20 @@ end subroutine test_halosize_update
     m1 = ishift - ioff
     m2 = 2*ishift - ioff
 
-    data(1-whalo:0,                  1:nyp,:) =      data(nx-whalo+1:nx,        1:ny+jshift,:) ! west
-    data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      data(1:ehalo+ishift,       1:ny+jshift,:) ! east
+    halo_data(1-whalo:0,                  1:nyp,:) =      halo_data(nx-whalo+1:nx,        1:ny+jshift,:) ! west
+    halo_data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      halo_data(1:ehalo+ishift,       1:ny+jshift,:) ! east
     if(m1 .GE. 1-whalo) &
-      data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*data(whalo+m2:1+ishift:-1, nyp-joff:nyp-nhalo-joff+1:-1,:)
-    data(m1+1:nx+m2,       nyp+1:nyp+nhalo,:) = sign*data(nx+ishift:1:-1,       nyp-joff:nyp-nhalo-joff+1:-1,:)
-    data(nx+m2+1:nxp+ehalo,nyp+1:nyp+nhalo,:) = sign*data(nx:nx-ehalo+m1+1:-1,  nyp-joff:nyp-nhalo-joff+1:-1,:)
+      halo_data(1-whalo:m1,  nyp+1:nyp+nhalo,:) = sign*halo_data(whalo+m2:1+ishift:-1, nyp-joff:nyp-nhalo-joff+1:-1,:)
+    halo_data(m1+1:nx+m2,       nyp+1:nyp+nhalo,:) = &
+      sign*halo_data(nx+ishift:1:-1,       nyp-joff:nyp-nhalo-joff+1:-1,:)
+    halo_data(nx+m2+1:nxp+ehalo,nyp+1:nyp+nhalo,:) = &
+      sign*halo_data(nx:nx-ehalo+m1+1:-1,  nyp-joff:nyp-nhalo-joff+1:-1,:)
 
   end subroutine fill_folded_north_halo_r8
 
   !################################################################################
-  subroutine fill_folded_south_halo(data, ioff, joff, ishift, jshift, sign)
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_folded_south_halo(halo_data, ioff, joff, ishift, jshift, sign)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign
     integer  :: nxp, nyp, m1, m2
 
@@ -3783,17 +3788,18 @@ end subroutine test_halosize_update
     m2 = 2*ishift - ioff
 
 
-    data(1-whalo:0,                  1:nyp,:) =      data(nx-whalo+1:nx,        1:nyp,:) ! west
-    data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      data(1:ehalo+ishift,       1:nyp,:) ! east
-    if(m1 .GE. 1-whalo)data(1-whalo:m1, 1-shalo:0,:) = sign*data(whalo+m2:1+ishift:-1, shalo+jshift:1+jshift:-1,:)
-    data(m1+1:nx+m2,       1-shalo:0,:) = sign*data(nxp:1:-1,             shalo+jshift:1+jshift:-1,:)
-    data(nx+m2+1:nxp+ehalo,1-shalo:0,:) = sign*data(nx:nx-ehalo+m1+1:-1,  shalo+jshift:1+jshift:-1,:)
+    halo_data(1-whalo:0,                  1:nyp,:) =      halo_data(nx-whalo+1:nx,        1:nyp,:) ! west
+    halo_data(nx+1:nx+ehalo+ishift,       1:nyp,:) =      halo_data(1:ehalo+ishift,       1:nyp,:) ! east
+    if(m1 .GE. 1-whalo)halo_data(1-whalo:m1, 1-shalo:0,:) = &
+      sign*halo_data(whalo+m2:1+ishift:-1, shalo+jshift:1+jshift:-1,:)
+    halo_data(m1+1:nx+m2,       1-shalo:0,:) = sign*halo_data(nxp:1:-1,             shalo+jshift:1+jshift:-1,:)
+    halo_data(nx+m2+1:nxp+ehalo,1-shalo:0,:) = sign*halo_data(nx:nx-ehalo+m1+1:-1,  shalo+jshift:1+jshift:-1,:)
 
   end subroutine fill_folded_south_halo
 
   !################################################################################
-  subroutine fill_folded_west_halo(data, ioff, joff, ishift, jshift, sign)
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_folded_west_halo(halo_data, ioff, joff, ishift, jshift, sign)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign
     integer  :: nxp, nyp, m1, m2
 
@@ -3802,17 +3808,18 @@ end subroutine test_halosize_update
     m1 = jshift - joff
     m2 = 2*jshift - joff
 
-    data(1:nxp, 1-shalo:0, :)      = data(1:nxp, ny-shalo+1:ny, :) ! south
-    data(1:nxp, ny+1:nyp+nhalo, :) = data(1:nxp, 1:nhalo+jshift,:) ! north
-    if(m1 .GE. 1-shalo) data(1-whalo:0, 1-shalo:m1, :) = sign*data(whalo+ishift:1+ishift:-1, shalo+m2:1+jshift:-1,:)
-    data(1-whalo:0, m1+1:ny+m2, :) = sign*data(whalo+ishift:1+ishift:-1, nyp:1:-1, :)
-    data(1-whalo:0, ny+m2+1:nyp+nhalo,:) = sign*data(whalo+ishift:1+ishift:-1, ny:ny-nhalo+m1+1:-1,:)
+    halo_data(1:nxp, 1-shalo:0, :)      = halo_data(1:nxp, ny-shalo+1:ny, :) ! south
+    halo_data(1:nxp, ny+1:nyp+nhalo, :) = halo_data(1:nxp, 1:nhalo+jshift,:) ! north
+    if(m1 .GE. 1-shalo) halo_data(1-whalo:0, 1-shalo:m1, :) = &
+      sign*halo_data(whalo+ishift:1+ishift:-1, shalo+m2:1+jshift:-1,:)
+    halo_data(1-whalo:0, m1+1:ny+m2, :) = sign*halo_data(whalo+ishift:1+ishift:-1, nyp:1:-1, :)
+    halo_data(1-whalo:0, ny+m2+1:nyp+nhalo,:) = sign*halo_data(whalo+ishift:1+ishift:-1, ny:ny-nhalo+m1+1:-1,:)
 
   end subroutine fill_folded_west_halo
 
   !################################################################################
-  subroutine fill_folded_east_halo(data, ioff, joff, ishift, jshift, sign)
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_folded_east_halo(halo_data, ioff, joff, ishift, jshift, sign)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     integer,                              intent(in   ) :: ioff, joff, ishift, jshift, sign
     integer  :: nxp, nyp, m1, m2
 
@@ -3821,12 +3828,13 @@ end subroutine test_halosize_update
     m1 = jshift - joff
     m2 = 2*jshift - joff
 
-    data(1:nxp, 1-shalo:0, :)      = data(1:nxp, ny-shalo+1:ny, :) ! south
-    data(1:nxp, ny+1:nyp+nhalo, :) = data(1:nxp, 1:nhalo+jshift,:) ! north
-    if(m1 .GE. 1-shalo) data(nxp+1:nxp+ehalo, 1-shalo:m1, :) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, &
+    halo_data(1:nxp, 1-shalo:0, :)      = halo_data(1:nxp, ny-shalo+1:ny, :) ! south
+    halo_data(1:nxp, ny+1:nyp+nhalo, :) = halo_data(1:nxp, 1:nhalo+jshift,:) ! north
+    if(m1 .GE. 1-shalo) halo_data(nxp+1:nxp+ehalo, 1-shalo:m1, :) = sign*halo_data(nxp-ioff:nxp-ehalo-ioff+1:-1, &
       &  shalo+m2:1+jshift:-1,:)
-    data(nxp+1:nxp+ehalo, m1+1:ny+m2, :) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, nyp:1:-1, :)
-    data(nxp+1:nxp+ehalo, ny+m2+1:nyp+nhalo,:) = sign*data(nxp-ioff:nxp-ehalo-ioff+1:-1, ny:ny-nhalo+m1+1:-1,:)
+    halo_data(nxp+1:nxp+ehalo, m1+1:ny+m2, :) = sign*halo_data(nxp-ioff:nxp-ehalo-ioff+1:-1, nyp:1:-1, :)
+    halo_data(nxp+1:nxp+ehalo, ny+m2+1:nyp+nhalo,:) = &
+      sign*halo_data(nxp-ioff:nxp-ehalo-ioff+1:-1, ny:ny-nhalo+m1+1:-1,:)
 
   end subroutine fill_folded_east_halo
 
@@ -4081,8 +4089,8 @@ end subroutine test_halosize_update
   !##############################################################################
   ! this routine fill the halo points for the cubic grid. ioff and joff is used to distinguish
   ! T, C, E, or N-cell
-  subroutine fill_cubic_grid_halo(data, data1_all, data2_all, tile, ioff, joff, sign1, sign2)
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_cubic_grid_halo(halo_data, data1_all, data2_all, tile, ioff, joff, sign1, sign2)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     real, dimension(:,:,:,:),             intent(in)    :: data1_all, data2_all
     integer,                              intent(in)    :: tile, ioff, joff, sign1, sign2
     integer                                             :: lw, le, ls, ln
@@ -4092,26 +4100,26 @@ end subroutine test_halosize_update
        if(le > 6 ) le = le - 6
        if(ls < 1 ) ls = ls + 6
        if(ln > 6 ) ln = ln - 6
-       data(1-whalo:0, 1:ny+joff, :) = data1_all(nx-whalo+1:nx, 1:ny+joff, :, lw) ! west
+       halo_data(1-whalo:0, 1:ny+joff, :) = data1_all(nx-whalo+1:nx, 1:ny+joff, :, lw) ! west
        do i = 1, ehalo
-          data(nx+i+ioff, 1:ny+joff, :)    = sign1*data2_all(nx+joff:1:-1, i+ioff, :, le) ! east
+          halo_data(nx+i+ioff, 1:ny+joff, :)    = sign1*data2_all(nx+joff:1:-1, i+ioff, :, le) ! east
        end do
        do i = 1, shalo
-          data(1:nx+ioff, 1-i, :)     = sign2*data2_all(nx-i+1, ny+ioff:1:-1, :, ls) ! south
+          halo_data(1:nx+ioff, 1-i, :)     = sign2*data2_all(nx-i+1, ny+ioff:1:-1, :, ls) ! south
        end do
-       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff, :) = data1_all(1:nx+ioff, 1+joff:nhalo+joff, :, ln) ! north
+       halo_data(1:nx+ioff, ny+1+joff:ny+nhalo+joff, :) = data1_all(1:nx+ioff, 1+joff:nhalo+joff, :, ln) ! north
     else ! tile 1, 3, 5
        lw = tile - 2; le = tile + 1; ls = tile - 1; ln = tile + 2
        if(lw < 1 ) lw = lw + 6
        if(ls < 1 ) ls = ls + 6
        if(ln > 6 ) ln = ln - 6
        do i = 1, whalo
-          data(1-i, 1:ny+joff, :)     = sign1*data2_all(nx+joff:1:-1, ny-i+1, :, lw) ! west
+          halo_data(1-i, 1:ny+joff, :)     = sign1*data2_all(nx+joff:1:-1, ny-i+1, :, lw) ! west
        end do
-       data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff, :) = data1_all(1+ioff:ehalo+ioff, 1:ny+joff, :, le) ! east
-       data(1:nx+ioff, 1-shalo:0, :)     = data1_all(1:nx+ioff, ny-shalo+1:ny, :, ls) ! south
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff, :) = data1_all(1+ioff:ehalo+ioff, 1:ny+joff, :, le) ! east
+       halo_data(1:nx+ioff, 1-shalo:0, :)     = data1_all(1:nx+ioff, ny-shalo+1:ny, :, ls) ! south
        do i = 1, nhalo
-          data(1:nx+ioff, ny+i+joff, :)    = sign2*data2_all(i+joff, ny+ioff:1:-1, :, ln) ! north
+          halo_data(1:nx+ioff, ny+i+joff, :)    = sign2*data2_all(i+joff, ny+ioff:1:-1, :, ln) ! north
        end do
     end if
 
@@ -4456,8 +4464,8 @@ end subroutine test_halosize_update
 
   end subroutine test_nonuniform_mosaic
 
-  subroutine fill_five_tile_halo(data, data_all, tile, ioff, joff)
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_five_tile_halo(halo_data, data_all, tile, ioff, joff)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     real, dimension(:,:,:,:),             intent(in)    :: data_all
     integer,                              intent(in)    :: tile, ioff, joff
     integer                                             :: nxm, nym
@@ -4466,57 +4474,58 @@ end subroutine test_halosize_update
 
     select case(tile)
     case(1)
-       data(nxm+1+ioff:nxm+ehalo+ioff, 1:ny,:) = data_all(1+ioff:ehalo+ioff, 1:ny,:,2) ! east
-       data(nxm+1+ioff:nxm+ehalo+ioff, ny+1:nym+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,4) ! east
-       data(1-whalo:0, 1:ny,:) = data_all(nx-whalo+1:nx, 1:ny,:,3) ! west
-       data(1-whalo:0, ny+1:nym+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,5) ! west
-       data(1:nxm+ioff, 1-shalo:0,:) = data_all(1:nxm+ioff, nym-shalo+1:nym,:,1) ! south
-       data(1:nxm+ioff, nym+1+joff:nym+nhalo+joff,:) = data_all(1:nxm+ioff, 1+joff:nhalo+joff,:,1) ! north
-       data(nxm+1+ioff:nxm+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,4) ! southeast
-       data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,5) ! southwest
-       data(nxm+1+ioff:nxm+ehalo+ioff,nym+1+joff:nym+nhalo+joff,:) = &
+       halo_data(nxm+1+ioff:nxm+ehalo+ioff, 1:ny,:) = data_all(1+ioff:ehalo+ioff, 1:ny,:,2) ! east
+       halo_data(nxm+1+ioff:nxm+ehalo+ioff, ny+1:nym+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,4) ! east
+       halo_data(1-whalo:0, 1:ny,:) = data_all(nx-whalo+1:nx, 1:ny,:,3) ! west
+       halo_data(1-whalo:0, ny+1:nym+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,5) ! west
+       halo_data(1:nxm+ioff, 1-shalo:0,:) = data_all(1:nxm+ioff, nym-shalo+1:nym,:,1) ! south
+       halo_data(1:nxm+ioff, nym+1+joff:nym+nhalo+joff,:) = data_all(1:nxm+ioff, 1+joff:nhalo+joff,:,1) ! north
+       halo_data(nxm+1+ioff:nxm+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,4) ! southeast
+       halo_data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,5) ! southwest
+       halo_data(nxm+1+ioff:nxm+ehalo+ioff,nym+1+joff:nym+nhalo+joff,:) = &
                                                   & data_all(1+ioff:ehalo+ioff, 1+joff:nhalo+joff,:,2) ! northeast
-       data(1-whalo:0, nym+1+joff:nym+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,3) ! northwest
+       halo_data(1-whalo:0, nym+1+joff:nym+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,3) ! northwest
     case(2)
-       data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,3) ! east
-       data(1-whalo:0, 1:ny+joff,:) = data_all(nxm-whalo+1:nxm, 1:ny+joff,:,1) ! west
-       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,4) ! south
-       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,4) ! north
-       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,5) ! southeast
-       data(1-whalo:0, 1-shalo:0,:) = data_all(nxm-whalo+1:nxm, nym-shalo+1:nym,:,1) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
-                                                  & data_all(1+ioff:ehalo+ioff,      1+joff:nhalo+joff,:,5) ! northeast
-       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nxm-whalo+1:nxm, ny+1+joff:ny+nhalo+joff,:,1) ! northwest
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,3) ! east
+       halo_data(1-whalo:0, 1:ny+joff,:) = data_all(nxm-whalo+1:nxm, 1:ny+joff,:,1) ! west
+       halo_data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,4) ! south
+       halo_data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,4) ! north
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,5) ! southeast
+       halo_data(1-whalo:0, 1-shalo:0,:) = data_all(nxm-whalo+1:nxm, nym-shalo+1:nym,:,1) ! southwest
+       halo_data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+                                                  & data_all(1+ioff:ehalo+ioff,   1+joff:nhalo+joff,:,5) ! northeast
+       halo_data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = &
+         data_all(nxm-whalo+1:nxm, ny+1+joff:ny+nhalo+joff,:,1) ! northwest
     case(3)
-       data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,1) ! east
-       data(1-whalo:0, 1:ny+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,2) ! west
-       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,5) ! south
-       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,5) ! north
-       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, nym-shalo+1:nym,:,1) ! southeast
-       data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,4) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
-                                                  & data_all(1+ioff:ehalo+ioff,ny+1+joff:ny+nhalo+joff,:,1) ! northeast
-       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,4) ! northwest
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,1) ! east
+       halo_data(1-whalo:0, 1:ny+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,2) ! west
+       halo_data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,5) ! south
+       halo_data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,5) ! north
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, nym-shalo+1:nym,:,1) ! southeast
+       halo_data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,4) ! southwest
+       halo_data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+                                                & data_all(1+ioff:ehalo+ioff,ny+1+joff:ny+nhalo+joff,:,1) ! northeast
+       halo_data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,4) ! northwest
     case(4)
-       data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,5) ! east
-       data(1-whalo:0, 1:ny+joff,:) = data_all(nxm-whalo+1:nxm, ny+1:2*ny+joff,:,1) ! west
-       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,2) ! south
-       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,2) ! north
-       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,3) ! southeast
-       data(1-whalo:0, 1-shalo:0,:) = data_all(nxm-whalo+1:nxm, ny-shalo+1:ny,:,1) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1:ny+joff,:) = data_all(1+ioff:ehalo+ioff, 1:ny+joff,:,5) ! east
+       halo_data(1-whalo:0, 1:ny+joff,:) = data_all(nxm-whalo+1:nxm, ny+1:2*ny+joff,:,1) ! west
+       halo_data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,2) ! south
+       halo_data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,2) ! north
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,3) ! southeast
+       halo_data(1-whalo:0, 1-shalo:0,:) = data_all(nxm-whalo+1:nxm, ny-shalo+1:ny,:,1) ! southwest
+       halo_data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
                                                   & data_all(1+ioff:ehalo+ioff,1+joff:nhalo+joff,:,3) ! northeast
-       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nxm-whalo+1:nxm, 1+joff:nhalo+joff,:,1) ! northwest
+       halo_data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nxm-whalo+1:nxm, 1+joff:nhalo+joff,:,1) ! northwest
     case(5)
-       data(nx+1+ioff:nx+ehalo+ioff, 1: ny+joff,:) = data_all(1+ioff:ehalo+ioff, ny+1:2*ny+joff,:,1) ! east
-       data(1-whalo:0, 1:ny+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,4) ! west
-       data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,3) ! south
-       data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,3) ! north
-       data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,1) ! southeast
-       data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,2) ! southwest
-       data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1: ny+joff,:) = data_all(1+ioff:ehalo+ioff, ny+1:2*ny+joff,:,1) ! east
+       halo_data(1-whalo:0, 1:ny+joff,:) = data_all(nx-whalo+1:nx, 1:ny+joff,:,4) ! west
+       halo_data(1:nx+ioff, 1-shalo:0,:) = data_all(1:nx+ioff, ny-shalo+1:ny,:,3) ! south
+       halo_data(1:nx+ioff, ny+1+joff:ny+nhalo+joff,:) = data_all(1:nx+ioff, 1+joff:nhalo+joff,:,3) ! north
+       halo_data(nx+1+ioff:nx+ehalo+ioff, 1-shalo:0,:) = data_all(1+ioff:ehalo+ioff, ny-shalo+1:ny,:,1) ! southeast
+       halo_data(1-whalo:0, 1-shalo:0,:) = data_all(nx-whalo+1:nx, ny-shalo+1:ny,:,2) ! southwest
+       halo_data(nx+1+ioff:nx+ehalo+ioff,ny+1+joff:ny+nhalo+joff,:) = &
                                                   & data_all(1+ioff:ehalo+ioff,1+joff:nhalo+joff,:,1) ! northeast
-       data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,2) ! northwest
+       halo_data(1-whalo:0, ny+1+joff:ny+nhalo+joff,:) = data_all(nx-whalo+1:nx, 1+joff:nhalo+joff,:,2) ! northwest
     end select
 
   end subroutine fill_five_tile_halo
@@ -5294,29 +5303,30 @@ end subroutine test_halosize_update
   end subroutine test_get_boundary
 
   !#######################################################################################
-  subroutine fill_regular_refinement_halo( data, data_all, ni, nj, tm, te, tse, ts, tsw, tw, tnw, tn, tne, ioff, joff )
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_regular_refinement_halo( halo_data, data_all, ni, nj, tm, te, tse, ts, &
+                                          tsw, tw, tnw, tn, tne, ioff, joff )
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     real, dimension(:,:,:,:),             intent(in)    :: data_all
     integer, dimension(:),                intent(in)    :: ni, nj
     integer,                              intent(in)    :: tm, te, tse, ts, tsw, tw, tnw, tn, tne
     integer,                              intent(in)    :: ioff, joff
 
 
-    if(te>0) data    (ni(tm)+1+ioff:ni(tm)+ehalo+ioff, 1:nj(tm)+joff,                   :) = &
+    if(te>0) halo_data    (ni(tm)+1+ioff:ni(tm)+ehalo+ioff, 1:nj(tm)+joff,                   :) = &
              data_all(1+ioff:ehalo+ioff,               1:nj(te)+joff,                   :,te)  ! east
-    if(ts>0) data    (1:ni(tm)+ioff,                   1-shalo:0,                       :) = &
+    if(ts>0) halo_data    (1:ni(tm)+ioff,                   1-shalo:0,                       :) = &
              data_all(1:ni(ts)+ioff,                   nj(ts)-shalo+1:nj(ts),           :,ts)  ! south
-    if(tw>0) data    (1-whalo:0,                       1:nj(tm)+joff,                   :) = &
+    if(tw>0) halo_data    (1-whalo:0,                       1:nj(tm)+joff,                   :) = &
              data_all(ni(tw)-whalo+1:ni(tw),           1:nj(tw)+joff,                   :,tw)  ! west
-    if(tn>0) data    (1:ni(tm)+ioff,                   nj(tm)+1+joff:nj(tm)+nhalo+joff, :) = &
+    if(tn>0) halo_data    (1:ni(tm)+ioff,                   nj(tm)+1+joff:nj(tm)+nhalo+joff, :) = &
              data_all(1:ni(tn)+ioff,                   1+joff:nhalo+joff,               :,tn)  ! north
-    if(tse>0)data    (ni(tm)+1+ioff:ni(tm)+ehalo+ioff, 1-shalo:0,                       :) = &
+    if(tse>0)halo_data    (ni(tm)+1+ioff:ni(tm)+ehalo+ioff, 1-shalo:0,                       :) = &
              data_all(1+ioff:ehalo+ioff,               nj(tse)-shalo+1:nj(tse),         :,tse) ! southeast
-    if(tsw>0)data    (1-whalo:0,                       1-shalo:0,                       :) = &
+    if(tsw>0)halo_data    (1-whalo:0,                       1-shalo:0,                       :) = &
              data_all(ni(tsw)-whalo+1:ni(tsw),         nj(tsw)-shalo+1:nj(tsw),         :,tsw) ! southwest
-    if(tne>0)data    (ni(tm)+1+ioff:ni(tm)+ehalo+ioff, nj(tm)+1+joff:nj(tm)+nhalo+joff, :) = &
+    if(tne>0)halo_data    (ni(tm)+1+ioff:ni(tm)+ehalo+ioff, nj(tm)+1+joff:nj(tm)+nhalo+joff, :) = &
              data_all(1+ioff:ehalo+ioff,               1+joff:nhalo+joff,               :,tnw) ! northeast
-    if(tnw>0)data    (1-whalo:0,                       nj(tm)+1+joff:nj(tm)+nhalo+joff, :) = &
+    if(tnw>0)halo_data    (1-whalo:0,                       nj(tm)+1+joff:nj(tm)+nhalo+joff, :) = &
              data_all(ni(tnw)-whalo+1:ni(tnw),         1+joff:nhalo+joff,               :,tne) ! northwest
 
   end subroutine fill_regular_refinement_halo
@@ -5324,8 +5334,8 @@ end subroutine test_halosize_update
   !##############################################################################
   ! this routine fill the halo points for the refined cubic grid. ioff and joff is used to distinguish
   ! T, C, E, or N-cell
-  subroutine fill_cubicgrid_refined_halo(data, data1_all, data2_all, ni, nj, tile, ioff, joff, sign1, sign2)
-    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: data
+  subroutine fill_cubicgrid_refined_halo(halo_data, data1_all, data2_all, ni, nj, tile, ioff, joff, sign1, sign2)
+    real, dimension(1-whalo:,1-shalo:,:), intent(inout) :: halo_data
     real, dimension(:,:,:,:),             intent(in)    :: data1_all, data2_all
     integer, dimension(:),                intent(in)    :: ni, nj
     integer,                              intent(in)    :: tile, ioff, joff, sign1, sign2
@@ -5337,20 +5347,20 @@ end subroutine test_halosize_update
        if(ls < 1 ) ls = ls + 6
        if(ln > 6 ) ln = ln - 6
        if( nj(tile) == nj(lw) ) then
-          data(1-whalo:0, 1:nj(tile)+joff, :) = data1_all(ni(lw)-whalo+1:ni(lw), 1:nj(lw)+joff, :, lw) ! west
+          halo_data(1-whalo:0, 1:nj(tile)+joff, :) = data1_all(ni(lw)-whalo+1:ni(lw), 1:nj(lw)+joff, :, lw) ! west
        end if
        if( nj(tile) == ni(le) ) then
           do i = 1, ehalo
-             data(ni(tile)+i+ioff, 1:nj(tile)+joff, :)    = sign1*data2_all(ni(le)+joff:1:-1, i+ioff, :, le) ! east
+             halo_data(ni(tile)+i+ioff, 1:nj(tile)+joff, :) = sign1*data2_all(ni(le)+joff:1:-1, i+ioff, :, le) ! east
           end do
        end if
        if(ni(tile) == nj(ls) ) then
           do i = 1, shalo
-             data(1:ni(tile)+ioff, 1-i, :)     = sign2*data2_all(ni(ls)-i+1, nj(ls)+ioff:1:-1, :, ls) ! south
+             halo_data(1:ni(tile)+ioff, 1-i, :)     = sign2*data2_all(ni(ls)-i+1, nj(ls)+ioff:1:-1, :, ls) ! south
           end do
        end if
        if(ni(tile) == ni(ln) ) then
-          data(1:ni(tile)+ioff, nj(tile)+1+joff:nj(tile)+nhalo+joff, :) = &
+          halo_data(1:ni(tile)+ioff, nj(tile)+1+joff:nj(tile)+nhalo+joff, :) = &
                                                   & data1_all(1:ni(ln)+ioff, 1+joff:nhalo+joff, :, ln) ! north
        end if
     else ! tile 1, 3, 5
@@ -5360,34 +5370,34 @@ end subroutine test_halosize_update
        if(ln > 6 ) ln = ln - 6
        if(nj(tile) == ni(lw) ) then
           do i = 1, whalo
-             data(1-i, 1:nj(tile)+joff, :)     = sign1*data2_all(ni(lw)+joff:1:-1, nj(lw)-i+1, :, lw) ! west
+            halo_data(1-i, 1:nj(tile)+joff, :)     = sign1*data2_all(ni(lw)+joff:1:-1, nj(lw)-i+1, :, lw) ! west
           end do
        end if
        if(nj(tile) == nj(le) ) then
-          data(ni(tile)+1+ioff:ni(tile)+ehalo+ioff, 1:nj(tile)+joff, :) = &
+          halo_data(ni(tile)+1+ioff:ni(tile)+ehalo+ioff, 1:nj(tile)+joff, :) = &
                                                   & data1_all(1+ioff:ehalo+ioff, 1:nj(le)+joff, :, le) ! east
        end if
        if(ni(tile) == ni(ls) ) then
-          data(1:ni(tile)+ioff, 1-shalo:0, :)     = data1_all(1:ni(ls)+ioff, nj(ls)-shalo+1:nj(ls), :, ls) ! south
+          halo_data(1:ni(tile)+ioff, 1-shalo:0, :)    = data1_all(1:ni(ls)+ioff, nj(ls)-shalo+1:nj(ls), :, ls) ! south
        end if
        if(ni(tile) == nj(ln) ) then
           do i = 1, nhalo
-             data(1:ni(tile)+ioff, nj(tile)+i+joff, :)    = sign2*data2_all(i+joff, nj(ln)+ioff:1:-1, :, ln) ! north
+             halo_data(1:ni(tile)+ioff, nj(tile)+i+joff, :) = sign2*data2_all(i+joff, nj(ln)+ioff:1:-1, :, ln) ! north
           end do
        end if
     end if
 
   end subroutine fill_cubicgrid_refined_halo
 
-  subroutine set_corner_zero( data, isd, ied, jsd, jed, isc, iec, jsc, jec )
+  subroutine set_corner_zero( corner_data, isd, ied, jsd, jed, isc, iec, jsc, jec )
      integer,                               intent(in) :: isd, ied, jsd, jed
      integer,                               intent(in) :: isc, iec, jsc, jec
-     real, dimension(isd:,jsd:,:), intent(inout) :: data
+     real, dimension(isd:,jsd:,:), intent(inout) :: corner_data
 
-    data (isd  :isc-1, jsd  :jsc-1,:) = 0
-    data (isd  :isc-1, jec+1:jed,  :) = 0
-    data (iec+1:ied  , jsd  :jsc-1,:) = 0
-    data (iec+1:ied  , jec+1:jed,  :) = 0
+    corner_data (isd  :isc-1, jsd  :jsc-1,:) = 0
+    corner_data (isd  :isc-1, jec+1:jed,  :) = 0
+    corner_data (iec+1:ied  , jsd  :jsc-1,:) = 0
+    corner_data (iec+1:ied  , jec+1:jed,  :) = 0
 
 
   end subroutine set_corner_zero

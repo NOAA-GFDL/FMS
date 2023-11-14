@@ -507,10 +507,10 @@ end subroutine init_nonblock_type
           domain%x%compute%end   = -1
           domain%y%compute%begin =  1
           domain%y%compute%end   = -1
-          domain%x%data   %begin = -1
-          domain%x%data   %end   = -1
-          domain%y%data   %begin = -1
-          domain%y%data   %end   = -1
+          domain%x%domain_data   %begin = -1
+          domain%x%domain_data   %end   = -1
+          domain%y%domain_data   %begin = -1
+          domain%y%domain_data   %end   = -1
           domain%x%global %begin = -1
           domain%x%global %end   = -1
           domain%y%global %begin = -1
@@ -552,10 +552,10 @@ end subroutine init_nonblock_type
              domain%list(listpos)%y%compute%end   = msg(5)
              domain%list(listpos)%tile_id(1)      = msg(6)
              if(domain%x(1)%global%begin < 0) then
-                domain%x(1)%data  %begin = msg(2)
-                domain%x(1)%data  %end   = msg(3)
-                domain%y(1)%data  %begin = msg(4)
-                domain%y(1)%data  %end   = msg(5)
+                domain%x(1)%domain_data  %begin = msg(2)
+                domain%x(1)%domain_data  %end   = msg(3)
+                domain%y(1)%domain_data  %begin = msg(4)
+                domain%y(1)%domain_data  %end   = msg(5)
                 domain%x(1)%global%begin = msg(2)
                 domain%x(1)%global%end   = msg(3)
                 domain%y(1)%global%begin = msg(4)
@@ -571,10 +571,10 @@ end subroutine init_nonblock_type
                 endif
                 domain%ntiles = msg(12)
              else
-                domain%x(1)%data  %begin = msg(2) - msg(7)
-                domain%x(1)%data  %end   = msg(3) + msg(8)
-                domain%y(1)%data  %begin = msg(4) - msg(9)
-                domain%y(1)%data  %end   = msg(5) + msg(10)
+                domain%x(1)%domain_data  %begin = msg(2) - msg(7)
+                domain%x(1)%domain_data  %end   = msg(3) + msg(8)
+                domain%y(1)%domain_data  %begin = msg(4) - msg(9)
+                domain%y(1)%domain_data  %end   = msg(5) + msg(10)
                 domain%x(1)%global%begin = min(domain%x(1)%global%begin, msg(2))
                 domain%x(1)%global%end   = max(domain%x(1)%global%end,   msg(3))
                 domain%y(1)%global%begin = min(domain%y(1)%global%begin, msg(4))
@@ -633,10 +633,10 @@ end subroutine init_nonblock_type
       domain_out%x%compute%end   = -1
       domain_out%y%compute%begin =  1
       domain_out%y%compute%end   = -1
-      domain_out%x%data   %begin = -1
-      domain_out%x%data   %end   = -1
-      domain_out%y%data   %begin = -1
-      domain_out%y%data   %end   = -1
+      domain_out%x%domain_data   %begin = -1
+      domain_out%x%domain_data   %end   = -1
+      domain_out%y%domain_data   %begin = -1
+      domain_out%y%domain_data   %end   = -1
       domain_out%x%global %begin = -1
       domain_out%x%global %end   = -1
       domain_out%y%global %begin = -1
@@ -684,10 +684,10 @@ end subroutine init_nonblock_type
              domain_out%list(listpos)%y%compute%end   = msg(5)
              domain_out%list(listpos)%tile_id(1)      = msg(6)
              if(domain_out%x(1)%global%begin < 0) then
-                domain_out%x(1)%data  %begin = msg(2)
-                domain_out%x(1)%data  %end   = msg(3)
-                domain_out%y(1)%data  %begin = msg(4)
-                domain_out%y(1)%data  %end   = msg(5)
+                domain_out%x(1)%domain_data  %begin = msg(2)
+                domain_out%x(1)%domain_data  %end   = msg(3)
+                domain_out%y(1)%domain_data  %begin = msg(4)
+                domain_out%y(1)%domain_data  %end   = msg(5)
                 domain_out%x(1)%global%begin = msg(2)
                 domain_out%x(1)%global%end   = msg(3)
                 domain_out%y(1)%global%begin = msg(4)
@@ -703,10 +703,10 @@ end subroutine init_nonblock_type
                 endif
                 domain_out%ntiles            = msg(12)
              else
-                domain_out%x(1)%data  %begin = msg(2) - msg(7)
-                domain_out%x(1)%data  %end   = msg(3) + msg(8)
-                domain_out%y(1)%data  %begin = msg(4) - msg(9)
-                domain_out%y(1)%data  %end   = msg(5) + msg(10)
+                domain_out%x(1)%domain_data  %begin = msg(2) - msg(7)
+                domain_out%x(1)%domain_data  %end   = msg(3) + msg(8)
+                domain_out%y(1)%domain_data  %begin = msg(4) - msg(9)
+                domain_out%y(1)%domain_data  %end   = msg(5) + msg(10)
                 domain_out%x(1)%global%begin = min(domain_out%x(1)%global%begin, msg(2))
                 domain_out%x(1)%global%end   = max(domain_out%x(1)%global%end,   msg(3))
                 domain_out%y(1)%global%begin = min(domain_out%y(1)%global%begin, msg(4))
@@ -771,10 +771,10 @@ end subroutine init_nonblock_type
           domain%x%compute%end   = -1
           domain%y%compute%begin =  0
           domain%y%compute%end   = -1
-          domain%x%data   %begin =  0
-          domain%x%data   %end   = -1
-          domain%y%data   %begin =  0
-          domain%y%data   %end   = -1
+          domain%x%domain_data   %begin =  0
+          domain%x%domain_data   %end   = -1
+          domain%y%domain_data   %begin =  0
+          domain%y%domain_data   %end   = -1
           domain%x%global %begin =  0
           domain%x%global %end   = -1
           domain%y%global %begin =  0
@@ -888,10 +888,10 @@ end subroutine init_nonblock_type
           domain%x%compute%end   = -1
           domain%y%compute%begin =  0
           domain%y%compute%end   = -1
-          domain%x%data   %begin =  0
-          domain%x%data   %end   = -1
-          domain%y%data   %begin =  0
-          domain%y%data   %end   = -1
+          domain%x%domain_data   %begin =  0
+          domain%x%domain_data   %end   = -1
+          domain%y%domain_data   %begin =  0
+          domain%y%domain_data   %end   = -1
           domain%x%global %begin =  0
           domain%x%global %end   = -1
           domain%y%global %begin =  0
@@ -930,10 +930,10 @@ end subroutine init_nonblock_type
          if( .NOT.native .AND. msg(1).NE.NULL_PE .AND. tile_coarse==msg(16) )then
              domain%list(listpos)%pe = msg(1)
              if(domain%x(1)%compute%begin == 0) then
-                domain%x(1)%data  %begin = msg(2) - msg(7)
-                domain%x(1)%data  %end   = msg(3) + msg(8)
-                domain%y(1)%data  %begin = msg(4) - msg(9)
-                domain%y(1)%data  %end   = msg(5) + msg(10)
+                domain%x(1)%domain_data  %begin = msg(2) - msg(7)
+                domain%x(1)%domain_data  %end   = msg(3) + msg(8)
+                domain%y(1)%domain_data  %begin = msg(4) - msg(9)
+                domain%y(1)%domain_data  %end   = msg(5) + msg(10)
                 domain%x(1)%global%begin = msg(12)
                 domain%x(1)%global%end   = msg(13)
                 domain%y(1)%global%begin = msg(14)
