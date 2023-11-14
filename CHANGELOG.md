@@ -42,6 +42,12 @@ sequential patch number (starting from `01`).
 - 2023.03-alpha2 9983ce308e62e9f7215b04c227cebd30fd75e784
 - 2023.03-alpha1 a46bd94fd8dd1f6f021501e29179003ff28180ec
 
+
+## [2023.02.01] - 2023-10-13
+### Fixed
+- DIAG_MANAGER: Fixes issue with incorrect start_time functionality
+
+
 ## [2023.02] - 2023-07-27
 ### Known Issues
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
