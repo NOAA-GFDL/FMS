@@ -667,38 +667,26 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     file_ids = diag_field%get_file_ids()
     math = diag_field%get_math_needs_to_be_done()
     ! if doing math loop through each file for given field
-    if (size(file_ids) .ge. 1 .and. math) then
-      file_loop: do ifile = 1, size(file_ids)
-        diag_file => this%FMS_diag_files(ifile)
-        ! if the file is not allocated go away
-        if(.not. allocated(diag_file%FMS_diag_file)) then
-          if(DEBUG_SC) call mpp_error(NOTE, "file id:"//string(ifile)//" not allocated for field:"//diag_field%get_varname())
-          cycle
-        endif
-        ! If the field is not registered go away
-        if (.not. diag_file%FMS_diag_file%is_field_registered(ifield)) then 
-          if(DEBUG_SC) call mpp_error(NOTE, "file id:"//string(ifile)//" not registered for field:"//diag_field%get_varname())
-          cycle
-        endif
-        ! Check if buffer alloc'd
-        has_input_buff: if (diag_field%has_input_data_buffer()) then
-          input_data_buffer => diag_field%get_data_buffer()
-          ! reset bounds, allocate output buffer, and update it with reduction
-          call bounds%reset_bounds_from_array_4D(input_data_buffer)
-          call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
-          error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
+    doing_math: if (size(file_ids) .ge. 1 .and. math) then
+      ! Check if buffer alloc'd
+      has_input_buff: if (diag_field%has_input_data_buffer()) then
+        input_data_buffer => diag_field%get_data_buffer()
+        ! reset bounds, allocate output buffer, and update it with reduction
+        call bounds%reset_bounds_from_array_4D(input_data_buffer)
+        call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
+        error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
                               bounds, .False., Time=this%current_model_time)
-          if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
-                                                         " -"//trim(error_string)))
-        endif has_input_buff 
-
-    enddo file_loop
-  endif
-  !> Clean up, clean up, everybody do your share
-  if (allocated(file_ids)) deallocate(file_ids)
-  if (associated(diag_field)) nullify(diag_field)
-enddo field_loop
+        if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
+                                                       " -"//trim(error_string)))
+      else
+        call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
+      endif has_input_buff
+    endif doing_math
+    !> Clean up, clean up, everybody do your share
+    if (allocated(file_ids)) deallocate(file_ids)
+    if (associated(diag_field)) nullify(diag_field)
+  enddo field_loop
 
 call this%fms_diag_do_io()
 #endif
