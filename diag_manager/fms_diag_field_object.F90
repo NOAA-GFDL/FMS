@@ -1644,8 +1644,8 @@ function get_mask(this)
   get_mask => this%mask
 end function get_mask
 
-!> @brief Get the mask from the input buffer object
-!! @return a pointer to the mask
+!> @brief If in openmp region, omp_axis should be provided in order to allocate to the given axis lengths.
+!! Otherwise mask will be allocated to the size of mask_in
 subroutine allocate_mask(this, mask_in, omp_axis)
   class(fmsDiagField_type), target, intent(inout) :: this !< input buffer object
   logical, intent(in) :: mask_in(:,:,:,:)
@@ -1674,12 +1674,22 @@ subroutine allocate_mask(this, mask_in, omp_axis)
   endif
 end subroutine allocate_mask 
 
-
+!> Sets previously allocated mask to mask_in at given index ranges
 subroutine set_mask(this, mask_in, is, js, ks, ie, je, ke)
   class(fmsDiagField_type), intent(inout) :: this
   logical, intent(in)                     :: mask_in(:,:,:,:)
   integer, optional, intent(in)           :: is, js, ks, ie, je, ke
-  this%mask(is:ie, js:je, ks:ke, :) = mask_in !(is:ie, js:je, ks:ke, :)
+  if(present(is)) then
+    if(is .lt. lbound(this%mask,1) .or. ie .gt. ubound(this%mask,1) .or. &
+      js .lt. lbound(this%mask,2) .or. je .gt. ubound(this%mask,2) .or. &
+      ks .lt. lbound(this%mask,3) .or. ke .gt. ubound(this%mask,3)) then
+        print *, mpp_pe(), "alloc'd", SHAPE(this%mask), "passed:", is,ie,js,je,ks,ke
+        call mpp_error(FATAL,"set_mask:: given indices out of bounds for allocated mask")
+    endif
+    this%mask(is:ie, js:je, ks:ke, :) = mask_in
+  else
+    this%mask = mask_in
+  endif
 end subroutine set_mask
 
 #endif
