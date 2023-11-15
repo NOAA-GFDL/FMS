@@ -34,12 +34,10 @@ module fms_diag_input_buffer_mod
   type fmsDiagInputBuffer_t
     logical                        :: initialized     !< .True. if the input buffer has been initialized
     class(*),          allocatable :: buffer(:,:,:,:) !< Input data passed in send_data
-    logical,           allocatable :: mask(:,:,:,:)   !< Mask passed in send_data
     real(kind=r8_kind)             :: weight          !< Weight passed in send_data
 
     contains
     procedure :: get_buffer
-    procedure :: get_mask
     procedure :: get_weight
     procedure :: init => init_input_buffer_object
     procedure :: set_input_buffer_object
@@ -60,15 +58,6 @@ module fms_diag_input_buffer_mod
     buffer => this%buffer
   end function get_buffer
 
-  !> @brief Get the mask from the input buffer object
-  !! @return a pointer to the mask
-  function get_mask(this) &
-    result(mask)
-    class(fmsDiagInputBuffer_t), target, intent(in) :: this !< input buffer object
-    logical, pointer :: mask(:,:,:,:)
-
-    mask => this%mask
-  end function get_mask
 
   !> @brief Get the weight from the input buffer object
   !! @return a pointer to the weight
@@ -111,7 +100,6 @@ module fms_diag_input_buffer_mod
       end select
     enddo axis_loop
 
-    allocate(this%mask(length(1), length(2), length(3), length(4)))
     select type (input_data)
     type is (real(r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(length(1), length(2), length(3), length(4)))
@@ -132,13 +120,12 @@ module fms_diag_input_buffer_mod
 
   !> @brief Sets the members of the input buffer object
   !! @return Error message if something went wrong
-  function set_input_buffer_object(this, input_data, weight, mask, is, js, ks, ie, je, ke) &
+  function set_input_buffer_object(this, input_data, weight, is, js, ks, ie, je, ke) &
     result(err_msg)
 
     class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
     class(*),                    intent(in)    :: input_data(:,:,:,:) !< Field data
     real(kind=r8_kind),          intent(in)    :: weight              !< Weight for the field
-    logical,                     intent(in)    :: mask(:,:,:,:)       !< Mask for the field
     integer,                     intent(in)    :: is, js, ks          !< Starting index for each of the dimension
     integer,                     intent(in)    :: ie, je, ke          !< Ending index for each of the dimensions
 
@@ -150,7 +137,6 @@ module fms_diag_input_buffer_mod
       return
     endif
 
-    this%mask(is:ie, js:je, ks:ke, :) = mask
     this%weight = weight
 
     select type (input_data)

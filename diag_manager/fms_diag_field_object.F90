@@ -80,6 +80,7 @@ type fmsDiagField_type
      logical, allocatable                             :: buffer_allocated  !< True if a buffer pointed by
                                                                            !! the corresponding index in
                                                                            !! buffer_ids(:) is allocated.
+     logical, allocatable                             :: mask(:,:,:,:)     !< Mask passed in send_data
   contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
@@ -165,6 +166,8 @@ type fmsDiagField_type
      procedure :: add_area_volume
      procedure :: append_time_cell_methods
      procedure :: get_file_ids
+     procedure :: set_mask
+     procedure :: allocate_mask
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -394,10 +397,9 @@ subroutine set_vartype(objin , var)
 end subroutine set_vartype
 
 !> @brief Adds the input data to the buffered data.
-subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
+subroutine set_data_buffer (this, input_data, weight, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
   class(*),                   intent(in)   :: input_data(:,:,:,:) !< The input array
-  logical,                    intent(in)   :: mask(:,:,:,:)       !< The field mask
   real(kind=r8_kind),         intent(in)   :: weight              !< The field weight
   integer,                    intent(in)   :: is, js, ks          !< Starting indicies of the field_data relative
                                                                   !! to the compute domain (1 based)
@@ -408,7 +410,7 @@ subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, 
   if (.not.this%data_buffer_is_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
-  err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, mask, is, js, ks, ie, je, ke)
+  err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, is, js, ks, ie, je, ke)
   if (trim(err_msg) .ne. "") call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
 
 end subroutine set_data_buffer
@@ -1239,19 +1241,6 @@ function get_data_buffer (this) &
   rslt => this%input_data_buffer%get_buffer()
 end function get_data_buffer
 
-!> @brief Gets a fields mask buffer
-!! @return a pointer to the mask buffer
-function get_mask (this) &
-  result(rslt)
-  class (fmsDiagField_type), target, intent(in) :: this  !< diag field
-  logical, dimension(:,:,:,:), pointer :: rslt
-
-  if (.not. this%data_buffer_is_allocated) &
-  call mpp_error(FATAL, "The input data buffer for the field:"&
-    //trim(this%varname)//" was never allocated.")
-
-  rslt => this%input_data_buffer%get_mask()
-end function get_mask
 
 !> @brief Gets a fields weight buffer
 !! @return a pointer to the weight buffer
@@ -1646,6 +1635,52 @@ pure function get_file_ids(this)
   integer, allocatable :: get_file_ids(:) !< Ids of the FMS_diag_files the variable
   get_file_ids = this%file_ids
 end function
+
+!> @brief Get the mask from the input buffer object
+!! @return a pointer to the mask
+function get_mask(this)
+  class(fmsDiagField_type), target, intent(in) :: this !< input buffer object
+  logical, pointer :: get_mask(:,:,:,:)
+  get_mask => this%mask
+end function get_mask
+
+!> @brief Get the mask from the input buffer object
+!! @return a pointer to the mask
+subroutine allocate_mask(this, mask_in, omp_axis)
+  class(fmsDiagField_type), target, intent(inout) :: this !< input buffer object
+  logical, intent(in) :: mask_in(:,:,:,:)
+  class(fmsDiagAxisContainer_type), intent(in), optional :: omp_axis(:) !< true if calling from omp region
+  integer :: axis_num, length(4)
+  integer, pointer :: id_num
+  if(allocated(this%mask)) then
+    call mpp_error(NOTE,"set_mask:: mask already allocated for field"//this%longname)
+    deallocate(this%mask)
+  endif
+  ! if not omp just allocate to whatever is given
+  if(.not. present(omp_axis)) then
+    allocate(this%mask(size(mask_in,1), size(mask_in,2), size(mask_in,3), &
+                     size(mask_in,4)))
+  ! otherwise loop through axis and get sizes
+  else
+    length = 1
+    do axis_num=1, size(this%axis_ids)
+      id_num => this%axis_ids(axis_num)
+      select type(axis => omp_axis(id_num)%axis)
+        type is (fmsDiagFullAxis_type)
+          length(axis_num) = axis%axis_length()
+      end select
+    enddo
+    allocate(this%mask(length(1), length(2), length(3), length(4)))
+  endif
+end subroutine allocate_mask 
+
+
+subroutine set_mask(this, mask_in, is, js, ks, ie, je, ke)
+  class(fmsDiagField_type), intent(inout) :: this
+  logical, intent(in)                     :: mask_in(:,:,:,:)
+  integer, optional, intent(in)           :: is, js, ks, ie, je, ke
+  this%mask(is:ie, js:je, ks:ke, :) = mask_in !(is:ie, js:je, ks:ke, :)
+end subroutine set_mask
 
 #endif
 end module fms_diag_field_object_mod
