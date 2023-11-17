@@ -79,7 +79,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = FMS.pc
 
 ## Build libFMS module
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_srcdir}/mpp/include
+AM_CPPFLAGS = -I${top_srcdir}/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 noinst_LTLIBRARIES = libFMS_mod.la
@@ -87,7 +87,7 @@ libFMS_mod_la_SOURCES = libFMS.F90
 
 fms.$(FC_MODEXT): .mods/*_mod.$(FC_MODEXT)
 
-nodist_include_HEADERS = libFMS_mod.la
+nodist_include_HEADERS = .mods/fms.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk
 
