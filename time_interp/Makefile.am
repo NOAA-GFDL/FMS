@@ -37,10 +37,11 @@ libtime_interp_la_SOURCES = \
   include/time_interp_r4.fh \
   include/time_interp_r8.fh \
   include/time_interp.inc \
-  include/time_interp_external2_r4.fh \
-  include/time_interp_external2_r8.fh \
   include/time_interp_external2_bridge_r4.fh \
   include/time_interp_external2_bridge_r8.fh \
+  include/time_interp_external2_bridge.inc \
+  include/time_interp_external2_r4.fh \
+  include/time_interp_external2_r8.fh \
   include/time_interp_external2.inc
 
 # Some mods are dependant on other mods in this dir.
