@@ -155,10 +155,12 @@
 !> @addtogroup field_manager_mod
 !> @{
 module field_manager_mod
+!TODO this variable can be removed when the legacy table is no longer used
 #ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
 #endif
 
+!TODO this variable can be removed when the legacy table is not longer used
 #ifndef MAXFIELDMETHODS_
 #define MAXFIELDMETHODS_ 250
 #endif
@@ -436,10 +438,12 @@ character(len=35), parameter :: warn_header       = '==>Warning from '//trim(mod
 character(len=32), parameter :: note_header       = '==>Note from '//trim(module_name)//': '
 character(len=1),  parameter :: comma             = ","
 character(len=1),  parameter :: list_sep          = '/'
+!TODO these variable can be removed when the legacy table is no longer used
 character(len=1),  parameter :: comment           = '#'
 character(len=1),  parameter :: dquote            = '"'
 character(len=1),  parameter :: equal             = '='
 character(len=1),  parameter :: squote            = "'"
+!
 integer,           parameter :: null_type         = 0
 integer,           parameter :: integer_type      = 1
 integer,           parameter :: list_type         = 2
@@ -448,8 +452,10 @@ integer,           parameter :: real_type         = 4
 integer,           parameter :: string_type       = 5
 integer,           parameter :: num_types         = 5
 integer,           parameter :: array_increment   = 10
+!TODO these variable can be removed when the legacy table is no longer used
 integer,           parameter :: MAX_FIELDS        = MAXFIELDS_
 integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
+!
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
