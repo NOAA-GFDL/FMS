@@ -130,3 +130,18 @@ else
 clean-local:
 	-rm -rf .mods
 endif
+
+install-data-hook:
+	@echo ''
+	@echo '+-------------------------------------------------------------+'
+	@echo '| Congratulations! You have successfully installed the FMS    |'
+	@echo '| Fortran library.                                            |'
+	@echo '|                                                             |'
+	@echo '| Code using FMS should be compiled using the -lFMS flag.     |'
+	@echo '|                                                             |'
+	@echo '| FMS is developed and maintained at the GFDL publicly on     |'
+	@echo '| Github. To report an issue or view available documentation, |'
+	@echo '| please see our page: https://www.github.com/NOAA-GFDL/FMS   |'
+	@echo '+-------------------------------------------------------------+'
+	@echo ''
+
