@@ -27,6 +27,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+rm -rf input.nml field_table field_table.yaml
+touch input.nml
+
 # Copy files for test.
 cat <<_EOF > field_table
 # Simplified field table to run the field table unit tests
@@ -50,6 +53,17 @@ cat <<_EOF > field_table
  "TRACER", "land_mod", "sphum"
            "longname",     "specific humidity"
             "units",        "kg/kg" /
+_EOF
+
+test_expect_success "tracer_manager r4 with the legacy field table" 'mpirun -n 2 ./test_tracer_manager_r4'
+test_expect_success "tracer_manager r8 with the legacy field table" 'mpirun -n 2 ./test_tracer_manager_r8'
+
+if [ -z $parser_skip ]; then
+rm -rf field_table
+cat <<_EOF > input.nml
+&field_manager_nml
+  use_field_table_yaml = .true.
+/
 _EOF
 
 cat <<_EOF > field_table.yaml
@@ -98,12 +112,8 @@ field_table:
       units: kg/kg
 _EOF
 
-cat <<_EOF > input.nml
-&test_tracer_manager
-/
-_EOF
-
-test_expect_success "tracer_manager r4" 'mpirun -n 2 ./test_tracer_manager_r4'
-test_expect_success "tracer_manager r8" 'mpirun -n 2 ./test_tracer_manager_r8'
+test_expect_success "tracer_manager r4 with the yaml field table" 'mpirun -n 2 ./test_tracer_manager_r4'
+test_expect_success "tracer_manager r8 with the yaml field table" 'mpirun -n 2 ./test_tracer_manager_r8'
+fi
 
 test_done
