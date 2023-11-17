@@ -466,6 +466,8 @@ type, private :: field_mgr_type
   type(method_type), dimension(:), allocatable        :: methods !< methods associated with this field name
 end type field_mgr_type
 
+!TODO These two types: field_names_type and field_names_type_short
+!! will no longer be needed when the legacy field table is not used
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
 type, private :: field_names_type
