@@ -50,19 +50,19 @@
     !! Provide data from external file interpolated to current model time.
     !! Data may be local to current processor or global, depending on
     !! "init_external_field" flags.
-    subroutine TIME_INTERP_EXTERNAL_BRIDGE_3D_(index1, index2, time, data, interp,verbose,horz_interp, mask_out, &
+    subroutine TIME_INTERP_EXTERNAL_BRIDGE_3D_(index1, index2, time, time_data, interp,verbose,horz_interp, mask_out, &
                                              &  is_in, ie_in, js_in, je_in, window_id)
 
-      integer,                    intent(in)           :: index1,index2 !< index of external field from previous call
-                                                                !! to init_external_field
-      type(time_type),            intent(in)           :: time !< target time for data
-      real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: data !< global or local data array
+      integer,                    intent(in) :: index1,index2 !< index of external field from previous call
+                                                                            !! to init_external_field
+      type(time_type),            intent(in) :: time !< target time for data
+      real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout) :: time_data !< global or local data array
       integer,                    intent(in), optional :: interp
       logical,                    intent(in), optional :: verbose !< flag for debugging
       type(horiz_interp_type),    intent(in), optional :: horz_interp
       logical, dimension(:,:,:), intent(out), optional :: mask_out !< set to true where output data is valid
       integer,                    intent(in), optional :: is_in, ie_in, js_in, je_in
-      integer,                    intent(in), optional :: window_id     
+      integer,                    intent(in), optional :: window_id
 
       type(time_type) :: time1, time2
       integer :: dims1(4), dims2(4)
@@ -84,9 +84,9 @@
       character(len=16) :: message1, message2
       integer, parameter :: kindl = FMS_TI_KIND_
 
-      nx = size(data,1)
-      ny = size(data,2)
-      nz = size(data,3)
+      nx = size(time_data,1)
+      ny = size(time_data,2)
+      nz = size(time_data,3)
 
       interp_method = LINEAR_TIME_INTERP
       if (PRESENT(interp)) interp_method = interp
@@ -114,7 +114,7 @@
 
       if (trim(loaded_fields(index2)%name) /= trim(loaded_fields(index1)%name)) then
          call mpp_error(FATAL, 'time_interp_external_bridge: cannot bridge between different fields.' // &
-                               'field1='//trim(loaded_fields(index1)%name)//' field2='//trim(loaded_fields(index2)%name))
+                        'field1='//trim(loaded_fields(index1)%name)//' field2='//trim(loaded_fields(index2)%name))
       endif
 
       if ((loaded_fields(index1)%numwindows == 1) .and. (loaded_fields(index2)%numwindows == 1)) then
@@ -140,13 +140,13 @@
          write(message1,'(i6,2i5)') nx,ny,nz
          call mpp_error(FATAL,'field '//trim(loaded_fields(index1)%name)// &
                               ' Array size mismatch in time_interp_external_bridge.'// &
-                              ' Array "data" is too small. shape(data)='//message1)
+                              ' Array "data" is too small. shape(time_data)='//message1)
       endif
       if (nx < nxw .or. ny < nyw .or. nz < loaded_fields(index2)%siz(3)) then
          write(message1,'(i6,2i5)') nx,ny,nz
          call mpp_error(FATAL,'field '//trim(loaded_fields(index2)%name)// &
                               ' Array size mismatch in time_interp_external_bridge.'// &
-                              ' Array "data" is too small. shape(data)='//message1)
+                              ' Array "data" is too small. shape(time_data)='//message1)
       endif
 
       if(PRESENT(mask_out)) then
@@ -156,7 +156,7 @@
           call mpp_error(FATAL,'field '//trim(loaded_fields(index1)%name)// &
                                ' array size mismatch in time_interp_external_bridge.'// &
                                ' Shape of array "mask_out" does not match that of array "data".'// &
-                               ' shape(data)='//message1//' shape(mask_out)='//message2)
+                               ' shape(time_data)='//message1//' shape(mask_out)='//message2)
         endif
       endif
 
@@ -199,17 +199,17 @@
          write(outunit,*) 'i1,i2= ',i1, i2
       endif
 
-      if( (loaded_fields(index1)%region_type == NO_REGION) .and. (loaded_fields(index2)%region_type == NO_REGION) ) then
+      if((loaded_fields(index1)%region_type == NO_REGION) .and. (loaded_fields(index2)%region_type == NO_REGION) ) then
          where(loaded_fields(index1)%mask(isc:iec,jsc:jec,:,i1).and.loaded_fields(index2)%mask(isc:iec,jsc:jec,:,i2))
-            data(isw:iew,jsw:jew,:) = real(loaded_fields(index1)%data(isc:iec,jsc:jec,:,i1), kindl)*w1 + &
-                 real(loaded_fields(index2)%data(isc:iec,jsc:jec,:,i2), kindl)*w2
+            time_data(isw:iew,jsw:jew,:) = real(loaded_fields(index1)%domain_data(isc:iec,jsc:jec,:,i1), kindl)*w1 + &
+                 real(loaded_fields(index2)%domain_data(isc:iec,jsc:jec,:,i2), kindl)*w2
          elsewhere
-            data(isw:iew,jsw:jew,:) = real(loaded_fields(index1)%missing, kindl)
+            time_data(isw:iew,jsw:jew,:) = real(loaded_fields(index1)%missing, kindl)
          end where
       else
          where(loaded_fields(index1)%mask(isc:iec,jsc:jec,:,i1).and.loaded_fields(index2)%mask(isc:iec,jsc:jec,:,i2))
-            data(isw:iew,jsw:jew,:) = real(loaded_fields(index1)%data(isc:iec,jsc:jec,:,i1), kindl)*w1 + &
-                 real(loaded_fields(index2)%data(isc:iec,jsc:jec,:,i2), kindl)*w2
+            time_data(isw:iew,jsw:jew,:) = real(loaded_fields(index1)%domain_data(isc:iec,jsc:jec,:,i1), kindl)*w1 + &
+                 real(loaded_fields(index2)%domain_data(isc:iec,jsc:jec,:,i2), kindl)*w2
          end where
       endif
 
@@ -220,11 +220,11 @@
 
     end subroutine TIME_INTERP_EXTERNAL_BRIDGE_3D_
 
-    subroutine TIME_INTERP_EXTERNAL_BRIDGE_0D_(index1, index2, time, data, verbose)
+    subroutine TIME_INTERP_EXTERNAL_BRIDGE_0D_(index1, index2, time, time_data, verbose)
 
       integer, intent(in) :: index1, index2
       type(time_type), intent(in) :: time
-      real(FMS_TI_KIND_), intent(inout) :: data
+      real(FMS_TI_KIND_), intent(inout) :: time_data
       logical, intent(in), optional :: verbose
 
       integer :: t1, t2
@@ -282,7 +282,8 @@
 
       if(i1<0.or.i2<0) &
            call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-      data = real(loaded_fields(index2)%data(1,1,1,i1), FMS_TI_KIND_)*w1 + real(loaded_fields(index2)%data(1,1,1,i2), FMS_TI_KIND_)*w2
+      time_data = real(loaded_fields(index2)%domain_data(1,1,1,i1), FMS_TI_KIND_)*w1 &
+                + real(loaded_fields(index2)%domain_data(1,1,1,i2), FMS_TI_KIND_)*w2
       if (verb) then
          write(outunit,*) 'ibuf= ',loaded_fields(index2)%ibuf
          write(outunit,*) 'i1,i2= ',i1, i2

@@ -258,7 +258,7 @@ use platform_mod
      CHARACTER(len=128) :: name
      CHARACTER(len=256) :: units, long_name
      CHARACTER(len=1) :: cart_name
-     REAL, DIMENSION(:), POINTER :: data
+     REAL, DIMENSION(:), POINTER :: diag_type_data
      INTEGER, DIMENSION(MAX_SUBAXES) :: start
      INTEGER, DIMENSION(MAX_SUBAXES) :: end
      CHARACTER(len=128), DIMENSION(MAX_SUBAXES) :: subaxis_name

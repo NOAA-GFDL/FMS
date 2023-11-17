@@ -129,7 +129,7 @@ subroutine column_diagnostics_init
 !--------------------------------------------------------------------
 !    local variables:
 !
-      integer    :: unit !< unit number for nml file
+      integer    :: iunit !< unit number for nml file
       integer    :: ierr !< error return flag
       integer    :: io   !< error return code
 
@@ -164,8 +164,8 @@ subroutine column_diagnostics_init
 !---------------------------------------------------------------------
       call write_version_number("COLUMN_DIAGNOSTICS_MOD", version)
       if (mpp_pe() == mpp_root_pe())    then
-                    unit = stdlog()
-                    write (unit, nml=column_diagnostics_nml)
+                    iunit = stdlog()
+                    write (iunit, nml=column_diagnostics_nml)
       endif
 !--------------------------------------------------------------------
       module_is_initialized = .true.

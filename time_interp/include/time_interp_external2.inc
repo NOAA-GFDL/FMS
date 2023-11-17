@@ -52,13 +52,13 @@
     !! Provide data from external file interpolated to current model time.
     !! Data may be local to current processor or global, depending on
     !! "init_external_field" flags.
-    subroutine TIME_INTERP_EXTERNAL_3D_(index, time, data, interp,verbose,horz_interp, mask_out, is_in, ie_in, &
+    subroutine TIME_INTERP_EXTERNAL_3D_(index, time, time_data, interp,verbose,horz_interp, mask_out, is_in, ie_in, &
                                       &  js_in, je_in, window_id)
 
         integer,                    intent(in)           :: index !< index of external field from previous call
                                                                   !! to init_external_field
         type(time_type),            intent(in)           :: time !< target time for data
-        real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: data !< global or local data array
+        real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: time_data !< global or local data array
         integer,                    intent(in), optional :: interp
         logical,                    intent(in), optional :: verbose !< flag for debugging
         type(horiz_interp_type),    intent(in), optional :: horz_interp
@@ -82,9 +82,9 @@
         character(len=16) :: message1, message2
         integer, parameter :: kindl = FMS_TI_KIND_
 
-        nx = size(data,1)
-        ny = size(data,2)
-        nz = size(data,3)
+        nx = size(time_data,1)
+        ny = size(time_data,2)
+        nz = size(time_data,3)
 
         interp_method = LINEAR_TIME_INTERP
         if (PRESENT(interp)) interp_method = interp
@@ -141,14 +141,16 @@
             i1 = find_buf_index(1,loaded_fields(index)%ibuf)
             if( loaded_fields(index)%region_type == NO_REGION ) then
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1))
-                  data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
+                time_data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1),&
+                                                FMS_TI_KIND_)
                 elsewhere
-    !               data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
-                  data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, FMS_TI_KIND_)
+    !               time_data(isw:iew,jsw:jew,:) = time_interp_missing !field(index)%missing? Balaji
+                    time_data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, FMS_TI_KIND_)
                 end where
             else
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1))
-                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), FMS_TI_KIND_)
+                time_data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1),&
+                                               FMS_TI_KIND_)
                 end where
             endif
             if(PRESENT(mask_out)) mask_out(isw:iew,jsw:jew,:) = loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1)
@@ -201,17 +203,17 @@
             if( loaded_fields(index)%region_type == NO_REGION ) then
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1) .and. &
                       loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
-                        real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
+                time_data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1), kindl)&
+                      * w1 + real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 elsewhere
-    !               data(isw:iew,jsw:jew,:) = time_interp_missing !loaded_fields(index)%missing? Balaji
-                data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, kindl)
+    !               time_data(isw:iew,jsw:jew,:) = time_interp_missing !loaded_fields(index)%missing? Balaji
+                time_data(isw:iew,jsw:jew,:) = real(loaded_fields(index)%missing, kindl)
                 end where
             else
                 where(loaded_fields(index)%mask(isc:iec,jsc:jec,:,i1) .and. &
                       loaded_fields(index)%mask(isc:iec,jsc:jec,:,i2))
-                data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%data(isc:iec,jsc:jec,:,i1), kindl) * w1 + &
-                        real(loaded_fields(index)%data(isc:iec,jsc:jec,:,i2), kindl) * w2
+                time_data(isw:iew,jsw:jew,:) = real( loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i1), kindl)&
+                      * w1 + real(loaded_fields(index)%domain_data(isc:iec,jsc:jec,:,i2), kindl) * w2
                 end where
             endif
             if(PRESENT(mask_out)) &
@@ -224,11 +226,11 @@
 !</SUBROUTINE> NAME="time_interp_external"
 
     !> @brief Scalar interpolation for @ref time_interp_external
-    subroutine TIME_INTERP_EXTERNAL_0D_(index, time, data, verbose)
+    subroutine TIME_INTERP_EXTERNAL_0D_(index, time, time_data, verbose)
 
       integer, intent(in) :: index
       type(time_type), intent(in) :: time
-      real(FMS_TI_KIND_), intent(inout) :: data
+      real(FMS_TI_KIND_), intent(inout) :: time_data
       logical, intent(in), optional :: verbose
 
       integer :: t1, t2
@@ -252,7 +254,7 @@
          ! only one record in the file => time-independent loaded_fields
          call load_record_0d(loaded_fields(index),1)
          i1 = find_buf_index(1,loaded_fields(index)%ibuf)
-         data = real(loaded_fields(index)%data(1,1,1,i1), FMS_TI_KIND_)
+         time_data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)
       else
         if(loaded_fields(index)%have_modulo_times) then
           call time_interp(time,loaded_fields(index)%modulo_time_beg, loaded_fields(index)%modulo_time_end, &
@@ -290,8 +292,8 @@
 
          if(i1<0.or.i2<0) &
               call mpp_error(FATAL,'time_interp_external : records were not loaded correctly in memory')
-         data = real(loaded_fields(index)%data(1,1,1,i1), FMS_TI_KIND_)*w1 &
-              & + real(loaded_fields(index)%data(1,1,1,i2), FMS_TI_KIND_)*w2
+         time_data = real(loaded_fields(index)%domain_data(1,1,1,i1), FMS_TI_KIND_)*w1 &
+              & + real(loaded_fields(index)%domain_data(1,1,1,i2), FMS_TI_KIND_)*w2
          if (verb) then
             write(outunit,*) 'ibuf= ',loaded_fields(index)%ibuf
             write(outunit,*) 'i1,i2= ',i1, i2

@@ -343,7 +343,7 @@ end function open_water_file
 !! and initializes constants
 subroutine read_namelist
 
-integer :: unit, ierr, io
+integer :: iunit, ierr, io
 
 !  read namelist
 
@@ -353,8 +353,8 @@ ierr = check_nml_error(io,'topography_nml')
 !  write version and namelist to log file
 
 if (mpp_pe() == mpp_root_pe()) then
-   unit = stdlog()
-   write (unit, nml=topography_nml)
+   iunit = stdlog()
+   write (iunit, nml=topography_nml)
 endif
 
 end subroutine read_namelist

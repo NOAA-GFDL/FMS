@@ -526,7 +526,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   if(domain%symmetry) shift = 1
   if( nvector >0 .AND. BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags_v,SCALAR_BIT)) )then
      j = domain%y(1)%global%end+shift
-     if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
+     if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE.domain%y(1)%domain_data%end+shift )then !fold is within domain
         !poles set to 0: BGRID only
         if( gridtype.EQ.BGRID_NE )then
            midpoint = (domain%x(1)%global%begin+domain%x(1)%global%end-1+shift)/2
@@ -534,7 +534,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
            is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
            if( .NOT. domain%symmetry ) is = is - 1
            do i = is ,ie, midpoint
-              if( domain%x(1)%data%begin.LE.i .AND. i.LE. domain%x(1)%data%end+shift )then
+              if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
@@ -558,15 +558,15 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               else
                  is = domain%x(1)%global%begin - 1
               end if
-              if( is.GT.domain%x(1)%data%begin )then
+              if( is.GT.domain%x(1)%domain_data%begin )then
 
-                 if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift ) &
+                 if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       do i = domain%x(1)%data%begin,is-1
+                       do i = domain%x(1)%domain_data%begin,is-1
                           fieldx(i,j,k) = fieldx(2*is-i,j,k)
                           fieldy(i,j,k) = fieldy(2*is-i,j,k)
                        end do
@@ -577,7 +577,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               is = domain%x(1)%global%begin
               isd = domain%x(1)%compute%begin - group%whalo_v
               if( is.GT.isd )then
-                 if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
+                 if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
@@ -592,7 +592,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
         end if
         !off east edge
         is = domain%x(1)%global%end
-        if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
+        if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%domain_data%end )then
            ie = domain%x(1)%compute%end+group%ehalo_v
            is = is + 1
            select case(gridtype)
@@ -802,7 +802,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   if(domain%symmetry) shift = 1
   if( nvector >0 .AND. BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags_v,SCALAR_BIT)) )then
      j = domain%y(1)%global%end+shift
-     if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
+     if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE.domain%y(1)%domain_data%end+shift )then !fold is within domain
         !poles set to 0: BGRID only
         if( gridtype.EQ.BGRID_NE )then
            midpoint = (domain%x(1)%global%begin+domain%x(1)%global%end-1+shift)/2
@@ -810,7 +810,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
            is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
            if( .NOT. domain%symmetry ) is = is - 1
            do i = is ,ie, midpoint
-              if( domain%x(1)%data%begin.LE.i .AND. i.LE. domain%x(1)%data%end+shift )then
+              if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
@@ -834,15 +834,15 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
               else
                  is = domain%x(1)%global%begin - 1
               end if
-              if( is.GT.domain%x(1)%data%begin )then
+              if( is.GT.domain%x(1)%domain_data%begin )then
 
-                 if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift ) &
+                 if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       do i = domain%x(1)%data%begin,is-1
+                       do i = domain%x(1)%domain_data%begin,is-1
                           fieldx(i,j,k) = fieldx(2*is-i,j,k)
                           fieldy(i,j,k) = fieldy(2*is-i,j,k)
                        end do
@@ -853,7 +853,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
               is = domain%x(1)%global%begin
               isd = domain%x(1)%compute%begin - group%whalo_v
               if( is.GT.isd)then
-                 if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
+                 if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
@@ -868,7 +868,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
         end if
         !off east edge
         is = domain%x(1)%global%end
-        if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
+        if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%domain_data%end )then
            ie = domain%x(1)%compute%end+group%ehalo_v
            is = is + 1
            select case(gridtype)
