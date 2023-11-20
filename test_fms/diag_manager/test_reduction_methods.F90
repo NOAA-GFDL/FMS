@@ -133,19 +133,19 @@ program test_reduction_methods
   select case (mask_case)
   case (logical_mask)
     clmask = allocate_logical_mask(isc, iec, jsc, jec, nz, nw)
-    if (mpp_pe() .eq. 0) clmask(isc, jsc, 1, 1) = .False.
+    if (mpp_pe() .eq. 0) clmask(isc, jsc, 1, :) = .False.
 
     if (test_case .eq. test_halos) then
       dlmask = allocate_logical_mask(isd, ied, jsd, jed, nz, nw)
-      if (mpp_pe() .eq. 0) dlmask(1+nhalox, 1+nhaloy, 1, 1) = .False.
+      if (mpp_pe() .eq. 0) dlmask(1+nhalox, 1+nhaloy, 1, :) = .False.
     endif
   case (real_mask)
     crmask = allocate_real_mask(isc, iec, jsc, jec, nz, nw)
-    if (mpp_pe() .eq. 0) crmask(isc, jsc, 1, 1) = 0_r8_kind
+    if (mpp_pe() .eq. 0) crmask(isc, jsc, 1, :) = 0_r8_kind
 
     if (test_case .eq. test_halos) then
       drmask = allocate_real_mask(isd, ied, jsd, jed, nz, nw)
-      if (mpp_pe() .eq. 0) drmask(1+nhalox, 1+nhaloy, 1, 1) = 0_r8_kind
+      if (mpp_pe() .eq. 0) drmask(1+nhalox, 1+nhaloy, 1, :) = 0_r8_kind
     endif
   end select
 
@@ -190,14 +190,17 @@ program test_reduction_methods
         used = send_data(id_var1, cdata(:,1,1,1), Time)
         used = send_data(id_var2, cdata(:,:,1,1), Time)
         used = send_data(id_var3, cdata(:,:,:,1), Time)
+        used = send_data(id_var4, cdata(:,:,:,:), Time)
       case (real_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, rmask=crmask(:,1,1,1))
         used = send_data(id_var2, cdata(:,:,1,1), Time, rmask=crmask(:,:,1,1))
         used = send_data(id_var3, cdata(:,:,:,1), Time, rmask=crmask(:,:,:,1))
+        used = send_data(id_var4, cdata(:,:,:,:), Time, rmask=crmask(:,:,:,:))
       case (logical_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, mask=clmask(:,1,1,1))
         used = send_data(id_var2, cdata(:,:,1,1), Time, mask=clmask(:,:,1,1))
         used = send_data(id_var3, cdata(:,:,:,1), Time, mask=clmask(:,:,:,1))
+        used = send_data(id_var4, cdata(:,:,:,:), Time, mask=clmask(:,:,:,:))
       end select
     case (test_halos)
       call set_buffer(ddata, i)
@@ -208,6 +211,8 @@ program test_reduction_methods
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
         used = send_data(id_var3, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
+        used = send_data(id_var4, ddata(:,:,:,:), Time, &
+          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
       case (real_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, &
           rmask=crmask(:,1,1,1))
@@ -217,6 +222,9 @@ program test_reduction_methods
         used = send_data(id_var3, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           rmask=drmask(:,:,:,1))
+        used = send_data(id_var4, ddata(:,:,:,:), Time, &
+          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+          rmask=drmask(:,:,:,:))
       case (logical_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, &
           mask=clmask(:,1,1,1))
@@ -226,6 +234,9 @@ program test_reduction_methods
         used = send_data(id_var3, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           mask=dlmask(:,:,:,1))
+        used = send_data(id_var4, ddata(:,:,:,:), Time, &
+          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+          mask=dlmask(:,:,:,:))
       end select
     case (test_openmp)
       select case(mask_case)
@@ -255,16 +266,21 @@ program test_reduction_methods
         case (no_mask)
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
+          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1)
         case (real_mask)
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, :, 1))
+          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
+            rmask=crmask(is1:ie1, js1:je1, :, :))
         case (logical_mask)
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, :, 1))
+          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
+            mask=clmask(is1:ie1, js1:je1, :, :))
         end select
       enddo
     end select
