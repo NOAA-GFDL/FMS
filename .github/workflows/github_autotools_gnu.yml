@@ -27,7 +27,7 @@ jobs:
         SKIP_TESTS: "test_yaml_parser.5" # temporary till fixes are in
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build

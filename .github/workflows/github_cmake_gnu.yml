@@ -21,7 +21,7 @@ jobs:
         CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Generate makefiles with CMake
       run: cmake $CMAKE_FLAGS .
     - name: Build the library
