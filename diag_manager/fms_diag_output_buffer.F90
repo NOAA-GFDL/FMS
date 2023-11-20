@@ -28,13 +28,13 @@ module fms_diag_output_buffer_mod
 use platform_mod
 use iso_c_binding
 use time_manager_mod, only: time_type, operator(==)
-use mpp_mod, only: mpp_error, FATAL
+use mpp_mod, only: mpp_error, FATAL, NOTE
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
                          time_min, time_max
 use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 use fms_diag_yaml_mod, only: diag_yaml
 use fms_diag_bbox_mod, only: fmsDiagIbounds_type
-use fms_diag_reduction_methods_mod, only: do_time_none, do_time_min, do_time_max, do_time_sum_update
+use fms_diag_reduction_methods_mod, only: do_time_none, do_time_min, do_time_max, do_time_sum_update, time_update_done
 use fms_diag_time_utils_mod, only: diag_time_inc
 
 implicit none
@@ -77,7 +77,7 @@ type :: fmsDiagOutputBuffer_type
   procedure :: do_time_min_wrapper
   procedure :: do_time_max_wrapper
   procedure :: do_time_sum_wrapper
-
+  procedure :: diag_reduction_done_wrapper
 end type fmsDiagOutputBuffer_type
 
 ! public types
@@ -588,5 +588,42 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       err_msg="do_time_sum_wrapper::the output buffer is not a valid type, must be real(r8_kind) or real(r4_kind)"
   end select
 end function do_time_sum_wrapper
+
+!> Finishes calculations for any reductions that use an average (avg, rms, pow)
+function diag_reduction_done_wrapper(this, reduction_method, missing_value, is_subregional, mask) &
+  result(err_msg)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this !< Updated buffer object
+  integer, intent(in)                            :: reduction_method !< enumerated reduction type from diag_data
+  real(kind=r8_kind), intent(in)                 :: missing_value !< missing_value for masked data points
+  logical, intent(in)                            :: is_subregional !< present and true if subregional output
+  logical, optional, intent(in)                  :: mask(:,:,:,:) !< whether a mask variant reduction
+  character(len=51)                              :: err_msg !< error message to return, blank if sucessful
+  logical, allocatable                           :: mask_tmp(:,:,:,:)
+
+  if(.not. allocated(this%buffer)) then
+    call mpp_error(NOTE, "diag_reduction_done_wrapper:: called on unallocated buffer")
+    return 
+  endif
+
+  err_msg = ""
+  select type(buff => this%buffer)
+    type is (real(r8_kind))
+      if(present(mask)) then
+        call time_update_done(buff, this%weight_sum, reduction_method, missing_value, mask) 
+      else
+        call time_update_done(buff, this%weight_sum, reduction_method, missing_value) 
+      endif
+    type is (real(r4_kind))
+      if(present(mask)) then
+        call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), mask) 
+      else
+        call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind)) 
+      endif
+  end select
+  this%weight_sum = 0.0_r8_kind
+
+end function
+
+
 #endif
 end module fms_diag_output_buffer_mod

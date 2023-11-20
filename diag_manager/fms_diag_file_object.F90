@@ -145,6 +145,8 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_varlist
  procedure, public :: has_file_global_meta
  procedure, public :: dump_file_obj
+ procedure, public :: get_buffer_ids
+ procedure, public :: get_number_of_buffers 
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
@@ -1474,6 +1476,21 @@ subroutine close_diag_file(this)
     this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
   endif
 end subroutine close_diag_file
+
+!> \brief Gets the buffer_id list from the file object
+pure function get_buffer_ids (this)
+  class(fmsDiagFile_type), intent(in) :: this         !< The file object
+  integer, allocatable :: get_buffer_ids(:)
+
+  allocate(get_buffer_ids(this%number_of_buffers))
+  get_buffer_ids = this%buffer_ids
+end function get_buffer_ids
+
+pure function get_number_of_buffers(this)
+  class(fmsDiagFile_type), intent(in) :: this !< file object
+  integer :: get_number_of_buffers
+  get_number_of_buffers = this%number_of_buffers
+end function get_number_of_buffers
 
 #endif
 end module fms_diag_file_object_mod

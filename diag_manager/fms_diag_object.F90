@@ -654,7 +654,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   character(len=128) :: error_string
   type(fmsDiagIbounds_type) :: bounds
   integer, dimension(:), allocatable :: file_ids !< Array of file IDs for a field
-  logical, parameter :: DEBUG_SC = .true. !< turn on output for debugging
+  logical, parameter :: DEBUG_SC = .false. !< turn on output for debugging
 
   !< Update the current model time by adding the time_step
   this%current_model_time = this%current_model_time + time_step
@@ -706,11 +706,19 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 #ifdef use_yaml
   integer :: i !< For do loops
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
+  class(fmsDiagOutputBuffer_type), pointer  :: diag_buff !< pointer to output buffers iterated in buff_loop 
+  class(fmsDiagField_type), pointer         :: diag_field !< pointer to output buffers iterated in buff_loop 
+  class(DiagYamlFilesVar_type), pointer     :: field_yaml !< Pointer to a field from yaml fields
   TYPE (time_type),                 pointer :: model_time!< The current model time
+  integer, allocatable                      :: buff_ids(:)
+  integer :: ibuff
 
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write
+  logical :: force_write, is_writing, subregional
+  logical, parameter :: DEBUG_REDUCT = .true.
+  real(r8_kind) :: missing_val
+  character(len=128) :: error_string
 
   force_write = .false.
   if (present (is_end_of_run)) force_write = .true.
@@ -732,7 +740,65 @@ subroutine fms_diag_do_io(this, is_end_of_run)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    if (diag_file%is_time_to_write(model_time)) then
+    is_writing = diag_file%is_time_to_write(model_time)
+
+    ! finish reduction method if its time to write
+    buff_reduct: if (is_writing) then
+      allocate(buff_ids(diag_file%FMS_diag_file%get_number_of_buffers()))
+      buff_ids = diag_file%FMS_diag_file%get_buffer_ids()
+      ! loop through the buffers and finish reduction if needed
+      buff_loop: do ibuff=1, SIZE(buff_ids)
+        diag_buff => this%FMS_diag_output_buffers(buff_ids(ibuff))
+        field_yaml => diag_yaml%get_diag_field_from_id(diag_buff%get_yaml_id())
+        diag_field => this%FMS_diag_fields(diag_buff%get_field_id())
+        select type(mval => diag_field%get_missing_value(r8))
+          type is(real(r8_kind))
+            missing_val = mval
+          type is(real(r4_kind))
+            missing_val = real(mval, r8_kind)
+          class default
+            call mpp_error(FATAL, "fms_do_io:: invalid type for missing value retrieved for variable:"// &
+                                  diag_field%get_varname())
+        end select
+        ! time_average and greater values all involve averaging so need to be divided
+        if( field_yaml%has_var_reduction()) then
+          if( field_yaml%get_var_reduction() .ge. time_average) then
+            call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
+            subregional =  diag_file%FMS_diag_file%has_file_sub_region()
+            ! TODO might not need all this z bounds shit anymore
+            !! normal call to finish reductions
+            !if(.not.field_yaml%has_var_zbounds()) then
+              if( diag_field%is_mask_variant()) then
+                error_string = diag_buff%diag_reduction_done_wrapper( &
+                                    field_yaml%get_var_reduction(), &
+                                    missing_val, subregional, &
+                                    mask=diag_field%get_mask())
+              else
+                error_string = diag_buff%diag_reduction_done_wrapper( &
+                                    field_yaml%get_var_reduction(), &
+                                    missing_val, subregional)
+              endif
+              if (trim(error_string) .ne. "") call mpp_error(FATAL, &
+                "fms_diag_do_io:: error finishing reduction for output: "//error_string)
+            !! has reduced zbounds, need to grab relevant slice of the mask
+            !else
+            !  mask_zbounds = field_yaml%get_var_zbounds()
+            !  error_string = diag_buff%diag_reduction_done_wrapper( &
+            !                      field_yaml%get_var_reduction(), &
+            !                      diag_field%get_mask_variant(), &
+            !                      missing_val, subregional, &
+            !                      z_bounds=mask_zbounds)
+            !endif 
+          endif
+        endif
+        !endif
+        nullify(diag_buff)
+        nullify(field_yaml)
+      enddo buff_loop
+      deallocate(buff_ids)
+    endif buff_reduct
+
+    if (is_writing) then
       call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
       call diag_file%write_field_data(this%FMS_diag_fields, this%FMS_diag_output_buffers)
@@ -913,6 +979,11 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
         return
       endif
     case (time_average)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_power)
     case (time_rms)
     case (time_diurnal)

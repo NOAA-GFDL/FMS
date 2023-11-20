@@ -297,3 +297,44 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     enddo
   endif
 end subroutine DO_TIME_SUM_UPDATE_
+
+!> To be called with diag_send_complete, finishes reductions
+!! Just divides the buffer by the counter array(which is just the sum of the weights used in the buffer's reduction)
+subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, mask)
+  real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previosuly updated with do_time_sum_update
+  real(r8_kind), intent(in)          :: weight_sum !< sum of weights for averaging, provided via argument to send data
+  integer, intent(in)                :: reduction_method !< which reduction method to use, should be time_avg
+  real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
+  logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one
+  logical                            :: has_mask !< whether or not mask is present 
+  integer :: i, j, k, l
+  integer, parameter :: kindl = FMS_TRM_KIND_
+
+  if(weight_sum .eq. 0.0_r8_kind) then
+    call mpp_error(NOTE, "skipping reduction, called with zero weight")
+    return
+  endif
+
+  has_mask = present(mask)
+
+  ! TODO certain written out values (starting at var2d, (1,3) )
+  ! are way smaller than they should be
+  ! getting divided twice
+  i=SIZE(out_buffer_data,1)
+  j=SIZE(out_buffer_data,2)
+  k=SIZE(out_buffer_data,3)
+  l=SIZE(out_buffer_data,4)
+  if ( has_mask ) then
+    where(mask(:,:,:,:))
+      out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
+                                   / weight_sum 
+    elsewhere
+      out_buffer_data(:,:,:,:,1) = missing_val 
+    endwhere
+  else  !not mask variant
+    out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
+                               / weight_sum 
+  endif
+
+end subroutine
+
