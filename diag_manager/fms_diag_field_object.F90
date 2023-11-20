@@ -1672,7 +1672,7 @@ subroutine allocate_mask(this, mask_in, omp_axis)
     enddo
     allocate(this%mask(length(1), length(2), length(3), length(4)))
   endif
-end subroutine allocate_mask 
+end subroutine allocate_mask
 
 !> Sets previously allocated mask to mask_in at given index ranges
 subroutine set_mask(this, mask_in, is, js, ks, ie, je, ke)

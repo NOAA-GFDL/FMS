@@ -603,7 +603,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       data_buffer_is_allocated = &
         this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, this%diag_axis)
       call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
-                                             
     endif
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
@@ -623,7 +622,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask) 
+    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask)
     return
   end if main_if
   !> Return false if nothing is done
