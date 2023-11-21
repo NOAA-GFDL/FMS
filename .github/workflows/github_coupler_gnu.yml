@@ -1,6 +1,11 @@
 name: Test coupler build
 on: [pull_request]
 
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   coupler-build:
     runs-on: ubuntu-latest
@@ -17,11 +22,11 @@ jobs:
         LDFLAGS: '-L/opt/view/lib'
     steps:
     - name: Checkout FMS
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         path: FMS
     - name: Checkout FMScoupler
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: 'NOAA-GFDL/FMScoupler'
         path: FMScoupler
