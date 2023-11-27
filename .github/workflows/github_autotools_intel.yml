@@ -1,4 +1,10 @@
 on: pull_request
+
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   intel-autotools:
     runs-on: ubuntu-latest
@@ -47,7 +53,7 @@ jobs:
         ./configure --prefix=/libs
         make -j install && cd
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Configure
       run: autoreconf -if ./configure.ac && ./configure --with-yaml
     - name: Compile
