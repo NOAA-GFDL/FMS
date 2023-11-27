@@ -543,12 +543,14 @@ subroutine read_table_yaml(data_table)
          call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
          call check_and_set_region_type(buffer, data_table(i)%region_type)
 
-         call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-         call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-         call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-         call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
-         call check_valid_lat_lon(data_table(i)%lon_start, data_table(i)%lon_end, &
+        if (data_table(i)%region_type .ne. NO_REGION) then
+          call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
+          call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
+          call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
+          call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+          call check_valid_lat_lon(data_table(i)%lon_start, data_table(i)%lon_end, &
             data_table(i)%lat_start, data_table(i)%lat_end)
+        endif
       end do
 
     end if
