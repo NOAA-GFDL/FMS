@@ -121,7 +121,7 @@ module mpp_domains_mod
   use mpp_mod,                only : mpp_type, mpp_byte
   use mpp_mod,                only : mpp_type_create, mpp_type_free
   use mpp_mod,                only : COMM_TAG_1, COMM_TAG_2, COMM_TAG_3, COMM_TAG_4
-  use mpp_mod,                only : mpp_declare_pelist, mpp_set_current_pelist
+  use mpp_mod,                only : mpp_declare_pelist, mpp_set_current_pelist,mpp_get_current_pelist_comm
   use mpp_memutils_mod,       only : mpp_memuse_begin, mpp_memuse_end
   use mpp_efp_mod,            only : mpp_reproducing_sum
   use platform_mod
@@ -159,9 +159,9 @@ module mpp_domains_mod
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
-  public :: mpp_copy_domain, mpp_set_domain_symmetry
+  public :: mpp_copy_domain, mpp_set_domain_symmetry, mpp_set_tile_comm
   public :: mpp_get_update_pelist, mpp_get_update_size
-  public :: mpp_get_domain_npes, mpp_get_domain_pelist
+  public :: mpp_get_domain_npes, mpp_get_domain_pelist, mpp_get_tile_comm
   public :: mpp_clear_group_update
   public :: mpp_group_update_initialized, mpp_group_update_is_set
   public :: mpp_get_global_domains
@@ -381,6 +381,7 @@ module mpp_domains_mod
      integer                     :: tile_root_pe  !< root pe of current tile.
      integer                     :: io_layout(2)  !< io_layout, will be set through mpp_define_io_domain
                                                   !! default = domain layout
+     integer                     :: TileComm=999  !< Communicator covering all ranks assigned to a each tile_id
      integer,            pointer :: pearray(:,:)  => NULL() !< pe of each layout position
      integer,            pointer :: tile_id(:)    => NULL() !< tile id of each tile on current processor
      integer,            pointer :: tile_id_all(:)=> NULL() !< tile id of all the tiles of domain
