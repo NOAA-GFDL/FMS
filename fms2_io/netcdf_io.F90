@@ -152,7 +152,6 @@ type, public :: FmsNetcdfFile_t
                                                !! restart variables
   logical :: use_collective = .false. !< Flag telling if we should open the file for collective input
   integer :: TileComm=989             !< MPI communicator used for collective reads
-  logical :: is_reader  = .false. !< Flag telling if the current rank part of the communicator that reads a particular file
 
 endtype FmsNetcdfFile_t
 
@@ -655,13 +654,11 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       ! NetCDF does not have the ability to specify collective I/O at the file basis
       ! so we must activate at the variable level in netcdf_read_data_2d() and netcdf_read_data_3d()
       if(fileobj%use_collective .and. fileobj%TileComm < 0) then
-        fileobj%is_reader = .true.
         !write(6,'("netcdf_file_open: Open for collective read "A,I4)') trim(fileobj%path), szTile
         err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=fileobj%TileComm, info=MPI_INFO_NULL)
       else
         !print*,'netcdf_file_open: Open for independent read ',trim(fileobj%path)
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
-        fileobj%is_reader = .true.
       endif
     elseif (string_compare(mode, "append", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid, chunksize=fms2_ncchksz)
