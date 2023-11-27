@@ -100,7 +100,7 @@ _EOF
 _EOF
 
   test_expect_success "data_override on cubic-grid with input (${KIND})" '
-    mpirun -n 6 ./test_data_override_${KIND}
+    mpirun -n 6 ../test_data_override_${KIND}
   '
 
 cat <<_EOF > input.nml
@@ -112,7 +112,8 @@ _EOF
   test_expect_success "data_override on latlon-grid with input (${KIND})" '
     mpirun -n 6 ./test_data_override_${KIND}
   '
-  rm -rf INPUT *.nc # remove any leftover files to reduce size
 fi
 done
+rm -rf INPUT *.nc # remove any leftover files to reduce size
+
 test_done
