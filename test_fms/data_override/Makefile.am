@@ -77,4 +77,4 @@ TESTS = test_data_override2.sh test_data_override_init.sh
 EXTRA_DIST = test_data_override2.sh test_data_override_init.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*
