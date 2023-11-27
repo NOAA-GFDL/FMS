@@ -208,8 +208,8 @@ end if
     default_table%factor = 1._lkind
     default_table%interpol_method = 'bilinear'
     default_table%multifile = .false.
-    default_table%prev_file_name = 'none'
-    default_table%next_file_name = 'none'
+    default_table%prev_file_name = ''
+    default_table%next_file_name = ''
 
 #ifdef use_yaml
     if (use_data_table_yaml) then
@@ -417,6 +417,8 @@ subroutine read_table(data_table)
                data_entry%multifile = .true.
                index_1col = index(data_entry%file_name, ":")
                index_2col = index(data_entry%file_name(index_1col+1:), ":")
+               if (index_2col .eq. 0) call mpp_error(FATAL, "data_override: when bridging over forcing files, " &
+                 // "central forcing files must be preceded AND followed by the column (:) separator")
                data_entry%prev_file_name = data_entry%file_name(1:index_1col-1)
                data_entry%next_file_name = data_entry%file_name(index_1col+index_2col+1:)
                ! once previous/next files are filled in, overwrite current
@@ -472,7 +474,8 @@ subroutine read_table(data_table)
             data_entry%multifile = .true.
             index_1col = index(data_entry%file_name, ":")
             index_2col = index(data_entry%file_name(index_1col+1:), ":")
-            if (index_2col .eq. 0) call mpp_error(FATAL, "data_override: must provide either 1 or 3 forcing files")
+            if (index_2col .eq. 0) call mpp_error(FATAL, "data_override: when bridging over forcing files, " &
+              // "central forcing files must be preceded AND followed by the column (:) separator")
             data_entry%prev_file_name = data_entry%file_name(1:index_1col-1)
             data_entry%next_file_name = data_entry%file_name(index_1col+index_2col+1:)
             ! once previous/next files are filled in, overwrite current
@@ -500,7 +503,8 @@ subroutine read_table(data_table)
             index_1col = index(data_entry%file_name, ":")
             index_2col = index(data_entry%file_name(index_1col+1:), ":")
             data_entry%multifile = .true.
-            if (index_2col .eq. 0) call mpp_error(FATAL, "data_override: must provide either 1 or 3 forcing files")
+            if (index_2col .eq. 0) call mpp_error(FATAL, "data_override: when bridging over forcing files, " &
+              // "central forcing files must be preceded AND followed by the column (:) separator")
             data_entry%prev_file_name = data_entry%file_name(1:index_1col-1)
             data_entry%next_file_name = data_entry%file_name(index_1col+index_2col+1:)
             ! once previous/next files are filled in, overwrite current
@@ -763,16 +767,28 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
 
   if (multifile) then
     id_time_prev = -1
-    if (prevfilename /= 'none') then
+    if (trim(prevfilename) /= '') then
       id_time_prev = init_external_field(prevfilename,fieldname,verbose=.false.)
+      dims = get_external_field_size(id_time)
       prev_dims = get_external_field_size(id_time_prev)
+      ! check consistency of spatial dims
+      if ((prev_dims(1) .ne. dims(1)) .or. (prev_dims(2) .ne. dims(2)) .or. &
+          (prev_dims(3) .ne. dims(3))) then
+        call mpp_error(FATAL, 'data_override: dimensions mismatch between consecutive forcing files')
+      endif
       allocate(data_table(index1)%time_prev_records(prev_dims(4)))
       call get_time_axis(id_time_prev,data_table(index1)%time_prev_records)
     endif
     id_time_next = -1
-    if (nextfilename /= 'none') then
+    if (trim(nextfilename) /= '') then
       id_time_next = init_external_field(nextfilename,fieldname,verbose=.false.)
+      dims = get_external_field_size(id_time)
       next_dims = get_external_field_size(id_time_next)
+      ! check consistency of spatial dims
+      if ((next_dims(1) .ne. dims(1)) .or. (next_dims(2) .ne. dims(2)) .or. &
+          (next_dims(3) .ne. dims(3))) then
+        call mpp_error(FATAL, 'data_override: dimensions mismatch between consecutive forcing files')
+      endif
       allocate(data_table(index1)%time_next_records(next_dims(4)))
       call get_time_axis(id_time_next,data_table(index1)%time_next_records)
     endif
@@ -802,7 +818,7 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
   else ! standard behavior
      if ((time<first_record) .or. (time>last_record)) then
        call mpp_error(WARNING, &
-                      'data_override: current time outside bounds, add previous/next files to data_table')
+            'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
      endif
      call time_interp_external(id_time,time,data_out,verbose=.false.)
   endif
@@ -1013,15 +1029,19 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            filename = filename2
         endif
         if (multifile) then
-          inquire(file=trim(prevfilename),EXIST=exists)
-          if (.not. exists) then
-             call get_mosaic_tile_file(prevfilename,prevfilename2,.false.,domain)
-             prevfilename = prevfilename2
+          if (trim(prevfilename) /= '') then
+            inquire(file=trim(prevfilename),EXIST=exists)
+            if (.not. exists) then
+               call get_mosaic_tile_file(prevfilename,prevfilename2,.false.,domain)
+               prevfilename = prevfilename2
+            endif
           endif
-          inquire(file=trim(nextfilename),EXIST=exists)
-          if (.not. exists) then
-             call get_mosaic_tile_file(nextfilename,nextfilename2,.false.,domain)
-             nextfilename = nextfilename2
+          if (trim(prevfilename) /= '') then
+            inquire(file=trim(nextfilename),EXIST=exists)
+            if (.not. exists) then
+               call get_mosaic_tile_file(nextfilename,nextfilename2,.false.,domain)
+               nextfilename = nextfilename2
+            endif
           endif
         endif
 
@@ -1031,20 +1051,32 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
 
         if (multifile) then
           id_time_prev = -1
-          if (prevfilename /= 'none') then
+          if (trim(prevfilename) /= '') then
             id_time_prev = init_external_field(prevfilename,fieldname,domain=domain, &
                verbose=.false.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows, ongrid=ongrid)
+            dims = get_external_field_size(id_time)
             prev_dims = get_external_field_size(id_time_prev)
+            ! check consistency of spatial dims
+            if ((prev_dims(1) .ne. dims(1)) .or. (prev_dims(2) .ne. dims(2)) .or. &
+                (prev_dims(3) .ne. dims(3))) then
+              call mpp_error(FATAL, 'data_override: dimensions mismatch between consecutive forcing files')
+            endif
             allocate(data_table(index1)%time_prev_records(prev_dims(4)))
             call get_time_axis(id_time_prev,data_table(index1)%time_prev_records)
           endif
           id_time_next = -1
-          if (nextfilename /= 'none') then
+          if (trim(nextfilename) /= '') then
             id_time_next = init_external_field(nextfilename,fieldname,domain=domain, &
                verbose=.false.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows, ongrid=ongrid)
+            dims = get_external_field_size(id_time)
             next_dims = get_external_field_size(id_time_next)
+            ! check consistency of spatial dims
+            if ((next_dims(1) .ne. dims(1)) .or. (next_dims(2) .ne. dims(2)) .or. &
+                (next_dims(3) .ne. dims(3))) then
+              call mpp_error(FATAL, 'data_override: dimensions mismatch between consecutive forcing files')
+            endif
             allocate(data_table(index1)%time_next_records(next_dims(4)))
             call get_time_axis(id_time_next,data_table(index1)%time_next_records)
           endif
@@ -1063,7 +1095,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
 
         if (multifile) then
           id_time_prev = -1
-          if (prevfilename /= 'none') then
+          if (trim(prevfilename) /= '') then
             id_time_prev = init_external_field(prevfilename,fieldname,domain=domain, axis_names=axis_names,&
                axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows)
@@ -1072,7 +1104,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
             call get_time_axis(id_time_prev,data_table(index1)%time_prev_records)
           endif
           id_time_next = -1
-          if (nextfilename /= 'none') then
+          if (trim(nextfilename) /= '') then
             id_time_next = init_external_field(nextfilename,fieldname,domain=domain, axis_names=axis_names,&
                axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows)
@@ -1156,8 +1188,12 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         override_array(curr_position)%je_src = je_src
         call reset_src_data_region(id_time, is_src, ie_src, js_src, je_src)
         if (multifile) then
-          call reset_src_data_region(id_time_prev, is_src, ie_src, js_src, je_src)
-          call reset_src_data_region(id_time_next, is_src, ie_src, js_src, je_src)
+          if (trim(prevfilename) /= '') then
+            call reset_src_data_region(id_time_prev, is_src, ie_src, js_src, je_src)
+          endif
+          if (trim(nextfilename) /= '') then
+            call reset_src_data_region(id_time_next, is_src, ie_src, js_src, je_src)
+          endif
         endif
 
 !       Find the index of lon_start, lon_end, lat_start and lat_end in the input grid (nearest points)
@@ -1186,8 +1222,12 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            jend   = jend   - js_src + 1
            call set_override_region(id_time, data_table(index1)%region_type, istart, iend, jstart, jend)
            if (multifile) then
-             call set_override_region(id_time_prev, data_table(index1)%region_type, istart, iend, jstart, jend)
-             call set_override_region(id_time_next, data_table(index1)%region_type, istart, iend, jstart, jend)
+             if (trim(prevfilename) /= '') then
+               call set_override_region(id_time_prev, data_table(index1)%region_type, istart, iend, jstart, jend)
+             endif
+             if (trim(nextfilename) /= '') then
+               call set_override_region(id_time_next, data_table(index1)%region_type, istart, iend, jstart, jend)
+             endif
            endif
            deallocate(lon_tmp, lat_tmp)
         endif
@@ -1333,7 +1373,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         else  ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
-                           'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
           endif
           call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1372,7 +1412,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         else  ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
-                           'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
           endif
           call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1407,7 +1447,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         else ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
-                           'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
           endif
           call time_interp_external(id_time,time,return_data,verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1439,7 +1479,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         else ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
-                           'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
           endif
           call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1477,7 +1517,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
-                              'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
              endif
              call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                        horz_interp=override_array(curr_position)%horz_interp(window_id), &
@@ -1519,7 +1559,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
-                              'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
              endif
              call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                    horz_interp=override_array(curr_position)%horz_interp(window_id),      &
@@ -1564,7 +1604,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
-                              'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
              endif
              call time_interp_external(id_time,time,return_data,verbose=.false.,      &
                   horz_interp=override_array(curr_position)%horz_interp(window_id), &
@@ -1603,7 +1643,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
-                              'data_override: current time outside bounds, add previous/next files to data_table')
+                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
              endif
              call time_interp_external(id_time,time,return_data,verbose=.false.,      &
                   horz_interp=override_array(curr_position)%horz_interp(window_id),    &
