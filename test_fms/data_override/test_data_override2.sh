@@ -76,7 +76,10 @@ test_expect_success "data_override on grid with 2 halos in x and y (${KIND})" '
 test_expect_success "data_override get_grid_v1 (${KIND})" '
   mpirun -n 1 ../test_get_grid_v1_${KIND}
 '
+done
 
+for KIND in r4 r8
+do
 # Run tests with input if enabled
 # skips if built with yaml parser(tests older behavior)
 if test ! -z "$test_input_path" && test ! -z "$parser_skip"  ; then
