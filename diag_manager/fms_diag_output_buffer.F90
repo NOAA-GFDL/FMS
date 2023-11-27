@@ -78,6 +78,7 @@ type :: fmsDiagOutputBuffer_type
   procedure :: do_time_max_wrapper
   procedure :: do_time_sum_wrapper
   procedure :: diag_reduction_done_wrapper
+  procedure :: get_buffer_dims
 end type fmsDiagOutputBuffer_type
 
 ! public types
@@ -624,6 +625,12 @@ function diag_reduction_done_wrapper(this, reduction_method, missing_value, is_s
 
 end function
 
+!> this leaves out the diurnal index cause its only used for tmp mask allocation
+pure function get_buffer_dims(this)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this
+  integer :: get_buffer_dims(4)
+  get_buffer_dims = this%buffer_dims(1:4)
+end function
 
 #endif
 end module fms_diag_output_buffer_mod

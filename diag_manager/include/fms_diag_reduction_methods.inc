@@ -307,7 +307,6 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
   logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one
   logical                            :: has_mask !< whether or not mask is present 
-  integer :: i, j, k, l
   integer, parameter :: kindl = FMS_TRM_KIND_
 
   if(weight_sum .eq. 0.0_r8_kind) then
@@ -320,10 +319,6 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   ! TODO certain written out values (starting at var2d, (1,3) )
   ! are way smaller than they should be
   ! getting divided twice
-  i=SIZE(out_buffer_data,1)
-  j=SIZE(out_buffer_data,2)
-  k=SIZE(out_buffer_data,3)
-  l=SIZE(out_buffer_data,4)
   if ( has_mask ) then
     where(mask(:,:,:,:))
       out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &

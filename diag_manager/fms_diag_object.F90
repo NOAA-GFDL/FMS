@@ -710,12 +710,12 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   class(fmsDiagField_type), pointer         :: diag_field !< pointer to output buffers iterated in buff_loop 
   class(DiagYamlFilesVar_type), pointer     :: field_yaml !< Pointer to a field from yaml fields
   TYPE (time_type),                 pointer :: model_time!< The current model time
-  integer, allocatable                      :: buff_ids(:)
-  integer :: ibuff
-
+  integer, allocatable                      :: buff_ids(:) !< ids for output buffers to loop through
+  integer                                   :: ibuff, mask_zbounds(2), mask_shape(4)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
   logical :: force_write, is_writing, subregional
+  logical, allocatable :: mask_adj(:,:,:,:), mask_tmp(:,:,:,:) !< copy of field mask and ajusted mask passed to reductions
   logical, parameter :: DEBUG_REDUCT = .true.
   real(r8_kind) :: missing_val
   character(len=128) :: error_string
@@ -765,30 +765,35 @@ subroutine fms_diag_do_io(this, is_end_of_run)
           if( field_yaml%get_var_reduction() .ge. time_average) then
             call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             subregional =  diag_file%FMS_diag_file%has_file_sub_region()
-            ! TODO might not need all this z bounds shit anymore
-            !! normal call to finish reductions
-            !if(.not.field_yaml%has_var_zbounds()) then
-              if( diag_field%is_mask_variant()) then
+            ! if no mask just go for it
+            mask: if(.not. diag_field%is_mask_variant()) then
+              error_string = diag_buff%diag_reduction_done_wrapper( &
+                                    field_yaml%get_var_reduction(), &
+                                    missing_val, subregional)
+            ! if mask, need to check if zbounds as well for adjustment
+            else
+              zbounds: if(.not. field_yaml%has_var_zbounds()) then
+                ! mask and no z-bounds, send mask as is
                 error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
                                     missing_val, subregional, &
                                     mask=diag_field%get_mask())
               else
+                ! TODO same as above for now
+                ! mask and zbounds, needs to adjust mask
+                mask_zbounds = field_yaml%get_var_zbounds()
+                mask_shape = diag_buff%get_buffer_dims() 
+                mask_tmp = diag_field%get_mask()
+                allocate(mask_adj(mask_shape(1), mask_shape(2), mask_zbounds(1):mask_zbounds(2), mask_shape(4)))
+                mask_adj(:,:,:,:) = mask_tmp(1:mask_shape(1), 1:mask_shape(2), mask_zbounds(1):mask_zbounds(2), 1:mask_shape(4)) !todo wrong starting
+                print *, "shape", mask_shape, "zbounds", mask_zbounds
                 error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
-                                    missing_val, subregional)
-              endif
-              if (trim(error_string) .ne. "") call mpp_error(FATAL, &
-                "fms_diag_do_io:: error finishing reduction for output: "//error_string)
-            !! has reduced zbounds, need to grab relevant slice of the mask
-            !else
-            !  mask_zbounds = field_yaml%get_var_zbounds()
-            !  error_string = diag_buff%diag_reduction_done_wrapper( &
-            !                      field_yaml%get_var_reduction(), &
-            !                      diag_field%get_mask_variant(), &
-            !                      missing_val, subregional, &
-            !                      z_bounds=mask_zbounds)
-            !endif 
+                                    missing_val, subregional, &
+                                    mask=mask_adj)
+                deallocate(mask_tmp, mask_adj)
+              endif zbounds
+            endif mask
           endif
         endif
         !endif
