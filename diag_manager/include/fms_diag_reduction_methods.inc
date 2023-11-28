@@ -289,7 +289,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
-          data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =   &
+          if (is_in+i .gt. ubound(data_in,1)) cycle ! TODO fixes error from modern diag test (test_diag_manager2.[45-47])
+          data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =  &
              data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
             + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
         enddo

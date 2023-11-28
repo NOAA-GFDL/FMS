@@ -81,6 +81,7 @@ type fmsDiagField_type
                                                                            !! the corresponding index in
                                                                            !! buffer_ids(:) is allocated.
      logical, allocatable                             :: mask(:,:,:,:)     !< Mask passed in send_data
+     logical                                          :: halo_present = .false. !< set if any halos are used
   contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
@@ -168,6 +169,9 @@ type fmsDiagField_type
      procedure :: get_file_ids
      procedure :: set_mask
      procedure :: allocate_mask
+     procedure :: set_halo_present
+     procedure :: is_halo_present
+     procedure :: find_missing_value
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -1691,6 +1695,39 @@ subroutine set_mask(this, mask_in, is, js, ks, ie, je, ke)
     this%mask = mask_in
   endif
 end subroutine set_mask
+
+subroutine set_halo_present(this)
+  class(fmsDiagField_type), intent(inout) :: this
+  this%halo_present = .true.
+end subroutine set_halo_present
+
+pure function is_halo_present(this)
+  class(fmsDiagField_type), intent(in) :: this
+  logical :: is_halo_present
+  is_halo_present = this%halo_present
+end function is_halo_present
+
+!> Helper routine to find and set the missing value for a field
+function find_missing_value(this, missing_val) &
+  result(res)
+  class(fmsDiagField_type), intent(in) :: this 
+  class(*), allocatable, intent(out) :: missing_val
+  real(r8_kind) :: res
+
+  if(this%has_missing_value()) then
+    missing_val = this%get_missing_value(this%get_vartype())
+  else
+    missing_val = get_default_missing_value(this%get_vartype()) 
+  endif
+
+  select type(missing_val)
+    type is (real(r8_kind))
+      res = missing_val
+    type is (real(r4_kind))
+      res = real(missing_val, r8_kind)
+  end select
+end function find_missing_value 
+
 
 #endif
 end module fms_diag_field_object_mod

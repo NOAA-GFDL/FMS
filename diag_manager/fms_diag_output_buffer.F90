@@ -591,32 +591,68 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
 end function do_time_sum_wrapper
 
 !> Finishes calculations for any reductions that use an average (avg, rms, pow)
-function diag_reduction_done_wrapper(this, reduction_method, missing_value, is_subregional, mask) &
+function diag_reduction_done_wrapper(this, reduction_method, missing_value, is_subregional, has_halo, mask) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this !< Updated buffer object
   integer, intent(in)                            :: reduction_method !< enumerated reduction type from diag_data
   real(kind=r8_kind), intent(in)                 :: missing_value !< missing_value for masked data points
-  logical, intent(in)                            :: is_subregional !< present and true if subregional output
+  logical, intent(in)                            :: is_subregional !< if subregional output (TODO can prob be removed)
+  logical, intent(in)                            :: has_halo !< true if halo region is being used 
   logical, optional, intent(in)                  :: mask(:,:,:,:) !< whether a mask variant reduction
   character(len=51)                              :: err_msg !< error message to return, blank if sucessful
   logical, allocatable                           :: mask_tmp(:,:,:,:)
+  integer :: is, ie, js, je, ks, ke, zs, ze
 
   if(.not. allocated(this%buffer)) then
     call mpp_error(NOTE, "diag_reduction_done_wrapper:: called on unallocated buffer")
     return 
   endif
 
+  ! if the mask is stil bigger than the buffer, theres a halo region we can leave out
+  if(has_halo .and. present(mask)) then
+    is = lbound(this%buffer,1); ie = ubound(this%buffer,1)
+    js = lbound(this%buffer,2); je = ubound(this%buffer,2)
+    ks = lbound(this%buffer,3); ke = ubound(this%buffer,3)
+    zs = lbound(this%buffer,4); ze = ubound(this%buffer,4)
+    allocate(mask_tmp(is:ie,js:je,ks:ke,zs:ze))
+    mask_tmp = .true.
+    ! TODO this is basically creating a new mask instead of adjusting the original one
+    ! not ideal, only needed for mask+halo cases
+    select type(buff => this%buffer)
+      type is(real(r8_kind))
+        where(buff(:,:,:,:,1) .eq. missing_value)
+          mask_tmp(:,:,:,:) = .false. 
+        endwhere
+      type is(real(r4_kind))
+        where(buff(:,:,:,:,1) .eq. missing_value)
+          mask_tmp(:,:,:,:) = .false. 
+        endwhere
+    end select
+    !mask_tmp(is:ie,js:je,ks:ke,zs:ze) = mask(is:ie,js:je,ks:ke,zs:ze) 
+    !print *, "adjusted mask bounds:", is, ie, js, je, ks, ke, zs, ze, "all mask_tmp, mask", all(mask_tmp), all(mask)
+  endif
+
   err_msg = ""
   select type(buff => this%buffer)
     type is (real(r8_kind))
       if(present(mask)) then
-        call time_update_done(buff, this%weight_sum, reduction_method, missing_value, mask) 
+        ! call with adjusted mask if halo
+        if(has_halo) then
+          call time_update_done(buff, this%weight_sum, reduction_method, missing_value, mask_tmp) 
+        else 
+          call time_update_done(buff, this%weight_sum, reduction_method, missing_value, mask) 
+        endif
       else
         call time_update_done(buff, this%weight_sum, reduction_method, missing_value) 
       endif
     type is (real(r4_kind))
       if(present(mask)) then
-        call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), mask) 
+        ! call with adjusted mask if halo
+        if(has_halo) then
+          call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), mask_tmp) 
+        else
+          call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), mask) 
+        endif
       else
         call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind)) 
       endif

@@ -538,6 +538,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !< Set the field_weight. If "weight" is not present it will be set to 1.0_r8_kind
   field_weight = set_weight(weight)
 
+  !< Set the variable type based off passed in field data
+  if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
+    call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
+
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
   if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
@@ -549,6 +553,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   has_halos = .false.
   if ((present(is_in) .and. present(ie_in)) .or. (present(js_in) .and. present(je_in))) &
     has_halos = .true.
+
+  if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
 
   !< If the field has `mask_variant=.true.`, check that mask OR rmask are present
   if (this%FMS_diag_fields(diag_field_id)%is_mask_variant()) then
@@ -714,10 +720,11 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   integer                                   :: ibuff, mask_zbounds(2), mask_shape(4)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write, is_writing, subregional
+  logical :: force_write, is_writing, subregional, has_halo
   logical, allocatable :: mask_adj(:,:,:,:), mask_tmp(:,:,:,:) !< copy of field mask and ajusted mask passed to reductions
   logical, parameter :: DEBUG_REDUCT = .true.
-  real(r8_kind) :: missing_val
+  class(*), allocatable :: missing_val
+  real(r8_kind) :: mval
   character(len=128) :: error_string
 
   force_write = .false.
@@ -751,45 +758,38 @@ subroutine fms_diag_do_io(this, is_end_of_run)
         diag_buff => this%FMS_diag_output_buffers(buff_ids(ibuff))
         field_yaml => diag_yaml%get_diag_field_from_id(diag_buff%get_yaml_id())
         diag_field => this%FMS_diag_fields(diag_buff%get_field_id())
-        select type(mval => diag_field%get_missing_value(r8))
-          type is(real(r8_kind))
-            missing_val = mval
-          type is(real(r4_kind))
-            missing_val = real(mval, r8_kind)
-          class default
-            call mpp_error(FATAL, "fms_do_io:: invalid type for missing value retrieved for variable:"// &
-                                  diag_field%get_varname())
-        end select
-        ! time_average and greater values all involve averaging so need to be divided
+        ! sets missing value
+        mval = diag_field%find_missing_value(missing_val)
+        ! time_average and greater values all involve averaging so need to be "finished" before written 
         if( field_yaml%has_var_reduction()) then
           if( field_yaml%get_var_reduction() .ge. time_average) then
             call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             subregional =  diag_file%FMS_diag_file%has_file_sub_region()
+            has_halo = diag_field%is_halo_present()
             ! if no mask just go for it
             mask: if(.not. diag_field%is_mask_variant()) then
               error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
-                                    missing_val, subregional)
+                                    mval, subregional, has_halo)
             ! if mask, need to check if zbounds as well for adjustment
             else
               zbounds: if(.not. field_yaml%has_var_zbounds()) then
                 ! mask and no z-bounds, send mask as is
                 error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
-                                    missing_val, subregional, &
+                                    mval, subregional, has_halo, &
                                     mask=diag_field%get_mask())
               else
-                ! TODO same as above for now
                 ! mask and zbounds, needs to adjust mask
                 mask_zbounds = field_yaml%get_var_zbounds()
                 mask_shape = diag_buff%get_buffer_dims() 
                 mask_tmp = diag_field%get_mask()
+                ! copy of masks are starting from one, potentially could be an issue with weirder masks
                 allocate(mask_adj(mask_shape(1), mask_shape(2), mask_zbounds(1):mask_zbounds(2), mask_shape(4)))
-                mask_adj(:,:,:,:) = mask_tmp(1:mask_shape(1), 1:mask_shape(2), mask_zbounds(1):mask_zbounds(2), 1:mask_shape(4)) !todo wrong starting
-                print *, "shape", mask_shape, "zbounds", mask_zbounds
+                mask_adj(:,:,:,:) = mask_tmp(1:mask_shape(1), 1:mask_shape(2), mask_zbounds(1):mask_zbounds(2), 1:mask_shape(4))
                 error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
-                                    missing_val, subregional, &
+                                    mval, subregional, has_halo, &
                                     mask=mask_adj)
                 deallocate(mask_tmp, mask_adj)
               endif zbounds
