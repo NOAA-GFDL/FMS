@@ -662,7 +662,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
           err = nf90_close(fileobj%ncid)
           if(IsNetcdf4 /= 1) then
             write(6,'("netcdf_file_open: Open for collective read failed because the file is not netCDF-4 format. &
-                       Falling back to parallel independent "A)') trim(fileobj%path)
+                       Falling back to parallel independent for file "A)') trim(fileobj%path)
           endif
           err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
         endif
