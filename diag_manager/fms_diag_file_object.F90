@@ -146,7 +146,7 @@ type :: fmsDiagFile_type
  procedure, public :: has_file_global_meta
  procedure, public :: dump_file_obj
  procedure, public :: get_buffer_ids
- procedure, public :: get_number_of_buffers 
+ procedure, public :: get_number_of_buffers
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type

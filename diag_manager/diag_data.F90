@@ -122,7 +122,7 @@ use platform_mod
   INTEGER, PARAMETER :: time_average= 4 !< The reduction method is average of values
   INTEGER, PARAMETER :: time_rms     = 5 !< The reudction method is root mean square of values
   INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
-  INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is average with exponents 
+  INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is average with exponents
   CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
   CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
   INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds

@@ -317,9 +317,6 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
 
   has_mask = present(mask)
 
-  ! TODO certain written out values (starting at var2d, (1,3) )
-  ! are way smaller than they should be
-  ! getting divided twice
   if ( has_mask ) then
     where(mask(:,:,:,:))
       out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &

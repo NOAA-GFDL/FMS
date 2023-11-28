@@ -608,7 +608,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (.not. this%FMS_diag_fields(diag_field_id)%is_data_buffer_allocated()) then
       data_buffer_is_allocated = &
         this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, this%diag_axis)
-      call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
+      if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
+        call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
     endif
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
@@ -627,7 +628,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       bounds, using_blocking, Time=Time)
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
-    call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
+    if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
+      call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
     call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask)
     return
   end if main_if
@@ -712,8 +714,8 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 #ifdef use_yaml
   integer :: i !< For do loops
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
-  class(fmsDiagOutputBuffer_type), pointer  :: diag_buff !< pointer to output buffers iterated in buff_loop 
-  class(fmsDiagField_type), pointer         :: diag_field !< pointer to output buffers iterated in buff_loop 
+  class(fmsDiagOutputBuffer_type), pointer  :: diag_buff !< pointer to output buffers iterated in buff_loop
+  class(fmsDiagField_type), pointer         :: diag_field !< pointer to output buffers iterated in buff_loop
   class(DiagYamlFilesVar_type), pointer     :: field_yaml !< Pointer to a field from yaml fields
   TYPE (time_type),                 pointer :: model_time!< The current model time
   integer, allocatable                      :: buff_ids(:) !< ids for output buffers to loop through
@@ -721,7 +723,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
   logical :: force_write, is_writing, subregional, has_halo
-  logical, allocatable :: mask_adj(:,:,:,:), mask_tmp(:,:,:,:) !< copy of field mask and ajusted mask passed to reductions
+  logical, allocatable :: mask_adj(:,:,:,:), mask_tmp(:,:,:,:) !< copy of field mask and ajusted mask
   logical, parameter :: DEBUG_REDUCT = .true.
   class(*), allocatable :: missing_val
   real(r8_kind) :: mval
@@ -760,7 +762,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
         diag_field => this%FMS_diag_fields(diag_buff%get_field_id())
         ! sets missing value
         mval = diag_field%find_missing_value(missing_val)
-        ! time_average and greater values all involve averaging so need to be "finished" before written 
+        ! time_average and greater values all involve averaging so need to be "finished" before written
         if( field_yaml%has_var_reduction()) then
           if( field_yaml%get_var_reduction() .ge. time_average) then
             call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
@@ -782,11 +784,12 @@ subroutine fms_diag_do_io(this, is_end_of_run)
               else
                 ! mask and zbounds, needs to adjust mask
                 mask_zbounds = field_yaml%get_var_zbounds()
-                mask_shape = diag_buff%get_buffer_dims() 
+                mask_shape = diag_buff%get_buffer_dims()
                 mask_tmp = diag_field%get_mask()
                 ! copy of masks are starting from one, potentially could be an issue with weirder masks
                 allocate(mask_adj(mask_shape(1), mask_shape(2), mask_zbounds(1):mask_zbounds(2), mask_shape(4)))
-                mask_adj(:,:,:,:) = mask_tmp(1:mask_shape(1), 1:mask_shape(2), mask_zbounds(1):mask_zbounds(2), 1:mask_shape(4))
+                mask_adj(:,:,:,:) = mask_tmp(1:mask_shape(1), 1:mask_shape(2), mask_zbounds(1):mask_zbounds(2), &
+                                             1:mask_shape(4))
                 error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
                                     mval, subregional, has_halo, &

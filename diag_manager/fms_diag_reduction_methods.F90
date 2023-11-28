@@ -65,8 +65,8 @@ module fms_diag_reduction_methods_mod
 
   !> @brief Finishes a reduction that involves an average
   !! (ie. time_avg, rms, pow)
-  !! This takes the average at the end of the time step 
-  interface time_update_done 
+  !! This takes the average at the end of the time step
+  interface time_update_done
     module procedure sum_update_done_r4, sum_update_done_r8
   end interface
 
