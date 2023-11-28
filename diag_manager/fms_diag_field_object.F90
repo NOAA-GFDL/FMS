@@ -1693,18 +1693,22 @@ subroutine set_mask(this, mask_in, is, js, ks, ie, je, ke)
   endif
 end subroutine set_mask
 
+!> sets halo_present to true
 subroutine set_halo_present(this)
-  class(fmsDiagField_type), intent(inout) :: this
+  class(fmsDiagField_type), intent(inout) :: this !< field object to modify
   this%halo_present = .true.
 end subroutine set_halo_present
 
+!> Getter for halo_present
 pure function is_halo_present(this)
-  class(fmsDiagField_type), intent(in) :: this
+  class(fmsDiagField_type), intent(in) :: this !< field object to get from
   logical :: is_halo_present
   is_halo_present = this%halo_present
 end function is_halo_present
 
 !> Helper routine to find and set the missing value for a field
+!! Always returns r8 due to reduction routine args
+!! casts up to r8 from given missing val or default if needed
 function find_missing_value(this, missing_val) &
   result(res)
   class(fmsDiagField_type), intent(in) :: this
@@ -1725,6 +1729,9 @@ function find_missing_value(this, missing_val) &
   end select
 end function find_missing_value
 
+!> @returns allocation status of logical mask array
+!! this just indicates whether the mask array itself has been alloc'd
+!! this is different from @ref has_mask_variant, which is set earlier for whether a mask is being used at all
 pure logical function has_mask_allocated(this)
   class(fmsDiagField_type),intent(in) :: this
   has_mask_allocated = allocated(this%mask)

@@ -19,7 +19,7 @@
 
 ! for any debug prints
 #ifndef DEBUG_REDUCT
-#define DEBUG_REDUCT .true.
+#define DEBUG_REDUCT .false.
 #endif
 
 !> @brief Do the time_none reduction method (i.e copy the correct portion of the input data)
@@ -289,7 +289,6 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
-          if (is_in+i .gt. ubound(data_in,1)) cycle ! TODO fixes error from modern diag test (test_diag_manager2.[45-47])
           data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =  &
              data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
             + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
@@ -309,11 +308,6 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one
   logical                            :: has_mask !< whether or not mask is present 
   integer, parameter :: kindl = FMS_TRM_KIND_
-
-  if(weight_sum .eq. 0.0_r8_kind) then
-    call mpp_error(NOTE, "skipping reduction, called with zero weight")
-    return
-  endif
 
   has_mask = present(mask)
 

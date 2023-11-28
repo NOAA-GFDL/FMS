@@ -724,7 +724,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
                                            !! If true the metadata will need to be written
   logical :: force_write, is_writing, subregional, has_halo
   logical, allocatable :: mask_adj(:,:,:,:), mask_tmp(:,:,:,:) !< copy of field mask and ajusted mask
-  logical, parameter :: DEBUG_REDUCT = .true.
+  logical, parameter :: DEBUG_REDUCT = .false.
   class(*), allocatable :: missing_val
   real(r8_kind) :: mval
   character(len=128) :: error_string
@@ -765,7 +765,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
         ! time_average and greater values all involve averaging so need to be "finished" before written
         if( field_yaml%has_var_reduction()) then
           if( field_yaml%get_var_reduction() .ge. time_average) then
-            call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
+            if(DEBUG_REDUCT) call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             subregional =  diag_file%FMS_diag_file%has_file_sub_region()
             has_halo = diag_field%is_halo_present()
             ! if no mask just go for it

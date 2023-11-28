@@ -603,10 +603,9 @@ function diag_reduction_done_wrapper(this, reduction_method, missing_value, is_s
   logical, allocatable                           :: mask_tmp(:,:,:,:)
   integer :: is, ie, js, je, ks, ke, zs, ze
 
-  if(.not. allocated(this%buffer)) then
-    call mpp_error(NOTE, "diag_reduction_done_wrapper:: called on unallocated buffer")
-    return
-  endif
+  if(.not. allocated(this%buffer)) return
+
+  if(this%weight_sum .eq. 0.0_r8_kind) return
 
   ! if the mask is stil bigger than the buffer, theres a halo region we can leave out
   if(has_halo .and. present(mask)) then
