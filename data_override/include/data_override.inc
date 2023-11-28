@@ -576,6 +576,23 @@ subroutine read_table_yaml(data_table)
          call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file, &
            & is_optional=.true.)
 
+         data_table(i)%multifile = .false.
+         call get_value_from_key(file_id, entry_id(i), "is_multi_file", data_table(i)%multifile, &
+           & is_optional=.true.)
+
+         if (data_table(i)%multifile) then
+          data_table(i)%prev_file_name = ""
+          data_table(i)%next_file_name = ""
+          call get_value_from_key(file_id, entry_id(i), "prev_file_name", data_table(i)%prev_file_name, &
+            & is_optional=.true.)
+          call get_value_from_key(file_id, entry_id(i), "next_file_name", data_table(i)%next_file_name, &
+            & is_optional=.true.)
+          if (trim(data_table(i)%prev_file_name) .eq. "" .or. trim(data_table(i)%next_file_name) .eq. "") &
+            call mpp_error(FATAL, "The prev_file_name and next_file_name must be present if is_multi_file. "//&
+              "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+              trim(data_table(i)%fieldname_code))
+         endif
+
          data_table(i)%file_name = ""
          call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name, &
            & is_optional=.true.)
