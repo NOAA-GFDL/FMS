@@ -566,7 +566,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   logical :: success
 
   integer :: nc_format_param
-  integer :: i,err
+  integer :: i,err,IsNetcdf4=-999
   character(len=256) :: buf !< Filename with .res in the filename if it is a restart
   character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
@@ -656,6 +656,16 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       if(fileobj%use_collective .and. fileobj%TileComm < 0) then
         !write(6,'("netcdf_file_open: Open for collective read "A,I4)') trim(fileobj%path), szTile
         err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=fileobj%TileComm, info=MPI_INFO_NULL)
+        if(err /= nf90_noerr) then
+          err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+          err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", IsNetcdf4)
+          err = nf90_close(fileobj%ncid)
+          if(IsNetcdf4 /= 1) then
+            write(6,'("netcdf_file_open: Open for collective read failed because the file is not netCDF-4 format. &
+                       Falling back to parallel independent "A)') trim(fileobj%path)
+          endif
+          err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
+        endif
       else
         !print*,'netcdf_file_open: Open for independent read ',trim(fileobj%path)
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
