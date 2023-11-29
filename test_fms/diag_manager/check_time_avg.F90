@@ -145,9 +145,10 @@ contains
    !  + ( 1/100 * avg of time step increments )
     buffer_exp = real((1000.0_r8_kind+10.0_r8_kind+1.0_r8_kind) * file_freq + &
                       real(step_avg,r8_kind)/100.0_r8_kind, kind=r4_kind)
-    buffer_exp = buffer_exp / file_freq 
+    buffer_exp = buffer_exp / file_freq
 
-    if (abs(buffer - buffer_exp) > 0.0) print *, "answer not exact for 0d, time:", time_level, " diff:", abs(buffer-buffer_exp)
+    if (abs(buffer - buffer_exp) > 0.0) print *, "answer not exact for 0d, time:", time_level, &
+                                                 " diff:", abs(buffer-buffer_exp)
 
     if (abs(buffer - buffer_exp) > 1.0e-4) then
       print *, "time_level", time_level, "expected", buffer_exp, "read", buffer
@@ -181,7 +182,7 @@ contains
 
       if (use_mask .and. ii .eq. 1) buffer_exp = -666_r4_kind
       if (abs(buffer(ii) - buffer_exp) > 0.0) then
-        print *, "i:", ii, "read in:", buffer(ii), "expected:", buffer_exp, "time level:", time_level 
+        print *, "i:", ii, "read in:", buffer(ii), "expected:", buffer_exp, "time level:", time_level
         print *, "diff:", abs(buffer(ii) - buffer_exp)
         call mpp_error(FATAL, "Check_time_avg::check_data_1d:: Data is not correct")
       endif

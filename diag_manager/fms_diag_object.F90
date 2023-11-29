@@ -724,7 +724,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   integer                                   :: ibuff, mask_zbounds(2), mask_shape(4)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write, is_writing, has_mask 
+  logical :: force_write, is_writing, has_mask
   logical, parameter :: DEBUG_REDUCT = .false.
   class(*), allocatable :: missing_val
   real(r8_kind) :: mval
@@ -766,10 +766,10 @@ subroutine fms_diag_do_io(this, is_end_of_run)
         ! time_average and greater values all involve averaging so need to be "finished" before written
         if( field_yaml%has_var_reduction()) then
           if( field_yaml%get_var_reduction() .ge. time_average) then
-            if(DEBUG_REDUCT) call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
+            if(DEBUG_REDUCT)call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             has_mask = diag_field%has_mask_variant()
             if(has_mask) has_mask = diag_field%get_mask_variant()
-            !! TODO pass in entire mask with anything needed for adjusting/grabbing the right region to 
+            !! TODO pass in entire mask with anything needed for adjusting/grabbing the right region to
             !! match output buffer
             error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
