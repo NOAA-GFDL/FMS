@@ -1463,6 +1463,7 @@ end subroutine mpp_get_tile_compute_domains
 
      !allocate(pelist(mpp_get_tile_npes(domain)))
      !call mpp_get_tile_pelist(domain, pelist)
+     !call mpp_declare_pelist(pelist)
      !domain%TileComm = peset(get_peset(pelist))%id
      !deallocate(pelist)
 
