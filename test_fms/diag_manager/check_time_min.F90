@@ -92,6 +92,12 @@ program check_time_min
     call check_data_3d(cdata_out(:,:,:,1), i, .false.)
 
     cdata_out = -999_r4_kind
+    print *, "Checking answers for var4_min - time_level:", string(i)
+    call read_data(fileobj, "var4_min", cdata_out(:,:,:,:), unlim_dim_level=i)
+    call check_data_3d(cdata_out(:,:,:,1), i, .false.)
+    call check_data_3d(cdata_out(:,:,:,2), i, .false.)
+
+    cdata_out = -999_r4_kind
     print *, "Checking answers for var3_Z_min - time_level:", string(i)
     call read_data(fileobj, "var3_Z_min", cdata_out(:,:,1:2,1), unlim_dim_level=i)
     call check_data_3d(cdata_out(:,:,1:2,1), i, .true., nz_offset=1)
