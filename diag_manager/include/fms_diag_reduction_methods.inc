@@ -308,17 +308,17 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
   logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped from avg'ing
   !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
-  !logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one. 
-  !logical                            :: has_mask !< whether or not mask is present 
+  !logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one.
+  !logical                            :: has_mask !< whether or not mask is present
 
   if ( has_mask ) then
     where(out_buffer_data(:,:,:,:,1) .ne. missing_val)
       out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
-                                   / weight_sum 
+                                   / weight_sum
     endwhere
   else  !not mask variant
     out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
-                               / weight_sum 
+                               / weight_sum
   endif
 
 end subroutine
