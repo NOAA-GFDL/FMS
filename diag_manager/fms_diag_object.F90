@@ -707,6 +707,8 @@ end subroutine fms_diag_send_complete
 
 !> @brief Loops through all the files, open the file, writes out axis and
 !! variable metadata and data when necessary.
+!! TODO: passing in the saved mask from the field obj to diag_reduction_done_wrapper
+!! for performance
 subroutine fms_diag_do_io(this, is_end_of_run)
   class(fmsDiagObject_type), target, intent(inout)  :: this          !< The diag object
   logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
@@ -722,8 +724,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   integer                                   :: ibuff, mask_zbounds(2), mask_shape(4)
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write, is_writing, subregional, has_halo
-  logical, allocatable :: mask_adj(:,:,:,:), mask_tmp(:,:,:,:) !< copy of field mask and ajusted mask
+  logical :: force_write, is_writing, has_mask 
   logical, parameter :: DEBUG_REDUCT = .false.
   class(*), allocatable :: missing_val
   real(r8_kind) :: mval
@@ -766,37 +767,13 @@ subroutine fms_diag_do_io(this, is_end_of_run)
         if( field_yaml%has_var_reduction()) then
           if( field_yaml%get_var_reduction() .ge. time_average) then
             if(DEBUG_REDUCT) call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
-            subregional =  diag_file%FMS_diag_file%has_file_sub_region()
-            has_halo = diag_field%is_halo_present()
-            ! if no mask just go for it
-            mask: if(.not. diag_field%is_mask_variant()) then
-              error_string = diag_buff%diag_reduction_done_wrapper( &
+            has_mask = diag_field%has_mask_variant()
+            if(has_mask) has_mask = diag_field%get_mask_variant()
+            !! TODO pass in entire mask with anything needed for adjusting/grabbing the right region to 
+            !! match output buffer
+            error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
-                                    mval, subregional, has_halo)
-            ! if mask, need to check if zbounds as well for adjustment
-            else
-              zbounds: if(.not. field_yaml%has_var_zbounds()) then
-                ! mask and no z-bounds, send mask as is
-                error_string = diag_buff%diag_reduction_done_wrapper( &
-                                    field_yaml%get_var_reduction(), &
-                                    mval, subregional, has_halo, &
-                                    mask=diag_field%get_mask())
-              else
-                ! mask and zbounds, needs to adjust mask
-                mask_zbounds = field_yaml%get_var_zbounds()
-                mask_shape = diag_buff%get_buffer_dims()
-                mask_tmp = diag_field%get_mask()
-                ! copy of masks are starting from one, potentially could be an issue with weirder masks
-                allocate(mask_adj(mask_shape(1), mask_shape(2), mask_zbounds(1):mask_zbounds(2), mask_shape(4)))
-                mask_adj(:,:,:,:) = mask_tmp(1:mask_shape(1), 1:mask_shape(2), mask_zbounds(1):mask_zbounds(2), &
-                                             1:mask_shape(4))
-                error_string = diag_buff%diag_reduction_done_wrapper( &
-                                    field_yaml%get_var_reduction(), &
-                                    mval, subregional, has_halo, &
-                                    mask=mask_adj)
-                deallocate(mask_tmp, mask_adj)
-              endif zbounds
-            endif mask
+                                    mval, has_mask)
           endif
         endif
         !endif
