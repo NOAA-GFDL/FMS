@@ -564,7 +564,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   logical :: success
 
   integer :: nc_format_param
-  integer :: i,err,IsNetcdf4=-999
+  integer :: err,IsNetcdf4=-999
   character(len=256) :: buf !< Filename with .res in the filename if it is a restart
   character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
