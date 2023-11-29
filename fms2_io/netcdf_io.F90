@@ -347,14 +347,12 @@ integer,              intent(in) :: header_buffer_val     !< Value used in NF__E
 integer,              intent(in) :: deflate_level         !< Netcdf deflate level to use in nf90_def_var
                                                           !! (integer between 1 to 9)
 logical,              intent(in) :: shuffle               !< Flag indicating whether to use the netcdf shuffle filter
-integer :: mystat
 
  fms2_ncchksz = chksz
  fms2_deflate_level = deflate_level
  fms2_shuffle = shuffle
  fms2_is_netcdf4 = .false.
  fms2_header_buffer_val = header_buffer_val
-
  if (string_compare(netcdf_default_format, "64bit", .true.)) then
      fms2_nc_format_param = nf90_64bit_offset
      call string_copy(fms2_nc_format, "64bit")
