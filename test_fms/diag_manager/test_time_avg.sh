@@ -56,6 +56,11 @@ diag_files:
     reduction: average
     kind: r4
   - module: ocn_mod
+    var_name: var4
+    output_name: var4_avg
+    reduction: average
+    kind: r4
+  - module: ocn_mod
     var_name: var3
     output_name: var3_Z
     reduction: average

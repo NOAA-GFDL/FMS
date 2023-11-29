@@ -94,6 +94,12 @@ program check_time_avg
     call check_data_3d(cdata_out(:,:,:,1), ti, .false.)
 
     cdata_out = -999_r4_kind
+    print *, "Checking answers for var4_avg - time_level:", string(ti)
+    call read_data(fileobj, "var4_avg", cdata_out(:,:,:,:), unlim_dim_level=ti)
+    call check_data_3d(cdata_out(:,:,:,1), ti, .false.)
+    call check_data_3d(cdata_out(:,:,:,2), ti, .false.)
+
+    cdata_out = -999_r4_kind
     print *, "Checking answers for var3_Z - time_level:", string(ti)
     call read_data(fileobj, "var3_Z", cdata_out(:,:,1:2,1), unlim_dim_level=ti)
     call check_data_3d(cdata_out(:,:,1:2,1), ti, .true., nz_offset=1)
