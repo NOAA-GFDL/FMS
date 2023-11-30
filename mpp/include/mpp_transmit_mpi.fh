@@ -164,11 +164,11 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !> Broadcasts data to a pelist
-    subroutine MPP_BROADCAST_( data, length, from_pe, pelist )
+    subroutine MPP_BROADCAST_( broadcast_data, length, from_pe, pelist )
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: data(*)
+      MPP_TYPE_, intent(inout) :: broadcast_data(*)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
       integer :: n, i, from_rank, stdout_unit
@@ -193,7 +193,7 @@
              exit
          endif
       enddo
-      if( mpp_npes().GT.1 )call MPI_BCAST( data, length, MPI_TYPE_, from_rank, peset(n)%id, error )
+      if( mpp_npes().GT.1 )call MPI_BCAST( broadcast_data, length, MPI_TYPE_, from_rank, peset(n)%id, error )
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_BROADCAST_

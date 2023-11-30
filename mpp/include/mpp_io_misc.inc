@@ -51,7 +51,7 @@
 
     subroutine mpp_io_init( flags, maxunit )
       integer, intent(in), optional :: flags, maxunit
-      integer                       :: io_status, iunit
+      integer                       :: io_status, unit
       integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
       real(r8_kind)             :: doubledata = 0
@@ -175,11 +175,11 @@
       if (errunit > NULLUNIT .AND. errunit < 2*maxunits) mpp_file(errunit)%opened = .TRUE.
 
       if( pe.EQ.mpp_root_pe() )then
-          iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
-          write( iunit,'(/a)' )'MPP_IO module '//trim(version)
+          unit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
+          write( unit,'(/a)' )'MPP_IO module '//trim(version)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
-          write( iunit,'(/a)' )'Using netCDF library version '//trim(text)
+          write( unit,'(/a)' )'Using netCDF library version '//trim(text)
 #endif
       endif
 

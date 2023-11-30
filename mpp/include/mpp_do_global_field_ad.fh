@@ -109,8 +109,8 @@
       else if( size(local,1).EQ.(domain%x(tile)%memory%size+ishift) .AND. size(local, &
              & 2).EQ.(domain%y(tile)%memory%size+jshift) )then
          !local is on data domain
-         ioff = -domain%x(tile)%data%begin + 1
-         joff = -domain%y(tile)%data%begin + 1
+         ioff = -domain%x(tile)%domain_data%begin + 1
+         joff = -domain%y(tile)%domain_data%begin + 1
       else
          call mpp_error( FATAL, &
               & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')

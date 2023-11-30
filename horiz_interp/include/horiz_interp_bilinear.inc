@@ -30,7 +30,7 @@
 
     logical :: src_is_modulo
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m
-    integer :: ie, is, je, js, ln_err, lt_err, warns, unit
+    integer :: ie, is, je, js, ln_err, lt_err, warns, iunit
     real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
     integer,parameter     :: kindl = FMS_HI_KIND_
@@ -143,26 +143,26 @@
        enddo
     enddo
 
-    unit = stdout()
+    iunit = stdout()
 
     if (ln_err .eq. 1 .and. warns > 0) then
-       write (unit,'(/,(1x,a))')                                      &
+       write (iunit,'(/,(1x,a))')                                      &
             '==> Warning: the geographic data set does not extend far   ', &
             '             enough east or west - a cyclic boundary       ', &
             '             condition was applied. check if appropriate   '
-       write (unit,'(/,(1x,a,2f8.4))')                                &
+       write (iunit,'(/,(1x,a,2f8.4))')                                &
             '    data required between longitudes:', gln_min, gln_max,     &
             '      data set is between longitudes:', lon_in(1), lon_in(nlon_in)
        warns = warns - 1
     endif
 
     if (lt_err .eq. 1 .and. warns > 0) then
-       write (unit,'(/,(1x,a))')                                     &
+       write (iunit,'(/,(1x,a))')                                     &
             '==> Warning: the geographic data set does not extend far   ',&
             '             enough north or south - extrapolation from    ',&
             '             the nearest data was applied. this may create ',&
             '             artificial gradients near a geographic pole   '
-       write (unit,'(/,(1x,a,2f8.4))')                             &
+       write (iunit,'(/,(1x,a,2f8.4))')                             &
             '    data required between latitudes:', glt_min, glt_max,   &
             '      data set is between latitudes:', lat_in(1), lat_in(nlat_in)
     endif
@@ -893,7 +893,7 @@
     !-----------------------------------------------------------------------
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m,         &
          is, ie, js, je, iverbose, max_missing, num_missing, &
-         miss_in, miss_out, unit
+         miss_in, miss_out, iunit
     real(FMS_HI_KIND_)    :: dwtsum, wtsum, min_in, max_in, avg_in, &
          min_out, max_out, avg_out, wtw, wte, wts, wtn
     real(FMS_HI_KIND_)    :: mask(size(data_in,1), size(data_in,2) )
@@ -1163,12 +1163,12 @@
        call stats (data_out, min_out, max_out, avg_out, miss_out, missing_value, mask_out)
 
        !---- output statistics ----
-       unit = stdout()
-       write (unit,900)
-       write (unit,901)  min_in ,max_in, avg_in
-       if (present(mask_in))  write (unit,903)  miss_in
-       write (unit,902)  min_out,max_out,avg_out
-       if (present(mask_out)) write (unit,903)  miss_out
+       iunit = stdout()
+       write (iunit,900)
+       write (iunit,901)  min_in ,max_in, avg_in
+       if (present(mask_in))  write (iunit,903)  miss_in
+       write (iunit,902)  min_out,max_out,avg_out
+       if (present(mask_out)) write (iunit,903)  miss_out
 
 900    format (/,1x,10('-'),' output from horiz_interp ',10('-'))
 901    format ('  input:  min=',f16.9,'  max=',f16.9,'  avg=',f22.15)
@@ -1187,40 +1187,40 @@
   !! if "value" is outside the domain of "array" then INDP_ = 1
   !! or "ia" depending on whether array(1) or array(ia) is
   !! closest to "value"
-  function INDP_ (value, array)
+  function INDP_ (rval, array)
     integer                        :: INDP_ !< index of nearest data point within "array"
                                            !! corresponding to "value".
     real(FMS_HI_KIND_), dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
-    real(FMS_HI_KIND_), intent(in)               :: value !< arbitrary data, same units as elements in 'array'
+    real(FMS_HI_KIND_), intent(in)               :: rval !< arbitrary data, same units as elements in 'array'
 
     !=======================================================================
 
-    integer i, ia, unit
+    integer i, ia, iunit
     logical keep_going
     !
     ia = size(array(:))
     do i=2,ia
        if (array(i) .lt. array(i-1)) then
-          unit = stdout()
-          write (unit,*) &
+          iunit = stdout()
+          write (iunit,*) &
                ' => Error: array must be monotonically increasing in "INDP_"' , &
-               '           when searching for nearest element to value=',value
-          write (unit,*) '           array(i) < array(i-1) for i=',i
-          write (unit,*) '           array(i) for i=1..ia follows:'
+               '           when searching for nearest element to value=',rval
+          write (iunit,*) '           array(i) < array(i-1) for i=',i
+          write (iunit,*) '           array(i) for i=1..ia follows:'
           call mpp_error()
        endif
     enddo
-    if (value .lt. array(1) .or. value .gt. array(ia)) then
-       if (value .lt. array(1))  INDP_ = 1
-       if (value .gt. array(ia)) INDP_ = ia
+    if (rval .lt. array(1) .or. rval .gt. array(ia)) then
+       if (rval .lt. array(1))  INDP_ = 1
+       if (rval .gt. array(ia)) INDP_ = ia
     else
        i=1
        keep_going = .true.
        do while (i .le. ia .and. keep_going)
           i = i+1
-          if (value .le. array(i)) then
+          if (rval .le. array(i)) then
              INDP_ = i
-             if (array(i)-value .gt. value-array(i-1)) INDP_ = i-1
+             if (array(i)-rval .gt. rval-array(i-1)) INDP_ = i-1
              keep_going = .false.
           endif
        enddo

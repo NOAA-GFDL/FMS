@@ -1,4 +1,3 @@
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -178,14 +177,10 @@
   !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 3
   !!    ==> lon = 3 4 5 6 7 8  ...  359 360 361 362; istrt = 4
   !!
-  !!        lon = 0 1 2 3 4 5  ...  358 359; lon_strt = 0
-  !!    ==> lon = 0 1 2 3 4 5  ...  358 359; istrt = 0
-
   subroutine TRANLON_(lon, lon_start, istrt)
     real(kind=FMS_AU_KIND_), intent(inout), dimension(:) :: lon
     real(kind=FMS_AU_KIND_), intent(in)                  :: lon_start
     integer, intent(out)                                 :: istrt
-
     integer                 :: len, i
     real(kind=FMS_AU_KIND_) :: lon_strt, tmp(size(lon(:))-1)
 
@@ -223,10 +218,10 @@
   end subroutine TRANLON_
 
 
-  function FRAC_INDEX_(value, array)
+  function FRAC_INDEX_(rval, array)
 
-    integer                               :: ia, i, ii, unit
-    real(kind=FMS_AU_KIND_)               :: value !< arbitrary data...same units as elements in "array"
+    integer                               :: ia, i, ii, iunit
+    real(kind=FMS_AU_KIND_)               :: rval !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_)               :: FRAC_INDEX_
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical                               :: keep_going
@@ -235,29 +230,27 @@
 
     do i = 2, ia
        if (array(i) < array(i-1)) then
-          unit = stdout()
-          write (unit,*) '=> Error: "frac_index" array must be monotonically' &
-          & // 'increasing when searching for nearest value to ', value
-          write (unit,*) '          array(i) < array(i-1) for i=',i
-          write (unit,*) '          array(i) for i=1..ia follows:'
+          iunit = stdout()
+          write (iunit,*) '=> Error: "frac_index" array must be monotonically' &
+          & // 'increasing when searching for nearest value to ', rval
+          write (iunit,*) '          array(i) < array(i-1) for i=',i
+          write (iunit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
-             write (unit,*) 'i=',ii, ' array(i)=',array(ii)
+             write (iunit,*) 'i=',ii, ' array(i)=',array(ii)
           enddo
           call mpp_error(FATAL,' "frac_index" array must be monotonically increasing.')
        endif
     enddo
 
-    if (value < array(1) .or. value > array(ia)) then
- !       if (value < array(1))  frac_index = 1.
- !       if (value > array(ia)) frac_index = float(ia)
+    if (rval < array(1) .or. rval > array(ia)) then
         FRAC_INDEX_ = -1.0_lkind
     else
        i = 1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
-          if (value <= array(i)) then
-             FRAC_INDEX_ = real((i-1), lkind) + (value-array(i-1)) / (array(i) - array(i-1))
+          if (rval <= array(i)) then
+             FRAC_INDEX_ = real((i-1), lkind) + (rval-array(i-1)) / (array(i) - array(i-1))
              keep_going  = .false.
           endif
        enddo
@@ -271,7 +264,7 @@
   !!
   !!     inputs:
   !!
-  !!     value  = arbitrary data...same units as elements in "array"
+  !!     rval   = arbitrary data...same units as elements in "array"
   !!     array  = array of data points  (must be monotonically increasing)
   !!     ia     = dimension of "array"
   !!
@@ -303,12 +296,12 @@
 
 
 
-  function NEAREST_INDEX_(value, array)
+  function NEAREST_INDEX_(rval, array)
 
     integer                               :: NEAREST_INDEX_
     integer                               :: ia !< dimension of "array"
-    integer                               :: i, ii, unit
-    real(kind=FMS_AU_KIND_)               :: value !< arbitrary data...same units as elements in "array"
+    integer                               :: i, ii, iunit
+    real(kind=FMS_AU_KIND_)               :: rval !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical                               :: keep_going
 
@@ -316,29 +309,29 @@
 
     do i = 2, ia
        if (array(i) < array(i-1)) then
-          unit = stdout()
-          write (unit,*) '=> Error: "nearest_index" array must be monotonically increasing' &
-                         & // 'when searching for nearest value to ', value
-          write (unit,*) '          array(i) < array(i-1) for i=',i
-          write (unit,*) '          array(i) for i=1..ia follows:'
+          iunit = stdout()
+          write (iunit,*) '=> Error: "nearest_index" array must be monotonically increasing' &
+                         & // 'when searching for nearest value to ', rval
+          write (iunit,*) '          array(i) < array(i-1) for i=',i
+          write (iunit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
-             write (unit,*) 'i=',ii, ' array(i)=', array(ii)
+             write (iunit,*) 'i=',ii, ' array(i)=', array(ii)
           enddo
           call mpp_error(FATAL,' "nearest_index" array must be monotonically increasing.')
        endif
     enddo
 
-    if (value < array(1) .or. value > array(ia)) then
-       if (value < array(1))  NEAREST_INDEX_ = 1
-       if (value > array(ia)) NEAREST_INDEX_ = ia
+    if (rval < array(1) .or. rval > array(ia)) then
+       if (rval < array(1))  NEAREST_INDEX_ = 1
+       if (rval > array(ia)) NEAREST_INDEX_ = ia
     else
        i = 1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
-          if (value <= array(i)) then
+          if (rval <= array(i)) then
              NEAREST_INDEX_ = i
-             if (array(i)-value > value-array(i-1)) NEAREST_INDEX_ = i-1
+             if (array(i)-rval > rval-array(i-1)) NEAREST_INDEX_ = i-1
              keep_going = .false.
           endif
        enddo
