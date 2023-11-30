@@ -63,8 +63,8 @@
 
     mpp_domain1D_eq = ( a%compute%begin.EQ.b%compute%begin .AND. &
          a%compute%end  .EQ.b%compute%end   .AND. &
-         a%data%begin   .EQ.b%data%begin    .AND. &
-         a%data%end     .EQ.b%data%end      .AND. &
+         a%domain_data%begin   .EQ.b%domain_data%begin    .AND. &
+         a%domain_data%end     .EQ.b%domain_data%end      .AND. &
          a%global%begin .EQ.b%global%begin  .AND. &
          a%global%end   .EQ.b%global%end    )
     !compare pelists
@@ -140,11 +140,11 @@
     integer, intent(out), optional :: begin, end, size, max_size
     logical, intent(out), optional :: is_global
 
-    if( PRESENT(begin)     )begin     = domain%data%begin
-    if( PRESENT(end)       )end       = domain%data%end
-    if( PRESENT(size)      )size      = domain%data%size
-    if( PRESENT(max_size)  )max_size  = domain%data%max_size
-    if( PRESENT(is_global) )is_global = domain%data%is_global
+    if( PRESENT(begin)     )begin     = domain%domain_data%begin
+    if( PRESENT(end)       )end       = domain%domain_data%end
+    if( PRESENT(size)      )size      = domain%domain_data%size
+    if( PRESENT(max_size)  )max_size  = domain%domain_data%max_size
+    if( PRESENT(is_global) )is_global = domain%domain_data%is_global
     return
   end subroutine mpp_get_data_domain1D
 
@@ -320,8 +320,8 @@
         call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%compute)
 
         !< There is no data domain in domain%list
-        !call mpp_set_super_grid_indices(domain%list(i-1)%x(1)%data)
-        !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%data)
+        !call mpp_set_super_grid_indices(domain%list(i-1)%x(1)%domain_data)
+        !call mpp_set_super_grid_indices(domain%list(i-1)%y(1)%domain_data)
     enddo
 
     do i=1, size(domain%x(1)%list)
@@ -370,10 +370,10 @@
     integer, intent(in), optional :: begin, end, size
     logical, intent(in), optional :: is_global
 
-    if(present(begin)) domain%data%begin = begin
-    if(present(end))   domain%data%end   = end
-    if(present(size))  domain%data%size  = size
-    if(present(is_global)) domain%data%is_global = is_global
+    if(present(begin)) domain%domain_data%begin = begin
+    if(present(end))   domain%domain_data%end   = end
+    if(present(size))  domain%domain_data%size  = size
+    if(present(is_global)) domain%domain_data%is_global = is_global
 
   end subroutine mpp_set_data_domain1D
 
@@ -1728,7 +1728,7 @@ end subroutine mpp_get_tile_compute_domains
      integer                       :: ending   !< Ending bounds
 
      domain_out%compute = domain_in%compute
-     domain_out%data    = domain_in%data
+     domain_out%domain_data    = domain_in%domain_data
      domain_out%global  = domain_in%global
      domain_out%memory  = domain_in%memory
      domain_out%cyclic  = domain_in%cyclic

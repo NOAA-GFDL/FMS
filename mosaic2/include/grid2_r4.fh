@@ -1,0 +1,59 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @file
+!> @brief include file for grid2_mod to generate subroutines/functions for r4_kind arguments
+
+!> @addtogroup grid2_mod
+!> @{
+
+#undef  FMS_MOS_KIND_
+#define FMS_MOS_KIND_ r4_kind
+
+#undef  GET_GRID_CELL_AREA_SG_
+#define GET_GRID_CELL_AREA_SG_ get_grid_cell_area_SG_r4
+
+#undef  GET_GRID_COMP_AREA_SG_
+#define GET_GRID_COMP_AREA_SG_ get_grid_comp_area_SG_r4
+
+#undef  GET_GRID_CELL_AREA_UG_
+#define GET_GRID_CELL_AREA_UG_ get_grid_cell_area_UG_r4
+
+#undef  GET_GRID_COMP_AREA_UG_
+#define GET_GRID_COMP_AREA_UG_ get_grid_comp_area_UG_r4
+
+#undef  GET_GRID_CELL_VERTICES_1D_
+#define GET_GRID_CELL_VERTICES_1D_ get_grid_cell_vertices_1D_r4
+
+#undef  GET_GRID_CELL_VERTICES_2D_
+#define GET_GRID_CELL_VERTICES_2D_ get_grid_cell_vertices_2D_r4
+
+#undef  GET_GRID_CELL_VERTICES_UG_
+#define GET_GRID_CELL_VERTICES_UG_ get_grid_cell_vertices_UG_r4
+
+#undef  GET_GRID_CELL_CENTERS_1D_
+#define GET_GRID_CELL_CENTERS_1D_ get_grid_cell_centers_1D_r4
+
+#undef  GET_GRID_CELL_CENTERS_2D_
+#define GET_GRID_CELL_CENTERS_2D_ get_grid_cell_centers_2D_r4
+
+#undef  GET_GRID_CELL_CENTERS_UG_
+#define GET_GRID_CELL_CENTERS_UG_ get_grid_cell_centers_UG_r4
+
+#include "grid2.inc"
+!> @}

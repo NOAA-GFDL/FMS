@@ -801,7 +801,7 @@ contains
 
   character(len=*), intent(out), optional :: err_msg
   character(len=128) :: err_msg_local
-  integer :: unit, ierr, io
+  integer :: iunit, ierr, io
 
 ! return silently if this routine has already been called
   if (module_is_initialized) return
@@ -812,9 +812,9 @@ contains
 
 ! write version number and namelist to log file
   call write_version_number("SAT_VAPOR_PRES_MOD", version)
-  unit = stdlog()
+  iunit = stdlog()
   stdoutunit = stdout()
-  if (mpp_pe() == mpp_root_pe()) write (unit, nml=sat_vapor_pres_nml)
+  if (mpp_pe() == mpp_root_pe()) write (iunit, nml=sat_vapor_pres_nml)
 
   if(do_simple) then
     tcmin = -173
