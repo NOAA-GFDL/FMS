@@ -111,7 +111,7 @@ contains
 
     !> set flux fields
     do i=1, num_bcs
-       coupler_index(i)=aof_set_coupler_flux(name=flux_name(i), &
+       coupler_index(i)=aof_set_coupler_flux(flux_name=flux_name(i), &
                                              flux_type=flux_type(i), &
                                              implementation=impl(i), &
                                              atm_tr_index=atm_tr_index(i), &
@@ -161,9 +161,9 @@ contains
 
     do i=1, num_bcs
        !> check fluxes name
-       call check_answers(flux_name(i), gas_fluxes%FMS_TEST_BC_TYPE_(i)%name, 'gas_fluxes flux name')
-       call check_answers(flux_name(i), gas_fields_atm%FMS_TEST_BC_TYPE_(i)%name, 'gas_fields_atms flux name')
-       call check_answers(flux_name(i), gas_fields_ice%FMS_TEST_BC_TYPE_(i)%name, 'gas_fields_ice flux name')
+       call check_answers(flux_name(i), gas_fluxes%FMS_TEST_BC_TYPE_(i)%field_name, 'gas_fluxes flux name')
+       call check_answers(flux_name(i), gas_fields_atm%FMS_TEST_BC_TYPE_(i)%field_name, 'gas_fields_atms flux name')
+       call check_answers(flux_name(i), gas_fields_ice%FMS_TEST_BC_TYPE_(i)%field_name, 'gas_fields_ice flux name')
 
        !> check implementation
        call check_answers(impl(i), gas_fluxes%FMS_TEST_BC_TYPE_(i)%implementation, 'gas_fluxes impl')
