@@ -132,7 +132,7 @@ subroutine mpp_define_nest_domains(nest_domain, domain, num_nest, nest_level, ti
              "the len_trim of optional argument name ="//trim(name)// &
              " is greater than NAME_LENGTH, change the argument name or increase NAME_LENGTH")
      endif
-     nest_domain%name = name
+     nest_domain%domain_name = name
   endif
 
   extra_halo_local = 0
@@ -601,12 +601,12 @@ end subroutine define_nest_level_type
 
 
 !###############################################################################
-subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, position, name)
+subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, position, domain_name)
   type(nest_level_type),  intent(inout) :: nest_domain
   type(nestSpec),         intent(inout) :: overlap
   integer,                intent(in   ) :: extra_halo
   integer,                intent(in   ) :: position
-  character(len=*),       intent(in   ) :: name
+  character(len=*),       intent(in   ) :: domain_name
 
   type(domain2D), pointer :: domain_fine  =>NULL()
   type(domain2D), pointer :: domain_coarse=>NULL()
@@ -1099,7 +1099,7 @@ subroutine compute_overlap_coarse_to_fine(nest_domain, overlap, extra_halo, posi
      endif
   endif
 
-  if(debug_message_passing) call debug_message_size(overlap, name)
+  if(debug_message_passing) call debug_message_size(overlap, domain_name)
 
 
 end subroutine compute_overlap_coarse_to_fine
@@ -1107,11 +1107,11 @@ end subroutine compute_overlap_coarse_to_fine
 !###############################################################################
 !> This routine will compute the send and recv information between overlapped nesting
 !! region. The data is assumed on T-cell center.
-subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
+subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, domain_name)
   type(nest_level_type),  intent(inout) :: nest_domain
   type(nestSpec),         intent(inout) :: overlap
   integer,                intent(in   ) :: position
-  character(len=*),       intent(in   ) :: name
+  character(len=*),       intent(in   ) :: domain_name
 
   !--- local variables
 
@@ -1343,7 +1343,7 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
 
   endif
 
-  if(debug_message_passing) call debug_message_size(overlap, name)
+  if(debug_message_passing) call debug_message_size(overlap, domain_name)
 
   deallocate(isl_coarse, iel_coarse, jsl_coarse, jel_coarse)
   deallocate(isl_fine, iel_fine, jsl_fine, jel_fine)
@@ -1371,9 +1371,9 @@ function find_index(array, index_data, start_pos)
 
 end function find_index
 
-subroutine  debug_message_size(overlap, name)
+subroutine  debug_message_size(overlap, domain_name)
    type(nestSpec),   intent(in) :: overlap
-   character(len=*), intent(in) :: name
+   character(len=*), intent(in) :: domain_name
    integer, allocatable :: msg1(:), msg2(:), msg3(:), pelist(:)
    integer :: m, n, l, npes, msgsize
    integer :: is, ie, js, je, outunit
@@ -1413,13 +1413,13 @@ subroutine  debug_message_size(overlap, name)
 
       do m = 1, npes
          if(msg1(m) .NE. msg2(m)) then
-            print*, "debug_message_size: My pe = ", mpp_pe(), ",name =", trim(name),", from pe=", &
+            print*, "debug_message_size: My pe = ", mpp_pe(), ",name =", trim(domain_name),", from pe=", &
                  pelist(m), ":send size = ", msg1(m), ", recv size = ", msg2(m)
             call mpp_error(FATAL, "debug_message_size: mismatch on send and recv size")
          endif
       enddo
       write(outunit,*)"NOTE from compute_overlap_fine_to_coarse: "// &
-           "message sizes are matched between send and recv for "//trim(name)
+           "message sizes are matched between send and recv for "//trim(domain_name)
       deallocate(msg1, msg2, msg3, pelist)
 
 end subroutine  debug_message_size
@@ -1554,14 +1554,14 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
     integer,                intent(in)    :: position, nest_level
     type(nestSpec),         pointer       :: search_C2F_nest_overlap
     type(nestSpec),        pointer        :: update_ref
-    character(len=128)                    :: name
+    character(len=128)                    :: domain_name
 
     if(nest_level < 1 .OR. nest_level > nest_domain%num_level) call mpp_error(FATAL, &
       "mpp_define_nest_domains.inc(search_C2F_nest_overlap): nest_level should be between 1 and nest_domain%num_level")
 
     select case(position)
     case (CENTER)
-       name = trim(nest_domain%name)//" T-cell"
+       domain_name = trim(nest_domain%domain_name)//" T-cell"
        update_ref => nest_domain%nest(nest_level)%C2F_T
     case (CORNER)
        update_ref => nest_domain%nest(nest_level)%C2F_C
@@ -1585,7 +1585,7 @@ function search_C2F_nest_overlap(nest_domain, nest_level, extra_halo, position)
           allocate(search_C2F_nest_overlap%next)
           search_C2F_nest_overlap => search_C2F_nest_overlap%next
           call compute_overlap_coarse_to_fine(nest_domain%nest(nest_level), search_C2F_nest_overlap, &
-                                             &  extra_halo, position, name)
+                                             &  extra_halo, position, domain_name)
           exit
        else
           search_C2F_nest_overlap => search_C2F_nest_overlap%next

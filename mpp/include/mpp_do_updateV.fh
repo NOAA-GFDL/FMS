@@ -199,7 +199,7 @@
 !         call mpp_sync_self(check=EVENT_RECV)
          do m = 0, nlist-1
             if(msg1(m) .NE. msg2(m)) then
-               print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%name), ",from pe=", &
+               print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%domain_name), ",from pe=", &
                     domain%list(m)%pe, ":send size = ", msg1(m), ", recv size = ", msg2(m)
                call mpp_error(FATAL, "mpp_do_updateV: mismatch on send and recv size")
             endif
@@ -207,7 +207,7 @@
 
 !         call mpp_sync_self()
          write(outunit,*)"NOTE from mpp_do_updateV: message sizes are matched between send and recv for domain " &
-              //trim(domain%name)
+              //trim(domain%domain_name)
          deallocate(msg1, msg2, msg3)
       endif
 

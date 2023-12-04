@@ -176,10 +176,10 @@ subroutine mpp_exit()
         tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
         tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
         if( pe.EQ.root_pe )write( out_unit,'(a32,i10,4f14.6,f7.3,3i6)' ) &
-             clocks(i)%name, clocks(i)%hits, tmin, tmax, tavg, tstd, tavg/t_total, &
+             clocks(i)%clock_name, clocks(i)%hits, tmin, tmax, tavg, tstd, tavg/t_total, &
              clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
              maxval(peset(clocks(i)%peset_num)%list)
-        if (pe.NE.root_pe) write(out_unit,'(a32,f14.6)') clocks(i)%name, clocks(i)%total_ticks*tick_rate
+        if (pe.NE.root_pe) write(out_unit,'(a32,f14.6)') clocks(i)%clock_name, clocks(i)%total_ticks*tick_rate
      end do
      if( ANY(clocks(1:clock_num)%detailed) .AND. pe.EQ.root_pe )write( out_unit,'(/32x,a)' ) &
           '       tmin       tmax       tavg       tstd       mmin       mmax       mavg       mstd  mavg/tavg'
@@ -205,7 +205,7 @@ subroutine mpp_exit()
               tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
               tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
               if( pe.EQ.root_pe )write( out_unit,'(a32,4f11.3,5es11.3)' ) &
-                   trim(clocks(i)%name)//' '//trim(clocks(i)%events(j)%name), &
+                   trim(clocks(i)%clock_name)//' '//trim(clocks(i)%events(j)%event_name), &
                    tmin, tmax, tavg, tstd, mmin, mmax, mavg, mstd, mavg/tavg
            end if
         end do

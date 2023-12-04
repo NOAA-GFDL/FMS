@@ -469,7 +469,7 @@
 
     if(io_layout(1) * io_layout(2) .LE. 0) then
        call mpp_error(NOTE,  &
-         "mpp_domains_define.inc(mpp_define_io_domain): io domain will not be defined for "//trim(domain%name)// &
+         "mpp_domains_define.inc(mpp_define_io_domain): io domain will not be defined for "//trim(domain%domain_name)//&
          " when one or both entry of io_layout is not positive")
        return
     endif
@@ -481,13 +481,13 @@
        "mpp_domains_define.inc(mpp_define_io_domain): io_domain is already defined")
 
     if(mod(layout(1), io_layout(1)) .NE. 0) call mpp_error(FATAL, &
-       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)// &
+       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%domain_name)// &
                              & " domain layout(1) must be divided by io_layout(1)")
     if(mod(layout(2), io_layout(2)) .NE. 0) call mpp_error(FATAL, &
-       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)// &
+       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%domain_name)// &
                              & " domain layout(2) must be divided by io_layout(2)")
     if(size(domain%x(:)) > 1) call mpp_error(FATAL, &
-       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%name)// &
+       "mpp_domains_define.inc(mpp_define_io_domain): "//trim(domain%domain_name)// &
        ": multiple tile per pe is not supported yet for this routine")
 
     if (associated(domain%io_domain)) deallocate(domain%io_domain) !< Check if associated
@@ -665,12 +665,12 @@
        if(len_trim(name) > NAME_LENGTH) call mpp_error(FATAL,  &
             "mpp_domains_define.inc(mpp_define_domains2D): the len_trim of optional argument name ="//trim(name)// &
             " is greater than NAME_LENGTH, change the argument name or increase NAME_LENGTH")
-       domain%name = name
+       domain%domain_name = name
     endif
     if(size(global_indices(:)) .NE. 4) call mpp_error(FATAL,   &
-       "mpp_define_domains2D: size of global_indices should be 4 for "//trim(domain%name) )
+       "mpp_define_domains2D: size of global_indices should be 4 for "//trim(domain%domain_name) )
     if(size(layout(:)) .NE. 2) call mpp_error(FATAL,"mpp_define_domains2D: size of layout should be 2 for "// &
-       & trim(domain%name) )
+       & trim(domain%domain_name) )
 
     ndivx = layout(1); ndivy = layout(2)
     isg = global_indices(1); ieg = global_indices(2); jsg = global_indices(3); jeg = global_indices(4)
@@ -709,18 +709,20 @@
     if(PRESENT(y_cyclic_offset)) y_offset = y_cyclic_offset
     if(x_offset*y_offset .NE. 0) call mpp_error(FATAL, &
        'MPP_DEFINE_DOMAINS2D: At least one of x_cyclic_offset and y_cyclic_offset must be zero for '// &
-       & trim(domain%name))
+       & trim(domain%domain_name))
 
     !--- x_cyclic_offset and y_cyclic_offset should no larger than the global grid size.
     if(abs(x_offset) > jeg-jsg+1) call mpp_error(FATAL, &
-         'MPP_DEFINE_DOMAINS2D: absolute value of x_cyclic_offset is greater than jeg-jsg+1 for '//trim(domain%name))
+         'MPP_DEFINE_DOMAINS2D: absolute value of x_cyclic_offset is greater than jeg-jsg+1 for '// &
+	 & trim(domain%domain_name))
     if(abs(y_offset) > ieg-isg+1) call mpp_error(FATAL, &
-         'MPP_DEFINE_DOMAINS2D: absolute value of y_cyclic_offset is greater than ieg-isg+1 for '//trim(domain%name))
+         'MPP_DEFINE_DOMAINS2D: absolute value of y_cyclic_offset is greater than ieg-isg+1 for '// &
+	 & trim(domain%domain_name))
 
     !--- when there is more than one tile on one processor, all the tile will limited on this processor
     if( tile > 1 .AND. size(pes(:)) > 1) call mpp_error(FATAL, &
          'MPP_DEFINE_DOMAINS2D: there are more than one tile on this pe, '// &
-         'all the tile should be limited on this pe for '//trim(domain%name))
+         'all the tile should be limited on this pe for '//trim(domain%domain_name))
 
     !--- the position of current pe is changed due to mosaic, because  pes
     !--- is only part of the pelist in mosaic (pesall). We assume the pe
@@ -761,7 +763,7 @@
     if( PRESENT(maskmap) )then
        if( size(maskmap,1).NE.ndivx .OR. size(maskmap,2).NE.ndivy ) &
             call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: maskmap array does not match layout for '// &
-                           & trim(domain%name) )
+                           & trim(domain%domain_name) )
        mask(:,:) = maskmap(:,:)
     end if
     !number of unmask domains in layout must equal number of PEs assigned
@@ -769,13 +771,13 @@
     if( n.NE.size(pes(:)) )then
        write( text,'(i8)' )n
        call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: incorrect number of PEs assigned for ' // &
-            'this layout and maskmap. Use '//text//' PEs for this domain decomposition for '//trim(domain%name) )
+            'this layout and maskmap. Use '//text//' PEs for this domain decomposition for '//trim(domain%domain_name) )
     end if
 
     memory_xsize = 0; memory_ysize = 0
     if(present(memory_size)) then
        if(size(memory_size(:)) .NE. 2) call mpp_error(FATAL,  &
-             "mpp_define_domains2D: size of memory_size should be 2 for "//trim(domain%name))
+             "mpp_define_domains2D: size of memory_size should be 2 for "//trim(domain%domain_name))
        memory_xsize = memory_size(1)
        memory_ysize = memory_size(2)
     end if
@@ -854,7 +856,7 @@
        domain%io_layout = layout
        domain%tile_root_pe  = pes(0)
        if( ipos.EQ.NULL_PE .OR. jpos.EQ.NULL_PE ) &
-            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: pelist must include this PE for '//trim(domain%name) )
+            call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: pelist must include this PE for '//trim(domain%domain_name) )
        if( debug ) then
          errunit = stderr()
          write( errunit, * )'pe, tile, ipos, jpos=', mpp_pe(), tile, ipos, jpos, ' pearray(:,jpos)=', &
@@ -913,7 +915,7 @@
                  'MPP_DEFINE_DOMAINS: the domain could not be crossed when west is folded')
              endif
              if( domain%x(tile)%cyclic )call mpp_error( FATAL, &
-                   'MPP_DEFINE_DOMAINS: an axis cannot be both folded west and cyclic for '//trim(domain%name) )
+                   'MPP_DEFINE_DOMAINS: an axis cannot be both folded west and cyclic for '//trim(domain%domain_name) )
              domain%fold = domain%fold + FOLD_WEST_EDGE
              nfold = nfold+1
           endif
@@ -925,7 +927,7 @@
                  'MPP_DEFINE_DOMAINS: the domain could not be crossed when north is folded')
              endif
              if( domain%x(tile)%cyclic )call mpp_error( FATAL, &
-                  'MPP_DEFINE_DOMAINS: an axis cannot be both folded east and cyclic for '//trim(domain%name) )
+                  'MPP_DEFINE_DOMAINS: an axis cannot be both folded east and cyclic for '//trim(domain%domain_name) )
              domain%fold = domain%fold + FOLD_EAST_EDGE
              nfold = nfold+1
           endif
@@ -939,7 +941,7 @@
                  'MPP_DEFINE_DOMAINS: the domain could not be crossed when south is folded')
              endif
              if( domain%y(tile)%cyclic )call mpp_error( FATAL, &
-                 'MPP_DEFINE_DOMAINS: an axis cannot be both folded north and cyclic for '//trim(domain%name))
+                 'MPP_DEFINE_DOMAINS: an axis cannot be both folded north and cyclic for '//trim(domain%domain_name))
              domain%fold = domain%fold + FOLD_SOUTH_EDGE
              nfold = nfold+1
           endif
@@ -961,47 +963,47 @@
 
 
              if( domain%y(tile)%cyclic )call mpp_error( FATAL, &
-                'MPP_DEFINE_DOMAINS: an axis cannot be both folded south and cyclic for '//trim(domain%name) )
+                'MPP_DEFINE_DOMAINS: an axis cannot be both folded south and cyclic for '//trim(domain%domain_name) )
              domain%fold = domain%fold + FOLD_NORTH_EDGE
              nfold = nfold+1
           endif
        endif
        if(nfold > 1) call mpp_error(FATAL, &
-           'MPP_DEFINE_DOMAINS2D: number of folded edge is greater than 1 for '//trim(domain%name) )
+           'MPP_DEFINE_DOMAINS2D: number of folded edge is greater than 1 for '//trim(domain%domain_name) )
 
        if(nfold == 1) then
            if( x_offset .NE. 0 .OR. y_offset .NE. 0) call mpp_error(FATAL, &
                'MPP_DEFINE_DOMAINS2D: For the foled_north/folded_south/fold_east/folded_west boundary condition,  '//&
-               'x_cyclic_offset and y_cyclic_offset must be zero for '//trim(domain%name))
+               'x_cyclic_offset and y_cyclic_offset must be zero for '//trim(domain%domain_name))
        endif
        if( BTEST(domain%fold,SOUTH) .OR. BTEST(domain%fold,NORTH) )then
           if( domain%y(tile)%cyclic )call mpp_error( FATAL, &
-              'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic for '//trim(domain%name) )
+              'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic for '//trim(domain%domain_name) )
           if( modulo(domain%x(tile)%global%size,2).NE.0 ) &
                call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: number of points in X must be even ' // &
-                  'when there is a fold in Y for '//trim(domain%name) )
+                  'when there is a fold in Y for '//trim(domain%domain_name) )
           !check if folded domain boundaries line up in X: compute domains lining up is a sufficient
           !condition for symmetry
           n = ndivx - 1
           do i = 0,n/2
              if( domain%x(tile)%list(i)%compute%size.NE.domain%x(tile)%list(n-i)%compute%size ) &
                   call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: Folded domain boundaries ' // &
-                                         'must line up (mirror-symmetric extents) for '//trim(domain%name) )
+                                         'must line up (mirror-symmetric extents) for '//trim(domain%domain_name) )
           end do
        end if
        if( BTEST(domain%fold,WEST) .OR. BTEST(domain%fold,EAST) )then
           if( domain%x(tile)%cyclic )call mpp_error( FATAL, &
-             'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic for '//trim(domain%name) )
+             'MPP_DEFINE_DOMAINS: an axis cannot be both folded and cyclic for '//trim(domain%domain_name) )
           if( modulo(domain%y(tile)%global%size,2).NE.0 ) &
                call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: number of points in Y must be even '//&
-                   'when there is a fold in X for '//trim(domain%name) )
+                   'when there is a fold in X for '//trim(domain%domain_name) )
           !check if folded domain boundaries line up in Y: compute domains lining up is a sufficient
           !condition for symmetry
           n = ndivy - 1
           do i = 0,n/2
              if( domain%y(tile)%list(i)%compute%size.NE.domain%y(tile)%list(n-i)%compute%size ) &
                   call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS: Folded domain boundaries must '//&
-                        'line up (mirror-symmetric extents) for '//trim(domain%name) )
+                        'line up (mirror-symmetric extents) for '//trim(domain%domain_name) )
           end do
        end if
 
@@ -1063,10 +1065,10 @@
           call compute_overlaps(domain, NORTH,  domain%update_N, domain%check_N,      0, jshift, x_offset, y_offset, &
                                 domain%whalo, domain%ehalo, domain%shalo, domain%nhalo)
        endif
-       call check_overlap_pe_order(domain, domain%update_T, trim(domain%name)//" update_T in mpp_define_domains")
-       call check_overlap_pe_order(domain, domain%update_C, trim(domain%name)//" update_C in mpp_define_domains")
-       call check_overlap_pe_order(domain, domain%update_E, trim(domain%name)//" update_E in mpp_define_domains")
-       call check_overlap_pe_order(domain, domain%update_N, trim(domain%name)//" update_N in mpp_define_domains")
+       call check_overlap_pe_order(domain, domain%update_T, trim(domain%domain_name)//" update_T in mpp_define_domains")
+       call check_overlap_pe_order(domain, domain%update_C, trim(domain%domain_name)//" update_C in mpp_define_domains")
+       call check_overlap_pe_order(domain, domain%update_E, trim(domain%domain_name)//" update_E in mpp_define_domains")
+       call check_overlap_pe_order(domain, domain%update_N, trim(domain%domain_name)//" update_N in mpp_define_domains")
 
 
        !--- when ncontacts is nonzero, set_check_overlap will be called in mpp_define
@@ -1170,7 +1172,7 @@ subroutine check_message_size(domain, update, send, recv, position)
 
   do m = 0, nlist-1
      if(msg1(m) .NE. msg2(m)) then
-        print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%name), ",at position=",position,",from pe=", &
+        print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%domain_name), ",at position=",position,",from pe=", &
              domain%list(m)%pe, ":send size = ", msg1(m), ", recv size = ", msg2(m)
         call mpp_error(FATAL, "mpp_define_domains2D: mismatch on send and recv size")
      endif
@@ -1528,10 +1530,10 @@ end subroutine check_message_size
           end if
        end do
     end do
-    call check_overlap_pe_order(domain, domain%update_T, trim(domain%name)//" update_T in mpp_define_mosaic")
-    call check_overlap_pe_order(domain, domain%update_C, trim(domain%name)//" update_C in mpp_define_mosaic")
-    call check_overlap_pe_order(domain, domain%update_E, trim(domain%name)//" update_E in mpp_define_mosaic")
-    call check_overlap_pe_order(domain, domain%update_N, trim(domain%name)//" update_N in mpp_define_mosaic")
+    call check_overlap_pe_order(domain, domain%update_T, trim(domain%domain_name)//" update_T in mpp_define_mosaic")
+    call check_overlap_pe_order(domain, domain%update_C, trim(domain%domain_name)//" update_C in mpp_define_mosaic")
+    call check_overlap_pe_order(domain, domain%update_E, trim(domain%domain_name)//" update_E in mpp_define_mosaic")
+    call check_overlap_pe_order(domain, domain%update_N, trim(domain%domain_name)//" update_N in mpp_define_mosaic")
 
     !--- set the overlapping for boundary check if domain is symmetry
     if(debug_update_level .NE. NO_CHECK) then
@@ -1547,9 +1549,9 @@ end subroutine check_message_size
        call set_bound_overlap( domain, CORNER )
        call set_bound_overlap( domain, EAST   )
        call set_bound_overlap( domain, NORTH  )
-       call check_overlap_pe_order(domain, domain%bound_C, trim(domain%name)//" bound_C")
-       call check_overlap_pe_order(domain, domain%bound_E, trim(domain%name)//" bound_E")
-       call check_overlap_pe_order(domain, domain%bound_N, trim(domain%name)//" bound_N")
+       call check_overlap_pe_order(domain, domain%bound_C, trim(domain%domain_name)//" bound_C")
+       call check_overlap_pe_order(domain, domain%bound_E, trim(domain%domain_name)//" bound_E")
+       call check_overlap_pe_order(domain, domain%bound_N, trim(domain%domain_name)//" bound_N")
     end if
 
     !--- check the send and recv size are matching.
@@ -1648,7 +1650,7 @@ end subroutine check_message_size
     folded_north = BTEST(domain%fold,NORTH)
     if( BTEST(domain%fold,SOUTH) .OR. BTEST(domain%fold,EAST) .OR. BTEST(domain%fold,WEST) ) then
        call mpp_error(FATAL,"mpp_domains_define.inc(compute_overlaps): folded south, east or west boundary condition "&
-            &//"is not supported, please use other version of compute_overlaps for "//trim(domain%name))
+            &//"is not supported, please use other version of compute_overlaps for "//trim(domain%domain_name))
     endif
 
     nsend = 0
@@ -3078,16 +3080,16 @@ end subroutine check_message_size
 
     if(.NOT. BTEST(domain%fold,SOUTH)) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_south): "//&
-            "boundary condition in y-direction should be folded-south for "//trim(domain%name))
+            "boundary condition in y-direction should be folded-south for "//trim(domain%domain_name))
     endif
     if(.NOT. domain%x(tMe)%cyclic) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_south): "//&
-            "boundary condition in x-direction should be cyclic for "//trim(domain%name))
+            "boundary condition in x-direction should be cyclic for "//trim(domain%domain_name))
     endif
 
     if(.not. domain%symmetry) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_south): "//&
-            "when south boundary is folded, the domain must be symmetry for "//trim(domain%name))
+            "when south boundary is folded, the domain must be symmetry for "//trim(domain%domain_name))
     endif
 
     nsend = 0
@@ -3718,16 +3720,16 @@ end subroutine check_message_size
 
     if(.NOT. BTEST(domain%fold,WEST)) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_west): "//&
-            "boundary condition in y-direction should be folded-west for "//trim(domain%name))
+            "boundary condition in y-direction should be folded-west for "//trim(domain%domain_name))
     endif
     if(.NOT. domain%y(tMe)%cyclic) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_west): "//&
-            "boundary condition in y-direction should be cyclic for "//trim(domain%name))
+            "boundary condition in y-direction should be cyclic for "//trim(domain%domain_name))
     endif
 
     if(.not. domain%symmetry) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_west): "//&
-            "when west boundary is folded, the domain must be symmetry for "//trim(domain%name))
+            "when west boundary is folded, the domain must be symmetry for "//trim(domain%domain_name))
     endif
 
     nsend = 0
@@ -4340,15 +4342,15 @@ end subroutine check_message_size
 
     if(.NOT. BTEST(domain%fold,EAST)) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_east): "//&
-            "boundary condition in y-direction should be folded-east for "//trim(domain%name))
+            "boundary condition in y-direction should be folded-east for "//trim(domain%domain_name))
     endif
     if(.NOT. domain%y(tMe)%cyclic) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_east): "//&
-            "boundary condition in y-direction should be cyclic for "//trim(domain%name))
+            "boundary condition in y-direction should be cyclic for "//trim(domain%domain_name))
     endif
     if(.not. domain%symmetry) then
        call mpp_error(FATAL, "mpp_domains_define.inc(compute_overlaps_fold_east): "//&
-            "when east boundary is folded, the domain must be symmetry for "//trim(domain%name))
+            "when east boundary is folded, the domain must be symmetry for "//trim(domain%domain_name))
     endif
 
     nsend = 0
@@ -5034,7 +5036,7 @@ end subroutine check_message_size
     do m = 1, nsend_in
        ptrIn  => overlap_in%send(m)
        if(ptrIn%count .LE. 0) call mpp_error(FATAL, "mpp_domains_define.inc(set_overlaps):"// &
-                              " number of overlap for send should be a positive number for"//trim(domain%name) )
+                              " number of overlap for send should be a positive number for"//trim(domain%domain_name) )
        do n = 1, ptrIn%count
           dir = ptrIn%dir(n)
           rotation = ptrIn%rotation(n)
@@ -8142,10 +8144,10 @@ end subroutine expand_check_overlap_list
 
 
 !###############################################################################
-subroutine check_overlap_pe_order(domain, overlap, name)
+subroutine check_overlap_pe_order(domain, overlap, domain_name)
   type(domain2d),    intent(in) :: domain
   type(overlapSpec), intent(in) :: overlap
-  character(len=*),  intent(in) :: name
+  character(len=*),  intent(in) :: domain_name
   integer                       :: m
   integer                       :: pe1, pe2
 
@@ -8160,17 +8162,17 @@ subroutine check_overlap_pe_order(domain, overlap, name)
      pe2 = overlap%send(m)%pe
      !-- when p1 == domain%pe, pe2 could be any value except domain%pe
      if( pe2 == domain%pe ) then
-        print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
+        print*, trim(domain_name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
         call mpp_error(FATAL, &
              "mpp_domains_define.inc(check_overlap_pe_order): send pe2 can not equal to domain%pe")
      else if( (pe1 > domain%pe .AND. pe2 > domain%pe) .OR. (pe1 < domain%pe .AND. pe2 < domain%pe)) then
         if( pe2 < pe1 ) then
-           print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
+           print*, trim(domain_name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
            call mpp_error(FATAL, &
              "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 1")
         endif
      else if ( pe2 > domain%pe .AND. pe1 < domain%pe ) then
-        print*, trim(name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
+        print*, trim(domain_name)//" at pe = ", domain%pe, ": send pe is ", pe1, pe2
         call mpp_error(FATAL, &
              "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for send 2")
      endif
@@ -8182,17 +8184,17 @@ subroutine check_overlap_pe_order(domain, overlap, name)
      pe2 = overlap%recv(m)%pe
      !-- when p1 == domain%pe, pe2 could be any value except domain%pe
      if( pe2 == domain%pe ) then
-        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
+        print*, trim(domain_name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
         call mpp_error(FATAL, &
              "mpp_domains_define.inc(check_overlap_pe_order): recv pe2 can not equal to domain%pe")
      else if( (pe1 > domain%pe .AND. pe2 > domain%pe) .OR. (pe1 < domain%pe .AND. pe2 < domain%pe)) then
         if( pe2 > pe1 ) then
-           print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
+           print*, trim(domain_name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
            call mpp_error(FATAL, &
              "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 1")
         endif
      else if ( pe2 < domain%pe .AND. pe1 > domain%pe ) then
-        print*, trim(name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
+        print*, trim(domain_name)//" at pe = ", domain%pe, ": recv pe is ", pe1, pe2
         call mpp_error(FATAL, &
              "mpp_domains_define.inc(check_overlap_pe_order): pe is not in right order for recv 2")
      endif
