@@ -393,9 +393,9 @@ end subroutine diag_integral_init
 !! @param [in] <name> Name of the field to be integrated
 !! @param [in] <format> Output format of the field to be integrated
 !!
-subroutine diag_integral_field_init (name, format)
+subroutine diag_integral_field_init (fieldname, format)
 
-character(len=*), intent(in) :: name !< Name of the field to be integrated
+character(len=*), intent(in) :: fieldname !< Name of the field to be integrated
 character(len=*), intent(in) :: format !< Output format of the field to be integrated
 
 !-------------------------------------------------------------------------------
@@ -411,7 +411,7 @@ character(len=*), intent(in) :: format !< Output format of the field to be integ
 !-------------------------------------------------------------------------------
 !    make sure the integral name is not too long.
 !-------------------------------------------------------------------------------
-      if (len(name) > max_len_name )  then
+      if (len(fieldname) > max_len_name )  then
         call error_mesg ('diag_integral_mod',  &
                 ' integral name too long', FATAL)
       endif
@@ -420,7 +420,7 @@ character(len=*), intent(in) :: format !< Output format of the field to be integ
 !    check to be sure the integral name has not already been
 !    initialized.
 !-------------------------------------------------------------------------------
-      field = get_field_index (name)
+      field = get_field_index (fieldname)
       if (field /= 0)   then
         call error_mesg ('diag_integral_mod', &
                              'integral name already exists', FATAL)
@@ -441,7 +441,7 @@ character(len=*), intent(in) :: format !< Output format of the field to be integ
 !    initialize its value and the number of grid points that have been
 !    counted to zero.
 !-------------------------------------------------------------------------------
-      field_name   (num_field) = name
+      field_name   (num_field) = fieldname
       field_format (num_field) = format
       field_sum    (num_field) = 0.0_r8_kind
       field_count  (num_field) = 0
@@ -639,9 +639,9 @@ end function set_axis_time
 !! @param [in] <name> Name associated with an integral
 !! @param [out] <index>
 !!
-function get_field_index (name) result (index)
+function get_field_index (fieldname) result (index)
 
-character(len=*),  intent(in) :: name !< Name associated with an integral
+character(len=*),  intent(in) :: fieldname !< Name associated with an integral
 integer                       :: index
 
 !-------------------------------------------------------------------------------
@@ -650,7 +650,7 @@ integer                       :: index
       integer :: nc
       integer :: i
 
-      nc = len_trim (name)
+      nc = len_trim (fieldname)
       if (nc > max_len_name)  then
         call error_mesg ('diag_integral_mod',  &
                                         'name too long', FATAL)
@@ -663,7 +663,7 @@ integer                       :: index
 !-------------------------------------------------------------------------------
       index = 0
       do i = 1, num_field
-        if (name(1:nc) ==     &
+        if (fieldname(1:nc) ==     &
                        field_name(i) (1:len_trim(field_name(i))) ) then
           index = i
           exit
