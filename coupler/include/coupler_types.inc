@@ -57,7 +57,7 @@
           & call mpp_error(FATAL, "CT_rescale_data_2d: bc_index is present and exceeds var%num_bcs.")
       if (present(field_index)) then ; if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
           & call mpp_error(FATAL, "CT_rescale_data_2d: field_index is present and exceeds num_fields for" //&
-          & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
+          & trim(var%FMS_CP_BC_TYPE_(bc_index)%field_name) )
       endif
     elseif (present(field_index)) then
       call mpp_error(FATAL, "CT_rescale_data_2d: bc_index must be present if field_index is present.")
@@ -148,7 +148,7 @@
           & call mpp_error(FATAL, "CT_rescale_data_2d: bc_index is present and exceeds var%num_bcs.")
       if (present(field_index)) then ; if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
           & call mpp_error(FATAL, "CT_rescale_data_2d: field_index is present and exceeds num_fields for" //&
-          & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
+          & trim(var%FMS_CP_BC_TYPE_(bc_index)%field_name) )
       endif
     elseif (present(field_index)) then
       call mpp_error(FATAL, "CT_rescale_data_2d: bc_index must be present if field_index is present.")
@@ -221,7 +221,7 @@
   !! normalized weight array must match the array sizes of the coupler_3d_bc_type.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
+  !! @throw FATAL, "field_index is present and exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%field_name"
   !! @throw FATAL, "bc_index must be present if field_index is present."
   !! @throw FATAL, "There is an i-direction computational domain size mismatch."
   !! @throw FATAL, "There is an j-direction computational domain size mismatch."
@@ -270,7 +270,7 @@
           & call mpp_error(FATAL, "CT_increment_data_2d_3d: bc_index is present and exceeds var_in%num_bcs.")
       if (present(field_index)) then ; if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
           & call mpp_error(FATAL, "CT_increment_data_2d_3d: field_index is present and exceeds num_fields for" //&
-          & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
+          & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%field_name) )
       endif
     elseif (present(field_index)) then
       call mpp_error(FATAL, "CT_increment_data_2d_3d: bc_index must be present if field_index is present.")
@@ -365,7 +365,7 @@
   !! Extract a single 2-d field from a coupler_2d_bc_type into a two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%field_name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -422,7 +422,7 @@
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
     if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
+        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%field_name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -502,7 +502,7 @@
   !! Extract a single k-level of a 3-d field from a coupler_3d_bc_type into a two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%field_name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -560,7 +560,7 @@
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
     if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
+        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%field_name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -646,7 +646,7 @@
   !! Extract a single 3-d field from a coupler_3d_bc_type into a three-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%field_name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -704,7 +704,7 @@
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var_in%num_bcs.")
     if (field_index > var_in%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%name) )
+        & trim(var_in%FMS_CP_BC_TYPE_(bc_index)%field_name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -794,7 +794,7 @@
   !! Set a single 2-d field in a coupler_3d_bc_type from a two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%field_name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -847,7 +847,7 @@
         call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var%num_bcs.")
     if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
+        & trim(var%FMS_CP_BC_TYPE_(bc_index)%field_name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -928,7 +928,7 @@
   !! two-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%field_name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -984,7 +984,7 @@
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var%num_bcs.")
     if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
+        & trim(var%FMS_CP_BC_TYPE_(bc_index)%field_name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then
@@ -1070,7 +1070,7 @@
   !! This subroutine sets a single 3-d field in a coupler_3d_bc_type from a three-dimensional array.
   !!
   !! @throw FATAL, "bc_index is present and exceeds var_in%num_bcs."
-  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%name"
+  !! @throw FATAL, "field_index exceeds num_fields for var_in%FMS_CP_BC_TYPE_(bc_incdx)%field_name"
   !! @throw FATAL, "Excessive i-direction halo size for the input structure."
   !! @throw FATAL, "Excessive j-direction halo size for the input structure."
   !! @throw FATAL, "Disordered i-dimension index bound list"
@@ -1125,7 +1125,7 @@
         & call mpp_error(FATAL, trim(error_header)//" bc_index exceeds var%num_bcs.")
     if (field_index > var%FMS_CP_BC_TYPE_(bc_index)%num_fields)&
         & call mpp_error(FATAL, trim(error_header)//" field_index exceeds num_fields for" //&
-        & trim(var%FMS_CP_BC_TYPE_(bc_index)%name) )
+        & trim(var%FMS_CP_BC_TYPE_(bc_index)%field_name) )
 
     ! Do error checking on the i-dimension and determine the array offsets.
     if (present(idim)) then

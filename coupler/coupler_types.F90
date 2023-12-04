@@ -78,7 +78,7 @@ module coupler_types_mod
   !> Coupler data for 3D values
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real8_values_type
-    character(len=48)       :: name = ' '  !< The diagnostic name for this array
+    character(len=48)       :: diag_name = ' '  !< The diagnostic name for this array
     logical                 :: mean = .true. !< mean
     logical                 :: override = .false. !< override
     integer                 :: id_diag = 0 !< The diagnostic id for this array
@@ -96,7 +96,7 @@ module coupler_types_mod
   !> Coupler data for 3D fields
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real8_field_type
-    character(len=48)                 :: name = ' ' !< name
+    character(len=48)                 :: field_name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
     type(coupler_3d_real8_values_type), pointer, dimension(:) :: field => NULL() !< field
     character(len=128)                :: flux_type = ' ' !< flux_type
@@ -121,7 +121,7 @@ module coupler_types_mod
   !> Coupler data for 3D values
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real4_values_type
-    character(len=48)       :: name = ' '  !< The diagnostic name for this array
+    character(len=48)       :: diag_name = ' '  !< The diagnostic name for this array
     logical                 :: mean = .true. !< mean
     logical                 :: override = .false. !< override
     integer                 :: id_diag = 0 !< The diagnostic id for this array
@@ -139,7 +139,7 @@ module coupler_types_mod
   !> Coupler data for 3D fields
   !> @ingroup coupler_types_mod
   type, public :: coupler_3d_real4_field_type
-    character(len=48)                 :: name = ' ' !< name
+    character(len=48)                 :: field_name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
     type(coupler_3d_real4_values_type), pointer, dimension(:) :: field => NULL() !< field
     character(len=128)                :: flux_type = ' ' !< flux_type
@@ -181,7 +181,7 @@ module coupler_types_mod
   !> Coupler data for 2D values
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real8_values_type
-    character(len=48)       :: name = ' '  !< The diagnostic name for this array
+    character(len=48)       :: diag_name = ' '  !< The diagnostic name for this array
     real(r8_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
@@ -199,7 +199,7 @@ module coupler_types_mod
   !> Coupler data for 2D fields
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real8_field_type
-    character(len=48)                 :: name = ' ' !< name
+    character(len=48)                 :: field_name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
     type(coupler_2d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)                :: flux_type = ' ' !< flux_type
@@ -224,7 +224,7 @@ module coupler_types_mod
   !> Coupler data for 2D values
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real4_values_type
-    character(len=44)       :: name = ' '  !< The diagnostic name for this array
+    character(len=44)       :: diag_name = ' '  !< The diagnostic name for this array
     real(r4_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
@@ -242,7 +242,7 @@ module coupler_types_mod
   !> Coupler data for 2D fields
   !> @ingroup coupler_types_mod
   type, public    :: coupler_2d_real4_field_type
-    character(len=44)                 :: name = ' ' !< name
+    character(len=44)                 :: field_name = ' ' !< name
     integer                           :: num_fields = 0 !< num_fields
     type(coupler_2d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=124)                :: flux_type = ' ' !< flux_type
@@ -283,7 +283,7 @@ module coupler_types_mod
   !> Coupler data for 1D values
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real8_values_type
-    character(len=48)           :: name = ' '  !< The diagnostic name for this array
+    character(len=48)           :: diag_name = ' '  !< The diagnostic name for this array
     real(r8_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
     logical                     :: mean = .true. !< mean
     logical                     :: override = .false. !< override
@@ -298,7 +298,7 @@ module coupler_types_mod
   !> Coupler data for 1D fields
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real8_field_type
-    character(len=48)              :: name = ' ' !< name
+    character(len=48)              :: field_name = ' ' !< name
     integer                        :: num_fields = 0 !< num_fields
     type(coupler_1d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)             :: flux_type = ' ' !< flux_type
@@ -324,7 +324,7 @@ module coupler_types_mod
   !> Coupler data for 1D values
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real4_values_type
-    character(len=48)           :: name = ' '  !< The diagnostic name for this array
+    character(len=48)           :: diag_name = ' '  !< The diagnostic name for this array
     real(r4_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
     logical                     :: mean = .true. !< mean
     logical                     :: override = .false. !< override
@@ -339,7 +339,7 @@ module coupler_types_mod
   !> Coupler data for 1D fields
   !> @ingroup coupler_types_mod
   type, public    :: coupler_1d_real4_field_type
-    character(len=48)              :: name = ' ' !< name
+    character(len=48)              :: field_name = ' ' !< name
     integer                        :: num_fields = 0 !< num_fields
     type(coupler_1d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
     character(len=128)             :: flux_type = ' ' !< flux_type
@@ -808,7 +808,7 @@ contains
         endif
         allocate ( var%bc(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc(n)%name = var_in%bc(n)%name
+          var%bc(n)%field_name = var_in%bc(n)%field_name
           var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
           var%bc(n)%flux_type = var_in%bc(n)%flux_type
           var%bc(n)%implementation = var_in%bc(n)%implementation
@@ -826,9 +826,9 @@ contains
           allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
           do m = 1, var%bc(n)%num_fields
             if (present(suffix)) then
-              var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+              var%bc(n)%field(m)%diag_name = trim(var_in%bc(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+              var%bc(n)%field(m)%diag_name = var_in%bc(n)%field(m)%diag_name
             endif
             var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
             var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
@@ -850,7 +850,7 @@ contains
         endif
         allocate ( var%bc_r4(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc_r4(n)%name = var_in%bc_r4(n)%name
+          var%bc_r4(n)%field_name = var_in%bc_r4(n)%field_name
           var%bc_r4(n)%atm_tr_index = var_in%bc_r4(n)%atm_tr_index
           var%bc_r4(n)%flux_type = var_in%bc_r4(n)%flux_type
           var%bc_r4(n)%implementation = var_in%bc_r4(n)%implementation
@@ -868,9 +868,9 @@ contains
           allocate ( var%bc_r4(n)%field(var%bc_r4(n)%num_fields) )
           do m = 1, var%bc_r4(n)%num_fields
             if (present(suffix)) then
-              var%bc_r4(n)%field(m)%name = trim(var_in%bc_r4(n)%field(m)%name) // trim(suffix)
+              var%bc_r4(n)%field(m)%diag_name = trim(var_in%bc_r4(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc_r4(n)%field(m)%name = var_in%bc_r4(n)%field(m)%name
+              var%bc_r4(n)%field(m)%diag_name = var_in%bc_r4(n)%field(m)%diag_name
             endif
             var%bc_r4(n)%field(m)%long_name = var_in%bc_r4(n)%field(m)%long_name
             var%bc_r4(n)%field(m)%units = var_in%bc_r4(n)%field(m)%units
@@ -971,7 +971,7 @@ contains
         endif
         allocate ( var%bc(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc(n)%name = var_in%bc(n)%name
+          var%bc(n)%field_name = var_in%bc(n)%field_name
           var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
           var%bc(n)%flux_type = var_in%bc(n)%flux_type
           var%bc(n)%implementation = var_in%bc(n)%implementation
@@ -989,9 +989,9 @@ contains
           allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
           do m = 1, var%bc(n)%num_fields
             if (present(suffix)) then
-              var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+              var%bc(n)%field(m)%diag_name = trim(var_in%bc(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+              var%bc(n)%field(m)%diag_name = var_in%bc(n)%field(m)%diag_name
             endif
             var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
             var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
@@ -1012,7 +1012,7 @@ contains
         endif
         allocate ( var%bc_r4(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc_r4(n)%name = var_in%bc_r4(n)%name
+          var%bc_r4(n)%field_name = var_in%bc_r4(n)%field_name
           var%bc_r4(n)%atm_tr_index = var_in%bc_r4(n)%atm_tr_index
           var%bc_r4(n)%flux_type = var_in%bc_r4(n)%flux_type
           var%bc_r4(n)%implementation = var_in%bc_r4(n)%implementation
@@ -1030,9 +1030,9 @@ contains
           allocate ( var%bc_r4(n)%field(var%bc_r4(n)%num_fields) )
           do m = 1, var%bc_r4(n)%num_fields
             if (present(suffix)) then
-              var%bc_r4(n)%field(m)%name = trim(var_in%bc_r4(n)%field(m)%name) // trim(suffix)
+              var%bc_r4(n)%field(m)%diag_name = trim(var_in%bc_r4(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc_r4(n)%field(m)%name = var_in%bc_r4(n)%field(m)%name
+              var%bc_r4(n)%field(m)%diag_name = var_in%bc_r4(n)%field(m)%diag_name
             endif
             var%bc_r4(n)%field(m)%long_name = var_in%bc_r4(n)%field(m)%long_name
             var%bc_r4(n)%field(m)%units = var_in%bc_r4(n)%field(m)%units
@@ -1125,7 +1125,7 @@ contains
         endif
         allocate ( var%bc(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc(n)%name = var_in%bc(n)%name
+          var%bc(n)%field_name = var_in%bc(n)%field_name
           var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
           var%bc(n)%flux_type = var_in%bc(n)%flux_type
           var%bc(n)%implementation = var_in%bc(n)%implementation
@@ -1143,9 +1143,9 @@ contains
           allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
           do m = 1, var%bc(n)%num_fields
             if (present(suffix)) then
-              var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+              var%bc(n)%field(m)%diag_name = trim(var_in%bc(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+              var%bc(n)%field(m)%diag_name = var_in%bc(n)%field(m)%diag_name
             endif
             var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
             var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
@@ -1166,7 +1166,7 @@ contains
         endif
         allocate ( var%bc_r4(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc_r4(n)%name = var_in%bc_r4(n)%name
+          var%bc_r4(n)%field_name = var_in%bc_r4(n)%field_name
           var%bc_r4(n)%atm_tr_index = var_in%bc_r4(n)%atm_tr_index
           var%bc_r4(n)%flux_type = var_in%bc_r4(n)%flux_type
           var%bc_r4(n)%implementation = var_in%bc_r4(n)%implementation
@@ -1184,9 +1184,9 @@ contains
           allocate ( var%bc_r4(n)%field(var%bc_r4(n)%num_fields) )
           do m = 1, var%bc_r4(n)%num_fields
             if (present(suffix)) then
-              var%bc_r4(n)%field(m)%name = trim(var_in%bc_r4(n)%field(m)%name) // trim(suffix)
+              var%bc_r4(n)%field(m)%diag_name = trim(var_in%bc_r4(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc_r4(n)%field(m)%name = var_in%bc_r4(n)%field(m)%name
+              var%bc_r4(n)%field(m)%diag_name = var_in%bc_r4(n)%field(m)%diag_name
             endif
             var%bc_r4(n)%field(m)%long_name = var_in%bc_r4(n)%field(m)%long_name
             var%bc_r4(n)%field(m)%units = var_in%bc_r4(n)%field(m)%units
@@ -1287,7 +1287,7 @@ contains
         endif
         allocate ( var%bc(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc(n)%name = var_in%bc(n)%name
+          var%bc(n)%field_name = var_in%bc(n)%field_name
           var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
           var%bc(n)%flux_type = var_in%bc(n)%flux_type
           var%bc(n)%implementation = var_in%bc(n)%implementation
@@ -1305,9 +1305,9 @@ contains
           allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
           do m = 1, var%bc(n)%num_fields
             if (present(suffix)) then
-              var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+              var%bc(n)%field(m)%diag_name = trim(var_in%bc(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+              var%bc(n)%field(m)%diag_name = var_in%bc(n)%field(m)%diag_name
             endif
             var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
             var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
@@ -1328,7 +1328,7 @@ contains
         endif
         allocate ( var%bc_r4(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc_r4(n)%name = var_in%bc_r4(n)%name
+          var%bc_r4(n)%field_name = var_in%bc_r4(n)%field_name
           var%bc_r4(n)%atm_tr_index = var_in%bc_r4(n)%atm_tr_index
           var%bc_r4(n)%flux_type = var_in%bc_r4(n)%flux_type
           var%bc_r4(n)%implementation = var_in%bc_r4(n)%implementation
@@ -1346,9 +1346,9 @@ contains
           allocate ( var%bc_r4(n)%field(var%bc_r4(n)%num_fields) )
           do m = 1, var%bc_r4(n)%num_fields
             if (present(suffix)) then
-              var%bc_r4(n)%field(m)%name = trim(var_in%bc_r4(n)%field(m)%name) // trim(suffix)
+              var%bc_r4(n)%field(m)%diag_name = trim(var_in%bc_r4(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc_r4(n)%field(m)%name = var_in%bc_r4(n)%field(m)%name
+              var%bc_r4(n)%field(m)%diag_name = var_in%bc_r4(n)%field(m)%diag_name
             endif
             var%bc_r4(n)%field(m)%long_name = var_in%bc_r4(n)%field(m)%long_name
             var%bc_r4(n)%field(m)%units = var_in%bc_r4(n)%field(m)%units
@@ -1441,7 +1441,7 @@ contains
         endif
         allocate ( var%bc(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc(n)%name = var_in%bc(n)%name
+          var%bc(n)%field_name = var_in%bc(n)%field_name
           var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
           var%bc(n)%flux_type = var_in%bc(n)%flux_type
           var%bc(n)%implementation = var_in%bc(n)%implementation
@@ -1459,9 +1459,9 @@ contains
           allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
           do m = 1, var%bc(n)%num_fields
             if (present(suffix)) then
-              var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+              var%bc(n)%field(m)%diag_name = trim(var_in%bc(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+              var%bc(n)%field(m)%diag_name = var_in%bc(n)%field(m)%diag_name
             endif
             var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
             var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
@@ -1483,7 +1483,7 @@ contains
         endif
         allocate ( var%bc_r4(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc_r4(n)%name = var_in%bc_r4(n)%name
+          var%bc_r4(n)%field_name = var_in%bc_r4(n)%field_name
           var%bc_r4(n)%atm_tr_index = var_in%bc_r4(n)%atm_tr_index
           var%bc_r4(n)%flux_type = var_in%bc_r4(n)%flux_type
           var%bc_r4(n)%implementation = var_in%bc_r4(n)%implementation
@@ -1501,9 +1501,9 @@ contains
           allocate ( var%bc_r4(n)%field(var%bc_r4(n)%num_fields) )
           do m = 1, var%bc_r4(n)%num_fields
             if (present(suffix)) then
-              var%bc_r4(n)%field(m)%name = trim(var_in%bc_r4(n)%field(m)%name) // trim(suffix)
+              var%bc_r4(n)%field(m)%diag_name = trim(var_in%bc_r4(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc_r4(n)%field(m)%name = var_in%bc_r4(n)%field(m)%name
+              var%bc_r4(n)%field(m)%diag_name = var_in%bc_r4(n)%field(m)%diag_name
             endif
             var%bc_r4(n)%field(m)%long_name = var_in%bc_r4(n)%field(m)%long_name
             var%bc_r4(n)%field(m)%units = var_in%bc_r4(n)%field(m)%units
@@ -1603,7 +1603,7 @@ contains
         endif
         allocate ( var%bc(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc(n)%name = var_in%bc(n)%name
+          var%bc(n)%field_name = var_in%bc(n)%field_name
           var%bc(n)%atm_tr_index = var_in%bc(n)%atm_tr_index
           var%bc(n)%flux_type = var_in%bc(n)%flux_type
           var%bc(n)%implementation = var_in%bc(n)%implementation
@@ -1621,9 +1621,9 @@ contains
           allocate ( var%bc(n)%field(var%bc(n)%num_fields) )
           do m = 1, var%bc(n)%num_fields
             if (present(suffix)) then
-              var%bc(n)%field(m)%name = trim(var_in%bc(n)%field(m)%name) // trim(suffix)
+              var%bc(n)%field(m)%diag_name = trim(var_in%bc(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc(n)%field(m)%name = var_in%bc(n)%field(m)%name
+              var%bc(n)%field(m)%diag_name = var_in%bc(n)%field(m)%diag_name
             endif
             var%bc(n)%field(m)%long_name = var_in%bc(n)%field(m)%long_name
             var%bc(n)%field(m)%units = var_in%bc(n)%field(m)%units
@@ -1645,7 +1645,7 @@ contains
         endif
         allocate ( var%bc_r4(var%num_bcs) )
         do n = 1, var%num_bcs
-          var%bc_r4(n)%name = var_in%bc_r4(n)%name
+          var%bc_r4(n)%field_name = var_in%bc_r4(n)%field_name
           var%bc_r4(n)%atm_tr_index = var_in%bc_r4(n)%atm_tr_index
           var%bc_r4(n)%flux_type = var_in%bc_r4(n)%flux_type
           var%bc_r4(n)%implementation = var_in%bc_r4(n)%implementation
@@ -1663,9 +1663,9 @@ contains
           allocate ( var%bc_r4(n)%field(var%bc_r4(n)%num_fields) )
           do m = 1, var%bc_r4(n)%num_fields
             if (present(suffix)) then
-              var%bc_r4(n)%field(m)%name = trim(var_in%bc_r4(n)%field(m)%name) // trim(suffix)
+              var%bc_r4(n)%field(m)%diag_name = trim(var_in%bc_r4(n)%field(m)%diag_name) // trim(suffix)
             else
-              var%bc_r4(n)%field(m)%name = var_in%bc_r4(n)%field(m)%name
+              var%bc_r4(n)%field(m)%diag_name = var_in%bc_r4(n)%field(m)%diag_name
             endif
             var%bc_r4(n)%field(m)%long_name = var_in%bc_r4(n)%field(m)%long_name
             var%bc_r4(n)%field(m)%units = var_in%bc_r4(n)%field(m)%units
@@ -1726,11 +1726,11 @@ contains
         if( associated(var_in%bc)) then
           if (field_index > var_in%bc(bc_index)%num_fields)&
             & call mpp_error(FATAL, "CT_copy_data_2d: field_index is present and exceeds num_fields for" //&
-            & trim(var_in%bc(bc_index)%name) )
+            & trim(var_in%bc(bc_index)%field_name) )
         else
           if (field_index > var_in%bc_r4(bc_index)%num_fields)&
             & call mpp_error(FATAL, "CT_copy_data_2d: field_index is present and exceeds num_fields for" //&
-            & trim(var_in%bc_r4(bc_index)%name) )
+            & trim(var_in%bc_r4(bc_index)%field_name) )
         endif
       endif
     elseif (present(field_index)) then
@@ -1872,11 +1872,11 @@ contains
         if( associated(var_in%bc)) then
           if (field_index > var_in%bc(bc_index)%num_fields)&
             & call mpp_error(FATAL, "CT_copy_data_3d: field_index is present and exceeds num_fields for" //&
-            & trim(var_in%bc(bc_index)%name) )
+            & trim(var_in%bc(bc_index)%field_name) )
         else
           if (field_index > var_in%bc_r4(bc_index)%num_fields)&
             & call mpp_error(FATAL, "CT_copy_data_3d: field_index is present and exceeds num_fields for" //&
-            & trim(var_in%bc_r4(bc_index)%name) )
+            & trim(var_in%bc_r4(bc_index)%field_name) )
         endif
       endif
     elseif (present(field_index)) then
@@ -2028,7 +2028,7 @@ contains
           & call mpp_error(FATAL, "CT_copy_data_2d_3d: bc_index is present and exceeds var_in%num_bcs.")
       if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields)&
           & call mpp_error(FATAL, "CT_copy_data_2d_3d: field_index is present and exceeds num_fields for" //&
-          & trim(var_in%bc(bc_index)%name) )
+          & trim(var_in%bc(bc_index)%field_name) )
       endif
     elseif (present(field_index)) then
       call mpp_error(FATAL, "CT_copy_data_2d_3d: bc_index must be present if field_index is present.")
@@ -2556,11 +2556,11 @@ contains
         if( associated(var_in%bc)) then
           if (field_index > var_in%bc(bc_index)%num_fields)&
               & call mpp_error(FATAL, "CT_increment_data_2d_2d: field_index is present and exceeds num_fields for" //&
-              & trim(var_in%bc(bc_index)%name) )
+              & trim(var_in%bc(bc_index)%field_name) )
         else
           if (field_index > var_in%bc_r4(bc_index)%num_fields)&
               & call mpp_error(FATAL, "CT_increment_data_2d_2d: field_index is present and exceeds num_fields for" //&
-              & trim(var_in%bc_r4(bc_index)%name) )
+              & trim(var_in%bc_r4(bc_index)%field_name) )
         endif
       endif
     elseif (present(field_index)) then
@@ -2714,12 +2714,12 @@ contains
       if(associated(var_in%bc)) then
         if (present(field_index)) then ; if (field_index > var_in%bc(bc_index)%num_fields)&
             & call mpp_error(FATAL, "CT_increment_data_3d_3d: field_index is present and exceeds num_fields for" //&
-            & trim(var_in%bc(bc_index)%name) )
+            & trim(var_in%bc(bc_index)%field_name) )
         endif
       else if(associated(var_in%bc_r4)) then
         if (present(field_index)) then ; if (field_index > var_in%bc_r4(bc_index)%num_fields)&
             & call mpp_error(FATAL, "CT_increment_data_3d_3d: field_index is present and exceeds num_fields for" //&
-            & trim(var_in%bc_r4(bc_index)%name) )
+            & trim(var_in%bc_r4(bc_index)%field_name) )
         endif
       endif
     elseif (present(field_index)) then
@@ -2868,7 +2868,7 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           var%bc(n)%field(m)%id_diag = register_diag_field(diag_name,&
-              & var%bc(n)%field(m)%name, axes(1:2), Time,&
+              & var%bc(n)%field(m)%diag_name, axes(1:2), Time,&
               & var%bc(n)%field(m)%long_name, var%bc(n)%field(m)%units)
         enddo
       enddo
@@ -2876,7 +2876,7 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           var%bc_r4(n)%field(m)%id_diag = register_diag_field(diag_name,&
-              & var%bc_r4(n)%field(m)%name, axes(1:2), Time,&
+              & var%bc_r4(n)%field(m)%diag_name, axes(1:2), Time,&
               & var%bc_r4(n)%field(m)%long_name, var%bc_r4(n)%field(m)%units)
         enddo
       enddo
@@ -2924,7 +2924,7 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           var%bc(n)%field(m)%id_diag = register_diag_field(diag_name,&
-              & var%bc(n)%field(m)%name, axes(1:3), Time,&
+              & var%bc(n)%field(m)%diag_name, axes(1:3), Time,&
               & var%bc(n)%field(m)%long_name, var%bc(n)%field(m)%units )
         enddo
       enddo
@@ -2932,7 +2932,7 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           var%bc_r4(n)%field(m)%id_diag = register_diag_field(diag_name,&
-              & var%bc_r4(n)%field(m)%name, axes(1:3), Time,&
+              & var%bc_r4(n)%field(m)%diag_name, axes(1:3), Time,&
               & var%bc_r4(n)%field(m)%long_name, var%bc_r4(n)%field(m)%units )
         enddo
       enddo
@@ -3122,11 +3122,11 @@ contains
 
         do m = 1, var%bc(n)%num_fields
           if (file_is_open(f)) then
-              if( to_read .and. variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
+              if( to_read .and. variable_exists(bc_rest_files(f), var%bc(n)%field(m)%diag_name)) then
                   !< If reading get the dimension names from the file
-                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%diag_name)))
                   call get_variable_dimension_names(bc_rest_files(f), &
-                  & var%bc(n)%field(m)%name, dim_names)
+                  & var%bc(n)%field(m)%diag_name, dim_names)
               else
                   !< If writing use dummy dimension names
                   allocate(dim_names(3))
@@ -3136,7 +3136,7 @@ contains
               endif !< to_read
 
               call register_restart_field(bc_rest_files(f),&
-              & var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, dim_names, &
+              & var%bc(n)%field(m)%diag_name, var%bc(n)%field(m)%values, dim_names, &
               & is_optional=var%bc(n)%field(m)%may_init )
 
               deallocate(dim_names)
@@ -3185,11 +3185,11 @@ contains
 
         do m = 1, var%bc_r4(n)%num_fields
           if (file_is_open(f)) then
-              if( to_read .and. variable_exists(bc_rest_files(f), var%bc_r4(n)%field(m)%name)) then
+              if( to_read .and. variable_exists(bc_rest_files(f), var%bc_r4(n)%field(m)%diag_name)) then
                   !< If reading get the dimension names from the file
-                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc_r4(n)%field(m)%name)))
+                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc_r4(n)%field(m)%diag_name)))
                   call get_variable_dimension_names(bc_rest_files(f), &
-                  & var%bc_r4(n)%field(m)%name, dim_names)
+                  & var%bc_r4(n)%field(m)%diag_name, dim_names)
               else
                   !< If writing use dummy dimension names
                   allocate(dim_names(3))
@@ -3199,7 +3199,7 @@ contains
               endif !< to_read
 
               call register_restart_field(bc_rest_files(f),&
-              & var%bc_r4(n)%field(m)%name, var%bc_r4(n)%field(m)%values, dim_names, &
+              & var%bc_r4(n)%field(m)%diag_name, var%bc_r4(n)%field(m)%values, dim_names, &
               & is_optional=var%bc_r4(n)%field(m)%may_init )
 
               deallocate(dim_names)
@@ -3411,11 +3411,11 @@ contains
 
         do m = 1, var%bc(n)%num_fields
           if (file_is_open(f)) then
-              if( to_read .and. variable_exists(bc_rest_files(f), var%bc(n)%field(m)%name)) then
+              if( to_read .and. variable_exists(bc_rest_files(f), var%bc(n)%field(m)%diag_name)) then
                   !< If reading get the dimension names from the file
-                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%name)))
+                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc(n)%field(m)%diag_name)))
                   call get_variable_dimension_names(bc_rest_files(f), &
-                  & var%bc(n)%field(m)%name, dim_names)
+                  & var%bc(n)%field(m)%diag_name, dim_names)
               else
                   !< If writing use dummy dimension names
                   allocate(dim_names(4))
@@ -3426,7 +3426,7 @@ contains
               endif !< to_read
 
               call register_restart_field(bc_rest_files(f),&
-                  & var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, dim_names, &
+                  & var%bc(n)%field(m)%diag_name, var%bc(n)%field(m)%values, dim_names, &
                   & is_optional=var%bc(n)%field(m)%may_init )
               deallocate(dim_names)
           endif !< If file_is_open
@@ -3479,11 +3479,11 @@ contains
 
         do m = 1, var%bc_r4(n)%num_fields
           if (file_is_open(f)) then
-              if( to_read .and. variable_exists(bc_rest_files(f), var%bc_r4(n)%field(m)%name)) then
+              if( to_read .and. variable_exists(bc_rest_files(f), var%bc_r4(n)%field(m)%diag_name)) then
                   !< If reading get the dimension names from the file
-                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc_r4(n)%field(m)%name)))
+                  allocate(dim_names(get_variable_num_dimensions(bc_rest_files(f), var%bc_r4(n)%field(m)%diag_name)))
                   call get_variable_dimension_names(bc_rest_files(f), &
-                  & var%bc_r4(n)%field(m)%name, dim_names)
+                  & var%bc_r4(n)%field(m)%diag_name, dim_names)
               else
                   !< If writing use dummy dimension names
                   allocate(dim_names(4))
@@ -3494,7 +3494,7 @@ contains
               endif !< to_read
 
               call register_restart_field(bc_rest_files(f),&
-                  & var%bc_r4(n)%field(m)%name, var%bc_r4(n)%field(m)%values, dim_names, &
+                  & var%bc_r4(n)%field(m)%diag_name, var%bc_r4(n)%field(m)%values, dim_names, &
                   & is_optional=var%bc_r4(n)%field(m)%may_init )
               deallocate(dim_names)
           endif !< If file_is_open
@@ -3548,10 +3548,10 @@ contains
         do m = 1, var%bc(n)%num_fields
           var_set = .false.
           if (check_if_open(var%bc(n)%fms2_io_rest_type)) then
-              var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%name)
+              var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%diag_name)
           endif
 
-          if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+          if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%diag_name)
           if (var_set) any_set = .true.
           if (all_set) all_set = var_set
           if (var_set) any_var_set = .true.
@@ -3563,7 +3563,7 @@ contains
           if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
               & "CT_restore_state_2d: test_by_field is true, and "//&
               & trim(unset_varname)//" was not read but some other fields in "//&
-              & trim(trim(var%bc(n)%name))//" were.")
+              & trim(trim(var%bc(n)%field_name))//" were.")
         endif
       enddo
     else if(associated(var%bc_r4)) then
@@ -3573,10 +3573,10 @@ contains
         do m = 1, var%bc_r4(n)%num_fields
           var_set = .false.
           if (check_if_open(var%bc_r4(n)%fms2_io_rest_type)) then
-              var_set = variable_exists(var%bc_r4(n)%fms2_io_rest_type, var%bc_r4(n)%field(m)%name)
+              var_set = variable_exists(var%bc_r4(n)%fms2_io_rest_type, var%bc_r4(n)%field(m)%diag_name)
           endif
 
-          if (.not.var_set) unset_varname = trim(var%bc_r4(n)%field(m)%name)
+          if (.not.var_set) unset_varname = trim(var%bc_r4(n)%field(m)%diag_name)
           if (var_set) any_set = .true.
           if (all_set) all_set = var_set
           if (var_set) any_var_set = .true.
@@ -3588,7 +3588,7 @@ contains
           if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
               & "CT_restore_state_2d: test_by_field is true, and "//&
               & trim(unset_varname)//" was not read but some other fields in "//&
-              & trim(trim(var%bc_r4(n)%name))//" were.")
+              & trim(trim(var%bc_r4(n)%field_name))//" were.")
         endif
       enddo
     else
@@ -3656,10 +3656,10 @@ contains
         do m = 1, var%bc(n)%num_fields
           var_set = .false.
           if (check_if_open(var%bc(n)%fms2_io_rest_type)) then
-              var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%name)
+              var_set = variable_exists(var%bc(n)%fms2_io_rest_type, var%bc(n)%field(m)%diag_name)
           endif
 
-          if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+          if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%diag_name)
 
           if (var_set) any_set = .true.
           if (all_set) all_set = var_set
@@ -3672,7 +3672,7 @@ contains
           if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
               & "CT_restore_state_3d: test_by_field is true, and "//&
               & trim(unset_varname)//" was not read but some other fields in "//&
-              & trim(trim(var%bc(n)%name))//" were.")
+              & trim(trim(var%bc(n)%field_name))//" were.")
         endif
       enddo
     else if(associated(var%bc_r4)) then
@@ -3682,10 +3682,10 @@ contains
         do m = 1, var%bc_r4(n)%num_fields
           var_set = .false.
           if (check_if_open(var%bc_r4(n)%fms2_io_rest_type)) then
-              var_set = variable_exists(var%bc_r4(n)%fms2_io_rest_type, var%bc_r4(n)%field(m)%name)
+              var_set = variable_exists(var%bc_r4(n)%fms2_io_rest_type, var%bc_r4(n)%field(m)%diag_name)
           endif
 
-          if (.not.var_set) unset_varname = trim(var%bc_r4(n)%field(m)%name)
+          if (.not.var_set) unset_varname = trim(var%bc_r4(n)%field(m)%diag_name)
 
           if (var_set) any_set = .true.
           if (all_set) all_set = var_set
@@ -3698,7 +3698,7 @@ contains
           if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
               & "CT_restore_state_3d: test_by_field is true, and "//&
               & trim(unset_varname)//" was not read but some other fields in "//&
-              & trim(trim(var%bc(n)%name))//" were.")
+              & trim(trim(var%bc(n)%field_name))//" were.")
         endif
       enddo
     else
@@ -3744,13 +3744,13 @@ contains
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
-          call data_override(gridname, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, Time)
+          call data_override(gridname, var%bc(n)%field(m)%diag_name, var%bc(n)%field(m)%values, Time)
         enddo
       enddo
     else if(associated(var%bc_r4)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
-          call data_override(gridname, var%bc_r4(n)%field(m)%name, var%bc_r4(n)%field(m)%values, Time)
+          call data_override(gridname, var%bc_r4(n)%field(m)%diag_name, var%bc_r4(n)%field(m)%values, Time)
         enddo
       enddo
     else
@@ -3784,13 +3784,13 @@ contains
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
-          call data_override(gridname, var%bc(n)%field(m)%name, var%bc(n)%field(m)%values, Time)
+          call data_override(gridname, var%bc(n)%field(m)%diag_name, var%bc(n)%field(m)%values, Time)
         enddo
       enddo
     else if(associated(var%bc_r4)) then
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
-          call data_override(gridname, var%bc_r4(n)%field(m)%name, var%bc_r4(n)%field(m)%values, Time)
+          call data_override(gridname, var%bc_r4(n)%field(m)%diag_name, var%bc_r4(n)%field(m)%values, Time)
         enddo
       enddo
     else
@@ -3827,9 +3827,9 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (present(name_lead)) then
-            var_name = trim(name_lead)//trim(var%bc(n)%field(m)%name)
+            var_name = trim(name_lead)//trim(var%bc(n)%field(m)%diag_name)
           else
-            var_name = trim(var%bc(n)%field(m)%name)
+            var_name = trim(var%bc(n)%field(m)%diag_name)
           endif
           chks = mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec))
           if(outunit.ne.0) write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), chks
@@ -3839,9 +3839,9 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           if (present(name_lead)) then
-            var_name = trim(name_lead)//trim(var%bc_r4(n)%field(m)%name)
+            var_name = trim(name_lead)//trim(var%bc_r4(n)%field(m)%diag_name)
           else
-            var_name = trim(var%bc_r4(n)%field(m)%name)
+            var_name = trim(var%bc_r4(n)%field(m)%diag_name)
           endif
           chks = mpp_chksum(var%bc_r4(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec))
           if(outunit.ne.0) write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), chks
@@ -3879,9 +3879,9 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (present(name_lead)) then
-            var_name = trim(name_lead)//trim(var%bc(n)%field(m)%name)
+            var_name = trim(name_lead)//trim(var%bc(n)%field(m)%diag_name)
           else
-            var_name = trim(var%bc(n)%field(m)%name)
+            var_name = trim(var%bc(n)%field(m)%diag_name)
           endif
           chks = mpp_chksum(var%bc(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec,:))
           if(outunit.ne.0) write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), chks
@@ -3891,9 +3891,9 @@ contains
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           if (present(name_lead)) then
-            var_name = trim(name_lead)//trim(var%bc_r4(n)%field(m)%name)
+            var_name = trim(name_lead)//trim(var%bc_r4(n)%field(m)%diag_name)
           else
-            var_name = trim(var%bc_r4(n)%field(m)%name)
+            var_name = trim(var%bc_r4(n)%field(m)%diag_name)
           endif
           chks = mpp_chksum(var%bc_r4(n)%field(m)%values(var%isc:var%iec,var%jsc:var%jec,:))
           if(outunit.ne.0) write(outunit, '("   CHECKSUM:: ",A40," = ",Z20)') trim(var_name), chks
@@ -4084,7 +4084,7 @@ contains
       var%bc(n)%rest_type => bc_rest_files(f)
       do m = 1, var%bc(n)%num_fields
         var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(bc_rest_files(f),&
-            & rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values,&
+            & rest_file_names(f), var%bc(n)%field(m)%diag_name, var%bc(n)%field(m)%values,&
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
@@ -4115,7 +4115,7 @@ contains
 
       var%bc(n)%rest_type => rest_file
       do m = 1, var%bc(n)%num_fields
-        var_name = trim(var%bc(n)%field(m)%name)
+        var_name = trim(var%bc(n)%field(m)%diag_name)
         if (present(varname_prefix)) var_name = trim(varname_prefix)//trim(var_name)
         var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(rest_file,&
             & file_name, var_name, var%bc(n)%field(m)%values,&
@@ -4173,7 +4173,7 @@ contains
       var%bc(n)%rest_type => bc_rest_files(f)
       do m = 1, var%bc(n)%num_fields
         var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(bc_rest_files(f),&
-            & rest_file_names(f), var%bc(n)%field(m)%name, var%bc(n)%field(m)%values,&
+            & rest_file_names(f), var%bc(n)%field(m)%diag_name, var%bc(n)%field(m)%values,&
             & mpp_domain, mandatory=.not.var%bc(n)%field(m)%may_init )
       enddo
     enddo
@@ -4202,7 +4202,7 @@ contains
 
       var%bc(n)%rest_type => rest_file
       do m = 1, var%bc(n)%num_fields
-        var_name = trim(var%bc(n)%field(m)%name)
+        var_name = trim(var%bc(n)%field(m)%diag_name)
         if (present(varname_prefix)) var_name = trim(varname_prefix)//trim(var_name)
         var%bc(n)%field(m)%id_rest = fms_io_register_restart_field(rest_file,&
             & file_name, var_name, var%bc(n)%field(m)%values,&
@@ -4251,7 +4251,7 @@ contains
           endif
         endif
 
-        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%diag_name)
         if (var_set) any_set = .true.
         if (all_set) all_set = var_set
         if (var_set) any_var_set = .true.
@@ -4263,7 +4263,7 @@ contains
         if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
             & "mpp_io_CT_restore_state_2d: test_by_field is true, and "//&
             & trim(unset_varname)//" was not read but some other fields in "//&
-            & trim(trim(var%bc(n)%name))//" were.")
+            & trim(trim(var%bc(n)%field_name))//" were.")
       endif
     enddo
 
@@ -4321,7 +4321,7 @@ contains
           endif
         endif
 
-        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%name)
+        if (.not.var_set) unset_varname = trim(var%bc(n)%field(m)%diag_name)
 
         if (var_set) any_set = .true.
         if (all_set) all_set = var_set
@@ -4334,7 +4334,7 @@ contains
         if (test_by_field .and. (all_var_set .neqv. any_var_set)) call mpp_error(FATAL,&
             & "mpp_io_CT_restore_state_3d: test_by_field is true, and "//&
             & trim(unset_varname)//" was not read but some other fields in "//&
-            & trim(trim(var%bc(n)%name))//" were.")
+            & trim(trim(var%bc(n)%field_name))//" were.")
       endif
     enddo
 
