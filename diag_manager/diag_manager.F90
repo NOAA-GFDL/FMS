@@ -583,13 +583,13 @@ CONTAINS
           output_fields(ind)%next_output = diag_time_inc(diag_file_init_time, freq, output_units, err_msg=msg)
           IF ( msg /= '' ) THEN
              IF ( fms_error_handler('diag_manager_mod::register_diag_field',&
-                  & ' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg)) RETURN
+                  & ' file='//TRIM(files(file_num)%filename)//': '//TRIM(msg),err_msg)) RETURN
           END IF
           output_fields(ind)%next_next_output = &
                & diag_time_inc(output_fields(ind)%next_output, freq, output_units, err_msg=msg)
           IF ( msg /= '' ) THEN
              IF ( fms_error_handler('diag_manager_mod::register_diag_field',&
-                  &' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg) ) RETURN
+                  &' file='//TRIM(files(file_num)%filename)//': '//TRIM(msg),err_msg) ) RETURN
           END IF
           IF ( debug_diag_manager .AND. mpp_pe() == mpp_root_pe() .AND. output_fields(ind)%local_output ) THEN
              WRITE (msg,'(" lon(",F5.1,", ",F5.1,"), lat(",F5.1,", ",F5.1,"), dep(",F5.1,", ",F5.1,")")') &
@@ -733,11 +733,11 @@ CONTAINS
           file_num = output_fields(out_num)%output_file
           IF(input_fields(field)%local) THEN
              CALL init_output_field(module_name, field_name,output_fields(out_num)%output_name,&
-                  & files(file_num)%name,output_fields(out_num)%time_method, output_fields(out_num)%pack,&
+                  & files(file_num)%filename,output_fields(out_num)%time_method, output_fields(out_num)%pack,&
                   & tile, input_fields(field)%local_coord)
           ELSE
              CALL init_output_field(module_name, field_name,output_fields(out_num)%output_name,&
-                  & files(file_num)%name,output_fields(out_num)%time_method, output_fields(out_num)%pack, tile)
+                  & files(file_num)%filename,output_fields(out_num)%time_method, output_fields(out_num)%pack, tile)
           END IF
        END DO
        field = register_static_field
@@ -903,7 +903,7 @@ CONTAINS
                                "Diagnostics living on a structured grid" &
                                //" and an unstructured grid cannot exist" &
                                //" in the same file (" &
-                               //trim(files(file_num)%name)//")", &
+                               //trim(files(file_num)%filename)//")", &
                                FATAL)
            elseif (.not. files(file_num)%use_domain2D) then
                files(file_num)%use_domain2D = .true.
@@ -914,7 +914,7 @@ CONTAINS
                                "Diagnostics living on a structured grid" &
                                //" and an unstructured grid cannot exist" &
                                //" in the same file (" &
-                               //trim(files(file_num)%name)//")", &
+                               //trim(files(file_num)%filename)//")", &
                                FATAL)
            elseif (.not. files(file_num)%use_domainUG) then
                files(file_num)%use_domainUG = .true.
@@ -1265,12 +1265,12 @@ CONTAINS
     ! Get the base file name
     ! Verify asso_file_name is long enough to hold the file name,
     ! plus 17 for the additional '.ens_??.tile?.nc' (and a null character)
-    IF ( LEN_TRIM(files(cm_file_num)%name)+17 > LEN(asso_file_name) ) THEN
+    IF ( LEN_TRIM(files(cm_file_num)%filename)+17 > LEN(asso_file_name) ) THEN
        CALL error_mesg ('diag_manager_mod::add_associated_files',&
             & 'Length of asso_file_name is not long enough to hold the associated file name. '&
             & //'Contact the developer', FATAL)
     ELSE
-       asso_file_name = TRIM(files(cm_file_num)%name)
+       asso_file_name = TRIM(files(cm_file_num)%filename)
     END IF
 
     ! Add the ensemble number string into the file name
@@ -3769,7 +3769,7 @@ CONTAINS
        CALL mpp_sum (files(file)%bytes_written)
        IF ( mpp_pe() == mpp_root_pe() )&
             & WRITE (stdout_unit,'(a,i12,a,a)') 'Diag_Manager: ',files(file)%bytes_written, &
-            & ' bytes of data written to file ',TRIM(files(file)%name)
+            & ' bytes of data written to file ',TRIM(files(file)%filename)
     END IF
   END SUBROUTINE closing_file
 
@@ -4015,7 +4015,7 @@ CONTAINS
     INTEGER :: hour !< components of the base date
     INTEGER :: minute !< components of the base date
     INTEGER :: second !< components of the base date
-    CHARACTER(32)  :: name  !< name of the axis
+    CHARACTER(32)  :: axis_name  !< name of the axis
     CHARACTER(128) :: units !< units of time
 
     CALL get_base_date(year, month, day, hour, minute, second)
@@ -4029,26 +4029,26 @@ CONTAINS
     END DO
 
     ! define edges
-    name = ''
-    WRITE (name,'(a,i2.2)') 'time_of_day_edges_', n_samples
-    edges_id = get_axis_num(name, 'diurnal')
+    axis_name = ''
+    WRITE (axis_name,'(a,i2.2)') 'time_of_day_edges_', n_samples
+    edges_id = get_axis_num(axis_name, 'diurnal')
     IF ( edges_id <= 0 ) THEN
-       edges_id =  diag_axis_init(name,edges,units,'N','time of day edges', set_name='diurnal')
+       edges_id =  diag_axis_init(axis_name,edges,units,'N','time of day edges', set_name='diurnal')
     END IF
 
     ! define axis itself
-    name = ''
-    WRITE (name,'(a,i2.2)') 'time_of_day_', n_samples
-    init_diurnal_axis = get_axis_num(name, 'diurnal')
+    axis_name = ''
+    WRITE (axis_name,'(a,i2.2)') 'time_of_day_', n_samples
+    init_diurnal_axis = get_axis_num(axis_name, 'diurnal')
     IF ( init_diurnal_axis <= 0 ) THEN
-       init_diurnal_axis = diag_axis_init(name, center_data, units, 'N', 'time of day', &
+       init_diurnal_axis = diag_axis_init(axis_name, center_data, units, 'N', 'time of day', &
                            set_name='diurnal', edges=edges_id)
     END IF
   END FUNCTION init_diurnal_axis
 
-  SUBROUTINE diag_field_attribute_init(diag_field_id, name, type, cval, ival, rval)
+  SUBROUTINE diag_field_attribute_init(diag_field_id, att_name, type, cval, ival, rval)
     INTEGER, INTENT(in) :: diag_field_id !< input field ID, obtained from diag_manager_mod::register_diag_field.
-    CHARACTER(len=*), INTENT(in) :: name !< Name of the attribute
+    CHARACTER(len=*), INTENT(in) :: att_name !< Name of the attribute
     INTEGER, INTENT(in) :: type !< NetCDF type (NF90_FLOAT, NF90_INT, NF90_CHAR)
     CHARACTER(len=*), INTENT(in), OPTIONAL :: cval !< Character string attribute value
     INTEGER, DIMENSION(:), INTENT(in), OPTIONAL :: ival !< Integer attribute value(s)
@@ -4063,7 +4063,7 @@ CONTAINS
        !   after first send_data call.  Too late.
        ! </ERROR>
        CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Attempting to add attribute "'&
-            &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+            &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
             &//TRIM(input_fields(diag_field_id)%field_name)//'" after first send_data call.  Too late.', FATAL)
     END IF
 
@@ -4080,7 +4080,7 @@ CONTAINS
           ! Check if attribute already exists
           this_attribute = 0
           DO i=1, output_fields(out_field)%num_attributes
-             IF ( TRIM(output_fields(out_field)%attributes(i)%name) .EQ. TRIM(name) ) THEN
+             IF ( TRIM(output_fields(out_field)%attributes(i)%att_name) .EQ. TRIM(att_name) ) THEN
                 this_attribute = i
                 EXIT
              END IF
@@ -4092,7 +4092,7 @@ CONTAINS
              !   Contact the developers
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
-                  & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
+                  & 'Attribute "'//TRIM(att_name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Contact the developers.', FATAL)
           ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR .AND. debug_diag_manager ) THEN
@@ -4101,7 +4101,7 @@ CONTAINS
              !   Prepending.
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
-                  & 'Attribute "'//TRIM(name)//'" already defined for module/input_field "'&
+                  & 'Attribute "'//TRIM(att_name)//'" already defined for module/input_field "'&
                   &//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'".  Prepending.', NOTE)
           ELSE IF ( this_attribute.EQ.0 ) THEN
@@ -4117,13 +4117,13 @@ CONTAINS
                 ! </ERROR>
                 CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
                      & 'Number of attributes exceeds max_field_attributes for attribute "'&
-                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)&
                      &//'".  Increase diag_manager_nml:max_field_attributes.', FATAL)
              ELSE
                 output_fields(out_field)%num_attributes = this_attribute
                 ! Set name and type
-                output_fields(out_field)%attributes(this_attribute)%name = name
+                output_fields(out_field)%attributes(this_attribute)%att_name = att_name
                 output_fields(out_field)%attributes(this_attribute)%type = type
                 ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
                 output_fields(out_field)%attributes(this_attribute)%catt = ''
@@ -4140,7 +4140,7 @@ CONTAINS
                 ! </ERROR>
                 CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
                      & 'Attribute type claims INTEGER, but ival not present for attribute "'&
-                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact then developers.', FATAL)
              END IF
              length = SIZE(ival)
@@ -4151,7 +4151,7 @@ CONTAINS
                 !   Unable to allocate iatt for attribute <name> to module/input_field <module_name>/<field_name>
                 ! </ERROR>
                 CALL error_mesg('diag_manager_mod::diag_field_add_attribute','Unable to allocate iatt for attribute "'&
-                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
              END IF
              ! Set remaining fields
@@ -4166,7 +4166,7 @@ CONTAINS
                 ! </ERROR>
                 CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
                      & 'Attribute type claims REAL, but rval not present for attribute "'&
-                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
              END IF
              length = SIZE(rval)
@@ -4177,7 +4177,7 @@ CONTAINS
                 !   Unable to allocate fatt for attribute <name> to module/input_field <module_name>/<field_name>
                 ! </ERROR>
                 CALL error_mesg('diag_manager_mod::diag_field_add_attribute','Unable to allocate fatt for attribute "'&
-                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'"', FATAL)
              END IF
              ! Set remaining fields
@@ -4192,17 +4192,17 @@ CONTAINS
                 ! </ERROR>
                 CALL error_mesg('diag_manager_mod::diag_field_add_attribute',&
                      & 'Attribute type claims CHARACTER, but cval not present for attribute "'&
-                     &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                     &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                      &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
              END IF
-             CALL prepend_attribute(output_fields(out_field), TRIM(name), TRIM(cval))
+             CALL prepend_attribute(output_fields(out_field), TRIM(att_name), TRIM(cval))
           CASE default
              ! <ERROR STATUS="FATAL">
              !   Unknown attribute type for attribute <name> to module/input_field <module_name>/<field_name>.
              !   Contact the developers.
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_field_add_attribute', 'Unknown attribute type for attribute "'&
-                  &//TRIM(name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
+                  &//TRIM(att_name)//'" to module/input_field "'//TRIM(input_fields(diag_field_id)%module_name)//'/'&
                   &//TRIM(input_fields(diag_field_id)%field_name)//'". Contact the developers.', FATAL)
           END SELECT
        END DO

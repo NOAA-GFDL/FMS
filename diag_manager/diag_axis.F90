@@ -105,9 +105,9 @@ CONTAINS
   !! increments the axis counter and fills in the axes
   !!
   !! @return integer axis ID
-  INTEGER FUNCTION diag_axis_init(name, array_data, units, cart_name, long_name, direction,&
+  INTEGER FUNCTION diag_axis_init(axis_name, array_data, units, cart_name, long_name, direction,&
        & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
-    CHARACTER(len=*), INTENT(in) :: name !< Short name for axis
+    CHARACTER(len=*), INTENT(in) :: axis_name !< Short name for axis
     CLASS(*), DIMENSION(:), INTENT(in) :: array_data !< Array of coordinate values
     CHARACTER(len=*), INTENT(in) :: units !< Units for the axis
     CHARACTER(len=*), INTENT(in) :: cart_name !< Cartesian axis ("X", "Y", "Z", "T")
@@ -175,14 +175,14 @@ CONTAINS
     ! if this is time axis, return the ID of a previously defined
     ! if this is spatial axis, FATAL error
     DO i = 1, num_def_axes
-       IF ( TRIM(name) == Axes(i)%name ) THEN
-          IF ( TRIM(name) == 'Stations' .OR. TRIM(name) == 'Levels') THEN
+       IF ( TRIM(axis_name) == Axes(i)%axis_name ) THEN
+          IF ( TRIM(axis_name) == 'Stations' .OR. TRIM(axis_name) == 'Levels') THEN
              diag_axis_init = i
              RETURN
           ELSE IF ( set == Axes(i)%set ) THEN
-             IF ( TRIM(lowercase(name)) == 'time' .OR.&
+             IF ( TRIM(lowercase(axis_name)) == 'time' .OR.&
                   & TRIM(lowercase(cart_name)) == 't' .OR.&
-                  & TRIM(lowercase(name)) == 'nv' .OR.&
+                  & TRIM(lowercase(axis_name)) == 'nv' .OR.&
                   & TRIM(lowercase(cart_name)) == 'n' ) THEN
                 diag_axis_init = i
                 RETURN
@@ -190,7 +190,7 @@ CONTAINS
                   & .OR. tile /= Axes(i)%tile_count) THEN
                 ! <ERROR STATUS="FATAL">axis_name <NAME> and axis_set already exist.</ERROR>
                 CALL error_mesg('diag_axis_mod::diag_axis_init',&
-                     & 'axis_name '//TRIM(name)//' and axis_set already exist.', FATAL)
+                     & 'axis_name '//TRIM(axis_name)//' and axis_set already exist.', FATAL)
              END IF
           END IF
        END IF
@@ -225,7 +225,7 @@ CONTAINS
     ALLOCATE ( Axes(diag_axis_init)%diag_type_data(1:axlen) )
 
     ! Initialize Axes(diag_axis_init)
-    Axes(diag_axis_init)%name   = TRIM(name)
+    Axes(diag_axis_init)%axis_name   = TRIM(axis_name)
     SELECT TYPE (array_data)
     TYPE IS (real(kind=r4_kind))
        Axes(diag_axis_init)%diag_type_data = array_data(1:axlen)
@@ -248,7 +248,7 @@ CONTAINS
     IF ( PRESENT(long_name) ) THEN
        Axes(diag_axis_init)%long_name = long_name
     ELSE
-       Axes(diag_axis_init)%long_name = name
+       Axes(diag_axis_init)%long_name = axis_name
     END IF
 
     IF ( PRESENT(aux) ) THEN
@@ -380,7 +380,7 @@ CONTAINS
     INTEGER :: i, nsub_axis, direction
     INTEGER :: xbegin, xend, ybegin, yend
     INTEGER :: ad_xbegin, ad_xend, ad_ybegin, ad_yend
-    CHARACTER(len=128) :: name, nsub_name
+    CHARACTER(len=128) :: axis_name, nsub_name
     CHARACTER(len=128) :: units
     CHARACTER(len=128) :: cart_name
     CHARACTER(len=128) :: long_name
@@ -408,7 +408,7 @@ CONTAINS
           END IF
           nsub_axis = i
           subaxis_set = .TRUE.    !subaxis already exists
-          name = TRIM(Axes(axis)%subaxis_name(nsub_axis))
+          axis_name = TRIM(Axes(axis)%subaxis_name(nsub_axis))
           EXIT sa_search
        END IF
     END DO sa_search
@@ -430,33 +430,33 @@ CONTAINS
     ! If subaxis already exists, get the index and return
     IF(subaxis_set) THEN
        IF ( Axes(axis)%set > 0 ) THEN
-          diag_subaxes_init = get_axis_num(name, set_name=TRIM(Axis_sets(Axes(axis)%set)))
+          diag_subaxes_init = get_axis_num(axis_name, set_name=TRIM(Axis_sets(Axes(axis)%set)))
        ELSE
-          diag_subaxes_init = get_axis_num(name)
+          diag_subaxes_init = get_axis_num(axis_name)
        END IF
     ELSE
        ! get a new index for subaxis
        !::sdu:: Need a check to allow larger numbers in the index number.
        WRITE (nsub_name,'(I2.2)') nsub_axis
-       name = TRIM(Axes(axis)%name)//'_sub'//TRIM(nsub_name)
-       Axes(axis)%subaxis_name(nsub_axis) = name
+       axis_name = TRIM(Axes(axis)%axis_name)//'_sub'//TRIM(nsub_name)
+       Axes(axis)%subaxis_name(nsub_axis) = axis_name
        long_name = TRIM(Axes(axis)%long_name)
        units = TRIM(Axes(axis)%units)
        cart_name = TRIM(Axes(axis)%cart_name)
        direction = Axes(axis)%direction
        IF (Axes(axis)%set > 0) THEN
-          diag_subaxes_init =  diag_axis_init (TRIM(name), subdata, TRIM(units), TRIM(cart_name), TRIM(long_name),&
+          diag_subaxes_init =  diag_axis_init (TRIM(axis_name), subdata, TRIM(units), TRIM(cart_name), TRIM(long_name),&
                & set_name=TRIM(Axis_sets(Axes(axis)%set)), direction=direction, Domain2=domain_2d)
        ELSE
-          diag_subaxes_init =  diag_axis_init (TRIM(name), subdata, TRIM(units), TRIM(cart_name), TRIM(long_name),&
+          diag_subaxes_init =  diag_axis_init (TRIM(axis_name), subdata, TRIM(units), TRIM(cart_name), TRIM(long_name),&
                & direction=direction, Domain2=domain_2d)
        END IF
     END IF
   END FUNCTION diag_subaxes_init
   !> @brief Return information about the axis with index ID
-  SUBROUTINE get_diag_axis(id, name, units, long_name, cart_name,&
+  SUBROUTINE get_diag_axis(id, axis_name, units, long_name, cart_name,&
        & direction, edges, Domain, DomainU, array_data, num_attributes, attributes, domain_position)
-    CHARACTER(len=*), INTENT(out) :: name, units, long_name, cart_name
+    CHARACTER(len=*), INTENT(out) :: axis_name, units, long_name, cart_name
     INTEGER, INTENT(in) :: id !< Axis ID
     TYPE(domain1d), INTENT(out) :: Domain
     TYPE(domainUG), INTENT(out) :: DomainU
@@ -471,7 +471,7 @@ CONTAINS
     INTEGER :: i, j, istat
 
     CALL valid_id_check(id, 'get_diag_axis')
-    name      = Axes(id)%name
+    axis_name = Axes(id)%axis_name
     units     = Axes(id)%units
     long_name = Axes(id)%long_name
     cart_name = Axes(id)%cart_name
@@ -523,7 +523,7 @@ CONTAINS
              ! Copy in attribute data
              attributes(i)%type = Axes(id)%attributes(i)%type
              attributes(i)%len = Axes(id)%attributes(i)%len
-             attributes(i)%name = Axes(id)%attributes(i)%name
+             attributes(i)%att_name = Axes(id)%attributes(i)%att_name
              attributes(i)%catt = Axes(id)%attributes(i)%catt
              ! Allocate fatt arrays (if needed), and copy in data
              IF ( allocated(Axes(id)%attributes(i)%fatt) ) THEN
@@ -576,21 +576,21 @@ CONTAINS
   END SUBROUTINE get_diag_axis_data
 
   !> @brief Return the short name of the axis.
-  SUBROUTINE get_diag_axis_name(id, name)
+  SUBROUTINE get_diag_axis_name(id, axis_name)
     INTEGER         , INTENT(in)  :: id !< Axis ID
-    CHARACTER(len=*), INTENT(out) :: name !< Axis short name
+    CHARACTER(len=*), INTENT(out) :: axis_name !< Axis short name
 
     CALL valid_id_check(id, 'get_diag_axis_name')
-    name = Axes(id)%name
+    axis_name = Axes(id)%axis_name
   END SUBROUTINE get_diag_axis_name
 
   !> @brief Return the name of the axis' domain
-  SUBROUTINE get_diag_axis_domain_name(id, name)
+  SUBROUTINE get_diag_axis_domain_name(id, domain_name)
     INTEGER, INTENT(in) :: id !< Axis ID
-    CHARACTER(len=*), INTENT(out) :: name !< Axis' domain name
+    CHARACTER(len=*), INTENT(out) :: domain_name !< Axis' domain name
 
     CALL valid_id_check(id, 'get_diag_axis_domain_name')
-    name = mpp_get_domain_name(Axes(id)%domain2)
+    domain_name = mpp_get_domain_name(Axes(id)%domain2)
   END SUBROUTINE get_diag_axis_domain_name
 
   !> @brief Return the length of the axis.
@@ -833,7 +833,7 @@ CONTAINS
     END IF
     get_axis_num = 0
     DO n = 1, num_def_axes
-       IF ( TRIM(axis_name) == TRIM(Axes(n)%name) .AND. Axes(n)%set == set ) THEN
+       IF ( TRIM(axis_name) == TRIM(Axes(n)%axis_name) .AND. Axes(n)%set == set ) THEN
           get_axis_num = n
           RETURN
        END IF
@@ -874,9 +874,9 @@ CONTAINS
     END IF
   END SUBROUTINE valid_id_check
 
-  SUBROUTINE diag_axis_attribute_init(diag_axis_id, name, type, cval, ival, rval)
+  SUBROUTINE diag_axis_attribute_init(diag_axis_id, att_name, type, cval, ival, rval)
     INTEGER, INTENT(in) :: diag_axis_id !< input field ID, obtained from diag_axis_mod::diag_axis_init.
-    CHARACTER(len=*) :: name !< Name of the attribute
+    CHARACTER(len=*) :: att_name !< Name of the attribute
     INTEGER, INTENT(in) :: type !< NetCDF type (NF_FLOAT, NF_INT, NF_CHAR)
     CHARACTER(len=*), INTENT(in), OPTIONAL :: cval !< Character string attribute value
     INTEGER, DIMENSION(:), INTENT(in), OPTIONAL :: ival !< Integer attribute value(s)
@@ -892,7 +892,7 @@ CONTAINS
        !   after first send_data call.  Too late.
        ! </ERROR>
        CALL error_mesg('diag_manager_mod::diag_axis_add_attribute', 'Attempting to add attribute "'&
-            &//TRIM(name)//'" to axis after first send_data call.  Too late.', FATAL)
+            &//TRIM(att_name)//'" to axis after first send_data call.  Too late.', FATAL)
     END IF
 
     ! Simply return if diag_axis_id <= 0 --- not registered
@@ -905,7 +905,7 @@ CONTAINS
        ! </ERROR>
        WRITE(err_msg, '(I5)') diag_axis_id
        CALL error_mesg('diag_manager_mod::diag_axis_add_attribute', 'Attempting to add attribute "'&
-            &//TRIM(name)//'" to axis ID "'//TRIM(err_msg)//'", however ID unknown.', FATAL)
+            &//TRIM(att_name)//'" to axis ID "'//TRIM(err_msg)//'", however ID unknown.', FATAL)
 
     ELSE
        ! Allocate memory for the attributes
@@ -914,7 +914,7 @@ CONTAINS
        ! Check if attribute already exists
        this_attribute = 0
        DO i=1, Axes(diag_axis_id)%num_attributes
-          IF ( TRIM(Axes(diag_axis_id)%attributes(i)%name) .EQ. TRIM(name) ) THEN
+          IF ( TRIM(Axes(diag_axis_id)%attributes(i)%att_name) .EQ. TRIM(att_name) ) THEN
              this_attribute = i
              EXIT
           END IF
@@ -926,16 +926,16 @@ CONTAINS
           !   Contact the developers
           ! </ERROR>
           CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
-               & 'Attribute "'//TRIM(name)//'" already defined for axis "'&
-               &//TRIM(Axes(diag_axis_id)%name)//'".  Contact the developers.', FATAL)
+               & 'Attribute "'//TRIM(att_name)//'" already defined for axis "'&
+               &//TRIM(Axes(diag_axis_id)%axis_name)//'".  Contact the developers.', FATAL)
        ELSE IF ( this_attribute.NE.0 .AND. type.EQ.NF90_CHAR .AND. debug_diag_manager ) THEN
           ! <ERROR STATUS="NOTE">
           !   Attribute <name> already defined for axis <axis_name>.
           !   Prepending.
           ! </ERROR>
           CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
-               & 'Attribute "'//TRIM(name)//'" already defined for axis"'&
-               &//TRIM(Axes(diag_axis_id)%name)//'".  Prepending.', NOTE)
+               & 'Attribute "'//TRIM(att_name)//'" already defined for axis"'&
+               &//TRIM(Axes(diag_axis_id)%axis_name)//'".  Prepending.', NOTE)
        ELSE
           ! Defining a new attribute
           ! Increase the number of field attributes
@@ -948,13 +948,13 @@ CONTAINS
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
                   & 'Number of attributes exceeds max_axis_attributes for attribute "'&
-                  & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
+                  & //TRIM(att_name)//'" for axis "'//TRIM(Axes(diag_axis_id)%axis_name)&
                   & //'".  Increase diag_manager_nml:max_axis_attributes.',&
                   & FATAL)
           ELSE
              Axes(diag_axis_id)%num_attributes = this_attribute
              ! Set name and type
-             Axes(diag_axis_id)%attributes(this_attribute)%name = name
+             Axes(diag_axis_id)%attributes(this_attribute)%att_name = att_name
              Axes(diag_axis_id)%attributes(this_attribute)%type = type
              ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
              Axes(diag_axis_id)%attributes(this_attribute)%catt = ''
@@ -970,7 +970,7 @@ CONTAINS
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
                   & 'Attribute type claims INTEGER, but ival not present for attribute "'&
-                  & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
+                  & //TRIM(att_name)//'" for axis "'//TRIM(Axes(diag_axis_id)%axis_name)&
                   & //'". Contact the developers.', FATAL)
           END IF
           length = SIZE(ival)
@@ -981,7 +981,7 @@ CONTAINS
              !   Unable to allocate iatt for attribute <name> for axis <axis_name>
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute', 'Unable to allocate iatt for attribute "'&
-                  & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)//'"', FATAL)
+                  & //TRIM(att_name)//'" for axis "'//TRIM(Axes(diag_axis_id)%axis_name)//'"', FATAL)
           END IF
           ! Set remaining fields
           Axes(diag_axis_id)%attributes(this_attribute)%len = length
@@ -994,7 +994,7 @@ CONTAINS
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
                   & 'Attribute type claims REAL, but rval not present for attribute "'&
-                  & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
+                  & //TRIM(att_name)//'" for axis "'//TRIM(Axes(diag_axis_id)%axis_name)&
                   & //'". Contact the developers.', FATAL)
           END IF
           length = SIZE(rval)
@@ -1005,7 +1005,7 @@ CONTAINS
              !   Unable to allocate fatt for attribute <name> for axis <axis_name>
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute', 'Unable to allocate fatt for attribute "'&
-                  & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
+                  & //TRIM(att_name)//'" for axis "'//TRIM(Axes(diag_axis_id)%axis_name)&
                   & //'"', FATAL)
           END IF
           ! Set remaining fields
@@ -1019,17 +1019,17 @@ CONTAINS
              ! </ERROR>
              CALL error_mesg('diag_manager_mod::diag_axis_add_attribute',&
                   & 'Attribute type claims CHARACTER, but cval not present for attribute "'&
-                  & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
+                  & //TRIM(att_name)//'" for axis "'//TRIM(Axes(diag_axis_id)%axis_name)&
                   & //'". Contact the developers.', FATAL)
           END IF
-          CALL prepend_attribute_axis(Axes(diag_axis_id), TRIM(name), TRIM(cval))
+          CALL prepend_attribute_axis(Axes(diag_axis_id), TRIM(att_name), TRIM(cval))
        CASE default
           ! <ERROR STATUS="FATAL">
           !   Unknown attribute type for attribute <name> for axis <axis_name>.
           !   Contact the developers.
           ! </ERROR>
           CALL error_mesg('diag_manager_mod::diag_axis_add_attribute', 'Unknown attribute type for attribute "'&
-               & //TRIM(name)//'" for axis "'//TRIM(Axes(diag_axis_id)%name)&
+               & //TRIM(att_name)//'" for axis "'//TRIM(Axes(diag_axis_id)%axis_name)&
                & //'". Contact the developers.', FATAL)
        END SELECT
     END IF
@@ -1130,7 +1130,7 @@ CONTAINS
     ! Find if attribute exists
     this_attribute = 0
     DO i=1, out_axis%num_attributes
-       IF ( TRIM(out_axis%attributes(i)%name) .EQ. TRIM(att_name) ) THEN
+       IF ( TRIM(out_axis%attributes(i)%att_name) .EQ. TRIM(att_name) ) THEN
           this_attribute = i
           EXIT
        END IF
@@ -1165,7 +1165,7 @@ CONTAINS
        ELSE
           out_axis%num_attributes = this_attribute
           ! Set name and type
-          out_axis%attributes(this_attribute)%name = att_name
+          out_axis%attributes(this_attribute)%att_name = att_name
           out_axis%attributes(this_attribute)%type = NF90_CHAR
           ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
           out_axis%attributes(this_attribute)%catt = ''
@@ -1206,7 +1206,7 @@ CONTAINS
     axis_is_compressed = .FALSE.
     if (.not.allocated(Axes(id)%attributes)) return
     do i = 1, Axes(id)%num_attributes
-       if (trim(Axes(id)%attributes(i)%name)=='compress') then
+       if (trim(Axes(id)%attributes(i)%att_name)=='compress') then
           axis_is_compressed = .TRUE.
           return
        endif
@@ -1229,21 +1229,21 @@ CONTAINS
 
     associate (axis=>Axes(id))
     if (.not.allocated(axis%attributes)) call error_mesg(tag, &
-       'attempt to get compression dimensions from axis "'//trim(axis%name)// &
+       'attempt to get compression dimensions from axis "'//trim(axis%axis_name)// &
         & '" which is not compressed (does not have any attributes)', FATAL)
 
     iatt = 0
     do k = 1,axis%num_attributes
-       if (trim(axis%attributes(k)%name)=='compress') then
+       if (trim(axis%attributes(k)%att_name)=='compress') then
           iatt = k; exit ! from loop
        endif
     enddo
 
     if (iatt == 0) call error_mesg(tag, &
-       'attempt to get compression dimensions from axis "'//trim(axis%name)//&
+       'attempt to get compression dimensions from axis "'//trim(axis%axis_name)//&
        '" which is not compressed (does not have "compress" attributes).', FATAL)
     if (axis%attributes(iatt)%type/=NF90_CHAR) call error_mesg(tag, &
-       'attempt to get compression dimensions from axis "'//trim(axis%name)//&
+       'attempt to get compression dimensions from axis "'//trim(axis%axis_name)//&
        '" but the axis attribute "compress" has incorrect type.', FATAL)
 
     ! parse the "compress" attribute
