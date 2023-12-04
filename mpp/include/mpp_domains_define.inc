@@ -714,10 +714,10 @@
     !--- x_cyclic_offset and y_cyclic_offset should no larger than the global grid size.
     if(abs(x_offset) > jeg-jsg+1) call mpp_error(FATAL, &
          'MPP_DEFINE_DOMAINS2D: absolute value of x_cyclic_offset is greater than jeg-jsg+1 for '// &
-	 & trim(domain%domain_name))
+         & trim(domain%domain_name))
     if(abs(y_offset) > ieg-isg+1) call mpp_error(FATAL, &
          'MPP_DEFINE_DOMAINS2D: absolute value of y_cyclic_offset is greater than ieg-isg+1 for '// &
-	 & trim(domain%domain_name))
+         & trim(domain%domain_name))
 
     !--- when there is more than one tile on one processor, all the tile will limited on this processor
     if( tile > 1 .AND. size(pes(:)) > 1) call mpp_error(FATAL, &
@@ -1172,7 +1172,7 @@ subroutine check_message_size(domain, update, send, recv, position)
 
   do m = 0, nlist-1
      if(msg1(m) .NE. msg2(m)) then
-        print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%domain_name), ",at position=",position,",from pe=", &
+        print*, "My pe = ", mpp_pe(), ",domain name =", trim(domain%domain_name), ",at position=",position,",from pe=",&
              domain%list(m)%pe, ":send size = ", msg1(m), ", recv size = ", msg2(m)
         call mpp_error(FATAL, "mpp_define_domains2D: mismatch on send and recv size")
      endif

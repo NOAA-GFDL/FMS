@@ -747,7 +747,7 @@ if (fm_type .eq. 'list') then  !{
 elseif (fm_type .eq. ' ') then  !}{
   call mpp_error(FATAL, trim(error_header) // ' List does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 
