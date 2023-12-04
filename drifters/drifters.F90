@@ -230,7 +230,7 @@ contains
     if(ermesg/='') return
 
     ! Set meta data
-    call drifters_io_set_time_units(self%io, name=self%input%time_units, &
+    call drifters_io_set_time_units(self%io, time_unit_name=self%input%time_units, &
          & ermesg=ermesg)
 
     call drifters_io_set_position_names(self%io, names=self%input%position_names, &
