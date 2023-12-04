@@ -367,7 +367,7 @@ integer                                 :: ind
 integer                                 :: list_length
 integer                                 :: good_length
 character(len=fm_type_name_len)         :: typ
-character(len=fm_field_name_len)        :: name
+character(len=fm_field_name_len)        :: field_name
 logical                                 :: found
 character(len=256)                      :: error_header
 character(len=256)                      :: warn_header
@@ -467,15 +467,15 @@ elseif (list_length .gt. good_length) then  !}{
        list_length, ' > ', good_length, ') in list ', trim(list)
 
   write (out_unit,*) trim(error_header), ' Start of list of fields'
-  do while (fm_loop_over_list(list, name, typ, ind))  !{
+  do while (fm_loop_over_list(list, field_name, typ, ind))  !{
     found = .false.
     do i = 1, good_length  !{
-      found = found .or. (name .eq. good_fields(i))
+      found = found .or. (field_name .eq. good_fields(i))
     enddo  !} i
     if (found) then  !{
-      write (out_unit,*) 'Good list field: "', trim(name), '"'
+      write (out_unit,*) 'Good list field: "', trim(field_name), '"'
     else  !}{
-      write (out_unit,*) 'EXTRA list field: "', trim(name), '"'
+      write (out_unit,*) 'EXTRA list field: "', trim(field_name), '"'
     endif  !}
   enddo  !}
   write (out_unit,*) trim(error_header), ' End of list of fields'
@@ -496,7 +496,7 @@ end subroutine fm_util_check_for_bad_fields  !}
 !#######################################################################
 
 !> Get the length of an element of the Field Manager tree
-function fm_util_get_length(name, caller)       &
+function fm_util_get_length(field_name, caller)       &
          result (field_length)  !{
 
 implicit none
@@ -511,7 +511,7 @@ integer :: field_length
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 
 !
@@ -550,7 +550,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -558,9 +558,9 @@ endif  !}
 !       Get the field's length
 !
 
-field_length = fm_get_length(name)
+field_length = fm_get_length(field_name)
 if (field_length .lt. 0) then  !{
-  call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
 endif  !}
 
 return
@@ -570,7 +570,7 @@ end function fm_util_get_length  !}
 !#######################################################################
 
 !> Get the index of an element of a string in the Field Manager tree
-function fm_util_get_index_string(name, string, caller)       &
+function fm_util_get_index_string(field_name, string, caller)       &
          result (fm_index)  !{
 
 implicit none
@@ -585,7 +585,7 @@ integer :: fm_index
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in)            :: string
 character(len=*), intent(in), optional  :: caller
 
@@ -630,7 +630,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -639,17 +639,17 @@ endif  !}
 !
 
 fm_index = 0
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'string') then  !{
-  length = fm_get_length(name)
+  length = fm_get_length(field_name)
   if (length .lt. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
   endif  !}
   if (length .gt. 0) then  !{
     do i = 1, length  !{
-      if (.not. fm_get_value(name, fm_string, index = i)) then  !{
+      if (.not. fm_get_value(field_name, fm_string, index = i)) then  !{
         write (index_str,*) '(', i, ')'
-        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name) // trim(index_str))
+        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name) // trim(index_str))
       endif  !}
       if (fm_string .eq. string) then  !{
         fm_index = i
@@ -658,9 +658,9 @@ if (fm_type .eq. 'string') then  !{
     enddo  !} i
   endif  !}
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 !if (fm_index .eq. 0) then  !{
@@ -674,7 +674,7 @@ end function fm_util_get_index_string  !}
 !#######################################################################
 
 !> Get the length of an element of the Field Manager tree
-function fm_util_get_index_list(name, caller)       &
+function fm_util_get_index_list(field_name, caller)       &
          result (fm_index)  !{
 
 implicit none
@@ -689,7 +689,7 @@ integer :: fm_index
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 
 !
@@ -729,7 +729,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -738,16 +738,16 @@ endif  !}
 !
 
 fm_index = 0
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'list') then  !{
-  fm_index = fm_get_index(name)
+  fm_index = fm_get_index(field_name)
   if (fm_index .le. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' List does not exist: ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // ' List does not exist: ' // trim(field_name))
   endif  !}
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' List does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' List does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) // ', found (' // trim(fm_type) // ')')
 endif  !}
 
 
@@ -759,7 +759,7 @@ end function fm_util_get_index_list  !}
 !#######################################################################
 
 !> Get an integer value from the Field Manager tree.
-function fm_util_get_integer_array(name, caller)            &
+function fm_util_get_integer_array(field_name, caller)            &
          result (array)  !{
 
 implicit none
@@ -774,7 +774,7 @@ integer, pointer, dimension(:) :: array
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 
 !
@@ -819,29 +819,29 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'integer') then  !{
-  length = fm_get_length(name)
+  length = fm_get_length(field_name)
   if (length .lt. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
   endif  !}
   if (length .gt. 0) then  !{
     allocate(array(length))
     do i = 1, length  !{
-      if (.not. fm_get_value(name, array(i), index = i)) then  !{
+      if (.not. fm_get_value(field_name, array(i), index = i)) then  !{
         write (index_str,*) '(', i, ')'
-        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name) // trim(index_str))
+        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name) // trim(index_str))
       endif  !}
     enddo  !} i
   endif  !}
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -851,7 +851,7 @@ end function fm_util_get_integer_array  !}
 !#######################################################################
 
 !> Get a logical value from the Field Manager tree.
-function fm_util_get_logical_array(name, caller)            &
+function fm_util_get_logical_array(field_name, caller)            &
          result (array)  !{
 
 implicit none
@@ -866,7 +866,7 @@ logical, pointer, dimension(:) :: array
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 
 !
@@ -911,29 +911,29 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'logical') then  !{
-  length = fm_get_length(name)
+  length = fm_get_length(field_name)
   if (length .lt. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
   endif  !}
   if (length .gt. 0) then  !{
     allocate(array(length))
     do i = 1, length  !{
-      if (.not. fm_get_value(name, array(i), index = i)) then  !{
+      if (.not. fm_get_value(field_name, array(i), index = i)) then  !{
         write (index_str,*) '(', i, ')'
-        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name) // trim(index_str))
+        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name) // trim(index_str))
       endif  !}
     enddo  !} i
   endif  !}
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -943,7 +943,7 @@ end function fm_util_get_logical_array  !}
 !#######################################################################
 
 !> Get a real value from the Field Manager tree.
-function fm_util_get_real_array(name, caller)            &
+function fm_util_get_real_array(field_name, caller)            &
          result (array)  !{
 
 implicit none
@@ -958,7 +958,7 @@ real(r8_kind), pointer, dimension(:) :: array
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 
 !
@@ -1003,29 +1003,29 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'real') then  !{
-  length = fm_get_length(name)
+  length = fm_get_length(field_name)
   if (length .lt. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
   endif  !}
   if (length .gt. 0) then  !{
     allocate(array(length))
     do i = 1, length  !{
-      if (.not. fm_get_value(name, array(i), index = i)) then  !{
+      if (.not. fm_get_value(field_name, array(i), index = i)) then  !{
         write (index_str,*) '(', i, ')'
-        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name) // trim(index_str))
+        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name) // trim(index_str))
       endif  !}
     enddo  !} i
   endif  !}
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -1036,7 +1036,7 @@ end function fm_util_get_real_array  !}
 
 
 !> Get a string value from the Field Manager tree.
-function fm_util_get_string_array(name, caller)            &
+function fm_util_get_string_array(field_name, caller)            &
          result (array)  !{
 
 implicit none
@@ -1051,7 +1051,7 @@ character(len=fm_string_len), pointer, dimension(:) :: array
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 
 !
@@ -1096,29 +1096,29 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'string') then  !{
-  length = fm_get_length(name)
+  length = fm_get_length(field_name)
   if (length .lt. 0) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
   endif  !}
   if (length .gt. 0) then  !{
     allocate(array(length))
     do i = 1, length  !{
-      if (.not. fm_get_value(name, array(i), index = i)) then  !{
+      if (.not. fm_get_value(field_name, array(i), index = i)) then  !{
         write (index_str,*) '(', i, ')'
-        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name) // trim(index_str))
+        call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name) // trim(index_str))
       endif  !}
     enddo  !} i
   endif  !}
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Array does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -1128,7 +1128,7 @@ end function fm_util_get_string_array  !}
 !#######################################################################
 
 !> Get an integer value from the Field Manager tree.
-function fm_util_get_integer(name, caller, index, default_value, scalar)            &
+function fm_util_get_integer(field_name, caller, index, default_value, scalar)            &
          result (ival)  !{
 
 implicit none
@@ -1143,7 +1143,7 @@ integer :: ival
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
 integer, intent(in), optional           :: default_value
@@ -1188,7 +1188,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -1199,11 +1199,11 @@ endif  !}
 
 if (present(scalar)) then  !{
   if (scalar) then  !{
-    field_length = fm_get_length(name)
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     elseif (field_length .gt. 1) then  !}{
-      call mpp_error(FATAL, trim(error_header) // trim(name) // ' not scalar')
+      call mpp_error(FATAL, trim(error_header) // trim(field_name) // ' not scalar')
     endif  !}
   endif  !}
 endif  !}
@@ -1221,17 +1221,17 @@ else  !}{
   index_t = 1
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'integer') then  !{
-  if (.not. fm_get_value(name, ival, index = index_t)) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
+  if (.not. fm_get_value(field_name, ival, index = index_t)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name))
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   ival = default_value
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -1241,7 +1241,7 @@ end function fm_util_get_integer  !}
 !#######################################################################
 
 !> Get a logical value from the Field Manager tree.
-function fm_util_get_logical(name, caller, index, default_value, scalar)            &
+function fm_util_get_logical(field_name, caller, index, default_value, scalar)            &
          result (lval)  !{
 
 implicit none
@@ -1256,7 +1256,7 @@ logical :: lval
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
 logical, intent(in), optional           :: default_value
@@ -1301,7 +1301,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -1312,11 +1312,11 @@ endif  !}
 
 if (present(scalar)) then  !{
   if (scalar) then  !{
-    field_length = fm_get_length(name)
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     elseif (field_length .gt. 1) then  !}{
-      call mpp_error(FATAL, trim(error_header) // trim(name) // ' not scalar')
+      call mpp_error(FATAL, trim(error_header) // trim(field_name) // ' not scalar')
     endif  !}
   endif  !}
 endif  !}
@@ -1334,17 +1334,17 @@ else  !}{
   index_t = 1
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'logical') then  !{
-  if (.not. fm_get_value(name, lval, index = index_t)) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
+  if (.not. fm_get_value(field_name, lval, index = index_t)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name))
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   lval = default_value
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -1355,7 +1355,7 @@ end function fm_util_get_logical  !}
 
 
 !> Get a real value from the Field Manager tree.
-function fm_util_get_real(name, caller, index, default_value, scalar)           &
+function fm_util_get_real(field_name, caller, index, default_value, scalar)           &
          result (rval)  !{
 
 implicit none
@@ -1370,7 +1370,7 @@ real(r8_kind) :: rval
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
 real(r8_kind), intent(in), optional     :: default_value
@@ -1416,7 +1416,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -1427,11 +1427,11 @@ endif  !}
 
 if (present(scalar)) then  !{
   if (scalar) then  !{
-    field_length = fm_get_length(name)
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     elseif (field_length .gt. 1) then  !}{
-      call mpp_error(FATAL, trim(error_header) // trim(name) // ' not scalar')
+      call mpp_error(FATAL, trim(error_header) // trim(field_name) // ' not scalar')
     endif  !}
   endif  !}
 endif  !}
@@ -1449,22 +1449,22 @@ else  !}{
   index_t = 1
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'real') then  !{
-  if (.not. fm_get_value(name, rval, index = index_t)) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
+  if (.not. fm_get_value(field_name, rval, index = index_t)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name))
   endif  !}
 else if (fm_type .eq. 'integer') then
-  if (.not. fm_get_value(name, ivalue, index = index_t)) then
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
+  if (.not. fm_get_value(field_name, ivalue, index = index_t)) then
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name))
   endif
   rval = real(ivalue,r8_kind)
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   rval = default_value
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -1476,7 +1476,7 @@ end function fm_util_get_real  !}
 
 
 !> Get a string value from the Field Manager tree.
-function fm_util_get_string(name, caller, index, default_value, scalar)            &
+function fm_util_get_string(field_name, caller, index, default_value, scalar)            &
          result (sval)  !{
 
 implicit none
@@ -1491,7 +1491,7 @@ character(len=fm_string_len) :: sval
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
 character(len=*), intent(in), optional  :: default_value
@@ -1536,7 +1536,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -1547,11 +1547,11 @@ endif  !}
 
 if (present(scalar)) then  !{
   if (scalar) then  !{
-    field_length = fm_get_length(name)
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     elseif (field_length .gt. 1) then  !}{
-      call mpp_error(FATAL, trim(error_header) // trim(name) // ' not scalar')
+      call mpp_error(FATAL, trim(error_header) // trim(field_name) // ' not scalar')
     endif  !}
   endif  !}
 endif  !}
@@ -1569,17 +1569,17 @@ else  !}{
   index_t = 1
 endif  !}
 
-fm_type = fm_get_type(name)
+fm_type = fm_get_type(field_name)
 if (fm_type .eq. 'string') then  !{
-  if (.not. fm_get_value(name, sval, index = index_t)) then  !{
-    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(name))
+  if (.not. fm_get_value(field_name, sval, index = index_t)) then  !{
+    call mpp_error(FATAL, trim(error_header) // ' Problem getting ' // trim(field_name))
   endif  !}
 elseif (fm_type .eq. ' ' .and. present(default_value)) then  !}{
   sval = default_value
 elseif (fm_type .eq. ' ') then  !}{
-  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(name))
+  call mpp_error(FATAL, trim(error_header) // ' Field does not exist: ' // trim(field_name))
 else  !}{
- call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(name) // ', found (' // trim(fm_type) // ')')
+ call mpp_error(FATAL, trim(error_header) // ' Wrong type for ' // trim(field_name) //', found ('// trim(fm_type) //')')
 endif  !}
 
 return
@@ -1589,7 +1589,7 @@ end function fm_util_get_string  !}
 !#######################################################################
 
 !> Set an integer array in the Field Manager tree.
-subroutine fm_util_set_value_integer_array(name, ival, length, caller, no_overwrite, good_name_list)  !{
+subroutine fm_util_set_value_integer_array(field_name, ival, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
 
@@ -1597,7 +1597,7 @@ implicit none
 !       arguments
 !
 
-character(len=*), intent(in)                            :: name
+character(len=*), intent(in)                            :: field_name
 integer, intent(in)                                     :: length
 integer, intent(in)                                     :: ival(length)
 character(len=*), intent(in), optional                  :: caller
@@ -1647,7 +1647,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -1684,36 +1684,36 @@ endif  !}
 !
 
 if (length .eq. 0) then  !{
-  if (.not. (no_overwrite_use .and. fm_exists(name))) then  !{
-    field_index = fm_new_value(name, 0, index = 0)
+  if (.not. (no_overwrite_use .and. fm_exists(field_name))) then  !{
+    field_index = fm_new_value(field_name, 0, index = 0)
     if (field_index .le. 0) then  !{
       write (str_error,*) ' with length = ', length
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
     endif  !}
   endif  !}
 else  !}{
-  if (no_overwrite_use .and. fm_exists(name)) then  !{
-    field_length = fm_get_length(name)
+  if (no_overwrite_use .and. fm_exists(field_name)) then  !{
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     endif  !}
     do n = field_length + 1, length  !{
-      field_index = fm_new_value(name, ival(n), index = n)
+      field_index = fm_new_value(field_name, ival(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
-        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
       endif  !}
     enddo  !} n
   else  !}{
-    field_index = fm_new_value(name, ival(1))
+    field_index = fm_new_value(field_name, ival(1))
     if (field_index .le. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name))
     endif  !}
     do n = 2, length  !{
-      field_index = fm_new_value(name, ival(n), index = n)
+      field_index = fm_new_value(field_name, ival(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
-        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
       endif  !}
     enddo  !} n
   endif  !}
@@ -1726,15 +1726,15 @@ endif  !}
 
 if (good_name_list_use .ne. ' ') then  !{
   if (fm_exists(good_name_list_use)) then  !{
-    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+    add_name = fm_util_get_index_string(good_name_list_use, field_name,               &
        caller = caller_str) .le. 0              ! true if name does not exist in string array
   else  !}{
     add_name = .true.                           ! always add to new list
   endif  !}
-  if (add_name .and. fm_exists(name)) then  !{
-    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+  if (add_name .and. fm_exists(field_name)) then  !{
+    if (fm_new_value(good_name_list_use, field_name, append = .true., create = .true.) .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) //                               &
-           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+           ' Could not add ' // trim(field_name) // ' to "' // trim(good_name_list_use) // '" list')
     endif  !}
   endif  !}
 endif  !}
@@ -1746,7 +1746,7 @@ end subroutine fm_util_set_value_integer_array  !}
 !#######################################################################
 
 !> Set a logical array in the Field Manager tree.
-subroutine fm_util_set_value_logical_array(name, lval, length, caller, no_overwrite, good_name_list)  !{
+subroutine fm_util_set_value_logical_array(field_name, lval, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
 
@@ -1754,7 +1754,7 @@ implicit none
 !       arguments
 !
 
-character(len=*), intent(in)                            :: name
+character(len=*), intent(in)                            :: field_name
 integer, intent(in)                                     :: length
 logical, intent(in)                                     :: lval(length)
 character(len=*), intent(in), optional                  :: caller
@@ -1804,7 +1804,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -1841,36 +1841,36 @@ endif  !}
 !
 
 if (length .eq. 0) then  !{
-  if (.not. (no_overwrite_use .and. fm_exists(name))) then  !{
-    field_index = fm_new_value(name, .false., index = 0)
+  if (.not. (no_overwrite_use .and. fm_exists(field_name))) then  !{
+    field_index = fm_new_value(field_name, .false., index = 0)
     if (field_index .le. 0) then  !{
       write (str_error,*) ' with length = ', length
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
     endif  !}
   endif  !}
 else  !}{
-  if (no_overwrite_use .and. fm_exists(name)) then  !{
-    field_length = fm_get_length(name)
+  if (no_overwrite_use .and. fm_exists(field_name)) then  !{
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     endif  !}
     do n = field_length + 1, length  !{
-      field_index = fm_new_value(name, lval(n), index = n)
+      field_index = fm_new_value(field_name, lval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
-        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
       endif  !}
     enddo  !} n
   else  !}{
-    field_index = fm_new_value(name, lval(1))
+    field_index = fm_new_value(field_name, lval(1))
     if (field_index .le. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name))
     endif  !}
     do n = 2, length  !{
-      field_index = fm_new_value(name, lval(n), index = n)
+      field_index = fm_new_value(field_name, lval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
-        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
       endif  !}
     enddo  !} n
   endif  !}
@@ -1883,15 +1883,15 @@ endif  !}
 
 if (good_name_list_use .ne. ' ') then  !{
   if (fm_exists(good_name_list_use)) then  !{
-    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+    add_name = fm_util_get_index_string(good_name_list_use, field_name,               &
        caller = caller_str) .le. 0              ! true if name does not exist in string array
   else  !}{
     add_name = .true.                           ! always add to new list
   endif  !}
-  if (add_name .and. fm_exists(name)) then  !{
-    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+  if (add_name .and. fm_exists(field_name)) then  !{
+    if (fm_new_value(good_name_list_use, field_name, append = .true., create = .true.) .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) //                               &
-           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+           ' Could not add ' // trim(field_name) // ' to "' // trim(good_name_list_use) // '" list')
     endif  !}
   endif  !}
 endif  !}
@@ -1903,7 +1903,7 @@ end subroutine fm_util_set_value_logical_array  !}
 !#######################################################################
 
 !> Set a string array in the Field Manager tree.
-subroutine fm_util_set_value_string_array(name, sval, length, caller, no_overwrite, good_name_list)  !{
+subroutine fm_util_set_value_string_array(field_name, sval, length, caller, no_overwrite, good_name_list)  !{
 
 implicit none
 
@@ -1911,7 +1911,7 @@ implicit none
 !       arguments
 !
 
-character(len=*), intent(in)                            :: name
+character(len=*), intent(in)                            :: field_name
 integer, intent(in)                                     :: length
 character(len=*), intent(in)                            :: sval(length)
 character(len=*), intent(in), optional                  :: caller
@@ -1961,7 +1961,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -1998,36 +1998,36 @@ endif  !}
 !
 
 if (length .eq. 0) then  !{
-  if (.not. (no_overwrite_use .and. fm_exists(name))) then  !{
-    field_index = fm_new_value(name, ' ', index = 0)
+  if (.not. (no_overwrite_use .and. fm_exists(field_name))) then  !{
+    field_index = fm_new_value(field_name, ' ', index = 0)
     if (field_index .le. 0) then  !{
       write (str_error,*) ' with length = ', length
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
     endif  !}
   endif  !}
 else  !}{
-  if (no_overwrite_use .and. fm_exists(name)) then  !{
-    field_length = fm_get_length(name)
+  if (no_overwrite_use .and. fm_exists(field_name)) then  !{
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     endif  !}
     do n = field_length + 1, length  !{
-      field_index = fm_new_value(name, sval(n), index = n)
+      field_index = fm_new_value(field_name, sval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
-        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
       endif  !}
     enddo  !} n
   else  !}{
-    field_index = fm_new_value(name, sval(1))
+    field_index = fm_new_value(field_name, sval(1))
     if (field_index .le. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name))
     endif  !}
     do n = 2, length  !{
-      field_index = fm_new_value(name, sval(n), index = n)
+      field_index = fm_new_value(field_name, sval(n), index = n)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', n
-        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
       endif  !}
     enddo  !} n
   endif  !}
@@ -2040,15 +2040,15 @@ endif  !}
 
 if (good_name_list_use .ne. ' ') then  !{
   if (fm_exists(good_name_list_use)) then  !{
-    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+    add_name = fm_util_get_index_string(good_name_list_use, field_name,               &
        caller = caller_str) .le. 0              ! true if name does not exist in string array
   else  !}{
     add_name = .true.                           ! always add to new list
   endif  !}
-  if (add_name .and. fm_exists(name)) then  !{
-    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+  if (add_name .and. fm_exists(field_name)) then  !{
+    if (fm_new_value(good_name_list_use, field_name, append = .true., create = .true.) .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) //                               &
-           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+           ' Could not add ' // trim(field_name) // ' to "' // trim(good_name_list_use) // '" list')
     endif  !}
   endif  !}
 endif  !}
@@ -2060,7 +2060,7 @@ end subroutine fm_util_set_value_string_array  !}
 !#######################################################################
 
 !> Set an integer value in the Field Manager tree.
-subroutine fm_util_set_value_integer(name, ival, caller, index, append, no_create,        &
+subroutine fm_util_set_value_integer(field_name, ival, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
 implicit none
@@ -2069,7 +2069,7 @@ implicit none
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 integer, intent(in)                     :: ival
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
@@ -2121,7 +2121,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -2157,50 +2157,50 @@ if (present(no_create)) then  !{
   create = .not. no_create
   if (no_create .and. (present(append) .or. present(index))) then  !{
     call mpp_error(FATAL, trim(error_header) // &
-                   &  ' append or index are present when no_create is true for ' // trim(name))
+                   &  ' append or index are present when no_create is true for ' // trim(field_name))
   endif  !}
 else  !}{
   create = .true.
 endif  !}
 
 if (present(index)) then  !{
-  if (fm_exists(name)) then  !{
-    field_length = fm_get_length(name)
+  if (fm_exists(field_name)) then  !{
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     endif  !}
     if (.not. (no_overwrite_use .and. field_length .ge. index)) then  !{
-      field_index = fm_new_value(name, ival, index = index)
+      field_index = fm_new_value(field_name, ival, index = index)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', index
-        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(field_name) // trim(str_error))
       endif  !}
     endif  !}
   else  !}{
-    field_index = fm_new_value(name, ival, index = index)
+    field_index = fm_new_value(field_name, ival, index = index)
     if (field_index .le. 0) then  !{
       write (str_error,*) ' with index = ', index
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
     endif  !}
   endif  !}
 elseif (present(append)) then  !}{
-  field_index = fm_new_value(name, ival, append = append)
+  field_index = fm_new_value(field_name, ival, append = append)
   if (field_index .le. 0) then  !{
     write (str_error,*) ' with append = ', append
-    call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+    call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
   endif  !}
 else  !}{
-  if (fm_exists(name)) then  !{
+  if (fm_exists(field_name)) then  !{
     if (.not. no_overwrite_use) then  !{
-      field_index = fm_new_value(name, ival)
+      field_index = fm_new_value(field_name, ival)
       if (field_index .le. 0) then  !{
-        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name))
+        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(field_name))
       endif  !}
     endif  !}
   elseif (create) then  !}{
-    field_index = fm_new_value(name, ival)
+    field_index = fm_new_value(field_name, ival)
     if (field_index .le. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(field_name))
     endif  !}
   endif  !}
 endif  !}
@@ -2212,15 +2212,15 @@ endif  !}
 
 if (good_name_list_use .ne. ' ') then  !{
   if (fm_exists(good_name_list_use)) then  !{
-    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+    add_name = fm_util_get_index_string(good_name_list_use, field_name,               &
        caller = caller_str) .le. 0              ! true if name does not exist in string array
   else  !}{
     add_name = .true.                           ! always add to new list
   endif  !}
-  if (add_name .and. fm_exists(name)) then  !{
-    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+  if (add_name .and. fm_exists(field_name)) then  !{
+    if (fm_new_value(good_name_list_use, field_name, append = .true., create = .true.) .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) //                               &
-           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+           ' Could not add ' // trim(field_name) // ' to "' // trim(good_name_list_use) // '" list')
     endif  !}
   endif  !}
 endif  !}
@@ -2232,7 +2232,7 @@ end subroutine fm_util_set_value_integer  !}
 !#######################################################################
 
 !> Set a logical value in the Field Manager tree.
-subroutine fm_util_set_value_logical(name, lval, caller, index, append, no_create,        &
+subroutine fm_util_set_value_logical(field_name, lval, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
 implicit none
@@ -2241,7 +2241,7 @@ implicit none
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 logical, intent(in)                     :: lval
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
@@ -2293,7 +2293,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -2329,50 +2329,50 @@ if (present(no_create)) then  !{
   create = .not. no_create
   if (no_create .and. (present(append) .or. present(index))) then  !{
     call mpp_error(FATAL, trim(error_header) // &
-                   &  ' append or index are present when no_create is true for ' // trim(name))
+                   &  ' append or index are present when no_create is true for ' // trim(field_name))
   endif  !}
 else  !}{
   create = .true.
 endif  !}
 
 if (present(index)) then  !{
-  if (fm_exists(name)) then  !{
-    field_length = fm_get_length(name)
+  if (fm_exists(field_name)) then  !{
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     endif  !}
     if (.not. (no_overwrite_use .and. field_length .ge. index)) then  !{
-      field_index = fm_new_value(name, lval, index = index)
+      field_index = fm_new_value(field_name, lval, index = index)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', index
-        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(field_name) // trim(str_error))
       endif  !}
     endif  !}
   else  !}{
-    field_index = fm_new_value(name, lval, index = index)
+    field_index = fm_new_value(field_name, lval, index = index)
     if (field_index .le. 0) then  !{
       write (str_error,*) ' with index = ', index
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
     endif  !}
   endif  !}
 elseif (present(append)) then  !}{
-  field_index = fm_new_value(name, lval, append = append)
+  field_index = fm_new_value(field_name, lval, append = append)
   if (field_index .le. 0) then  !{
     write (str_error,*) ' with append = ', append
-    call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+    call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
   endif  !}
 else  !}{
-  if (fm_exists(name)) then  !{
+  if (fm_exists(field_name)) then  !{
     if (.not. no_overwrite_use) then  !{
-      field_index = fm_new_value(name, lval)
+      field_index = fm_new_value(field_name, lval)
       if (field_index .le. 0) then  !{
-        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name))
+        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(field_name))
       endif  !}
     endif  !}
   elseif (create) then  !}{
-    field_index = fm_new_value(name, lval)
+    field_index = fm_new_value(field_name, lval)
     if (field_index .le. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(field_name))
     endif  !}
   endif  !}
 endif  !}
@@ -2384,15 +2384,15 @@ endif  !}
 
 if (good_name_list_use .ne. ' ') then  !{
   if (fm_exists(good_name_list_use)) then  !{
-    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+    add_name = fm_util_get_index_string(good_name_list_use, field_name,               &
        caller = caller_str) .le. 0              ! true if name does not exist in string array
   else  !}{
     add_name = .true.                           ! always add to new list
   endif  !}
-  if (add_name .and. fm_exists(name)) then  !{
-    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+  if (add_name .and. fm_exists(field_name)) then  !{
+    if (fm_new_value(good_name_list_use, field_name, append = .true., create = .true.) .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) //                               &
-           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+           ' Could not add ' // trim(field_name) // ' to "' // trim(good_name_list_use) // '" list')
     endif  !}
   endif  !}
 endif  !}
@@ -2403,7 +2403,7 @@ end subroutine fm_util_set_value_logical  !}
 
 !#######################################################################
 !> Set a string value in the Field Manager tree.
-subroutine fm_util_set_value_string(name, sval, caller, index, append, no_create,        &
+subroutine fm_util_set_value_string(field_name, sval, caller, index, append, no_create,        &
      no_overwrite, good_name_list)  !{
 
 implicit none
@@ -2412,7 +2412,7 @@ implicit none
 !       arguments
 !
 
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in)            :: sval
 character(len=*), intent(in), optional  :: caller
 integer, intent(in), optional           :: index
@@ -2464,7 +2464,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -2500,50 +2500,50 @@ if (present(no_create)) then  !{
   create = .not. no_create
   if (no_create .and. (present(append) .or. present(index))) then  !{
     call mpp_error(FATAL, trim(error_header) // &
-                   &  ' append or index are present when no_create is true for ' // trim(name))
+                   &  ' append or index are present when no_create is true for ' // trim(field_name))
   endif  !}
 else  !}{
   create = .true.
 endif  !}
 
 if (present(index)) then  !{
-  if (fm_exists(name)) then  !{
-    field_length = fm_get_length(name)
+  if (fm_exists(field_name)) then  !{
+    field_length = fm_get_length(field_name)
     if (field_length .lt. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem getting length of ' // trim(field_name))
     endif  !}
     if (.not. (no_overwrite_use .and. field_length .ge. index)) then  !{
-      field_index = fm_new_value(name, sval, index = index)
+      field_index = fm_new_value(field_name, sval, index = index)
       if (field_index .le. 0) then  !{
         write (str_error,*) ' with index = ', index
-        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name) // trim(str_error))
+        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(field_name) // trim(str_error))
       endif  !}
     endif  !}
   else  !}{
-    field_index = fm_new_value(name, sval, index = index)
+    field_index = fm_new_value(field_name, sval, index = index)
     if (field_index .le. 0) then  !{
       write (str_error,*) ' with index = ', index
-      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+      call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
     endif  !}
   endif  !}
 elseif (present(append)) then  !}{
-  field_index = fm_new_value(name, sval, append = append)
+  field_index = fm_new_value(field_name, sval, append = append)
   if (field_index .le. 0) then  !{
     write (str_error,*) ' with append = ', append
-    call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(name) // trim(str_error))
+    call mpp_error(FATAL, trim(error_header) // ' Problem setting ' // trim(field_name) // trim(str_error))
   endif  !}
 else  !}{
-  if (fm_exists(name)) then  !{
+  if (fm_exists(field_name)) then  !{
     if (.not. no_overwrite_use) then  !{
-      field_index = fm_new_value(name, sval)
+      field_index = fm_new_value(field_name, sval)
       if (field_index .le. 0) then  !{
-        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(name))
+        call mpp_error(FATAL, trim(error_header) // ' Problem overwriting ' // trim(field_name))
       endif  !}
     endif  !}
   elseif (create) then  !}{
-    field_index = fm_new_value(name, sval)
+    field_index = fm_new_value(field_name, sval)
     if (field_index .le. 0) then  !{
-      call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(name))
+      call mpp_error(FATAL, trim(error_header) // ' Problem creating ' // trim(field_name))
     endif  !}
   endif  !}
 endif  !}
@@ -2555,15 +2555,15 @@ endif  !}
 
 if (good_name_list_use .ne. ' ') then  !{
   if (fm_exists(good_name_list_use)) then  !{
-    add_name = fm_util_get_index_string(good_name_list_use, name,               &
+    add_name = fm_util_get_index_string(good_name_list_use, field_name,               &
        caller = caller_str) .le. 0              ! true if name does not exist in string array
   else  !}{
     add_name = .true.                           ! always add to new list
   endif  !}
-  if (add_name .and. fm_exists(name)) then  !{
-    if (fm_new_value(good_name_list_use, name, append = .true., create = .true.) .le. 0) then  !{
+  if (add_name .and. fm_exists(field_name)) then  !{
+    if (fm_new_value(good_name_list_use, field_name, append = .true., create = .true.) .le. 0) then  !{
       call mpp_error(FATAL, trim(error_header) //                               &
-           ' Could not add ' // trim(name) // ' to "' // trim(good_name_list_use) // '" list')
+           ' Could not add ' // trim(field_name) // ' to "' // trim(good_name_list_use) // '" list')
     endif  !}
   endif  !}
 endif  !}
@@ -2575,7 +2575,7 @@ end subroutine fm_util_set_value_string  !}
 !#######################################################################
 
 !> Start processing a namelist
-subroutine fm_util_start_namelist(path, name, caller, no_overwrite, check)  !{
+subroutine fm_util_start_namelist(path, field_name, caller, no_overwrite, check)  !{
 
 implicit none
 
@@ -2584,7 +2584,7 @@ implicit none
 !
 
 character(len=*), intent(in)            :: path
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 logical,          intent(in), optional  :: no_overwrite
 logical,          intent(in), optional  :: check
@@ -2630,7 +2630,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a name is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -2639,12 +2639,12 @@ endif  !}
 !
 
 if (path .eq. ' ') then  !{
-  path_name = name
+  path_name = field_name
 else  !}{
-  path_name = trim(path) // '/' // name
+  path_name = trim(path) // '/' // field_name
 endif  !}
 save_path = path
-save_name = name
+save_name = field_name
 
 !
 !       set the default caller string, if desired
@@ -2715,9 +2715,9 @@ endif  !}
 !
 
 if (fm_new_value('/ocean_mod/GOOD/namelists/' // trim(path) // '/good_values',    &
-                 name, append = .true., create = .true.) .le. 0) then  !{
+                 field_name, append = .true., create = .true.) .le. 0) then  !{
   call mpp_error(FATAL, trim(error_header) //                           &
-       ' Could not add ' // trim(name) // ' to "' // trim(path) // '/good_values" list')
+       ' Could not add ' // trim(field_name) // ' to "' // trim(path) // '/good_values" list')
 endif  !}
 
 !
@@ -2740,7 +2740,7 @@ end subroutine fm_util_start_namelist  !}
 !#######################################################################
 
 !> Finish up processing a namelist
-subroutine fm_util_end_namelist(path, name, caller, check)  !{
+subroutine fm_util_end_namelist(path, field_name, caller, check)  !{
 
 implicit none
 
@@ -2749,7 +2749,7 @@ implicit none
 !
 
 character(len=*), intent(in)            :: path
-character(len=*), intent(in)            :: name
+character(len=*), intent(in)            :: field_name
 character(len=*), intent(in), optional  :: caller
 logical,          intent(in), optional  :: check
 
@@ -2791,7 +2791,7 @@ note_header = '==>Note from ' // trim(mod_name) //     &
 !       check that a path is given (fatal if not)
 !
 
-if (name .eq. ' ') then  !{
+if (field_name .eq. ' ') then  !{
   call mpp_error(FATAL, trim(error_header) // ' Empty name given')
 endif  !}
 
@@ -2803,9 +2803,9 @@ endif  !}
 if (path .ne. save_path) then  !{
   call mpp_error(FATAL, trim(error_header) // &
                  &  ' Path "' // trim(path) // '" does not match saved path "' // trim(save_path) // '"')
-elseif (name .ne. save_name) then  !}{
+elseif (field_name .ne. save_name) then  !}{
   call mpp_error(FATAL, trim(error_header) // &
-                 &  ' Name "' // trim(name) // '" does not match saved name "' // trim(save_name) // '"')
+                 &  ' Name "' // trim(field_name) // '" does not match saved name "' // trim(save_name) // '"')
 endif  !}
 
 !
@@ -2813,9 +2813,9 @@ endif  !}
 !
 
 if (path .eq. ' ') then  !{
-  path_name = name
+  path_name = field_name
 else  !}{
-  path_name = trim(path) // '/' // name
+  path_name = trim(path) // '/' // field_name
 endif  !}
 save_path = ' '
 save_name = ' '

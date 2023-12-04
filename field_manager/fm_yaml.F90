@@ -63,7 +63,7 @@ end type fmAttr_t
 type, public :: fmVar_t
   integer                                     :: yfid                  !< file id of a yaml file
   integer                                     :: id                    !< block id of this var
-  character(len=:), allocatable               :: name                  !< name of the variable
+  character(len=:), allocatable               :: var_name              !< name of the variable
   integer, dimension(:), allocatable          :: key_ids               !< key ids for params
   character(len=:), dimension(:), allocatable :: keys                  !< names of params
   character(len=:), dimension(:), allocatable :: values                !< values of params
@@ -85,7 +85,7 @@ end type fmVar_t
 type, public :: fmModel_t
   integer                       :: yfid                !< file id of a yaml file
   integer                       :: id                  !< block id of this model
-  character(len=:), allocatable :: name                !< name of the model
+  character(len=:), allocatable :: model_name          !< name of the model
   character(len=7)              :: blockname="varlist" !< name of the root block
   integer                       :: nchildren           !< number of var types
   integer, allocatable          :: child_ids(:)        !< array of var ids
@@ -104,7 +104,7 @@ end type fmModel_t
 type, public :: fmType_t
   integer                       :: yfid                !< file id of a yaml file
   integer                       :: id                  !< block id of this type
-  character(len=:), allocatable :: name                !< name of the type
+  character(len=:), allocatable :: type_name           !< name of the type
   character(len=7)              :: blockname="modlist" !< name of the root block
   integer                       :: nchildren           !< number of model types
   integer, allocatable          :: child_ids(:)        !< array of model ids
@@ -263,7 +263,7 @@ end subroutine destruct_fmTable_t
 subroutine destruct_fmType_t(this)
   class (fmType_t) :: this !< type object
 
-  if (allocated(this%name)) deallocate(this%name)
+  if (allocated(this%type_name)) deallocate(this%type_name)
   if (allocated(this%child_ids)) deallocate(this%child_ids)
   if (allocated(this%children)) then
     do type_i=1,this%nchildren
@@ -279,7 +279,7 @@ end subroutine destruct_fmType_t
 subroutine destruct_fmModel_t(this)
   class (fmModel_t) :: this !< model object
 
-  if (allocated(this%name)) deallocate(this%name)
+  if (allocated(this%model_name)) deallocate(this%model_name)
   if (allocated(this%child_ids)) deallocate(this%child_ids)
   if (allocated(this%children)) then
     do model_i=1,this%nchildren
@@ -295,7 +295,7 @@ end subroutine destruct_fmModel_t
 subroutine destruct_fmVar_t(this)
   class (fmVar_t) :: this !< variable object
 
-  if (allocated(this%name)) deallocate(this%name)
+  if (allocated(this%var_name)) deallocate(this%var_name)
   if (allocated(this%key_ids)) deallocate(this%key_ids)
   if (allocated(this%keys)) deallocate(this%keys)
   if (allocated(this%values)) deallocate(this%values)
@@ -345,7 +345,7 @@ subroutine get_name_fmType_t(this)
   allocate(key_ids(nkeys))
   call get_key_ids(this%yfid, this%id, key_ids)
   call get_key_value(this%yfid, key_ids(1), key_value)
-  this%name = trim(key_value)
+  this%type_name = trim(key_value)
 end subroutine get_name_fmType_t
 
 !> @brief gets the block ids for children of this type.
@@ -367,7 +367,7 @@ subroutine get_name_fmModel_t(this)
   allocate(key_ids(nkeys))
   call get_key_ids(this%yfid, this%id, key_ids)
   call get_key_value(this%yfid, key_ids(1), key_value)
-  this%name = trim(key_value)
+  this%model_name = trim(key_value)
 end subroutine get_name_fmModel_t
 
 !> @brief gets the block ids for children of this type.
@@ -393,7 +393,7 @@ subroutine get_name_fmVar_t(this)
   allocate(key_ids(nkeys))
   call get_key_ids(this%yfid, this%id, key_ids)
   call get_key_value(this%yfid, key_ids(1), key_value)
-  this%name = trim(key_value)
+  this%var_name = trim(key_value)
   if (nkeys .gt. 1) then
     maxln = 0
     maxlv = 0
