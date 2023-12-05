@@ -215,7 +215,7 @@ end subroutine DO_TIME_MAX_
 !!
 !! Where l are the indices passed in through the bounds_in/out
 subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, &
-                               missing_value, weight, pow)
+                               missing_value, diurnal_section, weight)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(r8_kind),       intent(inout) :: weight_sum          !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
@@ -226,9 +226,11 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
                                                                   !! of the output buffer
   real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
-  real(r8_kind),optional, intent(in) :: weight              !< Weight applied to data_in before added to data_out
-                                                                  !! used for weighted averages, default 1.0
-  real(FMS_TRM_KIND_),optional, intent(in) :: pow                 !< Used for pow reduction, adds field^pow to buffer
+  integer, intent(in)                      :: diurnal_section !< the diurnal "section" if doing a diurnal reduction 
+                                                              !! indicates which index to add data on 5th axis
+                                                              !! if not doing a diurnal reduction, this should always =1
+  real(r8_kind),optional, intent(in)       :: weight          !< Weight applied to data_in before added to data_out
+                                                              !! used for weighted averages, default 1.0
 
   integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
                                                             !! the input buffer
@@ -237,17 +239,12 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   integer :: i, j, k, l !< For looping
   real(FMS_TRM_KIND_) :: weight_loc, pow_loc !< local copies of optional arguments
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
+  integer :: diurnal
 
   if(present(weight)) then
     weight_loc = weight
   else
     weight_loc = 1.0_kindl
-  endif
-
-  if(present(pow)) then
-    pow_loc = weight
-  else
-    pow_loc = 1.0_kindl
   endif
 
   ! update with given weight for average before write
@@ -275,8 +272,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
           where (mask(is_in + i, js_in + j, ks_in + k, :))
-            data_out(is_out + i, js_out + j, ks_out + k, :, 1) =           &
-                       data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal_section) =           &
+                       data_out(is_out + i, js_out + j, ks_out + k, :, diurnal_section)  &
                      + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
           elsewhere
             data_out(is_out + i, js_out + j, ks_out + k, :, 1) = missing_value
@@ -289,8 +286,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
-          data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =  &
-             data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
+          data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal_section) =  &
+             data_out(is_out + i, js_out + j, ks_out + k, :, diurnal_section)  &
             + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
         enddo
       enddo
@@ -313,12 +310,12 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   !logical                            :: has_mask !< whether or not mask is present
 
   if ( has_mask ) then
-    where(out_buffer_data(:,:,:,:,1) .ne. missing_val)
-      out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
+    where(out_buffer_data(:,:,:,:,:) .ne. missing_val)
+      out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
                                    / weight_sum
     endwhere
   else  !not mask variant
-    out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
+    out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
                                / weight_sum
   endif
 

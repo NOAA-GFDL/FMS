@@ -1028,6 +1028,7 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
   integer                                   :: i     !< For do loops
   integer                                   :: naxis !< Number of axis for the field
   class(fmsDiagAxisContainer_type), pointer :: axis_ptr !diag_axis(this%axis_ids(i), for convenience
+  character(len=23)                         :: diurnal_axis_name !< name of the diurnal axis
 
   if (this%is_static()) then
     naxis = size(this%axis_ids)
@@ -1060,7 +1061,8 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
 
   !< The second to last dimension is always the diurnal axis
   if (field_yaml%has_n_diurnal()) then
-    dimnames(naxis - 1) = 'time_of_day_'//int2str(field_yaml%get_n_diurnal())
+    WRITE (diurnal_axis_name,'(a,i2.2)') 'time_of_day_', field_yaml%get_n_diurnal()
+    dimnames(naxis - 1) = trim(diurnal_axis_name)
   endif
 
   !< The last dimension is always the unlimited dimensions

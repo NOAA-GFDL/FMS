@@ -203,9 +203,11 @@ integer function fms_register_diag_field_obj &
  class (fmsDiagFile_type), pointer :: fileptr !< Pointer to the diag_file
  class (fmsDiagField_type), pointer :: fieldptr !< Pointer to the diag_field
  class (fmsDiagOutputBuffer_type), pointer :: bufferptr !< Pointer to the output buffer
+ class (diagYamlFilesVar_type), pointer :: yamlfptr
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
+ logical :: is_diurnal
 #endif
 #ifndef use_yaml
 fms_register_diag_field_obj = DIAG_FIELD_NOT_FOUND
@@ -233,11 +235,18 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
 !> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
 !! of the sorted variable list
+  is_diurnal = .false.
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
   do i = 1, size(fieldptr%buffer_ids)
     bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
     call bufferptr%set_field_id(this%registered_variables)
     call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
+    ! check if diurnal reduction for this buffer and if so set the diurnal sample size 
+    yamlfptr => diag_yaml%diag_fields(fieldptr%buffer_ids(i))
+    if( yamlfptr%get_var_reduction() .eq. time_diurnal) then
+      call bufferptr%set_diurnal_sample_size(yamlfptr%get_n_diurnal())
+      is_diurnal = .true.
+    endif
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
@@ -257,9 +266,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
-     call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
        fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
+     call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_start_time(init_time, this%current_model_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
@@ -268,10 +277,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
-     call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
        fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
+     call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(init_time)) then !only inti time present
@@ -972,6 +981,15 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     case (time_power)
     case (time_rms)
     case (time_diurnal)
+      if(.not. present(time)) call mpp_error(FATAL, &
+                            "fms_diag_do_reduction:: time must be present when using diurnal reductions")
+      ! sets the diurnal index for reduction within the buffer object
+      call buffer_ptr%set_diurnal_section_index(time)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case default
       error_msg = "The reduction method is not supported. "//&
         "Only none, min, max, sum, average, power, rms, and diurnal are supported."

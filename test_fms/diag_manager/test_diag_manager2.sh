@@ -494,8 +494,8 @@ test_diag_manager
 "test_diurnal",         1, "hours",   1, "hours", "time"
 
 #output variables
- "test_diag_manager_mod", "sst", "sst", "test_diurnal",  "all", "diurnal3", "none", 2
- "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal3", "none", 2
+ "test_diag_manager_mod", "sst", "sst", "test_diurnal",  "all", "diurnal4", "none", 2
+ "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal4", "none", 2
 _EOF
 
 my_test_count=`expr $my_test_count + 1`

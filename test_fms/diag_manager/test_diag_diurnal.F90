@@ -17,7 +17,9 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  General program to test the different possible reduction methods
+!> @brief  Program to test the diurnal reduction
+!! Similar to test_reduction_methods, but uses the variables and reductions
+!! from the test_diag_manager_time diurnal test (#25)
 program test_reduction_methods
   use fms_mod,           only: fms_init, fms_end
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
@@ -45,6 +47,7 @@ program test_reduction_methods
   integer                            :: jec, jed        !< Ending y compute, data domain index
   integer                            :: nhalox          !< Number of halos in x
   integer                            :: nhaloy          !< Number of halos in y
+  integer                            :: nhours          !< number of hours to send per time step
   real(kind=r8_kind), allocatable    :: cdata(:,:,:,:)  !< Data in the compute domain
   real(kind=r8_kind), allocatable    :: ddata(:,:,:,:)  !< Data in the data domain
   real(kind=r8_kind), allocatable    :: crmask(:,:,:,:) !< Mask in the compute domain
@@ -155,19 +158,13 @@ program test_reduction_methods
   id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', &
     Domain2=Domain)
   id_z  = diag_axis_init('z',  real((/ (i, i = 1,nz) /), kind=r8_kind),  'point_Z', 'z', long_name='point_Z')
-  id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
+  !!id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
 
   missing_value = -666._r8_kind
   !< Register the fields
-  id_var0 = register_diag_field  ('ocn_mod', 'var0', Time, 'Var0d', &
+  id_ice = register_diag_field  ('ocn_mod', 'ice', (/id_x, id_y/), Time, 'ice', &
     'mullions', missing_value = missing_value)
-  id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x/), Time, 'Var1d', &
-    'mullions', missing_value = missing_value)
-  id_ice = register_diag_field  ('ocn_mod', 'var2', (/id_x, id_y/), Time, 'Var2d', &
-    'mullions', missing_value = missing_value)
-  id_sst = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'Var3d', &
-    'mullions', missing_value = missing_value)
-  id_var4 = register_diag_field  ('ocn_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'Var4d', &
+  id_sst = register_diag_field  ('ocn_mod', 'sst', (/id_x, id_y, id_z/), Time, 'sst', &
     'mullions', missing_value = missing_value)
 
   !< Get the data domain indices (1 based)
@@ -181,74 +178,44 @@ program test_reduction_methods
     Time = Time + Time_step
 
     call set_buffer(cdata, i)
-    used = send_data(id_var0, cdata(1,1,1,1), Time)
 
     select case(test_case)
     case (test_normal)
       select case (mask_case)
       case (no_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time)
         used = send_data(id_ice, cdata(:,:,1,1), Time)
         used = send_data(id_sst, cdata(:,:,:,1), Time)
-        used = send_data(id_var4, cdata(:,:,:,:), Time)
       case (real_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time, rmask=crmask(:,1,1,1))
         used = send_data(id_ice, cdata(:,:,1,1), Time, rmask=crmask(:,:,1,1))
         used = send_data(id_sst, cdata(:,:,:,1), Time, rmask=crmask(:,:,:,1))
-        used = send_data(id_var4, cdata(:,:,:,:), Time, rmask=crmask(:,:,:,:))
       case (logical_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time, mask=clmask(:,1,1,1))
         used = send_data(id_ice, cdata(:,:,1,1), Time, mask=clmask(:,:,1,1))
         used = send_data(id_sst, cdata(:,:,:,1), Time, mask=clmask(:,:,:,1))
-        used = send_data(id_var4, cdata(:,:,:,:), Time, mask=clmask(:,:,:,:))
       end select
     case (test_halos)
       call set_buffer(ddata, i)
       select case (mask_case)
       case (no_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time)
         used = send_data(id_ice, ddata(:,:,1,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
         used = send_data(id_sst, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
-        used = send_data(id_var4, ddata(:,:,:,:), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
       case (real_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time, &
-          rmask=crmask(:,1,1,1))
         used = send_data(id_ice, ddata(:,:,1,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           rmask=drmask(:,:,1,1))
         used = send_data(id_sst, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           rmask=drmask(:,:,:,1))
-        used = send_data(id_var4, ddata(:,:,:,:), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
-          rmask=drmask(:,:,:,:))
       case (logical_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time, &
-          mask=clmask(:,1,1,1))
         used = send_data(id_ice, ddata(:,:,1,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           mask=dlmask(:,:,1,1))
         used = send_data(id_sst, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           mask=dlmask(:,:,:,1))
-        used = send_data(id_var4, ddata(:,:,:,:), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
-          mask=dlmask(:,:,:,:))
       end select
     case (test_openmp)
-      select case(mask_case)
-      case (no_mask)
-        used=send_data(id_var1, cdata(:, 1, 1, 1), time)
-      case (logical_mask)
-        used=send_data(id_var1, cdata(:, 1, 1, 1), time, &
-            mask=clmask(:, 1, 1, 1))
-      case (real_mask)
-        used=send_data(id_var1, cdata(:, 1, 1, 1), time, &
-            rmask=crmask(:, 1, 1, 1))
-      end select
 !$OMP parallel do default(shared) private(iblock, isw, iew, jsw, jew, is1, ie1, js1, je1)
       do iblock=1, 4
         isw = my_block%ibs(iblock)
@@ -266,21 +233,16 @@ program test_reduction_methods
         case (no_mask)
           used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
           used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
-          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1)
         case (real_mask)
           used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, :, 1))
-          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
-            rmask=crmask(is1:ie1, js1:je1, :, :))
         case (logical_mask)
           used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, :, 1))
-          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
-            mask=clmask(is1:ie1, js1:je1, :, :))
         end select
       enddo
     end select

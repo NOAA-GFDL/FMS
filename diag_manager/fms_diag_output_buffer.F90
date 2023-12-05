@@ -27,7 +27,8 @@ module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
 use iso_c_binding
-use time_manager_mod, only: time_type, operator(==)
+use time_manager_mod, only: time_type, operator(==), get_ticks_per_second, get_time
+use constants_mod, only: SECONDS_PER_DAY
 use mpp_mod, only: mpp_error, FATAL, NOTE
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
                          time_min, time_max
@@ -54,6 +55,10 @@ type :: fmsDiagOutputBuffer_type
   integer               :: field_id           !< The id of the field the buffer belongs to
   integer               :: yaml_id            !< The id of the yaml id the buffer belongs to
   logical               :: done_with_math     !< .True. if done doing the math
+  integer               :: diurnal_sample_size = 1  !< dirunal sample size as read in from the reduction method
+                                                    !! ie. diurnal24 = sample size of 24
+  integer               :: diurnal_section    !< the diurnal section (ie 5th index) calculated from the current model
+                                              !! time and sample size if using a diurnal reduction
 
   contains
   procedure :: add_axis_ids
@@ -79,6 +84,9 @@ type :: fmsDiagOutputBuffer_type
   procedure :: do_time_sum_wrapper
   procedure :: diag_reduction_done_wrapper
   procedure :: get_buffer_dims
+  procedure :: get_diurnal_sample_size
+  procedure :: set_diurnal_sample_size
+  procedure :: set_diurnal_section_index
 end type fmsDiagOutputBuffer_type
 
 ! public types
@@ -573,7 +581,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       select type (field_data)
       type is (real(kind=r8_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, &
-                                bounds_in, bounds_out, missing_value)
+                                bounds_in, bounds_out, missing_value, this%diurnal_section)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
@@ -581,7 +589,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       select type (field_data)
       type is (real(kind=r4_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, bounds_in, bounds_out, &
-          real(missing_value, kind=r4_kind))
+          real(missing_value, kind=r4_kind), this%diurnal_section)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
@@ -643,6 +651,34 @@ pure function get_buffer_dims(this)
   integer :: get_buffer_dims(4)
   get_buffer_dims = this%buffer_dims(1:4)
 end function
+
+!> Get diurnal sample size (amount of diurnal sections) 
+pure integer function get_diurnal_sample_size(this)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this
+  get_diurnal_sample_size = this%diurnal_sample_size
+end function get_diurnal_sample_size
+
+!> Set diurnal sample size (amount of diurnal sections) 
+subroutine set_diurnal_sample_size(this, sample_size)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this
+  integer, intent(in)                            :: sample_size !< sample size to used to split daily
+                                                               !! data into given amount of sections
+  this%diurnal_sample_size = sample_size
+end subroutine set_diurnal_sample_size 
+
+!> Set diurnal section index based off the current time and previously set diurnal_samplesize
+!! Calculates which diurnal section of daily data the current time is in
+subroutine set_diurnal_section_index(this, time)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this
+  type(time_type), intent(in)                     :: time !< current model time
+  integer :: seconds, days, ticks
+
+  call get_time(time,seconds,days,ticks) ! get current date
+  ! calculates which diurnal section current time is in for a given amount of diurnal sections(<24)
+  this%diurnal_section = floor( (seconds+real(ticks)/get_ticks_per_second()) &
+                       & * this%diurnal_sample_size/SECONDS_PER_DAY) + 1
+  print *, this%diurnal_section
+end subroutine set_diurnal_section_index
 
 #endif
 end module fms_diag_output_buffer_mod
