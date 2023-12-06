@@ -221,10 +221,10 @@
   end subroutine TRANLON_
 
 
-  function FRAC_INDEX_(value, array)
+  function FRAC_INDEX_(rval, array)
 
-    integer                               :: ia, i, ii, unit
-    real(kind=FMS_AU_KIND_)               :: value !< arbitrary data...same units as elements in "array"
+    integer                               :: ia, i, ii, iunit
+    real(kind=FMS_AU_KIND_)               :: rval !< arbitrary data...same units as elements in "array"
     real(kind=FMS_AU_KIND_)               :: FRAC_INDEX_
     real(kind=FMS_AU_KIND_), dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical                               :: keep_going
@@ -233,29 +233,27 @@
 
     do i = 2, ia
        if (array(i) < array(i-1)) then
-          unit = stdout()
-          write (unit,*) '=> Error: "frac_index" array must be monotonically' &
-          & // 'increasing when searching for nearest value to ', value
-          write (unit,*) '          array(i) < array(i-1) for i=',i
-          write (unit,*) '          array(i) for i=1..ia follows:'
+          iunit = stdout()
+          write (iunit,*) '=> Error: "frac_index" array must be monotonically' &
+          & // 'increasing when searching for nearest value to ', rval
+          write (iunit,*) '          array(i) < array(i-1) for i=',i
+          write (iunit,*) '          array(i) for i=1..ia follows:'
           do ii = 1, ia
-             write (unit,*) 'i=',ii, ' array(i)=',array(ii)
+             write (iunit,*) 'i=',ii, ' array(i)=',array(ii)
           enddo
           call mpp_error(FATAL,' "frac_index" array must be monotonically increasing.')
        endif
     enddo
 
-    if (value < array(1) .or. value > array(ia)) then
- !       if (value < array(1))  frac_index = 1.
- !       if (value > array(ia)) frac_index = float(ia)
+    if (rval < array(1) .or. rval > array(ia)) then
         FRAC_INDEX_ = -1.0_lkind
     else
        i = 1
        keep_going = .true.
        do while (i <= ia .and. keep_going)
           i = i+1
-          if (value <= array(i)) then
-             FRAC_INDEX_ = real((i-1), lkind) + (value-array(i-1)) / (array(i) - array(i-1))
+          if (rval <= array(i)) then
+             FRAC_INDEX_ = real((i-1), lkind) + (rval-array(i-1)) / (array(i) - array(i-1))
              keep_going  = .false.
           endif
        enddo
@@ -269,8 +267,8 @@
   !!
   !!     inputs:
   !!
-  !!     value  = arbitrary data...same units as elements in "array"
-  !!     array  = array of data points  (must be monotonic)
+  !!     rval   = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically)
   !!     ia     = dimension of "array"
   !!
   !!     output:
@@ -298,13 +296,14 @@
   !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
   !!     be the nearest data point to 0.0
   !! @return integer nearest_index
-  function NEAREST_INDEX_(value, array)
-    real(kind=FMS_AU_KIND_)              , intent(in) :: value !< arbitrary data...same units as elements in "array"
-    real(kind=FMS_AU_KIND_), dimension(:), intent(in) :: array !< array of data points  (must be monotonic)
+  function NEAREST_INDEX_(rval, array)
+    real(kind=FMS_AU_KIND_), intent(in)               :: rval !< arbitrary data...same units as elements in "array"
+    real(kind=FMS_AU_KIND_), intent(in), dimension(:) :: array !< array of data points  (must be monotonic)
 
     integer                               :: NEAREST_INDEX_
     integer                               :: ia !< dimension of "array"
-    integer                               :: i  !< For do loops
+    integer                               :: i, ii, iunit
+    logical                               :: keep_going
 
     ia = SIZE(array(:))
 
@@ -319,18 +318,18 @@
     if (array(1) < array(ia)) then
     !< increasing array
 
-      !< Check if the value is outside the range of the array
-      if (value < array(1)) then
+      !< Check if the rval is outside the range of the array
+      if (rval < array(1)) then
          NEAREST_INDEX_ = 1
          return
-      elseif (value > array(ia)) then
+      elseif (rval > array(ia)) then
          NEAREST_INDEX_ = ia
          return
       endif
 
       DO i = 1, ia-1
-         IF ( (array(i)<=value).AND.(array(i+1)>= value) ) THEN
-            IF( value - array(i) <= array(i+1) - value ) THEN
+         IF ( (array(i)<=rval).AND.(array(i+1)>= rval) ) THEN
+            IF( rval - array(i) <= array(i+1) - rval ) THEN
                NEAREST_INDEX_ = i
                return
             ELSE
@@ -343,18 +342,18 @@
     else
     !< Decreasing Array
 
-      !< Check if the value is outside the range of the array
-      if (value < array(ia)) then
+      !< Check if the rval is outside the range of the array
+      if (rval < array(ia)) then
          NEAREST_INDEX_ = ia
          return
-      elseif (value > array(1)) then
+      elseif (rval > array(1)) then
          NEAREST_INDEX_ = 1
          return
       endif
 
       DO i = 1, ia-1
-         IF ( (array(i)>=value).AND.(array(i+1)<= value) ) THEN
-            IF ( array(i)-value <= value-array(i+1) ) THEN
+         IF ( (array(i)>=rval).AND.(array(i+1)<= rval) ) THEN
+            IF ( array(i)-rval <= rval-array(i+1) ) THEN
                NEAREST_INDEX_ = i
                return
             ELSE

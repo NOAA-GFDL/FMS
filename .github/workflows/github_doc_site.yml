@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup repo
         run: | # do autotool's job for substitutes since we don't need a full build environement
           mkdir gen_docs

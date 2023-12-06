@@ -109,12 +109,12 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
 end subroutine MPP_GATHER_1DV_
 
 
-subroutine MPP_GATHER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_root_pe, &
+subroutine MPP_GATHER_PELIST_2D_(is, ie, js, je, pelist, array_seg, gather_data, is_root_pe, &
                                  ishift, jshift)
    integer,                                       intent(in)    :: is, ie, js, je
    integer,   dimension(:),                       intent(in)    :: pelist
    MPP_TYPE_, dimension(is:ie,js:je),     target, intent(in)    :: array_seg
-   MPP_TYPE_, dimension(:,:), contiguous, target, intent(inout) :: data
+   MPP_TYPE_, dimension(:,:), contiguous, target, intent(inout) :: gather_data
    logical,                                       intent(in)    :: is_root_pe
    integer,   optional,                           intent(in)    :: ishift, jshift
 
@@ -123,7 +123,7 @@ subroutine MPP_GATHER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_roo
 
    arr3D(1:size(array_seg,1),1:size(array_seg,2),1:1) => array_seg
    if (is_root_pe) then
-     data3D(1:size(data,1),1:size(data,2),1:1) => data
+     data3D(1:size(gather_data,1),1:size(gather_data,2),1:1) => gather_data
    else
      data3D => null()
    endif
@@ -135,12 +135,12 @@ subroutine MPP_GATHER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_roo
 end subroutine MPP_GATHER_PELIST_2D_
 
 
-subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is_root_pe, &
+subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_data, is_root_pe, &
                                  ishift, jshift)
    integer,                                intent(in)    :: is, ie, js, je, nk
    integer,   dimension(:),                intent(in)    :: pelist
    MPP_TYPE_, dimension(is:ie,js:je,1:nk), intent(in)    :: array_seg
-   MPP_TYPE_, dimension(:,:,:),            intent(inout) :: data
+   MPP_TYPE_, dimension(:,:,:),            intent(inout) :: gather_data
    logical,                                intent(in)    :: is_root_pe
    integer,   optional,                    intent(in)    :: ishift, jshift
 
@@ -148,7 +148,7 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is
    integer :: i1, i2, j1, j2, ioff, joff
    integer :: my_ind(4), gind(4,size(pelist))
    type array3D
-     MPP_TYPE_, dimension(:,:,:), allocatable :: data
+     MPP_TYPE_, dimension(:,:,:), allocatable :: data3D_type
    endtype array3D
    type(array3d), dimension(:), allocatable :: temp
 
@@ -200,7 +200,8 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is
      gind(3,:)=gind(3,:)+joff
      gind(4,:)=gind(4,:)+joff
 ! check indices to make sure they are within the range of "data"
-     if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(data,1)) .OR. (maxval(gind(3:4,:)).gt.size(data,2))) &
+     if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(gather_data,1)) .OR. &
+         (maxval(gind(3:4,:)).gt.size(gather_data,2))) &
          call mpp_error(FATAL,"fms_io(mpp_gather_pelist): specified indices (with shift) are outside of the &
                         &range of the receiving array")
    else
@@ -218,8 +219,8 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is
          j1 = gind(3,i)
          j2 = gind(4,i)
          msgsize = (i2-i1+1)*(j2-j1+1)*nk
-         allocate(temp(i)%data(i1:i2,j1:j2,1:nk))
-         call mpp_recv(temp(i)%data(i1:i2,j1:j2,1:nk), msgsize, pelist(i), .FALSE., COMM_TAG_2)
+         allocate(temp(i)%data3D_type(i1:i2,j1:j2,1:nk))
+         call mpp_recv(temp(i)%data3D_type(i1:i2,j1:j2,1:nk), msgsize, pelist(i), .FALSE., COMM_TAG_2)
        endif
      enddo
      call mpp_sync_self(check=EVENT_RECV)
@@ -227,14 +228,14 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is
      do i = 1, size(pelist)
        if (pelist(i).eq.root_pe) then
 !        data copy - no send to self
-         data(is+ioff:ie+ioff,js+joff:je+joff,1:nk) = array_seg(is:ie,js:je,1:nk)
+         gather_data(is+ioff:ie+ioff,js+joff:je+joff,1:nk) = array_seg(is:ie,js:je,1:nk)
        else
          i1 = gind(1,i)
          i2 = gind(2,i)
          j1 = gind(3,i)
          j2 = gind(4,i)
-         data(i1:i2,j1:j2,1:nk)=temp(i)%data(i1:i2,j1:j2,1:nk)
-         deallocate(temp(i)%data)
+         gather_data(i1:i2,j1:j2,1:nk)=temp(i)%data3D_type(i1:i2,j1:j2,1:nk)
+         deallocate(temp(i)%data3D_type)
        endif
      enddo
      deallocate(temp)

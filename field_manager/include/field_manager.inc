@@ -27,25 +27,25 @@ real(FMS_FM_KIND_), intent(out) :: values(:) !< The value or values that have be
 include 'parse.inc'
 end function PARSE_REALS_
 
-function PARSE_REAL_ ( text, label, value ) result (parse)
+function PARSE_REAL_ ( text, label, parse_rval ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-real(FMS_FM_KIND_), intent(out) :: value !< The value or values that have been decoded.
+real(FMS_FM_KIND_), intent(out) :: parse_rval !< The value or values that have been decoded.
 integer :: parse
 
 real(FMS_FM_KIND_) :: values(1)
 
    parse = PARSE_REALS_( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_rval = values(1)
  end function PARSE_REAL_
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  FM_GET_VALUE_REAL_(name, value, index)                 &
+function  FM_GET_VALUE_REAL_(name, get_rval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name  !< The name of a field that the user wishes to get a value for.
-real(FMS_FM_KIND_), intent(out)        :: value !< The value associated with the named field
+real(FMS_FM_KIND_), intent(out)        :: get_rval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -61,7 +61,7 @@ if (.not. module_is_initialized) then
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = 0.0_lkind
+  get_rval = 0.0_lkind
   success = .false.
   return
 endif
@@ -79,19 +79,19 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. real_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or is too large
-       value = 0.0_lkind
+       get_rval = 0.0_lkind
       success = .false.
     else
 !        extract the value; the value is stored as r8_kind
-      value = real(temp_field_p%r_value(index_t),lkind)
+      get_rval = real(temp_field_p%r_value(index_t),lkind)
       success = .true.
     endif
   else
-    value = 0.0_lkind
+    get_rval = 0.0_lkind
     success = .false.
   endif
 else
-  value = 0.0_lkind
+  get_rval = 0.0_lkind
   success = .false.
 endif
 
@@ -99,12 +99,12 @@ end function  FM_GET_VALUE_REAL_
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  FM_NEW_VALUE_REAL_(name, value, create, index, append) &
+function  FM_NEW_VALUE_REAL_(name, new_rval, create, index, append) &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-real(FMS_FM_KIND_),    intent(in)      :: value !< The value that the user wishes to apply to the
+real(FMS_FM_KIND_),    intent(in)      :: new_rval !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -226,7 +226,7 @@ if (associated(temp_list_p)) then
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
        ! all real field values are stored as r8_kind
-      temp_field_p%r_value(index_t) = real(value,r8_kind)
+      temp_field_p%r_value(index_t) = real(new_rval,r8_kind)
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
