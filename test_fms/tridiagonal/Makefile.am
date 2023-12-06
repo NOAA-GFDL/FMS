@@ -17,32 +17,36 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/mosaic directory of the
-# FMS package.
+# This is an automake file for the test_fms/tridiagonal directory of the FMS
+# package.
 
-# uramirez, Ed Hartnett
+# Ryan Mulhall
 
-# Find the needed mod and include files.
+# Find the .mod directory
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_mosaic
+check_PROGRAMS = test_tridiagonal_r4 test_tridiagonal_r8
 
-# This is the source code for the test.
-test_mosaic_SOURCES = test_mosaic.F90
+# compiles test file with both kind sizes via macro
+test_tridiagonal_r4_SOURCES=test_tridiagonal.F90
+test_tridiagonal_r8_SOURCES=test_tridiagonal.F90
+
+test_tridiagonal_r4_CPPFLAGS=-DTRID_REAL_TYPE=tridiag_r4 -DTEST_TRIDIAG_REAL=r4_kind -I$(MODDIR)
+test_tridiagonal_r8_CPPFLAGS=-DTRID_REAL_TYPE=tridiag_r8 -DTEST_TRIDIAG_REAL=r8_kind -I$(MODDIR)
 
 # Run the test program.
-TESTS = test_mosaic2.sh
+TESTS = test_tridiagonal.sh
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
-# These files are also included in the distribution.
-EXTRA_DIST = test_mosaic2.sh
+# These files will be included in the distribution.
+EXTRA_DIST = test_tridiagonal.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc *.out *.dpi *.spi *.dyn *.spl
+CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl *.o test_tridiagonal4 test_tridiagonal8 test_tridiagonal

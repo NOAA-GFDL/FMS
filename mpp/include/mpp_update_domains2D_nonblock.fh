@@ -45,7 +45,7 @@ function MPP_START_UPDATE_DOMAINS_3D_( field, domain, flags, position, &
                                        whalo, ehalo, shalo, nhalo, name, tile_count, update_id, complete )
 
   type(domain2D),   intent(inout)        :: domain
-  MPP_TYPE_,        intent(inout)        :: field(domain%x(1)%data%begin:,domain%y(1)%data%begin:,:)
+  MPP_TYPE_,        intent(inout)        :: field(domain%x(1)%domain_data%begin:,domain%y(1)%domain_data%begin:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
   integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! specify halo region to be updated.
@@ -316,7 +316,7 @@ subroutine MPP_COMPLETE_UPDATE_DOMAINS_3D_( id_update, field, domain, flags, pos
                                             whalo, ehalo, shalo, nhalo, name, tile_count, complete )
   integer,          intent(in)           :: id_update
   type(domain2D),   intent(inout)        :: domain
-  MPP_TYPE_,        intent(inout)        :: field(domain%x(1)%data%begin:,domain%y(1)%data%begin:,:)
+  MPP_TYPE_,        intent(inout)        :: field(domain%x(1)%domain_data%begin:,domain%y(1)%domain_data%begin:,:)
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
   integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! specify halo region to be updated.

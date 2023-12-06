@@ -135,7 +135,7 @@ use           fms_mod, only: error_mesg, write_version_number,  &
                              NOTE, mpp_error, fms_error_handler
 
 use     constants_mod, only: TFREEZE, pi
-use      platform_mod, only: R4_KIND, I2_KIND
+use      platform_mod, only: r4_kind, r8_kind, i2_kind
 use mpp_mod,           only: input_nml_file
 use fms2_io_mod,       only: FmsNetcdfFile_t, fms2_io_file_exists=>file_exists, open_file, close_file, &
                              get_dimension_size, fms2_io_read_data=>read_data
@@ -147,15 +147,15 @@ private
 !----------------- Public interfaces -----------------------------------
 
 public amip_interp_init, get_amip_sst, get_amip_ice, amip_interp_new, &
-       amip_interp_del, amip_interp_type, assignment(=)
+     & amip_interp_del, amip_interp_type, assignment(=)
 
 !-----------------------------------------------------------------------
 !----------------- Public Data -----------------------------------
 integer :: i_sst = 1200
 integer :: j_sst = 600
-real, parameter:: big_number = 1.E30
+real(r8_kind), parameter:: big_number = 1.E30_r8_kind
 logical :: forecast_mode = .false.
-real, allocatable, dimension(:,:) ::  sst_ncep, sst_anom
+real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep, sst_anom
 
 public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 
@@ -167,9 +167,8 @@ public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
-   real, allocatable:: temp1(:,:), temp2(:,:)
 ! add by JHC
-   real, allocatable, dimension(:,:) :: tempamip
+   real(r8_kind), allocatable, dimension(:,:) :: tempamip
 ! end add by JHC
 !-----------------------------------------------------------------------
 !------ private defined data type --------
@@ -186,7 +185,7 @@ end type
 !> Assignment overload to allow native assignment between amip_interp_type variables.
 !> @ingroup amip_interp_mod
 interface assignment(=)
-  module procedure  amip_interp_type_eq
+  module procedure amip_interp_type_eq
 end interface
 
 !> Private logical equality overload for amip_interp_type
@@ -207,6 +206,15 @@ interface operator (>)
    module procedure date_gt
 end interface
 
+!> Retrieve sea surface temperature data and interpolated grid
+interface get_amip_sst
+  module procedure get_amip_sst_r4, get_amip_sst_r8
+end interface
+
+!> AMIP interpolation for ice
+interface get_amip_ice
+  module procedure get_amip_ice_r4, get_amip_ice_r8
+end interface
 
 !> Initializes data needed for the horizontal
 !! interpolation between the sst data and model grid.
@@ -265,23 +273,24 @@ end interface
 !!
 !> @ingroup amip_interp_mod
 interface amip_interp_new
-   module procedure amip_interp_new_1d
-   module procedure amip_interp_new_2d
+   module procedure amip_interp_new_1d_r4, amip_interp_new_1d_r8
+   module procedure amip_interp_new_2d_r4, amip_interp_new_2d_r8
 end interface
-
 
 !----- public data type ------
 
-!> @brief Contains information needed by the interpolation module (exchange_mod) and buffers data.
+!> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
+!! data (r4_kind flavor).
 !> @ingroup amip_interp_mod
 type amip_interp_type
    private
-   type (horiz_interp_type) :: Hintrp, Hintrp2 ! add by JHC
-   real, allocatable        ::    data1(:,:),  data2(:,:)
-   type (date_type)         ::    Date1,       Date2
-   logical                  :: use_climo, use_annual
-   logical                  :: I_am_initialized=.false.
-end type
+   type (horiz_interp_type)              :: Hintrp, Hintrp2 ! add by JHC
+   real(r4_kind), dimension(:,:), allocatable :: data1_r4, data2_r4
+   real(r8_kind), dimension(:,:), allocatable :: data1_r8, data2_r8
+   type (date_type)                      :: Date1, Date2
+   logical                               :: use_climo, use_annual
+   logical                               :: I_am_initialized=.false.
+end type amip_interp_type
 
 !> @addtogroup amip_interp_mod
 !> @{
@@ -289,20 +298,20 @@ end type
 !  ---- resolution/grid variables ----
 
    integer :: mobs, nobs
-   real, allocatable :: lon_bnd(:), lat_bnd(:)
+   real(r8_kind), allocatable, dimension(:) :: lon_bnd, lat_bnd
 
 !  ---- global unit & date ----
 
    integer, parameter :: maxc = 128
-   integer :: unit
+   integer :: iunit
    character(len=maxc) :: file_name_sst, file_name_ice
    type(FmsNetcdfFile_t), target :: fileobj_sst, fileobj_ice
 
    type (date_type) :: Curr_date = date_type( -99, -99, -99 )
    type (date_type) :: Date_end  = date_type( -99, -99, -99 )
 
-   real             :: tice_crit_k
-   integer(I2_KIND) ::  ice_crit
+   real(r8_kind)    :: tice_crit_k
+   integer(i2_kind) ::  ice_crit
 
    logical :: module_is_initialized = .false.
 
@@ -316,19 +325,19 @@ end type
 
  character(len=16) :: date_out_of_range = 'fail' !< use 'fail', 'initclimo', or 'climo'
 
- real    :: tice_crit    = -1.80 !<  in degC or degK
+ real(r8_kind)    :: tice_crit    = -1.80_r8_kind !<  in degC or degK
  integer :: verbose      = 0     !<  0 <= verbose <= 3
 
  logical :: use_zonal    = .false. !< parameters for prescribed zonal sst option
- real :: teq  = 305. !< parameters for prescribed zonal sst option
- real :: tdif = 50. !< parameters for prescribed zonal sst option
- real :: tann = 20. !< parameters for prescribed zonal sst option
- real :: tlag = 0.875 !< parameters for prescribed zonal sst option
+ real(r8_kind) :: teq  = 305._r8_kind !< parameters for prescribed zonal sst option
+ real(r8_kind) :: tdif = 50._r8_kind !< parameters for prescribed zonal sst option
+ real(r8_kind) :: tann = 20._r8_kind !< parameters for prescribed zonal sst option
+ real(r8_kind) :: tlag = 0.875_r8_kind !< parameters for prescribed zonal sst option
 
 
  integer :: amip_date(3)=(/-1,-1,-1/) !< amip date for repeating single day (rsd) option
 
- real :: sst_pert = 0. !< global temperature perturbation used for sensitivity experiments
+ real(r8_kind) :: sst_pert = 0._r8_kind !< global temperature perturbation used for sensitivity experiments
 
  character(len=6) :: sst_pert_type = 'fixed'  !< use 'random' or 'fixed'
  logical :: do_sst_pert = .false.
@@ -356,508 +365,9 @@ end type
 
 contains
 
-! modified by JHC
-!> Retrieve sea surface temperature data and interpolated grid
-subroutine get_amip_sst (Time, Interp, sst, err_msg, lon_model, lat_model)
-
-   type (time_type),         intent(in)    :: Time !< Time to interpolate
-   type (amip_interp_type),  intent(inout) :: Interp !< Holds data for interpolation
-   real,                     intent(out)   ::  sst(:,:) !< Sea surface temperature data
-   character(len=*), optional, intent(out) :: err_msg !< Holds error message string if present
-
-   real, dimension(mobs,nobs) :: sice
-
-    integer :: year1, year2, month1, month2
-    real    :: fmonth
-    type (date_type) :: Date1, Date2, Udate1, Udate2
-
-    type(time_type) :: Amip_Time
-    integer :: tod(3),dum(3)
-
-! add by JHC
-    real,    intent(in), dimension(:,:), optional :: lon_model, lat_model
-    real :: pert
-    integer :: i, j, mobs_sst, nobs_sst
-    integer :: jhctod(6)
-    type (time_type) :: Udate
-    character(len=4) :: yyyy
-    integer :: nrecords, ierr, k, yr, mo, dy
-    integer, dimension(:), allocatable :: ryr, rmo, rdy
-    character(len=30) :: time_unit
-    real, dimension(:), allocatable :: timeval
-    character(len=maxc) :: ncfilename
-    type(FmsNetcdfFile_t) :: fileobj
-    logical :: the_file_exists
-! end add by JHC
-    logical, parameter :: DEBUG = .false. !> switch for debugging output
-    !> These are fms_io specific
-    integer :: unit
-
-    if(present(err_msg)) err_msg = ''
-    if(.not.Interp%I_am_initialized) then
-      if(fms_error_handler('get_amip_sst','The amip_interp_type variable is not initialized',err_msg)) return
-    endif
-
-!-----------------------------------------------------------------------
-!----- compute zonally symetric sst ---------------
-
-    if ( use_ncep_sst .and. forecast_mode ) no_anom_sst = .false.
-
-    if (all(amip_date>0)) then
-       call get_date(Time,dum(1),dum(2),dum(3),tod(1),tod(2),tod(3))
-       Amip_Time = set_date(amip_date(1),amip_date(2),amip_date(3),tod(1),tod(2),tod(3))
-    else
-       Amip_Time = Time
-    endif
-
-! add by JHC
-if ( .not.use_daily ) then
-! end add by JHC
-
-   if ( .not. allocated(temp1) ) allocate (temp1(mobs,nobs))
-   if ( .not. allocated(temp2) ) allocate (temp2(mobs,nobs))
-
-   if (use_zonal) then
-      call zonal_sst (Amip_Time, sice, temp1)
-      call horiz_interp ( Interp%Hintrp, temp1, sst )
-   else
-
-!-----------------------------------------------------------------------
-!---------- get new observed sea surface temperature -------------------
-
-! ---- time interpolation for months -----
-     call time_interp (Amip_Time, fmonth, year1, year2, month1, month2)
-! ---- force climatology ----
-     if (Interp % use_climo) then
-         year1=0; year2=0
-     endif
-     if (Interp % use_annual) then
-          year1=0;  year2=0
-         month1=0; month2=0
-     endif
-! ---------------------------
-
-     Date1 = date_type( year1, month1, 0 )
-     Date2 = date_type( year2, month2, 0 )
-
-!  -- open/rewind file --
-     unit = -1
-!-----------------------------------------------------------------------
-
-
-      if (Date1 /= Interp % Date1) then
-!       ---- use Date2 for Date1 ----
-          if (Date1 == Interp % Date2) then
-              Interp % Date1 = Interp % Date2
-              Interp % data1 = Interp % data2
-              temp1(:,:) = temp2(:,:)   ! SJL BUG fix: June 24, 2011
-          else
-              call read_record ('sst', Date1, Udate1, temp1)
-              if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-                   temp1(:,:) = temp1(:,:) + sst_anom(:,:)
-              endif
-              call horiz_interp ( Interp%Hintrp, temp1, Interp%data1 )
-              call clip_data ('sst', Interp%data1)
-             Interp % Date1 = Date1
-          endif
-      endif
-
-!-----------------------------------------------------------------------
-
-      if (Date2 /= Interp % Date2) then
-          call read_record ('sst', Date2, Udate2, temp2)
-          if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-               temp2(:,:) = temp2(:,:) + sst_anom(:,:)
-          endif
-          call horiz_interp ( Interp%Hintrp, temp2, Interp%data2 )
-          call clip_data ('sst', Interp%data2)
-          Interp % Date2 = Date2
-      endif
-
-!-----------------------------------------------------------------------
-!---------- time interpolation (between months) of sst's ---------------
-!-----------------------------------------------------------------------
-    sst = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
-
-!-------------------------------------------------------------------------------
-! SJL mods for NWP and TCSF ---
-!      Nudging runs: (Note: NCEP SST updated only every 6-hr)
-!      Compute SST anomaly from global SST datasets for subsequent forecast runs
-!-------------------------------------------------------------------------------
-    if ( use_ncep_sst .and. no_anom_sst ) then
-         sst_anom(:,:) = sst_ncep(:,:) - (temp1(:,:) + fmonth*(temp2(:,:) - temp1(:,:)) )
-         call horiz_interp ( Interp%Hintrp, sst_ncep, sst )
-         call clip_data ('sst', sst)
-    endif
-
-!! DEBUG CODE
-    if (DEBUG) then
-          call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
-          if (mpp_pe() == 0) then
-             write (*,200) 'JHC: use_daily = F, AMIP_Time: ',jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5), &
-                   & jhctod(6)
-             write (*,300) 'JHC: use_daily = F, interped SST: ', sst(1,1),sst(5,5),sst(10,10)
-          endif
-    endif
-
-
-  endif
-
-! add by JHC
-else
-    call get_date(Amip_Time,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
-     if (mpp_pe() == mpp_root_pe()) write(*,200) 'amip_interp_mod: use_daily = T, Amip_Time = ',jhctod(1), &
-        & jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6)
-
-    yr = jhctod(1); mo = jhctod(2); dy = jhctod(3)
-
-    write (yyyy,'(i4)') jhctod(1)
-
-    file_name_sst = 'INPUT/' // 'sst.day.mean.'//yyyy//'.v2.nc'
-    ncfilename = trim(file_name_sst)
-    time_unit = 'days since 1978-01-01 00:00:00'
-
-    mobs_sst = 1440;  nobs_sst = 720
-
-    call set_sst_grid_edges_daily(mobs_sst, nobs_sst)
-    call horiz_interp_new ( Interp%Hintrp2, lon_bnd, lat_bnd, &
-                             lon_model, lat_model, interp_method="bilinear" )
-
-    the_file_exists = fms2_io_file_exists(ncfilename)
-
-    if ( (.NOT. the_file_exists)  ) then
-        call mpp_error ('amip_interp_mod', &
-             'cannot find daily SST input data file: '//trim(ncfilename), NOTE)
-    else
-        if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
-             'Reading NetCDF formatted daily SST from: '//trim(ncfilename), NOTE)
-
-            if(.not. open_file(fileobj, trim(ncfilename), 'read')) &
-                call error_mesg ('get_amip_sst', 'Error in opening file '//trim(ncfilename), FATAL)
-
-            call get_dimension_size(fileobj, 'TIME', nrecords)
-            if (nrecords < 1) call mpp_error('amip_interp_mod', &
-                           'Invalid number of SST records in daily SST data file: '//trim(ncfilename), FATAL)
-            allocate(timeval(nrecords), ryr(nrecords), rmo(nrecords), rdy(nrecords))
-            call fms2_io_read_data(fileobj, 'TIME', timeval)
-!!! DEBUG CODE
-        if(DEBUG) then
-          if (mpp_pe() == 0) then
-             print *, 'JHC: nrecords = ', nrecords
-             print *, 'JHC: TIME = ', timeval
-          endif
-        endif
-
-        ierr = 1
-        do k = 1, nrecords
-
-          Udate = get_cal_time (timeval(k), time_unit, 'julian')
-          call get_date(Udate,jhctod(1),jhctod(2),jhctod(3),jhctod(4),jhctod(5),jhctod(6))
-          ryr(k) = jhctod(1); rmo(k) = jhctod(2); rdy(k) = jhctod(3)
-
-          if ( yr == ryr(k) .and. mo == rmo(k) .and. dy == rdy (k) ) ierr = 0
-          if (ierr==0) exit
-
-        enddo
-
-        if(DEBUG) then
-          if (mpp_pe() == 0) then
-            print *, 'JHC: k =', k
-            print *, 'JHC: ryr(k) rmo(k) rdy(k)',ryr(k), rmo(k), rdy(k)
-            print *, 'JHC:  yr     mo     dy   ',yr, mo, dy
-          endif
-        endif
-
-        if (ierr .ne. 0) call mpp_error('amip_interp_mod', &
-                         'Model time is out of range not in SST data: '//trim(ncfilename), FATAL)
-    endif ! if(file_exist(ncfilename))
-
-
-   !---- read NETCDF data ----
-     if ( .not. allocated(tempamip) ) allocate (tempamip(mobs_sst,nobs_sst))
-
-     if (the_file_exists) then
-          call fms2_io_read_data(fileobj, 'SST', tempamip, unlim_dim_level=k)
-          call close_file(fileobj)
-          tempamip = tempamip + TFREEZE
-
-!!! DEBUG CODE
-          if(DEBUG) then
-            if (mpp_pe() == 0) then
-              print*, 'JHC: TFREEZE = ', TFREEZE
-              print*, lbound(sst)
-              print*, ubound(sst)
-              print*, lbound(tempamip)
-              print*, ubound(tempamip)
-              write(*,300) 'JHC: tempamip : ', tempamip(100,100), tempamip(200,200), tempamip(300,300)
-            endif
-          endif
-
-          call horiz_interp ( Interp%Hintrp2, tempamip, sst )
-          call clip_data ('sst', sst)
-
-     endif
-
-    if(DEBUG) then
-      if (mpp_pe() == 400) then
-        write(*,300)'JHC: use_daily = T, daily SST: ', sst(1,1),sst(5,5),sst(10,10)
-        print *,'JHC: use_daily = T, daily SST: ', sst
-      endif
-    endif
-
-200 format(a35, 6(i5,1x))
-300 format(a35, 3(f7.3,2x))
-
-endif
-! end add by JHC
-
-! add by JHC: add on non-zero sea surface temperature perturbation (namelist option)
-!             This perturbation may be useful in accessing model sensitivities
-
- if ( do_sst_pert ) then
-
-      if ( trim(sst_pert_type) == 'fixed' ) then
-          sst = sst + sst_pert
-      else if ( trim(sst_pert_type) == 'random' ) then
-          call random_seed()
-
-       if(DEBUG) then
-         if (mpp_pe() == 0) then
-             print*, 'mobs = ', mobs
-             print*, 'nobs = ', nobs
-             print*, lbound(sst)
-             print*, ubound(sst)
-          endif
-       endif
-
-          do i = 1, size(sst,1)
-          do j = 1, size(sst,2)
-             call random_number(pert)
-             sst (i,j) = sst (i,j) + sst_pert*((pert-0.5)*2)
-          end do
-          end do
-      endif
-
-  endif
-! end add by JHC
-
-!-----------------------------------------------------------------------
-
- end subroutine get_amip_sst
-
-!> AMIP interpolation for ice
-subroutine get_amip_ice (Time, Interp, ice, err_msg)
-
-   type (time_type),         intent(in)    :: Time !< Time to interpolate
-   type (amip_interp_type),  intent(inout) :: Interp !< Holds data for interpolation
-   real,                     intent(out)   :: ice(:,:) !< ice data
-   character(len=*), optional, intent(out) :: err_msg !< Holds error message string if present
-
-    real, dimension(mobs,nobs) :: sice, temp
-
-    integer :: year1, year2, month1, month2
-    real    :: fmonth
-    type (date_type) :: Date1, Date2, Udate1, Udate2
-
-    type(time_type) :: Amip_Time
-    integer :: tod(3),dum(3)
-
-    if(present(err_msg)) err_msg = ''
-    if(.not.Interp%I_am_initialized) then
-      if(fms_error_handler('get_amip_ice','The amip_interp_type variable is not initialized',err_msg)) return
-    endif
-
-!-----------------------------------------------------------------------
-!----- compute zonally symetric sst ---------------
-
-
-    if (any(amip_date>0)) then
-
-       call get_date(Time,dum(1),dum(2),dum(3),tod(1),tod(2),tod(3))
-
-       Amip_Time = set_date(amip_date(1),amip_date(2),amip_date(3),tod(1),tod(2),tod(3))
-
-    else
-
-       Amip_Time = Time
-
-    endif
-
-
-if (use_zonal) then
-   call zonal_sst (Amip_Time, sice, temp)
-   call horiz_interp ( Interp%Hintrp, sice, ice )
-else
-
-!-----------------------------------------------------------------------
-!---------- get new observed sea surface temperature -------------------
-
-! ---- time interpolation for months -----
-
-   call time_interp (Amip_Time, fmonth, year1, year2, month1, month2)
-
-! ---- force climatology ----
-   if (Interp % use_climo) then
-       year1=0; year2=0
-   endif
-   if (Interp % use_annual) then
-        year1=0;  year2=0
-       month1=0; month2=0
-   endif
-! ---------------------------
-
-   Date1 = date_type( year1, month1, 0 )
-   Date2 = date_type( year2, month2, 0 )
-
-   unit = -1
-!-----------------------------------------------------------------------
-
-    if (Date1 /= Interp % Date1) then
-!       ---- use Date2 for Date1 ----
-        if (Date1 == Interp % Date2) then
-            Interp % Date1 = Interp % Date2
-            Interp % data1 = Interp % data2
-        else
-!-- SJL -------------------------------------------------------------
-! Can NOT use ncep_sst to determine sea_ice For seasonal forecast
-! Use climo sea ice for seasonal runs
-            if ( use_ncep_sst .and. use_ncep_ice ) then
-               where ( sst_ncep <= (TFREEZE+tice_crit) )
-                   sice = 1.
-               elsewhere
-                   sice = 0.
-               endwhere
-            else
-               call read_record ('ice', Date1, Udate1, sice)
-            endif
-!--------------------------------------------------------------------
-            call horiz_interp ( Interp%Hintrp, sice, Interp%data1 )
-            call clip_data ('ice', Interp%data1)
-            Interp % Date1 = Date1
-        endif
-    endif
-
-!-----------------------------------------------------------------------
-
-    if (Date2 /= Interp % Date2) then
-
-!-- SJL -------------------------------------------------------------
-            if ( use_ncep_sst .and. use_ncep_ice ) then
-               where ( sst_ncep <= (TFREEZE+tice_crit) )
-                   sice = 1.
-               elsewhere
-                   sice = 0.
-               endwhere
-            else
-               call read_record ('ice', Date2, Udate2, sice)
-            endif
-!--------------------------------------------------------------------
-        call horiz_interp ( Interp%Hintrp, sice, Interp%data2 )
-        call clip_data ('ice', Interp%data2)
-        Interp % Date2 = Date2
-
-    endif
-
-!-----------------------------------------------------------------------
-!---------- time interpolation (between months) ------------------------
-!-----------------------------------------------------------------------
-
-   ice = Interp % data1 + fmonth * (Interp % data2 - Interp % data1)
-
-endif
-
-!-----------------------------------------------------------------------
-
- end subroutine get_amip_ice
-
-!#######################################################################
-
- !> @return A newly created @ref amip_interp_type
- function amip_interp_new_1d ( lon , lat , mask , use_climo, use_annual, &
-                                interp_method ) result (Interp)
-
- real,    intent(in), dimension(:)   :: lon, lat
- logical, intent(in), dimension(:,:) :: mask
- character(len=*), intent(in), optional       :: interp_method
- logical, intent(in), optional       :: use_climo, use_annual
-
-   type (amip_interp_type) :: Interp
-
-   if(.not.module_is_initialized) call amip_interp_init
-
-   Interp % use_climo  = .false.
-   if (present(use_climo)) Interp % use_climo  = use_climo
-   Interp % use_annual = .false.
-   if (present(use_annual)) Interp % use_annual  = use_annual
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_climo ) &
-      call error_mesg ('amip_interp_new_1d', 'use_climo mismatch', FATAL)
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_annual ) &
-      call error_mesg ('amip_interp_new_1d', 'use_annual(climo) mismatch', FATAL)
-
-   Interp % Date1 = date_type( -99, -99, -99 )
-   Interp % Date2 = date_type( -99, -99, -99 )
-
-!-----------------------------------------------------------------------
-!   ---- initialization of horizontal interpolation ----
-
-    call horiz_interp_new ( Interp%Hintrp, lon_bnd, lat_bnd, &
-                             lon, lat, interp_method= interp_method )
-
-    allocate ( Interp % data1 (size(lon(:))-1,size(lat(:))-1), &
-               Interp % data2 (size(lon(:))-1,size(lat(:))-1)  )
-
-    Interp%I_am_initialized = .true.
-
-   end function amip_interp_new_1d
-
- !> @return A newly created @ref amip_interp_type
- function amip_interp_new_2d ( lon , lat , mask , use_climo, use_annual, &
-                                interp_method ) result (Interp)
-
- real,    intent(in), dimension(:,:)   :: lon, lat
- logical, intent(in), dimension(:,:) :: mask
- character(len=*), intent(in), optional :: interp_method
- logical, intent(in), optional       :: use_climo, use_annual
-
-   type (amip_interp_type) :: Interp
-
-   if(.not.module_is_initialized) call amip_interp_init
-
-   Interp % use_climo  = .false.
-   if (present(use_climo)) Interp % use_climo  = use_climo
-   Interp % use_annual = .false.
-   if (present(use_annual)) Interp % use_annual  = use_annual
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_climo ) &
-      call error_mesg ('amip_interp_new_2d', 'use_climo mismatch', FATAL)
-
-   if ( date_out_of_range == 'fail' .and. Interp%use_annual ) &
-      call error_mesg ('amip_interp_new_2d', 'use_annual(climo) mismatch', FATAL)
-
-   Interp % Date1 = date_type( -99, -99, -99 )
-   Interp % Date2 = date_type( -99, -99, -99 )
-
-!-----------------------------------------------------------------------
-!   ---- initialization of horizontal interpolation ----
-
-   call horiz_interp_new ( Interp%Hintrp, lon_bnd, lat_bnd, &
-                           lon, lat, interp_method = interp_method)
-
-   allocate ( Interp % data1 (size(lon,1),size(lat,2)), &
-              Interp % data2 (size(lon,1),size(lat,2)))
-
-   Interp%I_am_initialized = .true.
-
-   end function amip_interp_new_2d
-
-!#######################################################################
-
  !> initialize @ref amip_interp_mod for use
- subroutine amip_interp_init()
-
-   integer :: unit,io,ierr
+ subroutine amip_interp_init
+   integer :: iunit,io,ierr
 
 !-----------------------------------------------------------------------
 
@@ -871,9 +381,9 @@ endif
 !  ----- write namelist/version info -----
     call write_version_number("AMIP_INTERP_MOD", version)
 
-    unit = stdlog ( )
+    iunit = stdlog ( )
     if (mpp_pe() == 0) then
-        write (unit,nml=amip_interp_nml)
+        write (iunit,nml=amip_interp_nml)
     endif
 
     if (use_mpp_io) then
@@ -887,8 +397,10 @@ endif
 !   ---- freezing point of sea water in deg K ---
 
     tice_crit_k = tice_crit
-    if ( tice_crit_k < 200. ) tice_crit_k = tice_crit_k + TFREEZE
-    ice_crit = nint((tice_crit_k-TFREEZE)*100., I2_KIND)
+    if ( tice_crit_k < 200._r8_kind ) then
+      tice_crit_k = tice_crit_k + TFREEZE
+    endif
+    ice_crit = nint((tice_crit_k-TFREEZE)*100._r8_kind, I2_KIND)
 
 !   ---- set up file dependent variable ----
 !   ----   global file name   ----
@@ -909,7 +421,7 @@ endif
         mobs = 360;  nobs = 180
         call set_sst_grid_edges_oi
 !       --- specfied min for amip2 ---
-        tice_crit_k = 271.38
+        tice_crit_k = 271.38_r8_kind
         if (mpp_pe() == 0) &
         call error_mesg ('amip_interp_init', 'using AMIP 2 sst', NOTE)
         Date_end = date_type( 1996, 3, 0 )
@@ -919,7 +431,7 @@ endif
         mobs = 360;  nobs = 180
         call set_sst_grid_edges_oi
 !       --- specfied min for hurrell ---
-        tice_crit_k = 271.38
+        tice_crit_k = 271.38_r8_kind
         if (mpp_pe() == 0) &
         call error_mesg ('amip_interp_init', 'using HURRELL sst', NOTE)
         Date_end = date_type( 2011, 8, 16 ) ! updated by JHC
@@ -991,230 +503,96 @@ endif
     if (.not. open_file(fileobj_ice, trim(file_name_ice), 'read')) &
         call error_mesg ('amip_interp_init', 'Error in opening file '//trim(file_name_ice), FATAL)
     module_is_initialized = .true.
-
  end subroutine amip_interp_init
 
-!#######################################################################
+   subroutine set_sst_grid_edges_amip1
+   integer :: i, j
+   real(r8_kind) :: hpie, dlon, dlat, wb, sb
+
+      allocate(lon_bnd(mobs+1))
+      allocate(lat_bnd(nobs+1))
+
+! ---- compute grid edges (do only once) -----
+
+      hpie = pi / 2._r8_kind
+
+      dlon = 4._r8_kind*hpie/real(mobs, r8_kind)
+      wb = -0.5_r8_kind*dlon
+
+      do i = 1, mobs+1
+          lon_bnd(i) = wb + dlon*real(i-1, r8_kind)
+      enddo
+      lon_bnd(mobs+1) = lon_bnd(1) + 4._r8_kind*hpie
+
+      dlat = 2._r8_kind*hpie/real(nobs-1, r8_kind)
+      sb = -hpie + 0.5_r8_kind*dlat
+
+      lat_bnd(1) = -hpie
+      lat_bnd(nobs+1) = hpie
+      do j = 2, nobs
+          lat_bnd(j) = sb + dlat * real(j-2, r8_kind)
+      enddo
+   end subroutine set_sst_grid_edges_amip1
+
+   subroutine set_sst_grid_edges_oi
+   integer :: i, j
+   real(r8_kind) :: hpie, dlon, dlat, wb, sb
+
+! add by JHC
+      if(allocated(lon_bnd)) deallocate(lon_bnd)
+      if(allocated(lat_bnd)) deallocate(lat_bnd)
+! end add by JHC
+
+      allocate(lon_bnd(mobs+1))
+      allocate(lat_bnd(nobs+1))
+
+! ---- compute grid edges (do only once) -----
+
+      hpie = pi / 2._r8_kind
+      dlon = 4._r8_kind*hpie/real(mobs, r8_kind)
+      wb = 0.0_r8_kind
+
+      lon_bnd(1) = wb
+      do i = 2, mobs+1
+          lon_bnd(i) = wb + dlon * real(i-1, r8_kind)
+      enddo
+      lon_bnd(mobs+1) = lon_bnd(1) + 4._r8_kind*hpie
+
+      dlat = 2._r8_kind*hpie/real(nobs, r8_kind)
+      sb = -hpie
+
+      lat_bnd(1) = sb
+      lat_bnd(nobs+1) = hpie
+      do j = 2, nobs
+          lat_bnd(j) = sb + dlat * real(j-1, r8_kind)
+      enddo
+   end subroutine set_sst_grid_edges_oi
 
 !> Frees data associated with a amip_interp_type variable. Should be used for any
 !! variables initialized via @ref amip_interp_new.
 !> @param[inout] Interp A defined data type variable initialized by amip_interp_new and used
 !! when calling get_amip_sst and get_amip_ice.
    subroutine amip_interp_del (Interp)
-   type (amip_interp_type), intent(inout) :: Interp
-     if(allocated(Interp%data1)) deallocate(Interp%data1)
-     if(allocated(Interp%data2)) deallocate(Interp%data2)
-     if(allocated(lon_bnd))       deallocate(lon_bnd)
-     if(allocated(lat_bnd))       deallocate(lat_bnd)
+     type (amip_interp_type), intent(inout) :: Interp
+
+     if(allocated(Interp%data1_r4)) deallocate(Interp%data1_r4)
+     if(allocated(Interp%data1_r8)) deallocate(Interp%data1_r8)
+     if(allocated(Interp%data2_r4)) deallocate(Interp%data2_r4)
+     if(allocated(Interp%data2_r8)) deallocate(Interp%data2_r8)
+
+     if(allocated(lon_bnd))   deallocate(lon_bnd)
+     if(allocated(lat_bnd))   deallocate(lat_bnd)
+
      call horiz_interp_del ( Interp%Hintrp )
 
      Interp%I_am_initialized = .false.
-
    end subroutine amip_interp_del
-
-!#######################################################################
-
-   subroutine set_sst_grid_edges_amip1
-
-   integer :: i, j
-   real    :: hpie, dlon, dlat, wb, sb
-
-      allocate ( lon_bnd(mobs+1), lat_bnd(nobs+1) )
-
-! ---- compute grid edges (do only once) -----
-
-      hpie = 0.5*pi
-
-      dlon = 4.*hpie/float(mobs);  wb = -0.5*dlon
-      do i = 1, mobs+1
-          lon_bnd(i) = wb + dlon * float(i-1)
-      enddo
-          lon_bnd(mobs+1) = lon_bnd(1) + 4.*hpie
-
-      dlat = 2.*hpie/float(nobs-1);  sb = -hpie + 0.5*dlat
-      lat_bnd(1) = -hpie;  lat_bnd(nobs+1) = hpie
-      do j = 2, nobs
-          lat_bnd(j) = sb + dlat * float(j-2)
-      enddo
-
-   end subroutine set_sst_grid_edges_amip1
-
-!#######################################################################
-   subroutine set_sst_grid_edges_oi
-
-   integer :: i, j
-   real    :: hpie, dlon, dlat, wb, sb
-
-! add by JHC
-      if(allocated(lon_bnd))       deallocate(lon_bnd)
-      if(allocated(lat_bnd))       deallocate(lat_bnd)
-! end add by JHC
-      allocate ( lon_bnd(mobs+1), lat_bnd(nobs+1) )
-
-! ---- compute grid edges (do only once) -----
-
-      hpie = 0.5*pi
-
-      dlon = 4.*hpie/float(mobs);  wb = 0.0
-          lon_bnd(1) = wb
-      do i = 2, mobs+1
-          lon_bnd(i) = wb + dlon * float(i-1)
-      enddo
-          lon_bnd(mobs+1) = lon_bnd(1) + 4.*hpie
-
-      dlat = 2.*hpie/float(nobs);  sb = -hpie
-      lat_bnd(1) = sb;  lat_bnd(nobs+1) = hpie
-      do j = 2, nobs
-          lat_bnd(j) = sb + dlat * float(j-1)
-      enddo
-
-   end subroutine set_sst_grid_edges_oi
-!#######################################################################
-! add by JHC
-   subroutine set_sst_grid_edges_daily(mobs_sst, nobs_sst)
-
-   integer :: i, j, mobs_sst, nobs_sst
-   real    :: hpie, dlon, dlat, wb, sb
-
-      if(allocated(lon_bnd))       deallocate(lon_bnd)
-      if(allocated(lat_bnd))       deallocate(lat_bnd)
-      allocate ( lon_bnd(mobs_sst+1), lat_bnd(nobs_sst+1) )
-
-! ---- compute grid edges (do only once) -----
-
-      hpie = 0.5*pi
-
-      dlon = 4.*hpie/float(mobs_sst);  wb = 0.0
-          lon_bnd(1) = wb
-      do i = 2, mobs_sst+1
-          lon_bnd(i) = wb + dlon * float(i-1)
-      enddo
-          lon_bnd(mobs_sst+1) = lon_bnd(1) + 4.*hpie
-
-      dlat = 2.*hpie/float(nobs_sst);  sb = -hpie
-      lat_bnd(1) = sb;  lat_bnd(nobs_sst+1) = hpie
-      do j = 2, nobs_sst
-          lat_bnd(j) = sb + dlat * float(j-1)
-      enddo
-
-   end subroutine set_sst_grid_edges_daily
-! end add by JHC
-!#######################################################################
-
-
-   subroutine a2a_bilinear(nx, ny, dat1, n1, n2, dat2)
-   integer, intent(in):: nx, ny
-   integer, intent(in):: n1, n2
-   real, intent(in) :: dat1(nx,ny)
-   real, intent(out):: dat2(n1,n2)      !> output interpolated data
-
-! local:
-  real:: lon1(nx), lat1(ny)
-  real:: lon2(n1), lat2(n2)
-  real:: dx1, dy1, dx2, dy2
-  real:: xc, yc
-  real:: a1, b1, c1, c2, c3, c4
-  integer i1, i2, jc, i0, j0, it, jt
-  integer i,j
-
-
-!-----------------------------------------------------------
-! * Interpolate from "FMS" 1x1 SST data grid to a finer grid
-!                     lon: 0.5, 1.5, ..., 359.5
-!                     lat: -89.5, -88.5, ... , 88.5, 89.5
-!-----------------------------------------------------------
-
-  dx1 = 360./real(nx) !> INput Grid
-  dy1 = 180./real(ny) !> INput Grid
-
-  do i=1,nx
-     lon1(i) = 0.5*dx1 + real(i-1)*dx1
-  enddo
-  do j=1,ny
-     lat1(j) = -90. + 0.5*dy1 + real(j-1)*dy1
-  enddo
-
-  dx2 = 360./real(n1) !> OutPut Grid:
-  dy2 = 180./real(n2) !> OutPut Grid:
-
-  do i=1,n1
-     lon2(i) = 0.5*dx2 + real(i-1)*dx2
-  enddo
-  do j=1,n2
-     lat2(j) = -90. + 0.5*dy2 + real(j-1)*dy2
-  enddo
-
-  jt = 1
-  do 5000 j=1,n2
-
-     yc = lat2(j)
-     if ( yc<lat1(1) ) then
-            jc = 1
-            b1 = 0.
-     elseif ( yc>lat1(ny) ) then
-            jc = ny-1
-            b1 = 1.
-     else
-          do j0=jt,ny-1
-          if ( yc>=lat1(j0) .and. yc<=lat1(j0+1) ) then
-               jc = j0
-               jt = j0
-               b1 = (yc-lat1(jc)) / dy1
-               go to 222
-          endif
-          enddo
-     endif
-222  continue
-
-     it = 1
-     do i=1,n1
-        xc = lon2(i)
-       if ( xc>lon1(nx) ) then
-            i1 = nx;     i2 = 1
-            a1 = (xc-lon1(nx)) / dx1
-       elseif ( xc<lon1(1) ) then
-            i1 = nx;     i2 = 1
-            a1 = (xc+360.-lon1(nx)) / dx1
-       else
-            do i0=it,nx-1
-            if ( xc>=lon1(i0) .and. xc<=lon1(i0+1) ) then
-               i1 = i0;  i2 = i0+1
-               it = i0
-               a1 = (xc-lon1(i1)) / dx1
-               go to 111
-            endif
-            enddo
-       endif
-111    continue
-
-! Debug code:
-       if ( a1<-0.001 .or. a1>1.001 .or.  b1<-0.001 .or. b1>1.001 ) then
-            write(*,*) i,j,a1, b1
-            call mpp_error(FATAL,'a2a bilinear interpolation')
-       endif
-
-       c1 = (1.-a1) * (1.-b1)
-       c2 =     a1  * (1.-b1)
-       c3 =     a1  *     b1
-       c4 = (1.-a1) *     b1
-
-! Bilinear interpolation:
-       dat2(i,j) = c1*dat1(i1,jc) + c2*dat1(i2,jc) + c3*dat1(i2,jc+1) + c4*dat1(i1,jc+1)
-
-     enddo   !i-loop
-
-5000 continue   ! j-loop
-
-   end subroutine a2a_bilinear
-
-!#######################################################################
 
 !> @brief Returns the size (i.e., number of longitude and latitude
 !!         points) of the observed data grid.
 !! @throws FATAL have not called amip_interp_new
 !!     Must call amip_interp_new before get_sst_grid_size.
    subroutine get_sst_grid_size (nlon, nlat)
-
    integer, intent(out) :: nlon !> The number of longitude points (first dimension) in the
                                 !! observed data grid.  For AMIP 1 nlon = 180, and the Reynolds nlon = 360.
    integer, intent(out) :: nlat !> The number of latitude points (second dimension) in the
@@ -1223,181 +601,7 @@ endif
       if ( .not.module_is_initialized ) call amip_interp_init
 
       nlon = mobs;  nlat = nobs
-
    end subroutine get_sst_grid_size
-
-!#######################################################################
-
-!> @brief Returns the grid box boundaries of the observed data grid.
-!!
-!! @throws FATAL, have not called amip_interp_new
-!!     Must call amip_interp_new before get_sst_grid_boundary.
-!!
-!! @throws FATAL, invalid argument dimensions
-!!     The size of the output argument arrays do not agree with
-!!     the size of the observed data. See the documentation for
-!!     interfaces get_sst_grid_size and get_sst_grid_boundary.
-   subroutine get_sst_grid_boundary (blon, blat, mask)
-
-   real,    intent(out) :: blon(:) !> The grid box edges (in radians) for longitude points of the
-                                   !! observed data grid. The size of this argument must be nlon+1.
-   real,    intent(out) :: blat(:) !> The grid box edges (in radians) for latitude points of the
-                                   !! observed data grid. The size of this argument must be nlat+1.
-   logical, intent(out) :: mask(:,:)
-
-      if ( .not.module_is_initialized ) call amip_interp_init
-
-! ---- check size of argument(s) ----
-
-      if (size(blon(:)) /= mobs+1 .or. size(blat(:)) /= nobs+1)   &
-      call error_mesg ('get_sst_grid_boundary in amip_interp_mod',  &
-                       'invalid argument dimensions', FATAL)
-
-! ---- return grid box edges -----
-
-      blon = lon_bnd
-      blat = lat_bnd
-
-! ---- masking (data exists at all points) ----
-
-      mask = .true.
-
-
-   end subroutine get_sst_grid_boundary
-
-!#######################################################################
-
-   subroutine read_record (type, Date, Adate, dat)
-
-     character(len=*), intent(in)  :: type
-     type (date_type), intent(in)  :: Date
-     type (date_type), intent(inout) :: Adate
-     real,             intent(out) :: dat(mobs,nobs)
-     real :: tmp_dat(360,180)
-
-     integer(I2_KIND) :: idat(mobs,nobs)
-     integer :: nrecords, yr, mo, dy, ierr, k
-     integer, dimension(:), allocatable :: ryr, rmo, rdy
-     character(len=maxc) :: ncfilename, ncfieldname
-     type(FmsNetcdfFile_t), pointer :: fileobj
-
-    !---- set file and field name for NETCDF data sets ----
-
-        ncfieldname = 'sst'
-     if(type(1:3) == 'sst') then
-        ncfilename = trim(file_name_sst)
-        fileobj => fileobj_sst
-     else if(type(1:3) == 'ice') then
-        ncfilename = trim(file_name_ice)
-        fileobj => fileobj_ice
-        if (lowercase(trim(data_set)) == 'amip2' .or. &
-            lowercase(trim(data_set)) == 'hurrell' .or. &
-            lowercase(trim(data_set)) == 'daily') ncfieldname = 'ice' ! modified by JHC
-     endif
-
-     dy = 0 ! only processing monthly data
-
-     if (verbose > 2 .and. mpp_pe() == 0)  &
-          print *, 'looking for date = ', Date
-
-     ! This code can handle amip1, reynolds, or reyoi type SST data files in netCDF format
-     if (mpp_pe() == mpp_root_pe()) call mpp_error ('amip_interp_mod', &
-          'Reading NetCDF formatted input data file: '//trim(ncfilename), NOTE)
-
-        call fms2_io_read_data (fileobj, 'nrecords', nrecords)
-        if (nrecords < 1) call mpp_error('amip_interp_mod', &
-                           'Invalid number of SST records in SST datafile: '//trim(ncfilename), FATAL)
-        allocate(ryr(nrecords), rmo(nrecords), rdy(nrecords))
-        call fms2_io_read_data(fileobj, 'yr', ryr)
-        call fms2_io_read_data(fileobj, 'mo', rmo)
-        call fms2_io_read_data(fileobj, 'dy', rdy)
-
-     ierr = 1
-     do k = 1, nrecords
-       yr = ryr(k);  mo = rmo(k)
-       Adate = date_type( yr, mo, 0)
-       Curr_date = Adate
-       if (verbose > 2 .and. mpp_pe() == 0)  &
-             print *, '....... checking   ', Adate
-       if (Date == Adate) ierr = 0
-       if (yr == 0 .and. mo == Date%month) ierr = 0
-       if (ierr == 0) exit
-     enddo
-     if (ierr .ne. 0) call mpp_error('amip_interp_mod', &
-                      'Model time is out of range not in SST data: '//trim(ncfilename), FATAL)
-        deallocate(ryr, rmo, rdy)
-       !PRINT *, 'New SST data: ', k, yr, mo, dy, Date%year, Date%month, Date%day, ryr(1), rmo(1)
-
-   !---- check if climatological data should be used ----
-
-     if (yr == 0 .or. mo == 0) then
-        ierr = 0
-        if (date_out_of_range == 'fail' )               ierr = 1
-        if (date_out_of_range == 'initclimo' .and.  &
-             Date > Date_end )   ierr = 1
-        if (ierr /= 0) call error_mesg &
-             ('read_record in amip_interp_mod', &
-             'climo data read when NO climo data requested', FATAL)
-     endif
-
-   !---- read NETCDF data ----
-
-     if ( interp_oi_sst ) then
-          call fms2_io_read_data(fileobj, ncfieldname, tmp_dat, unlim_dim_level=k)
-!     interpolate tmp_dat(360, 180) ---> dat(mobs,nobs) (to enable SST anom computation)
-          if ( mobs/=360 .or. nobs/=180 ) then
-               call a2a_bilinear(360, 180, tmp_dat, mobs, nobs, dat)
-          else
-               dat(:,:) = tmp_dat(:,:)
-          endif
-     else
-          call fms2_io_read_data(fileobj, ncfieldname, dat, unlim_dim_level=k)
-     endif
-     !TODO This assumes that the data is "packed" (has the scale_factor and add_offset attributes)
-     ! in fms2_io_read_data the data is unpacked (data_in_file*scale_factor + add_offset)
-     ! the line below "packs" the data again. This is needed for reproducibility
-     idat =  nint(dat*100., I2_KIND)
-
-   !---- unpacking of data ----
-
-     if (type(1:3) == 'ice') then
-        !---- create fractional [0,1] ice mask
-        if (lowercase(trim(data_set)) /= 'amip2' .and. lowercase(trim(data_set)) /= 'hurrell') then
-               where ( idat <= ice_crit )
-                   dat = 1.
-               elsewhere
-                   dat = 0.
-               endwhere
-        else
-           dat = dat*0.01
-        endif
-     else if (type(1:3) == 'sst') then
-        !---- unpack sst ----
-        if (lowercase(trim(data_set)) /= 'amip2' .and. lowercase(trim(data_set)) /= 'hurrell') then
-               dat = real(idat)*0.01 + TFREEZE
-        endif
-     endif
-
-     return
-
-   end subroutine read_record
-
-!#######################################################################
-
-   subroutine clip_data (type, dat)
-
-   character(len=*), intent(in)    :: type
-   real,             intent(inout) :: dat(:,:)
-
-   if (type(1:3) == 'ice') then
-       dat = min(max(dat,0.0),1.0)
-   else if (type(1:3) == 'sst') then
-       dat = max(tice_crit_k,dat)
-   endif
-
-   end subroutine clip_data
-
-!#######################################################################
 
 !> @return logical answer
 function date_equals (Left, Right) result (answer)
@@ -1411,10 +615,7 @@ logical :: answer
    else
            answer = .false.
    endif
-
 end function date_equals
-
-!#######################################################################
 
 !> @return logical answer
 function date_not_equals (Left, Right) result (answer)
@@ -1428,10 +629,7 @@ logical :: answer
    else
            answer = .true.
    endif
-
 end function date_not_equals
-
-!#######################################################################
 
 !> @return logical answer
 function date_gt (Left, Right) result (answer)
@@ -1451,85 +649,9 @@ integer :: i, dif(3)
          exit
      endif
    enddo
-
 end function date_gt
 
-!#######################################################################
-
-subroutine print_dates (Time, Date1, Udate1,  &
-                              Date2, Udate2, fmonth)
-
-   type (time_type), intent(in) :: Time
-   type (date_type), intent(in) :: Date1, Udate1, Date2, Udate2
-   real,             intent(in) :: fmonth
-
-   integer :: year, month, day, hour, minute, second
-
-   call get_date (Time, year, month, day, hour, minute, second)
-
-   write (*,10) year,month,day, hour,minute,second
-   write (*,20) fmonth
-   write (*,30) Date1, Udate1
-   write (*,40) Date2, Udate2
-
-10 format (/,' date(y/m/d h:m:s) = ',i4,2('/',i2.2),1x,2(i2.2,':'),i2.2)
-20 format (' fmonth = ',f9.7)
-30 format (' date1(y/m/d) = ',i4,2('/',i2.2),6x, &
-                    'used = ',i4,2('/',i2.2),6x  )
-40 format (' date2(y/m/d) = ',i4,2('/',i2.2),6x, &
-                    'used = ',i4,2('/',i2.2),6x  )
-
-end subroutine print_dates
-
-!#######################################################################
-
-subroutine zonal_sst (Time, ice, sst)
-
-   type (time_type), intent(in)  :: Time
-   real,             intent(out) :: ice(mobs,nobs), sst(mobs,nobs)
-
-   real    :: tpi, fdate, eps, ph, sph, sph2, ts
-   integer :: j
-
-! namelist needed
-!
-!  teq  = sst at equator
-!  tdif = equator to pole sst difference
-!  tann = amplitude of annual cycle
-!  tlag = offset for time of year (for annual cycle)
-!
-
-    tpi = 2.0*pi
-
-    fdate = fraction_of_year (Time)
-
-    eps = sin( tpi*(fdate-tlag) ) * tann
-
-    do j = 1, nobs
-
-        ph  = 0.5*(lat_bnd(j)+lat_bnd(j+1))
-       sph  = sin(ph)
-       sph2 = sph*sph
-
-       ts = teq - tdif*sph2 - eps*sph
-
-       sst(:,j) = ts
-
-    enddo
-
-    where ( sst < tice_crit_k )
-       ice = 1.0
-       sst = tice_crit_k
-    elsewhere
-       ice  = 0.0
-    endwhere
-
-
-end subroutine zonal_sst
-
-!#######################################################################
-
-subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
+subroutine amip_interp_type_eq (amip_interp_out, amip_interp_in)
     type(amip_interp_type), intent(inout) :: amip_interp_out
     type(amip_interp_type), intent(in)    :: amip_interp_in
 
@@ -1539,8 +661,10 @@ subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
 
     amip_interp_out%Hintrp     =  amip_interp_in%Hintrp
     amip_interp_out%Hintrp2    =  amip_interp_in%Hintrp2 !< missing assignment statement; added by GPP
-    amip_interp_out%data1      =  amip_interp_in%data1
-    amip_interp_out%data2      =  amip_interp_in%data2
+    amip_interp_out%data1_r4   =  amip_interp_in%data1_r4
+    amip_interp_out%data1_r8   =  amip_interp_in%data1_r8
+    amip_interp_out%data2_r4   =  amip_interp_in%data2_r4
+    amip_interp_out%data2_r8   =  amip_interp_in%data2_r8
     amip_interp_out%Date1      =  amip_interp_in%Date1
     amip_interp_out%Date2      =  amip_interp_in%Date2
     amip_interp_out%Date1      =  amip_interp_in%Date1
@@ -1548,10 +672,10 @@ subroutine amip_interp_type_eq(amip_interp_out, amip_interp_in)
     amip_interp_out%use_climo  =  amip_interp_in%use_climo
     amip_interp_out%use_annual =  amip_interp_in%use_annual
     amip_interp_out%I_am_initialized = .true.
-
 end subroutine amip_interp_type_eq
 
-!#######################################################################
+#include "amip_interp_r4.fh"
+#include "amip_interp_r8.fh"
 
 end module amip_interp_mod
 !> @}

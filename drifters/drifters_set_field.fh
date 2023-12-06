@@ -22,7 +22,7 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
 #if _DIMS >= 3
      & z, &
 #endif
-     & data, ermesg)
+     & set_field_data, ermesg)
   use cloud_interpolator_mod
   type(drifters_type) :: self
   ! field index must be consistent with field_names from input file
@@ -30,11 +30,11 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
   real, intent(in)    :: x(:)
   real, intent(in)    :: y(:)
 #if _DIMS == 2
-  real, intent(in)    :: data(:,:)
+  real, intent(in)    :: set_field_data(:,:)
 #endif
 #if _DIMS == 3
   real, intent(in)    :: z(:)
-  real, intent(in)    :: data(:,:,:)
+  real, intent(in)    :: set_field_data(:,:,:)
 #endif
   character(len=*), intent(out) :: ermesg
 
@@ -52,12 +52,12 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
   nsizes(3) = size(z)
 #endif
 
-  if(nsizes(1) /= size(data, 1) .or. nsizes(2) /= size(data, 2)) then
+  if(nsizes(1) /= size(set_field_data, 1) .or. nsizes(2) /= size(set_field_data, 2)) then
      ermesg = 'drifters_set_field_XXX: ERROR size mismatch between data and x or y'
      return
   end if
 #if _DIMS >=3
-  if(nsizes(3) /= size(data, 3)) then
+  if(nsizes(3) /= size(set_field_data, 3)) then
      ermesg = 'drifters_set_field_XXX: ERROR size mismatch between data and z'
      return
   endif
@@ -104,7 +104,7 @@ subroutine drifters_set_field_XXX(self, index_field, x, y, &
      ts(3) = (self%core%positions(3,ip) - z(j))/(z(j+1) - z(j))
 #endif
 
-     call cld_ntrp_get_cell_values(nsizes, _FLATTEN(data), ij, fvals, ier)
+     call cld_ntrp_get_cell_values(nsizes, _FLATTEN(set_field_data), ij, fvals, ier)
      call cld_ntrp_linear_cell_interp(fvals, ts, self%fields(index_field, ip), ier)
   enddo
 

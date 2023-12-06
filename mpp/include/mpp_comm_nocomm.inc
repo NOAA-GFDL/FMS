@@ -244,8 +244,8 @@ end subroutine mpp_exit
     return
   end subroutine mpp_set_stack_size
 
-    subroutine mpp_broadcast_char(data, length, from_pe, pelist )
-      character(len=*), intent(inout) :: data(:)
+    subroutine mpp_broadcast_char(char_data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: char_data(:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
 
