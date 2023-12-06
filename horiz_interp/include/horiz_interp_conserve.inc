@@ -881,18 +881,18 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   !#######################################################################
 
   !> sums up the data and weights for a single output grid box
-  subroutine DATA_SUM_( data, area, facis, facie, facjs, facje,  &
+  subroutine DATA_SUM_( grid_data, area, facis, facie, facjs, facje,  &
        dwtsum, wtsum, arsum, mask )
 
     !-----------------------------------------------------------------------
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data, area
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: grid_data, area
     real(FMS_HI_KIND_), intent(in)                 :: facis, facie, facjs, facje
     real(FMS_HI_KIND_), intent(inout)              :: dwtsum, wtsum, arsum
     real(FMS_HI_KIND_), intent(in), optional       :: mask(:,:)
 
     !  fac__ = fractional portion of each boundary grid box included
     !          in the integral
-    !  dwtsum = sum(data*area*mask)
+    !  dwtsum = sum(grid_data*area*mask)
     !  wtsum  = sum(area*mask)
     !  arsum  = sum(area)
     !-----------------------------------------------------------------------
@@ -914,10 +914,10 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
     if (present(mask)) then
        wt = wt * mask
-       dwtsum = dwtsum + sum(wt*data)
+       dwtsum = dwtsum + sum(wt*grid_data)
        wtsum =  wtsum + sum(wt)
     else
-       dwtsum = dwtsum + sum(wt*data)
+       dwtsum = dwtsum + sum(wt*grid_data)
        wtsum =  wtsum + asum
     endif
     !-----------------------------------------------------------------------

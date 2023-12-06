@@ -71,11 +71,11 @@
          &  'MPP_REDISTRIBUTE_INIT_COMM: either domain_in or domain_out must be native.' )
 !check sizes
       if( domain_in%pe /= NULL_PE )then
-          if( isize_in /= domain_in%x(1)%data%size .OR. jsize_in /= domain_in%y(1)%data%size ) &
+          if( isize_in /= domain_in%x(1)%domain_data%size .OR. jsize_in /= domain_in%y(1)%domain_data%size ) &
                call mpp_error( FATAL, 'MPP_REDISTRIBUTE_INIT_COMM: field_in must be on data domain of domain_in.' )
       end if
       if( domain_out%pe /= NULL_PE )then
-          if( isize_out /= domain_out%x(1)%data%size .OR. jsize_out /= domain_out%y(1)%data%size ) &
+          if( isize_out /= domain_out%x(1)%domain_data%size .OR. jsize_out /= domain_out%y(1)%domain_data%size ) &
                call mpp_error( FATAL, 'MPP_REDISTRIBUTE_INIT_COMM: field_out must be on data domain of domain_out.' )
       end if
 
@@ -115,8 +115,8 @@
       d_comm%S_msize=0
       d_comm%S_do_buf=.false.
 
-      ioff = domain_in%x(1)%data%begin
-      joff = domain_in%y(1)%data%begin
+      ioff = domain_in%x(1)%domain_data%begin
+      joff = domain_in%y(1)%domain_data%begin
       mytile = domain_in%tile_id(1)
 
       call mpp_get_compute_domain( domain_in, isc, iec, jsc, jec )
@@ -256,8 +256,8 @@
         joff = -domain%y(1)%compute%begin + 1
       elseif( isize_l == (domain%x(1)%memory%size+ishift) .AND. jsize_l == (domain%y(1)%memory%size+jshift) )then
 !local is on data domain
-        ioff = -domain%x(1)%data%begin + 1
-        joff = -domain%y(1)%data%begin + 1
+        ioff = -domain%x(1)%domain_data%begin + 1
+        joff = -domain%y(1)%domain_data%begin + 1
       else
         call mpp_error(FATAL, &
                  & 'MPP_GLOBAL_FIELD_INIT_COMM: incoming field array must match either compute domain or data domain.')

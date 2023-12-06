@@ -91,7 +91,7 @@ contains
     !--- local variables
     integer:: io_stat
     integer:: ierr
-    integer:: unit
+    integer:: iunit
 
     !--- return if module is initialized
     if (module_is_initialized) return
@@ -105,8 +105,8 @@ contains
 
     !--- output information to logfile
     call write_version_number("fms_affinity_mod", version)
-    unit = stdlog()
-    write(unit,nml=fms_affinity_nml)
+    iunit = stdlog()
+    write(iunit,nml=fms_affinity_nml)
 
     module_is_initialized = .TRUE.
 

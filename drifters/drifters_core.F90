@@ -21,6 +21,7 @@
 !> @brief Handles the mechanics for adding and removing drifters
 
 module drifters_core_mod
+#ifdef use_drifters
   use platform_mod
   implicit none
   private
@@ -272,7 +273,7 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
   end subroutine drifters_core_print
 
-
+#endif
 end module drifters_core_mod
 !###############################################################################
 !> @}

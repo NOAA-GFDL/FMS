@@ -121,7 +121,7 @@ contains
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(kind=r4_kind), allocatable, dimension(:,:)  ::  data     !!Data to be scattered
+    real(kind=r4_kind), allocatable, dimension(:,:)  ::  scatter_data     !!Data to be scattered
     real(kind=r4_kind), allocatable, dimension(:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
@@ -130,7 +130,7 @@ contains
 
     DS = 7 !! DS should be less than 10 for the tests below to make sense.
     SS = 6
-    allocate(data(DS, DS))
+    allocate(scatter_data(DS, DS))
     allocate(segment(SS, SS))
 
     !!The full PE list [0, ...,npes-1]
@@ -139,7 +139,7 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    scatter_data = -1
     segment = -2.0
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
@@ -147,7 +147,7 @@ contains
     if (pe == root) then
        do i = 1,DS
           do j = 1,DS
-             data(i,j) = i*10 + j
+             scatter_data(i,j) = i*10 + j
           enddo
        enddo
        !! And re-initalize segment on the root pe.
@@ -170,9 +170,9 @@ contains
     js = 2
     je = 3
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
     else
-       call mpp_scatter(is, ie, js, je, pelist(1:npes -1), segment, data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
     endif
 
     call mpp_sync() !
@@ -227,7 +227,7 @@ end subroutine test_scatter_2D_R4
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(kind=r8_kind), allocatable, dimension(:,:)  ::  data     !!Data to be scattered
+    real(kind=r8_kind), allocatable, dimension(:,:)  ::  scatter_data     !!Data to be scattered
     real(kind=r8_kind), allocatable, dimension(:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
@@ -237,7 +237,7 @@ end subroutine test_scatter_2D_R4
 
     DS = 7 !! DS should be less than 10 for the tests below to make sense.
     SS = 6
-    allocate(data(DS, DS))
+    allocate(scatter_data(DS, DS))
     allocate(segment(SS, SS))
 
     !!The full PE list [0, ...,npes-1]
@@ -246,7 +246,7 @@ end subroutine test_scatter_2D_R4
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    scatter_data = -1
     segment = -2.0
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
@@ -254,7 +254,7 @@ end subroutine test_scatter_2D_R4
     if (pe == root) then
        do i = 1,DS
           do j = 1,DS
-             data(i,j) = i*10 + j
+             scatter_data(i,j) = i*10 + j
           enddo
        enddo
        !! And re-initalize segment on the root pe.
@@ -277,9 +277,9 @@ end subroutine test_scatter_2D_R4
     js = 2
     je = 3
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
     else
-       call mpp_scatter(is, ie, js, je, pelist(1:npes -1), segment, data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
     endif
 
     call mpp_sync()
@@ -334,7 +334,7 @@ end subroutine test_scatter_2D_R8
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(kind=r4_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be scattered
+    real(kind=r4_kind), allocatable, dimension(:,:,:)  ::  scatter_data     !!Data to be scattered
     real(kind=r4_kind), allocatable, dimension(:,:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
@@ -346,7 +346,7 @@ end subroutine test_scatter_2D_R8
     NZ = 11 !! Depth of the square tube to be scattered.
     DS = 6 !! DS should be less than 10 for the tests below to make sense.
     SS = 5 !! Can be different that DS, but see retrictions.
-    allocate(data(DS, DS, NZ))
+    allocate(scatter_data(DS, DS, NZ))
     allocate(segment(SS, SS, NZ))
 
     !!The full PE list is [0, ...,npes-1]
@@ -355,7 +355,7 @@ end subroutine test_scatter_2D_R8
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    scatter_data = -1
     segment = -2.0
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
@@ -364,7 +364,7 @@ end subroutine test_scatter_2D_R8
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-             data(i,j, k) = k*100 + j*10 + i
+             scatter_data(i,j, k) = k*100 + j*10 + i
           enddo
        enddo
        enddo
@@ -372,7 +372,7 @@ end subroutine test_scatter_2D_R8
        do i = 1,SS
           do j = 1,SS
              do k = 1,NZ
-             segment(i,j, k) = data(i,j, k)
+             segment(i,j, k) = scatter_data(i,j, k)
           enddo
        enddo
        enddo
@@ -390,9 +390,9 @@ end subroutine test_scatter_2D_R8
     js = 2
     je = 3
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
     else
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes -1), segment, data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
     endif
 
     call mpp_sync()
@@ -464,7 +464,7 @@ end subroutine test_scatter_2D_R8
 
     integer :: pelist(npes)
     integer :: i,j,k
-    real(kind=r8_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be scattered
+    real(kind=r8_kind), allocatable, dimension(:,:,:)  ::  scatter_data     !!Data to be scattered
     real(kind=r8_kind), allocatable, dimension(:,:,:)  ::  segment
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
@@ -476,7 +476,7 @@ end subroutine test_scatter_2D_R8
     NZ = 11 !! Depth of the square tube to be scattered.
     DS = 6 !! DS should be less than 10 for the tests below to make sense.
     SS = 5 !! Can be different that DS, but see retrictions.
-    allocate(data(DS, DS, NZ))
+    allocate(scatter_data(DS, DS, NZ))
     allocate(segment(SS, SS, NZ))
 
     !!The full PE list is [0, ...,npes-1]
@@ -485,7 +485,7 @@ end subroutine test_scatter_2D_R8
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    scatter_data = -1
     segment = -2.0
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
@@ -494,7 +494,7 @@ end subroutine test_scatter_2D_R8
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-             data(i,j, k) = k*100 + j*10 + i
+             scatter_data(i,j, k) = k*100 + j*10 + i
           enddo
        enddo
        enddo
@@ -502,7 +502,7 @@ end subroutine test_scatter_2D_R8
        do i = 1,SS
           do j = 1,SS
              do k = 1,NZ
-             segment(i,j, k) = data(i,j, k)
+             segment(i,j, k) = scatter_data(i,j, k)
           enddo
        enddo
        enddo
@@ -520,9 +520,9 @@ end subroutine test_scatter_2D_R8
     js = 2
     je = 3
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
     else
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes -1), segment, data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
     endif
 
     call mpp_sync()
@@ -787,7 +787,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
      integer :: pelist(npes),rsize(npes)
      integer :: pelist2(npes),rsize2(npes)
      integer :: i,j,k,l,nz,ssize,nelems
-     real,allocatable,dimension(:,:) :: data, cdata, sbuff,rbuff
+     real,allocatable,dimension(:,:) :: gather_data, cdata, sbuff,rbuff
      real,allocatable :: ref(:,:)
      integer, parameter :: KSIZE=10
 
@@ -805,9 +805,9 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
      write(out_unit,*)
 
      ssize = pe+1
-     allocate(data(ssize,KSIZE))
+     allocate(gather_data(ssize,KSIZE))
      do k=1,KSIZE; do i=1,ssize
-       data(i,k) = 10000.0*k + pe + 0.0001*i
+       gather_data(i,k) = 10000.0*k + pe + 0.0001*i
      enddo; enddo
      do i=1,npes
        pelist(i) = i-1
@@ -834,7 +834,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
      ! and a clear, concise unpack
      do j=1,ssize
        do i=1,nz
-         sbuff(i,j) = data(j,i)
+         sbuff(i,j) = gather_data(j,i)
      enddo; enddo
 
   !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size
@@ -892,7 +892,7 @@ subroutine test_gather2DV(npes,pe,root,out_unit)
      endif
      call mpp_sync()
      write(out_unit,*) "Test gather2DV with reversed pelist successful"
-     deallocate(data,sbuff,rbuff,cdata,ref)
+     deallocate(gather_data,sbuff,rbuff,cdata,ref)
   end subroutine test_gather2DV
 
 end program test_mpp_gatscat

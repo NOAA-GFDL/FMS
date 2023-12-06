@@ -628,7 +628,7 @@ module mpp_domains_mod
   type :: domain1D
      private
      type(domain_axis_spec) :: compute !< index limits for compute domain
-     type(domain_axis_spec) :: data    !< index limits for data domain
+     type(domain_axis_spec) :: domain_data !< index limits for data domain
      type(domain_axis_spec) :: global  !< index limits for global domain
      type(domain_axis_spec) :: memory  !< index limits for memory domain
      logical :: cyclic !< true if domain is cyclic

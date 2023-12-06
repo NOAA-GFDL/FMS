@@ -53,8 +53,8 @@
     else if( size(field,1).EQ.domain%x(tile)%memory%size+ishift .AND. &
            & size(field,2).EQ.domain%y(tile)%memory%size+jshift )then
 !field is on data domain
-        ioff = -domain%x(tile)%data%begin + 1
-        joff = -domain%y(tile)%data%begin + 1
+        ioff = -domain%x(tile)%domain_data%begin + 1
+        joff = -domain%y(tile)%domain_data%begin + 1
     else
         call mpp_error( FATAL, &
                        &  'MPP_GLOBAL_SUM_: incoming field array must match either compute domain or data domain.' )
