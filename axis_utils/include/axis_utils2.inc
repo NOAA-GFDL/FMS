@@ -46,7 +46,9 @@
                                               !! indicating to reproduce the mpp_io bug where
                                               !! the null characters were not removed after reading a string attribute
   integer, parameter                                   :: lkind = FMS_AU_KIND_
-  integer :: edge_index(2)
+  integer :: edge_index(2) !< Index to use when reading the edges from the file
+                           !! (/1, 2/) if the axis data is monotonically increasing
+                           !! (/2, 1/) if the axis data is monotonically decreasing
 
   ndims = get_variable_num_dimensions(fileobj, name)
   allocate(dim_sizes(ndims))
@@ -302,8 +304,7 @@
 
     integer                               :: NEAREST_INDEX_
     integer                               :: ia !< dimension of "array"
-    integer                               :: i, ii, iunit
-    logical                               :: keep_going
+    integer                               :: i !< For looping through "array"
 
     ia = SIZE(array(:))
 
