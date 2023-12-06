@@ -459,6 +459,7 @@ subroutine test_axis_edges(increasing_array)
   integer :: count
   integer :: count_factor
   integer :: factor
+  integer :: index !< For looping through the data
 
   if (increasing_array) then
     count = 0
@@ -470,14 +471,14 @@ subroutine test_axis_edges(increasing_array)
     count_factor = 0
   endif
 
-  do i=1,10
+  do index=1,10
      count = count + factor
-     data_in_var(i) = real(count, k) - 0.5_k
+     data_in_var(index) = real(count, k) - 0.5_k
 
-     data_in_var_edges(1,i) = real(count-1, k)
-     data_in_var_edges(2,i) = real(count, k)
+     data_in_var_edges(1,index) = real(count-1, k)
+     data_in_var_edges(2,index) = real(count, k)
 
-     data_in_answers(i) = real(count + count_factor, k)
+     data_in_answers(index) = real(count + count_factor, k)
   enddo
 
   if (increasing_array) then
