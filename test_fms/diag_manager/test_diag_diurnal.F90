@@ -99,8 +99,6 @@ program test_reduction_methods
   read (input_nml_file, test_reduction_methods_nml, iostat=io_status)
   if (io_status > 0) call mpp_error(FATAL,'=>test_modern_diag: Error reading input.nml')
 
-  Time = set_date(2,1,1,0,0,0)
-  Time_step = set_time (3600,0) !< 1 hour
   nx = 96
   ny = 96
   nz = 5
@@ -152,6 +150,18 @@ program test_reduction_methods
     endif
   end select
 
+
+  !< Get the data domain indices (1 based)
+  isd1 = isc-isd+1
+  jsd1 = jsc-jsd+1
+  ied1 = isd1 + iec-isc
+  jed1 = jsd1 + jec-jsc
+
+  !< Set up start, end, and increment times
+  Time = set_date(2,1,1,0,0,0)
+  Time_step = set_time (3600,0) !< 1 hour
+  call diag_manager_set_time_end(set_date(2,1,3,0,0,0))
+
   !< Register the axis
   id_x  = diag_axis_init('x',  real((/ (i, i = 1,nx) /), kind=r8_kind),  'point_E', 'x', long_name='point_E', &
     Domain2=Domain)
@@ -167,13 +177,6 @@ program test_reduction_methods
   id_sst = register_diag_field  ('ocn_mod', 'sst', (/id_x, id_y, id_z/), Time, 'sst', &
     'mullions', missing_value = missing_value)
 
-  !< Get the data domain indices (1 based)
-  isd1 = isc-isd+1
-  jsd1 = jsc-jsd+1
-  ied1 = isd1 + iec-isc
-  jed1 = jsd1 + jec-jsc
-
-  call diag_manager_set_time_end(set_date(2,1,3,0,0,0))
   do i = 1, ntimes
     Time = Time + Time_step
 

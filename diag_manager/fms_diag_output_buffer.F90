@@ -141,7 +141,7 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   class(fmsDiagOutputBuffer_type), intent(inout), target :: this            !< 5D buffer object
   class(*),                        intent(in)            :: buff_type       !< allocates to the type of buff_type
   integer,                         intent(in)            :: ndim            !< Number of dimension
-  integer,                         intent(in)            :: buff_sizes(5)   !< dimension buff_sizes
+  integer,                         intent(in)            :: buff_sizes(4)   !< dimension buff_sizes
   character(len=*),                intent(in)            :: field_name      !< field name for error output
   integer, optional,               intent(in)            :: diurnal_samples !< number of diurnal samples
 
@@ -159,22 +159,22 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   select type (buff_type)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
-                                                  & buff_sizes(5)))
+                                                  & n_samples))
       this%weight_sum = 0.0_r4_kind
       this%buffer_type = i4
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
-                                                  & buff_sizes(5)))
+                                                  & n_samples))
       this%weight_sum = 0.0_r8_kind
       this%buffer_type = i8
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4),  &
-                                               & buff_sizes(5)))
+                                               & n_samples))
       this%weight_sum = 0.0_r4_kind
       this%buffer_type = r4
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(buff_sizes(1),buff_sizes(2),buff_sizes(3),buff_sizes(4), &
-                                               & buff_sizes(5)))
+                                               & n_samples))
       this%weight_sum = 0.0_r8_kind
       this%buffer_type = r8
     class default
@@ -190,7 +190,7 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   this%buffer_dims(2) = buff_sizes(2)
   this%buffer_dims(3) = buff_sizes(3)
   this%buffer_dims(4) = buff_sizes(4)
-  this%buffer_dims(5) = buff_sizes(5)
+  this%buffer_dims(5) = n_samples 
 end subroutine allocate_buffer
 
 !> Get routine for 5D buffers.
@@ -573,6 +573,8 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
   logical,                         intent(in)    :: is_masked           !< .True. if the field has a mask
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   character(len=50) :: err_msg
+
+  print *, "shape(buffer)", SHAPE(this%buffer), "shape(field_data)", shape(field_data)
 
   !TODO This will be expanded for integers
   err_msg = ""

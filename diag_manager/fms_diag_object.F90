@@ -1285,7 +1285,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: ndims !< Number of dimensions in the input field data
   integer :: buffer_id !< Buffer index of FMS_diag_buffers
   integer :: num_diurnal_samples !< Number of diurnal samples from diag_yaml
-  integer :: axes_length(5) !< Length of each axis
+  integer :: axes_length(4) !< Length of each axis
   integer :: i, j !< For looping
   class(fmsDiagOutputBuffer_type), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
@@ -1332,12 +1332,11 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     enddo
 
     if (num_diurnal_samples .ne. 0) then
-      axes_length(ndims + 1) = num_diurnal_samples
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
 
     ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)
-    call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:5), &
+    call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:4), &
           this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
     call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 

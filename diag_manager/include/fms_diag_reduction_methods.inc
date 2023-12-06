@@ -215,7 +215,7 @@ end subroutine DO_TIME_MAX_
 !!
 !! Where l are the indices passed in through the bounds_in/out
 subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, &
-                               missing_value, diurnal_section, weight)
+                               missing_value, diurnal_section, weight, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(r8_kind),       intent(inout) :: weight_sum          !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
@@ -231,6 +231,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
                                                               !! if not doing a diurnal reduction, this should always =1
   real(r8_kind),optional, intent(in)       :: weight          !< Weight applied to data_in before added to data_out
                                                               !! used for weighted averages, default 1.0
+  real(FMS_TRM_KIND_),optional, intent(in) :: pow                 !< Used for pow reduction, adds field^pow to buffer
 
   integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
                                                             !! the input buffer
@@ -245,6 +246,12 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     weight_loc = weight
   else
     weight_loc = 1.0_kindl
+  endif
+
+  if(present(pow)) then
+    pow_loc = weight
+  else
+    pow_loc = 1.0_kindl
   endif
 
   ! update with given weight for average before write
