@@ -950,14 +950,14 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         ie_src = axis_sizes(1)
         js_src = 1
         je_src = axis_sizes(2)
-        do j = 1, axis_sizes(2)+1
-           if( override_array(curr_position)%lat_in(j) > lat_min ) exit
-           js_src = j
-        enddo
-        do j = 1, axis_sizes(2)+1
-           je_src = j
-           if( override_array(curr_position)%lat_in(j) > lat_max ) exit
-        enddo
+        ! do j = 1, axis_sizes(2)+1
+        !    if( override_array(curr_position)%lat_in(j) > lat_min ) exit
+        !    js_src = j
+        ! enddo
+        ! do j = 1, axis_sizes(2)+1
+        !    je_src = j
+        !    if( override_array(curr_position)%lat_in(j) > lat_max ) exit
+        ! enddo
 
         !--- bicubic interpolation need one extra point in each direction. Also add
         !--- one more point for because lat_in is in the corner but the interpolation
