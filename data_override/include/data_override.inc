@@ -703,20 +703,23 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
   real(FMS_DATA_OVERRIDE_KIND_), intent(out) :: data_out !< output data array returned by this call
   integer, intent(in), optional :: data_index
 
-  type(time_type)    :: first_record, last_record
+  type(time_type)    :: first_record !< first record of "current" file
+  type(time_type)    :: last_record !< last record of "current" file
   character(len=512) :: filename !< file containing source data
-  character(len=512) :: prevfilename !< file containing source data for bridge
-  character(len=512) :: nextfilename !< file containing source data for bridge
+  character(len=512) :: prevfilename !< file containing previous source data, when using multiple files
+  character(len=512) :: nextfilename !< file containing next source data, when using multiple files
   character(len=128) :: fieldname !< fieldname used in the data file
   integer :: index1 !< field index in data_table
-  integer            :: dims(4), prev_dims(4), next_dims(4)
+  integer            :: dims(4)
+  integer            :: prev_dims(4) !< dimensions of previous source data, when using multiple files
+  integer            :: next_dims(4) !< dimensions of next source data, when using multiple files
   integer :: id_time !< index for time interp in override array
-  integer            :: id_time_prev=-1 !index for time interp in override array
-  integer            :: id_time_next=-1 !index for time interp in override array
+  integer            :: id_time_prev=-1 !< time index for previous file, when using multiple files
+  integer            :: id_time_next=-1 !< time index for next file, when using multiple files
   integer :: curr_position !< position of the field currently processed in override_array
   integer :: i
   real(FMS_DATA_OVERRIDE_KIND_) :: factor
-  logical :: multifile
+  logical :: multifile !< use multiple consecutive files for override
 
   if(.not.module_is_initialized) &
        call mpp_error(FATAL,'Error: need to call data_override_init first')
@@ -782,9 +785,11 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
   endif !if curr_position < 0
 
 
-  if (multifile) then
+  ! if using consecutive files for data_override, get time axis for previous and next files
+  ! and check spatial dims for consistency
+  if_multi1: if (multifile) then
     id_time_prev = -1
-    if (trim(prevfilename) /= '') then
+    if_prev1: if (trim(prevfilename) /= '') then
       id_time_prev = init_external_field(prevfilename,fieldname,verbose=.false.)
       dims = get_external_field_size(id_time)
       prev_dims = get_external_field_size(id_time_prev)
@@ -795,9 +800,9 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
       endif
       allocate(data_table(index1)%time_prev_records(prev_dims(4)))
       call get_time_axis(id_time_prev,data_table(index1)%time_prev_records)
-    endif
+    endif if_prev1
     id_time_next = -1
-    if (trim(nextfilename) /= '') then
+    if_next1: if (trim(nextfilename) /= '') then
       id_time_next = init_external_field(nextfilename,fieldname,verbose=.false.)
       dims = get_external_field_size(id_time)
       next_dims = get_external_field_size(id_time_next)
@@ -808,8 +813,8 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
       endif
       allocate(data_table(index1)%time_next_records(next_dims(4)))
       call get_time_axis(id_time_next,data_table(index1)%time_next_records)
-    endif
-  endif
+    endif if_next1
+  endif if_multi1
 
 
   !10 do time interp to get data in compute_domain
@@ -817,8 +822,11 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
   first_record = data_table(index1)%time_records(1)
   last_record = data_table(index1)%time_records(dims(4))
 
-  if (multifile) then   ! bridging between files
-    if (time<first_record) then
+  ! if using consecutive files, allow to perform time interpolation between the last record of previous
+  ! file and first record of current file OR between the last record of current file and first record of
+  ! next file hence "bridging" over files.
+  if_multi2: if (multifile) then
+    if_time2: if (time<first_record) then
       if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
       prev_dims = get_external_field_size(id_time_prev)
       if (time<data_table(index1)%time_prev_records(prev_dims(4))) call mpp_error(FATAL, &
@@ -831,14 +839,14 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
       call time_interp_external_bridge(id_time, id_time_next,time,data_out,verbose=.false.)
     else ! first_record < time < last_record, do not use bridge
       call time_interp_external(id_time,time,data_out,verbose=.false.)
-    endif
+    endif if_time2
   else ! standard behavior
      if ((time<first_record) .or. (time>last_record)) then
        call mpp_error(WARNING, &
             'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
      endif
      call time_interp_external(id_time,time,data_out,verbose=.false.)
-  endif
+  endif if_multi2
 
 
   data_out = data_out*factor
@@ -893,15 +901,19 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
 
   character(len=512) :: filename !< file containing source data
   character(len=512) :: filename2 !< file containing source data
-  character(len=512) :: prevfilename, prevfilename2 !< file containing source data for previous segment
-  character(len=512) :: nextfilename, nextfilename2 !< file containing source data for next segment
+  character(len=512) :: prevfilename !< file containing source data for previous file
+  character(len=512) :: prevfilename2 !< file containing source data for previous file
+  character(len=512) :: nextfilename !< file containing source data for next file
+  character(len=512) :: nextfilename2 !< file containing source data for next file
   character(len=128) :: fieldname !< fieldname used in the data file
   integer            :: i,j
-  integer            :: dims(4), prev_dims(4), next_dims(4)
+  integer            :: dims(4)
+  integer            :: prev_dims(4) !< dimensions of previous source data, when using multiple files
+  integer            :: next_dims(4) !< dimensions of next source data, when using multiple files
   integer            :: index1 !< field index in data_table
   integer            :: id_time !< index for time interp in override array
-  integer            :: id_time_prev=-1 !< index for time interp bridge in override array
-  integer            :: id_time_next=-1 !< index for time interp bridge in override array
+  integer            :: id_time_prev=-1 !< time index for previous file, when using multiple files
+  integer            :: id_time_next=-1 !< time index for next file, when using multiple files
   integer            :: axis_sizes(4)
   character(len=32)  :: axis_names(4)
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), pointer :: lon_local =>NULL() !< of output (target) grid cells
@@ -911,7 +923,8 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   logical :: data_file_is_2D = .false.  !< data in netCDF file is 2D
   logical :: ongrid, use_comp_domain
   type(domain2D) :: domain
-  type(time_type)    :: first_record, last_record
+  type(time_type)    :: first_record !< first record of "current" file
+  type(time_type)    :: last_record !< last record of "current" file
   integer :: curr_position !< position of the field currently processed in override_array
   real(FMS_DATA_OVERRIDE_KIND_) :: factor
   integer, dimension(4) :: comp_domain = 0  !< istart,iend,jstart,jend for compute domain
@@ -924,7 +937,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   real(FMS_DATA_OVERRIDE_KIND_) :: lat_min, lat_max
   integer :: is_src, ie_src, js_src, je_src
   logical :: exists
-  logical :: multifile
+  logical :: multifile !< use multiple consecutive files for override
   type(FmsNetcdfFile_t) :: fileobj
   integer :: startingi !< Starting x index for the compute domain relative to the input buffer
   integer :: endingi !< Ending x index for the compute domain relative to the input buffer
@@ -1045,30 +1058,34 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            call get_mosaic_tile_file(filename,filename2,.false.,domain)
            filename = filename2
         endif
-        if (multifile) then
-          if (trim(prevfilename) /= '') then
+
+        ! if using consecutive files for data_override, get file names
+        if_multi3: if (multifile) then
+          if_prev3: if (trim(prevfilename) /= '') then
             inquire(file=trim(prevfilename),EXIST=exists)
             if (.not. exists) then
                call get_mosaic_tile_file(prevfilename,prevfilename2,.false.,domain)
                prevfilename = prevfilename2
             endif
-          endif
-          if (trim(prevfilename) /= '') then
+          endif if_prev3
+          if_next3: if (trim(nextfilename) /= '') then
             inquire(file=trim(nextfilename),EXIST=exists)
             if (.not. exists) then
                call get_mosaic_tile_file(nextfilename,nextfilename2,.false.,domain)
                nextfilename = nextfilename2
             endif
-          endif
-        endif
+          endif if_next3
+        endif if_multi3
 
         !--- we always only pass data on compute domain
         id_time = init_external_field(filename,fieldname,domain=domain,verbose=.false., &
                                     use_comp_domain=use_comp_domain, nwindows=nwindows, ongrid=ongrid)
 
-        if (multifile) then
+        ! if using consecutive files for data_override, get time axis for previous and next files
+        ! and check spatial dims for consistency
+        if_multi4: if (multifile) then
           id_time_prev = -1
-          if (trim(prevfilename) /= '') then
+          if_prev4:if (trim(prevfilename) /= '') then
             id_time_prev = init_external_field(prevfilename,fieldname,domain=domain, &
                verbose=.false.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows, ongrid=ongrid)
@@ -1081,9 +1098,9 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
             endif
             allocate(data_table(index1)%time_prev_records(prev_dims(4)))
             call get_time_axis(id_time_prev,data_table(index1)%time_prev_records)
-          endif
+          endif if_prev4
           id_time_next = -1
-          if (trim(nextfilename) /= '') then
+          if_next4: if (trim(nextfilename) /= '') then
             id_time_next = init_external_field(nextfilename,fieldname,domain=domain, &
                verbose=.false.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows, ongrid=ongrid)
@@ -1096,8 +1113,8 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
             endif
             allocate(data_table(index1)%time_next_records(next_dims(4)))
             call get_time_axis(id_time_next,data_table(index1)%time_next_records)
-          endif
-        endif
+          endif if_next4
+        endif if_multi4
 
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
@@ -1110,26 +1127,28 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
             axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
             nwindows = nwindows)
 
-        if (multifile) then
+        ! if using consecutive files for data_override, get time axis for previous and next files
+        ! and check spatial dims for consistency
+        if_multi5: if (multifile) then
           id_time_prev = -1
-          if (trim(prevfilename) /= '') then
+          if_prev5: if (trim(prevfilename) /= '') then
             id_time_prev = init_external_field(prevfilename,fieldname,domain=domain, axis_names=axis_names,&
                axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows)
             prev_dims = get_external_field_size(id_time_prev)
             allocate(data_table(index1)%time_prev_records(prev_dims(4)))
             call get_time_axis(id_time_prev,data_table(index1)%time_prev_records)
-          endif
+          endif if_prev5
           id_time_next = -1
-          if (trim(nextfilename) /= '') then
+          if_next5: if (trim(nextfilename) /= '') then
             id_time_next = init_external_field(nextfilename,fieldname,domain=domain, axis_names=axis_names,&
                axis_sizes=axis_sizes, verbose=.false.,override=.true.,use_comp_domain=use_comp_domain, &
                nwindows = nwindows)
             next_dims = get_external_field_size(id_time_next)
             allocate(data_table(index1)%time_next_records(next_dims(4)))
             call get_time_axis(id_time_next,data_table(index1)%time_next_records)
-          endif
-        endif
+          endif if_next5
+        endif if_multi5
 
         dims = get_external_field_size(id_time)
         override_array(curr_position)%dims = dims
@@ -1249,7 +1268,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            deallocate(lon_tmp, lat_tmp)
         endif
 
-     endif
+     endif !ongrid
   else !curr_position >0
      dims = override_array(curr_position)%dims
      comp_domain = override_array(curr_position)%comp_domain
@@ -1363,8 +1382,11 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
     if(data_file_is_2D) then
       if (use_comp_domain) then
 
-        if (multifile) then   ! bridging between files
-          if (time<first_record) then
+        ! if using consecutive files, allow to perform time interpolation between the last record of previous
+        ! file and first record of current file OR between the last record of current file and first record of
+        ! next file hence "bridging" over files.
+        if_multi6: if (multifile) then
+          if_time6: if (time<first_record) then
             ! previous file must be init and time must be between last record of previous file and
             ! first record of current file
             if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
@@ -1386,7 +1408,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           else  ! first_record <= time <= last_record, do not use bridge
             call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                       is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-          endif
+          endif if_time6
         else  ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
@@ -1394,14 +1416,17 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           endif
           call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-        endif
+        endif if_multi6
 
       else
         !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
         !! size
 
-        if (multifile) then   ! bridging between files
-          if (time<first_record) then
+        ! if using consecutive files, allow to perform time interpolation between the last record of previous
+        ! file and first record of current file OR between the last record of current file and first record of
+        ! next file hence "bridging" over files.
+        if_multi7: if (multifile) then
+          if_time7: if (time<first_record) then
             ! previous file must be init and time must be between last record of previous file and
             ! first record of current file
             if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
@@ -1425,7 +1450,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           else  ! first_record <= time <= last_record, do not use bridge
             call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                       is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-          endif
+          endif if_time7
         else  ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
@@ -1433,7 +1458,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           endif
           call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-        endif  ! end bridge
+        endif if_multi7
 
       end if
       return_data(:,:,1) = return_data(:,:,1)*factor
@@ -1443,8 +1468,11 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
     else
       if (use_comp_domain) then
 
-        if (multifile) then   ! bridging between files, see previous blocks for comments
-          if (time<first_record) then
+        ! if using consecutive files, allow to perform time interpolation between the last record of previous
+        ! file and first record of current file OR between the last record of current file and first record of
+        ! next file hence "bridging" over files.
+        if_multi8: if (multifile) then
+          if_time8: if (time<first_record) then
             if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
             prev_dims = get_external_field_size(id_time_prev)
             if (time<data_table(index1)%time_prev_records(prev_dims(4))) call mpp_error(FATAL, &
@@ -1460,7 +1488,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           else ! first_record <= time <= last_record, do not use bridge
             call time_interp_external(id_time,time,return_data,verbose=.false., &
                                       is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-          endif
+          endif if_time8
         else ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
@@ -1468,13 +1496,17 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           endif
           call time_interp_external(id_time,time,return_data,verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-       endif
+       endif if_multi8
 
       else
         !> If this in an ongrid case and you are not in the compute domain, send in `data` to be the correct
         !! size
-        if (multifile) then  ! bridging between files, see previous blocks for comments
-          if (time<first_record) then
+
+        ! if using consecutive files, allow to perform time interpolation between the last record of previous
+        ! file and first record of current file OR between the last record of current file and first record of
+        ! next file hence "bridging" over files.
+        if_multi9: if (multifile) then
+          if_time9: if (time<first_record) then
             if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
             prev_dims = get_external_field_size(id_time_prev)
             if (time<data_table(index1)%time_prev_records(prev_dims(4))) call mpp_error(FATAL, &
@@ -1492,7 +1524,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           else ! first_record <= time <= last_record, do not use bridge
             call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                      is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-          endif
+          endif if_time9
         else ! standard behavior
           if ((time<first_record) .or. (time>last_record)) then
             call mpp_error(WARNING, &
@@ -1500,7 +1532,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
           endif
           call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-        endif
+        endif if_multi9
 
       end if
       return_data = return_data*factor
@@ -1510,8 +1542,11 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
      if(data_file_is_2D) then
         if( data_table(index1)%region_type == NO_REGION ) then
 
-           if (multifile) then   ! bridging between files, see previous blocks for comments
-             if (time<first_record) then
+           ! if using consecutive files, allow to perform time interpolation between the last record of previous
+           ! file and first record of current file OR between the last record of current file and first record of
+           ! next file hence "bridging" over files.
+           if_multi10: if (multifile) then
+             if_time10: if (time<first_record) then
                if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
                prev_dims = get_external_field_size(id_time_prev)
                if (time<data_table(index1)%time_prev_records(prev_dims(4))) call mpp_error(FATAL, &
@@ -1530,7 +1565,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                          horz_interp=override_array(curr_position)%horz_interp(window_id), &
                                          is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-             endif
+             endif if_time10
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
@@ -1539,7 +1574,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
              call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                        horz_interp=override_array(curr_position)%horz_interp(window_id), &
                                        is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           endif
+           endif if_multi10
 
            return_data(:,:,1) = return_data(:,:,1)*factor
            do i = 2, size(return_data,3)
@@ -1549,8 +1584,11 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
            allocate(mask_out(size(return_data,1), size(return_data,2),1))
            mask_out = .false.
 
-           if (multifile) then  ! bridging between files, see previous blocks for comments
-             if (time<first_record) then
+           ! if using consecutive files, allow to perform time interpolation between the last record of previous
+           ! file and first record of current file OR between the last record of current file and first record of
+           ! next file hence "bridging" over files.
+           if_multi11: if (multifile) then
+             if_time11: if (time<first_record) then
                if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
                prev_dims = get_external_field_size(id_time_prev)
                if (time<data_table(index1)%time_prev_records(prev_dims(4))) call mpp_error(FATAL, &
@@ -1572,7 +1610,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                     horz_interp=override_array(curr_position)%horz_interp(window_id),      &
                     mask_out   =mask_out(:,:,1), &
                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-             endif
+             endif if_time11
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
@@ -1582,7 +1620,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                    horz_interp=override_array(curr_position)%horz_interp(window_id),      &
                    mask_out   =mask_out(:,:,1), &
                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           endif
+           endif if_multi11
 
            where(mask_out(:,:,1))
               return_data(:,:,1) = return_data(:,:,1)*factor
@@ -1597,8 +1635,11 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
      else
         if( data_table(index1)%region_type == NO_REGION ) then
 
-           if (multifile) then  ! bridging between files, see previous blocks for comments
-             if (time<first_record) then
+           ! if using consecutive files, allow to perform time interpolation between the last record of previous
+           ! file and first record of current file OR between the last record of current file and first record of
+           ! next file hence "bridging" over files.
+           if_multi12: if (multifile) then
+             if_time12: if (time<first_record) then
                if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
                prev_dims = get_external_field_size(id_time_prev)
                if (time<data_table(index1)%time_prev_records(prev_dims(4))) call mpp_error(FATAL, &
@@ -1617,7 +1658,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                call time_interp_external(id_time,time,return_data,verbose=.false.,      &
                     horz_interp=override_array(curr_position)%horz_interp(window_id), &
                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-             endif
+             endif if_time12
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
@@ -1626,15 +1667,18 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
              call time_interp_external(id_time,time,return_data,verbose=.false.,      &
                   horz_interp=override_array(curr_position)%horz_interp(window_id), &
                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           endif
+           endif if_multi12
 
            return_data = return_data*factor
         else
            allocate(mask_out(size(return_data,1), size(return_data,2), size(return_data,3)) )
            mask_out = .false.
 
-           if (multifile) then   ! bridging between files, see previous blocks for comments
-             if (time<first_record) then
+           ! if using consecutive files, allow to perform time interpolation between the last record of previous
+           ! file and first record of current file OR between the last record of current file and first record of
+           ! next file hence "bridging" over files.
+           if_multi13: if (multifile) then
+             if_time13: if (time<first_record) then
                if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
                prev_dims = get_external_field_size(id_time_prev)
                if (time<data_table(index1)%time_prev_records(prev_dims(4))) call mpp_error(FATAL, &
@@ -1656,7 +1700,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                     horz_interp=override_array(curr_position)%horz_interp(window_id),    &
                     mask_out   =mask_out, &
                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-             endif
+             endif if_time13
            else ! standard behavior
              if ((time<first_record) .or. (time>last_record)) then
                call mpp_error(WARNING, &
@@ -1666,7 +1710,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                   horz_interp=override_array(curr_position)%horz_interp(window_id),    &
                   mask_out   =mask_out, &
                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
-           endif
+           endif if_multi13
 
            where(mask_out)
            return_data = return_data*factor

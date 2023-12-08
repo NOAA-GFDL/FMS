@@ -24,18 +24,19 @@
     subroutine TIME_INTERP_EXTERNAL_BRIDGE_2D_(index1, index2, time, data_in, interp, verbose,horz_interp, mask_out, &
                is_in, ie_in, js_in, je_in, window_id)
 
-      integer, intent(in) :: index1, index2
-      type(time_type), intent(in) :: time
-      real(FMS_TI_KIND_), dimension(:,:), intent(inout) :: data_in
-      integer, intent(in), optional :: interp
-      logical, intent(in), optional :: verbose
-      type(horiz_interp_type),intent(in), optional :: horz_interp
+      integer, intent(in) :: index1 !< index of first external field
+      integer, intent(in) :: index2 !< index of second external field
+      type(time_type), intent(in) :: time !< target time for data
+      real(FMS_TI_KIND_), dimension(:,:), intent(inout) :: data_in !< global or local data array
+      integer, intent(in), optional :: interp !< hardcoded to linear
+      logical, intent(in), optional :: verbose !< flag for debugging
+      type(horiz_interp_type),intent(in), optional :: horz_interp !< horizontal interpolation type
       logical, dimension(:,:), intent(out), optional :: mask_out !< set to true where output data is valid
-      integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in
-      integer,                  intent(in), optional :: window_id
+      integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in !< horizontal indices for load_record
+      integer,                  intent(in), optional :: window_id !< harcoded to 1 in load_record
 
-      real(FMS_TI_KIND_), dimension(size(data_in,1), size(data_in,2), 1) :: data_out
-      logical, dimension(size(data_in,1), size(data_in,2), 1) :: mask3d
+      real(FMS_TI_KIND_), dimension(size(data_in,1), size(data_in,2), 1) :: data_out !< 3d version of data_in
+      logical, dimension(size(data_in,1), size(data_in,2), 1) :: mask3d !< 3d version of mask_out
 
       data_out(:,:,1) = data_in(:,:) ! fill initial values for the portions of array that are not touched by 3d routine
       call time_interp_external_bridge(index1, index2, time, data_out, interp, verbose, horz_interp, mask3d, &
@@ -53,35 +54,41 @@
     subroutine TIME_INTERP_EXTERNAL_BRIDGE_3D_(index1, index2, time, time_data, interp,verbose,horz_interp, mask_out, &
                                              &  is_in, ie_in, js_in, je_in, window_id)
 
-      integer,                    intent(in) :: index1,index2 !< index of external field from previous call
-                                                                            !! to init_external_field
-      type(time_type),            intent(in) :: time !< target time for data
+      integer,                    intent(in) :: index1 !< index of first external field
+      integer,                    intent(in) :: index2 !< index of second external field
+      type(time_type),            intent(in) :: time   !< target time for data
       real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout) :: time_data !< global or local data array
-      integer,                    intent(in), optional :: interp
+      integer,                    intent(in), optional :: interp !< hardcoded to linear
       logical,                    intent(in), optional :: verbose !< flag for debugging
-      type(horiz_interp_type),    intent(in), optional :: horz_interp
+      type(horiz_interp_type),    intent(in), optional :: horz_interp !< horizontal interpolation type
       logical, dimension(:,:,:), intent(out), optional :: mask_out !< set to true where output data is valid
-      integer,                    intent(in), optional :: is_in, ie_in, js_in, je_in
-      integer,                    intent(in), optional :: window_id
+      integer,                    intent(in), optional :: is_in, ie_in !<  x horizontal indices for load_record
+      integer,                    intent(in), optional :: js_in, je_in !< y horizontal indices for load_record
+      integer,                    intent(in), optional :: window_id !< harcoded to 1 in load_record
 
-      type(time_type) :: time1, time2
-      integer :: dims1(4), dims2(4)
-      integer :: first_rec, last_rec
-      integer :: nx, ny, nz, interp_method, t1, t2
-      integer :: i1, i2, isc, iec, jsc, jec, mod_time
-      integer :: isc1, iec1, jsc1, jec1, isc2, iec2, jsc2, jec2
-      integer :: yy, mm, dd, hh, min, ss
-      character(len=256) :: err_msg, filename
+      type(time_type) :: time1 !< time type associated with index1 of external field
+      type(time_type) :: time2 !< time type associated with index2 of external field
+      integer :: dims1(4) !< dimensions XYZT of index1
+      integer :: dims2(4) !< dimensions XYZT of index2
+      integer :: nx, ny, nz !< size in X,Y,Z of array
+      integer :: interp_method !< hardcoded to linear in time
+      integer :: t1, t2 !< temporary to store time index
+      integer :: i1, i2 !< temporary to store time index
+      integer :: isc, iec, jsc, jec !< start/end arrays in X,Y
+      integer :: isc1, iec1, jsc1, jec1 !< start/end arrays in X,Y for field1
+      integer :: isc2, iec2, jsc2, jec2 !< start/end arrays in X,Y for field2
+      integer :: yy, mm, dd, hh, minu, ss !< year, month, day, hour, minute, second for date
 
-      integer :: isw, iew, jsw, jew, nxw, nyw
-          ! these are boundaries of the updated portion of the "data" argument
-          ! they are calculated using sizes of the "data" and isc,iec,jsc,jsc
-          ! fileds from respective input field, to center the updated portion
-          ! in the output array
+      integer :: isw, iew, jsw, jew, nxw, nyw !< these are boundaries of the updated portion of the "data" argument
+                                              !! they are calculated using sizes of the "data" and isc,iec,jsc,jsc
+                                              !! fileds from respective input field, to center the updated portion
+                                              !! in the output array
 
-      real(FMS_TI_KIND_) :: w1,w2
-      logical :: verb
-      character(len=16) :: message1, message2
+      real(FMS_TI_KIND_) :: w1 !< interp weight for index1
+      real(FMS_TI_KIND_) :: w2 !< interp weight for index2
+      logical :: verb !< verbose
+      character(len=16) :: message1 !< temp string
+      character(len=16) :: message2 !< temp string
       integer, parameter :: kindl = FMS_TI_KIND_
 
       nx = size(time_data,1)
@@ -178,12 +185,12 @@
       time1 = loaded_fields(index1)%time(t1)
       time2 = loaded_fields(index2)%time(t2)
       w2= (time - time1) // (time2 - time1)
-      w1 = 1.0-w2
+      w1 = 1.0_kindl-w2
 
       if (verb) then
-         call get_date(time,yy,mm,dd,hh,min,ss)
+         call get_date(time,yy,mm,dd,hh,minu,ss)
          write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
-              'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',min,':',ss
+              'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',minu,':',ss
          write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
       endif
 
@@ -222,20 +229,23 @@
 
     subroutine TIME_INTERP_EXTERNAL_BRIDGE_0D_(index1, index2, time, time_data, verbose)
 
-      integer, intent(in) :: index1, index2
-      type(time_type), intent(in) :: time
-      real(FMS_TI_KIND_), intent(inout) :: time_data
-      logical, intent(in), optional :: verbose
+      integer, intent(in) :: index1 !< index of first external field
+      integer, intent(in) :: index2 !< index of second external field
+      type(time_type), intent(in) :: time !< target time for data
+      real(FMS_TI_KIND_), intent(inout) :: time_data !< global or local data array
+      logical, intent(in), optional :: verbose !< flag for debugging
 
-      integer :: t1, t2
-      integer :: i1, i2, mod_time
-      integer :: yy, mm, dd, hh, min, ss
-      character(len=256) :: err_msg, filename
-      type(time_type) :: time1, time2
-      integer :: dims1(4), dims2(4)
+      integer :: t1, t2 !< temporary to store time index
+      integer :: i1, i2 !< temporary to store time index
+      integer :: yy, mm, dd, hh, minu, ss !< year, month, day, hour, minute, second for date
+      type(time_type) :: time1 !< time type associated with index1 of external field
+      type(time_type) :: time2 !< time type associated with index2 of external field
+      integer :: dims1(4) !< dimensions XYZT of index1
+      integer :: dims2(4) !< dimensions XYZT of index2
 
-      real(FMS_TI_KIND_) :: w1,w2
-      logical :: verb
+      real(FMS_TI_KIND_) :: w1 !< interp weight for index1
+      real(FMS_TI_KIND_) :: w2 !< interp weight for index2
+      logical :: verb !< verbose
       integer, parameter :: kindl = FMS_TI_KIND_
 
       verb=.false.
@@ -267,12 +277,12 @@
       time1 = loaded_fields(index1)%time(t1)
       time2 = loaded_fields(index2)%time(t2)
       w2= (time - time1) // (time2 - time1)
-      w1 = 1.0-w2
+      w1 = 1.0_kindl-w2
 
       if (verb) then
-         call get_date(time,yy,mm,dd,hh,min,ss)
+         call get_date(time,yy,mm,dd,hh,minu,ss)
          write(outunit,'(a,i4,a,i2,a,i2,1x,i2,a,i2,a,i2)') &
-              'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',min,':',ss
+              'target time yyyy/mm/dd hh:mm:ss= ',yy,'/',mm,'/',dd,hh,':',minu,':',ss
          write(outunit,*) 't1, t2, w1, w2= ', t1, t2, w1, w2
       endif
       call load_record_0d(loaded_fields(index2),t1)
