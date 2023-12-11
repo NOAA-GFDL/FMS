@@ -233,7 +233,7 @@ subroutine create_ongrid_data_file()
 
     call register_field(fileobj, "i", "float", (/"i"/))
     call register_variable_attribute(fileobj, "i", "cartesian_axis", "x", str_len=1)
-  
+
     call register_field(fileobj, "j", "float", (/"j"/))
     call register_variable_attribute(fileobj, "j", "cartesian_axis", "y", str_len=1)
 
@@ -263,7 +263,7 @@ subroutine generate_ongrid_input_file()
   call mpp_sync()
 end subroutine
 
-!> @brief Tests ongrid data overrides. 
+!> @brief Tests ongrid data overrides.
 !! In the first case there is no time interpolation
 !! In the second case there is time interpolation
 subroutine ongrid_test()
@@ -329,7 +329,8 @@ subroutine create_bilinear_data_file(increasing_grid)
     do i = 1, nlon_data
       do j = 1, nlat_data
         do k = 1, 10
-          runoff_in(i, j, k) = real(362-i, kind=lkind) * 1000._lkind + real(180-j, kind=lkind) + real(k, kind=lkind)/100._lkind
+          runoff_in(i, j, k) = real(362-i, kind=lkind) * 1000._lkind + &
+            real(180-j, kind=lkind) + real(k, kind=lkind)/100._lkind
         enddo
       enddo
     enddo
@@ -342,7 +343,8 @@ subroutine create_bilinear_data_file(increasing_grid)
     do i = 1, nlon_data
       do j = 1, nlat_data
         do k = 1, 10
-          runoff_in(i, j, k) = real(i, kind=lkind) * 1000._lkind + real(j, kind=lkind) + real(k, kind=lkind)/100._lkind
+          runoff_in(i, j, k) = real(i, kind=lkind) * 1000._lkind + real(j, kind=lkind) + &
+            real(k, kind=lkind)/100._lkind
         enddo
       enddo
     enddo
@@ -369,7 +371,7 @@ subroutine create_bilinear_data_file(increasing_grid)
 
     call register_field(fileobj, "i", "float", (/"i"/))
     call register_variable_attribute(fileobj, "i", "cartesian_axis", "x", str_len=1)
-  
+
     call register_field(fileobj, "j", "float", (/"j"/))
     call register_variable_attribute(fileobj, "j", "cartesian_axis", "y", str_len=1)
 
@@ -422,7 +424,7 @@ subroutine bilinear_test()
   if (.not. success) call mpp_error(FATAL, "Data override failed")
   call data_override('OCN','runoff_decreasing',runoff_decreasing, Time, override=success)
   if (.not. success) call mpp_error(FATAL, "Data override failed")
-  
+
   do i = is, ie
     do j =  js, je
       if (abs(runoff_decreasing(i,j) - runoff_increasing(i,j)) .gt. 1) then
