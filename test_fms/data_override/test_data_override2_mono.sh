@@ -38,9 +38,51 @@ cat <<_EOF > data_table
 "OCN", "runoff_decreasing", "runoff", "./INPUT/bilinear_decreasing.nc", "bilinear" ,  1.0
 _EOF
 
-test_expect_success "test_data_override with monotonically increasing and decreasing data sets" '
-    mpirun -n 6 ../test_data_override_ongrid_r4
-  '
+for KIND in r4 r8
+do
+  rm -rf INPUT/*
+  test_expect_success "test_data_override with monotonically increasing and decreasing data sets (${KIND})" '
+    mpirun -n 6 ../test_data_override_ongrid_${KIND}
+    '
+done
+
+rm -rf data_table
+
+cat <<_EOF > input.nml
+&test_data_override_ongrid_nml
+  test_case = 2
+/
+&data_override_nml
+  use_data_table_yaml = .True.
+/
+_EOF
+
+cat <<_EOF > data_table.yaml
+data_table:
+- gridname: OCN
+  fieldname_code: runoff_increasing
+  fieldname_file: runoff
+  file_name: ./INPUT/bilinear_increasing.nc
+  interpol_method: bilinear
+  factor: 1.0
+- gridname: OCN
+  fieldname_code: runoff_decreasing
+  fieldname_file: runoff
+  file_name: ./INPUT/bilinear_decreasing.nc
+  interpol_method: bilinear
+  factor: 1.0
+_EOF
+
+#Repeat the test with yaml if needed
+if [ -z $parser_skip ]; then
+  for KIND in r4 r8
+  do
+    rm -rf INPUT/*
+    test_expect_success "test_data_override with monotonically increasing and decreasing data sets  -yaml (${KIND})" '
+      mpirun -n 6 ../test_data_override_ongrid_${KIND}
+      '
+  done
+fi
 
 rm -rf INPUT
 test_done
