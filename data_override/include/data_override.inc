@@ -44,8 +44,9 @@ use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, N
 use time_manager_mod, only: time_type
 use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
                             read_data, fms2_io_init, variable_exists, &
-                            get_mosaic_tile_file
+                            get_mosaic_tile_file, file_exists
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
+use fms_string_utils_mod, only: string
 
 implicit none
 private
@@ -201,8 +202,12 @@ end if
 
 #ifdef use_yaml
     if (use_data_table_yaml) then
+       if (file_exists("data_table")) &
+         call mpp_error(FATAL, "You cannot have the legacy data_table if use_data_table_yaml=.true.")
        call read_table_yaml(data_table)
     else
+       if (file_exists("data_table.yaml"))&
+         call mpp_error(FATAL, "You cannot have the yaml data_table if use_data_table_yaml=.false.")
        allocate(data_table(max_table))
        do i = 1, max_table
           data_table(i) = default_table
@@ -210,9 +215,13 @@ end if
        call read_table(data_table)
     end if
 #else
+    if (file_exists("data_table.yaml"))&
+         call mpp_error(FATAL, "You cannot have the yaml data_table if use_data_table_yaml=.false.")
+
     if (use_data_table_yaml) then
-       call mpp_error(FATAL, "compilation error, need to compile with `-Duse_yaml`")
+       call mpp_error(FATAL, "You cannot have use_data_table_yaml=.true. without compiling with -Duse_yaml")
     else
+
        allocate(data_table(max_table))
        do i = 1, max_table
           data_table(i) = default_table
@@ -491,8 +500,9 @@ subroutine read_table(data_table)
 end subroutine read_table
 
 #ifdef use_yaml
+!> @brief Read and parse the data_table.yaml
 subroutine read_table_yaml(data_table)
-    type(data_type), dimension(:), allocatable, intent(out) :: data_table
+    type(data_type), dimension(:), allocatable, intent(out) :: data_table !< Contents of the data_table.yaml
 
     integer, allocatable :: entry_id(:)
     integer :: nentries
@@ -511,6 +521,7 @@ subroutine read_table_yaml(data_table)
 
       do i = 1, nentries
          call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
+         call check_for_valid_gridname(data_table(i)%gridname)
          call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
 
          data_table(i)%fieldname_file = ""
@@ -524,28 +535,98 @@ subroutine read_table_yaml(data_table)
          data_table(i)%interpol_method = "none"
          call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method, &
            & is_optional=.true.)
+         call check_interpol_method(data_table(i)%interpol_method, data_table(i)%file_name, &
+            data_table(i)%fieldname_file)
 
          call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+         buffer = ""
          call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
+         call check_and_set_region_type(buffer, data_table(i)%region_type)
 
-         if(trim(buffer) == "inside_region" ) then
-            data_table(i)%region_type = INSIDE_REGION
-         else if( trim(buffer) == "outside_region" ) then
-            data_table(i)%region_type = OUTSIDE_REGION
-         else
-            data_table(i)%region_type = NO_REGION
-         endif
-
-         call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-         call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-         call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-         call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
-
+        if (data_table(i)%region_type .ne. NO_REGION) then
+          call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
+          call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
+          call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
+          call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+          call check_valid_lat_lon(data_table(i)%lon_start, data_table(i)%lon_end, &
+            data_table(i)%lat_start, data_table(i)%lat_end)
+        endif
       end do
 
     end if
     table_size = nentries !< Because one variable is not enough
 end subroutine read_table_yaml
+
+!> @brief Check if a grid name is valid, crashes if it is not
+subroutine check_for_valid_gridname(gridname)
+   character(len=*), intent(in) :: gridname !< Gridname
+
+   select case(trim(gridname))
+   case ("OCN", "ATM", "LND", "ICE")
+   case default
+      call mpp_error(FATAL, trim(gridname)//" is not a valid gridname. "//&
+         "The acceptable values are OCN ATM LND and ICE. Check your data_table.yaml")
+   end select
+end subroutine check_for_valid_gridname
+
+!> @brief Check if the interpol method is correct, crashes if it is not
+subroutine check_interpol_method(interp_method, filename, fieldname)
+   character(len=*), intent(in) :: interp_method !< The interpo_method
+   character(len=*), intent(in) :: filename      !< The filename
+   character(len=*), intent(in) :: fieldname     !< The fieldname in the file
+
+   select case(trim(interp_method))
+   case ("bicubic", "bilinear")
+      if (trim(filename) .eq. "" .or. trim(fieldname) .eq. "") call mpp_error(FATAL, &
+         "The file_name and the fieldname_file must be set if using the bicubic or bilinear interpolation method."//&
+         " Check your data_table.yaml")
+   case ("none")
+      if (trim(filename) .ne. "" ) then
+         if (trim(fieldname) .eq. "") call mpp_error(FATAL, &
+            "If the interpol_method is none and file_name is specified (ongrid case), "//&
+            "you must also specify the fieldname_file")
+      endif
+   case default
+      call mpp_error(FATAL, trim(interp_method)//" is not a valid interp method. "//&
+         "The acceptable values are bilinear and bicubic")
+   end select
+end subroutine check_interpol_method
+
+!> @brief Check if a region_type is valid, crashes if it is not. Otherwise it sets the
+!! correct integer parameter.
+subroutine check_and_set_region_type(region_type_str, region_type_int)
+   character(len=*), intent(in)  :: region_type_str !< The region type as defined in the data.yaml
+   integer,          intent(out) :: region_type_int !< The region type as an integer parameter
+
+   select case(trim(region_type_str))
+   case ("inside_region")
+      region_type_int = INSIDE_REGION
+   case ("outside_region")
+      region_type_int = OUTSIDE_REGION
+   case ("")
+      region_type_int = NO_REGION
+   case default
+      call mpp_error(FATAL, trim(region_type_str)//" is not a valid region type. "//&
+         "The acceptable values are inside_region and outside_regioon. Check your data_table.yaml")
+   end select
+end subroutine check_and_set_region_type
+
+!> @brief Check if a region lon_start, lon_end, lat_start and lat_end is valid.
+!! Crashes if it is not.
+subroutine check_valid_lat_lon(lon_start, lon_end, lat_start, lat_end)
+   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_start !< Starting longitude of the data_override region
+   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_end   !< Ending longitude of the data_override region
+   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_start !< Starting lattiude of the data_override region
+   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_end   !< Ending lattiude of the data_override region
+
+   if (lon_start > lon_end) call mpp_error(FATAL, &
+      "lon_start:"//string(lon_start)//" is greater than lon_end"//string(lon_end)//&
+      ". Check your data_table.yaml.")
+
+   if (lat_start > lat_end) call mpp_error(FATAL, &
+      "lat_start:"//string(lat_start)//" is greater than lat_end:"//string(lat_end)//&
+      ". Check your data_table.yaml.")
+end subroutine check_valid_lat_lon
 #endif
 
 subroutine DATA_OVERRIDE_UNSET_ATM_

@@ -26,7 +26,7 @@ set(CMAKE_Fortran_FLAGS_DEBUG)
 
 # Define the CMake project
 project(FMS
-  VERSION 2023.03.0
+  VERSION 2023.04.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -349,7 +349,7 @@ foreach(kind ${kinds})
   if ( CMAKE_Fortran_COMPILER_VERSION MATCHES "1[0-9]\.[0-9]*\.[0-9]*" AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
     if(MPI_C_COMPILER MATCHES ".*mpich.*" )
       message(STATUS "Adding -fallow-argument-mismatch flag to compile with GCC >=10 and MPICH")
-      set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "-fallow-argument-mismatch -w")
+      target_compile_options(${libTgt}_f PRIVATE "-fallow-argument-mismatch;-w")
     endif()
   endif()
 
