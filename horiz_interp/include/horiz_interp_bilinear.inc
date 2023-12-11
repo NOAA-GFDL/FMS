@@ -105,19 +105,18 @@
 
           is = nearest_index(lon, lon_in )
           if (decreasing_lon) then
-            ! Lon_in is decreasing
-            ! This is so that is is the lower bound.
-            ! For example, if the array is [10 20 30 40 50] and lon is 49, `is` is going to be 5 from `nearest_index`
-            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
-            if( lon_in(is) .gt. lon ) is = max(is-1,1)
-          else
             ! Lon_in is increasing
             ! This is so that is is the lower bound.
             ! For example, if the array is [50 40 30 20 10] and lon is 11, `is` is going to be 5 from `nearest_index`
             ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
             if( lon_in(is) .lt. lon ) is = max(is-1,1)
+          else
+            ! Lon_in is increasing
+            ! This is so that is is the lower bound.
+            ! For example, if the array is [10 20 30 40 50] and lon is 49, `is` is going to be 5 from `nearest_index`
+            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
+            if( lon_in(is) .gt. lon ) is = max(is-1,1)
           endif
-
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
           if(lon_in(is) .ne. lon_in(ie) .and. (decreasing_lon .or. lon_in(is) .le. lon)) then
@@ -137,7 +136,6 @@
           wte = 1.0_kindl - wtw
 
           js = nearest_index(lat, lat_in )
-
           if (decreasing_lat) then
             ! Lat_in is decreasing
             if( lat_in(js) .lt. lat ) js = max(js - 1, 1)
@@ -145,7 +143,6 @@
             ! Lat_in is increasing
             if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
           endif
-
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
           je = min(js + 1, nlat_in)
 

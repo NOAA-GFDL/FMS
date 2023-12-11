@@ -311,36 +311,48 @@ subroutine create_bilinear_data_file(increasing_grid)
                                                       !! +1 if the grid is increasing
   integer                         :: i, j, k          !< For looping through variables
 
-  allocate(runoff_in(nlon, nlat, 10))
-  allocate(time_data(10))
-  allocate(lat_data(nlat))
-  allocate(lon_data(nlon))
+  integer :: nlon_data
+  integer :: nlat_data
 
-  do i = 1, nlon
-    do j = 1, nlat
-      do k = 1, 10
-        runoff_in(i, j, k) = real(i, kind=lkind) * 1000._lkind + real(j, kind=lkind) + real(k, kind=lkind)/100._lkind
-      enddo
-    enddo
-  enddo
+  nlon_data = nlon + 1
+  nlat_data = nlat - 1
+  allocate(runoff_in(nlon_data, nlat_data, 10))
+  allocate(time_data(10))
+  allocate(lat_data(nlat_data))
+  allocate(lon_data(nlon_data))
+
   if (.not. increasing_grid) then
     filename = 'INPUT/bilinear_decreasing.nc'
-    lon_data(1) = 359.0_lkind
+    lon_data(1) = 360.0_lkind
     lat_data(1) = 89.0_lkind
     factor = -1
-    call flip_array(runoff_in)
+    do i = 1, nlon_data
+      do j = 1, nlat_data
+        do k = 1, 10
+          runoff_in(i, j, k) = real(362-i, kind=lkind) * 1000._lkind + real(180-j, kind=lkind) + real(k, kind=lkind)/100._lkind
+        enddo
+      enddo
+    enddo
   else
     filename = 'INPUT/bilinear_increasing.nc'
     lon_data(1) = 0.0_lkind
-    lat_data(1) = -90.0_lkind
+    lat_data(1) = -89.0_lkind
     factor = 1
+
+    do i = 1, nlon_data
+      do j = 1, nlat_data
+        do k = 1, 10
+          runoff_in(i, j, k) = real(i, kind=lkind) * 1000._lkind + real(j, kind=lkind) + real(k, kind=lkind)/100._lkind
+        enddo
+      enddo
+    enddo
   endif
 
-  do i = 2, nlon
+  do i = 2, nlon_data
     lon_data(i) = real(lon_data(i-1) + 1*factor, lkind)
   enddo
 
-  do i = 2, nlat
+  do i = 2, nlat_data
     lat_data(i) =real(lat_data(i-1) + 1*factor, lkind)
   enddo
 
@@ -351,8 +363,8 @@ subroutine create_bilinear_data_file(increasing_grid)
   dimnames(3) = 'time'
 
   if (open_file(fileobj, filename, 'overwrite')) then
-    call register_axis(fileobj, "i", nlon)
-    call register_axis(fileobj, "j", nlat)
+    call register_axis(fileobj, "i", nlon_data)
+    call register_axis(fileobj, "j", nlat_data)
     call register_axis(fileobj, "time", unlimited)
 
     call register_field(fileobj, "i", "float", (/"i"/))
@@ -406,52 +418,20 @@ subroutine bilinear_test()
   runoff_decreasing = 999_lkind
   runoff_increasing = 999_lkind
   Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff_increasing',runoff_decreasing, Time, override=success)
-  if (.not. success) call mpp_error(FATAL, "Data override failed")
   call data_override('OCN','runoff_increasing',runoff_increasing, Time, override=success)
   if (.not. success) call mpp_error(FATAL, "Data override failed")
+  call data_override('OCN','runoff_decreasing',runoff_decreasing, Time, override=success)
+  if (.not. success) call mpp_error(FATAL, "Data override failed")
   
-  do i = 1, size(runoff_decreasing, 1)
-    do j =  1, size(runoff_decreasing, 2)
-      if (runoff_decreasing(i,j) .ne. runoff_increasing(i,j)) &
+  do i = is, ie
+    do j =  js, je
+      if (abs(runoff_decreasing(i,j) - runoff_increasing(i,j)) .gt. 1) then
         call mpp_error(FATAL, "The data is not the same: "// &
         string(i)//","//string(j)//":"// &
         string(runoff_decreasing(i,j))//" vs "//string(runoff_increasing(i,j)))
+      endif
     enddo
   enddo
   deallocate(runoff_decreasing, runoff_increasing)
 end subroutine bilinear_test
-
-!> @brief Flips an array along the x and y axes
-subroutine flip_array(array)
-  real(lkind), intent(inout) :: array(:,:,:) !< Array to flip
-
-  integer :: nx !< size of the x dimension
-  integer :: ny !< size of the y dimension
-  integer :: nt !< size of the t dimension
-
-  integer :: i, j, k
-
-  nx = size(array, 1)
-  ny = size(array, 2)
-  nt = size(array, 3)
-
-  do k = 1, nt
-    do j = 1, ny
-      do i = 1, nx / 2
-        ! Swap elements along the x-axis
-        array(i, j, k) = array(nx - i + 1, j, k)
-        array(nx - i + 1, j, k) = array(i, j, k)
-      end do
-    end do
-
-    do i = 1, nx
-      do j = 1, ny / 2
-        ! Swap elements along the y-axis
-        array(i, j, k) = array(i, ny - j + 1, k)
-        array(i, ny - j + 1, k) = array(i, j, k)
-      end do
-    end do
-  end do
-end subroutine flip_array
 end program test_data_override_ongrid
