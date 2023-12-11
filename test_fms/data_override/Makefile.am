@@ -71,10 +71,11 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@" \
                    parser_skip=${skipflag}
 
 # Run the test program.
-TESTS = test_data_override2.sh test_data_override2_mono.sh
+
+TESTS = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = test_data_override2.sh test_data_override2_mono.sh
+EXTRA_DIST = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*
