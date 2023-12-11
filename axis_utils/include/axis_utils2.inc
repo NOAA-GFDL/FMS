@@ -26,10 +26,10 @@
 !> @{
 
   !> get axis edge data from a given file
-  subroutine AXIS_EDGES_(fileobj, name, edge_data, reproduce_null_char_bug_flag)
+  subroutine AXIS_EDGES_(fileobj, axis_name, edge_data, reproduce_null_char_bug_flag)
 
   class(FmsNetcdfFile_t), intent(in)            :: fileobj  !< File object to read from
-  character(len=*), intent(in)                  :: name  !< Name of a given axis
+  character(len=*), intent(in)                  :: axis_name  !< Name of a given axis
   real(FMS_AU_KIND_), dimension(:), intent(out) :: edge_data  !< Returned edge data from given axis name
   logical, intent(in), optional                 :: reproduce_null_char_bug_flag  !< Flag indicating to reproduce
                                      !! the mpp_io bug where the null characters were not removed
@@ -47,10 +47,10 @@
                                               !! the null characters were not removed after reading a string attribute
   integer, parameter                                   :: lkind = FMS_AU_KIND_
 
-  ndims = get_variable_num_dimensions(fileobj, name)
+  ndims = get_variable_num_dimensions(fileobj, axis_name)
   allocate(dim_sizes(ndims))
 
-  call get_variable_size(fileobj, name, dim_sizes)
+  call get_variable_size(fileobj, axis_name, dim_sizes)
 
   n = dim_sizes(1)
   if (size(edge_data) .ne. n+1) then
@@ -62,9 +62,9 @@
   if (present(reproduce_null_char_bug_flag)) reproduce_null_char_bug = reproduce_null_char_bug_flag
 
   buffer = ""
-  if (variable_att_exists(fileobj, name, "edges")) then
+  if (variable_att_exists(fileobj, axis_name, "edges")) then
    !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character
-    call get_variable_attribute(fileobj, name, "edges", buffer(1:128), &
+    call get_variable_attribute(fileobj, axis_name, "edges", buffer(1:128), &
         reproduce_null_char_bug_flag=reproduce_null_char_bug)
 
    !! Check for a null character here, if it exists *_bnds will be calculated instead of read in
@@ -73,9 +73,9 @@
         i = index(buffer, char(0))
         if (i > 0) buffer = ""
     endif
-  elseif (variable_att_exists(fileobj, name, "bounds")) then
+  elseif (variable_att_exists(fileobj, axis_name, "bounds")) then
    !! If the reproduce_null_char_bug flag is turned on fms2io will not remove the null character
-    call get_variable_attribute(fileobj, name, "bounds", buffer(1:128), &
+    call get_variable_attribute(fileobj, axis_name, "bounds", buffer(1:128), &
         reproduce_null_char_bug_flag=reproduce_null_char_bug)
 
     !! Check for a null character here, if it exists *_bnds will be calculated instead of read in
@@ -116,7 +116,7 @@
   else
       allocate(r_var(n))
 
-      call read_data(fileobj, name, r_var)
+      call read_data(fileobj, axis_name, r_var)
 
       do i = 2, n
          edge_data(i) = r_var(i-1) + 0.5_lkind*(r_var(i) - r_var(i-1))

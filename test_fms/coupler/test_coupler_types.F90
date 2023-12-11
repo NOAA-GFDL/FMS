@@ -197,8 +197,8 @@ id_z  = diag_axis_init('z',  nzs,  'point_Z', 'z', long_name='point_Z')
 time_t = set_date(1, 1, 1)
 do i=1, num_bc
   do j=1, num_fields
-    bc_2d_new%FMS_TEST_BC_TYPE_(i)%field(j)%name = "bc"//string(i)//"_var2d_"//string(j)
-    bc_3d_new%FMS_TEST_BC_TYPE_(i)%field(j)%name = "bc"//string(i)//"_var3d_"//string(j)
+    bc_2d_new%FMS_TEST_BC_TYPE_(i)%field(j)%diag_name = "bc"//string(i)//"_var2d_"//string(j)
+    bc_3d_new%FMS_TEST_BC_TYPE_(i)%field(j)%diag_name = "bc"//string(i)//"_var3d_"//string(j)
     bc_2d_new%FMS_TEST_BC_TYPE_(i)%field(j)%long_name = "bc"//string(i)//"_variable_2d_"//string(j)//"_min"
     bc_3d_new%FMS_TEST_BC_TYPE_(i)%field(j)%long_name = "bc"//string(i)//"_variable_3d_"//string(j)//"_min"
   enddo

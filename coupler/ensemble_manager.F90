@@ -184,12 +184,12 @@ contains
 !! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * land_npes_pm"
 !! @throw FATAL, "get_ensemble_filter_pelist: size of pelist argument < ensemble_size * ice_npes_pm"
 !! @throw FATAL, "get_ensemble_filter_pelist: unknown argument name=[name]"
-  subroutine get_ensemble_filter_pelist(pelist, name)
+  subroutine get_ensemble_filter_pelist(pelist, component_name)
 
     integer, intent(inout) :: pelist(:) !< Returned filter pe list
-    character(len=*), intent(in)  :: name !< Ensemble component name
+    character(len=*), intent(in)  :: component_name !< Ensemble component name
 
-    select case(name)
+    select case(component_name)
     case('ocean')
        if (size(pelist) < ensemble_size * ocean_npes_pm)&
             call mpp_error(FATAL,'get_ensemble_filter_pelist: size of pelist argument < ensemble_size * ocean_npes_pm')
@@ -219,7 +219,7 @@ contains
             ensemble_pelist_ice_filter(1:ensemble_size*ice_npes_pm)
 
     case default
-       call mpp_error(FATAL,'get_ensemble_filter_pelist: unknown argument name='//name)
+       call mpp_error(FATAL,'get_ensemble_filter_pelist: unknown argument name='//component_name)
     end select
 
 

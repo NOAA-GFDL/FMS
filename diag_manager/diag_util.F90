@@ -1057,9 +1057,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
 
 
   !> @brief Initialize the output file.
-  SUBROUTINE init_file(name, output_freq, output_units, format, time_units, long_name, tile_count,&
+  SUBROUTINE init_file(filename, output_freq, output_units, format, time_units, long_name, tile_count,&
        & new_file_freq, new_file_freq_units, start_time, file_duration, file_duration_units, filename_time_bounds)
-    CHARACTER(len=*), INTENT(in) :: name !< File name.
+    CHARACTER(len=*), INTENT(in) :: filename !< File name.
     CHARACTER(len=*), INTENT(in) :: long_name !< Long name for time axis.
     INTEGER, INTENT(in) :: output_freq !< How often data is to be written to the file.
     INTEGER, INTENT(in) :: output_units !< The output frequency unit.  (MIN, HOURS, DAYS, etc.)
@@ -1086,7 +1086,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     same_file_err=.FALSE. ! To indicate that if this file was previously defined
                           ! no differences in this registration was detected.
     DO n=1,num_files
-      IF ( TRIM(files(n)%name) == TRIM(name) ) THEN
+      IF ( TRIM(files(n)%filename) == TRIM(filename) ) THEN
         ! File is defined, check if all inputs are the same
         ! Start with the required parameters
         IF ( files(n)%output_freq.NE.output_freq .OR.&
@@ -1134,12 +1134,12 @@ END SUBROUTINE check_bounds_are_exact_dynamic
           ! Something in this file is not identical to the previously defined
           ! file of the same name.  FATAL
           CALL error_mesg('diag_util_mod::init_file',&
-                  & 'The file "'//TRIM(name)//'" is defined multiple times in&
+                  & 'The file "'//TRIM(filename)//'" is defined multiple times in&
                   & the diag_table.', FATAL)
         ELSE
           ! Issue a note that the same file is defined multiple times
           CALL error_mesg('diag_util_mod::init_file',&
-                  & 'The file "'//TRIM(name)//'" is defined multiple times in&
+                  & 'The file "'//TRIM(filename)//'" is defined multiple times in&
                   & the diag_table.', NOTE)
           ! Return to the calling function
           RETURN
@@ -1186,7 +1186,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
 
     files(num_files)%tile_count = tile_count
-    files(num_files)%name = TRIM(name)
+    files(num_files)%filename = TRIM(filename)
     files(num_files)%output_freq = output_freq
     files(num_files)%output_units = output_units
     files(num_files)%format = FORMAT
@@ -1218,7 +1218,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        !   file frequency in <files(num_files)%name>
        ! </ERROR>
        CALL error_mesg('diag_util_mod::init_file', 'close time GREATER than next_open time, check file duration,&
-            & file frequency in '//files(num_files)%name, FATAL)
+            & file frequency in '//files(num_files)%filename, FATAL)
     END IF
 
     ! add time_axis_id and time_bounds_id here
@@ -1226,7 +1226,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
          & base_month, base_day, base_hour, base_minute, base_second
 11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
     files(num_files)%time_axis_id = diag_axis_init (TRIM(long_name), tdata, time_units_str, 'T',&
-         & TRIM(long_name) , set_name=TRIM(name) )
+         & TRIM(long_name) , set_name=TRIM(filename) )
     !---- register axis for storing time boundaries
     files(num_files)%time_bounds_id = diag_axis_init( 'nv',(/1.,2./),'none','N','vertex number',&
          & set_name='nv')
@@ -1261,7 +1261,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
             & files(file_id)%new_file_freq, files(file_id)%new_file_freq_units, err_msg=msg)
        IF ( msg /= '' ) THEN
           IF ( fms_error_handler('diag_util_mod::sync_file_times',&
-               & ' file='//TRIM(files(file_id)%name)//': '//TRIM(msg), err_msg) ) RETURN
+               & ' file='//TRIM(files(file_id)%filename)//': '//TRIM(msg), err_msg) ) RETURN
        END IF
     END DO
   END SUBROUTINE sync_file_times
@@ -1337,15 +1337,15 @@ END SUBROUTINE check_bounds_are_exact_dynamic
 
   !> @brief Return the file number for file name and tile.
   !! @return Integer find_file
-  INTEGER FUNCTION find_file(name, tile_count)
+  INTEGER FUNCTION find_file(filename, tile_count)
     INTEGER, INTENT(in) :: tile_count !< Tile number.
-    CHARACTER(len=*), INTENT(in) :: name !< File name.
+    CHARACTER(len=*), INTENT(in) :: filename !< File name.
 
     INTEGER :: i
 
     find_file = -1
     DO i = 1, num_files
-       IF( TRIM(files(i)%name) == TRIM(name) .AND. tile_count == files(i)%tile_count ) THEN
+       IF( TRIM(files(i)%filename) == TRIM(filename) .AND. tile_count == files(i)%tile_count ) THEN
           find_file = i
           RETURN
        END IF
@@ -1497,7 +1497,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
           file_num_tile1 = file_num
           file_num = find_file(output_file, tile_count)
           IF(file_num < 0) THEN
-             CALL init_file(files(file_num_tile1)%name, files(file_num_tile1)%output_freq,&
+             CALL init_file(files(file_num_tile1)%filename, files(file_num_tile1)%output_freq,&
                   & files(file_num_tile1)%output_units, files(file_num_tile1)%format,&
                   & files(file_num_tile1)%time_units, files(file_num_tile1)%long_name,&
                   & tile_count, files(file_num_tile1)%new_file_freq,&
@@ -1741,9 +1741,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
          & base_month, base_day, base_hour, base_minute, base_second
 11  FORMAT(A, ' since ', I4.4, '-', I2.2, '-', I2.2, ' ', I2.2, ':', I2.2, ':', I2.2)
-    base_name = files(file)%name
+    base_name = files(file)%filename
     IF ( files(file)%new_file_freq < VERY_LARGE_FILE_FREQ ) THEN
-       position = INDEX(files(file)%name, '%')
+       position = INDEX(files(file)%filename, '%')
        IF ( position > 0 )  THEN
           base_name = base_name(1:position-1)
        ELSE
@@ -1751,14 +1751,14 @@ END SUBROUTINE check_bounds_are_exact_dynamic
           !   filename <files(file)%name> does not contain % for time stamp string
           ! </ERROR>
           CALL error_mesg('diag_util_mod::opening_file',&
-               & 'file name '//TRIM(files(file)%name)//' does not contain % for time stamp string', FATAL)
+               & 'file name '//TRIM(files(file)%filename)//' does not contain % for time stamp string', FATAL)
        END IF
        if (present(filename_time)) then
           fname_time = filename_time
        else
           fname_time = time
        endif
-       suffix = get_time_string(files(file)%name, fname_time)
+       suffix = get_time_string(files(file)%filename, fname_time)
     ELSE
        suffix = ' '
     END IF
@@ -1869,7 +1869,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
              req_fields = get_axis_reqfld(axes(k))
              IF ( TRIM(req_fields) /= 'none' ) THEN
                 CALL error_mesg('diag_util_mod::opening_file','required fields found: '//&
-                               &TRIM(req_fields)//' in file '//TRIM(files(file)%name),NOTE)
+                               &TRIM(req_fields)//' in file '//TRIM(files(file)%filename),NOTE)
                 req_present = .TRUE.
                 EXIT
              END IF
@@ -1943,7 +1943,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
                 !   <files(file)%name> can NOT have BOTH time average AND instantaneous fields.
                 !   Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.
                 ! </ERROR>
-                CALL error_mesg('diag_util_mod::opening_file','file '//TRIM(files(file)%name)// &
+                CALL error_mesg('diag_util_mod::opening_file','file '//TRIM(files(file)%filename)// &
                      &' can NOT have BOTH time average AND instantaneous fields.'//&
                      &' Create a new file or set mix_snapshot_average_fields=.TRUE. in the namelist diag_manager_nml.'&
                      &, FATAL)
@@ -2103,7 +2103,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        ! </ERROR>
        IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
             &'one axis has auxiliary but the corresponding field is NOT found in file '// &
-             & TRIM(files(file)%name), WARNING)
+             & TRIM(files(file)%filename), WARNING)
     END IF
     IF( req_present .AND. .NOT.match_req_fields ) THEN
        ! <ERROR STATUS="FATAL">
@@ -2112,7 +2112,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        ! </ERROR>
        IF ( mpp_pe() == mpp_root_pe() ) CALL error_mesg('diag_util_mod::opening_file',&
                   &'one axis has required fields ('//trim(req_fields)//') but the '// &
-                  &'corresponding fields are NOT found in file '//TRIM(files(file)%name), FATAL)
+                  &'corresponding fields are NOT found in file '//TRIM(files(file)%filename), FATAL)
     END IF
     ! Clean up pointer
     if (associated(fileob)) nullify(fileob)
@@ -2352,10 +2352,10 @@ END SUBROUTINE check_bounds_are_exact_dynamic
           call diag_write_time (fileobjND(file), files(file)%rtime_current, files(file)%time_index, &
                                 time_name=fileobjND(file)%time_name)
      else
-          call error_mesg("diag_util_mod::diag_data_out","Error opening the file "//files(file)%name,fatal)
+          call error_mesg("diag_util_mod::diag_data_out","Error opening the file "//files(file)%filename,fatal)
      endif
     elseif (dif < files(file)%rtime_current .and. .not.(static_write) ) then
-     call error_mesg("diag_util_mod::diag_data_out","The time for the file "//trim(files(file)%name)//&
+     call error_mesg("diag_util_mod::diag_data_out","The time for the file "//trim(files(file)%filename)//&
                     " has gone backwards. There may be missing values for some of the variables",NOTE)
     endif
 !> Write data
@@ -2447,7 +2447,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
                 !   check file duration and frequency
                 ! </ERROR>
                 CALL error_mesg('diag_util_mod::check_and_open',&
-                     & files(file)%name// &
+                     & files(file)%filename// &
                       & ' has close time GREATER than next_open time, check file duration and frequency',FATAL)
              END IF
           END IF ! no need to open new file, simply return file_unit
@@ -2508,7 +2508,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
           IF ( (tmp_name == TRIM(output_fields(j)%output_name)) .AND. &
                &(tmp_file == output_fields(j)%output_file)) THEN
              err_msg_local = ' output_field "'//TRIM(tmp_name)//&
-                  &'" duplicated in file "'//TRIM(files(tmp_file)%name)//'"'
+                  &'" duplicated in file "'//TRIM(files(tmp_file)%filename)//'"'
              EXIT i_loop
           END IF
        END DO
@@ -2572,7 +2572,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     ! Find if attribute exists
     this_attribute = 0
     DO i=1, out_field%num_attributes
-       IF ( TRIM(out_field%attributes(i)%name) .EQ. TRIM(att_name) ) THEN
+       IF ( TRIM(out_field%attributes(i)%att_name) .EQ. TRIM(att_name) ) THEN
           this_attribute = i
           EXIT
        END IF
@@ -2607,7 +2607,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        ELSE
           out_field%num_attributes = this_attribute
           ! Set name and type
-          out_field%attributes(this_attribute)%name = att_name
+          out_field%attributes(this_attribute)%att_name = att_name
           out_field%attributes(this_attribute)%type = NF90_CHAR
           ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
           out_field%attributes(this_attribute)%catt = ''
@@ -2688,7 +2688,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     ! Find if attribute exists
     this_attribute = 0
     DO i=1, out_file%num_attributes
-       IF ( TRIM(out_file%attributes(i)%name) .EQ. TRIM(att_name) ) THEN
+       IF ( TRIM(out_file%attributes(i)%att_name) .EQ. TRIM(att_name) ) THEN
           this_attribute = i
           EXIT
        END IF
@@ -2723,7 +2723,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        ELSE
           out_file%num_attributes = this_attribute
           ! Set name and type
-          out_file%attributes(this_attribute)%name = att_name
+          out_file%attributes(this_attribute)%att_name = att_name
           out_file%attributes(this_attribute)%type = NF90_CHAR
           ! Initialize catt to a blank string, as len_trim doesn't always work on an uninitialized string
           out_file%attributes(this_attribute)%catt = ''

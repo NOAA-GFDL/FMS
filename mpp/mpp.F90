@@ -229,7 +229,7 @@ private
   !> @ingroup mpp_mod
   type :: communicator
      private
-     character(len=32) :: name
+     character(len=32) :: pelist_name
      integer, pointer  :: list(:) =>NULL()
      integer           :: count
      integer           :: start, log2stride !< dummy variables when libMPI is defined.
@@ -240,7 +240,7 @@ private
   !> @ingroup mpp_mod
   type :: event
      private
-     character(len=16)                         :: name
+     character(len=16)                         :: event_name
      integer(i8_kind), dimension(MAX_EVENTS)   :: ticks, bytes
      integer                                   :: calls
   end type event
@@ -249,7 +249,7 @@ private
   !> @ingroup mpp_mod
   type :: clock
      private
-     character(len=32)    :: name
+     character(len=32)    :: clock_name
      integer(i8_kind)     :: hits
      integer(i8_kind)     :: tick
      integer(i8_kind)     :: total_ticks
@@ -265,7 +265,7 @@ private
   !> @ingroup mpp_mod
   type :: Clock_Data_Summary
      private
-     character(len=16)  :: name
+     character(len=16)  :: summary_name
      real(r8_kind)      :: msg_size_sums(MAX_BINS)
      real(r8_kind)      :: msg_time_sums(MAX_BINS)
      real(r8_kind)      :: total_data
@@ -278,7 +278,7 @@ private
   !> @ingroup mpp_mod
   type :: Summary_Struct
      private
-     character(len=16)         :: name
+     character(len=16)         :: struct_name
      type (Clock_Data_Summary) :: event(MAX_EVENT_TYPES)
   end type Summary_Struct
 

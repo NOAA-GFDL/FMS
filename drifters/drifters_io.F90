@@ -130,16 +130,16 @@ contains
   end subroutine drifters_io_del
 
 !###############################################################################
-  subroutine drifters_io_set_time_units(self, name, ermesg)
+  subroutine drifters_io_set_time_units(self, time_unit_name, ermesg)
     type(drifters_io_type)        :: self
-    character(len=*), intent(in)  :: name
+    character(len=*), intent(in)  :: time_unit_name
     character(len=*), intent(out) :: ermesg
 
     integer ier
 
     ermesg = ''
     ier = nf_put_att_text(self%ncid, NF_GLOBAL, &
-         & 'time_units', len_trim(name), trim(name))
+         & 'time_units', len_trim(time_unit_name), trim(time_unit_name))
     if(ier/=NF_NOERR) &
          & ermesg = 'drifters_io_set_time_units::failed to add time_units attribute ' &
          & //nf_strerror(ier)

@@ -94,7 +94,7 @@ module time_interp_external2_mod
   !> @ingroup time_interp_external2_mod
   type, private :: ext_fieldtype
         type(FmsNetcdfFile_t), pointer :: fileobj=>NULL() !< keep unit open when not reading all records
-        character(len=128) :: name, units
+        character(len=128) :: field_name, units
         integer :: siz(4), ndim
         character(len=32) :: axisname(4)
         type(domain2d) :: domain
@@ -442,7 +442,7 @@ module time_interp_external2_mod
 
       init_external_field = num_fields
       loaded_fields(num_fields)%fileobj => fileobj
-      loaded_fields(num_fields)%name = trim(fieldname)
+      loaded_fields(num_fields)%field_name = trim(fieldname)
       loaded_fields(num_fields)%units = trim(fld_units)
       loaded_fields(num_fields)%isc = 1
       loaded_fields(num_fields)%iec = 1
@@ -778,13 +778,13 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
      field%ibuf(ib) = rec
      field%need_compute(ib,:) = .true.
 
-     if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
+     if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%field_name)
      start = 1; nread = 1
      start(1) = field%is_src; nread(1) = field%ie_src - field%is_src + 1
      start(2) = field%js_src; nread(2) = field%je_src - field%js_src + 1
      start(3) = 1;            nread(3) = size(field%src_data,3)
      start(field%tdim) = rec; nread(field%tdim) = 1
-     call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib:ib),corner=start,edge_lengths=nread)
+     call read_data(field%fileobj,field%field_name,field%src_data(:,:,:,ib:ib),corner=start,edge_lengths=nread)
   endif
 !$OMP END CRITICAL
   isw=field%isc;iew=field%iec
@@ -899,11 +899,11 @@ subroutine load_record_0d(field, rec)
      ib = field%nbuf
      field%ibuf(ib) = rec
 
-     if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%name)
+     if (debug_this_module) write(outunit,*) 'reading record without domain for field ',trim(field%field_name)
      start = 1; nread = 1
      start(3) = 1;            nread(3) = size(field%src_data,3)
      start(field%tdim) = rec; nread(field%tdim) = 1
-     call read_data(field%fileobj,field%name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
+     call read_data(field%fileobj,field%field_name,field%src_data(:,:,:,ib),corner=start,edge_lengths=nread)
      if ( field%region_type .NE. NO_REGION ) then
         call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when field is scalar")
      endif
@@ -995,7 +995,7 @@ subroutine realloc_fields(n)
   allocate(ptr(n))
   do i=1,size(ptr)
      ptr(i)%fileobj => NULL()
-     ptr(i)%name=''
+     ptr(i)%field_name=''
      ptr(i)%units=''
      ptr(i)%siz=-1
      ptr(i)%ndim=-1

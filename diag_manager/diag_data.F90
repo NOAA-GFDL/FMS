@@ -109,7 +109,7 @@ use platform_mod
      INTEGER             :: type !< Data type of attribute values (NF_INT, NF_FLOAT, NF_CHAR)
      INTEGER             :: len !< Number of values in attribute, or if a character string then
                                 !! length of the string.
-     CHARACTER(len=128)  :: name !< Name of the attribute
+     CHARACTER(len=128)  :: att_name !< Name of the attribute
      CHARACTER(len=1280) :: catt !< Character string to hold character value of attribute
      REAL, allocatable, DIMENSION(:)    :: fatt !< REAL array to hold value of REAL attributes
      INTEGER, allocatable, DIMENSION(:) :: iatt !< INTEGER array to hold value of INTEGER attributes
@@ -131,7 +131,7 @@ use platform_mod
   !> @brief Type to define the diagnostic files that will be written as defined by the diagnostic table.
   !> @ingroup diag_data_mod
   TYPE file_type
-     CHARACTER(len=128) :: name !< Name of the output file.
+     CHARACTER(len=128) :: filename !< Name of the output file.
      CHARACTER(len=128) :: long_name
      INTEGER, DIMENSION(max_fields_per_file) :: fields
      INTEGER :: num_fields
@@ -255,7 +255,7 @@ use platform_mod
   !> @brief Type to hold the diagnostic axis description.
   !> @ingroup diag_data_mod
   TYPE diag_axis_type
-     CHARACTER(len=128) :: name
+     CHARACTER(len=128) :: axis_name
      CHARACTER(len=256) :: units, long_name
      CHARACTER(len=1) :: cart_name
      REAL, DIMENSION(:), POINTER :: diag_type_data

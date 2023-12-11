@@ -81,7 +81,7 @@ module mpp_pset_mod
      integer(POINTER_KIND) :: p_stack
      integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
      integer :: commID
-     character(len=32) :: name
+     character(len=32) :: pelist_name
      logical :: initialized=.FALSE.
   end type mpp_pset_type
 !public types

@@ -179,13 +179,13 @@ CONTAINS
        DO i=1, SIZE(attributes)
           SELECT CASE (attributes(i)%type)
           CASE (NF90_INT)
-             call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%iatt)
+             call register_global_attribute(fileob, TRIM(attributes(i)%att_name), attributes(i)%iatt)
           CASE (NF90_FLOAT)
 
-             call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%fatt)
+             call register_global_attribute(fileob, TRIM(attributes(i)%att_name), attributes(i)%fatt)
           CASE (NF90_CHAR)
 
-             call register_global_attribute(fileob, TRIM(attributes(i)%name), attributes(i)%catt, &
+             call register_global_attribute(fileob, TRIM(attributes(i)%att_name), attributes(i)%catt, &
                                            &  str_len=len_trim(attributes(i)%catt))
           CASE default
              ! <ERROR STATUS="FATAL">
@@ -193,7 +193,7 @@ CONTAINS
              !   Contact the developers.
              ! </ERROR>
              CALL error_mesg('diag_output_mod::diag_output_init', 'Unknown attribute type for global attribute "'&
-                  &//TRIM(attributes(i)%name)//'" in file "'//TRIM(file_name)//'". Contact the developers.', FATAL)
+                  &//TRIM(attributes(i)%att_name)//'" in file "'//TRIM(file_name)//'". Contact the developers.', FATAL)
           END SELECT
        END DO
     END IF
@@ -465,12 +465,12 @@ CONTAINS
   !> @brief Write the field meta data to file.
   !! @return diag_fieldtype Field
   !! @details The meta data for the field is written to the file indicated by file_unit
-  FUNCTION write_field_meta_data ( file_unit, name, axes, units, long_name, range, pack, mval,&
+  FUNCTION write_field_meta_data ( file_unit, field_name, axes, units, long_name, range, pack, mval,&
        & avg_name, time_method, standard_name, interp_method, attributes, num_attributes,     &
        & use_UGdomain, fileob) result ( Field )
     INTEGER, INTENT(in) :: file_unit !< Output file unit number
     INTEGER, INTENT(in) :: axes(:) !< Array of axis IDs
-    CHARACTER(len=*), INTENT(in) :: name !< Field name
+    CHARACTER(len=*), INTENT(in) :: field_name !< Field name
     CHARACTER(len=*), INTENT(in) :: units !< Field units
     CHARACTER(len=*), INTENT(in) :: long_name !< Field's long name
     REAL, OPTIONAL, INTENT(in) :: RANGE(2) !< Valid range (min, max).  If min > max, the range will be ignored
@@ -527,7 +527,7 @@ character(len=128),dimension(size(axes)) :: axis_names
     IF ( file_unit /= current_file_unit ) CALL error_mesg ( 'write_meta_data',  &
          & 'writing meta data out-of-order to different files', FATAL)
 
-    IF (trim(name) .eq. "time_bnds") then
+    IF (trim(field_name) .eq. "time_bnds") then
        is_time_bounds = .true.
     ELSE
        is_time_bounds = .false.
@@ -543,7 +543,7 @@ character(len=128),dimension(size(axes)) :: axis_names
        ELSE
           ! <ERROR STATUS="FATAL">axis data not written for field</ERROR>
           CALL error_mesg ('write_field_meta_data',&
-               & 'axis data not written for field '//TRIM(name), FATAL)
+               & 'axis data not written for field '//TRIM(field_name), FATAL)
        END IF
        !Get the axes names
           call get_diag_axis_name(axes(i),axis_names(i))
@@ -609,9 +609,9 @@ character(len=128),dimension(size(axes)) :: axis_names
     END IF
 
     !< Save the fieldname in the diag_fieldtype, so it can be used later
-    field%fieldname = name
+    field%fieldname = field_name
 
-  if (.not. variable_exists(fileob,name)) then
+  if (.not. variable_exists(fileob,field_name)) then
   ! ipack Valid values:
   !        1 = 64bit </LI>
   !        2 = 32bit </LI>
@@ -619,46 +619,46 @@ character(len=128),dimension(size(axes)) :: axis_names
   !        8 =  8bit </LI>
      select case (ipack)
      case (1)
-          call register_field(fileob,name,"double",axis_names)
+          call register_field(fileob,field_name,"double",axis_names)
           !< Don't write the _FillValue, missing_value if the variable is
           !time_bounds to be cf compliant
           if (.not. is_time_bounds) then
           IF ( Field%miss_present ) THEN
-               call register_variable_attribute(fileob,name,"_FillValue",real(Field%miss_pack,8))
-               call register_variable_attribute(fileob,name,"missing_value",real(Field%miss_pack,8))
+               call register_variable_attribute(fileob,field_name,"_FillValue",real(Field%miss_pack,8))
+               call register_variable_attribute(fileob,field_name,"missing_value",real(Field%miss_pack,8))
           ELSE
-               call register_variable_attribute(fileob,name,"_FillValue",real(CMOR_MISSING_VALUE,8))
-               call register_variable_attribute(fileob,name,"missing_value",real(CMOR_MISSING_VALUE,8))
+               call register_variable_attribute(fileob,field_name,"_FillValue",real(CMOR_MISSING_VALUE,8))
+               call register_variable_attribute(fileob,field_name,"missing_value",real(CMOR_MISSING_VALUE,8))
           ENDIF
           IF ( use_range ) then
-               call register_variable_attribute(fileob,name,"valid_range", real(RANGE,8))
+               call register_variable_attribute(fileob,field_name,"valid_range", real(RANGE,8))
           ENDIF
           endif !< if (.not. is_time_bounds)
      case (2) !default
-          call register_field(fileob,name,"float",axis_names)
+          call register_field(fileob,field_name,"float",axis_names)
           !< Don't write the _FillValue, missing_value if the variable is
           !time_bounds to be cf compliant
           if (.not. is_time_bounds) then
           IF ( Field%miss_present ) THEN
-               call register_variable_attribute(fileob,name,"_FillValue",real(Field%miss_pack,4))
-               call register_variable_attribute(fileob,name,"missing_value",real(Field%miss_pack,4))
+               call register_variable_attribute(fileob,field_name,"_FillValue",real(Field%miss_pack,4))
+               call register_variable_attribute(fileob,field_name,"missing_value",real(Field%miss_pack,4))
           ELSE
-               call register_variable_attribute(fileob,name,"_FillValue",real(CMOR_MISSING_VALUE,4))
-               call register_variable_attribute(fileob,name,"missing_value",real(CMOR_MISSING_VALUE,4))
+               call register_variable_attribute(fileob,field_name,"_FillValue",real(CMOR_MISSING_VALUE,4))
+               call register_variable_attribute(fileob,field_name,"missing_value",real(CMOR_MISSING_VALUE,4))
           ENDIF
           IF ( use_range ) then
-               call register_variable_attribute(fileob,name,"valid_range", real(RANGE,4))
+               call register_variable_attribute(fileob,field_name,"valid_range", real(RANGE,4))
           ENDIF
           endif !< if (.not. is_time_bounds)
      case default
           CALL error_mesg('diag_output_mod::write_field_meta_data',&
                &"Pack values must be 1 or 2. Contact the developers.", FATAL)
      end select
-     if (trim(units) .ne. "none") call register_variable_attribute(fileob,name,"units",trim(units), &
+     if (trim(units) .ne. "none") call register_variable_attribute(fileob,field_name,"units",trim(units), &
                                      & str_len=len_trim(units))
-     call register_variable_attribute(fileob,name,"long_name",long_name, str_len=len_trim(long_name))
+     call register_variable_attribute(fileob,field_name,"long_name",long_name, str_len=len_trim(long_name))
      IF (present(time_method) ) then
-          call register_variable_attribute(fileob,name,'cell_methods','time: '//trim(time_method), &
+          call register_variable_attribute(fileob,field_name,'cell_methods','time: '//trim(time_method), &
                                          & str_len=len_trim('time: '//trim(time_method)))
      ENDIF
   endif
@@ -667,7 +667,7 @@ character(len=128),dimension(size(axes)) :: axis_names
        IF ( PRESENT(attributes) ) THEN
           IF ( num_attributes .GT. 0 .AND. allocated(attributes) ) THEN
              CALL write_attribute_meta(file_unit, num_attributes, attributes, time_method, err_msg, &
-                                     & fileob=fileob, varname=name)
+                                     & fileob=fileob, varname=field_name)
              IF ( LEN_TRIM(err_msg) .GT. 0 ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & TRIM(err_msg)//" Contact the developers.", FATAL)
@@ -677,29 +677,31 @@ character(len=128),dimension(size(axes)) :: axis_names
              IF ( num_attributes .GT. 0 .AND. .NOT.allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes > 0 but attributes is not allocated for attribute '&
-                     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                     &//TRIM(attributes(i)%att_name)//' for field '//TRIM(field_name)//&
+                     &'. Contact the developers.', FATAL)
              ELSE IF ( num_attributes .EQ. 0 .AND. allocated(attributes) ) THEN
                 CALL error_mesg('diag_output_mod::write_field_meta_data',&
                      & 'num_attributes == 0 but attributes is allocated for attribute '&
-                     &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+                     &//TRIM(attributes(i)%att_name)//' for field '//TRIM(field_name)//&
+                     &'. Contact the developers.', FATAL)
              END IF
           END IF
        ELSE
           ! More edge error cases
           CALL error_mesg('diag_output_mod::write_field_meta_data',&
                & 'num_attributes present but attributes missing for attribute '&
-               &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+               &//TRIM(attributes(i)%att_name)//' for field '//TRIM(field_name)//'. Contact the developers.', FATAL)
        END IF
     ELSE IF ( PRESENT(attributes) ) THEN
        CALL error_mesg('diag_output_mod::write_field_meta_data',&
             & 'attributes present but num_attributes missing for attribute '&
-            &//TRIM(attributes(i)%name)//' for field '//TRIM(name)//'. Contact the developers.', FATAL)
+            &//TRIM(attributes(i)%att_name)//' for field '//TRIM(field_name)//'. Contact the developers.', FATAL)
     END IF
 
     !---- write additional attribute for time averaging -----
     IF ( PRESENT(avg_name) ) THEN
        IF ( avg_name(1:1) /= ' ' ) THEN
-          call register_variable_attribute(fileob,name,'time_avg_info',&
+          call register_variable_attribute(fileob,field_name,'time_avg_info',&
              & trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
              & str_len=len_trim(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
        END IF
@@ -707,15 +709,15 @@ character(len=128),dimension(size(axes)) :: axis_names
 
     ! write coordinates attribute for CF compliance
     IF ( coord_present ) then
-         call register_variable_attribute(fileob,name,'coordinates',TRIM(coord_att), str_len=len_trim(coord_att))
+         call register_variable_attribute(fileob,field_name,'coordinates',TRIM(coord_att), str_len=len_trim(coord_att))
     ENDIF
     IF ( TRIM(standard_name2) /= 'none' ) then
-         call register_variable_attribute(fileob,name,'standard_name',TRIM(standard_name2), &
+         call register_variable_attribute(fileob,field_name,'standard_name',TRIM(standard_name2), &
                                          &  str_len=len_trim(standard_name2))
     ENDIF
     !---- write attribute for interp_method ----
     IF( PRESENT(interp_method) ) THEN
-       call register_variable_attribute(fileob,name,'interp_method', TRIM(interp_method), &
+       call register_variable_attribute(fileob,field_name,'interp_method', TRIM(interp_method), &
                                        &  str_len=len_trim(interp_method))
     END IF
 
@@ -750,37 +752,37 @@ character(len=128),dimension(size(axes)) :: axis_names
           IF ( .NOT.allocated(attributes(i)%iatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Integer attribute type indicated, but array not allocated for attribute '&
-                  &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
+                  &//TRIM(attributes(i)%att_name)//'.', err_msg) ) THEN
                 RETURN
              END IF
           END IF
-          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name), &
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%att_name), &
                                                               & attributes(i)%iatt)
        CASE (NF90_FLOAT)
           IF ( .NOT.allocated(attributes(i)%fatt) ) THEN
              IF ( fms_error_handler('diag_output_mod::write_attribute_meta',&
                   & 'Real attribute type indicated, but array not allocated for attribute '&
-                  &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
+                  &//TRIM(attributes(i)%att_name)//'.', err_msg) ) THEN
                 RETURN
              END IF
           END IF
-          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name), &
+          if (present(varname))call register_variable_attribute(fileob, varname,TRIM(attributes(i)%att_name), &
                                                               & real(attributes(i)%fatt,4) )
        CASE (NF90_CHAR)
           att_str = attributes(i)%catt
           att_len = attributes(i)%len
-          IF ( TRIM(attributes(i)%name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
+          IF ( TRIM(attributes(i)%att_name).EQ.'cell_methods' .AND. PRESENT(time_method) ) THEN
              ! Append ",time: time_method" if time_method present
              att_str = attributes(i)%catt(1:attributes(i)%len)//' time: '//time_method
              att_len = LEN_TRIM(att_str)
           END IF
           if (present(varname))&
-               call register_variable_attribute(fileob, varname,TRIM(attributes(i)%name)  , att_str(1:att_len), &
+               call register_variable_attribute(fileob, varname,TRIM(attributes(i)%att_name)  , att_str(1:att_len), &
                                                &  str_len=att_len)
 
        CASE default
           IF ( fms_error_handler('diag_output_mod::write_attribute_meta', 'Invalid type for attribute '&
-               &//TRIM(attributes(i)%name)//'.', err_msg) ) THEN
+               &//TRIM(attributes(i)%att_name)//'.', err_msg) ) THEN
              RETURN
           END IF
        END SELECT

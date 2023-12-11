@@ -365,7 +365,7 @@ module mpp_domains_mod
   !> @ingroup mpp_domains_mod
   TYPE :: domain2D
      private
-     character(len=NAME_LENGTH)  :: name='unnamed' !< name of the domain, default is "unspecified"
+     character(len=NAME_LENGTH)  :: domain_name='unnamed' !< name of the domain, default is "unspecified"
      integer(i8_kind)            :: id
      integer                     :: pe             !< PE to which this domain is assigned
      integer                     :: fold
@@ -450,7 +450,7 @@ module mpp_domains_mod
   !> @brief domain with nested fine and course tiles
   !> @ingroup mpp_domains_mod
   type :: nest_domain_type
-     character(len=NAME_LENGTH)     :: name
+     character(len=NAME_LENGTH)     :: domain_name
      integer                        :: num_level
      integer,               pointer :: nest_level(:) => NULL() !< Added for moving nest functionality
      type(nest_level_type), pointer :: nest(:) => NULL()

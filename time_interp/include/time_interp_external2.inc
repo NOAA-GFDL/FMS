@@ -105,7 +105,7 @@
         else
             if(.not. present(is_in) .or. .not. present(ie_in) .or. .not. present(js_in) .or. .not. present(je_in))then
                 call mpp_error(FATAL, 'time_interp_external: is_in, ie_in, js_in and je_in must be present ' // &
-                                    'when numwindows > 1, field='//trim(loaded_fields(index)%name))
+                                    'when numwindows > 1, field='//trim(loaded_fields(index)%field_name))
             endif
             nxw = ie_in - is_in + 1
             nyw = je_in - js_in + 1
@@ -120,7 +120,7 @@
 
         if (nx < nxw .or. ny < nyw .or. nz < loaded_fields(index)%siz(3)) then
             write(message1,'(i6,2i5)') nx,ny,nz
-            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%name)// &
+            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%field_name)// &
                         ' Array size mismatch in time_interp_external. Array "data" is too small. shape(data)=' &
                         //message1)
         endif
@@ -128,7 +128,7 @@
             if (size(mask_out,1) /= nx .or. size(mask_out,2) /= ny .or. size(mask_out,3) /= nz) then
             write(message1,'(i6,2i5)') nx,ny,nz
             write(message2,'(i6,2i5)') size(mask_out,1),size(mask_out,2),size(mask_out,3)
-            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%name)// &
+            call mpp_error(FATAL,'field '//trim(loaded_fields(index)%field_name)// &
                                  ' array size mismatch in time_interp_external.'// &
                                  ' Shape of array "mask_out" does not match that of array "data".'// &
                                  ' shape(data)='//message1//' shape(mask_out)='//message2)
@@ -164,7 +164,7 @@
                 if(err_msg .NE. '') then
                     filename = trim(loaded_fields(index)%fileobj%path)
                     call mpp_error(FATAL,"time_interp_external 1: "//trim(err_msg)//&
-                             ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
+                             ",file="//trim(filename)//",field="//trim(loaded_fields(index)%field_name) )
                 endif
             ! using time_interp_list
             else
@@ -177,7 +177,7 @@
                 if(err_msg .NE. '') then
                     filename = trim(loaded_fields(index)%fileobj%path)
                     call mpp_error(FATAL,"time_interp_external 2: "//trim(err_msg)//&
-                                   ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
+                                   ",file="//trim(filename)//",field="//trim(loaded_fields(index)%field_name) )
                 endif
             endif
             w1 = 1.0_kindl -w2
@@ -263,7 +263,7 @@
           if(err_msg .NE. '') then
              filename = trim(loaded_fields(index)%fileobj%path)
              call mpp_error(FATAL,"time_interp_external 3:"//trim(err_msg)//&
-                    ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
+                    ",file="//trim(filename)//",field="//trim(loaded_fields(index)%field_name) )
           endif
         else
           if(loaded_fields(index)%modulo_time) then
@@ -275,7 +275,7 @@
           if(err_msg .NE. '') then
              filename = trim(loaded_fields(index)%fileobj%path)
              call mpp_error(FATAL,"time_interp_external 4:"//trim(err_msg)// &
-                    ",file="//trim(filename)//",field="//trim(loaded_fields(index)%name) )
+                    ",file="//trim(filename)//",field="//trim(loaded_fields(index)%field_name) )
           endif
         endif
          w1 = 1.0_kindl-w2

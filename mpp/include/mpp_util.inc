@@ -435,8 +435,8 @@ end function rarray_to_char
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
     i = get_peset(pelist)
-    write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
-    if( PRESENT(name) )peset(i)%name = name
+    write( peset(i)%pelist_name,'(a,i2.2)' ) 'PElist', i !default name
+    if( PRESENT(name) )peset(i)%pelist_name = name
     return
   end subroutine mpp_declare_pelist
 
@@ -481,9 +481,9 @@ end function rarray_to_char
   !#####################################################################
   function mpp_get_current_pelist_name()
    ! Simply return the current pelist name
-   character(len=len(peset(current_peset_num)%name)) :: mpp_get_current_pelist_name
+   character(len=len(peset(current_peset_num)%pelist_name)) :: mpp_get_current_pelist_name
 
-   mpp_get_current_pelist_name = peset(current_peset_num)%name
+   mpp_get_current_pelist_name = peset(current_peset_num)%pelist_name
   end function mpp_get_current_pelist_name
 
   !#####################################################################
@@ -497,7 +497,7 @@ end function rarray_to_char
     if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
          call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
     pelist(:) = peset(current_peset_num)%list(:)
-    if( PRESENT(name) )name = peset(current_peset_num)%name
+    if( PRESENT(name) )name = peset(current_peset_num)%pelist_name
 #ifdef use_libMPI
     if( PRESENT(commID) )commID = peset(current_peset_num)%id
 #endif
@@ -618,13 +618,13 @@ end function rarray_to_char
   end subroutine mpp_clock_set_grain
 
   !#####################################################################
-  subroutine clock_init( id, name, flags, grain )
+  subroutine clock_init( id, clock_name, flags, grain )
     integer,           intent(in) :: id
-    character(len=*),  intent(in) :: name
+    character(len=*),  intent(in) :: clock_name
     integer, intent(in), optional :: flags, grain
     integer                       :: i
 
-    clocks(id)%name = name
+    clocks(id)%clock_name = clock_name
     clocks(id)%hits = 0
     clocks(id)%tick = 0
     clocks(id)%total_ticks = 0
@@ -639,22 +639,22 @@ end function rarray_to_char
     if( PRESENT(grain) )clocks(id)%grain = grain
     if( clocks(id)%detailed )then
        allocate( clocks(id)%events(MAX_EVENT_TYPES) )
-       clocks(id)%events(EVENT_ALLREDUCE)%name = 'ALLREDUCE'
-       clocks(id)%events(EVENT_BROADCAST)%name = 'BROADCAST'
-       clocks(id)%events(EVENT_RECV)%name = 'RECV'
-       clocks(id)%events(EVENT_SEND)%name = 'SEND'
-       clocks(id)%events(EVENT_WAIT)%name = 'WAIT'
+       clocks(id)%events(EVENT_ALLREDUCE)%event_name = 'ALLREDUCE'
+       clocks(id)%events(EVENT_BROADCAST)%event_name = 'BROADCAST'
+       clocks(id)%events(EVENT_RECV)%event_name = 'RECV'
+       clocks(id)%events(EVENT_SEND)%event_name = 'SEND'
+       clocks(id)%events(EVENT_WAIT)%event_name = 'WAIT'
        do i=1,MAX_EVENT_TYPES
           clocks(id)%events(i)%ticks(:) = 0
           clocks(id)%events(i)%bytes(:) = 0
           clocks(id)%events(i)%calls = 0
        end do
-       clock_summary(id)%name = name
-       clock_summary(id)%event(EVENT_ALLREDUCE)%name = 'ALLREDUCE'
-       clock_summary(id)%event(EVENT_BROADCAST)%name = 'BROADCAST'
-       clock_summary(id)%event(EVENT_RECV)%name = 'RECV'
-       clock_summary(id)%event(EVENT_SEND)%name = 'SEND'
-       clock_summary(id)%event(EVENT_WAIT)%name = 'WAIT'
+       clock_summary(id)%struct_name = clock_name
+       clock_summary(id)%event(EVENT_ALLREDUCE)%summary_name = 'ALLREDUCE'
+       clock_summary(id)%event(EVENT_BROADCAST)%summary_name = 'BROADCAST'
+       clock_summary(id)%event(EVENT_RECV)%summary_name = 'RECV'
+       clock_summary(id)%event(EVENT_SEND)%summary_name = 'SEND'
+       clock_summary(id)%event(EVENT_WAIT)%summary_name = 'WAIT'
        do i=1,MAX_EVENT_TYPES
           clock_summary(id)%event(i)%msg_size_sums(:) = 0.0
           clock_summary(id)%event(i)%msg_time_sums(:) = 0.0
@@ -669,9 +669,9 @@ end function rarray_to_char
 
   !#####################################################################
   !> Return an ID for a new or existing clock
-  function mpp_clock_id( name, flags, grain )
+  function mpp_clock_id( clock_name, flags, grain )
     integer                       :: mpp_clock_id
-    character(len=*),  intent(in) :: name
+    character(len=*),  intent(in) :: clock_name
     integer, intent(in), optional :: flags, grain
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_CLOCK_ID: You must first call mpp_init.')
@@ -690,9 +690,9 @@ end function rarray_to_char
 
     if( clock_num.EQ.0 )then  !first
        clock_num = mpp_clock_id
-       call clock_init(mpp_clock_id,name,flags)
+       call clock_init(mpp_clock_id,clock_name,flags)
     else
-       FIND_CLOCK: do while( trim(name).NE.trim(clocks(mpp_clock_id)%name) )
+       FIND_CLOCK: do while( trim(clock_name).NE.trim(clocks(mpp_clock_id)%clock_name) )
           mpp_clock_id = mpp_clock_id + 1
           if( mpp_clock_id.GT.clock_num )then
              if( mpp_clock_id.GT.MAX_CLOCKS )then
@@ -700,7 +700,7 @@ end function rarray_to_char
                       'check your clock id request or increase MAX_CLOCKS.')
              else               !new clock: initialize
                 clock_num = mpp_clock_id
-                call clock_init(mpp_clock_id,name,flags,grain)
+                call clock_init(mpp_clock_id,clock_name,flags,grain)
                 exit FIND_CLOCK
              end if
           end if
@@ -722,7 +722,7 @@ end function rarray_to_char
     if( clocks(id)%peset_num.NE.current_peset_num ) &
          call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: cannot change pelist context of a clock.' )
     if( clocks(id)%is_on) call mpp_error(FATAL, 'MPP_CLOCK_BEGIN: mpp_clock_begin is called again '// &
-                'before calling mpp_clock_end for the clock '//trim(clocks(id)%name) )
+                'before calling mpp_clock_end for the clock '//trim(clocks(id)%clock_name) )
     if( clocks(id)%sync_on_begin .OR. sync_all_clocks )then
        !do an untimed sync at the beginning of the clock
        !this puts all PEs in the current pelist on par, so that measurements begin together
@@ -755,7 +755,7 @@ end function rarray_to_char
     if( id.LT.0 .OR. id.GT.clock_num )call mpp_error( FATAL, 'MPP_CLOCK_BEGIN: invalid id.' )
 !$OMP MASTER
     if( .NOT. clocks(id)%is_on) call mpp_error(FATAL, 'MPP_CLOCK_END: mpp_clock_end is called '// &
-                'before calling mpp_clock_begin for the clock '//trim(clocks(id)%name) )
+                'before calling mpp_clock_begin for the clock '//trim(clocks(id)%clock_name) )
 
     call SYSTEM_CLOCK(end_tick)
     if( clocks(id)%peset_num.NE.current_peset_num ) &
@@ -812,7 +812,7 @@ end function rarray_to_char
 
     if( n.EQ.MAX_EVENTS )call mpp_error( WARNING, &
          'MPP_CLOCK: events exceed MAX_EVENTS, ignore detailed profiling data for clock '// &
-         & trim(clocks(current_clock)%name) )
+         & trim(clocks(current_clock)%clock_name) )
     if( n.GT.MAX_EVENTS )return
 
     clocks(current_clock)%events(event_id)%calls = n
@@ -871,7 +871,7 @@ end function rarray_to_char
 
        if( .NOT.clocks(ct)%detailed )cycle
        write(SD_UNIT,*) &
-            clock_summary(ct)%name(1:15),' Communication Data for PE ',pe
+            clock_summary(ct)%struct_name(1:15),' Communication Data for PE ',pe
 
        write(SD_UNIT,*) ' '
        write(SD_UNIT,*) ' '
@@ -886,7 +886,7 @@ end function rarray_to_char
           total_data = clock_summary(ct)%event(k)%total_data
           total_calls = int(clock_summary(ct)%event(k)%total_cnts)
 
-          write(SD_UNIT,1000) clock_summary(ct)%event(k)%name(1:9) // ':'
+          write(SD_UNIT,1000) clock_summary(ct)%event(k)%summary_name(1:9) // ':'
 
           write(SD_UNIT,1001) 'Total Data: ',total_data*1.0e-6, &
                'MB; Total Time: ', total_time, &
@@ -933,7 +933,7 @@ end function rarray_to_char
           total_time_all = total_time_all + total_time
           total_calls = int(clock_summary(ct)%event(MAX_EVENT_TYPES)%total_cnts)
 
-          write(SD_UNIT,1000) clock_summary(ct)%event(MAX_EVENT_TYPES)%name(1:9) // ':'
+          write(SD_UNIT,1000) clock_summary(ct)%event(MAX_EVENT_TYPES)%summary_name(1:9) // ':'
 
           write(SD_UNIT,1004) 'Total Calls: ',total_calls,'; Total Time: ', &
                total_time,'secs'
@@ -942,7 +942,7 @@ end function rarray_to_char
 
        write(SD_UNIT,*) ' '
        write(SD_UNIT,1005) 'Total communication time spent for ' // &
-            clock_summary(ct)%name(1:9) // ': ',total_time_all,'secs'
+            clock_summary(ct)%struct_name(1:9) // ': ',total_time_all,'secs'
        write(SD_UNIT,*) ' '
        write(SD_UNIT,*) ' '
        write(SD_UNIT,*) ' '
@@ -1078,7 +1078,7 @@ end function rarray_to_char
         peset_old(n)%count      = peset(n)%count
         peset_old(n)%id         = peset(n)%id
         peset_old(n)%group      = peset(n)%group
-        peset_old(n)%name       = peset(n)%name
+        peset_old(n)%pelist_name= peset(n)%pelist_name
         peset_old(n)%start      = peset(n)%start
         peset_old(n)%log2stride = peset(n)%log2stride
 
@@ -1098,12 +1098,12 @@ end function rarray_to_char
      peset(:)%group = -1
      peset(:)%start = -1
      peset(:)%log2stride = -1
-     peset(:)%name  = " "
+     peset(:)%pelist_name  = " "
      do n = 0, old_peset_max
         peset(n)%count      = peset_old(n)%count
         peset(n)%id         = peset_old(n)%id
         peset(n)%group      = peset_old(n)%group
-        peset(n)%name       = peset_old(n)%name
+        peset(n)%pelist_name= peset_old(n)%pelist_name
         peset(n)%start      = peset_old(n)%start
         peset(n)%log2stride = peset_old(n)%log2stride
 
@@ -1195,7 +1195,7 @@ end function rarray_to_char
     integer :: i
     integer, dimension(2) :: lines_and_length
     logical :: file_exist
-    character(len=len(peset(current_peset_num)%name)) :: pelist_name
+    character(len=len(peset(current_peset_num)%pelist_name)) :: pelist_name
     character(len=128) :: filename
 
 ! check the status of input_nml_file

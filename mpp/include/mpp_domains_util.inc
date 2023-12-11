@@ -1423,7 +1423,7 @@ end subroutine mpp_get_tile_compute_domains
      type(domain2d),    intent(in) :: domain
      character(len=NAME_LENGTH)    :: mpp_get_domain_name
 
-     mpp_get_domain_name = domain%name
+     mpp_get_domain_name = domain%domain_name
 
   end function mpp_get_domain_name
 
@@ -1780,7 +1780,7 @@ end subroutine mpp_get_tile_compute_domains
      domain_out%initialized    = domain_in%initialized
      domain_out%tile_root_pe   = domain_in%tile_root_pe
      domain_out%io_layout      = domain_in%io_layout
-     domain_out%name           = domain_in%name
+     domain_out%domain_name    = domain_in%domain_name
 
      ntiles = size(domain_in%x(:))
      allocate(domain_out%x(ntiles), domain_out%y(ntiles), domain_out%tile_id(ntiles) )

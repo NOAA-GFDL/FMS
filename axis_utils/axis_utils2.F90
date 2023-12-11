@@ -113,7 +113,7 @@ contains
     character(len=16), dimension(3) :: lon_units, lat_units
     character(len=8) , dimension(4) :: z_units
     character(len=3) , dimension(6) :: t_units
-    character(len=32) :: name
+    character(len=32) :: axis_name
     integer :: i
 
     lon_names = (/'lon','x  '/)
@@ -141,34 +141,34 @@ contains
     endif
 
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
-       name = lowercase(axisname)
+       axis_name = lowercase(axisname)
        do i=1,size(lon_names(:))
-          if (trim(name(1:3)) == trim(lon_names(i))) cart = 'X'
+          if (trim(axis_name(1:3)) == trim(lon_names(i))) cart = 'X'
        enddo
        do i=1,size(lat_names(:))
-          if (trim(name(1:3)) == trim(lat_names(i))) cart = 'Y'
+          if (trim(axis_name(1:3)) == trim(lat_names(i))) cart = 'Y'
        enddo
        do i=1,size(z_names(:))
-          if (trim(name) == trim(z_names(i))) cart = 'Z'
+          if (trim(axis_name) == trim(z_names(i))) cart = 'Z'
        enddo
        do i=1,size(t_names(:))
-          if (trim(name) == t_names(i)) cart = 'T'
+          if (trim(axis_name) == t_names(i)) cart = 'T'
        enddo
     end if
 
     if (cart /= 'X' .and. cart /= 'Y' .and. cart /= 'Z' .and. cart /= 'T') then
-       name = lowercase(axisname)
+       axis_name = lowercase(axisname)
        do i=1,size(lon_units(:))
-          if (trim(name) == trim(lon_units(i))) cart = 'X'
+          if (trim(axis_name) == trim(lon_units(i))) cart = 'X'
        enddo
        do i=1,size(lat_units(:))
-          if (trim(name) == trim(lat_units(i))) cart = 'Y'
+          if (trim(axis_name) == trim(lat_units(i))) cart = 'Y'
        enddo
        do i=1,size(z_units(:))
-          if (trim(name) == trim(z_units(i))) cart = 'Z'
+          if (trim(axis_name) == trim(z_units(i))) cart = 'Z'
        enddo
        do i=1,size(t_units(:))
-          if (name(1:3) == trim(t_units(i))) cart = 'T'
+          if (axis_name(1:3) == trim(t_units(i))) cart = 'T'
        enddo
     end if
   end subroutine get_axis_cart

@@ -156,7 +156,7 @@ end type tracer_name_type
 !> Private type to represent named instances
 !> @ingroup tracer_manager_mod
 type, private :: inst_type
-   character(len=128) :: name
+   character(len=128) :: inst_name
    integer            :: instances
 end type inst_type
 
@@ -213,7 +213,7 @@ integer,  intent(in) :: model !< model being used
 integer, intent(out) :: num_tracers, num_prog, num_diag
 character(len=256)    :: warnmesg
 
-character(len=32)  :: name_type, type, name
+character(len=32)  :: name_type, type, tracer_name
 integer :: n, m, mod, num_tracer_methods, nfields, swop
 integer :: j, log_unit, num_methods
 logical :: flag_type
@@ -264,7 +264,7 @@ endif
 total_tracers(model) = 0
 
 do n=1,nfields
-   call get_field_info(n,type,name,mod,num_methods)
+   call get_field_info(n,type,tracer_name,mod,num_methods)
 
    if (mod == model .and. type == 'tracer') then
          num_tracer_fields = num_tracer_fields + 1
@@ -276,7 +276,7 @@ do n=1,nfields
             & 'tracer_manager_init: MAX_TRACER_FIELDS exceeded')
          TRACER_ARRAY(model,total_tracers(model))  = num_tracer_fields
          tracers(num_tracer_fields)%model          = model
-         tracers(num_tracer_fields)%tracer_name    = name
+         tracers(num_tracer_fields)%tracer_name    = tracer_name
          tracers(num_tracer_fields)%tracer_units   = 'none'
          tracers(num_tracer_fields)%tracer_longname = tracers(num_tracer_fields)%tracer_name
          tracers(num_tracer_fields)%instances_set   = .FALSE.
@@ -285,10 +285,10 @@ do n=1,nfields
 !        This should ideally be cleaned up.
          tracers(num_tracer_fields)%needs_mass_adjust = .true.
          tracers(num_tracer_fields)%needs_positive_adjust = .true.
-         if (name == 'cld_amt') then
+         if (tracer_name == 'cld_amt') then
             tracers(num_tracer_fields)%needs_mass_adjust = .false.
          endif
-         if (name == 'cld_amt' .or. name == 'liq_wat' .or. name == 'ice_wat') then
+         if (tracer_name == 'cld_amt' .or. tracer_name == 'liq_wat' .or. tracer_name == 'ice_wat') then
             tracers(num_tracer_fields)%needs_positive_adjust = .false.
          endif
 
@@ -354,7 +354,7 @@ do n = 1, num_tracer_fields !{
       TRACER_ARRAY(model,total_tracers(model))  = num_tracer_fields
       ! Copy the original tracer type to the multiple instances.
       tracers(num_tracer_fields) = tracers(n)
-      if ( query_method ('instances', model,model_tracer_number(model,n),name, control)) then !{
+      if ( query_method ('instances', model,model_tracer_number(model,n),tracer_name, control)) then !{
 
         if (i .lt. 10) then  !{
            write (suffnam,'(''suffix'',i1)') i
@@ -417,7 +417,7 @@ enddo !}
 
 ! Find any field entries with the instances keyword.
 do n=1,nfields
-   call get_field_info(n,type,name,mod,num_methods)
+   call get_field_info(n,type,tracer_name,mod,num_methods)
 
    if ( mod == model .and. type == 'instances' ) then
       call get_field_methods(n,methods)
@@ -432,7 +432,7 @@ do n=1,nfields
               //trim(methods(j)%method_type)//' but has previously been defined in the tracer entry')
            siz_inst = parse(methods(j)%method_name,"",instances)
            tracers(m)%instances = instances
-           call mpp_error(NOTE,'tracer_manager_init: '//trim(instantiations(j)%name)// &
+           call mpp_error(NOTE,'tracer_manager_init: '//trim(instantiations(j)%inst_name)// &
                                ' will have '//trim(methods(j)%method_name)//' instances')
          endif
          if ( num_tracer_fields + instances > MAX_TRACER_FIELDS ) then
@@ -735,10 +735,10 @@ end subroutine get_tracer_indices
 !!
 !> See @ref get_tracer_index Interface for more information.
 !! @returns index of given tracer name if present, otherwise returns NO_TRACER
-function get_tracer_index_integer(model, name, indices, verbose)
+function get_tracer_index_integer(model, t_name, indices, verbose)
 
 integer, intent(in)                         :: model !< Parameter to identify which model is used
-character(len=*), intent(in)                :: name !< name of the tracer
+character(len=*), intent(in)                :: t_name !< name of the tracer
 integer, intent(in), dimension(:), optional :: indices !< An array of indices, limits search to tracers
                                                        !! whose indices are within the array.
 logical, intent(in), optional               :: verbose !< debug flag
@@ -752,7 +752,7 @@ get_tracer_index_integer = NO_TRACER
 
 if (PRESENT(indices)) then
     do i = 1, size(indices(:))
-       if (model == tracers(indices(i))%model .and. lowercase(trim(name)) == trim(tracers(indices(i))%tracer_name))then
+       if (model == tracers(indices(i))%model .and. lowercase(trim(t_name))==trim(tracers(indices(i))%tracer_name))then
            get_tracer_index_integer = i
            exit
        endif
@@ -760,7 +760,7 @@ if (PRESENT(indices)) then
 else
     do i=1, num_tracer_fields
        if(TRACER_ARRAY(model,i) == NOTRACER) cycle
-       if (lowercase(trim(name)) == trim(tracers(TRACER_ARRAY(model,i))%tracer_name)) then
+       if (lowercase(trim(t_name)) == trim(tracers(TRACER_ARRAY(model,i))%tracer_name)) then
            get_tracer_index_integer = i!TRACER_ARRAY(model,i)
            exit
        endif
@@ -773,7 +773,7 @@ if (present(verbose)) verbose_local=verbose
 if (verbose_local) then
 ! <ERROR MSG="tracer with this name not found: X" STATUS="NOTE">
   if (get_tracer_index_integer == NO_TRACER ) then
-    call mpp_error(NOTE,'get_tracer_index : tracer with this name not found: '//trim(name))
+    call mpp_error(NOTE,'get_tracer_index : tracer with this name not found: '//trim(t_name))
   endif
 ! </ERROR>
 endif
@@ -784,16 +784,16 @@ end function get_tracer_index_integer
 
 !#######################################################################
 !> @brief Checks if tracer is present, and returns it's position in index
-function get_tracer_index_logical(model, name, index, indices, verbose)
+function get_tracer_index_logical(model, tracer_name, index, indices, verbose)
 
 integer, intent(in)                         :: model !< Parameter for which model is used
-character(len=*), intent(in)                :: name !< name of given drifter
+character(len=*), intent(in)                :: tracer_name !< name of given drifter
 integer, intent(out)                        :: index !< returned drifter index
 integer, intent(in), dimension(:), optional :: indices !< optional list of indices to limit results to
 logical, intent(in), optional               :: verbose !< debug flag
 logical :: get_tracer_index_logical
 
-index = get_tracer_index_integer(model, name, indices, verbose)
+index = get_tracer_index_integer(model, tracer_name, indices, verbose)
 if(index == NO_TRACER) then
   get_tracer_index_logical = .false.
 else
@@ -852,11 +852,11 @@ end subroutine print_tracer_info
 !!
 !> This routine can return the name, long name and units associated
 !! with a tracer.
-subroutine get_tracer_names(model,n,name,longname, units, err_msg)
+subroutine get_tracer_names(model,n,tracer_name,longname, units, err_msg)
 
 integer,          intent(in)  :: model !< A parameter representing component model in use
 integer,          intent(in)  :: n !< Tracer number
-character (len=*),intent(out) :: name !< Field name associate with tracer number
+character (len=*),intent(out) :: tracer_name !< Field name associate with tracer number
 character (len=*), intent(out), optional :: longname !< Long name associated with tracer number
 character (len=*), intent(out), optional :: units !< Tracer associated units
 character (len=*), intent(out), optional :: err_msg
@@ -873,7 +873,7 @@ if(.not.module_is_initialized) call tracer_manager_init
  endif
  n1 = TRACER_ARRAY(model,n)
 
-name = trim(tracers(n1)%tracer_name)
+tracer_name = trim(tracers(n1)%tracer_name)
 if (PRESENT(longname)) longname = trim(tracers(n1)%tracer_longname)
 if (PRESENT(units))    units    = trim(tracers(n1)%tracer_units)
 
@@ -886,11 +886,11 @@ end subroutine get_tracer_names
 !> This routine can return the name, long name and units associated with a tracer.
 !! The return value of get_tracer_name is .false. when a FATAL error condition is
 !! detected, otherwise the return value is .true.
-function get_tracer_name(model,n,name,longname, units, err_msg)
+function get_tracer_name(model,n,tracer_name,longname, units, err_msg)
 
 integer,          intent(in)  :: model !< A parameter representing component model in use
 integer,          intent(in)  :: n !< Tracer number
-character (len=*),intent(out) :: name !< Field name associate with tracer number
+character (len=*),intent(out) :: tracer_name !< Field name associate with tracer number
 character (len=*), intent(out), optional :: longname !< Long name associated with tracer number
 character (len=*), intent(out), optional :: units !< Tracer associated units
 character (len=*), intent(out), optional :: err_msg !< When present: If a FATAL error condition is
@@ -921,7 +921,7 @@ if(.not.module_is_initialized) call tracer_manager_init
  endif
  n1 = TRACER_ARRAY(model,n)
 
-name = trim(tracers(n1)%tracer_name)
+tracer_name = trim(tracers(n1)%tracer_name)
 if (PRESENT(longname)) longname = trim(tracers(n1)%tracer_longname)
 if (PRESENT(units))    units    = trim(tracers(n1)%tracer_units)
 
@@ -1038,12 +1038,12 @@ end function adjust_positive_def
 !!  |profile_type |profile      |surface_value = X, top_value = Y    |(atmosphere)
 !!  |profile_type |profile      |surface_value = X, bottom_value = Y |(ocean)
 !!  ==================================================================
- function query_method  (method_type, model, n, name, control, err_msg)
+ function query_method  (method_type, model, n, str_name, control, err_msg)
 
  character(len=*), intent(in)            :: method_type !< The requested method
  integer         , intent(in)            :: model !< Model the function is being called from
  integer         , intent(in)            :: n !< Tracer number
- character(len=*), intent(out)           :: name !< A string containing the modified name to be used
+ character(len=*), intent(out)           :: str_name !< A string containing the modified name to be used
                                          !! with method_type. i.e. "2nd_order" might be the default
                                          !! advection. One could use "4th_order" to modify behaviour
  character(len=*), intent(out), optional :: control !< A string containing the modified parameters
@@ -1084,9 +1084,9 @@ end function adjust_positive_def
    list_name = "/default/tracer/"//trim(tracers(n1)%tracer_name)//"/"//trim(method_type)
  end select
 
- name = ''
+ str_name = ''
  control_tr = ''
- query_method = fm_query_method(list_name, name, control_tr)
+ query_method = fm_query_method(list_name, str_name, control_tr)
 
  if ( present(control) ) then
     if ( len_trim(control_tr)>len(control) ) then
@@ -1111,10 +1111,10 @@ end function adjust_positive_def
 !! coding the tracer code will know what units they are working in and it
 !! is probably safer to set the value in the tracer code rather than in
 !! the field table.
-subroutine set_tracer_atts(model, name, longname, units)
+subroutine set_tracer_atts(model, tracer_name, longname, units)
 
 integer, intent(in)                    :: model !< A parameter representing component model in use
-character(len=*), intent(in)           :: name !< Tracer name
+character(len=*), intent(in)           :: tracer_name !< Tracer name
 character(len=*), intent(in), optional :: longname !< Long name of the tracer
 character(len=*), intent(in), optional :: units !< Units for the tracer
 
@@ -1122,22 +1122,22 @@ integer :: n, index
 logical :: success
 character(len=128) :: list_name
 
-if ( get_tracer_index(model,name,n) ) then
+if ( get_tracer_index(model,tracer_name,n) ) then
     tracers(TRACER_ARRAY(model,n))%tracer_units   = units
     tracers(TRACER_ARRAY(model,n))%tracer_longname = longname
   select case(model)
     case(MODEL_COUPLER)
-      list_name = "/coupler_mod/tracer/"//trim(name)
+      list_name = "/coupler_mod/tracer/"//trim(tracer_name)
     case(MODEL_ATMOS)
-      list_name = "/atmos_mod/tracer/"//trim(name)
+      list_name = "/atmos_mod/tracer/"//trim(tracer_name)
     case(MODEL_OCEAN)
-      list_name = "/ocean_mod/tracer/"//trim(name)
+      list_name = "/ocean_mod/tracer/"//trim(tracer_name)
     case(MODEL_LAND)
-      list_name = "/land_mod/tracer/"//trim(name)
+      list_name = "/land_mod/tracer/"//trim(tracer_name)
     case(MODEL_ICE)
-      list_name = "/ice_mod/tracer/"//trim(name)
+      list_name = "/ice_mod/tracer/"//trim(tracer_name)
     case DEFAULT
-      list_name = "/"//trim(name)
+      list_name = "/"//trim(tracer_name)
   end select
 
 ! Method_type is a list, method_name is a name of a parameter and method_control has the value.
@@ -1153,16 +1153,17 @@ if ( get_tracer_index(model,name,n) ) then
   endif
 
 else
-    call mpp_error(NOTE,'set_tracer_atts : Trying to set longname and/or units for non-existent tracer : '//trim(name))
+    call mpp_error(NOTE,'set_tracer_atts : Trying to set longname and/or units for non-existent tracer : '// &
+            & trim(tracer_name))
 endif
 
 end subroutine set_tracer_atts
 
 !> @brief A subroutine to allow the user to set some tracer specific methods.
-subroutine set_tracer_method(model, name, method_type, method_name, method_control)
+subroutine set_tracer_method(model, tracer_name, method_type, method_name, method_control)
 
 integer, intent(in)                    :: model !< A parameter representing component model in use
-character(len=*), intent(in)           :: name !< Tracer name
+character(len=*), intent(in)           :: tracer_name !< Tracer name
 character(len=*), intent(in)           :: method_type !< type of method to be set
 character(len=*), intent(in)           :: method_name !< name of method to be set
 character(len=*), intent(in)           :: method_control !< control parameters of the given method
@@ -1171,23 +1172,23 @@ integer :: n, num_method, index
 logical :: success
 character(len=128) :: list_name
 
-if ( get_tracer_index(model,name,n) ) then
+if ( get_tracer_index(model,tracer_name,n) ) then
   tracers(n)%num_methods = tracers(n)%num_methods + 1
   num_method = tracers(n)%num_methods
 
   select case(model)
     case(MODEL_COUPLER)
-      list_name = "/coupler_mod/tracer/"//trim(name)
+      list_name = "/coupler_mod/tracer/"//trim(tracer_name)
     case(MODEL_ATMOS)
-      list_name = "/atmos_mod/tracer/"//trim(name)
+      list_name = "/atmos_mod/tracer/"//trim(tracer_name)
     case(MODEL_OCEAN)
-      list_name = "/ocean_mod/tracer/"//trim(name)
+      list_name = "/ocean_mod/tracer/"//trim(tracer_name)
     case(MODEL_LAND)
-      list_name = "/land_mod/tracer/"//trim(name)
+      list_name = "/land_mod/tracer/"//trim(tracer_name)
     case(MODEL_ICE)
-      list_name = "/ice_mod/tracer/"//trim(name)
+      list_name = "/ice_mod/tracer/"//trim(tracer_name)
     case DEFAULT
-      list_name = "/"//trim(name)
+      list_name = "/"//trim(tracer_name)
   end select
 
   if ( method_control .ne. "" ) then
@@ -1198,7 +1199,7 @@ if ( get_tracer_index(model,name,n) ) then
       index = fm_new_value(method_type,method_control)
     endif
   else
-    call mpp_error(NOTE,'set_tracer_method : Trying to set a method for non-existent tracer : '//trim(name))
+    call mpp_error(NOTE,'set_tracer_method : Trying to set a method for non-existent tracer : '//trim(tracer_name))
   endif
 endif
 

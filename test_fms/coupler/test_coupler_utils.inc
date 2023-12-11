@@ -46,7 +46,7 @@ subroutine set_up_1d_coupler_type(bc_type, data_grid)
 
       do j = 1, nfields
          write(field_num,'(i1)') j
-         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
+         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%diag_name="var_"//field_num
          allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2)))
          bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
       end do
@@ -98,7 +98,7 @@ subroutine set_up_2d_coupler_type(bc_type, data_grid, appendix, to_read)
 
       do j = 1, nfields
          write(field_num,'(i1)') j
-         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
+         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%diag_name="var_"//field_num
          allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4)))
          if (to_read) then
              bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=FMS_CP_TEST_KIND_)
@@ -140,7 +140,7 @@ subroutine compare_2d_answers(bc_type_read, bc_type)
              sum(bc_type_read%FMS_TEST_BC_TYPE_(i)%field(j)%values)) then
              call mpp_error(FATAL, "test_coupler_2d: Answers do not match for: " &
                             & //trim(bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file)&
-                            & //" var: "//trim(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name))
+                            & //" var: "//trim(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%diag_name))
          endif
       end do
    end do
@@ -149,13 +149,13 @@ subroutine compare_2d_answers(bc_type_read, bc_type)
    if (sum(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%values) .ne. &
        sum(bc_type_read%FMS_TEST_BC_TYPE_(1)%field(1)%values)) then
        call mpp_error(FATAL, "test_coupler_2d: Answers do not match for var: "// &
-                              trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%name))
+                              trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%diag_name))
    endif
 
    if (sum(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%values) .ne. &
        sum(bc_type_read%FMS_TEST_BC_TYPE_(1)%field(2)%values)) then
        call mpp_error(FATAL, "test_coupler_2d: Answers do not match for var: "// &
-                              trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%name))
+                              trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%diag_name))
    endif
 
 
@@ -209,7 +209,7 @@ subroutine set_up_3d_coupler_type(bc_type, data_grid, appendix, to_read)
 
       do j = 1, nfields
          write(field_num,'(i1)') j
-         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
+         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%diag_name="var_"//field_num
          allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4), &
                                                                data_grid(5)))
 
@@ -253,7 +253,7 @@ subroutine compare_3d_answers(bc_type_read, bc_type)
              sum(bc_type_read%FMS_TEST_BC_TYPE_(i)%field(j)%values)) then
              call mpp_error(FATAL, "test_coupler_3d: Answers do not match for: "// &
                             & trim(bc_type%FMS_TEST_BC_TYPE_(i)%ice_restart_file) &
-                            & //" var: "//trim(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name))
+                            & //" var: "//trim(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%diag_name))
          endif
       end do
    end do
@@ -262,13 +262,13 @@ subroutine compare_3d_answers(bc_type_read, bc_type)
    if (sum(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%values) .ne. &
        sum(bc_type_read%FMS_TEST_BC_TYPE_(1)%field(1)%values)) then
        call mpp_error(FATAL, "test_coupler_3d: Answers do not match for var: "// &
-                      & trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%name))
+                      & trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(1)%diag_name))
    endif
 
    if (sum(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%values) .ne. &
        sum(bc_type_read%FMS_TEST_BC_TYPE_(1)%field(2)%values)) then
        call mpp_error(FATAL, "test_coupler_3d: Answers do not match for var: "// &
-                      & trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%name))
+                      & trim(bc_type_read%FMS_TEST_BC_TYPE_(3)%field(2)%diag_name))
    endif
 
 

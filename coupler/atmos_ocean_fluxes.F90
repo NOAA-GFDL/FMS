@@ -111,10 +111,10 @@ contains
   !!     Mismatch between parameter input and the parameters being replaced
   !! @throw FATAL, "Could not change back to [current_list]"
   !! @throw FATAL, "Empty [name] list"
-  function aof_set_coupler_flux(name, flux_type, implementation, atm_tr_index, param, flag,&
+  function aof_set_coupler_flux(flux_name, flux_type, implementation, atm_tr_index, param, flag,&
       & mol_wt, ice_restart_file, ocean_restart_file, units, caller, verbosity) &
       & result (coupler_index)
-    character(len=*), intent(in)                :: name !< name
+    character(len=*), intent(in)                :: flux_name !< name
     character(len=*), intent(in)                :: flux_type !< flux_type
     character(len=*), intent(in)                :: implementation !< implementation
     integer, intent(in), optional               :: atm_tr_index !< atm_tr_index
@@ -167,23 +167,23 @@ contains
         & '(' // trim(sub_name) // ')' // trim(caller_str) // ':'
 
     ! Check that a name is given (fatal if not).
-    if (name .eq. ' ') then
+    if (flux_name .eq. ' ') then
       call mpp_error(FATAL, trim(error_header) // ' Empty name given')
     endif
     outunit = stdout()
     if (verbose >= 5) then
       write (outunit,*)
-      write (outunit,*) trim(note_header), ' Processing coupler fluxes ', trim(name)
+      write (outunit,*) trim(note_header), ' Processing coupler fluxes ', trim(flux_name)
     endif
 
     ! Define the coupler list name.
-    coupler_list = '/coupler_mod/fluxes/' // trim(name)
+    coupler_list = '/coupler_mod/fluxes/' // trim(flux_name)
 
     ! Check whether a flux has already been set for this name, and if so, return the index for it
     ! (this is because the fluxes may be defined in both the atmosphere and ocean models) (check
     ! whether the good_list list exists, since this will indicate that this routine has already been
     ! called, and not just that the field table input has this list defined)
-    if (fm_exists('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')) then
+    if (fm_exists('/coupler_mod/GOOD/fluxes/' // trim(flux_name) // '/good_list')) then
       if (verbose >= 5) then
         write (outunit,*)
         write (outunit,*) trim(note_header), ' Using previously defined coupler flux'
@@ -225,7 +225,7 @@ contains
     ! Set the array in which to save the valid names for this list,
     ! used later for a consistency check. This is used in the fm_util_set_value
     ! routines to make the list of valid values.
-    call fm_util_set_good_name_list('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list')
+    call fm_util_set_good_name_list('/coupler_mod/GOOD/fluxes/' // trim(flux_name) // '/good_list')
 
     ! Set other defaults for the fm_util_set_value routines.
     call fm_util_set_no_overwrite(.true.)
@@ -332,7 +332,7 @@ contains
           & scalar = .true.)
       length = min(size(param(:)),num_parameters)
       if ((length .ne. num_parameters) .and. (verbose >= 5)) then
-        write (outunit,*) trim(note_header), ' Number of parameters provided for ', trim(name), ' does not match the'
+        write (outunit,*) trim(note_header),' Number of parameters provided for ', trim(flux_name),' does not match the'
         write (outunit,*) 'number of parameters required (', size(param(:)), ' != ', num_parameters, ').'
         write (outunit,*) 'This could be an error, or more likely is just a result of the implementation being'
         write (outunit,*) 'overridden by the field table input'
@@ -408,13 +408,13 @@ contains
     if (caller_str .eq. ' ') then
       caller_str = trim(mod_name) // '(' // trim(sub_name) // ')'
     endif
-    good_list => fm_util_get_string_array('/coupler_mod/GOOD/fluxes/' // trim(name) // '/good_list',&
+    good_list => fm_util_get_string_array('/coupler_mod/GOOD/fluxes/' // trim(flux_name) // '/good_list',&
         & caller = caller_str)
     if (associated(good_list)) then
       call fm_util_check_for_bad_fields(trim(coupler_list), good_list, caller = caller_str)
       deallocate(good_list)
     else
-      call mpp_error(FATAL, trim(error_header) // ' Empty "' // trim(name) // '" list')
+      call mpp_error(FATAL, trim(error_header) // ' Empty "' // trim(flux_name) // '" list')
     endif
 
     return
@@ -481,7 +481,7 @@ contains
     integer                                 :: m
     character(len=128)                      :: caller_str
     character(len=fm_type_name_len)         :: typ
-    character(len=fm_field_name_len)        :: name
+    character(len=fm_field_name_len)        :: field_name
     integer                                 :: ind
     integer                                 :: outunit
     integer                                 :: total_fluxes
@@ -549,9 +549,9 @@ contains
 
     ! Loop over the input fields, setting the values in the flux_type.
     n = 0
-    do while (fm_loop_over_list('/coupler_mod/fluxes', name, typ, ind))
+    do while (fm_loop_over_list('/coupler_mod/fluxes', field_name, typ, ind))
       if (typ .ne. 'list') then
-        call mpp_error(FATAL, trim(error_header) // ' ' // trim(name) // ' is not a list')
+        call mpp_error(FATAL, trim(error_header) // ' ' // trim(field_name) // ' is not a list')
       endif
 
       n = n + 1  ! increment the array index
@@ -559,12 +559,12 @@ contains
       if (n .ne. ind) then
         if (verbose >= 3) &
             write (outunit,*) trim(warn_header), ' Flux index, ', ind,&
-            & ' does not match array index, ', n, ' for ', trim(name)
+            & ' does not match array index, ', n, ' for ', trim(field_name)
       endif
 
       ! Change list to the new flux.
-      if (.not. fm_change_list('/coupler_mod/fluxes/' // trim(name))) then
-        call mpp_error(FATAL, trim(error_header) // ' Problem changing to ' // trim(name))
+      if (.not. fm_change_list('/coupler_mod/fluxes/' // trim(field_name))) then
+        call mpp_error(FATAL, trim(error_header) // ' Problem changing to ' // trim(field_name))
       endif
 
       !! mixed precision support
@@ -574,7 +574,7 @@ contains
         gas_fluxes%bc(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
         if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type))) then
           call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given for ' //&
-              & trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type))
+              & trim(field_name) // ': ' // trim(gas_fluxes%bc(n)%flux_type))
         endif
         gas_fields_atm%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
         gas_fields_ice%bc(n)%flux_type = gas_fluxes%bc(n)%flux_type
@@ -584,7 +584,7 @@ contains
         if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc(n)%flux_type) //&
             & '/implementation/' // trim(gas_fluxes%bc(n)%implementation))) then
           call mpp_error(FATAL, trim(error_header) // ' Undefined implementation given for ' //&
-              & trim(name) // ': ' // trim(gas_fluxes%bc(n)%flux_type) // '/implementation/' //&
+              & trim(field_name) // ': ' // trim(gas_fluxes%bc(n)%flux_type) // '/implementation/' //&
               & trim(gas_fluxes%bc(n)%implementation))
         endif
         gas_fields_atm%bc(n)%implementation = gas_fluxes%bc(n)%implementation
@@ -602,25 +602,25 @@ contains
         allocate (gas_fields_ice%bc(n)%field(gas_fields_ice%bc(n)%num_fields))
 
         ! Save the name and generate unique field names for Flux, Ice and Atm.
-        gas_fluxes%bc(n)%name = name
+        gas_fluxes%bc(n)%field_name = field_name
         do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
-          gas_fluxes%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+          gas_fluxes%bc(n)%field(m)%diag_name = trim(field_name) // "_" // fm_util_get_string(trim(flux_list) //&
               & 'flux/name', index = m)
           gas_fluxes%bc(n)%field(m)%override = .false.
           gas_fluxes%bc(n)%field(m)%mean     = .false.
         enddo
 
-        gas_fields_atm%bc(n)%name = name
+        gas_fields_atm%bc(n)%field_name = field_name
         do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
-          gas_fields_atm%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+          gas_fields_atm%bc(n)%field(m)%diag_name = trim(field_name) // "_" // fm_util_get_string(trim(flux_list) //&
               & 'atm/name', index = m)
           gas_fields_atm%bc(n)%field(m)%override = .false.
           gas_fields_atm%bc(n)%field(m)%mean     = .false.
         enddo
 
-        gas_fields_ice%bc(n)%name = name
+        gas_fields_ice%bc(n)%field_name = field_name
         do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
-          gas_fields_ice%bc(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) // &
+          gas_fields_ice%bc(n)%field(m)%diag_name = trim(field_name) // "_" // fm_util_get_string(trim(flux_list) // &
                                           &  'ice/name', index = m)
           gas_fields_ice%bc(n)%field(m)%override = .false.
           gas_fields_ice%bc(n)%field(m)%mean     = .false.
@@ -646,17 +646,17 @@ contains
           gas_fluxes%bc(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
               &  '-long_name', scalar = .true.)
-          gas_fluxes%bc(n)%field(m)%long_name = trim(gas_fluxes%bc(n)%field(m)%long_name) // ' for ' // name
+          gas_fluxes%bc(n)%field(m)%long_name = trim(gas_fluxes%bc(n)%field(m)%long_name) // ' for ' // field_name
         enddo
         do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
           gas_fields_atm%bc(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-long_name')
-          gas_fields_atm%bc(n)%field(m)%long_name = trim(gas_fields_atm%bc(n)%field(m)%long_name) // ' for ' // name
+          gas_fields_atm%bc(n)%field(m)%long_name = trim(gas_fields_atm%bc(n)%field(m)%long_name) //' for '// field_name
         enddo
         do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
           gas_fields_ice%bc(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-long_name')
-          gas_fields_ice%bc(n)%field(m)%long_name = trim(gas_fields_ice%bc(n)%field(m)%long_name) // ' for ' // name
+          gas_fields_ice%bc(n)%field(m)%long_name = trim(gas_fields_ice%bc(n)%field(m)%long_name) //' for '// field_name
         enddo
 
         ! Save the atm_tr_index.
@@ -689,39 +689,43 @@ contains
         if (num_parameters .gt. 0) then
           if (.not. associated(gas_fluxes%bc(n)%param)) then
             write (error_string,'(a,i2)') ': need ', num_parameters
-            call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(field_name) // trim(error_string))
           elseif (size(gas_fluxes%bc(n)%param(:)) .ne. num_parameters) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%param(:)), ' given, need ', num_parameters
             call mpp_error(FATAL, trim(error_header) // &
-                          &  ' Wrong number of param for ' // trim(name) // trim(error_string))
+                          &  ' Wrong number of param for ' // trim(field_name) // trim(error_string))
           endif
         elseif (num_parameters .eq. 0) then
           if (associated(gas_fluxes%bc(n)%param)) then
             write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%param(:))
-            call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(field_name) // &
+                    & trim(error_string))
           endif
         else
           write (error_string,'(a,i2)') ': ', num_parameters
           call mpp_error(FATAL, trim(error_header) // &
-                        &  'Num_parameters is negative for ' // trim(name) // trim(error_string))
+                        &  'Num_parameters is negative for ' // trim(field_name) // trim(error_string))
         endif
         num_flags = fm_util_get_integer(trim(flux_list) // '/num_flags', scalar = .true.)
         if (num_flags .gt. 0) then
           if (.not. associated(gas_fluxes%bc(n)%flag)) then
             write (error_string,'(a,i2)') ': need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(field_name) // trim(error_string))
           elseif (size(gas_fluxes%bc(n)%flag(:)) .ne. num_flags) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc(n)%flag(:)), ' given, need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(name)//trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for ' // trim(field_name)// &
+                    & trim(error_string))
           endif
         elseif (num_flags .eq. 0) then
           if (associated(gas_fluxes%bc(n)%flag)) then
             write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc(n)%flag(:))
-            call mpp_error(FATAL, trim(error_header) // ' No flags needed for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No flags needed for ' // trim(field_name) // &
+                    & trim(error_string))
           endif
         else
           write (error_string,'(a,i2)') ': ', num_flags
-          call mpp_error(FATAL, trim(error_header) // 'Num_flags is negative for ' // trim(name) // trim(error_string))
+          call mpp_error(FATAL, trim(error_header) // 'Num_flags is negative for ' // trim(field_name) // &
+                  & trim(error_string))
         endif
 
         ! Set some flags for this flux_type.
@@ -743,7 +747,7 @@ contains
         gas_fluxes%bc_r4(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
         if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc_r4(n)%flux_type))) then
           call mpp_error(FATAL, trim(error_header) // ' Undefined flux_type given for ' //&
-              & trim(name) // ': ' // trim(gas_fluxes%bc_r4(n)%flux_type))
+              & trim(field_name) // ': ' // trim(gas_fluxes%bc_r4(n)%flux_type))
         endif
         gas_fields_atm%bc_r4(n)%flux_type = gas_fluxes%bc_r4(n)%flux_type
         gas_fields_ice%bc_r4(n)%flux_type = gas_fluxes%bc_r4(n)%flux_type
@@ -753,7 +757,7 @@ contains
         if (.not. fm_exists('/coupler_mod/types/' // trim(gas_fluxes%bc_r4(n)%flux_type) //&
             & '/implementation/' // trim(gas_fluxes%bc_r4(n)%implementation))) then
           call mpp_error(FATAL, trim(error_header) // ' Undefined implementation given for ' //&
-              & trim(name) // ': ' // trim(gas_fluxes%bc_r4(n)%flux_type) // '/implementation/' //&
+              & trim(field_name) // ': ' // trim(gas_fluxes%bc_r4(n)%flux_type) // '/implementation/' //&
               & trim(gas_fluxes%bc_r4(n)%implementation))
         endif
         gas_fields_atm%bc_r4(n)%implementation = gas_fluxes%bc_r4(n)%implementation
@@ -771,25 +775,25 @@ contains
         allocate (gas_fields_ice%bc_r4(n)%field(gas_fields_ice%bc_r4(n)%num_fields))
 
         ! Save the name and generate unique field names for Flux, Ice and Atm.
-        gas_fluxes%bc_r4(n)%name = name
+        gas_fluxes%bc_r4(n)%field_name = field_name
         do m = 1, fm_util_get_length(trim(flux_list) // 'flux/name')
-          gas_fluxes%bc_r4(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+          gas_fluxes%bc_r4(n)%field(m)%diag_name = trim(field_name) // "_" // fm_util_get_string(trim(flux_list) //&
               & 'flux/name', index = m)
           gas_fluxes%bc_r4(n)%field(m)%override = .false.
           gas_fluxes%bc_r4(n)%field(m)%mean     = .false.
         enddo
 
-        gas_fields_atm%bc_r4(n)%name = name
+        gas_fields_atm%bc_r4(n)%field_name = field_name
         do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
-          gas_fields_atm%bc_r4(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) //&
+          gas_fields_atm%bc_r4(n)%field(m)%diag_name = trim(field_name) // "_" // fm_util_get_string(trim(flux_list) //&
               & 'atm/name', index = m)
           gas_fields_atm%bc_r4(n)%field(m)%override = .false.
           gas_fields_atm%bc_r4(n)%field(m)%mean     = .false.
         enddo
 
-        gas_fields_ice%bc_r4(n)%name = name
+        gas_fields_ice%bc_r4(n)%field_name = field_name
         do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
-          gas_fields_ice%bc_r4(n)%field(m)%name = trim(name) // "_" // fm_util_get_string(trim(flux_list) // &
+          gas_fields_ice%bc_r4(n)%field(m)%diag_name = trim(field_name) // "_" // fm_util_get_string(trim(flux_list) //&
                                           &  'ice/name', index = m)
           gas_fields_ice%bc_r4(n)%field(m)%override = .false.
           gas_fields_ice%bc_r4(n)%field(m)%mean     = .false.
@@ -815,19 +819,19 @@ contains
           gas_fluxes%bc_r4(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'flux/name', index = m)) // &
               &  '-long_name', scalar = .true.)
-          gas_fluxes%bc_r4(n)%field(m)%long_name = trim(gas_fluxes%bc_r4(n)%field(m)%long_name) // ' for ' // name
+          gas_fluxes%bc_r4(n)%field(m)%long_name = trim(gas_fluxes%bc_r4(n)%field(m)%long_name) // ' for ' // field_name
         enddo
         do m = 1, fm_util_get_length(trim(flux_list) // 'atm/name')
           gas_fields_atm%bc_r4(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'atm/name', index = m)) // '-long_name')
           gas_fields_atm%bc_r4(n)%field(m)%long_name = trim(gas_fields_atm%bc_r4(n)%field(m)%long_name)// &
-                                                       ' for '// name
+                                                       ' for '// field_name
         enddo
         do m = 1, fm_util_get_length(trim(flux_list) // 'ice/name')
           gas_fields_ice%bc_r4(n)%field(m)%long_name =&
               & fm_util_get_string(trim(fm_util_get_string(trim(flux_list) // 'ice/name', index = m)) // '-long_name')
           gas_fields_ice%bc_r4(n)%field(m)%long_name = trim(gas_fields_ice%bc_r4(n)%field(m)%long_name) // &
-                                                       ' for ' // name
+                                                       ' for ' // field_name
         enddo
 
         ! Save the atm_tr_index.
@@ -860,39 +864,43 @@ contains
         if (num_parameters .gt. 0) then
           if (.not. associated(gas_fluxes%bc_r4(n)%param)) then
             write (error_string,'(a,i2)') ': need ', num_parameters
-            call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No param for ' // trim(field_name) // trim(error_string))
           elseif (size(gas_fluxes%bc_r4(n)%param(:)) .ne. num_parameters) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc_r4(n)%param(:)), ' given, need ', num_parameters
             call mpp_error(FATAL, trim(error_header) // &
-                          &  ' Wrong number of param for ' // trim(name) // trim(error_string))
+                          &  ' Wrong number of param for ' // trim(field_name) // trim(error_string))
           endif
         elseif (num_parameters .eq. 0) then
           if (associated(gas_fluxes%bc_r4(n)%param)) then
             write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc_r4(n)%param(:))
-            call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No params needed for ' // trim(field_name) // &
+                    & trim(error_string))
           endif
         else
           write (error_string,'(a,i2)') ': ', num_parameters
           call mpp_error(FATAL, trim(error_header) // &
-                        &  'Num_parameters is negative for ' // trim(name) // trim(error_string))
+                        &  'Num_parameters is negative for ' // trim(field_name) // trim(error_string))
         endif
         num_flags = fm_util_get_integer(trim(flux_list) // '/num_flags', scalar = .true.)
         if (num_flags .gt. 0) then
           if (.not. associated(gas_fluxes%bc_r4(n)%flag)) then
             write (error_string,'(a,i2)') ': need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No flag for ' // trim(field_name) // trim(error_string))
           elseif (size(gas_fluxes%bc_r4(n)%flag(:)) .ne. num_flags) then
             write (error_string,'(a,i2,a,i2)') ': ', size(gas_fluxes%bc_r4(n)%flag(:)), ' given, need ', num_flags
-            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for '//trim(name)//trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' Wrong number of flag for '//trim(field_name)// &
+                    & trim(error_string))
           endif
         elseif (num_flags .eq. 0) then
           if (associated(gas_fluxes%bc_r4(n)%flag)) then
             write (error_string,'(a,i3)') ' but has size of ', size(gas_fluxes%bc_r4(n)%flag(:))
-            call mpp_error(FATAL, trim(error_header) // ' No flags needed for ' // trim(name) // trim(error_string))
+            call mpp_error(FATAL, trim(error_header) // ' No flags needed for ' // trim(field_name) // &
+                    & trim(error_string))
           endif
         else
           write (error_string,'(a,i2)') ': ', num_flags
-          call mpp_error(FATAL, trim(error_header) // 'Num_flags is negative for ' // trim(name) // trim(error_string))
+          call mpp_error(FATAL, trim(error_header) // 'Num_flags is negative for ' // trim(field_name) // &
+                  & trim(error_string))
         endif
 
         ! Set some flags for this flux_type.
