@@ -20,13 +20,13 @@
 program test_data_override_ongrid
 
 !> @brief  This programs tests data_override ability to override data for an
-!! on grid case
+!! on grid case and when using bilinear interpolation
 
 use platform_mod,      only: r4_kind, r8_kind
 use mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
                              mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
 use mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL, &
-                             input_nml_file, mpp_sync
+                             input_nml_file, mpp_sync, NOTE
 use data_override_mod, only: data_override_init, data_override
 use fms2_io_mod
 use time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
@@ -86,6 +86,7 @@ case (bilinear)
 end select
 
 call mpp_sync()
+call mpp_error(NOTE, "Finished creating INPUT Files")
 
 !< Initiliaze data_override
 call data_override_init(Ocean_domain_in=Domain, mode=lkind)
