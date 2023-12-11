@@ -42,4 +42,5 @@ test_expect_success "test_data_override with monotonically increasing and decrea
     mpirun -n 6 ../test_data_override_ongrid_r4
   '
 
+rm -rf INPUT
 test_done
