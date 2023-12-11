@@ -45,6 +45,6 @@ integer :: nfields
 call fms_init
 call field_manager_init(nfields)
 if (nfields .ne. 4) &
-  call mpp_error(FATAL, "The number fields is not the epected result")
+  call mpp_error(FATAL, "test_field_table_read:: The number fields returned is not the expected result")
 call fms_end
 end program test_field_table_read
