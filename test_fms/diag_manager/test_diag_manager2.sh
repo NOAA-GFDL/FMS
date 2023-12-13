@@ -711,7 +711,7 @@ diag_files:
     var_name: var5
     reduction: average
     kind: r4
-  - module: lnd_mod
+  - module: atm_mod
     var_name: var7
     reduction: average
     kind: r4

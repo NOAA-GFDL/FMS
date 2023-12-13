@@ -371,8 +371,9 @@ module fms_diag_axis_object_mod
     end select
 
     !< Write its metadata
-    call register_variable_attribute(fms2io_fileobj, axis_name, "long_name", diag_axis%long_name, &
-      str_len=len_trim(diag_axis%long_name))
+    if(allocated(diag_axis%long_name)) &
+      call register_variable_attribute(fms2io_fileobj, axis_name, "long_name", diag_axis%long_name, &
+        str_len=len_trim(diag_axis%long_name))
 
     if (diag_axis%cart_name .NE. "N") &
       call register_variable_attribute(fms2io_fileobj, axis_name, "axis", diag_axis%cart_name, str_len=1)

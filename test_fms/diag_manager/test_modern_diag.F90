@@ -248,7 +248,7 @@ subroutine allocate_dummy_data(var, lat_lon_domain, cube_sphere, lnd_domain, nz)
   allocate(var%var4(is:ie, js:je, nz)) !< Variable in a 3D cube sphere domain
 
   call mpp_get_UG_compute_domain(lnd_domain, size=nland)
-  allocate(var%var5(nz)) !< Variable in the land unstructured domain
+  allocate(var%var5(nland)) !< Variable in the land unstructured domain
 
   allocate(var%var6(nz)) !< 1D variable not domain decomposed
 
