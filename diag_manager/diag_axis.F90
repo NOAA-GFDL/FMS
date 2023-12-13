@@ -105,10 +105,10 @@ CONTAINS
   !! increments the axis counter and fills in the axes
   !!
   !! @return integer axis ID
-  INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
+  INTEGER FUNCTION diag_axis_init(name, array_data, units, cart_name, long_name, direction,&
        & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     CHARACTER(len=*), INTENT(in) :: name !< Short name for axis
-    CLASS(*), DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
+    CLASS(*), DIMENSION(:), INTENT(in) :: array_data !< Array of coordinate values
     CHARACTER(len=*), INTENT(in) :: units !< Units for the axis
     CHARACTER(len=*), INTENT(in) :: cart_name !< Cartesian axis ("X", "Y", "Z", "T")
     CHARACTER(len=*), INTENT(in), OPTIONAL :: long_name !< Long name for the axis.
@@ -220,17 +220,17 @@ CONTAINS
     IF ( Axes(diag_axis_init)%cart_name == 'T' ) THEN
        axlen = 0
     ELSE
-       axlen = SIZE(DATA(:))
+       axlen = SIZE(array_data(:))
     END IF
-    ALLOCATE ( Axes(diag_axis_init)%data(1:axlen) )
+    ALLOCATE ( Axes(diag_axis_init)%diag_type_data(1:axlen) )
 
     ! Initialize Axes(diag_axis_init)
     Axes(diag_axis_init)%name   = TRIM(name)
-    SELECT TYPE (DATA)
+    SELECT TYPE (array_data)
     TYPE IS (real(kind=r4_kind))
-       Axes(diag_axis_init)%data = DATA(1:axlen)
+       Axes(diag_axis_init)%diag_type_data = array_data(1:axlen)
     TYPE IS (real(kind=r8_kind))
-       Axes(diag_axis_init)%data = real(DATA(1:axlen))
+       Axes(diag_axis_init)%diag_type_data = real(array_data(1:axlen))
     CLASS DEFAULT
        CALL error_mesg('diag_axis_mod::diag_axis_init',&
             & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -455,7 +455,7 @@ CONTAINS
   END FUNCTION diag_subaxes_init
   !> @brief Return information about the axis with index ID
   SUBROUTINE get_diag_axis(id, name, units, long_name, cart_name,&
-       & direction, edges, Domain, DomainU, DATA, num_attributes, attributes, domain_position)
+       & direction, edges, Domain, DomainU, array_data, num_attributes, attributes, domain_position)
     CHARACTER(len=*), INTENT(out) :: name, units, long_name, cart_name
     INTEGER, INTENT(in) :: id !< Axis ID
     TYPE(domain1d), INTENT(out) :: Domain
@@ -463,7 +463,7 @@ CONTAINS
     INTEGER, INTENT(out) :: direction !< Direction of data. (See <TT>@ref diag_axis_init</TT> for a description of
                                       !! allowed values)
     INTEGER, INTENT(out) :: edges !< Axis ID for the previously defined "edges axis".
-    CLASS(*), DIMENSION(:), INTENT(out) :: DATA !< Array of coordinate values for this axis.
+    CLASS(*), DIMENSION(:), INTENT(out) :: array_data !< Array of coordinate values for this axis.
     INTEGER, INTENT(out), OPTIONAL :: num_attributes
     TYPE(diag_atttype), ALLOCATABLE, DIMENSION(:), INTENT(out), OPTIONAL :: attributes
     INTEGER, INTENT(out), OPTIONAL :: domain_position
@@ -480,15 +480,15 @@ CONTAINS
     Domain    = Axes(id)%Domain
     DomainU   = Axes(id)%DomainUG
     if (present(domain_position)) domain_position = Axes(id)%domain_position
-    IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN
+    IF ( Axes(id)%length > SIZE(array_data(:)) ) THEN
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
-       SELECT TYPE (DATA)
+       SELECT TYPE (array_data)
        TYPE IS (real(kind=r4_kind))
-          DATA(1:Axes(id)%length) = real(Axes(id)%data(1:Axes(id)%length), kind=r4_kind)
+          array_data(1:Axes(id)%length) = real(Axes(id)%diag_type_data(1:Axes(id)%length), kind=r4_kind)
        TYPE IS (real(kind=r8_kind))
-          DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+          array_data(1:Axes(id)%length) = Axes(id)%diag_type_data(1:Axes(id)%length)
        CLASS DEFAULT
           CALL error_mesg('diag_axis_mod::get_diag_axis',&
                & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -562,16 +562,16 @@ CONTAINS
   END SUBROUTINE get_diag_axis_cart
 
   !> @brief Return the axis data.
-  SUBROUTINE get_diag_axis_data(id, DATA)
+  SUBROUTINE get_diag_axis_data(id, axis_data)
     INTEGER, INTENT(in) :: id !< Axis ID
-    REAL, DIMENSION(:), INTENT(out) :: DATA !< Axis data
+    REAL, DIMENSION(:), INTENT(out) :: axis_data !< Axis data
 
     CALL valid_id_check(id, 'get_diag_axis_data')
-    IF (Axes(id)%length > SIZE(DATA(:))) THEN
+    IF (Axes(id)%length > SIZE(axis_data(:))) THEN
        ! <ERROR STATUS="FATAL">array data is too small</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis_data', 'array data is too small', FATAL)
     ELSE
-       DATA(1:Axes(id)%length) = Axes(id)%data
+       axis_data(1:Axes(id)%length) = Axes(id)%diag_type_data
     END IF
   END SUBROUTINE get_diag_axis_data
 

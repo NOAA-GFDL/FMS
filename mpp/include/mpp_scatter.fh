@@ -24,13 +24,13 @@
 !!
 !> Scatter (ie - is) * (je - js) contiguous elements of array data from the designated root pe
 !! into contigous members of array segment in each pe that is included in the pelist argument.
-subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_root_pe, &
+subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, input_data, is_root_pe, &
                                   ishift, jshift)
    integer,                           intent(in)    :: is, ie, js, je !< indices of segment array
    integer,   dimension(:),           intent(in)    :: pelist !<PE list of target pes,
                                                               !! must be in monotonic increasing order
    MPP_TYPE_, dimension(is:ie,js:je), target, intent(inout)  :: array_seg !< 2D array of output data
-   MPP_TYPE_, dimension(:,:), contiguous, target, intent(in) :: data !< 2D array of input data
+   MPP_TYPE_, dimension(:,:), contiguous, target, intent(in) :: input_data !< 2D array of input data
    logical,                           intent(in)    :: is_root_pe !< true if calling from root
    integer,   optional,               intent(in)    :: ishift, jshift !< Offsets of array elements
 
@@ -39,7 +39,7 @@ subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_ro
 
    arr3D(1:size(array_seg,1),1:size(array_seg,2),1:1) => array_seg
    if (is_root_pe) then
-     data3D(1:size(data,1),1:size(data,2),1:1) => data
+     data3D(1:size(input_data,1),1:size(input_data,2),1:1) => input_data
    else
      data3D => null()
    endif
@@ -51,12 +51,12 @@ subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, data, is_ro
 end subroutine MPP_SCATTER_PELIST_2D_
 
 
-subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, is_root_pe, &
+subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_data, is_root_pe, &
                                   ishift, jshift)
    integer,                                intent(in)    :: is, ie, js, je, nk
    integer,   dimension(:),                intent(in)    :: pelist
    MPP_TYPE_, dimension(is:ie,js:je,1:nk), intent(inout)    :: array_seg
-   MPP_TYPE_, dimension(:,:,:),            intent(in) :: data
+   MPP_TYPE_, dimension(:,:,:),            intent(in) :: input_data
    logical,                                intent(in)    :: is_root_pe
    integer,   optional,                    intent(in)    :: ishift, jshift
 
@@ -64,7 +64,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
    integer :: i1, i2, j1, j2, ioff, joff
    integer :: my_ind(4), gind(4,size(pelist))
    type array3D
-     MPP_TYPE_, dimension(:,:,:), allocatable :: data
+     MPP_TYPE_, dimension(:,:,:), allocatable :: data3D_type
    endtype array3D
    type(array3d), dimension(size(pelist)) :: temp
 
@@ -115,7 +115,8 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
      gind(3,:)=gind(3,:)+joff
      gind(4,:)=gind(4,:)+joff
 ! check indices to make sure they are within the range of "data"
-     if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(data,1)) .OR. (maxval(gind(3:4,:)).gt.size(data,2))) &
+     if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(input_data,1)) &
+     .OR. (maxval(gind(3:4,:)).gt.size(input_data,2))) &
          call mpp_error(FATAL,"fms_io(mpp_scatter_pelist): specified indices (with shift) are outside of the &
                         &range of the receiving array")
    else
@@ -134,18 +135,18 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, data, i
          j2 = gind(4,i)
          msgsize = (i2-i1+1)*(j2-j1+1)*nk
 ! allocate and copy data into a contiguous memory space
-         allocate(temp(i)%data(i1:i2,j1:j2,1:nk))
-         temp(i)%data(i1:i2,j1:j2,1:nk)=data(i1:i2,j1:j2,1:nk)
-         call mpp_send(temp(i)%data, msgsize, pelist(i), COMM_TAG_2)
+         allocate(temp(i)%data3D_type(i1:i2,j1:j2,1:nk))
+         temp(i)%data3D_type(i1:i2,j1:j2,1:nk)=input_data(i1:i2,j1:j2,1:nk)
+         call mpp_send(temp(i)%data3D_type, msgsize, pelist(i), COMM_TAG_2)
        else
 !        data copy - no send to self
-         array_seg(is:ie,js:je,1:nk) = data(is+ioff:ie+ioff,js+joff:je+joff,1:nk)
+         array_seg(is:ie,js:je,1:nk) = input_data(is+ioff:ie+ioff,js+joff:je+joff,1:nk)
        endif
      enddo
      call mpp_sync_self(check=EVENT_SEND)
 ! deallocate the temporary array used for the send
      do i = 1, size(pelist)
-       if (allocated(temp(i)%data)) deallocate(temp(i)%data)
+       if (allocated(temp(i)%data3D_type)) deallocate(temp(i)%data3D_type)
      enddo
    else
 !    non root_pe's recv data from root_pe

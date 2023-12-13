@@ -303,7 +303,7 @@ end type amip_interp_type
 !  ---- global unit & date ----
 
    integer, parameter :: maxc = 128
-   integer :: unit
+   integer :: iunit
    character(len=maxc) :: file_name_sst, file_name_ice
    type(FmsNetcdfFile_t), target :: fileobj_sst, fileobj_ice
 
@@ -367,7 +367,7 @@ contains
 
  !> initialize @ref amip_interp_mod for use
  subroutine amip_interp_init
-   integer :: unit,io,ierr
+   integer :: iunit,io,ierr
 
 !-----------------------------------------------------------------------
 
@@ -381,9 +381,9 @@ contains
 !  ----- write namelist/version info -----
     call write_version_number("AMIP_INTERP_MOD", version)
 
-    unit = stdlog ( )
+    iunit = stdlog ( )
     if (mpp_pe() == 0) then
-        write (unit,nml=amip_interp_nml)
+        write (iunit,nml=amip_interp_nml)
     endif
 
     if (use_mpp_io) then

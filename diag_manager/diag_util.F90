@@ -82,7 +82,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & prepend_attribute, attribute_init, diag_util_init,&
        & update_bounds, check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & fms_diag_check_out_of_bounds, &
-       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static
+       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static, get_file_start_time
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
@@ -1706,7 +1706,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
                                                            !! writting periodic files
 
     TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
-    REAL, DIMENSION(2) :: DATA
+    REAL, DIMENSION(2) :: open_file_data
     INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
     INTEGER :: position
@@ -2084,9 +2084,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        time_axis_id(1) = files(file)%time_axis_id
        time_bounds_id(1) = files(file)%time_bounds_id
        CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
+            & cart_name, dir, edges, Domain, domainU, open_file_data)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
+            & cart_name, dir, edges, Domain, domainU, open_file_data)
        ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
             & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
@@ -2751,6 +2751,16 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
   END SUBROUTINE prepend_attribute_file
 
+  !> @brief Get the a diag_file's start_time as it is defined in the diag_table
+  !! @return the start_time for the file
+  function get_file_start_time(file_num) &
+   result (start_time)
+   integer,         intent(in)  :: file_num   !< File number of the file to get the start_time from
+
+   TYPE(time_type) :: start_time !< The start_time to return
+
+   start_time = files(file_num)%start_time
+  end function get_file_start_time
 END MODULE diag_util_mod
 !> @}
 ! close documentation grouping

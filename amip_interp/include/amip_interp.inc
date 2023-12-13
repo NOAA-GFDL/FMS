@@ -52,7 +52,7 @@ subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
 ! end add by JHC
     logical, parameter :: DEBUG = .false. !> switch for debugging output
     !> These are fms_io specific
-    integer :: unit
+    integer :: iunit
     integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 
     if(present(err_msg)) err_msg = ''
@@ -103,7 +103,7 @@ if ( .not.use_daily ) then
      Date2 = date_type( year2, month2, 0 )
 
 !  -- open/rewind file --
-     unit = -1
+     iunit = -1
 !-----------------------------------------------------------------------
 
       if (Date1 /= Interp%Date1) then
@@ -368,7 +368,7 @@ else
    Date1 = date_type( year1, month1, 0 )
    Date2 = date_type( year2, month2, 0 )
 
-   unit = -1
+   iunit = -1
 !-----------------------------------------------------------------------
 
     if (Date1 /= Interp%Date1) then

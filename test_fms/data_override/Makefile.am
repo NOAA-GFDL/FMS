@@ -30,6 +30,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = \
+  test_data_override_init \
   test_get_grid_v1_r4 \
   test_get_grid_v1_r8 \
   test_data_override_r4 \
@@ -38,6 +39,7 @@ check_PROGRAMS = \
   test_data_override_ongrid_r8
 
 # This is the source code for the test.
+test_data_override_init_SOURCES = test_data_override_init.F90
 test_data_override_r4_SOURCES = test_data_override.F90
 test_data_override_r8_SOURCES = test_data_override.F90
 
@@ -69,10 +71,10 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@" \
                    parser_skip=${skipflag}
 
 # Run the test program.
-TESTS = test_data_override2.sh
+TESTS = test_data_override2.sh test_data_override_init.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = test_data_override2.sh
+EXTRA_DIST = test_data_override2.sh test_data_override_init.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*

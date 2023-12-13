@@ -1842,10 +1842,10 @@
 
  subroutine TEMP_CHECK_1D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:) !< temperature in degrees Kelvin (K)
- integer :: i, unit
+ integer :: i, iunit
 
-   unit = stdoutunit
-   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
+   iunit = stdoutunit
+   write(iunit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
 
  end subroutine TEMP_CHECK_1D_
 
@@ -1853,11 +1853,11 @@
 
  subroutine TEMP_CHECK_2D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:,:) !< temperature in degrees Kelvin (K)
- integer :: i, j, unit
+ integer :: i, j, iunit
 
-   unit = stdoutunit
-   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
-   write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
+   iunit = stdoutunit
+   write(iunit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
+   write(iunit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
 
  end subroutine TEMP_CHECK_2D_
 
@@ -1865,12 +1865,12 @@
 
  subroutine TEMP_CHECK_3D_ ( temp )
  real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:) !< temperature in degrees Kelvin (K)
- integer :: i, j, k, unit
+ integer :: i, j, k, iunit
 
-   unit = stdoutunit
-   write(unit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
-   write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
-   write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
+   iunit = stdoutunit
+   write(iunit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
+   write(iunit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
+   write(iunit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
 
  end subroutine TEMP_CHECK_3D_
 
@@ -1878,7 +1878,7 @@
 
  subroutine SHOW_ALL_BAD_0D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp !< temperature in degrees Kelvin (K)
- integer :: ind, unit
+ integer :: ind, iunit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
  real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
@@ -1889,10 +1889,10 @@
  tminll=real(tmin,FMS_SVP_KIND_)
  tepsll=real(teps,FMS_SVP_KIND_)
 
- unit = stdoutunit
+ iunit = stdoutunit
  ind = int( dtinvll*(temp-tminll+tepsll) )
  if (ind < 0 .or. ind > nlim) then
-   write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
+   write(iunit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
  endif
 
  end subroutine SHOW_ALL_BAD_0D_
@@ -1901,7 +1901,7 @@
 
  subroutine SHOW_ALL_BAD_1D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:) !< temperature in degrees Kelvin (K)
- integer :: i, ind, unit
+ integer :: i, ind, iunit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
  real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
@@ -1912,11 +1912,11 @@
  tminll=real(tmin,FMS_SVP_KIND_)
  tepsll=real(teps,FMS_SVP_KIND_)
 
- unit = stdoutunit
+ iunit = stdoutunit
  do i=1,size(temp)
    ind = int( dtinvll*(temp(i)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
+     write(iunit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
    endif
  enddo
 
@@ -1926,7 +1926,7 @@
 
  subroutine SHOW_ALL_BAD_2D_ ( temp )
  real(kind=FMS_SVP_KIND_)   , intent(in) :: temp(:,:) !< temperature in degrees Kelvin (K)
- integer :: i, j, ind, unit
+ integer :: i, j, ind, iunit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
  real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
@@ -1937,12 +1937,12 @@
  tminll=real(tmin,FMS_SVP_KIND_)
  tepsll=real(teps,FMS_SVP_KIND_)
 
- unit = stdoutunit
+ iunit = stdoutunit
  do j=1,size(temp,2)
  do i=1,size(temp,1)
    ind = int( dtinvll*(temp(i,j)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+     write(iunit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
    endif
  enddo
  enddo
@@ -1953,7 +1953,7 @@
 
  subroutine SHOW_ALL_BAD_3D_ ( temp )
  real(kind=FMS_SVP_KIND_), intent(in)  :: temp(:,:,:) !< temperature in degrees Kelvin (K)
- integer :: i, j, k, ind, unit
+ integer :: i, j, k, ind, iunit
  !> DTINV, TMIN, TEPS are module level variables declared in r8_kind
  !! Thus they need to be converted to FMS_SVP_KIND_
  real(FMS_SVP_KIND_) :: dtinvll !< local version of module variable dtinvl
@@ -1964,13 +1964,13 @@
  tminll=real(tmin,FMS_SVP_KIND_)
  tepsll=real(teps,FMS_SVP_KIND_)
 
- unit = stdoutunit
+ iunit = stdoutunit
  do k=1,size(temp,3)
  do j=1,size(temp,2)
  do i=1,size(temp,1)
    ind = int( dtinvll*(temp(i,j,k)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k, &
+     write(iunit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k, &
           & ' pe=',mpp_pe()
    endif
  enddo
