@@ -45,7 +45,7 @@ program test_interpolator2
 
   implicit none
 
-  character(100), parameter :: ncfile='immadeup.o3.climatology.nc' !< fake climatology file.
+  character(100), parameter :: ncfile='immadeup.o3.climatology.nc' !< fake climatology file
   integer, parameter :: lkind=TEST_INTP_KIND_
   !> the interpolation methods are not perfect.Will not get perfectly agreeing answers
   real(r8_kind) :: tol
