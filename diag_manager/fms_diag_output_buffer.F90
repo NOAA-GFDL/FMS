@@ -27,7 +27,7 @@ module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
 use iso_c_binding
-use time_manager_mod, only: time_type, operator(==)
+use time_manager_mod, only: time_type, operator(==), operator(>)
 use mpp_mod, only: mpp_error, FATAL, NOTE
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
                          time_min, time_max
@@ -54,6 +54,7 @@ type :: fmsDiagOutputBuffer_type
   integer               :: field_id           !< The id of the field the buffer belongs to
   integer               :: yaml_id            !< The id of the yaml id the buffer belongs to
   logical               :: done_with_math     !< .True. if done doing the math
+  type(time_type)       :: time               !< The last time the data was received
 
   contains
   procedure :: add_axis_ids
@@ -62,6 +63,8 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_field_id
   procedure :: set_yaml_id
   procedure :: get_yaml_id
+  procedure :: init_buffer_time
+  procedure :: update_buffer_time
   procedure :: is_done_with_math
   procedure :: set_done_with_math
   procedure :: write_buffer
@@ -324,6 +327,35 @@ subroutine set_yaml_id(this, yaml_id)
   this%yaml_id = yaml_id
 end subroutine set_yaml_id
 
+!> @brief inits the buffer time for the buffer
+subroutine init_buffer_time(this, time)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  type(time_type), optional,       intent(in)    :: time        !< time to add to the buffer
+
+  if (present(time)) then
+    this%time = time
+  else
+    this%time = get_base_time()
+  endif
+end subroutine init_buffer_time
+
+!> @brief Update the buffer time if it is a new time
+!! @return .true. if the buffer was updated
+function update_buffer_time(this, time) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  type(time_type),                 intent(in)    :: time        !< time to add to the buffer
+
+  logical :: res
+
+  if (time > this%time) then
+    this%time = time
+    res = .true.
+  else
+    res = .false.
+  endif
+end function
+
 !> @brief Determine if finished with math
 !! @return this%done_with_math
 function is_done_with_math(this) &
@@ -555,7 +587,8 @@ end function do_time_max_wrapper
 
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
-function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bounds_out, missing_value) &
+function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bounds_out, missing_value, &
+                             increase_counter) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
@@ -564,6 +597,8 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
   logical,                         intent(in)    :: mask(:,:,:,:)       !< Mask for the field
   logical,                         intent(in)    :: is_masked           !< .True. if the field has a mask
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  logical,                         intent(in)    :: increase_counter    !< .True. if data has not been received for
+                                                                        !! time, so the counter needs to be increased
   character(len=50) :: err_msg
 
   !TODO This will be expanded for integers
@@ -573,7 +608,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       select type (field_data)
       type is (real(kind=r8_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, &
-                                bounds_in, bounds_out, missing_value)
+                                bounds_in, bounds_out, missing_value, increase_counter)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
@@ -581,7 +616,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       select type (field_data)
       type is (real(kind=r4_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, bounds_in, bounds_out, &
-          real(missing_value, kind=r4_kind))
+          real(missing_value, kind=r4_kind), increase_counter)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select

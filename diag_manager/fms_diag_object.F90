@@ -238,6 +238,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
     call bufferptr%set_field_id(this%registered_variables)
     call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
+    call bufferptr%init_buffer_time(init_time)
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
@@ -846,6 +847,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   real(kind=r8_kind)        :: missing_value      !< Missing_value for data points that are masked
                                                   !! This will obtained as r8 and converted to the right type as
                                                   !! needed. This is to avoid yet another select type ...
+  logical                   :: new_time           !< .True. if this is a new time (i.e data has not be been
+                                                  !! sent for this time)
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
@@ -959,13 +962,14 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       endif
     case (time_sum)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value)
+        bounds_in, bounds_out, missing_value, .true.)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_average)
+      new_time = buffer_ptr%update_buffer_time(time)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value)
+        bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif

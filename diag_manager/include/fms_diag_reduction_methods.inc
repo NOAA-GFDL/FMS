@@ -215,7 +215,7 @@ end subroutine DO_TIME_MAX_
 !!
 !! Where l are the indices passed in through the bounds_in/out
 subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, &
-                               missing_value, weight, pow)
+                               missing_value, increase_counter, weight, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(r8_kind),       intent(inout) :: weight_sum          !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
@@ -226,6 +226,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
                                                                   !! of the output buffer
   real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  logical,                   intent(in)    :: increase_counter    !< .True. if data has not been received for
+                                                                  !! time, so the counter needs to be increased
   real(r8_kind),optional, intent(in) :: weight              !< Weight applied to data_in before added to data_out
                                                                   !! used for weighted averages, default 1.0
   real(FMS_TRM_KIND_),optional, intent(in) :: pow                 !< Used for pow reduction, adds field^pow to buffer
@@ -251,7 +253,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   endif
 
   ! update with given weight for average before write
-  weight_sum = weight_sum + weight_loc
+  if (increase_counter) weight_sum = weight_sum + weight_loc
 
   is_out = bounds_out%get_imin()
   ie_out = bounds_out%get_imax()
