@@ -57,7 +57,7 @@ integer, parameter :: lkind=FMS_FM_KIND_
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
@@ -126,7 +126,7 @@ integer                          :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
