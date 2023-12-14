@@ -34,11 +34,19 @@
     real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
     integer,parameter     :: kindl = FMS_HI_KIND_
+    logical               :: decreasing_lat !< .True. if latitude is monotically decreasing
+    logical               :: decreasing_lon !< .True. if longitude is monotically decreasing
 
     warns = 0
     if(present(verbose)) warns = verbose
     src_is_modulo = .true.
     if (present(src_modulo)) src_is_modulo = src_modulo
+
+    decreasing_lat = .false.
+    if (lat_in(1) > lat_in(2)) decreasing_lat = .true.
+
+    decreasing_lon = .false.
+    if (lon_in(1) > lon_in(2)) decreasing_lon = .true.
 
     hpi = 0.5_kindl * real(pi, FMS_HI_KIND_)
     tpi = 4.0_kindl * hpi
@@ -95,11 +103,23 @@
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = indp(lon, lon_in )
-          if( lon_in(is) .gt. lon ) is = max(is-1,1)
+          is = nearest_index(lon, lon_in )
+          if (decreasing_lon) then
+            ! Lon_in is increasing
+            ! This is so that is is the lower bound.
+            ! For example, if the array is [50 40 30 20 10] and lon is 11, `is` is going to be 5 from `nearest_index`
+            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
+            if( lon_in(is) .lt. lon ) is = max(is-1,1)
+          else
+            ! Lon_in is increasing
+            ! This is so that is is the lower bound.
+            ! For example, if the array is [10 20 30 40 50] and lon is 49, `is` is going to be 5 from `nearest_index`
+            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
+            if( lon_in(is) .gt. lon ) is = max(is-1,1)
+          endif
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
-          if(lon_in(is) .ne. lon_in(ie) .and. lon_in(is) .le. lon) then
+          if(lon_in(is) .ne. lon_in(ie) .and. (decreasing_lon .or. lon_in(is) .le. lon)) then
              wtw = ( lon_in(ie) - lon) / (lon_in(ie) - lon_in(is) )
           else
              !     east or west of the last data value. this could be because a
@@ -115,13 +135,18 @@
           endif
           wte = 1.0_kindl - wtw
 
-          js = indp(lat, lat_in )
-
-          if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
+          js = nearest_index(lat, lat_in )
+          if (decreasing_lat) then
+            ! Lat_in is decreasing
+            if( lat_in(js) .lt. lat ) js = max(js - 1, 1)
+          else
+            ! Lat_in is increasing
+            if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
+          endif
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
           je = min(js + 1, nlat_in)
 
-          if ( lat_in(js) .ne. lat_in(je) .and. lat_in(js) .le. lat) then
+          if ( lat_in(js) .ne. lat_in(je) .and. (decreasing_lat .or. lat_in(js) .le. lat)) then
              wts = ( lat_in(je) - lat )/(lat_in(je)-lat_in(js))
           else
              !     north or south of the last data value. this could be because a
@@ -1180,51 +1205,4 @@
     return
 
   end subroutine
-
-
-  !#######################################################################
-  !> @returns index of nearest data point to "value"
-  !! if "value" is outside the domain of "array" then INDP_ = 1
-  !! or "ia" depending on whether array(1) or array(ia) is
-  !! closest to "value"
-  function INDP_ (rval, array)
-    integer                        :: INDP_ !< index of nearest data point within "array"
-                                           !! corresponding to "value".
-    real(FMS_HI_KIND_), dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
-    real(FMS_HI_KIND_), intent(in)               :: rval !< arbitrary data, same units as elements in 'array'
-
-    !=======================================================================
-
-    integer i, ia, iunit
-    logical keep_going
-    !
-    ia = size(array(:))
-    do i=2,ia
-       if (array(i) .lt. array(i-1)) then
-          iunit = stdout()
-          write (iunit,*) &
-               ' => Error: array must be monotonically increasing in "INDP_"' , &
-               '           when searching for nearest element to value=',rval
-          write (iunit,*) '           array(i) < array(i-1) for i=',i
-          write (iunit,*) '           array(i) for i=1..ia follows:'
-          call mpp_error()
-       endif
-    enddo
-    if (rval .lt. array(1) .or. rval .gt. array(ia)) then
-       if (rval .lt. array(1))  INDP_ = 1
-       if (rval .gt. array(ia)) INDP_ = ia
-    else
-       i=1
-       keep_going = .true.
-       do while (i .le. ia .and. keep_going)
-          i = i+1
-          if (rval .le. array(i)) then
-             INDP_ = i
-             if (array(i)-rval .gt. rval-array(i-1)) INDP_ = i-1
-             keep_going = .false.
-          endif
-       enddo
-    endif
-    return
-  end function INDP_
 !> @}

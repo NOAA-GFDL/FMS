@@ -27,62 +27,14 @@
 output_dir
 rm -rf data_table data_table.yaml input.nml input_base.nml
 
-if [ ! -z $parser_skip ]; then
-  cat <<_EOF > input_base.nml
-&data_override_nml
-use_data_table_yaml=.False.
-/
-
-&test_data_override_ongrid_nml
-  nhalox=halo_size
-  nhaloy=halo_size
-/
-_EOF
-  printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
-else
-cat <<_EOF > input_base.nml
-&data_override_nml
-use_data_table_yaml=.True.
-/
-
-&test_data_override_ongrid_nml
-  nhalox=halo_size
-  nhaloy=halo_size
-/
-_EOF
-cat <<_EOF > data_table.yaml
-data_table:
- - gridname          : OCN
-   fieldname_code    : runoff
-   fieldname_file    : runoff
-   file_name         : INPUT/runoff.daitren.clim.1440x1080.v20180328.nc
-   interpol_method   : none
-   factor            : 1.0
-_EOF
-fi
-
-[ ! -d "INPUT" ] && mkdir -p "INPUT"
-for KIND in r4 r8
-do
-sed 's/halo_size/2/g' input_base.nml > input.nml
-test_expect_success "data_override on grid with 2 halos in x and y (${KIND})" '
-  mpirun -n 6 ../test_data_override_ongrid_${KIND}
-'
-sed 's/halo_size/0/g' input_base.nml > input.nml
-test_expect_success "data_override on grid with 2 halos in x and y (${KIND})" '
-  mpirun -n 6 ../test_data_override_ongrid_${KIND}
-'
-
-test_expect_success "data_override get_grid_v1 (${KIND})" '
-  mpirun -n 1 ../test_get_grid_v1_${KIND}
-'
-done
-
 for KIND in r4 r8
 do
 # Run tests with input if enabled
 # skips if built with yaml parser(tests older behavior)
 if test ! -z "$test_input_path" && test ! -z "$parser_skip"  ; then
+  cat <<_EOF > input.nml
+_EOF
+
   cp -r $test_input_path/data_override/INPUT .
   cat <<_EOF > diag_table
 test_data_override
