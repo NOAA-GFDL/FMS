@@ -63,9 +63,12 @@ use horiz_interp_mod,  only : horiz_interp_type, &
 use time_manager_mod,  only : time_type,   &
                               set_time,    &
                               set_date,    &
-                              get_date,    &
+                              time_type_to_real, &
+                              days_in_year, &
                               get_calendar_type, &
+                              leap_year, &
                               JULIAN, NOLEAP, &
+                              get_date, &
                               get_date_julian, set_date_no_leap, &
                               set_date_julian, get_date_no_leap, &
                               print_date, &
@@ -435,8 +438,8 @@ type(interpolate_type), intent(inout) :: Out
 
      Out%interph = In%interph
      if (allocated(In%time_slice)) Out%time_slice =  In%time_slice
-     Out%file_name = In%file_name
-     Out%time_flag = In%time_flag
+     Out%file_name  = In%file_name
+     Out%time_flag  = In%time_flag
      Out%level_type = In%level_type
      Out%is = In%is
      Out%ie = In%ie
@@ -708,18 +711,14 @@ else if(clim_type%r8_type%is_allocated) then
       deallocate(clim_type%r8_type%nmon_pyear)
    end if
 endif
-if (allocated(clim_type%indexm)) deallocate(clim_type%indexm)
-if (allocated(clim_type%indexp)) deallocate(clim_type%indexp)
-if (allocated(clim_type%climatology)) deallocate(clim_type%climatology)
-if (allocated(clim_type%clim_times)) deallocate(clim_type%clim_times)
 
 clim_type%r4_type%is_allocated=.false.
 clim_type%r8_type%is_allocated=.false.
 
 !! RSH mod
-if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &
+if( .not.(clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) &
+   .and. (clim_type%TIME_FLAG.ne.NOTIME) ) then
 !     read_all_on_init)) .or. clim_type%TIME_FLAG .eq. BILINEAR  ) then
-      read_all_on_init)  ) then
      call close_file(clim_type%fileobj)
 endif
 

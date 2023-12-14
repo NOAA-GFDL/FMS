@@ -24,9 +24,6 @@ subroutine write_climatology_file
   implicit none
 
   type(FmsNetcdfFile_t) :: fileobj
-  integer :: i,j,k,l, itime
-  integer :: stringlen
-  character(100) :: mystring
 
   ! write netcdf file
   if(open_file(fileobj, 'INPUT/'//trim(ncfile), 'overwrite')) then
@@ -44,9 +41,10 @@ subroutine write_climatology_file
      !if(ntime /=0 ) then
      call register_field(fileobj, 'time', 'double', dimensions=(/'time'/))
      call register_string_attribute(fileobj, 'time', 'axis', 'T')
-     call register_string_attribute(fileobj, 'time', 'calendar', 'noleap')
-     call register_string_attribute(fileobj, 'time', 'climatology', '1979-01-01 00:00:00, 1998-01-01 00:00:00')
-     call register_string_attribute(fileobj, 'time', 'units', 'days since 1849-01-01 00:00:00')
+     if(noleap) call register_string_attribute(fileobj, 'time', 'calendar', 'noleap')
+     if(.not.noleap) call register_string_attribute(fileobj, 'time', 'calendar', 'julian')
+     if(daily)  call register_string_attribute(fileobj, 'time', 'units', 'days since 1849-01-01 01:01:01')
+     if(yearly) call register_string_attribute(fileobj, 'time', 'units', 'years since 1849-01-01 01:01:01')
      !end if
 
      !lon axes
@@ -119,52 +117,31 @@ subroutine register_string_attribute(fileobj, variable, attribute, att_value)
 
 end subroutine register_string_attribute
 !===============================================!
-subroutine allocate_arrays()
-
-  implicit none
-  integer :: ntime2
-
-  ntime2=ntime
-  if(ntime==0) ntime2=1
-
-  allocate( lat(nlonlat),     &
-            lon(nlonlat),     &
-            latb(nlonlatb),   &
-            lonb(nlonlatb),   &
-            clim_time(ntime2),&
-            pfull(npfull),    &
-            phalf(nphalf),    &
-            ozone(nlonlat, nlonlat, npfull, ntime2) )
-
-  allocate( lat_mod(nlonlat_mod, nlonlat_mod),    &
-            lon_mod(nlonlat_mod, nlonlat_mod),    &
-            latb_mod(nlonlatb_mod, nlonlatb_mod), &
-            lonb_mod(nlonlatb_mod, nlonlatb_mod) )
-
-end subroutine allocate_arrays
-!===============================================!
 subroutine deallocate_arrays()
 
   implicit none
-  deallocate( lat,   &
-              lon,   &
-              latb,  &
-              lonb,  &
-              clim_time,  &
+  deallocate( lat,  &
+              lon,  &
+              latb, &
+              lonb, &
+              clim_time, &
+              model_time_noleap, &
+              model_time_julian, &
               pfull, &
               phalf, &
-              lat_mod,   &
-              lon_mod,   &
-              latb_mod,  &
-              lonb_mod,  &
+              lat_mod,  &
+              lon_mod,  &
+              latb_mod, &
+              lonb_mod, &
               ozone )
 
 end subroutine deallocate_arrays
 !===============================================!
-subroutine set_write_data(nlonlat_in, nlonlat_mod_in, ntime_in, npfull_in)
+subroutine set_parameters(nlonlat_in, nlonlat_mod_in, ntime_in, npfull_in, daily_in, yearly_in, noleap_in)
 
   implicit none
   integer, intent(in) :: nlonlat_in, nlonlat_mod_in, ntime_in, npfull_in
+  logical, intent(in) :: daily_in, yearly_in, noleap_in
 
   nlonlat  = nlonlat_in   !< number of latitude and longitudinal center coordinates
   nlonlatb = nlonlat_in+1 !< number of latitude and longitudinal boundary coordinates
@@ -173,25 +150,117 @@ subroutine set_write_data(nlonlat_in, nlonlat_mod_in, ntime_in, npfull_in)
   ntime  = ntime_in    !< number of time slices
   npfull = npfull_in   !< number of p levels
   nphalf = npfull_in+1 !< number of half p levels
-  call allocate_arrays()
+
+  daily  = daily_in
+  yearly = yearly_in
+  noleap = noleap_in
+
+end subroutine set_parameters
+!===============================================!
+subroutine set_and_write_data
+
+  implicit none
+
   if( ntime /= 0) call set_clim_time()
   call set_latlon_b()
+  call set_latlon_b_mod()
   call set_pfullhalf()
   call set_ozone()
-  call write_climatology_file()
+  call write_climatology_file
 
-  call set_latlon_b_mod()
-
-end subroutine set_write_data
+end subroutine set_and_write_data
 !===============================================!
 subroutine set_clim_time()
 
   implicit none
   integer :: i
 
-  do i=1, ntime
-     clim_time(i)=2*i
-  end do
+  type(time_type) :: base_time
+  integer :: l, ii, yr, mo, dy, hr, mn, sc
+  integer :: ntime2
+
+  if(allocated(clim_time)) deallocate(clim_time)
+  if(allocated(model_time_julian)) deallocate(model_time_julian)
+  if(allocated(model_time_noleap)) deallocate(model_time_noleap)
+  allocate(clim_time(ntime))
+  allocate(model_time_julian(ntime), model_time_noleap(ntime))
+
+  !write(*,*) ' -- SETTING TIME -- '
+
+  hr = 1 ; mn = 1 ; sc = 1
+
+  if(test_file_daily_noleap) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_no_leap(1849,1,1,hr,mn,sc)
+     yr = 1849 ; mo = 1 ; dy = 15
+     do i=1, ntime
+        yr = yr + 1
+        mo = mo + 1 ; if( mo > 12 ) mo=1
+        dy = 15
+        model_time_julian(i)=set_date_julian(yr, mo, dy, hr, mn, sc)
+        model_time_noleap(i)=set_date_no_leap(yr, mo, dy, hr, mn, sc)
+        clim_time(i)=time_type_to_real(model_time_noleap(i)-base_time)/86400._r8_kind
+        !call print_time(model_time_noleap(i))
+     end do
+  else if(test_file_daily_julian) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_julian(1849,1,1,hr,mn,sc)
+     yr = 1849 ; mo = 1 ; dy = 15
+     do i=1, ntime
+        yr = yr + 1
+        mo = mo + 1 ; if( mo > 12 ) mo=1
+        dy = 15
+        model_time_julian(i)=set_date_julian(yr, mo, dy, hr, mn, sc)
+        model_time_noleap(i)=set_date_no_leap(yr, mo, dy, hr, mn, sc)
+        clim_time(i)=time_type_to_real(model_time_julian(i)-base_time)/86400._r8_kind
+        !call print_time(model_time_julian(i))
+     end do
+  else if(test_file_yearly_noleap) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_no_leap(1849,1,1,hr,mn,sc)
+     yr = 1849 ; mo = 1 ; dy = 15
+     do i=1, ntime
+        yr = yr + 1
+        mo = mo + 1 ; if( mo > 12 ) mo=1
+        dy = 15
+        model_time_julian(i)=set_date_julian(yr, mo, dy, hr, mn, sc)
+        model_time_noleap(i)=set_date_no_leap(yr, mo, dy, hr, mn, sc)
+        clim_time(i)=real(yr-1849,r8_kind)
+        do ii=1, mo-1
+           select case(ii)
+           case(1,3,5,7,8,10,12) ; clim_time(i) = clim_time(i) + 31.0_r8_kind/365._r8_kind
+           case(2) ; clim_time(i) = clim_time(i) + 28._r8_kind/365._r8_kind
+           case(4,6,9,11) ; clim_time(i) = clim_time(i) + 30.0_r8_kind/365._r8_kind
+           end select
+        end do
+        clim_time(i) = clim_time(i) + real(dy-1,r8_kind)/365._r8_kind
+        !call print_time(model_time_noleap(i))
+     end do
+  else if(test_file_yearly_julian) then
+     ! base_time must match that in the time attribute
+     base_time=set_date_julian(1849,1,1,hr,mn,sc)
+     yr = 1849 ; mo = 1 ; dy = 15
+     call set_calendar_type(2)
+     do i=1, ntime
+        yr = yr + 1
+        mo = mo + 1 ; if( mo > 12 ) mo=1
+        dy = 15
+        model_time_julian(i)=set_date_julian(yr,mo,dy,hr,mn,sc)
+        model_time_noleap(i)=set_date_no_leap(yr,mo,dy,hr,mn,sc)
+        clim_time(i)=real(yr-1849,lkind)
+        l=0 ; if(leap_year(model_time_julian(i))) l=l+1
+        do ii=1, mo-1
+           select case(ii)
+           case(1,3,5,7,8,10,12) ; clim_time(i) = clim_time(i) + 31.0_r8_kind/real(365+l,r8_kind)
+           case(2) ; clim_time(i) = clim_time(i) + real(28+l,r8_kind)/real(365+l,r8_kind)
+           case(4,6,9,11) ; clim_time(i) = clim_time(i) + 30.0_r8_kind/real(365+l,r8_kind)
+           end select
+        end do
+        clim_time(i) = clim_time(i) + real(dy-1,r8_kind)/real(365+l,r8_kind)
+        !call print_time(model_time_julian(i))
+     end do
+     call set_calendar_type(0)
+  end if
 
 end subroutine set_clim_time
 !===============================================!
@@ -199,6 +268,14 @@ subroutine set_latlon_b()
 
   implicit none
   integer :: i
+
+  if(allocated(lat))  deallocate(lat)
+  if(allocated(lon))  deallocate(lon)
+  if(allocated(latb)) deallocate(latb)
+  if(allocated(lonb)) deallocate(lonb)
+
+  allocate(lat(nlonlat), lon(nlonlat))
+  allocate(latb(nlonlat+1), lonb(nlonlat+1))
 
   do i=1, nlonlat
      lat(i)= real(2*i-1,TEST_INTP_KIND_)
@@ -222,20 +299,26 @@ subroutine set_latlon_b_mod
   implicit none
   integer :: i, j
 
-  !> the model grid and the climatology grid are the same
-  do i=1, nlonlat
-     lon_mod(:,i) = real(2*i-1,TEST_INTP_KIND_)
-     lat_mod(i,:) = real(2*i-1,TEST_INTP_KIND_)
-  end do
+  if(allocated(lat_mod))  deallocate(lat_mod)
+  if(allocated(lon_mod))  deallocate(lon_mod)
+  if(allocated(latb_mod)) deallocate(latb_mod)
+  if(allocated(lonb_mod)) deallocate(lonb_mod)
 
-  lonb_mod(1:nlonlatb,1)=1.0_lkind
-  latb_mod(1,1:nlonlatb)=1.0_lkind
-  do i=1, nlonlat-1
-     lonb_mod(1:nlonlatb,i+1)=2*i
-     latb_mod(i+1,1:nlonlatb)=2*i
+  allocate(lat_mod(nlonlat_mod,nlonlat_mod), lon_mod(nlonlat_mod,nlonlat_mod))
+  allocate(latb_mod(nlonlatb_mod,nlonlatb_mod), lonb_mod(nlonlatb_mod,nlonlatb_mod))
+
+  !> nlonlat = nlonlat_mod
+  ! the model coordinates are the same as the file coordinates
+  do i=1, nlonlat_mod
+     lat_mod(i,:) = lat(i)
+     lon_mod(:,i) = lon(i)
   end do
-  lonb_mod(1:nlonlatb,nlonlatb)=real(2*nlonlat-1,TEST_INTP_KIND_)
-  latb_mod(nlonlatb,1:nlonlatb)=real(2*nlonlat-1,TEST_INTP_KIND_)
+  !> nlonlatb_mod = nlonlatb
+  !! the model coordinates are the same as the file coordinates
+  do i=1, nlonlatb_mod
+     latb_mod(i,:) = latb(i)
+     lonb_mod(:,i) = lonb(i)
+  end do
 
   !> convert from degrees to radians
   lon_mod  = lon_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
@@ -250,6 +333,10 @@ subroutine set_pfullhalf()
 
   implicit none
   integer :: i
+
+  if(allocated(pfull)) deallocate(pfull)
+  if(allocated(phalf)) deallocate(phalf)
+  allocate(pfull(npfull), phalf(nphalf))
 
   do i=1, npfull
      pfull(i) = 0.0001_lkind * real(i-1,TEST_INTP_KIND_)
@@ -271,12 +358,13 @@ subroutine set_ozone()
 
   ntime2=ntime
   if(ntime == 0 ) ntime2=1
-
+  if(allocated(ozone)) deallocate(ozone)
+  allocate(ozone(nlonlat, nlonlat, npfull, ntime2))
   do i=1, ntime2
      do j=1, npfull
         do k=1, nlonlat
            do l=1, nlonlat
-              ozone(l,k,j,i)=real(i,TEST_INTP_KIND_)
+              ozone(l,k,j,i)= real(i,TEST_INTP_KIND_)
            end do
         end do
      end do
