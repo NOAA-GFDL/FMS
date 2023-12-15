@@ -39,12 +39,6 @@ test_field_table_read_SOURCES = test_field_table_read.F90
 test_field_manager_r4_CPPFLAGS=-DTEST_FM_KIND_=4 -I$(MODDIR)
 test_field_manager_r8_CPPFLAGS=-DTEST_FM_KIND_=8 -I$(MODDIR)
 
-if SKIP_PARSER_TESTS
-skipflag="skip"
-else
-skipflag=""
-endif
-
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh
 TESTS_ENVIRONMENT= parser_skip=${skipflag}
