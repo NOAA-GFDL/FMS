@@ -58,7 +58,7 @@ _EOF
 test_expect_success "tracer_manager r4 with the legacy field table" 'mpirun -n 2 ./test_tracer_manager_r4'
 test_expect_success "tracer_manager r8 with the legacy field table" 'mpirun -n 2 ./test_tracer_manager_r8'
 
-if [ -z $parser_skip ]; then
+if [ $parser_skip ]; then
 rm -rf field_table
 cat <<_EOF > input.nml
 &field_manager_nml
