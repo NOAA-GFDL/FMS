@@ -58,21 +58,6 @@ test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
 test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 
-test_data_override_ongrid_r4_SOURCES = test_data_override_ongrid.F90
-test_data_override_ongrid_r8_SOURCES = test_data_override_ongrid.F90
-
-test_get_grid_v1_r4_SOURCES = test_get_grid_v1.F90
-test_get_grid_v1_r8_SOURCES = test_get_grid_v1.F90
-
-test_data_override_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
-test_data_override_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
-
-test_data_override_ongrid_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
-test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
-
-test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
-test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
-
 if USING_YAML
 skipflag=""
 else
