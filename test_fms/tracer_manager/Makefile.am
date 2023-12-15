@@ -38,6 +38,12 @@ test_tracer_manager_r8_SOURCES = test_tracer_manager.F90
 test_tracer_manager_r4_CPPFLAGS=-DTEST_TM_KIND_=4 -I$(MODDIR)
 test_tracer_manager_r8_CPPFLAGS=-DTEST_TM_KIND_=8 -I$(MODDIR)
 
+if USING_YAML
+skipflag="skip"
+else
+skipflag=""
+endif
+
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh
 TESTS_ENVIRONMENT= parser_skip=${skipflag}
