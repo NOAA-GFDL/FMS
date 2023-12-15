@@ -39,7 +39,7 @@ use platform_mod
        & fms_error_handler, FATAL, NOTE
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
-       & first_send_data_call, diag_atttype, use_modern_diag, TWO_D_DOMAIN
+       & first_send_data_call, diag_atttype, use_modern_diag
   use fms_diag_object_mod, only:fms_diag_object
 #ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
