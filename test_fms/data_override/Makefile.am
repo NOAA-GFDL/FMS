@@ -58,6 +58,21 @@ test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
 test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 
+test_data_override_ongrid_r4_SOURCES = test_data_override_ongrid.F90
+test_data_override_ongrid_r8_SOURCES = test_data_override_ongrid.F90
+
+test_get_grid_v1_r4_SOURCES = test_get_grid_v1.F90
+test_get_grid_v1_r8_SOURCES = test_get_grid_v1.F90
+
+test_data_override_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
+test_data_override_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
+
+test_data_override_ongrid_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
+test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
+
+test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
+test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
+
 if USING_YAML
 skipflag=""
 else
@@ -71,10 +86,11 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@" \
                    parser_skip=${skipflag}
 
 # Run the test program.
-TESTS = test_data_override2.sh
+
+TESTS = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = test_data_override2.sh
+EXTRA_DIST = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*

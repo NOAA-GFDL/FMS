@@ -6,6 +6,26 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2023.04] - 2023-12-04
+### Known Issues
+- GCC 9 and below as well as GCC 11.1.0 are unsupported due to compilation issues. See prior releases for more details.
+- `NO_QUAD_PRECISION` macro is no longer set by FMS, the `ENABLE_QUAD_PRECISION` macro has replaced prior usage of `NO_QUAD_PRECISION`. `-DENABLE_QUAD_PRECISION` should be set if quad precision is to be used, otherwise FMS will not use quad precision reals where applicable.
+
+### Added
+- DATA_OVERRIDE: A new namelist flag `use_data_table_yaml` has been added to enable usage of the yaml format data_override tables. This allows an executable built with yaml support be able to accept either format.
+
+### Changed
+- RESERVED KEYWORD CHANGES: Various routines in FMS have been updated to not use fortran keywords for variable names. The names changed were: `data`, `unit`, and `value`. This may affect usage of external code if argument names are explicitly used. Only required arguement names were changed to mitigate any breaking changes.
+- TESTS: Changes the testing scripts to allow for the `MPI_LAUNCHER` environment variable override to work with any provided arguments.
+
+### Fixed
+- CMAKE: Fixed build issue with CMake where precision default flags were being overwritten when using GNU and MPICH.
+- AUTOTOOLS: Fixes issue affecting installs where the global libFMS.F90 module was not being installed correctly and adds post-install message.
+- DIAG_MANAGER: Fixes issue with incorrect start_time functionality (from the 2023.02.01 patch)
+
+### Tag Commit Hashes
+- 2023.04-beta1 be1856c45accfe2fb15953c5f51e0d58a8816882
+
 ## [2023.03] - 2023-10-27
 ### Known Issues
 - GCC 9 and below as well as GCC 11.1.0 are unsupported due to compilation issues. See prior releases for more details.
