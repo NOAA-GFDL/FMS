@@ -2899,6 +2899,25 @@ end subroutine set_comm_put1
 
 
 !###############################################################################
+!> @brief Regenerate/Update the xmap
+!! @details This subroutine basically regenerates the exchange grid via updating the xmap.
+!! Practically xmap is the object specifying the exchange grid and has all the relevant information of Xgrid.
+!! Particularly note that regenerating the xmap/Xgrid accounts for dynamical changes of the subgrid parametrization
+!! of the side 2 components (land and ice-ocean).
+!! E.g., for when side 2 is the ice , the xgrid is regenrated so that
+!! OCN grid cells that are partially or totally open water contribute to (are side2 parent of) the Xgrid
+!! and conversely
+!! OCN grid cells that are totally ice covered do not contribute to (are kicked out of) the Xgrid.
+!! This makes xmap a dynamical object and a quiet powerful tool for flux exchange calculations.
+!!
+!! Things to keep in mind about xmap/xgrid:
+!! xgrid contains two sides:
+!!   side1: This is the side where 2d arrays are put to and get from the Xgrid
+!!   side2: This is the side where 3d arrays are put to and get from the Xgrid.
+!!          This was designed to enable exchange along sub-grid-scale (3rd dimension) for component models that have
+!!          subgrid scale parametrization (e.g., seaice categories and land tiles). 
+!! @param[inout] xmap exchange grid
+!!
 subroutine regen(xmap)
 type (xmap_type), intent(inout) :: xmap
 
@@ -3105,8 +3124,32 @@ type (xmap_type), intent(inout) :: xmap
 end subroutine regen
 
 !#######################################################################
-
 !> @brief Changes sub-grid portion areas and/or number.
+!! @details (re)sets the "fraction area" of the side 2 component grid cell. 
+!!  "fraction area" is a dynamic property of the component model (seaice or land) 
+!!  that needs to be updated after each timestep of that component in order for the exhange mechanism to work properly.
+!!  The input is a 3d array of numbers between 0 and 1. It signifies the 
+!!  fraction of the component grid cell area which has a model-specific property.
+!!  This property is used for some sub-grid scale parametrization in the component model.
+!!  E.g., for the seaice component model, the quantity of seaice in each grid cell (i,j) 
+!!  is distibuted into N=grid%km partitions (ice categories) each parametrized with a weight (part_size) that add to 1. 
+!!  E.g., for 6+2 thickness (h) categories used in GFDL seaice models we have
+!!  given  hlim(1, ..., 8) = [1.0e-10, 0.1, 0.3, 0.7, 1.1, 1.5, 2.0, 2.5] (meters)
+!!  Caterory n=1     : h <= hlim(1), essentially no ice
+!!  Caterory n=2...7 : hlim(n-1) < h <= hlim(n) 
+!!  Caterory n=8     : hlim(n-1) < h   , unlimimitted ice thickness  
+!!  E.g., if seaice in grid cell (i,j) is parameterized as 10% open water, 0% category 1, 40% category 2 , 50% category 3 then we have
+!!  f(i,j,1:km) = part_size(i,j,1:8) = [0.1, 0.0, 0.4, 0.5, 0.0, 0.0, 0.0, 0.0]
+!!
+!! @param[in] f real(r8_kind) 3D array
+!! @param[in] grid_id 3 character grid ID
+!! @param[inout] xmap exchange grid
+!! 
+!! <br>Example usage:
+!! @code{.F90}
+!! call fms_xgrid_set_frac_area (Ice%part_size(isc:iec,jsc:jec,:) , 'OCN', xmap_sfc) 
+!! @endcode
+!!
 subroutine set_frac_area_sg(f, grid_id, xmap)
 real(r8_kind), dimension(:,:,:), intent(in)    :: f !< fraction area to be set
 character(len=3),                intent(in)    :: grid_id !< 3 character grid ID
@@ -3284,7 +3327,7 @@ type (xmap_type),                intent(inout) :: xmap !< exchange grid
 
   if (grid_id==xmap%grids(1)%id) &
     call error_mesg ('xgrid_mod',  &
-                     'put_to_xgrid expects a 2D side 1 grid', FATAL)
+                     'put_side2_to_xgrid expects a 3D side 2 grid', FATAL)
 
   do g=2,size(xmap%grids(:))
     if (grid_id==xmap%grids(g)%id) then
