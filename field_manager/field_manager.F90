@@ -155,16 +155,14 @@
 !> @addtogroup field_manager_mod
 !> @{
 module field_manager_mod
-#ifndef use_yaml
+!TODO this variable can be removed when the legacy table is no longer used
 #ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
 #endif
-#endif
 
-#ifndef use_yaml
+!TODO this variable can be removed when the legacy table is not longer used
 #ifndef MAXFIELDMETHODS_
 #define MAXFIELDMETHODS_ 250
-#endif
 #endif
 
 !
@@ -187,9 +185,11 @@ use    mpp_mod, only : mpp_error,   &
                        mpp_pe,      &
                        mpp_root_pe, &
                        stdlog,      &
-                       stdout
+                       stdout,      &
+                       input_nml_file
 use    fms_mod, only : lowercase,   &
-                       write_version_number
+                       write_version_number, &
+                       check_nml_error
 use fms2_io_mod, only: file_exists
 use platform_mod, only: r4_kind, r8_kind
 #ifdef use_yaml
@@ -253,7 +253,7 @@ private :: find_field          ! (field, list_p) return field pointer
 private :: find_head           ! (field, head, rest)
 private :: find_list           ! (list, list_p, create) return field pointer
 private :: get_field           ! (field, list_p) return field pointer
-private :: initialize          ! ()
+private :: initialize_module_variables          ! ()
 private :: make_list           ! (list_p, name) return field pointer
 
 !> The length of a character string representing the field name.
@@ -438,12 +438,12 @@ character(len=35), parameter :: warn_header       = '==>Warning from '//trim(mod
 character(len=32), parameter :: note_header       = '==>Note from '//trim(module_name)//': '
 character(len=1),  parameter :: comma             = ","
 character(len=1),  parameter :: list_sep          = '/'
-#ifndef use_yaml
+!TODO these variable can be removed when the legacy table is no longer used
 character(len=1),  parameter :: comment           = '#'
 character(len=1),  parameter :: dquote            = '"'
 character(len=1),  parameter :: equal             = '='
 character(len=1),  parameter :: squote            = "'"
-#endif
+!
 integer,           parameter :: null_type         = 0
 integer,           parameter :: integer_type      = 1
 integer,           parameter :: list_type         = 2
@@ -452,10 +452,10 @@ integer,           parameter :: real_type         = 4
 integer,           parameter :: string_type       = 5
 integer,           parameter :: num_types         = 5
 integer,           parameter :: array_increment   = 10
-#ifndef use_yaml
+!TODO these variable can be removed when the legacy table is no longer used
 integer,           parameter :: MAX_FIELDS        = MAXFIELDS_
 integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
-#endif
+!
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
@@ -463,14 +463,11 @@ type, private :: field_mgr_type
   character(len=fm_field_name_len)                    :: field_type
   character(len=fm_string_len)                        :: field_name
   integer                                             :: model, num_methods
-#ifdef use_yaml
   type(method_type), dimension(:), allocatable        :: methods !< methods associated with this field name
-#else
-  type(method_type)                                   :: methods(MAX_FIELD_METHODS)
-#endif
 end type field_mgr_type
 
-#ifndef use_yaml
+!TODO These two types: field_names_type and field_names_type_short
+!! will no longer be needed when the legacy field table is not used
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
 type, private :: field_names_type
@@ -485,7 +482,6 @@ type, private :: field_names_type_short
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
 end type field_names_type_short
-#endif
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
@@ -511,11 +507,7 @@ end type field_def
 !> @addtogroup field_manager_mod
 !> @{
 
-#ifdef use_yaml
 type(field_mgr_type), dimension(:), allocatable, private :: fields !< fields of field_mgr_type
-#else
-type(field_mgr_type), private :: fields(MAX_FIELDS)
-#endif
 
 character(len=fm_path_name_len)  :: loop_list
 character(len=fm_type_name_len)  :: field_type_name(num_types)
@@ -535,9 +527,12 @@ type (field_def), pointer        :: root_p             => NULL()
 type (field_def), pointer        :: save_root_parent_p => NULL()
 type (field_def), target, save   :: root
 
-contains
+logical :: use_field_table_yaml = .false. !< .True. if using the field_table.yaml,
+                                          !! .false. if using the legacy field_table
 
-#ifdef use_yaml
+namelist /field_manager_nml/ use_field_table_yaml
+
+contains
 
 !> @brief Routine to initialize the field manager.
 !!
@@ -560,6 +555,41 @@ subroutine field_manager_init(nfields, table_name)
 integer,                      intent(out), optional :: nfields    !< number of fields
 character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
 
+if (module_is_initialized) then
+   if(present(nfields)) nfields = num_fields
+   return
+endif
+
+call initialize_module_variables()
+
+!TODO the use_field_table_yaml namelist can be removed when the legacy table is no longer in used
+if (use_field_table_yaml) then
+  !Crash if you are not compiling with -Duse_yaml or if the field_table is present
+#ifndef use_yaml
+  call mpp_error(FATAL, "You cannot have use_field_table_yaml=.true. without compiling with -Duse_yaml")
+#else
+  if (file_exists("field_table")) &
+    call mpp_error(FATAL, "You cannot have the legacy field_table if use_field_table_yaml=.true.")
+
+  call mpp_error(NOTE, "You are using the yaml version of the field_table")
+  call read_field_table_yaml(nfields, table_name)
+#endif
+else
+  if (file_exists("field_table.yaml")) &
+    call mpp_error(FATAL, "You cannot have the yaml field_table if use_field_table_yaml=.false.")
+  call mpp_error(NOTE, "You are using the legacy version of the field_table")
+  call read_field_table_legacy(nfields, table_name)
+endif
+
+end subroutine field_manager_init
+
+#ifdef use_yaml
+
+!> @brief Routine to read and parse the field table yaml
+subroutine read_field_table_yaml(nfields, table_name)
+integer,                      intent(out), optional :: nfields    !< number of fields
+character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
+
 character(len=fm_string_len)    :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
 integer                         :: h, i, j, k, l, m !< dummy integer buffer
@@ -573,13 +603,6 @@ integer                         :: index_list_name !< integer used as check for 
 integer                         :: subparamindex !< index to identify whether subparams exist for this field
 logical                         :: fm_success !< logical for whether fm_change_list was a success
 logical                         :: subparams !< logical whether subparams exist in this iteration
-
-if (module_is_initialized) then
-   if(present(nfields)) nfields = num_fields
-   return
-endif
-
-call initialize
 
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table.yaml'
@@ -646,7 +669,7 @@ do h=1,my_table%nchildren
           fields(current_field)%methods(k)%method_name = &
             lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
           if (.not.subparams) then
-            call new_name(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
+            call new_name_yaml(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
               my_table%children(h)%children(i)%children(j)%values(k) )
           else
             subparamindex=-1
@@ -658,7 +681,7 @@ do h=1,my_table%nchildren
               end if
             end do
             if (subparamindex.eq.-1) then
-              call new_name(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
+              call new_name_yaml(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
                 my_table%children(h)%children(i)%children(j)%values(k) )
             else
               do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
@@ -673,7 +696,7 @@ do h=1,my_table%nchildren
                   &trim(fm_yaml_null)//&
                   &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
                 subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
-                call new_name(list_name, method_control, subparamvalue)
+                call new_name_yaml(list_name, method_control, subparamvalue)
               end do
             end if
           end if
@@ -685,7 +708,7 @@ end do
 
 if (present(nfields)) nfields = num_fields
 call my_table%destruct
-end subroutine field_manager_init
+end subroutine read_field_table_yaml
 
 !> @brief Subroutine to add new values to list parameters.
 !!
@@ -695,7 +718,7 @@ end subroutine field_manager_init
 !! method_name and is given the value or values in
 !! val_name_in. If there is more than 1 value in
 !! val_name_in, these values should be  comma-separated.
-subroutine new_name ( list_name, method_name_in , val_name_in)
+subroutine new_name_yaml ( list_name, method_name_in , val_name_in)
 character(len=*), intent(in)    :: list_name !< The name of the field that is of interest here.
 character(len=*), intent(in)    :: method_name_in !< The name of the method that values are
                                                   !! being supplied for.
@@ -819,17 +842,17 @@ enddo
   deallocate(start_val)
   deallocate(end_val)
 
-end subroutine new_name
-#else
+end subroutine new_name_yaml
+#endif
 
-!> @brief Routine to initialize the field manager.
+!> @brief Routine to read and parse the field table yaml
 !!
 !> This routine reads from a file containing formatted strings.
 !! These formatted strings contain information on which schemes are
 !! needed within various modules. The field manager does not
 !! initialize any of those schemes however. It simply holds the
 !! information and is queried by the appropriate  module.
-subroutine field_manager_init(nfields, table_name)
+subroutine read_field_table_legacy(nfields, table_name)
 
 integer,                      intent(out), optional :: nfields !< number of fields
 character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
@@ -864,13 +887,6 @@ type(method_type_short)          :: text_method_short
 type(method_type)                :: text_method
 type(method_type_very_short)     :: text_method_very_short
 
-if (module_is_initialized) then
-   if(present(nfields)) nfields = num_fields
-   return
-endif
-
-call initialize
-
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table'
 else
@@ -880,6 +896,8 @@ if (.not. file_exists(trim(tbl_name))) then
   if(present(nfields)) nfields = 0
   return
 endif
+
+allocate(fields(MAX_FIELDS))
 
 open(newunit=iunit, file=trim(tbl_name), action='READ', iostat=io_status)
 if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in opening file '//trim(tbl_name))
@@ -962,6 +980,7 @@ do while (.TRUE.)
       fields(num_fields)%field_name  = lowercase(trim(text_names%fld_name))
       fields(num_fields)%field_type  = lowercase(trim(text_names%fld_type))
       fields(num_fields)%num_methods = 0
+      allocate(fields(num_fields)%methods(MAX_FIELD_METHODS))
       call check_for_name_duplication
 
 ! Check to see that the first line is not the only line
@@ -1152,7 +1171,7 @@ return
 
 call mpp_error(FATAL,trim(error_header)//' Error reading field table. Record = '//trim(record))
 
-end subroutine field_manager_init
+end subroutine read_field_table_legacy
 
 subroutine check_for_name_duplication
 integer :: i
@@ -1360,26 +1379,20 @@ do i = 1, num_elem
 enddo
 
 end subroutine new_name
-#endif
 
 !> @brief Destructor for field manager.
 !!
 !> This subroutine deallocates allocated variables (if allocated) and
 !! changes the initialized flag to false.
 subroutine field_manager_end
-
-#ifdef use_yaml
 integer :: j
-#endif
 
 module_is_initialized = .false.
 
-#ifdef use_yaml
 do j=1,size(fields)
   if(allocated(fields(j)%methods)) deallocate(fields(j)%methods)
 end do
 if(allocated(fields)) deallocate(fields)
-#endif
 
 end subroutine field_manager_end
 
@@ -1984,7 +1997,7 @@ character(len=*), intent(in)  :: name !< name of a list to change to
 type (field_def), pointer, save :: temp_p
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Find the list if path is not empty
 temp_p => find_list(name, current_list_p, .false.)
@@ -2017,7 +2030,7 @@ type (field_def), pointer, save :: temp_list_p
 integer :: out_unit
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 out_unit = stdout()
 !        Must supply a field field name
@@ -2077,7 +2090,7 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
 
   recursive_t = .false.
   if (present(recursive)) recursive_t = recursive
-  if (.not. module_is_initialized) call initialize()
+  if (.not. module_is_initialized) call initialize_module_variables()
 
   if (name .eq. ' ') then
     ! If list is empty, then dump the current list
@@ -2111,7 +2124,7 @@ character(len=*), intent(in) :: name !< The name of the field that is being quer
 type (field_def), pointer, save :: dummy_p
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Determine whether the field exists
 dummy_p => get_field(name, current_list_p)
@@ -2137,7 +2150,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
@@ -2167,7 +2180,7 @@ character(len=fm_path_name_len) :: path
 type (field_def), pointer, save :: temp_list_p
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Set a pointer to the current list and proceed
 !        up the tree, filling in the name as we go
@@ -2215,7 +2228,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2256,7 +2269,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2291,7 +2304,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
@@ -2348,7 +2361,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
@@ -2406,7 +2419,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
@@ -2463,7 +2476,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 
 if (list .eq. loop_list .and. associated(loop_list_p)) then
@@ -2523,7 +2536,7 @@ subroutine fm_init_loop(loop_list, iter)
   character(len=*)       , intent(in)  :: loop_list !< name of the list to iterate over
   type(fm_list_iter_type), intent(out) :: iter     !< loop iterator
 
-  if (.not.module_is_initialized) call initialize
+  if (.not.module_is_initialized) call initialize_module_variables
 
   if (loop_list==' ') then ! looping over current list
      iter%ptr => current_list_p%first_field
@@ -2543,7 +2556,7 @@ function fm_loop_over_list_new(iter, name, field_type, index) &
   character(len=*), intent(out) :: field_type !< type of the field
   integer         , intent(out) :: index      !< index in the list
 
-  if (.not.module_is_initialized) call initialize
+  if (.not.module_is_initialized) call initialize_module_variables
   if (associated(iter%ptr)) then
      name       = iter%ptr%name
      field_type = field_type_name(iter%ptr%field_type)
@@ -2580,7 +2593,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field list name
 if (name .eq. ' ') then
@@ -2651,7 +2664,7 @@ integer                          :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2791,7 +2804,7 @@ integer                              :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2924,7 +2937,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -3036,7 +3049,7 @@ end function  fm_new_value_string
 subroutine  fm_reset_loop
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Reset the variables
 loop_list = ' '
@@ -3053,7 +3066,7 @@ end subroutine  fm_reset_loop
 subroutine  fm_return_root
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        restore the saved values to the current root
 root_p%name = save_root_name
@@ -3143,9 +3156,19 @@ end function fm_modify_name
 
 !> A function to initialize the values of the pointers. This will remove
 !! all fields and reset the field tree to only the root field.
-subroutine initialize
-!        Initialize the root field
-if (.not. module_is_initialized) then
+subroutine initialize_module_variables
+  !        Initialize the root field
+  integer :: io, ierr !< Error codes when reading the namelist
+  integer :: logunit !< Unit number for the log file
+
+  if (.not. module_is_initialized) then
+
+  read (input_nml_file, nml=field_manager_nml, iostat=io)
+  ierr = check_nml_error(io,"field_manager_nml")
+
+  logunit = stdlog()
+  if (mpp_pe() == mpp_root_pe()) write (logunit, nml=field_manager_nml)
+
   root_p => root
 
   field_type_name(integer_type) = 'integer'
@@ -3185,7 +3208,7 @@ if (.not. module_is_initialized) then
 
 endif
 
-end subroutine initialize
+end subroutine initialize_module_variables
 
 !> This function creates a new field and returns a pointer to that field.
 !!
@@ -3258,7 +3281,7 @@ integer                         :: out_unit
   method_name = " "
   method_control = " "
 !        Initialize the field manager if needed
-if (.not. module_is_initialized) call initialize
+if (.not. module_is_initialized) call initialize_module_variables
 name_loc = lowercase(name)
 call find_base(name_loc, path, base)
 
@@ -3427,7 +3450,7 @@ list_name_new = trim(list_name)//trim(suffix)
   recursive_t = .true.
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 
 if (list_name .eq. ' ') then
@@ -3514,7 +3537,7 @@ num_meth= 1
   recursive_t = .true.
 
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 
 if (list_name .eq. ' ') then
