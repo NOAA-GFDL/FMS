@@ -2908,14 +2908,14 @@ end subroutine set_comm_put1
 !! OCN grid cells that are partially or totally open water contribute to (are side2 parent of) the Xgrid
 !! and conversely
 !! OCN grid cells that are totally ice covered do not contribute to (are kicked out of) the Xgrid.
-!! This makes xmap a dynamical object and a quiet powerful tool for flux exchange calculations.
+!! This makes xmap a dynamical object and a powerful tool for flux exchange calculations.
 !!
 !! Things to keep in mind about xmap/xgrid:
 !! xgrid contains two sides:
 !!   side1: This is the side where 2d arrays are put to and get from the Xgrid
 !!   side2: This is the side where 3d arrays are put to and get from the Xgrid.
 !!          This was designed to enable exchange along sub-grid-scale (3rd dimension) for component models that have
-!!          subgrid scale parametrization (e.g., seaice categories and land tiles). 
+!!          subgrid scale parametrization (e.g., seaice categories and land tiles).
 !! @param[inout] xmap exchange grid
 !!
 subroutine regen(xmap)
