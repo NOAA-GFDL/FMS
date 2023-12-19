@@ -20,13 +20,13 @@
 !> @brief  Program to test the diurnal reduction
 !! Similar to test_reduction_methods, but uses the variables and reductions
 !! from the test_diag_manager_time diurnal test (#25)
-program test_reduction_methods
+program test_diag_diurnal
   use fms_mod,           only: fms_init, fms_end
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
   use platform_mod,      only: r8_kind
   use block_control_mod, only: block_control_type, define_blocks
   use mpp_mod,           only: mpp_sync, FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file
-  use time_manager_mod,  only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+)
+  use time_manager_mod,  only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+), days_in_month, get_time
   use diag_manager_mod,  only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                                diag_send_complete, diag_manager_set_time_end, send_data
   use mpp_domains_mod,   only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
@@ -56,7 +56,8 @@ program test_reduction_methods
   logical,            allocatable    :: dlmask(:,:,:,:) !< Logical mask in the data domain
   type(time_type)                    :: Time            !< Time of the simulation
   type(time_type)                    :: Time_step       !< Time of the simulation
-  integer                            :: ntimes          !< Number of times
+  integer                            :: nmonths         !< number of months to run for (submits ntimes per month)
+  integer                            :: ndays           !< number of days in the month 
   integer                            :: id_x            !< axis id for the x dimension
   integer                            :: id_y            !< axis id for the y dimension
   integer                            :: id_z            !< axis id for the z dimension
@@ -85,6 +86,8 @@ program test_reduction_methods
   integer                            :: i               !< For do loops
   logical                            :: used            !< Dummy argument to send_data
   real(kind=r8_kind)                 :: missing_value   !< Missing value to use
+  integer :: days_out, seconds_out
+  integer :: m, h, d !< to iterate through months, hours, and days
 
   !< Configuration parameters
   integer :: test_case = test_normal !< Indicates which test case to run
@@ -99,15 +102,15 @@ program test_reduction_methods
   read (input_nml_file, test_reduction_methods_nml, iostat=io_status)
   if (io_status > 0) call mpp_error(FATAL,'=>test_modern_diag: Error reading input.nml')
 
-  nx = 96
-  ny = 96
+  nx = 24
+  ny = 24
   nz = 5
   nw = 2
   layout = (/1, mpp_npes()/)
   io_layout = (/1, 1/)
   nhalox = 2
   nhaloy = 2
-  ntimes = 48
+  nmonths = 2
 
   !< Create a lat/lon domain
   call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='2D domain', xhalo=nhalox, yhalo=nhaloy)
@@ -177,79 +180,87 @@ program test_reduction_methods
   id_sst = register_diag_field  ('ocn_mod', 'sst', (/id_x, id_y, id_z/), Time, 'sst', &
     'mullions', missing_value = missing_value)
 
-  do i = 1, ntimes
-    Time = Time + Time_step
+  ! iterate through nmonths and each day, each hour 
+  do m = 1, nmonths
+    Time = set_date(2,m,1)
+    ndays = days_in_month(Time)
+    print * , "days in month:", ndays
+    do d = 1, ndays
+      do h = 1, 23 ! hours
+        Time = set_date(2,m,d,hour=h)
 
-    call set_buffer(cdata, i)
+        call set_buffer(cdata, m, d, h)
 
-    select case(test_case)
-    case (test_normal)
-      select case (mask_case)
-      case (no_mask)
-        used = send_data(id_ice, cdata(:,:,1,1), Time)
-        used = send_data(id_sst, cdata(:,:,:,1), Time)
-      case (real_mask)
-        used = send_data(id_ice, cdata(:,:,1,1), Time, rmask=crmask(:,:,1,1))
-        used = send_data(id_sst, cdata(:,:,:,1), Time, rmask=crmask(:,:,:,1))
-      case (logical_mask)
-        used = send_data(id_ice, cdata(:,:,1,1), Time, mask=clmask(:,:,1,1))
-        used = send_data(id_sst, cdata(:,:,:,1), Time, mask=clmask(:,:,:,1))
-      end select
-    case (test_halos)
-      call set_buffer(ddata, i)
-      select case (mask_case)
-      case (no_mask)
-        used = send_data(id_ice, ddata(:,:,1,1), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
-        used = send_data(id_sst, ddata(:,:,:,1), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
-      case (real_mask)
-        used = send_data(id_ice, ddata(:,:,1,1), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
-          rmask=drmask(:,:,1,1))
-        used = send_data(id_sst, ddata(:,:,:,1), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
-          rmask=drmask(:,:,:,1))
-      case (logical_mask)
-        used = send_data(id_ice, ddata(:,:,1,1), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
-          mask=dlmask(:,:,1,1))
-        used = send_data(id_sst, ddata(:,:,:,1), Time, &
-          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
-          mask=dlmask(:,:,:,1))
-      end select
-    case (test_openmp)
-!$OMP parallel do default(shared) private(iblock, isw, iew, jsw, jew, is1, ie1, js1, je1)
-      do iblock=1, 4
-        isw = my_block%ibs(iblock)
-        jsw = my_block%jbs(iblock)
-        iew = my_block%ibe(iblock)
-        jew = my_block%jbe(iblock)
+        select case(test_case)
+        case (test_normal)
+          select case (mask_case)
+          case (no_mask)
+            used = send_data(id_ice, cdata(:,:,1,1), Time)
+            used = send_data(id_sst, cdata(:,:,:,1), Time)
+          case (real_mask)
+            used = send_data(id_ice, cdata(:,:,1,1), Time, rmask=crmask(:,:,1,1))
+            used = send_data(id_sst, cdata(:,:,:,1), Time, rmask=crmask(:,:,:,1))
+          case (logical_mask)
+            used = send_data(id_ice, cdata(:,:,1,1), Time, mask=clmask(:,:,1,1))
+            used = send_data(id_sst, cdata(:,:,:,1), Time, mask=clmask(:,:,:,1))
+          end select
+        case (test_halos)
+          call set_buffer(ddata, m, d, h)
+          select case (mask_case)
+          case (no_mask)
+            used = send_data(id_ice, ddata(:,:,1,1), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
+            used = send_data(id_sst, ddata(:,:,:,1), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
+          case (real_mask)
+            used = send_data(id_ice, ddata(:,:,1,1), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+              rmask=drmask(:,:,1,1))
+            used = send_data(id_sst, ddata(:,:,:,1), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+              rmask=drmask(:,:,:,1))
+          case (logical_mask)
+            used = send_data(id_ice, ddata(:,:,1,1), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+              mask=dlmask(:,:,1,1))
+            used = send_data(id_sst, ddata(:,:,:,1), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+              mask=dlmask(:,:,:,1))
+          end select
+        case (test_openmp)
+    !$OMP parallel do default(shared) private(iblock, isw, iew, jsw, jew, is1, ie1, js1, je1)
+          do iblock=1, 4
+            isw = my_block%ibs(iblock)
+            jsw = my_block%jbs(iblock)
+            iew = my_block%ibe(iblock)
+            jew = my_block%jbe(iblock)
 
-      !--- indices for 1-based arrays ---
-        is1 = isw-isc+1
-        ie1 = iew-isc+1
-        js1 = jsw-jsc+1
-        je1 = jew-jsc+1
+          !--- indices for 1-based arrays ---
+            is1 = isw-isc+1
+            ie1 = iew-isc+1
+            js1 = jsw-jsc+1
+            je1 = jew-jsc+1
 
-        select case (mask_case)
-        case (no_mask)
-          used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
-          used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
-        case (real_mask)
-          used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
-            rmask=crmask(is1:ie1, js1:je1, 1, 1))
-          used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
-            rmask=crmask(is1:ie1, js1:je1, :, 1))
-        case (logical_mask)
-          used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
-            mask=clmask(is1:ie1, js1:je1, 1, 1))
-          used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
-            mask=clmask(is1:ie1, js1:je1, :, 1))
+            select case (mask_case)
+            case (no_mask)
+              used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
+              used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
+            case (real_mask)
+              used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
+                rmask=crmask(is1:ie1, js1:je1, 1, 1))
+              used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
+                rmask=crmask(is1:ie1, js1:je1, :, 1))
+            case (logical_mask)
+              used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
+                mask=clmask(is1:ie1, js1:je1, 1, 1))
+              used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
+                mask=clmask(is1:ie1, js1:je1, :, 1))
+            end select
+          enddo
         end select
+        call diag_send_complete(Time_step)
       enddo
-    end select
-    call diag_send_complete(Time_step)
+    enddo
   enddo
 
   call diag_manager_end(Time)
@@ -306,23 +317,25 @@ program test_reduction_methods
       do j = js, je
         do k = 1, size(buffer, 3)
           do l = 1, size(buffer,4)
-            buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = real(ii, kind=r8_kind)* 1000_r8_kind + &
-              real(j, kind=r8_kind)* 10_r8_kind + &
-              real(k, kind=r8_kind)
+            buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = real(ii, kind=r8_kind)* 0.01_r8_kind + &
+              real(j, kind=r8_kind)* 0.0001_r8_kind + &
+              real(k, kind=r8_kind)* 0.000001_r8_kind
           enddo
         enddo
       enddo
     enddo
 
+    buffer = 0.0
+
   end subroutine init_buffer
 
   !> @brief Set the buffer based on the time_index
-  subroutine set_buffer(buffer, time_index)
+  subroutine set_buffer(buffer, month, day, hour)
     real(kind=r8_kind), intent(inout) :: buffer(:,:,:,:) !< Output buffer
-    integer,            intent(in)    :: time_index      !< Time index
+    integer,            intent(in)    :: month, day, hour !< Time index
 
-    buffer = nint(buffer) + real(time_index, kind=r8_kind)/100_r8_kind
+    buffer = nint(buffer) + (real(month, r8_kind)*10000.0 + real(day, kind=r8_kind)*100.0 + real(hour, kind=r8_kind))
 
   end subroutine set_buffer
 
-end program test_reduction_methods
+end program test_diag_diurnal

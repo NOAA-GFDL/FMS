@@ -54,9 +54,26 @@ _EOF
 
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n" > input.nml
 
-test_expect_success "diag_manager_time diurnal" '
+test_expect_success "new diurnal test" '
   mpirun -n 1 ../test_diag_diurnal
 '
+
+# use old code for now
+#rm input.nml && touch input.nml
+#cat <<_EOF > diag_table
+#test_diag_manager
+#2 1 1 0 0 0
+#
+##output files
+#"test_diurnal",         1, "hours",   1, "hours", "time"
+#
+##output variables
+# "test_diag_manager_mod", "sst", "sst", "test_diurnal",  "all", "diurnal4", "none", 2
+# "test_diag_manager_mod", "ice", "ice", "test_diurnal",  "all", "diurnal4", "none", 2
+#_EOF
+#test_expect_success "old diurnal test (with new code)" '
+#  mpirun -n 1 ../test_diag_manager_time
+#'
 
 ## just run the very basic test for now
 test_done

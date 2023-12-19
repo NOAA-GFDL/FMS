@@ -55,9 +55,9 @@ type :: fmsDiagOutputBuffer_type
   integer               :: field_id           !< The id of the field the buffer belongs to
   integer               :: yaml_id            !< The id of the yaml id the buffer belongs to
   logical               :: done_with_math     !< .True. if done doing the math
-  integer               :: diurnal_sample_size = 1  !< dirunal sample size as read in from the reduction method
+  integer               :: diurnal_sample_size = -1  !< dirunal sample size as read in from the reduction method
                                                     !! ie. diurnal24 = sample size of 24
-  integer               :: diurnal_section    !< the diurnal section (ie 5th index) calculated from the current model
+  integer               :: diurnal_section= 1 !< the diurnal section (ie 5th index) calculated from the current model
                                               !! time and sample size if using a diurnal reduction
 
   contains
@@ -87,6 +87,7 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_diurnal_sample_size
   procedure :: set_diurnal_sample_size
   procedure :: set_diurnal_section_index
+  procedure :: get_remapped_diurnal_data
 end type fmsDiagOutputBuffer_type
 
 ! public types
@@ -152,6 +153,7 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   else
     n_samples = 1
   endif
+  call this%set_diurnal_sample_size(n_samples)
 
   this%ndim =ndim
   if(allocated(this%buffer)) call mpp_error(FATAL, "allocate_buffer: buffer already allocated for field:" // &
@@ -362,18 +364,20 @@ function get_yaml_id(this) &
 end function get_yaml_id
 
 !> @brief Write the buffer to the file
-subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level)
+subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
   class(FmsNetcdfFile_t),          intent(in)    :: fms2io_fileobj  !< fileobj to write to
   integer, optional,               intent(in)    :: unlim_dim_level !< unlimited dimension
+  logical, optional,               intent(in)    :: is_diurnal      !< indicates if writing a diurnal
+                                                                    !! field (in order to write correct axis) 
 
   select type(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
-    call this%write_buffer_wrapper_netcdf(fms2io_fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_netcdf(fms2io_fileobj, unlim_dim_level=unlim_dim_level, is_diurnal=is_diurnal)
   type is (FmsNetcdfDomainFile_t)
-    call this%write_buffer_wrapper_domain(fms2io_fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_domain(fms2io_fileobj, unlim_dim_level=unlim_dim_level, is_diurnal=is_diurnal)
   type is (FmsNetcdfUnstructuredDomainFile_t)
-    call this%write_buffer_wrapper_u(fms2io_fileobj, unlim_dim_level=unlim_dim_level)
+    call this%write_buffer_wrapper_u(fms2io_fileobj, unlim_dim_level=unlim_dim_level, is_diurnal=is_diurnal)
   class default
     call mpp_error(FATAL, "The file "//trim(fms2io_fileobj%path)//" is not one of the accepted types"//&
       " only FmsNetcdfFile_t, FmsNetcdfDomainFile_t, and FmsNetcdfUnstructuredDomainFile_t are accepted.")
@@ -385,77 +389,110 @@ subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level)
 end subroutine write_buffer
 
 !> @brief Write the buffer to the FmsNetcdfFile_t fms2io_fileobj
-subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level)
+subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
   class(fmsDiagOutputBuffer_type),  intent(in) :: this            !< buffer object to write
   type(FmsNetcdfFile_t),            intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                intent(in) :: unlim_dim_level !< unlimited dimension
-
+  logical, optional,                intent(in) :: is_diurnal !< true if data is for diurnal field
+                                                             !! if so writes 
   character(len=:), allocatable :: varname !< name of the variable
+  logical :: using_diurnal
+  class(*), allocatable                        :: buff_ptr(:,:,:,:,:)
+
+  using_diurnal = .false.
+  if( present(is_diurnal) ) using_diurnal = is_diurnal
+  if( using_diurnal ) then
+    buff_ptr = this%get_remapped_diurnal_data()
+  else
+    buff_ptr = this%buffer
+  endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
   select case(this%ndim)
   case (0)
-    call write_data(fms2io_fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (1)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (2)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
   case (3)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
   case (4)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
   case (5)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_netcdf
 
 !> @brief Write the buffer to the FmsNetcdfDomainFile_t fms2io_fileobj
-subroutine write_buffer_wrapper_domain(this, fms2io_fileobj, unlim_dim_level)
+subroutine write_buffer_wrapper_domain(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
   class(fmsDiagOutputBuffer_type),    intent(in) :: this            !< buffer object to write
   type(FmsNetcdfDomainFile_t),        intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                  intent(in) :: unlim_dim_level !< unlimited dimension
+  logical, optional,                  intent(in) :: is_diurnal
 
   character(len=:), allocatable :: varname !< name of the variable
+  logical :: using_diurnal
+  class(*), allocatable                        :: buff_ptr(:,:,:,:,:)
+
+  using_diurnal = .false.
+  if( present(is_diurnal) ) using_diurnal = is_diurnal
+  if( using_diurnal ) then
+    buff_ptr = this%get_remapped_diurnal_data()
+  else
+    buff_ptr = this%buffer
+  endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
   select case(this%ndim)
   case (0)
-    call write_data(fms2io_fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (1)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (2)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
   case (3)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
   case (4)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
   case (5)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_domain
 
 !> @brief Write the buffer to the FmsNetcdfUnstructuredDomainFile_t fms2io_fileobj
-subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level)
+subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
   class(fmsDiagOutputBuffer_type),                 intent(in) :: this            !< buffer object to write
   type(FmsNetcdfUnstructuredDomainFile_t),         intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                               intent(in) :: unlim_dim_level !< unlimited dimension
+  logical, optional,                  intent(in) :: is_diurnal
 
   character(len=:), allocatable :: varname !< name of the variable
+  logical :: using_diurnal
+  class(*), allocatable                        :: buff_ptr(:,:,:,:,:)
+
+  using_diurnal = .false.
+  if( present(is_diurnal) ) using_diurnal = is_diurnal
+  if( using_diurnal ) then
+    buff_ptr = this%get_remapped_diurnal_data()
+  else
+    buff_ptr = this%buffer
+  endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
   select case(this%ndim)
   case (0)
-    call write_data(fms2io_fileobj, varname, this%buffer(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (1)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,1,1,1,1), unlim_dim_level=unlim_dim_level)
   case (2)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,1,1,1), unlim_dim_level=unlim_dim_level)
   case (3)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,1,1), unlim_dim_level=unlim_dim_level)
   case (4)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,:,1), unlim_dim_level=unlim_dim_level)
   case (5)
-    call write_data(fms2io_fileobj, varname, this%buffer(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
+    call write_data(fms2io_fileobj, varname, buff_ptr(:,:,:,:,:), unlim_dim_level=unlim_dim_level)
   end select
 end subroutine write_buffer_wrapper_u
 
@@ -574,7 +611,6 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   character(len=50) :: err_msg
 
-  print *, "shape(buffer)", SHAPE(this%buffer), "shape(field_data)", shape(field_data)
 
   !TODO This will be expanded for integers
   err_msg = ""
@@ -679,8 +715,70 @@ subroutine set_diurnal_section_index(this, time)
   ! calculates which diurnal section current time is in for a given amount of diurnal sections(<24)
   this%diurnal_section = floor( (seconds+real(ticks)/get_ticks_per_second()) &
                        & * this%diurnal_sample_size/SECONDS_PER_DAY) + 1
-  print *, this%diurnal_section
 end subroutine set_diurnal_section_index
+
+!> Remaps the output buffer array when using the diurnal reduction
+!! moves the diurnal index to the left-most unused dimension for the io
+function get_remapped_diurnal_data(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this
+  class(*), allocatable :: res(:,:,:,:,:)
+  integer :: last_dim
+  integer :: ie, je, ke, ze, de !< ending indices for the new array 
+  integer(i4_kind) :: buff_size(5)!< sizes for allocated buffer
+
+  ! last dim is number of dimensions - 1 for diurnal axis 
+  last_dim = this%ndim - 1 
+  print *, "last_dim val:", last_dim
+  ! if 4d we don't need to do anything
+  if(last_dim .eq. -1) return 
+  ! get the bounds of the remapped output array based on # of dims 
+  ke = 1; ze = 1; de = 1 
+  select case(last_dim)
+    case (1)
+      ie = this%buffer_dims(1); je = this%buffer_dims(5)
+    case (2)
+      ie = this%buffer_dims(1); je = this%buffer_dims(2)
+      ke = this%buffer_dims(5)
+    case (3)
+      ie = this%buffer_dims(1); je = this%buffer_dims(2)
+      ke = this%buffer_dims(3); ze = this%buffer_dims(5)
+  end select
+
+  !
+  select type(buff => this%buffer)
+    type is (real(r8_kind))
+      allocate(real(r8_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
+      select type(res)
+        type is (real(r8_kind))
+          res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
+      end select 
+    type is (real(r4_kind))
+      allocate(real(r4_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
+      select type(res)
+        type is (real(r4_kind))
+          res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
+      end select 
+    type is (integer(i8_kind))
+      allocate(integer(i8_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
+      select type(res)
+        type is (integer(i8_kind))
+          res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
+      end select 
+    type is (integer(i4_kind))
+      allocate(integer(i4_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
+      select type(res)
+        type is (integer(i4_kind))
+          res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
+      end select 
+  end select
+
+  !res = get_buff_remap(this%buffer, last_dim)
+
+  print *, "remapped diurnal data shape(result, buffer):", SHAPE(res), SHAPE(this%buffer) 
+  
+
+end function get_remapped_diurnal_data
 
 #endif
 end module fms_diag_output_buffer_mod

@@ -1780,7 +1780,7 @@ END FUNCTION register_static_field
     END SELECT
   ! Split old and modern2023 here
   modern_if: iF (use_modern_diag) then
-    field_name = fms_diag_object%fms_get_field_name_from_id(diag_field_id)
+    field_name = fms_diag_object%fms_get_field_name_from_id(diag_field_id) !!! crashes here on other reductions
     field_remap = copy_3d_to_4d(field, trim(field_name)//"'s data")
     if (present(rmask)) rmask_remap = copy_3d_to_4d(rmask, trim(field_name)//"'s mask")
     if (present(mask)) then
