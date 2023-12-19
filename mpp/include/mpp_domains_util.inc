@@ -1451,7 +1451,6 @@ end subroutine mpp_get_tile_compute_domains
      type(domain2d),    intent(in) :: domain
      integer                       :: mpp_get_tile_comm
      mpp_get_tile_comm = domain%TileComm
-     !write(6,'("mpp_get_tile_comm: "I12)') domain%TileComm
      return
   end function mpp_get_tile_comm
 
@@ -1459,26 +1458,9 @@ end subroutine mpp_get_tile_compute_domains
   subroutine mpp_set_tile_comm(domain)
      type(domain2d), intent(inout) :: domain
      integer :: color(1),err
-     !integer :: commID,szatm,szTile
-
-     !allocate(pelist(mpp_get_tile_npes(domain)))
-     !call mpp_get_tile_pelist(domain, pelist)
-     !call mpp_declare_pelist(pelist)
-     !domain%TileComm = peset(get_peset(pelist))%id
-     !deallocate(pelist)
-
-     !commID=mpp_get_current_pelist_comm()
-     !call MPI_Comm_size(commID,szatm,err)
-     !if(err /= MPI_SUCCESS) print*,'netcdf_file_open : MPI_Comm_size1 ',err
-
      color=domain%tile_id
      call MPI_Comm_split(mpp_get_current_pelist_comm(), color(1), mpp_pe(), domain%TileComm, err)
-
-     !if(err /= MPI_SUCCESS) print*,'mpp_set_tile_comm: MPI_Comm_split ',err
-     !call MPI_Comm_size(domain%TileComm,szTile,err)
-     !if(err /= MPI_SUCCESS) print*,'mpp_set_tile_comm: MPI_Comm_size2 ',err
-     !write(6,'("mpp_set_tile_comm: "3I4)') szatm,szTile,color(1)
-     !write(6,'("mpp_set_tile_comm: "I12)') domain%TileComm
+     if(err /= MPI_SUCCESS) call mpp_error(FATAL, "mpp_set_tile_comm: MPI_Comm_split")
   end subroutine mpp_set_tile_comm
 
   !################################################################

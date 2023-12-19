@@ -32,7 +32,7 @@ use netcdf
 use mpp_mod
 use fms_io_utils_mod
 use platform_mod
-use mpi, only: MPI_INFO_NULL
+use mpi, only: MPI_INFO_NULL, MPI_COMM_NULL
 implicit none
 private
 
@@ -150,8 +150,11 @@ type, public :: FmsNetcdfFile_t
   character (len=20) :: time_name
   type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
                                                !! restart variables
-  logical :: use_collective = .false. !< Flag telling if we should open the file for collective input
-  integer :: TileComm=989             !< MPI communicator used for collective reads
+  logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
+                                      !! this should be set to .true. in the user application if they want
+                                      !! collective reads (put before open_file())
+  integer :: TileComm=MPI_COMM_NULL   !< MPI communicator used for collective reads.
+                                      !! To be replaced with a real communicator at user request
 
 endtype FmsNetcdfFile_t
 
@@ -564,7 +567,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   logical :: success
 
   integer :: nc_format_param
-  integer :: err,IsNetcdf4=-999
+  integer :: err
+  integer :: IsNetcdf4=-999 !< Query the file for IsNetcdf4 in the event that the open for collective reads fails
   character(len=256) :: buf !< Filename with .res in the filename if it is a restart
   character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
@@ -624,7 +628,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   fileobj%is_netcdf4 = .false.
   !Open the file with netcdf if this rank is the I/O root.
-  if (fileobj%is_root) then
+  if (fileobj%is_root .and. .not.(fileobj%use_collective)) then
     if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
     if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
 
@@ -648,26 +652,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     endif
 
     if (string_compare(mode, "read", .true.)) then
-      ! Open the file for collective reads if the user requested that treatment
-      ! NetCDF does not have the ability to specify collective I/O at the file basis
-      ! so we must activate at the variable level in netcdf_read_data_2d() and netcdf_read_data_3d()
-      if(fileobj%use_collective .and. fileobj%TileComm < 0) then
-        !write(6,'("netcdf_file_open: Open for collective read "A,I4)') trim(fileobj%path), szTile
-        err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=fileobj%TileComm, info=MPI_INFO_NULL)
-        if(err /= nf90_noerr) then
-          err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
-          err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", IsNetcdf4)
-          err = nf90_close(fileobj%ncid)
-          if(IsNetcdf4 /= 1) then
-            write(6,'("netcdf_file_open: Open for collective read failed because the file is not netCDF-4 format. &
-                       Falling back to parallel independent for file "A)') trim(fileobj%path)
-          endif
-          err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
-        endif
-      else
-        !print*,'netcdf_file_open: Open for independent read ',trim(fileobj%path)
-        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
-      endif
+      err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_write, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "write", .true.)) then
@@ -679,6 +664,24 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
     endif
     call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
+  elseif(fileobj%use_collective .and. (fileobj%TileComm /= MPI_COMM_NULL)) then
+    if(string_compare(mode, "read", .true.)) then
+      ! Open the file for collective reads if the user requested that treatment in their application.
+      ! NetCDF does not have the ability to specify collective I/O at the file basis
+      ! so we must activate each variable in netcdf_read_data_2d() and netcdf_read_data_3d()
+      err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=fileobj%TileComm, info=MPI_INFO_NULL)
+      if(err /= nf90_noerr) then
+        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+        err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", IsNetcdf4)
+        err = nf90_close(fileobj%ncid)
+        if(IsNetcdf4 /= 1) then
+          call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not netCDF-4 format."// &
+                              " Falling back to parallel independent for file "// trim(fileobj%path))
+        endif
+        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
+      endif
+      call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
+    endif
   else
     fileobj%ncid = missing_ncid
   endif
