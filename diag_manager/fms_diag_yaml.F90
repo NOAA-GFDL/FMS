@@ -39,7 +39,7 @@ use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_bloc
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
-use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
+use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string
 use platform_mod, only: r4_kind, i4_kind
 use fms_mod, only: lowercase
 
@@ -1444,11 +1444,13 @@ function get_diag_files_id(indices) &
     file_indices = fms_find_my_string(file_list%file_pointer, size(file_list%file_pointer), &
       & trim(filename)//c_null_char)
 
-    if (size(file_indices) .ne. 1) &
-      & call mpp_error(FATAL, "get_diag_files_id: Error getting the correct number of file indices!")
-
     if (file_indices(1) .eq. diag_null) &
-      & call mpp_error(FATAL, "get_diag_files_id: Error finding the filename in the diag_files yaml")
+      & call mpp_error(FATAL, "get_diag_files_id: Error finding the file "//trim(filename)//" in the diag_files yaml")
+
+    if (size(file_indices) .ne. 1) &
+      & call mpp_error(FATAL, "get_diag_files_id: Error getting the correct number of file indices!"//&
+                              " The diag file "//trim(filename)//" was defined "//string(size(file_indices))&
+                              // " times")
 
     !< Get the index of the file in the diag_yaml file
     file_id(i) = file_list%diag_file_indices(file_indices(1))
