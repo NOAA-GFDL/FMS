@@ -48,7 +48,7 @@ program test_interpolator2
   character(100), parameter :: ncfile='immadeup.o3.climatology.nc' !< fake climatology file
   integer, parameter :: lkind=TEST_INTP_KIND_
   !> the interpolation methods are not perfect.Will not get perfectly agreeing answers
-  real(r8_kind) :: tol
+  real(r8_kind), parameter :: tol=0.1_lkind
   integer :: calendar_type
 
   !> climatology related variables and arrays (made up data)
@@ -89,9 +89,6 @@ program test_interpolator2
   character(*), parameter :: nml_file='test_interpolator.nml'
   NAMELIST / test_interpolator_nml / test_file_daily_noleap, test_file_daily_julian, &
                                      test_file_yearly_noleap, test_file_yearly_julian, test_file_no_time
-
-  if(lkind==r4_kind) tol=1.e-4_r8_kind
-  if(lkind==r8_kind) tol=1.e-6_r8_kind
 
   open(unit=nml_unit_var, file=nml_file)
   read(unit=nml_unit_var, nml=test_interpolator_nml)

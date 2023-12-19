@@ -535,9 +535,7 @@ if(dimension_exists(fileobj, "time")) then
            !    convert file times from noleap to julian.
            !---------------------------------------------------------------------
            else if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
-              Noleap_time = set_time( INT((time_in(n)-real(INT(time_in(n)),r8_kind))*SECONDS_PER_DAY), &
-                   INT(time_in(n))) + base_time
-             !Noleap_time = set_time (0, INT(time_in(n))) + base_time
+             Noleap_time = set_time (0, INT(time_in(n))) + base_time
              call get_date_no_leap (Noleap_time, yr, mo, dy, hr, mn, sc)
              clim_type%time_slice(n) = set_date_julian (yr, mo, dy, hr, mn, sc)
              if (n == 1) then
@@ -554,9 +552,7 @@ if(dimension_exists(fileobj, "time")) then
            !    convert file times from julian to noleap.
            !---------------------------------------------------------------------
            else if ( (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
-              Julian_time = set_time( INT( (time_in(n)-real(INT(time_in(n)),r8_kind))*SECONDS_PER_DAY), &
-                   INT(time_in(n))) + base_time
-              !Julian_time = set_time (0, INT(time_in(n))) + base_time
+             Julian_time = set_time (0, INT(time_in(n))) + base_time
              call get_date_julian (Julian_time, yr, mo, dy, hr, mn, sc)
              clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy,hr, mn, sc)
              if (n == 1) then
