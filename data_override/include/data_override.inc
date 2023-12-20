@@ -922,10 +922,6 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
       call time_interp_external(id_time,time,data_out,verbose=.false.)
     endif if_time2
   else ! standard behavior
-     if ((time<first_record) .or. (time>last_record)) then
-       call mpp_error(WARNING, &
-            'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-     endif
      call time_interp_external(id_time,time,data_out,verbose=.false.)
   endif if_multi2
 
@@ -1491,10 +1487,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                                       is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
           endif if_time6
         else  ! standard behavior
-          if ((time<first_record) .or. (time>last_record)) then
-            call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-          endif
           call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif if_multi6
@@ -1533,10 +1525,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                                       is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
           endif if_time7
         else  ! standard behavior
-          if ((time<first_record) .or. (time>last_record)) then
-            call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-          endif
           call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,1),verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif if_multi7
@@ -1571,10 +1559,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                                       is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
           endif if_time8
         else ! standard behavior
-          if ((time<first_record) .or. (time>last_record)) then
-            call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-          endif
           call time_interp_external(id_time,time,return_data,verbose=.false., &
                                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
        endif if_multi8
@@ -1607,10 +1591,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                                      is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
           endif if_time9
         else ! standard behavior
-          if ((time<first_record) .or. (time>last_record)) then
-            call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-          endif
           call time_interp_external(id_time,time,return_data(startingi:endingi,startingj:endingj,:),verbose=.false., &
                                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
         endif if_multi9
@@ -1648,10 +1628,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                                          is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
              endif if_time10
            else ! standard behavior
-             if ((time<first_record) .or. (time>last_record)) then
-               call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-             endif
              call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                                        horz_interp=override_array(curr_position)%horz_interp(window_id), &
                                        is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1693,10 +1669,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
              endif if_time11
            else ! standard behavior
-             if ((time<first_record) .or. (time>last_record)) then
-               call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-             endif
              call time_interp_external(id_time,time,return_data(:,:,1),verbose=.false., &
                    horz_interp=override_array(curr_position)%horz_interp(window_id),      &
                    mask_out   =mask_out(:,:,1), &
@@ -1741,10 +1713,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
              endif if_time12
            else ! standard behavior
-             if ((time<first_record) .or. (time>last_record)) then
-               call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-             endif
              call time_interp_external(id_time,time,return_data,verbose=.false.,      &
                   horz_interp=override_array(curr_position)%horz_interp(window_id), &
                   is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
@@ -1783,10 +1751,6 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
                     is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
              endif if_time13
            else ! standard behavior
-             if ((time<first_record) .or. (time>last_record)) then
-               call mpp_error(WARNING, &
-                 'data_override: current time outside bounds, use [previous]:current:[next] files in data_table')
-             endif
              call time_interp_external(id_time,time,return_data,verbose=.false.,      &
                   horz_interp=override_array(curr_position)%horz_interp(window_id),    &
                   mask_out   =mask_out, &
