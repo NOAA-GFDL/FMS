@@ -254,6 +254,12 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     pow_loc = 1.0_kindl
   endif
 
+  if(diurnal_section .lt. 0) then
+    diurnal = 1
+  else
+    diurnal = diurnal_section
+  endif
+
   ! update with given weight for average before write
   weight_sum = weight_sum + weight_loc
 
@@ -279,8 +285,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
           where (mask(is_in + i, js_in + j, ks_in + k, :))
-            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal_section) =           &
-                       data_out(is_out + i, js_out + j, ks_out + k, :, diurnal_section)  &
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
+                       data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
                      + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
           elsewhere
             data_out(is_out + i, js_out + j, ks_out + k, :, 1) = missing_value
@@ -293,8 +299,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
-          data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal_section) =  &
-             data_out(is_out + i, js_out + j, ks_out + k, :, diurnal_section)  &
+          data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal) =  &
+             data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
             + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
         enddo
       enddo
@@ -305,25 +311,40 @@ end subroutine DO_TIME_SUM_UPDATE_
 !> To be called with diag_send_complete, finishes reductions
 !! Just divides the buffer by the counter array(which is just the sum of the weights used in the buffer's reduction)
 !! TODO: change has_mask to an actual logical mask so we don't have to check for missing values
-subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask)
+subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask, n_diurnal_samples)
   real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
                                                                    !! do_time_sum_update
   real(r8_kind), intent(in)          :: weight_sum !< sum of weights for averaging, provided via argument to send data
   integer, intent(in)                :: reduction_method !< which reduction method to use, should be time_avg
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
   logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped
+  integer, optional, intent(in)      :: n_diurnal_samples !< number of diurnal samples as set in reduction method
+  integer :: wsum !< local cp of weight_sum, only changed if using diurnal
   !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
   !logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one.
   !logical                            :: has_mask !< whether or not mask is present
 
+  ! need to divide weight sum by amount of samples to get the actual
+  ! number of times that the diurnal section was incremented
+  ! legacy diag manager stored these weights explicitly, this doesn't so assumes uniformity in when data is sent
+  if(reduction_method .eq. time_diurnal) then
+    if(.not. present(n_diurnal_samples)) call mpp_error(FATAL, &
+      "SUM_UPDATE_DONE_ :: reduction method is diurnal but no sample size was given")
+    wsum = weight_sum / n_diurnal_samples
+  else
+    wsum = weight_sum
+  endif
+
+  print *, "finishing reduction with weight_sum:", wsum
+
   if ( has_mask ) then
     where(out_buffer_data(:,:,:,:,:) .ne. missing_val)
       out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
-                                   / weight_sum
+                                   / wsum
     endwhere
   else  !not mask variant
     out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
-                               / weight_sum
+                               / wsum
   endif
 
 end subroutine

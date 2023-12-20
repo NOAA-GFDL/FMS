@@ -55,9 +55,9 @@ type :: fmsDiagOutputBuffer_type
   integer               :: field_id           !< The id of the field the buffer belongs to
   integer               :: yaml_id            !< The id of the yaml id the buffer belongs to
   logical               :: done_with_math     !< .True. if done doing the math
-  integer               :: diurnal_sample_size = -1  !< dirunal sample size as read in from the reduction method
+  integer               :: diurnal_sample_size = -1 !< dirunal sample size as read in from the reduction method
                                                     !! ie. diurnal24 = sample size of 24
-  integer               :: diurnal_section= 1 !< the diurnal section (ie 5th index) calculated from the current model
+  integer               :: diurnal_section= -1 !< the diurnal section (ie 5th index) calculated from the current model
                                               !! time and sample size if using a diurnal reduction
 
   contains
@@ -408,6 +408,7 @@ subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level, is
   endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+  print *, "writing data: "//varname, "dims:", this%ndim, "shape: ", SHAPE(buff_ptr)
   select case(this%ndim)
   case (0)
     call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
@@ -444,6 +445,7 @@ subroutine write_buffer_wrapper_domain(this, fms2io_fileobj, unlim_dim_level, is
   endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+  print *, "writing data: "//varname, "dims:", this%ndim, "shape: ", SHAPE(buff_ptr)
   select case(this%ndim)
   case (0)
     call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
@@ -480,6 +482,7 @@ subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level, is_diur
   endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+  print *, "writing data: "//varname, "dims:", this%ndim, "shape: ", SHAPE(buff_ptr)
   select case(this%ndim)
   case (0)
     call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
@@ -675,9 +678,9 @@ function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_
   err_msg = ""
   select type(buff => this%buffer)
     type is (real(r8_kind))
-      call time_update_done(buff, this%weight_sum, reduction_method, missing_value, has_mask)
+      call time_update_done(buff, this%weight_sum, reduction_method, missing_value, has_mask, this%diurnal_sample_size)
     type is (real(r4_kind))
-      call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), has_mask)
+      call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), has_mask, this%diurnal_sample_size)
   end select
   this%weight_sum = 0.0_r8_kind
 
@@ -711,6 +714,9 @@ subroutine set_diurnal_section_index(this, time)
   type(time_type), intent(in)                     :: time !< current model time
   integer :: seconds, days, ticks
 
+  if(this%diurnal_sample_size .lt. 0) call mpp_error(FATAL, "set_diurnal_section_index::"// &
+    " diurnal sample size must be set before trying to set diurnal index for send_data")
+
   call get_time(time,seconds,days,ticks) ! get current date
   ! calculates which diurnal section current time is in for a given amount of diurnal sections(<24)
   this%diurnal_section = floor( (seconds+real(ticks)/get_ticks_per_second()) &
@@ -729,7 +735,6 @@ function get_remapped_diurnal_data(this) &
 
   ! last dim is number of dimensions - 1 for diurnal axis 
   last_dim = this%ndim - 1 
-  print *, "last_dim val:", last_dim
   ! if 4d we don't need to do anything
   if(last_dim .eq. -1) return 
   ! get the bounds of the remapped output array based on # of dims 
@@ -745,7 +750,6 @@ function get_remapped_diurnal_data(this) &
       ke = this%buffer_dims(3); ze = this%buffer_dims(5)
   end select
 
-  !
   select type(buff => this%buffer)
     type is (real(r8_kind))
       allocate(real(r8_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
@@ -772,11 +776,6 @@ function get_remapped_diurnal_data(this) &
           res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
       end select 
   end select
-
-  !res = get_buff_remap(this%buffer, last_dim)
-
-  print *, "remapped diurnal data shape(result, buffer):", SHAPE(res), SHAPE(this%buffer) 
-  
 
 end function get_remapped_diurnal_data
 

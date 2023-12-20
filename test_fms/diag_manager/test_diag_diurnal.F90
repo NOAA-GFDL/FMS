@@ -16,6 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!! TODO send more complicated data than just the current hour
 
 !> @brief  Program to test the diurnal reduction
 !! Similar to test_reduction_methods, but uses the variables and reductions
@@ -102,15 +103,15 @@ program test_diag_diurnal
   read (input_nml_file, test_reduction_methods_nml, iostat=io_status)
   if (io_status > 0) call mpp_error(FATAL,'=>test_modern_diag: Error reading input.nml')
 
-  nx = 24
-  ny = 24
+  nx = 96 
+  ny = 96
   nz = 5
   nw = 2
   layout = (/1, mpp_npes()/)
   io_layout = (/1, 1/)
   nhalox = 2
   nhaloy = 2
-  nmonths = 2
+  nmonths = 3
 
   !< Create a lat/lon domain
   call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='2D domain', xhalo=nhalox, yhalo=nhaloy)
@@ -119,7 +120,6 @@ program test_diag_diurnal
   call mpp_get_data_domain(Domain, isd, ied, jsd, jed)
 
   cdata = allocate_buffer(isc, iec, jsc, jec, nz, nw)
-  call init_buffer(cdata, isc, iec, jsc, jec, 0)
 
   select case (test_case)
   case (test_normal)
@@ -127,7 +127,6 @@ program test_diag_diurnal
   case (test_halos)
     if (mpp_pe() .eq. mpp_root_pe()) print *, "Testing the send_data calls with halos"
     ddata = allocate_buffer(isd, ied, jsd, jed, nz, nw)
-    call init_buffer(ddata, isc, iec, jsc, jec, 2) !< The halos never get set
   case (test_openmp)
     if (mpp_pe() .eq. mpp_root_pe()) print *, "Testing the send_data calls with openmp blocks"
      call define_blocks ('testing_model', my_block, isc, iec, jsc, jec, kpts=0, &
@@ -160,10 +159,10 @@ program test_diag_diurnal
   ied1 = isd1 + iec-isc
   jed1 = jsd1 + jec-jsc
 
-  !< Set up start, end, and increment times
+  !< set up end time
   Time = set_date(2,1,1,0,0,0)
   Time_step = set_time (3600,0) !< 1 hour
-  call diag_manager_set_time_end(set_date(2,1,3,0,0,0))
+  call diag_manager_set_time_end(set_date(2,nmonths+1,1,0,0,0))
 
   !< Register the axis
   id_x  = diag_axis_init('x',  real((/ (i, i = 1,nx) /), kind=r8_kind),  'point_E', 'x', long_name='point_E', &
@@ -171,7 +170,7 @@ program test_diag_diurnal
   id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', &
     Domain2=Domain)
   id_z  = diag_axis_init('z',  real((/ (i, i = 1,nz) /), kind=r8_kind),  'point_Z', 'z', long_name='point_Z')
-  !!id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
+  !id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
 
   missing_value = -666._r8_kind
   !< Register the fields
@@ -186,7 +185,7 @@ program test_diag_diurnal
     ndays = days_in_month(Time)
     print * , "days in month:", ndays
     do d = 1, ndays
-      do h = 1, 23 ! hours
+      do h = 0, 23 ! hours
         Time = set_date(2,m,d,hour=h)
 
         call set_buffer(cdata, m, d, h)
@@ -302,39 +301,13 @@ program test_diag_diurnal
     buffer = 1.0_r8_kind
   end function allocate_real_mask
 
-  !> @brief initiliazed the buffer based on the starting/ending indices
-  subroutine init_buffer(buffer, is, ie, js, je, nhalo)
-    real(kind=r8_kind), intent(inout) :: buffer(:,:,:,:) !< output buffer
-    integer,            intent(in)    :: is              !< Starting x index
-    integer,            intent(in)    :: ie              !< Ending x index
-    integer,            intent(in)    :: js              !< Starting y index
-    integer,            intent(in)    :: je              !< Ending y index
-    integer,            intent(in)    :: nhalo           !< Number of halos
-
-    integer :: ii, j, k, l
-
-    do ii = is, ie
-      do j = js, je
-        do k = 1, size(buffer, 3)
-          do l = 1, size(buffer,4)
-            buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = real(ii, kind=r8_kind)* 0.01_r8_kind + &
-              real(j, kind=r8_kind)* 0.0001_r8_kind + &
-              real(k, kind=r8_kind)* 0.000001_r8_kind
-          enddo
-        enddo
-      enddo
-    enddo
-
-    buffer = 0.0
-
-  end subroutine init_buffer
 
   !> @brief Set the buffer based on the time_index
   subroutine set_buffer(buffer, month, day, hour)
     real(kind=r8_kind), intent(inout) :: buffer(:,:,:,:) !< Output buffer
     integer,            intent(in)    :: month, day, hour !< Time index
 
-    buffer = nint(buffer) + (real(month, r8_kind)*10000.0 + real(day, kind=r8_kind)*100.0 + real(hour, kind=r8_kind))
+    buffer = hour ! month * 10000 + day * 100 + hour
 
   end subroutine set_buffer
 

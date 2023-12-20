@@ -38,7 +38,7 @@ diag_files:
 - file_name: test_diurnal
   time_units: hours 
   unlimdim: time
-  freq: 1 hours
+  freq: 1 months 
   varlist:
   - module: ocn_mod 
     var_name: sst
@@ -54,9 +54,23 @@ _EOF
 
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n" > input.nml
 
-test_expect_success "new diurnal test" '
+test_expect_success "simple hourly diurnal test" '
   mpirun -n 1 ../test_diag_diurnal
 '
+
+test_expect_success "checking results for simple hourly diurnal test" '
+  mpirun -n 1 ../check_time_diurnal
+' 
+
+# end here for now
+test_done
+exit
+
+# this passes but doesn't seem to be using the new code as it should
+test_expect_success "old diurnal test with modern_diag" '
+  mpirun -n 1 ../test_diag_manager_time
+'
+
 
 # use old code for now
 #rm input.nml && touch input.nml
