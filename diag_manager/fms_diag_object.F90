@@ -529,7 +529,8 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  field_info = " Check send data call for field:"//trim(this%FMS_diag_fields(diag_field_id)%get_varname())
+  field_info = " Check send data call for field:"//trim(this%FMS_diag_fields(diag_field_id)%get_varname())//&
+    " and module:"//trim(this%FMS_diag_fields(diag_field_id)%get_modname())
 
   !< Check if time should be present for this field
   if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) &
