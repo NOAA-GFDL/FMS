@@ -635,31 +635,10 @@ function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_
   real(kind=r8_kind), intent(in)                 :: missing_value !< missing_value for masked data points
   logical, intent(in)                            :: has_mask !< indicates if there was a mask used during buffer updates
   character(len=51)                              :: err_msg !< error message to return, blank if sucessful
-  !logical, intent(in)                            :: is_subregional !< if subregional output
-  !logical, intent(in)                            :: has_halo !< true if halo region is being used
-  !logical, optional, intent(in)                  :: mask(:,:,:,:) !< whether a mask variant reduction
-  !logical, allocatable                           :: mask_tmp(:,:,:,:)
-  !integer :: is, ie, js, je, ks, ke, zs, ze
-  !integer :: i, halo_size(4)
 
   if(.not. allocated(this%buffer)) return
 
   if(this%weight_sum .eq. 0.0_r8_kind) return
-
-  ! TODO mask adjustment for halos, not needed unless were passing in the mask
-  ! if the mask is stil bigger than the buffer, theres a halo region we can leave out
-  !if(has_halo .and. present(mask)) then
-    !is = lbound(this%buffer,1); ie = ubound(this%buffer,1)
-    !js = lbound(this%buffer,2); je = ubound(this%buffer,2)
-    !ks = lbound(this%buffer,3); ke = ubound(this%buffer,3)
-    !zs = lbound(this%buffer,4); ze = ubound(this%buffer,4)
-    !! might be safe to assume these are all the same
-    !do i=1, 4
-      !halo_size(i) = (SIZE(this%buffer,i) - SIZE(mask,i)) / 2
-    !enddo
-    !mask_tmp = mask(is+halo_size(1):ie+halo_size(1), js+halo_size(2):je+halo_size(2), ks+halo_size(3):ke+halo_size(3),&
-                    !zs+halo_size(4):ze+halo_size(4))
-  !endif
 
   err_msg = ""
   select type(buff => this%buffer)

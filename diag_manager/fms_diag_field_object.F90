@@ -1706,14 +1706,14 @@ pure function is_halo_present(this)
   is_halo_present = this%halo_present
 end function is_halo_present
 
-!> Helper routine to find and set the missing value for a field
+!> Helper routine to find and set the netcdf missing value for a field
 !! Always returns r8 due to reduction routine args
 !! casts up to r8 from given missing val or default if needed
 function find_missing_value(this, missing_val) &
   result(res)
-  class(fmsDiagField_type), intent(in) :: this
-  class(*), allocatable, intent(out) :: missing_val
-  real(r8_kind) :: res
+  class(fmsDiagField_type), intent(in) :: this !< field object to get missing value for 
+  class(*), allocatable, intent(out) :: missing_val !< outputted netcdf missing value (oriignal type)
+  real(r8_kind) :: res !< returned r8 copy of missing_val
 
   if(this%has_missing_value()) then
     missing_val = this%get_missing_value(this%get_vartype())
@@ -1733,7 +1733,7 @@ end function find_missing_value
 !! this just indicates whether the mask array itself has been alloc'd
 !! this is different from @ref has_mask_variant, which is set earlier for whether a mask is being used at all
 pure logical function has_mask_allocated(this)
-  class(fmsDiagField_type),intent(in) :: this
+  class(fmsDiagField_type),intent(in) :: this !< field object to check mask allocation for
   has_mask_allocated = allocated(this%mask)
 end function has_mask_allocated
 

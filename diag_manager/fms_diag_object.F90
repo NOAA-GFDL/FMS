@@ -722,14 +722,18 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   class(DiagYamlFilesVar_type), pointer     :: field_yaml !< Pointer to a field from yaml fields
   TYPE (time_type),                 pointer :: model_time!< The current model time
   integer, allocatable                      :: buff_ids(:) !< ids for output buffers to loop through
-  integer                                   :: ibuff, mask_zbounds(2), mask_shape(4)
+  integer                                   :: ibuff !< buffer index
+  !integer                                   :: mask_zbounds(2) TODO used for passing in mask
+  !integer                                   :: mask_shape(4)  TODO used for passing in mask
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write, is_writing, has_mask
-  logical, parameter :: DEBUG_REDUCT = .false.
-  class(*), allocatable :: missing_val
-  real(r8_kind) :: mval
-  character(len=128) :: error_string
+  logical :: force_write !< force the last write if at end of run 
+  logical :: is_writing !< true if we are writing the actual field data (metadata is always written)
+  logical :: has_mask !< whether we have a mask
+  logical, parameter :: DEBUG_REDUCT = .false. !< enables debugging output
+  class(*), allocatable :: missing_val !< netcdf missing value for a given field
+  real(r8_kind) :: mval !< r8 copy of missing value
+  character(len=128) :: error_string !< outputted error string from reducti
 
   force_write = .false.
   if (present (is_end_of_run)) force_write = .true.
@@ -775,6 +779,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
             error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
                                     mval, has_mask)
+            if(error_string /= "") call mpp_error(FATAL, "fms_diag_do_io:: error finishing reduction: "//error_string)
           endif
         endif
         !endif
