@@ -723,8 +723,6 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   TYPE (time_type),                 pointer :: model_time!< The current model time
   integer, allocatable                      :: buff_ids(:) !< ids for output buffers to loop through
   integer                                   :: ibuff !< buffer index
-  !integer                                   :: mask_zbounds(2) TODO used for passing in mask
-  !integer                                   :: mask_shape(4)  TODO used for passing in mask
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
   logical :: force_write !< force the last write if at end of run 
