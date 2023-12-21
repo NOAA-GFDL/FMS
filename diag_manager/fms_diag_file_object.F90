@@ -1480,7 +1480,7 @@ end subroutine close_diag_file
 !> \brief Gets the buffer_id list from the file object
 pure function get_buffer_ids (this)
   class(fmsDiagFile_type), intent(in) :: this !< The file object
-  integer, allocatable :: get_buffer_ids(:) !< returned buffer ids for this file 
+  integer, allocatable :: get_buffer_ids(:) !< returned buffer ids for this file
 
   allocate(get_buffer_ids(this%number_of_buffers))
   get_buffer_ids = this%buffer_ids

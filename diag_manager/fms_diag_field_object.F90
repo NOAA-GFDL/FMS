@@ -1711,7 +1711,7 @@ end function is_halo_present
 !! casts up to r8 from given missing val or default if needed
 function find_missing_value(this, missing_val) &
   result(res)
-  class(fmsDiagField_type), intent(in) :: this !< field object to get missing value for 
+  class(fmsDiagField_type), intent(in) :: this !< field object to get missing value for
   class(*), allocatable, intent(out) :: missing_val !< outputted netcdf missing value (oriignal type)
   real(r8_kind) :: res !< returned r8 copy of missing_val
 

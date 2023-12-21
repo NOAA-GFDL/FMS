@@ -725,7 +725,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   integer                                   :: ibuff !< buffer index
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write !< force the last write if at end of run 
+  logical :: force_write !< force the last write if at end of run
   logical :: is_writing !< true if we are writing the actual field data (metadata is always written)
   logical :: has_mask !< whether we have a mask
   logical, parameter :: DEBUG_REDUCT = .false. !< enables debugging output
@@ -772,12 +772,9 @@ subroutine fms_diag_do_io(this, is_end_of_run)
             if(DEBUG_REDUCT)call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             has_mask = diag_field%has_mask_variant()
             if(has_mask) has_mask = diag_field%get_mask_variant()
-            !! TODO pass in entire mask with anything needed for adjusting/grabbing the right region to
-            !! match output buffer
             error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
                                     mval, has_mask)
-            if(error_string /= "") call mpp_error(FATAL, "fms_diag_do_io:: error finishing reduction: "//error_string)
           endif
         endif
         !endif
