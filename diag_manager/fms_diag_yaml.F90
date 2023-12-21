@@ -1444,13 +1444,13 @@ function get_diag_files_id(indices) &
     file_indices = fms_find_my_string(file_list%file_pointer, size(file_list%file_pointer), &
       & trim(filename)//c_null_char)
 
-    if (file_indices(1) .eq. diag_null) &
-      & call mpp_error(FATAL, "get_diag_files_id: Error finding the file "//trim(filename)//" in the diag_files yaml")
-
     if (size(file_indices) .ne. 1) &
       & call mpp_error(FATAL, "get_diag_files_id: Error getting the correct number of file indices!"//&
                               " The diag file "//trim(filename)//" was defined "//string(size(file_indices))&
                               // " times")
+
+    if (file_indices(1) .eq. diag_null) &
+      & call mpp_error(FATAL, "get_diag_files_id: Error finding the file "//trim(filename)//" in the diag_files yaml")
 
     !< Get the index of the file in the diag_yaml file
     file_id(i) = file_list%diag_file_indices(file_indices(1))
