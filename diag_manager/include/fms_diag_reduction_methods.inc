@@ -215,7 +215,7 @@ end subroutine DO_TIME_MAX_
 !!
 !! Where l are the indices passed in through the bounds_in/out
 subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, &
-                               missing_value, diurnal_section, weight, pow)
+                               missing_value, increase_counter, diurnal_section, weight, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(r8_kind),       intent(inout) :: weight_sum          !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
@@ -226,6 +226,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
                                                                   !! of the output buffer
   real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  logical,                   intent(in)    :: increase_counter    !< .True. if data has not been received for
+                                                                  !! time, so the counter needs to be increased
   integer, intent(in)                      :: diurnal_section !< the diurnal "section" if doing a diurnal reduction 
                                                               !! indicates which index to add data on 5th axis
                                                               !! if not doing a diurnal reduction, this should always =1
@@ -261,7 +263,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   endif
 
   ! update with given weight for average before write
-  weight_sum = weight_sum + weight_loc
+  if (increase_counter) weight_sum = weight_sum + weight_loc
 
   is_out = bounds_out%get_imin()
   ie_out = bounds_out%get_imax()

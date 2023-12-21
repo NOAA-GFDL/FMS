@@ -247,6 +247,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       call bufferptr%set_diurnal_sample_size(yamlfptr%get_n_diurnal())
       is_diurnal = .true.
     endif
+    call bufferptr%init_buffer_time(init_time)
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
@@ -730,14 +731,16 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   class(DiagYamlFilesVar_type), pointer     :: field_yaml !< Pointer to a field from yaml fields
   TYPE (time_type),                 pointer :: model_time!< The current model time
   integer, allocatable                      :: buff_ids(:) !< ids for output buffers to loop through
-  integer                                   :: ibuff, mask_zbounds(2), mask_shape(4)
+  integer                                   :: ibuff !< buffer index
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write, is_writing, has_mask
-  logical, parameter :: DEBUG_REDUCT = .false.
-  class(*), allocatable :: missing_val
-  real(r8_kind) :: mval
-  character(len=128) :: error_string
+  logical :: force_write !< force the last write if at end of run
+  logical :: is_writing !< true if we are writing the actual field data (metadata is always written)
+  logical :: has_mask !< whether we have a mask
+  logical, parameter :: DEBUG_REDUCT = .false. !< enables debugging output
+  class(*), allocatable :: missing_val !< netcdf missing value for a given field
+  real(r8_kind) :: mval !< r8 copy of missing value
+  character(len=128) :: error_string !< outputted error string from reducti
 
   force_write = .false.
   if (present (is_end_of_run)) force_write = .true.
@@ -778,8 +781,6 @@ subroutine fms_diag_do_io(this, is_end_of_run)
             if(DEBUG_REDUCT)call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
             has_mask = diag_field%has_mask_variant()
             if(has_mask) has_mask = diag_field%get_mask_variant()
-            !! TODO pass in entire mask with anything needed for adjusting/grabbing the right region to
-            !! match output buffer
             error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
                                     mval, has_mask)
@@ -855,6 +856,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   real(kind=r8_kind)        :: missing_value      !< Missing_value for data points that are masked
                                                   !! This will obtained as r8 and converted to the right type as
                                                   !! needed. This is to avoid yet another select type ...
+  logical                   :: new_time           !< .True. if this is a new time (i.e data has not be been
+                                                  !! sent for this time)
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
@@ -968,13 +971,14 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       endif
     case (time_sum)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value)
+        bounds_in, bounds_out, missing_value, .true.)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_average)
+      new_time = buffer_ptr%update_buffer_time(time)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value)
+        bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif
@@ -986,7 +990,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       ! sets the diurnal index for reduction within the buffer object
       call buffer_ptr%set_diurnal_section_index(time)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value)
+        bounds_in, bounds_out, missing_value, .true.)
       if (trim(error_msg) .ne. "") then
         return
       endif
