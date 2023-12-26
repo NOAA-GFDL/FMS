@@ -627,30 +627,30 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
   fileobj%is_netcdf4 = .false.
+  if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
+  if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
+
+  if (present(nc_format)) then
+    if (string_compare(nc_format, "64bit", .true.)) then
+      nc_format_param = nf90_64bit_offset
+    elseif (string_compare(nc_format, "classic", .true.)) then
+      nc_format_param = nf90_classic_model
+    elseif (string_compare(nc_format, "netcdf4", .true.)) then
+      fileobj%is_netcdf4 = .true.
+      nc_format_param = nf90_netcdf4
+    else
+      call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
+    endif
+    call string_copy(fileobj%nc_format, nc_format)
+  else
+    call string_copy(fileobj%nc_format, trim(fms2_nc_format))
+    nc_format_param = fms2_nc_format_param
+    fileobj%is_netcdf4 = fms2_is_netcdf4
+  endif
+
   !Open the file with netcdf if this rank is the I/O root.
   if (fileobj%is_root .and. .not.(fileobj%use_collective)) then
-    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
-    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
-
-    if (present(nc_format)) then
-      if (string_compare(nc_format, "64bit", .true.)) then
-        nc_format_param = nf90_64bit_offset
-      elseif (string_compare(nc_format, "classic", .true.)) then
-        nc_format_param = nf90_classic_model
-      elseif (string_compare(nc_format, "netcdf4", .true.)) then
-        fileobj%is_netcdf4 = .true.
-        nc_format_param = nf90_netcdf4
-      else
-        call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
-                   &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
-      endif
-      call string_copy(fileobj%nc_format, nc_format)
-    else
-      call string_copy(fileobj%nc_format, trim(fms2_nc_format))
-      nc_format_param = fms2_nc_format_param
-      fileobj%is_netcdf4 = fms2_is_netcdf4
-    endif
-
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
@@ -680,8 +680,19 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
         endif
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
       endif
-      call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
+    elseif (string_compare(mode, "write", .true.)) then
+      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective write"// &
+                              " This feature is not implemented"// trim(fileobj%path))
+      !err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, comm=fileobj%TileComm, info=MPI_INFO_NULL)
+    elseif (string_compare(mode,"overwrite",.true.)) then
+      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective overwrite"// &
+                              " This feature is not implemented"// trim(fileobj%path))
+      !err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, comm=fileobj%TileComm, info=MPI_INFO_NULL)
+    else
+      call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are read, append, write, overwrite")
     endif
+    call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
   else
     fileobj%ncid = missing_ncid
   endif
