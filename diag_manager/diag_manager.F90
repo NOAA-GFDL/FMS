@@ -1781,8 +1781,8 @@ END FUNCTION register_static_field
   ! Split old and modern2023 here
   modern_if: iF (use_modern_diag) then
     field_name = fms_diag_object%fms_get_field_name_from_id(diag_field_id)
-    field_remap = copy_3d_to_4d(field, trim(field_name)//"'s data")
-    if (present(rmask)) rmask_remap = copy_3d_to_4d(rmask, trim(field_name)//"'s mask")
+    call copy_3d_to_4d(field, field_remap, trim(field_name)//"'s data")
+    if (present(rmask)) call copy_3d_to_4d(rmask, rmask_remap, trim(field_name)//"'s mask")
     if (present(mask)) then
       allocate(mask_remap(1:size(mask,1), 1:size(mask,2), 1:size(mask,3), 1))
       mask_remap(:,:,:,1) = mask
@@ -4587,8 +4587,7 @@ END FUNCTION register_static_field
 
   !> @brief Copies a 3d buffer to a 4d buffer
   !> @return a 4d buffer
-  function copy_3d_to_4d(data_in, field_name) &
-    result(data_out)
+  subroutine copy_3d_to_4d(data_in, data_out, field_name)
     class (*),        intent(in) :: data_in(:,:,:) !< Data to copy
     character(len=*), intent(in) :: field_name     !< Name of the field copying (for error messages)
     class (*), allocatable :: data_out(:,:,:,:)
@@ -4617,7 +4616,7 @@ END FUNCTION register_static_field
       call mpp_error(FATAL, "The data for "//trim(field_name)//&
         &" is not a valid type. Currently only r4 and r8 are supported")
     end select
-  end function copy_3d_to_4d
+  end subroutine copy_3d_to_4d
 
 END MODULE diag_manager_mod
 !> @}
