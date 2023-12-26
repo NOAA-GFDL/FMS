@@ -434,7 +434,7 @@ subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level, is
   using_diurnal = .false.
   if( present(is_diurnal) ) using_diurnal = is_diurnal
   if( using_diurnal ) then
-    buff_ptr = this%get_remapped_diurnal_data()
+    call this%get_remapped_diurnal_data(buff_ptr)
   else
     buff_ptr = this%buffer
   endif
@@ -471,7 +471,7 @@ subroutine write_buffer_wrapper_domain(this, fms2io_fileobj, unlim_dim_level, is
   using_diurnal = .false.
   if( present(is_diurnal) ) using_diurnal = is_diurnal
   if( using_diurnal ) then
-    buff_ptr = this%get_remapped_diurnal_data()
+    call this%get_remapped_diurnal_data(buff_ptr)
   else
     buff_ptr = this%buffer
   endif
@@ -508,7 +508,7 @@ subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level, is_diur
   using_diurnal = .false.
   if( present(is_diurnal) ) using_diurnal = is_diurnal
   if( using_diurnal ) then
-    buff_ptr = this%get_remapped_diurnal_data()
+    call this%get_remapped_diurnal_data(buff_ptr)
   else
     buff_ptr = this%buffer
   endif
@@ -739,10 +739,9 @@ end subroutine set_diurnal_section_index
 
 !> Remaps the output buffer array when using the diurnal reduction
 !! moves the diurnal index to the left-most unused dimension for the io
-function get_remapped_diurnal_data(this) &
-  result(res)
+subroutine get_remapped_diurnal_data(this, res)
   class(fmsDiagOutputBuffer_type), intent(in) :: this
-  class(*), allocatable :: res(:,:,:,:,:)
+  class(*), intent(out), allocatable :: res(:,:,:,:,:)
   integer :: last_dim
   integer :: ie, je, ke, ze, de !< ending indices for the new array 
   integer(i4_kind) :: buff_size(5)!< sizes for allocated buffer
@@ -791,7 +790,7 @@ function get_remapped_diurnal_data(this) &
       end select 
   end select
 
-end function get_remapped_diurnal_data
+end subroutine get_remapped_diurnal_data
 
 #endif
 end module fms_diag_output_buffer_mod
