@@ -4586,11 +4586,10 @@ END FUNCTION register_static_field
   END SUBROUTINE diag_field_add_cell_measures
 
   !> @brief Copies a 3d buffer to a 4d buffer
-  !> @return a 4d buffer
   subroutine copy_3d_to_4d(data_in, data_out, field_name)
     class (*),        intent(in) :: data_in(:,:,:) !< Data to copy
     character(len=*), intent(in) :: field_name     !< Name of the field copying (for error messages)
-    class (*), allocatable :: data_out(:,:,:,:)
+    class (*), allocatable, intent(out) :: data_out(:,:,:,:) !< 4D version of the data
 
     !TODO this should be extended to integers
     select type(data_in)
