@@ -114,13 +114,13 @@ use platform_mod
   INTEGER, PARAMETER :: index_gridtype = 2
   INTEGER, PARAMETER :: null_gridtype = DIAG_NULL
   INTEGER, PARAMETER :: time_none    = 0 !< There is no reduction method
-  INTEGER, PARAMETER :: time_average = 1 !< The reduction method is avera
-  INTEGER, PARAMETER :: time_rms     = 2 !< The reduction method is rms
-  INTEGER, PARAMETER :: time_max     = 3 !< The reduction method is max
-  INTEGER, PARAMETER :: time_min     = 4 !< The reduction method is min
-  INTEGER, PARAMETER :: time_sum     = 5 !< The reudction method is sum
+  INTEGER, PARAMETER :: time_min     = 1 !< The reduction method is min value
+  INTEGER, PARAMETER :: time_max     = 2 !< The reduction method is max value
+  INTEGER, PARAMETER :: time_sum     = 3 !< The reduction method is sum of values
+  INTEGER, PARAMETER :: time_average= 4 !< The reduction method is average of values
+  INTEGER, PARAMETER :: time_rms     = 5 !< The reudction method is root mean square of values
   INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
-  INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is power
+  INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is average with exponents
   CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
   CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
   INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds

@@ -19,7 +19,7 @@
 
 ! for any debug prints
 #ifndef DEBUG_REDUCT
-#define DEBUG_REDUCT .true.
+#define DEBUG_REDUCT .false.
 #endif
 
 !> @brief Do the time_none reduction method (i.e copy the correct portion of the input data)
@@ -215,7 +215,7 @@ end subroutine DO_TIME_MAX_
 !!
 !! Where l are the indices passed in through the bounds_in/out
 subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, &
-                               missing_value, weight, pow)
+                               missing_value, increase_counter, weight, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(r8_kind),       intent(inout) :: weight_sum          !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
@@ -226,6 +226,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
                                                                   !! of the output buffer
   real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  logical,                   intent(in)    :: increase_counter    !< .True. if data has not been received for
+                                                                  !! time, so the counter needs to be increased
   real(r8_kind),optional, intent(in) :: weight              !< Weight applied to data_in before added to data_out
                                                                   !! used for weighted averages, default 1.0
   real(FMS_TRM_KIND_),optional, intent(in) :: pow                 !< Used for pow reduction, adds field^pow to buffer
@@ -251,7 +253,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   endif
 
   ! update with given weight for average before write
-  weight_sum = weight_sum + weight_loc
+  if (increase_counter) weight_sum = weight_sum + weight_loc
 
   is_out = bounds_out%get_imin()
   ie_out = bounds_out%get_imax()
@@ -289,7 +291,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
-          data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =   &
+          data_out(is_out + i, js_out + j, ks_out + k,  :, 1) =  &
              data_out(is_out + i, js_out + j, ks_out + k, :, 1)  &
             + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
         enddo
@@ -297,3 +299,30 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
     enddo
   endif
 end subroutine DO_TIME_SUM_UPDATE_
+
+!> To be called with diag_send_complete, finishes reductions
+!! Just divides the buffer by the counter array(which is just the sum of the weights used in the buffer's reduction)
+!! TODO: change has_mask to an actual logical mask so we don't have to check for missing values
+subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask)
+  real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
+                                                                   !! do_time_sum_update
+  real(r8_kind), intent(in)          :: weight_sum !< sum of weights for averaging, provided via argument to send data
+  integer, intent(in)                :: reduction_method !< which reduction method to use, should be time_avg
+  real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
+  logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped
+  !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
+  !logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one.
+  !logical                            :: has_mask !< whether or not mask is present
+
+  if ( has_mask ) then
+    where(out_buffer_data(:,:,:,:,1) .ne. missing_val)
+      out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
+                                   / weight_sum
+    endwhere
+  else  !not mask variant
+    out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
+                               / weight_sum
+  endif
+
+end subroutine
+

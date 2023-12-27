@@ -238,6 +238,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
     call bufferptr%set_field_id(this%registered_variables)
     call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
+    call bufferptr%init_buffer_time(init_time)
   enddo
 
 !> Allocate and initialize member buffer_allocated of this field
@@ -539,6 +540,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !< Set the field_weight. If "weight" is not present it will be set to 1.0_r8_kind
   field_weight = set_weight(weight)
 
+  !< Set the variable type based off passed in field data
+  if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
+    call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
+
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
   if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
@@ -550,6 +555,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   has_halos = .false.
   if ((present(is_in) .and. present(ie_in)) .or. (present(js_in) .and. present(je_in))) &
     has_halos = .true.
+
+  if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
 
   !< If the field has `mask_variant=.true.`, check that mask OR rmask are present
   if (this%FMS_diag_fields(diag_field_id)%is_mask_variant()) then
@@ -603,7 +610,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (.not. this%FMS_diag_fields(diag_field_id)%is_data_buffer_allocated()) then
       data_buffer_is_allocated = &
         this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, this%diag_axis)
-      call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
+      if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
+        call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
     endif
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
@@ -622,7 +630,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       bounds, using_blocking, Time=Time)
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
-    call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
+    if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
+      call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
     call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info)
     return
   end if main_if
@@ -655,7 +664,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   character(len=128) :: error_string
   type(fmsDiagIbounds_type) :: bounds
   integer, dimension(:), allocatable :: file_ids !< Array of file IDs for a field
-  logical, parameter :: DEBUG_SC = .true. !< turn on output for debugging
+  logical, parameter :: DEBUG_SC = .false. !< turn on output for debugging
 
   !< Update the current model time by adding the time_step
   this%current_model_time = this%current_model_time + time_step
@@ -700,6 +709,8 @@ end subroutine fms_diag_send_complete
 
 !> @brief Loops through all the files, open the file, writes out axis and
 !! variable metadata and data when necessary.
+!! TODO: passing in the saved mask from the field obj to diag_reduction_done_wrapper
+!! for performance
 subroutine fms_diag_do_io(this, is_end_of_run)
   class(fmsDiagObject_type), target, intent(inout)  :: this          !< The diag object
   logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
@@ -707,11 +718,21 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 #ifdef use_yaml
   integer :: i !< For do loops
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
+  class(fmsDiagOutputBuffer_type), pointer  :: diag_buff !< pointer to output buffers iterated in buff_loop
+  class(fmsDiagField_type), pointer         :: diag_field !< pointer to output buffers iterated in buff_loop
+  class(DiagYamlFilesVar_type), pointer     :: field_yaml !< Pointer to a field from yaml fields
   TYPE (time_type),                 pointer :: model_time!< The current model time
-
+  integer, allocatable                      :: buff_ids(:) !< ids for output buffers to loop through
+  integer                                   :: ibuff !< buffer index
   logical :: file_is_opened_this_time_step !< True if the file was opened in this time_step
                                            !! If true the metadata will need to be written
-  logical :: force_write
+  logical :: force_write !< force the last write if at end of run
+  logical :: is_writing !< true if we are writing the actual field data (metadata is always written)
+  logical :: has_mask !< whether we have a mask
+  logical, parameter :: DEBUG_REDUCT = .false. !< enables debugging output
+  class(*), allocatable :: missing_val !< netcdf missing value for a given field
+  real(r8_kind) :: mval !< r8 copy of missing value
+  character(len=128) :: error_string !< outputted error string from reducti
 
   force_write = .false.
   if (present (is_end_of_run)) force_write = .true.
@@ -733,7 +754,38 @@ subroutine fms_diag_do_io(this, is_end_of_run)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    if (diag_file%is_time_to_write(model_time)) then
+    is_writing = diag_file%is_time_to_write(model_time)
+
+    ! finish reduction method if its time to write
+    buff_reduct: if (is_writing) then
+      allocate(buff_ids(diag_file%FMS_diag_file%get_number_of_buffers()))
+      buff_ids = diag_file%FMS_diag_file%get_buffer_ids()
+      ! loop through the buffers and finish reduction if needed
+      buff_loop: do ibuff=1, SIZE(buff_ids)
+        diag_buff => this%FMS_diag_output_buffers(buff_ids(ibuff))
+        field_yaml => diag_yaml%get_diag_field_from_id(diag_buff%get_yaml_id())
+        diag_field => this%FMS_diag_fields(diag_buff%get_field_id())
+        ! sets missing value
+        mval = diag_field%find_missing_value(missing_val)
+        ! time_average and greater values all involve averaging so need to be "finished" before written
+        if( field_yaml%has_var_reduction()) then
+          if( field_yaml%get_var_reduction() .ge. time_average) then
+            if(DEBUG_REDUCT)call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
+            has_mask = diag_field%has_mask_variant()
+            if(has_mask) has_mask = diag_field%get_mask_variant()
+            error_string = diag_buff%diag_reduction_done_wrapper( &
+                                    field_yaml%get_var_reduction(), &
+                                    mval, has_mask)
+          endif
+        endif
+        !endif
+        nullify(diag_buff)
+        nullify(field_yaml)
+      enddo buff_loop
+      deallocate(buff_ids)
+    endif buff_reduct
+
+    if (is_writing) then
       call diag_file%increase_unlim_dimension_level()
       call diag_file%write_time_data()
       call diag_file%write_field_data(this%FMS_diag_fields, this%FMS_diag_output_buffers)
@@ -796,6 +848,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   real(kind=r8_kind)        :: missing_value      !< Missing_value for data points that are masked
                                                   !! This will obtained as r8 and converted to the right type as
                                                   !! needed. This is to avoid yet another select type ...
+  logical                   :: new_time           !< .True. if this is a new time (i.e data has not be been
+                                                  !! sent for this time)
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
@@ -909,11 +963,17 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       endif
     case (time_sum)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value)
+        bounds_in, bounds_out, missing_value, .true.)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_average)
+      new_time = buffer_ptr%update_buffer_time(time)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value, new_time)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_power)
     case (time_rms)
     case (time_diurnal)
