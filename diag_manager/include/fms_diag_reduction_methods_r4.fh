@@ -38,6 +38,9 @@
 #undef DO_TIME_SUM_UPDATE_
 #define DO_TIME_SUM_UPDATE_ do_time_sum_update_r4
 
+#undef SUM_UPDATE_DONE_
+#define SUM_UPDATE_DONE_ sum_update_done_r4
+
 #include "fms_diag_reduction_methods.inc"
 
 !> @}
