@@ -771,7 +771,6 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 
     ! finish reduction method if its time to write
     buff_reduct: if (is_writing) then
-      allocate(buff_ids(diag_file%FMS_diag_file%get_number_of_buffers()))
       buff_ids = diag_file%FMS_diag_file%get_buffer_ids()
       ! loop through the buffers and finish reduction if needed
       buff_loop: do ibuff=1, SIZE(buff_ids)
