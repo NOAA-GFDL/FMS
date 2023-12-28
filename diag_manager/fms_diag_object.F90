@@ -1032,6 +1032,7 @@ subroutine fms_diag_axis_add_attribute(this, axis_id, att_name, att_value)
   class(*),         intent(in) :: att_value(:) !< The attribute value to add
 
   character(len=20) :: axis_names(2) !< Names of the uncompress axis
+  character(len=20) :: set_name      !< Name of the axis set
   integer           :: uncmx_ids(2)  !< Ids of the uncompress axis
   integer           :: j             !< For do loops
 #ifndef use_yaml
@@ -1054,8 +1055,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       !! and the ids of the axis and add it to the axis object so it can be written to netcdf files
       !! that use this axis
       axis_names = parse_compress_att(att_value)
+      set_name = ""
+      if (axis%has_set_name()) set_name = axis%get_set_name()
       do j = 1, size(axis_names)
-        uncmx_ids(j) = get_axis_id_from_name(axis_names(j), this%diag_axis, this%registered_axis)
+        uncmx_ids(j) = get_axis_id_from_name(axis_names(j), this%diag_axis, this%registered_axis, set_name)
         if (uncmx_ids(j) .eq. diag_null) call mpp_error(FATAL, &
           &"Error parsing the compress attribute for axis: "//trim(axis%get_axis_name())//&
           &". Be sure that the axes in the compress attribute are registered")
