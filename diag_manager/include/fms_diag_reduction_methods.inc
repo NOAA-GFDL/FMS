@@ -291,7 +291,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
                        data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
                      + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
           elsewhere
-            data_out(is_out + i, js_out + j, ks_out + k, :, 1) = missing_value
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
           endwhere
         enddo
       enddo

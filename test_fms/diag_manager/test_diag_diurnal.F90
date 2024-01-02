@@ -65,8 +65,8 @@ program test_diag_diurnal
   integer                            :: id_w            !< axis id for the w dimension
   integer                            :: id_var0         !< diag_field id for 0d var
   integer                            :: id_var1         !< diag_field id for 1d var
-  integer                            :: id_ice         !< diag_field id for 2d var
-  integer                            :: id_sst         !< diag_field id for 3d var
+  integer                            :: id_var2         !< diag_field id for 2d var
+  integer                            :: id_var3         !< diag_field id for 3d var
   integer                            :: id_var4         !< diag_field id for 4d var
   integer                            :: io_status       !< Status after reading the namelist
   type(block_control_type)           :: my_block        !< Returns instantiated @ref block_control_type
@@ -94,13 +94,13 @@ program test_diag_diurnal
   integer :: test_case = test_normal !< Indicates which test case to run
   integer :: mask_case = no_mask     !< Indicates which masking option to run
 
-  namelist / test_reduction_methods_nml / test_case, mask_case
+  namelist / test_diag_diurnal_nml / test_case, mask_case
 
   call fms_init
   call set_calendar_type(JULIAN)
   call diag_manager_init
 
-  read (input_nml_file, test_reduction_methods_nml, iostat=io_status)
+  read (input_nml_file, test_diag_diurnal_nml, iostat=io_status)
   if (io_status > 0) call mpp_error(FATAL,'=>test_modern_diag: Error reading input.nml')
 
   nx = 96 
@@ -170,13 +170,17 @@ program test_diag_diurnal
   id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', &
     Domain2=Domain)
   id_z  = diag_axis_init('z',  real((/ (i, i = 1,nz) /), kind=r8_kind),  'point_Z', 'z', long_name='point_Z')
-  !id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
+  id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
 
   missing_value = -666._r8_kind
   !< Register the fields
-  id_ice = register_diag_field  ('ocn_mod', 'ice', (/id_x, id_y/), Time, 'ice', &
+  id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x/), Time, 'var1', &
     'mullions', missing_value = missing_value)
-  id_sst = register_diag_field  ('ocn_mod', 'sst', (/id_x, id_y, id_z/), Time, 'sst', &
+  id_var2 = register_diag_field  ('ocn_mod', 'var2', (/id_x, id_y/), Time, 'var2', &
+    'mullions', missing_value = missing_value)
+  id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'var3', &
+    'mullions', missing_value = missing_value)
+  id_var4 = register_diag_field  ('ocn_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'var4', &
     'mullions', missing_value = missing_value)
 
   ! iterate through nmonths and each day, each hour 
@@ -194,40 +198,69 @@ program test_diag_diurnal
         case (test_normal)
           select case (mask_case)
           case (no_mask)
-            used = send_data(id_ice, cdata(:,:,1,1), Time)
-            used = send_data(id_sst, cdata(:,:,:,1), Time)
+            used = send_data(id_var1, cdata(:,1,1,1), Time)
+            used = send_data(id_var2, cdata(:,:,1,1), Time)
+            used = send_data(id_var3, cdata(:,:,:,1), Time)
+            used = send_data(id_var4, cdata(:,:,:,:), Time)
           case (real_mask)
-            used = send_data(id_ice, cdata(:,:,1,1), Time, rmask=crmask(:,:,1,1))
-            used = send_data(id_sst, cdata(:,:,:,1), Time, rmask=crmask(:,:,:,1))
+            used = send_data(id_var1, cdata(:,1,1,1), Time, rmask=crmask(:,1,1,1))
+            used = send_data(id_var2, cdata(:,:,1,1), Time, rmask=crmask(:,:,1,1))
+            used = send_data(id_var3, cdata(:,:,:,1), Time, rmask=crmask(:,:,:,1))
+            used = send_data(id_var4, cdata(:,:,:,:), Time, rmask=crmask(:,:,:,:))
           case (logical_mask)
-            used = send_data(id_ice, cdata(:,:,1,1), Time, mask=clmask(:,:,1,1))
-            used = send_data(id_sst, cdata(:,:,:,1), Time, mask=clmask(:,:,:,1))
+            used = send_data(id_var1, cdata(:,1,1,1), Time, mask=clmask(:,1,1,1))
+            used = send_data(id_var2, cdata(:,:,1,1), Time, mask=clmask(:,:,1,1))
+            used = send_data(id_var3, cdata(:,:,:,1), Time, mask=clmask(:,:,:,1))
+            used = send_data(id_var4, cdata(:,:,:,:), Time, mask=clmask(:,:,:,:))
           end select
         case (test_halos)
           call set_buffer(ddata, m, d, h)
           select case (mask_case)
           case (no_mask)
-            used = send_data(id_ice, ddata(:,:,1,1), Time, &
+            used = send_data(id_var1, ddata(:,1,1,1), Time)
+            used = send_data(id_var2, ddata(:,:,1,1), Time, &
               is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
-            used = send_data(id_sst, ddata(:,:,:,1), Time, &
+            used = send_data(id_var3, ddata(:,:,:,1), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
+            used = send_data(id_var4, ddata(:,:,:,:), Time, &
               is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
           case (real_mask)
-            used = send_data(id_ice, ddata(:,:,1,1), Time, &
+            used = send_data(id_var1, ddata(:,1,1,1), Time, &
+              rmask=drmask(:,1,1,1))
+            used = send_data(id_var2, ddata(:,:,1,1), Time, &
               is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
               rmask=drmask(:,:,1,1))
-            used = send_data(id_sst, ddata(:,:,:,1), Time, &
+            used = send_data(id_var3, ddata(:,:,:,1), Time, &
               is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
               rmask=drmask(:,:,:,1))
+            used = send_data(id_var4, ddata(:,:,:,:), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+              rmask=drmask(:,:,:,:))
           case (logical_mask)
-            used = send_data(id_ice, ddata(:,:,1,1), Time, &
+            used = send_data(id_var1, ddata(:,1,1,1), Time, &
+              mask=dlmask(:,1,1,1))
+            used = send_data(id_var2, ddata(:,:,1,1), Time, &
               is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
               mask=dlmask(:,:,1,1))
-            used = send_data(id_sst, ddata(:,:,:,1), Time, &
+            used = send_data(id_var3, ddata(:,:,:,1), Time, &
               is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
               mask=dlmask(:,:,:,1))
+            used = send_data(id_var4, ddata(:,:,:,:), Time, &
+              is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+              mask=dlmask(:,:,:,:))
           end select
         case (test_openmp)
-    !$OMP parallel do default(shared) private(iblock, isw, iew, jsw, jew, is1, ie1, js1, je1)
+          select case(mask_case)
+          case (no_mask)
+            used=send_data(id_var1, cdata(:, 1, 1, 1), time)
+          case (logical_mask)
+            used=send_data(id_var1, cdata(:, 1, 1, 1), time, &
+                mask=clmask(:, 1, 1, 1))
+          case (real_mask)
+            used=send_data(id_var1, cdata(:, 1, 1, 1), time, &
+                rmask=crmask(:, 1, 1, 1))
+          end select
+!$OMP parallel do default(shared) private(iblock, isw, iew, jsw, jew, is1, ie1, js1, je1)
           do iblock=1, 4
             isw = my_block%ibs(iblock)
             jsw = my_block%jbs(iblock)
@@ -242,18 +275,23 @@ program test_diag_diurnal
 
             select case (mask_case)
             case (no_mask)
-              used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
-              used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
+              used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
+              used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
+              used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1)
             case (real_mask)
-              used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
+              used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
                 rmask=crmask(is1:ie1, js1:je1, 1, 1))
-              used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
+              used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
                 rmask=crmask(is1:ie1, js1:je1, :, 1))
+              used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
+                rmask=crmask(is1:ie1, js1:je1, :, :))
             case (logical_mask)
-              used=send_data(id_ice, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
+              used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
                 mask=clmask(is1:ie1, js1:je1, 1, 1))
-              used=send_data(id_sst, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
+              used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
                 mask=clmask(is1:ie1, js1:je1, :, 1))
+              used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
+                mask=clmask(is1:ie1, js1:je1, :, :))
             end select
           enddo
         end select

@@ -748,8 +748,6 @@ subroutine get_remapped_diurnal_data(this, res)
 
   ! last dim is number of dimensions - 1 for diurnal axis 
   last_dim = this%ndim - 1 
-  ! if 4d we don't need to do anything
-  if(last_dim .eq. -1) return 
   ! get the bounds of the remapped output array based on # of dims 
   ke = 1; ze = 1; de = 1 
   select case(last_dim)
@@ -761,6 +759,10 @@ subroutine get_remapped_diurnal_data(this, res)
     case (3)
       ie = this%buffer_dims(1); je = this%buffer_dims(2)
       ke = this%buffer_dims(3); ze = this%buffer_dims(5)
+    case (4)
+      ! no need to remap if 4d
+      res = this%buffer 
+      return
   end select
 
   select type(buff => this%buffer)
