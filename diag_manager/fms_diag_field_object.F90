@@ -1011,7 +1011,7 @@ result(rslt)
   endif
   if (rslt .eq. "") then !! If the long name is not defined in the yaml and in the register_diag_field
                          !! use the variable name
-    rslt = field_yaml%get_var_outname()
+    rslt = field_yaml%get_var_varname()
   endif
 end function get_longname_to_write
 
