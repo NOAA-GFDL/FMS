@@ -26,7 +26,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     - name: Generate makefiles with CMake
-      run: cmake $CMAKE_FLAGS .
+      run: cmake $CMAKE_FLAGS . -DNetCDF_INCLUDE_DIRS="`nc-config --cflags`"
     - name: Build the library
       run: make
     - name: Link with basic executable
