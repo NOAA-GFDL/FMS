@@ -395,7 +395,7 @@ foreach(kind ${kinds})
                                          MPI::MPI_Fortran)
 
   if(OpenMP_Fortran_FOUND)
-    target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_Fortran)
+    target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
   endif()
 
   add_library(FMS::${libTgt} ALIAS ${libTgt})
