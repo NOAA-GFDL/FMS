@@ -352,7 +352,7 @@ foreach(kind ${kinds})
     check_fortran_compiler_flag("-fallow-argument-mismatch" _arg_mismatch_flag)
     if(_arg_mismatch_flag)
       message(STATUS "Adding -fallow-argument-mismatch flag to compile with GCC >=10 and MPICH")
-      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fallow-argument-mismatch -w")
+      target_compile_options(${libTgt}_f PRIVATE "-fallow-argument-mismatch;-w")
     endif()
   endif()
 
