@@ -88,7 +88,7 @@ if (.not. checking_crashes) then
   call compare_result("nfiles", size(diag_files), 3) !< the fourth file has file_write = false so it doesn't count
   call compare_diag_files(diag_files)
 
-  diag_fields = my_yaml%get_diag_fields()
+  call my_yaml%get_diag_fields(diag_fields)
   call compare_result("nfields", size(diag_fields), 3) !< the fourth variable has var_write = false so it doesn't count
   call compare_diag_fields(diag_fields)
 
@@ -105,7 +105,7 @@ if (.not. checking_crashes) then
   if (indices(1) .ne. 2 .and. indices(2) .ne. 1) &
     call mpp_error(FATAL, 'sst was supposed to be found in indices 1 and 2')
 
-  diag_fields = get_diag_fields_entries(indices)
+  call get_diag_fields_entries(indices, diag_fields)
   call compare_result("sst - nfields", size(diag_fields), 2)
   call compare_result("sst - fieldname", diag_fields(1)%get_var_varname(), "sst")
   call compare_result("sst - fieldname", diag_fields(2)%get_var_varname(), "sst")

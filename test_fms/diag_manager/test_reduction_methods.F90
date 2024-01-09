@@ -23,12 +23,13 @@ program test_reduction_methods
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
   use platform_mod,      only: r8_kind
   use block_control_mod, only: block_control_type, define_blocks
-  use mpp_mod,           only: mpp_sync, FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file
+  use mpp_mod,           only: mpp_sync, FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file, NOTE
   use time_manager_mod,  only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+)
   use diag_manager_mod,  only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                                diag_send_complete, diag_manager_set_time_end, send_data
   use mpp_domains_mod,   only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
                                mpp_get_data_domain
+  use fms_string_utils_mod
 
   implicit none
 
@@ -179,6 +180,7 @@ program test_reduction_methods
   call diag_manager_set_time_end(set_date(2,1,3,0,0,0))
   do i = 1, ntimes
     Time = Time + Time_step
+    call mpp_error(NOTE, "sending data for timestep: "//string(i))
 
     call set_buffer(cdata, i)
     used = send_data(id_var0, cdata(1,1,1,1), Time)

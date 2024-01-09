@@ -128,7 +128,7 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
   this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)
-  this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
+  this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,diag_yaml%get_diag_field_size())
   this%registered_variables = 0
   this%registered_axis = 0
   this%current_model_time = get_base_time()
@@ -536,10 +536,16 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
   type(fmsDiagIbounds_type)                :: bounds          !< Bounds (starting ending indices) for the field
   logical                                  :: has_halos       !< .True. if field_data contains halos
   logical                                  :: using_blocking  !< .True. if field_data is passed in blocks
+  character(len=:), allocatable :: varname
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  field_info = " Check send data call for field:"//trim(this%FMS_diag_fields(diag_field_id)%get_varname())
+
+  print *, "fms_diag_accept_data:: size of fields:",SIZE(this%FMS_diag_fields), " field id to send to", diag_field_id
+  call this%FMS_diag_fields(diag_field_id)%dump_field_obj(6)
+
+  call this%FMS_diag_fields(diag_field_id)%get_name(varname)
+  field_info = " Check send data call for field:"//trim(varname)
 
   !< Check if time should be present for this field
   if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) &
@@ -596,6 +602,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   buffer_the_data = (omp_num_threads > 1 .AND. omp_level > 0)
 #endif
 
+  print *, "fms_diag_accept_data:: field name:", varname, "buffering data?", buffer_the_data, "num threads/lvl", omp_num_threads, omp_level
   !> Calculate the i,j,k start and end
   ! If is, js, or ks not present default them to 1
   is = 1
@@ -618,15 +625,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (.not. this%FMS_diag_fields(diag_field_id)%is_data_buffer_allocated()) then
       data_buffer_is_allocated = &
         this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, this%diag_axis)
-      if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
-        call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
+      !if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
+      !  call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
     endif
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
 !$omp end critical
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, field_weight, &
                                                              is, js, ks, ie, je, ke)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, is, js, ks, ie, je, ke)
+    !call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, is, js, ks, ie, je, ke)
     fms_diag_accept_data = .TRUE.
     return
   else
@@ -638,9 +645,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       bounds, using_blocking, Time=Time)
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
-    if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
-      call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask)
+    !if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
+    !  call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
+    !call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask)
     return
   end if main_if
   !> Return false if nothing is done
@@ -1086,18 +1093,26 @@ end subroutine fms_diag_axis_add_attribute
 
 !> \brief Gets the field_name from the diag_field
 !> \returns a copy of the field_name
-function fms_get_field_name_from_id (this, field_id) &
-  result(field_name)
+subroutine fms_get_field_name_from_id (this, field_id, field_name)
 
-  class(fmsDiagObject_type), intent (in) :: this     !< The diag object, the caller
+  class(fmsDiagObject_type), target, intent (in) :: this     !< The diag object, the caller
   integer,                   intent (in) :: field_id !< Field id to get the name for
-  character(len=:), allocatable :: field_name
+  character(len=:), intent(out), allocatable :: field_name
+  class(fmsDiagField_type), pointer :: field_ptr
 #ifndef use_yaml
   CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  field_name = this%FMS_diag_fields(field_id)%get_varname()
+  !! needed to use pointer + change to subroutine
+  if(this%FMS_diag_fields(field_id)%has_varname()) then
+    !allocate(character(len=128) :: field_name)
+    !field_name = field_ptr%get_varname()
+    field_ptr => this%FMS_diag_fields(field_id)
+    call field_ptr%get_name(field_name)
+  else
+    field_name = "n/a"
+  endif
 #endif
-end function fms_get_field_name_from_id
+end subroutine fms_get_field_name_from_id
 
 !> \brief Gets the diag field ID from the module name and field name.
 !> \returns a copy of the ID of the diag field or DIAG_FIELD_NOT_FOUND if the field is not registered
