@@ -297,19 +297,17 @@ end subroutine
 
 !> @brief Get the axis_ids for the buffer
 !! @return Axis_ids, if the buffer doesn't have axis ids it returns diag_null
-function get_axis_ids(this) &
-  result(res)
-
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
-  integer, allocatable :: res(:)
+subroutine get_axis_ids(this, res)
+  class(fmsDiagOutputBuffer_type), target, intent(inout) :: this        !< Buffer object
+  integer, pointer, intent(out) :: res(:)
 
   if (allocated(this%axis_ids)) then
-    res = this%axis_ids
+    res => this%axis_ids 
   else
     allocate(res(1))
     res = diag_null
   endif
-end function
+end subroutine 
 
 !> @brief Get the field id of the buffer
 !! @return the field id of the buffer

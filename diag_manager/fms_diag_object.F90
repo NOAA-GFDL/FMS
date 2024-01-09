@@ -545,7 +545,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   call this%FMS_diag_fields(diag_field_id)%dump_field_obj(6)
 
   call this%FMS_diag_fields(diag_field_id)%get_name(varname)
-  field_info = " Check send data call for field:"//trim(varname)
+  field_info = " Check send data call for field:"//trim(varname)!!//& TODO change get_modname to routine as well
+    !!" and module:"//trim(this%FMS_diag_fields(diag_field_id)%get_modname())
 
   !< Check if time should be present for this field
   if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) &
@@ -553,10 +554,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !< Set the field_weight. If "weight" is not present it will be set to 1.0_r8_kind
   field_weight = set_weight(weight)
-
-  !< Set the variable type based off passed in field data
-  if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
-    call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
 
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
@@ -570,16 +567,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   if ((present(is_in) .and. present(ie_in)) .or. (present(js_in) .and. present(je_in))) &
     has_halos = .true.
 
-  if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
-
   !< If the field has `mask_variant=.true.`, check that mask OR rmask are present
   if (this%FMS_diag_fields(diag_field_id)%is_mask_variant()) then
     if (.not. allocated(mask) .and. .not. allocated(rmask)) call mpp_error(FATAL, &
       "The field was registered with mask_variant, but mask or rmask are not present in the send_data call. "//&
       trim(field_info))
-  else
-    if (allocated(mask) .or. allocated(rmask)) &
-      call this%FMS_diag_fields(diag_field_id)%set_mask_variant(.True.)
   endif
 
   !< Check that mask and rmask are not both present
@@ -622,6 +614,17 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   main_if: if (buffer_the_data) then
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
 !$omp critical
+    !< These set_* calls need to be done inside an omp_critical to avoid any race conditions
+    !! and allocation issues
+    if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
+
+    !< Set the variable type based off passed in field data
+    if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
+      call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
+
+    if (allocated(mask) .or. allocated(rmask)) &
+      call this%FMS_diag_fields(diag_field_id)%set_mask_variant(.True.)
+
     if (.not. this%FMS_diag_fields(diag_field_id)%is_data_buffer_allocated()) then
       data_buffer_is_allocated = &
         this%FMS_diag_fields(diag_field_id)%allocate_data_buffer(field_data, this%diag_axis)
@@ -637,6 +640,17 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_diag_accept_data = .TRUE.
     return
   else
+    !< At this point if we are no longer in an openmp region or running with 1 thread
+    !! so it is safe to have these set_* calls
+    if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
+
+    !< Set the variable type based off passed in field data
+    if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
+      call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
+
+    if (allocated(mask) .or. allocated(rmask)) &
+      call this%FMS_diag_fields(diag_field_id)%set_mask_variant(.True.)
+
     error_string = bounds%set_bounds(field_data, is, ie, js, je, ks, ke, has_halos)
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
 
@@ -773,7 +787,6 @@ subroutine fms_diag_do_io(this, is_end_of_run)
 
     ! finish reduction method if its time to write
     buff_reduct: if (is_writing) then
-      allocate(buff_ids(diag_file%FMS_diag_file%get_number_of_buffers()))
       buff_ids = diag_file%FMS_diag_file%get_buffer_ids()
       ! loop through the buffers and finish reduction if needed
       buff_loop: do ibuff=1, SIZE(buff_ids)
@@ -846,7 +859,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   integer                   :: ids                !< For looping through buffer ids
   integer                   :: buffer_id          !< Id of the buffer
   integer                   :: file_id            !< File id
-  integer, allocatable      :: axis_ids(:)        !< Axis ids for the buffer
+  integer, pointer          :: axis_ids(:)        !< Axis ids for the buffer
   logical                   :: is_subregional     !< .True. if the buffer is subregional
   logical                   :: reduced_k_range    !< .True. is the field is only outputing a section
                                                   !! of the z dimension
@@ -919,7 +932,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Reset the bounds based on the reduced k range and subregional
     is_subregional_reduced_k_range: if (is_subregional .or. reduced_k_range) then
-      axis_ids = buffer_ptr%get_axis_ids()
+      call buffer_ptr%get_axis_ids(axis_ids)
       block_in_subregion = .true.
       axis_loops: do i = 1, size(axis_ids)
         !< Move on if the block does not have any data for the subregion
@@ -1308,9 +1321,9 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: i, j !< For looping
   class(fmsDiagOutputBuffer_type), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
-  integer, allocatable :: axis_ids(:) !< Pointer to indices of axes of the field variable
+  integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
   integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
-  character(len=128), allocatable :: var_name !< Field name to initialize output buffers
+  character(len=:), allocatable :: var_name !< Field name to initialize output buffers
   logical :: is_scalar !< Flag indicating that the variable is a scalar
   integer :: yaml_id !< Yaml id for the buffer
   integer :: file_id !< File id for the buffer
@@ -1321,7 +1334,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   var_type = get_var_type(field_data(1, 1, 1, 1))
 
   ! Get variable/field name
-  var_name = this%Fms_diag_fields(field_id)%get_varname()
+  call this%FMS_diag_fields(field_id)%get_name(var_name)
 
   ! Determine dimensions of the field
   is_scalar = this%FMS_diag_fields(field_id)%is_scalar()
@@ -1336,7 +1349,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
     ndims = 0
     if (.not. is_scalar) then
-      axis_ids = this%FMS_diag_output_buffers(buffer_id)%get_axis_ids()
+      call this%FMS_diag_output_buffers(buffer_id)%get_axis_ids(axis_ids)
       ndims = size(axis_ids)
     endif
 
@@ -1356,10 +1369,10 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
     ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)
     call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:4), &
-          this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+          var_name, num_diurnal_samples)
     call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 
-    if (allocated(axis_ids)) deallocate(axis_ids)
+    !if (allocated(axis_ids)) deallocate(axis_ids)
   enddo
 
   this%FMS_diag_fields(field_id)%buffer_allocated = .true.

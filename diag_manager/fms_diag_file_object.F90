@@ -1485,7 +1485,7 @@ pure function get_buffer_ids (this)
   integer, allocatable :: get_buffer_ids(:) !< returned buffer ids for this file
 
   allocate(get_buffer_ids(this%number_of_buffers))
-  get_buffer_ids = this%buffer_ids
+  get_buffer_ids = this%buffer_ids(1:this%number_of_buffers)
 end function get_buffer_ids
 
 !> Gets the stored number of buffers from the file object
