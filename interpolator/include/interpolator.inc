@@ -145,13 +145,22 @@ integer :: model_calendar
 integer :: yr, mo, dy, hr, mn, sc
 integer :: n
 type(time_type) :: Julian_time, Noleap_time
-real(FMS_INTP_KIND_), allocatable :: time_in(:)
+real(r8_kind), allocatable :: time_in(:)
 real(FMS_INTP_KIND_), allocatable, save :: agrid_mod(:,:,:)
 integer :: nx, ny
 type(FmsNetcdfFile_t) :: fileobj
 
 integer, parameter :: lkind=FMS_INTP_KIND_
 real(FMS_INTP_KIND_), parameter :: lPI=real(PI,FMS_INTP_KIND_)
+
+!> variables used to set time
+logical :: yearly !< flags to indicate if time data is in units of months or years
+integer :: num_years !< number of years
+integer :: base_year, base_month, base_day, base_hour, base_minute, base_second
+integer :: nn !< counter
+logical :: noleap_file_calendar !< is the file calendar noleap or julian
+real(r8_kind) :: num_days, frac_year !< variables for yearly=.true.
+type(time_type) :: n_time !< temporary time
 
 clim_type%separate_time_vary_calc = .false.
 
@@ -332,6 +341,7 @@ if(dimension_exists(fileobj, "time")) then
    filehr  = 0
    filemin = 0
    filesec = 0
+   yearly  = .false.
    select case(units(:3))
      case('day')
        fileunits = units(12:) !Assuming "days since YYYY-MM-DD HH:MM:SS"
@@ -363,8 +373,24 @@ if(dimension_exists(fileobj, "time")) then
        read(fileunits(12:13), *)  filehr
        read(fileunits(15:16), *)  filemin
        read(fileunits(18:19), *)  filesec
+    case( 'yea')
+       fileunits = units(13:) !Assuming "years since YYYY-MM-DD HH:MM:SS"
+       if ( len_trim(fileunits) < 19 ) then
+         write(error_mesg, '(A49,A,A51,A)' ) &
+           'Interpolator_init : Incorrect time units in file ', &
+           trim(file_name), '. Expecting years since YYYY-MM-DD HH:MM:SS, found', &
+           trim(units)
+         call mpp_error(FATAL,error_mesg)
+       endif
+       read(fileunits(1:4)  , *)  fileyr
+       read(fileunits(6:7)  , *)  filemon
+       read(fileunits(9:10) , *)  fileday
+       read(fileunits(12:13), *)  filehr
+       read(fileunits(15:16), *)  filemin
+       read(fileunits(18:19), *)  filesec
+       yearly = .true.
      case default
-       call mpp_error(FATAL,'Interpolator_init : Time units not recognised in file '//file_name)
+       call mpp_error(FATAL,'Interpolator_init : Time units not recognized in file '//file_name)
    end select
 
    clim_type%climatological_year = (fileyr == 0)
@@ -375,32 +401,35 @@ if(dimension_exists(fileobj, "time")) then
       !    if file date has a non-zero year in the base time, determine that
       !    base_time based on the netcdf info.
       !----------------------------------------------------------------------
-      if ( (model_calendar == JULIAN .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
-           & (model_calendar == NOLEAP .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
-        call mpp_error (NOTE, 'interpolator_mod: Model and file&
-                  & calendars are the same for file ' //   &
-                  & trim(file_name) // '; no calendar conversion  &
-                  &needed')
-        base_time = set_date (fileyr, filemon, fileday, filehr, &
-                              filemin,filesec)
-      else if ( (model_calendar == JULIAN .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
-        call mpp_error (NOTE, 'interpolator_mod: Using julian &
+      noleap_file_calendar=.false.
+      if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
+         call mpp_error (NOTE, 'interpolator_mod: Model and file&
+              & calendars are the same for file ' //   &
+              & trim(file_name) // '; no calendar conversion  &
+              &needed')
+         base_time = set_date (fileyr, filemon, fileday, filehr,filemin,filesec)
+         noleap_file_calendar=.false.
+      else if((model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
+         call mpp_error (NOTE, 'interpolator_mod: Model and file&
+              & calendars are the same for file ' //   &
+              & trim(file_name) // '; no calendar conversion  &
+              &needed')
+         base_time = set_date (fileyr, filemon, fileday, filehr,filemin,filesec)
+         noleap_file_calendar=.true.
+      else if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
+         call mpp_error (NOTE, 'interpolator_mod: Using julian &
                           &model calendar and noleap file calendar&
                           & for file ' // trim(file_name) //   &
                           &'; calendar conversion needed')
-        base_time = set_date_no_leap (fileyr, filemon, fileday,  &
-             & filehr, filemin, filesec)
-      else if ( (model_calendar == NOLEAP .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
+        base_time = set_date_no_leap (fileyr, filemon, fileday,filehr, filemin, filesec)
+        noleap_file_calendar=.true.
+      else if ( (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
         call mpp_error (NOTE, 'interpolator_mod: Using noleap &
                           &model calendar and julian file calendar&
                           & for file ' // trim(file_name) //  &
                           &'; calendar conversion needed')
-        base_time = set_date_julian (fileyr, filemon, fileday,  &
-             & filehr, filemin, filesec)
+        base_time = set_date_julian (fileyr, filemon, fileday,filehr, filemin, filesec)
+        noleap_file_calendar=.false.
       else
         call mpp_error (FATAL , 'interpolator_mod: Model and file&
              & calendars ( ' // trim(file_calendar) // ' ) differ  &
@@ -425,17 +454,38 @@ if(dimension_exists(fileobj, "time")) then
    if (ntime > 0) then
       allocate(time_in(ntime), clim_type%time_slice(ntime))
       allocate(clim_type%clim_times(12,(ntime+11)/12))
-      time_in = 0.0_lkind
+      time_in = 0.0_r8_kind
       clim_type%time_slice = set_time(0,0) + base_time
       clim_type%clim_times = set_time(0,0) + base_time
       call fms2_io_read_data(fileobj, "time", time_in)
       ntime_in = ntime
+      !> convert the number of years passed to days if yearly=.true.
+      if(yearly) then
+         do n = 1, ntime
+            if(.not.noleap_file_calendar) then
+               ! Julian calendar
+               num_years  = int(time_in(n))
+               frac_year = time_in(n) - real(num_years, r8_kind)
+               call get_date_julian(base_time, base_year, base_month, base_day, base_hour, base_minute, base_second)
+               num_days = 0.0_r8_kind
+               do nn=1, num_years
+                  if( mod(base_year+nn-1,4)==0) num_days = num_days + 366._r8_kind
+                  if( mod(base_year+nn-1,4)/=0) num_days = num_days + 365._r8_kind
+               end do
+               if( mod(base_year+num_years,4)==0) num_days = num_days + 366._r8_kind*frac_year
+               if( mod(base_year+num_years,4)/=0) num_days = num_days + 365._r8_kind*frac_year
+            else
+               num_days = time_in(n)*365._r8_kind
+            end if
+            time_in(n)=num_days
+         end do
+      end if
       ! determine whether the data is a continuous set of monthly values or
       ! a series of annual cycles spread throughout the period of data
       non_monthly = .false.
       do n = 1, ntime-1
          !  Assume that the times in the data file correspond to days only.
-         if (time_in(n+1) > (time_in(n) + 32._lkind)) then
+         if (time_in(n+1) > (time_in(n) + 32._r8_kind)) then
            non_monthly = .true.
            exit
          endif
@@ -458,9 +508,8 @@ if(dimension_exists(fileobj, "time")) then
            !! time_interp_list with the optional argument modtime=YEAR, so that
            !! the time that is needed in time_slice is the displacement into the
            !! year, not the displacement from a base_time.
-           clim_type%time_slice(n) = &
-               set_time( INT( (time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
-                               *real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n)))
+            clim_type%time_slice(n) = set_time( INT( (time_in(n)-real(INT(time_in(n)),r8_kind))*SECONDS_PER_DAY), &
+                 INT(time_in(n)))
          else
 
            !--------------------------------------------------------------------
@@ -472,59 +521,47 @@ if(dimension_exists(fileobj, "time")) then
            !    include the base_time; values will be generated relative to the
            !    "real" time.
            !--------------------------------------------------------------------
-           if ( (model_calendar == JULIAN .and.   &
-                & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
-                & (model_calendar == NOLEAP .and.   &
-                & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
+           if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
+                & (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
 
              !---------------------------------------------------------------------
              !    no calendar conversion needed.
              !---------------------------------------------------------------------
              clim_type%time_slice(n) = &
-               set_time( INT( (time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
-                               *real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n))) &
-                 + base_time
+               set_time( INT( (time_in(n)-real(INT(time_in(n)),r8_kind))*SECONDS_PER_DAY), &
+               INT(time_in(n))) + base_time
 
            !---------------------------------------------------------------------
            !    convert file times from noleap to julian.
            !---------------------------------------------------------------------
-           else if ( (model_calendar == JULIAN .and.   &
-                & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
+           else if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
              Noleap_time = set_time (0, INT(time_in(n))) + base_time
-             call get_date_no_leap (Noleap_time, yr, mo, dy, hr,  &
-                                    mn, sc)
-             clim_type%time_slice(n) = set_date_julian (yr, mo, dy,  &
-                                                        hr, mn, sc)
+             call get_date_no_leap (Noleap_time, yr, mo, dy, hr, mn, sc)
+             clim_type%time_slice(n) = set_date_julian (yr, mo, dy, hr, mn, sc)
              if (n == 1) then
                call print_date (clim_type%time_slice(1), &
-                       str= 'for file ' // trim(file_name) // ', the &
-                             &first time slice is mapped to :')
+                       str= 'for file ' // trim(file_name) // ', the first time slice is mapped to :')
              endif
              if (n == ntime) then
                call print_date (clim_type%time_slice(ntime), &
-                        str= 'for file ' // trim(file_name) // ', the &
-                              &last time slice is mapped to:')
+                        str= 'for file ' // trim(file_name) // ', the last time slice is mapped to:')
              endif
 
 
            !---------------------------------------------------------------------
            !    convert file times from julian to noleap.
            !---------------------------------------------------------------------
-           else if ( (model_calendar == NOLEAP .and.   &
-                      & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
+           else if ( (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
              Julian_time = set_time (0, INT(time_in(n))) + base_time
              call get_date_julian (Julian_time, yr, mo, dy, hr, mn, sc)
-             clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy, &
-                                                         hr, mn, sc)
+             clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy,hr, mn, sc)
              if (n == 1) then
                call print_date (clim_type%time_slice(1), &
-                                str= 'for file ' // trim(file_name) // ', the &
-                                &first time slice is mapped to :')
+                                str= 'for file ' // trim(file_name) // ', the first time slice is mapped to :')
              endif
              if (n == ntime) then
                call print_date (clim_type%time_slice(ntime), &
-                                str= 'for file ' // trim(file_name) // ', the &
-                                &last time slice is mapped to:')
+                                str= 'for file ' // trim(file_name) // ', the last time slice is mapped to:')
              endif
 
            !---------------------------------------------------------------------
@@ -540,7 +577,7 @@ if(dimension_exists(fileobj, "time")) then
    else
       allocate(time_in(1), clim_type%time_slice(1))
       allocate(clim_type%clim_times(1,1))
-      time_in = 0.0_lkind
+      time_in = 0.0_r8_kind
       clim_type%time_slice = set_time(0,0) + base_time
       clim_type%clim_times(1,1) = set_time(0,0) + base_time
    endif
