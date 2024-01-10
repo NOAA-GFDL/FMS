@@ -73,9 +73,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE constants_mod, ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE fms2_io_mod
   USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
-#ifdef use_netCDF
   USE netcdf, ONLY: NF90_CHAR
-#endif
 
   IMPLICIT NONE
   PRIVATE
@@ -85,8 +83,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
        & prepend_attribute, attribute_init, diag_util_init,&
        & fms_diag_check_out_of_bounds, &
-       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static,&
-       & get_time_string, init_mask_3d, real_copy_set, check_indices_order
+       & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static, get_file_start_time
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
@@ -1643,7 +1640,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
                                                            !! writting periodic files
 
     TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
-    REAL, DIMENSION(2) :: DATA
+    REAL, DIMENSION(2) :: open_file_data
     INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
     INTEGER :: position
@@ -2021,9 +2018,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        time_axis_id(1) = files(file)%time_axis_id
        time_bounds_id(1) = files(file)%time_bounds_id
        CALL get_diag_axis( time_axis_id(1), time_name, time_units, time_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
+            & cart_name, dir, edges, Domain, domainU, open_file_data)
        CALL get_diag_axis( time_bounds_id(1), timeb_name, timeb_units, timeb_longname,&
-            & cart_name, dir, edges, Domain, domainU, DATA)
+            & cart_name, dir, edges, Domain, domainU, open_file_data)
        ! CF Compliance requires the unit on the _bnds axis is the same as 'time'
        files(file)%f_bounds =  write_field_meta_data(files(file)%file_unit,&
             & TRIM(time_name)//'_bnds', (/time_bounds_id,time_axis_id/),&
@@ -2499,135 +2496,16 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
   END SUBROUTINE prepend_attribute_file
 
-  !> @brief Allocates outmask(second argument) with sizes of the first three dimensions of field(first argument).
-  !! Initializes the outmask depending on presence/absence of inmask and rmask.
-  !! Uses and sets rmask_threshold.
-  subroutine init_mask_3d(field, outmask, rmask_threshold, inmask, rmask, err_msg)
-   class(*), intent(in) :: field(:,:,:,:) !< Dummy variable whose sizes only in the first three dimensions are important
-   logical, allocatable, intent(inout) :: outmask(:,:,:) !< Output logical mask
-   real, intent(inout) :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
-                                          !! needed to be passed to the math/buffer update functions.
-   logical, intent(in), optional :: inmask(:,:,:) !< Input logical mask
-   class(*), intent(in), optional :: rmask(:,:,:) !< Floating point input mask value
-   character(len=*), intent(out), optional :: err_msg !< Error message to relay back to caller
+  !> @brief Get the a diag_file's start_time as it is defined in the diag_table
+  !! @return the start_time for the file
+  function get_file_start_time(file_num) &
+   result (start_time)
+   integer,         intent(in)  :: file_num   !< File number of the file to get the start_time from
 
-   character(len=256) :: err_msg_local !< Stores locally generated error message
-   integer :: status !< Stores status of memory allocation call
+   TYPE(time_type) :: start_time !< The start_time to return
 
-   ! Initialize character strings
-   err_msg_local = ''
-   if (present(err_msg)) err_msg = ''
-
-   ! Check if outmask is allocated
-   if (allocated(outmask)) deallocate(outmask)
-   ALLOCATE(outmask(SIZE(field, 1), SIZE(field, 2), SIZE(field, 3)), STAT=status)
-   IF ( status .NE. 0 ) THEN
-     WRITE (err_msg_local, FMT='("Unable to allocate outmask(",I5,",",I5,",",I5,"). (STAT: ",I5,")")')&
-           & SIZE(field, 1), SIZE(field, 2), SIZE(field, 3), status
-     if (fms_error_handler('diag_util_mod:init_mask_3d', trim(err_msg_local), err_msg)) then
-       return
-     end if
-   END IF
-
-   IF ( PRESENT(inmask) ) THEN
-     outmask = inmask
-   ELSE
-     outmask = .TRUE.
-   END IF
-
-   IF ( PRESENT(rmask) ) THEN
-     SELECT TYPE (rmask)
-       TYPE IS (real(kind=r4_kind))
-           WHERE (rmask < real(rmask_threshold, kind=r4_kind)) outmask = .FALSE.
-           rmask_threshold = real(rmask_threshold, kind=r4_kind)
-        TYPE IS (real(kind=r8_kind))
-           WHERE ( rmask < real(rmask_threshold, kind=r8_kind) ) outmask = .FALSE.
-           rmask_threshold = real(rmask_threshold, kind=r8_kind)
-       CLASS DEFAULT
-         if (fms_error_handler('diag_util_mod:init_mask_3d',&
-           & 'The rmask is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) then
-         end if
-     END SELECT
-   END IF
- end subroutine init_mask_3d
-
-  !> @brief Copies input data to output data with proper type if the input data is present
-  !! else sets the output data to a given value val if it is present.
-  !! If the value val and the input data are not present, the output data is untouched.
-  subroutine real_copy_set(out_data, in_data, val, err_msg)
-    real, intent(out) :: out_data !< Proper type copy of in_data
-    class(*), intent(in), optional :: in_data !< Data to copy to out_data
-    real, intent(in), optional :: val !< Default value to assign to out_data if in_data is absent
-    character(len=*), intent(out), optional :: err_msg !< Error message to pass back to caller
-
-    IF ( PRESENT(err_msg) ) err_msg = ''
-
-    IF ( PRESENT(in_data) ) THEN
-      SELECT TYPE (in_data)
-      TYPE IS (real(kind=r4_kind))
-        out_data = in_data
-      TYPE IS (real(kind=r8_kind))
-        out_data = real(in_data)
-      CLASS DEFAULT
-        if (fms_error_handler('diag_util_mod:real_copy_set',&
-          & 'The in_data is not one of the supported types of real(kind=4) or real(kind=8)', err_msg)) THEN
-          return
-        end if
-      END SELECT
-    ELSE
-      if (present(val)) out_data = val
-    END IF
-  end subroutine real_copy_set
-
-  !> @brief Checks improper combinations of is, ie, js, and je.
-  !> @return Returns .false. if there is no error else .true.
-  !> @note send_data works in either one or another of two modes.
-  ! 1. Input field is a window (e.g. FMS physics)
-  ! 2. Input field includes halo data
-  ! It cannot handle a window of data that has halos.
-  ! (A field with no windows or halos can be thought of as a special case of either mode.)
-  ! The logic for indexing is quite different for these two modes, but is not clearly separated.
-  ! If both the beggining and ending indices are present, then field is assumed to have halos.
-  ! If only beggining indices are present, then field is assumed to be a window.
-  !> @par
-  ! There are a number of ways a user could mess up this logic, depending on the combination
-  ! of presence/absence of is,ie,js,je. The checks below should catch improper combinations.
-  function check_indices_order(is_in, ie_in, js_in, je_in, error_msg) result(rslt)
-    integer, intent(in), optional :: is_in, ie_in, js_in, je_in !< Indices passed to fms_diag_accept_data()
-    character(len=*), intent(inout), optional :: error_msg !< An error message used only for testing purpose!!!
-
-    character(len=128) :: err_module_name !< Stores the module name to be used in error calls
-    logical :: rslt !< Return value
-
-    rslt = .false. !< If no error occurs.
-
-    err_module_name = 'diag_util_mod:check_indices_order'
-
-    IF ( PRESENT(ie_in) ) THEN
-      IF ( .NOT.PRESENT(is_in) ) THEN
-        rslt = fms_error_handler(trim(err_module_name), 'ie_in present without is_in', error_msg)
-        IF (rslt) return
-      END IF
-      IF ( PRESENT(js_in) .AND. .NOT.PRESENT(je_in) ) THEN
-        rslt = fms_error_handler(trim(err_module_name),&
-          & 'is_in and ie_in present, but js_in present without je_in', error_msg)
-        IF (rslt) return
-      END IF
-    END IF
-
-    IF ( PRESENT(je_in) ) THEN
-      IF ( .NOT.PRESENT(js_in) ) THEN
-        rslt = fms_error_handler(trim(err_module_name), 'je_in present without js_in', error_msg)
-        IF (rslt) return
-      END IF
-      IF ( PRESENT(is_in) .AND. .NOT.PRESENT(ie_in) ) THEN
-        rslt = fms_error_handler(trim(err_module_name),&
-          & 'js_in and je_in present, but is_in present without ie_in', error_msg)
-        IF (rslt) return
-      END IF
-    END IF
-  end function check_indices_order
-
+   start_time = files(file_num)%start_time
+  end function get_file_start_time
 END MODULE diag_util_mod
 !> @}
 ! close documentation grouping

@@ -408,41 +408,41 @@
 
     !get data domain
     !data domain is at least equal to compute domain
-    domain%list(:)%data%begin = domain%list(:)%compute%begin
-    domain%list(:)%data%end   = domain%list(:)%compute%end
-    domain%list(:)%data%is_global = .FALSE.
+    domain%list(:)%domain_data%begin = domain%list(:)%compute%begin
+    domain%list(:)%domain_data%end   = domain%list(:)%compute%end
+    domain%list(:)%domain_data%is_global = .FALSE.
     !apply global flags
     if( data_domain_is_global )then
-       domain%list(:)%data%begin  = isg
-       domain%list(:)%data%end    = ieg
-       domain%list(:)%data%is_global = .TRUE.
+       domain%list(:)%domain_data%begin  = isg
+       domain%list(:)%domain_data%end    = ieg
+       domain%list(:)%domain_data%is_global = .TRUE.
     end if
     !apply margins
-    domain%list(:)%data%begin = domain%list(:)%data%begin - halobegin
-    domain%list(:)%data%end   = domain%list(:)%data%end   + haloend
-    domain%list(:)%data%size  = domain%list(:)%data%end - domain%list(:)%data%begin + 1
+    domain%list(:)%domain_data%begin = domain%list(:)%domain_data%begin - halobegin
+    domain%list(:)%domain_data%end   = domain%list(:)%domain_data%end   + haloend
+    domain%list(:)%domain_data%size  = domain%list(:)%domain_data%end - domain%list(:)%domain_data%begin + 1
 
     !--- define memory domain, if memory_size is not present or memory size is 0, memory domain size
     !--- will be the same as data domain size. if momory_size is present, memory_size should greater than
     !--- or equal to data size. The begin of memory domain will be always the same as data domain.
-    domain%list(:)%memory%begin = domain%list(:)%data%begin
-    domain%list(:)%memory%end   = domain%list(:)%data%end
+    domain%list(:)%memory%begin = domain%list(:)%domain_data%begin
+    domain%list(:)%memory%end   = domain%list(:)%domain_data%end
     if( present(memory_size) ) then
        if(memory_size > 0) then
-          if( domain%list(domain%pos)%data%size > memory_size ) call mpp_error(FATAL, &
+          if( domain%list(domain%pos)%domain_data%size > memory_size ) call mpp_error(FATAL, &
                "mpp_domains_define.inc: data domain size is larger than memory domain size on this pe")
           domain%list(:)%memory%end   = domain%list(:)%memory%begin + memory_size - 1
        end if
     end if
     domain%list(:)%memory%size = domain%list(:)%memory%end - domain%list(:)%memory%begin + 1
-    domain%list(:)%memory%is_global = domain%list(:)%data%is_global
+    domain%list(:)%memory%is_global = domain%list(:)%domain_data%is_global
 
     domain%compute = domain%list(domain%pos)%compute
-    domain%data    = domain%list(domain%pos)%data
+    domain%domain_data    = domain%list(domain%pos)%domain_data
     domain%global  = domain%list(domain%pos)%global
     domain%memory  = domain%list(domain%pos)%memory
     domain%compute%max_size = MAXVAL( domain%list(:)%compute%size )
-    domain%data%max_size    = MAXVAL( domain%list(:)%data%size )
+    domain%domain_data%max_size    = MAXVAL( domain%list(:)%domain_data%size )
     domain%global%max_size  = domain%global%size
     domain%memory%max_size  = domain%memory%size
 
@@ -565,10 +565,10 @@
     enddo
     io_domain%pos          = n
     io_domain%x(1)%compute = domain%x(1)%compute
-    io_domain%x(1)%data    = domain%x(1)%data
+    io_domain%x(1)%domain_data    = domain%x(1)%domain_data
     io_domain%x(1)%memory  = domain%x(1)%memory
     io_domain%y(1)%compute = domain%y(1)%compute
-    io_domain%y(1)%data    = domain%y(1)%data
+    io_domain%y(1)%domain_data    = domain%y(1)%domain_data
     io_domain%y(1)%memory  = domain%y(1)%memory
     io_domain%x(1)%global%begin     = domain%x(1)%list(ipos_beg)%compute%begin
     io_domain%x(1)%global%end       = domain%x(1)%list(ipos_end)%compute%end
@@ -907,7 +907,7 @@
        if( PRESENT(xflags) )then
           if( BTEST(xflags,WEST) ) then
              !--- make sure no cross-domain in y-direction
-             if(domain%x(tile)%data%begin .LE. domain%x(tile)%global%begin .AND. &
+             if(domain%x(tile)%domain_data%begin .LE. domain%x(tile)%global%begin .AND. &
                 domain%x(tile)%compute%begin > domain%x(tile)%global%begin ) then
                 call mpp_error(FATAL, &
                  'MPP_DEFINE_DOMAINS: the domain could not be crossed when west is folded')
@@ -919,7 +919,7 @@
           endif
           if( BTEST(xflags,EAST) ) then
              !--- make sure no cross-domain in y-direction
-             if(domain%x(tile)%data%end .GE. domain%x(tile)%global%end .AND. &
+             if(domain%x(tile)%domain_data%end .GE. domain%x(tile)%global%end .AND. &
                 domain%x(tile)%compute%end < domain%x(tile)%global%end ) then
                 call mpp_error(FATAL, &
                  'MPP_DEFINE_DOMAINS: the domain could not be crossed when north is folded')
@@ -933,7 +933,7 @@
        if( PRESENT(yflags) )then
           if( BTEST(yflags,SOUTH) ) then
              !--- make sure no cross-domain in y-direction
-             if(domain%y(tile)%data%begin .LE. domain%y(tile)%global%begin .AND. &
+             if(domain%y(tile)%domain_data%begin .LE. domain%y(tile)%global%begin .AND. &
                 domain%y(tile)%compute%begin > domain%y(tile)%global%begin ) then
                 call mpp_error(FATAL, &
                  'MPP_DEFINE_DOMAINS: the domain could not be crossed when south is folded')
@@ -1607,7 +1607,7 @@ end subroutine check_message_size
     type(overlap_type),  pointer     :: checkList(:)=>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
-    integer                          :: unit
+    integer                          :: iunit
     logical                          :: set_check
 
     !--- since we restrict that if multiple tiles on one pe, all the tiles are limited to this pe.
@@ -2140,15 +2140,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nsend
-          write(unit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) flush(unit)
+       if(nsend >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain data structure
@@ -2719,15 +2719,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nrecv
-          write(unit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain
@@ -3017,7 +3017,7 @@ end subroutine check_message_size
     type(overlapSpec),   pointer     :: check =>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
-    integer                          :: unit
+    integer                          :: iunit
 
     !--- since we restrict that if multiple tiles on one pe, all the tiles are limited to this pe.
     !--- In this case, if ntiles on this pe is greater than 1, no overlapping between processor within each tile
@@ -3267,8 +3267,8 @@ end subroutine check_message_size
           !--- Now calculate the overlapping for fold-edge.
           !--- only position at NORTH and CORNER need to be considered
           if( ( position == NORTH .OR. position == CORNER) ) then
-             if( domain%y(tMe)%data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%data%end+jshift )then !fold
-                                                                                                    !! is within domain
+             !fold is within domain
+             if( domain%y(tMe)%domain_data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%domain_data%end+jshift )then
                 dir = 3
                 !--- calculate the overlapping for sending
                 if( domain%x(tMe)%pos .LT. (size(domain%x(tMe)%list(:))+1)/2 )then
@@ -3312,15 +3312,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nsend
-          write(unit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if( nsend > 0) flush(unit)
+       if( nsend > 0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain data structure
@@ -3367,7 +3367,7 @@ end subroutine check_message_size
           jsc = domain%list(m)%y(1)%compute%begin; jec = domain%list(m)%y(1)%compute%end+jshift
           !recv_e
           dir = 1
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( (position == NORTH .OR. position == CORNER ) .AND. ( jsd == je .or. jed == js ) ) then
@@ -3402,8 +3402,8 @@ end subroutine check_message_size
           !recv_se
           dir = 2
           folded = .false.
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
+          jsd = domain%y(tMe)%domain_data%begin;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           if( jsd.LT.jsg )then
              folded = .true.
@@ -3419,7 +3419,7 @@ end subroutine check_message_size
           dir = 3
           folded = .false.
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%domain_data%begin;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           if( jsd.LT.jsg )then
              folded = .true.
@@ -3441,8 +3441,8 @@ end subroutine check_message_size
           !recv_sw
           dir = 4
           folded = .false.
-          isd = domain%x(tMe)%data%begin; ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%data%begin; jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%domain_data%begin; ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%domain_data%begin; jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           if( jsd.LT.jsg )then
              folded = .true.
@@ -3462,7 +3462,7 @@ end subroutine check_message_size
 
           !recv_w
           dir = 5
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
+          isd = domain%x(tMe)%domain_data%begin;    ied = domain%x(tMe)%compute%begin-1
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( (position == NORTH .OR. position == CORNER ) .AND. ( jsd == je .or. jed == js ) ) then
@@ -3506,8 +3506,8 @@ end subroutine check_message_size
 
           !recv_nw
           dir = 6
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%domain_data%begin;    ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( isd.LT.isg .AND. is.GE.ied )then !cyclic offset
              is = is-ioff; ie = ie-ioff
@@ -3519,15 +3519,15 @@ end subroutine check_message_size
           !recv_n
           dir = 7
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           call insert_update_overlap( overlap, domain%list(m)%pe, &
                                       is, ie, js, je, isd, ied, jsd, jed, dir, symmetry=domain%symmetry)
 
           !recv_ne
           dir = 8
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if(  ied.GT.ieg .AND. ie.LT.isd )then ! cyclic offset
              is = is+ioff; ie = ie+ioff
@@ -3539,8 +3539,8 @@ end subroutine check_message_size
           !--- for folded-south-edge, only need to consider to_pe's south(3) direction
           !--- only position at NORTH and CORNER need to be considered
           if( ( position == NORTH .OR. position == CORNER) ) then
-             if( domain%y(tMe)%data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%data%end+jshift )then !fold
-                                                                                                    !! is within domain
+            !fold is within domain
+             if( domain%y(tMe)%domain_data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%domain_data%end+jshift )then
                 dir = 3
                 !--- calculating overlapping for receving on north
                 if( domain%x(tMe)%pos .GE. size(domain%x(tMe)%list(:))/2 )then
@@ -3585,15 +3585,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nrecv
-          write(unit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain
@@ -3662,7 +3662,7 @@ end subroutine check_message_size
     type(overlapSpec),   pointer     :: check =>NULL()
     integer                          :: nsend, nrecv
     integer                          :: nsend_check, nrecv_check
-    integer                          :: unit
+    integer                          :: iunit
 
     !--- since we restrict that if multiple tiles on one pe, all the tiles are limited to this pe.
     !--- In this case, if ntiles on this pe is greater than 1, no overlapping between processor within each tile
@@ -3907,8 +3907,8 @@ end subroutine check_message_size
           !--- Now calculate the overlapping for fold-edge.
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%compute%begin-whalo .LE. isg .AND. isg .LE. domain%x(tMe)%data%end+ishift )then !fold
-                                                                                                    !! is within domain
+            !fold is within domain
+             if( domain%x(tMe)%compute%begin-whalo .LE. isg .AND. isg .LE. domain%x(tMe)%domain_data%end+ishift )then
                 dir = 5
                 !--- calculate the overlapping for sending
                 if( domain%y(tMe)%pos .LT. (size(domain%y(tMe)%list(:))+1)/2 )then
@@ -3950,15 +3950,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nsend
-          write(unit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********to_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) flush(unit)
+       if(nsend >0) flush(iunit)
     endif
 
    ! copy the overlapping information into domain data structure
@@ -4000,7 +4000,7 @@ end subroutine check_message_size
           jsc = domain%list(m)%y(1)%compute%begin; jec = domain%list(m)%y(1)%compute%end+jshift
           !recv_e
           dir = 1
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           call insert_update_overlap( overlap, domain%list(m)%pe, &
@@ -4008,8 +4008,8 @@ end subroutine check_message_size
 
           !recv_se
           dir = 2
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
+          jsd = domain%y(tMe)%domain_data%begin;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           if( jsd.LT.jsg .AND. js.GE.jed )then ! cyclic is assumed
              js = js-joff; je = je-joff
@@ -4021,7 +4021,7 @@ end subroutine check_message_size
           dir = 3
           folded = .false.
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%domain_data%begin;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
 
           if( (position == EAST .OR. position == CORNER ) .AND. ( isd == ie .or. ied == is ) ) then
@@ -4065,8 +4065,8 @@ end subroutine check_message_size
           !recv_sw
           dir = 4
           folded = .false.
-          isd = domain%x(tMe)%data%begin; ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%data%begin; jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%domain_data%begin; ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%domain_data%begin; jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           if( isd.LT.isg )then
              folded = .true.
@@ -4087,7 +4087,7 @@ end subroutine check_message_size
           !recv_w
           dir = 5
           folded = .false.
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
+          isd = domain%x(tMe)%domain_data%begin;    ied = domain%x(tMe)%compute%begin-1
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( isd.LT.isg )then
@@ -4110,8 +4110,8 @@ end subroutine check_message_size
           !recv_nw
           dir = 6
           folded = .false.
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%domain_data%begin;    ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( isd.LT.isg) then
              folded = .true.
@@ -4128,7 +4128,7 @@ end subroutine check_message_size
           dir = 7
           folded = .false.
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( (position == EAST .OR. position == CORNER ) .AND. ( isd == ie .or. ied == is ) ) then
              !--- do nothing, this point will come from other pe
@@ -4159,8 +4159,8 @@ end subroutine check_message_size
 
           !recv_ne
           dir = 8
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if(  jed.GT.jeg .AND. je.LT.jsd )then ! cyclic offset
              js = js+joff; je = je+joff
@@ -4172,8 +4172,8 @@ end subroutine check_message_size
           !--- for folded-south-edge, only need to consider to_pe's south(3) direction
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%data%begin .LE. isg .AND. isg .LE. domain%x(tMe)%data%end+ishift )then !fold
-                                                                                                    !! is within domain
+            !fold is within domain
+             if( domain%x(tMe)%domain_data%begin .LE. isg .AND. isg .LE. domain%x(tMe)%domain_data%end+ishift )then
                 dir = 5
                 !--- calculating overlapping for receving on north
                 if( domain%y(tMe)%pos .GE. size(domain%y(tMe)%list(:))/2 )then
@@ -4216,15 +4216,15 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do m =1,nrecv
-          write(unit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
+          write(iunit, *) "********from_pe = " ,overlapList(m)%pe, " count = ",overlapList(m)%count
           do n = 1, overlapList(m)%count
-             write(unit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
+             write(iunit, *) overlapList(m)%is(n), overlapList(m)%ie(n), overlapList(m)%js(n), overlapList(m)%je(n), &
                   overlapList(m)%dir(n), overlapList(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     ! copy the overlapping information into domain
@@ -4536,8 +4536,8 @@ end subroutine check_message_size
           !--- Now calculate the overlapping for fold-edge.
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%data%end+ishift )then !fold
-                                                                                                    !! is within domain
+            !fold is within domain
+             if( domain%x(tMe)%domain_data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%domain_data%end+ishift )then
                 dir = 1
                 !--- calculate the overlapping for sending
                 if( domain%y(tMe)%pos .LT. (size(domain%y(tMe)%list(:))+1)/2 )then
@@ -4617,7 +4617,7 @@ end subroutine check_message_size
           !recv_e
           dir = 1
           folded = .false.
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( ied.GT.ieg )then
@@ -4640,8 +4640,8 @@ end subroutine check_message_size
           !recv_se
           dir = 2
           folded = .false.
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
+          jsd = domain%y(tMe)%domain_data%begin;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           if( ied.GT.ieg )then
              folded = .true.
@@ -4663,7 +4663,7 @@ end subroutine check_message_size
           dir = 3
           folded = .false.
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%data%begin;    jed = domain%y(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%domain_data%begin;    jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
 
           if( (position == EAST .OR. position == CORNER ) .AND. ( isd == ie .or. ied == is ) ) then
@@ -4706,8 +4706,8 @@ end subroutine check_message_size
 
           !recv_sw
           dir = 4
-          isd = domain%x(tMe)%data%begin; ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%data%begin; jed = domain%y(tMe)%compute%begin-1
+          isd = domain%x(tMe)%domain_data%begin; ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%domain_data%begin; jed = domain%y(tMe)%compute%begin-1
           is=isc; ie=iec; js=jsc; je=jec
           if( jsd.LT.jsg .AND. js.GE.jed )then ! cyclic is assumed
              js = js-joff; je = je-joff
@@ -4717,7 +4717,7 @@ end subroutine check_message_size
 
           !recv_w
           dir = 5
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
+          isd = domain%x(tMe)%domain_data%begin;    ied = domain%x(tMe)%compute%begin-1
           jsd = domain%y(tMe)%compute%begin; jed = domain%y(tMe)%compute%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           call insert_update_overlap( overlap, domain%list(m)%pe, &
@@ -4726,8 +4726,8 @@ end subroutine check_message_size
           !recv_nw
           dir = 6
           folded = .false.
-          isd = domain%x(tMe)%data%begin;    ied = domain%x(tMe)%compute%begin-1
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%domain_data%begin;    ied = domain%x(tMe)%compute%begin-1
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if(  jed.GT.jeg .AND. je.LT.jsd )then ! cyclic offset
              js = js+joff; je = je+joff
@@ -4739,7 +4739,7 @@ end subroutine check_message_size
           dir = 7
           folded = .false.
           isd = domain%x(tMe)%compute%begin; ied = domain%x(tMe)%compute%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( (position == EAST .OR. position == CORNER ) .AND. ( isd == ie .or. ied == is ) ) then
              !--- do nothing, this point will come from other pe
@@ -4771,8 +4771,8 @@ end subroutine check_message_size
           !recv_ne
           dir = 8
           folded = .false.
-          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%data%end+ishift
-          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%data%end+jshift
+          isd = domain%x(tMe)%compute%end+1+ishift; ied = domain%x(tMe)%domain_data%end+ishift
+          jsd = domain%y(tMe)%compute%end+1+jshift; jed = domain%y(tMe)%domain_data%end+jshift
           is=isc; ie=iec; js=jsc; je=jec
           if( ied.GT.ieg) then
              folded = .true.
@@ -4788,8 +4788,8 @@ end subroutine check_message_size
           !--- for folded-south-edge, only need to consider to_pe's south(3) direction
           !--- only position at EAST and CORNER need to be considered
           if( ( position == EAST .OR. position == CORNER) ) then
-             if( domain%x(tMe)%data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%data%end+ishift )then !fold
-                                                                                                    !! is within domain
+            !fold is within domain
+             if( domain%x(tMe)%domain_data%begin .LE. ieg .AND. ieg .LE. domain%x(tMe)%domain_data%end+ishift )then
                 dir = 1
                 !--- calculating overlapping for receving on north
                 if( domain%y(tMe)%pos .GE. size(domain%y(tMe)%list(:))/2 )then
@@ -5319,7 +5319,7 @@ end subroutine check_message_size
     integer                           :: nsend, nrecv, nsend2, nrecv2
     type(contact_type), dimension(domain%ntiles)            :: eCont, wCont, sCont, nCont
     type(overlap_type), dimension(0:size(domain%list(:))-1) :: overlapSend, overlapRecv
-    integer                                                 :: unit
+    integer                                                 :: iunit
 
     if( position .NE. CENTER )  call mpp_error(FATAL,  "mpp_domains_define.inc: " //&
          "routine define_contact_point can only be used to calculate overlapping for cell center.")
@@ -5702,32 +5702,32 @@ end subroutine check_message_size
                    select case ( dir )
                    case ( 1 )  ! eastern halo
                       if( align1Recv(n) .NE. EAST ) cycle
-                      isd2 = domain%x(tMe)%compute%end+1; ied2 = domain%x(tMe)%data%end
+                      isd2 = domain%x(tMe)%compute%end+1; ied2 = domain%x(tMe)%domain_data%end
                       jsd2 = domain%y(tMe)%compute%begin; jed2 = domain%y(tMe)%compute%end
                    case ( 2 )  ! southeast halo
-                      isd2 = domain%x(tMe)%compute%end+1; ied2 = domain%x(tMe)%data%end
-                      jsd2 = domain%y(tMe)%data%begin;    jed2 = domain%y(tMe)%compute%begin-1
+                      isd2 = domain%x(tMe)%compute%end+1; ied2 = domain%x(tMe)%domain_data%end
+                      jsd2 = domain%y(tMe)%domain_data%begin;    jed2 = domain%y(tMe)%compute%begin-1
                    case ( 3 )  ! southern halo
                       if( align1Recv(n) .NE. SOUTH ) cycle
                       isd2 = domain%x(tMe)%compute%begin; ied2 = domain%x(tMe)%compute%end
-                      jsd2 = domain%y(tMe)%data%begin;    jed2 = domain%y(tMe)%compute%begin-1
+                      jsd2 = domain%y(tMe)%domain_data%begin;    jed2 = domain%y(tMe)%compute%begin-1
                    case ( 4 )  ! southwest halo
-                      isd2 = domain%x(tMe)%data%begin;    ied2 = domain%x(tMe)%compute%begin-1
-                      jsd2 = domain%y(tMe)%data%begin;    jed2 = domain%y(tMe)%compute%begin-1
+                      isd2 = domain%x(tMe)%domain_data%begin;    ied2 = domain%x(tMe)%compute%begin-1
+                      jsd2 = domain%y(tMe)%domain_data%begin;    jed2 = domain%y(tMe)%compute%begin-1
                    case ( 5 )  ! western halo
                       if( align1Recv(n) .NE. WEST ) cycle
-                      isd2 = domain%x(tMe)%data%begin;    ied2 = domain%x(tMe)%compute%begin-1
+                      isd2 = domain%x(tMe)%domain_data%begin;    ied2 = domain%x(tMe)%compute%begin-1
                       jsd2 = domain%y(tMe)%compute%begin; jed2 = domain%y(tMe)%compute%end
                    case ( 6 )  ! northwest halo
-                      isd2 = domain%x(tMe)%data%begin;    ied2 = domain%x(tMe)%compute%begin-1
-                      jsd2 = domain%y(tMe)%compute%end+1; jed2 = domain%y(tMe)%data%end
+                      isd2 = domain%x(tMe)%domain_data%begin;    ied2 = domain%x(tMe)%compute%begin-1
+                      jsd2 = domain%y(tMe)%compute%end+1; jed2 = domain%y(tMe)%domain_data%end
                    case ( 7 )  ! northern halo
                       if( align1Recv(n) .NE. NORTH ) cycle
                       isd2 = domain%x(tMe)%compute%begin; ied2 = domain%x(tMe)%compute%end
-                      jsd2 = domain%y(tMe)%compute%end+1; jed2 = domain%y(tMe)%data%end
+                      jsd2 = domain%y(tMe)%compute%end+1; jed2 = domain%y(tMe)%domain_data%end
                    case ( 8 )  ! northeast halo
-                      isd2 = domain%x(tMe)%compute%end+1; ied2 = domain%x(tMe)%data%end
-                      jsd2 = domain%y(tMe)%compute%end+1; jed2 = domain%y(tMe)%data%end
+                      isd2 = domain%x(tMe)%compute%end+1; ied2 = domain%x(tMe)%domain_data%end
+                      jsd2 = domain%y(tMe)%compute%end+1; jed2 = domain%y(tMe)%domain_data%end
                    end select
                    is = max(isd1,isd2); ie = min(ied1,ied2)
                    js = max(jsd1,jsd2); je = min(jed1,jed2)
@@ -5753,17 +5753,17 @@ end subroutine check_message_size
 
     if(debug_message_passing) then
        !--- write out send information
-       unit = mpp_pe() + 1000
+       iunit = mpp_pe() + 1000
        do list = 0, nlist-1
           m = mod( domain%pos+list, nlist )
           if(overlapSend(m)%count==0) cycle
-          write(unit, *) "********to_pe = " ,overlapSend(m)%pe, " count = ",overlapSend(m)%count
+          write(iunit, *) "********to_pe = " ,overlapSend(m)%pe, " count = ",overlapSend(m)%count
           do n = 1, overlapSend(m)%count
-             write(unit, *) overlapSend(m)%is(n), overlapSend(m)%ie(n), overlapSend(m)%js(n), overlapSend(m)%je(n), &
+             write(iunit, *) overlapSend(m)%is(n), overlapSend(m)%ie(n), overlapSend(m)%js(n), overlapSend(m)%je(n), &
                   overlapSend(m)%dir(n), overlapSend(m)%rotation(n)
           enddo
        enddo
-       if(nsend >0) flush(unit)
+       if(nsend >0) flush(iunit)
     endif
 
     dirlist(1) = 1; dirlist(2) = 3; dirlist(3) = 5; dirlist(4) = 7
@@ -5827,13 +5827,13 @@ end subroutine check_message_size
        do list = 0, nlist-1
           m = mod( domain%pos+list, nlist )
           if(overlapRecv(m)%count==0) cycle
-          write(unit, *) "********from_pe = " ,overlapRecv(m)%pe, " count = ",overlapRecv(m)%count
+          write(iunit, *) "********from_pe = " ,overlapRecv(m)%pe, " count = ",overlapRecv(m)%count
           do n = 1, overlapRecv(m)%count
-             write(unit, *) overlapRecv(m)%is(n), overlapRecv(m)%ie(n), overlapRecv(m)%js(n), overlapRecv(m)%je(n), &
+             write(iunit, *) overlapRecv(m)%is(n), overlapRecv(m)%ie(n), overlapRecv(m)%js(n), overlapRecv(m)%je(n), &
                   overlapRecv(m)%dir(n), overlapRecv(m)%rotation(n)
           enddo
        enddo
-       if(nrecv >0) flush(unit)
+       if(nrecv >0) flush(iunit)
     endif
 
     if(nrecv >0) then
@@ -7554,7 +7554,7 @@ ndivs = size(domain_in%list(:))
 ! get the flag
 flag = 0
 if(domain_in%cyclic) flag = flag + CYCLIC_GLOBAL_DOMAIN
-if(domain_in%data%is_global) flag = flag + GLOBAL_DATA_DOMAIN
+if(domain_in%domain_data%is_global) flag = flag + GLOBAL_DATA_DOMAIN
 
 call mpp_define_domains( global_indices, ndivs, domain_out, pelist = domain_in%list(:)%pe, &
    flags = flag, begin_halo = hbegin, end_halo = hend, extent = domain_in%list(:)%compute%size )
@@ -7594,9 +7594,9 @@ if(present(whalo) .or. present(ehalo) .or. present(shalo) .or. present(nhalo) ) 
  ! get the flag
  xflag = 0; yflag = 0
  if(domain_in%x(1)%cyclic) xflag = xflag + CYCLIC_GLOBAL_DOMAIN
- if(domain_in%x(1)%data%is_global) xflag = xflag + GLOBAL_DATA_DOMAIN
+ if(domain_in%x(1)%domain_data%is_global) xflag = xflag + GLOBAL_DATA_DOMAIN
  if(domain_in%y(1)%cyclic) yflag = yflag + CYCLIC_GLOBAL_DOMAIN
- if(domain_in%y(1)%data%is_global) yflag = yflag + GLOBAL_DATA_DOMAIN
+ if(domain_in%y(1)%domain_data%is_global) yflag = yflag + GLOBAL_DATA_DOMAIN
 
  call mpp_define_domains( global_indices, layout, domain_out, pelist = domain_in%list(:)%pe, &
       xflags = xflag, yflags = yflag,  whalo = whalo, ehalo = ehalo,     &
@@ -7632,7 +7632,7 @@ subroutine mpp_define_null_domain1D(domain)
 type(domain1D), intent(inout) :: domain
 
 domain%global%begin  = -1; domain%global%end  = -1; domain%global%size = 0
-domain%data%begin    = -1; domain%data%end    = -1; domain%data%size = 0
+domain%domain_data%begin    = -1; domain%domain_data%end    = -1; domain%domain_data%size = 0
 domain%compute%begin = -1; domain%compute%end = -1; domain%compute%size = 0
 domain%pe = NULL_PE
 

@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2023.02.00-dev],
+  [2023.04.00-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -54,12 +54,6 @@ AS_IF([test x${CRAYPE_VERSION:+yes} = "xyes"],[
 
 
 # Process user optons.
-AC_ARG_ENABLE([mixed-mode],
-  [AS_HELP_STRING([--enable-mixed-mode],
-    [Build using mixed mode.  Enables both 64-bit and 32-bit reals in Fortran. This option will be ignored if --disable-fortran-flag-setting is also given.])])
-AS_IF([test ${enable_mixed_mode:-no} = no],
-  [enable_mixed_mode=no],
-  [enable_mixed_mode=yes])
 AC_ARG_WITH([mpi],
   [AS_HELP_STRING([--with-mpi],
     [Build with MPI support.  This option will be ignored if --disable-fortran-flag-setting is also given. (Default yes)])])
@@ -85,12 +79,6 @@ AS_IF([test ${enable_code_coverage:-no} = no],
   [enable_code_coverage=no],
   [enable_code_coverage=yes])
 # individual mixed precision overload macros
-AC_ARG_ENABLE([overload-r4],
-  [AS_HELP_STRING([--enable-overload-r4],
-    [Enables the OVERLOAD_R4 macro to compile with 4 byte real routine overloads. (Default no)])])
-AS_IF([test ${enable_overload_r4:-no} = yes],
-  [enable_overload_r4=yes],
-  [enable_overload_r4=no])
 AC_ARG_ENABLE([overload-c4],
   [AS_HELP_STRING([--enable-overload-c4],
     [Enables the OVERLOAD_C4 macro to compile with 4 byte complex routine overloads. (Default no)])])
@@ -116,6 +104,13 @@ AC_ARG_ENABLE([deprecated-io],
 AS_IF([test ${enable_deprecated_io:-no} = yes],
   [enable_deprecated_io=yes],
   [enable_deprecated_io=no])
+
+AC_ARG_ENABLE([r8-default],
+  [AS_HELP_STRING([--disable-r8-default],
+    [Disables the build from adding the 8 byte default real kind flag during compilation (default no)])])
+AS_IF([test ${enable_r8_default:-yes} = yes],
+  [enable_r8_default=yes],
+  [enable_r8_default=no])
 
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
@@ -282,7 +277,6 @@ AC_OPENMP()
 AC_LANG_POP(Fortran)
 
 # We passed all the tests.  Set the required defines.
-AC_DEFINE([use_netCDF], [1], [This is required for the library to build])
 if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
 fi
@@ -291,9 +285,18 @@ fi
 if test $enable_deprecated_io = yes; then
   #If the test pass, define use_deprecated_io macro and skip it's unit tests
   AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
+  # this macro was only removed from non-deprecated code so still needs to be set
+  AC_DEFINE([use_netCDF], [1], [This has been removed elsewhere but is still required to build with deprecated io])
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
 else
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
+fi
+
+# Builds with r8 default unless disable flag is given
+if test $enable_r8_default = yes; then
+  AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
+else
+  AM_CONDITIONAL([SKIP_MOSAIC_TESTS], true)
 fi
 
 # Set any required compile flags.  This will not be done if the user wants to
@@ -307,20 +310,13 @@ if test $enable_setting_flags = yes; then
   # necessary fortran flags.
   AC_FC_LINE_LENGTH([unlimited])
 
-  # Will we build with default 64-bit reals in Fortran, or do mixed mode?
-  if test $enable_mixed_mode = yes; then
-    GX_FC_DEFAULT_REAL_KIND4_FLAG([dnl
-      FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
-    AC_DEFINE([OVERLOAD_R4], [1], [Set to overload the R4 Fortran routines])
-    AC_DEFINE([OVERLOAD_R8], [1], [Set to overload the R8 Fortran routines])
-  else
+  # Builds with r8 default unless disable flag is given
+  if test $enable_r8_default = yes; then
     GX_FC_DEFAULT_REAL_KIND8_FLAG([dnl
       FCFLAGS="$FCFLAGS $FC_DEFAULT_REAL_KIND8_FLAG"])
   fi
+
   # individual mixed precision overloads
-  if test $enable_overload_r4 = yes; then
-    AC_DEFINE([OVERLOAD_R4], [1], [Set to overload with the R4 Fortran routines])
-  fi
   if test $enable_overload_c4 = yes; then
     AC_DEFINE([OVERLOAD_C4], [1], [Set to overload with the C4 Fortran routines])
   fi
@@ -475,6 +471,7 @@ AC_CONFIG_FILES([
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
+  test_fms/astronomy/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
   test_fms/exchange/Makefile
@@ -490,12 +487,18 @@ AC_CONFIG_FILES([
   test_fms/horiz_interp/Makefile
   test_fms/field_manager/Makefile
   test_fms/axis_utils/Makefile
-  test_fms/mosaic/Makefile
+  test_fms/mosaic2/Makefile
   test_fms/affinity/Makefile
   test_fms/coupler/Makefile
   test_fms/parser/Makefile
   test_fms/string_utils/Makefile
+  test_fms/tridiagonal/Makefile
   test_fms/sat_vapor_pres/Makefile
+  test_fms/diag_integral/Makefile
+  test_fms/tracer_manager/Makefile
+  test_fms/random_numbers/Makefile
+  test_fms/topography/Makefile
+  test_fms/column_diagnostics/Makefile
   FMS.pc
   ])
 

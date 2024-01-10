@@ -50,10 +50,10 @@ SUBROUTINE mpp_pass_SG_to_UG_3D_(UG_domain, field_SG, field_UG)
      size(field_SG,2) .EQ. UG_domain%SG_domain%y(1)%compute%size) then
      ioff = 1 - UG_domain%SG_domain%x(1)%compute%begin
      joff = 1 - UG_domain%SG_domain%y(1)%compute%begin
-  else if(size(field_SG,1) .EQ. UG_domain%SG_domain%x(1)%data%size .AND.  &
-          size(field_SG,2) .EQ. UG_domain%SG_domain%y(1)%data%size) then
-     ioff = 1 - UG_domain%SG_domain%x(1)%data%begin
-     joff = 1 - UG_domain%SG_domain%y(1)%data%begin
+  else if(size(field_SG,1) .EQ. UG_domain%SG_domain%x(1)%domain_data%size .AND.  &
+          size(field_SG,2) .EQ. UG_domain%SG_domain%y(1)%domain_data%size) then
+     ioff = 1 - UG_domain%SG_domain%x(1)%domain_data%begin
+     joff = 1 - UG_domain%SG_domain%y(1)%domain_data%begin
   else
      call mpp_error( FATAL, 'mpp_pass_SG_to_UG_3D_: field_SG must match either compute domain or data domain.' )
   endif
@@ -154,10 +154,10 @@ SUBROUTINE mpp_pass_UG_to_SG_3D_(UG_domain, field_UG, field_SG)
      size(field_SG,2) .EQ. UG_domain%SG_domain%y(1)%compute%size) then
      ioff = 1 - UG_domain%SG_domain%x(1)%compute%begin
      joff = 1 - UG_domain%SG_domain%y(1)%compute%begin
-  else if(size(field_SG,1) .EQ. UG_domain%SG_domain%x(1)%data%size .AND.  &
-          size(field_SG,2) .EQ. UG_domain%SG_domain%y(1)%data%size) then
-     ioff = 1 - UG_domain%SG_domain%x(1)%data%begin
-     joff = 1 - UG_domain%SG_domain%y(1)%data%begin
+  else if(size(field_SG,1) .EQ. UG_domain%SG_domain%x(1)%domain_data%size .AND.  &
+          size(field_SG,2) .EQ. UG_domain%SG_domain%y(1)%domain_data%size) then
+     ioff = 1 - UG_domain%SG_domain%x(1)%domain_data%begin
+     joff = 1 - UG_domain%SG_domain%y(1)%domain_data%begin
   else
      call mpp_error( FATAL, 'mpp_pass_UG_to_SG_3D_: field_SG must match either compute domain or data domain.' )
   endif

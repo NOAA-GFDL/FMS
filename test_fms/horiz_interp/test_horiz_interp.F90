@@ -52,10 +52,11 @@ implicit none
   integer :: ni_dst = 144, nj_dst = 72
   integer, parameter :: max_neighbors = 400 !! took this from spherical mod
                 !! max amount found neighbors to loop through in spherical search
-
+  logical :: decreasing_lat = .False. !< latitude and longitude are decreasing instead of increasing
+                                      !! This is only for the bilinear test case
 
   namelist /test_horiz_interp_nml/ test_conserve, test_bicubic, test_spherical, test_bilinear, test_assign, test_solo,&
-                                   ni_src, nj_src, ni_dst,nj_dst
+                                   ni_src, nj_src, ni_dst,nj_dst, decreasing_lat
 
 
   type(domain2d)                    :: domain
@@ -196,11 +197,19 @@ implicit none
     real(HI_TEST_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lon2D_src, lat2d_src, lon2D_dst, lat2D_dst
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
-    real(HI_TEST_KIND_), parameter :: lon_src_beg =  0._lkind,  lon_src_end = 360.0_lkind
-    real(HI_TEST_KIND_), parameter :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
+    real(HI_TEST_KIND_) :: lon_src_beg =  0._lkind,  lon_src_end = 360.0_lkind
+    real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
     real(HI_TEST_KIND_), parameter :: D2R = real(PI,lkind)/180._lkind
+    real(HI_TEST_KIND_), parameter :: R2D = 180._lkind/real(PI,lkind)
 
     type(horiz_interp_type) :: interp
+
+    if (decreasing_lat) then
+        lon_src_beg = 360.0_lkind
+        lon_src_end = 0._lkind
+        lat_src_beg = 90._lkind
+        lat_src_end = -90._lkind
+    endif
 
     allocate( lon1D_src(ni_src+1), lat1D_src(nj_src+1) )
     allocate( lon1D_dst(ni_src+1), lat1D_dst(nj_src+1) )
@@ -377,6 +386,7 @@ implicit none
         call check_dealloc(interp)
     endif
 
+    if (decreasing_lat) return
     ! --- 2dx1d version bilinear interpolation
     data_dst = 0.0_lkind
     lon1d_dst = lon1d_src

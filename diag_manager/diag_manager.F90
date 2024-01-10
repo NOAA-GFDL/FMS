@@ -221,7 +221,8 @@ use platform_mod
        & check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & diag_time_inc, find_input_field, init_input_field, init_output_field,&
        & diag_data_out, write_static, get_date_dif, get_subfield_vert_size, sync_file_times,&
-       & prepend_attribute, attribute_init, diag_util_init, field_log_separator
+       & prepend_attribute, attribute_init, diag_util_init, field_log_separator, &
+       & get_file_start_time
   USE diag_data_mod, ONLY: max_files, CMOR_MISSING_VALUE, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, EVERY_TIME,&
        & END_OF_RUN, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, num_files,&
        & max_input_fields, max_output_fields, num_output_fields, EMPTY, FILL_VALUE, null_axis_id,&
@@ -246,9 +247,7 @@ use platform_mod
   USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
    & fieldbuff_copy_fieldvals
 
-#ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
-#endif
 
 !----------
 !ug support
@@ -348,6 +347,7 @@ use platform_mod
      MODULE PROCEDURE send_data_1d
      MODULE PROCEDURE send_data_2d
      MODULE PROCEDURE send_data_3d
+     MODULE PROCEDURE send_data_4d
   END INTERFACE
 
   !> @brief Register a diagnostic field for a given module
@@ -594,6 +594,7 @@ END FUNCTION register_static_field
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
+    TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -709,7 +710,6 @@ END FUNCTION register_static_field
           ind = input_fields(field)%output_fields(j)
           output_fields(ind)%static = .FALSE.
           ! Set up times in output_fields
-          output_fields(ind)%last_output = init_time
           ! Get output frequency from for the appropriate output file
           file_num = output_fields(ind)%output_file
           IF ( file_num == max_files ) CYCLE
@@ -728,8 +728,10 @@ END FUNCTION register_static_field
           END IF
 
           freq = files(file_num)%output_freq
+          diag_file_init_time = get_file_start_time(file_num)
           output_units = files(file_num)%output_units
-          output_fields(ind)%next_output = diag_time_inc(init_time, freq, output_units, err_msg=msg)
+          output_fields(ind)%last_output = diag_file_init_time
+          output_fields(ind)%next_output = diag_time_inc(diag_file_init_time, freq, output_units, err_msg=msg)
           IF ( msg /= '' ) THEN
              IF ( fms_error_handler('diag_manager_mod::register_diag_field',&
                   & ' file='//TRIM(files(file_num)%name)//': '//TRIM(msg),err_msg)) RETURN
@@ -1779,8 +1781,8 @@ END FUNCTION register_static_field
   ! Split old and modern2023 here
   modern_if: iF (use_modern_diag) then
     field_name = fms_diag_object%fms_get_field_name_from_id(diag_field_id)
-    field_remap = copy_3d_to_4d(field, trim(field_name)//"'s data")
-    if (present(rmask)) rmask_remap = copy_3d_to_4d(rmask, trim(field_name)//"'s mask")
+    call copy_3d_to_4d(field, field_remap, trim(field_name)//"'s data")
+    if (present(rmask)) call copy_3d_to_4d(rmask, rmask_remap, trim(field_name)//"'s mask")
     if (present(mask)) then
       allocate(mask_remap(1:size(mask,1), 1:size(mask,2), 1:size(mask,3), 1))
       mask_remap(:,:,:,1) = mask
@@ -2135,6 +2137,11 @@ END FUNCTION register_static_field
           END IF  !.not.output_fields(out_num)%static .and. freq /= END_OF_RUN
           ! Finished output of previously buffered data, now deal with buffering new data
        END IF
+
+       if (present(time)) then
+         !! If the last_output is greater than the time passed in, it is not time to start averaging the data
+         if (output_fields(out_num)%last_output > time) CYCLE
+       endif
 
        IF ( .NOT.output_fields(out_num)%static .AND. .NOT.need_compute .AND. debug_diag_manager ) THEN
           CALL check_bounds_are_exact_dynamic(out_num, diag_field_id, Time, err_msg=err_msg_local)
@@ -3474,6 +3481,57 @@ END FUNCTION register_static_field
   endIF modern_if
   END FUNCTION diag_send_data
 
+  !> @brief Updates the output buffer for a field based on the data for current time step
+  !! @return true if send is successful
+  LOGICAL FUNCTION send_data_4d(diag_field_id, field, time, is_in, js_in, ks_in, &
+    & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
+    INTEGER,          INTENT(in)            :: diag_field_id  !< The field id returned from the register call
+    CLASS(*),         INTENT(in)            :: field(:,:,:,:) !< The field data for the current time step
+    CLASS(*),         INTENT(in),  OPTIONAL :: weight         !< The weight to multiply the data by when averaging
+    TYPE (time_type), INTENT(in),  OPTIONAL :: time           !< The current model time
+    INTEGER,          INTENT(in),  OPTIONAL :: is_in          !< Starting i index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: js_in          !< Starting j index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: ks_in          !< Starting k index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: ie_in          !< Ending i index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: je_in          !< Ending j index of the data
+    INTEGER,          INTENT(in),  OPTIONAL :: ke_in          !< Ending k index of the data
+    LOGICAL,          INTENT(in),  OPTIONAL :: mask(:,:,:,:)  !< Logical mask indicating the points to not average
+    CLASS(*),         INTENT(in),  OPTIONAL :: rmask(:,:,:,:) !< Real mask indicating the points to not averafe
+    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg        !< If some errors occurs, send_data will return the
+                                                              !! error message instead of crashing
+
+    class(*), allocatable :: rmask_local(:,:,:,:) !< Real version of the mask variable
+    logical,  allocatable :: mask_local(:,:,:,:)  !< Local version of the mask variable
+
+    ! If diag_field_id is < 0 it means that this field is not registered, simply return
+    IF ( diag_field_id <= 0 ) THEN
+      send_data_4d = .FALSE.
+      RETURN
+    ENDIF
+
+    if (.not. use_modern_diag) &
+      call mpp_error(FATAL, "Send_data_4d is only supported when diag_manager_nml::use_modern_diag=.true.")
+
+    !< The error checking is done in accept_data
+    if (present(mask)) mask_local = mask
+    if (present(rmask)) rmask_local = rmask
+
+    send_data_4d = fms_diag_object%fms_diag_accept_data(diag_field_id, field, mask_local, rmask_local, &
+                                                          time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
+                                                          err_msg)
+
+    if (present(err_msg)) then
+      if (err_msg .ne. "") then
+        call mpp_error(NOTE, trim(err_msg))
+        send_data_4d = .false.
+        return
+      endif
+    endif
+
+    if (allocated(rmask_local)) deallocate(rmask_local)
+    if (allocated(mask_local))  deallocate(mask_local)
+  end function send_data_4d
+
   !> @return true if send is successful
   LOGICAL FUNCTION send_tile_averaged_data1d ( id, field, area, time, mask )
     INTEGER, INTENT(in) :: id  !< id od the diagnostic field
@@ -4228,7 +4286,7 @@ END FUNCTION register_static_field
   INTEGER FUNCTION init_diurnal_axis(n_samples)
     INTEGER, INTENT(in) :: n_samples !< number of intervals during the day
 
-    REAL :: DATA  (n_samples)   !< central points of time intervals
+    REAL :: center_data  (n_samples)   !< central points of time intervals
     REAL :: edges (n_samples+1) !< boundaries of time intervals
     INTEGER :: edges_id !< id of the corresponding edges
     INTEGER :: i
@@ -4247,7 +4305,7 @@ END FUNCTION register_static_field
     ! compute central points and units
     edges(1) = 0.0
     DO i = 1, n_samples
-       DATA (i) = 24.0*(REAL(i)-0.5)/n_samples
+       center_data (i) = 24.0*(REAL(i)-0.5)/n_samples
        edges(i+1) = 24.0* REAL(i)/n_samples
     END DO
 
@@ -4264,7 +4322,8 @@ END FUNCTION register_static_field
     WRITE (name,'(a,i2.2)') 'time_of_day_', n_samples
     init_diurnal_axis = get_axis_num(name, 'diurnal')
     IF ( init_diurnal_axis <= 0 ) THEN
-       init_diurnal_axis = diag_axis_init(name, DATA, units, 'N', 'time of day', set_name='diurnal', edges=edges_id)
+       init_diurnal_axis = diag_axis_init(name, center_data, units, 'N', 'time of day', &
+                           set_name='diurnal', edges=edges_id)
     END IF
   END FUNCTION init_diurnal_axis
 
@@ -4527,12 +4586,10 @@ END FUNCTION register_static_field
   END SUBROUTINE diag_field_add_cell_measures
 
   !> @brief Copies a 3d buffer to a 4d buffer
-  !> @return a 4d buffer
-  function copy_3d_to_4d(data_in, field_name) &
-    result(data_out)
+  subroutine copy_3d_to_4d(data_in, data_out, field_name)
     class (*),        intent(in) :: data_in(:,:,:) !< Data to copy
     character(len=*), intent(in) :: field_name     !< Name of the field copying (for error messages)
-    class (*), allocatable :: data_out(:,:,:,:)
+    class (*), allocatable, intent(out) :: data_out(:,:,:,:) !< 4D version of the data
 
     !TODO this should be extended to integers
     select type(data_in)
@@ -4558,7 +4615,7 @@ END FUNCTION register_static_field
       call mpp_error(FATAL, "The data for "//trim(field_name)//&
         &" is not a valid type. Currently only r4 and r8 are supported")
     end select
-  end function copy_3d_to_4d
+  end subroutine copy_3d_to_4d
 
 END MODULE diag_manager_mod
 !> @}
