@@ -27,6 +27,6 @@ jobs:
         cd .testing
         make -j
       env:
-        FMS_BRANCH: $GITHUB_SHA
+        FMS_COMMIT: $GITHUB_SHA
     - name: Run MOM tests
       run: make -j test
