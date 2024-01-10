@@ -28,5 +28,6 @@ jobs:
         make -j
       env:
         FMS_COMMIT: ${{ github.ref }}
+        FMS_URL: ${{ github.repositoryUrl }}
     - name: Run MOM tests
       run: make -j test
