@@ -587,8 +587,7 @@ end function do_time_max_wrapper
 
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
-function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bounds_out, missing_value, &
-                             increase_counter) &
+function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bounds_out, missing_value, increase_counter, pow_value) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
@@ -599,6 +598,8 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   logical,                         intent(in)    :: increase_counter    !< .True. if data has not been received for
                                                                         !! time, so the counter needs to be increased
+  integer, optional,               intent(in)    :: pow_value           !< power value, will calculate field_data^pow before adding to buffer
+                                                                        !! should only be present if using pow reduction method 
   character(len=50) :: err_msg
 
   !TODO This will be expanded for integers
@@ -608,7 +609,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       select type (field_data)
       type is (real(kind=r8_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, &
-                                bounds_in, bounds_out, missing_value, increase_counter)
+                                bounds_in, bounds_out, missing_value, increase_counter, pow=pow_value)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
@@ -616,7 +617,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
       select type (field_data)
       type is (real(kind=r4_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, bounds_in, bounds_out, &
-          real(missing_value, kind=r4_kind), increase_counter)
+          real(missing_value, kind=r4_kind), increase_counter, pow=pow_value)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select

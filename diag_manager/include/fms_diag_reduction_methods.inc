@@ -230,14 +230,16 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
                                                                   !! time, so the counter needs to be increased
   real(r8_kind),optional, intent(in) :: weight              !< Weight applied to data_in before added to data_out
                                                                   !! used for weighted averages, default 1.0
-  real(FMS_TRM_KIND_),optional, intent(in) :: pow                 !< Used for pow reduction, adds field^pow to buffer
+  integer ,optional, intent(in) :: pow                            !< Used for pow(er) reduction,
+                                                                  !! calculates field_data^pow before adding to buffer
 
   integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
                                                             !! the input buffer
   integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
                                                             !! the output buffer
   integer :: i, j, k, l !< For looping
-  real(FMS_TRM_KIND_) :: weight_loc, pow_loc !< local copies of optional arguments
+  real(FMS_TRM_KIND_) :: weight_loc !< local copy of optional weight 
+  integer :: pow_loc !> 
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
 
   if(present(weight)) then
@@ -247,7 +249,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   endif
 
   if(present(pow)) then
-    pow_loc = weight
+    pow_loc = pow
   else
     pow_loc = 1.0_kindl
   endif
@@ -303,7 +305,7 @@ end subroutine DO_TIME_SUM_UPDATE_
 !> To be called with diag_send_complete, finishes reductions
 !! Just divides the buffer by the counter array(which is just the sum of the weights used in the buffer's reduction)
 !! TODO: change has_mask to an actual logical mask so we don't have to check for missing values
-subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask)
+subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask, is_rms)
   real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
                                                                    !! do_time_sum_update
   real(r8_kind), intent(in)          :: weight_sum !< sum of weights for averaging, provided via argument to send data
@@ -313,6 +315,8 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
   !logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one.
   !logical                            :: has_mask !< whether or not mask is present
+  logical, optional, intent(in)      :: is_rms !< Indicates if using the root mean square reduction (takes sqrt)
+                                              !! if not present does normal average
 
   if ( has_mask ) then
     where(out_buffer_data(:,:,:,:,1) .ne. missing_val)
@@ -322,6 +326,16 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   else  !not mask variant
     out_buffer_data(:,:,:,:,1) = out_buffer_data(:,:,:,:,1) &
                                / weight_sum
+  endif
+
+  if(present(is_rms)) then
+      if(is_rms .and. has_mask) then
+        where(out_buffer_data(:,:,:,:,1) .ne. missing_val)
+          out_buffer_data(:,:,:,:,1) = SQRT(out_buffer_data(:,:,:,:,1))
+        endwhere
+      else if(is_rms) then
+        out_buffer_data(:,:,:,:,1) = SQRT(out_buffer_data(:,:,:,:,1))
+      endif
   endif
 
 end subroutine
