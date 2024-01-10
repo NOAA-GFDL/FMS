@@ -27,6 +27,6 @@ jobs:
         cd .testing
         make -j
       env:
-        FMS_COMMIT: ${{ github.sha }}
+        FMS_COMMIT: ${{ github.ref }}
     - name: Run MOM tests
       run: make -j test
