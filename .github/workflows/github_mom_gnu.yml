@@ -1,8 +1,7 @@
-# 'main' required ci, does a distcheck (builds, tests, check install)
-# image created off dockerfile in repo, compile/link flags are set there
-name: Build libFMS test with autotools
+name: Run MOM6 test suite
 
-on: [push, pull_request]
+# runs on PR's or when manually triggered
+on: [workflow_dispatch, pull_request]
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -15,13 +14,17 @@ jobs:
     container:
       image: noaagfdl/fms-ci-rocky-gnu:12.3.0
     steps:
+    # clone mom6
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         repository: 'NOAA-GFDL/MOM6'
+        submodules: recursive
     - name: Build FMS and MOM test suite with makedep
       run: |
         cd .testing
         make -j
+      env:
+        FMS_BRANCH: $GITHUB_SHA
     - name: Run the tests
       run: make -j test
