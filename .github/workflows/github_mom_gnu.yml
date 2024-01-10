@@ -12,19 +12,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: noaagfdl/fms-ci-rocky-gnu:12.3.0
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:12.3.0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
     steps:
-    # clone mom6
-    - name: Checkout code
+    - name: Checkout MOM6 repository
       uses: actions/checkout@v4
       with:
         repository: 'NOAA-GFDL/MOM6'
         submodules: recursive
-    - name: Build FMS and MOM test suite with makedep
+    - name: Build FMS and MOM test suite
       run: |
         cd .testing
         make -j
       env:
         FMS_BRANCH: $GITHUB_SHA
-    - name: Run the tests
+    - name: Run MOM tests
       run: make -j test
