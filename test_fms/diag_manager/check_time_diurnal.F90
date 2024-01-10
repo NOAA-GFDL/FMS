@@ -16,7 +16,7 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!! TODO more complicated cases and data 
+!! TODO more complicated cases and data
 !> @brief  Checks the output file after running test_reduction_methods using the "time_diurnal" reduction method
 program check_time_diurnal
   use fms_mod,           only: fms_init, fms_end, string
@@ -62,7 +62,7 @@ program check_time_diurnal
   ny = 96
   nz = 5
   nw = 2
-  nmonths = 3 
+  nmonths = 3
   nd = 3 !< diurnal sample size
 
   if (.not. open_file(fileobj, "test_diurnal.nc", "read")) &
@@ -72,7 +72,7 @@ program check_time_diurnal
   allocate(cdata_out(nx, ny, nz, nd))
   allocate(cdata_out_5d(nx, ny, nz, nw, nd))
 
-  do ti = 1, nmonths 
+  do ti = 1, nmonths
     cdata_out = -999_r4_kind
     print *, "Checking answers for var1 - time_level:", string(ti)
     call read_data(fileobj, "var1", cdata_out(:,1:nd,1,1), unlim_dim_level=ti)
@@ -135,11 +135,11 @@ contains
     enddo
     hrly_sums = hrly_sums / (24/sample_size)
 
-    ! 2d answer is the  
+    ! 2d answer is the
     do ii = 1, size(buffer, 1)
       do j = 1, size(buffer, 2)
         do d = 1, sample_size
-          buffer_exp = hrly_sums(d) 
+          buffer_exp = hrly_sums(d)
           if (use_mask .and. ii .eq. 1 .and. j .eq. 1) buffer_exp = -666_r4_kind
           if (abs(buffer(ii, j, d) - buffer_exp) > 0.0) then
             print *, "indices:", ii, j, d, "expected:", buffer_exp, "read in:",buffer(ii, j, d)
@@ -188,7 +188,7 @@ contains
     if (present(nz_offset)) nz_oset = nz_offset
 
     ! 3d answer is
-    ! 
+    !
     do ii = 1, size(buffer, 1)
       do j = 1, size(buffer, 2)
         do k = 1, size(buffer, 3)
@@ -226,7 +226,7 @@ contains
 
     do ii = 1, size(buffer, 1)
       do d = 1, sample_size
-        buffer_exp = hrly_sums(d) 
+        buffer_exp = hrly_sums(d)
         if (use_mask .and. ii .eq. 1) buffer_exp = -666_r4_kind
         if (abs(buffer(ii,d) - buffer_exp) > 0.0) then
           print *, "indices:", ii, d, "expected:", buffer_exp, "read in:",buffer(ii,d)
@@ -252,7 +252,7 @@ contains
     integer :: ny_oset !< Offset in the y direction (local variable)
     integer :: nz_oset !< Offset in the z direction (local variable)
     integer :: step_avg!< avg of time step increments to use in generating reference data
-    real(r8_kind) :: hrly_sums(24/sample_size) !< calculated hourly sums for each diurnal section 
+    real(r8_kind) :: hrly_sums(24/sample_size) !< calculated hourly sums for each diurnal section
     integer :: d_index !< diurnal index
 
     ! data is just the hour it was sent at
@@ -277,7 +277,7 @@ contains
       do j = 1, size(buffer, 2)
         do k = 1, size(buffer, 3)
           do w = 1, size(buffer, 4)
-            do d = 1, sample_size 
+            do d = 1, sample_size
               buffer_exp = hrly_sums(d)
               if (use_mask .and. ii .eq. 1 .and. j .eq. 1 .and. k .eq. 1 .and. &
                  .not. is_regional) then

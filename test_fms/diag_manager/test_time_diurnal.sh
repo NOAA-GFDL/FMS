@@ -31,26 +31,26 @@ title: test_diurnal
 base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: test_diurnal
-  time_units: hours 
+  time_units: hours
   unlimdim: time
-  freq: 1 months 
+  freq: 1 months
   varlist:
-  - module: ocn_mod 
-    var_name: var4 
-    output_name: var4 
+  - module: ocn_mod
+    var_name: var4
+    output_name: var4
     reduction: diurnal3
     kind: r4
-  - module: ocn_mod 
-    var_name: var3 
+  - module: ocn_mod
+    var_name: var3
     output_name: var3
     reduction: diurnal3
     kind: r4
-  - module: ocn_mod 
+  - module: ocn_mod
     var_name: var2
     output_name: var2
     reduction: diurnal3
     kind: r4
-  - module: ocn_mod 
+  - module: ocn_mod
     var_name: var1
     output_name: var1
     reduction: diurnal3
@@ -65,7 +65,7 @@ test_expect_success "monthly simple diurnal output" '
 
 test_expect_success "checking results for diurnal test simple" '
   mpirun -n 1 ../check_time_diurnal
-' 
+'
 
 printf "&test_diag_diurnal_nml \n test_case=0 \n mask_case=1 \n / \n" >> input.nml
 
@@ -74,7 +74,7 @@ test_expect_success "monthly diurnal output with logical mask" '
 '
 test_expect_success "checking results for diurnal test with logical mask" '
   mpirun -n 1 ../check_time_diurnal
-' 
+'
 
 printf "&test_diag_diurnal_nml \n test_case=0 \n mask_case=2 \n / \n" >> input.nml
 
@@ -83,7 +83,7 @@ test_expect_success "monthly diurnal output with real mask" '
 '
 test_expect_success "checking results for diurnal test with real mask" '
   mpirun -n 1 ../check_time_diurnal
-' 
+'
 
 printf "&test_diag_diurnal_nml \n test_case=1 \n / \n" >> input.nml
 
@@ -92,7 +92,7 @@ test_expect_success "monthly diurnal output with openmp" '
 '
 test_expect_success "checking results for diurnal test with openmp" '
   mpirun -n 1 ../check_time_diurnal
-' 
+'
 
 printf "&test_diag_diurnal_nml \n test_case=1 \n mask_case=1 \n / \n" >> input.nml
 
@@ -101,7 +101,7 @@ test_expect_success "monthly diurnal output with openmp and real mask" '
 '
 test_expect_success "checking results for diurnal test with openmp and real mask" '
   mpirun -n 1 ../check_time_diurnal
-' 
+'
 
 printf "&test_diag_diurnal_nml \n test_case=1 \n mask_case=2 \n / \n" >> input.nml
 

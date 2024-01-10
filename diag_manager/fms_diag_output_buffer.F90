@@ -541,14 +541,14 @@ function do_time_none_wrapper(this, field_data, mask, is_masked, bounds_in, boun
   logical,                         intent(in)    :: is_masked           !< .True. if the field has a mask
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   character(len=50) :: err_msg
-
+  
   !TODO This will be expanded for integers
   err_msg = ""
   select type (output_buffer => this%buffer)
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
-        call do_time_none(output_buffer, field_data, mask, is_masked, bounds_in, bounds_out, missing_value)
+                call do_time_none(output_buffer, field_data, mask, is_masked, bounds_in, bounds_out, missing_value)
       class default
         err_msg="do_time_none_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select

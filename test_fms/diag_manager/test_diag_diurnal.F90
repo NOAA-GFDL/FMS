@@ -58,7 +58,7 @@ program test_diag_diurnal
   type(time_type)                    :: Time            !< Time of the simulation
   type(time_type)                    :: Time_step       !< Time of the simulation
   integer                            :: nmonths         !< number of months to run for (submits ntimes per month)
-  integer                            :: ndays           !< number of days in the month 
+  integer                            :: ndays           !< number of days in the month
   integer                            :: id_x            !< axis id for the x dimension
   integer                            :: id_y            !< axis id for the y dimension
   integer                            :: id_z            !< axis id for the z dimension
@@ -103,7 +103,7 @@ program test_diag_diurnal
   read (input_nml_file, test_diag_diurnal_nml, iostat=io_status)
   if (io_status > 0) call mpp_error(FATAL,'=>test_modern_diag: Error reading input.nml')
 
-  nx = 96 
+  nx = 96
   ny = 96
   nz = 5
   nw = 2
@@ -183,7 +183,7 @@ program test_diag_diurnal
   id_var4 = register_diag_field  ('ocn_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'var4', &
     'mullions', missing_value = missing_value)
 
-  ! iterate through nmonths and each day, each hour 
+  ! iterate through nmonths and each day, each hour
   do m = 1, nmonths
     Time = set_date(2,m,1)
     ndays = days_in_month(Time)
