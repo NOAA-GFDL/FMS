@@ -25,9 +25,6 @@ jobs:
     - name: Build FMS and MOM test suite
       run: |
         cd .testing
-        FMS_COMMIT="${GITHUB_SHA}" FMS_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" make -j
-      env:
-        FMS_COMMIT: ${{ github.ref }}
-        FMS_URL: ${}}
+        FMS_COMMIT="${GITHUB_REF}" FMS_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" make -j
     - name: Run MOM tests
       run: make -j test
