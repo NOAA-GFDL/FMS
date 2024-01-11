@@ -1676,15 +1676,21 @@ subroutine allocate_mask(this, mask_in, omp_axis)
 end subroutine allocate_mask
 
 !> Sets previously allocated mask to mask_in at given index ranges
-subroutine set_mask(this, mask_in, is, js, ks, ie, je, ke)
+subroutine set_mask(this, mask_in, field_info, is, js, ks, ie, je, ke)
   class(fmsDiagField_type), intent(inout) :: this
   logical, intent(in)                     :: mask_in(:,:,:,:)
+  character(len=*), intent(in)            :: field_info !< Field info to add to error message
   integer, optional, intent(in)           :: is, js, ks, ie, je, ke
   if(present(is)) then
     if(is .lt. lbound(this%mask,1) .or. ie .gt. ubound(this%mask,1) .or. &
       js .lt. lbound(this%mask,2) .or. je .gt. ubound(this%mask,2) .or. &
       ks .lt. lbound(this%mask,3) .or. ke .gt. ubound(this%mask,3)) then
-        print *, mpp_pe(), "alloc'd", SHAPE(this%mask), "passed:", is,ie,js,je,ks,ke
+        print *, "PE:", int2str(mpp_pe()), "The size of the mask is", &
+          SHAPE(this%mask), &
+          "But the indices passed in are is=", int2str(is), " ie=", int2str(ie),&
+          " js=", int2str(js), " je=", int2str(je), &
+          " ks=", int2str(ks), " ke=", int2str(ke), &
+          " ", trim(field_info)
         call mpp_error(FATAL,"set_mask:: given indices out of bounds for allocated mask")
     endif
     this%mask(is:ie, js:je, ks:ke, :) = mask_in
