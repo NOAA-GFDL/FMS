@@ -599,7 +599,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
   logical,                         intent(in)    :: increase_counter    !< .True. if data has not been received for
                                                                         !! time, so the counter needs to be increased
   integer, optional,               intent(in)    :: pow_value           !< power value, will calculate field_data^pow before adding to buffer
-                                                                        !! should only be present if using pow reduction method 
+                                                                        !! should only be present if using pow reduction method
   character(len=50) :: err_msg
 
   !TODO This will be expanded for integers

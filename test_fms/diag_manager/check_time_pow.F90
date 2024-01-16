@@ -46,7 +46,6 @@ program check_time_pow
   integer :: test_case = test_normal !< Indicates which test case to run
   integer :: mask_case = no_mask     !< Indicates which masking option to run
   integer, parameter :: kindl = KIND(0.0) !< compile-time default kind size
-  real(r4_kind), parameter :: tol = 1.0e-4
 
   namelist / test_reduction_methods_nml / test_case, mask_case
 
@@ -133,9 +132,7 @@ contains
     ! only one index(1,1,1,1) = sums to 4
     buffer_exp = get_answer_from_index(4)
 
-    if (abs(buffer - buffer_exp) > 0.0) print *, "answer not exact for 0d, time:", time_level, " diff:", abs(buffer-buffer_exp)
-
-    if (abs(buffer - buffer_exp) > tol) then
+    if (abs(buffer - buffer_exp) > 0.0) then
       print *, "time_level", time_level, "expected", buffer_exp, "read", buffer
       call mpp_error(FATAL, "Check_time_pow::check_data_0d:: Data is not correct")
     endif
@@ -159,11 +156,9 @@ contains
 
       if (use_mask .and. ii .eq. 1) buffer_exp = -666_r4_kind
       if (abs(buffer(ii) - buffer_exp) > 0.0) then
-        call mpp_error(NOTE, "Check_time_pow::check_data_1d:: Data is not exact")
         print *, "i:", ii, "read in:", buffer(ii), "expected:", buffer_exp, "time level:", time_level
         print *, "diff:", abs(buffer(ii) - buffer_exp)
-        if(abs(buffer(ii) - buffer_exp) > tol) call mpp_error(FATAL, &
-           "Check_time_pow:: check_data_1d:: data is incorrect")
+        call mpp_error(FATAL, "Check_time_pow::check_data_1d:: Data is not exact")
       endif
     enddo
   end subroutine check_data_1d

@@ -309,7 +309,8 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
                                                                    !! do_time_sum_update
   real(r8_kind), intent(in)          :: weight_sum !< sum of weights for averaging, provided via argument to send data
-  integer, intent(in)                :: reduction_method !< which reduction method to use, should be time_avg,diurnal, or rms
+  integer, intent(in)                :: reduction_method !< which reduction method to use
+                                                         !! should always be one of time_avg, time_diurnal, or time_rms
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
   logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped
   !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
