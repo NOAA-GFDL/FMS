@@ -549,10 +549,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !< Set the field_weight. If "weight" is not present it will be set to 1.0_r8_kind
   field_weight = set_weight(weight)
 
-  !< Set the variable type based off passed in field data
-  if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
-    call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
-
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
   if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
@@ -658,7 +654,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
       call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
-      call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info)
+    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info)
     return
   end if main_if
   !> Return false if nothing is done

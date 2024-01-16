@@ -337,8 +337,6 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
     wsum = weight_sum
   endif
 
-  print *, "finishing reduction with weight_sum:", wsum
-
   if ( has_mask ) then
     where(out_buffer_data(:,:,:,:,:) .ne. missing_val)
       out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &

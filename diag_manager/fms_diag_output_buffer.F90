@@ -642,7 +642,6 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bound
                                                                         !! time, so the counter needs to be increased
   character(len=50) :: err_msg
 
-
   !TODO This will be expanded for integers
   err_msg = ""
   select type (output_buffer => this%buffer)

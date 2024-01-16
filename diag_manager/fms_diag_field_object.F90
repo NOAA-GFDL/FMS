@@ -1693,7 +1693,7 @@ subroutine set_mask(this, mask_in, field_info, is, js, ks, ie, je, ke)
           " js=", int2str(js), " je=", int2str(je), &
           " ks=", int2str(ks), " ke=", int2str(ke), &
           " ", trim(field_info)
-        call mpp_error(NOTE,"set_mask:: given indices out of bounds for allocated mask")
+        call mpp_error(FATAL,"set_mask:: given indices out of bounds for allocated mask")
     endif
     this%mask(is:ie, js:je, ks:ke, :) = mask_in
   else
