@@ -191,7 +191,7 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   this%buffer_dims(2) = buff_sizes(2)
   this%buffer_dims(3) = buff_sizes(3)
   this%buffer_dims(4) = buff_sizes(4)
-  this%buffer_dims(5) = n_samples 
+  this%buffer_dims(5) = n_samples
 end subroutine allocate_buffer
 
 !> Get routine for 5D buffers.
@@ -298,12 +298,12 @@ subroutine get_axis_ids(this, res)
   integer, pointer, intent(out) :: res(:)
 
   if (allocated(this%axis_ids)) then
-    res => this%axis_ids 
+    res => this%axis_ids
   else
     allocate(res(1))
     res = diag_null
   endif
-end subroutine 
+end subroutine
 
 !> @brief Get the field id of the buffer
 !! @return the field id of the buffer
@@ -395,7 +395,7 @@ subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
   class(FmsNetcdfFile_t),          intent(in)    :: fms2io_fileobj  !< fileobj to write to
   integer, optional,               intent(in)    :: unlim_dim_level !< unlimited dimension
   logical, optional,               intent(in)    :: is_diurnal      !< indicates if writing a diurnal
-                                                                    !! field (in order to write correct axis) 
+                                                                    !! field (in order to write correct axis)
 
   select type(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
@@ -420,7 +420,6 @@ subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level, is
   type(FmsNetcdfFile_t),            intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                intent(in) :: unlim_dim_level !< unlimited dimension
   logical, optional,                intent(in) :: is_diurnal !< true if data is for diurnal field
-                                                             !! if so writes 
   character(len=:), allocatable :: varname !< name of the variable
   logical :: using_diurnal
   class(*), allocatable                        :: buff_ptr(:,:,:,:,:)
@@ -537,7 +536,7 @@ function do_time_none_wrapper(this, field_data, mask, is_masked, bounds_in, boun
   logical,                         intent(in)    :: is_masked           !< .True. if the field has a mask
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
   character(len=50) :: err_msg
-  
+
   !TODO This will be expanded for integers
   err_msg = ""
   select type (output_buffer => this%buffer)
@@ -688,7 +687,8 @@ function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_
     type is (real(r8_kind))
       call time_update_done(buff, this%weight_sum, reduction_method, missing_value, has_mask, this%diurnal_sample_size)
     type is (real(r4_kind))
-      call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), has_mask, this%diurnal_sample_size)
+      call time_update_done(buff, this%weight_sum, reduction_method, real(missing_value, r4_kind), has_mask, &
+                            this%diurnal_sample_size)
   end select
   this%weight_sum = 0.0_r8_kind
 
@@ -701,19 +701,19 @@ pure function get_buffer_dims(this)
   get_buffer_dims = this%buffer_dims(1:4)
 end function
 
-!> Get diurnal sample size (amount of diurnal sections) 
+!> Get diurnal sample size (amount of diurnal sections)
 pure integer function get_diurnal_sample_size(this)
   class(fmsDiagOutputBuffer_type), intent(in) :: this
   get_diurnal_sample_size = this%diurnal_sample_size
 end function get_diurnal_sample_size
 
-!> Set diurnal sample size (amount of diurnal sections) 
+!> Set diurnal sample size (amount of diurnal sections)
 subroutine set_diurnal_sample_size(this, sample_size)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this
   integer, intent(in)                            :: sample_size !< sample size to used to split daily
                                                                !! data into given amount of sections
   this%diurnal_sample_size = sample_size
-end subroutine set_diurnal_sample_size 
+end subroutine set_diurnal_sample_size
 
 !> Set diurnal section index based off the current time and previously set diurnal_samplesize
 !! Calculates which diurnal section of daily data the current time is in
@@ -734,16 +734,16 @@ end subroutine set_diurnal_section_index
 !> Remaps the output buffer array when using the diurnal reduction
 !! moves the diurnal index to the left-most unused dimension for the io
 subroutine get_remapped_diurnal_data(this, res)
-  class(fmsDiagOutputBuffer_type), intent(in) :: this
-  class(*), intent(out), allocatable :: res(:,:,:,:,:)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this !< output buffer object
+  class(*), intent(out), allocatable :: res(:,:,:,:,:) !< resulting remapped data
   integer :: last_dim
-  integer :: ie, je, ke, ze, de !< ending indices for the new array 
+  integer :: ie, je, ke, ze, de !< ending indices for the new array
   integer(i4_kind) :: buff_size(5)!< sizes for allocated buffer
 
-  ! last dim is number of dimensions - 1 for diurnal axis 
-  last_dim = this%ndim - 1 
-  ! get the bounds of the remapped output array based on # of dims 
-  ke = 1; ze = 1; de = 1 
+  ! last dim is number of dimensions - 1 for diurnal axis
+  last_dim = this%ndim - 1
+  ! get the bounds of the remapped output array based on # of dims
+  ke = 1; ze = 1; de = 1
   select case(last_dim)
     case (1)
       ie = this%buffer_dims(1); je = this%buffer_dims(5)
@@ -755,7 +755,7 @@ subroutine get_remapped_diurnal_data(this, res)
       ke = this%buffer_dims(3); ze = this%buffer_dims(5)
     case (4)
       ! no need to remap if 4d
-      res = this%buffer 
+      res = this%buffer
       return
   end select
 
@@ -765,25 +765,25 @@ subroutine get_remapped_diurnal_data(this, res)
       select type(res)
         type is (real(r8_kind))
           res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
-      end select 
+      end select
     type is (real(r4_kind))
       allocate(real(r4_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
       select type(res)
         type is (real(r4_kind))
           res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
-      end select 
+      end select
     type is (integer(i8_kind))
       allocate(integer(i8_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
       select type(res)
         type is (integer(i8_kind))
           res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
-      end select 
+      end select
     type is (integer(i4_kind))
       allocate(integer(i4_kind) :: res(1:ie, 1:je, 1:ke, 1:ze, 1:de))
       select type(res)
         type is (integer(i4_kind))
           res(1:ie, 1:je, 1:ke, 1:ze, 1:de) = reshape(buff, SHAPE(res))
-      end select 
+      end select
   end select
 
 end subroutine get_remapped_diurnal_data

@@ -194,7 +194,8 @@ contains
         do k = 1, size(buffer, 3)
           do d=1, size(buffer, 4)
             buffer_exp = hrly_sums(d)
-            if (use_mask .and. ii .eq. 1 .and. j .eq. 1 .and. k .eq. 1 .and. .not. is_regional) buffer_exp = -666_r4_kind
+            if (use_mask .and. ii .eq. 1 .and. j .eq. 1 .and. k .eq. 1 .and. .not. is_regional) &
+              buffer_exp = -666_r4_kind
             if (abs(buffer(ii, j, k, d) - buffer_exp) > 0.0) then
               print *, mpp_pe(),'indices:',ii, j, k, d, "read in:", buffer(ii, j, k, d), "expected:",buffer_exp
               call mpp_error(FATAL, "Check_time_diurnal::check_data_3d:: Data is not correct")

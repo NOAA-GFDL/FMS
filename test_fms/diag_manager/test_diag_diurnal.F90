@@ -27,7 +27,8 @@ program test_diag_diurnal
   use platform_mod,      only: r8_kind
   use block_control_mod, only: block_control_type, define_blocks
   use mpp_mod,           only: mpp_sync, FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe, mpp_broadcast, input_nml_file
-  use time_manager_mod,  only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+), days_in_month, get_time
+  use time_manager_mod,  only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+), days_in_month, &
+                               get_time
   use diag_manager_mod,  only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                                diag_send_complete, diag_manager_set_time_end, send_data
   use mpp_domains_mod,   only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &

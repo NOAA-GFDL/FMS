@@ -241,7 +241,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
     call bufferptr%set_field_id(this%registered_variables)
     call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
-    ! check if diurnal reduction for this buffer and if so set the diurnal sample size 
+    ! check if diurnal reduction for this buffer and if so set the diurnal sample size
     yamlfptr => diag_yaml%diag_fields(fieldptr%buffer_ids(i))
     if( yamlfptr%get_var_reduction() .eq. time_diurnal) then
       call bufferptr%set_diurnal_sample_size(yamlfptr%get_n_diurnal())
@@ -539,7 +539,8 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
-  field_info = " Check send data call for field:"//trim(this%FMS_diag_fields(diag_field_id)%get_varname())
+  field_info = " Check send data call for field:"//trim(this%FMS_diag_fields(diag_field_id)%get_varname())//&
+    " and module:"//trim(this%FMS_diag_fields(diag_field_id)%get_modname())
 
   !< Check if time should be present for this field
   if (.not.this%FMS_diag_fields(diag_field_id)%is_static() .and. .not.present(time)) &
@@ -547,6 +548,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
   !< Set the field_weight. If "weight" is not present it will be set to 1.0_r8_kind
   field_weight = set_weight(weight)
+
+  !< Set the variable type based off passed in field data
+  if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
+    call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
 
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
@@ -653,7 +658,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
       call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info, is, js, ks, ie, je, ke)
+      call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info)
     return
   end if main_if
   !> Return false if nothing is done
@@ -954,6 +959,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
             call bounds_out%update_index(1, ending-starting+1, i, .true.)
           endif
         end select
+        nullify(axis_ids)
       enddo axis_loops
       !< Move on to the next buffer if the block does not have any data for the subregion
       if (.not. block_in_subregion) cycle
@@ -1355,7 +1361,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
           var_name, num_diurnal_samples)
     call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 
-    !if (allocated(axis_ids)) deallocate(axis_ids)
+    nullify(axis_ids)
   enddo
 
   this%FMS_diag_fields(field_id)%buffer_allocated = .true.
