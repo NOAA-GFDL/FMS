@@ -79,7 +79,7 @@ do i = 1, nfiles
       &trim(file_names(i))//" not "//diag_files(i)%get_file_fname())
 end do
 
-call my_yaml%get_diag_fields(diag_fields)
+diag_fields = my_yaml%get_diag_fields()
 if (size(diag_fields) .ne. nvariables) call mpp_error(FATAL, "The number of variables should be "//string(nvariables))
 
 do i = 1, nvariables

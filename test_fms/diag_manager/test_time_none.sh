@@ -90,13 +90,8 @@ _EOF
 my_test_count=1
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method (test $my_test_count)" '
-  mpirun -n 1 ../test_reduction_methods
+  mpirun -n 6 ../test_reduction_methods
 '
-if [ $DEBUG ]; then
-  test_done
-  exit
-fi
-
 test_expect_success "Checking answers for the "none" reduction method (test $my_test_count)" '
   mpirun -n 1 ../check_time_none
 '

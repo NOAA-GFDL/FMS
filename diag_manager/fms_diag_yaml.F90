@@ -235,7 +235,6 @@ type diagYamlObject_type
   procedure :: get_diag_files   !< Returns the diag_files array
   procedure :: get_diag_fields  !< Returns the diag_field array
   procedure :: get_diag_field_from_id
-  procedure :: get_diag_field_size !< Returns size of diag_field array
 
   procedure :: has_diag_title
   procedure :: has_diag_basedate
@@ -323,21 +322,13 @@ end function get_diag_field_from_id
 
 !> @brief get the diag_fields of a diag_yaml type
 !! @return the diag_fields
-subroutine get_diag_fields(this, diag_fields)
-  class (diagYamlObject_type), intent(in)                 :: this !< The diag_yaml
-  type(diagYamlFilesVar_type), allocatable, dimension (:), intent(out) :: diag_fields !< Diag fields info
+pure function get_diag_fields(this) &
+result(diag_fields)
+  class (diagYamlObject_type), intent(in)                 :: this        !< The diag_yaml
+  type(diagYamlFilesVar_type), allocatable, dimension (:) :: diag_fields !< Diag fields info
 
   diag_fields = this%diag_fields
-end subroutine get_diag_fields
-
-!> @brief get the size of the diag_field array for a given diag_yaml type
-pure function get_diag_field_size(this) &
-  result(res)
-  class (diagYamlObject_type), intent(in)                 :: this !< The diag_yaml
-  integer :: res
-
-  res = SIZE(this%diag_fields)
-end function get_diag_field_size 
+end function get_diag_fields
 
 !> @brief Uses the yaml_parser_mod to read in the diag_table and fill in the
 !! diag_yaml object
@@ -1395,20 +1386,23 @@ end function find_diag_field
 
 !> @brief Gets the diag_field entries corresponding to the indices of the sorted variable_list
 !! @return Array of diag_fields
-subroutine get_diag_fields_entries(indices, diag_fields)
+function get_diag_fields_entries(indices) &
+  result(diag_field)
+
   integer, intent(in) :: indices(:) !< Indices of the field in the sorted variable_list array
-  type(diagYamlFilesVar_type), dimension (:), allocatable, intent(out) :: diag_fields
+  type(diagYamlFilesVar_type), dimension (:), allocatable :: diag_field
+
   integer :: i !< For do loops
   integer :: field_id !< Indices of the field in the diag_yaml array
 
-  allocate(diag_fields(size(indices)))
+  allocate(diag_field(size(indices)))
 
   do i = 1, size(indices)
     field_id = variable_list%diag_field_indices(indices(i))
-    diag_fields(i) = diag_yaml%diag_fields(field_id)
+    diag_field(i) = diag_yaml%diag_fields(field_id)
   end do
 
-end subroutine get_diag_fields_entries
+end function get_diag_fields_entries
 
 !> @brief Gets field indices corresponding to the indices (input argument) in the sorted variable_list
 !! @return Copy of array of field indices
@@ -1483,10 +1477,10 @@ subroutine dump_diag_yaml_obj( filename )
     if( diag_yaml%has_diag_title())    write(unit_num, *) 'Title:', diag_yaml%diag_title
     if( diag_yaml%has_diag_basedate()) write(unit_num, *) 'basedate array:', diag_yaml%diag_basedate
     write(unit_num, *) 'FILES'
-    allocate(fields(diag_yaml%get_diag_field_size()))
+    allocate(fields(SIZE(diag_yaml%get_diag_fields())))
     allocate(files(SIZE(diag_yaml%get_diag_files())))
     files = diag_yaml%get_diag_files()
-    call diag_yaml%get_diag_fields(fields)
+    fields = diag_yaml%get_diag_fields()
     do i=1, SIZE(files)
       write(unit_num, *) 'File: ', files(i)%get_file_fname()
       if(files(i)%has_file_frequnit()) write(unit_num, *) 'file_frequnit:', files(i)%get_file_frequnit()

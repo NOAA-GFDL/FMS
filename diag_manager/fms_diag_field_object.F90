@@ -50,7 +50,7 @@ type fmsDiagField_type
      logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
      logical, allocatable, private                    :: do_not_log        !< .true. if no need to log the diag_field
      logical, allocatable, private                    :: local             !< If the output is local
-     integer,              private                    :: vartype = -1      !< the type of varaible
+     integer,          allocatable, private           :: vartype           !< the type of varaible
      character(len=:), allocatable, private           :: varname           !< the name of the variable
      character(len=:), allocatable, private           :: longname          !< longname of the variable
      character(len=:), allocatable, private           :: standname         !< standard name of the variable
@@ -173,7 +173,6 @@ type fmsDiagField_type
      procedure :: is_halo_present
      procedure :: find_missing_value
      procedure :: has_mask_allocated
-     procedure :: get_name
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -252,11 +251,10 @@ subroutine fms_register_diag_field_obj &
   this%modname = trim(modname)
 
 !> Add the yaml info to the diag_object
-  call get_diag_fields_entries(diag_field_indices, this%diag_field)
+  this%diag_field = get_diag_fields_entries(diag_field_indices)
 
 !> Add axis and domain information
   if (present(axes)) then
-    print *, "registering field:", varname, " with axes:", axes
     this%scalar = .false.
     this%axis_ids = axes
     call get_domain_and_domain_type(diag_axis, this%axis_ids, this%type_of_domain, this%domain, this%varname)
@@ -363,9 +361,6 @@ subroutine fms_register_diag_field_obj &
  allocate(this%attributes(max_field_attributes))
  this%num_attributes = 0
  this%registered = .true.
-
- call this%dump_field_obj(6)
-
 end subroutine fms_register_diag_field_obj
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -386,7 +381,7 @@ end subroutine set_diag_id
 
 !> \brief Find the type of the variable and store it in the object
 subroutine set_vartype(objin , var)
- class (fmsDiagField_type),intent(inout):: objin
+ class (fmsDiagField_type) , intent(inout):: objin
  class(*)                               :: var
  select type (var)
      type is (real(kind=8))
@@ -478,7 +473,7 @@ end function
 !> \brief Prints to the screen what type the diag variable is
 subroutine what_is_vartype(this)
  class (fmsDiagField_type) , intent(inout):: this
- if (this%vartype .eq. -1) then
+ if (.not. allocated(this%vartype)) then
      call mpp_error("what_is_vartype", "The variable type has not been set prior to this call", warning)
      return
  endif
@@ -967,7 +962,8 @@ end function get_type_of_domain
 !> @brief Set the file ids of the files that the field belongs to
 subroutine set_file_ids(this, file_ids)
   class (fmsDiagField_type), intent(inout) :: this        !< diag field
-  integer, allocatable,      intent(in)    :: file_ids(:) !< File_ids to add
+  integer,                   intent(in)    :: file_ids(:) !< File_ids to add
+
   allocate(this%file_ids(size(file_ids)))
   this%file_ids = file_ids
 end subroutine set_file_ids
@@ -1329,7 +1325,7 @@ end function has_local
 !! @return true if obj%vartype is allocated
 pure logical function has_vartype (this)
   class (fmsDiagField_type), intent(in) :: this !< diag object
-  has_vartype = this%vartype .ne. -1
+  has_vartype = allocated(this%vartype)
 end function has_vartype
 
 !> @brief Checks if obj%varname is allocated
@@ -1560,7 +1556,7 @@ subroutine dump_field_obj (this, unit_num)
     if( allocated(this%mask_variant)) write(unit_num, *) 'mask_variant:' ,this%mask_variant
     if( allocated(this%do_not_log)) write(unit_num, *) 'do_not_log:' ,this%do_not_log
     if( allocated(this%local)) write(unit_num, *) 'local:' ,this%local
-    !if( allocated(this%vartype)) write(unit_num, *) 'vartype:' ,this%vartype
+    if( allocated(this%vartype)) write(unit_num, *) 'vartype:' ,this%vartype
     if( allocated(this%varname)) write(unit_num, *) 'varname:' ,this%varname
     if( allocated(this%longname)) write(unit_num, *) 'longname:' ,this%longname
     if( allocated(this%standname)) write(unit_num, *) 'standname:' ,this%standname
@@ -1748,13 +1744,6 @@ pure logical function has_mask_allocated(this)
   class(fmsDiagField_type),intent(in) :: this !< field object to check mask allocation for
   has_mask_allocated = allocated(this%mask)
 end function has_mask_allocated
-
-subroutine get_name(this, name)
-  class(fmsDiagField_type), intent(in) :: this
-  character(len=:), allocatable, intent(out) :: name
-  allocate(character(len=LEN_TRIM(this%varname)) :: name)
-  name = this%varname
-end subroutine  
 
 #endif
 end module fms_diag_field_object_mod
