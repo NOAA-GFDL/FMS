@@ -587,7 +587,8 @@ end function do_time_max_wrapper
 
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
-function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bounds_out, missing_value, increase_counter, pow_value) &
+function do_time_sum_wrapper(this, field_data, mask, is_masked, bounds_in, bounds_out, missing_value, &
+                             increase_counter, pow_value) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
