@@ -628,7 +628,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !$omp end critical
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, field_weight, &
                                                              is, js, ks, ie, je, ke)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, is, js, ks, ie, je, ke)
+    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info, is, js, ks, ie, je, ke)
     fms_diag_accept_data = .TRUE.
     return
   else
@@ -653,7 +653,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.FALSE.)
     if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
       call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask)
+    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info, is, js, ks, ie, je, ke)
     return
   end if main_if
   !> Return false if nothing is done
@@ -955,7 +955,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
           endif
         end select
       enddo axis_loops
-      deallocate(axis_ids)
       !< Move on to the next buffer if the block does not have any data for the subregion
       if (.not. block_in_subregion) cycle
     endif is_subregional_reduced_k_range
@@ -1318,7 +1317,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   var_type = get_var_type(field_data(1, 1, 1, 1))
 
   ! Get variable/field name
-  call this%FMS_diag_fields(field_id)%get_name(var_name)
+  var_name = this%FMS_diag_fields(field_id)%get_varname()
 
   ! Determine dimensions of the field
   is_scalar = this%FMS_diag_fields(field_id)%is_scalar()

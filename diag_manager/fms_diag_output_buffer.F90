@@ -147,15 +147,11 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   integer,                         intent(in)            :: ndim            !< Number of dimension
   integer,                         intent(in)            :: buff_sizes(4)   !< dimension buff_sizes
   character(len=*),                intent(in)            :: field_name      !< field name for error output
-  integer, optional,               intent(in)            :: diurnal_samples !< number of diurnal samples
+  integer,                         intent(in)            :: diurnal_samples !< number of diurnal samples
 
   integer :: n_samples !< number of diurnal samples, defaults to 1
 
-  if(present(diurnal_samples)) then
-    n_samples = diurnal_samples
-  else
-    n_samples = 1
-  endif
+  n_samples = MAX(1, diurnal_samples)
   call this%set_diurnal_sample_size(n_samples)
 
   this%ndim =ndim
