@@ -27,8 +27,6 @@ jobs:
       with:
         path: .testing/deps/fms/src
     - name: Build FMS and MOM test suite
-      run: |
-        cd .testing
-        make -j
+      run: make -C .testing -j
     - name: Run MOM tests
-      run: make -j test
+      run: make -C .testing -j test
