@@ -55,61 +55,78 @@ diag_files:
     output_name: var1
     reduction: diurnal3
     kind: r4
+- file_name: test_diurnal_regional
+  time_units: hours
+  unlimdim: time
+  sub_region:
+  - grid_type: latlon
+    corner1: 78. 78.
+    corner2: 78. 78.
+    corner3: 81. 81.
+    corner4: 81. 81.
+  freq: 1 months 
+  varlist:
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_diurnal
+    reduction: diurnal3
+    zbounds: 2. 3.
+    kind: r4
 _EOF
 
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n" > input.nml
 
 test_expect_success "monthly simple diurnal output" '
-  mpirun -n 1 ../test_diag_diurnal
+  mpirun -n 6 ../test_diag_diurnal
 '
 
 test_expect_success "checking results for diurnal test simple" '
-  mpirun -n 1 ../check_time_diurnal
+  mpirun -n 6 ../check_time_diurnal
 '
 
 printf "&test_diag_diurnal_nml \n test_case=0 \n mask_case=1 \n / \n" >> input.nml
 
 test_expect_success "monthly diurnal output with logical mask" '
-  mpirun -n 1 ../test_diag_diurnal
+  mpirun -n 6 ../test_diag_diurnal
 '
 test_expect_success "checking results for diurnal test with logical mask" '
-  mpirun -n 1 ../check_time_diurnal
+  mpirun -n 6 ../check_time_diurnal
 '
 
 printf "&test_diag_diurnal_nml \n test_case=0 \n mask_case=2 \n / \n" >> input.nml
 
 test_expect_success "monthly diurnal output with real mask" '
-  mpirun -n 1 ../test_diag_diurnal
+  mpirun -n 6 ../test_diag_diurnal
 '
 test_expect_success "checking results for diurnal test with real mask" '
-  mpirun -n 1 ../check_time_diurnal
+  mpirun -n 6 ../check_time_diurnal
 '
 
 printf "&test_diag_diurnal_nml \n test_case=1 \n / \n" >> input.nml
 
 test_expect_success "monthly diurnal output with openmp" '
-  mpirun -n 1 ../test_diag_diurnal
+  mpirun -n 6 ../test_diag_diurnal
 '
 test_expect_success "checking results for diurnal test with openmp" '
-  mpirun -n 1 ../check_time_diurnal
+  mpirun -n 6 ../check_time_diurnal
 '
 
 printf "&test_diag_diurnal_nml \n test_case=1 \n mask_case=1 \n / \n" >> input.nml
 
 test_expect_success "monthly diurnal output with openmp and real mask" '
-  mpirun -n 1 ../test_diag_diurnal
+  mpirun -n 6 ../test_diag_diurnal
 '
 test_expect_success "checking results for diurnal test with openmp and real mask" '
-  mpirun -n 1 ../check_time_diurnal
+  mpirun -n 6 ../check_time_diurnal
 '
 
 printf "&test_diag_diurnal_nml \n test_case=1 \n mask_case=2 \n / \n" >> input.nml
 
 test_expect_success "monthly diurnal output with openmp and logical mask" '
-  mpirun -n 1 ../test_diag_diurnal
+  mpirun -n 6 ../test_diag_diurnal
 '
 test_expect_success "checking results for diurnal test with openmp and logical mask" '
-  mpirun -n 1 ../check_time_diurnal
+  mpirun -n 6 ../check_time_diurnal
 '
 
 fi
