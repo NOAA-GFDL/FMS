@@ -64,7 +64,7 @@ diag_files:
     corner2: 78. 78.
     corner3: 81. 81.
     corner4: 81. 81.
-  freq: 1 months 
+  freq: 1 months
   varlist:
   - module: ocn_mod
     var_name: var3
