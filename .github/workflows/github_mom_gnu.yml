@@ -22,9 +22,13 @@ jobs:
       with:
         repository: 'NOAA-GFDL/MOM6'
         submodules: recursive
+    - name: Checkout FMS into MOM build
+      uses: actions/checkout@v4
+      with:
+        path: .testing/deps/fms/src
     - name: Build FMS and MOM test suite
       run: |
         cd .testing
-        FMS_COMMIT="${GITHUB_REF}" FMS_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" make -j
+        make -j
     - name: Run MOM tests
       run: make -j test
