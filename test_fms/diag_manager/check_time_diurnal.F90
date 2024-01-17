@@ -286,7 +286,7 @@ contains
               endif
               if (abs(buffer(ii, j, k, w, d) - buffer_exp) > 0.0) then
                 print *, mpp_pe(),'indices:',ii, j, k, w, d, "read in:", buffer(ii, j, k, w, d), "expected:",buffer_exp
-                call mpp_error(NOTE, "Check_time_diurnal::check_data_4d:: Data is not correct (TODO)")
+                call mpp_error(FATAL, "Check_time_diurnal::check_data_4d:: Data is not correct")
               endif
             enddo
           enddo
