@@ -47,7 +47,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
-                   uppercase, lowercase
+                   uppercase, lowercase, NOTE
 
 implicit none
 private
@@ -1162,6 +1162,13 @@ subroutine write_field_data(this, field_obj, buffer_obj)
         if (diag_file%unlim_dimension_level .eq. 1) &
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
       else
+        if (.not. buffer_obj(diag_file%buffer_ids(i))%is_there_data_to_write()) then
+          ! Only print the error message once
+          if (diag_file%unlim_dimension_level .eq. 1) &
+            call mpp_error(NOTE, "Send data was never called. Writing fill values for variable "//&
+              field_obj(field_id)%get_varname()//" in mod "//field_obj(field_id)%get_modname())
+          cycle
+        endif
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
                         unlim_dim_level=diag_file%unlim_dimension_level)
       endif
