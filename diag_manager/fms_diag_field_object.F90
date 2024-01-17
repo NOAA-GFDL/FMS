@@ -173,6 +173,8 @@ type fmsDiagField_type
      procedure :: is_halo_present
      procedure :: find_missing_value
      procedure :: has_mask_allocated
+     procedure :: is_variable_in_file
+     procedure :: get_field_file_name
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -1742,6 +1744,30 @@ pure logical function has_mask_allocated(this)
   class(fmsDiagField_type),intent(in) :: this !< field object to check mask allocation for
   has_mask_allocated = allocated(this%mask)
 end function has_mask_allocated
+
+!> @brief Determine if the variable is in the file
+!! @return .True. if the varibale is in the file
+pure function is_variable_in_file(this, file_id) &
+result(res)
+  class(fmsDiagField_type), intent(in) :: this    !< field object to check
+  integer,                  intent(in) :: file_id !< File id to check
+  logical :: res
+
+  integer :: i
+
+  res = .false.
+  if (any(this%file_ids .eq. file_id)) res = .true.
+end function is_variable_in_file
+
+!> @brief Determine the name of the first file the variable is in
+!! @return filename
+function get_field_file_name(this) &
+  result(res)
+  class(fmsDiagField_type), intent(in) :: this    !< Field object to query
+  character(len=:), allocatable :: res
+
+  res = this%diag_field(1)%get_var_fname()
+end function get_field_file_name
 
 #endif
 end module fms_diag_field_object_mod
