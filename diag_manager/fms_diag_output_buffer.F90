@@ -433,7 +433,6 @@ subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level, is
   endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
-  print *, "writing data: "//varname, "dims:", this%ndim, "shape: ", SHAPE(buff_ptr)
   select case(this%ndim)
   case (0)
     call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
@@ -470,7 +469,6 @@ subroutine write_buffer_wrapper_domain(this, fms2io_fileobj, unlim_dim_level, is
   endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
-  print *, "writing data: "//varname, "dims:", this%ndim, "shape: ", SHAPE(buff_ptr)
   select case(this%ndim)
   case (0)
     call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
@@ -507,7 +505,6 @@ subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level, is_diur
   endif
 
   varname = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
-  print *, "writing data: "//varname, "dims:", this%ndim, "shape: ", SHAPE(buff_ptr)
   select case(this%ndim)
   case (0)
     call write_data(fms2io_fileobj, varname, buff_ptr(1,1,1,1,1), unlim_dim_level=unlim_dim_level)
