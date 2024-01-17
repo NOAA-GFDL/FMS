@@ -775,7 +775,7 @@ subroutine fms_diag_do_io(this, is_end_of_run)
       ! loop through the buffers and finish reduction if needed
       buff_loop: do ibuff=1, SIZE(buff_ids)
         diag_buff => this%FMS_diag_output_buffers(buff_ids(ibuff))
-        field_yaml => diag_yaml%get_diag_field_from_id(diag_buff%get_yaml_id())
+        field_yaml => diag_yaml%diag_fields(diag_buff%get_yaml_id())
         diag_field => this%FMS_diag_fields(diag_buff%get_field_id())
         ! sets missing value
         mval = diag_field%find_missing_value(missing_val)
