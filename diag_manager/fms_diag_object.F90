@@ -955,8 +955,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
             call bounds_out%update_index(1, ending-starting+1, i, .true.)
           endif
         end select
-        nullify(axis_ids)
       enddo axis_loops
+      nullify(axis_ids)
       !< Move on to the next buffer if the block does not have any data for the subregion
       if (.not. block_in_subregion) cycle
     endif is_subregional_reduced_k_range
@@ -1357,8 +1357,8 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
           var_name, num_diurnal_samples)
     call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 
-    nullify(axis_ids)
   enddo
+  nullify(axis_ids)
 
   this%FMS_diag_fields(field_id)%buffer_allocated = .true.
 #else
