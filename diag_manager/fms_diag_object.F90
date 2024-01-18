@@ -540,10 +540,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   !< Set the field_weight. If "weight" is not present it will be set to 1.0_r8_kind
   field_weight = set_weight(weight)
 
-  !< Set the variable type based off passed in field data
-  if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
-    call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
-
   !< Check that the indices are present in the correct combination
   error_string = check_indices_order(is_in, ie_in, js_in, je_in)
   if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
@@ -555,8 +551,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   has_halos = .false.
   if ((present(is_in) .and. present(ie_in)) .or. (present(js_in) .and. present(je_in))) &
     has_halos = .true.
-
-  if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
 
   !< If the field has `mask_variant=.true.`, check that mask OR rmask are present
   if (this%FMS_diag_fields(diag_field_id)%is_mask_variant()) then
