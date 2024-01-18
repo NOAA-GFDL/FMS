@@ -87,8 +87,9 @@ program test_reduction_methods
   !< Configuration parameters
   integer :: test_case = test_normal !< Indicates which test case to run
   integer :: mask_case = no_mask     !< Indicates which masking option to run
+  logical :: use_pow_data = .false.  !< uses simplified smaller dataset for the pow reduction to simplify checks
 
-  namelist / test_reduction_methods_nml / test_case, mask_case
+  namelist / test_reduction_methods_nml / test_case, mask_case, use_pow_data
 
   call fms_init
   call set_calendar_type(JULIAN)
@@ -343,9 +344,14 @@ program test_reduction_methods
       do j = js, je
         do k = 1, size(buffer, 3)
           do l = 1, size(buffer,4)
-            buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = real(ii, kind=r8_kind)* 1000_r8_kind + &
-              real(j, kind=r8_kind)* 10_r8_kind + &
-              real(k, kind=r8_kind)
+            if(.not. use_pow_data) then
+              buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = real(ii, kind=r8_kind)* 1000_r8_kind + &
+                real(j, kind=r8_kind)* 10_r8_kind + &
+                real(k, kind=r8_kind)
+            else
+              ! just sends the sum of indices for pow
+              buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = ii + j + k + l
+            endif
           enddo
         enddo
       enddo
@@ -358,6 +364,7 @@ program test_reduction_methods
     real(kind=r8_kind), intent(inout) :: buffer(:,:,:,:) !< Output buffer
     integer,            intent(in)    :: time_index      !< Time index
 
+    if(use_pow_data) return
     buffer = nint(buffer) + real(time_index, kind=r8_kind)/100_r8_kind
 
   end subroutine set_buffer
