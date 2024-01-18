@@ -203,6 +203,7 @@ integer function fms_register_diag_field_obj &
  class (fmsDiagFile_type), pointer :: fileptr !< Pointer to the diag_file
  class (fmsDiagField_type), pointer :: fieldptr !< Pointer to the diag_field
  class (fmsDiagOutputBuffer_type), pointer :: bufferptr !< Pointer to the output buffer
+ class (diagYamlFilesVar_type), pointer :: yamlfptr !< Pointer to yaml object to get the reduction method
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
@@ -238,6 +239,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
     call bufferptr%set_field_id(this%registered_variables)
     call bufferptr%set_yaml_id(fieldptr%buffer_ids(i))
+    ! check if diurnal reduction for this buffer and if so set the diurnal sample size
+    yamlfptr => diag_yaml%diag_fields(fieldptr%buffer_ids(i))
+    if( yamlfptr%get_var_reduction() .eq. time_diurnal) then
+      call bufferptr%set_diurnal_sample_size(yamlfptr%get_n_diurnal())
+    endif
     call bufferptr%init_buffer_time(init_time)
   enddo
 
@@ -847,7 +853,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   integer                   :: ids                !< For looping through buffer ids
   integer                   :: buffer_id          !< Id of the buffer
   integer                   :: file_id            !< File id
-  integer, allocatable      :: axis_ids(:)        !< Axis ids for the buffer
+  integer, pointer          :: axis_ids(:)        !< Axis ids for the buffer
   logical                   :: is_subregional     !< .True. if the buffer is subregional
   logical                   :: reduced_k_range    !< .True. is the field is only outputing a section
                                                   !! of the z dimension
@@ -922,7 +928,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Reset the bounds based on the reduced k range and subregional
     is_subregional_reduced_k_range: if (is_subregional .or. reduced_k_range) then
-      axis_ids = buffer_ptr%get_axis_ids()
+      call buffer_ptr%get_axis_ids(axis_ids)
       block_in_subregion = .true.
       axis_loops: do i = 1, size(axis_ids)
         !< Move on if the block does not have any data for the subregion
@@ -953,7 +959,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
           endif
         end select
       enddo axis_loops
-      deallocate(axis_ids)
+      nullify(axis_ids)
       !< Move on to the next buffer if the block does not have any data for the subregion
       if (.not. block_in_subregion) cycle
     endif is_subregional_reduced_k_range
@@ -1007,6 +1013,15 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
         return
       endif
     case (time_diurnal)
+      if(.not. present(time)) call mpp_error(FATAL, &
+                            "fms_diag_do_reduction:: time must be present when using diurnal reductions")
+      ! sets the diurnal index for reduction within the buffer object
+      call buffer_ptr%set_diurnal_section_index(time)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value, .true.)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case default
       error_msg = "The reduction method is not supported. "//&
         "Only none, min, max, sum, average, power, rms, and diurnal are supported."
@@ -1305,13 +1320,13 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   integer :: ndims !< Number of dimensions in the input field data
   integer :: buffer_id !< Buffer index of FMS_diag_buffers
   integer :: num_diurnal_samples !< Number of diurnal samples from diag_yaml
-  integer :: axes_length(5) !< Length of each axis
+  integer :: axes_length(4) !< Length of each axis
   integer :: i, j !< For looping
   class(fmsDiagOutputBuffer_type), pointer :: ptr_diag_buffer_obj !< Pointer to the buffer class
   class(DiagYamlFilesVar_type), pointer :: ptr_diag_field_yaml !< Pointer to a field from yaml fields
-  integer, allocatable :: axis_ids(:) !< Pointer to indices of axes of the field variable
+  integer, pointer :: axis_ids(:) !< Pointer to indices of axes of the field variable
   integer :: var_type !< Stores type of the field data (r4, r8, i4, i8, and string) represented as an integer.
-  character(len=128), allocatable :: var_name !< Field name to initialize output buffers
+  character(len=:), allocatable :: var_name !< Field name to initialize output buffers
   logical :: is_scalar !< Flag indicating that the variable is a scalar
   integer :: yaml_id !< Yaml id for the buffer
   integer :: file_id !< File id for the buffer
@@ -1322,7 +1337,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
   var_type = get_var_type(field_data(1, 1, 1, 1))
 
   ! Get variable/field name
-  var_name = this%Fms_diag_fields(field_id)%get_varname()
+  var_name = this%FMS_diag_fields(field_id)%get_varname()
 
   ! Determine dimensions of the field
   is_scalar = this%FMS_diag_fields(field_id)%is_scalar()
@@ -1337,7 +1352,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
     ndims = 0
     if (.not. is_scalar) then
-      axis_ids = this%FMS_diag_output_buffers(buffer_id)%get_axis_ids()
+      call this%FMS_diag_output_buffers(buffer_id)%get_axis_ids(axis_ids)
       ndims = size(axis_ids)
     endif
 
@@ -1352,17 +1367,16 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
     enddo
 
     if (num_diurnal_samples .ne. 0) then
-      axes_length(ndims + 1) = num_diurnal_samples
       ndims = ndims + 1 !< Add one more dimension for the diurnal axis
     endif
 
     ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)
-    call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:5), &
-          this%FMS_diag_fields(field_id)%get_varname(), num_diurnal_samples)
+    call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:4), &
+          var_name, num_diurnal_samples)
     call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 
-    if (allocated(axis_ids)) deallocate(axis_ids)
   enddo
+  nullify(axis_ids)
 
   this%FMS_diag_fields(field_id)%buffer_allocated = .true.
 #else

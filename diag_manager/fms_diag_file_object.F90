@@ -1143,6 +1143,7 @@ subroutine write_field_data(this, field_obj, buffer_obj)
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
   integer                              :: i              !< For do loops
   integer                              :: field_id       !< The id of the field writing the data from
+  logical                              :: has_diurnal    !< indicates if theres a diurnal axis to adjust for
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
@@ -1162,6 +1163,7 @@ subroutine write_field_data(this, field_obj, buffer_obj)
         if (diag_file%unlim_dimension_level .eq. 1) &
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
       else
+        has_diurnal = buffer_obj(diag_file%buffer_ids(i))%get_diurnal_sample_size() .gt. 1
         if (.not. buffer_obj(diag_file%buffer_ids(i))%is_there_data_to_write()) then
           ! Only print the error message once
           if (diag_file%unlim_dimension_level .eq. 1) &
@@ -1170,7 +1172,7 @@ subroutine write_field_data(this, field_obj, buffer_obj)
           cycle
         endif
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
-                        unlim_dim_level=diag_file%unlim_dimension_level)
+                        unlim_dim_level=diag_file%unlim_dimension_level, is_diurnal=has_diurnal)
       endif
     enddo
   endif
