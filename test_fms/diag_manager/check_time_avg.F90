@@ -79,6 +79,12 @@ program check_time_avg
     call check_data_0d(cdata_out(1,1,1,1), ti)
 
     cdata_out = -999_r4_kind
+    print *, "Checking answers for IOnASphere - time_level:", string(ti)
+    call read_data(fileobj, "IOnASphere", cdata_out(1,1,1,1), unlim_dim_level=ti)
+    if (cdata_out(1,1,1,1) .ne. -666._r4_kind) &
+      call mpp_error(FATAL, "IOnASphere is not set to the expected value (_FillVal)")
+
+    cdata_out = -999_r4_kind
     print *, "Checking answers for var1_avg - time_level:", string(ti)
     call read_data(fileobj, "var1_avg", cdata_out(:,1,1,1), unlim_dim_level=ti)
     call check_data_1d(cdata_out(:,1,1,1), ti)

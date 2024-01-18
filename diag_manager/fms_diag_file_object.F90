@@ -47,7 +47,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
-                   uppercase, lowercase
+                   uppercase, lowercase, NOTE
 
 implicit none
 private
@@ -1162,6 +1162,13 @@ subroutine write_field_data(this, field_obj, buffer_obj)
         if (diag_file%unlim_dimension_level .eq. 1) &
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
       else
+        if (.not. buffer_obj(diag_file%buffer_ids(i))%is_there_data_to_write()) then
+          ! Only print the error message once
+          if (diag_file%unlim_dimension_level .eq. 1) &
+            call mpp_error(NOTE, "Send data was never called. Writing fill values for variable "//&
+              field_obj(field_id)%get_varname()//" in mod "//field_obj(field_id)%get_modname())
+          cycle
+        endif
         call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
                         unlim_dim_level=diag_file%unlim_dimension_level)
       endif
@@ -1386,6 +1393,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   integer            :: i             !< For do loops
   logical            :: is_regional   !< Flag indicating if the field is in a regional file
   character(len=255) :: cell_measures !< cell_measures attributes for the field
+  logical            :: need_associated_files !< .True. if the 'associated_files' global attribute is needed
+  character(len=255) :: associated_files !< Associated files attribute to add
 
   is_regional = this%is_regional()
 
@@ -1396,19 +1405,38 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
     field_ptr => diag_field(diag_file%field_ids(i))
 
-    !TODO I think if the area and the volume field are no in the same file, a global attribute containing the
-    !the file that the fields are in needs to be added
     cell_measures = ""
+    associated_files = ""
+    need_associated_files = .false.
     if (field_ptr%has_area()) then
       cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
+
+      !! Determine if the area field is already in the file. If it is not create the "associated_files" attribute
+      !! which contains the file name of the file the area field is in. This is needed for PP/fregrid.
+      if (.not. diag_field(field_ptr%get_area())%is_variable_in_file(diag_file%id)) then
+        need_associated_files = .true.
+        associated_files = "area: "//diag_field(field_ptr%get_area())%get_field_file_name()//".nc"
+      endif
     endif
 
     if (field_ptr%has_volume()) then
       cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(to_write=.true.)
+
+      !! Determine if the volume field is already in the file. If it is not create the "associated_files" attribute
+      !! which contains the file name of the file the volume field is in. This is needed for PP/fregrid.
+      if (.not. diag_field(field_ptr%get_volume())%is_variable_in_file(diag_file%id)) then
+        need_associated_files = .true.
+        associated_files = trim(associated_files)//&
+          " volume:"//diag_field(field_ptr%get_volume())%get_field_file_name()//".nc"
+      endif
     endif
 
     call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
       this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures)
+
+    if (need_associated_files) &
+      call register_global_attribute(fms2io_fileobj, "associated_files", trim(ADJUSTL(associated_files)), &
+        str_len=len_trim(ADJUSTL(associated_files)))
   enddo
 
 end subroutine write_field_metadata
