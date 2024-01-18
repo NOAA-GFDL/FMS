@@ -124,8 +124,8 @@ ug_dim_data = ug_dim_data - 1
 Time = set_date(2,1,1,0,0,0)
 
 ! Register the diags axis
-id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=Domain)
-id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Domain)
+id_x  = diag_axis_init('x',  x,  'point_E', 'x', long_name='point_E', Domain2=Domain, set_name="land")
+id_y  = diag_axis_init('y',  y,  'point_N', 'y', long_name='point_N', Domain2=Domain, set_name="land")
 
 id_x3 = diag_axis_init('x3', x, 'point_E', 'x', Domain2=Domain_cube_sph)
 id_y3 = diag_axis_init('y3', y, 'point_E', 'y', Domain2=Domain_cube_sph)

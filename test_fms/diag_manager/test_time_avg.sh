@@ -66,6 +66,10 @@ diag_files:
     reduction: average
     zbounds: 2. 3.
     kind: r4
+  - module: ocn_mod
+    var_name: IOnASphere
+    reduction: average
+    kind: r4
 - file_name: test_avg_regional
   time_units: hours
   unlimdim: time
