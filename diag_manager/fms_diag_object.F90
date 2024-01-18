@@ -999,7 +999,19 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
         return
       endif
     case (time_power)
+      new_time = buffer_ptr%update_buffer_time(time)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value, new_time, pow_value=field_yaml_ptr%get_pow_value())
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_rms)
+      new_time = buffer_ptr%update_buffer_time(time)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+        bounds_in, bounds_out, missing_value, new_time, pow_value = 2)
+      if (trim(error_msg) .ne. "") then
+        return
+      endif
     case (time_diurnal)
       if(.not. present(time)) call mpp_error(FATAL, &
                             "fms_diag_do_reduction:: time must be present when using diurnal reductions")

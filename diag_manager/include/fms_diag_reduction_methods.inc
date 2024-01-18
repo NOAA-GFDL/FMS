@@ -233,14 +233,16 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
                                                               !! if not doing a diurnal reduction, this should always =1
   real(r8_kind),optional, intent(in)       :: weight          !< Weight applied to data_in before added to data_out
                                                               !! used for weighted averages, default 1.0
-  real(FMS_TRM_KIND_),optional, intent(in) :: pow                 !< Used for pow reduction, adds field^pow to buffer
+  integer ,optional, intent(in) :: pow                            !< Used for pow(er) reduction,
+                                                                  !! calculates field_data^pow before adding to buffer
 
   integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
                                                             !! the input buffer
   integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
                                                             !! the output buffer
   integer :: i, j, k, l !< For looping
-  real(FMS_TRM_KIND_) :: weight_loc, pow_loc !< local copies of optional arguments
+  real(FMS_TRM_KIND_) :: weight_loc !< local copy of optional weight
+  integer :: pow_loc !> local copy of optional pow value (set if using pow reduction)
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
   integer :: diurnal !< diurnal index to indicate which daily section is updated
                      !! will be 1 unless using a diurnal reduction
@@ -252,7 +254,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   endif
 
   if(present(pow)) then
-    pow_loc = weight
+    pow_loc = pow
   else
     pow_loc = 1.0_kindl
   endif
@@ -318,7 +320,8 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
                                                                    !! do_time_sum_update
   real(r8_kind), intent(in)          :: weight_sum !< sum of weights for averaging, provided via argument to send data
-  integer, intent(in)                :: reduction_method !< which reduction method to use, should be time_avg
+  integer, intent(in)                :: reduction_method !< which reduction method to use
+                                                         !! should always be one of time_avg, time_diurnal, or time_rms
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
   logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped
   integer, optional, intent(in)      :: n_diurnal_samples !< number of diurnal samples as set in reduction method
@@ -346,6 +349,14 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   else  !not mask variant
     out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
                                / wsum
+  endif
+
+  if(reduction_method .eq. time_rms .and. has_mask) then
+    where(out_buffer_data(:,:,:,:,1) .ne. missing_val)
+      out_buffer_data(:,:,:,:,1) = SQRT(out_buffer_data(:,:,:,:,1))
+    endwhere
+  else if(reduction_method .eq. time_rms) then
+    out_buffer_data(:,:,:,:,1) = SQRT(out_buffer_data(:,:,:,:,1))
   endif
 
 end subroutine

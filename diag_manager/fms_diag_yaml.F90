@@ -820,7 +820,7 @@ subroutine set_field_reduction(field, reduction_method)
   pow_value = 0
   ioerror = 0
   if (index(reduction_method, "diurnal") .ne. 0) then
-    READ (reduction_method(8:LEN_TRIM(reduction_method)),FMT=*, IOSTAT=ioerror) n_diurnal
+    READ (reduction_method(8:LEN_TRIM(reduction_method)), FMT=*, IOSTAT=ioerror) n_diurnal
     if (ioerror .ne. 0) &
       call mpp_error(FATAL, "Error getting the number of diurnal samples from "//trim(reduction_method))
     if (n_diurnal .le. 0) &

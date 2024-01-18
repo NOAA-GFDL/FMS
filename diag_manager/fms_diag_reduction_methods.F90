@@ -31,7 +31,7 @@ module fms_diag_reduction_methods_mod
   use platform_mod, only: r8_kind, r4_kind
   use fms_diag_bbox_mod, only: fmsDiagIbounds_type
   use fms_string_utils_mod, only: string
-  use diag_data_mod, only: time_diurnal
+  use diag_data_mod, only: time_diurnal, time_rms
   use mpp_mod
   implicit none
   private
