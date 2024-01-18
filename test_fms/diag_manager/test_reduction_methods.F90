@@ -63,6 +63,7 @@ program test_reduction_methods
   integer                            :: id_var2         !< diag_field id for 2d var
   integer                            :: id_var3         !< diag_field id for 3d var
   integer                            :: id_var4         !< diag_field id for 4d var
+  integer                            :: id_var999       !< diag_field id for a var that send_data is not called for
   integer                            :: io_status       !< Status after reading the namelist
   type(block_control_type)           :: my_block        !< Returns instantiated @ref block_control_type
   logical                            :: message         !< Flag for outputting debug message
@@ -169,6 +170,7 @@ program test_reduction_methods
     'mullions', missing_value = missing_value)
   id_var4 = register_diag_field  ('ocn_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'Var4d', &
     'mullions', missing_value = missing_value)
+  id_var999 = register_diag_field  ('ocn_mod', 'IOnASphere', Time, missing_value=missing_value)
 
   !< Get the data domain indices (1 based)
   isd1 = isc-isd+1

@@ -59,6 +59,7 @@ type :: fmsDiagOutputBuffer_type
                                                     !! ie. diurnal24 = sample size of 24
   integer               :: diurnal_section= -1 !< the diurnal section (ie 5th index) calculated from the current model
                                               !! time and sample size if using a diurnal reduction
+  logical               :: send_data_called   !< .True. if send_data has been called
   type(time_type)       :: time               !< The last time the data was received
 
   contains
@@ -70,6 +71,8 @@ type :: fmsDiagOutputBuffer_type
   procedure :: get_yaml_id
   procedure :: init_buffer_time
   procedure :: update_buffer_time
+  procedure :: is_there_data_to_write
+  procedure :: set_send_data_called
   procedure :: is_done_with_math
   procedure :: set_done_with_math
   procedure :: write_buffer
@@ -186,6 +189,7 @@ subroutine allocate_buffer(this, buff_type, ndim, buff_sizes, field_name, diurna
   allocate(this%num_elements(n_samples))
   this%num_elements = 0
   this%done_with_math = .false.
+  this%send_data_called = .false.
   allocate(this%buffer_dims(5))
   this%buffer_dims(1) = buff_sizes(1)
   this%buffer_dims(2) = buff_sizes(2)
@@ -787,5 +791,22 @@ subroutine get_remapped_diurnal_data(this, res)
 
 end subroutine get_remapped_diurnal_data
 
+!> @brief Determine if there is any data to write (i.e send_data has been called)
+!! @return .true. if there is data to write
+function is_there_data_to_write(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+
+  logical :: res
+
+  res = this%send_data_called
+end function
+
+!> @brief Sets send_data_called to .true.
+subroutine set_send_data_called(this)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+
+  this%send_data_called = .true.
+end subroutine set_send_data_called
 #endif
 end module fms_diag_output_buffer_mod

@@ -29,7 +29,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_diag_manager test_diag_manager_time \
- test_diag_dlinked_list test_diag_yaml test_diag_ocean test_modern_diag test_diag_buffer \
+ test_diag_yaml test_diag_ocean test_modern_diag test_diag_buffer \
  test_flexible_time test_diag_update_buffer test_reduction_methods check_time_none \
  check_time_min check_time_max check_time_sum check_time_avg test_diag_diurnal check_time_diurnal
 
@@ -38,7 +38,6 @@ test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 test_diag_update_buffer_SOURCES= test_diag_update_buffer.F90
 test_diag_yaml_SOURCES = test_diag_yaml.F90
-test_diag_dlinked_list_SOURCES = test_diag_dlinked_list.F90
 test_diag_ocean_SOURCES = test_diag_ocean.F90
 test_modern_diag_SOURCES = test_modern_diag.F90
 test_diag_buffer_SOURCES= test_diag_buffer.F90

@@ -171,6 +171,8 @@ module fms_diag_axis_object_mod
      INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
      integer, allocatable           , private :: structured_ids(:) !< If the axis is in the unstructured grid,
                                                                    !! this is the axis ids of the structured axis
+     CHARACTER(len=:), ALLOCATABLE,   private :: set_name        !< Name of the axis set. This is to distinguish
+                                                                 !! two axis with the same name
 
      contains
 
@@ -184,6 +186,8 @@ module fms_diag_axis_object_mod
      PROCEDURE :: get_global_io_domain
      PROCEDURE :: get_aux
      PROCEDURE :: has_aux
+     PROCEDURE :: get_set_name
+     PROCEDURE :: has_set_name
      ! TO DO:
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
@@ -270,6 +274,8 @@ module fms_diag_axis_object_mod
 
     if (present(aux)) this%aux = trim(aux)
     if (present(req)) this%req = trim(req)
+    this%set_name = ""
+    if (present(set_name)) this%set_name = trim(set_name)
 
     this%nsubaxis = 0
     this%num_attributes = 0
@@ -603,6 +609,27 @@ module fms_diag_axis_object_mod
     rslt = .false.
     if (allocated(this%aux)) rslt = trim(this%aux) .ne. ""
   end function has_aux
+
+  !> @brief Determine if an axis object has a set_name
+  !! @return .true. if an axis object has a set_name
+  pure function has_set_name(this) &
+  result(rslt)
+    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+    logical :: rslt
+
+    rslt = .false.
+    if (allocated(this%set_name)) rslt = trim(this%set_name) .ne. ""
+  end function has_set_name
+
+  !> @brief Get the set name of an axis object
+  !! @return the set name of an axis object
+  pure function get_set_name(this) &
+  result(rslt)
+    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+    character(len=:), allocatable :: rslt
+
+    rslt = this%set_name
+  end function get_set_name
 
   !> @brief Get the auxiliary name of an axis object
   !! @return the auxiliary name of an axis object
@@ -1263,11 +1290,12 @@ module fms_diag_axis_object_mod
 
   !< @brief Determine the axis id of a axis
   !! @return Axis id
-  pure function get_axis_id_from_name(axis_name, diag_axis, naxis) &
+  pure function get_axis_id_from_name(axis_name, diag_axis, naxis, set_name) &
   result(axis_id)
     class(fmsDiagAxisContainer_type), intent(in) :: diag_axis(:) !< Array of axis object
     character(len=*),                 intent(in) :: axis_name    !< Name of the axis
     integer,                          intent(in) :: naxis        !< Number of axis that have been registered
+    character(len=*),                 intent(in) :: set_name     !< Name of the axis set
     integer                                      :: axis_id
 
     integer :: i !< For do loops
@@ -1277,8 +1305,10 @@ module fms_diag_axis_object_mod
       select type(axis => diag_axis(i)%axis)
       type is (fmsDiagFullAxis_type)
         if (trim(axis%axis_name) .eq. trim(axis_name)) then
-          axis_id = i
-          return
+          if (trim(axis%set_name) .eq. trim(set_name)) then
+            axis_id = i
+            return
+          endif
         endif
       end select
     enddo
