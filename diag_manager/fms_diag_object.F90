@@ -203,7 +203,7 @@ integer function fms_register_diag_field_obj &
  class (fmsDiagFile_type), pointer :: fileptr !< Pointer to the diag_file
  class (fmsDiagField_type), pointer :: fieldptr !< Pointer to the diag_field
  class (fmsDiagOutputBuffer_type), pointer :: bufferptr !< Pointer to the output buffer
- class (diagYamlFilesVar_type), pointer :: yamlfptr
+ class (diagYamlFilesVar_type), pointer :: yamlfptr !< Pointer to yaml object to get the reduction method
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml

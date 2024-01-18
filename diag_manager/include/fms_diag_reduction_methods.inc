@@ -242,7 +242,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   integer :: i, j, k, l !< For looping
   real(FMS_TRM_KIND_) :: weight_loc, pow_loc !< local copies of optional arguments
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
-  integer :: diurnal
+  integer :: diurnal !< diurnal index to indicate which daily section is updated
+                     !! will be 1 unless using a diurnal reduction
 
   if(present(weight)) then
     weight_loc = weight

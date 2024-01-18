@@ -394,8 +394,8 @@ subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
   class(FmsNetcdfFile_t),          intent(in)    :: fms2io_fileobj  !< fileobj to write to
   integer, optional,               intent(in)    :: unlim_dim_level !< unlimited dimension
-  logical, optional,               intent(in)    :: is_diurnal      !< indicates if writing a diurnal
-                                                                    !! field (in order to write correct axis)
+  logical, optional,               intent(in)    :: is_diurnal !< should be set if using diurnal
+                                                       !! reductions so buffer data can be remapped
 
   select type(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
@@ -419,10 +419,11 @@ subroutine write_buffer_wrapper_netcdf(this, fms2io_fileobj, unlim_dim_level, is
   class(fmsDiagOutputBuffer_type),  intent(in) :: this            !< buffer object to write
   type(FmsNetcdfFile_t),            intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                intent(in) :: unlim_dim_level !< unlimited dimension
-  logical, optional,                intent(in) :: is_diurnal !< true if data is for diurnal field
+  logical, optional,                intent(in) :: is_diurnal !< should be set if using diurnal
+                                                       !! reductions so buffer data can be remapped
   character(len=:), allocatable :: varname !< name of the variable
-  logical :: using_diurnal
-  class(*), allocatable                        :: buff_ptr(:,:,:,:,:)
+  logical :: using_diurnal !< local copy of is_diurnal if present
+  class(*), allocatable                        :: buff_ptr(:,:,:,:,:) !< pointer for buffer to write
 
   using_diurnal = .false.
   if( present(is_diurnal) ) using_diurnal = is_diurnal
@@ -454,11 +455,12 @@ subroutine write_buffer_wrapper_domain(this, fms2io_fileobj, unlim_dim_level, is
   class(fmsDiagOutputBuffer_type),    intent(in) :: this            !< buffer object to write
   type(FmsNetcdfDomainFile_t),        intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                  intent(in) :: unlim_dim_level !< unlimited dimension
-  logical, optional,                  intent(in) :: is_diurnal
+  logical, optional,                  intent(in) :: is_diurnal !< should be set if using diurnal
+                                                       !! reductions so buffer data can be remapped
 
   character(len=:), allocatable :: varname !< name of the variable
-  logical :: using_diurnal
-  class(*), allocatable                        :: buff_ptr(:,:,:,:,:)
+  logical :: using_diurnal !< local copy of is_diurnal if present
+  class(*), allocatable                        :: buff_ptr(:,:,:,:,:) !< pointer to buffer to write
 
   using_diurnal = .false.
   if( present(is_diurnal) ) using_diurnal = is_diurnal
@@ -490,11 +492,12 @@ subroutine write_buffer_wrapper_u(this, fms2io_fileobj, unlim_dim_level, is_diur
   class(fmsDiagOutputBuffer_type),                 intent(in) :: this            !< buffer object to write
   type(FmsNetcdfUnstructuredDomainFile_t),         intent(in) :: fms2io_fileobj  !< fileobj to write to
   integer, optional,                               intent(in) :: unlim_dim_level !< unlimited dimension
-  logical, optional,                  intent(in) :: is_diurnal
+  logical, optional,                  intent(in) :: is_diurnal !< should be set if using diurnal
+                                                       !! reductions so buffer data can be remapped
 
   character(len=:), allocatable :: varname !< name of the variable
-  logical :: using_diurnal
-  class(*), allocatable                        :: buff_ptr(:,:,:,:,:)
+  logical :: using_diurnal !< local copy of is_diurnal if present
+  class(*), allocatable                        :: buff_ptr(:,:,:,:,:) !< pointer for buffer to write
 
   using_diurnal = .false.
   if( present(is_diurnal) ) using_diurnal = is_diurnal
@@ -692,20 +695,20 @@ end function
 
 !> this leaves out the diurnal index cause its only used for tmp mask allocation
 pure function get_buffer_dims(this)
-  class(fmsDiagOutputBuffer_type), intent(in) :: this
+  class(fmsDiagOutputBuffer_type), intent(in) :: this !< buffer object to get from
   integer :: get_buffer_dims(4)
   get_buffer_dims = this%buffer_dims(1:4)
 end function
 
 !> Get diurnal sample size (amount of diurnal sections)
 pure integer function get_diurnal_sample_size(this)
-  class(fmsDiagOutputBuffer_type), intent(in) :: this
+  class(fmsDiagOutputBuffer_type), intent(in) :: this !< buffer object to get from
   get_diurnal_sample_size = this%diurnal_sample_size
 end function get_diurnal_sample_size
 
 !> Set diurnal sample size (amount of diurnal sections)
 subroutine set_diurnal_sample_size(this, sample_size)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this !< buffer object to set sample size for
   integer, intent(in)                            :: sample_size !< sample size to used to split daily
                                                                !! data into given amount of sections
   this%diurnal_sample_size = sample_size
@@ -714,7 +717,7 @@ end subroutine set_diurnal_sample_size
 !> Set diurnal section index based off the current time and previously set diurnal_samplesize
 !! Calculates which diurnal section of daily data the current time is in
 subroutine set_diurnal_section_index(this, time)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this !< buffer object to set diurnal index for
   type(time_type), intent(in)                     :: time !< current model time
   integer :: seconds, days, ticks
 
@@ -732,7 +735,7 @@ end subroutine set_diurnal_section_index
 subroutine get_remapped_diurnal_data(this, res)
   class(fmsDiagOutputBuffer_type), intent(in) :: this !< output buffer object
   class(*), intent(out), allocatable :: res(:,:,:,:,:) !< resulting remapped data
-  integer :: last_dim
+  integer :: last_dim !< last dimension thats used
   integer :: ie, je, ke, ze, de !< ending indices for the new array
   integer(i4_kind) :: buff_size(5)!< sizes for allocated buffer
 
