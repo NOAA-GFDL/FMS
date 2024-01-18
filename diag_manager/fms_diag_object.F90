@@ -207,7 +207,6 @@ integer function fms_register_diag_field_obj &
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
- logical :: is_diurnal
 #endif
 #ifndef use_yaml
 fms_register_diag_field_obj = DIAG_FIELD_NOT_FOUND
@@ -235,7 +234,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 
 !> Initialize buffer_ids of this field with the diag_field_indices(diag_field_indices)
 !! of the sorted variable list
-  is_diurnal = .false.
   fieldptr%buffer_ids = get_diag_field_ids(diag_field_indices)
   do i = 1, size(fieldptr%buffer_ids)
     bufferptr => this%FMS_diag_output_buffers(fieldptr%buffer_ids(i))
@@ -245,7 +243,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     yamlfptr => diag_yaml%diag_fields(fieldptr%buffer_ids(i))
     if( yamlfptr%get_var_reduction() .eq. time_diurnal) then
       call bufferptr%set_diurnal_sample_size(yamlfptr%get_n_diurnal())
-      is_diurnal = .true.
     endif
     call bufferptr%init_buffer_time(init_time)
   enddo

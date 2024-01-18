@@ -74,6 +74,8 @@ diag_files:
     kind: r4
 _EOF
 
+export OMP_NUM_THREADS=1
+
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n" > input.nml
 
 test_expect_success "monthly simple diurnal output" '
@@ -101,6 +103,8 @@ test_expect_success "monthly diurnal output with real mask" '
 test_expect_success "checking results for diurnal test with real mask" '
   mpirun -n 6 ../check_time_diurnal
 '
+
+export OMP_NUM_THREADS=2
 
 printf "&test_diag_diurnal_nml \n test_case=1 \n / \n" >> input.nml
 
