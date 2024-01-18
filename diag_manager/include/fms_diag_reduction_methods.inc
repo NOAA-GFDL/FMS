@@ -239,7 +239,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
                                                             !! the output buffer
   integer :: i, j, k, l !< For looping
   real(FMS_TRM_KIND_) :: weight_loc !< local copy of optional weight
-  integer :: pow_loc !>
+  integer :: pow_loc !> local copy of optional pow value (set if using pow reduction)
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
 
   if(present(weight)) then
