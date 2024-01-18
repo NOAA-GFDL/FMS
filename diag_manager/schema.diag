@@ -21,7 +21,7 @@
             "type": "string"
           },
           "freq": {
-            "anyOf": [ 
+            "anyOf": [
               {"type": "string"},
               {"type": "number"}
             ],
@@ -42,7 +42,7 @@
           "sub_region": {
             "type": "array",
             "minItems": 1,
-            "maxItems": 1, 
+            "maxItems": 1,
             "required": ["grid_type", "corner1", "corner2", "corner3", "corner4"],
             "properties": {
               "grid_type": {
@@ -138,4 +138,4 @@
       }
     }
   }
-} 
+}
