@@ -306,39 +306,45 @@
     integer                               :: ia !< dimension of "array"
     integer                               :: i !< For looping through "array"
 
+    logical :: increasing !< .True. if the array is increasing
+
     ia = SIZE(array(:))
 
-    ! check if array is monotonous
+    ! check if array is increasing
+    increasing = .true.
     DO i = 2, ia-1
-       IF( (array(i-1)<array(i).AND.array(i)>array(i+1)) .OR. (array(i-1)>array(i).AND.array(i)<array(i+1))) THEN
-          ! <ERROR STATUS="FATAL">array NOT monotonously ordered</ERROR>
-          CALL mpp_error(FATAL, 'axis_utils2::nearest_index array is NOT monotonously ordered')
-       END IF
+       IF( array(i) .lt. array(i-1)) then
+         increasing = .false.
+         exit
+       endif
     END DO
+
+    if (.not. increasing) then
+      ! if not increasing, check that it is decreasing
+      DO i = 2, ia-1
+         IF( array(i) .gt. array(i-1)) &
+            call mpp_error(FATAL, 'axis_utils2::nearest_index array is NOT monotonously ordered')
+      END DO
+    endif
 
     if (array(1) < array(ia)) then
     !< increasing array
 
       !< Check if the rval is outside the range of the array
-      if (rval < array(1)) then
+      if (rval .le. array(1)) then
          NEAREST_INDEX_ = 1
          return
-      elseif (rval > array(ia)) then
+      elseif (rval .gt. array(ia)) then
          NEAREST_INDEX_ = ia
          return
       endif
 
-      DO i = 1, ia-1
-         IF ( (array(i)<=rval).AND.(array(i+1)>= rval) ) THEN
-            IF( rval - array(i) <= array(i+1) - rval ) THEN
-               NEAREST_INDEX_ = i
-               return
-            ELSE
-               NEAREST_INDEX_ = i+1
-               return
-            ENDIF
-            EXIT
-         END IF
+      DO i = 1, ia
+         if (rval .le. array(i)) then
+            NEAREST_INDEX_ = i
+            if (array(i) -rval .gt. rval - array(i-1)) NEAREST_INDEX_ = i - 1
+            return
+         endif
       END DO
     else
     !< Decreasing Array
