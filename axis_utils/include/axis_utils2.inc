@@ -327,49 +327,41 @@
       END DO
     endif
 
-    if (array(1) < array(ia)) then
-    !< increasing array
-
+    array_is_increasing: if (increasing) then
       !< Check if the rval is outside the range of the array
       if (rval .le. array(1)) then
-         NEAREST_INDEX_ = 1
-         return
-      elseif (rval .gt. array(ia)) then
-         NEAREST_INDEX_ = ia
-         return
+        NEAREST_INDEX_ = 1
+        return
+      elseif (rval .ge. array(ia)) then
+        NEAREST_INDEX_ = ia
+        return
       endif
 
-      DO i = 1, ia
-         if (rval .le. array(i)) then
-            NEAREST_INDEX_ = i
-            if (array(i) -rval .gt. rval - array(i-1)) NEAREST_INDEX_ = i - 1
-            return
-         endif
+      DO i = 2, ia
+        if (rval .le. array(i)) then
+          NEAREST_INDEX_ = i
+          if (array(i) -rval .gt. rval - array(i-1)) NEAREST_INDEX_ = i - 1
+          return
+        endif
       END DO
-    else
-    !< Decreasing Array
-
+    else !array_is_decreasing
       !< Check if the rval is outside the range of the array
-      if (rval < array(ia)) then
-         NEAREST_INDEX_ = ia
-         return
-      elseif (rval > array(1)) then
-         NEAREST_INDEX_ = 1
-         return
+      if (rval .le. array(ia)) then
+        NEAREST_INDEX_ = ia
+        return
+      elseif (rval .gt. array(1)) then
+        NEAREST_INDEX_ = 1
+        return
       endif
 
-      DO i = 1, ia-1
-         IF ( (array(i)>=rval).AND.(array(i+1)<= rval) ) THEN
-            IF ( array(i)-rval <= rval-array(i+1) ) THEN
-               NEAREST_INDEX_ = i
-               return
-            ELSE
-               NEAREST_INDEX_ = i+1
-               return
-            END IF
-         END IF
+      DO i = 2, ia
+        if (rval .ge. array(i)) then
+          NEAREST_INDEX_ = i
+          if (rval - array(i) .gt. array(i-1) -rval ) NEAREST_INDEX_ = i - 1
+            return
+        endif
       END DO
-    endif
+    endif array_is_increasing
   end function NEAREST_INDEX_
 
   !#############################################################################
