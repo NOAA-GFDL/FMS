@@ -1,6 +1,6 @@
 # Ensure the $(MODDIR) exists
 
-SUFFIXES = .$(FC_MODEXT) _mod.$(FC_MODEXT)
+SUFFIXES = *.$(FC_MODEXT) _mod.$(FC_MODEXT)
 .F90.$(FC_MODEXT) .F90_mod.$(FC_MODEXT) .f90.$(FC_MODEXT) .f90_mod.$(FC_MODEXT):
 	test -d $(MODDIR) || mkdir -p $(MODDIR)
 	$(PPFCCOMPILE) -c $<

@@ -37,16 +37,7 @@ libmonin_obukhov_la_SOURCES = \
         include/monin_obukhov_inter_r8.fh \
         include/monin_obukhov_inter.inc
 
-monin_obukhov_inter.$(FC_MODEXT): \
-        include/monin_obukhov_inter_r4.fh \
-        include/monin_obukhov_inter_r8.fh \
-        include/monin_obukhov_inter.inc
-
-monin_obukhov_mod.$(FC_MODEXT): \
-        monin_obukhov_inter.$(FC_MODEXT) \
-        include/monin_obukhov_r4.fh \
-        include/monin_obukhov_r8.fh \
-        include/monin_obukhov.inc
+monin_obukhov_mod.$(FC_MODEXT): monin_obukhov_inter.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \

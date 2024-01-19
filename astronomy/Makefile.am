@@ -36,11 +36,6 @@ libastronomy_la_SOURCES = \
     include/astronomy_r8.fh \
     include/astronomy.inc
 
-astronomy.$(FC_MODEXT): \
-include/astronomy_r4.fh \
-include/astronomy_r8.fh \
-include/astronomy.inc
-
 BUILT_SOURCES = astronomy_mod.$(FC_MODEXT)
 nodist_include_HEADERS = astronomy_mod.$(FC_MODEXT)
 

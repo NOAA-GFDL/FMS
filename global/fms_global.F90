@@ -62,7 +62,7 @@
 
 !> @addtogroup FMS
 !> @{
-module fms
+module fms_global_mod
 
   !> import each FMS module's public routines/functions, interfaces, and variables
   !! done explicitly to avoid including any unwanted/depracated routines/modules
@@ -841,6 +841,6 @@ module fms
   character(len=*), parameter, public :: version_FMS = version
   private :: version
 
-end module fms
+end module fms_global_mod
 !> @}
 ! close documentation grouping

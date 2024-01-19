@@ -36,11 +36,6 @@ libaxis_utils_la_SOURCES = \
   include/axis_utils2_r8.fh \
   include/axis_utils2.inc
 
-axis_utils2.$(FC_MODEXT) : \
-include/axis_utils2_r4.fh \
-include/axis_utils2_r8.fh \
-include/axis_utils2.inc
-
 # Mod file depends on its o file, is built and then installed.
 nodist_include_HEADERS = axis_utils_mod.$(FC_MODEXT) axis_utils2_mod.$(FC_MODEXT)
 BUILT_SOURCES = axis_utils_mod.$(FC_MODEXT) axis_utils2_mod.$(FC_MODEXT)

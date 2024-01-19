@@ -35,11 +35,6 @@ include/column_diagnostics.inc \
 include/column_diagnostics_r4.fh \
 include/column_diagnostics_r8.fh
 
-column_diagnostics.$(FC_MOD_EXT):\
-include/column_diagnostics.inc \
-include/column_diagnostics_r4.fh \
-include/column_diagnostics_r8.fh
-
 BUILT_SOURCES = column_diagnostics_mod.$(FC_MODEXT)
 nodist_include_HEADERS = column_diagnostics_mod.$(FC_MODEXT)
 

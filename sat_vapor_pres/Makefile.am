@@ -41,15 +41,7 @@ libsat_vapor_pres_la_SOURCES = \
 	include/sat_vapor_pres_k.inc
 
 # Some mods are dependant on other mods in this dir.
-sat_vapor_pres_mod.$(FC_MODEXT): \
-	sat_vapor_pres_k_mod.$(FC_MODEXT) \
-	include/sat_vapor_pres_r4.fh \
-	include/sat_vapor_pres_r8.fh \
-	include/sat_vapor_pres.inc
-sat_vapor_pres_k_mod.$(FC_MODEXT): \
-	include/sat_vapor_pres_k_r4.fh \
-	include/sat_vapor_pres_k_r8.fh \
-	include/sat_vapor_pres_k.inc
+sat_vapor_pres_mod.$(FC_MODEXT): sat_vapor_pres_k_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \

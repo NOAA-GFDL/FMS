@@ -17,37 +17,23 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the topography directory of the FMS
+# This is an automake file for the global directory of the FMS
 # package.
+#
+# This directory only holds the libFMS.F90 file, which gets compiled into
+# a module just named 'fms'. It is meant to access all public routines/types/variables from
+# the other modules in fms.
 
-# Ed Hartnett 2/22/19
+# Ryan Mulhall 1/19/24
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/topography/include
-
+AM_CPPFLAGS = -I${top_srcdir}/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-# Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libtopography.la
+noinst_LTLIBRARIES = libfms_global.la
 
-# Each convenience library depends on its source.
-libtopography_la_SOURCES = \
-    topography.F90 \
-    include/topography_r4.fh \
-    include/topography_r8.fh \
-    include/topography.inc \
-    gaussian_topog.F90 \
-    include/gaussian_topog_r4.fh \
-    include/gaussian_topog_r8.fh \
-    include/gaussian_topog.inc
+libfms_global_la_SOURCES = fms_global.F90
 
-topography_mod.$(FC_MODEXT): gaussian_topog_mod.$(FC_MODEXT)
-
-# Mod files are built and then installed as headers.
-MODFILES = \
-  gaussian_topog_mod.$(FC_MODEXT) \
-  topography_mod.$(FC_MODEXT)
-nodist_include_HEADERS = $(MODFILES)
-BUILT_SOURCES = $(MODFILES)
+BUILT_SOURCES = fms_global_mod.$(FC_MODEXT)
+nodist_include_HEADERS = fms_global_mod.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk

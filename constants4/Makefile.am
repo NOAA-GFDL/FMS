@@ -37,7 +37,6 @@ libconstants4_la_SOURCES = \
   geos_constantsR4.fh \
   constantsr4.F90
 
-fmsconstantsr4.$(FC_MODEXT): gfdl_constantsR4.fh gfs_constantsR4.fh geos_constantsR4.fh
 constantsr4_mod.$(FC_MODEXT): fmsconstantsr4.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers

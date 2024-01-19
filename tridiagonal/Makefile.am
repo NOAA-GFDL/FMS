@@ -35,8 +35,6 @@ libtridiagonal_la_SOURCES = tridiagonal.F90           \
                             include/tridiagonal_r4.fh \
                             include/tridiagonal_r8.fh
 
-# Mod file depends on its o file, is built and then installed.
-tridiagonal.lo: tridiagonal_mod.$(FC_MODEXT)
 
 BUILT_SOURCES = tridiagonal_mod.$(FC_MODEXT)
 nodist_include_HEADERS = tridiagonal_mod.$(FC_MODEXT)

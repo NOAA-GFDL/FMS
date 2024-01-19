@@ -37,7 +37,6 @@ libconstants_la_SOURCES = \
   geos_constants.fh \
   constants.F90
 
-FMSconstants.$(FC_MODEXT): gfdl_constants.fh gfs_constants.fh geos_constants.fh
 constants_mod.$(FC_MODEXT): fmsconstants.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers

@@ -468,6 +468,7 @@ AC_CONFIG_FILES([
   docs/Makefile
   parser/Makefile
   string_utils/Makefile
+  global/Makefile
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile

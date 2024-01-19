@@ -61,9 +61,8 @@ horiz_interp_bicubic_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
 horiz_interp_bilinear_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
 horiz_interp_conserve_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
 horiz_interp_spherical_mod.$(FC_MODEXT): horiz_interp_type_mod.$(FC_MODEXT)
-horiz_interp_mod.$(FC_MODEXT): horiz_interp_bicubic_mod.$(FC_MODEXT) horiz_interp_type_mod.$(FC_MODEXT) \
-                      horiz_interp_bilinear_mod.$(FC_MODEXT) horiz_interp_conserve_mod.$(FC_MODEXT) \
-                      horiz_interp_spherical_mod.$(FC_MODEXT)
+
+horiz_interp_mod.$(FC_MODEXT): horiz_interp_conserve_mod.$(FC_MODEXT) horiz_interp_spherical_mod.$(FC_MODEXT) horiz_interp_bicubic_mod.$(FC_MODEXT) horiz_interp_bilinear_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \

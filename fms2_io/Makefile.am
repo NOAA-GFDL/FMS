@@ -58,22 +58,15 @@ libfms2_io_la_SOURCES = \
   include/unpack_data.inc
 
 # Some mods are dependant on other mods in this dir.
-fms2_io_mod.$(FC_MODEXT): fms_io_utils_mod.$(FC_MODEXT) netcdf_io_mod.$(FC_MODEXT) fms_netcdf_domain_io_mod.$(FC_MODEXT) \
-                 fms_netcdf_unstructured_domain_io_mod.$(FC_MODEXT) blackboxio.$(FC_MODEXT)
-fms_io_utils_mod.$(FC_MODEXT): include/array_utils.inc include/array_utils_char.inc \
-                      include/get_data_type_string.inc
-netcdf_io_mod.$(FC_MODEXT): fms_io_utils_mod.$(FC_MODEXT) include/netcdf_add_restart_variable.inc include/netcdf_read_data.inc \
-                   include/netcdf_write_data.inc include/register_global_attribute.inc \
-                   include/register_variable_attribute.inc include/get_global_attribute.inc \
-                   include/get_variable_attribute.inc include/compressed_write.inc include/compressed_read.inc \
-                   include/gather_data_bc.inc include/scatter_data_bc.inc include/unpack_data.inc
-fms_netcdf_domain_io_mod.$(FC_MODEXT): fms_io_utils_mod.$(FC_MODEXT) netcdf_io_mod.$(FC_MODEXT) include/register_domain_restart_variable.inc \
-                              include/domain_read.inc include/domain_write.inc include/compute_global_checksum.inc
-fms_netcdf_unstructured_domain_io_mod.$(FC_MODEXT): fms_io_utils_mod.$(FC_MODEXT) netcdf_io_mod.$(FC_MODEXT) \
-                                           include/register_unstructured_domain_restart_variable.inc \
-                                           include/unstructured_domain_read.inc include/unstructured_domain_write.inc
-blackboxio.$(FC_MODEXT): fms_io_utils_mod.$(FC_MODEXT) netcdf_io_mod.$(FC_MODEXT) fms_netcdf_domain_io_mod.$(FC_MODEXT) \
-                fms_netcdf_unstructured_domain_io_mod.$(FC_MODEXT)
+fms2_io_mod.$(FC_MODEXT): netcdf_io_mod.$(FC_MODEXT) fms_netcdf_domain_io_mod.$(FC_MODEXT) fms_netcdf_unstructured_domain_io_mod.$(FC_MODEXT) blackboxio.$(FC_MODEXT)
+
+netcdf_io_mod.$(FC_MODEXT): fms_io_utils_mod.$(FC_MODEXT)
+
+fms_netcdf_domain_io_mod.$(FC_MODEXT): netcdf_io_mod.$(FC_MODEXT)
+
+fms_netcdf_unstructured_domain_io_mod.$(FC_MODEXT): netcdf_io_mod.$(FC_MODEXT)
+
+blackboxio.$(FC_MODEXT): fms_netcdf_domain_io_mod.$(FC_MODEXT) fms_netcdf_unstructured_domain_io_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
