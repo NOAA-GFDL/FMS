@@ -28,7 +28,5 @@ jobs:
         path: .testing/deps/fms/src
     - name: Build FMS and MOM test suite
       run: make -C .testing -j
-    - name: Install diff for testing
-      run: dnf install -y diffutils
     - name: Run MOM tests
       run: make -C .testing -j test
