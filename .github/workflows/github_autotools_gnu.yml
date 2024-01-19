@@ -37,8 +37,8 @@ jobs:
       if: ${{ matrix.conf-flag == '--disable-setting-flags' }}
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="-fdefault-real-8 -fdefault-double-8 -fcray-pointer -ffree-line-length-none -I/usr/include $FCFLAGS" || cat config.log
     - name: Build the library
-      run: make distcheck
+      run: make -j distcheck
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
     - name: Build the library (without test suite for serial build)
-      run: make
+      run: make -j
       if: ${{ matrix.conf-flag == '--with-mpi=no' }}

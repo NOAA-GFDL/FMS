@@ -57,6 +57,6 @@ jobs:
     - name: Configure
       run: autoreconf -if ./configure.ac && ./configure --with-yaml
     - name: Compile
-      run: make -j || make
+      run: make -j
     - name: Run test suite
       run: make check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" TEST_VERBOSE=1
