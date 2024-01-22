@@ -395,19 +395,19 @@ end subroutine
 
 subroutine test_nearest_index(increasing_array)
   logical, intent(in) :: increasing_array !< .True. if test using an increasing array
-  real(k) :: arr(5)
-  integer :: ans(12)
+  real(k) :: arr(7)
+  integer :: ans(16)
 
   if (increasing_array) then
-    arr = [5._k, 12._k, 20._k, 40._k, 100._k]
-    ans=(/1, 5, 1, 2, 3, 4, 5, 1, 2, 2, 3, 3/)
+    arr = [-6._k, -3._k, 5._k, 12._k, 20._k, 40._k, 100._k]
+    ans=(/1, 7, 3, 4, 5, 6, 7, 3, 4, 4, 5, 5, 1, 2, 1, 2/)
   else
-    arr = [100._k, 40._k, 20._k, 12._k, 5._k]
-    ans=(/5, 1, 5, 4, 3, 2, 1, 5, 4, 4, 3, 3/)
+    arr = [100._k, 40._k, 20._k, 12._k, 5._k, -3._k, -6._k]
+    ans=(/7, 1, 5, 4, 3, 2, 1, 5, 4, 4, 3, 3, 7, 6, 7, 6/)
   endif
 
   ! Test values beyond array boundaries
-  call nearest_index_assert(4._k,    arr, ans(1))
+  call nearest_index_assert(-7._k,    arr, ans(1))
   call nearest_index_assert(1000._k, arr, ans(2))
 
   ! Test values actually in the array
@@ -423,6 +423,13 @@ subroutine test_nearest_index(increasing_array)
   call nearest_index_assert(15._k,   arr, ans(10))
   call nearest_index_assert(18._k,   arr, ans(11))
   call nearest_index_assert(29._k,   arr, ans(12))
+
+  ! Test the negative numbers
+  call nearest_index_assert(-6._k,    arr, ans(13))
+  call nearest_index_assert(-3._k,    arr, ans(14))
+  call nearest_index_assert(-5._k,    arr, ans(15))
+  call nearest_index_assert(-1._k,    arr, ans(16))
+
 end subroutine
 
 subroutine nearest_index_assert(val, arr, ret_expected)
