@@ -94,13 +94,24 @@ long-term, portability, and the scope of the impact on the code base. Therefore,
 Modeling Systems does not guarantee that all pull requests will be accepted,
 even if the changes pass the initial testing phases, and are otherwise correct.
 
+## Commits
+
+FMS uses the guidelines specified by [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+FMS pull requests are typically ‘squashed’ into one commit.
+Descriptive commit messages within PR’s should still be used, and some projects / developers may find it useful to include the file and routine being updated for easy reference.
+The commit message on the main branch must follow the guidelines of conventional commits, meaning it includes a ‘type’ prefix (ie. usually fix or feat(ure)) and a footer for any API-breaking changes.
+Additionally, commits should include the number of the pull request in parentheses (this is automatically added on github) to allow easier tracking of each commit.
+
 ## Tests
 
-FMS uses TravisCI and gitlab-CI to run build tests for libFMS.  Users may create
+FMS uses github actions workflows to run build, runtime, and code linting tests for libFMS.  Users may create
 unit tests, code coverage tests, and regression tests for new and existing code
 in yaml (.yml) files.  Github provides a guide
 (https://help.github.com/en/articles/about-continuous-integration) for
 implementing CI tests.
+
+The various FMS CI workflows are documented in [CI.md](CI.md)
 
 ## Code Style
 Code updates should follow the coding style for the project, contained in

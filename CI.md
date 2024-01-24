@@ -7,7 +7,7 @@ Required CI for pull requests are listed first.
 
 ## Pull Request CI and checks
 
-### Build libFMS with autotools
+### Build libFMS with autotools (GNU)
 
 Required GNU build test for all pull requests/pushes.
 Runs `make distcheck` after configuring via GNU autotools.
@@ -32,19 +32,26 @@ libyaml        v0.2.5
 - `--with-yaml`
 - `--enable-test-input=/home/unit_tests_input`
 
+### Build libFMS with autotools (intel)
+
+Required Intel build test for all pull requests.
+Runs `make check` after configuring via autotools.
+
+This runs on an intel-hosted container image from dockerhub.
+
+To access the netcdf and libyaml the dependencies, it builds and caches the resulting libaries for reuse.
+The cache is cleared after not being used for a week.
+
+`./configure` flags tested:
+- `--disable-deprecated-io`
+- `--enable-deprecated-io`
+
 
 ### Build libfms with cmake
 Required GNU build test for all pull requests/pushes.
 Runs `make` after configuring via cmake.
 
-Container environment:
-gcc            v7.3.0
-mpich          v3.3a2
-netcdf         v4.6.0
-netcdf-fortran v4.4.4
-cmake          v3.22.0
-
-container hosted at [noaagfdl/ubuntu_libfms_gnu:latest](https://hub.docker.com/r/noaagfdl/ubuntu_libfms_gnu)
+This uses the same image as the GNU autotools CI.
 
 cmake flags:
 - `-DOPENMP=on`
@@ -58,11 +65,26 @@ Checks code for line lengths, tabs, and trailing whitespace in accordance with
 the project's [style guide](https://github.com/NOAA-GFDL/FMS/blob/main/CODE_STYLE.md).
 The action is hosted on github [here](https://github.com/NOAA-GFDL/simple_lint).
 
-## Parallelworks CI
-The following CI workflows run on self-hosted runners through the parallelworks platform.
-### Pull Request CI libFMS with intel
-Optional(does not need to pass to merge) intel build test hosted on the parallelworks platform.
-Runs `make check` with intel 18 and 21 compilers for all pull requests.
+### Build FMScoupler with FMS
 
-### Tag CI libFMS with AM4 regression
-On alpha or beta tag creation, compiles and runs full AM4 model regression testing using the new FMS tag on parallelworks.
+Runs on pull requests. This workflow pulls in the main branch of the [FMScoupler repository](github.com/noaa-gfdl/FMScoupler),
+and then run's its test script using the pull request's version of FMS.
+
+The coupler's testing script runs a "null model" that uses simple placeholders for the components (ie. atmos_null, ice_null repositories).
+It also uses [`mkmf`](github.com/noaa-gfdl/mkmf), a GFDL created build tool to generate it's Makefile's.
+
+It uses the same docker image as the autotools GNU ci.
+
+## Miscellaneous
+
+### Documentation Site
+The `github_doc_site.yml` workflow uses the program doxygen to parse our documentation and create a searchable site.
+This site is then stored as an artifact, and deployed to github-pages to be accessible at [noaa-gfdl.github.io/FMS].
+
+
+### Version updates
+The `version.yml` workflow appends the -dev to the version number used by autotools upon the creation of a published release.
+
+It will create a new pull request with the change automatically.
+
+Since it's created by a bot account, the pull request will need to be closed and re-opened in order to be merged (due to above CI requirements).
