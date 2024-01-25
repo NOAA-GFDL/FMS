@@ -414,8 +414,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
 
     !> Save the file name in the file_list
-    !! The diag_table is not case sensitive (so we are saving it as lowercase)
-    file_list%file_name(file_count) = lowercase(trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char)
+    file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
     file_list%diag_file_indices(file_count) = file_count
 
     nvars = 0
