@@ -39,7 +39,7 @@ Runs `make check` after configuring via autotools.
 
 This runs on an intel-hosted container image from dockerhub.
 
-To access the netcdf and libyaml the dependencies, it builds and caches the resulting libaries for reuse.
+To access the netcdf and libyaml dependencies, it builds and caches the resulting libaries for reuse.
 The cache is cleared after not being used for a week.
 
 `./configure` flags tested:
@@ -51,7 +51,7 @@ The cache is cleared after not being used for a week.
 Required GNU build test for all pull requests/pushes.
 Runs `make` after configuring via cmake.
 
-This uses the same image as the GNU autotools CI.
+This uses the same container image as the GNU autotools CI.
 
 cmake flags:
 - `-DOPENMP=on`
