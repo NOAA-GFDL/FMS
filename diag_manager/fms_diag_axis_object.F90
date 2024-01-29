@@ -52,7 +52,7 @@ module fms_diag_axis_object_mod
           & get_domain_and_domain_type, diagDomain_t, &
           & DIAGDOMAIN2D_T, fmsDiagSubAxis_type, fmsDiagAxisContainer_type, fmsDiagFullAxis_type, DIAGDOMAINUG_T
   public :: define_new_axis, define_subaxis, parse_compress_att, get_axis_id_from_name, define_diurnal_axis, &
-          & fmsDiagDiurnalAxis_type, create_new_z_subaxis
+          & fmsDiagDiurnalAxis_type, create_new_z_subaxis, is_parent_axis
 
   !> @}
 
@@ -1405,6 +1405,24 @@ module fms_diag_axis_object_mod
     enddo
 
   end subroutine
+
+  !> @brief Determine if the parent_axis is the parent of axis_id
+  !! @return .True. if the parent_axis is the parent of axis_id
+  function is_parent_axis(axis_id, parent_axis_id, diag_axis) &
+    result(rslt)
+    integer, intent(in) :: axis_id
+    integer, intent(in) :: parent_axis_id
+    class(fmsDiagAxisContainer_type), target, intent(in) :: diag_axis(:)    !< Array of diag_axis objects
+
+    logical :: rslt
+
+    rslt = .false.
+    select type(axis => diag_axis(axis_id)%axis)
+    type is (fmsDiagSubAxis_type)
+      if (axis%parent_axis_id .eq. parent_axis_id) rslt = .true.
+    end select
+  end function is_parent_axis
+
 #endif
 end module fms_diag_axis_object_mod
 !> @}

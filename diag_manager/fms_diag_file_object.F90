@@ -43,7 +43,7 @@ use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type,
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
                                     fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
-                                    fmsDiagDiurnalAxis_type, create_new_z_subaxis
+                                    fmsDiagDiurnalAxis_type, create_new_z_subaxis, is_parent_axis
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
@@ -752,7 +752,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   select type(this)
   type is (subRegionalFile_type)
-    if (.not. this%is_subaxis_defined) then
+    subaxis_not_defined: if (.not. this%is_subaxis_defined) then
       if (associated(this%domain)) then
         if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
       endif
@@ -773,7 +773,27 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
       else
         this%axis_ids = diag_null
       endif
-    endif
+    else
+      !The subaxis has already being defined, update var_axis_ids with the subaxis id
+      do i = 1, size(var_axis_ids)
+        axis_found = .false.
+        do j = 1, this%number_of_axis
+          if (this%axis_ids(j) .eq. var_axis_ids(i)) then
+            axis_found = .true.
+            cycle
+          else
+            if (is_parent_axis(this%axis_ids(j), var_axis_ids(i), diag_axis)) then
+              var_axis_ids(i) = this%axis_ids(j)
+              axis_found = .true.
+            endif
+          endif
+        enddo
+        if (.not. axis_found) then
+          this%number_of_axis = this%number_of_axis + 1
+          this%axis_ids(this%number_of_axis) = var_axis_ids(j)
+        endif
+      enddo
+    endif subaxis_not_defined
   type is (fmsDiagFile_type)
     do i = 1, size(var_axis_ids)
       axis_found = .false.
