@@ -37,7 +37,7 @@ module fms_diag_axis_object_mod
                               direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes, &
                               MAX_SUBAXES, DIAG_NULL, index_gridtype, latlon_gridtype, pack_size_str, &
                               get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,&
-                              get_base_second
+                              get_base_second, is_x_axis, is_y_axis
   use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
@@ -51,8 +51,9 @@ module fms_diag_axis_object_mod
   public :: fmsDiagAxis_type, fms_diag_axis_object_init, fms_diag_axis_object_end, &
           & get_domain_and_domain_type, diagDomain_t, &
           & DIAGDOMAIN2D_T, fmsDiagSubAxis_type, fmsDiagAxisContainer_type, fmsDiagFullAxis_type, DIAGDOMAINUG_T
-  public :: define_new_axis, define_subaxis, parse_compress_att, get_axis_id_from_name, define_diurnal_axis, &
-          & fmsDiagDiurnalAxis_type, create_new_z_subaxis, is_parent_axis
+  public :: define_new_axis, parse_compress_att, get_axis_id_from_name, define_diurnal_axis, &
+          & fmsDiagDiurnalAxis_type, create_new_z_subaxis, is_parent_axis, define_new_subaxis_latlon, &
+          & define_new_subaxis_index
 
   !> @}
 
@@ -188,6 +189,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: has_aux
      PROCEDURE :: get_set_name
      PROCEDURE :: has_set_name
+     PROCEDURE :: is_x_or_y_axis
      ! TO DO:
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
@@ -621,6 +623,28 @@ module fms_diag_axis_object_mod
     if (allocated(this%set_name)) rslt = trim(this%set_name) .ne. ""
   end function has_set_name
 
+  !> @brief Determine if an axis object is an x or y axis
+  !! @return .true. if an axis object is an x or y axis, optionally return a flag indicating which it is
+  function is_x_or_y_axis(this, x_or_y) &
+  result(rslt)
+    class(fmsDiagFullAxis_type), intent(in)    :: this   !< diag_axis obj
+    integer, optional,           intent(inout) :: x_or_y !< returns is_x_axis if it is a x axis
+                                                         !! is_y_axis if it is a y axis
+    logical :: rslt
+
+    select case (trim(this%cart_name))
+    case ("X")
+      if (present(x_or_y)) x_or_y = is_x_axis
+      rslt = .true.
+    case ("Y")
+      if (present(x_or_y)) x_or_y = is_y_axis
+      rslt = .true.
+    case default
+      rslt = .false.
+      if (present(x_or_y)) x_or_y = diag_null
+    end select
+  end function is_x_or_y_axis
+
   !> @brief Get the set name of an axis object
   !! @return the set name of an axis object
   pure function get_set_name(this) &
@@ -667,7 +691,7 @@ module fms_diag_axis_object_mod
   !> @brief Determine if the subRegion is in the current PE.
   !! If it is, determine the starting and ending indices of the current PE that belong to the subRegion
   subroutine get_indices(this, compute_idx, corners_indices, starting_index, ending_index, need_to_define_axis)
-    class(fmsDiagFullAxis_type), intent(inout) :: this                !< diag_axis obj
+    class(fmsDiagFullAxis_type), intent(in)    :: this                !< diag_axis obj
     integer,                     intent(in)    :: compute_idx(:)      !< Current PE's compute domain
     class(*),                    intent(in)    :: corners_indices(:)  !< The indices of the corners of the subRegion
     integer,                     intent(out)   :: starting_index      !< Starting index of the subRegion
@@ -1012,76 +1036,38 @@ module fms_diag_axis_object_mod
     enddo
   end subroutine get_domain_and_domain_type
 
-  !> @brief Define a subaxis based on the subRegion defined by the yaml
-  subroutine define_subaxis (diag_axis, axis_ids, naxis, subRegion, is_cube_sphere, write_on_this_pe)
-    class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
-    integer,                                  INTENT(in)    :: axis_ids(:)      !< Array of axes_ids
-    integer,                                  intent(inout) :: naxis            !< Number of axis registered
-    type(subRegion_type),                     intent(in)    :: subRegion        !< The subRegion definition from
-                                                                                !! the yaml
-    logical,                                  intent(in)    :: is_cube_sphere   !< .true. if this is a cubesphere
-    logical,                                  intent(out)   :: write_on_this_pe !< .true. if the subregion
-                                                                                !! is on this PE
-
-    select case(subRegion%grid_type)
-    case (latlon_gridtype)
-      call define_subaxis_latlon(diag_axis, axis_ids, naxis, subRegion, is_cube_sphere, write_on_this_pe)
-    case (index_gridtype)
-      call define_subaxis_index(diag_axis, axis_ids, naxis, subRegion, write_on_this_pe)
-    end select
-  end subroutine define_subaxis
-
   !> @brief Fill in the subaxis object for a subRegion defined by index
-  subroutine define_subaxis_index(diag_axis, axis_ids, naxis, subRegion, write_on_this_pe)
+  subroutine define_new_subaxis_index(parent_axis, subRegion, diag_axis, naxis, is_x_or_y, write_on_this_pe)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
-    integer,                                  INTENT(in)    :: axis_ids(:)      !< Array of axes_ids
+    type(fmsDiagFullAxis_type),               intent(inout) :: parent_axis      !< axis object of the parent
     integer,                                  intent(inout) :: naxis            !< Number of axis registered
     type(subRegion_type),                     intent(in)    :: subRegion        !< SubRegion definition from the yaml
+    integer,                                  intent(in)    :: is_x_or_y        !< Flag indicating if it is
+                                                                                !! a x or y axis
     logical,                                  intent(out)   :: write_on_this_pe !< .true. if the subregion
                                                                                 !! is on this PE
-    integer :: i !< For do loops
-    integer :: compute_idx(2)
-    integer :: starting_index, ending_index
-    logical :: need_to_define_axis
-    integer :: lat_indices(2), lon_indices(2)
+    integer :: compute_idx(2) !< Indices of the compute domain
+    integer :: starting_index !< starting index of the subregion
+    integer :: ending_index   !< ending index of the subregion
 
+    call parent_axis%get_compute_domain(compute_idx, write_on_this_pe, tile_number=subRegion%tile)
+    if (.not. write_on_this_pe) return
 
-    do i = 1, size(axis_ids)
-      select type (parent_axis => diag_axis(axis_ids(i))%axis)
-      type is (fmsDiagFullAxis_type)
-        !< Get the PEs compute domain
-        call parent_axis%get_compute_domain(compute_idx, need_to_define_axis, tile_number=subRegion%tile)
+    !< Determine if the PE's compute domain is inside the subRegion
+    !! If it is get the starting and ending indices for that PE
+    call parent_axis%get_indices(compute_idx, subRegion%corners(:,is_x_or_y), starting_index, ending_index, &
+      write_on_this_pe)
 
-        !< If this is not a "X" or "Y" axis, go to the next axis
-        if (.not. need_to_define_axis) then
-          cycle
-        endif
+    if (.not. write_on_this_pe) return
 
-        !< Determine if the PE's compute domain is inside the subRegion
-        !! If it is get the starting and ending indices for that PE
-        call parent_axis%get_indices(compute_idx, subRegion%corners(:,i), starting_index, ending_index, &
-          need_to_define_axis)
-
-        !< If the PE's compute is not inside the subRegion, define a null subaxis and go to the next axis
-        if (.not. need_to_define_axis) then
-          compute_idx = diag_null
-          call define_new_axis(diag_axis, parent_axis, naxis, axis_ids(i), &
-            diag_null, diag_null, compute_idx)
-          cycle
-        endif
-
-        !< If it made it to this point, the current PE is in the subRegion!
-        write_on_this_pe = .true.
-
-        call define_new_axis(diag_axis, parent_axis, naxis, axis_ids(i), &
+    !< If it made it to this point, the current PE is in the subRegion!
+    call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
           starting_index, ending_index, compute_idx)
-        end select
-    enddo
 
-  end subroutine define_subaxis_index
+  end subroutine define_new_subaxis_index
 
   !> @brief Fill in the subaxis object for a subRegion defined by lat lon
-  subroutine define_subaxis_latlon(diag_axis, axis_ids, naxis, subRegion, is_cube_sphere, write_on_this_pe)
+  subroutine define_new_subaxis_latlon(diag_axis, axis_ids, naxis, subRegion, is_cube_sphere, write_on_this_pe)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
     integer,                                  INTENT(in)    :: axis_ids(:)      !< Array of axes_ids
     integer,                                  intent(inout) :: naxis            !< Number of axis registered
@@ -1104,6 +1090,7 @@ module fms_diag_axis_object_mod
     logical :: is_x_y_axis            !< .true. if the axis is x or y
     integer :: compute_idx_2(2, 2)    !< Starting and ending indices of the compute domain for the "x" and "y" direction
 
+    write_on_this_pe = .false.
     !< Get the rectangular coordinates of the subRegion
     !! If the subRegion is not rectangular, the points outside of the subRegion will be masked
     !! out later
@@ -1199,7 +1186,7 @@ module fms_diag_axis_object_mod
      end select
     enddo
 
-  end subroutine define_subaxis_latlon
+  end subroutine define_new_subaxis_latlon
 
   !> @brief Creates a new subaxis and fills it will all the information it needs
   subroutine define_new_axis(diag_axis, parent_axis, naxis, parent_id, &
