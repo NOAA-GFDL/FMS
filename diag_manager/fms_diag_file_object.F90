@@ -110,6 +110,7 @@ type :: fmsDiagFile_type
   procedure, public :: add_axes
   procedure, public :: add_new_axis
   procedure, public :: update_write_on_this_pe
+  procedure, public :: get_write_on_this_pe
   procedure, public :: does_axis_exist
   procedure, public :: define_new_subaxis
   procedure, public :: add_start_time
@@ -211,7 +212,7 @@ logical function fms_diag_files_object_init (files_array)
          type is (subRegionalFile_type)
            allocate(obj%sub_axis_ids(max_axes))
            obj%sub_axis_ids = diag_null
-           obj%write_on_this_pe = .false.
+           obj%write_on_this_pe = .true.
            obj%is_subaxis_defined = .false.
            obj%number_of_axis = 0
        end select
@@ -814,6 +815,8 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
                 call define_new_subaxis_latlon(diag_axis, var_axis_ids(i:i), naxis, this%get_file_sub_region(), &
                   .false., write_on_this_pe)
               end select
+              call this%update_write_on_this_pe(write_on_this_pe)
+              if (.not. this%get_write_on_this_pe()) cycle
               call this%add_new_axis(naxis)
               var_axis_ids(i) = naxis
             else
@@ -872,9 +875,22 @@ subroutine update_write_on_this_pe(this, write_on_this_pe)
 
   select type (this)
   type is (subRegionalFile_type)
-    if (.not. this%write_on_this_pe) this%write_on_this_pe = write_on_this_pe
+    if (this%write_on_this_pe) this%write_on_this_pe = write_on_this_pe
   end select
 end subroutine update_write_on_this_pe
+
+!> @brief Query for the write_on_this_pe member of the diag file object
+!! @return the write_on_this_pe member of the diag file object
+function get_write_on_this_pe(this) &
+  result(rslt)
+  class(fmsDiagFile_type),                 intent(inout) :: this             !< The file object
+  logical :: rslt
+  rslt = .true.
+  select type (this)
+  type is (subRegionalFile_type)
+    rslt= this%write_on_this_pe
+  end select
+end function get_write_on_this_pe
 
 !< @brief Determine if an axis is already in the list of axis for a diag file
 !! @return .True. if the axis is already in the list of axis for a diag file
@@ -913,7 +929,7 @@ subroutine define_new_subaxis(this, var_axis_ids, x_y_axis_id, is_cube_sphere, d
     call define_new_subaxis_latlon(diag_axis, x_y_axis_id, naxis, this%get_file_sub_region(), is_cube_sphere, &
       write_on_this_pe)
     call this%update_write_on_this_pe(write_on_this_pe)
-    if (.not. write_on_this_pe) return
+    if (.not. this%get_write_on_this_pe()) return
     call this%add_new_axis(naxis)
     call this%add_new_axis(naxis-1)
     do j = 1, size(var_axis_ids)
@@ -927,7 +943,7 @@ subroutine define_new_subaxis(this, var_axis_ids, x_y_axis_id, is_cube_sphere, d
         call define_new_subaxis_index(parent_axis, this%get_file_sub_region(), diag_axis, naxis, i, &
           write_on_this_pe)
         call this%update_write_on_this_pe(write_on_this_pe)
-        if (.not. write_on_this_pe) return
+        if (.not. this%get_write_on_this_pe()) return
         call this%add_new_axis(naxis)
         do j = 1, size(var_axis_ids)
           if (x_y_axis_id(i) .eq. var_axis_ids(j)) var_axis_ids(j) = naxis
