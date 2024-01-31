@@ -1091,6 +1091,7 @@ module fms_diag_axis_object_mod
     integer :: compute_idx_2(2, 2)    !< Starting and ending indices of the compute domain for the "x" and "y" direction
 
     write_on_this_pe = .false.
+    need_to_define_axis = .true.
     !< Get the rectangular coordinates of the subRegion
     !! If the subRegion is not rectangular, the points outside of the subRegion will be masked
     !! out later
@@ -1178,10 +1179,10 @@ module fms_diag_axis_object_mod
     !< If it made it to this point, the current PE is in the subRegion!
     write_on_this_pe = .true.
 
-    do i = 1, size(parent_axis_ids)
-      select type (parent_axis => diag_axis(parent_axis_ids(i))%axis)
+    do i = 1, size(axis_ids)
+      select type (parent_axis => diag_axis(axis_ids(i))%axis)
       type is (fmsDiagFullAxis_type)
-        call define_new_axis(diag_axis, parent_axis, naxis, parent_axis_ids(i), &
+        call define_new_axis(diag_axis, parent_axis, naxis, axis_ids(i), &
           starting_index(i), ending_index(i), compute_idx_2(i,:))
      end select
     enddo

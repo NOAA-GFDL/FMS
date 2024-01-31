@@ -765,6 +765,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   subregion_gridtype = this%get_file_sub_region_grid_type()
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+
   !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
   !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
   !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
@@ -778,6 +779,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   select type(this)
   type is (subRegionalFile_type)
+    if (.not. this%get_write_on_this_pe()) return
     subaxis_defined: if (this%is_subaxis_defined) then
       if (associated(this%domain)) then
         if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
