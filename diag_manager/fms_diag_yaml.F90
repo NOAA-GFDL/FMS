@@ -391,9 +391,9 @@ subroutine diag_yaml_object_init(diag_subset_output)
     if(.not. write_file) ignore(i) = .true.
 
     if (.not. ignore(i)) then
-        actual_num_files = actual_num_files + 1
         !< If ignoring the file, ignore the fields in that file too!
         total_nvars = total_nvars + get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+        if (total_nvars .ne. 0) actual_num_files = actual_num_files + 1
     endif
   enddo
 
