@@ -1403,13 +1403,13 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
 
+  associated_files = ""
+  need_associated_files = .false.
   do i = 1, size(diag_file%field_ids)
     if (.not. diag_file%field_registered(i)) cycle !TODO do something else here
     field_ptr => diag_field(diag_file%field_ids(i))
 
     cell_measures = ""
-    associated_files = ""
-    need_associated_files = .false.
     if (field_ptr%has_area()) then
       cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
 
@@ -1417,7 +1417,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
       !! which contains the file name of the file the area field is in. This is needed for PP/fregrid.
       if (.not. diag_field(field_ptr%get_area())%is_variable_in_file(diag_file%id)) then
         need_associated_files = .true.
-        associated_files = "area: "//diag_field(field_ptr%get_area())%get_field_file_name()//".nc"
+        call diag_field(field_ptr%get_area())%generate_associated_files_att(associated_files, diag_file%start_time)
       endif
     endif
 
@@ -1428,18 +1428,17 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
       !! which contains the file name of the file the volume field is in. This is needed for PP/fregrid.
       if (.not. diag_field(field_ptr%get_volume())%is_variable_in_file(diag_file%id)) then
         need_associated_files = .true.
-        associated_files = trim(associated_files)//&
-          " volume:"//diag_field(field_ptr%get_volume())%get_field_file_name()//".nc"
+        call diag_field(field_ptr%get_volume())%generate_associated_files_att(associated_files, diag_file%start_time)
       endif
     endif
 
     call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
       this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures)
-
-    if (need_associated_files) &
-      call register_global_attribute(fms2io_fileobj, "associated_files", trim(ADJUSTL(associated_files)), &
-        str_len=len_trim(ADJUSTL(associated_files)))
   enddo
+
+  if (need_associated_files) &
+    call register_global_attribute(fms2io_fileobj, "associated_files", trim(ADJUSTL(associated_files)), &
+      str_len=len_trim(ADJUSTL(associated_files)))
 
 end subroutine write_field_metadata
 
