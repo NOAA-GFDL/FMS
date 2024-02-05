@@ -1439,8 +1439,9 @@ end function fms_diag_compare_window
 subroutine update_current_model_time(this, time)
   class(fmsDiagObject_type), intent(inout) :: this !< Diag Object
   type(time_type),           intent(in)    :: time !< Current diag manager time
-
+#ifdef use_yaml
   if(time > this%current_model_time) this%current_model_time = time
+#endif
 end subroutine update_current_model_time
 
 end module fms_diag_object_mod
