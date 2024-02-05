@@ -779,12 +779,11 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   select type(this)
   type is (subRegionalFile_type)
+    if (associated(this%domain)) then
+      if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
+    endif
     if (.not. this%get_write_on_this_pe()) return
     subaxis_defined: if (this%is_subaxis_defined) then
-      if (associated(this%domain)) then
-        if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
-      endif
-
       do i = 1, size(var_axis_ids)
         select type (parent_axis => diag_axis(var_axis_ids(i))%axis)
         type is (fmsDiagFullAxis_type)
