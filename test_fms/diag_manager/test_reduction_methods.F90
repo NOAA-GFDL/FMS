@@ -288,6 +288,7 @@ program test_reduction_methods
       enddo
     end select
     call diag_send_complete(Time_step)
+    call diag_send_complete(Time_step)
   enddo
 
   call diag_manager_end(Time)
