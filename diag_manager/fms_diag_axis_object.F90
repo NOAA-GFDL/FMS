@@ -1051,7 +1051,6 @@ module fms_diag_axis_object_mod
     integer :: lat_indices(2), lon_indices(2)
 
 
-    write_on_this_pe = .false.
     do i = 1, size(axis_ids)
       select type (parent_axis => diag_axis(axis_ids(i))%axis)
       type is (fmsDiagFullAxis_type)
@@ -1121,7 +1120,6 @@ module fms_diag_axis_object_mod
       lat(2) = maxval(corners(:,2))
     end select
 
-    write_on_this_pe = .false.
     if_is_cube_sphere: if (is_cube_sphere) then
       !< Get the starting and ending indices of the subregion in the cubesphere relative to the global domain
       call get_local_indices_cubesphere(lat(1), lat(2), lon(1), lon(2),&
