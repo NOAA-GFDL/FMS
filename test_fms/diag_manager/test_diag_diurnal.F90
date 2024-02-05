@@ -49,7 +49,6 @@ program test_diag_diurnal
   integer                            :: jec, jed        !< Ending y compute, data domain index
   integer                            :: nhalox          !< Number of halos in x
   integer                            :: nhaloy          !< Number of halos in y
-  integer                            :: nhours          !< number of hours to send per time step
   real(kind=r8_kind), allocatable    :: cdata(:,:,:,:)  !< Data in the compute domain
   real(kind=r8_kind), allocatable    :: ddata(:,:,:,:)  !< Data in the data domain
   real(kind=r8_kind), allocatable    :: crmask(:,:,:,:) !< Mask in the compute domain
@@ -60,6 +59,7 @@ program test_diag_diurnal
   type(time_type)                    :: Time_step       !< Time of the simulation
   integer                            :: nmonths         !< number of months to run for (submits ntimes per month)
   integer                            :: ndays           !< number of days in the month
+  integer                            :: nhours          !< number of hours in a day - 1
   integer                            :: id_x            !< axis id for the x dimension
   integer                            :: id_y            !< axis id for the y dimension
   integer                            :: id_z            !< axis id for the z dimension
@@ -113,6 +113,7 @@ program test_diag_diurnal
   nhalox = 2
   nhaloy = 2
   nmonths = 3
+  nhours = 23 !< Number of hours in a day - 1
 
   !< Create a lat/lon domain
   call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='2D domain', xhalo=nhalox, yhalo=nhaloy)
@@ -185,12 +186,16 @@ program test_diag_diurnal
     'mullions', missing_value = missing_value)
 
   ! iterate through nmonths and each day, each hour
-  do m = 1, nmonths
+  do m = 1, nmonths + 1
     Time = set_date(2,m,1)
     ndays = days_in_month(Time)
-    print * , "days in month:", ndays
+    if (m .eq. nmonths + 1) then
+      ! This it so  that is can run till (2 4 1 0 0 0)
+      ndays = 1
+      nhours = 0
+    endif
     do d = 1, ndays
-      do h = 0, 23 ! hours
+      do h = 0, nhours ! hours
         Time = set_date(2,m,d,hour=h)
 
         call set_buffer(cdata, m, d, h)
