@@ -54,6 +54,7 @@ public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
 public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
+public :: MAX_SUBAXES
 !> @}
 
 integer, parameter :: basedate_size = 6
