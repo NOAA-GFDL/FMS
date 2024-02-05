@@ -1,0 +1,51 @@
+# to generate dockerfile from this:
+# 1. download/install spack and add to PATH
+# 2. cd into this directory (FMS/.github/container)
+# 3. `spack -e containerize`
+spack:
+  specs:
+    - gcc@13.2.0 
+    - mpich@4.1.2
+    - netcdf-c@4.9.2 ^hdf5@1.14.2
+    - netcdf-fortran@4.6.1
+    - libyaml@0.2.5
+  concretizer:
+    unify: true
+    reuse: true 
+  packages:
+    all:
+      compiler: [ gcc@13.2.0 ]
+  # template file for any extra steps
+  config:
+    template_dirs:
+      - ./
+  container:
+    format: docker
+    # base image
+    images:
+      os: "rockylinux:9"
+      spack: develop
+    # strip binaries for size
+    strip: true
+    template: Dockerfile.template
+    # packages we don't need to build from src
+    os_packages:
+      final:
+      - autoconf
+      - make
+      - automake
+      - m4
+      - libtool
+      - pkg-config
+      - zip
+      - diffutils
+      - git
+    # labels for final image
+    labels:
+      maintainer: "Ryan Mulhall <Ryan.Mulhall@noaa.gov>"
+      copyright: "2024 GFDL"
+      license: "LGPL v3+"
+      gov.noaa.gfdl.version: "1.0.0"
+      vendor: "Geophysical Fluid Dynamics Laboratory"
+      gov.noaa.gfdl.release-date: "2024-01-24" 
+

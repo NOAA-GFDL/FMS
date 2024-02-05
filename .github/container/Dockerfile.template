@@ -1,0 +1,10 @@
+{% extends "container/Dockerfile" %}
+{% block build_stage %}
+{{ super() }}
+{% endblock %}
+{% block final_stage %}
+{{ super() }}
+RUN ranlib -U /opt/software/linux-rocky9-skylake/gcc-*/gcc-*/lib/gcc/x86_64-pc-linux-gnu/*/libgcc.a
+ENV MPICH_FC=gfortran
+ENV MPICH_CC=gcc
+{% endblock %}
