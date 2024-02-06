@@ -81,6 +81,7 @@ RUN dnf update -y && dnf install -y epel-release && dnf update -y \
  && dnf install -y autoconf make automake m4 libtool pkg-config zip diffutils git libgomp \
  && rm -rf /var/cache/dnf && dnf clean all
 
+COPY ./fms_test_input /home/unit_tests_input
 RUN ranlib -U /opt/software/linux-rocky9-skylake/gcc-*/gcc-*/lib/gcc/x86_64-pc-linux-gnu/*/libgcc.a
 ENV MPICH_FC=gfortran
 ENV MPICH_CC=gcc
@@ -89,7 +90,7 @@ LABEL "copyright"="2024 GFDL"
 LABEL "license"="LGPL v3+"
 LABEL "gov.noaa.gfdl.version"="1.0.0"
 LABEL "vendor"="Geophysical Fluid Dynamics Laboratory"
-LABEL "gov.noaa.gfdl.release-date"="2024-01-24"
+LABEL "gov.noaa.gfdl.release-date"="2024-02-06"
 ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "/bin/bash" ]
 
