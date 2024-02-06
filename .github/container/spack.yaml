@@ -1,7 +1,26 @@
-# to generate dockerfile from this:
-# 1. download/install spack and add to PATH
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+# Generates the CI dockerfile via this spack config
+# To generate the image: 
+# 1. download spack and source a setup script from spack/share
 # 2. cd into this directory (FMS/.github/container)
-# 3. `spack -e containerize`
+# 3. `spack -e ./ containerize > DockerfileName`
 spack:
   specs:
     - gcc@13.2.0 
@@ -40,6 +59,7 @@ spack:
       - zip
       - diffutils
       - git
+      - libgomp
     # labels for final image
     labels:
       maintainer: "Ryan Mulhall <Ryan.Mulhall@noaa.gov>"

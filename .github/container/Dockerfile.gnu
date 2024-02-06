@@ -1,3 +1,21 @@
+#***********************************************************************
+#*                   GNU Lesser General Public License
+#*
+#* This file is part of the GFDL Flexible Modeling System (FMS).
+#*
+#* FMS is free software: you can redistribute it and/or modify it under
+#* the terms of the GNU Lesser General Public License as published by
+#* the Free Software Foundation, either version 3 of the License, or (at
+#* your option) any later version.
+#*
+#* FMS is distributed in the hope that it will be useful, but WITHOUT
+#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+#* for more details.
+#*
+#* You should have received a copy of the GNU Lesser General Public
+#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
 # Build stage with Spack pre-installed and ready to be used
 FROM spack/rockylinux9:latest as builder
 
@@ -60,7 +78,7 @@ RUN { \
 
 
 RUN dnf update -y && dnf install -y epel-release && dnf update -y \
- && dnf install -y autoconf make automake m4 libtool pkg-config zip diffutils git \
+ && dnf install -y autoconf make automake m4 libtool pkg-config zip diffutils git libgomp \
  && rm -rf /var/cache/dnf && dnf clean all
 
 RUN ranlib -U /opt/software/linux-rocky9-skylake/gcc-*/gcc-*/lib/gcc/x86_64-pc-linux-gnu/*/libgcc.a
