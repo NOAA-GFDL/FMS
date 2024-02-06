@@ -117,6 +117,7 @@ module fms_diag_axis_object_mod
                                                                 !! parent axis
     INTEGER                        , private  :: parent_axis_id !< Id of the parent_axis
     INTEGER                        , private  :: compute_idx(2) !< Starting and ending index of the compute domain
+    INTEGER,            allocatable, private  :: global_idx(:)  !< Starting and ending index of the global domain
     real(kind=r4_kind), allocatable, private  :: zbounds(:)     !< Bounds of the Z axis
     contains
       procedure :: fill_subaxis
@@ -318,8 +319,12 @@ module fms_diag_axis_object_mod
 
     integer :: type_of_domain !< The type of domain the current axis is in
     logical :: is_subaxis     !< .true. if the axis is a subaxis
+    logical :: needs_domain_decomposition !< .True. if the axis needs the domain decomposition attribute
+                                          !! (i.e for "X" and "Y" subaxis)
+    integer :: domain_decomposition(4) !< indices of the global (1:2) and compute (3:4) domain for a "X" and "Y" subaxis
 
     is_subaxis = .false.
+    needs_domain_decomposition = .false.
 
     select type(this)
     type is (fmsDiagFullAxis_type)
@@ -331,6 +336,12 @@ module fms_diag_axis_object_mod
       is_subaxis = .true.
       axis_name => this%subaxis_name
       axis_length = this%ending_index - this%starting_index + 1
+      if (allocated(this%global_idx)) then
+        needs_domain_decomposition = .true.
+        domain_decomposition(1:2) = this%global_idx
+        domain_decomposition(3) = this%starting_index
+        domain_decomposition(4) = this%ending_index
+      endif
       !< Get all the other information from the parent axis (i.e the cart_name, units, etc)
       if (present(parent_axis)) then
         select type(parent_axis)
@@ -352,6 +363,10 @@ module fms_diag_axis_object_mod
         !< Here the axis is not domain decomposed (i.e z_axis)
         call register_axis(fms2io_fileobj, axis_name, axis_length)
         call register_field(fms2io_fileobj, axis_name, diag_axis%type_of_data, (/axis_name/))
+        if (needs_domain_decomposition) then
+          call register_variable_attribute(fms2io_fileobj, axis_name, "domain_decomposition", &
+            domain_decomposition)
+        endif
       type is (FmsNetcdfDomainFile_t)
         select case (type_of_domain)
         case (NO_DOMAIN)
@@ -726,11 +741,11 @@ module fms_diag_axis_object_mod
     if (compute_idx(1)  >= subregion_start .and. compute_idx(2) >= subregion_end) then
       !< In this case all the point of the current PE are inside the range of the sub_axis
       starting_index = compute_idx(1)
-      ending_index   = compute_idx(2)
+      ending_index   = subregion_end
     else if (compute_idx(1)  >= subregion_start .and. compute_idx(2) <= subregion_end) then
       !< In this case all the points of the current PE are valid up to the end point
       starting_index = compute_idx(1)
-      ending_index   = subregion_end
+      ending_index   = compute_idx(2)
     else if (compute_idx(1)  <= subregion_start .and. compute_idx(2) <= subregion_end) then
       !< In this case all the points of the current PE are valid starting with t subregion_start
       starting_index = subregion_start
@@ -793,7 +808,7 @@ module fms_diag_axis_object_mod
   !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
   !> @brief Fills in the information needed to define a subaxis
   subroutine fill_subaxis(this, starting_index, ending_index, axis_id, parent_id, parent_axis_name, compute_idx, &
-                          zbounds)
+                          global_idx, zbounds)
     class(fmsDiagSubAxis_type)  , INTENT(INOUT) :: this             !< diag_sub_axis obj
     integer                     , intent(in)    :: starting_index   !< Starting index of the subRegion for the PE
     integer                     , intent(in)    :: ending_index     !< Ending index of the subRegion for the PE
@@ -801,6 +816,8 @@ module fms_diag_axis_object_mod
     integer                     , intent(in)    :: parent_id        !< The id of the parent axis the subaxis belongs to
     character(len=*)            , intent(in)    :: parent_axis_name !< Name of the parent_axis
     integer                     , intent(in)    :: compute_idx(2)   !< Starting and ending index of
+                                                                    !! the axis's compute domain
+    integer,            optional, intent(in)    :: global_idx(2)   !< Starting and ending index of
                                                                     !! the axis's compute domain
     real(kind=r4_kind), optional, intent(in)    :: zbounds(2)       !< Bounds of the z-axis
 
@@ -812,8 +829,15 @@ module fms_diag_axis_object_mod
     this%compute_idx = compute_idx
 
     if (present(zbounds)) then
+      ! This is needed to avoid duplicating z sub axis!
       allocate(this%zbounds(2))
       this%zbounds = zbounds
+    endif
+
+    if (present(global_idx)) then
+      ! This is needed for the "domain_decomposition" attribute which is needed for the combiner
+      allocate(this%global_idx(2))
+      this%global_idx = global_idx
     endif
   end subroutine fill_subaxis
 
@@ -1047,6 +1071,7 @@ module fms_diag_axis_object_mod
     logical,                                  intent(out)   :: write_on_this_pe !< .true. if the subregion
                                                                                 !! is on this PE
     integer :: compute_idx(2) !< Indices of the compute domain
+    integer :: global_idx(2)  !< Indices of the "global" domain
     integer :: starting_index !< starting index of the subregion
     integer :: ending_index   !< ending index of the subregion
 
@@ -1060,9 +1085,15 @@ module fms_diag_axis_object_mod
 
     if (.not. write_on_this_pe) return
 
+    select type(corners=> subRegion%corners(:,is_x_or_y))
+    type is (integer(kind=i4_kind))
+      global_idx(1) = minval(corners)
+      global_idx(2) = maxval(corners)
+    end select
+
     !< If it made it to this point, the current PE is in the subRegion!
     call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
-          starting_index, ending_index, compute_idx)
+          starting_index, ending_index, compute_idx, global_idx)
 
   end subroutine define_new_subaxis_index
 
@@ -1089,6 +1120,7 @@ module fms_diag_axis_object_mod
     integer :: parent_axis_ids(2)     !< The axis id of the parent axis for the "x" and "y" direction
     logical :: is_x_y_axis            !< .true. if the axis is x or y
     integer :: compute_idx_2(2, 2)    !< Starting and ending indices of the compute domain for the "x" and "y" direction
+    integer :: global_idx (2, 2)      !< Starting and ending indices of the global domain for the "x" and "y" direction
 
     write_on_this_pe = .false.
     need_to_define_axis = .true.
@@ -1125,11 +1157,13 @@ module fms_diag_axis_object_mod
               need_to_define_axis(1))
             parent_axis_ids(1) = axis_ids(i)
             compute_idx_2(1,:) = compute_idx
+            global_idx(1,:) = lon_indices
           else if (parent_axis%cart_name .eq. "Y") then
             call parent_axis%get_indices(compute_idx, lat_indices, starting_index(2), ending_index(2), &
               need_to_define_axis(2))
             parent_axis_ids(2) = axis_ids(i)
             compute_idx_2(2,:) = compute_idx
+            global_idx(2,:) = lat_indices
           endif
         end select select_axis_type
       enddo loop_over_axis_ids
@@ -1148,28 +1182,30 @@ module fms_diag_axis_object_mod
             select type(adata=>parent_axis%axis_data)
             type is (real(kind=r8_kind))
               lon_indices(1) = nearest_index(real(lon(1), kind=r8_kind), adata)
-              lon_indices(2) = nearest_index(real(lon(2), kind=r8_kind), adata) + 1
+              lon_indices(2) = nearest_index(real(lon(2), kind=r8_kind), adata)
             type is (real(kind=r4_kind))
               lon_indices(1) = nearest_index(real(lon(1), kind=r4_kind), adata)
-              lon_indices(2) = nearest_index(real(lon(2), kind=r4_kind), adata) + 1
+              lon_indices(2) = nearest_index(real(lon(2), kind=r4_kind), adata)
             end select
             call parent_axis%get_indices(compute_idx, lon_indices, starting_index(1), ending_index(1), &
               need_to_define_axis(1))
-              parent_axis_ids(1) = axis_ids(i)
-              compute_idx_2(1,:) = compute_idx
+            parent_axis_ids(1) = axis_ids(i)
+            compute_idx_2(1,:) = compute_idx
+            global_idx(1,:) = lon_indices
           else if (parent_axis%cart_name .eq. "Y") then
             select type(adata=>parent_axis%axis_data)
             type is (real(kind=r8_kind))
               lat_indices(1) = nearest_index(real(lat(1), kind=r8_kind), adata)
-              lat_indices(2) = nearest_index(real(lat(2), kind=r8_kind), adata) + 1
+              lat_indices(2) = nearest_index(real(lat(2), kind=r8_kind), adata)
             type is (real(kind=r4_kind))
               lat_indices(1) = nearest_index(real(lat(1), kind=r4_kind), adata)
-              lat_indices(2) = nearest_index(real(lat(2), kind=r4_kind), adata) + 1
+              lat_indices(2) = nearest_index(real(lat(2), kind=r4_kind), adata)
             end select
             call parent_axis%get_indices(compute_idx, lat_indices, starting_index(2), ending_index(2), &
               need_to_define_axis(2))
             parent_axis_ids(2) = axis_ids(i)
             compute_idx_2(2,:) = compute_idx
+            global_idx(2,:) = lat_indices
           endif
         end select
       enddo loop_over_axis_ids2
@@ -1186,7 +1222,7 @@ module fms_diag_axis_object_mod
       select type (parent_axis => diag_axis(parent_axis_ids(i))%axis)
       type is (fmsDiagFullAxis_type)
         call define_new_axis(diag_axis, parent_axis, naxis, parent_axis_ids(i), &
-          starting_index(i), ending_index(i), compute_idx_2(i,:))
+          starting_index(i), ending_index(i), compute_idx_2(i,:), global_idx(i,:))
      end select
     enddo
 
@@ -1194,7 +1230,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Creates a new subaxis and fills it will all the information it needs
   subroutine define_new_axis(diag_axis, parent_axis, naxis, parent_id, &
-                             starting_index, ending_index, compute_idx, new_axis_id, zbounds)
+                             starting_index, ending_index, compute_idx, global_idx, new_axis_id, zbounds)
 
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
     class(fmsDiagFullAxis_type),              intent(inout) :: parent_axis      !< The parent axis
@@ -1205,6 +1241,8 @@ module fms_diag_axis_object_mod
     integer,                                  intent(in)    :: ending_index     !< PE's Ending index
     integer,                                  intent(in)    :: compute_idx(2)   !< Starting and ending index of
                                                                                 !! the axis's compute domain
+    integer,                        optional, intent(in)    :: global_idx(2)    !< Starting and ending index of
+                                                                                !! the axis's global domain
     integer,                        optional, intent(out)   :: new_axis_id      !< Axis id of the axis this is creating
     real(kind=r4_kind),             optional, intent(in)    :: zbounds(2)       !< Bounds of the Z axis
 
@@ -1222,7 +1260,7 @@ module fms_diag_axis_object_mod
     select type (sub_axis => diag_axis(naxis)%axis)
     type is (fmsDiagSubAxis_type)
       call sub_axis%fill_subaxis(starting_index, ending_index, naxis, parent_id, &
-             parent_axis%axis_name, compute_idx, zbounds)
+             parent_axis%axis_name, compute_idx, global_idx=global_idx, zbounds=zbounds)
     end select
   end subroutine define_new_axis
 
@@ -1388,7 +1426,7 @@ module fms_diag_axis_object_mod
 
           call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
                         &subaxis_indices(1), subaxis_indices(2), (/lbound(zaxis_data,1), ubound(zaxis_data,1)/), &
-                        &subaxis_id, zbounds)
+                        &new_axis_id=subaxis_id, zbounds=zbounds)
           var_axis_ids(i) = subaxis_id
           return
         endif
