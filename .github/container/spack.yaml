@@ -16,21 +16,21 @@
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
-# Generates the CI dockerfile via this spack config
-# To generate the image: 
+# Generates the dockerfile for FMS CI testing via this spack config
+# To generate the Dockerfile:
 # 1. download spack and source a setup script from spack/share
 # 2. cd into this directory (FMS/.github/container)
 # 3. `spack -e ./ containerize > DockerfileName`
 spack:
   specs:
-    - gcc@13.2.0 
+    - gcc@13.2.0
     - mpich@4.1.2
     - netcdf-c@4.9.2 ^hdf5@1.14.2
     - netcdf-fortran@4.6.1
     - libyaml@0.2.5
   concretizer:
     unify: true
-    reuse: true 
+    reuse: true
   packages:
     all:
       compiler: [ gcc@13.2.0 ]
@@ -67,5 +67,5 @@ spack:
       license: "LGPL v3+"
       gov.noaa.gfdl.version: "1.0.0"
       vendor: "Geophysical Fluid Dynamics Laboratory"
-      gov.noaa.gfdl.release-date: "2024-01-24" 
+      gov.noaa.gfdl.release-date: "2024-02-06"
 
