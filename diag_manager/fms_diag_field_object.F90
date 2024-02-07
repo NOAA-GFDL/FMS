@@ -1774,9 +1774,9 @@ end function get_field_file_name
 
 !> @brief Generate the associated files attribute
 subroutine generate_associated_files_att(this, att, start_time)
-  class(fmsDiagField_type)        ,  intent(in)            :: this !< diag_field_object for the area/volume field
-  character(len=*),                  intent(inout)         :: att !< associated_files_att
-  type(time_type),                   intent(in)            :: start_time
+  class(fmsDiagField_type)        ,  intent(in)            :: this       !< diag_field_object for the area/volume field
+  character(len=*),                  intent(inout)         :: att        !< associated_files_att
+  type(time_type),                   intent(in)            :: start_time !< The start_time for the field's file
 
   character(len=:), allocatable :: field_name !< Name of the area/volume field
   character(len=MAX_STR_LEN) :: file_name !< Name of the file the area/volume field is in!
