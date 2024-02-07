@@ -1085,10 +1085,10 @@ module fms_diag_axis_object_mod
 
     if (.not. write_on_this_pe) return
 
-    select type(corners=> subRegion%corners(:,is_x_or_y))
+    select type(corners=> subRegion%corners)
     type is (integer(kind=i4_kind))
-      global_idx(1) = minval(corners)
-      global_idx(2) = maxval(corners)
+      global_idx(1) = minval(corners(:,is_x_or_y))
+      global_idx(2) = maxval(corners(:,is_x_or_y))
     end select
 
     !< If it made it to this point, the current PE is in the subRegion!
@@ -1435,12 +1435,12 @@ module fms_diag_axis_object_mod
 
   end subroutine
 
-  !> @brief Determine if the parent_axis is the parent of axis_id
-  !! @return .True. if the parent_axis is the parent of axis_id
+  !> @brief Determine if the diag_axis(parent_axis_id) is the parent of diag_axis(axis_id)
+  !! @return .True. if diag_axis(parent_axis_id) is the parent of diag_axis(axis_id)
   function is_parent_axis(axis_id, parent_axis_id, diag_axis) &
     result(rslt)
-    integer, intent(in) :: axis_id
-    integer, intent(in) :: parent_axis_id
+    integer, intent(in) :: axis_id        !< Axis id to check
+    integer, intent(in) :: parent_axis_id !< Axis id of the parent to check
     class(fmsDiagAxisContainer_type), target, intent(in) :: diag_axis(:)    !< Array of diag_axis objects
 
     logical :: rslt
