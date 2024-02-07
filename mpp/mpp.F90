@@ -196,7 +196,7 @@ private
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
+  public :: MPP_FILL_INT,MPP_FILL_DOUBLE,MPP_INFO_NULL
   public :: mpp_init_test_full_init, mpp_init_test_init_true_only, mpp_init_test_peset_allocated
   public :: mpp_init_test_clocks_init, mpp_init_test_datatype_list_init, mpp_init_test_logfile_init
   public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
@@ -1325,6 +1325,14 @@ private
   integer, parameter :: mpp_init_test_etc_unit = 6
   integer, parameter :: mpp_init_test_requests_allocated = 7
 
+!> MPP_INFO_NULL acts as an analagous mpp-macro for MPI_INFO_NULL to share with fms2_io NetCDF4
+!! mpi-io.  The default value for the no-mpi case comes from Intel MPI and MPICH.  OpenMPI sets
+!! a default value of '0'
+#if defined(use_libMPI)
+  integer, parameter ::  MPP_INFO_NULL = MPI_INFO_NULL
+#else
+  integer, parameter ::  MPP_INFO_NULL = 469762048
+#endif
 
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)
