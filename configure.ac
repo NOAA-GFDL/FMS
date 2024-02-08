@@ -269,7 +269,8 @@ AC_RUN_IFELSE([AC_LANG_PROGRAM([], [[
 ]])], [hdf5_fpe_bug=no], [hdf5_fpe_bug=yes])
 AC_MSG_RESULT([$hdf5_fpe_bug])
 if test $hdf5_fpe_bug = yes; then
-  AC_MSG_ERROR([The HDF5 version used to build netcdf is incompatible with the set flags. NetCDF must be built with a different HDF5 version to support floating point exception traps.])
+  AC_MSG_ERROR([The HDF5 version used to build netcdf is incompatible with the set FCFLAGS. dnl
+NetCDF must be built with a HDF5 version other than 1.14.3 to support floating point exception traps.])
 fi
 
 
