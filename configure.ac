@@ -211,21 +211,6 @@ if test $nc_has_nc4 = no; then
   AC_MSG_ERROR([NetCDF must be built with HDF5.])
 fi
 
-# Check if we get a floating point exception with netcdf
-# this will only get triggered if you already have a FPE trapping flag set
-AC_MSG_CHECKING([if HDF5 version causes floating point exceptions with set flags])
-AC_RUN_IFELSE([AC_LANG_PROGRAM([], [[
-#include <netcdf.h>
-int main(){
-  int i;
-  nc_open("test.nc", NC_WRITE, &i);
-  return 0;
-}]])], [hdf5_fpe_bug=no], [hdf5_fpe_bug=yes])
-AC_MSG_RESULT([$hdf5_fpe_bug])
-if test $hdf5_fpe_bug = yes; then
-  AC_MSG_ERROR([The HDF5 version used to build netcdf is incompatible with the set flags. NetCDF must be built with a different HDF5 version to support floating point exception traps.])
-fi
-
 # Check if ncdump is avaiable
 AC_CHECK_PROG([USE_NCDUMP],[ncdump], [yes], [no])
 if test $USE_NCDUMP = yes; then
@@ -273,6 +258,20 @@ AM_CONDITIONAL(COV, [test "$enable_code_coverage" = yes])
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
+
+# Check if we get a floating point exception with netcdf
+# this will only get triggered if you have FPE traps enabled via FCFLAGS
+AC_MSG_CHECKING([if HDF5 version causes floating point exceptions with set flags])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([], [[
+      use netcdf
+      integer i
+      i = nf90_open("test.nc", NC_WRITE, i)
+]])], [hdf5_fpe_bug=no], [hdf5_fpe_bug=yes])
+AC_MSG_RESULT([$hdf5_fpe_bug])
+if test $hdf5_fpe_bug = yes; then
+  AC_MSG_ERROR([The HDF5 version used to build netcdf is incompatible with the set flags. NetCDF must be built with a different HDF5 version to support floating point exception traps.])
+fi
+
 
 # Check if Fortran compiler has the Class, Character array assign bug
 GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
