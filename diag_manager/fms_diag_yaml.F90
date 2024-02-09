@@ -54,11 +54,14 @@ public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
 public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
+public :: MAX_SUBAXES
 !> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_FREQ = 12
+integer            :: MAX_SUBAXES = 0 !< Max number of subaxis, set in diag_yaml_object_init depending on
+                                      !! what is in the diag yaml
 
 
 !> @brief type to hold an array of sorted diag_fiels
@@ -391,9 +394,13 @@ subroutine diag_yaml_object_init(diag_subset_output)
     if(.not. write_file) ignore(i) = .true.
 
     if (.not. ignore(i)) then
-        actual_num_files = actual_num_files + 1
         !< If ignoring the file, ignore the fields in that file too!
         total_nvars = total_nvars + get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+        if (total_nvars .ne. 0) then
+          actual_num_files = actual_num_files + 1
+        else
+          ignore(i) = .true.
+        endif
     endif
   enddo
 
@@ -532,6 +539,7 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
   nsubregion = 0
   nsubregion = get_num_blocks(diag_yaml_id, "sub_region", parent_block_id=diag_file_id)
   if (nsubregion .eq. 1) then
+    MAX_SUBAXES = MAX_SUBAXES + 1
     call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=diag_file_id)
     call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", grid_type)
     call get_sub_region(diag_yaml_id, sub_region_id(1), yaml_fileobj%file_sub_region, grid_type, &
@@ -613,6 +621,7 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   !> Set the zbounds if they exist
   field%var_zbounds = DIAG_NULL
   call get_value_from_key(diag_file_id, var_id, "zbounds", field%var_zbounds, is_optional=.true.)
+  if (field%has_var_zbounds()) MAX_SUBAXES = MAX_SUBAXES + 1
 end subroutine
 
 !> @brief diag_manager wrapper to get_value_from_key to use for allocatable

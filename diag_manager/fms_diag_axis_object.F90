@@ -35,13 +35,13 @@ module fms_diag_axis_object_mod
   use platform_mod,    only:  r8_kind, r4_kind, i4_kind, i8_kind
   use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
                               direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes, &
-                              MAX_SUBAXES, DIAG_NULL, index_gridtype, latlon_gridtype, pack_size_str, &
+                              DIAG_NULL, index_gridtype, latlon_gridtype, pack_size_str, &
                               get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,&
                               get_base_second, is_x_axis, is_y_axis
   use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
-  use fms_diag_yaml_mod, only: subRegion_type, diag_yaml
+  use fms_diag_yaml_mod, only: subRegion_type, diag_yaml, MAX_SUBAXES
   use diag_grid_mod,       only:  get_local_indices_cubesphere => get_local_indexes
   use axis_utils2_mod,   only: nearest_index
   implicit none
@@ -153,7 +153,7 @@ module fms_diag_axis_object_mod
      CLASS(*),           ALLOCATABLE, private :: axis_data(:)    !< Data of the axis
      CHARACTER(len=:),   ALLOCATABLE, private :: type_of_data    !< The type of the axis_data ("float" or "double")
      !< TO DO this can be a dlinked to avoid having limits
-     integer                        , private :: subaxis(MAX_SUBAXES) !< Array of subaxis
+     integer,            ALLOCATABLE, private :: subaxis(:)      !< Array of subaxis
      integer                        , private :: nsubaxis        !< Number of subaxis
      class(diagDomain_t),ALLOCATABLE, private :: axis_domain     !< Domain
      INTEGER                        , private :: type_of_domain  !< The type of domain ("NO_DOMAIN", "TWO_D_DOMAIN",
@@ -279,6 +279,11 @@ module fms_diag_axis_object_mod
     if (present(req)) this%req = trim(req)
     this%set_name = ""
     if (present(set_name)) this%set_name = trim(set_name)
+
+    if (MAX_SUBAXES .gt. 0) then
+      allocate(this%subaxis(MAX_SUBAXES))
+      this%subaxis = diag_null
+    endif
 
     this%nsubaxis = 0
     this%num_attributes = 0

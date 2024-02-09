@@ -93,6 +93,7 @@ private
     procedure :: fms_diag_field_add_cell_measures
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
+    procedure :: update_current_model_time
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -604,6 +605,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   main_if: if (buffer_the_data) then
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
 !$omp critical
+
+    if (present(time)) call this%update_current_model_time(time)
+
     !< These set_* calls need to be done inside an omp_critical to avoid any race conditions
     !! and allocation issues
     if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
@@ -630,6 +634,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_diag_accept_data = .TRUE.
     return
   else
+    if (present(time)) call this%update_current_model_time(time)
+
     !< At this point if we are no longer in an openmp region or running with 1 thread
     !! so it is safe to have these set_* calls
     if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
@@ -685,9 +691,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   integer, dimension(:), allocatable :: file_ids !< Array of file IDs for a field
   logical, parameter :: DEBUG_SC = .false. !< turn on output for debugging
 
-  !< Update the current model time by adding the time_step
-  this%current_model_time = this%current_model_time + time_step
-
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !! In the future, this may be parallelized for offloading
   ! loop through each field
@@ -716,6 +719,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
         call mpp_error(FATAL, "diag_send_complete:: no input buffer allocated for field"//diag_field%get_longname())
       endif has_input_buff
     endif doing_math
+    call diag_field%set_math_needs_to_be_done(.False.)
     !> Clean up, clean up, everybody do your share
     if (allocated(file_ids)) deallocate(file_ids)
     if (associated(diag_field)) nullify(diag_field)
@@ -1430,4 +1434,14 @@ function fms_diag_compare_window(this, field, field_id, &
     "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end function fms_diag_compare_window
+
+!> @brief Update the current model time in the diag object
+subroutine update_current_model_time(this, time)
+  class(fmsDiagObject_type), intent(inout) :: this !< Diag Object
+  type(time_type),           intent(in)    :: time !< Current diag manager time
+#ifdef use_yaml
+  if(time > this%current_model_time) this%current_model_time = time
+#endif
+end subroutine update_current_model_time
+
 end module fms_diag_object_mod
