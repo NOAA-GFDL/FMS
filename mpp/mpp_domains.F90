@@ -212,7 +212,6 @@ module mpp_domains_mod
   public :: mpp_deallocate_domainUG
   public :: mpp_get_io_domain_UG_layout
 !----------
-  public :: dump_domain_list
 
   integer, parameter :: NAME_LENGTH = 64
   integer, parameter :: MAXLIST = 100
