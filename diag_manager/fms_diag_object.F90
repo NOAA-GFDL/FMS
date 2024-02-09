@@ -62,7 +62,6 @@ private
                                                                        !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
-  !type(time_type)  :: global_model_time !< The model time for the whole object
   integer, private :: registered_variables !< Number of registered variables
   integer, private :: registered_axis !< Number of registered axis
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
