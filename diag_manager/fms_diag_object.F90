@@ -62,7 +62,7 @@ private
                                                                        !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
-  type(time_type)  :: current_model_time !< The current model time
+  type(time_type)  :: global_model_time !< The model time for the whole object
   integer, private :: registered_variables !< Number of registered variables
   integer, private :: registered_axis !< Number of registered axis
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
@@ -128,11 +128,11 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   CALL diag_yaml_object_init(diag_subset_output)
   this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
-  this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)
+  this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields, get_base_time())
   this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
-  this%current_model_time = get_base_time()
+  this%global_model_time= get_base_time()
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -208,6 +208,7 @@ integer function fms_register_diag_field_obj &
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
+ type(time_type) :: start_time !< model start time
 #endif
 #ifndef use_yaml
 fms_register_diag_field_obj = DIAG_FIELD_NOT_FOUND
@@ -268,7 +269,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
        fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
-     call fileptr%add_start_time(init_time, this%current_model_time)
+       ! update global and field-specific model times
+     start_time = this%global_model_time
+     call fileptr%add_start_time(init_time, start_time)
+     call fieldptr%set_current_model_time(start_time)
+     this%global_model_time = start_time
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(axes)) then !only axes present
@@ -287,7 +292,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
-     call fileptr%add_start_time(init_time, this%current_model_time)
+     ! update global and field-specific model times
+     start_time = this%global_model_time
+     call fileptr%add_start_time(init_time, start_time)
+     call fieldptr%set_current_model_time(start_time)
+     this%global_model_time = start_time
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   else !no axis or init time present
@@ -606,7 +615,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
 !$omp critical
 
-    if (present(time)) call this%update_current_model_time(time)
+    if (present(time)) then
+      call this%FMS_diag_fields(diag_field_id)%update_current_model_time(time)
+      call this%update_current_model_time(time)
+    endif
 
     !< These set_* calls need to be done inside an omp_critical to avoid any race conditions
     !! and allocation issues
@@ -634,7 +646,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_diag_accept_data = .TRUE.
     return
   else
-    if (present(time)) call this%update_current_model_time(time)
+    if (present(time)) then
+      call this%FMS_diag_fields(diag_field_id)%update_current_model_time(time)
+      call this%update_current_model_time(time)
+    endif
 
     !< At this point if we are no longer in an openmp region or running with 1 thread
     !! so it is safe to have these set_* calls
@@ -712,7 +727,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
         call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
         error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
-                              bounds, .False., Time=this%current_model_time)
+                              bounds, .False., Time=diag_field%get_current_model_time())
         if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
                                                        " -"//trim(error_string)))
       else
@@ -760,7 +775,8 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   force_write = .false.
   if (present (is_end_of_run)) force_write = .true.
 
-  model_time => this%current_model_time
+  ! TODO can we use the global time here? 
+  model_time => this%global_model_time
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
@@ -1440,7 +1456,7 @@ subroutine update_current_model_time(this, time)
   class(fmsDiagObject_type), intent(inout) :: this !< Diag Object
   type(time_type),           intent(in)    :: time !< Current diag manager time
 #ifdef use_yaml
-  if(time > this%current_model_time) this%current_model_time = time
+  if(time > this%global_model_time) this%global_model_time = time
 #endif
 end subroutine update_current_model_time
 

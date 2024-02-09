@@ -20,7 +20,7 @@ use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, ge
   & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
   & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type
-use time_manager_mod, ONLY: time_type, get_date
+use time_manager_mod, ONLY: time_type, get_date, OPERATOR(>)
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
                        register_variable_attribute
 use fms_diag_input_buffer_mod, only: fmsDiagInputBuffer_t
@@ -82,6 +82,7 @@ type fmsDiagField_type
                                                                            !! buffer_ids(:) is allocated.
      logical, allocatable                             :: mask(:,:,:,:)     !< Mask passed in send_data
      logical                                          :: halo_present = .false. !< set if any halos are used
+     type(time_type)                                  :: current_model_time
   contains
 !     procedure :: send_data => fms_send_data  !!TODO
 ! Get ID functions
@@ -176,6 +177,9 @@ type fmsDiagField_type
      procedure :: is_variable_in_file
      procedure :: get_field_file_name
      procedure :: generate_associated_files_att
+     procedure :: set_current_model_time
+     procedure :: get_current_model_time
+     procedure :: update_current_model_time
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -205,13 +209,15 @@ end subroutine fms_diag_field_object_end
 !> \Description Allocates the diad field object array.
 !! Sets the diag_id to the not registered value.
 !! Initializes the number of registered variables to be 0
-logical function fms_diag_fields_object_init(ob)
+logical function fms_diag_fields_object_init(ob, time)
   class (fmsDiagField_type), allocatable, intent(inout) :: ob(:) !< diag field object
+  type(time_type), intent(in) :: time !< a time type take from the base date to initialize each fields model time
   integer :: i !< For looping
   allocate(ob(get_num_unique_fields()))
   do i = 1,size(ob)
       ob(i)%diag_id = diag_not_registered !null_ob%diag_id
       ob(i)%registered = .false.
+      call ob(i)%set_current_model_time(time)
   enddo
   module_is_initialized = .true.
   fms_diag_fields_object_init = .true.
@@ -1799,6 +1805,30 @@ subroutine generate_associated_files_att(this, att, start_time)
 
   att = trim(att)//" "//trim(field_name)//": "//trim(file_name)//".nc"
 end subroutine generate_associated_files_att
+!> @brief Sets the given time as the current model time for a field 
+subroutine set_current_model_time(this, time)
+  class(fmsDiagField_type), intent(inout) :: this    !< Field object to query
+  type(time_type), intent(in) :: time !< a time type to represent the current model time
+
+  this%current_model_time = time 
+end subroutine set_current_model_time
+
+!> @brief Gets the current set time for a given field
+!! @return current model time for that field 
+function get_current_model_time(this) &
+  result(res)
+  class(fmsDiagField_type), intent(in) :: this    !< Field object to query
+  type(time_type) :: res
+
+  res = this%current_model_time
+end function get_current_model_time
+
+!> @brief Update the current model time in the diag object
+subroutine update_current_model_time(this, time)
+  class(fmsDiagField_type), intent(inout) :: this !< Diag Object
+  type(time_type),           intent(in)    :: time !< Current diag manager time
+  if(time > this%current_model_time) this%current_model_time = time
+end subroutine update_current_model_time
 
 #endif
 end module fms_diag_field_object_mod
