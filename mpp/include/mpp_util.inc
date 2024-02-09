@@ -428,15 +428,19 @@ end function rarray_to_char
   !!
   !! This call implies synchronization across the PEs in the current
   !! pelist, of which <TT>pelist</TT> is a subset.
-  subroutine mpp_declare_pelist( pelist, name )
+  subroutine mpp_declare_pelist( pelist, name, commID )
     integer,                    intent(in) :: pelist(:)
     character(len=*), intent(in), optional :: name
+    integer,         intent(out), optional :: commID
     integer :: i
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
     i = get_peset(pelist)
     write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
     if( PRESENT(name) )peset(i)%name = name
+#ifdef use_libMPI
+    if( PRESENT(commID) )commID = peset(i)%id
+#endif
     return
   end subroutine mpp_declare_pelist
 
