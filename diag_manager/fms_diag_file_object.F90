@@ -34,7 +34,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
-                         middle_time, begin_time, end_time, MAX_STR_LEN
+                         middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -42,8 +42,9 @@ use fms_diag_time_utils_mod, only: diag_time_inc, get_time_string, get_date_dif
 use fms_diag_yaml_mod, only: diag_yaml, diagYamlObject_type, diagYamlFiles_type, subRegion_type, diagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
                                     fmsDiagAxisContainer_type, DIAGDOMAIN2D_T, DIAGDOMAINUG_T, &
-                                    fmsDiagFullAxis_type, define_subaxis, define_diurnal_axis, &
-                                    fmsDiagDiurnalAxis_type, create_new_z_subaxis
+                                    fmsDiagFullAxis_type, define_diurnal_axis, &
+                                    fmsDiagDiurnalAxis_type, create_new_z_subaxis, is_parent_axis, &
+                                    define_new_subaxis_latlon, define_new_subaxis_index, fmsDiagSubAxis_type
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
@@ -107,6 +108,11 @@ type :: fmsDiagFile_type
   procedure, public :: set_domain_from_axis
   procedure, public :: set_file_domain
   procedure, public :: add_axes
+  procedure, public :: add_new_axis
+  procedure, public :: update_write_on_this_pe
+  procedure, public :: get_write_on_this_pe
+  procedure, public :: does_axis_exist
+  procedure, public :: define_new_subaxis
   procedure, public :: add_start_time
   procedure, public :: set_file_time_ops
   procedure, public :: has_field_ids
@@ -122,6 +128,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_timeunit
  procedure, public :: get_file_unlimdim
  procedure, public :: get_file_sub_region
+ procedure, public :: get_file_sub_region_grid_type
  procedure, public :: get_file_new_file_freq
  procedure, public :: get_filename_time
  procedure, public :: get_file_new_file_freq_units
@@ -205,7 +212,7 @@ logical function fms_diag_files_object_init (files_array)
          type is (subRegionalFile_type)
            allocate(obj%sub_axis_ids(max_axes))
            obj%sub_axis_ids = diag_null
-           obj%write_on_this_pe = .false.
+           obj%write_on_this_pe = .true.
            obj%is_subaxis_defined = .false.
            obj%number_of_axis = 0
        end select
@@ -508,6 +515,19 @@ function get_file_sub_region (obj) result(res)
   res = obj%diag_yaml_file%get_file_sub_region()
 end function get_file_sub_region
 
+!< @brief Query for the subregion grid type (latlon or index)
+!! @return subregion grid type
+function get_file_sub_region_grid_type(this) &
+  result(res)
+  class(fmsDiagFile_type), intent(in) :: this !< Diag file object
+  integer :: res
+
+  type(subRegion_type) :: subregion !< Subregion type
+
+  subregion = this%diag_yaml_file%get_file_sub_region()
+  res = subregion%grid_type
+end function get_file_sub_region_grid_type
+
 !> \brief Returns a copy of file_new_file_freq from the yaml object
 !! \return Copy of file_new_file_freq
 pure function get_file_new_file_freq (this) result(res)
@@ -735,10 +755,17 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   logical              :: is_cube_sphere   !< Flag indicating if the file's domain is a cubesphere
   logical              :: axis_found       !< Flag indicating that the axis was already to the file obj
   integer, allocatable :: var_axis_ids(:)  !< Array of the variable's axis ids
+  integer              :: x_y_axis_id(2)   !< Ids of the x and y axis
+  integer              :: x_or_y           !< integer indicating if the axis is x or y
+  logical              :: is_x_or_y        !< flag indicating if the axis is x or y
+  integer              :: subregion_gridtype !< The type of the subregion (latlon or index)
+  logical              :: write_on_this_pe !< Flag indicating if the current pe is in the subregion
 
   is_cube_sphere = .false.
+  subregion_gridtype = this%get_file_sub_region_grid_type()
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
+
   !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
   !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
   !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
@@ -752,50 +779,180 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   select type(this)
   type is (subRegionalFile_type)
-    if (.not. this%is_subaxis_defined) then
-      if (associated(this%domain)) then
-        if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
-      endif
-
-      call define_subaxis(diag_axis, var_axis_ids, naxis, this%get_file_sub_region(), &
-        is_cube_sphere, this%write_on_this_pe)
-      this%is_subaxis_defined = .true.
-
-      !> add the axis to the list of axis in the file
-      if (this%write_on_this_pe) then
-        do i = 1, size(var_axis_ids)
-          this%number_of_axis = this%number_of_axis + 1 !< This is the current number of axis in the file
-          this%axis_ids(this%number_of_axis) = diag_axis(var_axis_ids(i))%axis%get_subaxes_id()
-
-          !< Change the variable axis ids to the subaxis that was just created
-          var_axis_ids(i) = this%axis_ids(this%number_of_axis)
-        enddo
-      else
-        this%axis_ids = diag_null
-      endif
+    if (associated(this%domain)) then
+      if (this%domain%get_ntiles() .eq. 6) is_cube_sphere = .true.
     endif
-  type is (fmsDiagFile_type)
-    do i = 1, size(var_axis_ids)
-      axis_found = .false.
-      do j = 1, this%number_of_axis
-        !> Check if the axis already exists, move on
-        if (var_axis_ids(i) .eq. this%axis_ids(j)) then
-          axis_found = .true.
-          cycle
-        endif
+    if (.not. this%get_write_on_this_pe()) return
+    subaxis_defined: if (this%is_subaxis_defined) then
+      do i = 1, size(var_axis_ids)
+        select type (parent_axis => diag_axis(var_axis_ids(i))%axis)
+        type is (fmsDiagFullAxis_type)
+          axis_found = .false.
+          is_x_or_y = parent_axis%is_x_or_y_axis()
+          do j = 1, this%number_of_axis
+            if (is_x_or_y) then
+              if(is_parent_axis(this%axis_ids(j), var_axis_ids(i), diag_axis)) then
+                axis_found = .true.
+                var_axis_ids(i) = this%axis_ids(j) !Set the var_axis_id to the sub axis_id
+                cycle
+              endif
+            elseif (var_axis_ids(i) .eq. this%axis_ids(j)) then
+              axis_found = .true.
+            endif
+          enddo
+
+          if (.not. axis_found) then
+            if (is_x_or_y) then
+              if (subregion_gridtype .eq. latlon_gridtype .and. is_cube_sphere) &
+                call mpp_error(FATAL, "If using the cube sphere and defining the subregion with latlon "//&
+                "the variable need to have the same x and y axis. Please check the variables in the file "//&
+                trim(this%get_file_fname())//" or use indices to define the subregion.")
+
+              select case (subregion_gridtype)
+              case (index_gridtype)
+                call define_new_subaxis_index(parent_axis, this%get_file_sub_region(), diag_axis, naxis, &
+                  i, write_on_this_pe)
+              case (latlon_gridtype)
+                call define_new_subaxis_latlon(diag_axis, var_axis_ids(i:i), naxis, this%get_file_sub_region(), &
+                  .false., write_on_this_pe)
+              end select
+              call this%update_write_on_this_pe(write_on_this_pe)
+              if (.not. this%get_write_on_this_pe()) cycle
+              call this%add_new_axis(naxis)
+              var_axis_ids(i) = naxis
+            else
+              call this%add_new_axis(var_axis_ids(i))
+            endif
+          endif
+        type is (fmsDiagSubAxis_type)
+          axis_found = this%does_axis_exist(var_axis_ids(i))
+          if (.not. axis_found) call this%add_new_axis(var_axis_ids(i))
+        end select
+      enddo
+    else
+      x_y_axis_id = diag_null
+      do i = 1, size(var_axis_ids)
+        select type (parent_axis => diag_axis(var_axis_ids(i))%axis)
+        type is (fmsDiagFullAxis_type)
+          if (.not. parent_axis%is_x_or_y_axis(x_or_y)) then
+            axis_found = this%does_axis_exist(var_axis_ids(i))
+            if (.not. axis_found) call this%add_new_axis(var_axis_ids(i))
+          else
+            x_y_axis_id(x_or_y) = var_axis_ids(i)
+          endif
+        type is (fmsDiagSubAxis_type)
+          axis_found = this%does_axis_exist(var_axis_ids(i))
+          if (.not. axis_found) call this%add_new_axis(var_axis_ids(i))
+        end select
       enddo
 
-      if (.not. axis_found) then
-        !> If the axis does not exist add it to the list
-        this%number_of_axis = this%number_of_axis + 1
-        this%axis_ids(this%number_of_axis) = var_axis_ids(i)
-      endif
+      call this%define_new_subaxis(var_axis_ids, x_y_axis_id, is_cube_sphere, diag_axis, naxis)
+      this%is_subaxis_defined = .true.
+    endif subaxis_defined
+  type is (fmsDiagFile_type)
+    do i = 1, size(var_axis_ids)
+      axis_found = this%does_axis_exist(var_axis_ids(i))
+      if (.not. axis_found) call this%add_new_axis(var_axis_ids(i))
     enddo
   end select
-
   !> Add the axis to the buffer object
   call output_buffers(buffer_id)%add_axis_ids(var_axis_ids)
 end subroutine add_axes
+
+!> @brief Adds a new axis the list of axis in the diag file object
+subroutine add_new_axis(this, var_axis_id)
+  class(fmsDiagFile_type),                 intent(inout) :: this        !< The file object
+  integer,                                 intent(in)    :: var_axis_id !< Axis id of the variable
+
+  this%number_of_axis = this%number_of_axis + 1
+  this%axis_ids(this%number_of_axis) = var_axis_id
+end subroutine add_new_axis
+
+!> @brief This updates write on this pe
+subroutine update_write_on_this_pe(this, write_on_this_pe)
+  class(fmsDiagFile_type),                 intent(inout) :: this             !< The file object
+  logical,                                 intent(in)    :: write_on_this_pe !< .True. if the current PE is in
+                                                                             !! subregion
+
+  select type (this)
+  type is (subRegionalFile_type)
+    if (this%write_on_this_pe) this%write_on_this_pe = write_on_this_pe
+  end select
+end subroutine update_write_on_this_pe
+
+!> @brief Query for the write_on_this_pe member of the diag file object
+!! @return the write_on_this_pe member of the diag file object
+function get_write_on_this_pe(this) &
+  result(rslt)
+  class(fmsDiagFile_type),                 intent(inout) :: this             !< The file object
+  logical :: rslt
+  rslt = .true.
+  select type (this)
+  type is (subRegionalFile_type)
+    rslt= this%write_on_this_pe
+  end select
+end function get_write_on_this_pe
+
+!< @brief Determine if an axis is already in the list of axis for a diag file
+!! @return .True. if the axis is already in the list of axis for a diag file
+function does_axis_exist(this, var_axis_id) &
+  result(rslt)
+  class(fmsDiagFile_type), intent(inout) :: this         !< The file object
+  integer,                 intent(in)    :: var_axis_id  !< Variable axis id to check
+
+  logical :: rslt
+  integer :: j !< For do loops
+
+  rslt = .false.
+  do j = 1, this%number_of_axis
+    !> Check if the axis already exists, move on
+    if (var_axis_id .eq. this%axis_ids(j)) then
+      rslt = .true.
+      return
+    endif
+  enddo
+end function
+
+!> @brief Define a new sub axis
+subroutine define_new_subaxis(this, var_axis_ids, x_y_axis_id, is_cube_sphere, diag_axis, naxis)
+  class(fmsDiagFile_type),                 intent(inout) :: this              !< The file object
+  integer,                                 INTENT(inout) :: var_axis_ids(:)   !< Original variable axis ids
+  integer,                                 INTENT(in)    :: x_y_axis_id(:)    !< The ids of the x and y axis
+  logical,                                 intent(in)    :: is_cube_sphere    !< .True. if the axis is in the cubesphere
+  integer,                                 intent(inout) :: naxis             !< Number of axis current registered
+  class(fmsDiagAxisContainer_type),        intent(inout) :: diag_axis(:)      !< Diag_axis object
+
+  logical :: write_on_this_pe !< .True. if the current PE is in the subregion
+  integer :: i, j             !< For do loop
+
+  select case (this%get_file_sub_region_grid_type())
+  case(latlon_gridtype)
+    call define_new_subaxis_latlon(diag_axis, x_y_axis_id, naxis, this%get_file_sub_region(), is_cube_sphere, &
+      write_on_this_pe)
+    call this%update_write_on_this_pe(write_on_this_pe)
+    if (.not. this%get_write_on_this_pe()) return
+    call this%add_new_axis(naxis)
+    call this%add_new_axis(naxis-1)
+    do j = 1, size(var_axis_ids)
+      if (x_y_axis_id(1) .eq. var_axis_ids(j)) var_axis_ids(j) = naxis - 1
+      if (x_y_axis_id(2) .eq. var_axis_ids(j)) var_axis_ids(j) = naxis
+    enddo
+  case (index_gridtype)
+    do i = 1, size(x_y_axis_id)
+      select type (parent_axis => diag_axis(x_y_axis_id(i))%axis)
+      type is (fmsDiagFullAxis_type)
+        call define_new_subaxis_index(parent_axis, this%get_file_sub_region(), diag_axis, naxis, i, &
+          write_on_this_pe)
+        call this%update_write_on_this_pe(write_on_this_pe)
+        if (.not. this%get_write_on_this_pe()) return
+        call this%add_new_axis(naxis)
+        do j = 1, size(var_axis_ids)
+          if (x_y_axis_id(i) .eq. var_axis_ids(j)) var_axis_ids(j) = naxis
+        enddo
+      end select
+    enddo
+  end select
+end subroutine define_new_subaxis
 
 !> @brief adds the start time to the fileobj
 !! @note This should be called from the register field calls. It can be called multiple times (one for each variable)

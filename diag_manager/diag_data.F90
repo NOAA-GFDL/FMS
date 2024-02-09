@@ -127,6 +127,8 @@ use platform_mod
   INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds
   INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds
   INTEGER, PARAMETER :: MAX_STR_LEN = 255 !< Max length for a string
+  INTEGER, PARAMETER :: is_x_axis = 1 !< integer indicating that it is a x axis
+  INTEGER, PARAMETER :: is_y_axis = 2 !< integer indicating that it is a y axis
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
