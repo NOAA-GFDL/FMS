@@ -798,16 +798,9 @@ subroutine register_unlimited_compressed_axis(fileobj, dimension_name, dimension
   !Gather all local dimension lengths on the I/O root pe.
   allocate(npes_start(size(fileobj%pelist)))
   allocate(npes_count(size(fileobj%pelist)))
-  do i = 1, size(fileobj%pelist)
-    if (fileobj%pelist(i) .eq. mpp_pe()) then
-      npes_count(i) = dimension_length
-    else
-      call mpp_recv(npes_count(i), fileobj%pelist(i), block=.false.)
-      call mpp_send(dimension_length, fileobj%pelist(i))
-    endif
-  enddo
-  call mpp_sync_self(check=event_recv)
-  call mpp_sync_self(check=event_send)
+
+  call mpp_gather((/dimension_length/),npes_count,pelist=fileobj%pelist)
+
   npes_start(1) = 1
   do i = 1, size(fileobj%pelist)-1
      npes_start(i+1) = npes_start(i) + npes_count(i)
