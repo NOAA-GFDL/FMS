@@ -8,7 +8,7 @@ module fms_diag_field_object_mod
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
 #ifdef use_yaml
-use diag_data_mod,  only: diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
+use diag_data_mod,  only: prepend_date, diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
@@ -20,7 +20,7 @@ use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, ge
   & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
   & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type
-use time_manager_mod, ONLY: time_type
+use time_manager_mod, ONLY: time_type, get_date
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
                        register_variable_attribute
 use fms_diag_input_buffer_mod, only: fmsDiagInputBuffer_t
@@ -175,6 +175,7 @@ type fmsDiagField_type
      procedure :: has_mask_allocated
      procedure :: is_variable_in_file
      procedure :: get_field_file_name
+     procedure :: generate_associated_files_att
 end type fmsDiagField_type
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! variables !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 type(fmsDiagField_type) :: null_ob
@@ -1770,6 +1771,34 @@ function get_field_file_name(this) &
 
   res = this%diag_field(1)%get_var_fname()
 end function get_field_file_name
+
+!> @brief Generate the associated files attribute
+subroutine generate_associated_files_att(this, att, start_time)
+  class(fmsDiagField_type)        ,  intent(in)            :: this       !< diag_field_object for the area/volume field
+  character(len=*),                  intent(inout)         :: att        !< associated_files_att
+  type(time_type),                   intent(in)            :: start_time !< The start_time for the field's file
+
+  character(len=:), allocatable :: field_name !< Name of the area/volume field
+  character(len=MAX_STR_LEN) :: file_name !< Name of the file the area/volume field is in!
+  character(len=128) :: start_date !< Start date to append to the begining of the filename
+
+  integer :: year, month, day, hour, minute, second
+  field_name = this%get_varname(to_write = .true.)
+
+  ! Check if the field is already in the associated files attribute (i.e the area can be associated with multiple
+  ! fields in the file, but it only needs to be added once)
+  if (index(att, field_name) .ne. 0) return
+
+  file_name = this%get_field_file_name()
+
+  if (prepend_date) then
+    call get_date(start_time, year, month, day, hour, minute, second)
+    write (start_date, '(1I20.4, 2I2.2)') year, month, day
+    file_name = TRIM(adjustl(start_date))//'.'//TRIM(file_name)
+  endif
+
+  att = trim(att)//" "//trim(field_name)//": "//trim(file_name)//".nc"
+end subroutine generate_associated_files_att
 
 #endif
 end module fms_diag_field_object_mod
