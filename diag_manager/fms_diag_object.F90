@@ -92,7 +92,6 @@ private
     procedure :: fms_diag_field_add_cell_measures
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
-    !procedure :: update_current_model_time
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -131,7 +130,6 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
-  !this%global_model_time= get_base_time()
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -268,7 +266,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
        fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
-       ! update global and field-specific model times
+     ! update field-specific model times
      start_time = get_base_time()
      call fileptr%add_start_time(init_time, start_time)
      call fieldptr%set_current_model_time(start_time)
@@ -290,7 +288,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
-     ! update global and field-specific model times
+     ! update field-specific model times
      start_time = get_base_time()
      call fileptr%add_start_time(init_time, start_time)
      call fieldptr%set_current_model_time(start_time)
