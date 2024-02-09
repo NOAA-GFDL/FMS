@@ -1053,9 +1053,8 @@ end select
 end function is_file_static
 
 !< @brief Opens the diag_file if it is time to do so
-subroutine open_diag_file(this, time_step, file_is_opened)
+subroutine open_diag_file(this, file_is_opened)
   class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
-  TYPE(time_type),                  intent(in)            :: time_step       !< Current model step time
   logical,                          intent(out)           :: file_is_opened  !< .true. if the file was opened in this
                                                                              !! time
 
