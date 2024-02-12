@@ -27,9 +27,9 @@ module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
 use iso_c_binding
-use time_manager_mod, only: time_type, operator(==), get_ticks_per_second, get_time, operator(>)
+use time_manager_mod, only: time_type, operator(==), operator(>=), get_ticks_per_second, get_time, operator(>), date_to_string
 use constants_mod, only: SECONDS_PER_DAY
-use mpp_mod, only: mpp_error, FATAL, NOTE
+use mpp_mod, only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
                          time_min, time_max
 use fms2_io_mod, only: FmsNetcdfFile_t, write_data, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
@@ -61,6 +61,7 @@ type :: fmsDiagOutputBuffer_type
                                               !! time and sample size if using a diurnal reduction
   logical               :: send_data_called   !< .True. if send_data has been called
   type(time_type)       :: time               !< The last time the data was received
+  type(time_type)       :: next_output        !< The next time to output the data
 
   contains
   procedure :: add_axis_ids
@@ -70,8 +71,10 @@ type :: fmsDiagOutputBuffer_type
   procedure :: set_yaml_id
   procedure :: get_yaml_id
   procedure :: init_buffer_time
+  procedure :: set_next_output
   procedure :: update_buffer_time
   procedure :: is_there_data_to_write
+  procedure :: is_time_to_finish_reduction
   procedure :: set_send_data_called
   procedure :: is_done_with_math
   procedure :: set_done_with_math
@@ -346,6 +349,14 @@ subroutine init_buffer_time(this, time)
     this%time = get_base_time()
   endif
 end subroutine init_buffer_time
+
+!> @brief Sets the next output
+subroutine set_next_output(this, time)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  type(time_type),                 intent(in)    :: time        !< time to add to the buffer
+
+  this%next_output = time
+end subroutine set_next_output
 
 !> @brief Update the buffer time if it is a new time
 !! @return .true. if the buffer was updated
@@ -805,6 +816,18 @@ function is_there_data_to_write(this) &
 
   res = this%send_data_called
 end function
+
+!> @brief Determine if it is time to finish the reduction method
+!! @return .true. if it is time to finish the reduction method
+function is_time_to_finish_reduction(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+
+  logical :: res
+
+  res = .false.
+  if (this%time >= this%next_output) res = .true.
+end function is_time_to_finish_reduction
 
 !> @brief Sets send_data_called to .true.
 subroutine set_send_data_called(this)
