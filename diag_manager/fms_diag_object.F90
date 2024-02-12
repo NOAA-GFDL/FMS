@@ -153,7 +153,7 @@ subroutine fms_diag_object_end (this, time)
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-  call this%fms_diag_do_io(is_end_of_run=.true.)
+  call this%fms_diag_do_io(end_time=time)
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_output_buffers)
     call this%FMS_diag_output_buffers(i)%flush_buffer()
@@ -736,10 +736,9 @@ end subroutine fms_diag_send_complete
 !! variable metadata and data when necessary.
 !! TODO: passing in the saved mask from the field obj to diag_reduction_done_wrapper
 !! for performance
-subroutine fms_diag_do_io(this, is_end_of_run)
+subroutine fms_diag_do_io(this, end_time)
   class(fmsDiagObject_type), target, intent(inout)  :: this          !< The diag object
-  logical,                 optional, intent(in)     :: is_end_of_run !< If .true. this is the end of the run,
-                                                                     !! so force write
+  type(time_type), optional, target, intent(in)     :: end_time      !< the model end_time
 #ifdef use_yaml
   integer :: i !< For do loops
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience)
@@ -760,9 +759,12 @@ subroutine fms_diag_do_io(this, is_end_of_run)
   character(len=128) :: error_string !< outputted error string from reducti
 
   force_write = .false.
-  if (present (is_end_of_run)) force_write = .true.
-
-  model_time => this%current_model_time
+  if (present (end_time)) then
+    force_write = .true.
+    model_time => end_time
+  else
+    model_time => this%current_model_time
+  endif
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)

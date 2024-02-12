@@ -27,7 +27,7 @@ module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
 use iso_c_binding
-use time_manager_mod, only: time_type, operator(==), operator(>=), get_ticks_per_second, get_time, operator(>), date_to_string
+use time_manager_mod, only: time_type, operator(==), operator(>=), get_ticks_per_second, get_time, operator(>)
 use constants_mod, only: SECONDS_PER_DAY
 use mpp_mod, only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe
 use diag_data_mod, only: DIAG_NULL, DIAG_NOT_REGISTERED, i4, i8, r4, r8, get_base_time, MIN_VALUE, MAX_VALUE, EMPTY, &
