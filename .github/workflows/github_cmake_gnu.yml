@@ -16,7 +16,7 @@ jobs:
         libyaml-flag: [ "", -DWITH_YAML=on ]
         io-flag: [ "", -DUSE_DEPRECATED_IO=on ]
     container:
-      image: noaagfdl/hpc-me.ubuntu-minimal:cmake
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
         CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
     steps:
