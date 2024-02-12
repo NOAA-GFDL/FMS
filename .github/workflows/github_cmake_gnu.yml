@@ -16,13 +16,27 @@ jobs:
         libyaml-flag: [ "", -DWITH_YAML=on ]
         io-flag: [ "", -DUSE_DEPRECATED_IO=on ]
     container:
-      image: noaagfdl/hpc-me.ubuntu-minimal:cmake
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:12.3.0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
       env:
         CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     - name: Generate makefiles with CMake
-      run: cmake $CMAKE_FLAGS .
+      run: cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view
     - name: Build the library
       run: make
+    - name: Link with basic executable
+      run: |
+        echo "program test" > test.F90
+        echo "    use fms_mod" >> test.F90
+        echo "    call fms_init" >> test.F90
+        echo "    call fms_end" >> test.F90
+        echo "end program" >> test.F90
+        mpifort -L/opt/view/lib -fopenmp `nf-config --flibs` -Iinclude_r4 -Iinclude_r8 test.F90 libfms_r4.a libfms_r8.a -o test.x
+        touch input.nml
+    - name: Run executable
+      run: ./test.x
