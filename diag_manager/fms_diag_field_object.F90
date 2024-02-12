@@ -1805,16 +1805,16 @@ subroutine generate_associated_files_att(this, att, start_time)
 
   att = trim(att)//" "//trim(field_name)//": "//trim(file_name)//".nc"
 end subroutine generate_associated_files_att
-!> @brief Sets the given time as the current model time for a field 
+!> @brief Sets the given time as the current model time for a field
 subroutine set_current_model_time(this, time)
   class(fmsDiagField_type), intent(inout) :: this    !< Field object to query
   type(time_type), intent(in) :: time !< a time type to represent the current model time
 
-  this%current_model_time = time 
+  this%current_model_time = time
 end subroutine set_current_model_time
 
 !> @brief Gets the current set time for a given field
-!! @return current model time for that field 
+!! @return current model time for that field
 function get_current_model_time(this) &
   result(res)
   class(fmsDiagField_type), intent(in) :: this    !< Field object to query
