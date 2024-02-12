@@ -795,7 +795,7 @@ subroutine fms_diag_do_io(this, end_time)
       ! Go away if there is no data to write
       if (.not. diag_buff%is_there_data_to_write()) cycle
 
-      if ( diag_buff%is_time_to_finish_reduction()) then
+      if ( diag_buff%is_time_to_finish_reduction(end_time)) then
         ! sets missing value
         mval = diag_field%find_missing_value(missing_val)
         ! time_average and greater values all involve averaging so need to be "finished" before written
@@ -824,10 +824,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%increase_unlim_dimension_level()
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
     else if (force_write) then
-      if (diag_file%get_unlim_dimension_level() .eq. 0) then
-        call diag_file%increase_unlim_dimension_level()
-        call diag_file%write_time_data()
-      endif
+      call diag_file%write_time_data()
       call diag_file%close_diag_file()
     endif
   enddo

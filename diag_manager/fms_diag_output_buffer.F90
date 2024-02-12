@@ -819,14 +819,19 @@ end function
 
 !> @brief Determine if it is time to finish the reduction method
 !! @return .true. if it is time to finish the reduction method
-function is_time_to_finish_reduction(this) &
+function is_time_to_finish_reduction(this, end_time) &
   result(res)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  type(time_type), optional,       intent(in)    :: end_time    !< The time at the end of the run
 
   logical :: res
 
   res = .false.
   if (this%time >= this%next_output) res = .true.
+
+  if (present(end_time)) then
+    if (end_time >= this%next_output) res = .true.
+  endif
 end function is_time_to_finish_reduction
 
 !> @brief Sets send_data_called to .true.
