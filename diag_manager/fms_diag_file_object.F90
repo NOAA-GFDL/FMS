@@ -184,6 +184,8 @@ type fmsDiagFileContainer_type
   procedure :: update_current_new_file_freq_index
   procedure :: increase_unlim_dimension_level
   procedure :: get_unlim_dimension_level
+  procedure :: get_next_output
+  procedure :: get_next_next_output
   procedure :: close_diag_file
 end type fmsDiagFileContainer_type
 
@@ -1293,13 +1295,11 @@ end subroutine write_time_metadata
 !> \brief Write out the field data to the file
 subroutine write_field_data(this, field_obj, buffer_obj)
   class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
-  type(fmsDiagField_type),                 intent(in),    target :: field_obj(:)   !< The field object to write from
-  type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj(:)  !< The buffer object with the data
+  type(fmsDiagField_type),                 intent(in),    target :: field_obj      !< The field object to write from
+  type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj     !< The buffer object with the data
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
-  integer                              :: i              !< For do loops
-  integer                              :: field_id       !< The id of the field writing the data from
   logical                              :: has_diurnal    !< indicates if theres a diurnal axis to adjust for
 
   diag_file => this%FMS_diag_file
@@ -1309,29 +1309,23 @@ subroutine write_field_data(this, field_obj, buffer_obj)
   if (diag_file%is_static) then
     !< Here the file is static so there is no need for the unlimited dimension
     !! as a variables are static
-    do i = 1, diag_file%number_of_buffers
-      call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
-    enddo
+    call buffer_obj%write_buffer(fms2io_fileobj)
   else
-    do i = 1, diag_file%number_of_buffers
-      field_id = buffer_obj(diag_file%buffer_ids(i))%get_field_id()
-      if (field_obj(field_id)%is_static()) then
-        !< If the variable is static, only write it the first time
+    if (field_obj%is_static()) then
+      !< If the variable is static, only write it the first time
+      if (diag_file%unlim_dimension_level .eq. 1) &
+      call buffer_obj%write_buffer(fms2io_fileobj)
+    else
+     has_diurnal = buffer_obj%get_diurnal_sample_size() .gt. 1
+      if (.not. buffer_obj%is_there_data_to_write()) then
+        ! Only print the error message once
         if (diag_file%unlim_dimension_level .eq. 1) &
-        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj)
-      else
-        has_diurnal = buffer_obj(diag_file%buffer_ids(i))%get_diurnal_sample_size() .gt. 1
-        if (.not. buffer_obj(diag_file%buffer_ids(i))%is_there_data_to_write()) then
-          ! Only print the error message once
-          if (diag_file%unlim_dimension_level .eq. 1) &
-            call mpp_error(NOTE, "Send data was never called. Writing fill values for variable "//&
-              field_obj(field_id)%get_varname()//" in mod "//field_obj(field_id)%get_modname())
-          cycle
-        endif
-        call buffer_obj(diag_file%buffer_ids(i))%write_buffer(fms2io_fileobj, &
-                        unlim_dim_level=diag_file%unlim_dimension_level, is_diurnal=has_diurnal)
+          call mpp_error(NOTE, "Send data was never called. Writing fill values for variable "//&
+            field_obj%get_varname()//" in mod "//field_obj%get_modname())
       endif
-    enddo
+      call buffer_obj%write_buffer(fms2io_fileobj, &
+                        unlim_dim_level=diag_file%unlim_dimension_level, is_diurnal=has_diurnal)
+    endif
   endif
 
 end subroutine write_field_data
@@ -1354,7 +1348,7 @@ logical function is_time_to_write(this, time_step)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
 
-  if (time_step >= this%FMS_diag_file%next_output) then
+  if (time_step > this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
     if (time_step > this%FMS_diag_file%next_next_output) &
@@ -1488,6 +1482,26 @@ result(res)
 
   res = this%FMS_diag_file%unlim_dimension_level
 end function
+
+!> \brief Get the next_output for the file object
+!! \return The next_output
+pure function get_next_output(this) &
+result(res)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  type(time_type) :: res
+
+  res = this%FMS_diag_file%next_output
+end function get_next_output
+
+!> \brief Get the next_output for the file object
+!! \return The next_output
+pure function get_next_next_output(this) &
+result(res)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  type(time_type) :: res
+
+  res = this%FMS_diag_file%next_next_output
+end function get_next_next_output
 
 !< @brief Writes the axis metadata for the file
 subroutine write_axis_metadata(this, diag_axis)
