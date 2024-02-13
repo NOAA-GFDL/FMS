@@ -78,7 +78,7 @@ RUN { \
 
 
 RUN dnf update -y && dnf install -y epel-release && dnf update -y \
- && dnf install -y autoconf make automake m4 libtool pkg-config zip diffutils git libgomp \
+ && dnf install -y autoconf make automake m4 libtool pkg-config zip diffutils git libgomp cmake \
  && rm -rf /var/cache/dnf && dnf clean all
 
 COPY ./fms_test_input /home/unit_tests_input

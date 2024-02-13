@@ -60,6 +60,7 @@ spack:
       - diffutils
       - git
       - libgomp
+      - cmake
     # labels for final image
     labels:
       maintainer: "Ryan Mulhall <Ryan.Mulhall@noaa.gov>"
