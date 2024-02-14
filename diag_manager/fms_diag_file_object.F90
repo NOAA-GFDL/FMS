@@ -1374,8 +1374,9 @@ logical function writing_on_this_pe(this)
 end function
 
 !> \brief Write out the time data to the file
-subroutine write_time_data(this)
+subroutine write_time_data(this, is_the_end)
   class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
+  logical, optional,                intent(in)           :: is_the_end !< True if it is the end of the run
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
@@ -1388,6 +1389,11 @@ subroutine write_time_data(this)
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
+
+  if (present(is_the_end)) then
+    ! If at the end of the run, do not do anything for the static files
+    if (is_the_end .and. diag_file%is_static) return
+  endif
 
   if (diag_file%time_ops) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2
