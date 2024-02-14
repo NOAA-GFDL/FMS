@@ -1260,8 +1260,8 @@ module fms_diag_axis_object_mod
                                                                                 !! the axis's global domain
     integer,                        optional, intent(out)   :: new_axis_id      !< Axis id of the axis this is creating
     real(kind=r4_kind),             optional, intent(in)    :: zbounds(2)       !< Bounds of the Z axis
-    integer,                        optional, intent(in)    :: nz_subaxis       !< The number of z subaxis that have been
-                                                                                !! defined in the file
+    integer,                        optional, intent(in)    :: nz_subaxis       !< The number of z subaxis that have
+                                                                                !! been defined in the file
 
     naxis = naxis + 1 !< This is the axis id of the new axis!
 
