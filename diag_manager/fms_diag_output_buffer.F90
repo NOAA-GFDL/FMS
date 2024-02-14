@@ -351,11 +351,17 @@ subroutine init_buffer_time(this, time)
 end subroutine init_buffer_time
 
 !> @brief Sets the next output
-subroutine set_next_output(this, time)
+subroutine set_next_output(this, time, is_static)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
   type(time_type),                 intent(in)    :: time        !< time to add to the buffer
+  logical, optional,               intent(in)    :: is_static   !< .True. if the field is static
 
   this%next_output = time
+  if (present(is_static)) then
+    !< If the field is static set the next_output to be equal to time
+    !! this should only be used in the init, so next_output will be equal to the the init time
+    if (is_static) this%next_output = this%time
+  endif
 end subroutine set_next_output
 
 !> @brief Update the buffer time if it is a new time
