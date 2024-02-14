@@ -96,6 +96,7 @@ type :: fmsDiagFile_type
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: is_static !< .True. if the frequency is -1
+  integer :: nz_subaxis !< The number of Z axis currently added to the file
 
  contains
   procedure, public :: add_field_and_yaml_id
@@ -270,6 +271,7 @@ logical function fms_diag_files_object_init (files_array)
      obj%time_ops = .false.
      obj%unlim_dimension_level = 0
      obj%is_static = obj%get_file_freq() .eq. -1
+     obj%nz_subaxis = 0
 
      nullify(obj)
    enddo set_ids_loop
@@ -775,8 +777,9 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   var_axis_ids = axis_ids
 
   if (field_yaml%has_var_zbounds()) then
+    this%nz_subaxis = this%nz_subaxis + 1
     call create_new_z_subaxis(field_yaml%get_var_zbounds(), var_axis_ids, diag_axis, naxis, &
-                              this%axis_ids, this%number_of_axis)
+                              this%axis_ids, this%number_of_axis, this%nz_subaxis)
   endif
 
   select type(this)
