@@ -1363,6 +1363,10 @@ logical function is_time_to_write(this, time_step)
         &" needed by the file.")
   else
     is_time_to_write = .false.
+    if (this%FMS_diag_file%is_static) then
+      ! This is to ensure that static files get finished in the begining of the run
+      if (this%FMS_diag_file%unlim_dimension_level .eq. 1) is_time_to_write = .true.
+    endif
   endif
 end function is_time_to_write
 
