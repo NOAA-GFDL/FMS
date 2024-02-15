@@ -90,6 +90,7 @@ ENV CC=/opt/views/view/bin/mpicc
 ENV FCFLAGS="-I/opt/views/view/include"
 ENV CFLAGS="-I/opt/views/view/include"
 ENV LDFLAGS="-L/opt/views/view/lib"
+ENV LD_LIBRARY_PATH="/opt/views/view/lib64:/opt/views/view/lib"
 LABEL "maintainer"="Ryan Mulhall <Ryan.Mulhall@noaa.gov>"
 LABEL "copyright"="2024 GFDL"
 LABEL "license"="LGPL v3+"
