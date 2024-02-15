@@ -81,8 +81,11 @@ RUN dnf update -y && dnf install -y epel-release && dnf update -y \
  && dnf install -y autoconf make automake m4 libtool pkg-config zip diffutils git libgomp cmake \
  && rm -rf /var/cache/dnf && dnf clean all
 
+# Copy input files for certain unit tests
 COPY ./fms_test_input /home/unit_tests_input
+# Fix libgcc link
 RUN ranlib -U /opt/software/linux-rocky9-skylake/gcc-*/gcc-*/lib/gcc/x86_64-pc-linux-gnu/*/libgcc.a
+# Any env vars needed, most of these are also set by the entrypoint but it is not run for github actions
 ENV MPICH_FC=/opt/views/view/bin/gfortran
 ENV MPICH_CC=/opt/views/view/bin/gcc
 ENV FC=/opt/views/view/bin/mpifort
@@ -91,6 +94,7 @@ ENV FCFLAGS="-I/opt/views/view/include"
 ENV CFLAGS="-I/opt/views/view/include"
 ENV LDFLAGS="-L/opt/views/view/lib"
 ENV LD_LIBRARY_PATH="/opt/views/view/lib64:/opt/views/view/lib"
+ENV PATH="/root/.local/bin:/root/bin:/opt/views/view/bin:/opt/spack/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 LABEL "maintainer"="Ryan Mulhall <Ryan.Mulhall@noaa.gov>"
 LABEL "copyright"="2024 GFDL"
 LABEL "license"="LGPL v3+"
