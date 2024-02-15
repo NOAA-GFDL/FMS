@@ -264,8 +264,8 @@ GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_crea
 AC_MSG_CHECKING([if HDF5 version causes floating point exceptions with set flags])
 AC_RUN_IFELSE([AC_LANG_PROGRAM([], [[
       use netcdf
-      integer i
-      i = nf90_open("test.nc", NC_WRITE, i)
+      integer i, j
+      j = nf90_open("test.nc", NC_WRITE, i)
 ]])], [hdf5_fpe_bug=no], [hdf5_fpe_bug=yes])
 AC_MSG_RESULT([$hdf5_fpe_bug])
 if test $hdf5_fpe_bug = yes; then
