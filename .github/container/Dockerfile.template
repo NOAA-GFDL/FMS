@@ -28,4 +28,7 @@ ENV MPICH_FC=/opt/views/view/bin/gfortran
 ENV MPICH_CC=/opt/views/view/bin/gcc
 ENV FC=/opt/views/view/bin/mpifort
 ENV CC=/opt/views/view/bin/mpicc
+ENV FCFLAGS="-I/opt/views/view/include"
+ENV CFLAGS="-I/opt/views/view/include"
+ENV LDFLAGS="-L/opt/views/view/lib"
 {% endblock %}
