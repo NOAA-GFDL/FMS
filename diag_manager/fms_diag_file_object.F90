@@ -257,7 +257,9 @@ logical function fms_diag_files_object_init (files_array)
        obj%next_close = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
                                         obj%get_file_new_file_freq_units())
      else
-       obj%next_close = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+       ! The file is static, so set the close time to be equal to the start time so that
+       ! the file can be closed at the first diag send complete call
+       obj%next_close = diag_time_inc(obj%start_time)
      endif
      obj%is_file_open = .false.
 
