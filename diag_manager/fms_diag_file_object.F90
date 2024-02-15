@@ -257,9 +257,7 @@ logical function fms_diag_files_object_init (files_array)
        obj%next_close = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
                                         obj%get_file_new_file_freq_units())
      else
-       ! The file is static, so set the close time to be equal to the start time so that
-       ! the file can be closed at the first diag send complete call
-       obj%next_close = obj%start_time
+       obj%next_close = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
      endif
      obj%is_file_open = .false.
 
@@ -993,7 +991,13 @@ subroutine add_start_time(this, start_time, model_time)
        this%next_close = diag_time_inc(this%start_time, this%get_file_new_file_freq(), &
                                         this%get_file_new_file_freq_units())
      else
-       this%next_close = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+      if (this%is_static) then
+        ! If the file is static, set the close time to be equal to the start_time, so that it can be closed
+        ! after the first write!
+        this%next_close = this%start_time
+      else
+        this%next_close = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+      endif
      endif
 
     if(this%has_file_duration()) then
@@ -1362,6 +1366,10 @@ logical function is_time_to_write(this, time_step)
         &" needed by the file.")
   else
     is_time_to_write = .false.
+    if (this%FMS_diag_file%is_static) then
+      ! This is to ensure that static files get finished in the begining of the run
+      if (this%FMS_diag_file%unlim_dimension_level .eq. 1) is_time_to_write = .true.
+    endif
   endif
 end function is_time_to_write
 
