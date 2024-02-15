@@ -990,11 +990,12 @@ subroutine add_start_time(this, start_time, model_time)
     if (this%has_file_new_file_freq()) then
        this%next_close = diag_time_inc(this%start_time, this%get_file_new_file_freq(), &
                                         this%get_file_new_file_freq_units())
-     else
+    else
       if (this%is_static) then
         ! If the file is static, set the close time to be equal to the start_time, so that it can be closed
         ! after the first write!
         this%next_close = this%start_time
+        this%next_next_output = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
       else
         this%next_close = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
       endif
@@ -1520,6 +1521,9 @@ result(res)
   type(time_type) :: res
 
   res = this%FMS_diag_file%next_next_output
+  if (this%FMS_diag_file%is_static) then
+    res = this%FMS_diag_file%no_more_data
+  endif
 end function get_next_next_output
 
 !< @brief Writes the axis metadata for the file
