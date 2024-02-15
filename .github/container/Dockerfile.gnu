@@ -85,8 +85,8 @@ COPY ./fms_test_input /home/unit_tests_input
 RUN ranlib -U /opt/software/linux-rocky9-skylake/gcc-*/gcc-*/lib/gcc/x86_64-pc-linux-gnu/*/libgcc.a
 ENV MPICH_FC=gfortran
 ENV MPICH_CC=gcc
-ENV FC=mpifort
-ENV CC=mpicc
+ENV FC=/opt/views/view/bin/mpifort
+ENV CC=/opt/views/view/bin/mpicc
 LABEL "maintainer"="Ryan Mulhall <Ryan.Mulhall@noaa.gov>"
 LABEL "copyright"="2024 GFDL"
 LABEL "license"="LGPL v3+"
