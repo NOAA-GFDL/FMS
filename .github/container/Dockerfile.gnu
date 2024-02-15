@@ -83,8 +83,8 @@ RUN dnf update -y && dnf install -y epel-release && dnf update -y \
 
 COPY ./fms_test_input /home/unit_tests_input
 RUN ranlib -U /opt/software/linux-rocky9-skylake/gcc-*/gcc-*/lib/gcc/x86_64-pc-linux-gnu/*/libgcc.a
-ENV MPICH_FC=gfortran
-ENV MPICH_CC=gcc
+ENV MPICH_FC=/opt/views/view/bin/gfortran
+ENV MPICH_CC=/opt/views/view/bin/gcc
 ENV FC=/opt/views/view/bin/mpifort
 ENV CC=/opt/views/view/bin/mpicc
 LABEL "maintainer"="Ryan Mulhall <Ryan.Mulhall@noaa.gov>"
