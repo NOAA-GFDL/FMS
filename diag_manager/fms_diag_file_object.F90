@@ -777,7 +777,6 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   var_axis_ids = axis_ids
 
   if (field_yaml%has_var_zbounds()) then
-    this%nz_subaxis = this%nz_subaxis + 1
     call create_new_z_subaxis(field_yaml%get_var_zbounds(), var_axis_ids, diag_axis, naxis, &
                               this%axis_ids, this%number_of_axis, this%nz_subaxis)
   endif

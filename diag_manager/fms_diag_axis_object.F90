@@ -1398,7 +1398,7 @@ module fms_diag_axis_object_mod
     integer,                                  intent(inout) :: file_axis_id(:) !< The file's axis_ids
     integer,                                  intent(inout) :: nfile_axis      !< Number of axis that have been
                                                                                !! defined in file
-    integer,                                  intent(in)    :: nz_subaxis      !< The number of z subaxis currently
+    integer,                                  intent(inout) :: nz_subaxis      !< The number of z subaxis currently
                                                                                !! defined in the file
 
     class(*), pointer :: zaxis_data(:)      !< The data of the full zaxis
@@ -1443,6 +1443,7 @@ module fms_diag_axis_object_mod
             subaxis_indices(2) = nearest_index(real(zbounds(2)), real(zaxis_data))
           end select
 
+          nz_subaxis = nz_subaxis + 1
           call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
                         &subaxis_indices(1), subaxis_indices(2), (/lbound(zaxis_data,1), ubound(zaxis_data,1)/), &
                         &new_axis_id=subaxis_id, zbounds=zbounds, nz_subaxis=nz_subaxis)
