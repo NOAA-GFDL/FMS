@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  This programs tests 
+!> @brief  This programs tests fields that have a mask that changes over time
 program test_var_masks
   use fms_mod, only: fms_init, fms_end
   use diag_manager_mod

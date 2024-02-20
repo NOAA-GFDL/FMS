@@ -27,7 +27,7 @@ if [ -z "${skipflag}" ]; then
 output_dir
 
 cat <<_EOF > diag_table.yaml
-title: test_var_masks 
+title: test_var_masks
 base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: test_var_masks

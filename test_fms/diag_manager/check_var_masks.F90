@@ -17,7 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> @brief  Checks the output 
+!> @brief  Checks the output for when running with a field that has a mask that changes
+!! over time
 program check_var_masks
   use fms_mod,           only: fms_init, fms_end
   use mpp_mod
