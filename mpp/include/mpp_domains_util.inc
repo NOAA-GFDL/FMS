@@ -691,8 +691,8 @@ end function mpp_get_domain_tile_root_pe
 
 
 function mpp_get_domain_tile_commid(domain)
-   type(domain2d), intent(in) :: domain
-   integer                    :: mpp_get_domain_tile_commid
+   type(domain2d), intent(in) :: domain                     !> domain you are querying for information
+   integer                    :: mpp_get_domain_tile_commid !> declaration of the return tile communicator
 
    mpp_get_domain_tile_commid = domain%tile_comm_id
 
@@ -700,8 +700,8 @@ end function mpp_get_domain_tile_commid
 
 
 function mpp_get_domain_commid(domain)
-   type(domain2d), intent(in) :: domain
-   integer                    :: mpp_get_domain_commid
+   type(domain2d), intent(in) :: domain                !> domain you are querying for information
+   integer                    :: mpp_get_domain_commid !> declaration of the return domain communicator
 
    mpp_get_domain_commid = domain%comm_id
 
