@@ -76,7 +76,7 @@ program test_var_masks
     var1_mask = .True.
     !< The first point is going to be asked every other hour
     if (mod(i,2) .eq. 0) var1_mask(1,1) = .False.
-    var1_data = real(i/2)
+    var1_data = real(i)
     used = send_data(id_var1, var1_data, Time, mask=var1_mask)
 
     ! Double send_data calls at the same time. This is similar to what happens with the
