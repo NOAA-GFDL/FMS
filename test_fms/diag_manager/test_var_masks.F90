@@ -18,6 +18,7 @@
 !***********************************************************************
 
 !> @brief  This programs tests fields that have a mask that changes over time
+!! It also tests the corner case where send_data is called twice for the same time
 program test_var_masks
   use fms_mod, only: fms_init, fms_end
   use diag_manager_mod
@@ -75,7 +76,11 @@ program test_var_masks
     var1_mask = .True.
     !< The first point is going to be asked every other hour
     if (mod(i,2) .eq. 0) var1_mask(1,1) = .False.
-    var1_data = real(i)
+    var1_data = real(i/2)
+    used = send_data(id_var1, var1_data, Time, mask=var1_mask)
+
+    ! Double send_data calls at the same time. This is similar to what happens with the
+    ! `tntpbl` and `tnhuspbl` diagnostics in the physics
     used = send_data(id_var1, var1_data, Time, mask=var1_mask)
     call diag_send_complete(Time_step)
   enddo
