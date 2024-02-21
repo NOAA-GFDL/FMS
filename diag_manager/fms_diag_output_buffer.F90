@@ -692,7 +692,7 @@ end function do_time_sum_wrapper
 !> Finishes calculations for any reductions that use an average (avg, rms, pow)
 !! TODO add mask and any other needed args for adjustment, and pass in the adjusted mask
 !! to time_update_done
-function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_mask, mask_variant) & !! , has_halo, mask) &
+function diag_reduction_done_wrapper(this, reduction_method, missing_value, has_mask, mask_variant) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this !< Updated buffer object
   integer, intent(in)                            :: reduction_method !< enumerated reduction type from diag_data

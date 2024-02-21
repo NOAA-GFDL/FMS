@@ -336,7 +336,8 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
                             n_diurnal_samples)
   real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
                                                                    !! do_time_sum_update
-  real(r8_kind), intent(in)          :: weight_sum(:,:,:,:) !< sum of weights for averaging, provided via argument to send data
+  real(r8_kind), intent(in)          :: weight_sum(:,:,:,:) !< sum of weights for averaging,
+                                                            !! provided via argument to send data
   integer, intent(in)                :: reduction_method !< which reduction method to use
                                                          !! should always be one of time_avg, time_diurnal, or time_rms
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
