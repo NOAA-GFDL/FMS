@@ -146,6 +146,7 @@ subroutine flush_buffer(this)
   if (allocated(this%buffer_dims))  deallocate(this%buffer_dims)
   if (allocated(this%num_elements)) deallocate(this%num_elements)
   if (allocated(this%axis_ids))     deallocate(this%axis_ids)
+  if (allocated(this%weight_sum))   deallocate(this%weight_sum)
 end subroutine flush_buffer
 
 !> Allocates a 5D buffer to given buff_type.
