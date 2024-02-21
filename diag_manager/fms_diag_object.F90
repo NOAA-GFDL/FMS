@@ -655,8 +655,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
       call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
 
-    if (allocated(mask) .or. allocated(rmask)) &
+    if (allocated(mask) .or. allocated(rmask)) then
       call this%FMS_diag_fields(diag_field_id)%set_var_is_masked(.True.)
+    else
+      call this%FMS_diag_fields(diag_field_id)%set_var_is_masked(.False.)
+    endif
 
     error_string = bounds%set_bounds(field_data, is, ie, js, je, ks, ke, has_halos)
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
