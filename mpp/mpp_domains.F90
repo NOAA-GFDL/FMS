@@ -158,6 +158,7 @@ module mpp_domains_mod
   public :: mpp_get_tile_npes, mpp_get_domain_root_pe, mpp_get_tile_pelist, mpp_get_tile_compute_domains
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
+  public :: mpp_get_domain_tile_commid, mpp_get_domain_commid
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
   public :: mpp_copy_domain, mpp_set_domain_symmetry
   public :: mpp_get_update_pelist, mpp_get_update_size
@@ -305,8 +306,8 @@ module mpp_domains_mod
   !> @ingroup mpp_domains_mod
   type :: domain2D_spec
      private
-     type(domain1D_spec), pointer :: x(:)       => NULL() !< x-direction domain decomposition
-     type(domain1D_spec), pointer :: y(:)       => NULL() !< y-direction domain decomposition
+     type(domain1D_spec), pointer :: x(:)  => NULL() !< x-direction domain decomposition
+     type(domain1D_spec), pointer :: y(:)  => NULL() !< y-direction domain decomposition
      integer,        pointer :: tile_id(:) => NULL() !< tile id of each tile
      integer                 :: pe                   !< PE to which this domain is assigned
      integer                 :: pos                  !< position of this PE within link list
@@ -374,13 +375,15 @@ module mpp_domains_mod
      integer                     :: whalo, ehalo   !< halo size in x-direction
      integer                     :: shalo, nhalo   !< halo size in y-direction
      integer                     :: ntiles         !< number of tiles within mosaic
+     integer                     :: comm_id        !< MPI communicator for the mosaic
+     integer                     :: tile_comm_id   !< MPI communicator for this tile of domain
      integer                     :: max_ntile_pe   !< maximum value in the pelist of number of tiles on each pe.
-     integer                     :: ncontacts     !< number of contact region within mosaic.
-     logical                     :: rotated_ninety  !< indicate if any contact rotate NINETY or MINUS_NINETY
+     integer                     :: ncontacts      !< number of contact region within mosaic.
+     logical                     :: rotated_ninety !< indicate if any contact rotate NINETY or MINUS_NINETY
      logical                     :: initialized=.FALSE. !< indicate if the overlapping is computed or not.
-     integer                     :: tile_root_pe  !< root pe of current tile.
-     integer                     :: io_layout(2)  !< io_layout, will be set through mpp_define_io_domain
-                                                  !! default = domain layout
+     integer                     :: tile_root_pe   !< root pe of current tile.
+     integer                     :: io_layout(2)   !< io_layout, will be set through mpp_define_io_domain
+                                                   !! default = domain layout
      integer,            pointer :: pearray(:,:)  => NULL() !< pe of each layout position
      integer,            pointer :: tile_id(:)    => NULL() !< tile id of each tile on current processor
      integer,            pointer :: tile_id_all(:)=> NULL() !< tile id of all the tiles of domain
