@@ -1176,7 +1176,7 @@ function get_diag_buffer(this, bufferid) &
 result(rslt)
   class(fmsDiagObject_type), intent(in) :: this
   integer, intent(in)                   :: bufferid
-  class(fmsDiagOutputBuffer_type),allocatable:: rslt
+  type(fmsDiagOutputBuffer_type),allocatable:: rslt
   if( (bufferid .gt. UBOUND(this%FMS_diag_output_buffers, 1)) .or. &
       (bufferid .lt. LBOUND(this%FMS_diag_output_buffers, 1))) &
     call mpp_error(FATAL, 'get_diag_bufer: invalid bufferid given')
