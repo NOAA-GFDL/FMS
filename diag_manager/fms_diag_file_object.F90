@@ -96,6 +96,7 @@ type :: fmsDiagFile_type
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: is_static !< .True. if the frequency is -1
+  integer :: nz_subaxis !< The number of Z axis currently added to the file
 
  contains
   procedure, public :: add_field_and_yaml_id
@@ -270,6 +271,7 @@ logical function fms_diag_files_object_init (files_array)
      obj%time_ops = .false.
      obj%unlim_dimension_level = 0
      obj%is_static = obj%get_file_freq() .eq. -1
+     obj%nz_subaxis = 0
 
      nullify(obj)
    enddo set_ids_loop
@@ -776,7 +778,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   if (field_yaml%has_var_zbounds()) then
     call create_new_z_subaxis(field_yaml%get_var_zbounds(), var_axis_ids, diag_axis, naxis, &
-                              this%axis_ids, this%number_of_axis)
+                              this%axis_ids, this%number_of_axis, this%nz_subaxis)
   endif
 
   select type(this)
@@ -987,8 +989,15 @@ subroutine add_start_time(this, start_time, model_time)
     if (this%has_file_new_file_freq()) then
        this%next_close = diag_time_inc(this%start_time, this%get_file_new_file_freq(), &
                                         this%get_file_new_file_freq_units())
-     else
-       this%next_close = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+    else
+      if (this%is_static) then
+        ! If the file is static, set the close time to be equal to the start_time, so that it can be closed
+        ! after the first write!
+        this%next_close = this%start_time
+        this%next_next_output = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+      else
+        this%next_close = diag_time_inc(this%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+      endif
      endif
 
     if(this%has_file_duration()) then
@@ -1357,6 +1366,10 @@ logical function is_time_to_write(this, time_step)
         &" needed by the file.")
   else
     is_time_to_write = .false.
+    if (this%FMS_diag_file%is_static) then
+      ! This is to ensure that static files get finished in the begining of the run
+      if (this%FMS_diag_file%unlim_dimension_level .eq. 1) is_time_to_write = .true.
+    endif
   endif
 end function is_time_to_write
 
@@ -1374,8 +1387,9 @@ logical function writing_on_this_pe(this)
 end function
 
 !> \brief Write out the time data to the file
-subroutine write_time_data(this)
+subroutine write_time_data(this, is_the_end)
   class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
+  logical, optional,                intent(in)           :: is_the_end !< True if it is the end of the run
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
@@ -1388,6 +1402,11 @@ subroutine write_time_data(this)
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
+
+  if (present(is_the_end)) then
+    ! If at the end of the run, do not do anything for the static files
+    if (is_the_end .and. diag_file%is_static) return
+  endif
 
   if (diag_file%time_ops) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2
@@ -1501,6 +1520,9 @@ result(res)
   type(time_type) :: res
 
   res = this%FMS_diag_file%next_next_output
+  if (this%FMS_diag_file%is_static) then
+    res = this%FMS_diag_file%no_more_data
+  endif
 end function get_next_next_output
 
 !< @brief Writes the axis metadata for the file
