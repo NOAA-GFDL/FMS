@@ -644,7 +644,7 @@
 
     integer              :: i, j, m, n, xhalosz, yhalosz, memory_xsize, memory_ysize
     integer              :: whalosz, ehalosz, shalosz, nhalosz
-    integer              :: ipos, jpos, pos, tile, nlist, cur_tile_id
+    integer              :: ipos, jpos, pos, tile, nlist, cur_tile_id, cur_comm_id
     integer              :: ndivx, ndivy, isg, ieg, jsg, jeg, ishift, jshift, errunit, logunit
     integer              :: x_offset, y_offset, start_pos, nfold
     logical              :: from_mosaic, is_complete
@@ -684,20 +684,22 @@
     cur_tile_id = 1
     if(present(tile_id)) cur_tile_id = tile_id
 
+    cur_comm_id=0
     if( PRESENT(pelist) )then
        allocate( pes(0:size(pelist(:))-1) )
        pes = pelist
        if(from_mosaic) then
           allocate( pesall(0:mpp_npes()-1) )
-          call mpp_get_current_pelist(pesall)
+          call mpp_get_current_pelist(pesall, commID=cur_comm_id)
        else
           allocate( pesall(0:size(pes(:))-1) )
           pesall = pes
+          call mpp_get_current_pelist(pesall, commID=cur_comm_id)
        end if
     else
        allocate( pes(0:mpp_npes()-1) )
        allocate( pesall(0:mpp_npes()-1) )
-       call mpp_get_current_pelist(pes)
+       call mpp_get_current_pelist(pes, commID=cur_comm_id)
        pesall = pes
     end if
 
@@ -795,13 +797,14 @@
        allocate(domain%tile_id_all(1))
        domain%tile_id        = cur_tile_id
        domain%tile_id_all    = cur_tile_id
+       domain%tile_comm_id   = cur_comm_id
        domain%ntiles         = 1
        domain%max_ntile_pe   = 1
        domain%ncontacts      = 0
        domain%rotated_ninety = .FALSE.
        allocate( domain%list(0:nlist-1) )
        do i = 0, nlist-1
-          allocate( domain%list(i)%x(1), domain%list(i)%y(1), domain%list(i)%tile_id(1) )
+          allocate( domain%list(i)%x(1), domain%list(i)%y(1), domain%list(i)%tile_id(1))
        end do
     end if
 
@@ -853,6 +856,7 @@
     if( ANY(pes == mpp_pe()) ) then
        domain%io_layout = layout
        domain%tile_root_pe  = pes(0)
+       domain%comm_id   = cur_comm_id
        if( ipos.EQ.NULL_PE .OR. jpos.EQ.NULL_PE ) &
             call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: pelist must include this PE for '//trim(domain%name) )
        if( debug ) then
@@ -1257,9 +1261,8 @@ end subroutine check_message_size
        if( nlist .NE. size(pelist(:))) call mpp_error(FATAL, &
             'mpp_domains_define.inc: size of pelist is not equal mpp_npes')
        pes = pelist
-    else
-       call mpp_get_current_pelist(pes)
     end if
+    call mpp_get_current_pelist(pes, commID=domain%comm_id)
     !--- pelist should be monotonic increasing by 1.
     do n = 1, nlist-1
        if(pes(n) - pes(n-1) .NE. 1) call mpp_error(FATAL, &
@@ -1332,11 +1335,11 @@ end subroutine check_message_size
 
     do n = 0, nlist-1
        nt = ntile_per_pe(n)
-       allocate(domain%list(n)%x(nt), domain%list(n)%y(nt), domain%list(n)%tile_id(nt) )
+       allocate(domain%list(n)%x(nt), domain%list(n)%y(nt), domain%list(n)%tile_id(nt))
     end do
 
-    pe = mpp_pe()
     pos = 0
+    pe = mpp_pe()
     if( PRESENT(tile_id) ) then
        if(size(tile_id(:)) .NE. num_tile) then
           call mpp_error(FATAL, "mpp_domains_define.inc: size(tile_id) .NE. num_tile")
@@ -1380,6 +1383,7 @@ end subroutine check_message_size
     allocate(tile_count(pes(0):pes(0)+nlist-1))
     tile_count = 0  ! tile number on current pe
 
+    domain%tile_comm_id=0
     do n = 1, num_tile
        allocate(mask(layout(1,n), layout(2,n)))
        allocate(pelist_tile(pe_start(n):pe_end(n)) )
@@ -1387,6 +1391,10 @@ end subroutine check_message_size
        do m = pe_start(n), pe_end(n)
           pelist_tile(m) = m
        end do
+       !--- set the tile communicator
+       if (ANY(pelist_tile == pe)) then
+         call mpp_declare_pelist(pelist_tile, commID=domain%tile_comm_id)
+       endif
        mask = .TRUE.
        if(present(maskmap))  mask = maskmap(1:layout(1,n), 1:layout(2,n), n)
        ndivx = layout(1,n); ndivy = layout(2,n)
@@ -1451,7 +1459,7 @@ end subroutine check_message_size
        deallocate(mask, xext, yext, pelist_tile)
     end do
 
-    deallocate(pes, tile_count)
+    deallocate(pes, tile_count, tile_id_local)
 
     if(num_contact == 0 .OR. num_tile == 1) return
 
