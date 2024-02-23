@@ -354,9 +354,12 @@ foreach(kind ${kinds})
     target_link_libraries(${libTgt}_f PRIVATE OpenMP::OpenMP_Fortran)
   endif()
 
-  # Check if gnu 10 or higher with mpich
+  # Check if gnu 10 or higher
+  # this should only be needed with mpich, but wasn't able to find a good way to find the MPI flavor consistently
   if ( CMAKE_Fortran_COMPILER_VERSION MATCHES "1[0-9]\.[0-9]*\.[0-9]*" AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    if(MPI_C_COMPILER MATCHES ".*mpich.*" )
+    include(CheckFortranCompilerFlag)
+    check_fortran_compiler_flag("-fallow-argument-mismatch" _arg_mismatch_flag)
+    if(_arg_mismatch_flag)
       message(STATUS "Adding -fallow-argument-mismatch flag to compile with GCC >=10 and MPICH")
       target_compile_options(${libTgt}_f PRIVATE "-fallow-argument-mismatch;-w")
     endif()

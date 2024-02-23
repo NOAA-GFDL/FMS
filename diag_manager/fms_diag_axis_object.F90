@@ -83,15 +83,9 @@ module fms_diag_axis_object_mod
     type(domainUG) :: DomainUG !< Domain of "U" axis
   end type
 
-  !> @brief Type to hold the diag_axis (either subaxis or a full axis)
-  !> @ingroup diag_axis_object_mod
-  type :: fmsDiagAxisContainer_type
-    class(fmsDiagAxis_type), allocatable :: axis
-  end type
-
   !> @brief Type to hold the diagnostic axis description.
   !> @ingroup diag_axis_object_mod
-  TYPE fmsDiagAxis_type
+  TYPE :: fmsDiagAxis_type
      INTEGER                        , private :: axis_id         !< ID of the axis
 
      contains
@@ -106,6 +100,12 @@ module fms_diag_axis_object_mod
        procedure :: is_unstructured_grid
        procedure :: get_edges_id
   END TYPE fmsDiagAxis_type
+
+  !> @brief Type to hold the diag_axis (either subaxis or a full axis)
+  !> @ingroup diag_axis_object_mod
+  type :: fmsDiagAxisContainer_type
+    class(fmsDiagAxis_type), allocatable :: axis
+  end type
 
   !> @brief Type to hold the subaxis
   !> @ingroup diag_axis_object_mod
