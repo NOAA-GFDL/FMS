@@ -215,7 +215,7 @@ end subroutine DO_TIME_MAX_
 !!
 !! Where l are the indices passed in through the bounds_in/out
 subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, mask_variant, bounds_in, bounds_out, &
-                               missing_value, diurnal_section, weight, pow)
+                               missing_value, increase_counter, diurnal_section, weight, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
   real(r8_kind),             intent(inout) :: weight_sum(:,:,:,:) !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
@@ -227,6 +227,8 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
                                                                   !! of the output buffer
   real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  logical,                   intent(in)    :: increase_counter    !< .True. if data has not been received for
+                                                                  !! time, so the counter needs to be increased
   integer, intent(in)                      :: diurnal_section !< the diurnal "section" if doing a diurnal reduction
                                                               !! indicates which index to add data on 5th axis
                                                               !! if not doing a diurnal reduction, this should always =1
@@ -240,17 +242,24 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
   integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
                                                             !! the output buffer
   integer :: i, j, k, l !< For looping
-  real(FMS_TRM_KIND_) :: weight_loc !< local copy of optional weight
+  real(FMS_TRM_KIND_) :: counter_local !< counter to increase the counter by
+  real(FMS_TRM_KIND_) :: weight_scale !< local copy of optional weight
   integer :: pow_loc !> local copy of optional pow value (set if using pow reduction)
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
   integer :: diurnal !< diurnal index to indicate which daily section is updated
                      !! will be 1 unless using a diurnal reduction
 
+  ! The counter and the weight are stored in different variables to avoid having
+  ! to do a if (increase_counter) inside a do loop
   if(present(weight)) then
-    weight_loc = weight
+    counter_local = weight
+    weight_scale = weight
   else
-    weight_loc = 1.0_kindl
+    counter_local = 1.0_kindl
+    weight_scale = 1.0_kindl
   endif
+
+  if (.not. increase_counter) counter_local = 0.0_kindl
 
   if(present(pow)) then
     pow_loc = pow
@@ -290,23 +299,23 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
             where (mask(is_in + i, js_in + j, ks_in + k, :))
               data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
                        data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
+                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
               !Increase the weight sum for the grid point that was not masked
               weight_sum(is_out + i, js_out + j, ks_out + k, :) = &
-                weight_sum(is_out + i, js_out + j, ks_out + k, :) + weight_loc
+                weight_sum(is_out + i, js_out + j, ks_out + k, :) + counter_local
             endwhere
           enddo
         enddo
       enddo
     else
-      weight_sum = weight_sum + weight_loc
+      weight_sum = weight_sum + counter_local
       do k = 0, ke_out - ks_out
         do j = 0, je_out - js_out
           do i = 0, ie_out - is_out
             where (mask(is_in + i, js_in + j, ks_in + k, :))
               data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
                        data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
+                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
             elsewhere
               data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
             endwhere
@@ -315,14 +324,14 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
       enddo
     endif
   else
-    weight_sum = weight_sum + weight_loc
+    weight_sum = weight_sum + counter_local
     ! doesn't need to loop through l if no mask, just sums the 1d slices
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
           data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal) =  &
              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-            + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
+            + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
         enddo
       enddo
     enddo

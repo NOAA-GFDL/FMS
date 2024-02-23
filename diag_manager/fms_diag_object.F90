@@ -29,8 +29,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
        & get_ticks_per_second
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
-use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
-                                    &check_for_slices
+use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
                            & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
@@ -603,13 +602,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   IF ( PRESENT(je_in) ) je = je_in
   IF ( PRESENT(ke_in) ) ke = ke_in
 
-  if (.not. buffer_the_data .and. using_blocking) then
-    ! If running with only 1 thread and using blocking, check if the data was sent in blocks
-    ! if it is, then buffer the data
-    buffer_the_data = check_for_slices(this%FMS_diag_fields(diag_field_id), this%diag_axis, &
-      shape(field_data))
-  endif
-
   !If this is true, buffer data
   main_if: if (buffer_the_data) then
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
@@ -887,6 +879,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   real(kind=r8_kind)        :: missing_value      !< Missing_value for data points that are masked
                                                   !! This will obtained as r8 and converted to the right type as
                                                   !! needed. This is to avoid yet another select type ...
+  logical                   :: new_time           !< .True. if this is a new time (i.e data has not be been
+                                                  !! sent for this time)
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
@@ -981,7 +975,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Determine the reduction method for the buffer
     reduction_method = field_yaml_ptr%get_var_reduction()
-    if (present(time)) call buffer_ptr%update_buffer_time(time)
+    if (present(time)) new_time = buffer_ptr%update_buffer_time(time)
     select case(reduction_method)
     case (time_none)
       error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
@@ -1003,25 +997,26 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       endif
     case (time_sum)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_average)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_power)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, pow_value=field_yaml_ptr%get_pow_value())
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time, &
+        pow_value=field_yaml_ptr%get_pow_value())
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_rms)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, pow_value = 2)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time, pow_value = 2)
       if (trim(error_msg) .ne. "") then
         return
       endif
@@ -1031,7 +1026,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       ! sets the diurnal index for reduction within the buffer object
       call buffer_ptr%set_diurnal_section_index(time)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif

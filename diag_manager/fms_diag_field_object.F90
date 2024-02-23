@@ -191,7 +191,6 @@ public :: fms_diag_fields_object_init
 public :: null_ob
 public :: fms_diag_field_object_end
 public :: get_default_missing_value
-public :: check_for_slices
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  CONTAINS
@@ -1813,28 +1812,5 @@ subroutine generate_associated_files_att(this, att, start_time)
   att = trim(att)//" "//trim(field_name)//": "//trim(file_name)//".nc"
 end subroutine generate_associated_files_att
 
-!> @brief Determines if the compute domain has been divide further into slices (i.e openmp blocks)
-!! @return .True. if the compute domain has been divided furter into slices
-function check_for_slices(field, diag_axis, var_size) &
-  result(rslt)
-  type(fmsDiagField_type),                 intent(in) :: field        !< Field object
-  type(fmsDiagAxisContainer_type), target, intent(in) :: diag_axis(:) !< Array of diag axis
-  integer,                                 intent(in) :: var_size(:)  !< The size of the buffer pass into send_data
-
-  logical :: rslt
-  integer :: i !< For do loops
-
-  rslt = .false.
-  if (field%has_axis_ids()) then
-    rslt = .true.
-    return
-  endif
-  do i = 1, size(field%axis_ids)
-    select type (axis_obj => diag_axis(field%axis_ids(i))%axis)
-    type is (fmsDiagFullAxis_type)
-      if (axis_obj%axis_length() .ne. var_size(i)) return
-    end select
-  enddo
-end function
 #endif
 end module fms_diag_field_object_mod
