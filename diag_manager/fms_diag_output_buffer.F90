@@ -385,6 +385,8 @@ function update_buffer_time(this, time) &
     res = .true.
   else
     res = .false.
+    !< If this is the first time send_data has been called
+    if (.not. this%send_data_called) res = .true.
   endif
 end function
 

@@ -918,8 +918,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     !< Go away if finished doing math for this buffer
     if (buffer_ptr%is_done_with_math()) cycle
 
-    call buffer_ptr%set_send_data_called()
-
     bounds_out = bounds
     if (.not. using_blocking) then
       !< Set output bounds to start at 1:size(buffer_ptr%buffer)
@@ -976,6 +974,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     !< Determine the reduction method for the buffer
     reduction_method = field_yaml_ptr%get_var_reduction()
     if (present(time)) new_time = buffer_ptr%update_buffer_time(time)
+    call buffer_ptr%set_send_data_called()
     select case(reduction_method)
     case (time_none)
       error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
