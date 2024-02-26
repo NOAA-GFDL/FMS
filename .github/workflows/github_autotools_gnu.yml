@@ -24,7 +24,7 @@ jobs:
       env:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
-        SKIP_TESTS: "test_yaml_parser.5 test_horiz_interp2.[23-24]"
+        SKIP_TESTS: "test_horiz_interp2.[23-24]" # TODO (couldn't reproduce outside CI)
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
