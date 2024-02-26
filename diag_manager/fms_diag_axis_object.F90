@@ -761,6 +761,12 @@ module fms_diag_axis_object_mod
       ending_index   = subregion_end
     endif
 
+    if (this%domain_position .ne. CENTER) then
+      if (ending_index - starting_index + 1 .eq. 1) then
+        if (ending_index .eq. compute_idx(2)) print *, mpp_pe(), " should get ignored"
+      endif
+    endif
+
   end subroutine get_indices
 
   !< Get the compute domain of the axis
