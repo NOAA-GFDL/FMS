@@ -1157,15 +1157,6 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
       str_len=len_trim(this%get_interp_method()))
   endif
 
-  if (.not. this%static) then
-    select case (field_yaml%get_var_reduction())
-    case (time_average, time_max, time_min, time_diurnal, time_power, time_rms, time_sum)
-      call register_variable_attribute(fms2io_fileobj, var_name, "time_avg_info", &
-        trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT', &
-        str_len=len(trim(avg_name)//'_T1,'//trim(avg_name)//'_T2,'//trim(avg_name)//'_DT'))
-    end select
-  endif
-
   cell_methods = ""
   !< Check if any of the attributes defined via a "diag_field_add_attribute" call
   !! are the cell_methods, if so add to the "cell_methods" variable:
