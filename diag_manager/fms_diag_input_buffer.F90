@@ -25,6 +25,7 @@ module fms_diag_input_buffer_mod
 #ifdef use_yaml
   use platform_mod,             only: r8_kind, r4_kind, i4_kind, i8_kind
   use fms_diag_axis_object_mod, only: fmsDiagAxisContainer_type, fmsDiagFullAxis_type
+  use time_manager_mod,         only: time_type
   implicit NONE
   private
 
@@ -35,12 +36,15 @@ module fms_diag_input_buffer_mod
     logical                        :: initialized     !< .True. if the input buffer has been initialized
     class(*),          allocatable :: buffer(:,:,:,:) !< Input data passed in send_data
     real(kind=r8_kind)             :: weight          !< Weight passed in send_data
+    type(time_type)                :: send_data_time  !< The time send data was called
 
     contains
     procedure :: get_buffer
     procedure :: get_weight
     procedure :: init => init_input_buffer_object
     procedure :: set_input_buffer_object
+    procedure :: set_send_data_time
+    procedure :: get_send_data_time
     procedure :: is_initialized
   end type fmsDiagInputBuffer_t
 
@@ -117,6 +121,24 @@ module fms_diag_input_buffer_mod
     this%weight = 1.0_r8_kind
     this%initialized = .true.
   end function init_input_buffer_object
+
+  !> @brief Sets the send data time
+  subroutine set_send_data_time(this, time)
+    class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
+    type(time_type),             intent(in)    :: time                !< The time send data was called
+
+    this%send_data_time = time
+  end subroutine set_send_data_time
+
+  !> @brief Get the send data time
+  !! @result Send data time
+  function get_send_data_time(this) &
+    result(rslt)
+    class(fmsDiagInputBuffer_t), intent(in) :: this                !< input buffer object
+    type(time_type) :: rslt
+
+    rslt = this%send_data_time
+  end function get_send_data_time
 
   !> @brief Sets the members of the input buffer object
   !! @return Error message if something went wrong

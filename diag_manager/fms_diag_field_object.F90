@@ -94,6 +94,8 @@ type fmsDiagField_type
      procedure :: set_type => set_vartype
      procedure :: set_data_buffer => set_data_buffer
      procedure :: set_data_buffer_is_allocated
+     procedure :: set_send_data_time
+     procedure :: get_send_data_time
      procedure :: is_data_buffer_allocated
      procedure :: allocate_data_buffer
      procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
@@ -405,6 +407,24 @@ subroutine set_vartype(objin , var)
           " r8, r4, i8, i4, or string.", warning)
  end select
 end subroutine set_vartype
+
+!> @brief Sets the send data time
+subroutine set_send_data_time (this, time)
+  class (fmsDiagField_type) , intent(inout):: this                !< The field object
+  type(time_type),            intent(in)   :: time                !< Current model time
+
+  call this%input_data_buffer%set_send_data_time(time)
+end subroutine set_send_data_time
+
+!> @brief Get the send data time
+!! @result Send data time
+function get_send_data_time(this) &
+  result(rslt)
+  class (fmsDiagField_type) , intent(in):: this                  !< The field object
+  type(time_type) :: rslt
+
+  rslt = this%input_data_buffer%get_send_data_time()
+end function get_send_data_time
 
 !> @brief Adds the input data to the buffered data.
 subroutine set_data_buffer (this, input_data, weight, is, js, ks, ie, je, ke)

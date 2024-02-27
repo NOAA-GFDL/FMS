@@ -538,6 +538,8 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+
+  !TODO this%FMS_diag_fields(diag_field_id) should be a pointer!
   field_info = " Check send data call for field:"//trim(this%FMS_diag_fields(diag_field_id)%get_varname())//&
     " and module:"//trim(this%FMS_diag_fields(diag_field_id)%get_modname())
 
@@ -629,6 +631,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
         call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
     endif
+    call this%FMS_diag_fields(diag_field_id)%set_send_data_time(time)
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
 !$omp end critical
@@ -719,7 +722,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
         call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
         error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
-                              bounds, .False., Time=this%current_model_time)
+                              bounds, .False., Time=diag_field%get_send_data_time())
         if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
                                                        " -"//trim(error_string)))
       else
