@@ -79,9 +79,6 @@ program test_var_masks
     var1_data = real(i)
     used = send_data(id_var1, var1_data, Time, mask=var1_mask)
 
-    ! Double send_data calls at the same time. This is similar to what happens with the
-    ! `tntpbl` and `tnhuspbl` diagnostics in the physics
-    ! TODO used = send_data(id_var1, var1_data, Time, mask=var1_mask)
     call diag_send_complete(Time_step)
   enddo
 
