@@ -186,7 +186,7 @@ integer function fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: standname             !< The variables stanard name
  class(*),         OPTIONAL,     INTENT(in)    :: missing_value         !< Missing value to add as a attribute
  class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(2)           !< Range to add as a attribute
- LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< Mask
+ LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< .True. if mask changes over time
  LOGICAL,          OPTIONAL,     INTENT(in)    :: do_not_log            !< if TRUE, field info is not logged
  CHARACTER(len=*), OPTIONAL,     INTENT(out)   :: err_msg               !< Error message to be passed back up
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: interp_method         !< The interp method to be used when
@@ -353,7 +353,7 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
     CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
     CLASS(*),         OPTIONAL, INTENT(in) :: var_range(:)  !< Range to add a variable attribute
-    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
+    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< .True. if mask changes over time
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
@@ -394,8 +394,7 @@ INTEGER FUNCTION fms_register_static_field(this, module_name, field_name, axes, 
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: standard_name !< Standard name to be added as a attribute
     CLASS(*),                       OPTIONAL, INTENT(in) :: missing_value !< Missing value to be added as a attribute
     CLASS(*),                       OPTIONAL, INTENT(in) :: range(:)      !< Range to be added as a attribute
-    LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< Flag indicating if the field is has
-                                                                          !! a mask variant
+    LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< .True. if mask changes over time
     LOGICAL,                        OPTIONAL, INTENT(in) :: DYNAMIC       !< Flag indicating if the field is dynamic
     LOGICAL,                        OPTIONAL, INTENT(in) :: do_not_log    !< if TRUE, field information is not logged
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
@@ -618,8 +617,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
       call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
 
-    if (allocated(mask) .or. allocated(rmask)) &
-      call this%FMS_diag_fields(diag_field_id)%set_mask_variant(.True.)
+    if (allocated(mask) .or. allocated(rmask)) then
+      call this%FMS_diag_fields(diag_field_id)%set_var_is_masked(.True.)
+    else
+      call this%FMS_diag_fields(diag_field_id)%set_var_is_masked(.False.)
+    endif
 
     if (.not. this%FMS_diag_fields(diag_field_id)%is_data_buffer_allocated()) then
       data_buffer_is_allocated = &
@@ -646,8 +648,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if(.not. this%FMS_diag_fields(diag_field_id)%has_vartype()) &
       call this%FMS_diag_fields(diag_field_id)%set_type(field_data(1,1,1,1))
 
-    if (allocated(mask) .or. allocated(rmask)) &
-      call this%FMS_diag_fields(diag_field_id)%set_mask_variant(.True.)
+    if (allocated(mask) .or. allocated(rmask)) then
+      call this%FMS_diag_fields(diag_field_id)%set_var_is_masked(.True.)
+    else
+      call this%FMS_diag_fields(diag_field_id)%set_var_is_masked(.False.)
+    endif
 
     error_string = bounds%set_bounds(field_data, is, ie, js, je, ks, ke, has_halos)
     if (trim(error_string) .ne. "") call mpp_error(FATAL, trim(error_string)//". "//trim(field_info))
@@ -802,11 +807,9 @@ subroutine fms_diag_do_io(this, end_time)
         if( field_yaml%has_var_reduction()) then
           if( field_yaml%get_var_reduction() .ge. time_average) then
             if(DEBUG_REDUCT)call mpp_error(NOTE, "fms_diag_do_io:: finishing reduction for "//diag_field%get_longname())
-            has_mask = diag_field%has_mask_variant()
-            if(has_mask) has_mask = diag_field%get_mask_variant()
             error_string = diag_buff%diag_reduction_done_wrapper( &
                                     field_yaml%get_var_reduction(), &
-                                   mval, has_mask)
+                                   mval, diag_field%get_var_is_masked(), diag_field%get_mask_variant())
           endif
         endif
         call diag_file%write_field_data(diag_field, diag_buff)
@@ -915,8 +918,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     !< Go away if finished doing math for this buffer
     if (buffer_ptr%is_done_with_math()) cycle
 
-    call buffer_ptr%set_send_data_called()
-
     bounds_out = bounds
     if (.not. using_blocking) then
       !< Set output bounds to start at 1:size(buffer_ptr%buffer)
@@ -973,46 +974,48 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
     !< Determine the reduction method for the buffer
     reduction_method = field_yaml_ptr%get_var_reduction()
     if (present(time)) new_time = buffer_ptr%update_buffer_time(time)
+    call buffer_ptr%set_send_data_called()
     select case(reduction_method)
     case (time_none)
-      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+      error_msg = buffer_ptr%do_time_none_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
         bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_min)
-      error_msg = buffer_ptr%do_time_min_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+      error_msg = buffer_ptr%do_time_min_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
         bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_max)
-      error_msg = buffer_ptr%do_time_max_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
+      error_msg = buffer_ptr%do_time_max_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
         bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_sum)
-      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value, .true.)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_average)
-      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value, new_time)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_power)
-      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value, new_time, pow_value=field_yaml_ptr%get_pow_value())
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time, &
+        pow_value=field_yaml_ptr%get_pow_value())
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_rms)
-      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value, new_time, pow_value = 2)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time, pow_value = 2)
       if (trim(error_msg) .ne. "") then
         return
       endif
@@ -1021,8 +1024,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
                             "fms_diag_do_reduction:: time must be present when using diurnal reductions")
       ! sets the diurnal index for reduction within the buffer object
       call buffer_ptr%set_diurnal_section_index(time)
-      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_mask_variant(), &
-        bounds_in, bounds_out, missing_value, .true.)
+      error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
       if (trim(error_msg) .ne. "") then
         return
       endif
@@ -1376,7 +1379,7 @@ subroutine allocate_diag_field_output_buffers(this, field_data, field_id)
 
     ptr_diag_buffer_obj => this%FMS_diag_output_buffers(buffer_id)
     call ptr_diag_buffer_obj%allocate_buffer(field_data(1, 1, 1, 1), ndims, axes_length(1:4), &
-          var_name, num_diurnal_samples)
+      this%FMS_diag_fields(field_id)%get_mask_variant(), var_name, num_diurnal_samples)
     call ptr_diag_buffer_obj%initialize_buffer(ptr_diag_field_yaml%get_var_reduction(), var_name)
 
   enddo

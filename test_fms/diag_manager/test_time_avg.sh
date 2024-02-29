@@ -154,6 +154,17 @@ test_expect_success "Checking answers for the "avg" reduction method with openmp
 
 export OMP_NUM_THREADS=1
 
+# This is the corner case where the number of openmp threads is 1 but the number of
+# atmosphere blocks is not set 1!
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 1 \n \n/" | cat > input.nml
+test_expect_success "Running diag_manager with "none" reduction method with blocking but no threads (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+test_expect_success "Checking answers for the "none" reduction method with blocking but no threads (test $my_test_count)" '
+  mpirun -n 1 ../check_time_avg
+'
+
 my_test_count=`expr $my_test_count + 1`
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 2 \n \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "avg" reduction method with halo output (test $my_test_count)" '

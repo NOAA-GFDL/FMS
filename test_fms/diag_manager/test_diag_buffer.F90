@@ -45,7 +45,7 @@ program test_diag_buffer
     buff_sizes = 1
     do i=0, 4
         buff_sizes(i+1) = i+5
-        call buffobj(i+1)%allocate_buffer(r8_data, i, buff_sizes, fname, 1)
+        call buffobj(i+1)%allocate_buffer(r8_data, i, buff_sizes, .false., fname, 1)
         call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)
@@ -68,7 +68,7 @@ program test_diag_buffer
     buff_sizes = 1
     do i=0, 4
         buff_sizes(i+1) = i+5
-        call buffobj(i+1)%allocate_buffer(r4_data, i, buff_sizes, fname, 1)
+        call buffobj(i+1)%allocate_buffer(r4_data, i, buff_sizes, .false., fname, 1)
         call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)
@@ -90,7 +90,7 @@ program test_diag_buffer
     buff_sizes = 1
     do i=0, 4
         buff_sizes(i+1) = i+5
-        call buffobj(i+1)%allocate_buffer(i8_data, i, buff_sizes, fname, 1)
+        call buffobj(i+1)%allocate_buffer(i8_data, i, buff_sizes, .false., fname, 1)
         call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)
@@ -112,7 +112,7 @@ program test_diag_buffer
     buff_sizes = 1
     do i=0, 4
         buff_sizes(i+1) = i+5
-        call buffobj(i+1)%allocate_buffer(i4_data, i, buff_sizes, fname, 1)
+        call buffobj(i+1)%allocate_buffer(i4_data, i, buff_sizes, .false., fname, 1)
         call buffobj(i+1)%initialize_buffer(time_none, fname)
         call buffobj(i+1)%get_buffer(p_val, fname)
         select type(p_val)

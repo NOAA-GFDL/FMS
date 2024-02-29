@@ -425,9 +425,9 @@ CONTAINS
     TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
-    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< .True. if the mask changes over time
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
     LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
@@ -475,10 +475,9 @@ end function register_diag_field_array
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: long_name     !< Longname to be added as a attribute
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: units         !< Units to be added as a attribute
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: standard_name !< Standard name to be added as a attribute
-    real,                           OPTIONAL, INTENT(in) :: missing_value !< Missing value to be added as a attribute
-    real,             DIMENSION(2), OPTIONAL, INTENT(in) :: range         !< Range to be added as a attribute
-    LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< Flag indicating if the field is has
-                                                                          !! a mask variant
+    CLASS(*),                       OPTIONAL, INTENT(in) :: missing_value !< Missing value to be added as a attribute
+    CLASS(*),         DIMENSION(:), OPTIONAL, INTENT(in) :: range         !< Range to be added as a attribute
+    LOGICAL,                        OPTIONAL, INTENT(in) :: mask_variant  !< .True. if the mask changes over time
     LOGICAL,                        OPTIONAL, INTENT(in) :: DYNAMIC       !< Flag indicating if the field is dynamic
     LOGICAL,                        OPTIONAL, INTENT(in) :: do_not_log    !< if TRUE, field information is not logged
     CHARACTER(len=*),               OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
@@ -1721,12 +1720,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
 
     REAL :: rmask_threshold !< Holds the values 0.5_r4_kind or 0.5_r8_kind, or related threhold values
                             !! needed to be passed to the math/buffer update functions.
-<<<<<<< HEAD
-    class(*), pointer, dimension(:,:,:,:) :: field_modern => null() !< i8 4d remapped pointer
-=======
     character(len=:), allocatable :: field_name !< Name of the field
 
->>>>>>> 07ff0679 (Implement time_none (#1347))
     ! If diag_field_id is < 0 it means that this field is not registered, simply return
     IF ( diag_field_id <= 0 ) THEN
        diag_send_data = .FALSE.

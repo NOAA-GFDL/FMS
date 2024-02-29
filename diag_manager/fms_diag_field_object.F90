@@ -47,7 +47,8 @@ type fmsDiagField_type
      logical, allocatable, private                    :: static            !< true if this is a static var
      logical, allocatable, private                    :: scalar            !< .True. if the variable is a scalar
      logical, allocatable, private                    :: registered        !< true when registered
-     logical, allocatable, private                    :: mask_variant      !< If there is a mask variant
+     logical, allocatable, private                    :: mask_variant      !< true if the mask changes over time
+     logical, allocatable, private                    :: var_is_masked     !< true if the field is masked
      logical, allocatable, private                    :: do_not_log        !< .true. if no need to log the diag_field
      logical, allocatable, private                    :: local             !< If the output is local
      integer,          allocatable, private           :: vartype           !< the type of varaible
@@ -98,7 +99,8 @@ type fmsDiagField_type
      procedure :: set_math_needs_to_be_done => set_math_needs_to_be_done
      procedure :: add_attribute => diag_field_add_attribute
      procedure :: vartype_inq => what_is_vartype
-     procedure :: set_mask_variant
+     procedure :: set_var_is_masked
+     procedure :: get_var_is_masked
 ! Check functions
      procedure :: is_static => diag_obj_is_static
      procedure :: is_scalar
@@ -349,8 +351,8 @@ subroutine fms_register_diag_field_obj &
     this%volume = volume
   endif
 
+  this%mask_variant = .false.
   if (present(mask_variant)) then
-    allocate(this%mask_variant)
     this%mask_variant = mask_variant
   endif
 
@@ -449,12 +451,22 @@ subroutine set_math_needs_to_be_done (this, math_needs_to_be_done)
 end subroutine set_math_needs_to_be_done
 
 !> @brief Set the mask_variant to .true.
-subroutine set_mask_variant(this, is_masked)
+subroutine set_var_is_masked(this, is_masked)
   class (fmsDiagField_type) , intent(inout):: this      !< The diag field object
   logical,                    intent (in)  :: is_masked !< .True. if the field is masked
 
-  this%mask_variant = is_masked
-end subroutine set_mask_variant
+  this%var_is_masked = is_masked
+end subroutine set_var_is_masked
+
+!> @brief Queries a field for the var_is_masked variable
+!! @return var_is_masked
+function get_var_is_masked(this) &
+  result(rslt)
+  class (fmsDiagField_type) , intent(inout):: this      !< The diag field object
+  logical :: rslt !< .True. if the field is masked
+
+  rslt = this%var_is_masked
+end function get_var_is_masked
 
 !> @brief Sets the flag saying that the data buffer is allocated
 subroutine set_data_buffer_is_allocated (this, data_buffer_is_allocated)
