@@ -762,7 +762,7 @@ module fms_diag_axis_object_mod
     endif
 
     if (this%domain_position .ne. CENTER) then
-      if (subregion_start - subregion_end .eq. 1) then
+      if (subregion_end - subregion_start + 1 .eq. 1) then
           !< If your subregion consitsts of just 1 one, only include 1 PE
           if (ending_index .eq. compute_idx(2)) need_to_define_axis = .false.
       else
