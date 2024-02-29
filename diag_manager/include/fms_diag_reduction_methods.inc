@@ -214,13 +214,14 @@ end subroutine DO_TIME_MAX_
 !!    buffer(l) = buffer(l) + (weight * field(l)) ^ pow
 !!
 !! Where l are the indices passed in through the bounds_in/out
-subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, bounds_in, bounds_out, &
+subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, mask_variant, bounds_in, bounds_out, &
                                missing_value, increase_counter, diurnal_section, weight, pow)
   real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
-  real(r8_kind),       intent(inout) :: weight_sum          !< Sum of weights from the output buffer object
+  real(r8_kind),             intent(inout) :: weight_sum(:,:,:,:) !< Sum of weights from the output buffer object
   real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
   logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
   logical,                   intent(in)    :: is_masked           !< .True. if the field is using a mask
+  logical,                   intent(in)    :: mask_variant        !< .True. if the mask changes over time
   type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
                                                                   !! of the input buffer
   type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
@@ -241,17 +242,24 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
                                                             !! the output buffer
   integer :: i, j, k, l !< For looping
-  real(FMS_TRM_KIND_) :: weight_loc !< local copy of optional weight
+  real(FMS_TRM_KIND_) :: counter_local !< counter to increase the counter by
+  real(FMS_TRM_KIND_) :: weight_scale !< local copy of optional weight
   integer :: pow_loc !> local copy of optional pow value (set if using pow reduction)
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
   integer :: diurnal !< diurnal index to indicate which daily section is updated
                      !! will be 1 unless using a diurnal reduction
 
+  ! The counter and the weight are stored in different variables to avoid having
+  ! to do a if (increase_counter) inside a do loop
   if(present(weight)) then
-    weight_loc = weight
+    counter_local = weight
+    weight_scale = weight
   else
-    weight_loc = 1.0_kindl
+    counter_local = 1.0_kindl
+    weight_scale = 1.0_kindl
   endif
+
+  if (.not. increase_counter) counter_local = 0.0_kindl
 
   if(present(pow)) then
     pow_loc = pow
@@ -264,9 +272,6 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   else
     diurnal = diurnal_section
   endif
-
-  ! update with given weight for average before write
-  if (increase_counter) weight_sum = weight_sum + weight_loc
 
   is_out = bounds_out%get_imin()
   ie_out = bounds_out%get_imax()
@@ -286,27 +291,47 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, b
   !! then mask will always be .True. so the if (mask) is redudant.
   ! TODO check if performance gain by not doing weight and pow if not needed
   if (is_masked) then
-    do k = 0, ke_out - ks_out
-      do j = 0, je_out - js_out
-        do i = 0, ie_out - is_out
-          where (mask(is_in + i, js_in + j, ks_in + k, :))
-            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
+    if (mask_variant) then
+      ! Mask changes over time so the weight is an array
+      do k = 0, ke_out - ks_out
+        do j = 0, je_out - js_out
+          do i = 0, ie_out - is_out
+            where (mask(is_in + i, js_in + j, ks_in + k, :))
+              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
                        data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
-          elsewhere
-            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
-          endwhere
+                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
+              !Increase the weight sum for the grid point that was not masked
+              weight_sum(is_out + i, js_out + j, ks_out + k, :) = &
+                weight_sum(is_out + i, js_out + j, ks_out + k, :) + counter_local
+            endwhere
+          enddo
         enddo
       enddo
-    enddo
+    else
+      weight_sum = weight_sum + counter_local
+      do k = 0, ke_out - ks_out
+        do j = 0, je_out - js_out
+          do i = 0, ie_out - is_out
+            where (mask(is_in + i, js_in + j, ks_in + k, :))
+              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
+                       data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
+                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
+            elsewhere
+              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
+            endwhere
+          enddo
+        enddo
+      enddo
+    endif
   else
+    weight_sum = weight_sum + counter_local
     ! doesn't need to loop through l if no mask, just sums the 1d slices
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
           data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal) =  &
              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-            + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_loc) ** pow_loc
+            + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
         enddo
       enddo
     enddo
@@ -316,20 +341,26 @@ end subroutine DO_TIME_SUM_UPDATE_
 !> To be called with diag_send_complete, finishes reductions
 !! Just divides the buffer by the counter array(which is just the sum of the weights used in the buffer's reduction)
 !! TODO: change has_mask to an actual logical mask so we don't have to check for missing values
-subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask, n_diurnal_samples)
+subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missing_val, has_mask, mask_variant, &
+                            n_diurnal_samples)
   real(FMS_TRM_KIND_), intent(inout) :: out_buffer_data(:,:,:,:,:) !< data buffer previously updated with
                                                                    !! do_time_sum_update
-  real(r8_kind), intent(in)          :: weight_sum !< sum of weights for averaging, provided via argument to send data
+  real(r8_kind), intent(in)          :: weight_sum(:,:,:,:) !< sum of weights for averaging,
+                                                            !! provided via argument to send data
   integer, intent(in)                :: reduction_method !< which reduction method to use
                                                          !! should always be one of time_avg, time_diurnal, or time_rms
   real(FMS_TRM_KIND_), intent(in)    :: missing_val !< missing value for masked elements
   logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped
+  logical, intent(in)                :: mask_variant !< Indicates if the mask changes over time
   integer, optional, intent(in)      :: n_diurnal_samples !< number of diurnal samples as set in reduction method
-  integer :: wsum !< local cp of weight_sum, only changed if using diurnal
+  integer, allocatable :: wsum(:,:,:,:) !< local cp of weight_sum, only changed if using diurnal
   !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
   !logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one.
   !logical                            :: has_mask !< whether or not mask is present
 
+  integer :: i, j, k, l !< For do loops
+
+  allocate(wsum(size(weight_sum,1), size(weight_sum,3), size(weight_sum,3), size(weight_sum,4)))
   ! need to divide weight sum by amount of samples to get the actual
   ! number of times that the diurnal section was incremented
   ! legacy diag manager stored these weights explicitly, this doesn't so assumes uniformity in when data is sent
@@ -342,13 +373,33 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   endif
 
   if ( has_mask ) then
-    where(out_buffer_data(:,:,:,:,:) .ne. missing_val)
-      out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
-                                   / wsum
-    endwhere
-  else  !not mask variant
+    if (.not. mask_variant) then
+      ! The mask does not change over time so wsum is just an integer and it is the same value for all fields
+      where(out_buffer_data(:,:,:,:,:) .ne. missing_val)
+        out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
+                                   / wsum(1,1,1,1)
+      endwhere
+    else
+      ! The mask changes over time
+      do l = 1, size(out_buffer_data, 4)
+        do k = 1, size(out_buffer_data, 3)
+          do j = 1, size(out_buffer_data, 2)
+            do i = 1, size(out_buffer_data, 1)
+              if (wsum(i, j, k, l) .gt. 0) then
+                out_buffer_data(i,j,k,l,:) = out_buffer_data(i,j,k,l,:)/ wsum(i,j,k,l)
+              else
+                ! Data was never received
+                out_buffer_data(i,j,k,l,:) = missing_val
+              endif
+            enddo
+          enddo
+        enddo
+      enddo
+    endif
+  else
+    ! There is no mask!
     out_buffer_data(:,:,:,:,:) = out_buffer_data(:,:,:,:,:) &
-                               / wsum
+                               / wsum(1,1,1,1)
   endif
 
   if(reduction_method .eq. time_rms .and. has_mask) then
