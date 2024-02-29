@@ -1280,14 +1280,6 @@ subroutine write_time_metadata(this)
     call register_variable_attribute(fms2io_fileobj, time_var_name, "bounds", &
       trim(time_var_name)//"_bnds", str_len=len_trim(time_var_name//"_bnds"))
 
-    !< Write out the "average_*" variables metadata
-    call write_var_metadata(fms2io_fileobj, avg_name//"_T1", dimensions(2:2), &
-      "Start time for average period", time_units_str)
-    call write_var_metadata(fms2io_fileobj, avg_name//"_T2", dimensions(2:2), &
-      "End time for average period", time_units_str)
-    call write_var_metadata(fms2io_fileobj, avg_name//"_DT", dimensions(2:2), &
-      "Length of average period", time_unit_list(diag_file%get_file_timeunit()))
-
     !< It is possible that the "nv" "axis" was registered via "diag_axis_init" call
     !! so only adding it if it doesn't exist already
     if ( .not. dimension_exists(fms2io_fileobj, "nv")) then
@@ -1398,7 +1390,6 @@ subroutine write_time_data(this, is_the_end)
 
   real :: T1 !< The beginning time of the averaging period
   real :: T2 !< The ending time of the averaging period
-  real :: DT !< The difference between the ending and beginning time of the averaging period
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
@@ -1421,11 +1412,7 @@ subroutine write_time_data(this, is_the_end)
   if (diag_file%time_ops) then
     T1 = get_date_dif(diag_file%last_output, get_base_time(), diag_file%get_file_timeunit())
     T2 = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
-    DT = T2 - T1
 
-    call write_data(fms2io_fileobj, avg_name//"_T1", T1, unlim_dim_level=diag_file%unlim_dimension_level)
-    call write_data(fms2io_fileobj, avg_name//"_T2", T2, unlim_dim_level=diag_file%unlim_dimension_level)
-    call write_data(fms2io_fileobj, avg_name//"_DT", DT, unlim_dim_level=diag_file%unlim_dimension_level)
     call write_data(fms2io_fileobj, trim(diag_file%get_file_unlimdim())//"_bnds", &
                     (/T1, T2/), unlim_dim_level=diag_file%unlim_dimension_level)
 
