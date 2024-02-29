@@ -16,78 +16,103 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_efp_mod mpp_efp_mod
+!> @ingroup mpp
+!> @brief This module provides interfaces to the non-domain-oriented communication
+!! subroutines.
+!!
+!> Mainly includes interfaces and type definitions for reproducing operations with extended
+!! fixed point data.
+
+!> @addtogroup mpp_efp_mod
+!> @{
 module mpp_efp_mod
-#include <fms_platform.h>
 
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE
 use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_npes
 use mpp_mod, only : mpp_sum
+use platform_mod
 
 implicit none ; private
 
 public :: mpp_reproducing_sum, mpp_efp_list_sum_across_PEs
 public :: mpp_efp_plus, mpp_efp_minus, mpp_efp_to_real, mpp_real_to_efp, mpp_efp_real_diff
 public :: operator(+), operator(-), assignment(=)
-public :: mpp_query_efp_overflow_error, mpp_reset_efp_overlow_error
+public :: mpp_query_efp_overflow_error, mpp_reset_efp_overflow_error
 
-!   This module provides interfaces to the non-domain-oriented communication
-! subroutines.
-integer, parameter :: NUMBIT = 46  ! number of bits used in the 64-bit signed integer representation.
-integer, parameter :: NUMINT = 6   ! The number of long integers to use to represent
-                                   ! a real number.
+integer, parameter :: NUMBIT = 46  !< number of bits used in the 64-bit signed integer representation.
+integer, parameter :: NUMINT = 6   !< The number of long integers to use to represent
+                                   !! a real number.
 
-integer(LONG_KIND), parameter :: prec=2_8**NUMBIT ! The precision of each integer.
-real(DOUBLE_KIND), parameter :: r_prec=2.0_8**NUMBIT  ! A real version of prec.
-real(DOUBLE_KIND), parameter :: I_prec=1.0_8/(2.0_8**NUMBIT) ! The inverse of prec.
-integer, parameter :: max_count_prec=2**(63-NUMBIT)-1
-                              ! The number of values that can be added together
-                              ! with the current value of prec before there will
-                              ! be roundoff problems.
+integer(i8_kind), parameter :: prec=2_8**NUMBIT !< The precision of each integer.
+real(r8_kind), parameter :: r_prec=2.0_8**NUMBIT !< A real version of prec.
+real(r8_kind), parameter :: I_prec=1.0_8/(2.0_8**NUMBIT) !< The inverse of prec.
+integer, parameter :: max_count_prec=2**(63-NUMBIT)-1  !< The number of values that can be added together
+                              !! with the current value of prec before there will
+                              !! be roundoff problems.
 
-real(DOUBLE_KIND), parameter, dimension(NUMINT) :: &
+real(r8_kind), parameter, dimension(NUMINT) :: &
   pr = (/ r_prec**2, r_prec, 1.0_8, 1.0_8/r_prec, 1.0_8/r_prec**2, 1.0_8/r_prec**3 /)
-real(DOUBLE_KIND), parameter, dimension(NUMINT) :: &
+real(r8_kind), parameter, dimension(NUMINT) :: &
   I_pr = (/ 1.0_8/r_prec**2, 1.0_8/r_prec, 1.0_8, r_prec, r_prec**2, r_prec**3 /)
 
 logical :: overflow_error = .false., NaN_error = .false.
-logical :: debug = .false.    ! Making this true enables debugging output.
+logical :: debug = .false.    !< Making this true enables debugging output.
 
+!> @}
+
+!> This interface uses a conversion to an integer representation
+!! of real numbers to give order-invariant sums that will reproduce
+!! across PE count.
+!!
+!! This idea comes from R. Hallberg and A. Adcroft.
+!!
+!> @ingroup mpp_efp_mod
 interface mpp_reproducing_sum
   module procedure mpp_reproducing_sum_r8_2d
   module procedure mpp_reproducing_sum_r8_3d
   module procedure mpp_reproducing_sum_r4_2d
 end interface mpp_reproducing_sum
 
-! The Extended Fixed Point (mpp_efp) type provides a public interface for doing
-! sums and taking differences with this type.
-type, public :: mpp_efp_type ; private
-  integer(kind=8), dimension(NUMINT) :: v
+!> The Extended Fixed Point (mpp_efp) type provides a public interface for doing
+!! sums and taking differences with this type.
+!> @ingroup mpp_efp_mod
+type, public :: mpp_efp_type
+  private
+  integer(i8_kind), dimension(NUMINT) :: v
 end type mpp_efp_type
 
+
+!> Operator override interface for mpp_efp_type
+!> @ingroup mpp_efp_mod
 interface operator (+); module procedure mpp_efp_plus  ; end interface
+!> Operator override interface for mpp_efp_type
+!> @ingroup mpp_efp_mod
 interface operator (-); module procedure mpp_efp_minus ; end interface
+!> Assignment override interface for mpp_efp_type
+!> @ingroup mpp_efp_mod
 interface assignment(=); module procedure mpp_efp_assign ; end interface
+
+!> @addtogroup mpp_efp_mod
+!> @{
 
 contains
 
+!> @brief Calculates a reproducing sum for a 2D, 8-byte real array
 function mpp_reproducing_sum_r8_2d(array, isr, ier, jsr, jer, EFP_sum, reproducing, &
                             overflow_check, err) result(sum)
-  real(DOUBLE_KIND), dimension(:,:), intent(in) :: array
+  real(r8_kind), dimension(:,:), intent(in) :: array
   integer,        optional,          intent(in) :: isr, ier, jsr, jer
   type(mpp_efp_type), optional,     intent(out) :: EFP_sum
   logical,        optional,          intent(in) :: reproducing
   logical,        optional,          intent(in) :: overflow_check
   integer,        optional,         intent(out) :: err
-  real(DOUBLE_KIND)                             :: sum  ! Result
+  real(r8_kind)                             :: sum  !< Result
 
-  !   This subroutine uses a conversion to an integer representation
-  ! of real numbers to give order-invariant sums that will reproduce
-  ! across PE count.  This idea comes from R. Hallberg and A. Adcroft.
-
-  integer(LONG_KIND), dimension(NUMINT)  :: ints_sum
-  integer(LONG_KIND) :: ival, prec_error
-  real(DOUBLE_KIND)  :: rsum(1), rs
-  real(DOUBLE_KIND)  :: max_mag_term
+  integer(i8_kind), dimension(NUMINT)  :: ints_sum
+  integer(i8_kind) :: ival, prec_error
+  real(r8_kind)  :: rsum(1), rs
+  real(r8_kind)  :: max_mag_term
   logical :: repro, over_check
   character(len=256) :: mesg
   integer :: i, j, n, is, ie, js, je, sgn
@@ -217,43 +242,43 @@ end function mpp_reproducing_sum_r8_2d
 
 function mpp_reproducing_sum_r4_2d(array, isr, ier, jsr, jer, EFP_sum, reproducing, &
                             overflow_check, err) result(sum)
-  real(FLOAT_KIND), dimension(:,:), intent(in) :: array
+  real(r4_kind), dimension(:,:), intent(in) :: array
   integer,        optional,          intent(in) :: isr, ier, jsr, jer
   type(mpp_efp_type), optional,     intent(out) :: EFP_sum
   logical,        optional,          intent(in) :: reproducing
   logical,        optional,          intent(in) :: overflow_check
   integer,        optional,         intent(out) :: err
-  real(FLOAT_KIND)                             :: sum  ! Result
+  real(r4_kind)                             :: sum  !< Result
 
-  real(DOUBLE_KIND) :: array_r8(size(array,1), size(array,2))
+  real(r8_kind) :: array_r8(size(array,1), size(array,2))
 
   array_r8 = array
 
-  sum = mpp_reproducing_sum_r8_2d(array_r8, isr, ier, jsr, jer, EFP_sum, reproducing, &
-                            overflow_check, err)
+  sum = real(mpp_reproducing_sum_r8_2d(array_r8, isr, ier, jsr, jer, EFP_sum, reproducing, &
+                            overflow_check, err), r4_kind)
 
   return
 
 end function mpp_reproducing_sum_r4_2d
 
-
+!> @brief Reproducing sum for 3d arrays of 8-bit reals
+!!
+!> This function uses a conversion to an integer representation
+!! of real numbers to give order-invariant sums that will reproduce
+!! across PE count.  This idea comes from R. Hallberg and A. Adcroft.
 function mpp_reproducing_sum_r8_3d(array, isr, ier, jsr, jer, sums, EFP_sum, err) &
                             result(sum)
-  real(DOUBLE_KIND), dimension(:,:,:),        intent(in) :: array
+  real(r8_kind), dimension(:,:,:),        intent(in) :: array
   integer,    optional,                       intent(in) :: isr, ier, jsr, jer
-  real(DOUBLE_KIND), dimension(:), optional, intent(out) :: sums
+  real(r8_kind), dimension(:), optional, intent(out) :: sums
   type(mpp_efp_type),     optional,          intent(out) :: EFP_sum
   integer,            optional,              intent(out) :: err
-  real(DOUBLE_KIND)                                      :: sum  ! Result
+  real(r8_kind)                                      :: sum  !< Result
 
-  !   This subroutine uses a conversion to an integer representation
-  ! of real numbers to give order-invariant sums that will reproduce
-  ! across PE count.  This idea comes from R. Hallberg and A. Adcroft.
-
-  real(DOUBLE_KIND)    :: max_mag_term
-  integer(LONG_KIND), dimension(NUMINT)  :: ints_sum
-  integer(LONG_KIND), dimension(NUMINT,size(array,3))  :: ints_sums
-  integer(LONG_KIND) :: prec_error
+  real(r8_kind)    :: max_mag_term
+  integer(i8_kind), dimension(NUMINT)  :: ints_sum
+  integer(i8_kind), dimension(NUMINT,size(array,3))  :: ints_sums
+  integer(i8_kind) :: prec_error
   character(len=256) :: mesg
   integer :: i, j, k, is, ie, js, je, ke, isz, jsz, n
 
@@ -402,17 +427,17 @@ function mpp_reproducing_sum_r8_3d(array, isr, ier, jsr, jer, sums, EFP_sum, err
 
 end function mpp_reproducing_sum_r8_3d
 
+!> @brief This function converts a real number to an equivalent representation
+!! using several long integers.
 function real_to_ints(r, prec_error, overflow) result(ints)
-  real(DOUBLE_KIND),            intent(in) :: r
-  integer(LONG_KIND), optional, intent(in) :: prec_error
+  real(r8_kind),            intent(in) :: r
+  integer(i8_kind), optional, intent(in) :: prec_error
   logical,   optional,       intent(inout) :: overflow
-  integer(LONG_KIND),    dimension(NUMINT) :: ints
-  !   This subroutine converts a real number to an equivalent representation
-  ! using several long integers.
+  integer(i8_kind),    dimension(NUMINT) :: ints
 
-  real(DOUBLE_KIND) :: rs
+  real(r8_kind) :: rs
   character(len=80) :: mesg
-  integer(LONG_KIND) :: ival, prec_err
+  integer(i8_kind) :: ival, prec_err
   integer :: sgn, i
 
   prec_err = prec ; if (present(prec_error)) prec_err = prec_error
@@ -438,10 +463,10 @@ function real_to_ints(r, prec_error, overflow) result(ints)
 
 end function real_to_ints
 
+!> @brief This function reverses the conversion in real_to_ints.
 function ints_to_real(ints) result(r)
-  integer(LONG_KIND), dimension(NUMINT), intent(in) :: ints
-  real(DOUBLE_KIND) :: r
-  ! This subroutine reverses the conversion in real_to_ints.
+  integer(i8_kind), dimension(NUMINT), intent(in) :: ints
+  real(r8_kind) :: r
 
   integer :: i
 
@@ -449,13 +474,13 @@ function ints_to_real(ints) result(r)
   do i=1,NUMINT ; r = r + pr(i)*ints(i) ; enddo
 end function ints_to_real
 
+!> @brief This subroutine increments a number with another, both using the integer
+!! representation in real_to_ints.
 subroutine increment_ints(int_sum, int2, prec_error)
-  integer(LONG_KIND), dimension(NUMINT), intent(inout) :: int_sum
-  integer(LONG_KIND), dimension(NUMINT), intent(in)    :: int2
-  integer(LONG_KIND), optional,      intent(in)    :: prec_error
+  integer(i8_kind), dimension(NUMINT), intent(inout) :: int_sum
+  integer(i8_kind), dimension(NUMINT), intent(in)    :: int2
+  integer(i8_kind), optional,      intent(in)    :: prec_error
 
-  ! This subroutine increments a number with another, both using the integer
-  ! representation in real_to_ints.
   integer :: i
 
   do i=NUMINT,2,-1
@@ -478,16 +503,16 @@ subroutine increment_ints(int_sum, int2, prec_error)
 
 end subroutine increment_ints
 
+!> @brief This subroutine increments a number with another, both using the integer
+!! representation in real_to_ints, but without doing any carrying of overflow.
+!! The entire operation is embedded in a single call for greater speed.
 subroutine increment_ints_faster(int_sum, r, max_mag_term)
-  integer(LONG_KIND), dimension(NUMINT), intent(inout) :: int_sum
-  real(DOUBLE_KIND),                        intent(in) :: r
-  real(DOUBLE_KIND),                     intent(inout) :: max_mag_term
+  integer(i8_kind), dimension(NUMINT), intent(inout) :: int_sum
+  real(r8_kind),                        intent(in) :: r
+  real(r8_kind),                     intent(inout) :: max_mag_term
 
-  ! This subroutine increments a number with another, both using the integer
-  ! representation in real_to_ints, but without doing any carrying of overflow.
-  ! The entire operation is embedded in a single call for greater speed.
-  real(DOUBLE_KIND) :: rs
-  integer(LONG_KIND) :: ival
+  real(r8_kind) :: rs
+  integer(i8_kind) :: ival
   integer :: sgn, i
 
   if ((r >= 1e30) .eqv. (r < 1e30)) then ; NaN_error = .true. ; return ; endif
@@ -503,11 +528,11 @@ subroutine increment_ints_faster(int_sum, r, max_mag_term)
 
 end subroutine increment_ints_faster
 
+!> @brief This subroutine handles carrying of the overflow.
 subroutine carry_overflow(int_sum, prec_error)
-  integer(LONG_KIND), dimension(NUMINT), intent(inout) :: int_sum
-  integer(LONG_KIND),                intent(in)    :: prec_error
+  integer(i8_kind), dimension(NUMINT), intent(inout) :: int_sum
+  integer(i8_kind),                intent(in)    :: prec_error
 
-  ! This subroutine handles carrying of the overflow.
   integer :: i, num_carry
 
   do i=NUMINT,2,-1 ; if (abs(int_sum(i)) > prec) then
@@ -521,11 +546,11 @@ subroutine carry_overflow(int_sum, prec_error)
 
 end subroutine carry_overflow
 
+!> @brief This subroutine carries the overflow, and then makes sure that
+!! all integers are of the same sign as the overall value.
 subroutine regularize_ints(int_sum)
-  integer(LONG_KIND), dimension(NUMINT), intent(inout) :: int_sum
+  integer(i8_kind), dimension(NUMINT), intent(inout) :: int_sum
 
-  ! This subroutine carries the overflow, and then makes sure that
-  ! all integers are of the same sign as the overall value.
   logical :: positive
   integer :: i, num_carry
 
@@ -563,9 +588,9 @@ function mpp_query_efp_overflow_error()
   mpp_query_efp_overflow_error = overflow_error
 end function mpp_query_efp_overflow_error
 
-subroutine mpp_reset_efp_overlow_error()
+subroutine mpp_reset_efp_overflow_error()
   overflow_error = .false.
-end subroutine mpp_reset_efp_overlow_error
+end subroutine mpp_reset_efp_overflow_error
 
 function mpp_efp_plus(EFP1, EFP2)
   type(mpp_efp_type)             :: mpp_efp_plus
@@ -586,20 +611,20 @@ function mpp_efp_minus(EFP1, EFP2)
   call increment_ints(mpp_efp_minus%v(:), EFP1%v(:))
 end function mpp_efp_minus
 
+!> @brief This subroutine assigns all components of the extended fixed point type
+!! variable on the RHS (EFP2) to the components of the variable on the LHS
+!! (EFP1).
 subroutine mpp_efp_assign(EFP1, EFP2)
   type(mpp_efp_type), intent(out) :: EFP1
   type(mpp_efp_type), intent(in)  :: EFP2
   integer i
-  ! This subroutine assigns all components of the extended fixed point type
-  ! variable on the RHS (EFP2) to the components of the variable on the LHS
-  ! (EFP1).
 
   do i=1,NUMINT ; EFP1%v(i) = EFP2%v(i) ; enddo
 end subroutine mpp_efp_assign
 
 function mpp_efp_to_real(EFP1)
   type(mpp_efp_type), intent(inout) :: EFP1
-  real(DOUBLE_KIND) :: mpp_efp_to_real
+  real(r8_kind) :: mpp_efp_to_real
 
   call regularize_ints(EFP1%v)
   mpp_efp_to_real = ints_to_real(EFP1%v)
@@ -607,7 +632,7 @@ end function mpp_efp_to_real
 
 function mpp_efp_real_diff(EFP1, EFP2)
   type(mpp_efp_type), intent(in) :: EFP1, EFP2
-  real(DOUBLE_KIND) :: mpp_efp_real_diff
+  real(r8_kind) :: mpp_efp_real_diff
 
   type(mpp_efp_type)             :: EFP_diff
 
@@ -617,7 +642,7 @@ function mpp_efp_real_diff(EFP1, EFP2)
 end function mpp_efp_real_diff
 
 function mpp_real_to_efp(val, overflow)
-  real(DOUBLE_KIND),    intent(in) :: val
+  real(r8_kind),    intent(in) :: val
   logical, optional, intent(inout) :: overflow
   type(mpp_efp_type)               :: mpp_real_to_efp
 
@@ -637,16 +662,15 @@ function mpp_real_to_efp(val, overflow)
 
 end function mpp_real_to_efp
 
+!> This subroutine does a sum across PEs of a list of EFP variables,
+!! returning the sums in place, with all overflows carried.
 subroutine mpp_efp_list_sum_across_PEs(EFPs, nval, errors)
   type(mpp_efp_type), dimension(:), intent(inout) :: EFPs
   integer, intent(in) :: nval
   logical, dimension(:), optional, intent(out) :: errors
 
-  !   This subroutine does a sum across PEs of a list of EFP variables,
-  ! returning the sums in place, with all overflows carried.
-
-  integer(LONG_KIND), dimension(NUMINT,nval) :: ints
-  integer(LONG_KIND) :: prec_error
+  integer(i8_kind), dimension(NUMINT,nval) :: ints
+  integer(i8_kind) :: prec_error
   logical :: error_found
   character(len=256) :: mesg
   integer :: i, n
@@ -670,7 +694,7 @@ subroutine mpp_efp_list_sum_across_PEs(EFPs, nval, errors)
     do n=1,NUMINT ; EFPs(i)%v(n) = ints(n,i) ; enddo
     if (present(errors)) errors(i) = overflow_error
     if (overflow_error) then
-      write (mesg,'("mpp_efp_list_sum_across_PEs error at ",i6," val was ",ES12.6, ", prec_error = ",ES12.6)') &
+      write (mesg,'("mpp_efp_list_sum_across_PEs error at ",i6," val was ",ES13.6, ", prec_error = ",ES13.6)') &
              i, mpp_efp_to_real(EFPs(i)), real(prec_error)
       if(mpp_pe()==mpp_root_pe()) call mpp_error(WARNING, mesg)
     endif
@@ -683,3 +707,5 @@ subroutine mpp_efp_list_sum_across_PEs(EFPs, nval, errors)
 end subroutine mpp_efp_list_sum_across_PEs
 
 end module mpp_efp_mod
+!> @}
+! close documentation grouping

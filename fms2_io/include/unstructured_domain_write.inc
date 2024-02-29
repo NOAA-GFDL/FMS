@@ -16,6 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief Routines to write data from an unstructured domain decomposition.
+!! Used in the @ref write_data interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine unstructured_domain_write_0d(fileobj, variable_name, variable_data, &
@@ -154,3 +160,4 @@ subroutine unstructured_domain_write_5d(fileobj, variable_name, variable_data, &
   call compressed_write(fileobj, variable_name, variable_data, unlim_dim_level, corner, &
                         edge_lengths=edge_lengths)
 end subroutine unstructured_domain_write_5d
+!> @}

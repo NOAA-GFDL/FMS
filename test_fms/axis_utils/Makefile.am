@@ -23,23 +23,32 @@
 # uramirez, Ed Hartnett
 
 # Find the fms and mpp mod files.
-AM_CPPFLAGS = -I${top_builddir}/axis_utils -I${top_builddir}/fms	\
--I${top_builddir}/mpp
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_axis_utils
+check_PROGRAMS = \
+    test_axis_utils_r4 \
+    test_axis_utils_r8
 
 # This is the source code for the test.
-test_axis_utils_SOURCES = test_axis_utils.F90
+test_axis_utils_r4_SOURCES = test_axis_utils.F90
+test_axis_utils_r8_SOURCES = test_axis_utils.F90
+
+test_axis_utils_r4_CPPFLAGS = $(AM_CPPFLAGS) -DAU_TEST_KIND_=r4_kind
+test_axis_utils_r8_CPPFLAGS = $(AM_CPPFLAGS) -DAU_TEST_KIND_=r8_kind
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test program.
 TESTS = test_axis_utils2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input_base.nml test_axis_utils2.sh
+EXTRA_DIST = test_axis_utils2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml *.out* *.nc* *.dpi *.spi *.dyn *.spl

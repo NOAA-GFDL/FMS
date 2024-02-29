@@ -23,26 +23,19 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/diag_manager
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/horiz_interp
-AM_CPPFLAGS += -I${top_builddir}/time_manager
-AM_CPPFLAGS += -I${top_builddir}/time_interp
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
-AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/interpolator/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libinterpolator.la
 
 # The convenience library depends on its source.
-libinterpolator_la_SOURCES = interpolator.F90
+libinterpolator_la_SOURCES = interpolator.F90 \
+														 include/interpolator.inc \
+														 include/interpolator_r4.fh \
+														 include/interpolator_r8.fh
 
-# Mod file depends on its o file, is built and then installed.
-interpolator_mod.mod: interpolator.lo
-BUILT_SOURCES = interpolator_mod.mod
-include_HEADERS = interpolator_mod.mod
+BUILT_SOURCES = interpolator_mod.$(FC_MODEXT)
+nodist_include_HEADERS = interpolator_mod.$(FC_MODEXT)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

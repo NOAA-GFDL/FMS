@@ -70,6 +70,7 @@
 #
 # The known flags are:
 # -fdefault-real-8: gfortran
+#    -real-size 64: Intel compiler
 #    -real_size 64: Intel compiler
 #        -s real64: Cray
 #              -r8: Portland Group compiler
@@ -81,6 +82,7 @@ gx_cv_fc_default_real_kind8_flag=unknown
 gx_fc_default_real_kind8_flag_FCFLAGS_save=$FCFLAGS
 for ac_flag in none \
                '-fdefault-real-8' \
+               '-real-size 64' \
                '-real_size 64' \
                '-s real64' \
                '-r8' \
@@ -126,6 +128,7 @@ AC_SUBST([FC_DEFAULT_REAL_KIND8_FLAG])
 # The known flags are:
 #             none: gfortran (gfortran does not have an option to set the
 #                   default REAL kind to KIND=4)
+#    -real-size 32: Intel compiler
 #    -real_size 32: Intel compiler
 #        -s real32: Cray
 #              -r4: Portland Group compiler
@@ -137,6 +140,7 @@ gx_cv_fc_default_real_kind4_flag=unknown
 gx_fc_default_real_kind4_flag_FCFLAGS_save=$FCFLAGS
 for ac_flag in none \
                '-fdefault-real-4' \
+               '-real-size 32' \
                '-real_size 32' \
                '-s real32' \
                '-r4' \

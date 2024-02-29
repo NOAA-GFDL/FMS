@@ -18,19 +18,23 @@
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
+#
+# Copyright (c) 2021 Seth Underwood
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/axis_utils directory.
-
-# Ed Hartnett 11/26/19
-
-# Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
 # Copy and rename namelist file.
-cp $top_srcdir/test_fms/affinity/input_base.nml input.nml
+cat <<_EOF > input.nml
+&test_affinity_nml
+/
+_EOF
 
-# Only run the test if on slurm:
-if test "x$mpi_launcher" == "xsrun" ; then
-   run_test test_affinity 6
+if test "x$mpi_launcher" != "xsrun"; then
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
 fi
+
+test_expect_success "FMS affinity places MPI processes correctly on slurm" '
+  mpirun -n 6 ./test_affinity
+'
+
+test_done

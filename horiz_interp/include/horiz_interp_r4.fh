@@ -1,0 +1,64 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @addtogroup horiz_interp
+!> @{
+#undef FMS_HI_KIND_
+#define FMS_HI_KIND_ r4_kind
+
+#undef HI_KIND_TYPE_
+#define HI_KIND_TYPE_ horizInterpReals4_type
+
+#undef HORIZ_INTERP_NEW_1D_
+#define HORIZ_INTERP_NEW_1D_ horiz_interp_new_1d_r4
+
+#undef HORIZ_INTERP_NEW_1D_SRC_
+#define HORIZ_INTERP_NEW_1D_SRC_ horiz_interp_new_1d_src_r4
+
+#undef HORIZ_INTERP_NEW_1D_DST_
+#define HORIZ_INTERP_NEW_1D_DST_ horiz_interp_new_1d_dst_r4
+
+#undef HORIZ_INTERP_BASE_2D_
+#define HORIZ_INTERP_BASE_2D_ horiz_interp_base_2d_r4
+
+#undef HORIZ_INTERP_BASE_3D_
+#define HORIZ_INTERP_BASE_3D_ horiz_interp_base_3d_r4
+
+#undef HORIZ_INTERP_SOLO_1D_
+#define HORIZ_INTERP_SOLO_1D_ horiz_interp_solo_1d_r4
+
+#undef HORIZ_INTERP_SOLO_1D_SRC_
+#define HORIZ_INTERP_SOLO_1D_SRC_ horiz_interp_solo_1d_src_r4
+
+#undef HORIZ_INTERP_SOLO_1D_DST_
+#define HORIZ_INTERP_SOLO_1D_DST_ horiz_interp_solo_1d_dst_r4
+
+#undef HORIZ_INTERP_SOLO_2D_
+#define HORIZ_INTERP_SOLO_2D_ horiz_interp_solo_2d_r4
+
+#undef HORIZ_INTERP_SOLO_OLD_
+#define HORIZ_INTERP_SOLO_OLD_ horiz_interp_solo_old_r4
+
+#undef HORIZ_INTERP_NEW_2D_
+#define HORIZ_INTERP_NEW_2D_ horiz_interp_new_2d_r4
+
+#undef IS_LAT_LON_
+#define IS_LAT_LON_ is_lat_lon_r4
+
+#include "horiz_interp.inc"
+!> @}

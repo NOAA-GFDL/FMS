@@ -1,0 +1,55 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @addtogroup horiz_interp_conserve
+!> @{
+#undef HI_KIND_TYPE_
+#define HI_KIND_TYPE_ horizInterpReals8_type
+
+#undef FMS_HI_KIND_
+#define FMS_HI_KIND_ r8_kind
+
+#undef HORIZ_INTERP_CONSERVE_NEW_1DX1D_
+#define HORIZ_INTERP_CONSERVE_NEW_1DX1D_ horiz_interp_conserve_new_1dx1d_r8
+
+#undef HORIZ_INTERP_CONSERVE_NEW_1DX2D_
+#define HORIZ_INTERP_CONSERVE_NEW_1DX2D_ horiz_interp_conserve_new_1dx2d_r8
+
+#undef HORIZ_INTERP_CONSERVE_NEW_2DX1D_
+#define HORIZ_INTERP_CONSERVE_NEW_2DX1D_ horiz_interp_conserve_new_2dx1d_r8
+
+#undef HORIZ_INTERP_CONSERVE_NEW_2DX2D_
+#define HORIZ_INTERP_CONSERVE_NEW_2DX2D_ horiz_interp_conserve_new_2dx2d_r8
+
+#undef HORIZ_INTERP_CONSERVE_
+#define HORIZ_INTERP_CONSERVE_ horiz_interp_conserve_r8
+
+#undef HORIZ_INTERP_CONSERVE_VERSION1_
+#define HORIZ_INTERP_CONSERVE_VERSION1_ horiz_interp_conserve_version1_r8
+
+#undef HORIZ_INTERP_CONSERVE_VERSION2_
+#define HORIZ_INTERP_CONSERVE_VERSION2_ horiz_interp_conserve_version2_r8
+
+#undef STATS_
+#define STATS_ stats_r8
+
+#undef DATA_SUM_
+#define DATA_SUM_ data_sum_r8
+
+#include "horiz_interp_conserve.inc"
+!> @}

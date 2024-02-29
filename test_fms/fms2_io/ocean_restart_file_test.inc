@@ -28,14 +28,14 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
   type(domain2d), pointer :: io_domain
   integer :: nx
   integer :: ny
-  real(kind=real64), dimension(:), allocatable :: lon_data
-  real(kind=real64), dimension(:), allocatable :: lat_data
-  real(kind=real64), dimension(:), allocatable :: lev_data
-  real(kind=real64), dimension(:,:,:), allocatable :: temperature_data
-  integer(kind=int64) :: out_chksum
+  real(kind=r8_kind), dimension(:), allocatable :: lon_data
+  real(kind=r8_kind), dimension(:), allocatable :: lat_data
+  real(kind=r8_kind), dimension(:), allocatable :: lev_data
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: temperature_data
+  integer(kind=i8_kind) :: out_chksum
   integer :: ndims
   integer, dimension(:), allocatable :: dim_sizes
-  integer(kind=int64) :: in_chksum
+  integer(kind=i8_kind) :: in_chksum
   logical :: debug
   integer :: err
   integer :: i
@@ -68,18 +68,12 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
   endif
   call mpp_get_compute_domain(io_domain, xsize=nx, ysize=ny)
   allocate(temperature_data(nz, nx, ny))
+  temperature_data(:,:,:) = 0.0
 
   !Write a restart file.
   !Open a restart file and initialize the file object.
   call open_check(open_file(fileobj, "ocean.nc", "overwrite", domain, &
                             nc_format="64bit", is_restart=.true.))
-
-  !Add some global attributes to the restart file.
-  call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
-  call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
-  call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
-  call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
-  call register_global_attribute(fileobj, "globalatt5", "some text")
 
   !Add dimensions and corresponding variables to the file.
   !Longitude (domain "x" dimension).
@@ -90,7 +84,7 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
     lon_data(i) = 33.33 + 1.2*i
   enddo
   call write_data(fileobj, "lon", lon_data)
-  call register_variable_attribute(fileobj, "lon", "units", "degrees")
+  call register_variable_attribute(fileobj, "lon", "units", "degrees", str_len=len_trim("degrees"))
 
   !Latitude (domain "y" dimension).
   call register_axis(fileobj, "lat", "y")
@@ -100,7 +94,7 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
     lat_data(i) = 65. + 0.05*i
   enddo
   call write_data(fileobj, "lat", lat_data)
-  call register_variable_attribute(fileobj, "lat", "units", "degrees")
+  call register_variable_attribute(fileobj, "lat", "units", "degrees", str_len=len_trim("degrees"))
 
   !Height.
   call register_axis(fileobj, "lev", nz)
@@ -110,12 +104,12 @@ subroutine ocean_restart_file(domain, nz, nt, debug_flag)
     lev_data(i) = 0.1 + 20.2*i
   enddo
   call write_data(fileobj, "lev", lev_data)
-  call register_variable_attribute(fileobj, "lev", "units", "mb")
+  call register_variable_attribute(fileobj, "lev", "units", "mb", str_len=len_trim("mb"))
 
   !Add a restart variable.
   call register_restart_field(fileobj, "temperature", temperature_data, &
                               (/"lev ","lon ","lat "/))
-  call register_variable_attribute(fileobj, "temperature", "units", "K")
+  call register_variable_attribute(fileobj, "temperature", "units", "K", str_len=len_trim("K"))
 
   !Initialize some random temperature data.
   do j = 1, ny

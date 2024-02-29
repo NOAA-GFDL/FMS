@@ -22,58 +22,231 @@
 
 # Ed Hartnett 2/22/19
 
-# Descend into include directory.
-SUBDIRS = include
+# Include .fh and .mod files.
+AM_CPPFLAGS = \
+  -I$(top_srcdir)/include \
+  -I$(top_srcdir)/mpp/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-# Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_srcdir}/mpp/include
+noinst_LTLIBRARIES = libmpp.la
 
-# Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libmpp_parameter.la libmpp_data.la libmpp.la \
-libmpp_utilities.la libmpp_memutils.la libmpp_pset.la libmpp_efp.la \
-libmpp_domains.la libmpp_io.la libmpp_c.la libmpp_memuse_c.la
+libmpp_la_SOURCES = \
+  mpp_parameter.F90 \
+  mpp.F90 \
+  mpp_data.F90 \
+  mpp_utilities.F90 \
+  mpp_domains.F90 \
+  mpp_io.F90 \
+  mpp_efp.F90 \
+  mpp_memutils.F90 \
+  mpp_memuse.c \
+  mpp_pset.F90 \
+  include/group_update_pack.inc \
+  include/group_update_unpack.inc \
+  include/mpp_alltoall_mpi.fh \
+  include/mpp_alltoall_nocomm.fh \
+  include/mpp_chksum.fh \
+  include/mpp_chksum_int.fh \
+  include/mpp_chksum_scalar.fh \
+  include/mpp_comm.inc \
+  include/mpp_comm_mpi.inc \
+  include/mpp_comm_nocomm.inc \
+  include/mpp_data_mpi.inc \
+  include/mpp_data_nocomm.inc \
+  include/mpp_define_nest_domains.inc \
+  include/mpp_do_check.fh \
+  include/mpp_do_checkV.fh \
+  include/mpp_do_get_boundary.fh \
+  include/mpp_do_get_boundary_ad.fh \
+  include/mpp_do_global_field.fh \
+  include/mpp_do_global_field_ad.fh \
+  include/mpp_do_redistribute.fh \
+  include/mpp_do_update.fh \
+  include/mpp_do_updateV.fh \
+  include/mpp_do_updateV_ad.fh \
+  include/mpp_do_updateV_nonblock.fh \
+  include/mpp_do_update_ad.fh \
+  include/mpp_do_update_nest.fh \
+  include/mpp_do_update_nonblock.fh \
+  include/mpp_domains_comm.inc \
+  include/mpp_domains_define.inc \
+  include/mpp_domains_misc.inc \
+  include/mpp_domains_reduce.inc \
+  include/mpp_domains_util.inc \
+  include/mpp_error_a_a.fh \
+  include/mpp_error_a_s.fh \
+  include/mpp_error_s_a.fh \
+  include/mpp_error_s_s.fh \
+  include/mpp_gather.fh \
+  include/mpp_get_boundary.fh \
+  include/mpp_get_boundary_ad.fh \
+  include/mpp_global_field.fh \
+  include/mpp_global_field_ad.fh \
+  include/mpp_global_field_ug.fh \
+  include/mpp_global_reduce.fh \
+  include/mpp_global_sum.fh \
+  include/mpp_global_sum_ad.fh \
+  include/mpp_global_sum_tl.fh \
+  include/mpp_group_update.fh \
+  include/mpp_io_connect.inc \
+  include/mpp_io_misc.inc \
+  include/mpp_io_read.inc \
+  include/mpp_io_unstructured_read.inc \
+  include/mpp_io_unstructured_write.inc \
+  include/mpp_io_util.inc \
+  include/mpp_io_write.inc \
+  include/mpp_read_2Ddecomp.fh \
+  include/mpp_read_compressed.fh \
+  include/mpp_read_distributed_ascii.fh \
+  include/mpp_read_distributed_ascii.inc \
+  include/mpp_reduce_mpi.fh \
+  include/mpp_reduce_nocomm.fh \
+  include/mpp_scatter.fh \
+  include/mpp_sum.inc \
+  include/mpp_sum_ad.inc \
+  include/mpp_sum_mpi.fh \
+  include/mpp_sum_mpi_ad.fh \
+  include/mpp_sum_nocomm.fh \
+  include/mpp_sum_nocomm_ad.fh \
+  include/mpp_transmit.inc \
+  include/mpp_transmit_mpi.fh \
+  include/mpp_transmit_nocomm.fh \
+  include/mpp_type_mpi.fh \
+  include/mpp_type_nocomm.fh \
+  include/mpp_unstruct_domain.inc \
+  include/mpp_unstruct_pass_data.fh \
+  include/mpp_update_domains2D.fh \
+  include/mpp_update_domains2D_ad.fh \
+  include/mpp_update_domains2D_nonblock.fh \
+  include/mpp_update_nest_domains.fh \
+  include/mpp_util.inc \
+  include/mpp_util_mpi.inc \
+  include/mpp_util_nocomm.inc \
+  include/mpp_write.fh \
+  include/mpp_write_2Ddecomp.fh \
+  include/mpp_write_compressed.fh \
+  include/mpp_write_unlimited_axis.fh \
+  include/system_clock.fh
 
-# Each convenience library depends on its source.
-libmpp_parameter_la_SOURCES = mpp_parameter.F90
-libmpp_la_SOURCES = mpp.F90
-libmpp_data_la_SOURCES = mpp_data.F90
-libmpp_utilities_la_SOURCES = mpp_utilities.F90
-libmpp_domains_la_SOURCES = mpp_domains.F90
-libmpp_io_la_SOURCES = mpp_io.F90
-libmpp_pset_la_SOURCES = mpp_pset.F90
-libmpp_efp_la_SOURCES = mpp_efp.F90
-libmpp_c_la_SOURCES = nsclock.c threadloc.c
-libmpp_memutils_la_SOURCES = mpp_memutils.F90
-libmpp_memuse_c_la_SOURCES = mpp_memuse.c
-
-# Each mod file depends on the .o file.
-mpp_parameter_mod.mod: mpp_parameter.lo
-mpp_data_mod.mod: mpp_data.lo
-mpp_mod.mod: mpp.lo
-mpp_pset_mod.mod: mpp_pset.lo
-mpp_utilities_mod.mod: mpp_utilities.lo
-mpp_memutils_mod.mod: mpp_memutils.lo
-mpp_efp_mod.mod: mpp_efp.lo
-mpp_domains_mod.mod: mpp_domains.lo
-mpp_io_mod.mod: mpp_io.lo
-
-# Some mods are dependant on other mods in this dir.
-mpp_data.lo: mpp_parameter_mod.mod
-mpp.lo: mpp_data_mod.mod
-mpp_utilities.lo: mpp_mod.mod mpp_efp_mod.mod
-mpp_memutils.lo: mpp_mod.mod
-mpp_pset.lo: mpp_mod.mod
-mpp_efp.lo: mpp_parameter_mod.mod mpp_mod.mod
-mpp_domains.lo: mpp_data_mod.mod mpp_parameter_mod.mod mpp_mod.mod	\
-mpp_memutils_mod.mod mpp_pset_mod.mod mpp_efp_mod.mod
-mpp_io.lo: mpp_parameter_mod.mod mpp_mod.mod mpp_domains_mod.mod
+mpp_mod.$(FC_MODEXT): \
+  mpp_parameter_mod.$(FC_MODEXT) \
+  mpp_data_mod.$(FC_MODEXT) \
+  include/mpp_util.inc \
+  include/mpp_error_a_a.fh \
+  include/mpp_error_a_s.fh \
+  include/mpp_error_s_a.fh \
+  include/mpp_error_s_s.fh \
+  include/mpp_util_mpi.inc \
+  include/mpp_util_nocomm.inc \
+  include/mpp_comm.inc \
+  include/mpp_chksum.fh \
+  include/mpp_chksum_int.fh \
+  include/mpp_chksum_scalar.fh \
+  include/mpp_comm_mpi.inc \
+  include/mpp_alltoall_mpi.fh \
+  include/mpp_reduce_mpi.fh \
+  include/mpp_sum_mpi.fh \
+  include/mpp_sum.inc \
+  include/mpp_sum_mpi_ad.fh \
+  include/mpp_sum_ad.inc \
+  include/mpp_transmit_mpi.fh \
+  include/mpp_transmit.inc \
+  include/mpp_type_mpi.fh \
+  include/mpp_comm_nocomm.inc \
+  include/mpp_alltoall_nocomm.fh \
+  include/mpp_reduce_nocomm.fh \
+  include/mpp_sum_nocomm.fh \
+  include/mpp_sum_nocomm_ad.fh \
+  include/mpp_transmit_nocomm.fh \
+  include/mpp_type_nocomm.fh \
+  include/mpp_gather.fh \
+  include/mpp_scatter.fh \
+  include/system_clock.fh
+mpp_data_mod.$(FC_MODEXT): \
+  mpp_parameter_mod.$(FC_MODEXT) \
+  include/mpp_data_mpi.inc \
+  include/mpp_data_nocomm.inc
+mpp_utilities_mod.$(FC_MODEXT): \
+  mpp_mod.$(FC_MODEXT) \
+  mpp_efp_mod.$(FC_MODEXT)
+mpp_domains_mod.$(FC_MODEXT): \
+  mpp_data_mod.$(FC_MODEXT) \
+  mpp_parameter_mod.$(FC_MODEXT) \
+  mpp_mod.$(FC_MODEXT) \
+  mpp_memutils_mod.$(FC_MODEXT) \
+  mpp_efp_mod.$(FC_MODEXT) \
+  include/mpp_define_nest_domains.inc \
+  include/mpp_domains_util.inc \
+  include/mpp_domains_comm.inc \
+  include/mpp_domains_define.inc \
+  include/mpp_domains_misc.inc \
+  include/mpp_do_check.fh \
+  include/mpp_do_checkV.fh \
+  include/mpp_do_get_boundary.fh \
+  include/mpp_do_get_boundary_ad.fh \
+  include/mpp_do_redistribute.fh \
+  include/mpp_do_update.fh \
+  include/mpp_do_updateV.fh \
+  include/mpp_do_updateV_ad.fh \
+  include/mpp_do_updateV_nonblock.fh \
+  include/mpp_do_update_ad.fh \
+  include/mpp_do_update_nest.fh \
+  include/mpp_do_update_nonblock.fh \
+  include/mpp_get_boundary.fh \
+  include/mpp_get_boundary_ad.fh \
+  include/mpp_group_update.fh \
+  include/group_update_pack.inc \
+  include/group_update_unpack.inc \
+  include/mpp_update_domains2D.fh \
+  include/mpp_update_domains2D_ad.fh \
+  include/mpp_update_domains2D_nonblock.fh \
+  include/mpp_update_nest_domains.fh \
+  include/mpp_domains_reduce.inc \
+  include/mpp_do_global_field.fh \
+  include/mpp_do_global_field_ad.fh \
+  include/mpp_global_field.fh \
+  include/mpp_global_field_ad.fh \
+  include/mpp_global_reduce.fh \
+  include/mpp_global_sum.fh \
+  include/mpp_global_sum_ad.fh \
+  include/mpp_global_sum_tl.fh \
+  include/mpp_unstruct_domain.inc \
+  include/mpp_global_field_ug.fh \
+  include/mpp_unstruct_pass_data.fh
+mpp_io_mod.$(FC_MODEXT): \
+  mpp_parameter_mod.$(FC_MODEXT) \
+  mpp_mod.$(FC_MODEXT) \
+  mpp_domains_mod.$(FC_MODEXT) \
+  include/mpp_io_util.inc \
+  include/mpp_io_misc.inc \
+  include/mpp_io_connect.inc \
+  include/mpp_io_read.inc \
+  include/mpp_read_2Ddecomp.fh \
+  include/mpp_read_compressed.fh \
+  include/mpp_read_distributed_ascii.inc \
+  include/mpp_read_distributed_ascii.fh \
+  include/mpp_io_write.inc \
+  include/mpp_write.fh \
+  include/mpp_write_2Ddecomp.fh \
+  include/mpp_write_compressed.fh \
+  include/mpp_write_unlimited_axis.fh \
+  include/mpp_io_unstructured_write.inc \
+  include/mpp_io_unstructured_read.inc
+mpp_efp_mod.$(FC_MODEXT): mpp_parameter_mod.$(FC_MODEXT) mpp_mod.$(FC_MODEXT)
+mpp_memutils_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
+mpp_pset_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = mpp_parameter_mod.mod mpp_data_mod.mod mpp_mod.mod \
-mpp_utilities_mod.mod mpp_memutils_mod.mod mpp_pset_mod.mod \
-mpp_efp_mod.mod mpp_domains_mod.mod mpp_io_mod.mod
-include_HEADERS = $(MODFILES)
-BUILT_SOURCES = $(MODFILES)
+BUILT_SOURCES = \
+  mpp_parameter_mod.$(FC_MODEXT) \
+  mpp_data_mod.$(FC_MODEXT) \
+  mpp_mod.$(FC_MODEXT) \
+  mpp_utilities_mod.$(FC_MODEXT) \
+  mpp_memutils_mod.$(FC_MODEXT) \
+  mpp_efp_mod.$(FC_MODEXT) \
+  mpp_domains_mod.$(FC_MODEXT) \
+  mpp_io_mod.$(FC_MODEXT) \
+  mpp_pset_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(BUILT_SOURCES)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

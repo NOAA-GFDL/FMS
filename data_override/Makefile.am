@@ -23,27 +23,32 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/platform
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/horiz_interp
-AM_CPPFLAGS += -I${top_builddir}/time_interp
-AM_CPPFLAGS += -I${top_builddir}/time_manager
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/axis_utils
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
-AM_CPPFLAGS += -I${top_builddir}/mosaic
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/data_override/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libdata_override.la
 
 # The convenience library depends on its source.
-libdata_override_la_SOURCES = data_override.F90
+libdata_override_la_SOURCES = \
+  get_grid_version.F90 \
+  include/get_grid_version_r4.fh \
+  include/get_grid_version_r8.fh \
+  include/get_grid_version.inc \
+  data_override.F90 \
+  include/data_override_r4.fh \
+  include/data_override_r8.fh \
+  include/data_override.inc
 
-# Mod file depends on its o file, is built and then installed.
-data_override_mod.mod: data_override.lo
-BUILT_SOURCES = data_override_mod.mod
-include_HEADERS = data_override_mod.mod
+# Some mods are dependent on other mods in this dir.
+data_override_mod.$(FC_MODEXT): get_grid_version_mod.$(FC_MODEXT)
 
-CLEANFILES = *.mod
+# Mod files are built and then installed as headers.
+MODFILES = \
+  data_override_mod.$(FC_MODEXT) \
+  get_grid_version_mod.$(FC_MODEXT)
+
+nodist_include_HEADERS = $(MODFILES)
+BUILT_SOURCES = $(MODFILES)
+
+include $(top_srcdir)/mkmods.mk

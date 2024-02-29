@@ -26,40 +26,41 @@
 .NOTPARALLEL:
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
+
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libdrifters_core.la libdrifters_input.la \
-libdrifters_comm.la libdrifters_io.la libcloud_interpolator.la \
-libdrifters.la libquicksort.la
+noinst_LTLIBRARIES = libdrifters.la
 
 # Each convenience library depends on its source.
-libdrifters_la_SOURCES = drifters.F90
-libdrifters_core_la_SOURCES = drifters_core.F90
-libdrifters_comm_la_SOURCES = drifters_comm.F90
-libdrifters_input_la_SOURCES = drifters_input.F90
-libdrifters_io_la_SOURCES = drifters_io.F90
-libcloud_interpolator_la_SOURCES = cloud_interpolator.F90
-libquicksort_la_SOURCES = quicksort.F90
+libdrifters_la_SOURCES = drifters.F90 \
+  drifters_core.F90 \
+  drifters_comm.F90 \
+  drifters_input.F90 \
+  drifters_io.F90 \
+  cloud_interpolator.F90 \
+  quicksort.F90 \
+  drifters_compute_k.fh \
+  drifters_push.fh \
+  drifters_set_field.fh \
+  fms_switches.h
 
-# These headers are in the drifters directory.
-DRIFTERS_HDRS = drifters_compute_k.h drifters_push.h \
-drifters_set_field.h fms_switches.h
-
-# Each mod file depends on the .o file.
-drifters_core_mod.mod: drifters_core.lo
-drifters_input_mod.mod: drifters_input.lo
-drifters_comm_mod.mod: drifters_comm.lo
-drifters_io_mod.mod: drifters_io.lo
-cloud_interpolator_mod.mod: cloud_interpolator.lo
-drifters_mod.mod: drifters.lo
+drifters_mod.$(FC_MODEXT): drifters_core_mod.$(FC_MODEXT) drifters_input_mod.$(FC_MODEXT) drifters_io_mod.$(FC_MODEXT) \
+                  drifters_comm_mod.$(FC_MODEXT) cloud_interpolator_mod.$(FC_MODEXT)
+drifters_comm_mod.$(FC_MODEXT): drifters_core_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = drifters_core_mod.mod drifters_input_mod.mod \
-drifters_comm_mod.mod drifters_io_mod.mod cloud_interpolator_mod.mod \
-drifters_mod.mod
-include_HEADERS = $(MODFILES) $(DRIFTERS_HDRS)
+MODFILES = \
+  drifters_core_mod.$(FC_MODEXT) \
+  drifters_input_mod.$(FC_MODEXT) \
+  drifters_comm_mod.$(FC_MODEXT) \
+  drifters_io_mod.$(FC_MODEXT) \
+  cloud_interpolator_mod.$(FC_MODEXT) \
+  drifters_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES) $(DRIFTERS_HDRS)
 BUILT_SOURCES = $(MODFILES)
-CLEANFILES = *.mod *__genmod.f90
 
+EXTRA_DIST = README.md
+
+include $(top_srcdir)/mkmods.mk

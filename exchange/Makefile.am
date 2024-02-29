@@ -23,33 +23,25 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/time_manager
-AM_CPPFLAGS += -I${top_builddir}/diag_manager
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/mosaic
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
-AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libstock_constants.la libxgrid.la
+noinst_LTLIBRARIES = libexchange.la
 
 # Each convenience library depends on its source.
-libstock_constants_la_SOURCES = stock_constants.F90
-libxgrid_la_SOURCES = xgrid.F90 stock_constants_mod.mod
-
-# Each mod file depends on the .o file.
-stock_constants_mod.mod: stock_constants.lo
-xgrid_mod.mod: xgrid.lo
+libexchange_la_SOURCES = \
+  stock_constants.F90 \
+  xgrid.F90
 
 # Some mods are dependant on other mods in this dir.
-xgrid.lo: stock_constants_mod.mod
+xgrid_mod.$(FC_MODEXT): stock_constants_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = stock_constants_mod.mod xgrid_mod.mod
-include_HEADERS = $(MODFILES)
+MODFILES = \
+  stock_constants_mod.$(FC_MODEXT) \
+  xgrid_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

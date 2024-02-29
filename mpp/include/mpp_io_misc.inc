@@ -18,6 +18,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief Misc. routines including initialization and finalization of @ref mpp_io_mod
+
+!> @addtogroup mpp_io_mod
+!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                      !
@@ -46,10 +51,10 @@
 
     subroutine mpp_io_init( flags, maxunit )
       integer, intent(in), optional :: flags, maxunit
-      integer                       :: unit_nml, io_status, iunit
+      integer                       :: io_status, unit
       integer                       :: logunit, outunit, inunit, errunit
       logical                       :: opened
-      real(DOUBLE_KIND)             :: doubledata = 0
+      real(r8_kind)             :: doubledata = 0
       real                          :: realarray(4)
 
       if( module_is_initialized )return
@@ -68,30 +73,19 @@
           verbose = flags.EQ.MPP_VERBOSE .OR. debug
       end if
 
-!set range of allowed fortran unit numbers: could be compiler-dependent (should not overlap stdin/out/err)
-      call mpp_set_unit_range( 103, maxunits )
-
       !--- namelist
-#ifdef INTERNAL_FILE_NML
       read (input_nml_file, mpp_io_nml, iostat=io_status)
-#else
-      do unit_nml = unit_begin, unit_end
-         inquire( unit_nml,OPENED=opened )
-         if( .NOT.opened )exit
-      end do
-      open(unit_nml,file='input.nml')
-      read(unit_nml,mpp_io_nml,iostat=io_status)
-      close(unit_nml)
-#endif
-
       if (io_status > 0) then
-         call mpp_error(FATAL,'=>mpp_io_init: Error reading input.nml')
+         call mpp_error(FATAL,'=>mpp_io_init: Error reading mpp_io_nml')
       endif
 
 
       outunit = stdout(); logunit=stdlog()
       write(outunit, mpp_io_nml)
       write(logunit, mpp_io_nml)
+
+      unit_begin = 103
+      unit_end = maxunits
 
 !--- check the deflate level, set deflate = 1 if deflate_level is greater than equal to 0
       if(deflate_level .GE. 0) deflate = 1
@@ -103,7 +97,8 @@
 
 ! determine the pack_size
       pack_size = size(transfer(doubledata, realarray))
-      if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL,'mpp_io_mod(mpp_io_init): pack_size should be 1 or 2')
+      if( pack_size .NE. 1 .AND. pack_size .NE. 2) call mpp_error(FATAL, &
+         & 'mpp_io_mod(mpp_io_init): pack_size should be 1 or 2')
 
 !initialize default_field
       default_field%name = 'noname'
@@ -145,7 +140,8 @@
 !up to MAXUNITS fortran units and MAXUNITS netCDF units are supported
 !file attributes (opened, format, access, threading, fileset) are saved against the unit number
 !external handles to netCDF units are saved from maxunits+1:2*maxunits
-      allocate( mpp_file(NULLUNIT:2*maxunits) ) !starts at NULLUNIT=-1, used by non-participant PEs in single-threaded I/O
+      allocate( mpp_file(NULLUNIT:2*maxunits) ) !starts at NULLUNIT=-1, used by non-participant PEs in
+                                                !! single-threaded I/O
       mpp_file(:)%name   = ' '
       mpp_file(:)%action    = -1
       mpp_file(:)%format    = -1
@@ -168,25 +164,24 @@
       mpp_file(NULLUNIT)%opened = .TRUE.
       mpp_file(NULLUNIT)%valid  = .TRUE.
       mpp_file(NULLUNIT)%initialized = .TRUE.
-!declare the stdunits to be open
-      mpp_file(outunit)%opened = .TRUE.
-      mpp_file(logunit)%opened = .TRUE.
-      inunit  = stdin()  ; mpp_file(inunit)%opened  = .TRUE.
-      errunit = stderr() ; mpp_file(errunit)%opened = .TRUE.
+!! Declare the stdunits to be open
+!! Because the stdunits are created with the newunit intrinsic function in some cases,
+!! only open up an mpp_file array for units that are within the allocated scope of mpp_file
+      if (outunit > NULLUNIT .AND. outunit < 2*maxunits) mpp_file(outunit)%opened = .TRUE.
+      if (logunit > NULLUNIT .AND. logunit < 2*maxunits) mpp_file(logunit)%opened = .TRUE.
+      inunit  = stdin()
+      if (inunit > NULLUNIT .AND. inunit < 2*maxunits) mpp_file(inunit)%opened  = .TRUE.
+      errunit = stderr()
+      if (errunit > NULLUNIT .AND. errunit < 2*maxunits) mpp_file(errunit)%opened = .TRUE.
 
       if( pe.EQ.mpp_root_pe() )then
-          iunit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
-          write( iunit,'(/a)' )'MPP_IO module '//trim(version)
+          unit = stdlog()  ! PGI compiler does not like stdlog() doing I/O within write call
+          write( unit,'(/a)' )'MPP_IO module '//trim(version)
 #ifdef use_netCDF
           text = NF_INQ_LIBVERS()
-          write( iunit,'(/a)' )'Using netCDF library version '//trim(text)
+          write( unit,'(/a)' )'Using netCDF library version '//trim(text)
 #endif
       endif
-
-#ifdef CRAYPVP
-!we require every file to be assigned threadwise: PVPs default to global, and are reset here
-      call ASSIGN( 'assign -P thread p:%', error )
-#endif
 
       call mpp_io_set_stack_size(131072) ! default initial value
       call mpp_sync()
@@ -228,7 +223,7 @@
       end if
 !close all open fortran units
       do unit = unit_begin,unit_end
-         if( mpp_file(unit)%opened )call FLUSH(unit)
+         if( mpp_file(unit)%opened )FLUSH(unit)
       end do
       if( dosync )call mpp_sync()
       do unit = unit_begin,unit_end
@@ -284,14 +279,15 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_FLUSH: must first call mpp_io_init.' )
       if( .NOT.mpp_file(unit)%write_on_this_pe) return
       if( .NOT.mpp_file(unit)%opened ) call mpp_error( FATAL, 'MPP_FLUSH: invalid unit number.' )
-      if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, 'MPP_FLUSH: cannot flush a file during writing of metadata.' )
+      if( .NOT.mpp_file(unit)%initialized )call mpp_error( FATAL, &
+         &  'MPP_FLUSH: cannot flush a file during writing of metadata.' )
 
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
 #ifdef use_netCDF
           error = NF_SYNC(mpp_file(unit)%ncid); call netcdf_err( error, mpp_file(unit) )
 #endif
       else
-          call FLUSH(unit)
+          FLUSH(unit)
       end if
       return
     end subroutine mpp_flush
@@ -308,4 +304,4 @@
     logical function do_cf_compliance()
       do_cf_compliance = cf_compliance
     end function do_cf_compliance
-
+!> @}

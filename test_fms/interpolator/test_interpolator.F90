@@ -35,35 +35,29 @@
 
 program test_interpolator
 
-#ifdef INTERNAL_FILE_NML
-use mpp_mod, only: input_nml_file
-#endif
-
 use mpp_mod
-use mpp_io_mod
 use mpp_domains_mod
+#ifdef use_deprecated_io
+use fms_mod, old_open_file => open_file
+#else
 use fms_mod
+#endif
 use time_manager_mod
-use diag_manager_mod!, only : diag_axis_init, file_exist, MPP_NPES, &
-                    !  MPP_PE, REGISTER_DIAG_FIELD, SEND_DATA, SET_DATE,&
-                    !  SET_TIME
-
+use diag_manager_mod
 use interpolator_mod
-!use sulfate_mod
-!use ozone_mod
-use constants_mod !, only : grav, constants_init, PI
+use constants_mod
 use time_interp_mod, only : time_interp_init
+use fms2_io_mod,     only : open_file, FmsNetcdfFile_t
 
 implicit none
 integer, parameter :: nsteps_per_day = 8, ndays = 16
 real, parameter :: delt = 1.0/nsteps_per_day
-! integer, parameter :: nxd = 144, nyd = 90, ntsteps = 240, two_delt = 2*delt
 integer, parameter :: nxd = 20, nyd = 40, ntsteps = nsteps_per_day*ndays, two_delt = 2*delt
 integer :: delt_days, delt_secs
 integer, parameter :: max_fields = 20 ! maximum number of fields to be interpolated
 
 integer :: i,k,n,level
-integer :: unit, io_status
+integer :: io_status
 integer :: ndivs
 integer :: jscomp, jecomp, iscomp, iecomp, isd,ied,jsd,jed
 integer :: numfields, domain_layout(2)
@@ -77,12 +71,6 @@ character(len=1) :: dest_grid
 character(len=128) :: src_file, file_out, title, units, colaer
 logical :: vector_field=.false., result
 
-type(axistype), allocatable, dimension(:)  :: axes_out, axes_src
-type(axistype) :: time_axis
-type(fieldtype), allocatable, dimension(:) :: fields
-type(fieldtype) :: dest_field(max_fields), src_field(max_fields), field_geolon_t, &
-     field_geolat_t, field_geolon_c, field_geolat_c
-type(atttype), allocatable, dimension(:) :: global_atts
 type(domain2d) :: domain
 type(time_type) :: model_time
 
@@ -100,8 +88,7 @@ data names(:) /"so4_anthro","so4_natural","organic_carbon","black_carbon","sea_s
 "natural_dust_0.2","natural_dust_0.8","natural_dust_2.0","natural_dust_8.0"/
 
 integer :: out_of_bounds(1)
-data out_of_bounds / CONSTANT/!, CONSTANT/!, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT, &
-!ZERO, ZERO, ZERO, ZERO /
+data out_of_bounds / CONSTANT/
 
 namelist /interpolator_nml/ src_file
 
@@ -113,7 +100,6 @@ delt_secs = INT(delt*SECONDS_PER_DAY) - delt_days*SECONDS_PER_DAY
 write(*,*) delt, delt_days,delt_secs
 
 call mpp_init
-call mpp_io_init
 call mpp_domains_init
 call set_calendar_type(JULIAN)
 call diag_manager_init
@@ -129,25 +115,12 @@ src_file = 'src_file'  ! input file containing fields to be interpolated
 
 model_time = set_date(1979,12,1,0,0,0)
 
-!if (numfields.ne.2.and.vector_field) call mpp_error(FATAL,'2 components of vector field not specified')
-!if (numfields.gt.1.and..not.vector_field) call mpp_error(FATAL,'only 1 scalar at a time')
-!if (numfields .gt. max_fields) call mpp_error(FATAL,'max num fields exceeded')
-
 !--------------------------------------------------------------------
 ! namelist input
 !--------------------------------------------------------------------
 
-#ifdef INTERNAL_FILE_NML
-  read (input_nml_file, nml=interpolator_nml, iostat=io)
-  ierr = check_nml_error(io, 'interpolator_nml')
-#else
-  call mpp_open(unit, 'input.nml',  action=MPP_RDONLY, form=MPP_ASCII)
-  read  (unit, interpolator_nml,iostat=io_status)
-  if (io_status .gt. 0) then
-    call mpp_error(FATAL,'=>Error reading interpolator_nml')
-  endif
-call mpp_close(unit)
-#endif
+read (input_nml_file, nml=interpolator_nml, iostat=io)
+ierr = check_nml_error(io, 'interpolator_nml')
 
 ! decompose model grid points
 ! mapping can get expensive so we distribute the task at this level
@@ -287,8 +260,12 @@ character(len=64),      intent(in)            :: names(:)
 integer,                intent(in)            :: data_out_of_bounds(:)
 integer,                intent(in), optional  :: vert_interp(:)
 character(len=*),       intent(out),optional  :: units(:)
+character(len=128)                            :: filename_aerosol
 
-if (.not. file_exist("INPUT/aerosol.climatology.nc") ) return
+type(FmsNetcdfFile_t) :: fileobj_aerosol
+
+filename_aerosol = "INPUT/aerosol.climatology.nc"
+if (.not. open_file(fileobj_aerosol, filename_aerosol, "read") ) return
 call interpolator_init( aerosol, "aerosol.climatology.nc", lonb, latb, &
                         data_names=names, data_out_of_bounds=data_out_of_bounds, &
                         vert_interp=vert_interp, clim_units=units )
@@ -319,8 +296,12 @@ type(time_type),       intent(in)           :: model_time
 type(interpolate_type),intent(inout)        :: o3
 integer,               intent(in)           :: data_out_of_bounds(:)
 integer,               intent(in), optional :: vert_interp(:)
+character(len=128)                          :: filename_o3
 
-if (.not. file_exist("INPUT/o3.climatology.nc") ) return
+type(FmsNetcdfFile_t) :: fileobj_o3
+
+filename_o3 = "INPUT/o3.climatology.nc"
+if (.not. open_file(fileobj_o3, filename_o3, "read") ) return
 call interpolator_init( o3, "o3.climatology.nc", lonb, latb, &
                         data_out_of_bounds=data_out_of_bounds, vert_interp=vert_interp )
 

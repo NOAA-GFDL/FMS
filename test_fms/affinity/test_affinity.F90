@@ -21,6 +21,7 @@ program test_affinity
 
 !--- FMS modules
  use mpp_mod,          only: input_nml_file, mpp_error, mpp_pe, mpp_root_pe, FATAl
+ use fms_mod,          only: fms_init, fms_end
  use fms_affinity_mod
 
 !--- namelist parameters
@@ -34,12 +35,12 @@ program test_affinity
  integer:: conc_threads
  character(len=32):: h_name
 
+     call fms_init()
+
 !-----------------------------------------------------------------------
 !--- print initial test message
     print *, ''
     print *, '*** Testing affinity placement within FMS library...'
-!--- initialize affinity
-    call FMS_affinity_init()
 
     read(input_nml_file,test_affinity_nml, iostat=io_status)
     if (io_status > 0) then
@@ -50,5 +51,7 @@ program test_affinity
 
 !--- print success or failure message
     if (mpp_pe() == mpp_root_pe()) print *, '*** SUCCESS!'
+
+    call fms_end()
 
 end program test_affinity

@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @addtogroup fms_io_mod
+!> @{
 
 !>Find the file unit for an inputted file, searching for its variants.  If the
 !!file is not found, then throw a fatal error.
@@ -33,7 +35,8 @@ subroutine fms_io_unstructured_file_unit(filename, &
    !Local variables
     logical(INT_KIND)  :: found_file  !<Flag telling if the file exists.
     character(len=256) :: actual_file !<Name of the found file.
-    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has IO domain tile id appended to the end).
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has IO domain
+                                      !! tile id appended to the end).
     integer(INT_KIND)  :: nfile       !<Index of the inputted file in the "files_read" module array.
 
    !Get the actual name of the file, searching for all possible variants. If
@@ -58,5 +61,4 @@ subroutine fms_io_unstructured_file_unit(filename, &
 
     return
 end subroutine fms_io_unstructured_file_unit
-
-!----------
+!> @}

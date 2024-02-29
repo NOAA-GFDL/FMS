@@ -23,23 +23,26 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/axis_utils/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
-noinst_LTLIBRARIES = libaxis_utils.la libaxis_utils2.la
+noinst_LTLIBRARIES = libaxis_utils.la
 
-# The convenience library depends on its source.
-libaxis_utils_la_SOURCES = axis_utils.F90
-libaxis_utils2_la_SOURCES = axis_utils2.F90
+libaxis_utils_la_SOURCES = \
+  axis_utils.F90 \
+  axis_utils2.F90 \
+  include/axis_utils2_r4.fh \
+  include/axis_utils2_r8.fh \
+  include/axis_utils2.inc
+
+axis_utils2.$(FC_MODEXT) : \
+include/axis_utils2_r4.fh \
+include/axis_utils2_r8.fh \
+include/axis_utils2.inc
 
 # Mod file depends on its o file, is built and then installed.
-axis_utils_mod.mod: axis_utils.lo
-axis_utils2_mod.mod: axis_utils2.lo
-include_HEADERS = axis_utils_mod.mod axis_utils2_mod.mod
-BUILT_SOURCES = axis_utils_mod.mod axis_utils2_mod.mod
+nodist_include_HEADERS = axis_utils_mod.$(FC_MODEXT) axis_utils2_mod.$(FC_MODEXT)
+BUILT_SOURCES = axis_utils_mod.$(FC_MODEXT) axis_utils2_mod.$(FC_MODEXT)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

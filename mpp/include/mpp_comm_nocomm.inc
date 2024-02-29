@@ -18,24 +18,35 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief Routines to initialize and finalize @ref mpp_mod without MPI.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !       ROUTINES TO INITIALIZE/FINALIZE MPP MODULE: mpp_init, mpp_exit        !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !    subroutine mpp_init( flags, in, out, err, log )
-  !      integer, optional, intent(in) :: flags, in, out, err, log
-subroutine mpp_init( flags,localcomm )
-  integer, optional, intent(in) :: flags
-  integer, optional, intent(in) :: localcomm ! dummy here, used only in MPI
+!> @brief Initialize the @ref mpp_mod module
+subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
+  integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
+  integer, optional, intent(in) :: localcomm !< Id of MPI communicator used to initialize
+  integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
+                                              !! before completion for testing purposes
+  character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
   integer                       :: my_pe, num_pes, len, i, logunit
   logical                       :: opened, existed
-  integer                       :: unit_begin, unit_end, unit_nml, io_status
+  integer                       :: io_status
+  integer                       :: t_level
 
   if( module_is_initialized )return
 
   module_is_initialized = .TRUE.
+  if(present(test_level)) then
+    t_level = test_level
+  else
+    t_level = -1
+  endif
+  if(t_level == 0) return
 
   allocate(peset(0:0))
   !PEsets: make defaults illegal
@@ -50,11 +61,13 @@ subroutine mpp_init( flags,localcomm )
   peset(0)%id = 0
   world_peset_num = 0
   current_peset_num = world_peset_num !initialize current PEset to world
+  if(t_level == 1) return
 
   !initialize clocks
   call SYSTEM_CLOCK( count=tick0, count_rate=ticks_per_sec, count_max=max_ticks )
   tick_rate = 1./ticks_per_sec
   clock0 = mpp_clock_id( 'Total runtime', flags=MPP_CLOCK_SYNC )
+  if(t_level == 2) return
 
   ! Initialize mpp_datatypes
   ! NOTE: mpp_datatypes is unused in serial mode; this is an empty list
@@ -79,76 +92,33 @@ subroutine mpp_init( flags,localcomm )
      debug   = flags.EQ.MPP_DEBUG
      verbose = flags.EQ.MPP_VERBOSE .OR. debug
   end if
+  if(t_level == 3) return
 
   call mpp_init_logfile()
-  call read_input_nml
+  if (present(alt_input_nml_path)) then
+     call read_input_nml(alt_input_nml_path=alt_input_nml_path)
+  else
+     call read_input_nml
+  end if
+  if(t_level == 4) return
 
   !--- read namelist
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, mpp_nml, iostat=io_status)
-#else
-  unit_begin = 103
-  unit_end   = 512
-  do unit_nml = unit_begin, unit_end
-     inquire( unit_nml,OPENED=opened )
-     if( .NOT.opened )exit
-  end do
-
-  open(unit_nml,file='input.nml', iostat=io_status)
-  read(unit_nml,mpp_nml,iostat=io_status)
-  close(unit_nml)
-#endif
-
   if (io_status > 0) then
-     call mpp_error(FATAL,'=>mpp_init: Error reading input.nml')
+     call mpp_error(FATAL,'=>mpp_init: Error reading mpp_nml')
   endif
+  if(t_level == 5) return
 
 ! non-root pe messages written to other location than stdout()
-! 9 is reserved for etc_unit
-  etc_unit=9
-  inquire(unit=etc_unit,opened=opened)
-  if(opened) call mpp_error(FATAL,'Unit 9 is already in use (etc_unit) in mpp_comm_nocomm')
   if (trim(etcfile) /= '/dev/null') then
     write( etcfile,'(a,i6.6)' )trim(etcfile)//'.', pe
   endif
   inquire(file=etcfile, exist=existed)
   if(existed) then
-     open( unit=etc_unit, file=trim(etcfile), status='REPLACE' )
+     open( newunit=etc_unit, file=trim(etcfile), status='REPLACE' )
   else
-     open( unit=etc_unit, file=trim(etcfile) )
+     open( newunit=etc_unit, file=trim(etcfile) )
   endif
-  !if optional argument logunit=stdout, write messages to stdout instead.
-  !if specifying non-defaults, you must specify units not yet in use.
-  !      if( PRESENT(in) )then
-  !          inquire( unit=in, opened=opened )
-  !          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stdin.' )
-  !          in_unit=in
-  !      end if
-  !      if( PRESENT(out) )then
-  !          inquire( unit=out, opened=opened )
-  !          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stdout.' )
-  !          out_unit=out
-  !      end if
-  !      if( PRESENT(err) )then
-  !          inquire( unit=err, opened=opened )
-  !          if( opened )call mpp_error( FATAL, 'MPP_INIT: unable to open stderr.' )
-  !          err_unit=err
-  !      end if
-  !      log_unit=get_unit()
-  !      if( PRESENT(log) )then
-  !          inquire( unit=log, opened=opened )
-  !          if( opened .AND. log.NE.out_unit )call mpp_error( FATAL, 'MPP_INIT: unable to open stdlog.' )
-  !          log_unit=log
-  !      end if
-  !!log_unit can be written to only from root_pe, all others write to stdout
-  !      if( log_unit.NE.out_unit )then
-  !          inquire( unit=log_unit, opened=opened )
-  !          if( opened )call mpp_error( FATAL, 'MPP_INIT: specified unit for stdlog already in use.' )
-  !          if( pe.EQ.root_pe )open( unit=log_unit, file=trim(configfile), status='REPLACE' )
-  !          call mpp_sync()
-  !          if( pe.NE.root_pe )open( unit=log_unit, file=trim(configfile), status='OLD' )
-  !      end if
-
 
   !messages
   if( verbose )call mpp_error( NOTE, 'MPP_INIT: initializing MPP module...' )
@@ -169,7 +139,7 @@ subroutine mpp_init( flags,localcomm )
 end subroutine mpp_init
 
 !#######################################################################
-  !to be called at the end of a run
+!> @brief To be called at the end of a run
 subroutine mpp_exit()
   integer :: i, j, k, n, nmax, istat, out_unit
   real    :: t, tmin, tmax, tavg, tstd
@@ -189,7 +159,8 @@ subroutine mpp_exit()
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
         if( ANY(clocks(1:clock_num)%detailed) ) &
              write( out_unit,'(a)' )'   ... see mpp_clock.out.#### for details on individual PEs.'
-        write( out_unit,'(/32x,a)' ) '          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
+        write( out_unit,'(/32x,a)' ) &
+             & '      hits          tmin          tmax          tavg          tstd  tfrac grain pemin pemax'
      else
         write( out_unit,'(/37x,a)' ) 'time'
      end if
@@ -204,8 +175,8 @@ subroutine mpp_exit()
         tmax = t; call mpp_max(tmax)
         tavg = t; call mpp_sum(tavg); tavg = tavg/mpp_npes()
         tstd = (t-tavg)**2; call mpp_sum(tstd); tstd = sqrt( tstd/mpp_npes() )
-        if( pe.EQ.root_pe )write( out_unit,'(a32,4f14.6,f7.3,3i6)' ) &
-             clocks(i)%name, tmin, tmax, tavg, tstd, tavg/t_total, &
+        if( pe.EQ.root_pe )write( out_unit,'(a32,i10,4f14.6,f7.3,3i6)' ) &
+             clocks(i)%name, clocks(i)%hits, tmin, tmax, tavg, tstd, tavg/t_total, &
              clocks(i)%grain, minval(peset(clocks(i)%peset_num)%list), &
              maxval(peset(clocks(i)%peset_num)%list)
         if (pe.NE.root_pe) write(out_unit,'(a32,f14.6)') clocks(i)%name, clocks(i)%total_ticks*tick_rate
@@ -241,7 +212,6 @@ subroutine mpp_exit()
      end do
   end if
 
-! close down etc_unit: 9
   inquire(unit=etc_unit, opened=opened)
   if (opened) then
    call FLUSH (etc_unit)
@@ -257,20 +227,7 @@ subroutine mpp_exit()
 end subroutine mpp_exit
 
 !#######################################################################
- !--- dummy routine, should never been called -------------------------
-    subroutine mpp_malloc( ptr, newlen, len )
-      integer, intent(in)    :: newlen
-      integer, intent(inout) :: len
-      real                   :: dummy
-      pointer( ptr, dummy )
-
-      call mpp_error(FATAL,'mpp_malloc: Should not been called when lib_SMA is not used')
-
-      return
-    end subroutine mpp_malloc
-
-!#######################################################################
-    !set the mpp_stack variable to be at least n LONG words long
+  !> Set the mpp_stack variable to be at least n LONG words long
   subroutine mpp_set_stack_size(n)
     integer, intent(in) :: n
     character(len=8)    :: text
@@ -287,8 +244,8 @@ end subroutine mpp_exit
     return
   end subroutine mpp_set_stack_size
 
-    subroutine mpp_broadcast_char(data, length, from_pe, pelist )
-      character(len=*), intent(inout) :: data(:)
+    subroutine mpp_broadcast_char(char_data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: char_data(:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
 
@@ -302,6 +259,9 @@ end subroutine mpp_exit
 !                BASIC MESSAGE PASSING ROUTINE: mpp_transmit                  !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! set init value for mpp_type
+#define MPP_TYPE_INIT_VALUE 0.
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_real8
@@ -352,12 +312,12 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
-#include <mpp_transmit_nocomm.h>
+#include <mpp_transmit_nocomm.fh>
 
 #ifdef OVERLOAD_C8
 #undef MPP_TRANSMIT_
@@ -409,12 +369,12 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
-#include <mpp_transmit_nocomm.h>
+#include <mpp_transmit_nocomm.fh>
 #endif
 
 #undef MPP_TRANSMIT_
@@ -466,12 +426,12 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
-#include <mpp_transmit_nocomm.h>
+#include <mpp_transmit_nocomm.fh>
 
 #ifdef OVERLOAD_C4
 #undef MPP_TRANSMIT_
@@ -523,15 +483,16 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
-#include <mpp_transmit_nocomm.h>
+#include <mpp_transmit_nocomm.fh>
 #endif
 
-#ifndef no_8byte_integers
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE 0
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int8
 #undef MPP_TRANSMIT_SCALAR_
@@ -581,13 +542,12 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
-#include <mpp_transmit_nocomm.h>
-#endif
+#include <mpp_transmit_nocomm.fh>
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_int4
@@ -638,14 +598,15 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
-#include <mpp_transmit_nocomm.h>
+#include <mpp_transmit_nocomm.fh>
 
-#ifndef no_8byte_integers
+#undef MPP_TYPE_INIT_VALUE
+#define MPP_TYPE_INIT_VALUE .false.
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical8
 #undef MPP_TRANSMIT_SCALAR_
@@ -695,13 +656,12 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(LONG_KIND)
+#define MPP_TYPE_ logical(l8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
-#include <mpp_transmit_nocomm.h>
-#endif
+#include <mpp_transmit_nocomm.fh>
 
 #undef MPP_TRANSMIT_
 #define MPP_TRANSMIT_ mpp_transmit_logical4
@@ -752,12 +712,13 @@ end subroutine mpp_exit
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(l4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
-#include <mpp_transmit_nocomm.h>
+#include <mpp_transmit_nocomm.fh>
+#undef MPP_TYPE_INIT_VALUE
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -769,120 +730,112 @@ end subroutine mpp_exit
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_real8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include <mpp_reduce_nocomm.h>
+#include <mpp_reduce_nocomm.fh>
 
-#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_max_real4_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_real4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include <mpp_reduce_nocomm.h>
-#endif
+#include <mpp_reduce_nocomm.fh>
 
-#ifndef no_8byte_integers
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_max_int8_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_int8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include <mpp_reduce_nocomm.h>
-#endif
+#include <mpp_reduce_nocomm.fh>
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_max_int4_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_max_int4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MAX
-#include <mpp_reduce_nocomm.h>
+#include <mpp_reduce_nocomm.fh>
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_real8_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_real8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include <mpp_reduce_nocomm.h>
+#include <mpp_reduce_nocomm.fh>
 
-#ifdef OVERLOAD_R4
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_real4_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_real4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include <mpp_reduce_nocomm.h>
-#endif
+#include <mpp_reduce_nocomm.fh>
 
-#ifndef no_8byte_integers
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_int8_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_int8_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include <mpp_reduce_nocomm.h>
-#endif
+#include <mpp_reduce_nocomm.fh>
 
 #undef MPP_REDUCE_0D_
 #define MPP_REDUCE_0D_ mpp_min_int4_0d
 #undef MPP_REDUCE_1D_
 #define MPP_REDUCE_1D_ mpp_min_int4_1d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPI_REDUCE_
 #define MPI_REDUCE_ MPI_MIN
-#include <mpp_reduce_nocomm.h>
+#include <mpp_reduce_nocomm.fh>
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real8
@@ -897,12 +850,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_real8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include <mpp_sum_nocomm.h>
+#include <mpp_sum_nocomm.fh>
 
 #ifdef OVERLOAD_C8
 #undef MPP_SUM_
@@ -918,15 +871,14 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_cmplx8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
-#include <mpp_sum_nocomm.h>
+#include <mpp_sum_nocomm.fh>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_real4
 #undef MPP_SUM_SCALAR_
@@ -940,13 +892,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_real4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include <mpp_sum_nocomm.h>
-#endif
+#include <mpp_sum_nocomm.fh>
 
 #ifdef OVERLOAD_C4
 #undef MPP_SUM_
@@ -962,15 +913,14 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_cmplx4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include <mpp_sum_nocomm.h>
+#include <mpp_sum_nocomm.fh>
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_int8
 #undef MPP_SUM_SCALAR_
@@ -984,13 +934,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_int8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include <mpp_sum_nocomm.h>
-#endif
+#include <mpp_sum_nocomm.fh>
 
 #undef MPP_SUM_
 #define MPP_SUM_ mpp_sum_int4
@@ -1005,12 +954,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_
 #define MPP_SUM_5D_ mpp_sum_int4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include <mpp_sum_nocomm.h>
+#include <mpp_sum_nocomm.fh>
 !--------------------------------
 #undef MPP_SUM_AD_
 #define MPP_SUM_AD_ mpp_sum_real8_ad
@@ -1025,12 +974,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_AD_
 #define MPP_SUM_5D_AD_ mpp_sum_real8_5d_ad
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include <mpp_sum_nocomm_ad.h>
+#include <mpp_sum_nocomm_ad.fh>
 
 #ifdef OVERLOAD_C8
 #undef MPP_SUM_AD_
@@ -1046,15 +995,14 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_AD_
 #define MPP_SUM_5D_AD_ mpp_sum_cmplx8_5d_ad
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(DOUBLE_KIND)
+#define MPP_TYPE_ complex(c8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_DOUBLE_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 16
-#include <mpp_sum_nocomm_ad.h>
+#include <mpp_sum_nocomm_ad.fh>
 #endif
 
-#ifdef OVERLOAD_R4
 #undef MPP_SUM_AD_
 #define MPP_SUM_AD_ mpp_sum_real4_ad
 #undef MPP_SUM_SCALAR_AD_
@@ -1068,13 +1016,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_AD_
 #define MPP_SUM_5D_AD_ mpp_sum_real4_5d_ad
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include <mpp_sum_nocomm_ad.h>
-#endif
+#include <mpp_sum_nocomm_ad.fh>
 
 #ifdef OVERLOAD_C4
 #undef MPP_SUM_AD_
@@ -1090,15 +1037,14 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_AD_
 #define MPP_SUM_5D_AD_ mpp_sum_cmplx4_5d_ad
 #undef MPP_TYPE_
-#define MPP_TYPE_ complex(FLOAT_KIND)
+#define MPP_TYPE_ complex(c4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_COMPLEX
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include <mpp_sum_nocomm_ad.h>
+#include <mpp_sum_nocomm_ad.fh>
 #endif
 
-#ifndef no_8byte_integers
 #undef MPP_SUM_AD_
 #define MPP_SUM_AD_ mpp_sum_int8_ad
 #undef MPP_SUM_SCALAR_AD_
@@ -1112,13 +1058,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_AD_
 #define MPP_SUM_5D_AD_ mpp_sum_int8_5d_ad
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 8
-#include <mpp_sum_nocomm_ad.h>
-#endif
+#include <mpp_sum_nocomm_ad.fh>
 
 #undef MPP_SUM_AD_
 #define MPP_SUM_AD_ mpp_sum_int4_ad
@@ -1133,12 +1078,12 @@ end subroutine mpp_exit
 #undef MPP_SUM_5D_AD_
 #define MPP_SUM_5D_AD_ mpp_sum_int4_5d_ad
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #undef MPP_TYPE_BYTELEN_
 #define MPP_TYPE_BYTELEN_ 4
-#include <mpp_sum_nocomm_ad.h>
+#include <mpp_sum_nocomm_ad.fh>
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1155,10 +1100,10 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_int4
 #define MPP_ALLTOALLV_ mpp_alltoall_int4_v
 #define MPP_ALLTOALLW_ mpp_alltoall_int4_w
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
-#include <mpp_alltoall_nocomm.h>
+#include <mpp_alltoall_nocomm.fh>
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1169,10 +1114,10 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_int8
 #define MPP_ALLTOALLV_ mpp_alltoall_int8_v
 #define MPP_ALLTOALLW_ mpp_alltoall_int8_w
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
-#include <mpp_alltoall_nocomm.h>
+#include <mpp_alltoall_nocomm.fh>
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1183,10 +1128,10 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_real4
 #define MPP_ALLTOALLV_ mpp_alltoall_real4_v
 #define MPP_ALLTOALLW_ mpp_alltoall_real4_w
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_REAL4
-#include <mpp_alltoall_nocomm.h>
+#include <mpp_alltoall_nocomm.fh>
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1197,10 +1142,10 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_real8
 #define MPP_ALLTOALLV_ mpp_alltoall_real8_v
 #define MPP_ALLTOALLW_ mpp_alltoall_real8_w
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_REAL8
-#include <mpp_alltoall_nocomm.h>
+#include <mpp_alltoall_nocomm.fh>
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1211,10 +1156,10 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_logical4
 #define MPP_ALLTOALLV_ mpp_alltoall_logical4_v
 #define MPP_ALLTOALLW_ mpp_alltoall_logical4_w
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(l4_kind)
 #define MPP_TYPE_BYTELEN_ 4
 #define MPI_TYPE_ MPI_INTEGER4
-#include <mpp_alltoall_nocomm.h>
+#include <mpp_alltoall_nocomm.fh>
 
 #undef MPP_ALLTOALL_
 #undef MPP_ALLTOALLV_
@@ -1225,10 +1170,10 @@ end subroutine mpp_exit
 #define MPP_ALLTOALL_ mpp_alltoall_logical8
 #define MPP_ALLTOALLV_ mpp_alltoall_logical8_v
 #define MPP_ALLTOALLW_ mpp_alltoall_logical8_w
-#define MPP_TYPE_ logical(LONG_KIND)
+#define MPP_TYPE_ logical(l8_kind)
 #define MPP_TYPE_BYTELEN_ 8
 #define MPI_TYPE_ MPI_INTEGER8
-#include <mpp_alltoall_nocomm.h>
+#include <mpp_alltoall_nocomm.fh>
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !            DATA TRANSFER TYPES: mpp_type_create, mpp_type_free              !
@@ -1236,34 +1181,44 @@ end subroutine mpp_exit
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #define MPP_TYPE_CREATE_ mpp_type_create_int4
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #define MPI_TYPE_ MPI_INTEGER4
-#include <mpp_type_nocomm.h>
+#include <mpp_type_nocomm.fh>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_int8
-#define MPP_TYPE_ integer(LONG_KIND)
+#define MPP_TYPE_ integer(i8_kind)
 #define MPI_TYPE_ MPI_INTEGER8
-#include <mpp_type_nocomm.h>
+#include <mpp_type_nocomm.fh>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_real4
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #define MPI_TYPE_ MPI_REAL4
-#include <mpp_type_nocomm.h>
+#include <mpp_type_nocomm.fh>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_real8
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #define MPI_TYPE_ MPI_REAL8
-#include <mpp_type_nocomm.h>
+#include <mpp_type_nocomm.fh>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx4
+#define MPP_TYPE_ complex(c4_kind)
+#define MPI_TYPE_ MPI_COMPLEX8
+#include <mpp_type_nocomm.fh>
+
+#define MPP_TYPE_CREATE_ mpp_type_create_cmplx8
+#define MPP_TYPE_ complex(c8_kind)
+#define MPI_TYPE_ MPI_COMPLEX16
+#include <mpp_type_nocomm.fh>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_logical4
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(l4_kind)
 #define MPI_TYPE_ MPI_INTEGER4
-#include <mpp_type_nocomm.h>
+#include <mpp_type_nocomm.fh>
 
 #define MPP_TYPE_CREATE_ mpp_type_create_logical8
-#define MPP_TYPE_ logical(LONG_KIND)
+#define MPP_TYPE_ logical(l8_kind)
 #define MPI_TYPE_ MPI_INTEGER8
-#include <mpp_type_nocomm.h>
+#include <mpp_type_nocomm.fh>
 
 ! Clear preprocessor flags
 #undef MPI_TYPE_

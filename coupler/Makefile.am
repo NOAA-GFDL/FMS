@@ -23,36 +23,31 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/time_manager
-AM_CPPFLAGS += -I${top_builddir}/diag_manager
-AM_CPPFLAGS += -I${top_builddir}/data_override
-AM_CPPFLAGS += -I${top_builddir}/field_manager
-AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/coupler/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libcoupler_types.la libensemble_manager.la \
-libatmos_ocean_fluxes.la
+noinst_LTLIBRARIES = libcoupler.la
 
 # Each convenience library depends on its source.
-libcoupler_types_la_SOURCES = coupler_types.F90
-libensemble_manager_la_SOURCES = ensemble_manager.F90
-libatmos_ocean_fluxes_la_SOURCES = atmos_ocean_fluxes.F90
-
-# Each mod file depends on the .o file.
-coupler_types_mod.mod: coupler_types.lo
-ensemble_manager_mod.mod: ensemble_manager.lo
-atmos_ocean_fluxes_mod.mod: atmos_ocean_fluxes.lo
+libcoupler_la_SOURCES = \
+  coupler_types.F90 \
+  ensemble_manager.F90 \
+  atmos_ocean_fluxes.F90 \
+  include/coupler_types.inc \
+  include/coupler_types_r4.fh \
+  include/coupler_types_r8.fh
 
 # Some mods are dependant on other mods in this dir.
-atmos_ocean_fluxes.lo: coupler_types_mod.mod
+atmos_ocean_fluxes_mod.$(FC_MODEXT): coupler_types_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = coupler_types_mod.mod ensemble_manager_mod.mod \
-atmos_ocean_fluxes_mod.mod
-include_HEADERS = $(MODFILES)
+MODFILES = \
+  coupler_types_mod.$(FC_MODEXT) \
+  ensemble_manager_mod.$(FC_MODEXT) \
+  atmos_ocean_fluxes_mod.$(FC_MODEXT)
+
+nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

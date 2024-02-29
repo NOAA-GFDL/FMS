@@ -16,43 +16,91 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup sat_vapor_pres_mod sat_vapor_pres_mod
+!> @ingroup sat_vapor_pres
+!> @brief Routines for computing the saturation vapor pressure (es),
+!! the specific humidity (qs) and vapor mixing ratio (mrs)
+!> Given a specified relative humidity, calculates es, qs, and mrs, as well as their
+!! derivatives with respect to temperature, and also includes routines
+!! to initialize the look-up table.
+!! This module contains routines for determining the saturation vapor
+!! pressure (<TT>ES</TT>) from lookup tables constructed using equations given
+!! in the Smithsonian tables.  The <TT>ES</TT> lookup tables are valid between
+!! -160C and +100C (approx 113K to 373K).
+!!
+!! The values of <TT>ES</TT> are computed over ice from -160C to -20C,
+!! over water from 0C to 100C, and a blended value (over water and ice)
+!! from -20C to 0C.
+!!
+!! Routines are also included to calculate the saturation specific
+!! humidity and saturation mixing ratio for vapor, and their deriv-
+!! atives with respect to temperature.  By default, the values returned
+!! are those at saturation; optionally, values of q and mr at a spec-
+!! ified relative humidity may instead be returned. Two forms are
+!! available; the approximate form that has been traditionally used in
+!! GCMs, and an exact form provided by SJ Lin in which saturation is
+!! reached while maintaining constant pressure and temperature.
+!!
+!! This version was written for non-vector machines.
+!! See the <LINK SRC="#NOTES">notes</LINK> section for details on vectorization.
+!!
+!!    arguments
+!!    ---------
+!!      temp    intent in       temperature in degrees kelvin
+!!      es      intent out      saturation vapor pressure in Pascals
+!!      des     intent out      derivative of saturation vapor pressure
+!!                              with respect to temperature
+!!                              (Pascals/degree)
+!!      press   intent in       atmospheric pressure in Pascals
+!!      qs      intent out      specific humidity at relative humidity hc
+!!                              (kg(vapor) / kg(moist air)
+!!      mrs     intent out      mixing ratio at relative humidity hc
+!!                              (kg(vapor) / kg(dry air)
+!!
+!!   optional arguments
+!!   ------------------
+!!      q       intent in       vapor specific humidity
+!!                              (kg(vapor) / kg(moist air)
+!!      hc      intent in       relative humidity at which output
+!!                              fields are desired: default is 100 %
+!!      dqsdT   intent out      derivative of saturation specific
+!!                              humidity with respect to temperature
+!!                              (kg(vapor) / kg(moist air) /degree)
+!!      mr      intent in       vapor mixing ratio
+!!                              (kg(vapor) / kg(dry air)
+!!      dmrsdT  intent out      derivative of saturation mixing ratio
+!!                              with respect to temperature
+!!                              (kg(vapor) / kg(dry air) /degree)
+!!      esat    intent out      saturation vapor pressure
+!!                              (Pascals)
+!!      err_msg intent out      character string to hold error message
+!!      es_over_liq
+!!              intent  in      use es table wrt liquid only
+!!
+!! Example Usages:
+!!
+!!              call lookup_es  (temp, es, err_msg)
+!!
+!!              call lookup_des (temp, des, err_msg)
+!!
+!!              call lookup_es_des (temp, es, des, err_msg)
+!!
+!!              call lookup_es2 (temp, es, err_msg)
+!!
+!!              call lookup_des2 (temp, des, err_msg)
+!!
+!!              call lookup_es2_des2 (temp, es, des, err_msg)
+!!
+!!              call compute_qs (temp, press, qs, q, hc, dqsdT, esat,
+!!                               err_msg, es_over_liq)
+!!
+!!              call compute_mrs (temp, press, mrs, mr, hc, dmrsdT, esat,
+!!                                err_msg, es_over_liq)
 
 module sat_vapor_pres_mod
 
 !-----------------------------------------------------------------------
 !
-!                 saturation vapor pressure lookup
-!                 saturation vapor specific humidity calculation
-!                 saturation vapor mixing ratio calculation
-!
-!      routines for computing the saturation vapor pressure (es),
-!      the specific humidity (qs) and vapor mixing ratio (mrs) at
-!      a specified relative humidity, the derivatives of es, qs and mrs
-!      with respect to temperature, and initialization of the
-!      look-up table.
-!
-!-----------------------------------------------------------------------
-!
-!                               usage
-!                               -----
-!
-!              call lookup_es  (temp, es, err_msg)
-!
-!              call lookup_des (temp, des, err_msg)
-!
-!              call lookup_es_des (temp, es, des, err_msg)
-!
-!              call lookup_es2 (temp, es, err_msg)
-!
-!              call lookup_des2 (temp, des, err_msg)
-!
-!              call lookup_es2_des2 (temp, es, des, err_msg)
-!
-!              call compute_qs (temp, press, qs, q, hc, dqsdT, esat,
-!                               err_msg, es_over_liq)
-!
-!              call compute_mrs (temp, press, mrs, mr, hc, dmrsdT, esat,
-!                                err_msg, es_over_liq)
 !
 !    arguments
 !    ---------
@@ -142,6 +190,7 @@ module sat_vapor_pres_mod
                                    lookup_es3_k,  &
                                    lookup_des3_k, lookup_es3_des3_k, &
                                    compute_qs_k, compute_mrs_k
+ use platform_mod, only: r4_kind, r8_kind
 
 implicit none
 private
@@ -191,13 +240,42 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
+ !> @brief For the given temperatures, returns the saturation vapor pressures
+ !!
+ !> For the given temperatures these routines return the saturation vapor pressure(esat).
+ !! The return values are derived from lookup tables.
+ !! Example usage:
+ !! @code{.F90} call lookup_es( temp, esat, err_msg ) @endcode
+ !!
+ !! @param temp Temperature in degrees Kelvin.
+ !! @param esat Saturation vapor pressure in pascals.
+ !!             May be a scalar, 1d, 2d, or 3d array
+ !!             Must have the same order and size as temp.
+ !! @param err_msg Character string containing error message to be returned to
+ !!                calling routine.
+ !! @throws FATAL table overflow, nbad=##
+ !!     Temperature(s) provided to the saturation vapor pressure lookup
+ !!          are outside the valid range of the lookup table (-160 to 100 deg C).
+ !!          This may be due to a numerical instability in the model.
+ !!          Information should have been printed to standard output to help
+ !!          determine where the instability may have occurred.
+ !!          If the lookup table needs a larger temperature range,
+ !!          then parameters in the module header must be modified.
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_es
-   module procedure lookup_es_0d, lookup_es_1d, lookup_es_2d, lookup_es_3d
- end interface
-! for backward compatibility (to be removed soon)
+   module procedure lookup_es_0d_r4, lookup_es_0d_r8
+   module procedure lookup_es_1d_r4, lookup_es_1d_r8
+   module procedure lookup_es_2d_r4, lookup_es_2d_r8
+   module procedure lookup_es_3d_r4, lookup_es_3d_r8
+ end interface lookup_es
+ !> Provided for backward compatibility (to be removed soon)
+ !> @ingroup sat_vapor_pres_mod
  interface escomp
-   module procedure lookup_es_0d, lookup_es_1d, lookup_es_2d, lookup_es_3d
- end interface
+   module procedure lookup_es_0d_r4, lookup_es_0d_r8
+   module procedure lookup_es_1d_r4, lookup_es_1d_r8
+   module procedure lookup_es_2d_r4, lookup_es_2d_r8
+   module procedure lookup_es_3d_r4, lookup_es_3d_r8
+ end interface escomp
 ! </INTERFACE>
 !-----------------------------------------------------------------------
 ! <INTERFACE NAME="lookup_des">
@@ -236,14 +314,46 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
+ !> For the given temperatures, returns the derivative of saturation vapor pressure
+ !! with respect to temperature.
+ !!
+ !! For the given temperatures these routines return the derivtive of esat w.r.t. temperature
+ !! (desat). The return values are derived from lookup tables.
+ !!
+ !! @param [in] temp Temperature in degrees kelvin
+ !! @param [out] desat Derivative of saturation vapor pressure w.r.t. temperature
+ !!                 in pascals/degree. May be a scalar, 1d, 2d, or 3d array.
+ !!                 Must have the same order and size as temp.
+ !! @param [out] err_msg Character string containing error message to be returned to
+ !!     calling routine.
+ !!
+ !! @error FATAL table overflow, nbad=##
+ !!        Temperature(s) provided to the saturation vapor pressure lookup
+ !!        are outside the valid range of the lookup table (-160 to 100 deg C).
+ !!        This may be due to a numerical instability in the model.
+ !!        Information should have been printed to standard output to help
+ !!        determine where the instability may have occurred.
+ !!        If the lookup table needs a larger temperature range,
+ !!        then parameters in the module header must be modified.
+ !!
+ !! <br>Example usage:
+ !! @code{.F90} call lookup_des( temp, desat) @endcode
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_des
-   module procedure lookup_des_0d, lookup_des_1d, lookup_des_2d, lookup_des_3d
- end interface
+   module procedure lookup_des_0d_r4, lookup_des_0d_r8
+   module procedure lookup_des_1d_r4, lookup_des_1d_r8
+   module procedure lookup_des_2d_r4, lookup_des_2d_r8
+   module procedure lookup_des_3d_r4, lookup_des_3d_r8
+ end interface lookup_des
 ! </INTERFACE>
-! for backward compatibility (to be removed soon)
+ !> Provided for backward compatibility (to be removed soon)
+ !> @ingroup sat_vapor_pres_mod
  interface descomp
-   module procedure lookup_des_0d, lookup_des_1d, lookup_des_2d, lookup_des_3d
- end interface
+   module procedure lookup_des_0d_r4, lookup_des_0d_r8
+   module procedure lookup_des_1d_r4, lookup_des_1d_r8
+   module procedure lookup_des_2d_r4, lookup_des_2d_r8
+   module procedure lookup_des_3d_r4, lookup_des_3d_r8
+ end interface descomp
 
 !-----------------------------------------------------------------------
 
@@ -290,34 +400,89 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
+ !> @brief For the given temperatures, returns the saturation vapor pressure
+ !! and the derivative of saturation vapor pressure with respect to
+ !! temperature.
+ !!
+ !> For the given temperatures these routines return the
+ !! saturation vapor pressure (esat) and the derivative of esat w.r.t
+ !! temperature (desat). The return values are derived from
+ !! lookup tables (see notes below).
+ !!
+ !! <br>Example usage:
+ !! @code{.F90} call lookup_es_des( temp, esat, desat, err_msg ) @endcode
+ !!
+ !! @param temp Temperature in degrees Kelvin.
+ !! @param [out] esat Saturation vapor pressure in pascals. May be a scalar, 1d, 2d, or 3d array.
+ !!              Must have the same order and size as temp.
+ !! @param [out] desat Derivative of saturation vapor pressure w.r.t. temperature
+ !!                    in pascals/degree. May be a scalar, 1d, 2d, or 3d array.
+ !!                    Must have the same order and size as temp.
+ !! @param [out] err_msg Character string containing error message to be returned to
+ !!                      calling routine.
+ !! @error FATAL table overflow, nbad=##
+ !! Temperature(s) provided to the saturation vapor pressure lookup
+ !! are outside the valid range of the lookup table (-160 to 100 deg C).
+ !! This may be due to a numerical instability in the model.
+ !! Information should have been printed to standard output to help
+ !! determine where the instability may have occurred.
+ !! If the lookup table needs a larger temperature range,
+ !! then parameters in the module header must be modified.
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_es_des
-   module procedure lookup_es_des_0d, lookup_es_des_1d, lookup_es_des_2d, lookup_es_des_3d
- end interface
+   module procedure lookup_es_des_0d_r4, lookup_es_des_0d_r8
+   module procedure lookup_es_des_1d_r4, lookup_es_des_1d_r8
+   module procedure lookup_es_des_2d_r4, lookup_es_des_2d_r8
+   module procedure lookup_es_des_3d_r4, lookup_es_des_3d_r8
+ end interface lookup_es_des
 
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_es2
-   module procedure lookup_es2_0d, lookup_es2_1d, lookup_es2_2d, lookup_es2_3d
- end interface
+   module procedure lookup_es2_0d_r4, lookup_es2_0d_r8
+   module procedure lookup_es2_1d_r4, lookup_es2_1d_r8
+   module procedure lookup_es2_2d_r4, lookup_es2_2d_r8
+   module procedure lookup_es2_3d_r4, lookup_es2_3d_r8
+ end interface lookup_es2
 
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_des2
-   module procedure lookup_des2_0d, lookup_des2_1d, lookup_des2_2d, lookup_des2_3d
- end interface
+   module procedure lookup_des2_0d_r4, lookup_des2_0d_r8
+   module procedure lookup_des2_1d_r4, lookup_des2_1d_r8
+   module procedure lookup_des2_2d_r4, lookup_des2_2d_r8
+   module procedure lookup_des2_3d_r4, lookup_des2_3d_r8
+ end interface lookup_des2
 
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_es2_des2
-   module procedure lookup_es2_des2_0d, lookup_es2_des2_1d, lookup_es2_des2_2d, lookup_es2_des2_3d
- end interface
+   module procedure lookup_es2_des2_0d_r4, lookup_es2_des2_0d_r8
+   module procedure lookup_es2_des2_1d_r4, lookup_es2_des2_1d_r8
+   module procedure lookup_es2_des2_2d_r4, lookup_es2_des2_2d_r8
+   module procedure lookup_es2_des2_3d_r4, lookup_es2_des2_3d_r8
+ end interface lookup_es2_des2
 
-
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_es3
-   module procedure lookup_es3_0d, lookup_es3_1d, lookup_es3_2d, lookup_es3_3d
- end interface
+   module procedure lookup_es3_0d_r4, lookup_es3_0d_r8
+   module procedure lookup_es3_1d_r4, lookup_es3_1d_r8
+   module procedure lookup_es3_2d_r4, lookup_es3_2d_r8
+   module procedure lookup_es3_3d_r4, lookup_es3_3d_r8
+ end interface lookup_es3
 
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_des3
-   module procedure lookup_des3_0d, lookup_des3_1d, lookup_des3_2d, lookup_des3_3d
- end interface
+   module procedure lookup_des3_0d_r4, lookup_des3_0d_r8
+   module procedure lookup_des3_1d_r4, lookup_des3_1d_r8
+   module procedure lookup_des3_2d_r4, lookup_des3_2d_r8
+   module procedure lookup_des3_3d_r4, lookup_des3_3d_r8
+ end interface lookup_des3
 
+ !> @ingroup sat_vapor_pres_mod
  interface lookup_es3_des3
-   module procedure lookup_es3_des3_0d, lookup_es3_des3_1d, lookup_es3_des3_2d, lookup_es3_des3_3d
- end interface
+   module procedure lookup_es3_des3_0d_r4, lookup_es3_des3_0d_r8
+   module procedure lookup_es3_des3_1d_r4, lookup_es3_des3_1d_r8
+   module procedure lookup_es3_des3_2d_r4, lookup_es3_des3_2d_r8
+   module procedure lookup_es3_des3_3d_r4, lookup_es3_des3_3d_r8
+ end interface lookup_es3_des3
 
 !-----------------------------------------------------------------------
 
@@ -390,9 +555,35 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
+ !> @brief For the given temperatures, pressures and optionally vapor
+ !! specific humidity, returns the specific humidity at saturation
+ !! (optionally at relative humidity hc instead of at saturation) and
+ !! optionally the derivative of saturation specific humidity w.r.t.
+ !! temperature, and the saturation vapor pressure.
+ !!
+ !! For the input temperature and pressure these routines return the
+ !! specific humidity (qsat) at saturation (unless optional argument
+ !! hc is used to specify the relative humidity at which qsat should
+ !! apply) and, if desired, the derivative of qsat w.r.t temperature
+ !! (dqsdT) and / or the saturation vapor pressure (esat). If the
+ !! optional input argument specific humidity (q) is present, the
+ !! exact expression for qs is used; if q is not present the tradit-
+ !! ional form (valid at saturation) is used. if the optional qsat
+ !! derivative argument is present, the derivative of qsat w.r.t.
+ !! temperature will also be returned, defined consistent with the
+ !! expression used for qsat. The return values are derived from
+ !! lookup tables (see notes below).
+ !!
+ !! Example usage:
+ !! @code{.F90} call compute_qs( temp, press, qsat, q, hc, dqsdT, esat, err_msg ) @endcode
+ !!
+ !> @ingroup sat_vapor_pres_mod
  interface compute_qs
-   module procedure compute_qs_0d, compute_qs_1d, compute_qs_2d, compute_qs_3d
- end interface
+   module procedure compute_qs_0d_r4, compute_qs_0d_r8
+   module procedure compute_qs_1d_r4, compute_qs_1d_r8
+   module procedure compute_qs_2d_r4, compute_qs_2d_r8
+   module procedure compute_qs_3d_r4, compute_qs_3d_r8
+ end interface compute_qs
 
 !-----------------------------------------------------------------------
 
@@ -466,9 +657,35 @@ private
 !          then parameters in the module header must be modified.
 !   </ERROR> *
 
+ !> For the given temperatures, pressures and optionally vapor
+ !! mixing ratio, returns the  vapor mixing ratio at saturation
+ !! (optionally at relative humidity hc instead of at saturation) and
+ !! optionally the derivative of saturation vapor mixing ratio w.r.t.
+ !! temperature, and the saturation vapor pressure.
+ !!
+ !! For the input temperature and pressure these routines return the
+ !! vapor mixing ratio (mrsat) at saturation (unless optional argument
+ !! hc is used to specify the relative humidity at which mrsat should
+ !! apply) and, if desired, the derivative of mrsat w.r.t temperature
+ !! (dmrsdT) and / or the saturation vapor pressure (esat). If the
+ !! optional input argument specific humidity (mr) is present, the
+ !! exact expression for mrs is used; if qr is not present the tradit-
+ !! ional form (valid at saturation) is used. if the optional mrsat
+ !! derivative argument is present, the derivative of mrsat w.r.t.
+ !! temperature will also be returned, defined consistent with the
+ !! expression used for mrsat. The return values are derived from
+ !! lookup tables (see notes below).
+ !!
+ !! <br>Example usage:
+ !! @code{.F90} call compute_mrs( temp, press, mrsat, mr, hc, dmrsdT, esat,
+ !!                       err_msg ) @endcode
+ !> @ingroup sat_vapor_pres_mod
  interface compute_mrs
-   module procedure compute_mrs_0d, compute_mrs_1d, compute_mrs_2d, compute_mrs_3d
- end interface
+   module procedure compute_mrs_0d_r4, compute_mrs_0d_r8
+   module procedure compute_mrs_1d_r4, compute_mrs_1d_r8
+   module procedure compute_mrs_2d_r4, compute_mrs_2d_r8
+   module procedure compute_mrs_3d_r4, compute_mrs_3d_r8
+ end interface compute_mrs
 
 !-----------------------------------------------------------------------
 ! <INTERFACE NAME="compute_es">
@@ -498,13 +715,32 @@ private
 !end interface
 ! </INTERFACE>
 !-----------------------------------------------------------------------
- interface temp_check
-   module procedure temp_check_1d, temp_check_2d, temp_check_3d
- end interface
+ !> @ingroup sat_vapor_pres_mod
+ interface check_1d
+    module procedure check_1d_r4, check_1d_r8
+ end interface check_1d
 
+ interface check_2d
+    module procedure check_2d_r4, check_2d_r8
+ end interface check_2d
+
+ !> @ingroup sat_vapor_pres_mod
+ interface temp_check
+   module procedure temp_check_1d_r4, temp_check_1d_r8
+   module procedure temp_check_2d_r4, temp_check_2d_r8
+   module procedure temp_check_3d_r4, temp_check_3d_r8
+ end interface temp_check
+
+ !> @ingroup sat_vapor_pres_mod
  interface show_all_bad
-   module procedure show_all_bad_0d, show_all_bad_1d, show_all_bad_2d, show_all_bad_3d
- end interface
+   module procedure show_all_bad_0d_r4, show_all_bad_0d_r8
+   module procedure show_all_bad_1d_r4, show_all_bad_1d_r8
+   module procedure show_all_bad_2d_r4, show_all_bad_2d_r8
+   module procedure show_all_bad_3d_r4, show_all_bad_3d_r8
+ end interface show_all_bad
+
+!> @addtogroup sat_vapor_pres_mod
+!> @{
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -514,8 +750,8 @@ private
 !-----------------------------------------------------------------------
 !  parameters for use in computing qs and mrs
 
- real, parameter    :: EPSILO = RDGAS/RVGAS
- real, parameter    :: ZVIR = RVGAS/RDGAS - 1.0
+ real(r8_kind), parameter :: EPSILO = real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
+ real(r8_kind), parameter :: ZVIR = real(RVGAS,r8_kind)/real(RDGAS,r8_kind) - 1.0_r8_kind
 
 !-----------------------------------------------------------------------
 !  parameters for table size and resolution
@@ -529,7 +765,7 @@ private
  integer :: stdoutunit=0
 !-----------------------------------------------------------------------
 !  variables needed by temp_check
- real :: tmin, dtinv, teps
+ real(r8_kind) :: tmin, dtinv, teps
 
 ! The default values below preserve the behavior of omsk and earlier revisions.
  logical :: show_bad_value_count_by_slice=.true.
@@ -546,1747 +782,6 @@ private
 
 contains
 
-!#######################################################################
-! <SUBROUTINE NAME="lookup_es_0d" INTERFACE="lookup_es">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_0d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: esat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es_1d" INTERFACE="lookup_es">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_1d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:)
- real, intent(out) :: esat(:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-
-!-----------------------------------------------
-
- end subroutine lookup_es_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es_2d" INTERFACE="lookup_es">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_2d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:,:)
- real, intent(out) :: esat(:,:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-
-!-----------------------------------------------
-
- end subroutine lookup_es_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es_3d" INTERFACE="lookup_es">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_3d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:,:,:)
- real, intent(out) :: esat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine lookup_es_3d
-
-
-!#######################################################################
-! <SUBROUTINE NAME="lookup_es2_0d" INTERFACE="lookup_es2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_0d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: esat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es2_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es2_1d" INTERFACE="lookup_es2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_1d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:)
- real, intent(out) :: esat(:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2',err_msg_local,err_msg)) return
-   endif
-
-!-----------------------------------------------
-
- end subroutine lookup_es2_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es2_2d" INTERFACE="lookup_es2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_2d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:,:)
- real, intent(out) :: esat(:,:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2',err_msg_local,err_msg)) return
-   endif
-
-!-----------------------------------------------
-
- end subroutine lookup_es2_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es2_3d" INTERFACE="lookup_es2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_3d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:,:,:)
- real, intent(out) :: esat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine lookup_es2_3d
-
-
-!#######################################################################
-! <SUBROUTINE NAME="lookup_es3_0d" INTERFACE="lookup_es3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_0d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: esat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es3_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es3_1d" INTERFACE="lookup_es3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_1d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:)
- real, intent(out) :: esat(:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3',err_msg_local,err_msg)) return
-   endif
-
-!-----------------------------------------------
-
- end subroutine lookup_es3_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es3_2d" INTERFACE="lookup_es3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_2d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:,:)
- real, intent(out) :: esat(:,:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3',err_msg_local,err_msg)) return
-   endif
-
-!-----------------------------------------------
-
- end subroutine lookup_es3_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es3_3d" INTERFACE="lookup_es3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_3d ( temp, esat, err_msg )
-
- real, intent(in)  :: temp(:,:,:)
- real, intent(out) :: esat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_k(temp, esat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine lookup_es3_3d
-
-
-!#######################################################################
-!  routines for computing derivative of es
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_des_0d" INTERFACE="lookup_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des_0d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des_k( temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_des_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_des_1d" INTERFACE="lookup_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des_1d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:)
- real, intent(out) :: desat(:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if(present(err_msg)) err_msg=''
-
-   call lookup_des_k(temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-!-----------------------------------------------
-
- end subroutine lookup_des_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_des_2d" INTERFACE="lookup_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des_2d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:,:)
- real, intent(out) :: desat(:,:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des_k(temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-!-----------------------------------------------
-
- end subroutine lookup_des_2d
-
-!#######################################################################
-! <SUBROUTINE NAME="lookup_des_3d" INTERFACE="lookup_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des_3d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:,:,:)
- real, intent(out) :: desat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des_k( temp, desat, nbad )
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg=''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine lookup_des_3d
-
-
-! <SUBROUTINE NAME="lookup_des2_0d" INTERFACE="lookup_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des2_0d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des2_k( temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des2',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_des2_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_des2_1d" INTERFACE="lookup_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des2_1d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:)
- real, intent(out) :: desat(:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if(present(err_msg)) err_msg=''
-
-   call lookup_des2_k(temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des2',err_msg_local,err_msg)) return
-   endif
-!-----------------------------------------------
-
- end subroutine lookup_des2_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_des2_2d" INTERFACE="lookup_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des2_2d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:,:)
- real, intent(out) :: desat(:,:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des2_k(temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des2',err_msg_local,err_msg)) return
-   endif
-!-----------------------------------------------
-
- end subroutine lookup_des2_2d
-
-!#######################################################################
-! <SUBROUTINE NAME="lookup_des2_3d" INTERFACE="lookup_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des2_3d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:,:,:)
- real, intent(out) :: desat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des2_k( temp, desat, nbad )
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg=''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des2',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine lookup_des2_3d
-
-
-! <SUBROUTINE NAME="lookup_des3_0d" INTERFACE="lookup_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des3_0d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des3_k( temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des3',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_des3_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_des3_1d" INTERFACE="lookup_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des3_1d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:)
- real, intent(out) :: desat(:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if(present(err_msg)) err_msg=''
-
-   call lookup_des3_k(temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des3',err_msg_local,err_msg)) return
-   endif
-!-----------------------------------------------
-
- end subroutine lookup_des3_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_des3_2d" INTERFACE="lookup_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des3_2d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:,:)
- real, intent(out) :: desat(:,:)
- character(len=*), intent(out), optional :: err_msg
-
- character(len=54) :: err_msg_local
- integer :: nbad
-!-----------------------------------------------
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des3_k(temp, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des3',err_msg_local,err_msg)) return
-   endif
-!-----------------------------------------------
-
- end subroutine lookup_des3_2d
-
-!#######################################################################
-! <SUBROUTINE NAME="lookup_des3_3d" INTERFACE="lookup_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="desat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_des3_3d ( temp, desat, err_msg )
-
- real, intent(in)  :: temp (:,:,:)
- real, intent(out) :: desat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_des3_k( temp, desat, nbad )
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg=''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_des3',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine lookup_des3_3d
-
-!========================================================================================================
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es_des_0d" INTERFACE="lookup_es_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_des_0d ( temp, esat, desat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_des_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es_des_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es_des_1d" INTERFACE="lookup_es_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_des_1d ( temp, esat, desat, err_msg )
-
- real, dimension(:), intent(in)  :: temp
- real, dimension(:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_des_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es_des_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es_des_2d" INTERFACE="lookup_es_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_des_2d ( temp, esat, desat, err_msg )
-
- real, dimension(:,:), intent(in)  :: temp
- real, dimension(:,:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_des_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es_des_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es_des_3d" INTERFACE="lookup_es_des">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es_des_3d ( temp, esat, desat, err_msg )
-
- real, dimension(:,:,:), intent(in)  :: temp
- real, dimension(:,:,:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es_des_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es_des_3d
-
-!#######################################################################
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es2_des2_0d" INTERFACE="lookup_es2_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_des2_0d ( temp, esat, desat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_des2_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2_des2',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es2_des2_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es2_des2_1d" INTERFACE="lookup_es2_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_des2_1d ( temp, esat, desat, err_msg )
-
- real, dimension(:), intent(in)  :: temp
- real, dimension(:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_des2_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2_des2',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es2_des2_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es2_des2_2d" INTERFACE="lookup_es2_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_des2_2d ( temp, esat, desat, err_msg )
-
- real, dimension(:,:), intent(in)  :: temp
- real, dimension(:,:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_des2_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2_des2',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es2_des2_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es2_des2_3d" INTERFACE="lookup_es2_des2">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es2_des2_3d ( temp, esat, desat, err_msg )
-
- real, dimension(:,:,:), intent(in)  :: temp
- real, dimension(:,:,:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es2_des2_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es2_des2',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es2_des2_3d
-
-
-!#######################################################################
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es3_des3_0d" INTERFACE="lookup_es3_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(scalar)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_des3_0d ( temp, esat, desat, err_msg )
-
- real, intent(in)  :: temp
- real, intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_des3_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3_des3',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es3_des3_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es3_des3_1d" INTERFACE="lookup_es3_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_des3_1d ( temp, esat, desat, err_msg )
-
- real, dimension(:), intent(in)  :: temp
- real, dimension(:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_des3_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3_des3',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es3_des3_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es3_des3_2d" INTERFACE="lookup_es3_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_des3_2d ( temp, esat, desat, err_msg )
-
- real, dimension(:,:), intent(in)  :: temp
- real, dimension(:,:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_des3_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3_des3',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es3_des3_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="lookup_es3_des3_3d" INTERFACE="lookup_es3_des3">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="esat" UNITS="pascal" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="desat" UNITS="pascal / degree" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine lookup_es3_des3_3d ( temp, esat, desat, err_msg )
-
- real, dimension(:,:,:), intent(in)  :: temp
- real, dimension(:,:,:), intent(out) :: esat, desat
- character(len=*), intent(out), optional :: err_msg
-
- integer :: nbad
- character(len=128) :: err_msg_local
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   call lookup_es3_des3_k(temp, esat, desat, nbad)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_local,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('lookup_es3_des3',err_msg_local,err_msg)) return
-   endif
-
- end subroutine lookup_es3_des3_3d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_qs_0d" INTERFACE="compute_qs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(SCALAR)"></IN>
-!   <IN NAME="press UNIT="Pascals" TYPE="real" DIM="(SCALAR)"></IN>
-!   <OUT NAME="qsat" UNITS="kg(vapor)/kg(moist air)" TYPE="real" DIM="(SCALAR)"></OUT>
-!   <IN NAME="q" UNIT="kg(vapor)/kg(moistair)" TYPE="real" DIM="(SCALAR)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dqsdT" UNIT="kg(vapor)/kg(moistair)/ degree Kelvin" TYPE="real" DIM="(SCALAR)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(scalar)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_qs_0d ( temp, press, qsat, q, hc, dqsdT, esat, &
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp, press
- real, intent(out)                       :: qsat
- real, intent(in),              optional :: q, hc
- real, intent(out),             optional :: dqsdT, esat
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_qs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-   call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, hc, &
-                       dqsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_qs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_qs_0d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_qs_1d" INTERFACE="compute_qs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <IN NAME="press UNIT="Pascals" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="qsat" UNITS="kg(vapor)/kg(moist air)" TYPE="real" DIM="(:)"></OUT>
-!   <IN NAME="q" UNIT="kg(vapor)/kg(moistair)" TYPE="real" DIM="(:)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dqsdT" UNIT="kg(vapor)/kg(moistair)/ degree Kelvin" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(:)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_qs_1d ( temp, press, qsat, q, hc, dqsdT, esat, &
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp(:), press(:)
- real, intent(out)                       :: qsat(:)
- real, intent(in),              optional :: q(:)
-real,  intent(in),              optional :: hc
- real, intent(out),             optional :: dqsdT(:), esat(:)
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_qs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-!  call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, dqsdT)
-   call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, hc, &
-                       dqsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_qs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_qs_1d
-
-
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_qs_2d" INTERFACE="compute_qs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <IN NAME="press UNIT="Pascals" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="qsat" UNITS="kg(vapor)/kg(moist air)" TYPE="real" DIM="(;,:)"></OUT>
-!   <IN NAME="q" UNIT="kg(vapor)/kg(moistair)" TYPE="real" DIM="(:,:)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dqsdT" UNIT="kg(vapor)/kg(moistair)/ degree Kelvin" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(:,:)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_qs_2d ( temp, press, qsat, q, hc, dqsdT, esat, &
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp(:,:), press(:,:)
- real, intent(out)                       :: qsat(:,:)
- real, intent(in),              optional :: q(:,:)
- real, intent(in),              optional :: hc
- real, intent(out),             optional :: dqsdT(:,:), esat(:,:)
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_qs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-!  call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, dqsdT)
-   call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, hc, &
-                       dqsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_qs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_qs_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_qs_3d" INTERFACE="compute_qs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <IN NAME="press UNIT="Pascals" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="qsat" UNITS="kg(vapor)/kg(moist air)" TYPE="real" DIM="(;,:,:)"></OUT>
-!   <IN NAME="q" UNIT="kg(vapor)/kg(moistair)" TYPE="real" DIM="(:,:,:)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dqsdT" UNIT="kg(vapor)/kg(moistair)/ degree Kelvin" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(:,:,:)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_qs_3d ( temp, press, qsat, q, hc, dqsdT, esat, &
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp(:,:,:), press(:,:,:)
- real, intent(out)                       :: qsat(:,:,:)
- real, intent(in),              optional :: q(:,:,:)
- real, intent(in),              optional :: hc
- real, intent(out),             optional :: dqsdT(:,:,:), esat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_qs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-!  call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, dqsdT)
-   call compute_qs_k (temp, press,  EPSILO, ZVIR, qsat, nbad, q, hc, &
-                       dqsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_qs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_qs_3d
-
-!#######################################################################
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_mrs_0d" INTERFACE="compute_mrs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(SCALAR)"></IN>
-!   <IN NAME="press" UNIT="Pascals" TYPE="real" DIM="(SCALAR)"></IN>
-!   <OUT NAME="mrsat" UNITS="kg(vapor)/kg(dry air)" TYPE="real" DIM="(SCALAR</OUT>
-!   <IN NAME="mr" UNIT="kg(vapor)/kg(dry air)" TYPE="real" DIM="(SCALAR)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dmrsdT" UNIT="kg(vapor)/kg(dry air)/ degree Kelvin" TYPE="real" DIM="(SCALAR)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(scalar)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_mrs_0d ( temp, press, mrsat, mr, hc, dmrsdT, esat, &
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp, press
- real, intent(out)                       :: mrsat
- real, intent(in),              optional :: mr, hc
- real, intent(out),             optional :: dmrsdT, esat
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_mrs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
-                     hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_mrs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_mrs_0d
-
-!#######################################################################
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_mrs_1d" INTERFACE="compute_mrs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:)"></IN>
-!   <IN NAME="press" UNIT="Pascals" TYPE="real" DIM="(:)"></IN>
-!   <OUT NAME="mrsat" UNITS="kg(vapor)/kg(dry air)" TYPE="real" DIM="(:)"></OUT>
-!   <IN NAME="mr" UNIT="kg(vapor)/kg(dry air)" TYPE="real" DIM="(:)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dmrsdT" UNIT="kg(vapor)/kg(dry air)/ degree Kelvin" TYPE="real" DIM="(:)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(:)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_mrs_1d ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp(:), press(:)
- real, intent(out)                       :: mrsat(:)
- real, intent(in),              optional :: mr(:)
- real, intent(in),              optional :: hc
- real, intent(out),             optional :: dmrsdT(:), esat(:)
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_mrs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-!  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,  &
-!                                                     nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
-                     hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_mrs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_mrs_1d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_mrs_2d" INTERFACE="compute_mrs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:)"></IN>
-!   <IN NAME="press" UNIT="Pascals" TYPE="real" DIM="(:,:)"></IN>
-!   <OUT NAME="mrsat" UNITS="kg(vapor)/kg(dry air)" TYPE="real" DIM="(:,:)"></OUT>
-!   <IN NAME="mr" UNIT="kg(vapor)/kg(dry air)" TYPE="real" DIM="(:,:)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dmrsdT" UNIT="kg(vapor)/kg(dry air)/ degree Kelvin" TYPE="real" DIM="(:,:)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(:,:)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_mrs_2d ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp(:,:), press(:,:)
- real, intent(out)                       :: mrsat(:,:)
- real, intent(in),              optional :: mr(:,:)
- real, intent(in),              optional :: hc
- real, intent(out),             optional :: dmrsdT(:,:), esat(:,:)
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_mrs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-!  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,  &
-!                                                     nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
-                     hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_mrs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_mrs_2d
-
-!#######################################################################
-
-! <SUBROUTINE NAME="compute_mrs_3d" INTERFACE="compute_mrs">
-!   <IN NAME="temp" UNIT="degrees Kelvin" TYPE="real" DIM="(:,:,:)"></IN>
-!   <IN NAME="press" UNIT="Pascals" TYPE="real" DIM="(:,:,:)"></IN>
-!   <OUT NAME="mrsat" UNITS="kg(vapor)/kg(dry air)" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <IN NAME="mr" UNIT="kg(vapor)/kg(dry air)" TYPE="real" DIM="(:,:,:)"></IN>
-!   <IN NAME="hc" UNIT="fraction" TYPE="real" DIM="(scalar)"></IN>
-!   <OUT NAME="dmrsdT" UNIT="kg(vapor)/kg(dry air)/ degree Kelvin" TYPE="real" DIM="(:,:,:)"></OUT>
-!   <OUT NAME="esat" UNITS="Pascals" TYPE="real" DIM="(:,:,:)"> </OUT>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-! </SUBROUTINE>
- subroutine compute_mrs_3d ( temp, press, mrsat, mr, hc, dmrsdT, esat,&
-                            err_msg, es_over_liq, es_over_liq_and_ice )
-
- real, intent(in)                        :: temp(:,:,:), press(:,:,:)
- real, intent(out)                       :: mrsat(:,:,:)
- real, intent(in),              optional :: mr(:,:,:)
- real, intent(in),              optional :: hc
- real, intent(out),             optional :: dmrsdT(:,:,:), esat(:,:,:)
- character(len=*), intent(out), optional :: err_msg
- logical,intent(in),            optional :: es_over_liq
- logical,intent(in),            optional :: es_over_liq_and_ice
-
- integer :: nbad
- character(len=128) :: err_msg_tmp
-
-   if (.not.module_is_initialized) then
-      if(fms_error_handler('lookup_es','sat_vapor_pres_init is not called' ,err_msg)) return
-   endif
-
-   if (present(es_over_liq)) then
-     if (.not. (construct_table_wrt_liq)) then
-       call error_mesg ('compute_mrs', &
-          'requesting es wrt liq, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-   if (present(es_over_liq_and_ice)) then
-     if (.not. (construct_table_wrt_liq_and_ice)) then
-       call error_mesg ('compute_qs', &
-      'requesting es wrt liq and ice, but that table not constructed', &
-                                                                FATAL)
-     endif
-   endif
-
-!  call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat,   &
-!                                                    nbad, mr, dmrsdT)
-   call compute_mrs_k (temp, press, EPSILO, ZVIR, mrsat, nbad, mr,  &
-                     hc, dmrsdT, esat, es_over_liq, es_over_liq_and_ice)
-
-   if ( nbad == 0 ) then
-     if(present(err_msg)) err_msg = ''
-   else
-     if(show_bad_value_count_by_slice) call temp_check ( temp )
-     if(show_all_bad_values) call show_all_bad ( temp )
-     write(err_msg_tmp,'(a47,i7)') 'saturation vapor pressure table overflow, nbad=', nbad
-     if(fms_error_handler('compute_mrs',err_msg_tmp,err_msg)) return
-   endif
-
- end subroutine compute_mrs_3d
-
-
-!#######################################################################
-
-!#######################################################################
-
-! <SUBROUTINE NAME="sat_vapor_pres_init">
-
-!   <OVERVIEW>
-!     Initializes the lookup tables for saturation vapor pressure.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Initializes the lookup tables for saturation vapor pressure.
-!     This routine will be called automatically the first time
-!     <B>lookup_es</B> or <B>lookup_des</B> is called,
-!     the user does not need to call this routine.
-!     There are no arguments.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call sat_vapor_pres_init
-!   </TEMPLATE>
-!   <OUT NAME="err_msg" TYPE="character">  </OUT>
-
-! </SUBROUTINE>
  subroutine sat_vapor_pres_init(err_msg)
 
 !  =================================================================
@@ -2306,7 +801,7 @@ real,  intent(in),              optional :: hc
 
   character(len=*), intent(out), optional :: err_msg
   character(len=128) :: err_msg_local
-  integer :: unit, ierr, io
+  integer :: iunit, ierr, io
 
 ! return silently if this routine has already been called
   if (module_is_initialized) return
@@ -2317,9 +812,9 @@ real,  intent(in),              optional :: hc
 
 ! write version number and namelist to log file
   call write_version_number("SAT_VAPOR_PRES_MOD", version)
-  unit = stdlog()
+  iunit = stdlog()
   stdoutunit = stdout()
-  if (mpp_pe() == mpp_root_pe()) write (unit, nml=sat_vapor_pres_nml)
+  if (mpp_pe() == mpp_root_pe()) write (iunit, nml=sat_vapor_pres_nml)
 
   if(do_simple) then
     tcmin = -173
@@ -2327,8 +822,9 @@ real,  intent(in),              optional :: hc
   endif
   nsize = (tcmax-tcmin)*esres+1
   nlim  = nsize-1
-  call sat_vapor_pres_init_k(nsize, real(tcmin), real(tcmax), TFREEZE, HLV, &
-                             RVGAS, ES0, err_msg_local, use_exact_qs, do_simple, &
+  call sat_vapor_pres_init_k(nsize, real(tcmin,r8_kind), real(tcmax,r8_kind), &
+                             real(TFREEZE,r8_kind), real(HLV,r8_kind),&
+                             real(RVGAS,r8_kind), real(ES0,r8_kind), err_msg_local, use_exact_qs, do_simple,&
                              construct_table_wrt_liq, &
                              construct_table_wrt_liq_and_ice, &
                              teps, tmin, dtinv)
@@ -2341,6 +837,9 @@ real,  intent(in),              optional :: hc
   module_is_initialized = .true.
 
 end subroutine sat_vapor_pres_init
+
+#include "sat_vapor_pres_r4.fh"
+#include "sat_vapor_pres_r8.fh"
 
 !#######################################################################
 !#######################################################################
@@ -2419,137 +918,6 @@ end subroutine sat_vapor_pres_init
 !   enddo
 
 !end function compute_es_3d
-
-!#######################################################################
-
- function check_1d ( temp ) result ( nbad )
- real   , intent(in)  :: temp(:)
- integer :: nbad, ind, i
-
-   nbad = 0
-   do i = 1, size(temp,1)
-     ind = int(dtinv*(temp(i)-tmin+teps))
-     if (ind < 0 .or. ind > nlim) nbad = nbad+1
-   enddo
-
- end function check_1d
-
-!------------------------------------------------
-
- function check_2d ( temp ) result ( nbad )
- real   , intent(in)  :: temp(:,:)
- integer :: nbad
- integer :: j
-
-    nbad = 0
-    do j = 1, size(temp,2)
-      nbad = nbad + check_1d ( temp(:,j) )
-    enddo
- end function check_2d
-
-!#######################################################################
-
- subroutine temp_check_1d ( temp )
- real   , intent(in) :: temp(:)
- integer :: i, unit
-
-   unit = stdoutunit
-   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i:i)),i=1,size(temp,1))
-
- end subroutine temp_check_1d
-
-!--------------------------------------------------------------
-
- subroutine temp_check_2d ( temp )
- real   , intent(in) :: temp(:,:)
- integer :: i, j, unit
-
-   unit = stdoutunit
-   write(unit,*) 'Bad temperatures (dimension 1): ', (check_1d(temp(i,:)),i=1,size(temp,1))
-   write(unit,*) 'Bad temperatures (dimension 2): ', (check_1d(temp(:,j)),j=1,size(temp,2))
-
- end subroutine temp_check_2d
-
-!--------------------------------------------------------------
-
- subroutine temp_check_3d ( temp )
- real, intent(in)  :: temp(:,:,:)
- integer :: i, j, k, unit
-
-   unit = stdoutunit
-   write(unit,*) 'Bad temperatures (dimension 1): ', (check_2d(temp(i,:,:)),i=1,size(temp,1))
-   write(unit,*) 'Bad temperatures (dimension 2): ', (check_2d(temp(:,j,:)),j=1,size(temp,2))
-   write(unit,*) 'Bad temperatures (dimension 3): ', (check_2d(temp(:,:,k)),k=1,size(temp,3))
-
- end subroutine temp_check_3d
-
-!#######################################################################
-
-subroutine show_all_bad_0d ( temp )
- real   , intent(in) :: temp
- integer :: ind, unit
-
- unit = stdoutunit
- ind = int(dtinv*(temp-tmin+teps))
- if (ind < 0 .or. ind > nlim) then
-   write(unit,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
- endif
-
- end subroutine show_all_bad_0d
-
-!--------------------------------------------------------------
-
- subroutine show_all_bad_1d ( temp )
- real   , intent(in) :: temp(:)
- integer :: i, ind, unit
-
- unit = stdoutunit
- do i=1,size(temp)
-   ind = int(dtinv*(temp(i)-tmin+teps))
-   if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
-   endif
- enddo
-
- end subroutine show_all_bad_1d
-
-!--------------------------------------------------------------
-
- subroutine show_all_bad_2d ( temp )
- real   , intent(in) :: temp(:,:)
- integer :: i, j, ind, unit
-
- unit = stdoutunit
- do j=1,size(temp,2)
- do i=1,size(temp,1)
-   ind = int(dtinv*(temp(i,j)-tmin+teps))
-   if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
-   endif
- enddo
- enddo
-
- end subroutine show_all_bad_2d
-
-!--------------------------------------------------------------
-
- subroutine show_all_bad_3d ( temp )
- real, intent(in)  :: temp(:,:,:)
- integer :: i, j, k, ind, unit
-
- unit = stdoutunit
- do k=1,size(temp,3)
- do j=1,size(temp,2)
- do i=1,size(temp,1)
-   ind = int(dtinv*(temp(i,j,k)-tmin+teps))
-   if (ind < 0 .or. ind > nlim) then
-     write(unit,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k,' pe=',mpp_pe()
-   endif
- enddo
- enddo
- enddo
-
- end subroutine show_all_bad_3d
 
 !#######################################################################
 end module sat_vapor_pres_mod
@@ -2662,3 +1030,5 @@ end module sat_vapor_pres_mod
 !</PRE>
 !   </TESTPROGRAM>
 ! </INFO>
+!> @}
+! close documentation grouping

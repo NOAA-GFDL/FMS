@@ -24,22 +24,29 @@
 # Script to test the mpp_memutils_mod Fortran module code.
 
 # Set common test settings
-. ../test_common.sh
+. ../test-lib.sh
 
 # All tests use blank input.nml file.
 touch input.nml
 
-echo "1: Test begin/end routines of mpp_memutils_mod"
-mpirun -n 1 ./test_mpp_memutils_begin_end
+test_expect_success "begin/end routines of mpp_memutils_mod" '
+    mpirun -n 1 ./test_mpp_memutils_begin_end
+'
 
-echo "2: Test mpp_print_memuse_stats"
-mpirun -n 1 ./test_mpp_print_memuse_stats_stderr
+test_expect_success "mpp_print_memuse_stats" '
+    mpirun -n 1 ./test_mpp_print_memuse_stats_stderr
+'
 
-echo "3: Test mpp_print_memuse_stats to file (stdout)"
-mpirun -n 1 ./test_mpp_print_memuse_stats_file
+test_expect_success "mpp_print_memuse_stats to file (stdout)" '
+    mpirun -n 1 ./test_mpp_print_memuse_stats_file
+'
 
-echo "4: Test failure caught if mpp_memuse_begin called multiple times"
-mpirun -n 1 ./test_mpp_memutils_begin_2x || echo "Ok"
+test_expect_failure "failure caught if mpp_memuse_begin called multiple times" '
+    mpirun -n 1 ./test_mpp_memutils_begin_2x
+'
 
-echo "5: Test failure caught if mpp_memuse_end called before mpp_memuse_begin"
-mpirun -n 1 ./test_mpp_memutils_end_before_begin || echo "Ok"
+test_expect_failure "failure caught if mpp_memuse_end called before mpp_memuse_begin" '
+    mpirun -n 1 ./test_mpp_memutils_end_before_begin
+'
+
+test_done

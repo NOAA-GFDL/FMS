@@ -16,55 +16,37 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_io_mod fms_io_mod
+!> @ingroup fms
+!> @brief Module for writing and reading restart data via NetCDF files
+!> @author M.J. Harrison, Zhi Liang
+!!
+!! This module is for writing and reading restart data in NetCDF format.
+!! fms_io_init must be called before the first write_data/read_data call
+!! For writing, fms_io_exit must be called after ALL write calls have
+!! been made. Typically, fms_io_init and fms_io_exit are placed in the
+!! main (driver) program while read_data and write_data can be called where needed.
+!! Presently, two combinations of threading and fileset are supported, users can choose
+!! one line of the following by setting namelist:
+!!
+!! With the introduction of netCDF restart files, there is a need for a global
+!! switch to turn on/off netCDF restart options in all of the modules that deal with
+!! restart files. Here two more namelist variables (logical type) are introduced to fms_io
+!!
+!! - fms_netcdf_override
+!! - fms_netcdf_restart
+!!
+!! because default values of both flags are .true., the default behavior of the entire model is
+!! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
 
-module fms_io_mod
-#include <fms_platform.h>
-
-!
-!
-! <CONTACT EMAIL="Zhi.Liang@noaa.gov">
-! Zhi Liang
-! </CONTACT>
-
-! <CONTACT EMAIL="Matthew.Harrison@noaa.gov">
-! M.J. Harrison
-! </CONTACT>
-!
-! <REVIEWER EMAIL="Matthew.Harrison@noaa.gov">
-! M.J. Harrison
-! </REVIEWER>
-
-! <REVIEWER EMAIL="Bruce.Wyman@noaa.gov">
-! B. Wyman
-! </REVIEWER>
-
-!<DESCRIPTION>
-! This module is for writing and reading restart data in NetCDF format.
-! fms_io_init must be called before the first write_data/read_data call
-! For writing, fms_io_exit must be called after ALL write calls have
-! been made. Typically, fms_io_init and fms_io_exit are placed in the
-! main (driver) program while read_data and write_data can be called where needed.
-! Presently, two combinations of threading and fileset are supported, users can choose
-! one line of the following by setting namelist:
-!
-! With the introduction of netCDF restart files, there is a need for a global
-! switch to turn on/off netCDF restart options in all of the modules that deal with
-! restart files. Here two more namelist variables (logical type) are introduced to fms_io
-!
-! fms_netcdf_override
-! fms_netcdf_restart
-!
-! because default values of both flags are .true., the default behavior of the entire model is
-! to use netCDF IO mode. To turn off netCDF restart, simply set fms_netcdf_restart to .false.
-!
-!</DESCRIPTION>
 ! <NAMELIST NAME="fms_io_nml">
 ! <DATA NAME="threading_read" TYPE="character">
 ! threading_read can be 'single' or 'multi'
 ! </DATA>
 ! <DATA NAME="fms_netcdf_override" TYPE="logical">
 !   .true. : fms_netcdf_restart overrides individual do_netcdf_restart value (default behavior)
-!   .false.: individual module settings has a precedence over the global setting, therefore fms_netcdf_restart is ignored
+!   .false.: individual module settings has a precedence over the global setting, therefore
+!   fms_netcdf_restart is ignored
 ! </DATA>
 ! <DATA NAME="fms_netcdf_restart" TYPE="logical">
 !   .true. : all modules deal with restart files will operate under netCDF mode (default behavior)
@@ -99,8 +81,14 @@ module fms_io_mod
 !
 !    Set checksum_required to false if you do not want to compare checksums.
 ! </DATA>
-
 !</NAMELIST>
+
+!> @addtogroup fms_io_mod
+!> @{
+module fms_io_mod
+#ifdef use_deprecated_io
+
+#include <fms_platform.h>
 
 use mpp_io_mod,      only: mpp_open, mpp_close, mpp_io_init, mpp_io_exit, mpp_read, mpp_write
 use mpp_io_mod,      only: mpp_write_meta, mpp_get_info, mpp_get_atts, mpp_get_fields
@@ -148,7 +136,7 @@ integer, parameter, private :: max_split_file = 50
 integer, parameter, private :: max_fields=400
 integer, parameter, private :: max_axes=40
 integer, parameter, private :: max_atts=20
-integer, parameter, private :: max_domains = 10
+integer, parameter, private :: max_domains = 100
 integer, parameter, private :: MAX_TIME_LEVEL_REGISTER = 2
 integer, parameter, private :: MAX_TIME_LEVEL_WRITE = 20
 integer, parameter          :: max_axis_size=10000
@@ -172,7 +160,11 @@ integer(INT_KIND),parameter,public :: CCIDX = 8
 
 integer, parameter, private :: NIDX=8
 
-type meta_type
+logical, private :: warn_string_function = .true.
+
+!> @}
+!> @ingroup fms_io_mod
+type, private :: meta_type
   type(meta_type), pointer :: prev=>null(), next=>null()
 !!$ Gfortran on gaea does not yet support deferred length character strings
 !!$  character(len=:),allocatable  :: name
@@ -184,7 +176,8 @@ type meta_type
   character(len=256)   :: cval
 end type meta_type
 
-type ax_type
+!> @ingroup fms_io_mod
+type, private :: ax_type
    private
    character(len=128) :: name = ''
    character(len=128) :: units = ''
@@ -194,24 +187,26 @@ type ax_type
    character(len=128) :: dimlen_name = ''
    character(len=128) :: dimlen_lname = ''
    character(len=128) :: calendar = ''
-   integer            :: sense              !Orientation of z axis definition
-   integer            :: dimlen             !max dim of elements across global domain
-   real               :: min             !valid min for real axis data
-   integer            :: imin            !valid min for integer axis data
-   integer,allocatable :: idx(:)         !compressed io-domain index vector
-   integer,allocatable :: nelems(:)      !num elements for each rank in io domain
-   real, pointer      :: data(:) =>NULL()    !real axis values (not used if time axis)
-   type(domain2d),pointer :: domain =>NULL() ! domain associated with compressed axis
+   integer            :: sense              !< Orientation of z axis definition
+   integer            :: dimlen             !< max dim of elements across global domain
+   real               :: min             !< valid min for real axis data
+   integer            :: imin            !< valid min for integer axis data
+   integer,allocatable :: idx(:)         !< compressed io-domain index vector
+   integer,allocatable :: nelems(:)      !< num elements for each rank in io domain
+   real, pointer      :: data(:) =>NULL()    !< real axis values (not used if time axis)
+   type(domain2d),pointer :: domain =>NULL() !< domain associated with compressed axis
 
 !----------
 !ug support
-   type(domainUG),pointer :: domain_ug => null()     !<A pointer to an unstructured mpp domain.
-   integer(INT_KIND)      :: nelems_for_current_rank !<The number of grid points registered to the current rank (used for error checking).
+   type(domainUG),pointer :: domain_ug => null()     !< A pointer to an unstructured mpp domain.
+   integer(INT_KIND)      :: nelems_for_current_rank !< The number of grid points registered
+                                                     !! to the current rank (used for error checking).
 !----------
 
 end type ax_type
 
-type var_type
+!> @ingroup fms_io_mod
+type, private :: var_type
    private
    character(len=128)                     :: name = ''
    character(len=128)                     :: longname = ''
@@ -221,81 +216,95 @@ type var_type
    integer                                :: domain_idx = -1
    logical                                :: is_dimvar = .FALSE.
    logical                                :: read_only = .FALSE.
-   logical                                :: owns_data = .FALSE. ! if true, restart owns the data and will deallocate them when freed
+   logical                                :: owns_data = .FALSE. !< if true, restart owns the
+                                                                 !! data and will deallocate them when freed
    type(fieldtype)                        :: field
    type(axistype)                         :: axis
    integer                                :: position
    integer                                :: ndim
-   integer                                :: siz(5)      ! X/Y/Z/T/A extent of fields (data domain
-                                                         ! size for distributed writes;global size for reads)
-   integer                                :: gsiz(4)     ! global X/Y/Z/A extent of fields
-   integer                                :: id_axes(4)  ! store index for x/y/z/a axistype.
-   logical                                :: initialized ! indicate if the field is read or not in routine save_state.
-   logical                                :: mandatory   ! indicate if the field is mandatory to be when restart.
-   integer                                :: is, ie, js, je  ! index of the data in compute domain
+   integer                                :: siz(5)      !< X/Y/Z/T/A extent of fields (data domain
+                                                         !< size for distributed writes;global size for reads)
+   integer                                :: gsiz(4)     !< global X/Y/Z/A extent of fields
+   integer                                :: id_axes(4)  !< store index for x/y/z/a axistype.
+   logical                                :: initialized !< indicate if the field is read or not in routine save_state.
+   logical                                :: mandatory   !< indicate if the field is mandatory to be when restart.
+   integer                                :: is, ie, js, je  !< index of the data in compute domain
    real                                   :: default_data
-   character(len=8)                       :: compressed_axis !< If on a compressed axis, which axis
+   character(len=8)                       :: compressed_axis !<< If on a compressed axis, which axis
    integer, dimension(:), allocatable     :: pelist
-   integer                                :: ishift, jshift ! can be used to shift indices when no_domain=T
-   integer                                :: x_halo, y_halo ! can be used to indicate halo size when no_domain=T
+   integer                                :: ishift, jshift !< can be used to shift indices when no_domain=T
+   integer                                :: x_halo, y_halo !< can be used to indicate halo size when no_domain=T
 
 !----------
 !ug support
-    type(domainUG),pointer            :: domain_ug => null()   !<A pointer to an unstructured mpp domain.
-    integer(INT_KIND),dimension(5)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
-    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !<Array of sizes of the dimensions for the field.
+    type(domainUG),pointer            :: domain_ug => null()   !< A pointer to an unstructured mpp domain.
+    integer(INT_KIND),dimension(5)    :: field_dimension_order !< Array telling the ordering
+                                                               !! of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX) :: field_dimension_sizes !< Array of sizes of the dimensions for the field.
 !----------
 
 end type var_type
 
+!> @ingroup fms_io_mod
 type Ptr0Dr
    real,                   pointer :: p => NULL()
 end type Ptr0Dr
 
+!> @ingroup fms_io_mod
 type Ptr1Dr
    real, dimension(:),     pointer :: p => NULL()
 end type Ptr1Dr
 
+!> @ingroup fms_io_mod
 type Ptr2Dr
    real, dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Dr
 
+!> @ingroup fms_io_mod
 type Ptr3Dr
    real, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr
 
+!> @ingroup fms_io_mod
 type Ptr2Dr8
    real(DOUBLE_KIND), dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Dr8
 
+!> @ingroup fms_io_mod
 type Ptr3Dr8
    real(DOUBLE_KIND), dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Dr8
 
+!> @ingroup fms_io_mod
 type Ptr4Dr
    real, dimension(:,:,:,:), pointer :: p => NULL()
 end type Ptr4Dr
 
+!> @ingroup fms_io_mod
 type Ptr0Di
    integer,                   pointer :: p => NULL()
 end type Ptr0Di
 
+!> @ingroup fms_io_mod
 type Ptr1Di
    integer, dimension(:),     pointer :: p => NULL()
 end type Ptr1Di
 
+!> @ingroup fms_io_mod
 type Ptr2Di
    integer, dimension(:,:),   pointer :: p => NULL()
 end type Ptr2Di
 
+!> @ingroup fms_io_mod
 type Ptr3Di
    integer, dimension(:,:,:), pointer :: p => NULL()
 end type Ptr3Di
 
+!> @ingroup fms_io_mod
 type restart_file_type
    private
    integer                                  :: unit = -1 ! mpp_io unit for netcdf file
-   character(len=128)                       :: name = ''
+   character(len=256)                       :: name = ''
    integer                                  :: register_id = 0
    integer                                  :: nvar = 0
    integer                                  :: natt = 0
@@ -320,6 +329,8 @@ type restart_file_type
    type(Ptr3Di),   dimension(:,:), pointer  :: p3di => NULL()
 end type restart_file_type
 
+!> Read data from a file
+!> @ingroup fms_io_mod
 interface read_data
    module procedure read_data_4d_new
    module procedure read_data_3d_new
@@ -345,6 +356,7 @@ interface read_data
 #endif
 end interface
 
+!> @ingroup fms_io_mod
 interface read_distributed
    module procedure read_distributed_r1D
    module procedure read_distributed_r3D
@@ -354,8 +366,9 @@ interface read_distributed
    module procedure read_distributed_a1D
 end interface
 
-! Only need read compressed att; write is handled in with
-! mpp_io calls in save_compressed_restart
+!> Only need read compressed att; write is handled in with
+!! mpp_io calls in save_compressed_restart
+!> @ingroup fms_io_mod
 interface read_compressed
    module procedure read_compressed_i1d
    module procedure read_compressed_i2d
@@ -364,6 +377,7 @@ interface read_compressed
    module procedure read_compressed_3d
 end interface read_compressed
 
+!> @ingroup fms_io_mod
 interface write_data
    module procedure write_data_4d_new
    module procedure write_data_3d_new
@@ -381,6 +395,7 @@ interface write_data
 #endif
 end interface
 
+!> @ingroup fms_io_mod
 interface register_restart_field
    module procedure register_restart_field_r0d
    module procedure register_restart_field_r1d
@@ -409,12 +424,14 @@ interface register_restart_field
    module procedure register_restart_region_r3d
 end interface
 
+!> @ingroup fms_io_mod
 interface register_restart_axis
    module procedure register_restart_axis_r1d
    module procedure register_restart_axis_i1d
    module procedure register_restart_axis_unlimited
 end interface
 
+!> @ingroup fms_io_mod
 interface reset_field_pointer
    module procedure reset_field_pointer_r0d
    module procedure reset_field_pointer_r1d
@@ -435,11 +452,13 @@ interface reset_field_pointer
    module procedure reset_field_pointer_i3d_2level
 end interface
 
+!> @ingroup fms_io_mod
 interface restore_state
    module procedure restore_state_all
    module procedure restore_state_one_field
 end interface
 
+!> @ingroup fms_io_mod
 interface query_initialized
    module procedure query_initialized_id
    module procedure query_initialized_name
@@ -448,6 +467,7 @@ interface query_initialized
    module procedure query_initialized_r4d
 end interface
 
+!> @ingroup fms_io_mod
 interface set_initialized
    module procedure set_initialized_id
    module procedure set_initialized_name
@@ -456,30 +476,36 @@ interface set_initialized
    module procedure set_initialized_r4d
 end interface
 
+!> @ingroup fms_io_mod
 interface get_global_att_value
   module procedure get_global_att_value_text
   module procedure get_global_att_value_real
 end interface
 
+!> @ingroup fms_io_mod
 interface get_var_att_value
   module procedure get_var_att_value_text
 end interface
 
+!> @ingroup fms_io_mod
 interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
 end interface
 
+!> @ingroup fms_io_mod
 interface get_mosaic_tile_file
   module procedure get_mosaic_tile_file_sg
   module procedure get_mosaic_tile_file_ug
 end interface
 
+!> @addtogroup fms_io_mod
+!> @{
 
-integer :: num_files_r = 0 ! number of currently opened files for reading
-integer :: num_files_w = 0 ! number of currently opened files for writing
-integer :: num_domains = 0 ! number of domains in array_domain
-integer :: num_registered_files = 0 ! mumber of files registered by calling register_restart_file
+integer :: num_files_r = 0 !< number of currently opened files for reading
+integer :: num_files_w = 0 !< number of currently opened files for writing
+integer :: num_domains = 0 !< number of domains in array_domain
+integer :: num_registered_files = 0 !< mumber of files registered by calling register_restart_file
 
 integer :: thread_r, form
 logical :: module_is_initialized = .FALSE.
@@ -491,12 +517,15 @@ logical           :: great_circle_algorithm=.FALSE.
 ! entrained from fms_mod.  This will be deprecated in the future.
 type(domain2D), pointer, private :: Current_domain =>NULL()
 
-integer, private :: is,ie,js,je      ! compute domain
-integer, private :: isd,ied,jsd,jed  ! data domain
-integer, private :: isg,ieg,jsg,jeg  ! global domain
-character(len=128),      dimension(:), allocatable         :: registered_file ! file names registered through register_restart_file
-type(restart_file_type), dimension(:), allocatable         :: files_read  ! store files that are read through read_data
-type(restart_file_type), dimension(:), allocatable, target :: files_write ! store files that are written through write_data
+integer, private :: is,ie,js,je      !< compute domain
+integer, private :: isd,ied,jsd,jed  !< data domain
+integer, private :: isg,ieg,jsg,jeg  !< global domain
+character(len=128),      dimension(:), allocatable         :: registered_file !< file names
+                                                                            !! registered through register_restart_file
+type(restart_file_type), dimension(:), allocatable         :: files_read  !< store files that are read
+                                                                          !! through read_data
+type(restart_file_type), dimension(:), allocatable, target :: files_write !< store files that
+                                                                          !! are written through write_data
 type(domain2d), dimension(max_domains), target, save  :: array_domain
 type(domain1d), dimension(max_domains), save       :: domain_x, domain_y
 public  :: read_data, read_compressed, write_data, read_distributed
@@ -519,14 +548,17 @@ public  :: set_filename_appendix, get_instance_filename
 public  :: get_filename_appendix, nullify_filename_appendix
 public  :: parse_mask_table
 public  :: get_great_circle_algorithm
-public  :: write_version_number
 character(len=32), save :: filename_appendix = ''
 
 !--- public interface ---
+!> @}
+!> @ingroup fms_io_mod
 interface string
    module procedure string_from_integer
    module procedure string_from_real
 end interface
+!> @addtogroup fms_io_mod
+!> @{
 
 !--- namelist interface
 logical           :: fms_netcdf_override = .true.
@@ -534,7 +566,6 @@ logical           :: fms_netcdf_restart  = .true.
 character(len=32) :: threading_read      = 'multi'
 character(len=32) :: format              = 'netcdf'
 logical           :: read_all_pe         = .TRUE.
-character(len=64) :: iospec_ieee32       = '-N ieee_32'
 integer           :: max_files_w         = 40
 integer           :: max_files_r         = 40
 integer           :: dr_set_size         = 10
@@ -545,7 +576,7 @@ logical           :: show_open_namelist_file_warning = .false.
 logical           :: debug_mask_list     = .false.
 logical           :: checksum_required   = .true.
   namelist /fms_io_nml/ fms_netcdf_override, fms_netcdf_restart, &
-       threading_read, format, read_all_pe, iospec_ieee32,max_files_w,max_files_r, &
+       threading_read, format, read_all_pe, max_files_w,max_files_r, &
        read_data_bug, time_stamp_restart, print_chksum, show_open_namelist_file_warning, &
        debug_mask_list, checksum_required, dr_set_size
 
@@ -553,6 +584,9 @@ integer            :: pack_size  ! = 1 for double = 2 for float
 
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
+
+! make version public so it can be written in fms_init()
+character(len=*), parameter, public :: fms_io_version = version
 
 !----------
 !ug support
@@ -564,12 +598,16 @@ public :: fms_io_unstructured_get_field_size
 public :: fms_io_unstructured_file_unit
 public :: fms_io_unstructured_field_exist
 
+!> @}
+
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_register_restart_axis
     module procedure fms_io_unstructured_register_restart_axis_r1D
     module procedure fms_io_unstructured_register_restart_axis_i1D
     module procedure fms_io_unstructured_register_restart_axis_u
 end interface fms_io_unstructured_register_restart_axis
 
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_register_restart_field
     module procedure fms_io_unstructured_register_restart_field_r_0d
     module procedure fms_io_unstructured_register_restart_field_r_1d
@@ -584,6 +622,7 @@ interface fms_io_unstructured_register_restart_field
     module procedure fms_io_unstructured_register_restart_field_i_2d
 end interface fms_io_unstructured_register_restart_field
 
+!> @ingroup fms_io_mod
 interface fms_io_unstructured_read
     module procedure fms_io_unstructured_read_r_scalar
     module procedure fms_io_unstructured_read_r_1D
@@ -595,6 +634,8 @@ interface fms_io_unstructured_read
 end interface fms_io_unstructured_read
 !----------
 
+!> @addtogroup fms_io_mod
+!> @{
 contains
 
 ! <SUBROUTINE NAME="get_restart_io_mode">
@@ -647,21 +688,18 @@ subroutine fms_io_init()
   if (module_is_initialized) return
   call mpp_io_init()
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, fms_io_nml, iostat=io_status)
   if (io_status > 0) then
-     call mpp_error(FATAL,'=>fms_io_init: Error reading input.nml')
+     call mpp_error(FATAL,'=>fms_io_init: Error reading input nml file')
   endif
-#else
-  call mpp_open(unit, 'input.nml',form=MPP_ASCII,action=MPP_RDONLY)
-  read(unit,fms_io_nml,iostat=io_status)
-  if (io_status > 0) then
-     call mpp_error(FATAL,'=>fms_io_init: Error reading input.nml')
-  endif
-  call mpp_close (unit)
-#endif
 
 ! take namelist options if present
+! read_data_bug is no longer supported.
+  if (read_data_bug) then
+    call mpp_error(FATAL, "fms_io_init: You have overridden the default value of " // &
+       "read_data_bug and set it to .true. in fms_io_nml. This was a temporary workaround " // &
+       "that is no longer supported. Please remove this namelist variable.")
+  endif
 
 ! determine packsize
   pack_size = size(transfer(doubledata, realarray))
@@ -685,8 +723,9 @@ subroutine fms_io_init()
   end select
 
 ! Initially allocate  files_write and files_read
-  allocate(files_write(max_files_w),files_read(max_files_r))
-  allocate(registered_file(max_files_w))
+  if (.not. allocated(files_write) ) allocate(files_write(max_files_w))
+  if (.not. allocated(files_read) ) allocate(files_read(max_files_r))
+  if (.not. allocated(registered_file)) allocate(registered_file(max_files_w))
 
   do i = 1, max_domains
      array_domain(i) = NULL_DOMAIN2D
@@ -697,9 +736,6 @@ subroutine fms_io_init()
 
   !This is set here instead of at the end of the routine to prevent the read_data call below from stopping the model
   module_is_initialized = .TRUE.
-
-  ! Record the version number in the log file
-  call write_version_number("FMS_IO_MOD", version)
 
   !--- read INPUT/grid_spec.nc to decide the value of great_circle_algorithm
   !--- great_circle_algorithm could be true only for mosaic grid.
@@ -771,7 +807,8 @@ subroutine fms_io_exit()
     enddo
 
     ! each field has an associated domain type (may be undefined).
-    ! each file only needs to write unique axes (i.e. if 2 fields share an identical axis, then only write the axis once)
+    ! each file only needs to write unique axes (i.e. if 2 fields share an identical axis,
+    ! then only write the axis once)
     ! unique axes are defined by the global size and domain decomposition (i.e. can support identical axis sizes with
     ! different domain decomposition)
 
@@ -1054,7 +1091,8 @@ subroutine write_data_3d_new(filename, fieldname, data, domain, no_domain, scala
 
   if(is_no_domain) then
      if(PRESENT(domain)) &
-       call mpp_error(FATAL, 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
+       call mpp_error(FATAL, &
+                   & 'fms_io(write_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
   else if(PRESENT(domain))then
      d_ptr => domain
   else if (ASSOCIATED(Current_domain)) then
@@ -1859,7 +1897,8 @@ function register_restart_field_i0d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i0d): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i0d): data_default and data different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -1899,7 +1938,8 @@ function register_restart_field_i1d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i1d): data_default and data different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -1943,7 +1983,8 @@ function register_restart_field_i2d(fileObj, filename, fieldname, data, domain, 
   is_compressed = .false.
   if(present(compressed)) is_compressed=compressed
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i2d): data_default and data different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -1982,7 +2023,8 @@ function register_restart_field_i3d(fileObj, filename, fieldname, data, domain, 
 
   if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(register_restart_field_i3d): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d): data_default and data different KIND()')
+  if (KIND(data_default)/=KIND(data)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i3d): data_default and data different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -2224,8 +2266,10 @@ function register_restart_field_i0d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i0d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d_2level): data_default and data1 different KIND()')
-  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i0d_2level): data_default and data2 different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i0d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i0d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -2265,8 +2309,10 @@ function register_restart_field_i1d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i1d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d_2level): data_default and data1 different KIND()')
-  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i1d_2level): data_default and data2 different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i1d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i1d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -2306,8 +2352,10 @@ function register_restart_field_i2d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i2d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d_2level): data_default and data1 different KIND()')
-  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i2d_2level): data_default and data2 different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i2d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i2d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -2347,8 +2395,10 @@ function register_restart_field_i3d_2level(fileObj, filename, fieldname, data1, 
   if(.not.module_is_initialized) call mpp_error(FATAL, &
       'fms_io(register_restart_field_i3d_2level): need to call fms_io_init')
 
-  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d_2level): data_default and data1 different KIND()')
-  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL,'fms_io(register_restart_field_i3d_2level): data_default and data2 different KIND()')
+  if (KIND(data_default)/=KIND(data1)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i3d_2level): data_default and data1 different KIND()')
+  if (KIND(data_default)/=KIND(data2)) call mpp_error(FATAL, &
+      & 'fms_io(register_restart_field_i3d_2level): data_default and data2 different KIND()')
   data_default_r = TRANSFER(MPP_FILL_INT,data_default_r)
   if (present(data_default)) data_default_r = TRANSFER(data_default ,data_default_r)
 
@@ -2492,7 +2542,8 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
   character(len=256) :: dir
   character(len=80)  :: restartname          ! The restart file name (no dir).
   character(len=336) :: restartpath          ! The restart file path (dir/file).
-
+  integer :: i !< For looping
+  logical :: has_dot !< For determining if the time_stamp has a .
   ! This approach is taken rather than interface overloading in order to preserve
   ! use of the register_restart_field infrastructure
 
@@ -2507,7 +2558,13 @@ subroutine save_restart(fileObj, time_stamp, directory, append, time_level)
      if (PRESENT(time_stamp)) then
         if(len_trim(restartname)+len_trim(time_stamp) > 79) call mpp_error(FATAL, "fms_io(save_restart): " // &
           "Length of restart file name + time_stamp is greater than allowed character length of 79")
-        restartname = trim(time_stamp)//"."//trim(restartname)
+           has_dot = .false.
+           if (time_stamp(len(time_stamp):len(time_stamp)) == ".") has_dot = .true.
+           if (has_dot) then
+              restartname = trim(time_stamp)//trim(restartname)
+           else
+              restartname = trim(time_stamp)//"."//trim(restartname)
+           endif
      endif
   end if
   if(len_trim(dir) > 0) then
@@ -2626,7 +2683,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
       mpp_action = MPP_APPEND
       write_meta_data = .false. ! Assuming meta data is already written when routine is called to append to field data.
       if(time_level < 0.0) then
-        call mpp_error(FATAL, 'fms_io(save_compressed_restart): time_level cannot be negative when append is .true.'// &
+        call mpp_error(FATAL, 'fms_io(save_compressed_restart): time_level cannot be negative when append is .true.'//&
                       ' for file '//trim(fileObj%name))
       endif
     endif
@@ -2634,7 +2691,8 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
 
   write_field_data = .true.
   if(present(time_level)) then
-    write_field_data = time_level >= 0.0 ! Using negative value of time_level as a flag that there is no valid field data to write.
+    write_field_data = time_level >= 0.0 ! Using negative value of time_level as a flag that
+                                         !! there is no valid field data to write.
   endif
 
   call mpp_open(unit,trim(restartpath),action=mpp_action,form=form, &
@@ -2699,7 +2757,8 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
     ! write out time axis
     axis => fileobj%axes(TIDX)
     if(ASSOCIATED(axis%data))then
-       call mpp_write_meta(unit,t_axis, axis%name, units=axis%units, longname=axis%longname, cartesian='T', calendar=axis%calendar)
+       call mpp_write_meta(unit,t_axis, axis%name, units=axis%units, longname=axis%longname, cartesian='T', &
+                          &  calendar=axis%calendar)
     else
        call mpp_write_meta(unit,t_axis, 'Time','time level','Time',cartesian='T')
     endif
@@ -2783,8 +2842,8 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
               check_val(k) = mpp_chksum(fileObj%p2di(k,j)%p(:,:), mask_val=cur_var%default_data)
               cpack = 0  ! Write data as integer*4
            else if ( Associated(fileObj%p3di(k,j)%p) ) then
-              call mpp_error(FATAL, "fms_io(save_compressed_restart): integer 3D restart fields are not currently supported"// &
-                   trim(cur_var%name)//" of file "//trim(fileObj%name) )
+              call mpp_error(FATAL, "fms_io(save_compressed_restart): integer 3D restart fields are not currently"//&
+                           & " supported"//trim(cur_var%name)//" of file "//trim(fileObj%name) )
            else
               call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
                    trim(cur_var%name)//" of file "//trim(fileObj%name) )
@@ -2867,7 +2926,7 @@ subroutine save_compressed_restart(fileObj,restartpath,append,time_level)
                      fileObj%axes(idx)%nelems(:), tstamp=tlev, default_data=cur_var%default_data)
                 deallocate(r2d)
              else
-                call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "// &
+                call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of field "//&
                        trim(cur_var%name)//" of file "//trim(fileObj%name) )
              endif
           endif
@@ -2938,7 +2997,8 @@ subroutine save_unlimited_axis_restart(fileObj,restartpath)
         check_val = mpp_chksum(INT(fileObj%p1di(1,j)%p(:),8))
            cpack = 0  ! Write data as integer*4
         else
-        call mpp_error(FATAL, "fms_io(save_unlimited_axis_restart): There is no pointer associated with the record data of field "// &
+        call mpp_error(FATAL, "fms_io(save_unlimited_axis_restart):"//&
+            " There is no pointer associated with the record data of field "//&
                 trim(cur_var%name)//" of file "//trim(fileObj%name) )
         end if
      call mpp_write_meta(unit,cur_var%field, var_axes(1:num_var_axes), cur_var%name, &
@@ -2975,8 +3035,10 @@ subroutine save_default_restart(fileObj,restartpath)
   type(restart_file_type), intent(inout) :: fileObj
   character(len=336)                     :: restartpath ! The restart file path (dir/file).
 
-  character(len=8)   :: suffix               ! A suffix (like _2) that is appended to the name of files after the first.
-  integer            :: var_sz, size_in_file ! The size in bytes of each variable and of the variables already in a file.
+  character(len=8)   :: suffix               ! A suffix (like _2) that is appended to the name of files
+                                             !! after the first.
+  integer            :: var_sz, size_in_file ! The size in bytes of each variable and of the
+                                             !! variables already in a file.
   integer            :: unit                 ! The mpp unit of the open file.
   real, dimension(max_axis_size)      :: axisdata
   integer,        dimension(max_axes) :: id_x_axes, siz_x_axes
@@ -3240,7 +3302,8 @@ subroutine save_default_restart(fileObj,restartpath)
            cpack_size = 1
            check_val(k) = mpp_chksum(fileObj%p3dr8(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd, :) )
         else if ( Associated(fileObj%p4dr(k,j)%p) ) then
-           check_val(k) = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, cur_var%js:cur_var%js+jadd, :, :) )
+           check_val(k) = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                    &  cur_var%js:cur_var%js+jadd, :, :) )
         else if ( Associated(fileObj%p0di(k,j)%p) ) then
            check_val(k) = fileObj%p0di(k,j)%p
         else if ( Associated(fileObj%p1di(k,j)%p) ) then
@@ -3351,8 +3414,8 @@ subroutine save_default_restart(fileObj,restartpath)
                  call mpp_write(unit, cur_var%field, r3d,                  tlev)
                  deallocate(r3d)
               else
-                 call mpp_error(FATAL, "fms_io(save_restart): There is no pointer associated with the data of  field "// &
-                      trim(cur_var%name)//" of file "//trim(fileObj%name) )
+                 call mpp_error(FATAL,"fms_io(save_restart): There is no pointer associated with the data of field "//&
+                      & trim(cur_var%name)//" of file "//trim(fileObj%name) )
               end if
            end if
         end if
@@ -3781,8 +3844,9 @@ subroutine restore_state_border(fileObj, directory, nonfatal_missing_files)
                     trim(cur_var%name)//" in file "//trim(fileObj%name) )
             end if
             if ((fileObj%is_root_pe) .and. (is_there_a_checksum) .and. (checksum_file(k)/=checksum_data)) then
-              write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname))//" ", checksum_data,&
-                           " does not match value ", checksum_file(k), " stored in "//uppercase(trim(fileObj%name)//"." )
+              write (mesg,'(a,Z16,a,Z16,a)')"Checksum of input field "// uppercase(trim(varname))//" ", checksum_data,&
+                           " does not match value ", checksum_file(k), " stored in "//uppercase(trim(fileObj%name)// &
+                           & ".")
               call mpp_error(FATAL, "fms_io(restore_state_border): "//trim(mesg) )
             endif
           end do
@@ -3873,7 +3937,8 @@ subroutine write_chksum(fileObj, action)
            else if ( Associated(fileObj%p3dr(k,j)%p) ) then
               data_chksum = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
            else if ( Associated(fileObj%p4dr(k,j)%p) ) then
-              data_chksum = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :, :) )
+              data_chksum = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                      & cur_var%js:cur_var%js+jadd, :, :) )
            else if ( Associated(fileObj%p0di(k,j)%p) ) then
               data_chksum = fileObj%p0di(k,j)%p
            else if ( Associated(fileObj%p1di(k,j)%p) ) then
@@ -3887,7 +3952,7 @@ subroutine write_chksum(fileObj, action)
                    trim(cur_var%name)//" of file "//trim(fileObj%name) )
            end if
            outunit = stdout()
-           write(outunit,'(a, I1, a, Z16)')'fms_io('//trim(routine_name)//'): At time level = ', k, ', chksum for "'// &
+           write(outunit,'(a, I1, a, Z16)')'fms_io('//trim(routine_name)//'): At time level = ', k, ', chksum for "'//&
                 trim(cur_var%name)// '" of "'// trim(fileObj%name)// '" = ', data_chksum
 
         enddo
@@ -4100,23 +4165,28 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
                     else if( Associated(fileObj%p2dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p2dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
+                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd) )
                     else if( Associated(fileObj%p3dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p3dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd, :) )
                     else if( Associated(fileObj%p2dr8(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p2dr8(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2dr8(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
+                         checksum_data = mpp_chksum(fileObj%p2dr8(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd) )
                     else if( Associated(fileObj%p3dr8(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p3dr8(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3dr8(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+                         checksum_data = mpp_chksum(fileObj%p3dr8(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd, :) )
                     else if( Associated(fileObj%p4dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), fileObj%p4dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd,:,:))
+                         checksum_data = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd,:,:))
                     else if( Associated(fileObj%p0di(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), r0d, tlev)
                        fileObj%p0di(k,j)%p = r0d
@@ -4133,7 +4203,8 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), r2d, tlev)
                        fileObj%p2di(k,j)%p(isc:iec,jsc:jec) = r2d(isc:iec,jsc:jec)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
+                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd) )
                        deallocate(r2d)
                     else if( Associated(fileObj%p3di(k,j)%p) ) then
                        allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
@@ -4141,11 +4212,13 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
                        call mpp_read(unit(n), fields(l), array_domain(domain_idx), r3d, tlev)
                        fileObj%p3di(k,j)%p(isc:iec,jsc:jec,:) = r3d(isc:iec,jsc:jec,:)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
+                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd, :))
                        deallocate(r3d)
                     else
-                       call mpp_error(FATAL, "fms_io(restore_state_all): domain is present for the field "//trim(varname)// &
-                            " of file "//trim(fileObj%name)//", but none of p2dr, p3dr, p2di and p3di is associated")
+                       call mpp_error(FATAL, "fms_io(restore_state_all): domain is present for the field "// &
+                                   & trim(varname)//" of file "//trim(fileObj%name)// &
+                                   & ", but none of p2dr, p3dr, p2di and p3di is associated")
                     end if
                  else
                     if( Associated(fileObj%p0dr(k,j)%p) ) then
@@ -4157,15 +4230,18 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
                     else if( Associated(fileObj%p2dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), fileObj%p2dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
+                         checksum_data = mpp_chksum(fileObj%p2dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd) )
                     else if( Associated(fileObj%p3dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), fileObj%p3dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :) )
+                         checksum_data = mpp_chksum(fileObj%p3dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd, :) )
                     else if( Associated(fileObj%p4dr(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), fileObj%p4dr(k,j)%p, tlev)
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd,:,:))
+                         checksum_data = mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd,:,:))
                     else if( Associated(fileObj%p0di(k,j)%p) ) then
                        call mpp_read(unit(n), fields(l), r0d, tlev)
                        fileObj%p0di(k,j)%p = r0d
@@ -4182,7 +4258,8 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
                        call mpp_read(unit(n), fields(l), r2d, tlev)
                        fileObj%p2di(k,j)%p = r2d
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd) )
+                         checksum_data = mpp_chksum(fileObj%p2di(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd) )
                        deallocate(r2d)
                     else if( Associated(fileObj%p3di(k,j)%p) ) then
                        allocate(r3d(cur_var%siz(1), cur_var%siz(2), cur_var%siz(3)) )
@@ -4190,7 +4267,8 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
                        call mpp_read(unit(n), fields(l), r3d, tlev)
                        fileObj%p3di(k,j)%p = r3d
                        if ( is_there_a_checksum ) &
-                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
+                         checksum_data = mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                                   & cur_var%js:cur_var%js+jadd, :))
                        deallocate(r3d)
                     else
                        call mpp_error(FATAL, "fms_io(restore_state_all): There is no pointer "//&
@@ -4198,8 +4276,9 @@ subroutine restore_state_all(fileObj, directory, nonfatal_missing_files)
                     end if
                  end if
                  if ( ( is_there_a_checksum ) .and. (checksum_file(k) /= checksum_data) ) then
-                   write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname))//" ", checksum_data,&
-                                " does not match value ", checksum_file(k), " stored in "//uppercase(trim(fileObj%name)//"." )
+                   write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname))//" ", &
+                          & checksum_data," does not match value ", checksum_file(k), " stored in "// &
+                          & uppercase(trim(fileObj%name)// "." )
                    call mpp_error(FATAL, "fms_io(restore_state_all): "//trim(mesg) )
                  endif
               end do
@@ -4462,8 +4541,9 @@ subroutine restore_state_one_field(fileObj, id_field, directory, nonfatal_missin
                          & mpp_chksum(fileObj%p3di(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :))
                     deallocate(r3d)
                  else
-                    call mpp_error(FATAL, "fms_io(restore_state_one_field): domain is present for the field "//trim(varname)// &
-                         " of file "//trim(fileObj%name)//", but none of p2dr, p3dr, p2di and p3di is associated")
+                    call mpp_error(FATAL, "fms_io(restore_state_one_field): domain is present for the field "// &
+                                  & trim(varname)//" of file "//trim(fileObj%name)// &
+                                  & ", but none of p2dr, p3dr, p2di and p3di is associated")
                  end if
               else
                  if( Associated(fileObj%p0dr(k,j)%p) ) then
@@ -4483,7 +4563,8 @@ subroutine restore_state_one_field(fileObj, id_field, directory, nonfatal_missin
                  else if( Associated(fileObj%p4dr(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), fileObj%p4dr(k,j)%p, tlev)
                     if ( is_there_a_checksum ) checksum_data =&
-                         & mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd,cur_var%js:cur_var%js+jadd, :, :) )
+                         & mpp_chksum(fileObj%p4dr(k,j)%p(cur_var%is:cur_var%is+iadd, &
+                                     & cur_var%js:cur_var%js+jadd, :, :) )
                  else if( Associated(fileObj%p0di(k,j)%p) ) then
                     call mpp_read(unit(n), fields(l), r0d, tlev)
                     fileObj%p0di(k,j)%p = r0d
@@ -4517,7 +4598,7 @@ subroutine restore_state_one_field(fileObj, id_field, directory, nonfatal_missin
               end if
               if ( (is_there_a_checksum ) .and. (checksum_file(k) /= checksum_data) )  then
                 write (mesg,'(a,Z16,a,Z16,a)') "Checksum of input field "// uppercase(trim(varname)), checksum_data,&
-                             " does not match value ", checksum_file(k), "stored in "//uppercase(trim(fileObj%name)//"." )
+                          " does not match value ", checksum_file(k), "stored in "//uppercase(trim(fileObj%name)//".")
                 call mpp_error(FATAL, "fms_io(restore_state_one_field): "//trim(mesg) )
               endif
           end do
@@ -4603,7 +4684,8 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
 
   if(is_no_domain) then
      if(PRESENT(domain)) &
-       call mpp_error(FATAL, 'fms_io(setup_one_field): no_domain cannot be .true. when optional argument domain is present.')
+       call mpp_error(FATAL, &
+                     & 'fms_io(setup_one_field): no_domain cannot be .true. when optional argument domain is present.')
   else if(PRESENT(domain))then
      d_ptr => domain
   else if (ASSOCIATED(Current_domain)) then
@@ -4701,7 +4783,7 @@ subroutine setup_one_field(fileObj, filename, fieldname, field_siz, index_field,
 
   if(index_field > 0) then
      cur_var   => fileObj%var(index_field)
-     if(cur_var%siz(1) .NE. field_siz(1) .OR. cur_var%siz(2) .NE. field_siz(2) .OR. cur_var%siz(3) .NE. field_siz(3) ) &
+     if(cur_var%siz(1) .NE. field_siz(1) .OR. cur_var%siz(2) .NE. field_siz(2) .OR. cur_var%siz(3) .NE. field_siz(3)) &
         call mpp_error(FATAL, 'fms_io(setup_one_field): field size mismatch for field '// &
                        trim(fieldname)//' of file '//trim(filename) )
 
@@ -4860,7 +4942,8 @@ subroutine write_data_scalar_new(filename, fieldname, data, domain, &
   logical, intent(in), optional          :: no_domain
   integer, intent(in), optional          :: tile_count
 
-  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_scalar_new):  module not initialized: '//fieldname)
+  if(.not.module_is_initialized) call mpp_error(FATAL,'fms_io(write_data_scalar_new):  module not initialized: '// &
+                                              & fieldname)
 
   data_3d(1,1,1) = data
   call write_data_3d_new(filename, fieldname, data_3d,domain, &
@@ -5094,7 +5177,8 @@ function dimension_size(filename, dimname, domain, no_domain )
   endif
 
   if(.not. found) call mpp_error(FATAL, &
-         'fms_io_mod(dimesion_size): failed at inquiring size of dimesion '//trim(dimname)//' from file '//trim(filename))
+         'fms_io_mod(dimesion_size): failed at inquiring size of dimesion '//trim(dimname)//' from file '// &
+                 & trim(filename))
 
   return
 end function dimension_size
@@ -5372,7 +5456,8 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
   is_no_domain = .false.
   if (PRESENT(no_domain)) THEN
      if(PRESENT(domain) .AND. no_domain) &
-       call mpp_error(FATAL, 'fms_io(read_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
+       call mpp_error(FATAL, &
+                    & 'fms_io(read_data_3d_new): no_domain cannot be .true. when optional argument domain is present.')
      is_no_domain = no_domain
   endif
 
@@ -5413,7 +5498,8 @@ subroutine read_data_3d_new(filename,fieldname,data,domain,timelevel, &
          (size(data,2) .NE. cysize .AND. size(data,2) .NE. dysize) )then
        call mpp_error(FATAL,'fms_io(read_data_3d_new): data should be on either compute domain '//&
                             'or data domain when domain is present. '//&
-                            'shape(data)=',shape(data),'  cxsize,cysize,dxsize,dysize=',(/cxsize,cysize,dxsize,dysize/))
+                            'shape(data)=',shape(data),'  cxsize,cysize,dxsize,dysize=',(/cxsize,cysize,dxsize, &
+                             dysize/))
      end if
   endif
 
@@ -5543,7 +5629,8 @@ subroutine read_compressed_2d(filename,fieldname,data,domain,timelevel,start,nre
   if (files_read(file_index)%var(index_field)%is_dimvar) then
      call mpp_get_axis_data(files_read(file_index)%var(index_field)%axis,data(:,1))
   else
-     call mpp_read_compressed(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,timelevel,start,nread,threading)
+     call mpp_read_compressed(unit,files_read(file_index)%var(index_field)%field,d_ptr,data,timelevel,start, &
+                             & nread,threading)
   endif
   d_ptr =>NULL()
 end subroutine read_compressed_2d
@@ -5936,9 +6023,12 @@ subroutine read_data_4d_new(filename,fieldname,data,domain,timelevel,&
                         no_domain,.false., position,tile_count)
 
   if(PRESENT(domain)) then
-     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count, position=position)
-     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count, position=position)
-     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count, position=position)
+     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count, &
+                               &  position=position)
+     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count, &
+                                &  position=position)
+     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count, &
+                             &  position=position)
      call mpp_get_domain_shift  (domain, ishift, jshift, position)
      if(((size(data,1)==xsize_c) .and. (size(data,2)==ysize_c))) then !on_comp_domain
         i = 0
@@ -6014,9 +6104,12 @@ subroutine read_data_2d_new(filename,fieldname,data,domain,timelevel,&
                         no_domain,.false., position,tile_count)
 
   if(PRESENT(domain)) then
-     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count, position=position)
-     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count, position=position)
-     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count, position=position)
+     call mpp_get_global_domain( domain,isg,ieg,jsg,jeg,xsize=xsize_g,ysize=ysize_g, tile_count=tile_count, &
+                               &  position=position)
+     call mpp_get_compute_domain( domain,isc,iec,jsc,jec,xsize=xsize_c,ysize=ysize_c, tile_count=tile_count, &
+                                &  position=position)
+     call mpp_get_data_domain( domain,isd,ied,jsd,jed,xsize=xsize_d,ysize=ysize_d, tile_count=tile_count, &
+                             &  position=position)
      call mpp_get_domain_shift  (domain, ishift, jshift, position)
      if(((size(data,1)==xsize_c) .and. (size(data,2)==ysize_c))) then !on_comp_domain
         data(:,:) = data_3d(:,:,1)
@@ -7074,8 +7167,9 @@ subroutine set_initialized_r2d(fileObj, f_ptr, name, is_set)
 
   if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
     call mpp_error(NOTE,"fms_io(set_initialized_r2d): Unable to find "// &
-          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"// &
-                        " when attempting to set initialization.")
+          & trim(name)//" queried by pointer, "//&
+          & "probably because of the suspect comparison of pointers by ASSOCIATED"//&
+          & " when attempting to set initialization.")
   end if
 
   do m=1,fileObj%nvar
@@ -7121,8 +7215,9 @@ subroutine set_initialized_r3d(fileObj, f_ptr, name, is_set)
 
   if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
     call mpp_error(NOTE,"fms_io(set_initialized_r3d): Unable to find "// &
-          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"//&
-                        " when attempting to set initialization.")
+          & trim(name)//" queried by pointer, "// &
+          & "probably because of the suspect comparison of pointers by ASSOCIATED"//&
+          & " when attempting to set initialization.")
   end if
 
   do m=1,fileObj%nvar
@@ -7169,8 +7264,9 @@ subroutine set_initialized_r4d(fileObj, f_ptr, name, is_set)
 
   if (m>fileObj%nvar .AND. mpp_pe() == mpp_root_pe() ) then
     call mpp_error(NOTE,"fms_io(set_initialized_r4d): Unable to find "// &
-          trim(name)//" queried by pointer, "//"probably because of the suspect comparison of pointers by ASSOCIATED"//&
-                        " when attempting to set initialization.")
+          & trim(name)//" queried by pointer, "// &
+          & "probably because of the suspect comparison of pointers by ASSOCIATED"//&
+          & " when attempting to set initialization.")
   end if
 
   do m=1,fileObj%nvar
@@ -7225,7 +7321,8 @@ function open_namelist_file (file) result (unit)
   character(len=128) :: filename
 
 #ifdef INTERNAL_FILE_NML
-  if(show_open_namelist_file_warning) call mpp_error(WARNING, "fms_io_mod: open_namelist_file should not be called when INTERNAL_FILE_NML is defined")
+  if(show_open_namelist_file_warning) call mpp_error(WARNING, &
+     &  "fms_io_mod: open_namelist_file should not be called when INTERNAL_FILE_NML is defined")
 #endif
 
   if (.not.module_is_initialized) call fms_io_init ( )
@@ -7351,15 +7448,9 @@ function open_ieee32_file (file, action) result (unit)
      call mpp_error (FATAL,'fms_io(open_ieee32_file): action should be either read or write in file'//trim(file))
   end select
 
-  if (iospec_ieee32(1:1) == ' ') then
-     call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
-          access=MPP_SEQUENTIAL, threading=MPP_SINGLE,    &
-          nohdrs=.true. )
-  else
-     call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
-          access=MPP_SEQUENTIAL, threading=MPP_SINGLE,    &
-          nohdrs=.true., iospec=iospec_ieee32 )
-  endif
+  call mpp_open ( unit, file, form=MPP_IEEE32, action=mpp_action, &
+       access=MPP_SEQUENTIAL, threading=MPP_SINGLE,    &
+       nohdrs=.true. )
 end function open_ieee32_file
 ! </FUNCTION>
 
@@ -7417,7 +7508,6 @@ end subroutine close_file
 subroutine set_domain (Domain2)
 
   type(domain2D), intent(in), target :: Domain2
-
   if (.NOT.module_is_initialized) call fms_io_init ( )
 
 !  --- set_domain must be called before a read_data or write_data ---
@@ -7692,7 +7782,6 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
                        fileset=MPP_SINGLE,nohdrs=no_headers, recl=recl )
     else
      ! special open for ieee32 file
-     ! fms_mod has iospec value
      ! pass local action flag to open changing append to write
        action_ieee32 = action_local
        if (lowercase(trim(action_ieee32)) == 'append') action_ieee32 = 'write'
@@ -7709,6 +7798,10 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     integer, intent(in) :: n
     character(len=16) :: string_from_integer
 
+    if (mpp_pe() == mpp_root_pe() .and. warn_string_function ) &
+            call mpp_error(WARNING, "The function named string has been moved "// &
+            "from fms_io_mod to fms_mod.  Please update your call.")
+    warn_string_function = .false.
     if(n<0) then
        call mpp_error(FATAL, 'fms_io_mod: n should be non-negative integer, contact developer')
     else if( n<10 ) then
@@ -7739,6 +7832,10 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
   function string_from_real(a)
     real, intent(in) :: a
     character(len=32) :: string_from_real
+    if (mpp_pe() == mpp_root_pe() .and. warn_string_function ) &
+            call mpp_error(WARNING, "The function named string has been moved "// &
+            "from fms_io_mod to fms_mod.  Please update your call.")
+    warn_string_function = .false.
 
     write(string_from_real,*) a
 
@@ -7754,9 +7851,9 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     integer,          intent(in)           :: tile
     character(len=*), intent(in), optional :: str2_in
 
-    if(tile > 0 .AND. tile < 9) then
+    if(tile > 0 .AND. tile <= 9) then
        write(str_out,'(a,i1)') trim(str_in), tile
-    else if(tile >= 10 .AND. tile < 99) then
+    else if(tile >= 10 .AND. tile <= 99) then
        write(str_out,'(a,i2)') trim(str_in), tile
     else
        call mpp_error(FATAL, "FMS_IO: get_tile_string: tile must be a positive number less than 100")
@@ -7863,11 +7960,12 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
 
 
   !#############################################################################
-  subroutine get_mosaic_tile_grid(grid_file, mosaic_file, domain, tile_count)
+  subroutine get_mosaic_tile_grid(grid_file, mosaic_file, domain, tile_count, custom_path)
     character(len=*), intent(out)          :: grid_file
     character(len=*), intent(in)           :: mosaic_file
     type(domain2D),   intent(in)           :: domain
     integer,          intent(in), optional :: tile_count
+    character(len=*), intent(in), optional :: custom_path
     integer                                :: tile, ntileMe
     integer, dimension(:), allocatable     :: tile_id
 
@@ -7877,7 +7975,11 @@ function open_file(file, form, action, access, threading, recl, dist) result(uni
     allocate(tile_id(ntileMe))
     tile_id = mpp_get_tile_id(domain)
     call read_data(mosaic_file, "gridfiles", grid_file, level=tile_id(tile) )
-    grid_file = 'INPUT/'//trim(grid_file)
+    if (.not. present(custom_path)) then
+      grid_file = 'INPUT/'//trim(grid_file)
+    else
+      grid_file = trim(custom_path)//'/'//trim(grid_file)
+    endif
     deallocate(tile_id)
 
   end subroutine get_mosaic_tile_grid
@@ -8480,7 +8582,8 @@ subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
   call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
   do n = 1, nmask
      if(debug_mask_list) then
-       write(stdoutunit,*) "==>NOTE from parse_mask_table_2d: ", trim(modelname), " mask_list = ", mask_list(n,1), mask_list(n,2)
+       write(stdoutunit,*) "==>NOTE from parse_mask_table_2d: ", trim(modelname), " mask_list = ", mask_list(n,1), &
+                         & mask_list(n,2)
      endif
      maskmap(mask_list(n,1),mask_list(n,2)) = .false.
   enddo
@@ -8589,66 +8692,6 @@ function get_great_circle_algorithm()
 
 end function get_great_circle_algorithm
 
-!#######################################################################
-! <SUBROUTINE NAME="write_version_number">
-
-!   <OVERVIEW>
-!     Prints to the log file (or a specified unit) the (cvs) version id string and
-!     (cvs) tag name.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Prints to the log file (stdlog) or a specified unit the (cvs) version id string
-!      and (cvs) tag name.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!    call write_version_number ( version [, tag, unit] )
-!   </TEMPLATE>
-
-!   <IN NAME="version" TYPE="character(len=*)">
-!    string that contains routine name and version number.
-!   </IN>
-!   <IN NAME="tag" TYPE="character(len=*)">
-!    The tag/name string, this is usually the Name string
-!    returned by CVS when checking out the code.
-!   </IN>
-!   <IN NAME="unit" TYPE="integer">
-!    The Fortran unit number of an open formatted file. If this unit number
-!    is not supplied the log file unit number is used (stdlog).
-!   </IN>
-! prints module version number to the log file of specified unit number
-
-subroutine write_version_number (version, tag, unit)
-
-!   in:  version = string that contains routine name and version number
-!
-!   optional in:
-!        tag = cvs tag name that code was checked out with
-!        unit    = alternate unit number to direct output
-!                  (default: unit=stdlog)
-
-   character(len=*), intent(in) :: version
-   character(len=*), intent(in), optional :: tag
-   integer,          intent(in), optional :: unit
-
-   integer :: logunit
-
-   if (.not.module_is_initialized) call fms_io_init ( )
-
-     logunit = stdlog()
-     if (present(unit)) then
-         logunit = unit
-     else
-       ! only allow stdlog messages on root pe
-         if ( mpp_pe() /= mpp_root_pe() ) return
-     endif
-
-     if (present(tag)) then
-         write (logunit,'(/,80("="),/(a))') trim(version), trim(tag)
-     else
-         write (logunit,'(/,80("="),/(a))') trim(version)
-     endif
-
-end subroutine write_version_number
 ! </SUBROUTINE>
 
 !----------
@@ -8664,5 +8707,7 @@ end subroutine write_version_number
 #include <fms_io_unstructured_get_field_size.inc>
 #include <fms_io_unstructured_field_exist.inc>
 !----------
-
+#endif
 end module fms_io_mod
+!> @}
+! close documentation grouping

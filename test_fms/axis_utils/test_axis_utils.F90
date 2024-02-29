@@ -19,126 +19,818 @@
 
 program test_axis_utils
 
-use fms_mod,       only : fms_init, fms_end, file_exist, open_namelist_file, check_nml_error
-use fms_mod,       only : close_file
-use mpp_mod,       only : mpp_error, FATAL, stdout
-use mpp_mod,       only : input_nml_file
-use axis_utils_mod, only: interp_1d
+use fms_mod,         only : fms_init, fms_end, lowercase
+use fms2_io_mod, only: FmsNetcdfFile_t, open_file, close_file, register_axis, register_field, &
+                     & register_variable_attribute, write_data
+use platform_mod, only: r4_kind, r8_kind
+use mpp_mod, only: mpp_error, fatal, stderr
+use fms_string_utils_mod, only: string, stringify
+use axis_utils2_mod
 
 implicit none
 
+type GetAxisCartTest_t
+  type(FmsNetcdfFile_t) :: fileobj
+  type(GetAxisCartTestCase_t), pointer :: test0, test1
+end type
 
+type GetAxisCartTestCase_t
+  character(:), allocatable :: var
+  character(1) :: cart
+  type(GetAxisCartTestCase_t), pointer :: next => NULL()
+end type
 
-integer, parameter :: maxsize = 100
+integer, parameter :: k = AU_TEST_KIND_
+real(k), parameter :: pi = 4._k * atan(1._k)
 
-integer :: n_src = 0
-integer :: n_dst = 0
-real, dimension(MAXSIZE) :: grid_src = 0
-real, dimension(MAXSIZE) :: grid_dst = 0
-real, dimension(MAXSIZE) :: data_src = 0
-real, dimension(MAXSIZE) :: out_linear_dst = 0
-real, dimension(MAXSIZE) :: out_cubic_dst = 0
-real :: diff
+integer :: i
+character(100) :: arg
 
-namelist / test_axis_utils_nml / n_src, n_dst, grid_src, grid_dst, data_src, out_linear_dst, out_cubic_dst
+call fms_init
 
-real, allocatable :: data_dst(:)
-integer           :: unit, ierr, io
+do i=1,command_argument_count()
+  call get_command_argument(i, arg)
 
-  call fms_init()
+  select case (arg)
+    case ('--get-axis-modulo')
+      print "(A)", "Testing get_axis_modulo"
+      call test_get_axis_modulo
 
-  !--- default option of data
+    case ('--get-axis-modulo-times')
+      print "(A)", "Testing get_axis_modulo_times"
+      call test_get_axis_modulo_times
 
- n_src = 31
-  n_dst = 40
-  grid_src(1:n_src) = (/ -63.6711465476916, -63.6711455476916, 166.564180735096, 401.25299580552, &
-                         641.056493022762, 886.219516665347, 1137.35352761133, 1394.4936854079,   &
-                         1657.17893448689, 1925.64572676068, 2200.13183483549, 2480.9124139255,   &
-                         2768.35396680912, 3062.86513953019, 3675.47369643284, 4325.10564183322,  &
-                         5020.19039479527, 5769.85432323481, 6584.25101514851, 7475.94655633703,  &
-                         8462.01951335773, 9568.28246037887, 10178.3869413515, 10834.1425668942,  &
-                         11543.5265942777, 12317.3907407535, 13170.4562394288, 14125.6466646843,  &
-                         15225.8720618086, 16554.7859690842, 19697.1334102613   /)
-  grid_dst(1:n_dst) = (/ 1002.9522552602, 1077.51144617887, 1163.37842788755, 1264.19848463606,  &
-                         1382.57557953916, 1521.56713587855, 1684.76300370633, 1876.37817787584, &
-                         2101.36166220498, 2365.52429149707, 2675.68881278444, 3039.86610206727, &
-                         3467.4620678435, 3969.52058529847, 4553.81573511231, 5159.54844211827,  &
-                         5765.28114912423, 6371.01385613019, 6976.74656313614, 7582.4792701421,  &
-                         8188.21197714806, 8793.94468415402, 9399.67739115997, 10005.4100981659, &
-                         10611.1428051719, 11216.8755121778, 11822.6082191838, 12428.3409261898, &
-                         13034.0736331957, 13639.8063402017, 14245.5390472076, 14851.2717542136, &
-                         15457.0044612196, 16062.7371682255, 16668.4698752315, 17274.2025822374, &
-                         17879.9352892434, 18485.6679962493, 19091.4007032553, 19697.1334102613 /)
-  data_src(1:n_src) = (/ 309.895999643929, 309.991081541887, 309.971074746584, 310.873654697145, &
-                         311.946530606618, 312.862249229647, 314.821236806913, 315.001269608758, &
-                         315.092410930288, 315.19010999336,  315.122964496815, 315.057882573487, &
-                         314.998796850493, 314.984586411292, 315.782246062002, 318.142544345795, &
-                         321.553905292867, 325.247730854554, 329.151282227113, 332.835673638378, &
-                         336.810414210932, 341.64530983048,  344.155248759994, 346.650476976385, &
-                         349.106430095269, 351.915323032738, 354.709396583792, 359.68904432446,  &
-                         371.054289820675, 395.098187506342, 446.150726850039 /)
-  out_linear_dst(1:n_src)  = (/ 313.772830731158,  314.354434665370,  314.839457748187, 314.910045389784, &
-                         314.992925326750, 315.045359036116, 315.102449183793, 315.172180798747, &
-                         315.147125910052, 315.084628301276, 315.017844853703, 314.985696136334, &
-                         315.511400215769, 316.850602339827, 319.265015637373, 322.240565405352, &
-                         325.225197414186, 328.129197765043, 330.773032206975, 333.265094095404, &
-                         335.706729219375, 338.261085191662, 340.908425428092, 343.443630789374, &
-                         345.801936337123, 347.975533834707, 350.119412036280, 352.278721832823, &
-                         354.262698137434, 357.156236613905, 360.927523607037, 367.184696853722, &
-                         375.236143688601, 386.195600996087, 396.945167256346, 406.786279175083, &
-                         416.627391093823, 426.468503012560, 436.309614931300, 446.150726850039 /)
- out_cubic_dst(1:n_src) = (/ -313.942318474633, 314.503163655656, 314.913470956341, 315.055635714636, &
-                         315.006673321389, 315.010907002311, 315.109298816167, 315.185728881530, &
-                         315.155647446989, 315.081117180934, 315.017858886237, 314.979618544023, &
-                         315.354523043308, 316.685513873638, 319.218943479033, 322.249746569912, &
-                         325.225277554867, 328.168923274850, 330.835994100920, 333.255253114313, &
-                         335.672089973660, 338.246525654852, 340.917577732601, 343.460878949881, &
-                         345.833971678071, 347.972895520732, 350.130774046054, 352.280193191086, &
-                         354.219167222638, 356.767905094900, 360.561704156599, 366.216858589885, &
-                         374.647838146611, 385.613883532528, 397.240573301678, 408.134997959681, &
-                         418.287826652131, 427.884458370414, 437.110292105921, 446.150726850039 /)
+    case ('--get-axis-cart')
+      print "(A)", "Testing get_axis_cart"
+      call test_get_axis_cart
 
-  !---reading namelist
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, test_axis_utils_nml, iostat=io)
-      ierr = check_nml_error(io,'test_axis_utils_nml')
-#else
-  if(file_exist('input.nml')) then
-    unit =  open_namelist_file()
-       ierr=1
-    do while (ierr /= 0)
-          read  (unit, nml=test_axis_utils_nml, iostat=io, end=10)
-          ierr = check_nml_error(io,'test_axis_utils_nml')  ! also initializes nml error codes
+    case ('--lon-in-range')
+      print "(A)", "Testing lon_in_range"
+      call test_lon_in_range
+
+    case ('--frac-index')
+      print "(A)", "Testing frac_index"
+      call test_frac_index
+
+    case ('--frac-index-fail')
+      print "(A)", "Testing frac_index (FAILURE)"
+      call test_frac_index_fail
+
+    case ('--nearest-index-increasing')
+      print "(A)", "Testing nearest_index with a monotonically increasing array"
+      call test_nearest_index(.true.)
+
+    case ('--nearest-index-decreasing')
+      print "(A)", "Testing nearest_index with a monotonically decreasing array"
+      call test_nearest_index(.false.)
+
+    case ('--nearest-index-fail')
+      print "(A)", "Testing nearest_index (FAILURE)"
+      call test_nearest_index_fail
+
+    case ('--axis-edges-increasing')
+      print "(A)", "Testing axis_edges-increasing"
+      call test_axis_edges(.true.)
+
+    case ('--axis-edges-decreasing')
+      print "(A)", "Testing axis_edges-decreasing"
+      call test_axis_edges(.false.)
+
+    case ('--tranlon')
+      print "(A)", "Testing tranlon"
+      call test_tranlon
+
+    case ('--interp-1d-1d')
+      print "(A)", "Testing interp_1d_1d"
+      call test_interp_1d_1d
+
+    case ('--interp-1d-2d')
+      print "(A)", "Testing interp_1d_2d"
+      call test_interp_1d_2d
+
+    case ('--interp-1d-3d')
+      print "(A)", "Testing interp_1d_3d"
+      call test_interp_1d_3d
+
+    case default
+      write(stderr(),"(A)") "Unrecognized command line option: " // trim(arg)
+  end select
+enddo
+
+call fms_end
+
+contains
+
+! Status: TODO
+! function get_axis_modulo(fileobj, axisname)
+subroutine test_get_axis_modulo
+  type(FmsNetcdfFile_t) :: fileobj
+
+  write(stderr(), "(A)") "Warning: get_axis_modulo unit test not yet implemented"
+end subroutine
+
+! Status: TODO
+! function get_axis_modulo_times(fileobj, axisname, tbeg, tend)
+subroutine test_get_axis_modulo_times
+  type(FmsNetcdfFile_t) :: fileobj
+
+  write(stderr(), "(A)") "Warning: get_axis_modulo_times unit test not yet implemented"
+end subroutine
+
+subroutine test_get_axis_cart
+  type(GetAxisCartTest_t) :: test
+  type(GetAxisCartTestCase_t), pointer :: test_nonexistent_var
+  character(:), allocatable :: var_name, attr_name, attr_value
+  integer :: i, j
+
+  character(*), parameter, dimension(*) :: &
+    & special_axis_names_x = [character(12) :: "lon", "x", "degrees_e", "degrees_east", "degreese"], &
+    & special_axis_names_y = [character(13) :: "lat", "y", "degrees_n", "degrees_north", "degreesn"], &
+    & special_axis_names_z = [character(6) :: "depth", "height", "z", "cm", "m", "pa", "hpa"], &
+    & special_axis_names_t = [character(4) :: "time", "t", "sec", "min", "hou", "day", "mon", "yea"], &
+    & attr_names           = [character(14) :: "cartesian_axis", "axis"], &
+    & xyzt_uc              = ["X", "Y", "Z", "T"]
+
+  call open_netcdf_w(test%fileobj)
+  call register_axis(test%fileobj, "dim1", 1)
+
+  ! Check a variable which does not exist
+
+  allocate(test_nonexistent_var)
+  test_nonexistent_var%var = "does_not_exist"
+  test_nonexistent_var%cart = "N"
+
+  test%test0 => test_nonexistent_var
+  test%test1 => test_nonexistent_var
+
+  ! Check a variable which exists, but which has neither a "cartesian_axis" nor an "axis" attribute.
+  var_name = "exists_no_attributes"
+  call get_axis_cart_test_add(test, var_name, "N")
+
+  do i=1,size(attr_names)
+    attr_name = trim(attr_names(i))
+
+    ! Check an unknown value on a "cartesian_axis" or "axis" attribute.
+    ! TODO: This test fails. It should be uncommented if/when get_axis_cart's behavior is fixed.
+
+    !attr_value = "unexpected"
+    !var_name = attr_name // "_attr_value_" // attr_value
+    !call get_axis_cart_test_add(test, var_name, "N")
+    !call register_variable_attribute(test%fileobj, var_name, attr_name, attr_value, str_len=len(attr_value))
+
+    do j=1,size(xyzt_uc)
+      ! Check upper-case "axis" attributes"
+      attr_value = xyzt_uc(j)
+      var_name = attr_name // "_attr_value_" // attr_value
+      call get_axis_cart_test_add(test, var_name, xyzt_uc(j))
+      call register_variable_attribute(test%fileobj, var_name, attr_name, attr_value, str_len=len(attr_value))
+
+      ! Check lower-case "axis" attributes"
+      attr_value = lowercase(xyzt_uc(j))
+      var_name = attr_name // "_attr_value_" // attr_value
+      call get_axis_cart_test_add(test, var_name, xyzt_uc(j))
+      call register_variable_attribute(test%fileobj, var_name, attr_name, attr_value, str_len=len(attr_value))
     enddo
- 10    call close_file(unit)
+  enddo
+
+  call test_special_axis_names(test, special_axis_names_x, "X")
+  call test_special_axis_names(test, special_axis_names_y, "Y")
+  call test_special_axis_names(test, special_axis_names_z, "Z")
+  call test_special_axis_names(test, special_axis_names_t, "T")
+
+  call close_file(test%fileobj)
+
+  call get_axis_cart_tests_run(test)
+end subroutine
+
+subroutine get_axis_cart_test_add(test, var_name, cart)
+  type(GetAxisCartTest_t), intent(inout) :: test
+  type(GetAxisCartTestCase_t), pointer :: test_case
+  character(*), intent(in) :: var_name
+  character(1), intent(in) :: cart
+  character(:), allocatable :: kind_str
+
+  if (k .eq. r4_kind) then
+    kind_str = "float"
+  else
+    kind_str = "double"
   endif
-#endif
 
-  if(n_src >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_src is greater than MAXSIZE')
-  if(n_dst >MAXSIZE) call mpp_error(FATAL, 'test_axis_utils: nml n_dst is greater than MAXSIZE')
+  call register_field(test%fileobj, var_name, kind_str, dimensions=["dim1"])
 
-  allocate(data_dst(n_dst) )
+  allocate(test_case)
+  test_case%var = var_name
+  test_case%cart = cart
 
+  test%test1%next => test_case
+  test%test1 => test_case
+end subroutine
 
-  !--- write out data
-  unit = stdout()
-  write(unit,*)' the source grid is ', grid_src(1:n_src)
-  write(unit,*)' the destination grid is ', grid_dst(1:n_dst)
-  write(unit,*)' the source data is ', data_src(1:n_src)
+subroutine get_axis_cart_tests_run(test)
+  type(GetAxisCartTest_t), intent(inout) :: test
+  type(GetAxisCartTestCase_t), pointer :: test_case, next
+  character(1) :: cart_test
+  integer :: i
 
-  !--- testing linear interpolation
-  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "linear")
-  write(unit,*)' the destination data using linear interpolation is ', data_dst(1:n_dst)
-  diff = sum(abs(data_dst - out_linear_dst(1:n_dst)))
-  write(unit,*)' the total difference between the result and the expected result is ', diff
-  if(diff > 1.0e-8) call mpp_error(FATAL, 'test_axis_utils: the result with linear interpolation is different')
+  call open_netcdf_r(test%fileobj)
 
-  !--- testing cubic spline interpolation
-  call interp_1d(grid_src(1:n_src), grid_dst(1:n_dst), data_src(1:n_src), data_dst, "cubic_spline")
-  write(unit,*)' the destination data using cublic spline interpolation is ', data_dst(1:n_dst)
-  diff = sum(abs(data_dst - out_cubic_dst(1:n_dst)))
-  write(unit,*)' the total difference between the result and the expected result is ', diff
-  if(diff > 1.0e-8) call mpp_error(FATAL, 'test_axis_utils: the result with cubic spline interpolation is different')
+  test_case => test%test0
 
-   call fms_end()
+  do while (associated(test_case))
+    cart_test = " "
+    call get_axis_cart(test%fileobj, test_case%var, cart_test)
+
+    if (cart_test .ne. test_case%cart) then
+      write(stderr(), "(A)") "get_axis_cart result for variable '" // test_case%var // "': " // cart_test
+      write(stderr(), "(A)") "Expected result: " // test_case%cart
+      call mpp_error(FATAL, "get_axis_cart unit test failed")
+    endif
+
+    next => test_case%next
+    deallocate(test_case)
+    test_case => next
+  enddo
+
+  call close_file(test%fileobj)
+end subroutine
+
+subroutine test_special_axis_names(test, special_axis_names, ret_expected)
+  type(GetAxisCartTest_t), intent(inout) :: test
+  character(*), intent(in) :: special_axis_names(:), ret_expected
+  character(:), allocatable :: var_name
+  integer :: i
+
+  do i=1,size(special_axis_names)
+    var_name = trim(special_axis_names(i))
+    call get_axis_cart_test_add(test, var_name, ret_expected)
+  enddo
+end subroutine
+
+subroutine test_lon_in_range
+  real(k), parameter :: eps_big = 1e-3_k, eps_tiny = 1e-5_k
+  real(k), parameter :: pi_plus_360 = 360._k + pi
+
+  ! Test some cases where no translation is needed
+  call lon_in_range_assert(0._k,              0._k,  0._k)
+  call lon_in_range_assert(1._k,              0._k,  1._k)
+  call lon_in_range_assert(350._k,            0._k,  350._k)
+  call lon_in_range_assert(1._k,              1._k,  1._k)
+  call lon_in_range_assert(350._k,            1._k,  350._k)
+  call lon_in_range_assert(359._k,            0._k,  359._k)
+  call lon_in_range_assert(359._k,            1._k,  359._k)
+  call lon_in_range_assert(pi,                0._k,  pi)
+
+  ! Test up-translation
+  call lon_in_range_assert(-2._k,             -1._k, 358._k)
+  call lon_in_range_assert(-2._k,             0._k,  358._k)
+  call lon_in_range_assert(-2._k,             5._k,  358._k)
+  call lon_in_range_assert(-1._k,             0._k,  359._k)
+  call lon_in_range_assert(-1._k,             5._k,  359._k)
+  call lon_in_range_assert(0._k,              5._k,  360._k)
+  call lon_in_range_assert(1._k,              5._k,  361._k)
+  call lon_in_range_assert(-pi,               0._k,  360._k - pi)
+
+  ! Test down-translation
+  call lon_in_range_assert(359._k,            -1._k, -1._k)
+  call lon_in_range_assert(360._k,            -1._k, 0._k)
+  call lon_in_range_assert(360._k,            0._k,  0._k)
+  call lon_in_range_assert(361._k,            -1._k, 1._k)
+  call lon_in_range_assert(361._k,            0._k,  1._k)
+  call lon_in_range_assert(362._k,            -1._k, 2._k)
+  call lon_in_range_assert(362._k,            0._k,  2._k)
+  call lon_in_range_assert(pi_plus_360,       0._k,  pi_plus_360 - 360._k)
+
+  ! Test rounding behavior
+  call lon_in_range_assert(eps_tiny,          0._k,  0._k)
+  call lon_in_range_assert(eps_big,           0._k,  eps_big)
+  call lon_in_range_assert(360._k - eps_tiny, 0._k,  0._k)
+  call lon_in_range_assert(360._k - eps_big,  0._k,  360._k - eps_big)
+end subroutine
+
+subroutine lon_in_range_assert(lon, l_start, ret_expected)
+  real(k), intent(in) :: lon, l_start, ret_expected
+  real(k) :: ret_test
+
+  ret_test = lon_in_range(lon, l_start)
+
+  if (ret_test /= ret_expected) then
+    write(stderr(), "(A)") "lon_in_range(" // string(lon) // ", " // string(l_start) // &
+                         & ") returned erroneous value: " // string(ret_test)
+    write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
+    call mpp_error(FATAL, "lon_in_range unit test failed")
+  endif
+end subroutine
+
+#define CALC_FRAC_INDEX_(i, v, values) real(i, k) + (v - values(i)) / (values(i + 1) - values(i))
+
+subroutine test_frac_index
+  real(k) :: values(6), v, fi
+  integer :: i, n
+  real(k), parameter :: f10=.1_k, f25=.25_k, f50=.5_k, f99=.99_k
+
+  values = [1._k, 2._k, 3._k, 5._k, 10._k, 11._k]
+  n = size(values)
+
+  ! Test values outside of the input array
+  call frac_index_assert(real(values(1), k) - f50, values, -1._k)
+  call frac_index_assert(real(values(n), k) + f50, values, -1._k)
+
+  ! Test the actual indices
+  do i=1,n
+    v = values(i)
+    call frac_index_assert(v, values, real(i, k))
+  enddo
+
+  ! Test the 10% point
+  do i=1,n-1
+    v = values(i) + f10*(values(i+1) - values(i))
+    fi = CALC_FRAC_INDEX_(i, v, values)
+    call frac_index_assert(v, values, fi)
+  enddo
+
+  ! Test the 25% point
+  do i=1,n-1
+    v = values(i) + f25*(values(i+1) - values(i))
+    fi = CALC_FRAC_INDEX_(i, v, values)
+    call frac_index_assert(v, values, fi)
+  enddo
+
+  ! Test the mid-point
+  do i=1,n-1
+    v = values(i) + f50*(values(i+1) - values(i))
+    fi = CALC_FRAC_INDEX_(i, v, values)
+    call frac_index_assert(v, values, fi)
+  enddo
+
+  ! Test the 99% point
+  do i=1,n-1
+    v = values(i) + f99*(values(i+1) - values(i))
+    fi = CALC_FRAC_INDEX_(i, v, values)
+    call frac_index_assert(v, values, fi)
+  enddo
+end subroutine
+
+subroutine frac_index_assert(fval, arr, ret_expected)
+  real(k), intent(in) :: fval, arr(:), ret_expected
+  real(k) :: ret_test
+
+  ret_test = frac_index(fval, arr)
+
+  if (ret_test /= ret_expected) then
+    write(stderr(), "(A)") "frac_index(" // string(fval) // ", " // stringify(arr) // &
+                         & ") returned erroneous value: " // string(ret_test)
+    write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
+    call mpp_error(FATAL, "frac_index unit test failed")
+  endif
+end subroutine
+
+! Test that frac_index fails with a non-monotonic array
+subroutine test_frac_index_fail
+  real(k) :: values(5)
+  real(k) :: ret_test
+
+  values = [1._k, 2._k, 4._k, 3._k, 5._k]
+  ret_test = frac_index(1.5_k, values)
+end subroutine
+
+subroutine test_nearest_index(increasing_array)
+  logical, intent(in) :: increasing_array !< .True. if test using an increasing array
+  real(k) :: arr(7)
+  integer :: ans(16)
+
+  if (increasing_array) then
+    arr = [-6._k, -3._k, 5._k, 12._k, 20._k, 40._k, 100._k]
+    ans=(/1, 7, 3, 4, 5, 6, 7, 3, 4, 4, 5, 5, 1, 2, 1, 2/)
+  else
+    arr = [100._k, 40._k, 20._k, 12._k, 5._k, -3._k, -6._k]
+    ans=(/7, 1, 5, 4, 3, 2, 1, 5, 4, 4, 3, 3, 7, 6, 7, 6/)
+  endif
+
+  ! Test values beyond array boundaries
+  call nearest_index_assert(-7._k,    arr, ans(1))
+  call nearest_index_assert(1000._k, arr, ans(2))
+
+  ! Test values actually in the array
+  call nearest_index_assert(5._k,    arr, ans(3))
+  call nearest_index_assert(12._k,   arr, ans(4))
+  call nearest_index_assert(20._k,   arr, ans(5))
+  call nearest_index_assert(40._k,   arr, ans(6))
+  call nearest_index_assert(100._k,  arr, ans(7))
+
+  ! Test the intervals between array values
+  call nearest_index_assert(6._k,    arr, ans(8))
+  call nearest_index_assert(11._k,   arr, ans(9))
+  call nearest_index_assert(15._k,   arr, ans(10))
+  call nearest_index_assert(18._k,   arr, ans(11))
+  call nearest_index_assert(29._k,   arr, ans(12))
+
+  ! Test the negative numbers
+  call nearest_index_assert(-6._k,    arr, ans(13))
+  call nearest_index_assert(-3._k,    arr, ans(14))
+  call nearest_index_assert(-5._k,    arr, ans(15))
+  call nearest_index_assert(-1._k,    arr, ans(16))
+
+end subroutine
+
+subroutine nearest_index_assert(val, arr, ret_expected)
+  real(k), intent(in) :: val, arr(:)
+  integer, intent(in) :: ret_expected
+  integer :: ret_test
+
+  ret_test = nearest_index(val, arr)
+
+  if (ret_test /= ret_expected) then
+    write(stderr(), "(A)") "nearest_index(" // string(val) // ", " // stringify(arr) // &
+                         & ") returned erroneous value: " // string(ret_test)
+    write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
+    call mpp_error(FATAL, "nearest_index unit test failed")
+  endif
+end subroutine
+
+! Test that nearest_index fails with a non-monotonic array
+subroutine test_nearest_index_fail
+  real(k) :: arr(5)
+  integer :: ret_test
+
+  arr=[5._k, 12._k, 40._k, 20._k, 100._k]
+  ret_test = nearest_index(5._k, arr)
+end subroutine
+
+subroutine test_axis_edges(increasing_array)
+  logical, intent(in) :: increasing_array !< .True. if test using an increasing array
+  real(k) :: data_in_var(10)
+  real(k) :: data_in_var_edges(2,10)
+  real(k) :: data_in_answers(11)
+  type(FmsNetcdfFile_t) :: fileobj
+  real(k)    :: answers(11)
+  integer :: count
+  integer :: count_factor
+  integer :: factor
+  integer :: index !< For looping through the data
+
+  if (increasing_array) then
+    count = 0
+    factor = 1
+    count_factor = -1
+  else
+    count = 11
+    factor = -1
+    count_factor = 0
+  endif
+
+  do index=1,10
+     count = count + factor
+     data_in_var(index) = real(count, k) - 0.5_k
+
+     data_in_var_edges(1,index) = real(count-1, k)
+     data_in_var_edges(2,index) = real(count, k)
+
+     data_in_answers(index) = real(count + count_factor, k)
+  enddo
+
+  if (increasing_array) then
+    data_in_answers(11) = real(count, k)
+  else
+    data_in_answers(11) = real(count + factor, k)
+  endif
+
+  call open_netcdf_w(fileobj)
+
+  call register_axis(fileobj, "dim1", 10)
+  call register_axis(fileobj, "dim2", 2)
+
+  call register_field(fileobj, "axis", "double", dimensions=["dim1"])
+
+  call register_field(fileobj, "axis_with_bounds", "double", dimensions=["dim1"])
+  call register_variable_attribute(fileobj, "axis_with_bounds", "bounds", "bounds", str_len=6)
+  call register_field(fileobj, "bounds", "double", dimensions=["dim2", "dim1"])
+
+  call register_field(fileobj, "axis_with_edges", "double", dimensions=["dim1"])
+  call register_variable_attribute(fileobj, "axis_with_edges", "edges", "edges"//char(0), str_len=6)
+  call register_field(fileobj, "edges", "double", dimensions=["dim2", "dim1"])
+
+  call write_data(fileobj, "axis", data_in_var)
+  call write_data(fileobj, "axis_with_bounds", data_in_var)
+  call write_data(fileobj, "axis_with_edges", data_in_var)
+  call write_data(fileobj, "bounds", data_in_var_edges)
+  call write_data(fileobj, "edges", data_in_var_edges)
+
+  call close_file(fileobj)
+
+  call open_netcdf_r(fileobj)
+
+  !< Case 1: Here the variable "axis" in the file does not have the attribute "bounds" or "edges", so
+  !! it calculates them from the data in "axis"
+  answers = 0._k
+  call axis_edges(fileobj, "axis", answers)
+  call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 1)")
+
+  !< Case 2: Here the variable "axis_with_bounds" in the file has the attribute
+  !! "bounds", so the data is read from the variable "bounds"
+  answers = 0._k
+  call axis_edges(fileobj, "axis_with_bounds", answers)
+  call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 2)")
+
+  !< Case 3: Here the variable "axis_with_edges" in the file has the attribute
+  !"edges", so the data is read from the variable "edges"
+  answers = 0._k
+  call axis_edges(fileobj, "axis_with_edges", answers)
+  call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 3)")
+
+  !< Case 4: Here the flag "reproduce_null_char_bug_flag" is turned on, so the
+  !! edges are calculated from the data in axis because edges has a null character
+  !! in the end
+  answers = 0._k
+  call axis_edges(fileobj, "axis_with_edges", answers, reproduce_null_char_bug_flag=.true.)
+  call array_compare_1d(answers, data_in_answers, "axis_edges unit test failed (case 4)")
+
+  call close_file(fileobj)
+end subroutine
+
+subroutine test_tranlon
+  real(k), dimension(5) :: lon1, lon2, lon3
+
+  lon1 = [1._k, 2._k, 3._k, 4._k,   5._k]
+  lon2 = [2._k, 3._k, 4._k, 5._k,   361._k]
+  lon3 = [3._k, 4._k, 5._k, 361._k, 362._k]
+
+  ! The first two cases fail due to tranlon's unexpected behavior when no elements are translated.
+  ! TODO: Uncomment these tests if/when tranlon's behavior is fixed.
+
+  !call tranlon_assert(lon1, lon1, 0.0_k,    1)
+  !call tranlon_assert(lon1, lon1, 1.0_k,    1)
+
+  call tranlon_assert(lon1, lon2, 1.5_k,    2)
+  call tranlon_assert(lon1, lon2, 2.0_k,    2)
+  call tranlon_assert(lon1, lon3, 2.001_k,  3)
+end subroutine
+
+subroutine tranlon_assert(lon0, lon_expected, lon_start, istrt_expected)
+  real(k), intent(in) :: lon0(:), lon_expected(:), lon_start
+  integer, intent(in) :: istrt_expected
+  integer :: istrt_test, i
+  real(k) :: lon_test(size(lon0))
+  character(:), allocatable :: test_name
+
+  test_name = "tranlon(" // stringify(lon0) // ", " // string(lon_start) // ", istrt)"
+
+  lon_test = lon0
+  call tranlon(lon_test, lon_start, istrt_test)
+  call array_compare_1d(lon_test, lon_expected, test_name // " unit test failed")
+
+  if (istrt_test.ne.istrt_expected) then
+    write(stderr(), "(A)") test_name // " returned erroneous istrt value: " // string(istrt_test)
+    write(stderr(), "(A)") "Expected istrt value: " // string(istrt_expected)
+    call mpp_error(FATAL, "tranlon unit test failed")
+  endif
+end subroutine
+
+! Status: SKELETAL
+! TODO: More comprehensive interp_1d_1d test
+subroutine test_interp_1d_1d
+  real(k) :: grid1(8), grid2(5), data1(8), data2(5)
+
+  grid1 = [1._k, 2._k, 3._k, 4._k, 5._k, 6._k, 7._k, 8._k]
+  grid2 = [2._k, 3._k, 4._k, 5._k, 6._k]
+  data1 = [101._k, 102._k, 103._k, 104._k, 105._k, 106._k, 107._k, 108._k]
+  data2 = [102._k, 103._k, 104._k, 105._k, 106._k]
+
+  call interp_1d_1d_assert(grid1, grid2, data1, data2, "linear")
+  call interp_1d_1d_assert(grid1, grid2, data1, data2, "cubic_spline")
+end subroutine
+
+subroutine interp_1d_1d_assert(grid1, grid2, data1, data2_expected, method, yp1, yp2)
+  real(k), intent(in), dimension(:) :: grid1, grid2, data1, data2_expected
+  character(*), intent(in), optional :: method
+  real(k), intent(in), optional :: yp1, yp2
+  real(k) :: data2_test(size(data2_expected))
+  character(:), allocatable :: test_name
+
+  test_name = "interp_1d_1d(" // &
+              stringify(grid1) // ", " // &
+              stringify(grid2) // ", " // &
+              stringify(data1) // ", data2"
+
+  if (present(method)) then
+    test_name = test_name // ", method=" // method
+  endif
+
+  if (present(yp1)) then
+    test_name = test_name // ", yp1=" // string(yp1)
+  endif
+
+  if (present(yp2)) then
+    test_name = test_name // ", yp2=" // string(yp2)
+  endif
+
+  test_name = test_name // ")"
+
+  call interp_1d(grid1, grid2, data1, data2_test, method, yp1, yp2)
+  call array_compare_1d(data2_test, data2_expected, test_name // " unit test failed")
+end subroutine
+
+! Status: SKELETAL
+! TODO: More comprehensive interp_1d_2d test
+subroutine test_interp_1d_2d
+  real(k) :: grid1(2,4), grid2(2,2), data1(2,4), data2(2,2)
+
+  grid1(1,:) = [1._k, 2._k, 3._k, 4._k]
+  grid1(2,:) = [5._k, 6._k, 7._k, 8._k]
+
+  grid2(1,:) = [2._k, 3._k]
+  grid2(2,:) = [6._k, 7._k]
+
+  data1(1,:) = [101._k, 102._k, 103._k, 104._k]
+  data1(2,:) = [105._k, 106._k, 107._k, 108._k]
+
+  data2(1,:) = [102._k, 103._k]
+  data2(2,:) = [106._k, 107._k]
+
+  call interp_1d_2d_assert(grid1, grid2, data1, data2)
+end subroutine
+
+subroutine interp_1d_2d_assert(grid1, grid2, data1, data2_expected)
+  real(k), intent(in), dimension(:,:) :: grid1, grid2, data1, data2_expected
+  real(k) :: data2_test(size(data2_expected,1), size(data2_expected,2))
+  character(:), allocatable :: test_name
+
+  test_name = "interp_1d_2d(" // &
+              stringify(grid1) // ", " // &
+              stringify(grid2) // ", " // &
+              stringify(data1) // ", data2)"
+
+  call interp_1d(grid1, grid2, data1, data2_test)
+  call array_compare_2d(data2_test, data2_expected, test_name // " unit test failed")
+end subroutine
+
+! Status: SKELETAL
+! TODO: More comprehensive interp_1d_3d test
+subroutine test_interp_1d_3d
+  real(k) :: grid1(2,2,4), grid2(2,2,2), data1(2,2,4), data2(2,2,2)
+
+  grid1(1,1,:) = [1._k, 2._k, 3._k, 4._k]
+  grid1(1,2,:) = [5._k, 6._k, 7._k, 8._k]
+  grid1(2,1,:) = [21._k, 22._k, 23._k, 24._k]
+  grid1(2,2,:) = [25._k, 26._k, 27._k, 28._k]
+
+  grid2(1,1,:) = [2._k, 3._k]
+  grid2(1,2,:) = [6._k, 7._k]
+  grid2(2,1,:) = [22._k, 23._k]
+  grid2(2,2,:) = [26._k, 27._k]
+
+  data1(1,1,:) = [101._k, 102._k, 103._k, 104._k]
+  data1(1,2,:) = [105._k, 106._k, 107._k, 108._k]
+  data1(2,1,:) = [201._k, 202._k, 203._k, 204._k]
+  data1(2,2,:) = [205._k, 206._k, 207._k, 208._k]
+
+  data2(1,1,:) = [102._k, 103._k]
+  data2(1,2,:) = [106._k, 107._k]
+  data2(2,1,:) = [202._k, 203._k]
+  data2(2,2,:) = [206._k, 207._k]
+
+  call interp_1d_3d_assert(grid1, grid2, data1, data2)
+  call interp_1d_3d_assert(grid1, grid2, data1, data2, "linear")
+  call interp_1d_3d_assert(grid1, grid2, data1, data2, "cubic_spline")
+end subroutine
+
+subroutine interp_1d_3d_assert(grid1, grid2, data1, data2_expected, method, yp1, yp2)
+  real(k), intent(in), dimension(:,:,:) :: grid1, grid2, data1, data2_expected
+  character(*), intent(in), optional :: method
+  real(k), intent(in), optional :: yp1, yp2
+  real(k) :: data2_test(size(data2_expected,1), size(data2_expected,2), size(data2_expected,3))
+  integer :: i,i2,i3
+  character(:), allocatable :: test_name
+
+  test_name = "interp_1d_3d(" // &
+              stringify(grid1) // ", " // &
+              stringify(grid2) // ", " // &
+              stringify(data1) // ", data2"
+
+  if (present(method)) then
+    test_name = test_name // ", method=" // method
+  endif
+
+  if (present(yp1)) then
+    test_name = test_name // ", yp1=" // string(yp1)
+  endif
+
+  if (present(yp2)) then
+    test_name = test_name // ", yp2=" // string(yp2)
+  endif
+
+  test_name = test_name // ")"
+
+  call interp_1d(grid1, grid2, data1, data2_test, method, yp1, yp2)
+  call array_compare_3d(data2_test, data2_expected, test_name // " unit test failed")
+end subroutine
+
+!
+! Supporting utilities
+!
+
+subroutine open_netcdf_w(fileobj)
+  type(FmsNetcdfFile_t), intent(out) :: fileobj
+
+  if (.not.open_file(fileobj, "test_axis_utils.nc", "overwrite")) then
+    call mpp_error(FATAL, "Error opening test_axis_utils.nc to write")
+  endif
+end subroutine
+
+subroutine open_netcdf_r(fileobj)
+  type(FmsNetcdfFile_t), intent(out) :: fileobj
+
+  if (.not.open_file(fileobj, "test_axis_utils.nc", "read")) then
+    call mpp_error(FATAL, "Error opening test_axis_utils.nc to read")
+  endif
+end subroutine
+
+subroutine array_compare_1d(arr1, arr2, msg)
+  real(k), intent(in), dimension(:) :: arr1, arr2
+  character(*), intent(in) :: msg
+  integer :: i, m, n
+
+  m = size(arr1)
+  n = size(arr2)
+
+  if (m.ne.n) then
+    write(stderr(), "(A)") "1D array comparison failed due to incompatible array sizes"
+    write(stderr(), "(A)") "Array 1 has size " // string(m) // " and array 2 has size " // string(n)
+    call mpp_error(FATAL, msg)
+  endif
+
+  do i=1,m
+    if (arr1(i).ne.arr2(i)) then
+      write(stderr(), "(A)") "1D array comparison failed due to element " // string(i)
+      write(stderr(), "(A)") "Array 1 has value " // string(arr1(i)) // &
+                           & " and array 2 has value " // string(arr2(i))
+      call mpp_error(FATAL, msg)
+    endif
+  enddo
+end subroutine
+
+subroutine array_compare_2d(arr1, arr2, msg)
+  real(k), intent(in), dimension(:,:) :: arr1, arr2
+  character(*), intent(in) :: msg
+  integer :: i1, i2, m1, m2, n1, n2
+
+  m1 = size(arr1, 1)
+  m2 = size(arr1, 2)
+
+  n1 = size(arr2, 1)
+  n2 = size(arr2, 2)
+
+  if (m1.ne.n1 .or. m2.ne.n2) then
+    write(stderr(), "(A)") "2D array comparison failed due to incompatible array sizes"
+    write(stderr(), "(A)") "Array 1 has size " // string(m1) // "x" // string(m2) // &
+                          & " and array 2 has size " // string(n1) // "x" // string(n2)
+    call mpp_error(FATAL, msg)
+  endif
+
+  do i2=1,m2
+    do i1=1,m1
+      if (arr1(i1,i2).ne.arr2(i1,i2)) then
+        write(stderr(), "(A)") "2D array comparison failed due to element " // string(i1) // "," // string(i2)
+        write(stderr(), "(A)") "Array 1 has value " // string(arr1(i1,i2)) // &
+                             & " and array 2 has value " // string(arr2(i1,i2))
+        call mpp_error(FATAL, msg)
+      endif
+    enddo
+  enddo
+end subroutine
+
+subroutine array_compare_3d(arr1, arr2, msg)
+  real(k), intent(in), dimension(:,:,:) :: arr1, arr2
+  character(*), intent(in) :: msg
+  integer :: i1, i2, i3, m1, m2, m3, n1, n2, n3
+
+  m1 = size(arr1, 1)
+  m2 = size(arr1, 2)
+  m3 = size(arr1, 3)
+
+  n1 = size(arr2, 1)
+  n2 = size(arr2, 2)
+  n3 = size(arr2, 3)
+
+  if (m1.ne.n1 .or. m2.ne.n2 .or. m3.ne.n3) then
+    write(stderr(), "(A)") "3D array comparison failed due to incompatible array sizes"
+    write(stderr(), "(A)") "Array 1 has size " // string(m1) // "x" // string(m2) // "x" // string(m3) // &
+                           & " and array 2 has size " // string(n1) // "x" // string(n2) // "x" // string(n3)
+    call mpp_error(FATAL, msg)
+  endif
+
+  do i3=1,m3
+    do i2=1,m2
+      do i1=1,m1
+        if (arr1(i1,i2,i3).ne.arr2(i1,i2,i3)) then
+          write(stderr(), "(A)") "3D array comparison failed due to element " // &
+                               & string(i1) // "," // string(i2) // "," // string(i3)
+          write(stderr(), "(A)") "Array 1 has value " // string(arr1(i1,i2,i3)) // &
+                               & " and array 2 has value " // string(arr2(i1,i2,i3))
+          call mpp_error(FATAL, msg)
+        endif
+      enddo
+    enddo
+  enddo
+end subroutine
+
 end program test_axis_utils

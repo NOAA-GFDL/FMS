@@ -16,14 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_memutils_mod mpp_memutils_mod
+!> @ingroup mpp
+!> @brief Routines to initialize and report on memory usage during the model run.
 
-!> Routines to initialize and report on memory usage during the model run.
+!> @addtogroup mpp_memutils_mod
+!> @{
 module mpp_memutils_mod
 
-#include "../include/fms_platform.h"
-
   use mpp_mod, only: mpp_min, mpp_max, mpp_sum, mpp_pe, mpp_root_pe
-  use mpp_mod, only: mpp_error, FATAL, stderr, mpp_npes, get_unit
+  use mpp_mod, only: mpp_error, FATAL, stderr, mpp_npes
+  use platform_mod
 
   implicit none
   private
@@ -122,3 +125,5 @@ contains
     return
   end subroutine mpp_mem_dump
 end module mpp_memutils_mod
+!> @}
+! close documentation grouping

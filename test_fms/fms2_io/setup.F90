@@ -18,11 +18,13 @@
 !***********************************************************************
 
 module setup
-use, intrinsic :: iso_fortran_env, only : real32, real64, int32, error_unit
+use, intrinsic :: iso_fortran_env, only : error_unit
 use mpi
 use argparse
 use mpp_mod
 use mpp_domains_mod
+use platform_mod
+
 implicit none
 private
 
@@ -495,7 +497,7 @@ end subroutine create_tripolar_domain
 
 subroutine create_data_double_1d(array, xsize)
 
-  real(kind=real64), dimension(:), allocatable, intent(inout) :: array
+  real(kind=r8_kind), dimension(:), allocatable, intent(inout) :: array
   integer, intent(in), optional :: xsize
 
   integer :: i
@@ -508,14 +510,14 @@ subroutine create_data_double_1d(array, xsize)
   endif
   do i = 1, size(array)
     call random_number(array(i))
-    array(i) = array(i) + real(mpp_pe(), kind=real64)
+    array(i) = array(i) + real(mpp_pe(), kind=r8_kind)
   enddo
 end subroutine create_data_double_1d
 
 
 subroutine create_data_double_2d(array, sizes)
 
-  real(kind=real64), dimension(:,:), allocatable, intent(inout) :: array
+  real(kind=r8_kind), dimension(:,:), allocatable, intent(inout) :: array
   integer, dimension(2), intent(in), optional :: sizes
 
   integer :: i
@@ -530,7 +532,7 @@ subroutine create_data_double_2d(array, sizes)
   do j = 1, size(array, 2)
     do i = 1, size(array, 1)
       call random_number(array(i,j))
-      array(i,j) = array(i,j) + real(mpp_pe(), kind=real64)
+      array(i,j) = array(i,j) + real(mpp_pe(), kind=r8_kind)
     enddo
   enddo
 end subroutine create_data_double_2d
@@ -538,12 +540,12 @@ end subroutine create_data_double_2d
 
 subroutine create_data_int_2d(array, sizes)
 
-  integer(kind=int32), dimension(:,:), allocatable, intent(inout) :: array
+  integer(kind=i4_kind), dimension(:,:), allocatable, intent(inout) :: array
   integer, dimension(2), intent(in), optional :: sizes
 
   integer :: i
   integer :: j
-  real(kind=real32) :: r
+  real(kind=r4_kind) :: r
 
   if (present(sizes)) then
     if (allocated(array)) then
@@ -554,7 +556,7 @@ subroutine create_data_int_2d(array, sizes)
   do j = 1, size(array, 2)
     do i = 1, size(array, 1)
       call random_number(r)
-      array(i,j) = int(10.*r, kind=int32) + mpp_pe()
+      array(i,j) = int(10.*r, kind=i4_kind) + mpp_pe()
     enddo
   enddo
 end subroutine create_data_int_2d
@@ -562,7 +564,7 @@ end subroutine create_data_int_2d
 
 subroutine create_data_double_3d(array, sizes)
 
-  real(kind=real64), dimension(:,:,:), allocatable, intent(inout) :: array
+  real(kind=r8_kind), dimension(:,:,:), allocatable, intent(inout) :: array
   integer, dimension(3), intent(in), optional :: sizes
 
   integer :: i
@@ -579,7 +581,7 @@ subroutine create_data_double_3d(array, sizes)
     do j = 1, size(array, 2)
       do i = 1, size(array, 1)
         call random_number(array(i,j,k))
-        array(i,j,k) = array(i,j,k) + real(mpp_pe(), kind=real64)
+        array(i,j,k) = array(i,j,k) + real(mpp_pe(), kind=r8_kind)
       enddo
     enddo
   enddo

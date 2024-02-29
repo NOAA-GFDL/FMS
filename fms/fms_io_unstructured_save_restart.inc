@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @addtogroup fms_io_mod
+!> @{
 
 !>Write out metadata and data for axes and fields to a restart file
 !!associated with an unstructured mpp domain.
@@ -31,7 +33,8 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
     type(restart_file_type),intent(inout),target :: fileObj     !<A restart object.
     character(len=*),intent(in),optional         :: time_stamp  !<A time stamp for the file.
     character(len=*),intent(in),optional         :: directory   !<The directory where the restart file lives.
-    logical(INT_KIND),intent(in),optional        :: append      !<Flag telling whether to append to or overwrite the restart file.
+    logical(INT_KIND),intent(in),optional        :: append      !<Flag telling whether to append to or
+                                                                !! overwrite the restart file.
     real,intent(in),optional                     :: time_level  !<A time level value (do not specify a kind value).
 
    !Optional arguments:
@@ -54,36 +57,58 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
 
    !Local variables
     type(domainUG),pointer                      :: domain            !<A pointer to an unstructured mpp domain.
-    integer(INT_KIND)                           :: mpp_action        !<Parameter specifying how the file will be acted on (overwritten or appended to).
-    logical(INT_KIND)                           :: write_meta_data   !<Flag telling whether or not metadata will be written to the restart file.
-    logical(INT_KIND)                           :: write_field_data  !<Flag telling whether or not field data will be written to the restart file.
+    integer(INT_KIND)                           :: mpp_action        !<Parameter specifying how the file
+                                                                     !! will be acted on (overwritten or appended to).
+    logical(INT_KIND)                           :: write_meta_data   !<Flag telling whether or not metadata
+                                                                     !! will be written to the restart file.
+    logical(INT_KIND)                           :: write_field_data  !<Flag telling whether or not field
+                                                                     !! data will be written to the restart file.
     character(len=128)                          :: dir               !<Directory where the restart file lives.
     character(len=80)                           :: restartname       !<The name of the restart file.
     character(len=256)                          :: restartpath       !<The restart file path (dir/file).
     integer(INT_KIND)                           :: funit             !<The file unit returned by mpp_open.
     type(ax_type),pointer                       :: axis              !<A pointer to an fms_io_axis_type.
-    type(axistype)                              :: x_axis            !<An mpp_io_axis_type, used to write the x-axis to the restart file.
-    logical(INT_KIND)                           :: x_axis_defined    !<Flag telling whether or not a x-axis has been define for the inputted restart object.
-    type(axistype)                              :: y_axis            !<An mpp_io_axis_type, used to write the y-axis to the restart file.
-    logical(INT_KIND)                           :: y_axis_defined    !<Flag telling whether or not a y-axis has been define for the inputted restart object.
-    type(axistype)                              :: z_axis            !<An mpp_io_axis_type, used to write the z-axis to the restart file.
-    logical(INT_KIND)                           :: z_axis_defined    !<Flag telling whether or not a z-axis has been define for the inputted restart object.
-    type(axistype)                              :: cc_axis           !<An mpp_io_axis_type, used to write the cc-axis (???) to the restart file.
-    logical(INT_KIND)                           :: cc_axis_defined   !<Flag telling whether or not a cc-axis (???) has been define for the inputted restart object.
-    type(axistype)                              :: c_axis            !<An mpp_io_axis_type, used to write the compressed c-axis (???) to the restart file.
-    logical(INT_KIND)                           :: c_axis_defined    !<Flag telling whether or not a compressed c-axis (???) has been define for the inputted restart object.
-    type(axistype)                              :: h_axis            !<An mpp_io_axis_type, used to write the compressed h-axis (???) to the restart file.
-    logical(INT_KIND)                           :: h_axis_defined    !<Flag telling whether or not a compressed h-axis (???) has been define for the inputted restart object.
-    type(axistype)                              :: t_axis            !<An mpp_io_axis_type, used to write the t-axis to the restart file.
+    type(axistype)                              :: x_axis            !<An mpp_io_axis_type, used to write
+                                                                     !! the x-axis to the restart file.
+    logical(INT_KIND)                           :: x_axis_defined    !<Flag telling whether or not a
+                                                             !! x-axis has been define for the inputted restart object.
+    type(axistype)                              :: y_axis            !<An mpp_io_axis_type, used to write
+                                                                     !! the y-axis to the restart file.
+    logical(INT_KIND)                           :: y_axis_defined    !<Flag telling whether or not a
+                                                             !! y-axis has been define for the inputted restart object.
+    type(axistype)                              :: z_axis            !<An mpp_io_axis_type, used to write
+                                                                     !! the z-axis to the restart file.
+    logical(INT_KIND)                           :: z_axis_defined    !<Flag telling whether or not a
+                                                             !! z-axis has been define for the inputted restart object.
+    type(axistype)                              :: cc_axis           !<An mpp_io_axis_type, used to write
+                                                                     !! the cc-axis (???) to the restart file.
+    logical(INT_KIND)                           :: cc_axis_defined   !<Flag telling whether or not a
+                                                      !! cc-axis (???) has been define for the inputted restart object.
+    type(axistype)                              :: c_axis            !<An mpp_io_axis_type, used to write
+                                                                    !! the compressed c-axis (???) to the restart file.
+    logical(INT_KIND)                           :: c_axis_defined    !<Flag telling whether or not a
+                                            !! compressed c-axis (???) has been define for the inputted restart object.
+    type(axistype)                              :: h_axis            !<An mpp_io_axis_type, used to write
+                                                                    !! the compressed h-axis (???) to the restart file.
+    logical(INT_KIND)                           :: h_axis_defined    !<Flag telling whether or not a
+                                            !! compressed h-axis (???) has been define for the inputted restart object.
+    type(axistype)                              :: t_axis            !<An mpp_io_axis_type, used to write
+                                                                     !! the t-axis to the restart file.
     type(var_type),pointer                      :: cur_var           !<A pointer to an fms_io_field_type.
     integer(INT_KIND)                           :: num_var_axes      !<Number of dimensions for a field.
     type(axistype),dimension(4)                 :: var_axes          !<Array of axis for each field.
-    integer(INT_KIND)                           :: cpack             !<(Number of bits in a real(8))/(Number of bits in a real)
-    integer(LONG_KIND),dimension(:),allocatable :: check_val         !<An array of check-sums of a field at each time level.
-    real                                        :: tlev              !<Time value for a time level (do not specify a kind value).
-    real                                        :: r0d               !<Used to convert a scalar integer field into a scalar real field.
-    real,dimension(:),allocatable               :: r1d               !<Used to convert a 1D integer field into a 1D real field.
-    real,dimension(:,:),allocatable             :: r2d               !<Used to convert a 2D integer field into a 2D real field.
+    integer(INT_KIND)                           :: cpack             !<(Number of bits in a real(8))/(Number
+                                                                     !! of bits in a real)
+    integer(LONG_KIND),dimension(:),allocatable :: check_val         !<An array of check-sums of a field
+                                                                     !! at each time level.
+    real                                        :: tlev              !<Time value for a time level (do
+                                                                     !! not specify a kind value).
+    real                                        :: r0d               !<Used to convert a scalar integer
+                                                                     !! field into a scalar real field.
+    real,dimension(:),allocatable               :: r1d               !<Used to convert a 1D integer field
+                                                                     !! into a 1D real field.
+    real,dimension(:,:),allocatable             :: r2d               !<Used to convert a 2D integer field
+                                                                     !! into a 2D real field.
     integer(INT_KIND)                           :: i                 !<Loop variable.
     integer(INT_KIND)                           :: j                 !<Loop variable.
     integer(INT_KIND)                           :: k                 !<Loop variable.
@@ -670,5 +695,4 @@ subroutine fms_io_unstructured_save_restart(fileObj, &
 
     return
 end subroutine fms_io_unstructured_save_restart
-
-!----------
+!> @}

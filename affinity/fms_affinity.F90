@@ -17,15 +17,17 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!> \file
-!! \author @bensonr
-
-!> Fortran API interfaces to set the thread affinity.
+!> @defgroup fms_affinity_mod fms_affinity_mod
+!> @ingroup affinity
+!> @brief Fortran API interfaces to set the thread affinity.
+!! API interfaces to allow setting and getting thread affinity.  The routines @ref get_cpuset
+!! , @ref set_cpu_affinity , and @ref fms_affinity_get are defined via C routines in affinity.c.
 !!
-!! API interfaces to allow setting and getting thread affinity.  The thread affinity get and set
-!! are managed in the C routines in affinity.c.
-module fms_affinity_mod
+!! @author Rusty Benson
 
+!> @addtogroup fms_affinity_mod
+!> @{
+module fms_affinity_mod
   !--- standard system modules
   use, intrinsic :: iso_c_binding, only: c_int, c_bool
   use omp_lib
@@ -40,10 +42,17 @@ module fms_affinity_mod
   private
 
   interface
+
+    !> Interface to get affinity from the current component.
+    !!
+    !> Defined in @ref affinity.c.
     integer(KIND=c_int) function fms_affinity_get() bind(c, name="get_cpu_affinity")
       import c_int
     end function fms_affinity_get
 
+    !> Private interface to retrieve this groups CPU set and it's size.
+    !!
+    !> Defined in @ref affinity.c.
     integer(KIND=c_int) function get_cpuset(fsz, output, pe, debug) bind(c, name="get_cpuset")
       import c_int, c_bool
       integer(KIND=c_int), value, intent(in) :: fsz, pe
@@ -51,6 +60,9 @@ module fms_affinity_mod
       logical(KIND=c_bool), value :: debug
     end function get_cpuset
 
+    !> Private interface to set CPU afinity to a given core.
+    !!
+    !> Defined in @ref affinity.c.
     integer(KIND=c_int) function set_cpu_affinity(cpu) bind(c, name="set_cpu_affinity")
       import c_int
       integer(KIND=c_int), value, intent(in) :: cpu
@@ -74,12 +86,12 @@ module fms_affinity_mod
 
 contains
 
-  !> initialization routine for affinity handling
+  !> Initialization routine for affinity handling
   subroutine fms_affinity_init()
     !--- local variables
     integer:: io_stat
     integer:: ierr
-    integer:: unit
+    integer:: iunit
 
     !--- return if module is initialized
     if (module_is_initialized) return
@@ -93,15 +105,15 @@ contains
 
     !--- output information to logfile
     call write_version_number("fms_affinity_mod", version)
-    unit = stdlog()
-    write(unit,nml=fms_affinity_nml)
+    iunit = stdlog()
+    write(iunit,nml=fms_affinity_nml)
 
     module_is_initialized = .TRUE.
 
   end subroutine fms_affinity_init
 
 
-  !> routine to set affinity
+  !> Routine to set affinity for a component
   subroutine fms_affinity_set (component, use_hyper_thread, nthreads)
     !--- interface variables
     character(len=*),  intent(in):: component !< Component name
@@ -119,6 +131,7 @@ contains
     integer:: th_num
     integer:: indx
 
+    if (.not. module_is_initialized) call fms_affinity_init()
     if (.not. affinity) return
 
     if (strict) then

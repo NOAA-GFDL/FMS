@@ -19,6 +19,9 @@
 !----------
 !ug support
 
+!> @addtogroup fms_io_mod
+!> @{
+
 !>Get the size of the dimensions of a field from a file associated with an
 !!unstructured mpp domain.
 subroutine fms_io_unstructured_get_field_size(filename, &
@@ -31,23 +34,32 @@ subroutine fms_io_unstructured_get_field_size(filename, &
     character(len=*),intent(in)        :: filename              !<The name of a file.
     character(len=*),intent(in)        :: fieldname             !<The name of a field in the input file.
     integer,dimension(:),intent(inout) :: field_dimension_sizes !<Array of dimension sizes for the inputted field.
-    type(domainUG),intent(in)          :: domain                !<An unstructured mpp domain associated with the input file.
-    logical,intent(out),optional       :: field_found           !<Flag telling if the inputted field was found in the inputted file.
+    type(domainUG),intent(in)          :: domain                !<An unstructured mpp domain
+                                                                !! associated with the input file.
+    logical,intent(out),optional       :: field_found           !<Flag telling if the inputted
+                                                                !! field was found in the inputted file.
 
    !Local variables
     type(domainUG),pointer                     :: io_domain       !<Pointer to the unstructured I/O domain.
     integer(INT_KIND)                          :: io_domain_npes  !<The total number of ranks in an I/O domain pelist.
     integer(INT_KIND),dimension(:),allocatable :: pelist          !<A pelist.
     integer(INT_KIND)                          :: funit           !<File unit for the inputted file.
-    integer(INT_KIND)                          :: num_axes        !<The total number of axes contained in the inputted file.
-    integer(INT_KIND)                          :: num_fields      !<The total number of fields contained in the inputted file.
-    integer(INT_KIND)                          :: num_atts        !<The total number of global attributes contained in the inputted file.
-    integer(INT_KIND)                          :: num_time_levels !<The total number of time levels contained in the inputted file.
-    type(fieldtype),dimension(max_fields)      :: file_fields     !<An array of all fields contained in the inputted file (max_fields is a module variable).
+    integer(INT_KIND)                          :: num_axes        !<The total number of axes
+                                                                  !! contained in the inputted file.
+    integer(INT_KIND)                          :: num_fields      !<The total number of fields
+                                                                  !! contained in the inputted file.
+    integer(INT_KIND)                          :: num_atts        !<The total number of global
+                                                                  !! attributes contained in the inputted file.
+    integer(INT_KIND)                          :: num_time_levels !<The total number of time
+                                                                  !! levels contained in the inputted file.
+    type(fieldtype),dimension(max_fields)      :: file_fields     !<An array of all fields
+                                                   !! contained in the inputted file (max_fields is a module variable).
     logical(INT_KIND)                          :: found           !<Flag telling if the field was found in the file.
     character(len=128)                         :: file_field_name !<Name of a field from the inputted file.
-    integer(INT_KIND)                          :: file_field_ndim !<Number of dimensions of a field from the inputted file.
-    type(axistype),dimension(max_fields)       :: file_field_axes !<An array of all axes of a field contained in the inputted file (max_fields is a module variable).
+    integer(INT_KIND)                          :: file_field_ndim !<Number of dimensions of
+                                                                  !! a field from the inputted file.
+    type(axistype),dimension(max_fields)       :: file_field_axes !<An array of all axes of
+                                           !! a field contained in the inputted file (max_fields is a module variable).
     character(len=128)                         :: file_axis_name  !<Name of an axis from the inputted file.
     integer(INT_KIND)                          :: file_axis_size  !<Size of an axis from the inputted file.
     integer(INT_KIND)                          :: i               !<Loop variable.
@@ -184,3 +196,4 @@ subroutine fms_io_unstructured_get_field_size(filename, &
 
     return
 end subroutine fms_io_unstructured_get_field_size
+!> @}

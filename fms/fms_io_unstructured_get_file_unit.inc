@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @addtogroup fms_io_mod
+!> @{
 
 !>Return the file unit and index in the "files_read" module array for the
 !!inputted file.  If the file does not currently exist in the "files_read"
@@ -32,7 +34,8 @@ subroutine fms_io_unstructured_get_file_unit(filename, &
     character(len=*),intent(in)   :: filename   !<Name of the file to be read from.
     integer(INT_KIND),intent(out) :: funit      !<File unit for the inputted file.
     integer(INT_KIND),intent(out) :: index_file !<Index of the inputted file in the "files_read" module array.
-    logical(INT_KIND),intent(in)  :: read_dist  !<Flag telling if the IO domain tile id string exists at the end of the inputted file name.
+    logical(INT_KIND),intent(in)  :: read_dist  !<Flag telling if the IO domain tile id string
+                                                !! exists at the end of the inputted file name.
     type(domainUG),intent(in)     :: domain     !<An unstructured mpp domain.
 
    !Local variables
@@ -100,5 +103,4 @@ subroutine fms_io_unstructured_get_file_unit(filename, &
 
     return
 end subroutine fms_io_unstructured_get_file_unit
-
-!----------
+!> @}

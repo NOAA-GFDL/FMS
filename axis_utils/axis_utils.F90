@@ -16,33 +16,19 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup axis_utils_mod axis_utils_mod
+!> @ingroup axis_utils
+!> @brief A set of utilities for manipulating axes and extracting axis attributes,
+!! A more recent version of this module using the updated fms2_io is available, @ref axis_utils2
+!! but this module should be used if still using @ref mpp_io
+!!
+!> @author M.J. Harrison
 
+!> @addtogroup axis_utils_mod
+!> @{
 module axis_utils_mod
-  !
-  !<CONTACT EMAIL="Matthew.Harrison@noaa.gov">M.J. Harrison</CONTACT>
-  !
-  !<REVIEWER EMAIL="Bruce.Wyman@noaa.gov">Bruce Wyman</REVIEWER>
-  !
-
-  !<OVERVIEW>
-  ! A set of utilities for manipulating axes and extracting axis
-  ! attributes
-  !</OVERVIEW>
-
-  !<DESCRIPTION>
-  !
-  ! subroutine get_axis_cart(axis,cart) : Returns X,Y,Z or T cartesian attribute
-  ! subroutine get_axis_bounds(axis,axis_bound,axes) : Return axis_bound either from an array of
-  !                                                    available axes, or defined based on axis mid-points
-  ! function get_axis_modulo : Returns true if axis has the modulo attribute
-  ! function get_axis_fold   : Returns is axis is folded at a boundary (non-standard meta-data)
-  ! function lon_in_range    : Returns lon_strt <= longitude <= lon_strt+360
-  ! subroutine tranlon       : Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
-  ! subroutine nearest_index : Return index of nearest point along axis
-  !
-  !</DESCRIPTION>
-  !
-
+#ifdef use_deprecated_io
+  use netcdf
   use mpp_io_mod, only: axistype, atttype, default_axis, default_att,         &
                         mpp_get_atts, mpp_get_axis_data, mpp_modify_meta,     &
                         mpp_get_att_name, mpp_get_att_type, mpp_get_att_char, &
@@ -51,8 +37,6 @@ module axis_utils_mod
   use fms_mod,    only: lowercase, string_array_index, fms_error_handler
 
   implicit none
-
-# include <netcdf.inc>
 
   public get_axis_cart, get_axis_bounds, get_axis_modulo, get_axis_fold, lon_in_range, &
          tranlon, frac_index, nearest_index, interp_1d, get_axis_modulo_times
@@ -66,19 +50,32 @@ module axis_utils_mod
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+!> @}
+
+  !> Perform 1D interpolation between grids.
+  !!
+  !> Data and grids can have 1, 2, or 3 dimensions.
+  !! @param grid1
+  !! @param grid2
+  !! @param data1 Data to interpolate
+  !! @param [inout] data2 Interpolated data
+  !! @param method Either "linear" or "cubic_spline" interpolation method, default="linear"
+  !! @ingroup axis_utils_mod
   interface interp_1d
      module procedure interp_1d_1d
      module procedure interp_1d_2d
      module procedure interp_1d_3d
   end interface
+!> @addtogroup axis_utils_mod
+!> @{
 
 contains
 
-
+  !> @brief Returns X,Y,Z or T cartesian attribute
   subroutine get_axis_cart(axis, cart)
 
-    type(axistype), intent(in) :: axis
-    character(len=1), intent(out) :: cart
+    type(axistype), intent(in) :: axis !< axis to get data from
+    character(len=1), intent(out) :: cart !< Returned cartesian axis
     character(len=1) :: axis_cart
     character(len=16), dimension(2) :: lon_names, lat_names
     character(len=16), dimension(3) :: z_names
@@ -87,7 +84,7 @@ contains
     character(len=8) , dimension(4) :: z_units
     character(len=3) , dimension(6) :: t_units
     character(len=32) :: name
-    integer :: i,j
+    integer :: i
 
     lon_names = (/'lon','x  '/)
     lat_names = (/'lat','y  '/)
@@ -144,7 +141,7 @@ contains
 
   end subroutine get_axis_cart
 
-
+  !> @brief Return axis_bound either from an array of available axes, or defined based on axis mid-points
   subroutine get_axis_bounds(axis,axis_bound,axes,bnd_name,err_msg)
 
     type(axistype), intent(in) :: axis
@@ -199,6 +196,9 @@ contains
     return
   end subroutine get_axis_bounds
 
+  !> @brief Checks if 'modulo' variable exists for a given axis.
+  !!
+  !> @return true if modulo variable exists in fileobj for the given axis name.
   function get_axis_modulo(axis)
 
     type(axistype) :: axis
@@ -221,6 +221,7 @@ contains
     return
   end function get_axis_modulo
 
+  !> @return logical get_axis_modulo_times
   function get_axis_modulo_times(axis, tbeg, tend)
 
     logical :: get_axis_modulo_times
@@ -265,6 +266,8 @@ contains
 
   end function get_axis_modulo_times
 
+  !> @brief Returns if axis is folded at a boundary (non-standard meta-data)
+  !! @return logical get_axis_fold
   function get_axis_fold(axis)
 
     type(axistype) :: axis
@@ -287,6 +290,8 @@ contains
     return
   end function get_axis_fold
 
+  !> @brief Returns lon_strt <= longitude <= lon_strt+360
+  !! @return real lon_in_range
   function lon_in_range(lon, l_strt)
     real :: lon, l_strt, lon_in_range, l_end
 
@@ -315,6 +320,7 @@ contains
 
   end function lon_in_range
 
+  !> @brief Returns monotonic array of longitudes s.t., lon_strt <= lon(:) <= lon_strt+360.
   subroutine tranlon(lon, lon_start, istrt)
 
     ! returns array of longitudes s.t.  lon_strt <= lon < lon_strt+360.
@@ -364,47 +370,45 @@ contains
     return
   end subroutine tranlon
 
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!   be the nearest data point to 0.0
+  !!
+  !!   @return real frac_index
   function frac_index (value, array)
-    !=======================================================================
-    !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
-    !
-    !=======================================================================
-
     integer :: ia, i, ii, unit
-    real :: value, frac_index
-    real, dimension(:) :: array
+    real :: value !< arbitrary data...same units as elements in "array"
+    real :: frac_index
+    real, dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))
@@ -412,8 +416,8 @@ contains
     do i=2,ia
        if (array(i) < array(i-1)) then
           unit = stdout()
-          write (unit,*) '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ',&
-                              value
+          write (unit,*) &
+            '=> Error: "frac_index" array must be monotonically increasing when searching for nearest value to ', value
           write (unit,*) '          array(i) < array(i-1) for i=',i
           write (unit,*) '          array(i) for i=1..ia follows:'
           do ii=1,ia
@@ -439,48 +443,56 @@ contains
     endif
   end function frac_index
 
+  !> @brief Return index of nearest point along axis
+  !!
+  !>     nearest_index = index of nearest data point within "array" corresponding to
+  !!            "value".
+  !!
+  !!     inputs:
+  !!
+  !!     value  = arbitrary data...same units as elements in "array"
+  !!     array  = array of data points  (must be monotonically increasing)
+  !!     ia     = dimension of "array"
+  !!
+  !!     output:
+  !!
+  !!     nearest_index =  index of nearest data point to "value"
+  !!             if "value" is outside the domain of "array" then nearest_index = 1
+  !!             or "ia" depending on whether array(1) or array(ia) is
+  !!             closest to "value"
+  !!
+  !!             note: if "array" is dimensioned array(0:ia) in the calling
+  !!                   program, then the returned index should be reduced
+  !!                   by one to account for the zero base.
+  !!
+  !!     example:
+  !!
+  !!     let model depths be defined by the following:
+  !!     parameter (km=5)
+  !!     dimension z(km)
+  !!     data z /5.0, 10.0, 50.0, 100.0, 250.0/
+  !!
+  !!     k1 = nearest_index (12.5, z, km)
+  !!     k2 = nearest_index (0.0, z, km)
+  !!
+  !!     k1 would be set to 2, and k2 would be set to 1 so that
+  !!     z(k1) would be the nearest data point to 12.5 and z(k2) would
+  !!     be the nearest data point to 0.0
+  !! @return integer nearest_index
   function nearest_index (value, array)
     !=======================================================================
     !
-    !     nearest_index = index of nearest data point within "array" corresponding to
-    !            "value".
-    !
-    !     inputs:
-    !
-    !     value  = arbitrary data...same units as elements in "array"
-    !     array  = array of data points  (must be monotonically increasing)
-    !     ia     = dimension of "array"
-    !
-    !     output:
-    !
-    !     nearest_index =  index of nearest data point to "value"
-    !             if "value" is outside the domain of "array" then nearest_index = 1
-    !             or "ia" depending on whether array(1) or array(ia) is
-    !             closest to "value"
-    !
-    !             note: if "array" is dimensioned array(0:ia) in the calling
-    !                   program, then the returned index should be reduced
-    !                   by one to account for the zero base.
-    !
-    !     example:
-    !
-    !     let model depths be defined by the following:
-    !     parameter (km=5)
-    !     dimension z(km)
-    !     data z /5.0, 10.0, 50.0, 100.0, 250.0/
-    !
-    !     k1 = nearest_index (12.5, z, km)
-    !     k2 = nearest_index (0.0, z, km)
-    !
-    !     k1 would be set to 2, and k2 would be set to 1 so that
-    !     z(k1) would be the nearest data point to 12.5 and z(k2) would
-    !     be the nearest data point to 0.0
     !
     !=======================================================================
 
-    integer :: nearest_index, ia, i, ii, unit
-    real :: value
-    real, dimension(:) :: array
+    integer :: nearest_index !< index of nearest data point to "value"
+                             !! if "value" is outside the domain of "array" then nearest_index = 1
+                             !! or "ia" depending on whether array(1) or array(ia) is
+                             !! closest to "value"
+    Integer :: i, ii, unit
+    integer :: ia !< dimension of "array"
+    real :: value !< arbitrary data...same units as elements in "array"
+    real, dimension(:) :: array !< array of data points  (must be monotonically increasing)
     logical keep_going
 
     ia = size(array(:))
@@ -522,7 +534,7 @@ contains
     real, dimension(:),    intent(in) :: grid1, data1, grid2
     real, dimension(:), intent(inout) :: data2
 
-    integer :: n1, n2, i, n, ext
+    integer :: n1, n2, i, n
     real :: w
 
     n1 = size(grid1(:))
@@ -679,8 +691,7 @@ contains
     real, dimension(:,:),    intent(in) :: grid1, data1, grid2
     real, dimension(:,:), intent(inout) :: data2
 
-    integer :: n1, n2, i, n, k2, ks, ke
-    real :: w
+    integer :: n1, n2, n, k2, ks, ke
 
     n1 = size(grid1,1)
     n2 = size(grid2,1)
@@ -706,8 +717,8 @@ contains
     character(len=*), optional, intent(in) :: method
     real,             optional, intent(in) :: yp1, yp2
 
-    integer           :: n1, n2, m1, m2, k2, i, n, m
-    real              :: w, y1, y2
+    integer           :: n1, n2, m1, m2, k2, n, m
+    real              :: y1, y2
     character(len=32) :: interp_method
     integer           :: ks, ke
     n1 = size(grid1,1)
@@ -777,5 +788,7 @@ contains
     if(ke == 0 ) call mpp_error(FATAL,' xe locate outside of grid1')
 
   end subroutine find_index
-
+#endif
 end module axis_utils_mod
+!> @}
+! close documentation grouping

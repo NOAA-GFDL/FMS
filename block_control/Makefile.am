@@ -23,8 +23,8 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/mpp
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libblock_control.la
@@ -32,9 +32,7 @@ noinst_LTLIBRARIES = libblock_control.la
 # The convenience library depends on its source.
 libblock_control_la_SOURCES = block_control.F90
 
-# Mod file depends on its o file, is built and then installed.
-block_control_mod.mod: block_control.lo
-BUILT_SOURCES = block_control_mod.mod
-include_HEADERS = block_control_mod.mod
+BUILT_SOURCES = block_control_mod.$(FC_MODEXT)
+nodist_include_HEADERS = block_control_mod.$(FC_MODEXT)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

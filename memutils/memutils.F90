@@ -1,8 +1,3 @@
-!> \file
-!! \author V. Balaji
-!!
-!! \section LICENSE
-!!
 !***********************************************************************
 !!                   GNU Lesser General Public License
 !!
@@ -21,8 +16,10 @@
 !! You should have received a copy of the GNU Lesser General Public
 !! License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!!
-!! \section DESCRIPTION
+!> @defgroup memutils_mod memutils_mod
+!> @ingroup memutils
+!! @brief Module to expose the memory printing API
+!! @author V. Balaji
 !!
 !! Module to expose the memory printing API
 !!
@@ -30,6 +27,9 @@
 !! or another file (e.g. the log file).  This can be useful in debugging.
 !! This module exposes the print_memuse_stat and memutils_init calls for
 !! use in external user code.
+
+!> @addtogroup memutils_mod
+!> @{
 module memutils_mod
 !Author: Balaji (V.Balaji@noaa.gov)
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_npes, mpp_min, mpp_max, mpp_sum, stderr
@@ -45,7 +45,7 @@ module memutils_mod
 
 contains
 
-  !> \brief Initialize the memutils module
+  !> @brief Initialize the memutils module
   !!
   !! memutils_init initializes the print_memory_usage and memutils_initialized
   !! module variables when called.  This configures if print_memuse_stats() should
@@ -59,7 +59,7 @@ contains
     return
   end subroutine memutils_init
 
-!> \brief Print memory usage stats to stdout, or a particular file
+!> @brief Print memory usage stats to stdout, or a particular file
 !!
 !! API to allow external user code to print memory statistics to stderr, or an
 !! optional file (Fortran file unit).  The module variable `print_memory_usage`
@@ -81,3 +81,5 @@ contains
     return
   end subroutine print_memuse_stats
 end module memutils_mod
+!> @}
+! close documentation grouping

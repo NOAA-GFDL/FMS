@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @addtogroup fms_io_mod
+!> @{
 
 !>Add a field to a restart object (restart_file_type).  Return the index of the
 !!inputted field in the fileObj%var array.
@@ -39,22 +41,30 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
     type(restart_file_type),intent(inout)        :: fileObj               !<A restart object.
     character(len=*),intent(in)                  :: filename              !<The name of the restart file.
     character(len=*),intent(in)                  :: fieldname             !<The name of a field.
-    integer(INT_KIND),dimension(:),intent(in)    :: field_dimension_order !<Array telling the ordering of the dimensions for the field.
-    integer(INT_KIND),dimension(NIDX),intent(in) :: field_dimension_sizes !<Array of sizes of the dimensions of the inputted field.
-    integer(INT_KIND),intent(out)                :: index_field           !<Index of the inputted field in the fileObj%var array.
+    integer(INT_KIND),dimension(:),intent(in)    :: field_dimension_order !<Array telling the ordering
+                                                                          !! of the dimensions for the field.
+    integer(INT_KIND),dimension(NIDX),intent(in) :: field_dimension_sizes !<Array of sizes of the dimensions
+                                                                          !! of the inputted field.
+    integer(INT_KIND),intent(out)                :: index_field           !<Index of the inputted field
+                                                                          !! in the fileObj%var array.
     type(domainUG),intent(in),target             :: domain                !<An unstructured mpp domain.
-    logical(INT_KIND),intent(in),optional        :: mandatory             !<Flag telling if the field is mandatory for the restart.
+    logical(INT_KIND),intent(in),optional        :: mandatory             !<Flag telling if the field
+                                                                          !! is mandatory for the restart.
     real,intent(in),optional                     :: data_default          !<A default value for the data.
     character(len=*),intent(in),optional         :: longname              !<A more descriptive name of the field.
     character(len=*),intent(in),optional         :: units                 !<Units for the field.
-    logical(INT_KIND),intent(in),optional        :: read_only             !<Tells whether or not the variable will be written to the restart file.
-    logical(INT_KIND),intent(in),optional        :: owns_data             !<Tells if the data will be deallocated when the restart object is deallocated.
+    logical(INT_KIND),intent(in),optional        :: read_only             !<Tells whether or not the
+                                                                       !! variable will be written to the restart file.
+    logical(INT_KIND),intent(in),optional        :: owns_data             !<Tells if the data will be
+                                                                 !! deallocated when the restart object is deallocated.
 
    !Local variables
-    real(DOUBLE_KIND)      :: default_data    !<The "default" data value.  This defaults to MPP_FILL_DOUBLE. Shouldn't this be a real(DOUBLE_KIND)?
+    real(DOUBLE_KIND)      :: default_data    !<The "default" data value.  This defaults to MPP_FILL_DOUBLE.
+                                              !! Shouldn't this be a real(DOUBLE_KIND)?
     character(len=256)     :: filename2       !<A string used to manipulate the inputted filename.
     integer(INT_KIND)      :: length          !<the length of the (trimmed) inputted file name.
-    character(len=256)     :: append_string   !<A string used to append the filename_appendix module variable string to the inputted filename.
+    character(len=256)     :: append_string   !<A string used to append the filename_appendix module
+                                              !! variable string to the inputted filename.
     character(len=256)     :: fname           !<A string to hold a file name.
     type(var_type),pointer :: cur_var         !<A convenience pointer.
     integer(INT_KIND)      :: i               !<Loop variable.
@@ -325,5 +335,4 @@ subroutine fms_io_unstructured_setup_one_field(fileObj, &
 
     return
 end subroutine fms_io_unstructured_setup_one_field
-
-!----------
+!> @}

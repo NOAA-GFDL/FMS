@@ -16,7 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup blackboxio blackboxio
+!> @ingroup fms2_io
+!> @brief File utility functions for use within @ref fms2_io
 
+!> @addtogroup blackboxio
+!> @{
 module blackboxio
 use netcdf
 use mpp_domains_mod
@@ -25,7 +30,8 @@ use netcdf_io_mod
 use fms_netcdf_domain_io_mod
 use fms_netcdf_unstructured_domain_io_mod
 use mpp_mod, only: mpp_pe
-use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
+use, intrinsic :: iso_fortran_env, only: error_unit
+use platform_mod
 implicit none
 private
 
@@ -43,7 +49,7 @@ public :: unstructured_write_restart_wrap
 
 
 contains
-!> @brief Accepts the namelist fms2_io_nml variables relevant to blackboxio 
+!> @brief Accepts the namelist fms2_io_nml variables relevant to blackboxio
 subroutine blackboxio_init (chksz)
 integer, intent(in) :: chksz
  fms2_ncchksz = chksz
@@ -140,7 +146,7 @@ function create_diskless_netcdf_file(fileobj, pelist, path) &
   fileobj%is_diskless = .true.
   cmode = ior(nf90_noclobber, nf90_classic_model)
   cmode = ior(cmode, nf90_diskless)
-  if (fms2_ncchksz == -1) call error("create_diskless_netcdf_file :: fms2_ncchksz not set.")
+  if (fms2_ncchksz == -1) call error("create_diskless_netcdf_file :: fms2_ncchksz not set. Call fms2_io init first")
   err = nf90_create(trim(fileobj%path), cmode, fileobj%ncid, chunksize=fms2_ncchksz)
   success = err .eq. nf90_noerr
   if (.not. success) then
@@ -178,51 +184,53 @@ subroutine copy_metadata(fileobj, new_fileobj)
   integer :: i
   integer :: j
   integer :: k
-  integer(kind=int32), dimension(:), allocatable :: buf_int
-  real(kind=real32), dimension(:), allocatable :: buf_float
-  real(kind=real64), dimension(:), allocatable :: buf_double
+  integer(kind=i4_kind), dimension(:), allocatable :: buf_int
+  real(kind=r4_kind), dimension(:), allocatable :: buf_float
+  real(kind=r8_kind), dimension(:), allocatable :: buf_double
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
+  append_error_msg = "copy_metadata: original file:"//trim(fileobj%path)//" new file:"//trim(new_fileobj%path)
   if (fileobj%is_root .and. .not. new_fileobj%is_readonly) then
     !Copy global attributes to the new file.
     call set_netcdf_mode(fileobj%ncid, define_mode)
     call set_netcdf_mode(new_fileobj%ncid, define_mode)
     err = nf90_inquire(fileobj%ncid, nattributes=natt)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     do i = 1, natt
       err = nf90_inq_attname(fileobj%ncid, nf90_global, i, n)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
       err = nf90_copy_att(fileobj%ncid, nf90_global, n, new_fileobj%ncid, nf90_global)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
 
     !Copy the dimensions to the new file.
     err = nf90_inquire(fileobj%ncid, ndimensions=ndim)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     err = nf90_inquire(fileobj%ncid, unlimiteddimid=ulim_dimid)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     do i = 1, ndim
       err = nf90_inquire_dimension(fileobj%ncid, i, dimnames(i), dimlens(i))
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
       if (i .eq. ulim_dimid) then
         err = nf90_def_dim(new_fileobj%ncid, dimnames(i), nf90_unlimited, dimids(i))
         ulim_dimid = dimids(i)
       else
         err = nf90_def_dim(new_fileobj%ncid, dimnames(i), dimlens(i), dimids(i))
       endif
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
     enddo
 
     !Copy the variables to the new file.
     err = nf90_inquire(fileobj%ncid, nvariables=nvar)
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
     do i = 1, nvar
       err = nf90_inquire_variable(fileobj%ncid, i, varname, xtype, varndim, d, natt)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
 
       !Map to new dimension ids.
       do j = 1, varndim
         err = nf90_inquire_dimension(fileobj%ncid, d(j), n)
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, append_error_msg)
         do k = 1, ndim
           if (string_compare(n, dimnames(k))) then
             d(j) = dimids(k)
@@ -233,7 +241,7 @@ subroutine copy_metadata(fileobj, new_fileobj)
 
       !Define variable in new file.
       err = nf90_def_var(new_fileobj%ncid, varname, xtype, d(1:varndim), varid)
-      call check_netcdf_code(err)
+      call check_netcdf_code(err, append_error_msg)
 
       !If the variable is an "axis", copy its data to the new file.
       if (varndim .eq. 1 .and. d(1) .ne. ulim_dimid) then
@@ -244,25 +252,27 @@ subroutine copy_metadata(fileobj, new_fileobj)
             if (xtype .eq. nf90_int) then
               allocate(buf_int(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_int)
-              call check_netcdf_code(err)
+              call check_netcdf_code(err, append_error_msg)
               err = nf90_put_var(new_fileobj%ncid, varid, buf_int)
               deallocate(buf_int)
             elseif (xtype .eq. nf90_float) then
               allocate(buf_float(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_float)
-              call check_netcdf_code(err)
+              call check_netcdf_code(err, append_error_msg)
               err = nf90_put_var(new_fileobj%ncid, varid, buf_float)
               deallocate(buf_float)
             elseif (xtype .eq. nf90_double) then
               allocate(buf_double(dimlens(k)))
               err = nf90_get_var(fileobj%ncid, i, buf_double)
-              call check_netcdf_code(err)
+              call check_netcdf_code(err, append_error_msg)
               err = nf90_put_var(new_fileobj%ncid, varid, buf_double)
               deallocate(buf_double)
             else
-              call error("this branch should not be reached.")
+              call error(append_error_msg//" "//trim(varname)//" has an unsupported type, "&
+                        //"only nf90_int, nf90_float, and nf90_double are currently supported")
+
             endif
-            call check_netcdf_code(err)
+            call check_netcdf_code(err, append_error_msg)
             call set_netcdf_mode(fileobj%ncid, define_mode)
             call set_netcdf_mode(new_fileobj%ncid, define_mode)
             exit
@@ -273,9 +283,9 @@ subroutine copy_metadata(fileobj, new_fileobj)
       !Copy variable attributes to the new file.
       do j = 1, natt
         err = nf90_inq_attname(fileobj%ncid, i, j, n)
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, append_error_msg)
         err = nf90_copy_att(fileobj%ncid, i, n, new_fileobj%ncid, varid)
-        call check_netcdf_code(err)
+        call check_netcdf_code(err, append_error_msg)
       enddo
     enddo
   endif
@@ -347,7 +357,8 @@ end subroutine new_netcdf_file
 
 
 !> @brief Wrapper to distinguish interfaces.
-!! @return Flag telling whether the creation of the buffer was successful.
+!!
+!> @return Flag telling whether the creation of the buffer was successful.
 function create_diskless_netcdf_file_wrap(fileobj, pelist, path) &
   result(success)
 
@@ -452,7 +463,7 @@ function create_diskless_domain_file(fileobj, domain, path) &
 
   io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
-    call error("input domain does not have an io_domain.")
+    call error("The domain associated with the file: "//trim(fileobj%path)//" does not have an io_domain.")
   endif
   pelist_size = mpp_get_domain_npes(io_domain)
   allocate(pelist(pelist_size))
@@ -547,13 +558,14 @@ end subroutine save_domain_restart_wrap
 !> @brief Loop through registered restart variables and read them from
 !!        a netcdf file.
 subroutine restore_domain_state_wrap(fileobj, unlim_dim_level, directory, timestamp, &
-                                     filename)
+                                     filename, ignore_checksum)
 
   type(FmsNetcdfDomainFile_t), intent(in), target :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
   character(len=*), intent(in), optional :: directory !< Directory to write restart file to.
   character(len=*), intent(in), optional :: timestamp !< Model time.
   character(len=*), intent(in), optional :: filename !< New name for the file.
+  logical,          intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
 
   character(len=256) :: new_name
   type(FmsNetcdfDomainFile_t), target :: new_fileobj
@@ -569,7 +581,7 @@ subroutine restore_domain_state_wrap(fileobj, unlim_dim_level, directory, timest
     p => new_fileobj
     close_new_file = .true.
   endif
-  call restore_domain_state(p, unlim_dim_level)
+  call restore_domain_state(p, unlim_dim_level, ignore_checksum=ignore_checksum)
   if (close_new_file) then
     call close_domain_file(p)
   endif
@@ -593,7 +605,7 @@ function create_diskless_unstructured_domain_file(fileobj, domain, path) &
 
   io_domain => mpp_get_ug_io_domain(domain)
   if (.not. associated(io_domain)) then
-    call error("input domain does not have an io_domain.")
+    call error("The domain associated with the file: "//trim(fileobj%path)//" does have an io_domain.")
   endif
   pelist_size = mpp_get_ug_domain_npes(io_domain)
   allocate(pelist(pelist_size))
@@ -663,3 +675,5 @@ end subroutine unstructured_write_restart_wrap
 
 
 end module blackboxio
+!> @}
+! close documentation grouping

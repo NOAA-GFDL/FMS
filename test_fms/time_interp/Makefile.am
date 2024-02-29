@@ -23,26 +23,35 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/time_manager -I${top_builddir}/fms	\
--I${top_builddir}/time_interp -I${top_builddir}/mpp			\
--I${top_builddir}/axis_utils -I${top_builddir}/horiz_interp		\
--I${top_builddir}/constants
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_time_interp test_time_interp_external
+check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 test_time_interp_external_r4 test_time_interp_external_r8
 
 # These are the sources for the tests.
-test_time_interp_SOURCES = test_time_interp.F90
-test_time_interp_external_SOURCES = test_time_interp_external.F90
+test_time_interp_r4_SOURCES = test_time_interp.F90
+test_time_interp_r8_SOURCES = test_time_interp.F90
+test_time_interp_external_r4_SOURCES = test_time_interp_external.F90
+test_time_interp_external_r8_SOURCES = test_time_interp_external.F90
+
+# filter out any added precision flags
+# adds r8 flag, otherwise no-flag default is 4
+test_time_interp_r4_CPPFLAGS=-DTI_TEST_KIND_=4 -I$(MODDIR)
+test_time_interp_r8_CPPFLAGS=-DTI_TEST_KIND_=8 -I$(MODDIR)
+test_time_interp_external_r4_CPPFLAGS=-DTI_TEST_KIND_=4 -I$(MODDIR)
+test_time_interp_external_r8_CPPFLAGS=-DTI_TEST_KIND_=8 -I$(MODDIR)
 
 # Run the test programs.
 TESTS = test_time_interp2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_time_interp2.sh
+EXTRA_DIST = test_time_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = INPUT/* input.nml *.out* *.dpi *.spi *.dyn *.spl

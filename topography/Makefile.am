@@ -23,30 +23,40 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/horiz_interp
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/topography/include
+
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libgaussian_topog.la libtopography.la
+noinst_LTLIBRARIES = libtopography.la
 
 # Each convenience library depends on its source.
-libtopography_la_SOURCES = topography.F90
-libgaussian_topog_la_SOURCES = gaussian_topog.F90
+libtopography_la_SOURCES = \
+    topography.F90 \
+    include/topography_r4.fh \
+    include/topography_r8.fh \
+    include/topography.inc \
+    gaussian_topog.F90 \
+    include/gaussian_topog_r4.fh \
+    include/gaussian_topog_r8.fh \
+    include/gaussian_topog.inc
 
-# Each mod file depends on the .o file.
-gaussian_topog_mod.mod: gaussian_topog.lo
-topography_mod.mod: topography.lo
+gaussian_topog_mod.$(FC_MODEXT): \
+    include/gaussian_topog_r4.fh \
+    include/gaussian_topog_r8.fh \
+    include/gaussian_topog.inc
 
-# Some mods are dependant on other mods in this dir.
-topography.lo: gaussian_topog_mod.mod
+topography_mod.$(FC_MODEXT): \
+    gaussian_topog_mod.$(FC_MODEXT) \
+    include/topography_r4.fh \
+    include/topography_r8.fh \
+    include/topography.inc
 
 # Mod files are built and then installed as headers.
-MODFILES = gaussian_topog_mod.mod topography_mod.mod
-include_HEADERS = $(MODFILES)
+MODFILES = \
+  gaussian_topog_mod.$(FC_MODEXT) \
+  topography_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

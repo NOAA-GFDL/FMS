@@ -16,74 +16,51 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!FDOC_TAG_GFDL fdoc.pl generated xml skeleton
 
 #include "fms_switches.h"
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
+!> @defgroup drifters_mod drifters_mod
+!> @ingroup drifters
+!! @brief <TT>Drifters_mod</TT>is a module designed to advect a set of particles, in parallel or
+!!   sequentially, given an prescribed velocity field.
+!! @author Alexander Pletzer
+!!
+!> Drifters are idealized point particles with positions that evolve in time according
+!! to a prescribed velocity field, starting from some initial conditions. Drifters have
+!! no mass, no energy, no size, and no friction and therefore have no impact on the
+!! dynamics of the underlying system. The only feature that distinguishes a drifter
+!! from another is its trajectory. This makes drifters ideal for tracking pollution
+!! clouds and probing fields (e.g. temperature, salinity) along ocean currents, to name
+!! a few applications.
+!! Drifters can mimic real experiments such as the Argo floats
+!! http://www.metoffice.com/research/ocean/argo/ukfloats.html.
+!!
+!! When run in parallel, on a 2d decomposed domain, <TT>drifters_mod</TT> will handle all the
+!! bookkeeping and communication transparently for the user. This involves adding/removing
+!! drifters as they enter/leave a processor element (PE) domain. Note that the number of drifters
+!! can vary greatly both between PE domains and within a PE domain in the course of a simulation; the drifters'
+!! module will also manage dynamically the memory for the user.
+!!
+!! There are a number of basic assumptions which could make the drifters' module
+!! ill-suited for some tasks. First and foremost, it is assumed that the motion of
+!! drifters is not erratic but follows deterministic trajectories. Furthermore,
+!! drifters should not cross both compute and data domain boundaries within less
+!! than a time step. This limitation is imposed by the Runge-Kutta integration
+!! scheme, which must be able to complete, within a time step, a trajectory
+!! calculation that starts inside the compute domain and ends inside the data domain. Therefore, the drifters,
+!! as they are presently modelled, are unlikely to work for very fast objects.
+!! This constraint also puts a upper limit to the domain decomposition, although
+!! it can often be remedied by increasing the number of ghost nodes.
+!!
+!! Another fundamental assumption is that the (e.g. velocity) fields are structured,
+!! on a per PE domain basis. There is no support for locally nested or unstrucured
+!! meshes. Meshes need not be smooth and continuous across PE domains, however.
+
+!> @addtogroup drifters_mod
+!> @{
 module drifters_mod
-#include <fms_platform.h>
-! <CONTACT EMAIL="Alexander.Pletzer@noaa.gov">
-!   Alexander Pletzer
-! </CONTACT>
-! <REVIEWER EMAIL="">
-!
-! </REVIEWER>
-! <HISTORY SRC="http://www.gfdl.noaa.gov/fms-cgi-bin/cvsweb.cgi/FMS/"/>
-! <OVERVIEW>
-!
-! </OVERVIEW>
-! <TT>Drifters_mod</TT>is a module designed to advect a set of particles, in parallel or
-! sequentially, given an prescribed velocity field.
-!
-! <DESCRIPTION>
-! Drifters are idealized point particles with positions that evolve in time according
-! to a prescribed velocity field, starting from some initial conditions. Drifters have
-! no mass, no energy, no size, and no friction and therefore have no impact on the
-! dynamics of the underlying system. The only feature that distinguishes a drifter
-! from another is its trajectory. This makes drifters ideal for tracking pollution
-! clouds and probing fields (e.g. temperature, salinity) along ocean currents, to name
-! a few applications.
-! Drifters can mimic real experiments such as the Argo floats
-! http://www.metoffice.com/research/ocean/argo/ukfloats.html.
-!
-! When run in parallel, on a 2d decomposed domain, <TT>drifters_mod</TT> will handle all the
-! bookkeeping and communication transparently for the user. This involves adding/removing
-! drifters as they enter/leave a processor element (PE) domain. Note that the number of drifters
-! can vary greatly both between PE domains and within a PE domain in the course of a simulation; the drifters'
-! module will also manage dynamically the memory for the user.
-!
-! There are a number of basic assumptions which could make the drifters' module
-! ill-suited for some tasks. First and foremost, it is assumed that the motion of
-! drifters is not erratic but follows deterministic trajectories. Furthermore,
-! drifters should not cross both compute and data domain boundaries within less
-! than a time step. This limitation is imposed by the Runge-Kutta integration
-! scheme, which must be able to complete, within a time step, a trajectory
-! calculation that starts inside the compute domain and ends inside the data domain. Therefore, the drifters,
-! as they are presently modelled, are unlikely to work for very fast objects.
-! This constraint also puts a upper limit to the domain decomposition, although
-! it can often be remedied by increasing the number of ghost nodes.
-!
-! Another fundamental assumption is that the (e.g. velocity) fields are structured,
-! on a per PE domain basis. There is no support for locally nested or unstrucured
-! meshes. Meshes need not be smooth and continuous across PE domains, however.
-! </DESCRIPTION>
-!
-
-! <INFO>
-
-!   <REFERENCE>            </REFERENCE>
-!   <COMPILER NAME="">     </COMPILER>
-!   <PRECOMP FLAG="">      </PRECOMP>
-!   <LOADER FLAG="">       </LOADER>
-!   <TESTPROGRAM NAME="">  </TESTPROGRAM>
-!   <BUG>                  </BUG>
-!   <NOTE>
-!     See NOTE above.
-!   </NOTE>
-!   <FUTURE>               </FUTURE>
-
-! </INFO>
+#ifdef use_drifters
 
 #ifdef _SERIAL
 
@@ -113,11 +90,11 @@ module drifters_mod
                                 drifters_io_set_position_names, drifters_io_set_position_units, &
                                 drifters_io_set_field_names, drifters_io_set_field_units, drifters_io_write
 
-  use drifters_comm_mod,  only: drifters_comm_type, drifters_comm_new, drifters_comm_del, drifters_comm_set_pe_neighbors, &
-                                drifters_comm_set_domain, drifters_comm_gather, drifters_comm_update
+  use drifters_comm_mod,  only: drifters_comm_type,drifters_comm_new,drifters_comm_del, &
+                               drifters_comm_set_pe_neighbors, drifters_comm_set_domain, &
+                               drifters_comm_gather, drifters_comm_update
 
   use cloud_interpolator_mod, only: cld_ntrp_linear_cell_interp, cld_ntrp_locate_cell, cld_ntrp_get_cell_values
-
   implicit none
   private
 
@@ -129,8 +106,10 @@ module drifters_mod
   integer, parameter, private :: MAX_STR_LEN = 128
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
-  real :: DRFT_EMPTY_ARRAY(0)
+  !> @}
 
+  !> @brief Holds all data needed for drifters communication, io, and input.
+  !> @ingroup drifters_mod
   type drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
@@ -138,92 +117,83 @@ module drifters_mod
      type(drifters_input_type) :: input
      type(drifters_io_type)    :: io
      type(drifters_comm_type)  :: comm
-     real    :: dt             ! total dt, over a complete step
+     real    :: dt             !< total dt, over a complete step
      real    :: time
      ! fields
      real, allocatable :: fields(:,:)
      ! velocity field axes
-     real, allocatable :: xu(:)
-     real, allocatable :: yu(:)
-     real, allocatable :: zu(:)
-     real, allocatable :: xv(:)
-     real, allocatable :: yv(:)
-     real, allocatable :: zv(:)
-     real, allocatable :: xw(:)
-     real, allocatable :: yw(:)
-     real, allocatable :: zw(:)
+     real, allocatable :: xu(:) !< velocity field axes
+     real, allocatable :: yu(:) !< velocity field axes
+     real, allocatable :: zu(:) !< velocity field axes
+     real, allocatable :: xv(:) !< velocity field axes
+     real, allocatable :: yv(:) !< velocity field axes
+     real, allocatable :: zv(:) !< velocity field axes
+     real, allocatable :: xw(:) !< velocity field axes
+     real, allocatable :: yw(:) !< velocity field axes
+     real, allocatable :: zw(:) !< velocity field axes
      ! Runge Kutta coefficients holding intermediate results (positions)
-     real, allocatable :: temp_pos(:,:)
-     real, allocatable :: rk4_k1(:,:)
-     real, allocatable :: rk4_k2(:,:)
-     real, allocatable :: rk4_k3(:,:)
-     real, allocatable :: rk4_k4(:,:)
+     real, allocatable :: temp_pos(:,:) !< Runge Kutta coefficients holding
+                                        !! intermediate results (positions)
+     real, allocatable :: rk4_k1(:,:) !< Runge Kutta coefficients holding
+                                      !! intermediate results (positions)
+     real, allocatable :: rk4_k2(:,:) !< Runge Kutta coefficients holding
+                                      !! intermediate results (positions)
+     real, allocatable :: rk4_k3(:,:) !< Runge Kutta coefficients holding
+                                      !! intermediate results (positions)
+     real, allocatable :: rk4_k4(:,:) !< Runge Kutta coefficients holding
+                                      !! intermediate results (positions)
      ! store filenames for convenience
-     character(len=MAX_STR_LEN) :: input_file, output_file
+     character(len=MAX_STR_LEN) :: input_file !< store filenames for convenience
+     character(len=MAX_STR_LEN) :: output_file !< store filenames for convenience
      ! Runge Kutta stuff
-     integer :: rk4_step
-     logical :: rk4_completed
+     integer :: rk4_step !< Runge Kutta stuff
+     logical :: rk4_completed !< Runge Kutta stuff
      integer :: nx, ny
      logical, allocatable   :: remove(:)
   end type drifters_type
 
+  !> @brief Assignment override for @ref drifters_type
+  !> @ingroup drifters_mod
   interface assignment(=)
      module procedure drifters_copy_new
   end interface
 
+  !> @brief "Push" a given drifter at a given velocity for either 2D or 3D data
+  !> @ingroup drifters_mod
   interface drifters_push
     module procedure drifters_push_2
     module procedure drifters_push_3
   end interface
 
+  !> @ingroup drifters_mod
   interface drifters_compute_k
      module procedure drifters_computek2d
      module procedure drifters_computek3d
   end interface
 
+  !> @brief Set the value of a given drifter field
+  !> @ingroup drifters_mod
   interface drifters_set_field
     module procedure drifters_set_field_2d
     module procedure drifters_set_field_3d
   end interface
 
-
+!> @addtogroup drifters_mod
+!> @{
 
 contains
 
-  !============================================================================
-! <SUBROUTINE NAME="drifters_new">
-!  <OVERVIEW>
-!  Constructor.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-! Will read positions stored in the netCDF file <TT>input_file</TT>.
-! The trajectories will be saved in files <TT>output_file.PE</TT>,
-! one file per PE domain.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_new(self, input_file, output_file, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Opaque data structure.
-!  </INOUT>
-!  <IN NAME="input_file" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!     NetCDF input file name containing initial positions.
-!  </IN>
-!  <IN NAME="output_file" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!     NetCDF output file. Will contain trajectory positions and interpolated fields.
-!  </IN>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!     Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Will read positions stored in the netCDF file <TT>input_file</TT>.
+  !!
+  !>   The trajectories will be saved in files <TT>output_file.PE</TT>,
+  !!   one file per PE domain.
   subroutine drifters_new(self, input_file, output_file, ermesg)
 
-    type(drifters_type) :: self
-    character(len=*), intent(in)  :: input_file
-    character(len=*), intent(in)  :: output_file
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(in)  :: input_file !< NetCDF input file name containing initial positions.
+    character(len=*), intent(in)  :: output_file !< NetCDF output file. Will contain trajectory
+                                                 !! positions and interpolated fields.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer nd, nf, npdim, i
     character(len=6) :: pe_str
@@ -303,28 +273,11 @@ contains
   end subroutine drifters_new
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_del">
-!  <OVERVIEW>
-!   Destructor.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Call this to reclaim memory.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_del(self, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Opaque data structure.
-!  </INOUT>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+
+  !> @brief Destructor, call this to reclaim memory from data used for drifters.
   subroutine drifters_del(self, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer flag
     ermesg = ''
@@ -357,31 +310,12 @@ contains
   end subroutine drifters_del
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_copy_new">
-!  <OVERVIEW>
-!   Copy constructor.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Copy a drifter state into a new state. Note: this will not open new files; this will
-!   copy all members into a new container.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_copy_new(new_instance, old_instance)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="new_instance" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!   New data structure.
-!  </INOUT>
-!  <IN NAME="old_instance" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Old data structure.
-!  </IN>
-! </SUBROUTINE>
-!
-  !============================================================================
+  !> @brief Copy a drifter state into a new state. Note: this will not open new files; this will
+  !!   copy all members into a new container.
   subroutine drifters_copy_new(new_instance, old_instance)
 
-    type(drifters_type), intent(in)    :: old_instance
-    type(drifters_type), intent(inout) :: new_instance
+    type(drifters_type), intent(in)    :: old_instance !< Old data structure.
+    type(drifters_type), intent(inout) :: new_instance !< New data structure.
 
     character(len=MAX_STR_LEN) :: ermesg
 
@@ -450,81 +384,42 @@ contains
   end subroutine drifters_copy_new
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_set_domain">
-!  <OVERVIEW>
-!   Set the compute, data, and global domain boundaries.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   The data domain extends beyond the compute domain and is shared between
-!   two or more PE domains. A particle crossing the compute domain boundary
-!   will trigger a communication with one or more neighboring domains. A particle
-!   leaving the data domain will be removed from the list of particles.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_set_domain(self, &
-!     & xmin_comp, xmax_comp, ymin_comp, ymax_comp, &
-!     & xmin_data, xmax_data, ymin_data, ymax_data, &
-!     & xmin_glob, xmax_glob, ymin_glob, ymax_glob, &
-!     & ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Opaque data structure.
-!  </INOUT>
-!  <IN NAME="xmin_comp" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Min of longitude-like axis on compute domain.
-!  </IN>
-!  <IN NAME="xmax_comp" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Max of longitude-like axis on compute domain.
-!  </IN>
-!  <IN NAME="ymin_comp" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Min of latitude-like axis on compute domain.
-!  </IN>
-!  <IN NAME="ymax_comp" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Max of latitude-like axis on compute domain.
-!  </IN>
-!  <IN NAME="xmin_data" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Min of longitude-like axis on data domain.
-!  </IN>
-!  <IN NAME="xmax_data" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Max of longitude-like axis on data domain.
-!  </IN>
-!  <IN NAME="ymin_data" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Min of latitude-like axis on data domain.
-!  </IN>
-!  <IN NAME="ymax_data" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Max of latitude-like axis on data domain.
-!  </IN>
-!  <IN NAME="xmin_glob" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Min of longitude-like axis on global domain.
-!  </IN>
-!  <IN NAME="xmax_glob" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Max of longitude-like axis on global domain.
-!  </IN>
-!  <IN NAME="ymin_glob" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Min of latitude-like axis on global domain.
-!  </IN>
-!  <IN NAME="ymax_glob" TYPE="real" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Max of latitude-like axis on global domain.
-!  </IN>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Set the compute, data, and global domain boundaries.
+  !! @details The data domain extends beyond the compute domain and is shared between
+  !!   two or more PE domains. A particle crossing the compute domain boundary
+  !!   will trigger a communication with one or more neighboring domains. A particle
+  !!   leaving the data domain will be removed from the list of particles.
+  !!
+  !! <br>Example usage:
+  !! @code{.F90}
+  !!   call   drifters_set_domain(self, &
+  !!     & xmin_comp, xmax_comp, ymin_comp, ymax_comp, &
+  !!     & xmin_data, xmax_data, ymin_data, ymax_data, &
+  !!     & xmin_glob, xmax_glob, ymin_glob, ymax_glob, &
+  !!     & ermesg)
+  !! @endcode
   subroutine drifters_set_domain(self, &
        & xmin_comp, xmax_comp, ymin_comp, ymax_comp, &
        & xmin_data, xmax_data, ymin_data, ymax_data, &
        & xmin_glob, xmax_glob, ymin_glob, ymax_glob, &
        & ermesg)
-    type(drifters_type) :: self
+    type(drifters_type) :: self !< Opaque data structure.
     ! compute domain boundaries
-    real, optional, intent(in) :: xmin_comp, xmax_comp, ymin_comp, ymax_comp
+    real, optional, intent(in) :: xmin_comp !< Min of longitude-like axis on compute domain.
+    real, optional, intent(in) :: xmax_comp !< Max of longitude-like axis on compute domain.
+    real, optional, intent(in) :: ymin_comp !< Min of latitude-like axis on compute domain.
+    real, optional, intent(in) :: ymax_comp !< Max of latitude-like axis on compute domain.
     ! data domain boundaries
-    real, optional, intent(in) :: xmin_data, xmax_data, ymin_data, ymax_data
+    real, optional, intent(in) :: xmin_data !< Min of longitude-like axis on data domain.
+    real, optional, intent(in) :: xmax_data !< Max of longitude-like axis on data domain.
+    real, optional, intent(in) :: ymin_data !< Min of latitude-like axis on data domain.
+    real, optional, intent(in) :: ymax_data !< Max of latitude-like axis on data domain.
     ! global boundaries (only specify those if domain is periodic)
-    real, optional, intent(in) :: xmin_glob, xmax_glob, ymin_glob, ymax_glob
-    character(len=*), intent(out) :: ermesg
+    real, optional, intent(in) :: xmin_glob !< Min of longitude-like axis on global domain.
+    real, optional, intent(in) :: xmax_glob !< Max of longitude-like axis on global domain.
+    real, optional, intent(in) :: ymin_glob !< Min of latitude-like axis on global domain.
+    real, optional, intent(in) :: ymax_glob !< Max of latitude-like axis on global domain.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     ermesg = ''
     if(present(xmin_comp)) self%comm%xcmin = xmin_comp
@@ -550,35 +445,15 @@ contains
   end subroutine drifters_set_domain
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_set_pe_neighbors">
-!  <OVERVIEW>
-!   Given an MPP based deomposition, set the PE numbers that are adjacent to this
-!   processor.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   This will allow several PEs to track the trajectories of particles in the
-!   buffer regions.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_set_pe_neighbors(self, domain, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Opaque data structure.
-!  </INOUT>
-!  <INOUT NAME="domain" TYPE="" DIM="SCALAR" UNITS="" DEFAULT="">
-!   MPP domain.
-!  </INOUT>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Given an MPP based deomposition, set the PE numbers that are adjacent to this
+  !!   processor.
+  !!
+  !> This will allow several PEs to track the trajectories of particles in the buffer regions.
   subroutine drifters_set_pe_neighbors(self, domain, ermesg)
 
-    type(drifters_type) :: self
-    _TYPE_DOMAIN2D      :: domain
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    _TYPE_DOMAIN2D      :: domain !< MPP domain.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     ermesg = ''
 
@@ -589,14 +464,14 @@ contains
   !============================================================================
 #define _DIMS 2
 #define drifters_push_XXX drifters_push_2
-#include "drifters_push.h"
+#include "drifters_push.fh"
 #undef _DIMS
 #undef drifters_push_XXX
 
   !============================================================================
 #define _DIMS 3
 #define drifters_push_XXX drifters_push_3
-#include "drifters_push.h"
+#include "drifters_push.fh"
 #undef _DIMS
 #undef drifters_push_XXX
 
@@ -633,40 +508,24 @@ contains
   !============================================================================
 #define _DIMS 2
 #define drifters_set_field_XXX drifters_set_field_2d
-#include "drifters_set_field.h"
+#include "drifters_set_field.fh"
 #undef _DIMS
 #undef drifters_set_field_XXX
 
   !============================================================================
 #define _DIMS 3
 #define drifters_set_field_XXX drifters_set_field_3d
-#include "drifters_set_field.h"
+#include "drifters_set_field.fh"
 #undef _DIMS
 #undef drifters_set_field_XXX
   !============================================================================
-! <SUBROUTINE NAME="drifters_save">
-!  <OVERVIEW>
-!   Append new positions to NetCDF file.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Use this method to append the new trajectory positions and the interpolated
-!   probe fields to a netCDF file.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_save(self, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Opaque daata structure.
-!  </INOUT>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Append new positions to NetCDF file.
+  !!
+  !> Use this method to append the new trajectory positions and the interpolated
+  !! probe fields to a netCDF file.
   subroutine drifters_save(self, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque daata structure.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer nf, np
 
@@ -681,30 +540,14 @@ contains
 
   end subroutine drifters_save
   !============================================================================
-! <SUBROUTINE NAME="drifters_distribute">
-!  <OVERVIEW>
-!   Distribute particles across PEs.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Use this method after setting the domain boundaries
-!   (<TT>drifters_set_domain</TT>) to spread the particles across PE
-!   domains.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_distribute(self, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!    Opaque handle.
-!  </INOUT>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!    Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+
+  !> @brief Distribute particles across PEs.
+  !!
+  !> Use this method after setting the domain boundaries
+  !! (<TT>drifters_set_domain</TT>) to spread the particles across PE domains.
   subroutine drifters_distribute(self, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque handle.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     real x, y
     integer i, nptot, nd
@@ -733,56 +576,10 @@ contains
   end subroutine drifters_distribute
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_write_restart">
-!  <OVERVIEW>
-!   Write restart file.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!   Gather all the particle positions distributed across PE domains on root PE
-!   and save the data in netCDF file.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_write_restart(self, filename, &
-!     & x1, y1, geolon1, &
-!     & x2, y2, geolat2, &
-!     & root, mycomm, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!    Opaque data structure.
-!  </INOUT>
-!  <IN NAME="filename" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!    Restart file name.
-!  </IN>
-!  <IN NAME="x1" TYPE="real" DIM="" UNITS="" DEFAULT="">
-!    Pseudo-longitude axis supporting longitudes.
-!  </IN>
-!  <INOUT NAME="y1" TYPE="" DIM="" UNITS="" DEFAULT="">
-!    Pseudo-latitude axis supporting longitudes.
-!  </INOUT>
-!  <INOUT NAME="geolon1" TYPE="" DIM="" UNITS="" DEFAULT="">
-!    Longitude array (x1, y1).
-!  </INOUT>
-!  <IN NAME="x2" TYPE="real" DIM="" UNITS="" DEFAULT="">
-!    Pseudo-longitude axis supporting latitudes.
-!  </IN>
-!  <INOUT NAME="y2" TYPE="" DIM="" UNITS="" DEFAULT="">
-!   Pseudo-latitude axis supporting latitudes.
-!  </INOUT>
-!  <INOUT NAME="geolat2" TYPE="" DIM="" UNITS="" DEFAULT="">
-!   Latitudes array (x2, y2)
-!  </INOUT>
-!  <IN NAME="root" TYPE="integer" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Root PE.
-!  </IN>
-!  <IN NAME="mycomm" TYPE="integer" DIM="SCALAR" UNITS="" DEFAULT="">
-!   MPI communicator.
-!  </IN>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!   Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Write restart file for drifters.
+  !!
+  !> Gather all the particle positions distributed
+  !! across PE domains on root PE and save the data in netCDF file.
   subroutine drifters_write_restart(self, filename, &
        & x1, y1, geolon1, &
        & x2, y2, geolat2, &
@@ -790,17 +587,22 @@ contains
     ! gather all positions and ids and save the result in
     ! self%input data structure on PE "root", then write restart file
 
-    type(drifters_type) :: self
-    character(len=*), intent(in)  :: filename
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(in)  :: filename !< Restart file name.
 
     ! if these optional arguments are passed, the positions will
     ! mapped to lon/lat degrees and saved in the file.
-    real, intent(in), optional    :: x1(:), y1(:), geolon1(:,:)
-    real, intent(in), optional    :: x2(:), y2(:), geolat2(:,:)
+    real, intent(in), optional    :: x1(:) !< Pseudo-longitude axis supporting longitudes.
+    real, intent(in), optional    :: y1(:) !< Pseudo-latitude axis supporting longitudes.
+    real, intent(in), optional    :: geolon1(:,:) !< Longitude array (x1, y1).
+    real, intent(in), optional    :: x2(:) !< Pseudo-longitude axis supporting latitudes.
+    real, intent(in), optional    :: y2(:) !< Pseudo-latitude axis supporting latitudes.
+    real, intent(in), optional    :: geolat2(:,:) !< Latitudes array (x2, y2)
 
-    integer, intent(in), optional :: root    ! root pe
-    integer, intent(in), optional :: mycomm  ! MPI communicator
-    character(len=*), intent(out) :: ermesg
+
+    integer, intent(in), optional :: root    !< root pe
+    integer, intent(in), optional :: mycomm  !< MPI communicator
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer :: np
     logical :: do_save_lonlat
@@ -844,58 +646,31 @@ contains
   !============================================================================
 #define _DIMS 2
 #define drifters_compute_k_XXX drifters_computek2d
-#include "drifters_compute_k.h"
+#include "drifters_compute_k.fh"
 #undef _DIMS
 #undef drifters_compute_k_XXX
 
    !============================================================================
 #define _DIMS 3
 #define drifters_compute_k_XXX drifters_computek3d
-#include "drifters_compute_k.h"
+#include "drifters_compute_k.fh"
 #undef _DIMS
 #undef drifters_compute_k_XXX
 
 
  !============================================================================
-! <SUBROUTINE NAME="drifters_set_v_axes">
-!  <OVERVIEW>
-!   Set velocity field axes.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!  Velocity axis components may be located on different grids or cell faces. For instance, zonal (u)
-!  and meridional (v) velcity components are staggered by half a cell size in Arakawa's C and D grids.
-!  This call will set individual axes for each components do as to allow interpolation of the velocity
-!  field on arbitrary positions.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_set_v_axes(self, component, x, y, z, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Opaque data structure.
-!  </INOUT>
-!  <IN NAME="component" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Velocity component: either 'u', 'v', or 'w'.
-!  </IN>
-!  <IN NAME="x" TYPE="real" DIM="" UNITS="" DEFAULT="">
-!  X-axis.
-!  </IN>
-!  <INOUT NAME="y" TYPE="" DIM="" UNITS="" DEFAULT="">
-!  Y-axis.
-!  </INOUT>
-!  <INOUT NAME="z" TYPE="" DIM="" UNITS="" DEFAULT="">
-!  Z-axis.
-!  </INOUT>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Set velocity field axes.
+  !! @details Velocity axis components may be located on different grids or cell faces. For instance, zonal (u)
+  !!  and meridional (v) velcity components are staggered by half a cell size in Arakawa's C and D grids.
+  !!  This call will set individual axes for each components do as to allow interpolation of the velocity
+  !!  field on arbitrary positions.
   subroutine drifters_set_v_axes(self, component, x, y, z, ermesg)
-    type(drifters_type) :: self
-    character(len=*), intent(in)  :: component
-    real, intent(in)              :: x(:), y(:), z(:)
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    character(len=*), intent(in)  :: component !< Velocity component: either 'u', 'v', or 'w'.
+    real, intent(in)              :: x(:) !< X-axis.
+    real, intent(in)              :: y(:) !< Y-axis.
+    real, intent(in)              :: z(:) !< Z-axis.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer ier, nx, ny, nz
 
@@ -964,40 +739,14 @@ contains
   end subroutine drifters_set_v_axes
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_set_domain_bounds">
-!  <OVERVIEW>
-!  Set boundaries of "data" and "compute" domains
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!  Each particle will be tracked sol long is it is located in the data domain.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_set_domain_bounds(self, domain, backoff_x, backoff_y, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Opaque data structure.
-!  </INOUT>
-!  <INOUT NAME="domain" TYPE="" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Instance of Domain2D (see mpp_domain)
-!  </INOUT>
-!  <IN NAME="backoff_x" TYPE="integer" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Data domain is reduced (if backoff_x > 0) by backoff_x nodes at east and west boundaries.
-!  </IN>
-!  <IN NAME="backoff_y" TYPE="integer" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Data domain is reduced (if backoff_y > 0) by backoff_y nodes at north and south boundaries.
-!  </IN>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Set boundaries of "data" and "compute" domains
+  !! @details Each particle will be tracked sol long is it is located in the data domain.
   subroutine drifters_set_domain_bounds(self, domain, backoff_x, backoff_y, ermesg)
-    type(drifters_type) :: self
-    _TYPE_DOMAIN2D      :: domain
-    integer, intent(in) ::  backoff_x ! particles leaves domain when crossing ied-backoff_x
-    integer, intent(in) ::  backoff_y ! particles leaves domain when crossing jed-backoff_y
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque data structure.
+    _TYPE_DOMAIN2D      :: domain !< Instance of Domain2D (see mpp_domain)
+    integer, intent(in) ::  backoff_x !< particles leaves domain when crossing ied-backoff_x
+    integer, intent(in) ::  backoff_y !< particles leaves domain when crossing jed-backoff_y
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     ermesg = ''
 
@@ -1018,72 +767,29 @@ contains
   end subroutine drifters_set_domain_bounds
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_positions2lonlat">
-!  <OVERVIEW>
-!  Interpolates positions onto longitude/latitude grid.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!  In many cases, the integrated positions will not be longitudes  or latitudes. This call
-!  can be ionvoked to recover the longitude/latitude positions from the "logical" positions.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_positions2lonlat(self, positions, &
-!     &                                        x1, y1, geolon1, &
-!     &                                        x2, y2, geolat2, &
-!     &                                        lons, lats, &
-!     &                                        ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Opaque data structure.
-!  </INOUT>
-!  <IN NAME="positions" TYPE="real" DIM="" UNITS="" DEFAULT="">
-!  Logical positions.
-!  </IN>
-!  <IN NAME="x1" TYPE="real" DIM="" UNITS="" DEFAULT="">
-!  X-axis of "geolon1" field.
-!  </IN>
-!  <INOUT NAME="y1" TYPE="" DIM="" UNITS="" DEFAULT="">
-!  Y-axis of "geolon1" field.
-!  </INOUT>
-!  <INOUT NAME="geolon1" TYPE="" DIM="" UNITS="" DEFAULT="">
-!  Longitude field as an array of (x1, y1).
-!  </INOUT>
-!  <IN NAME="x2" TYPE="real" DIM="" UNITS="" DEFAULT="">
-!  X-axis of "geolat2" field.
-!  </IN>
-!  <INOUT NAME="y2" TYPE="" DIM="" UNITS="" DEFAULT="">
-!  Y-axis of "geolat2" field.
-!  </INOUT>
-!  <INOUT NAME="geolat2" TYPE="" DIM="" UNITS="" DEFAULT="">
-!  Latitude field as an array of (x2, y2)
-!  </INOUT>
-!  <OUT NAME="lons" TYPE="real" DIM="" UNITS="" DEFAULT="">
-!  Returned longitudes.
-!  </OUT>
-!  <INOUT NAME="lats" TYPE="" DIM="" UNITS="" DEFAULT="">
-!  Returned latitudes.
-!  </INOUT>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Interpolates positions onto longitude/latitude grid.
+  !! @details In many cases, the integrated positions will not be longitudes  or latitudes. This call
+  !!  can be ionvoked to recover the longitude/latitude positions from the "logical" positions.
   subroutine drifters_positions2lonlat(self, positions, &
        &                                        x1, y1, geolon1, &
        &                                        x2, y2, geolat2, &
        &                                        lons, lats, &
        &                                        ermesg)
 
-    type(drifters_type) :: self
+    type(drifters_type) :: self !< Opaque data structure.
     ! Input positions
-    real, intent(in)    :: positions(:,:)
+    real, intent(in)    :: positions(:,:) !< Logical positions.
     ! Input mesh
-    real, intent(in)    :: x1(:), y1(:), geolon1(:,:) ! geolon1(x1, y1)
-    real, intent(in)    :: x2(:), y2(:), geolat2(:,:) ! geolat2(x2, y2)
+    real, intent(in)    :: x1(:) !< X-axis of "geolon1" field.
+    real, intent(in)    :: y1(:) !< Y-axis of "geolon1" field.
+    real, intent(in)    :: geolon1(:,:) !< Y-axis of "geolon1" field.
+    real, intent(in)    :: x2(:) !< X-axis of "geolat2" field.
+    real, intent(in)    :: y2(:) !< Y-axis of "geolat2" field.
+    real, intent(in)    :: geolat2(:,:) !< Latitude field as an array of (x2, y2)
     ! Output lon/lat
-    real, intent(out)   :: lons(:), lats(:)
-    character(len=*), intent(out) :: ermesg
+    real, intent(out)   :: lons(:) !< Returned longitudes.
+    real, intent(out)   :: lats(:) !< Returned latitudes.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     real    fvals(2**self%core%nd), ts(self%core%nd)
     integer np, ij(2), ip, ier, n1s(2), n2s(2), i, j, iertot
@@ -1156,33 +862,12 @@ contains
   end subroutine drifters_positions2lonlat
 
   !============================================================================
-! <SUBROUTINE NAME="drifters_print_checksums">
-!  <OVERVIEW>
-!  Print Runge-Kutta check sums.
-!  </OVERVIEW>
-!  <DESCRIPTION>
-!  Useful for debugging only.
-!  </DESCRIPTION>
-!  <TEMPLATE>
-!   call   drifters_print_checksums(self, pe, ermesg)
-!
-!  </TEMPLATE>
-!  <INOUT NAME="self" TYPE="drifters_type" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Opaque handle.
-!  </INOUT>
-!  <IN NAME="pe" TYPE="integer" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Processor element.
-!  </IN>
-!  <OUT NAME="ermesg" TYPE="character" DIM="SCALAR" UNITS="" DEFAULT="">
-!  Error message (if any).
-!  </OUT>
-! </SUBROUTINE>
-!
+  !> @brief Print Runge-Kutta check sums. Useful for debugging only.
   subroutine drifters_print_checksums(self, pe, ermesg)
 
-    type(drifters_type) :: self
-    integer, intent(in), optional :: pe
-    character(len=*), intent(out) :: ermesg
+    type(drifters_type) :: self !< Opaque handle.
+    integer, intent(in), optional :: pe !< Processor element.
+    character(len=*), intent(out) :: ermesg !< Error message (if any).
 
     integer, parameter :: i8 = selected_int_kind(13)
     integer(i8) :: mold, chksum_pos, chksum_k1, chksum_k2, chksum_k3, chksum_k4
@@ -1263,5 +948,7 @@ contains
     endif
 
   end subroutine drifters_reset_rk4
-
+#endif
 end module drifters_mod
+!> @}
+! close documentation grouping

@@ -16,9 +16,12 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
 !> @file
+!> @brief Routines to return a given arguments data type as a string.
+!! Provides multiple dimensions for @ref get_data_type_string interface.
 
+!> @addtogroup fms_io_utils_mod
+!> @{
 
 !> @brief Return a string describing the input data's type.
 subroutine get_data_type_string_0d(sdata, type_string)
@@ -27,13 +30,13 @@ subroutine get_data_type_string_0d(sdata, type_string)
   character(len=*), intent(inout) :: type_string !> Data type.
 
   select type(sdata)
-    type is (integer(kind=int32))
+    type is (integer(kind=i4_kind))
       call string_copy(type_string, "int")
-    type is (integer(kind=int64))
-      call string_copy(type_string, "int64")
-    type is (real(kind=real32))
+    type is (integer(kind=i8_kind))
+      call string_copy(type_string, "i8_kind")
+    type is (real(kind=r4_kind))
       call string_copy(type_string, "float")
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       call string_copy(type_string, "double")
     type is (character(len=*))
       call string_copy(type_string, "char")
@@ -51,13 +54,13 @@ subroutine get_data_type_string_1d(sdata, type_string)
   character(len=*), intent(inout) :: type_string !> Data type.
 
   select type(sdata)
-    type is (integer(kind=int32))
+    type is (integer(kind=i4_kind))
       call string_copy(type_string, "int")
-    type is (integer(kind=int64))
-      call string_copy(type_string, "int64")
-    type is (real(kind=real32))
+    type is (integer(kind=i8_kind))
+      call string_copy(type_string, "i8_kind")
+    type is (real(kind=r4_kind))
       call string_copy(type_string, "float")
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       call string_copy(type_string, "double")
     type is (character(len=*))
       call string_copy(type_string, "char")
@@ -75,13 +78,13 @@ subroutine get_data_type_string_2d(sdata, type_string)
   character(len=*), intent(inout) :: type_string !> Data type.
 
   select type(sdata)
-    type is (integer(kind=int32))
+    type is (integer(kind=i4_kind))
       call string_copy(type_string, "int")
-    type is (integer(kind=int64))
-      call string_copy(type_string, "int64")
-    type is (real(kind=real32))
+    type is (integer(kind=i8_kind))
+      call string_copy(type_string, "i8_kind")
+    type is (real(kind=r4_kind))
       call string_copy(type_string, "float")
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       call string_copy(type_string, "double")
     type is (character(len=*))
       call string_copy(type_string, "char")
@@ -99,13 +102,13 @@ subroutine get_data_type_string_3d(sdata, type_string)
   character(len=*), intent(inout) :: type_string !> Data type.
 
   select type(sdata)
-    type is (integer(kind=int32))
+    type is (integer(kind=i4_kind))
       call string_copy(type_string, "int")
-    type is (integer(kind=int64))
-      call string_copy(type_string, "int64")
-    type is (real(kind=real32))
+    type is (integer(kind=i8_kind))
+      call string_copy(type_string, "i8_kind")
+    type is (real(kind=r4_kind))
       call string_copy(type_string, "float")
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       call string_copy(type_string, "double")
     type is (character(len=*))
       call string_copy(type_string, "char")
@@ -123,13 +126,13 @@ subroutine get_data_type_string_4d(sdata, type_string)
   character(len=*), intent(inout) :: type_string !> Data type.
 
   select type(sdata)
-    type is (integer(kind=int32))
+    type is (integer(kind=i4_kind))
       call string_copy(type_string, "int")
-    type is (integer(kind=int64))
-      call string_copy(type_string, "int64")
-    type is (real(kind=real32))
+    type is (integer(kind=i8_kind))
+      call string_copy(type_string, "i8_kind")
+    type is (real(kind=r4_kind))
       call string_copy(type_string, "float")
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       call string_copy(type_string, "double")
     type is (character(len=*))
       call string_copy(type_string, "char")
@@ -147,13 +150,13 @@ subroutine get_data_type_string_5d(sdata, type_string)
   character(len=*), intent(inout) :: type_string !> Data type.
 
   select type(sdata)
-    type is (integer(kind=int32))
+    type is (integer(kind=i4_kind))
       call string_copy(type_string, "int")
-    type is (integer(kind=int64))
-      call string_copy(type_string, "int64")
-    type is (real(kind=real32))
+    type is (integer(kind=i8_kind))
+      call string_copy(type_string, "i8_kind")
+    type is (real(kind=r4_kind))
       call string_copy(type_string, "float")
-    type is (real(kind=real64))
+    type is (real(kind=r8_kind))
       call string_copy(type_string, "double")
     type is (character(len=*))
       call string_copy(type_string, "char")
@@ -161,5 +164,4 @@ subroutine get_data_type_string_5d(sdata, type_string)
       call error("unsupported type.")
     end select
 end subroutine get_data_type_string_5d
-
-
+!> @}

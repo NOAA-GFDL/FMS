@@ -16,8 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup mpp_utilities_mod mpp_utilities_mod
+!> @ingroup mpp
+!> @brief Module for utiltity routines to be used in @ref mpp modules
+!!
+!> Currently only holds one routine for finding global min and max
+
+!> @addtogroup mpp_utilities_mod
+!> @{
 module mpp_utilities_mod
 
+implicit none
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -28,44 +37,35 @@ module mpp_utilities_mod
 contains
 
 !#######################################################################
-! <SUBROUTINE NAME="mpp_array_global_min_max">
-!
-! <DESCRIPTION>
-! Compute and return the global min and max of an array
-! and the corresponding lat-lon-depth locations .
-!
-! NOTES:
-! This algorithm works only for an input array that has a unique global
-! max and min location. This is assured by introducing a factor that distinguishes
-! the values of extrema at each processor.
-!
-! Vectorized using maxloc() and minloc() intrinsic functions by
-! Russell.Fiedler@csiro.au (May 2005).
-!
-! Modified by Zhi.Liang@noaa.gov (July 2005)
-!
-! Modified by Niki.Zadeh@noaa.gov (Feb. 2009)
-!
-! </DESCRIPTION>
-!
+!> @brief Compute and return the global min and max of an array
+!! and the corresponding lat-lon-depth locations .
+!!
+!> This algorithm works only for an input array that has a unique global
+!! max and min location. This is assured by introducing a factor that distinguishes
+!! the values of extrema at each processor.
+!!
+!! Vectorized using maxloc() and minloc() intrinsic functions by
+!! Russell.Fiedler@csiro.au (May 2005).
+!!
+!! Modified by Zhi.Liang@noaa.gov (July 2005)
+!!
+!! Modified by Niki.Zadeh@noaa.gov (Feb. 2009)
+!!
 subroutine mpp_array_global_min_max(in_array, tmask,isd,jsd,isc,iec,jsc,jec,nk, g_min, g_max, &
                                     geo_x,geo_y,geo_z, xgmin, ygmin, zgmin, xgmax, ygmax, zgmax)
 
   use mpp_mod,           only: mpp_min, mpp_max, mpp_pe, mpp_sum
 
+  integer,                      intent(in) :: isd,jsd,isc,iec,jsc,jec,nk
   real, dimension(isd:,jsd:,:), intent(in) :: in_array
   real, dimension(isd:,jsd:,:), intent(in) :: tmask
-  integer,                      intent(in) :: isd,jsd,isc,iec,jsc,jec,nk
   real,                         intent(out):: g_min, g_max
   real, dimension(isd:,jsd:),   intent(in) :: geo_x,geo_y
   real, dimension(:),           intent(in) :: geo_z
   real,                         intent(out):: xgmin, ygmin, zgmin, xgmax, ygmax, zgmax
 
-
-
   real    :: tmax, tmin, tmax0, tmin0
   integer :: itmax, jtmax, ktmax, itmin, jtmin, ktmin
-  integer :: igmax, jgmax, kgmax, igmin, jgmin, kgmin
   real    :: fudge
 
   ! arrays to enable vectorization
@@ -153,3 +153,5 @@ end subroutine mpp_array_global_min_max
 
 
 end module mpp_utilities_mod
+!> @}
+! close documentation grouping

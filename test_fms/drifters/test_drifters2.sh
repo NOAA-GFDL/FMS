@@ -25,24 +25,41 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# Copy file for test_drifters_io test.
-cp $top_srcdir/test_fms/drifters/input_base.nml input.nml
+# input.nml for tests
+cat <<_EOF > input.nml
+&drifters_comm_nml
+   nx = 11
+  ny = 21
+  halox = 2
+  haloy = 2
+  u0    = 1.0
+  v0    = 0.0
+  dt    = 0.1
+  nt    = 10
+/
+_EOF
 
 # Run tests.
+test_expect_success "Test drifters IO" '
+  mpirun -n 2 ./test_drifters_io
+'
 
-echo "1: Test_drifters_io"
-run_test test_drifters_io 2
+test_expect_success "Test cloud interpolator" '
+  mpirun -n 2 ./test_cloud_interpolator
+'
 
-echo "2: Test_cloud_interpolator"
-run_test test_cloud_interpolator 2
+test_expect_success "Test drifters comm" '
+  mpirun -n 1 ./test_drifters_comm
+'
 
-echo "3: Test_drifters_comm"
-run_test test_drifters_comm 1
+test_expect_success "Test drifters core" '
+  mpirun -n 2 ./test_drifters_core
+'
 
-echo "4: Test_drifters_core"
-run_test test_drifters_core 2
+test_expect_success "test quicksort" '
+  mpirun -n 2 ./test_quicksort
+'
 
-echo "5: Test_quicksort"
-run_test test_quicksort 2
+test_done

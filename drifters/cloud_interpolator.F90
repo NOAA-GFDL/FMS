@@ -16,12 +16,16 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_CLOUD_INTERPOLATOR -D_F95 cloud_interpolator.F90
-
 #define _FLATTEN(A) reshape((A), (/size((A))/) )
 
+!> @defgroup cloud_interpolator_mod cloud_interpolator_mod
+!> @ingroup drifters
+!! @brief Cloud interpolation routines for use in @ref drifters_mod
+
+!> @addtogroup cloud_interpolator_mod
+!> @{
 MODULE cloud_interpolator_mod
-#include <fms_platform.h>
+#ifdef use_drifters
   implicit none
   private
 
@@ -35,10 +39,14 @@ real, parameter           :: tol = 10.0*epsilon(1.)
 CONTAINS
 
 !...............................................................................
+!> Get expanded list of indices from contracted index
+!> @param Ic contracted index
+!> @param[out] ie(:) expanded list of indices
+!> @param[out] ier error flag, non zero if operation unsuccessful
 pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
-    integer, intent(in)  ::  Ic    ! contacted index
-    integer, intent(out) ::  ie(:) ! expanded list of indices
-    integer, intent(out) ::  ier   ! error flag (0=ok)
+    integer, intent(in)  ::  Ic
+    integer, intent(out) ::  ie(:)
+    integer, intent(out) ::  ier
 
     integer j, nd
 
@@ -58,11 +66,14 @@ pure subroutine cld_ntrp_expand_index(Ic, ie, ier)
   end subroutine cld_ntrp_expand_index
 
 !...............................................................................
-!...............................................................................
+!> Contract list of indices to an single integer
+!> @param ie(:) expanded list of indices
+!> @param[out] Ic contracted index
+!> @param[out] ier error flag, non zero if operation unsuccessful
 pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
-    integer, intent(in) ::  ie(:)  ! expanded list of indices
-    integer, intent(out)  ::  Ic   ! contacted index
-    integer, intent(out) ::  ier   ! error flag (0=ok)
+    integer, intent(in) ::  ie(:)
+    integer, intent(out)  ::  Ic
+    integer, intent(out) ::  ier
 
     integer j, nd
 
@@ -82,11 +93,16 @@ pure subroutine cld_ntrp_contract_indices(ie, Ic, ier)
 
 !...............................................................................
 !...............................................................................
+!> Cloud interpolation for linear cells
+!> @param fvals values at the cell nodes
+!> @param ts normalized [0,1]^nd cell coordinates
+!> @param[out] interpolated value
+!> @param[out] error flag, non zero if unsucessful
 pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
-    real, intent(in) :: fvals(0:)  ! values at the cell nodes
-    real, intent(in) :: ts(:)      ! normalized [0,1]^nd cell coordinates
-    real, intent(out):: f          ! interpolated value
-    integer, intent(out) ::  ier   ! error flag (0=ok)
+    real, intent(in) :: fvals(0:)
+    real, intent(in) :: ts(:)
+    real, intent(out):: f
+    integer, intent(out) ::  ier
 
     integer j, nd, Ic, iflag
     integer ie(size(fvals))
@@ -114,10 +130,10 @@ pure subroutine cld_ntrp_linear_cell_interp(fvals, ts, f, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_locate_cell(axis, x, index, ier)
-    real, intent(in)     :: axis(:) ! axis
-    real, intent(in)     :: x       ! abscissae
-    integer, intent(out) :: index   ! lower-left corner index
-    integer, intent(out) ::  ier    ! error flag (0=ok)
+    real, intent(in)     :: axis(:) !< axis
+    real, intent(in)     :: x       !< abscissae
+    integer, intent(out) :: index   !< lower-left corner index
+    integer, intent(out) ::  ier    !< error flag (0=ok)
 
     logical down
     integer n, index1, is
@@ -201,10 +217,10 @@ pure subroutine cld_ntrp_locate_cell(axis, x, index, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_get_flat_index(nsizes, indices, flat_index, ier)
-    integer, intent(in)  :: nsizes(:)  ! size of array along each axis
-    integer, intent(in)  :: indices(:) ! cell indices
-    integer, intent(out) :: flat_index ! index into flattened array
-    integer, intent(out) ::  ier       ! error flag (0=ok)
+    integer, intent(in)  :: nsizes(:)  !< size of array along each axis
+    integer, intent(in)  :: indices(:) !< cell indices
+    integer, intent(out) :: flat_index !< index into flattened array
+    integer, intent(out) ::  ier       !< error flag (0=ok)
 
     integer nd, id
 
@@ -228,11 +244,11 @@ pure subroutine cld_ntrp_get_flat_index(nsizes, indices, flat_index, ier)
 !...............................................................................
 !...............................................................................
 pure subroutine cld_ntrp_get_cell_values(nsizes, fnodes, indices, fvals, ier)
-    integer, intent(in)  :: nsizes(:)  ! size of fnodes along each axis
-    real, intent(in)     :: fnodes(:)  ! flattened array of node values
-    integer, intent(in)  :: indices(:) ! cell indices
-    real, intent(out)    :: fvals(0:)  ! returned array values in the cell
-    integer, intent(out) ::  ier       ! error flag (0=ok)
+    integer, intent(in)  :: nsizes(:)  !< size of fnodes along each axis
+    real, intent(in)     :: fnodes(:)  !< flattened array of node values
+    integer, intent(in)  :: indices(:) !< cell indices
+    real, intent(out)    :: fvals(0:)  !< returned array values in the cell
+    integer, intent(out) ::  ier       !< error flag (0=ok)
 
     integer id, nt, nd, flat_index, Ic, iflag
     integer, dimension(size(nsizes)) :: cell_indices, node_indices
@@ -269,5 +285,8 @@ pure subroutine cld_ntrp_get_cell_values(nsizes, fnodes, indices, fvals, ier)
 
   end subroutine cld_ntrp_get_cell_values
 
+#endif
 end MODULE cloud_interpolator_mod
 !===============================================================================
+!> @}
+! close documentation grouping

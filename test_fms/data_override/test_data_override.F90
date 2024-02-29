@@ -44,18 +44,22 @@ program test
   ! Input data and path_names file for this program is in:
   ! /archive/pjp/unit_tests/test_data_override/lima/exp1
  use           mpp_mod, only: input_nml_file, stdout, mpp_chksum
- use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, mpp_define_layout
- use           fms_mod, only: fms_init, fms_end, mpp_npes, file_exist, open_namelist_file, check_nml_error, close_file
- use           fms_mod, only: error_mesg, FATAL, file_exist, field_exist, field_size
+ use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
+                           &  mpp_define_layout
+ use           fms_mod, only: fms_init, fms_end, mpp_npes, check_nml_error, error_mesg, FATAL
+#ifdef use_deprecated_io
+ use           fms_mod, only:   field_exist, field_size, file_exist
+#endif
  use  fms_affinity_mod, only: fms_affinity_set
- use        fms_io_mod, only: read_data, fms_io_exit
+ use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file
  use     constants_mod, only: constants_init, pi
- use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), set_time, print_time
+ use  time_manager_mod, only: time_type, set_calendar_type, set_date, NOLEAP, JULIAN, operator(+), &
+                              set_time, print_time
  use  diag_manager_mod, only: diag_manager_init, diag_manager_end, register_static_field, register_diag_field
  use  diag_manager_mod, only: send_data, diag_axis_init
  use data_override_mod, only: data_override_init, data_override, data_override_UG
   use mpp_mod,         only : FATAL, WARNING, MPP_DEBUG, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
-  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_node, mpp_root_pe, mpp_error, mpp_set_warn_level
+  use mpp_mod,         only : mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_set_warn_level
   use mpp_mod,         only : mpp_declare_pelist, mpp_set_current_pelist, mpp_sync, mpp_sync_self
   use mpp_mod,         only : mpp_clock_begin, mpp_clock_end, mpp_clock_id
   use mpp_mod,         only : mpp_init, mpp_exit, mpp_chksum, stdout, stderr
@@ -87,37 +91,40 @@ program test
   use mpp_domains_mod, only : mpp_get_UG_compute_domain, mpp_pass_SG_to_UG, mpp_pass_UG_to_SG
   use mpp_domains_mod, only : mpp_get_ug_global_domain, mpp_global_field_ug
   use mpp_memutils_mod, only : mpp_memuse_begin, mpp_memuse_end
-
-#include "../../include/fms_platform.h"
+  use platform_mod
 
  implicit none
 
- integer                           :: stdoutunit
- integer                           :: num_threads = 1
- integer                           :: omp_get_num_threads
- integer                           :: isw, iew, jsw, jew
- integer, allocatable              :: is_win(:), js_win(:)
- integer                           :: nx_dom, ny_dom, nx_win, ny_win
- type(domain2d)                    :: Domain
- integer                           :: nlon, nlat, siz(4)
- real, allocatable, dimension(:)   :: x, y
- real, allocatable, dimension(:,:) :: lon, lat
- real, allocatable, dimension(:,:) :: sst, ice
- integer                           :: id_x, id_y, id_lon, id_lat, id_sst, id_ice
- integer                           :: i, j, is, ie, js, je, unit, io, ierr, n
- real                              :: rad_to_deg
- character(len=36)                 :: message
- type(time_type)                   :: Time
- logical                           :: used
- logical, allocatable              :: ov_sst(:), ov_ice(:)
- integer, dimension(2)             :: layout = (/0,0/)
- character(len=256)                :: solo_mosaic_file, tile_file
- character(len=128)                :: grid_file   = "INPUT/grid_spec.nc"
- integer                           :: window(2) = (/1,1/)
- integer                           :: nthreads=1
- integer                           :: nwindows
- integer                           :: nx_cubic=90, ny_cubic=90, nx_latlon=90, ny_latlon=90
- integer                           :: test_num=1 !* 1 for unstruct cubic grid, 2 for unstruct latlon-grid
+ integer, parameter                       :: lkind = DO_TEST_KIND_
+ integer                                  :: stdoutunit
+ integer                                  :: num_threads = 1
+ integer                                  :: isw, iew, jsw, jew
+ integer, allocatable                     :: is_win(:), js_win(:)
+ integer                                  :: nx_dom, ny_dom, nx_win, ny_win
+ type(domain2d)                           :: Domain
+ integer                                  :: nlon, nlat, siz(2)
+ real(lkind), allocatable, dimension(:)   :: x, y
+ real(lkind), allocatable, dimension(:,:) :: lon, lat
+ real(lkind), allocatable, dimension(:,:) :: sst, ice
+ integer                                  :: id_x, id_y, id_lon, id_lat, id_sst, id_ice
+ integer                                  :: i, j, is, ie, js, je, io, ierr, n
+ real(lkind)                              :: rad_to_deg
+ character(len=36)                        :: message
+ type(time_type)                          :: Time
+ logical                                  :: used
+ logical, allocatable                     :: ov_sst(:), ov_ice(:)
+ integer, dimension(2)                    :: layout = (/0,0/)
+ character(len=256)                       :: solo_mosaic_file, tile_file
+ character(len=128)                       :: grid_file   = "INPUT/grid_spec.nc"
+ integer                                  :: window(2) = (/1,1/)
+ integer                                  :: nthreads=1
+ integer                                  :: nwindows
+ integer                                  :: nx_cubic=90, ny_cubic=90, nx_latlon=90, ny_latlon=90
+ integer                                  :: test_num=1 !> 1 for unstruct cubic grid, 2 for unstruct
+                                                        !! latlon-grid
+
+ type(FmsNetcdfFile_t) :: fileobj_grid, fileobj_solo_mosaic, fileobj_tile
+
  namelist / test_data_override_nml / layout, window, nthreads, nx_cubic, ny_cubic, nx_latlon, ny_latlon, test_num
 
  call fms_init
@@ -125,39 +132,34 @@ program test
  call set_calendar_type(NOLEAP)
  call diag_manager_init
 
+ call mpp_domains_set_stack_size(800000)
+
  rad_to_deg = 180./pi
 
-#ifdef INTERNAL_FILE_NML
-      read (input_nml_file, test_data_override_nml, iostat=io)
-      ierr = check_nml_error(io, 'test_data_override_nml')
-#else
- if (file_exist('input.nml')) then
-   unit = open_namelist_file ( )
-   ierr=1
-   do while (ierr /= 0)
-     read(unit, nml=test_data_override_nml, iostat=io, end=10)
-          ierr = check_nml_error(io, 'test_data_override_nml')
-   enddo
-10 call close_file (unit)
- endif
-#endif
+ read (input_nml_file, test_data_override_nml, iostat=io)
+ ierr = check_nml_error(io, 'test_data_override_nml')
 
- if(field_exist(grid_file, "x_T" ) ) then
-    call field_size(grid_file, 'x_T', siz)
+ if (.not. open_file(fileobj_grid, grid_file, "read")) call error_mesg('test_data_override', &
+ 'The grid_file does not exist', FATAL)
+ if(variable_exists(fileobj_grid, "x_T" ) ) then
+    call get_variable_size(fileobj_grid, 'x_T', siz)
     nlon = siz(1)
     nlat = siz(2)
- else if(field_exist(grid_file, "geolon_t" ) ) then
-    call field_size(grid_file, 'geolon_t', siz)
+ else if(variable_exists(fileobj_grid, "geolon_t" ) ) then
+    call get_variable_size(fileobj_grid, 'geolon_t', siz)
     nlon = siz(1)
     nlat = siz(2)
- else if (field_exist(grid_file, "ocn_mosaic_file" )) then
-    call read_data(grid_file, 'ocn_mosaic_file', solo_mosaic_file)
+ else if (variable_exists(fileobj_grid, "ocn_mosaic_file" )) then
+    call read_data(fileobj_grid, 'ocn_mosaic_file', solo_mosaic_file)
     solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
-    call field_size(solo_mosaic_file, 'gridfiles', siz)
-    if( siz(2) .NE. 1) call error_mesg('test_data_override', 'only support single tile mosaic, contact developer', FATAL)
-    call read_data(solo_mosaic_file, 'gridfiles', tile_file)
+    if (.not. open_file(fileobj_solo_mosaic, solo_mosaic_file, "read")) call error_mesg('test_data_override', &
+       'The solo_mosaic fike does not exist', FATAL)
+    call get_variable_size(fileobj_solo_mosaic, 'gridfiles', siz)
+    call read_data(fileobj_solo_mosaic, 'gridfiles', tile_file)
     tile_file = 'INPUT/'//trim(tile_file)
-    call field_size(tile_file, 'area', siz)
+    if(.not. open_file(fileobj_tile, tile_file, "read")) call error_mesg('test_data_override', &
+       'The tile_file does not exist', FATAL)
+    call get_variable_size(fileobj_tile, 'area', siz)
     if(mod(siz(1),2) .NE. 0 .OR. mod(siz(2),2) .NE. 0 ) call error_mesg('test_data_override', &
         "test_data_override: supergrid size can not be divided by 2", FATAL)
     nlon = siz(1)/2
@@ -173,8 +175,8 @@ program test
 
  call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, name='test_data_override')
  call mpp_define_io_domain(Domain, (/1,1/))
- call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
- call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain)
+ call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain, mode=lkind)
+ call data_override_init(Ice_domain_in=Domain, Ocean_domain_in=Domain, mode=lkind)
  call mpp_get_compute_domain(Domain, is, ie, js, je)
  call get_grid
 
@@ -219,9 +221,9 @@ if( mod( ny_dom, window(2) ) .NE. 0 ) call error_mesg('test_data_override', &
 
 nwindows = window(1)*window(2)
 !$ call omp_set_num_threads(nthreads)
-!$OMP PARALLEL
-!$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
-!$OMP END PARALLEL
+!!$OMP PARALLEL
+!!$ call fms_affinity_set("test_data_override", .FALSE., omp_get_num_threads() )
+!!$OMP END PARALLEL
 
 nx_win = nx_dom/window(1)
 ny_win = ny_dom/window(2)
@@ -316,41 +318,43 @@ enddo
 !-------------------------------------------------------------------------------------------------------
 
  call diag_manager_end(Time)
- call fms_io_exit
  call fms_end
 
 contains
 
-!=================================================================================================================================
+!====================================================================================================================
  subroutine get_grid
-   real, allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
-   real, allocatable, dimension(:,:)   :: lon_global, lat_global
-   integer, dimension(4)  :: siz
-   character(len=128) :: message
+   real(lkind), allocatable, dimension(:,:,:) :: lon_vert_glo, lat_vert_glo
+   real(lkind), allocatable, dimension(:,:)   :: lon_global, lat_global
+   integer, dimension(2)                      :: siz
+   character(len=128)                         :: message
 
+   type(FmsNetcdfFile_t) :: fileobj_grid, fileobj_solo_mosaic, fileobj_tile
 
-   if(field_exist(grid_file, 'x_T')) then
-      call field_size(grid_file, 'x_T', siz)
+   if (.not. open_file(fileobj_grid, grid_file, "read")) call error_mesg('test_data_override', &
+   'The grid_file does not exist', FATAL)
+   if(variable_exists(fileobj_grid, 'x_T')) then
+      call get_variable_size(fileobj_grid, 'x_T', siz)
       if(siz(1) /= nlon .or. siz(2) /= nlat) then
          write(message,'(a,2i4)') 'x_T is wrong shape. shape(x_T)=',siz(1:2)
          call error_mesg('test_data_override', trim(message), FATAL)
       endif
       allocate(lon_vert_glo(nlon,nlat,4), lat_vert_glo(nlon,nlat,4) )
       allocate(lon_global  (nlon,nlat  ), lat_global  (nlon,nlat  ) )
-      call read_data(trim(grid_file), 'x_vert_T', lon_vert_glo, no_domain=.true.)
-      call read_data(trim(grid_file), 'y_vert_T', lat_vert_glo, no_domain=.true.)
+      call read_data(fileobj_grid, 'x_vert_T', lon_vert_glo)
+      call read_data(fileobj_grid, 'y_vert_T', lat_vert_glo)
       lon_global(:,:)  = (lon_vert_glo(:,:,1) + lon_vert_glo(:,:,2) + lon_vert_glo(:,:,3) + lon_vert_glo(:,:,4))*0.25
       lat_global(:,:) =  (lat_vert_glo(:,:,1) + lat_vert_glo(:,:,2) + lat_vert_glo(:,:,3) + lat_vert_glo(:,:,4))*0.25
-   else  if(field_exist(grid_file, "geolon_t" ) ) then
-      call field_size(grid_file, 'geolon_vert_t', siz)
+   else  if(variable_exists(fileobj_grid, "geolon_t" ) ) then
+      call get_variable_size(fileobj_grid, 'geolon_vert_t', siz)
       if(siz(1) /= nlon+1 .or. siz(2) /= nlat+1) then
          write(message,'(a,2i4)') 'geolon_vert_t is wrong shape. shape(geolon_vert_t)=',siz(1:2)
          call error_mesg('test_data_override', trim(message), FATAL)
       endif
       allocate(lon_vert_glo(nlon+1,nlat+1,1), lat_vert_glo(nlon+1,nlat+1,1))
       allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-      call read_data(trim(grid_file), 'geolon_vert_t', lon_vert_glo, no_domain=.true.)
-      call read_data(trim(grid_file), 'geolat_vert_t', lat_vert_glo, no_domain=.true.)
+      call read_data(fileobj_grid, 'geolon_vert_t', lon_vert_glo)
+      call read_data(fileobj_grid, 'geolat_vert_t', lat_vert_glo)
 
       do i = 1, nlon
          do j = 1, nlat
@@ -360,16 +364,18 @@ contains
                  lat_vert_glo(i+1,j+1,1) + lat_vert_glo(i,j+1,1))*0.25
          enddo
       enddo
-   else if( field_exist(grid_file, "ocn_mosaic_file") ) then ! reading from mosaic file
-      call field_size(tile_file, 'area', siz)
+   else if( variable_exists(fileobj_grid, "ocn_mosaic_file") ) then ! reading from mosaic file
+      if(.not. open_file(fileobj_tile, tile_file, "read")) call error_mesg('test_data_override', &
+      'The tile_file does not exist', FATAL)
+      call get_variable_size(fileobj_tile, 'area', siz)
       if(siz(1) /= nlon*2 .or. siz(2) /= nlat*2) then
          write(message,'(a,2i4)') 'area is wrong shape. shape(area)=',siz(1:2)
          call error_mesg('test_data_override', trim(message), FATAL)
       endif
       allocate(lon_vert_glo(siz(1)+1,siz(2)+1,1), lat_vert_glo(siz(1)+1,siz(2)+1,1))
       allocate(lon_global  (nlon,  nlat    ), lat_global  (nlon,  nlat    ))
-      call read_data( tile_file, 'x', lon_vert_glo, no_domain=.true.)
-      call read_data( tile_file, 'y', lat_vert_glo, no_domain=.true.)
+      call read_data(fileobj_tile, 'x', lon_vert_glo)
+      call read_data(fileobj_tile, 'y', lat_vert_glo)
       do j = 1, nlat
          do i = 1, nlon
             lon_global(i,j) = lon_vert_glo(i*2,j*2,1)
@@ -396,7 +402,6 @@ contains
 
   integer :: pe, npes
   integer :: nx, ny, nz=40, stackmax=4000000
-  integer :: unit=7
   integer :: stdunit = 6
   logical :: debug=.FALSE., opened
 
@@ -416,14 +421,14 @@ contains
     integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer        :: ism, iem, jsm, jem, lsg, leg
 
-    integer, allocatable, dimension(:)       :: pe_start, pe_end, npts_tile, grid_index, ntiles_grid
-    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
-    real,    allocatable, dimension(:,:)     :: x1, x2, g1, g2
-    real,    allocatable, dimension(:,:,:)   :: a1, a2, gdata
-    real,    allocatable, dimension(:,:)     :: rmask
-    real,    allocatable, dimension(:)       :: frac_crit
-    logical, allocatable, dimension(:,:,:)   :: lmask,msk
-    integer, allocatable, dimension(:)       :: isl, iel, jsl, jel
+    integer, allocatable, dimension(:)            :: pe_start, pe_end, npts_tile, grid_index, ntiles_grid
+    integer, allocatable, dimension(:,:)          :: layout2D, global_indices
+    real(lkind),    allocatable, dimension(:,:)   :: x1, x2, g1, g2
+    real(lkind),    allocatable, dimension(:,:,:) :: a1, a2, gdata
+    real(lkind),    allocatable, dimension(:,:)   :: rmask
+    real(lkind),    allocatable, dimension(:)     :: frac_crit
+    logical, allocatable, dimension(:,:,:)        :: lmask,msk
+    integer, allocatable, dimension(:)            :: isl, iel, jsl, jel
     character(len=3)   :: text
     integer            :: tile
     integer            :: ntotal_land, istart, iend, pos
@@ -455,7 +460,8 @@ contains
           write(outunit,*)'NOTE from test_unstruct_update ==> For Mosaic "', trim(type), &
                '", each tile will be distributed over ', npes_per_tile, ' processors.'
        else
-          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          call mpp_error(NOTE,'test_unstruct_update: npes should be multiple of ntiles No test is done for '// &
+                         & trim(type))
           return
        endif
        if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
@@ -547,7 +553,8 @@ contains
     allocate(ntiles_grid(ntotal_land))
     ntiles_grid = 1
    !--- define the unstructured grid domain
-    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, name="LAND unstruct")
+    call mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, ntiles_grid, mpp_npes(), 1, grid_index, &
+                                   &  name="LAND unstruct")
     call mpp_get_UG_compute_domain(UG_domain, istart, iend)
 
     !--- figure out lmask according to grid_index
@@ -572,7 +579,7 @@ contains
        enddo
     enddo
     !First override the test SG data from file/field
-    call data_override_init(Land_domain_in=SG_domain)
+    call data_override_init(Land_domain_in=SG_domain, mode=lkind)
     call data_override('LND','sst_obs',a1(:,:,1),Time)
 
     !Create the test UG data
@@ -589,7 +596,7 @@ contains
     !--- fill the value of x2
 
     !Now override the test UG data from the same file/field
-    call data_override_init(Land_domainUG_in=UG_domain)
+    call data_override_init(Land_domainUG_in=UG_domain, mode=lkind)
     call data_override_UG('LND','sst_obs',x2(:,1),Time)
 
     !Ensure you get the same UG data from the SG data
@@ -616,7 +623,7 @@ contains
 !    enddo
 
     !First override the test SG data from file/field
-    call data_override_init(Land_domain_in=SG_domain)
+    call data_override_init(Land_domain_in=SG_domain, mode=lkind)
     call data_override('LND','sst_obs',a1,Time)
 
     a2 = -999
@@ -647,7 +654,7 @@ contains
  !   enddo
 
     !Now override the test UG data from the same file/field
-    call data_override_init(Land_domainUG_in=UG_domain)
+    call data_override_init(Land_domainUG_in=UG_domain, mode=lkind)
     call data_override_UG('LND','sst_obs',x2,Time)
 
     !Ensure you get the same UG data from the SG data
@@ -662,10 +669,10 @@ contains
   end subroutine test_unstruct_grid
 
   subroutine compare_checksums( a, b, string )
-    real, intent(in), dimension(:,:,:) :: a, b
-    character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
-    integer :: i, j, k,pe
+    real(lkind), intent(in), dimension(:,:,:) :: a, b
+    character(len=*), intent(in)              :: string
+    integer(i8_kind)                          :: sum1, sum2
+    integer                                   :: i, j, k,pe
 
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.
     ! mpp_sync()
@@ -707,10 +714,10 @@ contains
 
   !###########################################################################
   subroutine compare_checksums_2D( a, b, string )
-    real, intent(in), dimension(:,:) :: a, b
-    character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
-    integer :: i, j,pe
+    real(lkind), intent(in), dimension(:,:) :: a, b
+    character(len=*), intent(in)            :: string
+    integer(i8_kind)                        :: sum1, sum2
+    integer                                 :: i, j,pe
 
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.
     ! mpp_sync()
@@ -756,7 +763,7 @@ contains
     integer, dimension(12)        :: istart1, iend1, jstart1, jend1, tile1
     integer, dimension(12)        :: istart2, iend2, jstart2, jend2, tile2
     integer                       :: ntiles, num_contact, msize(2)
-  integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
+    integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
 
 
     ntiles = 6
@@ -833,5 +840,5 @@ contains
 
   end subroutine define_cubic_mosaic
 
-!=================================================================================================================================
+!====================================================================================================================
  end program test

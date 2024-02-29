@@ -19,16 +19,38 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/axis_utils directory.
-
-# Ed Hartnett 11/26/19
+# Copyright 2021 Seth Underwood
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# Copy and rename namelist file.
-cp $top_srcdir/test_fms/axis_utils/input_base.nml input.nml
+# Prepare the directory to run the tests.
+touch input.nml
 
-# Run the test.
-run_test test_axis_utils 2 skip
+TESTS_SUCCESS='--get-axis-modulo --get-axis-modulo-times --get-axis-cart --lon-in-range --frac-index --nearest-index-increasing --nearest-index-decreasing --axis-edges-increasing --axis_edges-decreasing --tranlon --interp-1d-1d --interp-1d-2d --interp-1d-3d'
+TESTS_FAIL='--frac-index-fail --nearest-index-fail'
+
+# TODO: Enable these tests after tranlon's memory corruption bug is fixed.
+SKIP_TESTS="test_axis_utils2.19 test_axis_utils2.20"
+
+# Run the tests
+
+for t in $TESTS_SUCCESS
+do
+  r4cmd="./test_axis_utils_r4 $t"
+  r8cmd="./test_axis_utils_r8 $t"
+
+  test_expect_success "Testing axis utils: $r4cmd" "mpirun -n 1 $r4cmd"
+  test_expect_success "Testing axis utils: $r8cmd" "mpirun -n 1 $r8cmd"
+done
+
+for t in $TESTS_FAIL
+do
+  r4cmd="./test_axis_utils_r4 $t"
+  r8cmd="./test_axis_utils_r8 $t"
+
+  test_expect_failure "Testing axis utils: $r4cmd" "mpirun -n 1 $r4cmd"
+  test_expect_failure "Testing axis utils: $r8cmd" "mpirun -n 1 $r8cmd"
+done
+
+test_done

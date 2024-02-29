@@ -25,11 +25,39 @@
 # Ed Hartnett 11/29/19
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
+
+# Tests to skip if input files not present
+if test -z "$test_input_path" ; then
+  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
+else
+  rm -rf INPUT && mkdir INPUT
+  cp $test_input_path/exchange/INPUT/* INPUT
+fi
 
 # Copy file for test.
-cp $top_srcdir/test_fms/exchange/input_base.nml input.nml
+cat <<_EOF > input.nml
+&xgrid_nml
+  interp_method = 'second_order'
+  make_exchange_reproduce=.true.
+/
 
-# This test is skipped in the bats file.
-#cp -r $top_srcdir/test_fms/exchange/INPUT INPUT
-run_test test_xgrid 2 skip
+&xgrid_test_nml
+  test_unstruct = .false.
+  atm_layout=2,2
+  lnd_layout= 2,2
+  ice_layout=12,3
+  nk_lnd = 14
+  nk_ice = 6
+  atm_field_name = 'depth'
+  test_unstruct = .true.
+/
+_EOF
+
+test_expect_success "Test exchange grid" '
+  mpirun -n 12 ./test_xgrid
+'
+
+rm -rf INPUT *.nc # remove any leftover io files to save space
+
+test_done

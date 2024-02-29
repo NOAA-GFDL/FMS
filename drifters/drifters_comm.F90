@@ -18,8 +18,12 @@
 !***********************************************************************
 #include "fms_switches.h"
 
+!> @defgroup drifters_comm_mod drifters_comm_mod
+!> @ingroup drifters
+!> @brief Routines and types to update drifter positions across processor domains
+
 module drifters_comm_mod
-#include <fms_platform.h>
+#ifdef use_drifters
 
 #ifdef _SERIAL
 
@@ -51,29 +55,43 @@ module drifters_comm_mod
   public :: drifters_comm_type, drifters_comm_new, drifters_comm_del, drifters_comm_set_pe_neighbors
   public :: drifters_comm_set_domain, drifters_comm_update, drifters_comm_gather
 
-  type drifters_comm_type
-     ! compute domain
-     real           :: xcmin, xcmax
-     real           :: ycmin, ycmax
-     ! data domain
-     real           :: xdmin, xdmax
-     real           :: ydmin, ydmax
-     ! global valid min/max
-     real           :: xgmin, xgmax
-     real           :: ygmin, ygmax
-     ! x/y period (can be be nearly infinite)
-     logical        :: xperiodic, yperiodic
-     ! neighbor domains
-     integer        :: pe_N, pe_S, pe_E, pe_W, pe_NE, pe_SE, pe_SW, pe_NW
-     ! starting/ending pe, set this to a value /= 0 if running concurrently
-     integer        :: pe_beg, pe_end
+  !> Type for drifter communication between PE's
+  !> @ingroup drifters_comm_mod
+  type :: drifters_comm_type
+     real           :: xcmin !< compute domain
+     real           :: xcmax !< compute domain
+     real           :: ycmin !< compute domain
+     real           :: ycmax !< compute domain
+     real           :: xdmin !< data domain
+     real           :: xdmax !< data domain
+     real           :: ydmin !< data domain
+     real           :: ydmax !< data domain
+     real           :: xgmin !< global valid min/max
+     real           :: xgmax !< global valid min/max
+     real           :: ygmin !< global valid min/max
+     real           :: ygmax !< global valid min/max
+     logical        :: xperiodic !< x/y period (can be be nearly infinite)
+     logical        :: yperiodic !< x/y period (can be be nearly infinite)
+     integer        :: pe_N !< neighbor domains
+     integer        :: pe_S !< neighbor domains
+     integer        :: pe_E !< neighbor domains
+     integer        :: pe_W !< neighbor domains
+     integer        :: pe_NE !< neighbor domains
+     integer        :: pe_SE !< neighbor domains
+     integer        :: pe_SW !< neighbor domains
+     integer        :: pe_NW !< neighbor domains
+     integer        :: pe_beg !< starting/ending pe, set this to a value /= 0 if running concurrently
+     integer        :: pe_end !< starting/ending pe, set this to a value /= 0 if running concurrently
   end type drifters_comm_type
 
 contains
 
+!> @addtogroup drifters_comm_mod
+!> @{
 !===============================================================================
+  !> @brief Initializes default values for @ref drifters_comm_type in self
   subroutine drifters_comm_new(self)
-    type(drifters_comm_type)   :: self
+    type(drifters_comm_type)   :: self !< A new @ref drifters_comm_type
 
     self%xcmin = -huge(1.); self%xcmax = +huge(1.)
     self%ycmin = -huge(1.); self%ycmax = +huge(1.)
@@ -102,8 +120,9 @@ contains
   end subroutine drifters_comm_new
 
 !===============================================================================
+  !> @brief Reset data in a given @ref drifters_comm_type to defaults
   subroutine drifters_comm_del(self)
-    type(drifters_comm_type)   :: self
+    type(drifters_comm_type)   :: self !< A @ref drifters_comm_type to reset
 
     ! nothing to deallocate
     call drifters_comm_new(self)
@@ -111,6 +130,7 @@ contains
   end subroutine drifters_comm_del
 
 !===============================================================================
+  !> @brief Set data domain bounds.
   subroutine drifters_comm_set_data_bounds(self, xmin, ymin, xmax, ymax)
     ! Set data domain bounds.
     type(drifters_comm_type)   :: self
@@ -124,6 +144,7 @@ contains
   end subroutine drifters_comm_set_data_bounds
 
 !===============================================================================
+  !> @brief Set compute domain bounds.
   subroutine drifters_comm_set_comp_bounds(self, xmin, ymin, xmax, ymax)
     ! Set compute domain bounds.
     type(drifters_comm_type)   :: self
@@ -137,10 +158,11 @@ contains
   end subroutine drifters_comm_set_comp_bounds
 
 !===============================================================================
+  !> @brief Set neighboring pe numbers.
   subroutine drifters_comm_set_pe_neighbors(self, domain)
     ! Set neighboring pe numbers.
-    type(drifters_comm_type)   :: self
-    _TYPE_DOMAIN2D, intent(inout) :: domain
+    type(drifters_comm_type)   :: self !< Drifters communication type to set pe numbers for
+    _TYPE_DOMAIN2D, intent(inout) :: domain !< domain to get neighboring PE's from
 
 #ifndef _SERIAL
 ! parallel code
@@ -203,18 +225,29 @@ contains
   end subroutine drifters_comm_set_pe_neighbors
 
 !===============================================================================
+  !> @brief Set boundaries of domain and compute neighbors. This method can be called
+  !!   multiple times; the data domain will just be the intersection (overlap) of
+  !!   all domains (e.g domain_u, domain_v, etc).
   subroutine drifters_comm_set_domain(self, domain, x, y, backoff_x, backoff_y)
     ! Set boundaries of domain and compute neighbors. This method can be called
     ! multiple times; the data domain will just be the intersection (overlap) of
     ! all domains (e.g domain_u, domain_v, etc).
     type(drifters_comm_type)   :: self
     _TYPE_DOMAIN2D, intent(inout) :: domain
-    real, intent(in)           :: x(:), y(:)           ! global axes
-    integer, intent(in)        :: backoff_x, backoff_y ! >=0, data domain is reduced by "backoff_x,y" indices in x, resp. y
+    real, intent(in)           :: x(:)           !< global axes
+    real, intent(in)           :: y(:)           !< global axes
+    integer, intent(in)        :: backoff_x !< >=0, data domain is reduced by "backoff_x,y" indices in x, resp. y
+    integer, intent(in)        :: backoff_y !< >=0, data domain is reduced by "backoff_x,y" indices in x, resp. y
 
     ! compute/data domain start/end indices
-    integer isc, iec, jsc, jec
-    integer isd, ied, jsd, jed
+    integer :: isc !< compute domain start/end indices
+    integer :: iec !< compute domain start/end indices
+    integer :: jsc !< compute domain start/end indices
+    integer :: jec !< compute domain start/end indices
+    integer :: isd !< data domain start/end indices
+    integer :: ied !< data domain start/end indices
+    integer :: jsd !< data domain start/end indices
+    integer :: jed !< data domain start/end indices
     integer nx, ny, hx, hy, bckf_x, bckf_y, halox, haloy
     real dx, dy, xdmin, xdmax, ydmin, ydmax
 
@@ -289,15 +322,19 @@ contains
   end subroutine drifters_comm_set_domain
 
 !===============================================================================
+  !> Updates drifter communication
   subroutine drifters_comm_update(self, drfts, new_positions, &
        & comm, remove, max_add_remove)
+#ifndef _SERIAL
+   use mpi
+#endif
 
     type(drifters_comm_type)   :: self
     type(drifters_core_type)   :: drfts
     real, intent(inout)           :: new_positions(:,:)
-    integer, intent(in), optional :: comm ! MPI communicator
-    logical, intent(in), optional :: remove(:) ! Set to True for particles that should be removed
-    integer, intent(in), optional :: max_add_remove ! max no of particles to add/remove
+    integer, intent(in), optional :: comm !< MPI communicator
+    logical, intent(in), optional :: remove(:) !< Set to True for particles that should be removed
+    integer, intent(in), optional :: max_add_remove !< max no of particles to add/remove
 
 #ifdef _SERIAL
 ! serial code
@@ -307,10 +344,6 @@ contains
 
 #else
 ! parallel code
-
-    include 'mpif.h'
-
-
     integer nd, np, nar_est, ip, neigh_pe, irem, pe, npes, ntuples
     integer ntuples_tot, ndata, mycomm
 #ifdef _USE_MPI
@@ -566,6 +599,9 @@ contains
        & filename, &
        & root, mycomm)
 
+#ifndef _SERIAL
+    use mpi
+#endif
     use drifters_input_mod, only : drifters_input_type, drifters_input_save
 
     type(drifters_comm_type)   :: self
@@ -574,8 +610,8 @@ contains
     real, intent(in)           :: lons(:), lats(:)
     logical, intent(in)        :: do_save_lonlat
     character(len=*), intent(in)  :: filename
-    integer, intent(in), optional :: root    ! root pe
-    integer, intent(in), optional :: mycomm  ! MPI communicator
+    integer, intent(in), optional :: root    !< root pe
+    integer, intent(in), optional :: mycomm  !< MPI communicator
 
     character(len=128) :: ermesg
 
@@ -605,8 +641,7 @@ contains
     integer, allocatable ::  nps(:)
     real    :: x, y
     real, allocatable :: lons0(:), lats0(:), recvbuf(:,:)
-    real    :: data(drfts%nd+3, drfts%np)
-    include 'mpif.h'
+    real    :: com_data(drfts%nd+3, drfts%np) !communication data
 
     comm    = MPI_COMM_WORLD
     if(present(mycomm)) comm = mycomm
@@ -633,10 +668,10 @@ contains
        if( x <= self%xcmax .and. x >= self%xcmin .and. &
         &  y <= self%ycmax .and. y >= self%ycmin) then
           npf = npf + 1
-          data(1       , npf)   = real(drfts%ids(ip))
-          data(1+1:1+nd, npf)   =      drfts%positions(:, ip)
-          data(    2+nd, npf)   = lons(ip)
-          data(    3+nd, npf)   = lats(ip)
+          com_data(1       , npf)   = real(drfts%ids(ip))
+          com_data(1+1:1+nd, npf)   =      drfts%positions(:, ip)
+          com_data(    2+nd, npf)   = lons(ip)
+          com_data(    3+nd, npf)   = lats(ip)
        endif
     enddo
 
@@ -665,12 +700,12 @@ contains
 
     ! Each PE sends data to recvbuf on root_pe.
 #ifdef _USE_MPI
-    call mpi_gather(         data  ,     npf*(nd+3), MPI_REAL8, &
+    call mpi_gather(         com_data  ,     npf*(nd+3), MPI_REAL8, &
          &                  recvbuf,   npmax*(nd+3), MPI_REAL8, &
          &          root_pe, comm, ier)
     !!if(ier/=0) ermesg = 'drifters_write_restart: ERROR while gathering "data"'
 #else
-    if(npf > 0) call mpp_send(data(1,1), plen=npf*(nd+3), to_pe=root_pe, tag=COMM_TAG_4)
+    if(npf > 0) call mpp_send(com_data(1,1), plen=npf*(nd+3), to_pe=root_pe, tag=COMM_TAG_4)
     if(pe==root_pe) then
        do i = self%pe_beg, self%pe_end
           if(nps(i) > 0) call mpp_recv(recvbuf(1, i), glen=nps(i)*(nd+3), from_pe=i, tag=COMM_TAG_4)
@@ -735,7 +770,7 @@ contains
 
   end subroutine drifters_comm_gather
 
-
+#endif
 end module drifters_comm_mod
 
 !===============================================================================

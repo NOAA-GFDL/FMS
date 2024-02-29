@@ -1,0 +1,40 @@
+#***********************************************************************
+#                   GNU Lesser General Public License
+#
+# This file is part of the GFDL FRE NetCDF tools package (FRE NCtools).
+#
+# FRE NCtools is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# FRE NCtools is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#**********************************************************************/
+
+# This is the preferred settings for files in the FRE NetCDF package
+# Please visit https://editorconfig.org for information on how to
+# configure your editor to use these settings.
+
+# This is the top-most EditorConfig file
+root = true
+
+# Settings for _all_ files
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+
+# Settings for specific files, or file patterns.
+[{Makefile,*.am}]
+indent_style = tab
+indent_size = 1
+

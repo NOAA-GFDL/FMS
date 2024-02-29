@@ -24,6 +24,8 @@ use mpi
 use mpp_mod
 use mpp_domains_mod
 use fms2_io_mod
+use platform_mod
+use fms_mod, only: check_nml_error, input_nml_file
 implicit none
 
 character(len=8), parameter :: green = achar(27)//"[1;32m"
@@ -36,9 +38,9 @@ integer, parameter :: ntiles = 6
 
 type(Parser_t) :: parser
 logical, dimension(3) :: tests
-integer :: nx
-integer :: ny
-integer :: nz
+integer :: nx = 96
+integer :: ny = 96
+integer :: nz = 30
 logical :: debug
 character(len=32) :: buf
 integer :: err
@@ -57,6 +59,9 @@ type(domain2d) :: atmosphere_domain
 type(domainug) :: land_domain
 integer :: i
 
+namelist / test_fms2_io_nml / nx, ny, nz
+
+
 !Initialize mpp.
 call mpp_init()
 my_rank = mpp_pe()
@@ -66,6 +71,9 @@ if (my_rank .eq. 0) then
 endif
 call mpi_barrier(mpi_comm_world, err)
 call mpi_check(err)
+
+read(input_nml_file, nml=test_fms2_io_nml, iostat=err)
+err = check_nml_error(err, 'test_fms2_io_nml')
 
 !Define command line arguments.
 parser = get_parser()
@@ -85,9 +93,6 @@ call parse_args(parser)
 
 !Set defaults.
 tests(:) = .true.
-nx = 96
-ny = 96
-nz = 30
 io_layout(:) = 1
 ocn_io_layout(:) = 1
 npes_group = 1
@@ -144,6 +149,7 @@ do i = 1,ntiles
 enddo
 ocn_layout = (/1, npes/)
 
+call fms2_io_init()
 !Run tests.
 if (tests(atmos)) then
   if (mod(npes,ntiles) .ne. 0) then
@@ -207,8 +213,8 @@ end subroutine mpi_check
 
 subroutine chksum_match(out_chksum, in_chksum, var_name, debug)
 
-  integer(kind=int64), intent(in) :: out_chksum
-  integer(kind=int64), intent(in) :: in_chksum
+  integer(kind=i8_kind), intent(in) :: out_chksum
+  integer(kind=i8_kind), intent(in) :: in_chksum
   character(len=*), intent(in) :: var_name
   logical, intent(in) :: debug
 
@@ -232,6 +238,5 @@ subroutine chksum_match(out_chksum, in_chksum, var_name, debug)
                    //" data that was written out.")
   endif
 end subroutine chksum_match
-
 
 end program main

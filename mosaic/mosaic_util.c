@@ -33,24 +33,16 @@
 #define EPSLN10 (1.e-10)
 #define EPSLN15 (1.e-15)
 #define EPSLN30 (1.e-30)
+
+/** \file
+ *  \ingroup mosaic
+ *  \brief Error handling and other general utilities for @ref mosaic_mod
+ */
+
 /***********************************************************
     void error_handler(char *str)
     error handler: will print out error message and then abort
 ***********************************************************/
-int reproduce_siena = 0;
-
-void set_reproduce_siena_true(void)
-{
-  reproduce_siena = 1;
-}
-
-#ifndef __AIX
-void set_reproduce_siena_true_(void)
-{
-  reproduce_siena = 1;
-}
-#endif
-
 
 void error_handler(const char *msg)
 {
@@ -294,14 +286,9 @@ double poly_area_dimensionless(const double x[], const double y[], int n)
     if ( fabs(lat1-lat2) < SMALL_VALUE) /* cheap area calculation along latitude */
       area -= dx*sin(0.5*(lat1+lat2));
     else {
-      if(reproduce_siena) {
-        area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
-      }
-      else {
-        dy = 0.5*(lat1-lat2);
-        dat = sin(dy)/dy;
-        area -= dx*sin(0.5*(lat1+lat2))*dat;
-      }
+      dy = 0.5*(lat1-lat2);
+      dat = sin(dy)/dy;
+      area -= dx*sin(0.5*(lat1+lat2))*dat;
     }
   }
   if(area < 0)
@@ -331,14 +318,9 @@ double poly_area(const double x[], const double y[], int n)
     if ( fabs(lat1-lat2) < SMALL_VALUE) /* cheap area calculation along latitude */
       area -= dx*sin(0.5*(lat1+lat2));
     else {
-      if(reproduce_siena) {
-        area += dx*(cos(lat1)-cos(lat2))/(lat1-lat2);
-      }
-      else {
-        dy = 0.5*(lat1-lat2);
-        dat = sin(dy)/dy;
-        area -= dx*sin(0.5*(lat1+lat2))*dat;
-      }
+      dy = 0.5*(lat1-lat2);
+      dat = sin(dy)/dy;
+      area -= dx*sin(0.5*(lat1+lat2))*dat;
     }
   }
   if(area < 0)
@@ -1374,7 +1356,6 @@ int inside_a_polygon(double *lon1, double *lat1, int *npts, double *lon2, double
 
 }
 
-#ifndef __AIX
 int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2)
 {
 
@@ -1385,4 +1366,3 @@ int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, doubl
   return isinside;
 
 }
-#endif

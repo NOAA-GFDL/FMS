@@ -23,25 +23,32 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/fms	\
--I${top_builddir}/time_manager -I${top_builddir}/diag_manager	\
--I${top_builddir}/interpolator -I${top_builddir}/constants	\
--I${top_builddir}/time_interp -I${top_builddir}/platform
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
-check_PROGRAMS = test_interpolator
+check_PROGRAMS = test_interpolator test_interpolator2_r4 test_interpolator2_r8
 
 # This is the source code for the test.
 test_interpolator_SOURCES = test_interpolator.F90
+test_interpolator2_r4_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
+test_interpolator2_r8_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
+
+test_interpolator2_r4_CPPFLAGS=-DTEST_INTP_KIND_=4 -I$(MODDIR)
+test_interpolator2_r8_CPPFLAGS=-DTEST_INTP_KIND_=8 -I$(MODDIR)
 
 # Run the test program.
 TESTS = test_interpolator2.sh
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+									$(abs_top_srcdir)/test_fms/tap-driver.sh
+TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
+
 # These files are also included in the distribution.
-EXTRA_DIST = test_interpolator2.sh input_base.nml diag_table_base
+EXTRA_DIST = test_interpolator2.sh
 
 # Clean up
-CLEANFILES = input.nml diag_table
+CLEANFILES = input.nml diag_table *.dpi *.spi *.dyn *.spl *.out

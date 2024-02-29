@@ -23,42 +23,59 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/constants
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/platform
-AM_CPPFLAGS += -I${top_builddir}/memutils
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/fms/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libfms_io.la libfms.la
+noinst_LTLIBRARIES = libfms.la
 
 # Each convenience library depends on its source.
-libfms_la_SOURCES = fms.F90
-libfms_io_la_SOURCES = fms_io.F90
+libfms_la_SOURCES = \
+  fms.F90 \
+  fms_stacksize.c \
+  include/fms.inc \
+  include/fms_r4.fh \
+  include/fms_r8.fh \
+  fms_io.F90 \
+  fms_io_unstructured_field_exist.inc \
+  fms_io_unstructured_get_file_name.inc \
+  fms_io_unstructured_register_restart_axis.inc \
+  fms_io_unstructured_setup_one_field.inc read_data_4d.inc \
+  fms_io_unstructured_file_unit.inc \
+  fms_io_unstructured_get_file_unit.inc \
+  fms_io_unstructured_register_restart_field.inc \
+  read_data_2d.inc \
+  write_data.inc \
+  fms_io_unstructured_get_field_size.inc \
+  fms_io_unstructured_read.inc \
+  fms_io_unstructured_save_restart.inc \
+  read_data_3d.inc
 
-# These inc files are in the fms directory.
-FMS_INC_FILES = fms_io_unstructured_field_exist.inc			\
-fms_io_unstructured_get_file_name.inc					\
-fms_io_unstructured_register_restart_axis.inc				\
-fms_io_unstructured_setup_one_field.inc read_data_4d.inc		\
-fms_io_unstructured_file_unit.inc					\
-fms_io_unstructured_get_file_unit.inc					\
-fms_io_unstructured_register_restart_field.inc read_data_2d.inc		\
-write_data.inc fms_io_unstructured_get_field_size.inc			\
-fms_io_unstructured_read.inc fms_io_unstructured_save_restart.inc	\
-read_data_3d.inc
+fms_mod.$(FC_MODEXT): fms_io_mod.$(FC_MODEXT) \
+  fms.F90 \
+  include/fms.inc \
+  include/fms_r4.fh \
+  include/fms_r8.fh
 
-# Each mod file depends on the .o file.
-fms_io_mod.mod: fms_io.lo
-fms_mod.mod: fms.lo
-
-# Some mods are dependant on other mods in this dir.
-fms.lo: fms_io_mod.mod
+fms_io_mod.$(FC_MODEXT): fms_io_unstructured_field_exist.inc \
+  fms_io_unstructured_get_file_name.inc \
+  fms_io_unstructured_register_restart_axis.inc \
+  fms_io_unstructured_setup_one_field.inc read_data_4d.inc \
+  fms_io_unstructured_file_unit.inc \
+  fms_io_unstructured_get_file_unit.inc \
+  fms_io_unstructured_register_restart_field.inc \
+  read_data_2d.inc \
+  write_data.inc \
+  fms_io_unstructured_get_field_size.inc \
+  fms_io_unstructured_read.inc \
+  fms_io_unstructured_save_restart.inc \
+  read_data_3d.inc
 
 # Mod files are built and then installed as headers.
-MODFILES = fms_io_mod.mod fms_mod.mod
+MODFILES = \
+  fms_io_mod.$(FC_MODEXT) \
+  fms_mod.$(FC_MODEXT)
 BUILT_SOURCES = $(MODFILES)
-include_HEADERS = $(MODFILES) $(FMS_INC_FILES)
+nodist_include_HEADERS = $(MODFILES) $(FMS_INC_FILES)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk

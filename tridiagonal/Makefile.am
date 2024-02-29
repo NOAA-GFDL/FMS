@@ -23,18 +23,22 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/platform
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/tridiagonal/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libtridiagonal.la
 
 # The convenience library depends on its source.
-libtridiagonal_la_SOURCES = tridiagonal.F90
+libtridiagonal_la_SOURCES = tridiagonal.F90           \
+                            include/tridiagonal.inc   \
+                            include/tridiagonal_r4.fh \
+                            include/tridiagonal_r8.fh
 
 # Mod file depends on its o file, is built and then installed.
-tridiagonal_mod.mod: tridiagonal.lo
-BUILT_SOURCES = tridiagonal_mod.mod
-include_HEADERS = tridiagonal_mod.mod
+tridiagonal.lo: tridiagonal_mod.$(FC_MODEXT)
 
-CLEANFILES = *.mod
+BUILT_SOURCES = tridiagonal_mod.$(FC_MODEXT)
+nodist_include_HEADERS = tridiagonal_mod.$(FC_MODEXT)
+
+include $(top_srcdir)/mkmods.mk

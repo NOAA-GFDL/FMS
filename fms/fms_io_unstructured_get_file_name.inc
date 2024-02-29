@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @addtogroup fms_io_mod
+!> @{
 
 !>For an inputted file name, check if it or any of its variants exist.
 !!For a file named "foo", variants checked (in order) include:
@@ -49,7 +51,8 @@ function fms_io_unstructured_get_file_name(orig_file, &
    !Inputs/Outputs
     character(len=*),intent(in)   :: orig_file       !<The name of file we're looking for.
     character(len=*),intent(out)  :: actual_file     !<Name of the file we found.
-    logical(INT_KIND),intent(out) :: read_dist       !<Flag telling if the file is "distributed" (has IO domain tile id appended onto the end).
+    logical(INT_KIND),intent(out) :: read_dist       !<Flag telling if the file is "distributed"
+                                                     !! (has IO domain tile id appended onto the end).
     type(domainUG),intent(in)     :: domain          !<Unstructured mpp domain.
     logical(INT_KIND)             :: does_file_exist !<Flag telling if the inputted file exists or one its variants.
 
@@ -164,5 +167,4 @@ function fms_io_unstructured_get_file_name(orig_file, &
 
     return
 end function fms_io_unstructured_get_file_name
-
-!------------------------------------------------------------------------------
+!> @}

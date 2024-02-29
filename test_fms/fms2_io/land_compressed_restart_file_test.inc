@@ -31,13 +31,13 @@ subroutine land_compressed_restart_file(nz, nt, debug_flag)
   integer, dimension(:), allocatable :: npes_nelems
   integer :: nx
   integer :: total_nx
-  real(kind=real64), dimension(:,:), allocatable :: temperature_data
-  real(kind=real64), dimension(:), allocatable :: cdim_data
-  real(kind=real64), dimension(:), allocatable :: lev_data
-  integer(kind=int64) :: out_chksum
+  real(kind=r8_kind), dimension(:,:), allocatable :: temperature_data
+  real(kind=r8_kind), dimension(:), allocatable :: cdim_data
+  real(kind=r8_kind), dimension(:), allocatable :: lev_data
+  integer(kind=i8_kind) :: out_chksum
   integer :: ndims
   integer, dimension(:), allocatable :: dim_sizes
-  integer(kind=int64) :: in_chksum
+  integer(kind=i8_kind) :: in_chksum
   logical :: debug
   integer :: err
   integer :: i
@@ -92,13 +92,6 @@ subroutine land_compressed_restart_file(nz, nt, debug_flag)
   call open_check(open_file(fileobj, "land_compressed.nc", "overwrite", &
                             pelist=pelist, nc_format="netcdf4", is_restart=.true.))
 
-  !Add some global attributes to the restart file.
-  call register_global_attribute(fileobj, "globalatt1", real(7., kind=real64))
-  call register_global_attribute(fileobj, "globalatt2", real(4., kind=real32))
-  call register_global_attribute(fileobj, "globalatt3", int(3, kind=int32))
-  call register_global_attribute(fileobj, "globalatt4", int(2, kind=int64))
-  call register_global_attribute(fileobj, "globalatt5", "some text")
-
   !Add dimensions and corresponding variables to the file.
   !cdim (compressed dimension).
   call register_axis(fileobj, "cdim", npes_corner=npes_corner, npes_nelems=npes_nelems)
@@ -108,7 +101,7 @@ subroutine land_compressed_restart_file(nz, nt, debug_flag)
     cdim_data(i) = 4.178 + 3.9567*i
   enddo
   call write_data(fileobj, "cdim", cdim_data)
-  call register_variable_attribute(fileobj, "cdim", "units", "compressed value")
+  call register_variable_attribute(fileobj, "cdim", "units", "compressed value", str_len=len_trim("compressed value"))
 
   !Height.
   call register_axis(fileobj, "lev", nz)
@@ -118,11 +111,11 @@ subroutine land_compressed_restart_file(nz, nt, debug_flag)
     lev_data(i) = 0.1111 + 20.236*i
   enddo
   call write_data(fileobj, "lev", lev_data)
-  call register_variable_attribute(fileobj, "lev", "units", "mb")
+  call register_variable_attribute(fileobj, "lev", "units", "mb", str_len=len_trim("mb"))
 
   !Add a restart variable.
   call register_restart_field(fileobj, "temperature", temperature_data, (/"cdim","lev "/))
-  call register_variable_attribute(fileobj, "temperature", "units", "K")
+  call register_variable_attribute(fileobj, "temperature", "units", "K", str_len=len_trim("K"))
 
   !Perform a "simulation".
   do i = 1, nt

@@ -16,6 +16,11 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief Compressed read routines for @ref read_data interface
+
+!> @addtogroup fms2_io_mod
+!> @{
 
 !> @brief I/O domain reads in data from the netcdf file and broadcasts the
 !!        data to the rest of the ranks.  This routine may only be used with
@@ -181,3 +186,4 @@ subroutine compressed_read_5d(fileobj, variable_name, cdata, unlim_dim_level, &
                        ,edge_lengths=edge_lengths &
                         ,broadcast=.true.)
 end subroutine compressed_read_5d
+!> @}

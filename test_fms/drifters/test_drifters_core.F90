@@ -19,10 +19,13 @@
 !**********************************************************************
 
 program test_drifters_core
+#ifdef use_drifters
 
   use drifters_core_mod
   use fms_mod, only : fms_init, fms_end
   use mpp_mod, only : mpp_error, FATAL, stdout
+  use platform_mod
+
   implicit none
   type(drifters_core_type) :: drf
   integer :: ier, nd, npdim, i, j, np
@@ -109,4 +112,5 @@ program test_drifters_core
 !!$     print *,'Sucessful test ier=', ier
 !!$  end if
   call fms_end()
+#endif
 end program test_drifters_core

@@ -23,8 +23,30 @@
 # execute tests in the test_fms/fms2_io directory.
 
 # Set common test settings.
-. ../test_common.sh
-# make an input.nml for mpp_init to read
-printf "EOF\n&dummy\nEOF" | cat > input.nml
+. ../test-lib.sh
+
+# Create and enter output directory
+output_dir
+
+touch input.nml
+
 # run the tests
-run_test test_atmosphere_io 6 skip
+test_expect_success "Test atmosphere IO" '
+  mpirun -n 6 ../test_atmosphere_io
+'
+
+# run test 2 - test for bad checksum (should fail)
+rm *.nc
+printf "&test_atmosphere_io_nml\n bad_checksum=.true.\n /" | cat > input.nml
+test_expect_failure "bad checksum failure" '
+  mpirun -n 6 ../test_atmosphere_io
+'
+
+# run test 3 - test for ignoring a bad checksum
+rm *.nc
+printf "&test_atmosphere_io_nml\n bad_checksum=.true.\n ignore_checksum=.true.\n /" | cat > input.nml
+test_expect_success "ignore bad checksum" '
+  mpirun -n 6 ../test_atmosphere_io
+'
+
+test_done

@@ -17,8 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 program test
-#include <fms_platform.h>
-
+#ifdef use_deprecated_io
+  use platform_mod,    only : i8_kind, r8_kind
   use mpp_mod,         only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error, mpp_sync_self
   use mpp_mod,         only : FATAL, NOTE, mpp_chksum, MPP_DEBUG, mpp_set_stack_size, MPP_CLOCK_SYNC
   use mpp_mod,         only : mpp_sync, mpp_exit, mpp_clock_begin, mpp_clock_end, mpp_clock_id
@@ -32,22 +32,23 @@ program test
   use mpp_io_mod,      only : MPP_NETCDF, MPP_MULTI, mpp_get_atts, mpp_write, mpp_close
   use mpp_io_mod,      only : mpp_get_info, mpp_get_axes, mpp_get_fields, mpp_get_times
   use mpp_io_mod,      only : mpp_read, mpp_io_exit, MPP_APPEND
+  use mpp_mod,         only : input_nml_file
+  use fms_mod,         only : check_nml_error
 
-#ifdef INTERNAL_FILE_NML
-  USE mpp_mod, ONLY: input_nml_file
+#ifdef use_netCDF
+  use netcdf
+  use netcdf_nf_data
+  use netcdf_nf_interfaces
+  use netcdf4_nf_interfaces
 #endif
 
   implicit none
-
-#ifdef use_netCDF
-#include <netcdf.inc>
-#endif
 
   !--- namelist definition
   integer           :: nx=360, ny=200, nz=50, nt=2
   integer           :: halo=2, stackmax=1500000, stackmaxd=2000000
   logical           :: debug=.FALSE.
-  character(len=64) :: file='test', iospec='-F cachea'
+  character(len=64) :: file='test'
   integer           :: layout(2) = (/1,1/)
   integer           :: ntiles_x=1, ntiles_y=1  ! total number of tiles will be ntiles_x*ntiles_y,
                                                ! the grid size for each tile will be (nx/ntiles_x, ny/ntiles_y)
@@ -56,7 +57,7 @@ program test
                                                ! group and write out data from the root pe of each group.
   integer           :: pack_size = 1
 
-  namelist / test_mpp_io_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, iospec, &
+  namelist / test_mpp_io_nml / nx, ny, nz, nt, halo, stackmax, stackmaxd, debug, file, &
                                ntiles_x, ntiles_y, layout, io_layout
 
   integer        :: pe, npes, io_status
@@ -73,32 +74,16 @@ program test
   type(axistype)     :: x, y, z, t
   type(fieldtype)    :: f
   type(domain1D)     :: xdom, ydom
-  integer(LONG_KIND) :: rchk, chk
-  real(DOUBLE_KIND)                  :: doubledata = 0.0
+  integer(i8_kind) :: rchk, chk
+  real(r8_kind)                  :: doubledata = 0.0
   real                               :: realarray(4)
 
   call mpp_init()
   pe = mpp_pe()
   npes = mpp_npes()
 
-#ifdef INTERNAL_FILE_NML
   read (input_nml_file, test_mpp_io_nml, iostat=io_status)
-#else
-  do
-     inquire( unit=unit, opened=opened )
-     if( .NOT.opened )exit
-     unit = unit + 1
-     if( unit.EQ.100 )call mpp_error( FATAL, 'Unable to locate unit number.' )
-  end do
-  open( unit=unit, file='input.nml', iostat=io_status)
-  read( unit,test_mpp_io_nml, iostat=io_status )
-  close(unit)
-#endif
-
-      if (io_status > 0) then
-         call mpp_error(FATAL,'=>test_mpp_io: Error reading input.nml')
-      endif
-
+  io_status = check_nml_error(io_status, 'test_mpp_io')
 
   call SYSTEM_CLOCK( count_rate=tks_per_sec )
   if( debug )then
@@ -505,14 +490,17 @@ program test
      call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI )
   case("Mult_tile")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, is_root_pe=is_root_pe )
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_SINGLE, &
+                  &  is_root_pe=is_root_pe )
   case("Single_tile_with_group")
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case("Mult_tile_with_group")
      write(output_file, '(a,I4.4)') type//'.tile', my_tile
      call mpp_define_io_domain(domain, io_layout)
-     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_OVERWR, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
 
   case default
      call mpp_error(FATAL, "program test_mpp_io: invaid value of type="//type)
@@ -545,7 +533,8 @@ program test
      call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
          fileset=MPP_SINGLE, is_root_pe=is_root_pe )
   case("Single_tile_with_group", "Mult_tile_with_group")
-     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, fileset=MPP_MULTI, domain=domain)
+     call mpp_open( unit, output_file, action=MPP_RDONLY, form=MPP_NETCDF, threading=MPP_MULTI, &
+                  &  fileset=MPP_MULTI, domain=domain)
   case default
      call mpp_error(FATAL, "program test_mpp_io: invaid value of type="//type)
   end select
@@ -576,5 +565,5 @@ program test
   call mpp_deallocate_domain(domain)
 
   end subroutine test_netcdf_io_mosaic
-
+#endif
 end program test

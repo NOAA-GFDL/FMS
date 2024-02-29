@@ -23,25 +23,31 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod files.
-AM_CPPFLAGS = -I${top_builddir}/horiz_interp -I${top_builddir}/fms	\
--I${top_builddir}/constants -I${top_builddir}/mpp			\
--I${top_builddir}/mosaic -I${top_builddir}/axis_utils
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_horiz_interp test2_horiz_interp
+check_PROGRAMS = test_horiz_interp_r4 test_horiz_interp_r8
 
 # These are the sources for the tests.
-test_horiz_interp_SOURCES = test_horiz_interp.F90
-test2_horiz_interp_SOURCES = test2_horiz_interp.F90
+test_horiz_interp_r4_SOURCES = test_horiz_interp.F90
+test_horiz_interp_r8_SOURCES = test_horiz_interp.F90
+
+test_horiz_interp_r4_CPPFLAGS=-DHI_TEST_KIND=4 -I$(MODDIR)
+test_horiz_interp_r8_CPPFLAGS=-DHI_TEST_KIND=8 -I$(MODDIR)
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
+TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 
 # Run the test programs.
 TESTS = test_horiz_interp2.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = input_base.nml test_horiz_interp2.sh
+EXTRA_DIST = test_horiz_interp2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl

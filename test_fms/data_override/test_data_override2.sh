@@ -18,26 +18,57 @@
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
-
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/data_override directory.
-
-# Ed Hartnett 11/26/19
+#
+# Copyright (c) 2019-2021 Ed Hartnett, Uriel Ramirez, Seth Underwood
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-# Copy to builddir and rename data files for tests.
-cp $top_srcdir/test_fms/data_override/data_table_base data_table
-cp $top_srcdir/test_fms/data_override/diag_table_base diag_table
-#cp -r $top_srcdir/test_fms/data_override/INPUT $top_builddir/test_fms/data_override/INPUT
+output_dir
+rm -rf data_table data_table.yaml input.nml input_base.nml
 
-# Both tests are skipped in the bats file, so commented out here.
-tnum=$( printf "%2.2d" 1 )
-sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-run_test test_data_override 2 skip
+for KIND in r4 r8
+do
+# Run tests with input if enabled
+# skips if built with yaml parser(tests older behavior)
+if test ! -z "$test_input_path" && test ! -z "$parser_skip"  ; then
+  cat <<_EOF > input.nml
+_EOF
 
-tnum=$( printf "%2.2d" 2 )
-sed "s/<test_num>/${tnum}/"  $top_srcdir/test_fms/data_override/input_base.nml > input.nml
-run_test test_data_override 2 skip
+  cp -r $test_input_path/data_override/INPUT .
+  cat <<_EOF > diag_table
+test_data_override
+1 3 1 0 0 0
 
+#output files
+"test_data_override",  -1, "days", 1, "days", "time"
+
+#output variables
+"test_data_override_mod", "sst", "sst", "test_data_override",  "all", .false., "none", 2
+"test_data_override_mod", "ice", "ice", "test_data_override",  "all", .false., "none", 2
+_EOF
+  cat <<_EOF > data_table
+"ICE", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+"ICE", "sic_obs",  "SIC", "INPUT/sst_ice_clim.nc", .false., 300.0
+"OCN", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+"LND", "sst_obs",  "SST", "INPUT/sst_ice_clim.nc", .false., 300.0
+_EOF
+
+  test_expect_success "data_override on cubic-grid with input (${KIND})" '
+    mpirun -n 6 ../test_data_override_${KIND}
+  '
+
+cat <<_EOF > input.nml
+&test_data_override_nml
+   test_num=2
+/
+_EOF
+
+  test_expect_success "data_override on latlon-grid with input (${KIND})" '
+    mpirun -n 6 ../test_data_override_${KIND}
+  '
+fi
+done
+rm -rf INPUT *.nc # remove any leftover files to reduce size
+
+test_done

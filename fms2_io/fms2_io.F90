@@ -16,10 +16,14 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms2_io_mod fms2_io_mod
+!> @ingroup fms2_io
+!> @brief An updated library for parallel IO to replace @ref mpp_io_mod. This module contains
+!! the public API for fms2 I/O interfaces and routines defined throughout this directory.
+!! A conversion guide for replacing mpp/fms_io code with this module is available below.
 
-!> @file
-
-!> @brief Public API for fms I/O.
+!> @addtogroup fms2_io_mod
+!> @{
 module fms2_io_mod
 use fms_io_utils_mod
 use netcdf_io_mod
@@ -31,7 +35,6 @@ use mpp_domains_mod, only: mpp_domains_init
 implicit none
 private
 
-
 public :: unlimited
 public :: FmsNetcdfFile_t
 public :: FmsNetcdfDomainFile_t
@@ -40,6 +43,7 @@ public :: open_file
 public :: open_virtual_file
 public :: close_file
 public :: register_axis
+public :: register_unlimited_compressed_axis
 public :: register_field
 public :: register_restart_field
 public :: write_data
@@ -84,7 +88,37 @@ public :: check_if_open
 public :: set_fileobj_time_name
 public :: is_dimension_registered
 public :: fms2_io_init
+public :: write_restart_bc
+public :: read_restart_bc
+public :: get_mosaic_tile_grid
+public :: ascii_read
+public :: get_mosaic_tile_file
+public :: parse_mask_table
+public :: get_filename_appendix
+public :: set_filename_appendix
+public :: get_instance_filename
+public :: nullify_filename_appendix
+public :: flush_file
+!> @}
 
+!> @brief Opens a given netcdf or domain file.
+!!
+!> <br>Example usage:
+!!
+!!              io_success = open_file(fileobj, "filename", "write")
+!!
+!! Opens a netcdf file of type @ref fmsnetcdffile_t at the given file path string.
+!! File mode is set to one of "read"/"write"/"overwrite"/"append"
+!!
+!!              io_success = open_file(fileobj, "filename", "overwrite", domain)
+!!
+!! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or
+!! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
+!> @ingroup fms2_io_mod
 interface open_file
   module procedure netcdf_file_open_wrap
   module procedure open_domain_file
@@ -92,20 +126,67 @@ interface open_file
 end interface open_file
 
 
+!> @brief Creates a diskless netcdf or domain file
+!!
+!> @return true if successful, false otherwise
+!!
+!> <br>Example usage:
+!!
+!!              io_success = open_virtual_file(fileobj, "filename", pelist)
+!!
+!! Opens a virtual file through @ref fmsnetcdffile_t at an optional file path and pelist
+!!
+!!              io_success = open_virtual_file(fileobj, domain, "filename")
+!!
+!! Opens a virtual domain file through @ref fmsnetcdfdomainfile_t or
+!! @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
+!> @ingroup fms2_io_mod
 interface open_virtual_file
   module procedure create_diskless_netcdf_file_wrap
   module procedure create_diskless_domain_file
   module procedure create_diskless_unstructured_domain_file
 end interface open_virtual_file
 
-
+!> @brief Close a netcdf or domain file opened with @ref open_file or
+!! @ref open_virtual_file
+!!
+!> <br>Example usage:
+!!
+!!              call close_file(fileobj)
+!!
+!! Closes any given fileobj opened via @ref open_file or @ref open_virtual_file
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
+!> @ingroup fms2_io_mod
 interface close_file
   module procedure netcdf_file_close_wrap
   module procedure close_domain_file
   module procedure close_unstructured_domain_file
 end interface close_file
 
-
+!> @brief Add a dimension to a given file
+!!
+!> <br>Example usage:
+!!
+!!              call register_axis(fileobj, "lon", "x")
+!!
+!! Adds a dimension named "lon" associated with the x axis of the 2D domain file. For unstructured
+!! domains no x or y axis character is provided.
+!!
+!!              call register_axis(fileobj, "lon", n)
+!!
+!! Adds a dimension named "lon" with length n to a given netcdf file.<br>
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
+!> @ingroup fms2_io_mod
 interface register_axis
   module procedure netcdf_add_dimension
   module procedure register_compressed_dimension
@@ -113,14 +194,40 @@ interface register_axis
   module procedure register_unstructured_dimension
 end interface register_axis
 
-
+!> @brief Defines a new field within the given file
+!> <br>Example usage:
+!!
+!!              call register_field(fileobj, "lon", "double", (/"lon"/) )
+!!
+!! Adds a double variable named "lon" to the given file, corresponding to the
+!! list of dimension names (which must be previously defined in the fileobj).
+!! The size of dimension name list provided is the amount of ranks for the created
+!! field, scalar if list not provided.
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
+!> @ingroup fms2_io_mod
 interface register_field
   module procedure netcdf_add_variable_wrap
   module procedure register_domain_variable
   module procedure register_unstructured_domain_variable
 end interface register_field
 
-
+!> @brief Similar to @ref register_field, but occupies the field with data for restarts
+!> <br>Example usage:
+!!
+!!              call register_restart_field(fileobj, "temperature", data_ptr, (/"lon", "time"/) )
+!!
+!! Creates a restart variable and sets it to the values from data_ptr, corresponding to
+!! the list of dimension names. Rank of data_ptr must equal the amount of corresponding dimensions.
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
+!> @ingroup fms2_io_mod
 interface register_restart_field
   module procedure netcdf_add_restart_variable_0d_wrap
   module procedure netcdf_add_restart_variable_1d_wrap
@@ -140,9 +247,18 @@ interface register_restart_field
   module procedure register_unstructured_domain_restart_variable_3d
   module procedure register_unstructured_domain_restart_variable_4d
   module procedure register_unstructured_domain_restart_variable_5d
+  module procedure register_restart_region_2d
+  module procedure register_restart_region_3d
 end interface register_restart_field
 
-
+!> @brief Write data to a defined field within a file
+!> <br>Example usage:
+!!
+!!              call write_data(fileobj, "lon", data)
+!!
+!! Write the value(s) in data to the field named "lon"
+!!
+!> @ingroup fms2_io_mod
 interface write_data
   module procedure compressed_write_0d_wrap
   module procedure compressed_write_1d_wrap
@@ -164,7 +280,15 @@ interface write_data
   module procedure unstructured_domain_write_5d
 end interface write_data
 
-
+!> @brief Read data from a defined field in a file
+!!
+!> <br>Example usage:
+!!
+!!              call read_data(fileobj, "lat", data)
+!!
+!! Read the values for the field "lat" from the file and write them onto data <br>
+!!
+!> @ingroup fms2_io_mod
 interface read_data
   module procedure compressed_read_0d
   module procedure compressed_read_1d
@@ -186,34 +310,72 @@ interface read_data
   module procedure unstructured_domain_read_5d
 end interface read_data
 
-
+!> @brief Writes all restart fields registered within a given restart file
+!> <br>Example usage:
+!!
+!!              call write_restart(fileobj)
+!!
+!! Writes previously registered restart fields to the given restart file
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
+!> @ingroup fms2_io_mod
 interface write_restart
   module procedure netcdf_save_restart_wrap
   module procedure save_domain_restart
   module procedure unstructured_write_restart
 end interface write_restart
 
-
+!> @brief Writes all restart fields in a given restart file to a new restart file
+!> <br>Example usage:
+!!
+!!              call write_new_restart(fileobj, timestamp="tstring", filename="new_restartfilename")
+!!
+!! Creates a new restart file, with the provided timestamp and filename, out of the registered
+!! restart fields in the given restart file.
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
+!> @ingroup fms2_io_mod
 interface write_new_restart
   module procedure netcdf_save_restart_wrap2
   module procedure save_domain_restart_wrap
   module procedure unstructured_write_restart_wrap
 end interface write_new_restart
 
-
+!> @brief Reads in restart variables from a given file
+!> <br>Example usage:
+!!              call read_restart(fileobj)
+!! Reads registered restart variables from fileobj
+!!
+!! @note For individual documentation on the listed routines, please see the appropriate helper module.
+!! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
+!! For generic netcdf: @ref netcdf_io_mod.
+!> @ingroup fms2_io_mod
 interface read_restart
   module procedure netcdf_restore_state
   module procedure restore_domain_state
 end interface read_restart
 
-
+!> @brief Read registered restarts from a new file
+!! Optionally takes directory to write to, model time and filename
+!> <br>Example usage:
+!!              call read_new_restart(fileobj, unlimted_dimension_level)
+!!
+!!              call read_new_restart(fileobj, unlimited_dimension_level, directory, timestamp, filename)
+!! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
+!> @ingroup fms2_io_mod
 interface read_new_restart
   module procedure netcdf_restore_state_wrap
   module procedure restore_domain_state_wrap
 end interface read_new_restart
 
+!> @addtogroup fms2_io_mod
+!> @{
+
 logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
-!< Namelist variables
+! Namelist variables
 integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
 character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf file format, acceptable values
@@ -221,8 +383,11 @@ character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf f
                               !! "nc_format" in the open_file call
 integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size(in bytes) used in
                                      !! NF__ENDDEF
+integer :: deflate_level = default_deflate_level !< Netcdf deflate level to use in nf90_def_var
+                                                 !! (integer between 1 to 9)
+logical :: shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
 namelist / fms2_io_nml / &
-                      ncchksz, netcdf_default_format, header_buffer_val
+                      ncchksz, netcdf_default_format, header_buffer_val, deflate_level, shuffle
 
 contains
 
@@ -239,16 +404,21 @@ subroutine fms2_io_init ()
   READ (input_nml_file, NML=fms2_io_nml, IOSTAT=mystat)
 !>Send the namelist variables to their respective modules
   if (ncchksz .le. 0) then
-        call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
+    call mpp_error(FATAL, "ncchksz in fms2_io_nml must be a positive number.")
   endif
-  call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format)
   if (header_buffer_val .le. 0) then
-        call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
+    call mpp_error(FATAL, "header_buffer_val in fms2_io_nml must be a positive number.")
   endif
+  if (deflate_level .lt. 0 .or. deflate_level .gt. 9) then
+    call mpp_error(FATAL, &
+      "deflate_level in fms2_io_nml must be a positive number between 1 and 9 as it is required by NetCDF")
+  endif
+  call netcdf_io_init (ncchksz,header_buffer_val,netcdf_default_format, deflate_level, shuffle)
   call blackboxio_init (ncchksz)
 !> Mark the fms2_io as initialized
   fms2_io_is_initialized = .true.
 end subroutine fms2_io_init
 
-
 end module fms2_io_mod
+!> @}
+! close documentation grouping

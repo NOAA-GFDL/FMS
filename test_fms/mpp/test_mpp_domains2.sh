@@ -23,85 +23,124 @@
 # execute tests in the test_fms/mpp directory.
 
 # Ed Hartnett 11/29/19
+# Ryan Mulhall 2/2021
 
 # Set common test settings.
-. ../test_common.sh
+. ../test-lib.sh
 
-if [ "x$(uname -s)" = "xDarwin" ]
-then
-    is_darwin='skip'
-elif [ "x$TRAVIS" = "xtrue" ]
-then
-    is_travis='skip'
-fi
+# TODO edge update, fails on non-blocking with gnu
+#SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).6"
 
-#echo "1: Test update nest domain"
+# create and enter directory for in/output
+output_dir
 
-#sed "s/test_nest = .false./test_nest = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
+# Create input_base.nml for test input
+cat <<_EOF > input_base.nml
+&test_mpp_domains_nml
+nx=64
+ny=64
+nz=10
+stackmax=10000000
+debug=.false.
+mpes = 3
+check_parallel = .false.
+whalo = 2
+ehalo = 2
+shalo = 2
+nhalo = 2
+x_cyclic_offset = 3
+y_cyclic_offset = -4
+warn_level = "fatal"
+wide_halo_x = 0
+wide_halo_y = 0
+nx_cubic = 20
+ny_cubic = 20
+test_performance = .false.
+test_interface = .false.
+num_fields = 4
+do_sleep = .false.
+num_iter = 1
+mix_2D_3D = .false.
+test_get_nbr = .false.
+test_edge_update = .false.
+test_cubic_grid_redistribute = .false.
+ensemble_size = 1
+layout_cubic = 0,0
+layout_ensemble = 0,0
+nthreads = 1
+test_boundary = .false.
+layout_tripolar = 0,0
+test_group = .false.
+test_global_sum = .false.
+test_unstruct = .false.
+test_nonsym_edge = .false.
+test_halosize_performance = .false.
+test_adjoint = .false.
+wide_halo = .false.
+/
+_EOF
 
-#echo "2:  Test Subset Update"
-#sed "s/test_subset = .false./test_subset = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
+cat input_base.nml > input.nml
+test_expect_success "simple functionality" '
+    mpirun -n 4 ../test_domains_simple
+'
 
-echo "3: Test Halosize Performance"
-sed "s/test_halosize_performance = .false./test_halosize_performance = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin it will be skipped because it fails
-run_test test_mpp_domains 2 $is_darwin
-
-#echo "4: Test Edge Update"
-#sed "s/test_edge_update = .false./test_edge_update = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
-
-#echo "5: Test Nonsym Edge"
-#sed "s/test_nonsym_edge = .false./test_nonsym_edge = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
-
-echo "6: Test Performance"
-sed "s/test_performance = .false./test_performance = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
+sed "s/test_subset = .false./test_subset = .true./" input_base.nml > input.nml
+test_expect_success "subset update" '
+    mpirun -n 25 ../test_mpp_domains
+'
+sed "s/test_halosize_performance = .false./test_halosize_performance = .true./" input_base.nml > input.nml
+test_expect_success "halosize performance" '
+    mpirun -n 2 ../test_mpp_domains
+'
+sed "s/test_edge_update = .false./test_edge_update = .true./" input_base.nml > input.nml
+test_expect_success "edge update" '
+    mpirun -n 2 ../test_mpp_domains
+'
+sed "s/test_nonsym_edge = .false./test_nonsym_edge = .true./" input_base.nml > input.nml
+test_expect_success "nonsym edge" '
+    mpirun -n 2 ../test_mpp_domains
+'
+sed "s/test_performance = .false./test_performance = .true./" input_base.nml > input.nml
 #If the system is Darwin or TRAVIS it will be skipped because it fails
-run_test test_mpp_domains 6 $is_darwin $is_travis
+test_expect_success "performance" '
+    mpirun -n 6 ../test_mpp_domains
+'
+sed "s/test_global_sum = .false./test_global_sum = .true./" input_base.nml > input.nml
+test_expect_success "global sum" '
+    mpirun -n 2 ../test_mpp_domains
+'
+sed "s/test_cubic_grid_redistribute = .false./test_cubic_grid_redistribute = .true./" input_base.nml > input.nml
+test_expect_success "cubic grid redistribute" '
+    mpirun -n 6 ../test_mpp_domains
+'
+sed "s/test_boundary = .false./test_boundary = .true./" input_base.nml > input.nml
+test_expect_success "boundary" '
+    mpirun -n 6 ../test_mpp_domains
+'
+sed "s/test_adjoint = .false./test_adjoint = .true./" input_base.nml > input.nml
+test_expect_success "adjoint" '
+    mpirun -n 2 ../test_mpp_domains
+'
+sed "s/test_unstruct = .false./test_unstruct = .true./" input_base.nml > input.nml
+test_expect_success "unstruct" '
+    mpirun -n 2 ../test_mpp_domains
+'
+sed "s/test_group = .false./test_group = .true./" input_base.nml > input.nml
+test_expect_success "group" '
+    mpirun -n 2 ../test_mpp_domains
+'
+sed "s/test_interface = .false./test_interface = .true./" input_base.nml > input.nml
+test_expect_success "interface" '
+    mpirun -n 6 ../test_mpp_domains
+'
+sed "s/check_parallel = .false./check_parallel = .true./" input_base.nml > input.nml
+test_expect_success "check_parallel" '
+    mpirun -n 6 ../test_mpp_domains
+'
+sed "s/test_get_nbr = .false./test_get_nbr = .true./" input_base.nml > input.nml
+test_expect_success "get nbr" '
+    mpirun -n 8 ../test_mpp_domains
+'
 
-echo "7: Test Global Sum"
-sed "s/test_global_sum = .false./test_global_sum = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin it will be skipped because it fails
-run_test test_mpp_domains 2 $is_dawin
-
-echo "8: Test Cubic Grid Redistribute"
-sed "s/test_cubic_grid_redistribute = .false./test_cubic_grid_redistribute = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin or TRAVIS it will be skipped because it fails
-run_test test_mpp_domains 6 $is_darwin $is_travis
-
-echo "9: Test Boundary"
-sed "s/test_boundary = .false./test_boundary = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin or TRAVIS it will be skipped because it fails
-run_test test_mpp_domains 6 $is_darwin $is_travis
-
-echo "10: Test Adjoint"
-sed "s/test_adjoint = .false./test_adjoint = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin it will be skipped because it fails
-run_test test_mpp_domains 2 $is_darwin
-
-#echo "11: Test Unstruct"
-#sed "s/test_unstruct = .false./test_unstruct = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 2 skip
-
-echo "12: Test Group"
-sed "s/test_group = .false./test_group = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin it will be skipped because it fails
-run_test test_mpp_domains 2 $is_darwin
-
-echo "13: Test Interface"
-sed "s/test_interface = .false./test_interface = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin it will be skipped because it fails
-run_test test_mpp_domains 2 $is_darwin
-
-#echo "14: Test Check Parallel"
-#echo "Does not work on Darwin or elsewhere"
-#sed "s/check_parallel = .false./check_parallel = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-run_test test_mpp_domains 6 skip
-
-echo "15: Test Get Nbr"
-sed "s/test_get_nbr = .false./test_get_nbr = .true./" $top_srcdir/test_fms/mpp/input_base.nml > input.nml
-#If the system is Darwin it will be skipped because it fails
-run_test test_mpp_domains 2 $is_darwin
+test_done

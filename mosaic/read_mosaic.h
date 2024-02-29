@@ -44,19 +44,6 @@ void get_var_text_att(const char *file, const char *name, const char *attname, c
 
 int read_mosaic_xgrid_size( const char *xgrid_file );
 
-#ifdef OVERLOAD_R4
-
-void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area );
-
-void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, int *isc, int *iec );
-
-void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2,
-                              float *area, float *di, float *dj );
-
-float get_global_area(void);
-
-#else
-
 void read_mosaic_xgrid_order1(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area );
 
 void read_mosaic_xgrid_order1_region(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec );
@@ -66,7 +53,6 @@ void read_mosaic_xgrid_order2(const char *xgrid_file, int *i1, int *j1, int *i2,
 
 double get_global_area(void);
 
-#endif
 
 int read_mosaic_ntiles(const char *mosaic_file);
 
@@ -83,8 +69,6 @@ void read_mosaic_grid_data(const char *mosaic_file, const char *name, int nx, in
                            double *data, unsigned int level, int ioff, int joff);
 
 
-#ifndef __AIX
-
 void read_mosaic_contact_(const char *mosaic_file, int *tile1, int *tile2, int *istart1, int *iend1,
                           int *jstart1, int *jend1, int *istart2, int *iend2, int *jstart2, int *jend2);
 
@@ -96,17 +80,6 @@ int read_mosaic_ncontacts_(const char *mosaic_file);
 
 void read_mosaic_grid_sizes_(const char *mosaic_file, int *nx, int *ny);
 
-#ifdef OVERLOAD_R4
-
-float get_global_area_(void);
-
-void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area );
-
-void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, int *isc, int *iec );
-
-void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, float *area, float *di, float *dj );
-
-#else
 
 double get_global_area_(void);
 
@@ -115,10 +88,5 @@ void read_mosaic_xgrid_order1_(const char *xgrid_file, int *i1, int *j1, int *i2
 void read_mosaic_xgrid_order1_region_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, int *isc, int *iec );
 
 void read_mosaic_xgrid_order2_(const char *xgrid_file, int *i1, int *j1, int *i2, int *j2, double *area, double *di, double *dj );
-
-#endif  /* OVERLOAD_R4 */
-
-#endif  /* AIX */
-
 
 #endif

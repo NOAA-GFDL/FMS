@@ -16,8 +16,9 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief A simple command line argument parsing module for Fortran programs
 
-!> @brief A simple command line argument parsing module for Fortran programs.
 module argparse
 use, intrinsic :: iso_fortran_env, only: error_unit
 implicit none

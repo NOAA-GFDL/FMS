@@ -16,13 +16,17 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-module grid_mod
+!> @defgroup grid_mod grid_mod
+!> @ingroup mosaic
+!> @brief Routines for grid calculations
 
-use mpp_mod, only : mpp_root_pe
+module grid_mod
+#ifdef use_deprecated_io
+
+use mpp_mod, only : mpp_root_pe, uppercase, lowercase, FATAL, NOTE, mpp_error
 use constants_mod, only : PI, radius
-use fms_mod, only : uppercase, lowercase, field_exist, field_size, read_data, &
-     error_mesg, string, FATAL, NOTE
-use fms_io_mod, only : get_great_circle_algorithm, get_global_att_value
+use fms_io_mod, only : get_great_circle_algorithm, get_global_att_value, string, &
+                       field_exist, field_size, read_data
 use mosaic_mod, only : get_mosaic_ntiles, get_mosaic_xgrid_size, get_mosaic_grid_sizes, &
      get_mosaic_xgrid, calc_mosaic_grid_area, calc_mosaic_grid_great_circle_area
 
@@ -35,8 +39,8 @@ implicit none;private
 
 ! ==== public interfaces =====================================================
 ! grid dimension inquiry subroutines
-public :: get_grid_ntiles ! returns number of tiles
-public :: get_grid_size   ! returns horizontal sizes of the grid
+public :: get_grid_ntiles
+public :: get_grid_size
 ! grid geometry inquiry subroutines
 public :: get_grid_cell_centers
 public :: get_grid_cell_vertices
@@ -48,32 +52,41 @@ public :: get_grid_comp_area
 public :: define_cube_mosaic
 ! ==== end of public interfaces ==============================================
 
+!> returns horizontal sizes of the grid
+!> @ingroup grid_mod
 interface get_grid_size
    module procedure get_grid_size_for_all_tiles
    module procedure get_grid_size_for_one_tile
 end interface
-
+!> returns number of tiles
+!> @ingroup grid_mod
 interface get_grid_cell_vertices
    module procedure get_grid_cell_vertices_1D
    module procedure get_grid_cell_vertices_2D
    module procedure get_grid_cell_vertices_UG
 end interface
 
+!> @ingroup grid_mod
 interface get_grid_cell_centers
    module procedure get_grid_cell_centers_1D
    module procedure get_grid_cell_centers_2D
    module procedure get_grid_cell_centers_UG
 end interface
 
+!> @ingroup grid_mod
 interface get_grid_cell_area
    module procedure get_grid_cell_area_SG
    module procedure get_grid_cell_area_UG
 end interface get_grid_cell_area
 
+!> @ingroup grid_mod
 interface get_grid_comp_area
    module procedure get_grid_comp_area_SG
    module procedure get_grid_comp_area_UG
 end interface get_grid_comp_area
+
+!> @addtogroup grid_mod
+!> @{
 
 ! ==== module constants ======================================================
 character(len=*), parameter :: &
@@ -83,18 +96,18 @@ character(len=*), parameter :: &
 #include<file_version.h>
 
 character(len=*), parameter :: &
-     grid_dir  = 'INPUT/',     &      ! root directory for all grid files
-     grid_file = 'INPUT/grid_spec.nc' ! name of the grid spec file
+     grid_dir  = 'INPUT/',     &      !< root directory for all grid files
+     grid_file = 'INPUT/grid_spec.nc' !< name of the grid spec file
 
 integer, parameter :: &
-     MAX_NAME = 256,  & ! max length of the variable names
-     MAX_FILE = 1024, & ! max length of the file names
+     MAX_NAME = 256,  & !< max length of the variable names
+     MAX_FILE = 1024, & !< max length of the file names
      VERSION_0 = 0,   &
      VERSION_1 = 1,   &
      VERSION_2 = 2
 
-integer, parameter :: BUFSIZE = 1048576  ! This is used to control memory usage in get_grid_comp_area
-                                         ! We may change this to a namelist variable is needed.
+integer, parameter :: BUFSIZE = 1048576  !< This is used to control memory usage in get_grid_comp_area
+                                         !! We may change this to a namelist variable is needed.
 
 ! ==== module variables ======================================================
 integer :: grid_version = -1
@@ -120,9 +133,9 @@ function get_grid_version()
     else if(field_exist(grid_file, 'ocn_mosaic_file') ) then
        grid_version = VERSION_2
     else
-       call error_mesg(module_name//'/get_grid_version',&
-            'Can''t determine the version of the grid spec: none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"', &
-            FATAL )
+       call mpp_error(FATAL, module_name//&
+                    & '/get_grid_version: Can''t determine the version of the grid spec:'// &
+                    & ' none of "x_T", "geolon_t", or "ocn_mosaic_file" exist in file "'//trim(grid_file)//'"')
     endif
   endif
   get_grid_version = grid_version
@@ -130,8 +143,8 @@ end function get_grid_version
 
 
 ! ============================================================================
-! returns number of tiles for a given component
 ! ============================================================================
+!> Returns number of tiles for a given component
 subroutine get_grid_ntiles(component,ntiles)
   character(len=*)     :: component
   integer, intent(out) :: ntiles
@@ -150,8 +163,8 @@ end subroutine get_grid_ntiles
 
 
 ! ============================================================================
-! returns size of the grid for each of the tiles
 ! ============================================================================
+!> Returns size of the grid for each of the tiles
 subroutine get_grid_size_for_all_tiles(component,nx,ny)
   character(len=*)     :: component
   integer, intent(inout) :: nx(:),ny(:)
@@ -176,8 +189,8 @@ end subroutine get_grid_size_for_all_tiles
 
 
 ! ============================================================================
-! returns size of the grid for one of the tiles
 ! ============================================================================
+!> Returns size of the grid for one of the tiles
 subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
   character(len=*)       :: component
   integer, intent(in)    :: tile
@@ -194,15 +207,14 @@ subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
      nx = nnx(tile); ny = nny(tile)
      deallocate(nnx,nny)
   else
-     call error_mesg('get_grid_size',&
-          'requested tile index '//trim(string(tile))//' is out of bounds (1:'//trim(string(ntiles))//')',&
-          FATAL)
+     call mpp_error(FATAL, 'get_grid_size: requested tile index '// &
+                    & trim(string(tile))//' is out of bounds (1:'//trim(string(ntiles))//')')
   endif
 end subroutine get_grid_size_for_one_tile
 
 ! ============================================================================
-! return grid cell area for the specified model component and tile
 ! ============================================================================
+!> Return grid cell area for the specified model component and tile
 subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
   character(len=*), intent(in)    :: component
   integer         , intent(in)    :: tile
@@ -223,9 +235,8 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
         call read_data(grid_file, 'AREA_'//trim(uppercase(component)),cellarea,&
             no_domain=.not.present(domain),domain=domain)
      case default
-        call error_mesg(module_name//'/get_grid_cell_area',&
-             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-             FATAL)
+        call mpp_error(FATAL, module_name//'/get_grid_cell_area: Illegal component name "'//trim(component) &
+                            & //'": must be one of ATM, LND, or OCN')
      end select
      ! convert area to m2
      cellarea = cellarea*4.*PI*radius**2
@@ -248,8 +259,8 @@ subroutine get_grid_cell_area_SG(component, tile, cellarea, domain)
 end subroutine get_grid_cell_area_SG
 
 ! ============================================================================
-! get the area of the component per grid cell
 ! ============================================================================
+!> Get the area of the component per grid cell
 subroutine get_grid_comp_area_SG(component,tile,area,domain)
   character(len=*) :: component
   integer, intent(in) :: tile
@@ -271,7 +282,6 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
      tilefile
   character(len=4096)     :: attvalue
   character(len=MAX_NAME), allocatable :: nest_tile_name(:)
-  character(len=MAX_NAME) :: varname1, varname2
   integer :: is,ie,js,je ! boundaries of our domain
   integer :: i0, j0 ! offsets for x and y, respectively
   integer :: num_nest_tile, ntiles
@@ -293,9 +303,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
      case('LND')
         call read_data(grid_file,'AREA_LND',area,no_domain=.not.present(domain),domain=domain)
      case default
-        call error_mesg(module_name//'/get_grid_comp_area',&
-             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-             FATAL)
+        call mpp_error(FATAL, module_name// &
+              & '/get_grid_comp_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
   case(VERSION_2) ! mosaic gridspec
      select case (component)
@@ -312,9 +321,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         call read_data(grid_file, 'ocn_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case default
-        call error_mesg(module_name//'/get_grid_comp_area',&
-             'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-             FATAL)
+        call mpp_error(FATAL, module_name// &
+              & '/get_grid_comp_area: Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN')
      end select
      ! get the boundaries of the requested domain
      if(present(domain)) then
@@ -326,8 +334,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
         js = 1 ; j0 = 0
      endif
      if (size(area,1)/=ie-is+1.or.size(area,2)/=je-js+1) &
-        call error_mesg(module_name//'/get_grid_comp_area',&
-        'size of the output argument "area" is not consistent with the domain',FATAL)
+        call mpp_error(FATAL, module_name// &
+                       & '/get_grid_comp_area: size of the output argument "area" is not consistent with the domain')
 
      ! find the nest tile
      call read_data(grid_file, 'atm_mosaic', mosaic_name)
@@ -344,8 +352,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
               num_nest_tile = num_nest_tile + 1
               nest_tile_name(num_nest_tile) = trim(mosaic_name)//'_tile'//char(n+ichar('0'))
            else if(trim(attvalue) .NE. "FALSE") then
-              call error_mesg(module_name//'/get_grid_comp_area', 'value of global attribute nest_grid in file'// &
-                   trim(tilefile)//' should be TRUE of FALSE', FATAL)
+              call mpp_error(FATAL, module_name//'/get_grid_comp_area: value of global attribute nest_grid in file'// &
+                             &  trim(tilefile)//' should be TRUE of FALSE')
            endif
         end if
      end do
@@ -400,8 +408,8 @@ subroutine get_grid_comp_area_SG(component,tile,area,domain)
            deallocate(i1, j1, i2, j2, xgrid_area)
         enddo
         if (found_xgrid_files == 0) &
-           call error_mesg('get_grid_comp_area', 'no xgrid files were found for component '&
-                 //trim(component)//' (mosaic name is '//trim(mosaic_name)//')', FATAL)
+           call mpp_error(FATAL, 'get_grid_comp_area: no xgrid files were found for component '// &
+                          & trim(component)//' (mosaic name is '//trim(mosaic_name)//')')
 
      endif
      deallocate(nest_tile_name)
@@ -447,12 +455,13 @@ end subroutine get_grid_comp_area_UG
 
 
 ! ============================================================================
-! returns arrays of global grid cell boundaries for given model component and
-! mosaic tile number.
-! NOTE that in case of non-lat-lon grid the returned coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
 ! ============================================================================
+!> Returns arrays of global grid cell boundaries for given model component and
+!! mosaic tile number.
+!!
+!> @note In the case of non-lat-lon grid the returned coordinates may have be not so
+!! meaningful, by the very nature of such grids. But presumably these 1D coordinate
+!! arrays are good enough for diag axis and such.
 subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
   character(len=*), intent(in) :: component
   integer,          intent(in) :: tile
@@ -465,15 +474,14 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glonb(:))/=nlon+1) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices_1D',&
-       'Size of argument "glonb" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL,  module_name// &
+                       & '/get_grid_cell_vertices_1D: Size of argument "glonb" is not consistent with the grid size')
   if (size(glatb(:))/=nlat+1) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices_1D',&
-       'Size of argument "glatb" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL, module_name// &
+                       & '/get_grid_cell_vertices_1D: Size of argument "glatb" is not consistent with the grid size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_vertices_1D',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices_1D: Illegal component name "'// &
+                    & trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
@@ -535,8 +543,8 @@ subroutine get_grid_cell_vertices_1D(component, tile, glonb, glatb)
 end subroutine get_grid_cell_vertices_1D
 
 ! ============================================================================
-! returns cell vertices for the specified model component and mosaic tile number
 ! ============================================================================
+!> Returns cell vertices for the specified model component and mosaic tile number
 subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
   character(len=*),         intent(in) :: component
   integer,                  intent(in) :: tile
@@ -560,22 +568,20 @@ subroutine get_grid_cell_vertices_2D(component, tile, lonb, latb, domain)
     is = 1 ; ie = nlon
     js = 1 ; je = nlat
     !--- domain normally should be present
-    call error_mesg ( module_name//'/get_grid_cell_vertices',&
-       'domain is not present, global data will be read', NOTE)
+    call mpp_error (NOTE, module_name//'/get_grid_cell_vertices: domain is not present, global data will be read')
   endif
   i0 = -is+1; j0 = -js+1
 
   ! verify that lonb and latb sizes are consistent with the size of domain
   if (size(lonb,1)/=ie-is+2.or.size(lonb,2)/=je-js+2) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices',&
-       'Size of argument "lonb" is not consistent with the domain size',FATAL)
+       call mpp_error (FATAL, module_name// &
+                       & '/get_grid_cell_vertices: Size of argument "lonb" is not consistent with the domain size')
   if (size(latb,1)/=ie-is+2.or.size(latb,2)/=je-js+2) &
-       call error_mesg ( module_name//'/get_grid_cell_vertices',&
-       'Size of argument "latb" is not consistent with the domain size',FATAL)
+       call mpp_error (FATAL, module_name// &
+                       & '/get_grid_cell_vertices: Size of argument "latb" is not consistent with the domain size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_vertices',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices: Illegal component name "'// &
+                    & trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
@@ -727,11 +733,10 @@ subroutine get_grid_cell_vertices_UG(component, tile, lonb, latb, SG_domain, UG_
 end subroutine get_grid_cell_vertices_UG
 
 ! ============================================================================
-! returns global coordinate arrays fro given model component and mosaic tile number
-! NOTE that in case of non-lat-lon grid those coordinates may have be not so
-! meaningful, by the very nature of such grids. But presumably these 1D coordinate
-! arrays are good enough for diag axis and such.
-! ============================================================================
+!> Returns global coordinate arrays fro given model component and mosaic tile number
+!! @note In the case of non-lat-lon grid those coordinates may have be not so
+!! meaningful, by the very nature of such grids. But presumably these 1D coordinate
+!! arrays are good enough for diag axis and such.
 subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
   character(len=*), intent(in) :: component
   integer, intent(in) :: tile
@@ -743,15 +748,14 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glon(:))/=nlon) &
-       call error_mesg ( module_name//'/get_grid_cell_centers_1D',&
-       'Size of argument "glon" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL,  module_name// &
+                       & '/get_grid_cell_centers_1D: Size of argument "glon" is not consistent with the grid size')
   if (size(glat(:))/=nlat) &
-       call error_mesg ( module_name//'/get_grid_cell_centers_1D',&
-       'Size of argument "glat" is not consistent with the grid size',FATAL)
+       call mpp_error (FATAL,  module_name// &
+                       & '/get_grid_cell_centers_1D: Size of argument "glat" is not consistent with the grid size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_centers_1D',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_centers_1D: Illegal component name "'// &
+                    & trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
@@ -800,15 +804,14 @@ subroutine get_grid_cell_centers_1D(component, tile, glon, glat)
 end subroutine get_grid_cell_centers_1D
 
 ! ============================================================================
-! returns grid cell centers for specified model component and mosaic tile number
 ! ============================================================================
+!> Returns grid cell centers for specified model component and mosaic tile number
 subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
   character(len=*), intent(in) :: component
   integer, intent(in) :: tile
   real, intent(inout) :: lon(:,:),lat(:,:)
   type(domain2d), intent(in), optional :: domain
   ! local vars
-  character(len=MAX_NAME) :: varname
   character(len=MAX_FILE) :: filename1, filename2
   integer :: nlon, nlat
   integer :: i,j
@@ -825,24 +828,20 @@ subroutine get_grid_cell_centers_2D(component, tile, lon, lat, domain)
     is = 1 ; ie = nlon
     js = 1 ; je = nlat
     !--- domain normally should be present
-    call error_mesg ( module_name//'/get_grid_cell_centers',&
-       'domain is not present, global data will be read', NOTE)
+    call mpp_error (NOTE, module_name//'/get_grid_cell_centers: domain is not present, global data will be read')
   endif
   i0 = -is+1; j0 = -js+1
 
   ! verify that lon and lat sizes are consistent with the size of domain
   if (size(lon,1)/=ie-is+1.or.size(lon,2)/=je-js+1) &
-       call error_mesg ( module_name//'/get_grid_cell_centers',&
-       'Size of array "lon" is not consistent with the domain size',&
-       FATAL )
+       call mpp_error (FATAL, module_name// &
+                       & '/get_grid_cell_centers: Size of array "lon" is not consistent with the domain size')
   if (size(lat,1)/=ie-is+1.or.size(lat,2)/=je-js+1) &
-       call error_mesg ( module_name//'/get_grid_cell_centers',&
-       'Size of array "lat" is not consistent with the domain size',&
-       FATAL )
+       call mpp_error (FATAL, module_name// &
+                       & '/get_grid_cell_centers: Size of array "lat" is not consistent with the domain size')
   if(trim(component) .NE. 'ATM' .AND. component .NE. 'LND' .AND. component .NE. 'OCN') then
-     call error_mesg(module_name//'/get_grid_cell_vertices',&
-          'Illegal component name "'//trim(component)//'": must be one of ATM, LND, or OCN',&
-          FATAL)
+     call mpp_error(FATAL, module_name//'/get_grid_cell_vertices: Illegal component name "'// &
+                    & trim(component)//'": must be one of ATM, LND, or OCN')
   endif
 
   select case(get_grid_version())
@@ -955,10 +954,10 @@ subroutine get_grid_cell_centers_UG(component, tile, lon, lat, SG_domain, UG_dom
 end subroutine get_grid_cell_centers_UG
 
 ! ============================================================================
-! given a model component, a layout, and (optionally) a halo size, returns a
-! domain for current processor
 ! ============================================================================
 ! this subroutine probably does not belong in the grid_mod
+!> Given a model component, a layout, and (optionally) a halo size, returns a
+!! domain for current processor
 subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   character(len=*) , intent(in)    :: component
   type(domain2d)   , intent(inout) :: domain
@@ -970,7 +969,7 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
 
   ! ---- local vars
   character(len=MAX_NAME) :: varname
-  character(len=MAX_FILE) :: mosaic_file
+  character(len=MAX_FILE + len(grid_dir)) :: mosaic_file
   integer :: ntiles     ! number of tiles
   integer :: ncontacts  ! number of contacts between mosaic tiles
   integer :: n
@@ -1003,8 +1002,8 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   enddo
 
   varname=trim(lowercase(component))//'_mosaic_file'
-  call read_data(grid_file,varname,mosaic_file)
-  mosaic_file = grid_dir//mosaic_file
+  call read_data(grid_file,varname,mosaic_file(1:MAX_FILE))
+  mosaic_file = grid_dir//mosaic_file(1:MAX_FILE)
 
   ! get the contact information from mosaic file
   ncontacts = get_mosaic_ncontacts(mosaic_file)
@@ -1032,5 +1031,7 @@ subroutine define_cube_mosaic ( component, domain, layout, halo, maskmap )
   deallocate(is2,ie2,js2,je2)
 
 end subroutine define_cube_mosaic
-
+#endif
 end module grid_mod
+!> @}
+! close documentation grouping

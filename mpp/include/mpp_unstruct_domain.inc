@@ -16,21 +16,27 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief Routines for defining and managing unstructured grids
 
+!> @addtogroup mpp_domains_mod
+!> @{
   !#####################################################################
-  subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, grid_index, name)
+  subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, &
+                                       &  grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
      type(domain2d), target,     intent(in) :: SG_domain
-     integer,                    intent(in) :: npts_tile(:) ! number of unstructured points on each tile
-     integer,                    intent(in) :: grid_nlev(:) ! number of levels in each unstructured grid.
+     integer,                    intent(in) :: npts_tile(:) !< number of unstructured points on each tile
+     integer,                    intent(in) :: grid_nlev(:) !< number of levels in each unstructured grid.
      integer,                    intent(in) :: ndivs
-     integer,                    intent(in) :: npes_io_group  ! number of processors in a io group. Only pe with same tile_id
-                                                              ! in the same group
+     integer,                    intent(in) :: npes_io_group!< number of processors in a io group.
+                                                            !! Only pe with same tile_id
+                                                            !! in the same group
      integer,                    intent(in) :: grid_index(:)
      character(len=*), optional, intent(in) :: name
      integer, dimension(size(npts_tile(:))) :: ndivs_tile, pe_start, pe_end
      integer, dimension(0:ndivs-1)          :: ibegin, iend, costs_list
-     integer :: ntiles, ntotal_pts, ndivs_used, max_npts, cur_tile, cur_npts
+     integer :: ntiles, ndivs_used, cur_tile
      integer :: n, ts, te, p, pos, tile_id, ngroup, group_id, my_pos, i
      integer :: npes_in_group, is, ie, ntotal_costs, max_cost, cur_cost, costs_left
      integer :: npts_left, ndiv_left, cur_pos, ndiv, prev_cost, ioff
@@ -42,10 +48,12 @@
      UG_domain%ntiles = ntiles
 
      !--- total number of points must be no less than ndivs
-     if(sum(npts_tile)<ndivs) call mpp_error(FATAL, "mpp_define_unstruct_domain: total number of points is less than ndivs")
+     if(sum(npts_tile)<ndivs) call mpp_error(FATAL, &
+        &  "mpp_define_unstruct_domain: total number of points is less than ndivs")
      !--- We are assuming nlev on each grid is at least one.
      do n = 1, size(grid_nlev(:))
-        if(grid_nlev(n) < 1) call mpp_error(FATAL, "mpp_define_unstruct_domain: grid_nlev at some point is less than 1")
+        if(grid_nlev(n) < 1) call mpp_error(FATAL, &
+           &  "mpp_define_unstruct_domain: grid_nlev at some point is less than 1")
      enddo
 
      !-- costs for each tile.
@@ -129,6 +137,7 @@
         pe_end(n) = te
         ioff = ioff+ npts_tile(n)
      enddo
+     if (associated(UG_domain%list)) deallocate(UG_domain%list) !< Check if allocated
      allocate(UG_domain%list(0:ndivs-1))
      do p = 0, ndivs-1
         UG_domain%list(p)%compute%begin = ibegin(p)
@@ -177,12 +186,14 @@
      UG_domain%global%begin_index = grid_index(pos+1)
      UG_domain%global%end_index = grid_index(pos+npts_tile(n))
 
+     if (associated(UG_domain%grid_index)) deallocate(UG_domain%grid_index) !< Check if allocated
      allocate(UG_domain%grid_index(UG_domain%compute%size))
      do n = 1, UG_domain%compute%size
         UG_domain%grid_index(n) = grid_index(pos+UG_domain%compute%begin+n-1)
      enddo
 
      !--- define io_domain
+     if (associated(UG_domain%io_domain)) deallocate(UG_domain%io_domain) !< Check if allocated
      allocate(UG_domain%io_domain)
      tile_id = UG_domain%tile_id
      UG_domain%io_domain%pe = UG_domain%pe
@@ -222,6 +233,7 @@
      UG_domain%io_domain%global%size        = UG_domain%io_domain%global%end -  UG_domain%io_domain%global%begin + 1
 
      npes_in_group = iend(group_id) - ibegin(group_id) + 1
+     if (associated(UG_domain%io_domain%list)) deallocate(UG_domain%io_domain%list) !< Check if allocated
      allocate(UG_domain%io_domain%list(0:npes_in_group-1))
      do n = 0, npes_in_group-1
         pos = UG_domain%io_domain%tile_root_pe - mpp_root_pe() + n
@@ -299,6 +311,7 @@
 
      nrecv = count( recv_cnt > 0 )
      UG_domain%SG2UG%nrecv = nrecv
+     if (associated(UG_domain%SG2UG%recv)) deallocate(UG_domain%SG2UG%recv) !< Check if allocated
      allocate(UG_domain%SG2UG%recv(nrecv))
      nrecv = 0
      pos = 0
@@ -343,6 +356,7 @@
 
      nsend = count( recv_cnt(:) > 0 )
      UG_domain%SG2UG%nsend = nsend
+     if (associated(UG_domain%SG2UG%send)) deallocate(UG_domain%SG2UG%send) !< Check if allocated
      allocate(UG_domain%SG2UG%send(nsend))
      nsend = 0
      isc = SG_domain%x(1)%compute%begin
@@ -531,7 +545,7 @@ return
      integer, optional, intent(out) :: pelist(:)
 
      if(present(root_pe)) root_pe = domain%tile_root_pe
-     if(present(npes)) root_pe = domain%tile_npes
+     if(present(npes)) npes = domain%tile_npes
 
      if(present(pelist)) then
         if( size(pelist(:)).NE. domain%tile_npes ) &
@@ -571,8 +585,8 @@ return
   end subroutine mpp_define_null_UG_domain
 
 !##############################################################################
+    !> @brief Broadcast domain (useful only outside the context of its own pelist)
     subroutine mpp_broadcast_domain_ug( domain )
-!broadcast domain (useful only outside the context of its own pelist)
       type(domainUG), intent(inout) :: domain
       integer, allocatable :: pes(:)
       logical :: native         !true if I'm on the pelist of this domain
@@ -602,6 +616,7 @@ return
 
       if( .NOT.native )then
 !initialize domain%list and set null values in message
+         if (associated(domain%list)) deallocate(domain%list) !< Check if allocated
           allocate( domain%list(0:listsize-1) )
           domain%pe = NULL_PE
           domain%pos = -1
@@ -650,7 +665,7 @@ function mpp_domain_UG_is_tile_root_pe(domain) result(is_root)
 
    !<Inputs/Outputs
     type(domainUG),intent(in) :: domain
-    logical(INT_KIND)         :: is_root
+    logical(l8_kind)         :: is_root
 
     if (domain%pe .eq. domain%tile_root_pe) then
         is_root = .true.
@@ -669,7 +684,7 @@ function mpp_get_io_domain_UG_layout(domain) result(io_layout)
 
    !<Inputs/Outputs
     type(domainUG),intent(in) :: domain
-    integer(INT_KIND)         :: io_layout
+    integer(i4_kind)         :: io_layout
 
     io_layout = domain%io_layout
 
@@ -687,20 +702,30 @@ subroutine deallocate_unstruct_overlap_type(overlap)
 end subroutine deallocate_unstruct_overlap_type
 
 !------------------------------------------------------------------
-subroutine deallocate_unstruct_pass_type(passobj)
-  type(unstruct_pass_type), intent(inout) :: passobj
+subroutine deallocate_unstruct_pass_type(domain)
+  type(domainUG), intent(inout) :: domain
   integer :: n
 
-  do n = 1, passobj%nsend
-     call deallocate_unstruct_overlap_type(passobj%send(n))
+  do n = 1, domain%UG2SG%nsend
+     call deallocate_unstruct_overlap_type(domain%UG2SG%send(n))
   enddo
-  do n = 1, passobj%nrecv
-     call deallocate_unstruct_overlap_type(passobj%recv(n))
+  do n = 1, domain%UG2SG%nrecv
+     call deallocate_unstruct_overlap_type(domain%UG2SG%recv(n))
   enddo
 
-  if(associated(passobj%send)) deallocate(passobj%send)
-  if(associated(passobj%recv)) deallocate(passobj%recv)
-
+  ! SG2UG%{send,recv} point to the same memory as UG2SG%{send,recv}
+  ! respectively.  Thus, we only need to `deallocate` one, and nullify
+  ! the other set.
+  if(associated(domain%UG2SG%send)) then
+    deallocate(domain%UG2SG%send)
+    nullify(domain%UG2SG%send)
+    nullify(domain%SG2UG%recv)
+  end if
+  if(associated(domain%UG2SG%recv)) then
+    deallocate(domain%UG2SG%recv)
+    nullify(domain%UG2SG%recv)
+    nullify(domain%SG2UG%send)
+  end if
 end subroutine deallocate_unstruct_pass_type
 
 !------------------------------------------------------------------
@@ -708,9 +733,6 @@ subroutine mpp_deallocate_domainUG(domain)
 
    !<Inputs/Outputs
     type(domainUG),intent(inout) :: domain
-
-   !<Local variables
-    integer(INT_KIND) :: i !<Loop variable.
 
     if (associated(domain%list)) then
         deallocate(domain%list)
@@ -726,8 +748,7 @@ subroutine mpp_deallocate_domainUG(domain)
         domain%io_domain => null()
     endif
 
-    call deallocate_unstruct_pass_type(domain%SG2UG)
-    call deallocate_unstruct_pass_type(domain%UG2SG)
+    call deallocate_unstruct_pass_type(domain)
 
     if (associated(domain%grid_index)) then
         deallocate(domain%grid_index)
@@ -792,7 +813,7 @@ end subroutine mpp_deallocate_domainUG
   end function mpp_domainUG_ne
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
+#define MPP_TYPE_ real(r8_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_r8_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -801,11 +822,10 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r8_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r8_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
-#ifdef OVERLOAD_R4
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
+#define MPP_TYPE_ real(r4_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_r4_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -814,11 +834,10 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_r4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_r4_3d
-#include <mpp_unstruct_pass_data.h>
-#endif
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
+#define MPP_TYPE_ integer(i4_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_i4_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -827,10 +846,10 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_i4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_i4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_TYPE_
-#define MPP_TYPE_ logical(INT_KIND)
+#define MPP_TYPE_ logical(i4_kind)
 #undef mpp_pass_SG_to_UG_2D_
 #define mpp_pass_SG_to_UG_2D_ mpp_pass_SG_to_UG_l4_2d
 #undef mpp_pass_SG_to_UG_3D_
@@ -839,7 +858,7 @@ end subroutine mpp_deallocate_domainUG
 #define mpp_pass_UG_to_SG_2D_ mpp_pass_UG_to_SG_l4_2d
 #undef mpp_pass_UG_to_SG_3D_
 #define mpp_pass_UG_to_SG_3D_ mpp_pass_UG_to_SG_l4_3d
-#include <mpp_unstruct_pass_data.h>
+#include <mpp_unstruct_pass_data.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r8_2d
@@ -850,10 +869,9 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_global_field_ug.h>
+#define MPP_TYPE_ real(r8_kind)
+#include <mpp_global_field_ug.fh>
 
-#ifndef no_8byte_integers
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i8_2d
 #undef MPP_GLOBAL_FIELD_UG_3D_
@@ -863,11 +881,9 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i8_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(LONG_KIND)
-#include <mpp_global_field_ug.h>
-#endif
+#define MPP_TYPE_ integer(i8_kind)
+#include <mpp_global_field_ug.fh>
 
-#ifdef OVERLOAD_R4
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_r4_2d
 #undef MPP_GLOBAL_FIELD_UG_3D_
@@ -877,9 +893,8 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_r4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(FLOAT_KIND)
-#include <mpp_global_field_ug.h>
-#endif
+#define MPP_TYPE_ real(r4_kind)
+#include <mpp_global_field_ug.fh>
 
 #undef MPP_GLOBAL_FIELD_UG_2D_
 #define MPP_GLOBAL_FIELD_UG_2D_ mpp_global_field2D_ug_i4_2d
@@ -890,5 +905,6 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_GLOBAL_FIELD_UG_5D_
 #define MPP_GLOBAL_FIELD_UG_5D_ mpp_global_field2D_ug_i4_5d
 #undef MPP_TYPE_
-#define MPP_TYPE_ integer(INT_KIND)
-#include <mpp_global_field_ug.h>
+#define MPP_TYPE_ integer(i4_kind)
+#include <mpp_global_field_ug.fh>
+!> @}

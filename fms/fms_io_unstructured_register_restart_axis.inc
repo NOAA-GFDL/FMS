@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @addtogroup
+!> @{
 
 !------------------------------------------------------------------------------
 !>Store a real axis (x,y,z,...) in a restart object assoicated with an
@@ -48,14 +50,20 @@ subroutine fms_io_unstructured_register_restart_axis_r1D(fileObj, &
 
    !Local variables
     integer(INT_KIND)                          :: input_filename_length !<The length of the trimmed input filename.
-    character(len=256)                         :: tmp_filename          !<A character buffer used to store various file names.
-    character(len=256)                         :: filename_suffix       !<A string appended to the end of the inputted file name.
-    character(len=256)                         :: mosaic_filename       !<The filename returned by the get_mosaic_tile_file_ug routine.
-    integer(INT_KIND)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
+    character(len=256)                         :: tmp_filename          !<A character buffer
+                                                                        !! used to store various file names.
+    character(len=256)                         :: filename_suffix       !<A string appended
+                                                                        !! to the end of the inputted file name.
+    character(len=256)                         :: mosaic_filename       !<The filename returned
+                                                                        !! by the get_mosaic_tile_file_ug routine.
+    integer(INT_KIND)                          :: axis_index            !<Index of the inputted
+                                                                        !! axis in the fileObj%axes array.
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(INT_KIND)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The total number
+                                                                        !! of ranks in an I/O domain pelist.
     integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
-    integer(INT_KIND),dimension(:),allocatable :: fdata_sizes           !<Size of the axis data for each rank in the I/O domain pelist.
+    integer(INT_KIND),dimension(:),allocatable :: fdata_sizes           !<Size of the axis
+                                                                        !! data for each rank in the I/O domain pelist.
 
    !Make sure that the module is initialized.
     if (.not. module_is_initialized) then
@@ -267,12 +275,17 @@ subroutine fms_io_unstructured_register_restart_axis_i1D(fileObj, &
 
    !Local variables
     integer(INT_KIND)                          :: input_filename_length !<The length of the trimmed input filename.
-    character(len=256)                         :: tmp_filename          !<A character buffer used to store various file names.
-    character(len=256)                         :: filename_suffix       !<A string appended to the end of the inputted file name.
-    character(len=256)                         :: mosaic_filename       !<The filename returned by the get_mosaic_tile_file_ug routine.
-    integer(INT_KIND)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
+    character(len=256)                         :: tmp_filename          !<A character buffer
+                                                                        !! used to store various file names.
+    character(len=256)                         :: filename_suffix       !<A string appended
+                                                                        !! to the end of the inputted file name.
+    character(len=256)                         :: mosaic_filename       !<The filename returned
+                                                                        !! by the get_mosaic_tile_file_ug routine.
+    integer(INT_KIND)                          :: axis_index            !<Index of the inputted
+                                                                        !! axis in the fileObj%axes array.
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(INT_KIND)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The total number
+                                                                        !! of ranks in an I/O domain pelist.
     integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
 
    !Make sure that the module is initialized.
@@ -466,12 +479,17 @@ subroutine fms_io_unstructured_register_restart_axis_u(fileObj, &
 
    !Local variables
     integer(INT_KIND)                          :: input_filename_length !<The length of the trimmed input filename.
-    character(len=256)                         :: tmp_filename          !<A character buffer used to store various file names.
-    character(len=256)                         :: filename_suffix       !<A string appended to the end of the inputted file name.
-    character(len=256)                         :: mosaic_filename       !<The filename returned by the get_mosaic_tile_file_ug routine.
-    integer(INT_KIND)                          :: axis_index            !<Index of the inputted axis in the fileObj%axes array.
+    character(len=256)                         :: tmp_filename          !<A character buffer
+                                                                        !! used to store various file names.
+    character(len=256)                         :: filename_suffix       !<A string appended
+                                                                        !! to the end of the inputted file name.
+    character(len=256)                         :: mosaic_filename       !<The filename returned
+                                                                        !! by the get_mosaic_tile_file_ug routine.
+    integer(INT_KIND)                          :: axis_index            !<Index of the inputted
+                                                                        !! axis in the fileObj%axes array.
     type(domainUG),pointer                     :: io_domain             !<Pointer to an unstructured I/O domain.
-    integer(INT_KIND)                          :: io_domain_npes        !<The total number of ranks in an I/O domain pelist.
+    integer(INT_KIND)                          :: io_domain_npes        !<The total number
+                                                                        !! of ranks in an I/O domain pelist.
     integer(INT_KIND),dimension(:),allocatable :: pelist                !<A pelist.
 
    !Make sure that the module is initialized.
@@ -588,7 +606,4 @@ subroutine fms_io_unstructured_register_restart_axis_u(fileObj, &
 
     return
 end subroutine fms_io_unstructured_register_restart_axis_u
-
-!------------------------------------------------------------------------------
-
-!----------
+!> @}

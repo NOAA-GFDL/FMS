@@ -23,10 +23,10 @@
 # uramirez
 
 # Find the fms and mpp mod files.
-AM_CPPFLAGS = -I${top_builddir}/mpp -I${top_builddir}/affinity
+AM_CPPFLAGS = -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_affinity
@@ -38,7 +38,11 @@ test_affinity_SOURCES = test_affinity.F90
 TESTS = test_affinity2.sh
 
 # Copy over other needed files to the srcdir
-EXTRA_DIST = input_base.nml test_affinity2.sh
+EXTRA_DIST = test_affinity2.sh
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Clean up
-CLEANFILES = input.nml *.out*
+CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl

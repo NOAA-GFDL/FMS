@@ -16,49 +16,55 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-!
-! nf95 -r8 -g -I ~/regression/ia64/23-Jun-2005/CM2.1U_Control-1990_E1.k32pe/include/ -D_TEST_DRIFTERS -D_F95 quicksort.F90 drifters_core.F90
-
+!> @defgroup drifters_core_mod drifters_core_mod
+!> @ingroup drifters
+!> @brief Handles the mechanics for adding and removing drifters
 
 module drifters_core_mod
-#include <fms_platform.h>
+#ifdef use_drifters
+  use platform_mod
   implicit none
   private
 
   public :: drifters_core_type, drifters_core_new, drifters_core_del, drifters_core_set_ids
   public :: drifters_core_remove_and_add, drifters_core_set_positions, assignment(=)
-!#ifdef _TEST_DRIFTERS_CORE
   public :: drifters_core_print,  drifters_core_resize
-!#endif
 
   ! Globals
   integer, parameter, private   :: MAX_STR_LEN = 128
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
+  !> @brief Core data needed for drifters.
+  !! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
+  !! when adding members.
+  !> @ingroup drifters_core_mod
   type drifters_core_type
-     ! Be sure to update drifters_core_new, drifters_core_del and drifters_core_copy_new
-     ! when adding members
-     integer*8 :: it   ! time index
-     integer :: nd     ! number of dimensions
-     integer :: np     ! number of particles (drifters)
-     integer :: npdim  ! max number of particles (drifters)
-     integer, allocatable :: ids(:)_NULL  ! particle id number
-     real   , allocatable :: positions(:,:)  
+     integer(kind=i8_kind) :: it   !< time index
+     integer :: nd     !< number of dimensions
+     integer :: np     !< number of particles (drifters)
+     integer :: npdim  !< max number of particles (drifters)
+     integer, allocatable :: ids(:) !< particle id number
+     real   , allocatable :: positions(:,:)
   end type drifters_core_type
 
+  !> @brief Assignment override for @ref drifters_core_type
+  !> @ingroup drifters_core_mod
   interface assignment(=)
      module procedure drifters_core_copy_new
   end interface
 
 contains
 
+!> @addtogroup drifters_core_mod
+!> @{
 !###############################################################################
+  !> Create a new @ref drifters_core_type
   subroutine drifters_core_new(self, nd, npdim, ermesg)
-    type(drifters_core_type)        :: self
+    type(drifters_core_type)        :: self !< @ref drifters_core_type to create
     integer, intent(in)       :: nd
     integer, intent(in)       :: npdim
-    character(*), intent(out) :: ermesg
+    character(*), intent(out) :: ermesg !< Error message string
     integer ier, iflag, i
     ermesg = ''
     ier    = 0
@@ -80,9 +86,10 @@ contains
   end subroutine drifters_core_new
 
  !###############################################################################
+ !> Deallocates the given @ref drifters_core_type
  subroutine drifters_core_del(self, ermesg)
-    type(drifters_core_type)        :: self
-    character(*), intent(out) :: ermesg
+    type(drifters_core_type)        :: self !< @ref drifters_core_type to delete
+    character(*), intent(out) :: ermesg !< Error message string
     integer ier, iflag
     ermesg = ''
     ier    = 0
@@ -124,7 +131,7 @@ contains
  !###############################################################################
   subroutine drifters_core_resize(self, npdim, ermesg)
     type(drifters_core_type)        :: self
-    integer, intent(in)        :: npdim ! new max value
+    integer, intent(in)        :: npdim !< new max value
     character(*), intent(out) :: ermesg
     integer ier, iflag, i
 
@@ -206,7 +213,8 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
     ! cannot remove more than there are elements
     if(self%np + n_diff < 0) then
-       ermesg = 'drifters::ERROR attempting to remove more elements than there are elements in drifters_core_remove_and_add'
+       ermesg = 'drifters::ERROR attempting to remove more elements than there are elements in '// &
+               &'drifters_core_remove_and_add'
        return
     endif
 
@@ -265,7 +273,8 @@ subroutine drifters_core_remove_and_add(self, indices_to_remove_in, &
 
   end subroutine drifters_core_print
 
-
+#endif
 end module drifters_core_mod
 !###############################################################################
-!###############################################################################
+!> @}
+! close documentation grouping

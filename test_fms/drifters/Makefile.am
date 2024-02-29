@@ -23,11 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I${top_builddir}/drifters -I${top_builddir}/mpp \
--I${top_srcdir}/include -I${top_builddir}/fms
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
 check_PROGRAMS = test_cloud_interpolator test_drifters_input		\
@@ -43,12 +42,16 @@ test_drifters_core_SOURCES = test_drifters_core.F90
 test_quicksort_SOURCES = test_quicksort.F90
 test_drifters_SOURCES = test_drifters.F90
 
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
+
 # Run the test programs.
 TESTS = test_drifters2.sh
 
 # Include these files in the distribution.
-EXTRA_DIST = input_base.nml drifters_inp_test_3d.cdl	\
+EXTRA_DIST = drifters_inp_test_3d.cdl	\
 test_drifters2.sh
 
 # Clean up
-CLEANFILES = *out *__genmod.mod *__genmod.f90 input.nml *.nc
+CLEANFILES = *out *__genmod.mod *__genmod.f90 input.nml *.nc *.dpi *.spi *.dyn *.spl

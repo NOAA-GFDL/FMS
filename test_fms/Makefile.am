@@ -24,10 +24,10 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = diag_manager data_override exchange monin_obukhov drifters \
-mosaic interpolator fms fms2_io mpp mpp_io time_interp time_manager \
-horiz_interp field_manager axis_utils affinity
+SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
+mosaic2 interpolator fms mpp mpp_io time_interp time_manager horiz_interp topography \
+field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
+random_numbers diag_integral column_diagnostics tridiagonal
 
-# This input file must be distributed, it is turned into
-# test_common.sh by configure.
-EXTRA_DIST = test_common.sh.in
+# testing utility scripts to distribute
+EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh

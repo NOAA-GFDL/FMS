@@ -16,17 +16,19 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> @file
-
+!> @defgroup fms_netcdf_domain_io_mod fms_netcdf_domain_io_mod
+!> @ingroup fms2_io
 !> @brief Domain-specific I/O wrappers.
+
+!> @addtogroup fms_netcdf_domain_io_mod
+!> @{
 module fms_netcdf_domain_io_mod
-use, intrinsic :: iso_fortran_env
 use netcdf
 use mpp_mod
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
+use platform_mod
 implicit none
 private
 
@@ -41,15 +43,18 @@ character(len=16), parameter :: domain_axis_att_name = "domain_axis"
 character(len=16), parameter :: x = "x"
 character(len=16), parameter :: y = "y"
 
+!> @}
 
 !> @brief Domain variable.
-type :: DomainDimension_t
+!> @ingroup fms_netcdf_domain_io_mod
+type, private :: DomainDimension_t
   character(len=nf90_max_name) :: varname !< Variable name.
   integer :: pos !< Domain position.
 endtype DomainDimension_t
 
 
 !> @brief netcdf domain file type.
+!> @ingroup fms_netcdf_domain_io_mod
 type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
   type(domain2d) :: domain !< Two-dimensional domain.
   type(DomainDimension_t), dimension(:), allocatable :: xdims !< Dimensions associated
@@ -93,14 +98,17 @@ public :: restore_domain_state
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
 public :: is_dimension_registered
+public :: get_mosaic_tile_grid
 
-
+!> @ingroup fms_netcdf_domain_io_mod
 interface compute_global_checksum
   module procedure compute_global_checksum_2d
   module procedure compute_global_checksum_3d
   module procedure compute_global_checksum_4d
 end interface compute_global_checksum
 
+!> @addtogroup fms_netcdf_domain_io_mod
+!> @{
 
 contains
 
@@ -297,10 +305,7 @@ function is_dimension_registered(fileobj, dimension_name) &
 
   ! local
   logical :: is_registered
-
   integer :: dpos
-  integer :: ndims
-  character(len=nf90_max_name), dimension(:), allocatable :: dim_names
 
   dpos = 0
   is_registered = .false.
@@ -317,7 +322,7 @@ end function is_dimension_registered
 
 !> @brief Open a domain netcdf file.
 !! @return Flag telling if the open completed successfully.
-function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
+function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, dont_add_res_to_filename) &
   result(success)
 
   type(FmsNetcdfDomainFile_t),intent(inout) :: fileobj !< File object.
@@ -335,6 +340,8 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
+                                              !! ".res" to the filename
   logical :: success
 
   integer, dimension(2) :: io_layout
@@ -349,8 +356,11 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
 
   !Get the path of a "combined" file.
   io_layout = mpp_get_io_domain_layout(domain)
-  if (mpp_get_ntile_count(domain) .gt. 1) then
-    tile_id = mpp_get_tile_id(domain)
+  tile_id = mpp_get_tile_id(domain)
+
+  !< If the number of tiles is greater than 1 or if the current tile is greater
+  !than 1 add .tileX. to the filename
+  if (mpp_get_ntile_count(domain) .gt. 1 .or. tile_id(1) > 1) then
     call domain_tile_filepath_mangle(combined_filepath, path, tile_id(1))
   else
     call string_copy(combined_filepath, path)
@@ -359,7 +369,7 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
   !Get the path of a "distributed" file.
   io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
-    call error("input domain does not have an io_domain.")
+    call error("The domain associated with the file:"//trim(path)//" does not have an io_domain.")
   endif
   if (io_layout(1)*io_layout(2) .gt. 1) then
     tile_id = mpp_get_tile_id(io_domain)
@@ -376,19 +386,20 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart) &
 
   !Open the distibuted files.
   success = netcdf_file_open(fileobj, distributed_filepath, mode, nc_format, pelist, &
-                             is_restart)
+                             is_restart, dont_add_res_to_filename)
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
     if (success) then
       if (.not. string_compare(distributed_filepath, combined_filepath)) then
         success2 = netcdf_file_open(fileobj2, combined_filepath, mode, nc_format, pelist, &
-                                    is_restart)
+                                    is_restart, dont_add_res_to_filename)
         if (success2) then
-          call error("you have both combined and distributed files.")
+          call error("The domain decomposed file:"//trim(path)// &
+                   & " contains both combined (*.nc) and distributed files (*.nc.XXXX).")
         endif
       endif
     else
       success = netcdf_file_open(fileobj, combined_filepath, mode, nc_format, pelist, &
-                                 is_restart)
+                                 is_restart, dont_add_res_to_filename)
       !If the file is combined and the layout is not (1,1) set the adjust_indices flag to false
       if (success .and. (io_layout(1)*io_layout(2) .gt. 1)) fileobj%adjust_indices = .false.
     endif
@@ -450,23 +461,29 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   io_domain => mpp_get_io_domain(fileobj%domain)
   if (string_compare(xory, x, .true.)) then
     if (dpos .ne. center .and. dpos .ne. east) then
-      call error("only center or east supported for x dimensions.")
+      call error("Only domain_position=center or domain_position=EAST is supported for x dimensions."// &
+                  & " Fix your register_axis call for file:"&
+                  &//trim(fileobj%path)//" and dimension:"//trim(dim_name))
     endif
     call mpp_get_global_domain(io_domain, xsize=domain_size, position=dpos)
     call append_domain_decomposed_dimension(dim_name, dpos, fileobj%xdims, fileobj%nx)
   elseif (string_compare(xory, y, .true.)) then
     if (dpos .ne. center .and. dpos .ne. north) then
-      call error("only center or north supported for y dimensions.")
+      call error("Only domain_position=center or domain_position=NORTH is supported for y dimensions."// &
+                  & " Fix your register_axis call for file:"&
+                  &//trim(fileobj%path)//" and dimension:"//trim(dim_name))
     endif
     call mpp_get_global_domain(io_domain, ysize=domain_size, position=dpos)
     call append_domain_decomposed_dimension(dim_name, dpos, fileobj%ydims, fileobj%ny)
   else
-    call error("unrecognized xory flag value.")
+    call error("The register_axis call for file:"//trim(fileobj%path)//" and dimension:"//trim(dim_name)// &
+               & " has an unrecognized xory flag value:"&
+               &//trim(xory)//" only 'x' and 'y' are allowed.")
   endif
   if (fileobj%is_readonly .or. (fileobj%mode_is_append .and. dimension_exists(fileobj, dim_name))) then
     call get_dimension_size(fileobj, dim_name, dim_size, broadcast=.true.)
     if (dim_size .lt. domain_size) then
-      call error("dimension "//trim(dim_name)//" is smaller than the size of" &
+      call error("dimension "//trim(dim_name)//" in the file "//trim(fileobj%path)//" is smaller than the size of" &
                  //" the associated domain "//trim(xory)//" axis.")
     endif
   else
@@ -475,7 +492,7 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
 end subroutine register_domain_decomposed_dimension
 
 
-!> @brief Add a "domain_decomposed" attribute to certain variables because it is
+!> @brief Add a "domain_decomposed" attribute to the axis variables because it is
 !!        required by mppnccombine.
 !! @internal
 subroutine add_domain_attribute(fileobj, variable_name)
@@ -489,6 +506,12 @@ subroutine add_domain_attribute(fileobj, variable_name)
   integer :: eg
   integer :: s
   integer :: e
+  integer, dimension(2) :: io_layout !< Io_layout in the fileobj's domain
+
+  !< Don't add the "domain_decomposition" variable attribute if the io_layout is
+  !! 1,1, to avoid frecheck "failures"
+  io_layout = mpp_get_io_domain_layout(fileobj%domain)
+  if (io_layout(1)  .eq. 1 .and. io_layout(2) .eq. 1) return
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(variable_name, fileobj%xdims, fileobj%nx)
@@ -544,7 +567,8 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
   logical :: is_decomposed
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("file "//trim(fileobj%path)// &
+             & " is not a restart file. You must set is_restart=.true. in your open_file call.")
   endif
 
 ! Calculate the variable's checksum and write it to the netcdf file
@@ -554,21 +578,21 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
                                        fileobj%restart_vars(i)%data2d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum(1:len(chksum)), str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data3d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum(1:len(chksum)), str_len=len(chksum))
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
                                        fileobj%restart_vars(i)%data4d, is_decomposed)
       if (is_decomposed) then
         call register_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                         "checksum", chksum)
+                                         "checksum", chksum(1:len(chksum)), str_len=len(chksum))
       endif
     endif
   enddo
@@ -591,7 +615,8 @@ subroutine save_domain_restart(fileobj, unlim_dim_level)
       call domain_write_4d(fileobj, fileobj%restart_vars(i)%varname, &
                            fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
     else
-      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d.  The data sent in has an unsupported dimensionality")
+      call error("This routine only accepts data that is scalar, 1d 2d 3d or 4d."//&
+                 " The data sent in has an unsupported dimensionality")
     endif
   enddo
 
@@ -600,18 +625,24 @@ end subroutine save_domain_restart
 
 !> @brief Loop through registered restart variables and read them from
 !!        a netcdf file.
-subroutine restore_domain_state(fileobj, unlim_dim_level)
+subroutine restore_domain_state(fileobj, unlim_dim_level, ignore_checksum)
 
   type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
   integer, intent(in), optional :: unlim_dim_level !< Unlimited dimension level.
+  logical, intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
 
   integer :: i
   character(len=32) :: chksum_in_file
   character(len=32) :: chksum
+  logical :: chksum_ignore = .FALSE. !< local variable for data integrity checks
+                                     !! default: .FALSE. - checks enabled
   logical :: is_decomposed
 
+  if (PRESENT(ignore_checksum)) chksum_ignore = ignore_checksum
+
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file.")
+    call error("file "//trim(fileobj%path)// &
+             & " is not a restart file. You must set is_restart=.true. in your open_file call.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -623,44 +654,60 @@ subroutine restore_domain_state(fileobj, unlim_dim_level)
     elseif (associated(fileobj%restart_vars(i)%data2d)) then
       call domain_read_2d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data2d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data2d, is_decomposed)
-      if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
-          is_decomposed) then
-        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                    "checksum", chksum_in_file)
-        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-          call error("checksum attribute does not match data in file.")
+      if (.not.chksum_ignore) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data2d, is_decomposed)
+        if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
+            is_decomposed) then
+          call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                      "checksum", chksum_in_file)
+          if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"// &
+                      & trim(fileobj%restart_vars(i)%varname)// &
+                      &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                      &" from data:"//trim(adjustl(chksum)))
+          endif
         endif
       endif
     elseif (associated(fileobj%restart_vars(i)%data3d)) then
       call domain_read_3d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data3d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data3d, is_decomposed)
-      if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
-          is_decomposed) then
-        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                    "checksum", chksum_in_file)
-        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-          call error("checksum attribute does not match data in file.")
+      if (.not.chksum_ignore) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data3d, is_decomposed)
+        if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
+            is_decomposed) then
+          call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                      "checksum", chksum_in_file(1:len(chksum_in_file)))
+          if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"// &
+                      & trim(fileobj%restart_vars(i)%varname)//&
+                      &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                      &" from data:"//trim(adjustl(chksum)))
+          endif
         endif
       endif
     elseif (associated(fileobj%restart_vars(i)%data4d)) then
       call domain_read_4d(fileobj, fileobj%restart_vars(i)%varname, &
                           fileobj%restart_vars(i)%data4d, unlim_dim_level=unlim_dim_level)
-      chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
-                                       fileobj%restart_vars(i)%data4d, is_decomposed)
-      if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
-          is_decomposed) then
-        call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
-                                    "checksum", chksum_in_file)
-        if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
-          call error("checksum attribute does not match data in file.")
+      if (.not.chksum_ignore) then
+        chksum = compute_global_checksum(fileobj, fileobj%restart_vars(i)%varname, &
+                                         fileobj%restart_vars(i)%data4d, is_decomposed)
+        if (variable_att_exists(fileobj, fileobj%restart_vars(i)%varname, "checksum") .and. &
+            is_decomposed) then
+          call get_variable_attribute(fileobj, fileobj%restart_vars(i)%varname, &
+                                      "checksum", chksum_in_file)
+          if (.not. string_compare(trim(adjustl(chksum_in_file)), trim(adjustl(chksum)))) then
+            call error("The checksum in the file:"//trim(fileobj%path)//" and variable:"// &
+                      & trim(fileobj%restart_vars(i)%varname)//&
+                      &" does not match the checksum calculated from the data. file:"//trim(adjustl(chksum_in_file))//&
+                      &" from data:"//trim(adjustl(chksum)))
+          endif
         endif
       endif
     else
-      call error("this branch should not be reached.")
+      call error("There is no data associated with the variable: "//trim(fileobj%restart_vars(i)%varname)//&
+                 &" and the file: "//trim(fileobj%path)//". Check your register_restart_variable call")
     endif
   enddo
 end subroutine restore_domain_state
@@ -690,7 +737,8 @@ subroutine get_compute_domain_dimension_indices(fileobj, dimname, indices)
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_compute_domain(io_domain, ybegin=s, yend=e, position=dpos)
     else
-      call error("input dimension is not associated with the domain.")
+      call error("get_compute_domain_dimension_indices: the input dimension:"//trim(dimname)// &
+               & " is not domain decomposed.")
     endif
   endif
   if (allocated(indices)) then
@@ -708,7 +756,7 @@ end subroutine get_compute_domain_dimension_indices
 subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
                           isd, isc, xc_size, jsd, jsc, yc_size, &
                           buffer_includes_halos, extra_x_point, &
-                          extra_y_point)
+                          extra_y_point, msg)
 
   integer, intent(in) :: data_xsize !< Size of buffer's domain "x" dimension.
   integer, intent(in) :: data_ysize !< Size of buffer's domain "y" dimension.
@@ -722,8 +770,9 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
   integer, intent(out) :: jsc !< Starting index for y dimension of compute domain.
   integer, intent(out) :: yc_size !< Size of y dimension of compute domain.
   logical, intent(out) :: buffer_includes_halos !< Flag telling if input buffer includes space for halos.
-  logical, intent(out), optional :: extra_x_point !<
-  logical, intent(out), optional :: extra_y_point !<
+  logical, intent(out), optional :: extra_x_point !< Flag indicating if data_array has an extra point in x
+  logical, intent(out), optional :: extra_y_point !< Flag indicating if data_array has an extra point in y
+  character(len=*), intent(in), optional :: msg !< Message appended to fatal error
 
   integer :: xd_size
   integer :: yd_size
@@ -765,8 +814,10 @@ subroutine domain_offsets(data_xsize, data_ysize, domain, xpos, ypos, &
   buffer_includes_halos = (data_xsize .eq. xd_size) .and. (data_ysize .eq. yd_size)
   if (.not. buffer_includes_halos .and. data_xsize .ne. xc_size .and. data_ysize &
       .ne. yc_size) then
-    call error("size of x dimension of input buffer does not match size" &
-               //" of x dimension of data or compute domain.")
+     print *, "buffer_includes_halos:", buffer_includes_halos, " data_xsize:", &
+     data_xsize, " xc_size:", xc_size, " data_ysize:", data_ysize, " yc_size:", &
+     yc_size
+    call error(trim(msg)//" The data is not on the compute domain or the data domain")
   endif
 end subroutine domain_offsets
 
@@ -796,7 +847,8 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
       dpos = fileobj%ydims(dpos)%pos
       call mpp_get_global_domain(io_domain, ybegin=is, yend=ie, position=dpos)
     else
-      call error("input dimension is not associated with the domain.")
+      call error("get_global_io_domain_indices: the dimension "//trim(dimname)//" in the file: "//trim(fileobj%path)//&
+                 &" is not domain decomposed. Check your register_axis call")
     endif
   endif
 
@@ -815,6 +867,36 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
 end subroutine get_global_io_domain_indices
 
+!> @brief Read a mosaic_file and get the grid filename for the current tile or
+!!        for the tile specified
+subroutine get_mosaic_tile_grid(grid_file,mosaic_file, domain, tile_count)
+  character(len=*), intent(out)          :: grid_file !< Filename of the grid file for the
+                                                      !! current domain tile or for tile
+                                                      !! specified in tile_count
+  character(len=*), intent(in)           :: mosaic_file !< Filename that will be read
+  type(domain2D),   intent(in)           :: domain !< Input domain
+  integer,          intent(in), optional :: tile_count !< Optional argument indicating
+                                                       !! the tile you want grid file name for
+                                                       !! this is for when a pe is in more than
+                                                       !! tile.
+  integer                                :: tile !< Current domian tile or tile_count
+  integer                                :: ntileMe !< Total number of tiles in the domain
+  integer, dimension(:), allocatable     :: tile_id !< List of tiles in the domain
+  type(FmsNetcdfFile_t)                  :: fileobj !< Fms2io file object
+
+  tile = 1
+  if(present(tile_count)) tile = tile_count
+  ntileMe = mpp_get_current_ntile(domain)
+  allocate(tile_id(ntileMe))
+  tile_id = mpp_get_tile_id(domain)
+
+  if (netcdf_file_open(fileobj, mosaic_file, "read")) then
+      call netcdf_read_data(fileobj, "gridfiles", grid_file, corner=tile_id(tile))
+      grid_file = 'INPUT/'//trim(grid_file)
+      call netcdf_file_close(fileobj)
+  endif
+
+end subroutine get_mosaic_tile_grid
 
 include "register_domain_restart_variable.inc"
 include "domain_read.inc"
@@ -823,4 +905,5 @@ include "domain_write.inc"
 
 
 end module fms_netcdf_domain_io_mod
-
+!> @}
+! close documentation grouping

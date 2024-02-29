@@ -1,6 +1,4 @@
 ! -*-f90-*-
-
-
 !***********************************************************************
 !*                   GNU Lesser General Public License
 !*
@@ -19,25 +17,18 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief Routines to retrieve data used in @ref mpp_io_mod
 
-  !#####################################################################
-! <SUBROUTINE NAME="mpp_get_info">
-!   <OVERVIEW>
-!     Get some general information about a file.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Get some general information about a file.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_get_info( unit, ndim, nvar, natt, ntime )
-!   </TEMPLATE>
-!   <IN NAME="unit" TYPE="integer"> </IN>
-!   <OUT NAME="ndim" TYPE="integer"> </OUT>
-!   <OUT NAME="nvar" TYPE="integer"> </OUT>
-!   <OUT NAME="natt" TYPE="integer"> </OUT>
-!   <OUT NAME="ntime" TYPE="integer"> </OUT>
-! </SUBROUTINE>
+!> @addtogroup mpp_io_mod
+!> @{
 
+    !> @brief Get some general information about a file.
+    !!
+    !> <br>Example usage:
+    !! @code{.F90}
+    !! call mpp_get_info( unit, ndim, nvar, natt, ntime )
+    !! @endcode
     subroutine mpp_get_info( unit, ndim, nvar, natt, ntime )
 
       integer, intent(in) :: unit
@@ -57,20 +48,13 @@
 
     end subroutine mpp_get_info
 
-  !#####################################################################
-! <SUBROUTINE NAME="mpp_get_global_atts" INTERFACE="mpp_get_atts">
-!  <IN NAME="unit" TYPE="integer"></IN>
-!  <IN NAME="global_atts" TYPE="atttype" DIM="(:)"></IN>
-! </SUBROUTINE>
+    !> @brief Copy global file attributes for use by user
     subroutine mpp_get_global_atts( unit, global_atts )
-!
-!  copy global file attributes for use by user
-!
-!  global_atts is an attribute type which is allocated from the
-!  calling routine
 
       integer,       intent(in)    :: unit
-      type(atttype), intent(inout) :: global_atts(:)
+      type(atttype), intent(inout) :: global_atts(:) !< an attribute type which is allocated from the
+                                                     !!  calling routine
+
       integer :: natt,i
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_INFO: must first call mpp_io_init.' )
@@ -104,7 +88,7 @@
      type(validtype),    intent(out),                 optional :: valid
      real,               intent(out),                 optional :: scale
      real,               intent(out),                 optional :: add
-     integer(LONG_KIND), intent(out),   dimension(:), optional :: checksum
+     integer(i8_kind), intent(out),   dimension(:), optional :: checksum
 
      type(atttype),      intent(inout), dimension(:), optional :: atts
      type(axistype),     intent(inout), dimension(:), optional :: axes
@@ -159,7 +143,8 @@
        checksum = 0
        check_exist = mpp_find_att(field%Att(:),"checksum")
        if ( check_exist >= 0 ) then
-         if(size(checksum(:)) >size(field%checksum(:))) call mpp_error(FATAL,"size(checksum(:)) >size(field%checksum(:))")
+         if(size(checksum(:)) >size(field%checksum(:))) call mpp_error(FATAL, &
+            & "size(checksum(:)) >size(field%checksum(:))")
          checksum = field%checksum(1:size(checksum(:)))
        endif
      endif
@@ -205,12 +190,8 @@
 
 
   !#####################################################################
+    !> @brief Copy variable information from file (excluding data)
     subroutine mpp_get_fields( unit, variables )
-!
-!  copy variable information from file (excluding data)
-!  global_atts is an attribute type which is allocated from the
-!  calling routine
-!
       integer,         intent(in)    :: unit
       type(fieldtype), intent(inout) :: variables(:)
 
@@ -235,12 +216,8 @@
 
 
   !#####################################################################
+    !> @brief Copy variable information from file (excluding data)
     subroutine mpp_get_axes( unit, axes, time_axis )
-!
-!  copy variable information from file (excluding data)
-!  global_atts is an attribute type which is allocated from the
-!  calling routine
-!
       integer, intent(in) :: unit
       type(axistype), intent(inout) :: axes(:)
       type(axistype), intent(inout), optional :: time_axis
@@ -272,6 +249,7 @@
    end subroutine mpp_get_axes
 
   !#####################################################################
+   !> @brief Copy variable information from file (excluding data)
    function mpp_get_dimension_length(unit, dimname, found)
      integer,           intent(in)  :: unit
      character(len=*),  intent(in)  :: dimname
@@ -300,6 +278,7 @@
    end function mpp_get_dimension_length
 
    !#####################################################################
+    !> @brief Copy variable information from file (excluding data)
     subroutine mpp_get_time_axis( unit, time_axis )
       integer, intent(in) :: unit
       type(axistype), intent(inout) :: time_axis
@@ -314,6 +293,7 @@
    end subroutine mpp_get_time_axis
 
   !####################################################################
+  !> @brief Copy variable information from file (excluding data)
   function mpp_get_default_calendar( )
      character(len=len(default_axis%calendar)) :: mpp_get_default_calendar
 
@@ -321,25 +301,14 @@
 
   end function mpp_get_default_calendar
 
-  !#####################################################################
-! <SUBROUTINE NAME="mpp_get_times">
-!   <OVERVIEW>
-!     Get file time data.
-!   </OVERVIEW>
-!   <DESCRIPTION>
-!     Get file time data.
-!   </DESCRIPTION>
-!   <TEMPLATE>
-!     call mpp_get_times( unit, time_values )
-!   </TEMPLATE>
-!   <IN NAME="unit" TYPE="integer"> </IN>
-!   <INOUT NAME="time_values" TYPE="real(DOUBLE_KIND)" DIM="(:)"> </INOUT>
-! </SUBROUTINE>
-
+   !> @brief Get file time data.
+   !!
+   !> Copy time information from file and convert to time_type
+   !! <br>Example usage:
+   !! @code{.F90}
+   !! call mpp_get_times( unit, time_values)
+   !! @endcode
    subroutine mpp_get_times( unit, time_values )
-!
-!  copy time information from file and convert to time_type
-!
       integer, intent(in) :: unit
       real, intent(inout) :: time_values(:)
 
@@ -516,20 +485,6 @@
       return
    end function mpp_get_recdimid
 
-    subroutine mpp_get_iospec( unit, iospec )
-      integer, intent(in) :: unit
-      character(len=*), intent(inout) :: iospec
-
-      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GET_IOSPEC: must first call mpp_io_init.' )
-      if( .NOT.mpp_file(unit)%opened )call mpp_error( FATAL, 'MPP_GET_IOSPEC: invalid unit number.' )
-#ifdef SGICRAY
-!currently will write to stdout: don't know how to trap and return as string to iospec
-      call ASSIGN( 'assign -V f:'//trim(mpp_file(unit)%name), error )
-#endif
-      return
-    end subroutine mpp_get_iospec
-
-
   !#####################################################################
 ! <FUNCTION NAME="mpp_get_ncid">
 !   <OVERVIEW>
@@ -547,6 +502,12 @@
 !   <IN NAME="unit" TYPE="integer"> </IN>
 ! </FUNCTION>
 
+    !> @brief Get netCDF ID of an open file.
+    !!
+    !> This returns the <TT>ncid</TT> associated with the open file on
+    !! <TT>unit</TT>. It is used in the instance that the user desires to
+    !! perform netCDF calls upon the file that are not provided by the
+    !! <TT>mpp_io_mod</TT> API itself.
     function mpp_get_ncid(unit)
       integer :: mpp_get_ncid
       integer, intent(in) :: unit
@@ -572,27 +533,8 @@
     end function mpp_get_field_id
 
   !#####################################################################
-    subroutine mpp_get_unit_range( unit_begin_out, unit_end_out )
-      integer, intent(out) ::      unit_begin_out, unit_end_out
-
-      unit_begin_out = unit_begin; unit_end_out = unit_end
-      return
-    end subroutine mpp_get_unit_range
-
-  !#####################################################################
-    subroutine mpp_set_unit_range( unit_begin_in, unit_end_in )
-      integer, intent(in) ::       unit_begin_in, unit_end_in
-
-      if( unit_begin_in.GT.unit_end_in )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_begin_in.GT.unit_end_in.' )
-      if( unit_begin_in.LT.0           )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_begin_in.LT.0.' )
-      if( unit_end_in  .GT.maxunits    )call mpp_error( FATAL, 'MPP_SET_UNIT_RANGE: unit_end_in.GT.maxunits.' )
-      unit_begin = unit_begin_in; unit_end = unit_end_in
-      return
-    end subroutine mpp_set_unit_range
-
-  !#####################################################################
+    !> @brief Set the mpp_io_stack variable to be at least n LONG words long
     subroutine mpp_io_set_stack_size(n)
-!set the mpp_io_stack variable to be at least n LONG words long
       integer, intent(in) :: n
       character(len=10) :: text
 
@@ -608,7 +550,7 @@
     end subroutine mpp_io_set_stack_size
 
   !#####################################################################
-  ! based on presence/absence of attributes, defines valid range or missing
+  !> Based on presence/absence of attributes, defines valid range or missing
   ! value. For details, see section 8.1 of NetCDF User Guide
   subroutine mpp_get_valid(f,v)
      type(fieldtype),intent(in)  :: f ! field
@@ -741,7 +683,7 @@
    end function mpp_find_att
    !#####################################################################
 
-   ! return the name of an attribute.
+   !> @brief return the name of an attribute.
    function mpp_get_att_name(att)
       type(atttype),    intent(in) :: att
       character(len=len(att%name)) :: mpp_get_att_name
@@ -753,7 +695,7 @@
 
    !#####################################################################
 
-   ! return the type of an attribute.
+   !> @brief return the type of an attribute.
    function mpp_get_att_type(att)
       type(atttype), intent(in) :: att
       integer                   :: mpp_get_att_type
@@ -765,7 +707,7 @@
 
    !#####################################################################
 
-   ! return the length of an attribute.
+   !> @brief return the length of an attribute.
    function mpp_get_att_length(att)
       type(atttype), intent(in) :: att
       integer                   :: mpp_get_att_length
@@ -778,7 +720,7 @@
 
    !#####################################################################
 
-   ! return the char value of an attribute.
+   !> @brief return the char value of an attribute.
    function mpp_get_att_char(att)
       type(atttype), intent(in) :: att
       character(len=att%len)    :: mpp_get_att_char
@@ -790,7 +732,7 @@
 
    !#####################################################################
 
-   ! return the real array value of an attribute.
+   !> @brief return the real array value of an attribute.
    function mpp_get_att_real(att)
       type(atttype), intent(in)          :: att
       real, dimension(size(att%fatt(:))) :: mpp_get_att_real
@@ -802,7 +744,7 @@
 
   !#####################################################################
 
-   ! return the real array value of an attribute.
+   !> @brief return the real array value of an attribute.
    function mpp_get_att_real_scalar(att)
       type(atttype), intent(in)          :: att
       real                               :: mpp_get_att_real_scalar
@@ -813,7 +755,7 @@
    end function mpp_get_att_real_scalar
 
    !#####################################################################
-   ! return the name of an field
+   !> @brief return the name of an field
    function mpp_get_field_name(field)
       type(fieldtype), intent(in) :: field
       character(len=len(field%name)) :: mpp_get_field_name
@@ -823,7 +765,7 @@
    end function mpp_get_field_name
 
    !#####################################################################
-   ! return the  file name of corresponding unit
+   !> @brief return the  file name of corresponding unit
    function mpp_get_file_name(unit)
       integer,                  intent(in) :: unit
       character(len=len(mpp_file(1)%name)) :: mpp_get_file_name
@@ -834,7 +776,7 @@
    end function mpp_get_file_name
 
    !####################################################################
-   ! return if certain file with unit is opened or not
+   !> @brief return if certain file with unit is opened or not
    function mpp_file_is_opened(unit)
       integer,  intent(in) :: unit
       logical              :: mpp_file_is_opened
@@ -845,7 +787,7 @@
    end function mpp_file_is_opened
 
    !####################################################################
-   ! return the attribute value of given field name
+   !> @brief return the attribute value of given field name
    subroutine mpp_get_field_att_text(unit, fieldname, attname, attvalue)
      integer,           intent(in) :: unit
      character(len=*),  intent(in) :: fieldname, attname
@@ -883,7 +825,7 @@
 
 
    !####################################################################
-   ! return mpp_io_nml variable io_clock_on
+   !> @brief return mpp_io_nml variable io_clock_on
    function mpp_io_clock_on()
       logical :: mpp_io_clock_on
 
@@ -956,3 +898,4 @@ logical function mpp_is_dist_ioroot(ssize,ioroot,lsize)
   if(PRESENT(ioroot)) ioroot = d_ioroot
   if(PRESENT(lsize)) lsize = d_lsize
 end function mpp_is_dist_ioroot
+!> @}

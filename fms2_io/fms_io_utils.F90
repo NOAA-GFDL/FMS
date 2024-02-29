@@ -16,18 +16,28 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @defgroup fms_io_utils_mod fms_io_utils_mod
+!> @ingroup fms2_io
+!> @brief Misc. utility routines for use in @ref fms2_io
 
-!> @file
-
-!> @brief Utility routines.
+!> @addtogroup fms_io_utils_mod
+!> @{
 module fms_io_utils_mod
-use, intrinsic :: iso_fortran_env, only: error_unit, int32, int64, real32, real64
+use, intrinsic :: iso_fortran_env, only: error_unit
+!use mpp_mod, only : get_ascii_file_num_lines_and_length, read_ascii_file
 #ifdef _OPENMP
 use omp_lib
 #endif
 use mpp_mod
+use mpp_domains_mod, only: domain2D, domainUG, mpp_get_ntile_count, &
+                           mpp_get_current_ntile, mpp_get_tile_id, &
+                           mpp_get_UG_domain_ntiles, mpp_get_UG_domain_tile_id
+use platform_mod
+use fms_string_utils_mod, only: string_copy
 implicit none
 private
+
+character(len=32), save :: filename_appendix = '' !< Appendix added to the restart filename
 
 public :: char_linked_list
 public :: error
@@ -43,39 +53,60 @@ public :: allocate_array
 public :: put_array_section
 public :: get_array_section
 public :: get_data_type_string
-public :: get_checksum
 public :: open_check
 public :: string_compare
 public :: restart_filepath_mangle
+public :: ascii_read
+public :: parse_mask_table
+public :: get_mosaic_tile_file
+public :: get_filename_appendix
+public :: set_filename_appendix
+public :: get_instance_filename
+public :: nullify_filename_appendix
 
-!> @brief A linked list of strings.
+!> @}
+
+!> @brief A linked list of strings
+!> @ingroup fms_io_utils_mod
 type :: char_linked_list
   character(len=128) :: string
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
+!> @ingroup fms_io_utils_mod
+interface parse_mask_table
+  module procedure parse_mask_table_2d
+  module procedure parse_mask_table_3d
+end interface parse_mask_table
 
+!> @ingroup fms_io_utils_mod
+interface get_mosaic_tile_file
+  module procedure get_mosaic_tile_file_sg
+  module procedure get_mosaic_tile_file_ug
+end interface get_mosaic_tile_file
+
+!> @ingroup fms_io_utils_mod
 interface allocate_array
-  module procedure allocate_array_int32_1d
-  module procedure allocate_array_int32_2d
-  module procedure allocate_array_int32_3d
-  module procedure allocate_array_int32_4d
-  module procedure allocate_array_int32_5d
-  module procedure allocate_array_int64_1d
-  module procedure allocate_array_int64_2d
-  module procedure allocate_array_int64_3d
-  module procedure allocate_array_int64_4d
-  module procedure allocate_array_int64_5d
-  module procedure allocate_array_real32_1d
-  module procedure allocate_array_real32_2d
-  module procedure allocate_array_real32_3d
-  module procedure allocate_array_real32_4d
-  module procedure allocate_array_real32_5d
-  module procedure allocate_array_real64_1d
-  module procedure allocate_array_real64_2d
-  module procedure allocate_array_real64_3d
-  module procedure allocate_array_real64_4d
-  module procedure allocate_array_real64_5d
+  module procedure allocate_array_i4_kind_1d
+  module procedure allocate_array_i4_kind_2d
+  module procedure allocate_array_i4_kind_3d
+  module procedure allocate_array_i4_kind_4d
+  module procedure allocate_array_i4_kind_5d
+  module procedure allocate_array_i8_kind_1d
+  module procedure allocate_array_i8_kind_2d
+  module procedure allocate_array_i8_kind_3d
+  module procedure allocate_array_i8_kind_4d
+  module procedure allocate_array_i8_kind_5d
+  module procedure allocate_array_r4_kind_1d
+  module procedure allocate_array_r4_kind_2d
+  module procedure allocate_array_r4_kind_3d
+  module procedure allocate_array_r4_kind_4d
+  module procedure allocate_array_r4_kind_5d
+  module procedure allocate_array_r8_kind_1d
+  module procedure allocate_array_r8_kind_2d
+  module procedure allocate_array_r8_kind_3d
+  module procedure allocate_array_r8_kind_4d
+  module procedure allocate_array_r8_kind_5d
   module procedure allocate_array_char_1d
   module procedure allocate_array_char_2d
   module procedure allocate_array_char_3d
@@ -85,54 +116,57 @@ interface allocate_array
 end interface allocate_array
 
 
+!> @ingroup fms_io_utils_mod
 interface put_array_section
-  module procedure put_array_section_int32_1d
-  module procedure put_array_section_int32_2d
-  module procedure put_array_section_int32_3d
-  module procedure put_array_section_int32_4d
-  module procedure put_array_section_int32_5d
-  module procedure put_array_section_int64_1d
-  module procedure put_array_section_int64_2d
-  module procedure put_array_section_int64_3d
-  module procedure put_array_section_int64_4d
-  module procedure put_array_section_int64_5d
-  module procedure put_array_section_real32_1d
-  module procedure put_array_section_real32_2d
-  module procedure put_array_section_real32_3d
-  module procedure put_array_section_real32_4d
-  module procedure put_array_section_real32_5d
-  module procedure put_array_section_real64_1d
-  module procedure put_array_section_real64_2d
-  module procedure put_array_section_real64_3d
-  module procedure put_array_section_real64_4d
-  module procedure put_array_section_real64_5d
+  module procedure put_array_section_i4_kind_1d
+  module procedure put_array_section_i4_kind_2d
+  module procedure put_array_section_i4_kind_3d
+  module procedure put_array_section_i4_kind_4d
+  module procedure put_array_section_i4_kind_5d
+  module procedure put_array_section_i8_kind_1d
+  module procedure put_array_section_i8_kind_2d
+  module procedure put_array_section_i8_kind_3d
+  module procedure put_array_section_i8_kind_4d
+  module procedure put_array_section_i8_kind_5d
+  module procedure put_array_section_r4_kind_1d
+  module procedure put_array_section_r4_kind_2d
+  module procedure put_array_section_r4_kind_3d
+  module procedure put_array_section_r4_kind_4d
+  module procedure put_array_section_r4_kind_5d
+  module procedure put_array_section_r8_kind_1d
+  module procedure put_array_section_r8_kind_2d
+  module procedure put_array_section_r8_kind_3d
+  module procedure put_array_section_r8_kind_4d
+  module procedure put_array_section_r8_kind_5d
 end interface put_array_section
 
 
+!> @ingroup fms_io_utils_mod
 interface get_array_section
-  module procedure get_array_section_int32_1d
-  module procedure get_array_section_int32_2d
-  module procedure get_array_section_int32_3d
-  module procedure get_array_section_int32_4d
-  module procedure get_array_section_int32_5d
-  module procedure get_array_section_int64_1d
-  module procedure get_array_section_int64_2d
-  module procedure get_array_section_int64_3d
-  module procedure get_array_section_int64_4d
-  module procedure get_array_section_int64_5d
-  module procedure get_array_section_real32_1d
-  module procedure get_array_section_real32_2d
-  module procedure get_array_section_real32_3d
-  module procedure get_array_section_real32_4d
-  module procedure get_array_section_real32_5d
-  module procedure get_array_section_real64_1d
-  module procedure get_array_section_real64_2d
-  module procedure get_array_section_real64_3d
-  module procedure get_array_section_real64_4d
-  module procedure get_array_section_real64_5d
+  module procedure get_array_section_i4_kind_1d
+  module procedure get_array_section_i4_kind_2d
+  module procedure get_array_section_i4_kind_3d
+  module procedure get_array_section_i4_kind_4d
+  module procedure get_array_section_i4_kind_5d
+  module procedure get_array_section_i8_kind_1d
+  module procedure get_array_section_i8_kind_2d
+  module procedure get_array_section_i8_kind_3d
+  module procedure get_array_section_i8_kind_4d
+  module procedure get_array_section_i8_kind_5d
+  module procedure get_array_section_r4_kind_1d
+  module procedure get_array_section_r4_kind_2d
+  module procedure get_array_section_r4_kind_3d
+  module procedure get_array_section_r4_kind_4d
+  module procedure get_array_section_r4_kind_5d
+  module procedure get_array_section_r8_kind_1d
+  module procedure get_array_section_r8_kind_2d
+  module procedure get_array_section_r8_kind_3d
+  module procedure get_array_section_r8_kind_4d
+  module procedure get_array_section_r8_kind_5d
 end interface get_array_section
 
 
+!> @ingroup fms_io_utils_mod
 interface get_data_type_string
   module procedure get_data_type_string_0d
   module procedure get_data_type_string_1d
@@ -142,16 +176,8 @@ interface get_data_type_string
   module procedure get_data_type_string_5d
 end interface get_data_type_string
 
-
-interface get_checksum
-  module procedure get_checksum_0d
-  module procedure get_checksum_1d
-  module procedure get_checksum_2d
-  module procedure get_checksum_3d
-  module procedure get_checksum_4d
-  module procedure get_checksum_5d
-end interface get_checksum
-
+!> @addtogroup fms_io_utils_mod
+!> @{
 contains
 
 
@@ -189,21 +215,6 @@ subroutine openmp_thread_trap()
     endif
 #endif
 end subroutine openmp_thread_trap
-
-
-!> @brief Safely copy a string from one buffer to another.
-subroutine string_copy(dest, source)
-  character(len=*), intent(inout) :: dest !< Destination string.
-  character(len=*), intent(in) :: source !< Source string.
-
-  if (len_trim(source) .gt. len(dest)) then
-    call error("The input destination string is not big enough to" &
-                 //" to hold the input source string.")
-  endif
-  dest = ""
-  dest = adjustl(trim(source))
-end subroutine string_copy
-
 
 !> @brief Compare strings.
 !! @return Flag telling if the strings are the same.
@@ -339,13 +350,13 @@ subroutine domain_tile_filepath_mangle(dest, source, domain_tile_id)
   integer :: i
 
   if (has_domain_tile_string(source)) then
-    call error("this file has already had a domain tile id added.")
+    call error("The file "//trim(source)//" has a domain tile id (tileX) added. Check your open_file call")
   endif
   i = index(trim(source), ".nc", back=.true.)
   if (i .eq. 0) then
-    call error("file "//trim(source)//" does not contain .nc")
+    call error("The file "//trim(source)//" does not contain .nc. Check your open_file call")
   endif
-  write(dest, '(a,i1,a)') source(1:i-1)//".tile", &
+  write(dest, '(a,i0,a)') source(1:i-1)//".tile", &
                           domain_tile_id, source(i:len_trim(source))
 end subroutine domain_tile_filepath_mangle
 
@@ -378,7 +389,6 @@ end function has_io_domain_tile_string
 
 
 !> @brief Add the I/O domain tile id to an input filepath.
-!!
 subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
 
   character(len=*), intent(inout) :: dest !< Output filepath.
@@ -386,7 +396,8 @@ subroutine io_domain_tile_filepath_mangle(dest, source, io_domain_tile_id)
   integer, intent(in) :: io_domain_tile_id !< I/O domain tile id.
 
   if (has_io_domain_tile_string(source)) then
-    call error("this file has already had a domain tile id added.")
+    call error("The file "//trim(source)// &
+             & " has already had a domain tile id (.nc.XXXX) added. Check your open_file call.")
   endif
   write(dest,'(a,i4.4)') trim(source)//".", io_domain_tile_id
 end subroutine io_domain_tile_filepath_mangle
@@ -405,7 +416,6 @@ end function has_restart_string
 
 
 !> @brief Add ".res" to an input file path.
-!!
 subroutine restart_filepath_mangle(dest, source)
 
   character(len=*), intent(inout) :: dest
@@ -422,7 +432,7 @@ subroutine restart_filepath_mangle(dest, source)
   else
     i = index(trim(source), ".nc", back=.true.)
     if (i .eq. 0) then
-      call error("file "//trim(source)//" does not contain .nc")
+      call error("The file "//trim(source)//" does not contain .nc. Check your open_file call")
     endif
   endif
   call string_copy(dest, source(1:i-1)//".res"//source(i:len_trim(source)))
@@ -442,11 +452,388 @@ subroutine open_check(flag, fname)
   endif
 end subroutine open_check
 
+!> @brief Read the ascii text from filename `ascii_filename`into string array
+!! `ascii_var`
+subroutine ascii_read(ascii_filename, ascii_var, num_lines, max_length)
+  character(len=*), intent(in) :: ascii_filename !< The file name to be read
+  character(len=:), dimension(:), allocatable, intent(out) :: ascii_var !< The
+                                                                        !! string
+                                                                        !! array
+  integer, optional, intent(out) :: num_lines !< Optional argument to return number of lines in file
+  integer, optional, intent(out) :: max_length !< Optional argument to return max_length of line in file
+  integer, dimension(2) :: lines_and_length !< lines = 1, length = 2
+  if(allocated(ascii_var)) deallocate(ascii_var)
+  lines_and_length = get_ascii_file_num_lines_and_length(ascii_filename)
+  allocate(character(len=lines_and_length(2))::ascii_var(lines_and_length(1)))
+  call read_ascii_file(ascii_filename, lines_and_length(2), ascii_var)
+  if(present(num_lines)) num_lines = lines_and_length(1)
+  if(present(max_length)) max_length = lines_and_length(2)
+end subroutine ascii_read
+
+!> @brief Populate 2D maskmap from mask_table given a model
+subroutine parse_mask_table_2d(mask_table, maskmap, modelname)
+
+  character(len=*), intent(in) :: mask_table !< Mask table to be read in
+  logical,         intent(out) :: maskmap(:,:) !< 2D Mask output
+  character(len=*), intent(in) :: modelname !< Model to which this applies
+
+  integer                      :: nmask, layout(2)
+  integer, allocatable         :: mask_list(:,:)
+  character(len=:), dimension(:), allocatable :: mask_table_contents
+  integer                      :: iocheck, n, stdoutunit, offset
+  character(len=128)           :: record
+
+  maskmap = .true.
+  nmask = 0
+  stdoutunit = stdout()
+  call ascii_read(mask_table, mask_table_contents)
+  if( mpp_pe() == mpp_root_pe() ) then
+     read(mask_table_contents(1), FMT=*, IOSTAT=iocheck) nmask
+     if (iocheck > 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading nmask from file variable")
+     elseif (iocheck < 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: nmask not completely read from file variable")
+     endif
+     write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
+     if( nmask > 0 ) then
+        !--- read layout from mask_table and confirm it matches the shape of maskmap
+        read(mask_table_contents(2), FMT=*, IOSTAT=iocheck) layout
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading layout from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: layout not completely read from file variable")
+        endif
+        if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
+           write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): layout in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        !--- make sure mpp_npes() == layout(1)*layout(2) - nmask
+        if( mpp_npes() .NE. layout(1)*layout(2) - nmask ) call mpp_error(FATAL, &
+           "fms2_io(parse_mask_table_2d): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
+     endif
+   endif
+
+   call mpp_broadcast(nmask, mpp_root_pe())
+
+   if(nmask==0) return
+
+   allocate(mask_list(nmask,2))
+
+   if( mpp_pe() == mpp_root_pe() ) then
+     n = 0
+     offset = 3
+     do while (offset + n < size(mask_table_contents)+1)
+        read(mask_table_contents(n+offset),'(a)',iostat=iocheck) record
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading record from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error: record not completely read from file variable")
+        endif
+        if (record(1:1) == '#') then
+            offset = offset + 1
+            cycle
+        elseif (record(1:10) == '          ') then
+            offset = offset + 1
+            cycle
+        endif
+        n = n + 1
+        if( n > nmask ) then
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): number of mask_list entry "// &
+                "is greater than nmask in file "//trim(mask_table) )
+        endif
+        read(record,*,iostat=iocheck) mask_list(n,1), mask_list(n,2)
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_2d): Error in reading mask_list from record variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, &
+                        &  "fms2_io(parse_mask_table_2d): Error: mask_list not completely read from record variable")
+        endif
+     enddo
+
+     !--- make sure the number of entry for mask_list is nmask
+     if( n .NE. nmask) call mpp_error(FATAL, &
+        "fms2_io(parse_mask_table_2d): number of mask_list entry does not match nmask in file "//trim(mask_table))
+  endif
+
+  call mpp_broadcast(mask_list, 2*nmask, mpp_root_pe())
+  do n = 1, nmask
+     maskmap(mask_list(n,1),mask_list(n,2)) = .false.
+  enddo
+
+  deallocate(mask_list, mask_table_contents)
+
+end subroutine parse_mask_table_2d
+
+
+!> @brief Populate 3D maskmap from mask_table given a model
+subroutine parse_mask_table_3d(mask_table, maskmap, modelname)
+
+  character(len=*), intent(in) :: mask_table !< Mask table to be read in
+  logical,         intent(out) :: maskmap(:,:,:) !< 2D Mask output
+  character(len=*), intent(in) :: modelname !< Model to which this applies
+
+  integer                      :: nmask, layout(2)
+  integer, allocatable         :: mask_list(:,:)
+  character(len=:), dimension(:), allocatable :: mask_table_contents
+  integer                      :: iocheck, n, stdoutunit, ntiles, offset
+  character(len=128)           :: record
+
+  maskmap = .true.
+  nmask = 0
+  stdoutunit = stdout()
+  call ascii_read(mask_table, mask_table_contents)
+  if( mpp_pe() == mpp_root_pe() ) then
+     read(mask_table_contents(1), FMT=*, IOSTAT=iocheck) nmask
+     if (iocheck > 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading nmask from file variable")
+     elseif (iocheck < 0) then
+         call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: nmask not completely read from file variable")
+     endif
+     write(stdoutunit,*)"parse_mask_table: Number of domain regions masked in ", trim(modelname), " = ", nmask
+     if( nmask > 0 ) then
+        !--- read layout from mask_table and confirm it matches the shape of maskmap
+        read(mask_table_contents(2), FMT=*, IOSTAT=iocheck) layout(1), layout(2), ntiles
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading layout from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: layout not completely read from file variable")
+        endif
+        if( (layout(1) .NE. size(maskmap,1)) .OR. (layout(2) .NE. size(maskmap,2)) )then
+           write(stdoutunit,*)"layout=", layout, ", size(maskmap) = ", size(maskmap,1), size(maskmap,2)
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): layout in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        if( ntiles .NE. size(maskmap,3) ) then
+           write(stdoutunit,*)"ntiles=", ntiles, ", size(maskmap,3) = ", size(maskmap,3)
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): ntiles in file "//trim(mask_table)// &
+                  "does not match size of maskmap for "//trim(modelname))
+        endif
+        !--- make sure mpp_npes() == layout(1)*layout(2) - nmask
+        if( mpp_npes() .NE. layout(1)*layout(2)*ntiles - nmask ) then
+           print*, "layout=", layout, nmask, mpp_npes()
+           call mpp_error(FATAL, &
+              "fms2_io(parse_mask_table_3d): mpp_npes() .NE. layout(1)*layout(2) - nmask for "//trim(modelname))
+        endif
+      endif
+   endif
+
+   call mpp_broadcast(nmask, mpp_root_pe())
+
+   if(nmask==0) return
+
+   allocate(mask_list(nmask,3))
+
+   if( mpp_pe() == mpp_root_pe() ) then
+     n = 0
+     offset = 3
+     do while (offset + n < size(mask_table_contents)+1)
+        read(mask_table_contents(n+offset),'(a)',iostat=iocheck) record
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading record from file variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error: record not completely read from file variable")
+        endif
+        if (record(1:1) == '#') then
+            offset = offset + 1
+            cycle
+        elseif (record(1:10) == '          ') then
+            offset = offset + 1
+            cycle
+        endif
+        n = n + 1
+        if( n > nmask ) then
+           call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): number of mask_list entry "// &
+                "is greater than nmask in file "//trim(mask_table) )
+        endif
+        read(record,*,iostat=iocheck) mask_list(n,1), mask_list(n,2), mask_list(n,3)
+        if (iocheck > 0) then
+            call mpp_error(FATAL, "fms2_io(parse_mask_table_3d): Error in reading mask_list from record variable")
+        elseif (iocheck < 0) then
+            call mpp_error(FATAL, &
+                          &  "fms2_io(parse_mask_table_3d): Error: mask_list not completely read from record variable")
+        endif
+     enddo
+
+     !--- make sure the number of entry for mask_list is nmask
+     if( n .NE. nmask) call mpp_error(FATAL, &
+        "fms2_io(parse_mask_table_3d): number of mask_list entry does not match nmask in file "//trim(mask_table))
+!     call mpp_close(unit)
+  endif
+
+  call mpp_broadcast(mask_list, 3*nmask, mpp_root_pe())
+  do n = 1, nmask
+     maskmap(mask_list(n,1),mask_list(n,2),mask_list(n,3)) = .false.
+  enddo
+  deallocate(mask_list, mask_table_contents)
+end subroutine parse_mask_table_3d
+
+!> @brief Determine tile_file for structured grid based on filename and current
+!! tile on mpp_domain (this is mostly used for ongrid data_overrides)
+subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile_count)
+  character(len=*), intent(in)            :: file_in !< name of 'base' file
+  character(len=*), intent(out)           :: file_out !< name of tile_file
+  logical,          intent(in)            :: is_no_domain !< are we providing a
+                                                          !! domain
+  type(domain2D),   intent(in), optional, target :: domain !< domain provided
+  integer,          intent(in), optional  :: tile_count !< tile count
+
+  character(len=256)                             :: basefile, tilename
+  character(len=2)                               :: my_tile_str
+  integer                                        :: lens, ntiles, ntileMe, tile, my_tile_id
+  integer, dimension(:), allocatable             :: tile_id
+  type(domain2d), pointer, save                  :: d_ptr =>NULL()
+  logical                                        :: domain_exist
+
+  if(index(file_in, '.nc', back=.true.)==0) then
+     basefile = trim(file_in)
+  else
+     lens = len_trim(file_in)
+     if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
+          'get_mosaic_tile_file_sg: .nc should be at the end of file '//trim(file_in))
+     basefile = file_in(1:lens-3)
+  end if
+
+  !--- get the tile name
+  ntiles = 1
+  my_tile_id = 1
+  domain_exist = .false.
+  if(PRESENT(domain))then
+     domain_exist = .true.
+     ntiles = mpp_get_ntile_count(domain)
+     d_ptr => domain
+  endif
+
+  if(domain_exist) then
+     ntileMe = mpp_get_current_ntile(d_ptr)
+     allocate(tile_id(ntileMe))
+     tile_id = mpp_get_tile_id(d_ptr)
+     tile = 1
+     if(present(tile_count)) tile = tile_count
+     my_tile_id = tile_id(tile)
+  endif
+
+  if(ntiles > 1 .or. my_tile_id > 1 )then
+     write(my_tile_str, '(I0)') my_tile_id
+     tilename = 'tile'//trim(my_tile_str)
+     if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
+        basefile = trim(basefile)//'.'//trim(tilename);
+     end if
+  end if
+  if(allocated(tile_id)) deallocate(tile_id)
+
+  file_out = trim(basefile)//'.nc'
+
+  d_ptr =>NULL()
+
+end subroutine get_mosaic_tile_file_sg
+
+!> @brief Determine tile_file for unstructured grid based on filename and current
+!! tile on mpp_domain (this is mostly used for ongrid data_overrides)
+subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
+  character(len=*), intent(in)           :: file_in !< name of base file
+  character(len=*), intent(out)          :: file_out !< name of tile file
+  type(domainUG),   intent(in), optional :: domain !< domain provided
+
+  character(len=256)                     :: basefile, tilename
+  character(len=2)                       :: my_tile_str
+  integer                                :: lens, ntiles, my_tile_id
+
+  if(index(file_in, '.nc', back=.true.)==0) then
+     basefile = trim(file_in)
+  else
+     lens = len_trim(file_in)
+     if(file_in(lens-2:lens) .NE. '.nc') call mpp_error(FATAL, &
+          'fms_io_mod: .nc should be at the end of file '//trim(file_in))
+     basefile = file_in(1:lens-3)
+  end if
+
+  !--- get the tile name
+  ntiles = 1
+  my_tile_id = 1
+  if(PRESENT(domain))then
+     ntiles = mpp_get_UG_domain_ntiles(domain)
+     my_tile_id = mpp_get_UG_domain_tile_id(domain)
+  endif
+
+  if(ntiles > 1 .or. my_tile_id > 1 )then
+     write(my_tile_str, '(I0)') my_tile_id
+     tilename = 'tile'//trim(my_tile_str)
+     if(index(basefile,'.'//trim(tilename),back=.true.) == 0)then
+        basefile = trim(basefile)//'.'//trim(tilename);
+     end if
+  end if
+
+  file_out = trim(basefile)//'.nc'
+
+end subroutine get_mosaic_tile_file_ug
+
+!> @brief Writes filename appendix to "string_out"
+subroutine get_filename_appendix(string_out)
+  character(len=*) , intent(out) :: string_out !< String to write the filename_appendix to
+
+  string_out = trim(filename_appendix)
+
+end subroutine get_filename_appendix
+
+!> @brief Clears the filename_appendix module variable
+subroutine nullify_filename_appendix()
+
+  filename_appendix = ''
+
+end subroutine nullify_filename_appendix
+
+!> @brief Save "string_in" as a module variable that will added to the filename
+!! of the restart files
+subroutine set_filename_appendix(string_in)
+  character(len=*) , intent(in) :: string_in !< String that will be saved as a module variable
+
+  ! Check if string has already been added
+  if (len_trim(filename_appendix) > 0) then
+      call error("Set_filename_appendix: The filename appendix has already be set " &
+                 //"call 'nullify_filename_appendix' first")
+  endif
+
+  filename_appendix = trim(string_in)
+
+end subroutine set_filename_appendix
+
+!> @brief Adds the filename_appendix to name_in and sets it as name_out
+subroutine get_instance_filename(name_in,name_out)
+  character(len=*)  , intent(in)  :: name_in  !< Buffer to add the filename_appendix to
+  character(len=*), intent(inout) :: name_out !< name_in with the filename_appendix
+
+  integer :: length !< Length of name_in
+  integer :: i !< no description
+
+  length = len_trim(name_in)
+  name_out = name_in(1:length)
+
+  if(len_trim(filename_appendix) > 0) then
+     !< If .tileXX is in the filename add the appendix before it
+     if (has_domain_tile_string(name_in)) then
+         i = index(trim(name_in), ".tile", back=.true.)
+         name_out = name_in(1:i-1)    //'.'//trim(filename_appendix)//name_in(i:length)
+         return
+     endif
+
+     !< If .nc is in the filename add the appendix before it
+     i = index(trim(name_in), ".nc", back=.true.)
+     if ( i .ne. 0 ) then
+        name_out = name_in(1:i-1)//'.'//trim(filename_appendix)//name_in(i:length)
+     else
+     !< If .nc is not in the name, add the appendix at the end of the file
+        name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+     end if
+  end if
+
+end subroutine get_instance_filename
 
 include "array_utils.inc"
 include "array_utils_char.inc"
 include "get_data_type_string.inc"
-include "get_checksum.inc"
 
 
 end module fms_io_utils_mod
+!> @}
+! close documentation grouping

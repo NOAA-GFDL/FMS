@@ -17,27 +17,44 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @defgroup random_numbers_mod random_numbers_mod
+!> @ingroup random_numbers
+!> @brief Generic module to wrap random number generators.
+!!
+!> The module defines a type that identifies the particular stream of random
+!!  numbers, and has procedures for initializing it and getting real numbers
+!!  in the range 0 to 1.
+!!  This version uses the Mersenne Twister to generate random numbers on [0, 1].
+
 module random_numbers_mod
-  ! Generic module to wrap random number generators.
-  !   The module defines a type that identifies the particular stream of random
-  !   numbers, and has procedures for initializing it and getting real numbers
-  !   in the range 0 to 1.
-  ! This version uses the Mersenne Twister to generate random numbers on [0, 1].
-  !
+
   use MersenneTwister_mod, only: randomNumberSequence, & ! The random number engine.
                                  new_RandomNumberSequence, getRandomReal
   use time_manager_mod, only: time_type, get_date
+  use platform_mod, only: r4_kind, r8_kind
+
   implicit none
   private
 
+  !> @brief Type to hold a stream of randomly generated numbers
+  !> @ingroup random_numbers_mod
   type randomNumberStream
     type(randomNumberSequence) :: theNumbers
   end type randomNumberStream
 
+  !> Returns scalar, 1 or 2 D random real numbers
+  !!
+  !> @param stream @ref randomNumberStream to generate from
+  !> @param[out] number output number(s)
+  !> @ingroup random_numbers_mod
   interface getRandomNumbers
-    module procedure getRandomNumber_Scalar, getRandomNumber_1D, getRandomNumber_2D
+    module procedure :: get_random_number_0d_r4, get_random_number_0d_r8
+    module procedure :: get_random_number_1d_r4, get_random_number_1d_r8
+    module procedure :: get_random_number_2d_r4, get_random_number_2d_r8
   end interface getRandomNumbers
 
+  !> Initializes stream for generating random numbers.
+  !> @ingroup random_numbers_mod
   interface initializeRandomNumberStream
     module procedure initializeRandomNumberStream_S, initializeRandomNumberStream_V
   end interface initializeRandomNumberStream
@@ -45,10 +62,13 @@ module random_numbers_mod
   public :: randomNumberStream,                             &
             initializeRandomNumberStream, getRandomNumbers, &
             constructSeed
+
+!> @addtogroup random_numbers_mod
+!> @{
+
 contains
-  ! ---------------------------------------------------------
-  ! Initialization
-  ! ---------------------------------------------------------
+
+  !> Initialization
   function initializeRandomNumberStream_S(seed) result(new)
     integer, intent( in)     :: seed
     type(randomNumberStream) :: new
@@ -56,56 +76,21 @@ contains
     new%theNumbers = new_RandomNumberSequence(seed)
 
   end function initializeRandomNumberStream_S
-  ! ---------------------------------------------------------
+
   function initializeRandomNumberStream_V(seed) result(new)
     integer, dimension(:), intent( in) :: seed
     type(randomNumberStream)           :: new
 
     new%theNumbers = new_RandomNumberSequence(seed)
-
   end function initializeRandomNumberStream_V
-  ! ---------------------------------------------------------
-  ! Procedures for drawing random numbers
-  ! ---------------------------------------------------------
-  subroutine getRandomNumber_Scalar(stream, number)
-    type(randomNumberStream), intent(inout) :: stream
-    real,                     intent(  out) :: number
 
-    number = getRandomReal(stream%theNumbers)
-  end subroutine getRandomNumber_Scalar
-  ! ---------------------------------------------------------
-  subroutine getRandomNumber_1D(stream, numbers)
-    type(randomNumberStream), intent(inout) :: stream
-    real, dimension(:),       intent(  out) :: numbers
-
-    ! Local variables
-    integer :: i
-
-    do i = 1, size(numbers)
-      numbers(i) = getRandomReal(stream%theNumbers)
-    end do
-  end subroutine getRandomNumber_1D
-  ! ---------------------------------------------------------
-  subroutine getRandomNumber_2D(stream, numbers)
-    type(randomNumberStream), intent(inout) :: stream
-    real, dimension(:, :),    intent(  out) :: numbers
-
-    ! Local variables
-    integer :: i
-
-    do i = 1, size(numbers, 2)
-      call getRandomNumber_1D(stream, numbers(:, i))
-    end do
-  end subroutine getRandomNumber_2D
-  ! ---------------------------------------------------------
-  ! Constructs a unique seed from grid cell index and model date/time
-  !   The perm is supplied we generate a different seed by
-  !   circularly shifting the bits of the seed - this is useful
-  !   if we want to create more than one seed for a given
-  !   column and model date/time.
-  !   Note that abs(perm) must be <= the number of bits used
-  !   to represent the default integer (likely 32)
-  ! ---------------------------------------------------------
+  !> Constructs a unique seed from grid cell index and model date/time
+  !!   The perm is supplied we generate a different seed by
+  !!   circularly shifting the bits of the seed - this is useful
+  !!   if we want to create more than one seed for a given
+  !!   column and model date/time.
+  !!   Note that abs(perm) must be <= the number of bits used
+  !!   to represent the default integer (likely 32)
   function constructSeed(i, j, time, perm) result(seed)
     integer,           intent( in)  :: i, j
     type(time_type),   intent( in) :: time
@@ -120,4 +105,11 @@ contains
     seed = (/ i, j, year, month, day, hour, minute, second /)
     if(present(perm)) seed = ishftc(seed, perm)
   end function constructSeed
+
+#include "random_numbers_r4.fh"
+#include "random_numbers_r8.fh"
+
 end module random_numbers_mod
+
+!> @}
+! close documentation grouping

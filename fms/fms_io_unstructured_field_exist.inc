@@ -18,8 +18,10 @@
 !***********************************************************************
 !----------
 !ug support
+!> @addtogroup fms_io_mod
+!> @{
 
-!>Return a flag indicating whether the inputted field exists in the inputted
+!> Return a flag indicating whether the inputted field exists in the inputted
 !!file, where the file is associated with an unstructured mpp domain.
 function fms_io_unstructured_field_exist(file_name, &
                                          field_name, &
@@ -33,11 +35,14 @@ function fms_io_unstructured_field_exist(file_name, &
     logical(INT_KIND)           :: does_field_exist !<Flag telling if the inputted field exists in the inputted file.
 
    !Local variables
-    logical(INT_KIND)                        :: file_exist !<Flag telling if the inputted file or one of its variants exists.
+    logical(INT_KIND)                        :: file_exist !<Flag telling if the inputted file
+                                                           !! or one of its variants exists.
     character(len=256)                       :: fname      !<Actual name of the found file.
-    logical(INT_KIND)                        :: read_dist  !<Flag telling if the file is "distributed" (has IO domain tile id appended onto the end).
+    logical(INT_KIND)                        :: read_dist  !<Flag telling if the file is "distributed"
+                                                           !! (has IO domain tile id appended onto the end).
     integer(INT_KIND)                        :: funit      !<A file unit.
-    integer(INT_KIND)                        :: nfile      !<Index of the inputted file in the "files_read" module array.
+    integer(INT_KIND)                        :: nfile      !<Index of the inputted file in
+                                                           !! the "files_read" module array.
     integer(INT_KIND)                        :: i          !<Loop variable.
     integer(INT_KIND)                        :: ndim       !<Number of dimensions in a file.
     integer(INT_KIND)                        :: nvar       !<Number of fields in a file.
@@ -102,5 +107,4 @@ function fms_io_unstructured_field_exist(file_name, &
 
     return
 end function fms_io_unstructured_field_exist
-
-!----------
+!> @}

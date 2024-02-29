@@ -28,13 +28,12 @@ program xgrid_test
   use mpp_domains_mod, only : mpp_define_mosaic_pelist, mpp_define_mosaic, mpp_global_sum
   use mpp_domains_mod, only : mpp_get_data_domain, mpp_get_global_domain, mpp_update_domains
   use mpp_domains_mod, only : domainUG, mpp_define_unstruct_domain, mpp_get_ug_compute_domain
-  use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug, mpp_define_io_domain
+  use mpp_domains_mod, only : mpp_pass_ug_to_sg, mpp_pass_sg_to_ug, mpp_define_io_domain, center
   use fms_mod,         only : fms_init
   use fms_mod,         only : check_nml_error, stdout, fms_end
-  use fms_io_mod,      only : fms_io_exit
   use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file
   use fms2_io_mod,     only : read_data, write_data, variable_exists, get_dimension_size
-  use fms2_io_mod,     only : get_variable_size
+  use fms2_io_mod,     only : get_variable_size, register_field, register_axis
   use constants_mod,   only : DEG_TO_RAD
   use xgrid_mod,       only : xgrid_init, setup_xmap, put_to_xgrid, get_from_xgrid
   use xgrid_mod,       only : xmap_type, xgrid_count, grid_box_type, SECOND_ORDER
@@ -42,15 +41,15 @@ program xgrid_test
   use xgrid_mod,       only : get_from_xgrid_ug, put_to_xgrid_ug
   use mosaic2_mod,     only : get_mosaic_ntiles, get_mosaic_grid_sizes
   use mosaic2_mod,     only : get_mosaic_ncontacts, get_mosaic_contact, get_mosaic_tile_grid
-  use grid_mod,        only : get_grid_comp_area
+  use grid2_mod,       only : get_grid_comp_area
   use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
   use ensemble_manager_mod, only : get_ensemble_size
+  use platform_mod,         only: r8_kind, i8_kind
 
 implicit none
-#include <fms_platform.h>
 
-  real, parameter :: EPSLN = 1.0e-10
+  real(r8_kind), parameter :: EPSLN = 1.0e-10_r8_kind
   character(len=256) :: atm_input_file  = "INPUT/atmos_input.nc"
   character(len=256) :: atm_output_file = "atmos_output.nc"
   character(len=256) :: lnd_output_file = "land_output.nc"
@@ -99,20 +98,20 @@ implicit none
   type(domain2d)       :: Atm_domain, Ice_domain, Lnd_domain
   type(xmap_type)      :: Xmap, Xmap_runoff
   type(grid_box_type)  :: atm_grid
-  real, allocatable    :: xt(:,:), yt(:,:)  ! on T-cell data domain
-  real, allocatable    :: xc(:,:), yc(:,:)  ! on C-cell compute domain
-  real, allocatable    :: tmpx(:,:), tmpy(:,:)
-  real, allocatable    :: atm_data_in(:,:), atm_data_out(:,:)
-  real, allocatable    :: atm_data_out_1(:,:), atm_data_out_2(:,:), atm_data_out_3(:,:)
-  real, allocatable    :: lnd_data_out(:,:,:), ice_data_out(:,:,:)
-  real, allocatable    :: runoff_data_in(:,:), runoff_data_out(:,:,:)
-  real, allocatable    :: atm_area(:,:), lnd_area(:,:), ice_area(:,:)
-  real, allocatable    :: lnd_frac(:,:,:), ice_frac(:,:,:)
-  real, allocatable    :: x_1(:), x_2(:), x_3(:), x_4(:)
-  real                 :: sum_atm_in, sum_ice_out, sum_lnd_out, sum_atm_out
-  real                 :: sum_runoff_in, sum_runoff_out, tot
-  real                 :: min_atm_in, max_atm_in, min_atm_out, max_atm_out
-  real                 :: min_x, max_x
+  real(r8_kind), allocatable    :: xt(:,:), yt(:,:)  ! on T-cell data domain
+  real(r8_kind), allocatable    :: xc(:,:), yc(:,:)  ! on C-cell compute domain
+  real(r8_kind), allocatable    :: tmpx(:,:), tmpy(:,:)
+  real(r8_kind), allocatable    :: atm_data_in(:,:), atm_data_out(:,:)
+  real(r8_kind), allocatable    :: atm_data_out_1(:,:), atm_data_out_2(:,:), atm_data_out_3(:,:)
+  real(r8_kind), allocatable    :: lnd_data_out(:,:,:), ice_data_out(:,:,:)
+  real(r8_kind), allocatable    :: runoff_data_in(:,:), runoff_data_out(:,:,:)
+  real(r8_kind), allocatable    :: atm_area(:,:), lnd_area(:,:), ice_area(:,:)
+  real(r8_kind), allocatable    :: lnd_frac(:,:,:), ice_frac(:,:,:)
+  real(r8_kind), allocatable    :: x_1(:), x_2(:), x_3(:), x_4(:)
+  real(r8_kind)                 :: sum_atm_in, sum_ice_out, sum_lnd_out, sum_atm_out
+  real(r8_kind)                 :: sum_runoff_in, sum_runoff_out, tot
+  real(r8_kind)                 :: min_atm_in, max_atm_in, min_atm_out, max_atm_out
+  real(r8_kind)                 :: min_x, max_x
   logical              :: atm_input_file_exist, runoff_input_file_exist
   integer              :: npes_per_tile
   integer              :: id_put_side1_to_xgrid, id_get_side1_from_xgrid
@@ -134,6 +133,7 @@ implicit none
   call mpp_domains_init
 
   call xgrid_init(remap_method)
+
   call ensemble_manager_init()
 
   npes     = mpp_npes()
@@ -486,13 +486,14 @@ implicit none
   call close_file(gridfileobj)
 
   !--- conservation check is done in setup_xmap.
+
   call setup_xmap(Xmap, (/ 'ATM', 'OCN', 'LND' /), (/ Atm_domain, Ice_domain, Lnd_domain /), grid_file, atm_grid)
   call setup_xmap(Xmap_runoff, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file )
   !--- set frac area if nk_lnd or nk_ocn is greater than 1.
   if(nk_lnd > 0 .AND. lnd_pe) then
     allocate(lnd_frac(isc_lnd:iec_lnd, jsc_lnd:jec_lnd, nk_lnd))
     call random_number(lnd_frac)
-    lnd_frac = lnd_frac + 0.5
+    lnd_frac = lnd_frac + 0.5_r8_kind
     do j = jsc_lnd, jec_lnd
        do i = isc_lnd, iec_lnd
           tot = sum(lnd_frac(i,j,:))
@@ -507,7 +508,7 @@ implicit none
     if( ice_pe ) then
        allocate(ice_frac(isc_ice:iec_ice, jsc_ice:jec_ice, nk_ice))
        call random_number(ice_frac)
-       ice_frac = ice_frac + 0.5
+       ice_frac = ice_frac + 0.5_r8_kind
        do j = jsc_ice, jec_ice
           do i = isc_ice, iec_ice
              tot = sum(ice_frac(i,j,:))
@@ -526,15 +527,16 @@ implicit none
 
   deallocate(atm_nx, atm_ny, lnd_nx, lnd_ny, ice_nx, ice_ny)
 
-  !--- remap realistic data and write the output file when atmos_input_file does exist
+  !--- remap real(r8_kind)istic data and write the output file when atmos_input_file does exist
   atm_input_file_exist = open_file(atminputfileobj, atm_input_file, 'read', atm_domain)
 
   if( atm_input_file_exist ) then
      if(trim(atm_input_file) == trim(atm_output_file) ) call mpp_error(FATAL, &
           "test_xgrid: atm_input_file should have a different name from atm_output_file")
+     allocate(siz(4))
      call get_variable_size(atminputfileobj, atm_field_name, siz)
-     if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(atm_field_name) &
-            //" in file "//trim(atm_input_file) //" does not compabile with the grid size" )
+     if(siz(1) .NE. nxa .OR. siz(2) .NE. nya ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "// &
+            & trim(atm_field_name)//" in file "//trim(atm_input_file) //" does not compabile with the grid size" )
      if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(atm_field_name) &
             //" in file "//trim(atm_input_file) //" should be no larger than 1")
      deallocate(siz)
@@ -591,19 +593,29 @@ implicit none
      if(ANY(atm_data_out .NE. atm_data_out_3)) &
         call mpp_error(FATAL,"test_xgrid: atm_data_out and atm_data_out_3 are not equal")
 
+
      !--- write out data
      if(.not. open_file(outputfileobj, atm_output_file, 'write', atm_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open atm_output_file "//trim(atm_output_file) )
+     call register_axis(outputfileobj, "xaxis", "x")
+     call register_axis(outputfileobj, "yaxis", "y")
+     call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, atm_data_out)
      call close_file(outputfileobj)
 
      if(.not. open_file(outputfileobj, lnd_output_file, 'write', lnd_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open lnd_output_file "//trim(lnd_output_file) )
+     call register_axis(outputfileobj, "xaxis", "x")
+     call register_axis(outputfileobj, "yaxis", "y")
+     call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, lnd_data_out)
      call close_file(outputfileobj)
 
      if(.not. open_file(outputfileobj, ice_output_file, 'write', ice_domain) ) call mpp_error(FATAL, &
            "test_xgrid: failed to open ice_output_file "//trim(ice_output_file) )
+     call register_axis(outputfileobj, "xaxis", "x")
+     call register_axis(outputfileobj, "yaxis", "y")
+     call register_field(outputfileobj, atm_field_name, 'float', (/ "xaxis", "yaxis"/))
      call write_data(outputfileobj, atm_field_name, ice_data_out)
      call close_file(outputfileobj)
      !--- print out checksum
@@ -657,7 +669,8 @@ implicit none
      deallocate(atm_data_out_1, atm_data_out_2, atm_data_out_3)
      deallocate(x_1, x_2)
   else
-     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)//" does not exist, no check is done for real data sets."
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(atm_input_file)// &
+         & " does not exist, no check is done for real(r8_kind) data sets."
   end if
 
   runoff_input_file_exist = open_file(runoffinputfileobj, runoff_input_file, "read", lnd_domain)
@@ -669,8 +682,8 @@ implicit none
           "test_xgrid: runoff_input_file should have a different name from runoff_output_file")
      call get_variable_size(runoffinputfileobj, runoff_field_name, siz )
      deallocate(siz)
-     if(siz(1) .NE. nxl .OR. siz(2) .NE. nyl ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "//trim(runoff_field_name) &
-            //" in file "//trim(runoff_input_file) //" does not compabile with the grid size" )
+     if(siz(1) .NE. nxl .OR. siz(2) .NE. nyl ) call mpp_error(FATAL,"test_xgrid: x- and y-size of field "// &
+            & trim(runoff_field_name)//" in file "//trim(runoff_input_file) //" does not compabile with the grid size")
      if(siz(3) > 1) call mpp_error(FATAL,"test_xgrid: number of vertical level of field "//trim(runoff_field_name) &
             //" in file "//trim(runoff_input_file) //" should be no larger than 1")
 
@@ -704,7 +717,8 @@ implicit none
      write(out_unit,*) "the global area sum of runoff input data is                    : ", sum_runoff_in
      write(out_unit,*) "the global area sum of runoff output data is                   : ", sum_runoff_out
   else
-     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)//" does not exist, no check is done for real data sets."
+     write(out_unit,*) "NOTE from test_xgrid ==> file "//trim(runoff_input_file)// &
+         & " does not exist, no check is done for real(r8_kind) data sets."
   end if
 
   ! when num_iter is greater than 0, create random number as input to test the performance of xgrid_mod.
@@ -762,22 +776,21 @@ implicit none
   write(out_unit,*) "***********      Finish running program test_xgrid         *************"
   write(out_unit,*) "************************************************************************"
 
-  call fms_io_exit
   call fms_end
 
 contains
 
   subroutine test_unstruct_exchange()
 
-    real, allocatable :: atm_data_in(:,:), atm_data_sg(:,:)
-    real, allocatable :: atm_data_sg_1(:,:), atm_data_sg_2(:,:), atm_data_sg_3(:,:)
-    real, allocatable :: lnd_data_sg(:,:,:), ice_data_sg(:,:,:)
-    real, allocatable :: atm_data_ug(:,:), tmp_sg(:,:,:)
-    real, allocatable :: atm_data_ug_1(:,:), atm_data_ug_2(:,:), atm_data_ug_3(:,:)
-    real, allocatable :: lnd_data_ug(:,:), ice_data_ug(:,:,:)
-    real, allocatable :: x_1(:), x_2(:), x_3(:), x_4(:)
-    real, allocatable :: y_1(:), y_2(:), y_3(:), y_4(:)
-    real,    allocatable, dimension(:,:)     :: rmask, tmp2d
+    real(r8_kind), allocatable :: atm_data_in(:,:), atm_data_sg(:,:)
+    real(r8_kind), allocatable :: atm_data_sg_1(:,:), atm_data_sg_2(:,:), atm_data_sg_3(:,:)
+    real(r8_kind), allocatable :: lnd_data_sg(:,:,:), ice_data_sg(:,:,:)
+    real(r8_kind), allocatable :: atm_data_ug(:,:), tmp_sg(:,:,:)
+    real(r8_kind), allocatable :: atm_data_ug_1(:,:), atm_data_ug_2(:,:), atm_data_ug_3(:,:)
+    real(r8_kind), allocatable :: lnd_data_ug(:,:), ice_data_ug(:,:,:)
+    real(r8_kind), allocatable :: x_1(:), x_2(:), x_3(:), x_4(:)
+    real(r8_kind), allocatable :: y_1(:), y_2(:), y_3(:), y_4(:)
+    real(r8_kind),    allocatable, dimension(:,:)     :: rmask, tmp2d
     logical, allocatable, dimension(:,:,:)   :: lmask
     integer, allocatable, dimension(:)       :: npts_tile, grid_index, ntiles_grid
     integer :: ntiles, nx, ny, ntotal_land, l, is_ug, ie_ug
@@ -858,7 +871,8 @@ contains
        call set_frac_area(ice_frac, 'OCN', Xmap_ug)
     endif
 
-!    call setup_xmap(Xmap_runoff_ug, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file, lnd_ug_domain=UG_domain )
+!    call setup_xmap(Xmap_runoff_ug, (/ 'LND', 'OCN'/), (/ Lnd_domain, Ice_domain/), grid_file,
+!    lnd_ug_domain=UG_domain )
     allocate(atm_data_ug(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_ug_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_ug_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
@@ -963,9 +977,9 @@ contains
 
  !###########################################################################
   subroutine compare_chksum_2D( a, b, string )
-    real, intent(in), dimension(:,:) :: a, b
+    real(r8_kind), intent(in), dimension(:,:) :: a, b
     character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
+    integer(i8_kind) :: sum1, sum2
     integer :: i, j
 
     call mpp_sync_self()
@@ -1000,9 +1014,9 @@ contains
 
 
   subroutine compare_chksum( a, b, string )
-    real, intent(in), dimension(:,:,:) :: a, b
+    real(r8_kind), intent(in), dimension(:,:,:) :: a, b
     character(len=*), intent(in) :: string
-    integer(LONG_KIND) :: sum1, sum2
+    integer(i8_kind) :: sum1, sum2
     integer :: i, j, k
 
     ! z1l can not call mpp_sync here since there might be different number of tiles on each pe.

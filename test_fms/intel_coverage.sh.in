@@ -1,0 +1,89 @@
+#!/usr/bin/sh
+#***********************************************************************
+#                   GNU Lesser General Public License
+#
+# This file is part of the GFDL Flexible Modeling System (FMS).
+#
+# FMS is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or (at
+# your option) any later version.
+#
+# FMS is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#***********************************************************************
+# Produces a code coverage report for each subdirectory using intel's codecov tool
+# runs with `make check-code-coverage` after configuring with `--enable-code-coverage`
+
+# Ryan Mulhall 1/26/21
+
+merge_dpis () {
+
+  mkdir coverage-data
+
+  for dir in `find . -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | grep -v test_fms`
+  do
+    cd $dir
+    if [ ! -z "`find . -type f -name "*.dyn" `" ]; then
+      profmerge -prof_dpi ${dir}.dpi
+      mv ${dir}.dpi ../coverage-data
+      echo ${1} ${dir} coverage data done.
+    fi
+    cd ..
+  done
+
+  cd coverage-data
+  profmerge -a -prof_dpi ${1}.dpi *.dpi
+  cd ..
+}
+
+# ensure working directory is at the top of the build directory
+top_builddir='@abs_top_builddir@'
+cd $top_builddir
+
+# remove previous runtime data/report
+rm -rf coverage-data
+rm -rf test_fms/coverage-data
+rm -rf coverage-report
+
+# combine runtime generated coverage data from src and tests
+merge_dpis src
+cd test_fms
+merge_dpis tests
+cd ..
+cp coverage-data/src.dpi ./
+cp test_fms/coverage-data/tests.dpi ./
+profmerge -a -prof_dpi fms-global-coverage.dpi src.dpi tests.dpi
+
+# basic html page to link the reports
+mkdir coverage-report
+cat <<_EOF > coverage-report/fms-coverage.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title> FMS Code Coverage </title>
+  <h1>FMS Code Coverage</h1>
+</head>
+<body>
+_EOF
+
+# generate code coverage report and links for each (src) subdirectory
+for dir in `find . -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | grep -v test_fms | sort`
+do
+  cd $dir
+  if [ ! -z "`find . -type f -name "*.spi"`" ] ; then
+    mkdir ../coverage-report/$dir
+    codecov -prj $dir -spi pgopti.spi -dpi ../fms-global-coverage.dpi
+    mv CODE_COVERAGE.HTML ../coverage-report/$dir
+    mv CodeCoverage ../coverage-report/$dir
+    echo "<p><a href=\"${dir}/CODE_COVERAGE.HTML\">${dir}</a></p>" >> ../coverage-report/fms-coverage.html
+  fi
+  cd ..
+done
+echo "</body>" >> coverage-report/fms-coverage.html
+echo "</html>" >> coverage-report/fms-coverage.html

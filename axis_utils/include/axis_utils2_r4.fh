@@ -1,0 +1,67 @@
+! -*-f90-*-
+
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+!> @file
+!> @brief Imports checksum, gather, and scatter routines from other include files used
+!! for communications and calculations between PE's in @ref mpp_mod
+
+!> @addtogroup mpp_mod
+!> @{
+
+#undef FMS_AU_KIND_
+#define FMS_AU_KIND_ r4_kind
+
+#undef AXIS_EDGES_
+#define AXIS_EDGES_ axis_edges_r4
+
+#undef LON_IN_RANGE_
+#define LON_IN_RANGE_ lon_in_range_r4
+
+#undef FRAC_INDEX_
+#define FRAC_INDEX_ frac_index_r4
+
+#undef NEAREST_INDEX_
+#define NEAREST_INDEX_ nearest_index_r4
+
+#undef TRANLON_
+#define TRANLON_ tranlon_r4
+
+#undef INTERP_1D_LINEAR_
+#define INTERP_1D_LINEAR_ interp_1d_linear_r4
+
+#undef INTERP_1D_CUBIC_SPLINE_
+#define INTERP_1D_CUBIC_SPLINE_ interp_1d_cubic_spline_r4
+
+#undef INTERP_1D_1D_
+#define INTERP_1D_1D_ interp_1d_1d_r4
+
+#undef INTERP_1D_2D_
+#define INTERP_1D_2D_ interp_1d_2d_r4
+
+#undef INTERP_1D_3D_
+#define INTERP_1D_3D_ interp_1d_3d_r4
+
+#undef FIND_INDEX_
+#define FIND_INDEX_ find_index_r4
+
+#include "axis_utils2.inc"
+
+!> @}
+! close documentation grouping

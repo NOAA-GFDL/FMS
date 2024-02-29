@@ -16,6 +16,100 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
+!> @file
+!> @brief Routines for writing variable values to netcdf files with different
+!! dimension sizes for the @ref netcdf_write_data interface
+
+!> @addtogroup netcdf_io_mod
+!> @{
+
+!> @brief Character write 0d function.
+subroutine char_write_0d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*),  intent(in) :: variable_data !< Data that will be written.
+  character(len=200), intent(in) :: append_error_msg !< Msg to be appended to FATAL error message
+  integer, intent(inout) :: err
+  integer, intent(in) :: varid
+
+  integer :: ndims
+  integer, dimension(:), allocatable :: start
+  integer, dimension(:), allocatable :: dimsizes
+  character, dimension(:), allocatable :: charbuf
+  integer :: i
+  integer :: tlen
+
+  ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+  if (ndims .ne. 1) then
+    call error("currently only scalar and 1d character writes are supported: "//trim(append_error_msg))
+  endif
+  allocate(start(ndims))
+  start(:) = 1
+  allocate(dimsizes(ndims))
+  call get_variable_size(fileobj, variable_name, dimsizes, .false.)
+  call allocate_array(charbuf, dimsizes)
+  charbuf(:) = ""
+  tlen = len_trim(variable_data)
+  if (tlen .gt. dimsizes(1)) then
+    call error("character buffer is too big; decrease length: "//trim(append_error_msg))
+  endif
+  do i = 1, tlen
+    charbuf(i) = variable_data(i:i)
+  enddo
+  err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
+  deallocate(charbuf)
+  deallocate(dimsizes)
+  deallocate(start)
+end subroutine char_write_0d
+
+!> @brief Character write 1d function.
+subroutine character_write_1d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
+
+  class(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  character(len=*), dimension(:), intent(in) :: variable_data !< Data that will be written.
+  character(len=200), intent(in) :: append_error_msg !< Msg to be appended to FATAL error message
+  integer, intent(inout) :: err
+  integer, intent(in) :: varid
+
+  integer :: ndims
+  integer, dimension(:), allocatable :: start
+  integer, dimension(:), allocatable :: dimsizes
+  character, dimension(:,:), allocatable :: charbuf
+  character(len=1024) :: sbuf
+  integer :: i
+  integer :: j
+  integer :: tlen
+
+  ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
+  if (ndims .ne. 2) then
+    call error("currently only scalar and 1d character writes are supported: "//trim(append_error_msg))
+  endif
+  allocate(start(ndims))
+  start(:) = 1
+  allocate(dimsizes(ndims))
+  call get_variable_size(fileobj, variable_name, dimsizes, .false.)
+  call allocate_array(charbuf, dimsizes)
+  charbuf(:,:) = ""
+  tlen = len(variable_data(1))
+  if (tlen .gt. dimsizes(1)) then
+    call error("character buffer is too big; decrease length: "//trim(append_error_msg))
+  endif
+  if (size(variable_data) .ne. dimsizes(2)) then
+    call error("incorrect size of variable_data array: "//trim(append_error_msg))
+  endif
+  do j = 1, dimsizes(2)
+    call string_copy(sbuf, variable_data(j))
+    do i = 1, tlen
+      charbuf(i,j) = sbuf(i:i)
+    enddo
+  enddo
+  err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
+  deallocate(charbuf)
+  deallocate(dimsizes)
+  deallocate(start)
+end subroutine character_write_1d
 
 !> @brief Write data to a variable in a netcdf file.
 subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim_level, &
@@ -34,13 +128,9 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
   integer :: varid
   integer :: unlim_dim_index
   integer, dimension(1) :: c
-  integer :: ndims
-  integer, dimension(:), allocatable :: start
-  integer, dimension(:), allocatable :: dimsizes
-  character, dimension(:), allocatable :: charbuf
-  integer :: i
-  integer :: tlen
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
+  append_error_msg = "netcdf_write_data_0d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
   if (fileobj%is_root) then
     c(:) = 1
     if (present(corner)) then
@@ -50,47 +140,27 @@ subroutine netcdf_write_data_0d(fileobj, variable_name, variable_data, unlim_dim
       unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                                broadcast=.false.)
       if (unlim_dim_index .ne. 1) then
-        call error("unlimited dimension must be the slowest varying dimension.")
+        call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
       endif
       c(unlim_dim_index) = unlim_dim_level
     endif
     call set_netcdf_mode(fileobj%ncid, data_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(variable_data)
-      type is (integer(kind=int32))
+      type is (integer(kind=i4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
-      type is (integer(kind=int64))
+      type is (integer(kind=i8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
-      type is (real(kind=real32))
+      type is (real(kind=r4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
-      type is (real(kind=real64))
+      type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c)
       type is (character(len=*))
-        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-        if (ndims .ne. 1) then
-          call error("currently only scalar and 1d character writes are supported.")
-        endif
-        allocate(start(ndims))
-        start(:) = 1
-        allocate(dimsizes(ndims))
-        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
-        call allocate_array(charbuf, dimsizes)
-        charbuf(:) = ""
-        tlen = len_trim(variable_data)
-        if (tlen .gt. dimsizes(1)) then
-          call error("character buffer is too big; decrease length.")
-        endif
-        do i = 1, tlen
-          charbuf(i) = variable_data(i:i)
-        enddo
-        err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
-        deallocate(charbuf)
-        deallocate(dimsizes)
-        deallocate(start)
+        call char_write_0d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_write_data_0d
 
@@ -117,14 +187,9 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
   integer :: unlim_dim_index
   integer, dimension(2) :: c
   integer, dimension(2) :: e
-  integer :: ndims
-  integer, dimension(:), allocatable :: start
-  integer, dimension(:), allocatable :: dimsizes
-  character, dimension(:,:), allocatable :: charbuf
-  character(len=1024) :: sbuf
-  integer :: i
-  integer :: j
-  integer :: tlen
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_write_data_1d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
 
   if (fileobj%is_root) then
     c(:) = 1
@@ -141,53 +206,27 @@ subroutine netcdf_write_data_1d(fileobj, variable_name, variable_data, unlim_dim
       unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                                broadcast=.false.)
       if (unlim_dim_index .ne. 2) then
-        call error("unlimited dimension must be the slowest varying dimension.")
+        call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
       endif
       c(unlim_dim_index) = unlim_dim_level
     endif
     call set_netcdf_mode(fileobj%ncid, data_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(variable_data)
-      type is (integer(kind=int32))
+      type is (integer(kind=i4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (integer(kind=int64))
+      type is (integer(kind=i8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real32))
+      type is (real(kind=r4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real64))
+      type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       type is (character(len=*))
-        ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
-        if (ndims .ne. 2) then
-          call error("currently only scalar and 1d character writes are supported.")
-        endif
-        allocate(start(ndims))
-        start(:) = 1
-        allocate(dimsizes(ndims))
-        call get_variable_size(fileobj, variable_name, dimsizes, .false.)
-        call allocate_array(charbuf, dimsizes)
-        charbuf(:,:) = ""
-        tlen = len(variable_data(1))
-        if (tlen .gt. dimsizes(1)) then
-          call error("character buffer is too big; decrease length.")
-        endif
-        if (size(variable_data) .ne. dimsizes(2)) then
-          call error("incorrect size of variable_data array.")
-        endif
-        do j = 1, dimsizes(2)
-          call string_copy(sbuf, variable_data(j))
-          do i = 1, tlen
-            charbuf(i,j) = sbuf(i:i)
-          enddo
-        enddo
-        err = nf90_put_var(fileobj%ncid, varid, charbuf, start=start, count=dimsizes)
-        deallocate(charbuf)
-        deallocate(dimsizes)
-        deallocate(start)
+        call character_write_1d(fileobj, variable_name, variable_data, append_error_msg, err, varid)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_write_data_1d
 
@@ -214,6 +253,9 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
   integer :: unlim_dim_index
   integer,dimension(3) :: c
   integer, dimension(3) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_write_data_2d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
 
   if (fileobj%is_root) then
     c(:) = 1
@@ -230,25 +272,25 @@ subroutine netcdf_write_data_2d(fileobj, variable_name, variable_data, unlim_dim
       unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                                broadcast=.false.)
       if (unlim_dim_index .ne. 3) then
-        call error("unlimited dimension must be the slowest varying dimension.")
+        call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
       endif
       c(unlim_dim_index) = unlim_dim_level
     endif
     call set_netcdf_mode(fileobj%ncid, data_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(variable_data)
-      type is (integer(kind=int32))
+      type is (integer(kind=i4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (integer(kind=int64))
+      type is (integer(kind=i8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real32))
+      type is (real(kind=r4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real64))
+      type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c ,count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_write_data_2d
 
@@ -276,6 +318,9 @@ subroutine netcdf_write_data_3d(fileobj, variable_name, variable_data, unlim_dim
   integer :: unlim_dim_index
   integer, dimension(4) :: c
   integer, dimension(4) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_write_data_3d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
 
   if (fileobj%is_root) then
     c(:) = 1
@@ -292,25 +337,25 @@ subroutine netcdf_write_data_3d(fileobj, variable_name, variable_data, unlim_dim
       unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                                broadcast=.false.)
       if (unlim_dim_index .ne. 4) then
-        call error("unlimited dimension must be the slowest varying dimension.")
+        call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
       endif
       c(unlim_dim_index) = unlim_dim_level
     endif
     call set_netcdf_mode(fileobj%ncid, data_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(variable_data)
-      type is (integer(kind=int32))
+      type is (integer(kind=i4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (integer(kind=int64))
+      type is (integer(kind=i8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real32))
+      type is (real(kind=r4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real64))
+      type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_write_data_3d
 
@@ -337,6 +382,9 @@ subroutine netcdf_write_data_4d(fileobj, variable_name, variable_data, unlim_dim
   integer :: unlim_dim_index
   integer,dimension(5) :: c
   integer, dimension(5) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_write_data_4d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
 
   if (fileobj%is_root) then
     c(:) = 1
@@ -357,20 +405,20 @@ subroutine netcdf_write_data_4d(fileobj, variable_name, variable_data, unlim_dim
      endif
     endif
     call set_netcdf_mode(fileobj%ncid, data_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(variable_data)
-      type is (integer(kind=int32))
+      type is (integer(kind=i4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (integer(kind=int64))
+      type is (integer(kind=i8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real32))
+      type is (real(kind=r4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real64))
+      type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_write_data_4d
 
@@ -399,6 +447,9 @@ subroutine netcdf_write_data_5d(fileobj, variable_name, variable_data, unlim_dim
   integer :: unlim_dim_index
   integer,dimension(6) :: c
   integer, dimension(6) :: e
+  character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
+
+  append_error_msg = "netcdf_write_data_5d: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
 
   if (fileobj%is_root) then
     c(:) = 1
@@ -415,24 +466,24 @@ subroutine netcdf_write_data_5d(fileobj, variable_name, variable_data, unlim_dim
       unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
                                                                broadcast=.false.)
       if (unlim_dim_index .ne. 6) then
-        call error("unlimited dimension must be the slowest varying dimension.")
+        call error("unlimited dimension must be the slowest varying dimension: "//trim(append_error_msg))
       endif
       c(unlim_dim_index) = unlim_dim_level
     endif
     call set_netcdf_mode(fileobj%ncid, data_mode)
-    varid = get_variable_id(fileobj%ncid, trim(variable_name))
+    varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(variable_data)
-      type is (integer(kind=int32))
+      type is (integer(kind=i4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (integer(kind=int64))
+      type is (integer(kind=i8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real32))
+      type is (real(kind=r4_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
-      type is (real(kind=real64))
+      type is (real(kind=r8_kind))
         err = nf90_put_var(fileobj%ncid, varid, variable_data, start=c, count=e)
       class default
-        call error("unsupported type.")
+        call error("Unsupported variable type: "//trim(append_error_msg))
     end select
-    call check_netcdf_code(err)
+    call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_write_data_5d

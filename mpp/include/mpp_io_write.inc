@@ -19,126 +19,19 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!                                                                            !
-!                             MPP_WRITE_META                                 !
-!                                                                            !
-! This series of routines is used to describe the contents of the file       !
-! being written on <unit>. Each file can contain any number of fields,       !
-! which can be functions of 0-3 spatial axes and 0-1 time axes. Axis         !
-! descriptors are stored in the <axistype> structure and field               !
-! descriptors in the <fieldtype> structure.                                  !
-!                                                                            !
-!  type, public :: axistype                                                  !
-!     sequence                                                               !
-!     character(len=128) :: name                                             !
-!     character(len=128) :: units                                            !
-!     character(len=256) :: longname                                         !
-!     integer :: sense           !+/-1, depth or height?                     !
-!     type(domain1D) :: domain                                               !
-!     real, pointer :: data(:) !axis values (not used if time axis)          !
-!     integer :: id                                                          !
-!  end type axistype                                                         !
-!                                                                            !
-!  type, public :: fieldtype                                                 !
-!     sequence                                                               !
-!     character(len=128) :: name                                             !
-!     character(len=128) :: units                                            !
-!     character(len=256) :: longname                                         !
-!     character(len=256) :: standard_name  !CF standard name                 !
-!     real :: min, max, missing, fill, scale, add                            !
-!     type(axistype), pointer :: axis(:)                                     !
-!     integer :: id                                                          !
-!  end type fieldtype                                                        !
-!                                                                            !
-! The metadata contained in the type is always written for each axis and     !
-! field. Any other metadata one wishes to attach to an axis or field         !
-! can subsequently be passed to mpp_write_meta using the ID, as shown below. !
-!                                                                            !
-! mpp_write_meta can take several forms:                                     !
-!                                                                            !
-!  mpp_write_meta( unit, name, rval=rval, pack=pack )                        !
-!  mpp_write_meta( unit, name, ival=ival )                                   !
-!  mpp_write_meta( unit, name, cval=cval )                                   !
-!      integer, intent(in) :: unit                                           !
-!      character(len=*), intent(in) :: name                                  !
-!      real, intent(in), optional :: rval(:)                                 !
-!      integer, intent(in), optional :: ival(:)                              !
-!      character(len=*), intent(in), optional :: cval                        !
-!                                                                            !
-! This form defines global metadata associated with the file as a            !
-! whole. The attribute is named <name> and can take on a real, integer       !
-! or character value. <rval> and <ival> can be scalar or 1D arrays.          !
-!                                                                            !
-!  mpp_write_meta( unit, id, name, rval=rval, pack=pack )                    !
-!  mpp_write_meta( unit, id, name, ival=ival )                               !
-!  mpp_write_meta( unit, id, name, cval=cval )                               !
-!      integer, intent(in) :: unit, id                                       !
-!      character(len=*), intent(in) :: name                                  !
-!      real, intent(in), optional :: rval(:)                                 !
-!      integer, intent(in), optional :: ival(:)                              !
-!      character(len=*), intent(in), optional :: cval                        !
-!                                                                            !
-! This form defines metadata associated with a previously defined            !
-! axis or field, identified to mpp_write_meta by its unique ID <id>.         !
-! The attribute is named <name> and can take on a real, integer              !
-! or character value. <rval> and <ival> can be scalar or 1D arrays.          !
-! This need not be called for attributes already contained in                !
-! the type.                                                                  !
-!                                                                            !
-! PACK can take values 1,2,4,8. This only has meaning when writing           !
-! floating point numbers. The value of PACK defines the number of words      !
-! written into 8 bytes. For pack=4 and pack=8, an integer value is           !
-! written: rval is assumed to have been scaled to the appropriate dynamic    !
-! range.                                                                     !
-! PACK currently only works for netCDF files, and is ignored otherwise.      !
-!                                                                            !
-!  subroutine mpp_write_meta_axis( unit, axis, name, units, longname, &      !
-!        cartesian, sense, domain, data )                                    !
-!     integer, intent(in) :: unit                                            !
-!     type(axistype), intent(inout) :: axis                                  !
-!     character(len=*), intent(in) :: name, units, longname                  !
-!     character(len=*), intent(in), optional :: cartesian                    !
-!     integer, intent(in), optional :: sense                                 !
-!     type(domain1D), intent(in), optional :: domain                         !
-!     real, intent(in), optional :: data(:)                                  !
-!                                                                            !
-! This form defines a time or space axis. Metadata corresponding to the      !
-! type above are written to the file on <unit>. A unique ID for subsequent   !
-! references to this axis is returned in axis%id. If the <domain>            !
-! element is present, this is recognized as a distributed data axis          !
-! and domain decomposition information is also written if required (the      !
-! domain decomposition info is required for multi-fileset multi-threaded     !
-! I/O). If the <datLINK> element is allocated, it is considered to be a      !
-! space axis, otherwise it is a time axis with an unlimited dimension.       !
-! Only one time axis is allowed per file.                                    !
-!                                                                            !
-!  subroutine mpp_write_meta_field( unit, field, axes, name, units, longname !
-!       stanadard_name, min, max, missing, fill, scale, add, pack)           !
-!     integer, intent(in) :: unit                                            !
-!     type(fieldtype), intent(out) :: field                                  !
-!     type(axistype), intent(in) :: axes(:)                                  !
-!     character(len=*), intent(in) :: name, units, longname, standard_name   !
-!     real, intent(in), optional :: min, max, missing, fill, scale, add      !
-!     integer, intent(in), optional :: pack                                  !
-!                                                                            !
-! This form defines a field. Metadata corresponding to the type              !
-! above are written to the file on <unit>. A unique ID for subsequent        !
-! references to this field is returned in field%id. At least one axis        !
-! must be associated, 0D variables are not considered. mpp_write_meta        !
-! must previously have been called on all axes associated with this          !
-! field.                                                                     !
-!                                                                            !
-! The mpp_write_meta package also includes subroutines write_attribute and   !
-! write_attribute_netcdf, that are private to this module.                   !
-!                                                                            !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!> @file
+!> @brief This series of routines is used to describe the contents of the file
+!! being written on <unit>.
+
+!> @addtogroup mpp_io_mod
+!> @{
+
+!> Writes a global metadata attribute to unit <unit>
+!! attribute <name> can be an real, integer or character
+!! one and only one of rval, ival, and cval should be present
+!! the first found will be used
+!! for a non-netCDF file, it is encoded into a string "GLOBAL <name> <val>"
     subroutine mpp_write_meta_global( unit, name, rval, ival, cval, pack)
-!writes a global metadata attribute to unit <unit>
-!attribute <name> can be an real, integer or character
-!one and only one of rval, ival, and cval should be present
-!the first found will be used
-!for a non-netCDF file, it is encoded into a string "GLOBAL <name> <val>"
       integer, intent(in) :: unit
       character(len=*), intent(in) :: name
       real,             intent(in), optional :: rval(:)
@@ -291,7 +184,7 @@
       call netcdf_err(error, mpp_file(unit),string='Axis='//trim(name))
 
     ! Write dimension data.
-      error = NF_DEF_VAR( mpp_file(unit)%ncid, name, NF_INT, 1, did, id )
+      error = NF_DEF_VAR( mpp_file(unit)%ncid, name, NF_INT, 1, (/did/), id )
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
 
       error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, 'long_name', len_trim(longname), longname )
@@ -305,7 +198,7 @@
          endif
       endif
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
-      error = NF_PUT_VARA_INT ( mpp_file(unit)%ncid, id, 1, size(data), data )
+      error = NF_PUT_VARA_INT ( mpp_file(unit)%ncid, id, (/1/), (/size(data)/), data )
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
       error = NF_REDEF(mpp_file(unit)%ncid)
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
@@ -328,7 +221,7 @@
       call netcdf_err(error, mpp_file(unit),string='Axis='//trim(name))
 
     ! Write dimension data.
-      error = NF_DEF_VAR( mpp_file(unit)%ncid, name, NF_INT, 1, did, id )
+      error = NF_DEF_VAR( mpp_file(unit)%ncid, name, NF_INT, 1, (/did/), id )
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
 
       error = NF_PUT_ATT_TEXT( mpp_file(unit)%ncid, id, 'long_name', len_trim(longname), longname )
@@ -342,7 +235,7 @@
          endif
       endif
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
-      error = NF_PUT_VARA_INT ( mpp_file(unit)%ncid, id, 1, size(data), data )
+      error = NF90_PUT_VAR ( mpp_file(unit)%ncid, id, data, start=(/1/), count=(/size(data)/) )
       call netcdf_err( error, mpp_file(unit), string=' axis varable '//trim(name))
       error = NF_REDEF(mpp_file(unit)%ncid)
       call netcdf_err( error, mpp_file(unit), string=' subroutine mpp_def_dim')
@@ -352,11 +245,13 @@
 
 
 
-    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min, calendar)
+    subroutine mpp_write_meta_axis_r1d( unit, axis, name, units, longname, cartesian, sense, domain, data, min, &
+                                      &  calendar)
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
-!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer components will be unassociated
+!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer
+!components will be unassociated
       integer,          intent(in)           :: unit
       type(axistype),   intent(inout)        :: axis
       character(len=*), intent(in)           :: name, units, longname
@@ -445,9 +340,9 @@
               error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%len, axis%did )
               call netcdf_err( error, mpp_file(unit), axis )
               if(pack_size == 1) then
-                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, axis%did, axis%id )
+                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, (/axis%did/), axis%id )
               else ! pack_size == 2
-                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
+                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, (/axis%did/), axis%id )
               endif
               call netcdf_err( error, mpp_file(unit), axis )
           else                            !time axis
@@ -456,9 +351,9 @@
               error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
               call netcdf_err( error, mpp_file(unit), axis )
               if(pack_size == 1) then
-                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, axis%did, axis%id )
+                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, (/axis%did/), axis%id )
               else ! pack_size == 2
-                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
+                 error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, (/axis%did/), axis%id )
               endif
               call netcdf_err( error, mpp_file(unit), axis )
               mpp_file(unit)%id = axis%id !file ID is the same as time axis varID
@@ -528,7 +423,8 @@
           call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/))
           axis%natt = axis%natt + 1
       end if
-      if( verbose )print '(a,2i6,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
+      if( verbose )print '(a,2i6,x,a,2i3)', &
+           'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
 
       mpp_file(unit)%ndim = max(1,mpp_file(unit)%ndim + 1)
@@ -541,7 +437,8 @@
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
-!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer components will be unassociated
+!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer
+!components will be unassociated
       integer,          intent(in)           :: unit
       type(axistype),   intent(inout)        :: axis
       character(len=*), intent(in)           :: name, units, longname
@@ -580,7 +477,7 @@
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, axis%len, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
-          error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_INT, 1, axis%did, axis%id )
+          error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_INT, 1, (/axis%did/), axis%id )
           call netcdf_err( error, mpp_file(unit), axis )
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_I1D: Only netCDF format is currently supported.' )
@@ -599,7 +496,8 @@
         call mpp_write_meta( unit, axis%id, 'valid_min', ival=min)
         axis%natt = axis%natt + 1
       endif
-      if( verbose )print '(a,2i6,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
+      if( verbose )print '(a,2i6,x,a,2i3)', &
+           'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
 
       mpp_file(unit)%ndim = max(1,mpp_file(unit)%ndim + 1)
@@ -613,7 +511,8 @@
 !load the values in an axistype (still need to call mpp_write)
 !write metadata attributes for axis
 !it is declared intent(inout) so you can nullify pointers in the incoming object if needed
-!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer components will be unassociated
+!the f90 standard doesn't guarantee that intent(out) on a type guarantees that its pointer
+!components will be unassociated
       integer,          intent(in)           :: unit
       type(axistype),   intent(inout)        :: axis
       character(len=*), intent(in)           :: name
@@ -647,7 +546,7 @@
       if( mpp_file(unit)%format.EQ.MPP_NETCDF )then
           error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
           call netcdf_err( error, mpp_file(unit), axis )
-          error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_INT, 0, axis%did, axis%id )
+          error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_INT, 0, (/axis%did/), axis%id )
           call netcdf_err( error, mpp_file(unit), axis )
       else
           call mpp_error( FATAL, 'MPP_WRITE_META_AXIS_UNLIMITED: Only netCDF format is currently supported.' )
@@ -684,7 +583,7 @@
       integer, intent(in), optional :: pack
       character(len=*), intent(in), optional :: time_method
       character(len=*), intent(in), optional :: standard_name
-      integer(LONG_KIND), dimension(:), intent(in), optional :: checksum
+      integer(i8_kind), dimension(:), intent(in), optional :: checksum
 !this array is required because of f77 binding on netCDF interface
       integer, allocatable :: axis_id(:)
       real :: a, b
@@ -786,17 +685,17 @@
               case(0)
                   error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_INT, size(field%axes(:)), axis_id, field%id )
               case(1)
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, size(field%axes(:)),axis_id,field%id)
               case(2)
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes(:)),axis_id,field%id)
               case(4)
                   if( .NOT.PRESENT(scale) .OR. .NOT.PRESENT(add) ) &
                        call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=4.' )
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes(:)),axis_id,field%id)
               case(8)
                   if( .NOT.PRESENT(scale) .OR. .NOT.PRESENT(add) ) &
                        call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=8.' )
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes(:)),axis_id,field%id)
               case default
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
@@ -812,7 +711,8 @@
       else
           varnum = varnum + 1
           field%id = varnum
-          if( PRESENT(pack) )call mpp_error( WARNING, 'MPP_WRITE_META: Packing is currently available only on netCDF files.' )
+          if( PRESENT(pack) )call mpp_error( WARNING, &
+             &  'MPP_WRITE_META: Packing is currently available only on netCDF files.' )
 !write field def
           write( text, '(a,i4,a)' )'FIELD ', field%id, ' name'
           call write_attribute( unit, trim(text), cval=field%name )
@@ -952,49 +852,54 @@
 !pack was only meaningful for FP numbers, but is now extended by the ival branch of this routine
           if( PRESENT(pack) )then
              if( pack== 0 ) then !! here be dragons, use ival branch!...
-                if( KIND(rval).EQ.DOUBLE_KIND )then
+                if( KIND(rval).EQ.r8_kind )then
                    call mpp_error( FATAL, &
                         'WRITE_ATTRIBUTE_NETCDF: attempting to write internal NF_INT, currently int32, as double.' )
-                   error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval(:)), rval )
-                else if( KIND(rval).EQ.FLOAT_KIND )then
+                else if( KIND(rval).EQ.r4_kind )then
                    call mpp_error( FATAL, &
                         'WRITE_ATTRIBUTE_NETCDF: attempting to write internal NF_INT, currently int32, as float.' )
-                   error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval(:)), rval )
                 end if
-                call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
              else if( pack.EQ.1 )then
-                  if( KIND(rval).EQ.DOUBLE_KIND )then
-                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval(:)), rval )
-                  else if( KIND(rval).EQ.FLOAT_KIND )then
+                  if( KIND(rval).EQ.r8_kind )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_DOUBLE, &
+                                                size(rval(:)), real(rval, kind=r8_kind))
+                  else if( KIND(rval).EQ.r4_kind )then
                       call mpp_error( WARNING, &
                            'WRITE_ATTRIBUTE_NETCDF: attempting to write internal 32-bit real as external 64-bit.' )
-                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_DOUBLE, size(rval(:)), rval )
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_DOUBLE, &
+                                                size(rval(:)), real(rval, kind=r4_kind))
                   end if
                   call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
               else if( pack.EQ.2 )then
-                  if( KIND(rval).EQ.DOUBLE_KIND )then
-                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval(:)), rval )
-                  else if( KIND(rval).EQ.FLOAT_KIND )then
-                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval(:)), rval )
+                  if( KIND(rval).EQ.r8_kind )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT, &
+                                                size(rval(:)), real(rval, kind=r8_kind))
+                  else if( KIND(rval).EQ.r4_kind )then
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_FLOAT, &
+                                                size(rval(:)), real(rval, kind=r4_kind))
                   end if
                   call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
               else if( pack.EQ.4 )then
                   allocate( rval_i(size(rval(:))) )
                   rval_i = rval
-                  if( KIND(rval).EQ.DOUBLE_KIND )then
-                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_SHORT,  size(rval_i(:)), rval )
-                  else if( KIND(rval).EQ.FLOAT_KIND )then
-                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_SHORT,  size(rval_i(:)), rval )
+                  if( KIND(rval).EQ.r8_kind )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_SHORT, &
+                                                size(rval_i(:)), real(rval, kind=r8_kind))
+                  else if( KIND(rval).EQ.r4_kind )then
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_SHORT, &
+                                                size(rval_i(:)), real(rval, kind=r4_kind))
                   end if
                   call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
                   deallocate(rval_i)
               else if( pack.EQ.8 )then
                   allocate( rval_i(size(rval(:))) )
                   rval_i = rval
-                  if( KIND(rval).EQ.DOUBLE_KIND )then
-                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_BYTE,   size(rval_i(:)), rval )
-                  else if( KIND(rval).EQ.FLOAT_KIND )then
-                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_BYTE,   size(rval_i(:)), rval )
+                  if( KIND(rval).EQ.r8_kind )then
+                      error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_BYTE, &
+                                                size(rval_i(:)), real(rval, kind=r8_kind))
+                  else if( KIND(rval).EQ.r4_kind )then
+                      error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_BYTE, &
+                                                size(rval_i(:)), real(rval, kind=r4_kind))
                   end if
                   call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
                   deallocate(rval_i)
@@ -1003,20 +908,23 @@
               end if
           else
 !default is to write FLOATs (32-bit)
-              if( KIND(rval).EQ.DOUBLE_KIND )then
-                  error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval(:)), rval )
-              else if( KIND(rval).EQ.FLOAT_KIND )then
-                  error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_FLOAT,  size(rval(:)), rval )
+              if( KIND(rval).EQ.r8_kind )then
+                  error = NF_PUT_ATT_DOUBLE( mpp_file(unit)%ncid, id, name, NF_FLOAT, &
+                                            size(rval(:)), real(rval, kind=r8_kind))
+              else if( KIND(rval).EQ.r4_kind )then
+                  error = NF_PUT_ATT_REAL  ( mpp_file(unit)%ncid, id, name, NF_FLOAT, &
+                                            size(rval(:)), real(rval, kind=r4_kind))
               end if
               call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
           end if
       else if( PRESENT(ival) )then
           if( PRESENT(pack) ) then
              if (pack ==0) then
-                if (KIND(ival).EQ.LONG_KIND ) then
+                if (KIND(ival).EQ.i8_kind) then
                    call mpp_error(FATAL,'only use NF_INTs with pack=0 for now')
                 end if
-                error = NF_PUT_ATT_INT( mpp_file(unit)%ncid, id, name, NF_INT, size(ival(:)), ival ) !!XXX int32_t..
+                error = NF_PUT_ATT_INT( mpp_file(unit)%ncid, id, name, &
+                                       NF_INT, size(ival(:)), ival ) !!XXX int32_t
                 call netcdf_err( error, mpp_file(unit), string=' Attribute='//name )
              else
                 call mpp_error( FATAL, 'WRITE_ATTRIBUTE_NETCDF: only implimented ints when pack=0, else use reals.' )
@@ -1065,7 +973,7 @@
 !  mpp_write( unit, field, data, tstamp )                              !
 !     integer, intent(in) :: unit                                      !
 !     type(fieldtype), intent(in) :: field                             !
-!     real(DOUBLE_KIND), optional :: tstamp                            !
+!     real(r8_kind), optional :: tstamp                            !
 !     data is real and can be scalar or of rank 1-3.                   !
 !                                                                      !
 ! For distributed data, use                                            !
@@ -1074,7 +982,7 @@
 !     integer, intent(in) :: unit                                      !
 !     type(fieldtype), intent(in) :: field                             !
 !     type(domain2D), intent(in) :: domain                             !
-!     real(DOUBLE_KIND), optional :: tstamp                            !
+!     real(r8_kind), optional :: tstamp                            !
 !     data is real and can be of rank 2 or 3.                          !
 !                                                                      !
 !  mpp_write( unit, axis )                                             !
@@ -1090,19 +998,6 @@
 !                                                                      !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #undef WRITE_RECORD_
-#define WRITE_RECORD_ write_record_default
-#undef MPP_WRITE_2DDECOMP_2D_
-#define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d
-#undef MPP_WRITE_2DDECOMP_3D_
-#define MPP_WRITE_2DDECOMP_3D_ mpp_write_2ddecomp_r3d
-#undef MPP_WRITE_2DDECOMP_4D_
-#define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d
-#undef MPP_TYPE_
-#define MPP_TYPE_ real
-#include <mpp_write_2Ddecomp.h>
-
-#ifdef OVERLOAD_R8
-#undef WRITE_RECORD_
 #define WRITE_RECORD_ write_record_r8
 #undef MPP_WRITE_2DDECOMP_2D_
 #define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d_r8
@@ -1111,75 +1006,150 @@
 #undef MPP_WRITE_2DDECOMP_4D_
 #define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d_r8
 #undef MPP_TYPE_
-#define MPP_TYPE_ real(DOUBLE_KIND)
-#include <mpp_write_2Ddecomp.h>
-#endif
+#define MPP_TYPE_ real(KIND=r8_kind)
+#include <mpp_write_2Ddecomp.fh>
+
+#undef WRITE_RECORD_
+#define WRITE_RECORD_ write_record_r4
+#undef MPP_WRITE_2DDECOMP_2D_
+#define MPP_WRITE_2DDECOMP_2D_ mpp_write_2ddecomp_r2d_r4
+#undef MPP_WRITE_2DDECOMP_3D_
+#define MPP_WRITE_2DDECOMP_3D_ mpp_write_2ddecomp_r3d_r4
+#undef MPP_WRITE_2DDECOMP_4D_
+#define MPP_WRITE_2DDECOMP_4D_ mpp_write_2ddecomp_r4d_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(KIND=r4_kind)
+#include <mpp_write_2Ddecomp.fh>
 
 #undef MPP_WRITE_COMPRESSED_1D_
-#define MPP_WRITE_COMPRESSED_1D_ mpp_write_compressed_r1d
+#define MPP_WRITE_COMPRESSED_1D_ mpp_write_compressed_r1d_r8
 #undef MPP_WRITE_COMPRESSED_2D_
-#define MPP_WRITE_COMPRESSED_2D_ mpp_write_compressed_r2d
+#define MPP_WRITE_COMPRESSED_2D_ mpp_write_compressed_r2d_r8
 #undef MPP_WRITE_COMPRESSED_3D_
-#define MPP_WRITE_COMPRESSED_3D_ mpp_write_compressed_r3d
+#define MPP_WRITE_COMPRESSED_3D_ mpp_write_compressed_r3d_r8
+#undef WRITE_RECORD_
+#define WRITE_RECORD_ write_record_r8
 #undef MPP_TYPE_
-#define MPP_TYPE_ real
-#include <mpp_write_compressed.h>
+#define MPP_TYPE_ real(KIND=r8_kind)
+#include <mpp_write_compressed.fh>
+
+#undef MPP_WRITE_COMPRESSED_1D_
+#define MPP_WRITE_COMPRESSED_1D_ mpp_write_compressed_r1d_r4
+#undef MPP_WRITE_COMPRESSED_2D_
+#define MPP_WRITE_COMPRESSED_2D_ mpp_write_compressed_r2d_r4
+#undef MPP_WRITE_COMPRESSED_3D_
+#define MPP_WRITE_COMPRESSED_3D_ mpp_write_compressed_r3d_r4
+#undef WRITE_RECORD_
+#define WRITE_RECORD_ write_record_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(KIND=r4_kind)
+#include <mpp_write_compressed.fh>
 
 #undef MPP_WRITE_UNLIMITED_AXIS_1D_
 #define MPP_WRITE_UNLIMITED_AXIS_1D_ mpp_write_unlimited_axis_r1d
 #undef MPP_TYPE_
 #define MPP_TYPE_ real
-#include <mpp_write_unlimited_axis.h>
+#include <mpp_write_unlimited_axis.fh>
 
 #undef MPP_WRITE_
-#define MPP_WRITE_ mpp_write_r0D
+#define MPP_WRITE_ mpp_write_r0D_r8
 #undef MPP_TYPE_
-#define MPP_TYPE_ real
+#define MPP_TYPE_ real(KIND=r8_kind)
 #undef MPP_RANK_
 #define MPP_RANK_ !
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_default( unit, field, 1, (/data/), tstamp)
-#include <mpp_write.h>
+#define MPP_WRITE_RECORD_ write_record_r8( unit, field, 1, (/data/), tstamp)
+#include <mpp_write.fh>
 
 #undef MPP_WRITE_
-#define MPP_WRITE_ mpp_write_r1D
+#define MPP_WRITE_ mpp_write_r1D_r8
 #undef MPP_TYPE_
-#define MPP_TYPE_ real
+#define MPP_TYPE_ real(KIND=r8_kind)
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:)), data, tstamp)
+#define MPP_WRITE_RECORD_ write_record_r8( unit, field, size(data(:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:)
-#include <mpp_write.h>
+#include <mpp_write.fh>
 
 #undef MPP_WRITE_
-#define MPP_WRITE_ mpp_write_r2D
+#define MPP_WRITE_ mpp_write_r2D_r8
 #undef MPP_TYPE_
-#define MPP_TYPE_ real
+#define MPP_TYPE_ real(KIND=r8_kind)
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:)), data, tstamp )
+#define MPP_WRITE_RECORD_ write_record_r8( unit, field, size(data(:,:)), data, tstamp )
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:)
-#include <mpp_write.h>
+#include <mpp_write.fh>
 
 #undef MPP_WRITE_
-#define MPP_WRITE_ mpp_write_r3D
+#define MPP_WRITE_ mpp_write_r3D_r8
 #undef MPP_TYPE_
-#define MPP_TYPE_ real
+#define MPP_TYPE_ real(KIND=r8_kind)
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:)), data, tstamp)
+#define MPP_WRITE_RECORD_ write_record_r8( unit, field, size(data(:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:)
-#include <mpp_write.h>
+#include <mpp_write.fh>
 
 #undef MPP_WRITE_
-#define MPP_WRITE_ mpp_write_r4D
+#define MPP_WRITE_ mpp_write_r4D_r8
 #undef MPP_TYPE_
-#define MPP_TYPE_ real
+#define MPP_TYPE_ real(KIND=r8_kind)
 #undef MPP_WRITE_RECORD_
-#define MPP_WRITE_RECORD_ call write_record_default( unit, field, size(data(:,:,:,:)), data, tstamp)
+#define MPP_WRITE_RECORD_ write_record_r8( unit, field, size(data(:,:,:,:)), data, tstamp)
 #undef MPP_RANK_
 #define MPP_RANK_ (:,:,:,:)
-#include <mpp_write.h>
+#include <mpp_write.fh>
+
+#undef MPP_WRITE_
+#define MPP_WRITE_ mpp_write_r0D_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(KIND=r4_kind)
+#undef MPP_RANK_
+#define MPP_RANK_ !
+#undef MPP_WRITE_RECORD_
+#define MPP_WRITE_RECORD_ write_record_r4( unit, field, 1, (/data/), tstamp)
+#include <mpp_write.fh>
+
+#undef MPP_WRITE_
+#define MPP_WRITE_ mpp_write_r1D_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(KIND=r4_kind)
+#undef MPP_WRITE_RECORD_
+#define MPP_WRITE_RECORD_ write_record_r4( unit, field, size(data(:)), data, tstamp)
+#undef MPP_RANK_
+#define MPP_RANK_ (:)
+#include <mpp_write.fh>
+
+#undef MPP_WRITE_
+#define MPP_WRITE_ mpp_write_r2D_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(KIND=r4_kind)
+#undef MPP_WRITE_RECORD_
+#define MPP_WRITE_RECORD_ write_record_r4( unit, field, size(data(:,:)), data, tstamp )
+#undef MPP_RANK_
+#define MPP_RANK_ (:,:)
+#include <mpp_write.fh>
+
+#undef MPP_WRITE_
+#define MPP_WRITE_ mpp_write_r3D_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(KIND=r4_kind)
+#undef MPP_WRITE_RECORD_
+#define MPP_WRITE_RECORD_ write_record_r4( unit, field, size(data(:,:,:)), data, tstamp)
+#undef MPP_RANK_
+#define MPP_RANK_ (:,:,:)
+#include <mpp_write.fh>
+
+#undef MPP_WRITE_
+#define MPP_WRITE_ mpp_write_r4D_r4
+#undef MPP_TYPE_
+#define MPP_TYPE_ real(KIND=r4_kind)
+#undef MPP_WRITE_RECORD_
+#define MPP_WRITE_RECORD_ write_record_r4( unit, field, size(data(:,:,:,:)), data, tstamp)
+#undef MPP_RANK_
+#define MPP_RANK_ (:,:,:,:)
+#include <mpp_write.fh>
 
     subroutine mpp_write_axis( unit, axis )
       integer, intent(in) :: unit
@@ -1320,15 +1290,15 @@
                   ieg = ieg + axis%shift
                   error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, ie-is+1, axis%did )
               else
-                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, size(axis%data(:)),          axis%did )
+                  error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, size(axis%data(:)), axis%did )
               end if
               call netcdf_err( error, mpp_file(unit), axis )
-              error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, axis%did, axis%id )
+              error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_FLOAT, 1, (/axis%did/), axis%id )
               call netcdf_err( error, mpp_file(unit), axis )
           else                            !time axis
               error = NF_DEF_DIM( mpp_file(unit)%ncid, axis%name, NF_UNLIMITED, axis%did )
               call netcdf_err( error, mpp_file(unit), axis )
-              error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, axis%did, axis%id )
+              error = NF_DEF_VAR( mpp_file(unit)%ncid, axis%name, NF_DOUBLE, 1, (/axis%did/), axis%id )
               call netcdf_err( error, mpp_file(unit), axis )
               mpp_file(unit)%id = axis%id !file ID is the same as time axis varID
               mpp_file(unit)%recdimid = axis%did ! record dimension id
@@ -1368,10 +1338,12 @@
          endif
       enddo
 
-      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI .AND. axis%domain.NE.NULL_DOMAIN1D )then
+      if( mpp_file(unit)%threading.EQ.MPP_MULTI .AND. mpp_file(unit)%fileset.EQ.MPP_MULTI &
+         .AND. axis%domain.NE.NULL_DOMAIN1D )then
           call mpp_write_meta( unit, axis%id, 'domain_decomposition', ival=(/isg,ieg,is,ie/) )
       end if
-      if( verbose )print '(a,2i6,x,a,2i3)', 'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
+      if( verbose )print '(a,2i6,x,a,2i3)', &
+           'MPP_WRITE_META: Wrote axis metadata, pe, unit, axis%name, axis%id, axis%did=', &
            pe, unit, trim(axis%name), axis%id, axis%did
 #else
       call mpp_error( FATAL, 'MPP_READ currently requires use_netCDF option' )
@@ -1437,17 +1409,21 @@
 !write field def
           select case (field%pack)
               case(1)
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_DOUBLE, &
+                                     size(field%axes(:)), axis_id, field%id )
               case(2)
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT,  size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_FLOAT, &
+                                     size(field%axes(:)), axis_id, field%id )
               case(4)
 !                 if( field%scale.EQ.default_field%scale .OR. field%add.EQ.default_field%add ) &
 !                      call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=4.' )
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT,  size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_SHORT, &
+                                     size(field%axes(:)), axis_id, field%id )
               case(8)
 !                 if( field%scale.EQ.default_field%scale .OR. field%add.EQ.default_field%add ) &
 !                      call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: scale and add must be supplied when pack=8.' )
-                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE,   size(field%axes(:)), axis_id, field%id )
+                  error = NF_DEF_VAR( mpp_file(unit)%ncid, field%name, NF_BYTE, &
+                                     size(field%axes(:)), axis_id, field%id )
               case default
                   call mpp_error( FATAL, 'MPP_WRITE_META_FIELD: only legal packing values are 1,2,4,8.' )
           end select
@@ -1511,8 +1487,10 @@
       end if
       if( field%pack.NE.1 .AND. field%pack.NE.2 )then
           call mpp_write_meta( unit, field%id, 'packing', ival=field%pack )
-          if( field%scale.NE.default_field%scale )call mpp_write_meta( unit, field%id, 'scale_factor',  rval=field%scale )
-          if( field%add.NE.default_field%add   )call mpp_write_meta( unit, field%id, 'add_offset',    rval=field%add   )
+          if( field%scale.NE.default_field%scale ) &
+                                 call mpp_write_meta( unit, field%id, 'scale_factor',  rval=field%scale )
+          if( field%add.NE.default_field%add   ) &
+                                 call mpp_write_meta( unit, field%id, 'add_offset',    rval=field%add )
       end if
       if( verbose )print '(a,2i6,x,a,i3)', 'MPP_WRITE_META: Wrote field metadata: pe, unit, field%name, field%id=', &
            pe, unit, trim(field%name), field%id
@@ -1577,7 +1555,7 @@
       integer, intent(in), optional :: pack
       character(len=*), intent(in), optional :: time_method
       character(len=*), intent(in), optional :: standard_name
-      integer(LONG_KIND), dimension(:), intent(in), optional :: checksum
+      integer(i8_kind), dimension(:), intent(in), optional :: checksum
 !this array is required because of f77 binding on netCDF interface
       integer, allocatable :: axis_id(:)
       real :: a, b
@@ -1651,3 +1629,4 @@
 
       return
     end subroutine fillin_fieldtype
+!> @}

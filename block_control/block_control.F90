@@ -16,30 +16,35 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-
-!> \file
-!! \brief Contains the \ref block_control_mod module
+!> @defgroup block_control_mod block_control_mod
+!> @ingroup block_control
+!> @brief Routines for "blocks" used for  OpenMP threading of column-based
+!!        calculations
 
 module block_control_mod
-#include <fms_platform.h>
 
 use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL
 use mpp_domains_mod, only: mpp_compute_extent
-
 implicit none
 
 public block_control_type
 
-type ix_type
+!> Type to dereference packed index from global index.
+!> @ingroup block_control_mod
+type :: ix_type
   integer, dimension(:,:), allocatable :: ix
 end type ix_type
 
-type pk_type
+!> Type to dereference packed index from global indices.
+!> @ingroup block_control_mod
+type :: pk_type
   integer, dimension(:), allocatable :: ii
   integer, dimension(:), allocatable :: jj
 end type pk_type
 
-type block_control_type
+!> @brief Block data and extents for OpenMP threading of column-based calculations
+!> @ingroup block_control_mod
+type :: block_control_type
   integer :: nx_block, ny_block  !< blocking factor using mpp-style decomposition
   integer :: nblks               !< number of blocks cover MPI domain
   integer :: isc, iec, jsc, jec  !< MPI domain global extents
@@ -47,7 +52,7 @@ type block_control_type
   integer, dimension(:),        allocatable :: ibs  , &  !< block extents for mpp-style
                                                ibe  , &  !! decompositions
                                                jbs  , &
-                                               jbe  
+                                               jbe
   type(ix_type), dimension(:),  allocatable :: ix    !< dereference packed index from global index
   !--- packed blocking fields
   integer, dimension(:),        allocatable :: blksz !< number of points in each individual block
@@ -59,44 +64,24 @@ type block_control_type
                                                             !! block/ixp combo
 end type block_control_type
 
+!> @addtogroup block_control_mod
+!> @{
+
 public :: define_blocks, define_blocks_packed
 
 contains
 
 !###############################################################################
-!> \fn define_blocks
-!!
-!! \brief Sets up "blocks" used for OpenMP threading of column-based
+!> @brief Sets up "blocks" used for OpenMP threading of column-based
 !!        calculations using rad_n[x/y]xblock from coupler_nml
-!!
-!! <b> Parameters: </b>
-!!
-!! \code{.f90}
-!! character(len=*),         intent(in)    :: component
-!! type(block_control_type), intent(inout) :: Block
-!! integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
-!! integer,                  intent(in)    :: nx_block, ny_block
-!! logical,                  intent(inout) :: message
-!! \endcode
-!!
-!! \param [in]    <component>
-!! \param [inout] <Block>
-!! \param [in]    <isc>
-!! \param [in]    <iec>
-!! \param [in]    <jsc>
-!! \param [in]    <jec>
-!! \param [in]    <kpts>
-!! \param [in]    <nx_block>
-!! \param [in]    <ny_block>
-!! \param [inout] <message>
 !!
   subroutine define_blocks (component, Block, isc, iec, jsc, jec, kpts, &
                             nx_block, ny_block, message)
-    character(len=*),         intent(in)    :: component
-    type(block_control_type), intent(inout) :: Block
+    character(len=*),         intent(in)    :: component !< Component name string
+    type(block_control_type), intent(inout) :: Block !< Returns instantiated @ref block_control_type
     integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
     integer,                  intent(in)    :: nx_block, ny_block
-    logical,                  intent(inout) :: message
+    logical,                  intent(inout) :: message !< flag for outputting debug message
 
 !-------------------------------------------------------------------------------
 ! Local variables:
@@ -181,39 +166,17 @@ contains
 
 
 !###############################################################################
-!> \fn define_blocks_packed
-!!
-!! \brief Creates and populates a data type which is used for defining the
+!> @brief Creates and populates a data type which is used for defining the
 !!        sub-blocks of the MPI-domain to enhance OpenMP and memory performance.
-!!        Uses a packed concept
-!!
-!! <b> Parameters: </b>
-!!
-!! \code{.f90}
-!! character(len=*),         intent(in)    :: component
-!! type(block_control_type), intent(inout) :: Block
-!! integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
-!! integer,                  intent(inout) :: blksz
-!! logical,                  intent(inout) :: message
-!! \endcode
-!!
-!! \param [in]    <component>
-!! \param [inout] <Block>
-!! \param [in]    <isc>
-!! \param [in]    <iec>
-!! \param [in]    <jsc>
-!! \param [in]    <jec>
-!! \param [in]    <kpts>
-!! \param [inout] <blksz>
-!! \param [inout] <message>
+!!        Uses a packed concept.
 !!
   subroutine define_blocks_packed (component, Block, isc, iec, jsc, jec, &
                                    kpts, blksz, message)
-    character(len=*),         intent(in)    :: component
-    type(block_control_type), intent(inout) :: Block
+    character(len=*),         intent(in)    :: component !< Component name string
+    type(block_control_type), intent(inout) :: Block !< Returns instantiated @ref block_control_type
     integer,                  intent(in)    :: isc, iec, jsc, jec, kpts
-    integer,                  intent(inout) :: blksz
-    logical,                  intent(inout) :: message
+    integer,                  intent(inout) :: blksz !< block size
+    logical,                  intent(inout) :: message !< flag for outputting debug message
 
 !-------------------------------------------------------------------------------
 ! Local variables:
@@ -235,10 +198,9 @@ contains
       nblks = 1
       blksz = tot_pts
     else
-      if (mod(tot_pts,blksz) .eq. 0) then
-        nblks = tot_pts/blksz
-      else
-        nblks = ceiling(real(tot_pts)/real(blksz))
+      nblks = tot_pts/blksz
+      if (mod(tot_pts,blksz) .gt. 0) then
+        nblks = nblks + 1
       endif
     endif
 
@@ -293,3 +255,5 @@ contains
   end subroutine define_blocks_packed
 
 end module block_control_mod
+!> @}
+! close documentation grouping

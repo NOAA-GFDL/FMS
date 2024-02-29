@@ -18,6 +18,8 @@
 !***********************************************************************
 !----------
 !ug support
+!> @ingroup fms_io_mod
+!> @{
 
 !------------------------------------------------------------------------------
 !>Read in a scalar field from a file associated with an unstructured mpp
@@ -95,7 +97,8 @@ subroutine fms_io_unstructured_read_r_1D(filename, &
    !Local variables
     logical(INT_KIND)  :: found_file  !<Flag telling if the input file or any of its variants exist.
     character(len=256) :: fname       !<Name of file that is actually found.
-    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O
+                                      !! domain tile id appended onto the end).
     integer(INT_KIND)  :: funit       !<File unit for the inputted file.
     integer(INT_KIND)  :: file_index  !<Index of the inputted file in the "files_read" module array.
     integer(INT_KIND)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
@@ -182,7 +185,8 @@ subroutine fms_io_unstructured_read_r_2D(filename, &
    !Local variables
     logical(INT_KIND)  :: found_file  !<Flag telling if the input file or any of its variants exist.
     character(len=256) :: fname       !<Name of file that is actually found.
-    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O
+                                      !! domain tile id appended onto the end).
     integer(INT_KIND)  :: funit       !<File unit for the inputted file.
     integer(INT_KIND)  :: file_index  !<Index of the inputted file in the "files_read" module array.
     integer(INT_KIND)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
@@ -269,7 +273,8 @@ subroutine fms_io_unstructured_read_r_3D(filename, &
    !Local variables
     logical(INT_KIND)  :: found_file  !<Flag telling if the input file or any of its variants exist.
     character(len=256) :: fname       !<Name of file that is actually found.
-    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O domain tile id appended onto the end).
+    logical(INT_KIND)  :: read_dist   !<Flag telling if the file is "distributed" (has I/O
+                                      !! domain tile id appended onto the end).
     integer(INT_KIND)  :: funit       !<File unit for the inputted file.
     integer(INT_KIND)  :: file_index  !<Index of the inputted file in the "files_read" module array.
     integer(INT_KIND)  :: index_field !<Index of the inputted field in the files_read(file_index)%var array.
@@ -468,7 +473,4 @@ subroutine fms_io_unstructured_read_i_2D(filename, &
 
     return
 end subroutine fms_io_unstructured_read_i_2D
-
-!------------------------------------------------------------------------------
-
-!----------
+!> @}

@@ -23,37 +23,37 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I${top_srcdir}/include
-AM_CPPFLAGS += -I${top_builddir}/time_manager
-AM_CPPFLAGS += -I${top_builddir}/fms
-AM_CPPFLAGS += -I${top_builddir}/mpp
-AM_CPPFLAGS += -I${top_builddir}/fms2_io
-AM_CPPFLAGS += -I${top_builddir}/axis_utils
-AM_CPPFLAGS += -I${top_builddir}/platform
-AM_CPPFLAGS += -I${top_builddir}/horiz_interp
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/time_interp/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
-noinst_LTLIBRARIES = libtime_interp.la libtime_interp_external.la	\
-libtime_interp_external2.la
+noinst_LTLIBRARIES = libtime_interp.la
 
 # Each convenience library depends on its source.
-libtime_interp_la_SOURCES = time_interp.F90
-libtime_interp_external_la_SOURCES = time_interp_external.F90
-libtime_interp_external2_la_SOURCES = time_interp_external2.F90
-
-# Each mod file depends on the .o file.
-time_interp_mod.mod: time_interp.lo
-time_interp_external_mod.mod: time_interp_external.lo
-time_interp_external2_mod.mod: time_interp_external2.lo
+libtime_interp_la_SOURCES = \
+  time_interp.F90 \
+  time_interp_external.F90 \
+  time_interp_external2.F90 \
+  include/time_interp_r4.fh \
+  include/time_interp_r8.fh \
+  include/time_interp.inc \
+  include/time_interp_external2_bridge_r4.fh \
+  include/time_interp_external2_bridge_r8.fh \
+  include/time_interp_external2_bridge.inc \
+  include/time_interp_external2_r4.fh \
+  include/time_interp_external2_r8.fh \
+  include/time_interp_external2.inc
 
 # Some mods are dependant on other mods in this dir.
-time_interp_external.lo: time_interp_mod.mod
-time_interp_external2.lo: time_interp_mod.mod
+time_interp_external_mod.$(FC_MODEXT): time_interp_mod.$(FC_MODEXT)
+time_interp_external2_mod.$(FC_MODEXT): time_interp_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
-MODFILES = time_interp_mod.mod time_interp_external_mod.mod	\
-time_interp_external2_mod.mod
-include_HEADERS = $(MODFILES)
+MODFILES = \
+  time_interp_mod.$(FC_MODEXT) \
+  time_interp_external_mod.$(FC_MODEXT) \
+  time_interp_external2_mod.$(FC_MODEXT)
+nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 
-CLEANFILES = *.mod
+include $(top_srcdir)/mkmods.mk
