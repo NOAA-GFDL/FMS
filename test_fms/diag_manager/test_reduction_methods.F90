@@ -160,12 +160,12 @@ program test_reduction_methods
   !< Register the axis
   id_x  = diag_axis_init('x',  real((/ (i, i = 1,nx) /), kind=r8_kind),  'point_E', 'x', long_name='point_E', &
     Domain2=Domain)
-  id_xc  = diag_axis_init('xc',  real((/ (i, i = 1,nx+1) /), kind=r8_kind),  'point_E corner', 'x', long_name='point_E', &
-    Domain2=Domain, domain_position=EAST)
+  id_xc  = diag_axis_init('xc',  real((/ (i, i = 1,nx+1) /), kind=r8_kind),  'point_E corner', 'x', &
+    long_name='point_E', Domain2=Domain, domain_position=EAST)
   id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', &
     Domain2=Domain)
-  id_yc  = diag_axis_init('yc',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N corner', 'y', long_name='point_N', &
-    Domain2=Domain, domain_position=NORTH)
+  id_yc  = diag_axis_init('yc',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N corner', 'y', &
+    long_name='point_N', Domain2=Domain, domain_position=NORTH)
   id_z  = diag_axis_init('z',  real((/ (i, i = 1,nz) /), kind=r8_kind),  'point_Z', 'z', long_name='point_Z')
   id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
 
