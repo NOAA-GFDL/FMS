@@ -827,7 +827,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%increase_unlim_dimension_level()
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
     else if (force_write) then
-      call diag_file%write_time_data(is_the_end = .true.)
+      call diag_file%write_time_data()
       call diag_file%close_diag_file()
     endif
   enddo
