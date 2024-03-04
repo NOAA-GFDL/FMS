@@ -573,19 +573,34 @@ CONTAINS
     select type (att_value)
     type is (integer(kind=i4_kind))
       allocate(integer(kind=i4_kind) :: this%att_value(natt))
-      this%att_value = att_value
+      select type(aval => this%att_value)
+        type is (integer(kind=i4_kind))
+          aval = att_value
+      end select
     type is (integer(kind=i8_kind))
       allocate(integer(kind=i8_kind) :: this%att_value(natt))
-      this%att_value = att_value
+      select type(aval => this%att_value)
+        type is (integer(kind=i8_kind))
+          aval = att_value
+      end select
     type is (real(kind=r4_kind))
       allocate(real(kind=r4_kind) :: this%att_value(natt))
-      this%att_value = att_value
+      select type(aval => this%att_value)
+        type is (real(kind=r4_kind))
+          aval = att_value
+      end select
     type is (real(kind=r8_kind))
       allocate(real(kind=r8_kind) :: this%att_value(natt))
-      this%att_value = att_value
+      select type(aval => this%att_value)
+        type is (real(kind=r8_kind))
+          aval = att_value
+      end select
     type is (character(len=*))
       allocate(character(len=len(att_value)) :: this%att_value(natt))
-      this%att_value = att_value
+      select type(aval => this%att_value)
+        type is (character(len=*))
+          aval = att_value
+      end select
     end select
   end subroutine fms_add_attribute
 
