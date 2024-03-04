@@ -1307,21 +1307,21 @@ subroutine write_field_data(this, field_obj, buffer_obj)
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
 
-  diag_file%data_has_been_written = .true.
   !TODO This may be offloaded in the future
   if (diag_file%is_static) then
     !< Here the file is static so there is no need for the unlimited dimension
     !! as a variables are static
     call buffer_obj%write_buffer(fms2io_fileobj)
+    diag_file%data_has_been_written = .true.
   else
     if (field_obj%is_static()) then
       !< If the variable is static, only write it the first time
       if (diag_file%unlim_dimension_level .eq. 1) then
         call buffer_obj%write_buffer(fms2io_fileobj)
-      else
-        diag_file%data_has_been_written = .false.
+        diag_file%data_has_been_written = .true.
       endif
     else
+     diag_file%data_has_been_written = .true.
      has_diurnal = buffer_obj%get_diurnal_sample_size() .gt. 1
       if (.not. buffer_obj%is_there_data_to_write()) then
         ! Only print the error message once
