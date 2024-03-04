@@ -207,7 +207,7 @@ if(test_lvl2keys) then
                                & (/ 1, 1, 1 , 1, 0 ,0 ,0 ,0/))
 else
   !> Write the yaml
-  call write_yaml_from_struct_3 (trim(filename), 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/))
+  call write_yaml_from_struct_3 (trim(filename), 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3,(/3, 0, 0, 0, 0, 0, 0, 0/))
 endif
 
 !> Check yaml output against reference
