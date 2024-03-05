@@ -408,7 +408,7 @@ subroutine set_vartype(objin , var)
  end select
 end subroutine set_vartype
 
-!> @brief Sets the send data time
+!> @brief Sets the time send data was called last
 subroutine set_send_data_time (this, time)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
   type(time_type),            intent(in)   :: time                !< Current model time
@@ -416,8 +416,8 @@ subroutine set_send_data_time (this, time)
   call this%input_data_buffer%set_send_data_time(time)
 end subroutine set_send_data_time
 
-!> @brief Get the send data time
-!! @result Send data time
+!> @brief Get the time send data was called last
+!! @result the time send data was called last
 function get_send_data_time(this) &
   result(rslt)
   class (fmsDiagField_type) , intent(in):: this                  !< The field object

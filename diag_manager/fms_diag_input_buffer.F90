@@ -36,7 +36,7 @@ module fms_diag_input_buffer_mod
     logical                        :: initialized     !< .True. if the input buffer has been initialized
     class(*),          allocatable :: buffer(:,:,:,:) !< Input data passed in send_data
     real(kind=r8_kind)             :: weight          !< Weight passed in send_data
-    type(time_type)                :: send_data_time  !< The time send data was called
+    type(time_type)                :: send_data_time  !< The time send data was called last
 
     contains
     procedure :: get_buffer
@@ -122,7 +122,7 @@ module fms_diag_input_buffer_mod
     this%initialized = .true.
   end function init_input_buffer_object
 
-  !> @brief Sets the send data time
+  !> @brief Sets the time send data was called last
   subroutine set_send_data_time(this, time)
     class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
     type(time_type),             intent(in)    :: time                !< The time send data was called
@@ -130,8 +130,8 @@ module fms_diag_input_buffer_mod
     this%send_data_time = time
   end subroutine set_send_data_time
 
-  !> @brief Get the send data time
-  !! @result Send data time
+  !> @brief Get the time send data was called last
+  !! @result the time send data was called last
   function get_send_data_time(this) &
     result(rslt)
     class(fmsDiagInputBuffer_t), intent(in) :: this                !< input buffer object
