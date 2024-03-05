@@ -28,7 +28,7 @@ program test_reduction_methods
   use diag_manager_mod,  only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                                diag_send_complete, diag_manager_set_time_end, send_data
   use mpp_domains_mod,   only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
-                               mpp_get_data_domain
+                               mpp_get_data_domain, NORTH, EAST
 
   implicit none
 
@@ -46,6 +46,7 @@ program test_reduction_methods
   integer                            :: nhalox          !< Number of halos in x
   integer                            :: nhaloy          !< Number of halos in y
   real(kind=r8_kind), allocatable    :: cdata(:,:,:,:)  !< Data in the compute domain
+  real(kind=r8_kind), allocatable    :: cdata_corner(:,:,:,:)  !< Data in the compute domain
   real(kind=r8_kind), allocatable    :: ddata(:,:,:,:)  !< Data in the data domain
   real(kind=r8_kind), allocatable    :: crmask(:,:,:,:) !< Mask in the compute domain
   real(kind=r8_kind), allocatable    :: drmask(:,:,:,:) !< Mask in the data domain
@@ -55,12 +56,15 @@ program test_reduction_methods
   type(time_type)                    :: Time_step       !< Time of the simulation
   integer                            :: ntimes          !< Number of times
   integer                            :: id_x            !< axis id for the x dimension
+  integer                            :: id_xc           !< axis id for the x dimension (corner)
   integer                            :: id_y            !< axis id for the y dimension
+  integer                            :: id_yc           !< axis id for the y dimension (corner)
   integer                            :: id_z            !< axis id for the z dimension
   integer                            :: id_w            !< axis id for the w dimension
   integer                            :: id_var0         !< diag_field id for 0d var
   integer                            :: id_var1         !< diag_field id for 1d var
   integer                            :: id_var2         !< diag_field id for 2d var
+  integer                            :: id_var2c        !< diag_field id for 2d var_corner
   integer                            :: id_var3         !< diag_field id for 3d var
   integer                            :: id_var4         !< diag_field id for 4d var
   integer                            :: id_var999       !< diag_field id for a var that send_data is not called for
@@ -111,13 +115,15 @@ program test_reduction_methods
   ntimes = 48
 
   !< Create a lat/lon domain
-  call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='2D domain', xhalo=nhalox, yhalo=nhaloy)
+  call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='2D domain', symmetry=.true., &
+    xhalo=nhalox, yhalo=nhaloy)
   call mpp_define_io_domain(Domain, io_layout)
   call mpp_get_compute_domain(Domain, isc, iec, jsc, jec)
   call mpp_get_data_domain(Domain, isd, ied, jsd, jed)
-
   cdata = allocate_buffer(isc, iec, jsc, jec, nz, nw)
+  cdata_corner = allocate_buffer(isc, iec+1, jsc, jec+1, nz, nw)
   call init_buffer(cdata, isc, iec, jsc, jec, 0)
+  call init_buffer(cdata_corner, isc, iec+1, jsc, jec+1, 0)
 
   select case (test_case)
   case (test_normal)
@@ -154,8 +160,12 @@ program test_reduction_methods
   !< Register the axis
   id_x  = diag_axis_init('x',  real((/ (i, i = 1,nx) /), kind=r8_kind),  'point_E', 'x', long_name='point_E', &
     Domain2=Domain)
+  id_xc  = diag_axis_init('xc',  real((/ (i, i = 1,nx+1) /), kind=r8_kind),  'point_E corner', 'x', &
+    long_name='point_E', Domain2=Domain, domain_position=EAST)
   id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', &
     Domain2=Domain)
+  id_yc  = diag_axis_init('yc',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N corner', 'y', &
+    long_name='point_N', Domain2=Domain, domain_position=NORTH)
   id_z  = diag_axis_init('z',  real((/ (i, i = 1,nz) /), kind=r8_kind),  'point_Z', 'z', long_name='point_Z')
   id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
 
@@ -166,6 +176,8 @@ program test_reduction_methods
   id_var1 = register_diag_field  ('ocn_mod', 'var1', (/id_x/), Time, 'Var1d', &
     'mullions', missing_value = missing_value)
   id_var2 = register_diag_field  ('ocn_mod', 'var2', (/id_x, id_y/), Time, 'Var2d', &
+    'mullions', missing_value = missing_value)
+  id_var2c = register_diag_field  ('ocn_mod', 'var2c', (/id_xc, id_yc/), Time, 'Var2d corner', &
     'mullions', missing_value = missing_value)
   id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'Var3d', &
     'mullions', missing_value = missing_value)
@@ -184,6 +196,9 @@ program test_reduction_methods
     Time = Time + Time_step
 
     call set_buffer(cdata, i)
+    call set_buffer(cdata_corner, i)
+
+    used = send_data(id_var2c, cdata_corner(:,:,1,1), Time)
     used = send_data(id_var0, cdata(1,1,1,1), Time)
 
     select case(test_case)
