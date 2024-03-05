@@ -95,6 +95,7 @@ type :: fmsDiagFile_type
   integer :: number_of_buffers !< Number of buffers that have been added to the file
   logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
+  logical :: data_has_been_written !< .True. if data has been written for the current unlimited dimension level
   logical :: is_static !< .True. if the frequency is -1
   integer :: nz_subaxis !< The number of Z axis currently added to the file
 
@@ -1311,12 +1312,16 @@ subroutine write_field_data(this, field_obj, buffer_obj)
     !< Here the file is static so there is no need for the unlimited dimension
     !! as a variables are static
     call buffer_obj%write_buffer(fms2io_fileobj)
+    diag_file%data_has_been_written = .true.
   else
     if (field_obj%is_static()) then
       !< If the variable is static, only write it the first time
-      if (diag_file%unlim_dimension_level .eq. 1) &
-      call buffer_obj%write_buffer(fms2io_fileobj)
+      if (diag_file%unlim_dimension_level .eq. 1) then
+        call buffer_obj%write_buffer(fms2io_fileobj)
+        diag_file%data_has_been_written = .true.
+      endif
     else
+     diag_file%data_has_been_written = .true.
      has_diurnal = buffer_obj%get_diurnal_sample_size() .gt. 1
       if (.not. buffer_obj%is_there_data_to_write()) then
         ! Only print the error message once
@@ -1379,9 +1384,8 @@ logical function writing_on_this_pe(this)
 end function
 
 !> \brief Write out the time data to the file
-subroutine write_time_data(this, is_the_end)
+subroutine write_time_data(this)
   class(fmsDiagFileContainer_type), intent(in), target   :: this !< The file object
-  logical, optional,                intent(in)           :: is_the_end !< True if it is the end of the run
 
   real                                 :: dif            !< The time as a real number
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
@@ -1394,10 +1398,9 @@ subroutine write_time_data(this, is_the_end)
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
 
-  if (present(is_the_end)) then
-    ! If at the end of the run, do not do anything for the static files
-    if (is_the_end .and. diag_file%is_static) return
-  endif
+  !< If data has not been written for the current unlimited dimension
+  !! ignore this
+  if (.not. diag_file%data_has_been_written) return
 
   if (diag_file%time_ops) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2
@@ -1477,6 +1480,7 @@ subroutine increase_unlim_dimension_level(this)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
 
   this%FMS_diag_file%unlim_dimension_level = this%FMS_diag_file%unlim_dimension_level + 1
+  this%FMS_diag_file%data_has_been_written = .false.
 end subroutine increase_unlim_dimension_level
 
 !> \brief Get the unlimited dimension level that is in the file
