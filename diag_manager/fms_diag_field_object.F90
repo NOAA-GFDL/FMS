@@ -74,6 +74,8 @@ type fmsDiagField_type
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
      type(fmsDiagInputBuffer_t), allocatable          :: input_data_buffer !< Input buffer object for when buffering
                                                                            !! data
+     logical, allocatable, private                    :: multiple_send_data!< .True. if multiple send data calls
+                                                                           !! made for the field
      logical, allocatable, private                    :: data_buffer_is_allocated !< True if the buffer has
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
@@ -225,7 +227,8 @@ end function fms_diag_fields_object_init
 subroutine fms_register_diag_field_obj &
        (this, modname, varname, diag_field_indices, diag_axis, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static, &
+       multiple_send_data)
 
  class(fmsDiagField_type),       INTENT(inout) :: this                  !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
@@ -252,6 +255,8 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
                                                                         !! modeling_realm attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< Set to true if it is a static field
+ LOGICAL,          OPTIONAL,     INTENT(in)    :: multiple_send_data    !< .True. if send data is called, multiple
+                                                                        !! times for the same time
 
 !> Fill in information from the register call
   this%varname = trim(varname)
@@ -363,6 +368,13 @@ subroutine fms_register_diag_field_obj &
     this%do_not_log = do_not_log
   endif
 
+  !TODO restrict to only averaging fields
+  if (present(multiple_send_data)) then
+    this%multiple_send_data = multiple_send_data
+  else
+    this%multiple_send_data = .false.
+  endif
+
  !< Allocate space for any additional variable attributes
  !< These will be fill out when calling `diag_field_add_attribute`
  allocate(this%attributes(max_field_attributes))
@@ -440,7 +452,10 @@ subroutine set_data_buffer (this, input_data, weight, is, js, ks, ie, je, ke)
   if (.not.this%data_buffer_is_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
-  err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, is, js, ks, ie, je, ke)
+  if (this%multiple_send_data) then
+  else
+    err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, is, js, ks, ie, je, ke)
+  endif
   if (trim(err_msg) .ne. "") call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
 
 end subroutine set_data_buffer
