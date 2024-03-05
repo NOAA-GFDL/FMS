@@ -20,7 +20,7 @@
 !> @brief Checks the output file after running test_subregional
 program check_subregional
   use fms_mod,           only: fms_init, fms_end, string
-  use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file, get_dimension_size
+  use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file, get_dimension_size, file_exists
   use mpp_mod,           only: mpp_npes, mpp_error, FATAL, mpp_pe
   use platform_mod,      only: r4_kind, r8_kind
 
@@ -32,6 +32,7 @@ program check_subregional
   ! The files are in the same subregion, one of them is defined using latlon and another one indices
   call check_subregional_file("test_subregional.nc")
   call check_subregional_file("test_subregional2.nc")
+  call check_corner_files()
 
   call fms_end()
 
@@ -135,5 +136,71 @@ program check_subregional
     call close_file(fileobj)
 
   end subroutine check_subregional_file
+
+  !> @brief Check the data for the corner subregional files
+  subroutine check_corner_files()
+    type(FmsNetcdfFile_t)              :: fileobj            !< FMS2 fileobj
+    integer                            :: dim_size           !< dim_size as read in from the file
+    real, allocatable                  :: dims(:)            !< dimension data as read in from the file
+    real, allocatable                  :: dims_exp(:)        !< dimensions data expected
+
+    !subregion:
+    !corner1: 17. 17.
+    !corner2: 17. 20.
+    !corner3: 20. 17.
+    !corner4: 20. 20.
+    ! In this case, lat 17 is shared between PE 0 and PE 1, but only PE 1 should have data
+    if (file_exists("test_corner1.nc.0000")) &
+      call mpp_error(FATAL, "test_corner1.nc.0000 should not exist!")
+
+    if (.not. open_file(fileobj, "test_corner1.nc.0001", "read")) &
+      call mpp_error(FATAL, "unable to open test_corner1.nc.0001")
+
+    call get_dimension_size(fileobj, "xc_sub01", dim_size)
+    if (dim_size .ne. 4) call mpp_error(FATAL, "xc_sub01 is not the correct size!")
+    call get_dimension_size(fileobj, "yc_sub01", dim_size)
+    if (dim_size .ne. 4) call mpp_error(FATAL, "yc_sub01 is not the correct size!")
+    call close_file(fileobj)
+
+  !subregion
+  !corner1: 17. 17.
+  !corner2: 20. 17.
+  !corner3: 17. 17.
+  !corner4: 20. 17.
+  ! In this case, lat 17 is shared between PE 0 and PE 1, but only PE 1 should have data
+  if (file_exists("test_corner2.nc.0000")) &
+    call mpp_error(FATAL, "test_corner2.nc.0000 should not exist!")
+
+  if (.not. open_file(fileobj, "test_corner2.nc.0001", "read")) &
+    call mpp_error(FATAL, "unable to open test_corner2.nc.0001")
+
+  call get_dimension_size(fileobj, "xc_sub01", dim_size)
+  if (dim_size .ne. 4) call mpp_error(FATAL, "xc_sub01 is not the correct size!")
+  call get_dimension_size(fileobj, "yc_sub01", dim_size)
+  if (dim_size .ne. 1) call mpp_error(FATAL, "yc_sub01 is not the correct size!")
+  call close_file(fileobj)
+
+  !subregion
+  ! In this case, lat 17 is shared between PE 0 and PE 1, but only PE 1 should have data
+  ! lat 33 is shared between PE 1 and PE 2, but only PE 1 should have data
+  !corner1: 17. 17.
+  !corner2: 20. 17.
+  !corner3: 17. 33.
+  !corner4: 20. 33.
+  if (file_exists("test_corner3.nc.0000")) &
+    call mpp_error(FATAL, "test_corner3.nc.0000 should not exist!")
+    if (file_exists("test_corner3.nc.0003")) &
+    call mpp_error(FATAL, "test_corner3.nc.0003 should not exist!")
+
+  if (.not. open_file(fileobj, "test_corner3.nc.0001", "read")) &
+    call mpp_error(FATAL, "unable to open test_corner3.nc.0001")
+
+  call get_dimension_size(fileobj, "xc_sub01", dim_size)
+  if (dim_size .ne. 4) call mpp_error(FATAL, "xc_sub01 is not the correct size!")
+  call get_dimension_size(fileobj, "yc_sub01", dim_size)
+  if (dim_size .ne. 17) call mpp_error(FATAL, "yc_sub01 is not the correct size!")
+  call close_file(fileobj)
+
+  end subroutine check_corner_files
 
 end program

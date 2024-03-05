@@ -103,9 +103,70 @@ test_expect_success "Running diag_manager with different subregions (test $my_te
   mpirun -n 6 ../test_reduction_methods
 '
 
+cat <<_EOF > diag_table.yaml
+title: test_corner_subregional
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_corner1
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var2c
+    output_name: var2c_avg
+    reduction: average
+    kind: r4
+  sub_region:
+  - grid_type: latlon
+    corner1: 17. 17.
+    corner2: 17. 20.
+    corner3: 20. 17.
+    corner4: 20. 20.
+- file_name: test_corner2
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var2c
+    output_name: var2c_avg
+    reduction: average
+    kind: r4
+  sub_region:
+  - grid_type: latlon
+    corner1: 17. 17.
+    corner2: 20. 17.
+    corner3: 17. 17.
+    corner4: 20. 17.
+- file_name: test_corner3
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var2c
+    output_name: var2c_avg
+    reduction: average
+    kind: r4
+  sub_region:
+  - grid_type: latlon
+    corner1: 17. 17.
+    corner2: 20. 17.
+    corner3: 17. 33.
+    corner4: 20. 33.
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n/" | cat > input.nml
+test_expect_success "Running diag_manager with corner diagnotics (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+
 my_test_count=`expr $my_test_count + 1`
 test_expect_success "Checking results from diag_manager with different subregions (test $my_test_count)" '
   mpirun -n 1 ../check_subregional
 '
+
 fi
 test_done

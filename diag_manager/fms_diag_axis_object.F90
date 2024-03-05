@@ -761,6 +761,19 @@ module fms_diag_axis_object_mod
       ending_index   = subregion_end
     endif
 
+    if (this%domain_position .ne. CENTER) then
+      if (subregion_end - subregion_start + 1 .eq. 1) then
+          !< If your subregion consitsts of just 1 one, only include 1 PE
+          if (ending_index .eq. compute_idx(2)) need_to_define_axis = .false.
+      else
+        if (ending_index - starting_index + 1 .eq. 1) then
+          !< If the PEs section is only 1, only include 1 PE
+          if (starting_index .eq. compute_idx(2) .or. ending_index .eq. compute_idx(1)) &
+            need_to_define_axis = .false.
+        endif
+      endif
+    endif
+
   end subroutine get_indices
 
   !< Get the compute domain of the axis
