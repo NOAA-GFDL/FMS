@@ -88,6 +88,7 @@ private
     procedure :: fms_get_axis_name_from_id
     procedure :: fms_diag_accept_data
     procedure :: fms_diag_send_complete
+    procedure :: do_buffer_math
     procedure :: fms_diag_do_io
     procedure :: fms_diag_do_reduction
     procedure :: fms_diag_field_add_cell_measures
@@ -153,6 +154,7 @@ subroutine fms_diag_object_end (this, time)
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
+  call this%do_buffer_math()
   call this%fms_diag_do_io(end_time=time)
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_output_buffers)
@@ -538,6 +540,8 @@ logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rm
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+
+  !TODO this%FMS_diag_fields(diag_field_id) should be a pointer!
   field_info = " Check send data call for field:"//trim(this%FMS_diag_fields(diag_field_id)%get_varname())//&
     " and module:"//trim(this%FMS_diag_fields(diag_field_id)%get_modname())
 
@@ -629,6 +633,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
         call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask, this%diag_axis)
     endif
+    call this%FMS_diag_fields(diag_field_id)%set_send_data_time(time)
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
 !$omp end critical
@@ -672,20 +677,15 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   return
 #endif
 end function fms_diag_accept_data
-!! TODO: This entire routine
-!> @brief Loops through all the files, open the file, writes out axis and
-!! variable metadata and data when necessary.
-subroutine fms_diag_send_complete(this, time_step)
+
+!< @brief Do the math for all the buffers
+subroutine do_buffer_math(this)
   class(fmsDiagObject_type), target, intent (inout) :: this      !< The diag object
-  TYPE (time_type),                  INTENT(in)     :: time_step !< The time_step
 
+#ifdef use_yaml
   integer :: i !< For do loops
-
   integer :: ifile !< For file loops
   integer :: ifield !< For field loops
-#ifndef use_yaml
-CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
-#else
 
   class(fmsDiagFileContainer_type), pointer :: diag_file !< Pointer to this%FMS_diag_files(i) (for convenience
   class(fmsDiagField_type), pointer :: diag_field !< Pointer to this%FMS_diag_files(i)%diag_field(j)
@@ -698,7 +698,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   integer, dimension(:), allocatable :: file_ids !< Array of file IDs for a field
   logical, parameter :: DEBUG_SC = .false. !< turn on output for debugging
 
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !! In the future, this may be parallelized for offloading
   ! loop through each field
   field_loop: do ifield = 1, size(this%FMS_diag_fields)
@@ -719,7 +719,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
         call this%allocate_diag_field_output_buffers(input_data_buffer, ifield)
         error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
-                              bounds, .False., Time=this%current_model_time)
+                              bounds, .False., Time=diag_field%get_send_data_time())
         if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
                                                        " -"//trim(error_string)))
       else
@@ -731,8 +731,20 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if (allocated(file_ids)) deallocate(file_ids)
     if (associated(diag_field)) nullify(diag_field)
   enddo field_loop
+#endif
+end subroutine do_buffer_math
 
-call this%fms_diag_do_io()
+!> @brief Loops through all the files, open the file, writes out axis and
+!! variable metadata and data when necessary.
+subroutine fms_diag_send_complete(this, time_step)
+  class(fmsDiagObject_type), target, intent (inout) :: this      !< The diag object
+  TYPE (time_type),                  INTENT(in)     :: time_step !< The time_step
+
+#ifndef use_yaml
+CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
+#else
+  call this%do_buffer_math()
+  call this%fms_diag_do_io()
 #endif
 
 end subroutine fms_diag_send_complete
