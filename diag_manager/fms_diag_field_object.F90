@@ -439,9 +439,11 @@ function get_send_data_time(this) &
 end function get_send_data_time
 
 !> @brief Adds the input data to the buffered data.
-subroutine set_data_buffer (this, input_data, weight, is, js, ks, ie, je, ke)
+subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
   class(*),                   intent(in)   :: input_data(:,:,:,:) !< The input array
+  logical,                    intent(in)   :: mask(:,:,:,:)       !< Mask that is passed into
+                                                                  !! send_data
   real(kind=r8_kind),         intent(in)   :: weight              !< The field weight
   integer,                    intent(in)   :: is, js, ks          !< Starting indicies of the field_data relative
                                                                   !! to the compute domain (1 based)
@@ -453,7 +455,10 @@ subroutine set_data_buffer (this, input_data, weight, is, js, ks, ie, je, ke)
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
   if (this%multiple_send_data) then
+    err_msg = this%input_data_buffer%update_input_buffer_object(input_data, is, js, ks, ie, je, ke, &
+                                                                mask, this%mask, this%mask_variant, this%var_is_masked)
   else
+    this%mask(is:ie, js:je, ks:ke, :) = mask
     err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, is, js, ks, ie, je, ke)
   endif
   if (trim(err_msg) .ne. "") call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))

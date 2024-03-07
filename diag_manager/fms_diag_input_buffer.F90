@@ -29,12 +29,21 @@ module fms_diag_input_buffer_mod
   implicit NONE
   private
 
+  interface append_data_buffer
+    module procedure append_data_buffer_r4, append_data_buffer_r8
+  end interface
+
+  interface sum_data_buffer
+    module procedure sum_data_buffer_r4, sum_data_buffer_r8
+  end interface
+
   !> @brief Type to hold the information needed for the input buffer
   !! This is used when set_math_needs_to_be_done = .true. (i.e calling send_data
   !! from an openmp region with multiple threads)
   type fmsDiagInputBuffer_t
     logical                        :: initialized     !< .True. if the input buffer has been initialized
     class(*),          allocatable :: buffer(:,:,:,:) !< Input data passed in send_data
+    integer                        :: counter         !< Number of send_data calls for each point
     real(kind=r8_kind)             :: weight          !< Weight passed in send_data
     type(time_type)                :: send_data_time  !< The time send data was called last
 
@@ -43,6 +52,7 @@ module fms_diag_input_buffer_mod
     procedure :: get_weight
     procedure :: init => init_input_buffer_object
     procedure :: set_input_buffer_object
+    procedure :: update_input_buffer_object
     procedure :: set_send_data_time
     procedure :: get_send_data_time
     procedure :: is_initialized
@@ -120,6 +130,7 @@ module fms_diag_input_buffer_mod
 
     this%weight = 1.0_r8_kind
     this%initialized = .true.
+    this%counter = 0
   end function init_input_buffer_object
 
   !> @brief Sets the time send data was called last
@@ -140,6 +151,73 @@ module fms_diag_input_buffer_mod
     rslt = this%send_data_time
   end function get_send_data_time
 
+  function update_input_buffer_object(this, input_data, is, js, ks, ie, je, ke, mask_in, mask_out, &
+                                      mask_variant, var_is_masked) &
+    result(err_msg)
+
+    class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
+    class(*),                    intent(in)    :: input_data(:,:,:,:) !< Field data
+    integer,                     intent(in)    :: is, js, ks          !< Starting index for each of the dimension
+    integer,                     intent(in)    :: ie, je, ke          !< Ending index for each of the dimensions
+    logical,                     intent(in)    :: mask_in(:,:,:,:)
+    logical,                     intent(inout) :: mask_out(:,:,:,:)
+    logical,                     intent(in)    :: mask_variant
+    logical,                     intent(in)    :: var_is_masked
+
+    character(len=128) :: err_msg
+
+    err_msg = ""
+    if (mask_variant) then
+      call append_data_buffer_wrapper(mask_out(is:ie,js:je,ks:ke,:), mask_in, &
+                        this%buffer(is:ie,js:je,ks:ke,:), input_data)
+    else
+      mask_out(is:ie,js:je,ks:ke,:) = mask_in
+      call sum_data_buffer_wrapper(mask_in, this%buffer(is:ie,js:je,ks:ke,:), input_data, this%counter, &
+                                   var_is_masked)
+    endif
+
+  end function update_input_buffer_object
+
+  subroutine sum_data_buffer_wrapper(mask, data_out, data_in, counter, var_is_masked)
+    logical,  intent(in)    :: mask(:,:,:,:)
+    class(*), intent(inout) :: data_out(:,:,:,:)
+    class(*), intent(in)    :: data_in(:,:,:,:)
+    integer,  intent(inout)    :: counter
+    logical,  intent(in)    :: var_is_masked
+
+    select type(data_out)
+    type is (real(kind=r8_kind))
+      select type (data_in)
+      type is (real(kind=r8_kind))
+        call sum_data_buffer(mask, data_out, data_in, counter, var_is_masked)
+      end select
+    type is (real(kind=r4_kind))
+      select type (data_in)
+      type is (real(kind=r4_kind))
+        call sum_data_buffer(mask, data_out, data_in, counter, var_is_masked)
+      end select
+    end select
+  end subroutine sum_data_buffer_wrapper
+
+  subroutine append_data_buffer_wrapper(mask_out, mask_in, data_out, data_in)
+    logical,  intent(inout) :: mask_out(:,:,:,:)
+    logical,  intent(in)    :: mask_in(:,:,:,:)
+    class(*), intent(inout) :: data_out(:,:,:,:)
+    class(*), intent(in)    :: data_in(:,:,:,:)
+
+    select type(data_out)
+    type is (real(kind=r8_kind))
+      select type (data_in)
+      type is (real(kind=r8_kind))
+        call append_data_buffer(mask_out, mask_in, data_out, data_in)
+      end select
+    type is (real(kind=r4_kind))
+      select type (data_in)
+      type is (real(kind=r4_kind))
+        call append_data_buffer(mask_out, mask_in, data_out, data_in)
+      end select
+    end select
+  end subroutine
   !> @brief Sets the members of the input buffer object
   !! @return Error message if something went wrong
   function set_input_buffer_object(this, input_data, weight, is, js, ks, ie, je, ke) &
@@ -209,6 +287,10 @@ module fms_diag_input_buffer_mod
       if (allocated(this%buffer)) is_initialized = .true.
     endif
   end function is_initialized
+
+#include "fms_diag_input_buffer_r4.fh"
+#include "fms_diag_input_buffer_r8.fh"
+
 #endif
 end module fms_diag_input_buffer_mod
 !> @}

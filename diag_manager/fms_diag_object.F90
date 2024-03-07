@@ -649,9 +649,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
 !$omp end critical
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, field_weight, &
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, oor_mask, field_weight, &
                                                              is, js, ks, ie, je, ke)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info, is, js, ks, ie, je, ke)
     fms_diag_accept_data = .TRUE.
     return
   else
