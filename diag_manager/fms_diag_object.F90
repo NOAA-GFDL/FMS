@@ -732,6 +732,7 @@ subroutine do_buffer_math(this)
     doing_math: if (size(file_ids) .ge. 1 .and. math) then
       ! Check if buffer alloc'd
       has_input_buff: if (diag_field%has_input_data_buffer()) then
+        call diag_field%prepare_data_buffer()
         input_data_buffer => diag_field%get_data_buffer()
         ! reset bounds, allocate output buffer, and update it with reduction
         call bounds%reset_bounds_from_array_4D(input_data_buffer)

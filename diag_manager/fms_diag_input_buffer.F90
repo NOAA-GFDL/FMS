@@ -53,6 +53,7 @@ module fms_diag_input_buffer_mod
     procedure :: init => init_input_buffer_object
     procedure :: set_input_buffer_object
     procedure :: update_input_buffer_object
+    procedure :: prepare_input_buffer_object
     procedure :: set_send_data_time
     procedure :: get_send_data_time
     procedure :: is_initialized
@@ -177,6 +178,17 @@ module fms_diag_input_buffer_mod
     endif
 
   end function update_input_buffer_object
+
+  subroutine prepare_input_buffer_object(this)
+    class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
+
+    select type (input_data => this%buffer)
+    type is (real(kind=r4_kind))
+      input_data = input_data / this%counter
+    type is (real(kind=r8_kind))
+      input_data = input_data / this%counter
+    end select
+  end subroutine prepare_input_buffer_object
 
   subroutine sum_data_buffer_wrapper(mask, data_out, data_in, counter, var_is_masked)
     logical,  intent(in)    :: mask(:,:,:,:)

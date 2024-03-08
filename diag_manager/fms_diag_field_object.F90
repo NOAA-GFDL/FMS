@@ -95,6 +95,7 @@ type fmsDiagField_type
      procedure :: setID => set_diag_id
      procedure :: set_type => set_vartype
      procedure :: set_data_buffer => set_data_buffer
+     procedure :: prepare_data_buffer
      procedure :: set_data_buffer_is_allocated
      procedure :: set_send_data_time
      procedure :: get_send_data_time
@@ -438,6 +439,16 @@ function get_send_data_time(this) &
 
   rslt = this%input_data_buffer%get_send_data_time()
 end function get_send_data_time
+
+subroutine prepare_data_buffer(this)
+  class (fmsDiagField_type) , intent(inout):: this                !< The field object
+
+  if (.not. this%multiple_send_data) return
+  if (this%mask_variant) return
+
+  call this%input_data_buffer%prepare_input_buffer_object()
+
+end subroutine
 
 !> @brief Adds the input data to the buffered data.
 subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
