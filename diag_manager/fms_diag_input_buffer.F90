@@ -50,7 +50,8 @@ module fms_diag_input_buffer_mod
     contains
     procedure :: get_buffer
     procedure :: get_weight
-    procedure :: init => init_input_buffer_object
+    procedure :: allocate_input_buffer_object
+    procedure :: init_input_buffer_object
     procedure :: set_input_buffer_object
     procedure :: update_input_buffer_object
     procedure :: prepare_input_buffer_object
@@ -86,7 +87,7 @@ module fms_diag_input_buffer_mod
 
   !> @brief Initiliazes an input data buffer
   !! @return Error message if something went wrong
-  function init_input_buffer_object(this, input_data, axis_ids, diag_axis) &
+  function allocate_input_buffer_object(this, input_data, axis_ids, diag_axis) &
     result(err_msg)
     class(fmsDiagInputBuffer_t),         intent(out)   :: this                !< input buffer object
     class(*),                            intent(in)    :: input_data(:,:,:,:) !< input data
@@ -118,12 +119,16 @@ module fms_diag_input_buffer_mod
     select type (input_data)
     type is (real(r4_kind))
       allocate(real(kind=r4_kind) :: this%buffer(length(1), length(2), length(3), length(4)))
+      this%buffer = 0.0_r4_kind
     type is (real(r8_kind))
       allocate(real(kind=r8_kind) :: this%buffer(length(1), length(2), length(3), length(4)))
+      this%buffer = 0.0_r8_kind
     type is (integer(i4_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(length(1), length(2), length(3), length(4)))
+      this%buffer = 0_i4_kind
     type is (integer(i8_kind))
       allocate(integer(kind=i4_kind) :: this%buffer(length(1), length(2), length(3), length(4)))
+      this%buffer = 0_i8_kind
     class default
       err_msg = "The data input is not one of the supported types."&
         "Only r4, r8, i4, and i8 types are supported."
@@ -132,7 +137,20 @@ module fms_diag_input_buffer_mod
     this%weight = 1.0_r8_kind
     this%initialized = .true.
     this%counter = 0
-  end function init_input_buffer_object
+  end function allocate_input_buffer_object
+
+  subroutine init_input_buffer_object(this)
+    class(fmsDiagInputBuffer_t), intent(inout) :: this                !< input buffer object
+
+    select type(buffer=>this%buffer)
+    type is (real(kind=r8_kind))
+      buffer = 0.0_r8_kind
+    type is (real(kind=r4_kind))
+      buffer = 0.0_r4_kind
+    end select
+
+    this%counter = 0
+  end subroutine init_input_buffer_object
 
   !> @brief Sets the time send data was called last
   subroutine set_send_data_time(this, time)

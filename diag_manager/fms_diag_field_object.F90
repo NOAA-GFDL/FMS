@@ -96,6 +96,7 @@ type fmsDiagField_type
      procedure :: set_type => set_vartype
      procedure :: set_data_buffer => set_data_buffer
      procedure :: prepare_data_buffer
+     procedure :: init_data_buffer
      procedure :: set_data_buffer_is_allocated
      procedure :: set_send_data_time
      procedure :: get_send_data_time
@@ -450,6 +451,17 @@ subroutine prepare_data_buffer(this)
 
 end subroutine
 
+subroutine init_data_buffer(this)
+  class (fmsDiagField_type) , intent(inout):: this                !< The field object
+
+  if (.not. this%multiple_send_data) return
+  if (this%mask_variant) return
+
+  call this%input_data_buffer%init_input_buffer_object()
+
+end subroutine
+
+
 !> @brief Adds the input data to the buffered data.
 subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
@@ -487,7 +499,7 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
   err_msg = ""
 
   allocate(this%input_data_buffer)
-  err_msg = this%input_data_buffer%init(input_data, this%axis_ids, diag_axis)
+  err_msg = this%input_data_buffer%allocate_input_buffer_object(input_data, this%axis_ids, diag_axis)
   if (trim(err_msg) .ne. "") then
     call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
     return

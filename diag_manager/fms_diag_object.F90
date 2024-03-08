@@ -740,6 +740,7 @@ subroutine do_buffer_math(this)
         error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
                               bounds, .False., Time=diag_field%get_send_data_time())
+        call diag_field%init_data_buffer()
         if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
                                                        " -"//trim(error_string)))
       else
