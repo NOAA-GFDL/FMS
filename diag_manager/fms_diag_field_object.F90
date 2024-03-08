@@ -1878,15 +1878,17 @@ function check_for_slices(field, diag_axis, var_size) &
   logical :: rslt
   integer :: i !< For do loops
 
-  rslt = .false.
-  if (field%has_axis_ids()) then
-    rslt = .true.
+  if (.not. field%has_axis_ids()) then
+    rslt = .false.
     return
   endif
   do i = 1, size(field%axis_ids)
     select type (axis_obj => diag_axis(field%axis_ids(i))%axis)
     type is (fmsDiagFullAxis_type)
-      if (axis_obj%axis_length() .ne. var_size(i)) return
+      if (axis_obj%axis_length() .ne. var_size(i)) then
+        rslt = .true.
+        return
+      endif
     end select
   enddo
 end function
