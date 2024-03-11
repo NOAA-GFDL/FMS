@@ -44,7 +44,7 @@ subroutine SUM_DATA_BUFFER_(mask, data_out, data_in, counter, var_is_masked)
   logical,  intent(in)    :: mask(:,:,:,:)
   real(FMS_TRM_KIND_), intent(inout) :: data_out(:,:,:,:)
   real(FMS_TRM_KIND_), intent(in)    :: data_in(:,:,:,:)
-  integer,  intent(inout)    :: counter
+  integer,  intent(inout)    :: counter(:,:,:,:)
   logical,  intent(in)    :: var_is_masked
 
   if (var_is_masked) then

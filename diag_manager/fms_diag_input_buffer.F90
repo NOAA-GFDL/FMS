@@ -43,7 +43,7 @@ module fms_diag_input_buffer_mod
   type fmsDiagInputBuffer_t
     logical                        :: initialized     !< .True. if the input buffer has been initialized
     class(*),          allocatable :: buffer(:,:,:,:) !< Input data passed in send_data
-    integer                        :: counter         !< Number of send_data calls for each point
+    integer,           allocatable :: counter(:,:,:,:)!< Number of send_data calls for each point
     real(kind=r8_kind)             :: weight          !< Weight passed in send_data
     type(time_type)                :: send_data_time  !< The time send data was called last
 
@@ -136,6 +136,7 @@ module fms_diag_input_buffer_mod
 
     this%weight = 1.0_r8_kind
     this%initialized = .true.
+    allocate(this%counter(length(1), length(2), length(3), length(4)))
     this%counter = 0
   end function allocate_input_buffer_object
 
@@ -191,7 +192,8 @@ module fms_diag_input_buffer_mod
                         this%buffer(is:ie,js:je,ks:ke,:), input_data)
     else
       mask_out(is:ie,js:je,ks:ke,:) = mask_in
-      call sum_data_buffer_wrapper(mask_in, this%buffer(is:ie,js:je,ks:ke,:), input_data, this%counter, &
+      call sum_data_buffer_wrapper(mask_in, this%buffer(is:ie,js:je,ks:ke,:), input_data, &
+                                   this%counter(is:ie,js:je,ks:ke,:), &
                                    var_is_masked)
     endif
 
@@ -202,9 +204,9 @@ module fms_diag_input_buffer_mod
 
     select type (input_data => this%buffer)
     type is (real(kind=r4_kind))
-      input_data = input_data / this%counter
+      input_data = input_data / this%counter(1,1,1,1)
     type is (real(kind=r8_kind))
-      input_data = input_data / this%counter
+      input_data = input_data / this%counter(1,1,1,1)
     end select
   end subroutine prepare_input_buffer_object
 
@@ -212,7 +214,7 @@ module fms_diag_input_buffer_mod
     logical,  intent(in)    :: mask(:,:,:,:)
     class(*), intent(inout) :: data_out(:,:,:,:)
     class(*), intent(in)    :: data_in(:,:,:,:)
-    integer,  intent(inout)    :: counter
+    integer,  intent(inout) :: counter(:,:,:,:)
     logical,  intent(in)    :: var_is_masked
 
     select type(data_out)
