@@ -169,6 +169,7 @@ type fmsDiagField_type
      procedure :: get_dimnames
      procedure :: get_var_skind
      procedure :: get_longname_to_write
+     procedure :: get_multiple_send_data
      procedure :: write_field_metadata
      procedure :: write_coordinate_attribute
      procedure :: get_math_needs_to_be_done
@@ -1071,6 +1072,13 @@ result(rslt)
   end select
 
 end function get_var_skind
+
+pure function get_multiple_send_data(this) &
+result(rslt)
+  class (fmsDiagField_type),   intent(in) :: this       !< diag field
+  logical :: rslt
+  rslt = this%multiple_send_data
+end function get_multiple_send_data
 
 !> @brief Determine the long name to write for the field
 !! @return Long name to write

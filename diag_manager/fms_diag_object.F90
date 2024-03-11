@@ -626,6 +626,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       shape(field_data))
   endif
 
+  !< If send data is called multiple times, buffer the data
+  !! This is so that the other reduction methods work and just averaging
+  if (this%FMS_diag_fields(diag_field_id)%get_multiple_send_data()) &
+    buffer_the_data = .true.
+
   !If this is true, buffer data
   main_if: if (buffer_the_data) then
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
