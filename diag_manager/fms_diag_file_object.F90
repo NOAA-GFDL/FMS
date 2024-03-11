@@ -1400,7 +1400,7 @@ subroutine write_time_data(this)
 
   !< If data has not been written for the current unlimited dimension
   !! ignore this
-  if (.not. diag_file%data_has_been_written) return
+  if (.not. diag_file%data_has_been_written .and. diag_file%unlim_dimension_level .ne. 1) return
 
   if (diag_file%time_ops) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2
