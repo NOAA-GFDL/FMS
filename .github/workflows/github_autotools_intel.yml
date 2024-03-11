@@ -9,10 +9,11 @@ jobs:
   intel-autotools:
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       matrix:
         io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
     container:
-      image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
+      image: intel/hpckit:2024.0.1-devel-ubuntu20.04
       env:
         CC: mpiicc
         FC: mpiifort
