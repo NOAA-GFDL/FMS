@@ -224,7 +224,7 @@ module fms_diag_input_buffer_mod
   !! @return Error message (if an error occurs)
   function sum_data_buffer_wrapper(mask, data_out, data_in, counter, var_is_masked) &
     result(err_msg)
-  
+
     logical,  intent(in)    :: mask(:,:,:,:)     !< Mask passed into send_data
     class(*), intent(inout) :: data_out(:,:,:,:) !< Data currently saved in the input_data_buffer
     class(*), intent(in)    :: data_in(:,:,:,:)  !< Data passed into send_data
@@ -259,7 +259,7 @@ module fms_diag_input_buffer_mod
     class(*), intent(in)    :: data_in(:,:,:,:)  !< Data passed in to send_data
 
     character(len=128) :: err_msg
-  
+
     select type(data_out)
     type is (real(kind=r8_kind))
       select type (data_in)
