@@ -74,8 +74,8 @@ type fmsDiagField_type
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
      type(fmsDiagInputBuffer_t), allocatable          :: input_data_buffer !< Input buffer object for when buffering
                                                                            !! data
-     logical, allocatable, private                    :: multiple_send_data!< .True. if multiple send data calls
-                                                                           !! made for the field
+     logical, allocatable, private                    :: multiple_send_data!< .True. if send_data is called multiple
+                                                                           !! times for the same model time
      logical, allocatable, private                    :: data_buffer_is_allocated !< True if the buffer has
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
@@ -372,7 +372,6 @@ subroutine fms_register_diag_field_obj &
     this%do_not_log = do_not_log
   endif
 
-  !TODO restrict to only averaging fields
   if (present(multiple_send_data)) then
     this%multiple_send_data = multiple_send_data
   else
@@ -442,26 +441,23 @@ function get_send_data_time(this) &
   rslt = this%input_data_buffer%get_send_data_time()
 end function get_send_data_time
 
+!> @brief Prepare the input_data_buffer to do the reduction method
 subroutine prepare_data_buffer(this)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
 
   if (.not. this%multiple_send_data) return
   if (this%mask_variant) return
+  call this%input_data_buffer%prepare_input_buffer_object(this%modname//":"//this%varname)
+end subroutine prepare_data_buffer
 
-  call this%input_data_buffer%prepare_input_buffer_object()
-
-end subroutine
-
+!> @brief Initialize the input_data_buffer
 subroutine init_data_buffer(this)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
 
   if (.not. this%multiple_send_data) return
   if (this%mask_variant) return
-
   call this%input_data_buffer%init_input_buffer_object()
-
-end subroutine
-
+end subroutine init_data_buffer
 
 !> @brief Adds the input data to the buffered data.
 subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
@@ -1073,6 +1069,8 @@ result(rslt)
 
 end function get_var_skind
 
+!> @brief Get the multiple_send_data member of the field object
+!! @return multiple_send_data of the field
 pure function get_multiple_send_data(this) &
 result(rslt)
   class (fmsDiagField_type),   intent(in) :: this       !< diag field

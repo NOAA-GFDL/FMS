@@ -17,13 +17,14 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
+!> @brief Appends the input_data_buffer and the mask (only when the mask is set to .True.)
 subroutine APPEND_DATA_BUFFER_(mask_out, mask_in, data_out, data_in)
-  logical, intent(inout) :: mask_out(:,:,:,:)
-  logical, intent(in)    :: mask_in(:,:,:,:)
-  real(FMS_TRM_KIND_), intent(inout) :: data_out(:,:,:,:)
-  real(FMS_TRM_KIND_), intent(in) :: data_in(:,:,:,:)
+  logical,             intent(inout) :: mask_out(:,:,:,:) !< Mask currently in the input_data_buffer
+  logical,             intent(in)    :: mask_in(:,:,:,:)  !< Mask passed in to send_data
+  real(FMS_TRM_KIND_), intent(inout) :: data_out(:,:,:,:) !< Data currently in the input_data_buffer
+  real(FMS_TRM_KIND_), intent(in)    :: data_in(:,:,:,:)  !< Data passed in to send_data
 
-  integer :: i, j, k, l
+  integer :: i, j, k, l !< For looping through the input_data_buffer
 
   do l = 1, size(data_out, 4)
     do k = 1, size(data_out, 3)
@@ -38,14 +39,15 @@ subroutine APPEND_DATA_BUFFER_(mask_out, mask_in, data_out, data_in)
     enddo
   enddo
 
-end subroutine
+end subroutine APPEND_DATA_BUFFER_
 
+!> @brief Sums the data in the input_data_buffer
 subroutine SUM_DATA_BUFFER_(mask, data_out, data_in, counter, var_is_masked)
-  logical,  intent(in)    :: mask(:,:,:,:)
-  real(FMS_TRM_KIND_), intent(inout) :: data_out(:,:,:,:)
-  real(FMS_TRM_KIND_), intent(in)    :: data_in(:,:,:,:)
-  integer,  intent(inout)    :: counter(:,:,:,:)
-  logical,  intent(in)    :: var_is_masked
+  logical,             intent(in)    :: mask(:,:,:,:)     !< Mask passed into send_data
+  real(FMS_TRM_KIND_), intent(inout) :: data_out(:,:,:,:) !< Data currently saved in the input_data_buffer
+  real(FMS_TRM_KIND_), intent(in)    :: data_in(:,:,:,:)  !< Data passed into send_data
+  integer,             intent(inout) :: counter(:,:,:,:)  !< Number of times data has been summed
+  logical,             intent(in)    :: var_is_masked     !< .True. if the variable is masked
 
   if (var_is_masked) then
     where (mask)
