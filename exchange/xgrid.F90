@@ -1514,7 +1514,7 @@ end subroutine get_ocean_model_area_elements
 !> @brief Sets up exchange grid connectivity using grid specification file and
 !!      processor domain decomposition.
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_domain)
-  type (xmap_type),                        intent(inout) :: xmap
+  type(xmap_type), allocatable,            intent(inout) :: xmap
   character(len=3), dimension(:),            intent(in ) :: grid_ids
   type(Domain2d),   dimension(:),            intent(in ) :: grid_domains
   character(len=*),                          intent(in ) :: grid_file
@@ -1524,7 +1524,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   integer :: g, p, i
   integer :: nxgrid_file, i1, i2, i3, tile1, tile2, j
   integer :: nxc, nyc, out_unit
-  type (grid_type), pointer, save              :: grid =>NULL(), grid1 =>NULL()
+  type(grid_type), pointer :: grid => NULL()!< pointer to loop through grid_type's in list
+  type(grid_type), pointer, save :: grid1 => NULL() !< saved pointer to the first grid in the list
   real(r8_kind), dimension(3)                  :: xxx
   real(r8_kind), dimension(:,:),   allocatable :: check_data
   real(r8_kind), dimension(:,:,:), allocatable :: check_data_3D
@@ -1593,9 +1594,14 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   endif
 
   call mpp_clock_begin(id_load_xgrid)
-  do g=1,size(grid_ids(:))
-     grid => xmap%grids(g)
-     if (g==1) grid1 => xmap%grids(g)
+
+  ! save the first grid in the array
+  grid1 => xmap%grids(1)
+
+  do g=1, size(grid_ids(:))
+
+     grid = xmap%grids(g)
+
      grid%id     = grid_ids    (g)
      grid%domain = grid_domains(g)
      grid%on_this_pe = mpp_domain_is_initialized(grid_domains(g))
