@@ -55,7 +55,7 @@ COPY --from=builder /opt/deps/ /opt/deps/
 # need to be on the dev boxes if building
 COPY ./fms_test_input /home/unit_tests_input
 
-RUN dnf install -y autoconf make automake m4 libtool pkg-config zip diffutils
+RUN dnf install -y autoconf make automake m4 libtool pkg-config zip
 
 ENV FC="mpifort"
 ENV CC="mpicc"
