@@ -1514,7 +1514,7 @@ end subroutine get_ocean_model_area_elements
 !> @brief Sets up exchange grid connectivity using grid specification file and
 !!      processor domain decomposition.
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_domain)
-  type(xmap_type), allocatable,            intent(inout) :: xmap
+  type(xmap_type),                         intent(inout) :: xmap
   character(len=3), dimension(:),            intent(in ) :: grid_ids
   type(Domain2d),   dimension(:),            intent(in ) :: grid_domains
   character(len=*),                          intent(in ) :: grid_file
@@ -1542,6 +1542,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   integer                                      :: lnd_ug_id, l
   integer,                         allocatable :: grid_index(:)
   type(FmsNetcdfFile_t)                        :: gridfileobj, mosaicfileobj, fileobj
+  type(xmap_type), allocatable, save           :: xmap_tmp
 
   call mpp_clock_begin(id_setup_xmap)
 
@@ -1595,12 +1596,16 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
 
   call mpp_clock_begin(id_load_xgrid)
 
-  ! save the first grid in the array
+  ! nvhpc compiler workaround
+  ! saves passed in xmap as an allocatable
+  ! this lets us use a normal assignment instead of a pointer assignment in the loop to avoid a compiler error
+  xmap_tmp = xmap
+
   grid1 => xmap%grids(1)
 
   do g=1, size(grid_ids(:))
 
-     grid = xmap%grids(g)
+     grid = xmap_tmp%grids(g)
 
      grid%id     = grid_ids    (g)
      grid%domain = grid_domains(g)
