@@ -64,8 +64,8 @@ program test_reduction_methods
   integer                            :: id_var0         !< diag_field id for 0d var
   integer                            :: id_var1         !< diag_field id for 1d var
   integer                            :: id_var2         !< diag_field id for 2d var
-  integer                            :: id_var2missing  !< diag_field id for a var that is not masked but has missing values
-                                                        !! passed into send_data
+  integer                            :: id_var2missing  !< diag_field id for a var that is not masked but has missing
+                                                        !! values passed into send_data
   integer                            :: id_var2c        !< diag_field id for 2d var_corner
   integer                            :: id_var3         !< diag_field id for 3d var
   integer                            :: id_var4         !< diag_field id for 4d var
