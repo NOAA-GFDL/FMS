@@ -233,6 +233,7 @@ module fms_diag_input_buffer_mod
 
     character(len=128) :: err_msg
 
+    err_msg = ""
     select type(data_out)
     type is (real(kind=r8_kind))
       select type (data_in)
@@ -260,6 +261,7 @@ module fms_diag_input_buffer_mod
 
     character(len=128) :: err_msg
 
+    err_msg = ""
     select type(data_out)
     type is (real(kind=r8_kind))
       select type (data_in)
