@@ -372,23 +372,14 @@ subroutine set_next_output(this, time, is_static)
 end subroutine set_next_output
 
 !> @brief Update the buffer time if it is a new time
-!! @return .true. if the buffer was updated
-function update_buffer_time(this, time) &
-  result(res)
+subroutine update_buffer_time(this, time)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
   type(time_type),                 intent(in)    :: time        !< Current model time
 
-  logical :: res
-
   if (time > this%time) then
     this%time = time
-    res = .true.
-  else
-    res = .false.
-    !< If this is the first time send_data has been called
-    if (.not. this%send_data_called) res = .true.
   endif
-end function
+end subroutine update_buffer_time
 
 !> @brief Determine if finished with math
 !! @return this%done_with_math
@@ -659,7 +650,7 @@ end function do_time_max_wrapper
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
 function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bounds_in, bounds_out, missing_value, &
-                             increase_counter, pow_value) &
+                             pow_value) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
@@ -669,8 +660,6 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
   logical,                         intent(in)    :: is_masked           !< .True. if the field has a mask
   logical,                         intent(in)    :: mask_variant        !< .True. if the mask changes over time
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
-  logical,                         intent(in)    :: increase_counter    !< .True. if data has not been received for
-                                                                        !! time, so the counter needs to be increased
   integer, optional,               intent(in)    :: pow_value           !< power value, will calculate field_data^pow
                                                                         !! before adding to buffer should only be
                                                                         !! present if using pow reduction method
@@ -683,7 +672,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
       select type (field_data)
       type is (real(kind=r8_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
-                                bounds_in, bounds_out, missing_value, increase_counter, this%diurnal_section, &
+                                bounds_in, bounds_out, missing_value, this%diurnal_section, &
                                 pow=pow_value)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
@@ -692,7 +681,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
       select type (field_data)
       type is (real(kind=r4_kind))
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
-                                bounds_in, bounds_out, real(missing_value, kind=r4_kind), increase_counter, &
+                                bounds_in, bounds_out, real(missing_value, kind=r4_kind), &
                                 this%diurnal_section, pow=pow_value)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"

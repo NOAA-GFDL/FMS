@@ -29,7 +29,8 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
        & get_ticks_per_second
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
-use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value
+use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
+                                     check_for_slices
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
                            & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
@@ -176,7 +177,8 @@ end subroutine fms_diag_object_end
 integer function fms_register_diag_field_obj &
        (this, modname, varname, axes, init_time, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static, &
+       multiple_send_data)
 
  class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
@@ -201,6 +203,9 @@ integer function fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
                                                                         !! modeling_realm attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< True if the variable is static
+ LOGICAL,          OPTIONAL,     INTENT(in)    :: multiple_send_data    !< .True. if send data is called, multiple
+                                                                        !! times for the same time
+
 #ifdef use_yaml
 
  class (fmsDiagFile_type), pointer :: fileptr !< Pointer to the diag_file
@@ -244,7 +249,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
        axes=axes, longname=longname, units=units, missing_value=missing_value, varRange= varRange, &
        mask_variant= mask_variant, standname=standname, do_not_log=do_not_log, err_msg=err_msg, &
        interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
-       static=static)
+       static=static, multiple_send_data=multiple_send_data)
 
 !> Add the axis information, initial time, and field IDs to the files
   if (present(axes) .and. present(init_time)) then
@@ -313,7 +318,7 @@ end function fms_register_diag_field_obj
 !! in the diag_table.yaml
 INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, init_time, &
        & long_name, units, missing_value, var_range, standard_name, do_not_log, err_msg,&
-       & area, volume, realm)
+       & area, volume, realm, multiple_send_data)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
@@ -328,6 +333,9 @@ INTEGER FUNCTION fms_register_diag_field_scalar(this,module_name, field_name, in
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: multiple_send_data !< .True. if send data is called, multiple times
+                                                                 !! for the same time
+
 #ifndef use_yaml
 fms_register_diag_field_scalar=DIAG_FIELD_NOT_FOUND
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
@@ -336,7 +344,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       & module_name, field_name, init_time=init_time, &
       & longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
-      & area=area, volume=volume, realm=realm)
+      & area=area, volume=volume, realm=realm, multiple_send_data=multiple_send_data)
 #endif
 end function fms_register_diag_field_scalar
 
@@ -345,7 +353,8 @@ end function fms_register_diag_field_scalar
 !! in the diag_table.yaml
 INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, var_range, mask_variant, standard_name, verbose,&
-       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm, &
+       & multiple_send_data)
     class(fmsDiagObject_type),TARGET,INTENT(inout):: this       !< Diaj_obj to fill
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
@@ -368,6 +377,9 @@ INTEGER FUNCTION fms_register_diag_field_array(this, module_name, field_name, ax
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: multiple_send_data !< .True. if send data is called, multiple times
+                                                                 !! for the same time
+
 
 #ifndef use_yaml
 fms_register_diag_field_array=DIAG_FIELD_NOT_FOUND
@@ -377,7 +389,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       & module_name, field_name, init_time=init_time, &
       & axes=axes, longname=long_name, units=units, missing_value=missing_value, varrange=var_range, &
       & mask_variant=mask_variant, standname=standard_name, do_not_log=do_not_log, err_msg=err_msg, &
-      & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
+      & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
+      & multiple_send_data=multiple_send_data)
 #endif
 end function fms_register_diag_field_array
 
@@ -606,6 +619,18 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   IF ( PRESENT(je_in) ) je = je_in
   IF ( PRESENT(ke_in) ) ke = ke_in
 
+  if (.not. buffer_the_data .and. using_blocking) then
+    ! If running with only 1 thread and using blocking, check if the data was sent in blocks
+    ! if it is, then buffer the data
+    buffer_the_data = check_for_slices(this%FMS_diag_fields(diag_field_id), this%diag_axis, &
+      shape(field_data))
+  endif
+
+  !< If send data is called multiple times, buffer the data
+  !! This is so that the other reduction methods work and just averaging
+  if (this%FMS_diag_fields(diag_field_id)%get_multiple_send_data()) &
+    buffer_the_data = .true.
+
   !If this is true, buffer data
   main_if: if (buffer_the_data) then
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
@@ -637,9 +662,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer_is_allocated(.TRUE.)
     call this%FMS_diag_fields(diag_field_id)%set_math_needs_to_be_done(.TRUE.)
 !$omp end critical
-    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, field_weight, &
+    call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, oor_mask, field_weight, &
                                                              is, js, ks, ie, je, ke)
-    call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info, is, js, ks, ie, je, ke)
     fms_diag_accept_data = .TRUE.
     return
   else
@@ -713,6 +737,7 @@ subroutine do_buffer_math(this)
     doing_math: if (size(file_ids) .ge. 1 .and. math) then
       ! Check if buffer alloc'd
       has_input_buff: if (diag_field%has_input_data_buffer()) then
+        call diag_field%prepare_data_buffer()
         input_data_buffer => diag_field%get_data_buffer()
         ! reset bounds, allocate output buffer, and update it with reduction
         call bounds%reset_bounds_from_array_4D(input_data_buffer)
@@ -720,6 +745,7 @@ subroutine do_buffer_math(this)
         error_string = this%fms_diag_do_reduction(input_data_buffer, ifield, &
                               diag_field%get_mask(), diag_field%get_weight(), &
                               bounds, .False., Time=diag_field%get_send_data_time())
+        call diag_field%init_data_buffer()
         if (trim(error_string) .ne. "") call mpp_error(FATAL, "Field:"//trim(diag_field%get_varname()//&
                                                        " -"//trim(error_string)))
       else
@@ -891,8 +917,6 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
   real(kind=r8_kind)        :: missing_value      !< Missing_value for data points that are masked
                                                   !! This will obtained as r8 and converted to the right type as
                                                   !! needed. This is to avoid yet another select type ...
-  logical                   :: new_time           !< .True. if this is a new time (i.e data has not be been
-                                                  !! sent for this time)
 
   !TODO mostly everything
   field_ptr => this%FMS_diag_fields(diag_field_id)
@@ -985,7 +1009,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Determine the reduction method for the buffer
     reduction_method = field_yaml_ptr%get_var_reduction()
-    if (present(time)) new_time = buffer_ptr%update_buffer_time(time)
+    if (present(time)) call buffer_ptr%update_buffer_time(time)
     call buffer_ptr%set_send_data_called()
     select case(reduction_method)
     case (time_none)
@@ -1008,26 +1032,26 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       endif
     case (time_sum)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_average)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_power)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time, &
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, &
         pow_value=field_yaml_ptr%get_pow_value())
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_rms)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time, pow_value = 2)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, pow_value = 2)
       if (trim(error_msg) .ne. "") then
         return
       endif
@@ -1037,7 +1061,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       ! sets the diurnal index for reduction within the buffer object
       call buffer_ptr%set_diurnal_section_index(time)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, new_time)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
       if (trim(error_msg) .ne. "") then
         return
       endif

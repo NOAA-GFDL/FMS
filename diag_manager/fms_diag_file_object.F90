@@ -1399,8 +1399,9 @@ subroutine write_time_data(this)
   fms2io_fileobj => diag_file%fms2io_fileobj
 
   !< If data has not been written for the current unlimited dimension
-  !! ignore this
-  if (.not. diag_file%data_has_been_written) return
+  !! ignore this. The diag_file%unlim_dimension_level .ne. 1 is there to ensure
+  !! that at least one time level is written (this is needed for the combiner)
+  if (.not. diag_file%data_has_been_written .and. diag_file%unlim_dimension_level .ne. 1) return
 
   if (diag_file%time_ops) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2

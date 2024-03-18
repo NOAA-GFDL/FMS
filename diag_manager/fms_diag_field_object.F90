@@ -74,6 +74,8 @@ type fmsDiagField_type
      class(*), allocatable, private                   :: data_RANGE(:)     !< The range of the variable data
      type(fmsDiagInputBuffer_t), allocatable          :: input_data_buffer !< Input buffer object for when buffering
                                                                            !! data
+     logical, allocatable, private                    :: multiple_send_data!< .True. if send_data is called multiple
+                                                                           !! times for the same model time
      logical, allocatable, private                    :: data_buffer_is_allocated !< True if the buffer has
                                                                            !! been allocated
      logical, allocatable, private                    :: math_needs_to_be_done !< If true, do math
@@ -93,6 +95,8 @@ type fmsDiagField_type
      procedure :: setID => set_diag_id
      procedure :: set_type => set_vartype
      procedure :: set_data_buffer => set_data_buffer
+     procedure :: prepare_data_buffer
+     procedure :: init_data_buffer
      procedure :: set_data_buffer_is_allocated
      procedure :: set_send_data_time
      procedure :: get_send_data_time
@@ -165,6 +169,7 @@ type fmsDiagField_type
      procedure :: get_dimnames
      procedure :: get_var_skind
      procedure :: get_longname_to_write
+     procedure :: get_multiple_send_data
      procedure :: write_field_metadata
      procedure :: write_coordinate_attribute
      procedure :: get_math_needs_to_be_done
@@ -193,6 +198,7 @@ public :: fms_diag_fields_object_init
 public :: null_ob
 public :: fms_diag_field_object_end
 public :: get_default_missing_value
+public :: check_for_slices
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  CONTAINS
@@ -225,7 +231,8 @@ end function fms_diag_fields_object_init
 subroutine fms_register_diag_field_obj &
        (this, modname, varname, diag_field_indices, diag_axis, axes, &
        longname, units, missing_value, varRange, mask_variant, standname, &
-       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static)
+       do_not_log, err_msg, interp_method, tile_count, area, volume, realm, static, &
+       multiple_send_data)
 
  class(fmsDiagField_type),       INTENT(inout) :: this                  !< Diaj_obj to fill
  CHARACTER(len=*),               INTENT(in)    :: modname               !< The module name
@@ -252,6 +259,8 @@ subroutine fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: realm                 !< String to set as the value to the
                                                                         !! modeling_realm attribute
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< Set to true if it is a static field
+ LOGICAL,          OPTIONAL,     INTENT(in)    :: multiple_send_data    !< .True. if send data is called, multiple
+                                                                        !! times for the same time
 
 !> Fill in information from the register call
   this%varname = trim(varname)
@@ -363,6 +372,12 @@ subroutine fms_register_diag_field_obj &
     this%do_not_log = do_not_log
   endif
 
+  if (present(multiple_send_data)) then
+    this%multiple_send_data = multiple_send_data
+  else
+    this%multiple_send_data = .false.
+  endif
+
  !< Allocate space for any additional variable attributes
  !< These will be fill out when calling `diag_field_add_attribute`
  allocate(this%attributes(max_field_attributes))
@@ -426,10 +441,30 @@ function get_send_data_time(this) &
   rslt = this%input_data_buffer%get_send_data_time()
 end function get_send_data_time
 
+!> @brief Prepare the input_data_buffer to do the reduction method
+subroutine prepare_data_buffer(this)
+  class (fmsDiagField_type) , intent(inout):: this                !< The field object
+
+  if (.not. this%multiple_send_data) return
+  if (this%mask_variant) return
+  call this%input_data_buffer%prepare_input_buffer_object(this%modname//":"//this%varname)
+end subroutine prepare_data_buffer
+
+!> @brief Initialize the input_data_buffer
+subroutine init_data_buffer(this)
+  class (fmsDiagField_type) , intent(inout):: this                !< The field object
+
+  if (.not. this%multiple_send_data) return
+  if (this%mask_variant) return
+  call this%input_data_buffer%init_input_buffer_object()
+end subroutine init_data_buffer
+
 !> @brief Adds the input data to the buffered data.
-subroutine set_data_buffer (this, input_data, weight, is, js, ks, ie, je, ke)
+subroutine set_data_buffer (this, input_data, mask, weight, is, js, ks, ie, je, ke)
   class (fmsDiagField_type) , intent(inout):: this                !< The field object
   class(*),                   intent(in)   :: input_data(:,:,:,:) !< The input array
+  logical,                    intent(in)   :: mask(:,:,:,:)       !< Mask that is passed into
+                                                                  !! send_data
   real(kind=r8_kind),         intent(in)   :: weight              !< The field weight
   integer,                    intent(in)   :: is, js, ks          !< Starting indicies of the field_data relative
                                                                   !! to the compute domain (1 based)
@@ -440,7 +475,13 @@ subroutine set_data_buffer (this, input_data, weight, is, js, ks, ie, je, ke)
   if (.not.this%data_buffer_is_allocated) &
     call mpp_error ("set_data_buffer", "The data buffer for the field "//trim(this%varname)//" was unable to be "//&
       "allocated.", FATAL)
-  err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, is, js, ks, ie, je, ke)
+  if (this%multiple_send_data) then
+    err_msg = this%input_data_buffer%update_input_buffer_object(input_data, is, js, ks, ie, je, ke, &
+                                                                mask, this%mask, this%mask_variant, this%var_is_masked)
+  else
+    this%mask(is:ie, js:je, ks:ke, :) = mask
+    err_msg = this%input_data_buffer%set_input_buffer_object(input_data, weight, is, js, ks, ie, je, ke)
+  endif
   if (trim(err_msg) .ne. "") call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
 
 end subroutine set_data_buffer
@@ -455,7 +496,7 @@ logical function allocate_data_buffer(this, input_data, diag_axis)
   err_msg = ""
 
   allocate(this%input_data_buffer)
-  err_msg = this%input_data_buffer%init(input_data, this%axis_ids, diag_axis)
+  err_msg = this%input_data_buffer%allocate_input_buffer_object(input_data, this%axis_ids, diag_axis)
   if (trim(err_msg) .ne. "") then
     call mpp_error(FATAL, "Field:"//trim(this%varname)//" -"//trim(err_msg))
     return
@@ -1027,6 +1068,15 @@ result(rslt)
   end select
 
 end function get_var_skind
+
+!> @brief Get the multiple_send_data member of the field object
+!! @return multiple_send_data of the field
+pure function get_multiple_send_data(this) &
+result(rslt)
+  class (fmsDiagField_type),   intent(in) :: this       !< diag field
+  logical :: rslt
+  rslt = this%multiple_send_data
+end function get_multiple_send_data
 
 !> @brief Determine the long name to write for the field
 !! @return Long name to write
@@ -1823,5 +1873,30 @@ subroutine generate_associated_files_att(this, att, start_time)
   att = trim(att)//" "//trim(field_name)//": "//trim(file_name)//".nc"
 end subroutine generate_associated_files_att
 
+!> @brief Determines if the compute domain has been divide further into slices (i.e openmp blocks)
+!! @return .True. if the compute domain has been divided furter into slices
+function check_for_slices(field, diag_axis, var_size) &
+  result(rslt)
+  type(fmsDiagField_type),                 intent(in) :: field        !< Field object
+  type(fmsDiagAxisContainer_type), target, intent(in) :: diag_axis(:) !< Array of diag axis
+  integer,                                 intent(in) :: var_size(:)  !< The size of the buffer pass into send_data
+
+  logical :: rslt
+  integer :: i !< For do loops
+
+  if (.not. field%has_axis_ids()) then
+    rslt = .false.
+    return
+  endif
+  do i = 1, size(field%axis_ids)
+    select type (axis_obj => diag_axis(field%axis_ids(i))%axis)
+    type is (fmsDiagFullAxis_type)
+      if (axis_obj%axis_length() .ne. var_size(i)) then
+        rslt = .true.
+        return
+      endif
+    end select
+  enddo
+end function
 #endif
 end module fms_diag_field_object_mod
