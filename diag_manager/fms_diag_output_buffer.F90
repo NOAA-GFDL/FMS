@@ -665,7 +665,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
   integer, optional,               intent(in)    :: pow_value           !< power value, will calculate field_data^pow
                                                                         !! before adding to buffer should only be
                                                                         !! present if using pow reduction method
-  character(len=50) :: err_msg
+  character(len=150) :: err_msg
 
   !TODO This will be expanded for integers
   err_msg = ""

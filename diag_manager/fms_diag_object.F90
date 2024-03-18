@@ -888,7 +888,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
                                                                          !! in blocks
   type(time_type),           intent(in), optional :: time                !< Current time
 
-  character(len=50)         :: error_msg          !< Error message to check
+  character(len=150)         :: error_msg          !< Error message to check
   !TODO Mostly everything
 #ifdef use_yaml
   type(fmsDiagField_type),          pointer :: field_ptr      !< Pointer to the field's object
