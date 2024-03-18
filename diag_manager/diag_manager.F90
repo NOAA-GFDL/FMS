@@ -378,7 +378,7 @@ CONTAINS
   !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
        & long_name, units, missing_value, range, standard_name, do_not_log, err_msg,&
-       & area, volume, realm)
+       & area, volume, realm, multiple_send_data)
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
     TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
@@ -392,6 +392,8 @@ CONTAINS
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: multiple_send_data !< .True. if send data is called, multiple times
+                                                                 !! for the same time
 
     if (use_modern_diag) then
       if( do_diag_field_log) then
@@ -406,7 +408,8 @@ CONTAINS
       register_diag_field_scalar = fms_diag_object%fms_register_diag_field_scalar( &
       & module_name, field_name, init_time, long_name=long_name, units=units, &
       & missing_value=missing_value, var_range=range, standard_name=standard_name, &
-      & do_not_log=do_not_log, err_msg=err_msg, area=area, volume=volume, realm=realm)
+      & do_not_log=do_not_log, err_msg=err_msg, area=area, volume=volume, realm=realm, &
+      multiple_send_data=multiple_send_data)
     else
       register_diag_field_scalar = register_diag_field_scalar_old(module_name, field_name, init_time, &
       & long_name=long_name, units=units, missing_value=missing_value, range=range, standard_name=standard_name, &
@@ -418,7 +421,7 @@ CONTAINS
   !> @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
-       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
+       & do_not_log, err_msg, interp_method, tile_count, area, volume, realm, multiple_send_data)
     CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
     CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
     INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
@@ -440,6 +443,8 @@ CONTAINS
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
     INTEGER,          OPTIONAL, INTENT(in) :: volume        !< Id of the volume field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: realm         !< String to set as the modeling_realm attribute
+    LOGICAL,          OPTIONAL, INTENT(in) :: multiple_send_data !< .True. if send data is called, multiple times
+                                                                 !! for the same time
 
     if (use_modern_diag) then
       if( do_diag_field_log) then
@@ -455,7 +460,8 @@ CONTAINS
        & module_name, field_name, axes, init_time, long_name=long_name, &
        & units=units, missing_value=missing_value, var_range=range, mask_variant=mask_variant, &
        & standard_name=standard_name, verbose=verbose, do_not_log=do_not_log, err_msg=err_msg, &
-       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm)
+       & interp_method=interp_method, tile_count=tile_count, area=area, volume=volume, realm=realm, &
+       multiple_send_data=multiple_send_data)
     else
       register_diag_field_array = register_diag_field_array_old(module_name, field_name, axes, init_time, &
        & long_name=long_name, units=units, missing_value=missing_value, range=range, mask_variant=mask_variant, &
