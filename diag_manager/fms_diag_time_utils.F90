@@ -132,6 +132,13 @@ contains
 
     CHARACTER(len=128) :: error_message_local !< Local variable to store the error_message
 
+    integer :: cyear   !< The current year stored in the time type
+    integer :: cmonth  !< The current month stored in the time type
+    integer :: cday    !< The current day stored in the time type
+    integer :: chour   !< The current hour stored in the time type
+    integer :: cmin    !< The current minute stored in the time type
+    integer :: csecond !< The current second stored in the time type
+
     IF ( PRESENT(err_msg) ) err_msg = ''
     error_message_local = ''
 
@@ -180,7 +187,17 @@ contains
        IF ( get_calendar_type() == NO_CALENDAR ) THEN
           error_message_local = 'output units of years NOT allowed with no calendar'
        ELSE
+        call get_date(Time, cyear, cmonth, cday, chour, cmin, csecond)
+        if (cmonth .eq. 2 .and. cday .eq. 29) then
+          !! TODO this is a hack, the leap year issue should be fixed inside increment_date instead
+          !! increment_date should also be updated to work in cases like when the frequency is 1 month and you
+          !! are starting from 1/31
+          ! This is a leap year, so increment the date from 2/28 instead
+          diag_forecast_time_inc = increment_date(set_date(cyear, cmonth, 28, chour, cmin, csecond), &
+            output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+        else
           diag_forecast_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
+        endif
        END IF
     ELSE
        error_message_local = 'illegal output units'
