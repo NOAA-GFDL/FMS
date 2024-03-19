@@ -149,6 +149,11 @@ type, public :: FmsNetcdfFile_t
   character (len=20) :: time_name
   type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
                                                !! restart variables
+  logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
+                                      !! this should be set to .true. in the user application if they want
+                                      !! collective reads (put before open_file())
+  integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
+                                      !! To be replaced with a real communicator at user request
 
 endtype FmsNetcdfFile_t
 
@@ -562,6 +567,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   integer :: nc_format_param
   integer :: err
+  integer :: netcdf4 !< Query the file for the _IsNetcdf4 global attribute in the event
+                     !! that the open for collective reads fails
   character(len=256) :: buf !< Filename with .res in the filename if it is a restart
   character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
@@ -619,30 +626,30 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
   fileobj%is_netcdf4 = .false.
-  !Open the file with netcdf if this rank is the I/O root.
-  if (fileobj%is_root) then
-    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
-    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
+  if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
+  if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
 
-    if (present(nc_format)) then
-      if (string_compare(nc_format, "64bit", .true.)) then
-        nc_format_param = nf90_64bit_offset
-      elseif (string_compare(nc_format, "classic", .true.)) then
-        nc_format_param = nf90_classic_model
-      elseif (string_compare(nc_format, "netcdf4", .true.)) then
-        fileobj%is_netcdf4 = .true.
-        nc_format_param = nf90_netcdf4
-      else
-        call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
-                   &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
-      endif
-      call string_copy(fileobj%nc_format, nc_format)
+  if (present(nc_format)) then
+    if (string_compare(nc_format, "64bit", .true.)) then
+      nc_format_param = nf90_64bit_offset
+    elseif (string_compare(nc_format, "classic", .true.)) then
+      nc_format_param = nf90_classic_model
+    elseif (string_compare(nc_format, "netcdf4", .true.)) then
+      fileobj%is_netcdf4 = .true.
+      nc_format_param = nf90_netcdf4
     else
-      call string_copy(fileobj%nc_format, trim(fms2_nc_format))
-      nc_format_param = fms2_nc_format_param
-      fileobj%is_netcdf4 = fms2_is_netcdf4
+      call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
     endif
+    call string_copy(fileobj%nc_format, nc_format)
+  else
+    call string_copy(fileobj%nc_format, trim(fms2_nc_format))
+    nc_format_param = fms2_nc_format_param
+    fileobj%is_netcdf4 = fms2_is_netcdf4
+  endif
 
+  !Open the file with netcdf if this rank is the I/O root.
+  if (fileobj%is_root .and. .not.(fileobj%use_collective)) then
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
@@ -651,6 +658,39 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
+    else
+      call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are read, append, write, overwrite")
+    endif
+    call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
+  elseif(fileobj%use_collective .and. (fileobj%tile_comm /= MPP_COMM_NULL)) then
+    if(string_compare(mode, "read", .true.)) then
+      ! Open the file for collective reads if the user requested that treatment in their application.
+      ! NetCDF does not have the ability to specify collective I/O at the file basis
+      ! so we must activate each variable in netcdf_read_data_2d() and netcdf_read_data_3d()
+      err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, &
+                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+      if(err /= nf90_noerr) then
+        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+        err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", netcdf4)
+        err = nf90_close(fileobj%ncid)
+        if(netcdf4 /= 1) then
+          call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not &
+                               netCDF-4 format."// &
+                              " Falling back to parallel independent for file "// trim(fileobj%path))
+        endif
+        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
+      endif
+    elseif (string_compare(mode, "write", .true.)) then
+      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective write"// &
+                              " This feature is not implemented"// trim(fileobj%path))
+      !err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
+      !                  comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+    elseif (string_compare(mode,"overwrite",.true.)) then
+      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective overwrite"// &
+                              " This feature is not implemented"// trim(fileobj%path))
+      !err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
+      !                  comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     else
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
