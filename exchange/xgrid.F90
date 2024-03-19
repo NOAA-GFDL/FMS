@@ -1542,7 +1542,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   integer                                      :: lnd_ug_id, l
   integer,                         allocatable :: grid_index(:)
   type(FmsNetcdfFile_t)                        :: gridfileobj, mosaicfileobj, fileobj
-  type(xmap_type), allocatable, save           :: xmap_tmp
+  type(grid_type), allocatable, target         :: grids_tmp(:)
 
   call mpp_clock_begin(id_setup_xmap)
 
@@ -1597,15 +1597,15 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   call mpp_clock_begin(id_load_xgrid)
 
   ! nvhpc compiler workaround
-  ! saves passed in xmap as an allocatable
+  ! saves grid array as an allocatable
   ! this lets us use a normal assignment instead of a pointer assignment in the loop to avoid a compiler error
-  xmap_tmp = xmap
+  grids_tmp = xmap%grids
 
   grid1 => xmap%grids(1)
 
   do g=1, size(grid_ids(:))
 
-     grid = xmap_tmp%grids(g)
+     grid => grids_tmp(g)
 
      grid%id     = grid_ids    (g)
      grid%domain = grid_domains(g)
@@ -1866,6 +1866,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            grid%frac_area = 1.0_r8_kind
         endif
 
+        ! nvhpc workaround, needs to save the grid pointer since its allocatable
+        xmap%grids(g) = grid
+
         ! load exchange cells, sum grid cell areas, set your1my2/your2my1
         select case(xmap%version)
         case(VERSION1)
@@ -1971,6 +1974,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            where (grid%area>0.0_r8_kind) grid%area_inv = 1.0_r8_kind/grid%area
         endif
      end if
+
+     ! nvhpc workaround, needs to save the grid pointer since its allocatable
+     xmap%grids(g) = grid
   end do
 
   if(xmap%version == VERSION2) call close_file(gridfileobj)
