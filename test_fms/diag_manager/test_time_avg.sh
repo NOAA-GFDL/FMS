@@ -191,5 +191,25 @@ test_expect_success "Running diag_manager with "avg" reduction method with halo 
 test_expect_success "Checking answers for the "avg" reduction method with halo output with real mask (test $my_test_count)" '
   mpirun -n 1 ../check_time_avg
 '
+
+cat <<_EOF > diag_table.yaml
+title: test_avg
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_failure
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var2missing
+    reduction: average
+    kind: r4
+_EOF
+
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_failure "Fail if passing in missing_values without masking them (test $my_test_count)" '
+    mpirun -n 6 ../test_reduction_methods
+  '
 fi
 test_done
