@@ -650,7 +650,7 @@ end function do_time_max_wrapper
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
 function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bounds_in, bounds_out, missing_value, &
-                             pow_value) &
+                             has_missing_value, pow_value) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
@@ -660,10 +660,12 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
   logical,                         intent(in)    :: is_masked           !< .True. if the field has a mask
   logical,                         intent(in)    :: mask_variant        !< .True. if the mask changes over time
   real(kind=r8_kind),              intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  logical,                         intent(in)    :: has_missing_value   !< .True. if the field was registered with
+                                                                        !! a missing value
   integer, optional,               intent(in)    :: pow_value           !< power value, will calculate field_data^pow
                                                                         !! before adding to buffer should only be
                                                                         !! present if using pow reduction method
-  character(len=50) :: err_msg
+  character(len=150) :: err_msg
 
   !TODO This will be expanded for integers
   err_msg = ""
@@ -671,6 +673,10 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
     type is (real(kind=r8_kind))
       select type (field_data)
       type is (real(kind=r8_kind))
+        if (.not. is_masked) then
+          if (any(field_data .eq. missing_value)) &
+            err_msg = "You cannot pass data with missing values without masking them!"
+        endif
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
                                 bounds_in, bounds_out, missing_value, this%diurnal_section, &
                                 pow=pow_value)
@@ -680,6 +686,10 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
     type is (real(kind=r4_kind))
       select type (field_data)
       type is (real(kind=r4_kind))
+        if (.not. is_masked) then
+          if (any(field_data .eq. missing_value)) &
+            err_msg = "You cannot pass data with missing values without masking them!"
+        endif
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
                                 bounds_in, bounds_out, real(missing_value, kind=r4_kind), &
                                 this%diurnal_section, pow=pow_value)

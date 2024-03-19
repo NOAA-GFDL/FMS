@@ -888,7 +888,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
                                                                          !! in blocks
   type(time_type),           intent(in), optional :: time                !< Current time
 
-  character(len=50)         :: error_msg          !< Error message to check
+  character(len=150)         :: error_msg          !< Error message to check
   !TODO Mostly everything
 #ifdef use_yaml
   type(fmsDiagField_type),          pointer :: field_ptr      !< Pointer to the field's object
@@ -1032,26 +1032,27 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       endif
     case (time_sum)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, field_ptr%has_missing_value())
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_average)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, field_ptr%has_missing_value())
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_power)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, &
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, field_ptr%has_missing_value(), &
         pow_value=field_yaml_ptr%get_pow_value())
       if (trim(error_msg) .ne. "") then
         return
       endif
     case (time_rms)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, pow_value = 2)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, field_ptr%has_missing_value(), &
+        pow_value = 2)
       if (trim(error_msg) .ne. "") then
         return
       endif
@@ -1061,7 +1062,7 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
       ! sets the diurnal index for reduction within the buffer object
       call buffer_ptr%set_diurnal_section_index(time)
       error_msg = buffer_ptr%do_time_sum_wrapper(field_data, oor_mask, field_ptr%get_var_is_masked(), &
-        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value)
+        field_ptr%get_mask_variant(), bounds_in, bounds_out, missing_value, field_ptr%has_missing_value())
       if (trim(error_msg) .ne. "") then
         return
       endif
