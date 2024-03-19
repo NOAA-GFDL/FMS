@@ -567,7 +567,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   integer :: nc_format_param
   integer :: err
-  integer :: IsNetcdf4=-999 !< Query the file for IsNetcdf4 in the event that the open for collective reads fails
+  integer :: netcdf4 !< Query the file for the _IsNetcdf4 global attribute in the event
+                     !! that the open for collective reads fails
   character(len=256) :: buf !< Filename with .res in the filename if it is a restart
   character(len=256) :: buf2 !< Filename with the filename appendix if there is one
   logical :: is_res
@@ -671,9 +672,9 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                       comm=fileobj%tile_comm, info=MPP_INFO_NULL)
       if(err /= nf90_noerr) then
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
-        err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", IsNetcdf4)
+        err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", netcdf4)
         err = nf90_close(fileobj%ncid)
-        if(IsNetcdf4 /= 1) then
+        if(netcdf4 /= 1) then
           call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not &
                                netCDF-4 format."// &
                               " Falling back to parallel independent for file "// trim(fileobj%path))
