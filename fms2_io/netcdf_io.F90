@@ -32,7 +32,6 @@ use netcdf
 use mpp_mod
 use fms_io_utils_mod
 use platform_mod
-use mpi, only: MPI_COMM_NULL
 implicit none
 private
 
@@ -153,7 +152,7 @@ type, public :: FmsNetcdfFile_t
   logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
                                       !! this should be set to .true. in the user application if they want
                                       !! collective reads (put before open_file())
-  integer :: TileComm=MPI_COMM_NULL   !< MPI communicator used for collective reads.
+  integer :: TileComm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
                                       !! To be replaced with a real communicator at user request
 
 endtype FmsNetcdfFile_t
@@ -663,18 +662,20 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
     endif
     call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
-  elseif(fileobj%use_collective .and. (fileobj%TileComm /= MPI_COMM_NULL)) then
+  elseif(fileobj%use_collective .and. (fileobj%TileComm /= MPP_COMM_NULL)) then
     if(string_compare(mode, "read", .true.)) then
       ! Open the file for collective reads if the user requested that treatment in their application.
       ! NetCDF does not have the ability to specify collective I/O at the file basis
       ! so we must activate each variable in netcdf_read_data_2d() and netcdf_read_data_3d()
-      err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, comm=fileobj%TileComm, info=MPP_INFO_NULL)
+      err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, &
+                      comm=fileobj%TileComm, info=MPP_INFO_NULL)
       if(err /= nf90_noerr) then
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
         err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", IsNetcdf4)
         err = nf90_close(fileobj%ncid)
         if(IsNetcdf4 /= 1) then
-          call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not netCDF-4 format."// &
+          call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not &
+                               netCDF-4 format."// &
                               " Falling back to parallel independent for file "// trim(fileobj%path))
         endif
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
@@ -682,11 +683,13 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     elseif (string_compare(mode, "write", .true.)) then
       call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective write"// &
                               " This feature is not implemented"// trim(fileobj%path))
-      !err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, comm=fileobj%TileComm, info=MPP_INFO_NULL)
+      !err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
+      !                  comm=fileobj%TileComm, info=MPP_INFO_NULL)
     elseif (string_compare(mode,"overwrite",.true.)) then
       call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective overwrite"// &
                               " This feature is not implemented"// trim(fileobj%path))
-      !err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, comm=fileobj%TileComm, info=MPP_INFO_NULL)
+      !err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
+      !                  comm=fileobj%TileComm, info=MPP_INFO_NULL)
     else
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
