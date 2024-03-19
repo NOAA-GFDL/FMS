@@ -1542,7 +1542,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   integer                                      :: lnd_ug_id, l
   integer,                         allocatable :: grid_index(:)
   type(FmsNetcdfFile_t)                        :: gridfileobj, mosaicfileobj, fileobj
-  type(grid_type), allocatable, target         :: grids_tmp(:)
+  type(grid_type), allocatable, target         :: grids_tmp(:) !< added for nvhpc workaround, stores xmap's
+                                                               !! grid_type array so we can safely point to it
 
   call mpp_clock_begin(id_setup_xmap)
 
@@ -1597,8 +1598,7 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   call mpp_clock_begin(id_load_xgrid)
 
   ! nvhpc compiler workaround
-  ! saves grid array as an allocatable
-  ! this lets us use a normal assignment instead of a pointer assignment in the loop to avoid a compiler error
+  ! saves grid array as an allocatable and points to that to avoid error from pointing to xmap%grids in loop
   grids_tmp = xmap%grids
 
   grid1 => xmap%grids(1)
