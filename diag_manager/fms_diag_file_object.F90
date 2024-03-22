@@ -1351,16 +1351,28 @@ end function
 
 !> \brief Determine if it is time to "write" to the file
 logical function is_time_to_write(this, time_step)
-  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
-  TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+  TYPE(time_type),                  intent(in)              :: time_step       !< Current model step time
 
   if (time_step > this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
-    if (time_step > this%FMS_diag_file%next_next_output) &
-      call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
-        &": Diag_manager_mod:: You skipped a time_step. Be sure that diag_send_complete is called at every time step "&
-        &" needed by the file.")
+    if (time_step > this%FMS_diag_file%next_next_output) then
+      if (this%FMS_diag_file%num_registered_fields .eq. 0) then
+        !! If no variables have been registered, write a dummy time dimension for the first level
+        !! At least one time level is needed for the combiner to work ...
+        if (this%FMS_diag_file%unlim_dimension_level .eq. 1) then
+          call mpp_error(NOTE, this%FMS_diag_file%get_file_fname()//&
+            ": diag_manager_mod: This file does not have any variables registered. Fill values will be written")
+          this%FMS_diag_file%data_has_been_written = .true.
+        endif
+        is_time_to_write =.false.
+      else
+        call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
+          ": diag_manager_mod: You skipped a time_step. Be sure that diag_send_complete is called at every "//&
+          "time_step needed by the file.")
+      endif
+    endif
   else
     is_time_to_write = .false.
     if (this%FMS_diag_file%is_static) then
