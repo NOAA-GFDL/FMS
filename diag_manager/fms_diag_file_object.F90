@@ -1129,7 +1129,7 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     !< If using a wildcard file name (i.e ocn%4yr%2mo%2dy%2hr), get the basename (i.e ocn)
     pos = INDEX(diag_file_name, '%')
     if (pos > 0) base_name = diag_file_name(1:pos-1)
-    suffix = get_time_string(trim(diag_file_name), diag_file%get_filename_time())
+    suffix = get_time_string(diag_file_name, diag_file%get_filename_time())
     base_name = trim(base_name)//trim(suffix)
   else
     base_name = trim(diag_file_name)
