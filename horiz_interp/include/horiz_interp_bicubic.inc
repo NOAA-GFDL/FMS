@@ -45,7 +45,7 @@
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: jcl, jcu, icl, icu, jj
     real(FMS_HI_KIND_)                     :: xz, yz
-    integer                                :: unit
+    integer                                :: iunit
     integer, parameter   :: kindl = FMS_HI_KIND_ !< real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
@@ -74,21 +74,21 @@
     Interp%HI_KIND_TYPE_%lat_in = lat_in
 
     if ( verbose_bicubic > 0 ) then
-       unit = stdout()
-       write (unit,'(/,"Initialising bicubic interpolation, interface horiz_interp_bicubic_new_1d_s")')
-       write (unit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
-       write (unit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lat_in(jj),jj=1,Interp%nlat_src)
+       iunit = stdout()
+       write (iunit,'(/,"Initialising bicubic interpolation, interface horiz_interp_bicubic_new_1d_s")')
+       write (iunit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
+       write (iunit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
+       write (iunit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
+       write (iunit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lat_in(jj),jj=1,Interp%nlat_src)
        do i=1, Interp%nlat_dst
-         write (unit,*)
-         write (unit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
-         write (unit,'(1x,10f10.4)') (lon_out(jj,i),jj=1,Interp%nlon_dst)
+         write (iunit,*)
+         write (iunit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
+         write (iunit,'(1x,10f10.4)') (lon_out(jj,i),jj=1,Interp%nlon_dst)
        enddo
        do i=1, Interp%nlon_dst
-         write (unit,*)
-         write (unit,'(/," Latitude of fine grid points (radian):  yf(j) j=1, ",i4)') Interp%nlon_dst
-         write (unit,'(1x,10f10.4)') (lat_out(i,jj),jj=1,Interp%nlat_dst)
+         write (iunit,*)
+         write (iunit,'(/," Latitude of fine grid points (radian):  yf(j) j=1, ",i4)') Interp%nlon_dst
+         write (iunit,'(1x,10f10.4)') (lat_out(i,jj),jj=1,Interp%nlat_dst)
        enddo
     endif
 
@@ -210,7 +210,7 @@
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: jcl, jcu, icl, icu, jj
     real(FMS_HI_KIND_)                                   :: xz, yz
-    integer                                :: unit
+    integer                                :: iunit
     integer, parameter                     :: kindl = FMS_HI_KIND_ !< real size at compile time
 
     if(present(verbose)) verbose_bicubic = verbose
@@ -234,17 +234,17 @@
     Interp%HI_KIND_TYPE_%lat_in = lat_in
 
     if ( verbose_bicubic > 0 ) then
-       unit = stdout()
-       write (unit,'(/,"Initialising bicubic interpolation, interface HORIZ_INTERP_BICUBIC_NEW_1D_")')
-       write (unit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
-       write (unit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
-       write (unit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lat_in(jj),jj=1,Interp%nlat_src)
-       write (unit,*)
-       write (unit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
-       write (unit,'(1x,10f10.4)') (lon_out(jj),jj=1,Interp%nlon_dst)
-       write (unit,'(/," Latitude of fine grid points (radian):  yf(j) j=1, ",i4)') Interp%nlon_dst
-       write (unit,'(1x,10f10.4)') (lat_out(jj),jj=1,Interp%nlat_dst)
+       iunit = stdout()
+       write (iunit,'(/,"Initialising bicubic interpolation, interface HORIZ_INTERP_BICUBIC_NEW_1D_")')
+       write (iunit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
+       write (iunit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
+       write (iunit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
+       write (iunit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lat_in(jj),jj=1,Interp%nlat_src)
+       write (iunit,*)
+       write (iunit,'(/," Longitude of fine grid points (radian): xf(i) i=1, ",i4)') Interp%nlat_dst
+       write (iunit,'(1x,10f10.4)') (lon_out(jj),jj=1,Interp%nlon_dst)
+       write (iunit,'(/," Latitude of fine grid points (radian):  yf(j) j=1, ",i4)') Interp%nlon_dst
+       write (iunit,'(1x,10f10.4)') (lat_out(jj),jj=1,Interp%nlat_dst)
     endif
 
 

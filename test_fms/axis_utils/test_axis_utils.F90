@@ -76,17 +76,25 @@ do i=1,command_argument_count()
       print "(A)", "Testing frac_index (FAILURE)"
       call test_frac_index_fail
 
-    case ('--nearest-index')
-      print "(A)", "Testing nearest_index"
-      call test_nearest_index
+    case ('--nearest-index-increasing')
+      print "(A)", "Testing nearest_index with a monotonically increasing array"
+      call test_nearest_index(.true.)
+
+    case ('--nearest-index-decreasing')
+      print "(A)", "Testing nearest_index with a monotonically decreasing array"
+      call test_nearest_index(.false.)
 
     case ('--nearest-index-fail')
       print "(A)", "Testing nearest_index (FAILURE)"
       call test_nearest_index_fail
 
-    case ('--axis-edges')
-      print "(A)", "Testing axis_edges"
-      call test_axis_edges
+    case ('--axis-edges-increasing')
+      print "(A)", "Testing axis_edges-increasing"
+      call test_axis_edges(.true.)
+
+    case ('--axis-edges-decreasing')
+      print "(A)", "Testing axis_edges-decreasing"
+      call test_axis_edges(.false.)
 
     case ('--tranlon')
       print "(A)", "Testing tranlon"
@@ -385,28 +393,43 @@ subroutine test_frac_index_fail
   ret_test = frac_index(1.5_k, values)
 end subroutine
 
-subroutine test_nearest_index
-  real(k) :: arr(5)
+subroutine test_nearest_index(increasing_array)
+  logical, intent(in) :: increasing_array !< .True. if test using an increasing array
+  real(k) :: arr(7)
+  integer :: ans(16)
 
-  arr = [5._k, 12._k, 20._k, 40._k, 100._k]
+  if (increasing_array) then
+    arr = [-6._k, -3._k, 5._k, 12._k, 20._k, 40._k, 100._k]
+    ans=(/1, 7, 3, 4, 5, 6, 7, 3, 4, 4, 5, 5, 1, 2, 1, 2/)
+  else
+    arr = [100._k, 40._k, 20._k, 12._k, 5._k, -3._k, -6._k]
+    ans=(/7, 1, 5, 4, 3, 2, 1, 5, 4, 4, 3, 3, 7, 6, 7, 6/)
+  endif
 
   ! Test values beyond array boundaries
-  call nearest_index_assert(4._k,    arr, 1)
-  call nearest_index_assert(1000._k, arr, size(arr))
+  call nearest_index_assert(-7._k,    arr, ans(1))
+  call nearest_index_assert(1000._k, arr, ans(2))
 
   ! Test values actually in the array
-  call nearest_index_assert(5._k,    arr, 1)
-  call nearest_index_assert(12._k,   arr, 2)
-  call nearest_index_assert(20._k,   arr, 3)
-  call nearest_index_assert(40._k,   arr, 4)
-  call nearest_index_assert(100._k,  arr, 5)
+  call nearest_index_assert(5._k,    arr, ans(3))
+  call nearest_index_assert(12._k,   arr, ans(4))
+  call nearest_index_assert(20._k,   arr, ans(5))
+  call nearest_index_assert(40._k,   arr, ans(6))
+  call nearest_index_assert(100._k,  arr, ans(7))
 
   ! Test the intervals between array values
-  call nearest_index_assert(6._k,    arr, 1)
-  call nearest_index_assert(11._k,   arr, 2)
-  call nearest_index_assert(15._k,   arr, 2)
-  call nearest_index_assert(18._k,   arr, 3)
-  call nearest_index_assert(29._k,   arr, 3)
+  call nearest_index_assert(6._k,    arr, ans(8))
+  call nearest_index_assert(11._k,   arr, ans(9))
+  call nearest_index_assert(15._k,   arr, ans(10))
+  call nearest_index_assert(18._k,   arr, ans(11))
+  call nearest_index_assert(29._k,   arr, ans(12))
+
+  ! Test the negative numbers
+  call nearest_index_assert(-6._k,    arr, ans(13))
+  call nearest_index_assert(-3._k,    arr, ans(14))
+  call nearest_index_assert(-5._k,    arr, ans(15))
+  call nearest_index_assert(-1._k,    arr, ans(16))
+
 end subroutine
 
 subroutine nearest_index_assert(val, arr, ret_expected)
@@ -433,24 +456,43 @@ subroutine test_nearest_index_fail
   ret_test = nearest_index(5._k, arr)
 end subroutine
 
-subroutine test_axis_edges
+subroutine test_axis_edges(increasing_array)
+  logical, intent(in) :: increasing_array !< .True. if test using an increasing array
   real(k) :: data_in_var(10)
   real(k) :: data_in_var_edges(2,10)
   real(k) :: data_in_answers(11)
   type(FmsNetcdfFile_t) :: fileobj
   real(k)    :: answers(11)
-  integer :: i
+  integer :: count
+  integer :: count_factor
+  integer :: factor
+  integer :: index !< For looping through the data
 
-  do i=1,10
-     data_in_var(i) = real(i, k) - 0.5_k
+  if (increasing_array) then
+    count = 0
+    factor = 1
+    count_factor = -1
+  else
+    count = 11
+    factor = -1
+    count_factor = 0
+  endif
 
-     data_in_var_edges(1,i) = real(i-1, k)
-     data_in_var_edges(2,i) = real(i, k)
+  do index=1,10
+     count = count + factor
+     data_in_var(index) = real(count, k) - 0.5_k
 
-     data_in_answers(i) = real(i-1, k)
+     data_in_var_edges(1,index) = real(count-1, k)
+     data_in_var_edges(2,index) = real(count, k)
+
+     data_in_answers(index) = real(count + count_factor, k)
   enddo
 
-  data_in_answers(11) = 10._k
+  if (increasing_array) then
+    data_in_answers(11) = real(count, k)
+  else
+    data_in_answers(11) = real(count + factor, k)
+  endif
 
   call open_netcdf_w(fileobj)
 

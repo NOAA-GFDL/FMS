@@ -156,20 +156,20 @@ subroutine mpp_error_noargs()
 end subroutine mpp_error_noargs
 
 !#####################################################################
-subroutine mpp_error_Is(errortype, errormsg1, value, errormsg2)
+subroutine mpp_error_Is(errortype, errormsg1, mpp_ival, errormsg2)
   integer,          intent(in) :: errortype
-  INTEGER,          intent(in) :: value
+  INTEGER,          intent(in) :: mpp_ival
   character(len=*), intent(in) :: errormsg1
   character(len=*),      intent(in), optional :: errormsg2
-  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+  call mpp_error( errortype, errormsg1, (/mpp_ival/), errormsg2)
 end subroutine mpp_error_Is
 !#####################################################################
-subroutine mpp_error_Rs(errortype, errormsg1, value, errormsg2)
+subroutine mpp_error_Rs(errortype, errormsg1, mpp_rval, errormsg2)
   integer,          intent(in) :: errortype
-  REAL,             intent(in) :: value
+  REAL,             intent(in) :: mpp_rval
   character(len=*), intent(in) :: errormsg1
   character(len=*),      intent(in), optional :: errormsg2
-  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+  call mpp_error( errortype, errormsg1, (/mpp_rval/), errormsg2)
 end subroutine mpp_error_Rs
 !#####################################################################
 subroutine mpp_error_Ia(errortype, errormsg1, array, errormsg2)
@@ -428,15 +428,18 @@ end function rarray_to_char
   !!
   !! This call implies synchronization across the PEs in the current
   !! pelist, of which <TT>pelist</TT> is a subset.
-  subroutine mpp_declare_pelist( pelist, name )
-    integer,                    intent(in) :: pelist(:)
-    character(len=*), intent(in), optional :: name
+  subroutine mpp_declare_pelist( pelist, name, commID )
+    integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
+    character(len=*), intent(in), optional :: name      !> unique name for an input pelist
+    integer,         intent(out), optional :: commID    !> return of current MPI comm group communicator ID
     integer :: i
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
     i = get_peset(pelist)
     write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
     if( PRESENT(name) )peset(i)%name = name
+    if( PRESENT(commID) )commID = peset(i)%id
+
     return
   end subroutine mpp_declare_pelist
 

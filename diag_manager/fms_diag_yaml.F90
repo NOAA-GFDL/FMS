@@ -41,7 +41,7 @@ use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_bloc
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
-use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique
+use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string
 use platform_mod, only: r4_kind, i4_kind
 use fms_mod, only: lowercase
 
@@ -57,11 +57,14 @@ public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_d
 public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
 public :: fms_diag_yaml_out
+public :: MAX_SUBAXES
 !> @}
 
 integer, parameter :: basedate_size = 6
 integer, parameter :: NUM_SUB_REGION_ARRAY = 8
 integer, parameter :: MAX_FREQ = 12
+integer            :: MAX_SUBAXES = 0 !< Max number of subaxis, set in diag_yaml_object_init depending on
+                                      !! what is in the diag yaml
 
 
 !> @brief type to hold an array of sorted diag_fiels
@@ -394,9 +397,13 @@ subroutine diag_yaml_object_init(diag_subset_output)
     if(.not. write_file) ignore(i) = .true.
 
     if (.not. ignore(i)) then
-        actual_num_files = actual_num_files + 1
         !< If ignoring the file, ignore the fields in that file too!
         total_nvars = total_nvars + get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+        if (total_nvars .ne. 0) then
+          actual_num_files = actual_num_files + 1
+        else
+          ignore(i) = .true.
+        endif
     endif
   enddo
 
@@ -417,8 +424,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call fill_in_diag_files(diag_yaml_id, diag_file_ids(i), diag_yaml%diag_files(file_count))
 
     !> Save the file name in the file_list
-    !! The diag_table is not case sensitive (so we are saving it as lowercase)
-    file_list%file_name(file_count) = lowercase(trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char)
+    file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
     file_list%diag_file_indices(file_count) = file_count
 
     nvars = 0
@@ -536,6 +542,7 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
   nsubregion = 0
   nsubregion = get_num_blocks(diag_yaml_id, "sub_region", parent_block_id=diag_file_id)
   if (nsubregion .eq. 1) then
+    MAX_SUBAXES = MAX_SUBAXES + 1
     call get_block_ids(diag_yaml_id, "sub_region", sub_region_id, parent_block_id=diag_file_id)
     call diag_get_value_from_key(diag_yaml_id, sub_region_id(1), "grid_type", grid_type)
     call get_sub_region(diag_yaml_id, sub_region_id(1), yaml_fileobj%file_sub_region, grid_type, &
@@ -617,6 +624,7 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
   !> Set the zbounds if they exist
   field%var_zbounds = DIAG_NULL
   call get_value_from_key(diag_file_id, var_id, "zbounds", field%var_zbounds, is_optional=.true.)
+  if (field%has_var_zbounds()) MAX_SUBAXES = MAX_SUBAXES + 1
 end subroutine
 
 !> @brief diag_manager wrapper to get_value_from_key to use for allocatable
@@ -823,7 +831,7 @@ subroutine set_field_reduction(field, reduction_method)
   pow_value = 0
   ioerror = 0
   if (index(reduction_method, "diurnal") .ne. 0) then
-    READ (UNIT=reduction_method(8:LEN_TRIM(reduction_method)), FMT=*, IOSTAT=ioerror) n_diurnal
+    READ (reduction_method(8:LEN_TRIM(reduction_method)), FMT=*, IOSTAT=ioerror) n_diurnal
     if (ioerror .ne. 0) &
       call mpp_error(FATAL, "Error getting the number of diurnal samples from "//trim(reduction_method))
     if (n_diurnal .le. 0) &
@@ -831,7 +839,7 @@ subroutine set_field_reduction(field, reduction_method)
         & Check your entry for file:"//trim(field%var_varname)//" in file "//trim(field%var_fname))
     field%var_reduction = time_diurnal
   elseif (index(reduction_method, "pow") .ne. 0) then
-    READ (UNIT=reduction_method(4:LEN_TRIM(reduction_method)), FMT=*, IOSTAT=ioerror) pow_value
+    READ (reduction_method(4:LEN_TRIM(reduction_method)), FMT=*, IOSTAT=ioerror) pow_value
     if (ioerror .ne. 0) &
       call mpp_error(FATAL, "Error getting the power value from "//trim(reduction_method))
       if (pow_value .le. 0) &
@@ -1448,10 +1456,12 @@ function get_diag_files_id(indices) &
       & trim(filename)//c_null_char)
 
     if (size(file_indices) .ne. 1) &
-      & call mpp_error(FATAL, "get_diag_files_id: Error getting the correct number of file indices!")
+      & call mpp_error(FATAL, "get_diag_files_id: Error getting the correct number of file indices!"//&
+                              " The diag file "//trim(filename)//" was defined "//string(size(file_indices))&
+                              // " times")
 
     if (file_indices(1) .eq. diag_null) &
-      & call mpp_error(FATAL, "get_diag_files_id: Error finding the filename in the diag_files yaml")
+      & call mpp_error(FATAL, "get_diag_files_id: Error finding the file "//trim(filename)//" in the diag_files yaml")
 
     !< Get the index of the file in the diag_yaml file
     file_id(i) = file_list%diag_file_indices(file_indices(1))

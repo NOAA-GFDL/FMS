@@ -25,6 +25,7 @@
 !> @addtogroup cloud_interpolator_mod
 !> @{
 MODULE cloud_interpolator_mod
+#ifdef use_drifters
   implicit none
   private
 
@@ -284,6 +285,7 @@ pure subroutine cld_ntrp_get_cell_values(nsizes, fnodes, indices, fvals, ier)
 
   end subroutine cld_ntrp_get_cell_values
 
+#endif
 end MODULE cloud_interpolator_mod
 !===============================================================================
 !> @}

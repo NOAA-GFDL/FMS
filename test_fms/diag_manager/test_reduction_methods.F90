@@ -28,7 +28,7 @@ program test_reduction_methods
   use diag_manager_mod,  only: diag_manager_init, diag_manager_end, diag_axis_init, register_diag_field, &
                                diag_send_complete, diag_manager_set_time_end, send_data
   use mpp_domains_mod,   only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
-                               mpp_get_data_domain
+                               mpp_get_data_domain, NORTH, EAST
 
   implicit none
 
@@ -46,6 +46,7 @@ program test_reduction_methods
   integer                            :: nhalox          !< Number of halos in x
   integer                            :: nhaloy          !< Number of halos in y
   real(kind=r8_kind), allocatable    :: cdata(:,:,:,:)  !< Data in the compute domain
+  real(kind=r8_kind), allocatable    :: cdata_corner(:,:,:,:)  !< Data in the compute domain
   real(kind=r8_kind), allocatable    :: ddata(:,:,:,:)  !< Data in the data domain
   real(kind=r8_kind), allocatable    :: crmask(:,:,:,:) !< Mask in the compute domain
   real(kind=r8_kind), allocatable    :: drmask(:,:,:,:) !< Mask in the data domain
@@ -55,14 +56,20 @@ program test_reduction_methods
   type(time_type)                    :: Time_step       !< Time of the simulation
   integer                            :: ntimes          !< Number of times
   integer                            :: id_x            !< axis id for the x dimension
+  integer                            :: id_xc           !< axis id for the x dimension (corner)
   integer                            :: id_y            !< axis id for the y dimension
+  integer                            :: id_yc           !< axis id for the y dimension (corner)
   integer                            :: id_z            !< axis id for the z dimension
   integer                            :: id_w            !< axis id for the w dimension
   integer                            :: id_var0         !< diag_field id for 0d var
   integer                            :: id_var1         !< diag_field id for 1d var
   integer                            :: id_var2         !< diag_field id for 2d var
+  integer                            :: id_var2missing  !< diag_field id for a var that is not masked but has missing
+                                                        !! values passed into send_data
+  integer                            :: id_var2c        !< diag_field id for 2d var_corner
   integer                            :: id_var3         !< diag_field id for 3d var
   integer                            :: id_var4         !< diag_field id for 4d var
+  integer                            :: id_var999       !< diag_field id for a var that send_data is not called for
   integer                            :: io_status       !< Status after reading the namelist
   type(block_control_type)           :: my_block        !< Returns instantiated @ref block_control_type
   logical                            :: message         !< Flag for outputting debug message
@@ -86,8 +93,9 @@ program test_reduction_methods
   !< Configuration parameters
   integer :: test_case = test_normal !< Indicates which test case to run
   integer :: mask_case = no_mask     !< Indicates which masking option to run
+  logical :: use_pow_data = .false.  !< uses simplified smaller dataset for the pow reduction to simplify checks
 
-  namelist / test_reduction_methods_nml / test_case, mask_case
+  namelist / test_reduction_methods_nml / test_case, mask_case, use_pow_data
 
   call fms_init
   call set_calendar_type(JULIAN)
@@ -109,13 +117,15 @@ program test_reduction_methods
   ntimes = 48
 
   !< Create a lat/lon domain
-  call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='2D domain', xhalo=nhalox, yhalo=nhaloy)
+  call mpp_define_domains( (/1,nx,1,ny/), layout, Domain, name='2D domain', symmetry=.true., &
+    xhalo=nhalox, yhalo=nhaloy)
   call mpp_define_io_domain(Domain, io_layout)
   call mpp_get_compute_domain(Domain, isc, iec, jsc, jec)
   call mpp_get_data_domain(Domain, isd, ied, jsd, jed)
-
   cdata = allocate_buffer(isc, iec, jsc, jec, nz, nw)
+  cdata_corner = allocate_buffer(isc, iec+1, jsc, jec+1, nz, nw)
   call init_buffer(cdata, isc, iec, jsc, jec, 0)
+  call init_buffer(cdata_corner, isc, iec+1, jsc, jec+1, 0)
 
   select case (test_case)
   case (test_normal)
@@ -133,27 +143,31 @@ program test_reduction_methods
   select case (mask_case)
   case (logical_mask)
     clmask = allocate_logical_mask(isc, iec, jsc, jec, nz, nw)
-    if (mpp_pe() .eq. 0) clmask(isc, jsc, 1, 1) = .False.
+    if (mpp_pe() .eq. 0) clmask(isc, jsc, 1, :) = .False.
 
     if (test_case .eq. test_halos) then
       dlmask = allocate_logical_mask(isd, ied, jsd, jed, nz, nw)
-      if (mpp_pe() .eq. 0) dlmask(1+nhalox, 1+nhaloy, 1, 1) = .False.
+      if (mpp_pe() .eq. 0) dlmask(1+nhalox, 1+nhaloy, 1, :) = .False.
     endif
   case (real_mask)
     crmask = allocate_real_mask(isc, iec, jsc, jec, nz, nw)
-    if (mpp_pe() .eq. 0) crmask(isc, jsc, 1, 1) = 0_r8_kind
+    if (mpp_pe() .eq. 0) crmask(isc, jsc, 1, :) = 0_r8_kind
 
     if (test_case .eq. test_halos) then
       drmask = allocate_real_mask(isd, ied, jsd, jed, nz, nw)
-      if (mpp_pe() .eq. 0) drmask(1+nhalox, 1+nhaloy, 1, 1) = 0_r8_kind
+      if (mpp_pe() .eq. 0) drmask(1+nhalox, 1+nhaloy, 1, :) = 0_r8_kind
     endif
   end select
 
   !< Register the axis
   id_x  = diag_axis_init('x',  real((/ (i, i = 1,nx) /), kind=r8_kind),  'point_E', 'x', long_name='point_E', &
     Domain2=Domain)
+  id_xc  = diag_axis_init('xc',  real((/ (i, i = 1,nx+1) /), kind=r8_kind),  'point_E corner', 'x', &
+    long_name='point_E', Domain2=Domain, domain_position=EAST)
   id_y  = diag_axis_init('y',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N', 'y', long_name='point_N', &
     Domain2=Domain)
+  id_yc  = diag_axis_init('yc',  real((/ (i, i = 1,ny) /), kind=r8_kind),  'point_N corner', 'y', &
+    long_name='point_N', Domain2=Domain, domain_position=NORTH)
   id_z  = diag_axis_init('z',  real((/ (i, i = 1,nz) /), kind=r8_kind),  'point_Z', 'z', long_name='point_Z')
   id_w  = diag_axis_init('w',  real((/ (i, i = 1,nw) /), kind=r8_kind),  'point_W', 'n', long_name='point_W')
 
@@ -165,10 +179,15 @@ program test_reduction_methods
     'mullions', missing_value = missing_value)
   id_var2 = register_diag_field  ('ocn_mod', 'var2', (/id_x, id_y/), Time, 'Var2d', &
     'mullions', missing_value = missing_value)
+  id_var2missing = register_diag_field  ('ocn_mod', 'var2missing', (/id_x, id_y/), Time, 'Var2d', &
+    'mullions', missing_value = missing_value)
+  id_var2c = register_diag_field  ('ocn_mod', 'var2c', (/id_xc, id_yc/), Time, 'Var2d corner', &
+    'mullions', missing_value = missing_value)
   id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'Var3d', &
     'mullions', missing_value = missing_value)
   id_var4 = register_diag_field  ('ocn_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'Var4d', &
     'mullions', missing_value = missing_value)
+  id_var999 = register_diag_field  ('ocn_mod', 'IOnASphere', Time, missing_value=missing_value)
 
   !< Get the data domain indices (1 based)
   isd1 = isc-isd+1
@@ -181,6 +200,13 @@ program test_reduction_methods
     Time = Time + Time_step
 
     call set_buffer(cdata, i)
+    call set_buffer(cdata_corner, i)
+
+    ! This is passing in the data with missing values, but the variable is not masked.
+    ! An error is expected in this case.
+    used = send_data(id_var2missing, cdata(:,:,1,1)*0_r8_kind + missing_value, Time)
+
+    used = send_data(id_var2c, cdata_corner(:,:,1,1), Time)
     used = send_data(id_var0, cdata(1,1,1,1), Time)
 
     select case(test_case)
@@ -190,14 +216,17 @@ program test_reduction_methods
         used = send_data(id_var1, cdata(:,1,1,1), Time)
         used = send_data(id_var2, cdata(:,:,1,1), Time)
         used = send_data(id_var3, cdata(:,:,:,1), Time)
+        used = send_data(id_var4, cdata(:,:,:,:), Time)
       case (real_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, rmask=crmask(:,1,1,1))
         used = send_data(id_var2, cdata(:,:,1,1), Time, rmask=crmask(:,:,1,1))
         used = send_data(id_var3, cdata(:,:,:,1), Time, rmask=crmask(:,:,:,1))
+        used = send_data(id_var4, cdata(:,:,:,:), Time, rmask=crmask(:,:,:,:))
       case (logical_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, mask=clmask(:,1,1,1))
         used = send_data(id_var2, cdata(:,:,1,1), Time, mask=clmask(:,:,1,1))
         used = send_data(id_var3, cdata(:,:,:,1), Time, mask=clmask(:,:,:,1))
+        used = send_data(id_var4, cdata(:,:,:,:), Time, mask=clmask(:,:,:,:))
       end select
     case (test_halos)
       call set_buffer(ddata, i)
@@ -208,6 +237,8 @@ program test_reduction_methods
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
         used = send_data(id_var3, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
+        used = send_data(id_var4, ddata(:,:,:,:), Time, &
+          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1)
       case (real_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, &
           rmask=crmask(:,1,1,1))
@@ -217,6 +248,9 @@ program test_reduction_methods
         used = send_data(id_var3, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           rmask=drmask(:,:,:,1))
+        used = send_data(id_var4, ddata(:,:,:,:), Time, &
+          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+          rmask=drmask(:,:,:,:))
       case (logical_mask)
         used = send_data(id_var1, cdata(:,1,1,1), Time, &
           mask=clmask(:,1,1,1))
@@ -226,6 +260,9 @@ program test_reduction_methods
         used = send_data(id_var3, ddata(:,:,:,1), Time, &
           is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
           mask=dlmask(:,:,:,1))
+        used = send_data(id_var4, ddata(:,:,:,:), Time, &
+          is_in=isd1, ie_in=ied1, js_in=jsd1, je_in=jed1, &
+          mask=dlmask(:,:,:,:))
       end select
     case (test_openmp)
       select case(mask_case)
@@ -255,19 +292,25 @@ program test_reduction_methods
         case (no_mask)
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1)
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1)
+          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1)
         case (real_mask)
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             rmask=crmask(is1:ie1, js1:je1, :, 1))
+          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
+            rmask=crmask(is1:ie1, js1:je1, :, :))
         case (logical_mask)
           used=send_data(id_var2, cdata(is1:ie1, js1:je1, 1, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, 1, 1))
           used=send_data(id_var3, cdata(is1:ie1, js1:je1, :, 1), time, is_in=is1, js_in=js1, &
             mask=clmask(is1:ie1, js1:je1, :, 1))
+          used=send_data(id_var4, cdata(is1:ie1, js1:je1, :, :), time, is_in=is1, js_in=js1, &
+            mask=clmask(is1:ie1, js1:je1, :, :))
         end select
       enddo
     end select
+    call diag_send_complete(Time_step)
     call diag_send_complete(Time_step)
   enddo
 
@@ -325,9 +368,14 @@ program test_reduction_methods
       do j = js, je
         do k = 1, size(buffer, 3)
           do l = 1, size(buffer,4)
-            buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = real(ii, kind=r8_kind)* 1000_r8_kind + &
-              real(j, kind=r8_kind)* 10_r8_kind + &
-              real(k, kind=r8_kind)
+            if(.not. use_pow_data) then
+              buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = real(ii, kind=r8_kind)* 1000_r8_kind + &
+                real(j, kind=r8_kind)* 10_r8_kind + &
+                real(k, kind=r8_kind)
+            else
+              ! just sends the sum of indices for pow
+              buffer(ii-is+1+nhalo, j-js+1+nhalo, k, l) = ii + j + k + l
+            endif
           enddo
         enddo
       enddo
@@ -340,6 +388,7 @@ program test_reduction_methods
     real(kind=r8_kind), intent(inout) :: buffer(:,:,:,:) !< Output buffer
     integer,            intent(in)    :: time_index      !< Time index
 
+    if(use_pow_data) return
     buffer = nint(buffer) + real(time_index, kind=r8_kind)/100_r8_kind
 
   end subroutine set_buffer

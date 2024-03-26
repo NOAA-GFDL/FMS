@@ -246,7 +246,7 @@ contains
 
   !> Initialize module and writes version number to logfile.out
   subroutine horiz_interp_init
-  integer :: unit, ierr, io
+  integer :: iunit, ierr, io
 
   if(module_is_initialized) return
   call write_version_number("HORIZ_INTERP_MOD", version)
@@ -254,8 +254,8 @@ contains
   read (input_nml_file, horiz_interp_nml, iostat=io)
   ierr = check_nml_error(io,'horiz_interp_nml')
   if (mpp_pe() == mpp_root_pe() ) then
-     unit = stdlog()
-     write (unit, nml=horiz_interp_nml)
+     iunit = stdlog()
+     write (iunit, nml=horiz_interp_nml)
   endif
 
   if (reproduce_siena) then

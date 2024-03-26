@@ -45,8 +45,5 @@
 #undef INTERSECT_
 #define INTERSECT_ intersect_r8
 
-#undef INDP_
-#define INDP_ indp_r8
-
 #include "horiz_interp_bilinear.inc"
 !> @}

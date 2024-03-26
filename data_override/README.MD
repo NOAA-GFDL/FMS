@@ -24,6 +24,13 @@ If it is desired to interpolate the data to a region of the model grid. The foll
 - **lat_start:** The starting longitude in the same units as the grid data in the file
 - **lon_end:** The ending longitude in the same units as the grid data in the file
 
+If it is desired to use multiple(3) input netcdf files instead of 1. The following **optional** keys are available.
+- **is_multi_file:** Set to `True` is using the multi-file feature
+- **prev_file_name:** The name of the first file in the set
+- **next_file_name:** The name of the third file in the set
+
+Note that **file_name** must be the second file in the set. **prev_file_name** and/or **next_file_name** are required if **is_multi_file** is set to `True`
+
 #### 2. How to use it?
 In order to use the yaml data format, [libyaml](https://github.com/yaml/libyaml) needs to be installed and linked with FMS. Additionally, FMS must be compiled with -Duse_yaml macro. If using autotools, you can add `--with-yaml`, which will add the macro for you and check that libyaml is linked correctly.
 ```

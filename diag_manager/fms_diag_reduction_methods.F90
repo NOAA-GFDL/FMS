@@ -30,12 +30,14 @@
 module fms_diag_reduction_methods_mod
   use platform_mod, only: r8_kind, r4_kind
   use fms_diag_bbox_mod, only: fmsDiagIbounds_type
+  use fms_string_utils_mod, only: string
+  use diag_data_mod, only: time_diurnal, time_rms
   use mpp_mod
   implicit none
   private
 
   public :: check_indices_order, init_mask, set_weight
-  public :: do_time_none, do_time_min, do_time_max
+  public :: do_time_none, do_time_min, do_time_max, do_time_sum_update, time_update_done
 
   !> @brief Does the time_none reduction method. See include/fms_diag_reduction_methods.inc
   !TODO This needs to be extended to integers
@@ -54,6 +56,20 @@ module fms_diag_reduction_methods_mod
   interface do_time_max
     module procedure do_time_max_r4, do_time_max_r8
   end interface do_time_max
+
+  !> @brief Sum update updates the buffer for any reductions that involve summation
+  !! (ie. time_sum, avg, rms, pow)
+  !!TODO This needs to be extended to integers
+  interface do_time_sum_update
+    module procedure do_time_sum_update_r4, do_time_sum_update_r8
+  end interface
+
+  !> @brief Finishes a reduction that involves an average
+  !! (ie. time_avg, rms, pow)
+  !! This takes the average at the end of the time step
+  interface time_update_done
+    module procedure sum_update_done_r4, sum_update_done_r8
+  end interface
 
   contains
 

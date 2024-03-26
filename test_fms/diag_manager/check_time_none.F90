@@ -20,7 +20,7 @@
 !> @brief  Checks the output file after running test_reduction_methods using the "none" reduction method
 program check_time_none
   use fms_mod,           only: fms_init, fms_end, string
-  use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file
+  use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file, get_dimension_size
   use mpp_mod,           only: mpp_npes, mpp_error, FATAL, mpp_pe, input_nml_file
   use platform_mod,      only: r4_kind, r8_kind
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
@@ -37,6 +37,7 @@ program check_time_none
   integer                            :: nw                 !< Number of points in the 4th dimension
   integer                            :: i                  !< For looping
   integer                            :: io_status          !< Io status after reading the namelist
+  integer                            :: dim_size           !< dimension size as read from the file
   logical                            :: use_mask           !< .true. if using masks
 
   integer :: test_case = test_normal !< Indicates which test case to run
@@ -68,6 +69,23 @@ program check_time_none
   if (.not. open_file(fileobj2, "test_none_regional.nc.0005", "read")) &
     call mpp_error(FATAL, "unable to open test_none_regional.nc.0005")
 
+  print *, "Checking the dimensions of the subaxis"
+  ! This is only done for the "none" reduction because the logic that determines the subaxis
+  ! size is independent of the reduction method
+  call get_dimension_size(fileobj1, "x_sub01", dim_size)
+  if (dim_size .ne. 4) call mpp_error(FATAL, "x_sub01 is not the correct size!")
+  call get_dimension_size(fileobj1, "y_sub01", dim_size)
+  if (dim_size .ne. 3) call mpp_error(FATAL, "y_sub01 is not the correct size!")
+  call get_dimension_size(fileobj1, "z_sub01", dim_size)
+  if (dim_size .ne. 2) call mpp_error(FATAL, "z_sub01 is not the correct size!")
+
+  call get_dimension_size(fileobj2, "x_sub01", dim_size)
+  if (dim_size .ne. 4) call mpp_error(FATAL, "x_sub01 is not the correct size!")
+  call get_dimension_size(fileobj2, "y_sub01", dim_size)
+  if (dim_size .ne. 1) call mpp_error(FATAL, "y_sub01 is not the correct size!")
+  call get_dimension_size(fileobj2, "z_sub01", dim_size)
+  if (dim_size .ne. 2) call mpp_error(FATAL, "z_sub01 is not the correct size!")
+
   cdata_out = allocate_buffer(1, nx, 1, ny, nz, nw)
 
   do i = 1, 8
@@ -90,6 +108,12 @@ program check_time_none
     print *, "Checking answers for var3_none - time_level:", string(i)
     call read_data(fileobj, "var3_none", cdata_out(:,:,:,1), unlim_dim_level=i)
     call check_data_3d(cdata_out(:,:,:,1), i, .false.)
+
+    cdata_out = -999_r4_kind
+    print *, "Checking answers for var4_none - time_level:", string(i)
+    call read_data(fileobj, "var4_none", cdata_out(:,:,:,:), unlim_dim_level=i)
+    call check_data_3d(cdata_out(:,:,:,1), i, .false.)
+    call check_data_3d(cdata_out(:,:,:,2), i, .false.)
 
     cdata_out = -999_r4_kind
     print *, "Checking answers for var3_Z - time_level:", string(i)
