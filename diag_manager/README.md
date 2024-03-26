@@ -7,7 +7,7 @@ The purpose of this document is to document the differences between the old diag
 - [4. Subregional Files](README.md#4-subregional-files)
 - [5. Global attributes](README.md#5-global-attributes)
 - [6. Real attributes from diag_field_add_attribute calls](README.md#6-real-attributes-from-diag_field_add_attribute-calls)
-- [7. Answers "changes"](README.md#7-answers-changes)
+- [7. History files data output "changes"](README.md#7-history-files-data-output-changes)
 
 ### 1. Diag Table Format
 The modern diag manager uses a YAML format instead of the legacy ascii table. A description of the YAML diag table can be found [here](diag_yaml_format.md).
@@ -94,7 +94,7 @@ When real attributes were added to the file via a diag_field_add_attribute call,
 
 The new diag manager is going to write the attribute as it is passed in. This will cause differences when the model component was compiled with r8 as it will write the attribute as r8 instead of r4.
 
-### 7. Answers "changes"
+### 7. History files data output "changes"
 When the model run time is less than then the output frequency (i.e if the module run time is 2 days and you are writing monthly diagnostics), the old diag manager was writing 9.96921e+36. The new diag manager is not going to write anything for this cases, so if you ncdump the output from the new diag manager, you will get:
 
 ```
