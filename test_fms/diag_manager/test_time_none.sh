@@ -169,5 +169,60 @@ test_expect_success "Running diag_manager with "none" reduction method with halo
 test_expect_success "Checking answers for the "none" reduction method with halo output with real mask (test $my_test_count)" '
   mpirun -n 1 ../check_time_none
 '
+
+cat <<_EOF > diag_table.yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_empty_file
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Testing diag manager that defined a diag file with no variables (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+
+cat <<_EOF > diag_table.yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_unregistered_data
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: something_funny
+    reduction: none
+    kind: r4
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Testing diag manager where no variables were registered for a file (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+
+cat <<_EOF > diag_table.yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_send_data_never_called
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: IOnASphere
+    reduction: none
+    kind: r4
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Testing diag manager where send data was never called for any fields in a file (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+  '
 fi
 test_done

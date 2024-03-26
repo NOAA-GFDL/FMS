@@ -37,7 +37,7 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
                            middle_time, begin_time, end_time, MAX_STR_LEN
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
-use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
+use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string
 use platform_mod, only: r4_kind, i4_kind
@@ -356,6 +356,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
   integer              :: file_count       !! The current number of files added to the diag_yaml obj
   logical              :: write_file       !< Flag indicating if the user wants the file to be written
   logical              :: write_var        !< Flag indicating if the user wants the variable to be written
+  character(len=:), allocatable :: filename!< Diag file name (for error messages)
 
   if (diag_yaml_module_initialized) return
 
@@ -393,13 +394,16 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call get_value_from_key(diag_yaml_id, diag_file_ids(i), "write_file", write_file, is_optional=.true.)
     if(.not. write_file) ignore(i) = .true.
 
+    !< If ignoring the file, ignore the fields in that file too!
     if (.not. ignore(i)) then
-        !< If ignoring the file, ignore the fields in that file too!
-        total_nvars = total_nvars + get_total_num_vars(diag_yaml_id, diag_file_ids(i))
-        if (total_nvars .ne. 0) then
+        nvars = get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+        total_nvars = total_nvars + nvars
+        if (nvars .ne. 0) then
           actual_num_files = actual_num_files + 1
         else
-          ignore(i) = .true.
+          call diag_get_value_from_key(diag_yaml_id, diag_file_ids(i), "file_name", filename)
+          call mpp_error(NOTE, "diag_manager_mod:: the file:"//trim(filename)//" has no variables defined. Ignoring!")
+          ignore(i) = .True.
         endif
     endif
   enddo
