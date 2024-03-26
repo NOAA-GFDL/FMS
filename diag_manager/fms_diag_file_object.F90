@@ -1370,6 +1370,7 @@ logical function is_time_to_write(this, time_step, output_buffers)
           call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
             ": diag_manager_mod: You skipped a time_step. Be sure that diag_send_complete is called at every "//&
             "time_step needed by the file.")
+        is_time_to_write =.false.
       endif
     endif
   else
