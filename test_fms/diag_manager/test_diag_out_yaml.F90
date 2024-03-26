@@ -18,12 +18,10 @@
 !***********************************************************************
 !> @author Ryan Mulhall
 !> @brief Simple test program for diag manager output yaml file.
-!! reads input yaml with diag_manager_init and prints
-!! out output yaml including all possible fields with diag_manager_end
+!! Just checks output from previous test 
 program test_diag_out_yaml
 
 use fms_mod,          only: fms_init, fms_end
-use diag_manager_mod, only: diag_manager_init, diag_manager_end, diag_manager_set_time_end
 use time_manager_mod, only: set_calendar_type, JULIAN, time_type
 use mpp_mod,          only: mpp_root_pe, mpp_pe, mpp_error, FATAL
 
@@ -32,10 +30,6 @@ implicit none
 type(time_type) :: time
 
 call fms_init
-call set_calendar_type(JULIAN)
-call diag_manager_init
-call diag_manager_set_time_end(time)
-call diag_manager_end(time)
 call check_output_yaml
 call fms_end
 

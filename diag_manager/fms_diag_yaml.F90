@@ -39,10 +39,13 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
                            middle_time, begin_time, end_time, MAX_STR_LEN
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
+use fms_yaml_output_mod, only: fmsYamlOutKeys_type, fmsYamlOutValues_type, write_yaml_from_struct_3, &
+                               yaml_out_add_level2key, initialize_key_struct, initialize_val_struct 
 use mpp_mod,         only: mpp_error, FATAL, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
-use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string
-use platform_mod, only: r4_kind, i4_kind
+use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string, &
+                                fms_f2c_string
+use platform_mod, only: r4_kind, i4_kind, r8_kind, i8_kind
 use fms_mod, only: lowercase
 
 implicit none
@@ -131,6 +134,9 @@ type diagYamlFiles_type
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), allocatable :: file_varlist(:)            !< An array of variable names
                                                                          !! within a file
+  character (len=MAX_STR_LEN), allocatable :: file_outlist(:)            !< An array of variable output names
+                                                                         !! within a file, used to distinguish
+                                                                         !! varlist names for yaml output
   character (len=MAX_STR_LEN), allocatable :: file_global_meta(:,:)      !< Array of key(dim=1)
                                                                          !! and values(dim=2) to be
                                                                          !! added as global meta data to
@@ -433,6 +439,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
     file_var_count = 0
     allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
+    allocate(diag_yaml%diag_files(file_count)%file_outlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
     nvars_loop: do j = 1, nvars
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
@@ -448,6 +455,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
+      diag_yaml%diag_files(file_count)%file_outlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_outname
 
       !> Save the variable name and the module name in the variable_list
       variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//&
@@ -476,6 +484,7 @@ subroutine diag_yaml_object_end()
 
   do i = 1, size(diag_yaml%diag_files, 1)
     if(allocated(diag_yaml%diag_files(i)%file_varlist)) deallocate(diag_yaml%diag_files(i)%file_varlist)
+    if(allocated(diag_yaml%diag_files(i)%file_outlist)) deallocate(diag_yaml%diag_files(i)%file_outlist)
     if(allocated(diag_yaml%diag_files(i)%file_global_meta)) deallocate(diag_yaml%diag_files(i)%file_global_meta)
     if(allocated(diag_yaml%diag_files(i)%file_sub_region%corners)) &
       deallocate(diag_yaml%diag_files(i)%file_sub_region%corners)
@@ -1652,9 +1661,16 @@ subroutine fms_diag_yaml_out()
           if(DEBUG) print *, 'file obj', trim(diag_yaml%diag_fields(varnum_i)%var_varname)
           if( trim(diag_yaml%diag_fields(varnum_i)%var_varname ) .eq. trim(fileptr%file_varlist(j)) .and. &
               trim(diag_yaml%diag_fields(varnum_i)%var_fname) .eq. trim(fileptr%file_fname)) then
-            if(DEBUG) print *, 'match'
-            varptr => diag_yaml%diag_fields(varnum_i)
-            exit
+            ! if theres a output name, that should match as well
+            if(diag_yaml%diag_fields(varnum_i)%has_var_outname()) then
+              if(trim(diag_yaml%diag_fields(varnum_i)%var_outname) .eq. trim(fileptr%file_outlist(j))) then
+                varptr => diag_yaml%diag_fields(varnum_i)
+                exit
+              endif
+            else
+              varptr => diag_yaml%diag_fields(varnum_i)
+              exit
+            endif
           endif
         enddo
         if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: could not find variable in list."//&
@@ -1691,13 +1707,7 @@ subroutine fms_diag_yaml_out()
           end select
         endif
 
-        tmpstr1 = ''
-        !! trims don't seem to work with just (F) for the format code
-        !! these are just abritrary lengths
-        write (tmpstr1, '(F10.5)') varptr%var_zbounds(1)
-        tmpstr2 = trim(tmpstr1)
-        write (tmpstr1, '(F10.5)') varptr%var_zbounds(2)
-        tmpstr2 = trim(tmpstr2) // ', ' // trim(tmpstr1)
+        tmpstr2 = string(varptr%var_zbounds(1)) // ', ' // string(varptr%var_zbounds(2))
         call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
 
         tmpstr1 = ''; write(tmpstr1, '(I0)') varptr%n_diurnal
@@ -1919,6 +1929,8 @@ pure function get_diag_reduction_string( reduction_val )
                 tmp = 'rms'
             case (time_sum)
                 tmp = 'sum'
+            case (time_diurnal)
+                tmp = 'diurnal'
             case default
                 exit 
         end select
