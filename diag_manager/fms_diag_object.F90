@@ -825,7 +825,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%increase_unlim_dimension_level()
     endif
 
-    finish_writing = diag_file%is_time_to_write(model_time)
+    finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers)
 
     ! finish reduction method if its time to write
     buff_ids = diag_file%FMS_diag_file%get_buffer_ids()
@@ -863,10 +863,11 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%update_next_write(model_time)
       call diag_file%update_current_new_file_freq_index(model_time)
       call diag_file%increase_unlim_dimension_level()
-      if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file()
+      if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
+        diag_fields = this%FMS_diag_fields)
     else if (force_write) then
       call diag_file%write_time_data()
-      call diag_file%close_diag_file()
+      call diag_file%close_diag_file(this%FMS_diag_output_buffers, diag_fields = this%FMS_diag_fields)
     endif
   enddo
 #endif

@@ -826,7 +826,7 @@ end subroutine get_remapped_diurnal_data
 !! @return .true. if there is data to write
 function is_there_data_to_write(this) &
   result(res)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
 
   logical :: res
 

@@ -156,6 +156,7 @@ type :: fmsDiagFile_type
  procedure, public :: dump_file_obj
  procedure, public :: get_buffer_ids
  procedure, public :: get_number_of_buffers
+ procedure, public :: has_send_data_been_called
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
@@ -1323,12 +1324,6 @@ subroutine write_field_data(this, field_obj, buffer_obj)
     else
      diag_file%data_has_been_written = .true.
      has_diurnal = buffer_obj%get_diurnal_sample_size() .gt. 1
-      if (.not. buffer_obj%is_there_data_to_write()) then
-        ! Only print the error message once
-        if (diag_file%unlim_dimension_level .eq. 1) &
-          call mpp_error(NOTE, "Send data was never called. Writing fill values for variable "//&
-            field_obj%get_varname()//" in mod "//field_obj%get_modname())
-      endif
       call buffer_obj%write_buffer(fms2io_fileobj, &
                         unlim_dim_level=diag_file%unlim_dimension_level, is_diurnal=has_diurnal)
     endif
@@ -1350,9 +1345,11 @@ logical function is_time_to_close_file (this, time_step)
 end function
 
 !> \brief Determine if it is time to "write" to the file
-logical function is_time_to_write(this, time_step)
-  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
-  TYPE(time_type),                  intent(in)              :: time_step       !< Current model step time
+logical function is_time_to_write(this, time_step, output_buffers)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
+  TYPE(time_type),                  intent(in)              :: time_step         !< Current model step time
+  type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffer.
+                                                                                 !! This is needed for error messages!
 
   if (time_step > this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
@@ -1368,9 +1365,11 @@ logical function is_time_to_write(this, time_step)
         endif
         is_time_to_write =.false.
       else
-        call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
-          ": diag_manager_mod: You skipped a time_step. Be sure that diag_send_complete is called at every "//&
-          "time_step needed by the file.")
+        !! Only fail if send data has actually been called for at least one variable
+        if (this%FMS_diag_file%has_send_data_been_called(output_buffers, .false.)) &
+          call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
+            ": diag_manager_mod: You skipped a time_step. Be sure that diag_send_complete is called at every "//&
+            "time_step needed by the file.")
       endif
     endif
   else
@@ -1675,8 +1674,12 @@ subroutine write_axis_data(this, diag_axis)
 end subroutine write_axis_data
 
 !< @brief Closes the diag_file
-subroutine close_diag_file(this)
-  class(fmsDiagFileContainer_type), intent(inout), target :: this            !< The file object
+subroutine close_diag_file(this, output_buffers, diag_fields)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
+  type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffers
+                                                                                 !! This is needed for error checking
+  type(fmsDiagField_type),          intent(in),    optional :: diag_fields(:)    !< Array of diag fields
+                                                                                 !! This is needed for error checking
 
   if (.not. this%FMS_diag_file%is_file_open) return
 
@@ -1702,6 +1705,8 @@ subroutine close_diag_file(this)
   else
     this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
   endif
+
+  if (this%FMS_diag_file%has_send_data_been_called(output_buffers, .True., diag_fields)) return
 end subroutine close_diag_file
 
 !> \brief Gets the buffer_id list from the file object
@@ -1720,5 +1725,38 @@ pure function get_number_of_buffers(this)
   get_number_of_buffers = this%number_of_buffers
 end function get_number_of_buffers
 
+!> @brief Determine if send_data has been called for any fields in the file. Prints out warnings, if indicated
+!! @return .True. if send_data has been called for any fields in the file
+function has_send_data_been_called(this, output_buffers, print_warnings, diag_fields) &
+result(rslt)
+  class(fmsDiagFile_type),        intent(in)           :: this              !< file object
+  type(fmsDiagOutputBuffer_type), intent(in), target   :: output_buffers(:) !< Array of output buffers
+  logical,                        intent(in)           :: print_warnings    !< .True. if printing warnings
+  type(fmsDiagField_type),        intent(in), optional :: diag_fields(:)    !< Array of diag fields
+
+  logical :: rslt
+  integer :: i        !< For do loops
+  integer :: field_id !< Field id
+
+  rslt = .false.
+
+  if (print_warnings) then
+    do i = 1, this%number_of_buffers
+      if (.not. output_buffers(this%buffer_ids(i))%is_there_data_to_write()) then
+        field_id = output_buffers(this%buffer_ids(i))%get_field_id()
+        call mpp_error(NOTE, "Send data was never called for field:"//&
+          trim(diag_fields(field_id)%get_varname())//" mod: "//trim(diag_fields(field_id)%get_modname())//&
+          " in file: "//trim(this%get_file_fname())//". Writting FILL VALUES!")
+      endif
+    enddo
+  else
+    do i = 1, this%number_of_buffers
+      if (output_buffers(this%buffer_ids(i))%is_there_data_to_write()) then
+        rslt = .true.
+        return
+      endif
+    enddo
+  endif
+end function has_send_data_been_called
 #endif
 end module fms_diag_file_object_mod
