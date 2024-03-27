@@ -828,7 +828,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -859,7 +859,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   - module: ocn_mod
@@ -869,7 +869,7 @@ diag_files:
     output_name: potato
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -899,7 +899,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   - module: atm_mod
@@ -909,7 +909,7 @@ diag_files:
     output_name: i_on_a_sphere
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   - module: atm_mod
@@ -919,7 +919,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   - module: atm_mod
@@ -929,7 +929,7 @@ diag_files:
     output_name: var4_bounded
     long_name:
     units:
-    zbounds: 2.000000, 3.000000
+    zbounds: 2.00, 3.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -959,7 +959,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   - module: atm_mod
@@ -969,7 +969,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -999,7 +999,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -1029,7 +1029,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -1059,7 +1059,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -1089,7 +1089,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -1119,7 +1119,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -1149,7 +1149,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
   sub_region:
@@ -1179,7 +1179,7 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.0000, -999.0000
+    zbounds: -999.00, -999.00
     n_diurnal: 12
     pow_value: 0
   sub_region:

@@ -1711,7 +1711,7 @@ subroutine fms_diag_yaml_out()
           end select
         endif
 
-        tmpstr2 = string(varptr%var_zbounds(1)) // ', ' // string(varptr%var_zbounds(2))
+        tmpstr2 = string(varptr%var_zbounds(1), "F8.2") // ', ' // string(varptr%var_zbounds(2), "F8.2")
         call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
 
         tmpstr1 = ''; tmpstr1 = string(varptr%n_diurnal)
