@@ -298,8 +298,8 @@ contains
     position = INDEX(filetail, 'dy')
     IF ( position > 0 ) THEN
        width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
-       WRITE(dy, format) dy1_s
+       FORMAT(7:9) = width//'.'//width
+       WRITE(dy, FORMAT) dy1_s
     ELSE
        dy = ' '
     END IF

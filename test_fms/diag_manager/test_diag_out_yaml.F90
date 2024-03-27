@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @author Ryan Mulhall
 !> @brief Simple test program for diag manager output yaml file.
-!! Just checks output from previous test 
+!! Just checks output from previous test
 program test_diag_out_yaml
 
 use fms_mod,          only: fms_init, fms_end
