@@ -640,6 +640,7 @@ _EOF
     mpirun -n 2 ../test_diag_ocean
   '
 
+
   printf "&diag_manager_nml \n use_modern_diag = .true. \n do_diag_field_log = .true. \n/" | cat > input.nml
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
@@ -792,6 +793,11 @@ diag_files:
     reduction: diurnal12
     kind: r4
 _EOF
+
+  my_test_count=`expr $my_test_count + 1`
+  test_expect_success "buffer functionality (test $my_test_count)" '
+    mpirun -n 1 ../test_diag_buffer
+  '
 
   my_test_count=`expr $my_test_count + 1`
   test_expect_success "Test the modern diag manager end to end (test $my_test_count)" '
@@ -1192,12 +1198,6 @@ my_test_count=`expr $my_test_count + 1`
 test_expect_success "check modern diag manager yaml output (test $my_test_count)" '
     mpirun -n 1 ../test_diag_out_yaml
 '
-
-  my_test_count=`expr $my_test_count + 1`
-  test_expect_success "buffer functionality (test $my_test_count)" '
-    mpirun -n 1 ../test_diag_buffer
-  '
-
 
 printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .true. \n /" | cat > input.nml
 cat <<_EOF > diag_table.yaml
