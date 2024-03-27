@@ -32,7 +32,7 @@ use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type,
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
                                      check_for_slices
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                           & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type
+                           & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type, fms_diag_yaml_out
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -152,6 +152,9 @@ subroutine fms_diag_object_end (this, time)
 
   integer                   :: i
 #ifdef use_yaml
+  ! write output yaml
+  call fms_diag_yaml_out()
+
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
