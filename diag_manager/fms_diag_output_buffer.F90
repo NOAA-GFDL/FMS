@@ -61,7 +61,7 @@ type :: fmsDiagOutputBuffer_type
                                                     !! ie. diurnal24 = sample size of 24
   integer               :: diurnal_section= -1 !< the diurnal section (ie 5th index) calculated from the current model
                                               !! time and sample size if using a diurnal reduction
-  logical               :: send_data_called   !< .True. if send_data has been called
+  logical, allocatable  :: send_data_called   !< .True. if send_data has been called
   type(time_type)       :: time               !< The last time the data was received
   type(time_type)       :: next_output        !< The next time to output the data
 
@@ -826,11 +826,15 @@ end subroutine get_remapped_diurnal_data
 !! @return .true. if there is data to write
 function is_there_data_to_write(this) &
   result(res)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
 
   logical :: res
 
-  res = this%send_data_called
+  if (allocated(this%send_data_called)) then
+    res = this%send_data_called
+  else
+    res = .false.
+  endif
 end function
 
 !> @brief Determine if it is time to finish the reduction method
