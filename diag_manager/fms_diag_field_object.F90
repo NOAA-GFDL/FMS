@@ -1884,6 +1884,8 @@ function check_for_slices(field, diag_axis, var_size) &
   logical :: rslt
   integer :: i !< For do loops
 
+  rslt = .false.
+
   if (.not. field%has_axis_ids()) then
     rslt = .false.
     return
