@@ -26,7 +26,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
-       & get_ticks_per_second
+       & get_ticks_per_second, date_to_string
 #ifdef use_yaml
 use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type, fms_diag_files_object_init
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
@@ -63,7 +63,6 @@ private
                                                                        !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
-  type(time_type)  :: current_model_time !< The current model time
   integer, private :: registered_variables !< Number of registered variables
   integer, private :: registered_axis !< Number of registered axis
   logical, private :: initialized=.false. !< True if the fmsDiagObject is initialized
@@ -95,7 +94,6 @@ private
     procedure :: fms_diag_field_add_cell_measures
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
-    procedure :: update_current_model_time
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -134,7 +132,6 @@ subroutine fms_diag_object_init (this,diag_subset_output)
   this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
-  this%current_model_time = get_base_time()
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -261,7 +258,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
        fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
-     call fileptr%add_start_time(init_time, this%current_model_time)
+     call fileptr%add_start_time(init_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   elseif (present(axes)) then !only axes present
@@ -280,7 +277,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
-     call fileptr%add_start_time(init_time, this%current_model_time)
+     call fileptr%add_start_time(init_time)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
     enddo
   else !no axis or init time present
@@ -304,7 +301,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       call bufferptr%set_diurnal_sample_size(yamlfptr%get_n_diurnal())
     endif
     call bufferptr%init_buffer_time(init_time)
-    call bufferptr%set_next_output(this%FMS_diag_files(file_ids(i))%get_next_output(), fieldptr%is_static())
+    call bufferptr%set_next_output(this%FMS_diag_files(file_ids(i))%get_next_output(), &
+    this%FMS_diag_files(file_ids(i))%get_next_next_output(), is_static=fieldptr%is_static())
   enddo
 
   nullify (fileptr)
@@ -636,8 +634,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
 !$omp critical
 
-    if (present(time)) call this%update_current_model_time(time)
-
     !< These set_* calls need to be done inside an omp_critical to avoid any race conditions
     !! and allocation issues
     if(has_halos) call this%FMS_diag_fields(diag_field_id)%set_halo_present()
@@ -667,7 +663,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     fms_diag_accept_data = .TRUE.
     return
   else
-    if (present(time)) call this%update_current_model_time(time)
 
     !< At this point if we are no longer in an openmp region or running with 1 thread
     !! so it is safe to have these set_* calls
@@ -800,32 +795,38 @@ subroutine fms_diag_do_io(this, end_time)
   class(*), allocatable :: missing_val !< netcdf missing value for a given field
   real(r8_kind) :: mval !< r8 copy of missing value
   character(len=128) :: error_string !< outputted error string from reducti
+  logical :: unlim_dim_was_increased !< .True. if the unlimited dimension index was increased for any of the buffers
 
   force_write = .false.
-  if (present (end_time)) then
-    force_write = .true.
-    model_time => end_time
-  else
-    model_time => this%current_model_time
-  endif
 
   do i = 1, size(this%FMS_diag_files)
     diag_file => this%FMS_diag_files(i)
 
     !< Go away if the file is a subregional file and the current PE does not have any data for it
     if (.not. diag_file%writing_on_this_pe()) cycle
+    if (diag_file%FMS_diag_file%is_done_writing_data()) cycle
+
+    if (present (end_time)) then
+      force_write = .true.
+      model_time => end_time
+    else
+      model_time => diag_file%get_model_time()
+    endif
 
     call diag_file%open_diag_file(model_time, file_is_opened_this_time_step)
     if (file_is_opened_this_time_step) then
+      ! Initialize unlimited dimension in file and the buffer to 0
+      call diag_file%init_unlim_dim(this%FMS_diag_output_buffers)
+
       call diag_file%write_global_metadata()
       call diag_file%write_axis_metadata(this%diag_axis)
       call diag_file%write_time_metadata()
       call diag_file%write_field_metadata(this%FMS_diag_fields, this%diag_axis)
       call diag_file%write_axis_data(this%diag_axis)
-      call diag_file%increase_unlim_dimension_level()
     endif
 
     finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers)
+    unlim_dim_was_increased = .false.
 
     ! finish reduction method if its time to write
     buff_ids = diag_file%FMS_diag_file%get_buffer_ids()
@@ -850,22 +851,25 @@ subroutine fms_diag_do_io(this, end_time)
                                    mval, diag_field%get_var_is_masked(), diag_field%get_mask_variant())
           endif
         endif
-        call diag_file%write_field_data(diag_field, diag_buff)
-        call diag_buff%set_next_output(diag_file%get_next_next_output())
+        call diag_file%write_field_data(diag_field, diag_buff, unlim_dim_was_increased)
+        call diag_buff%set_next_output(diag_file%get_next_output(), diag_file%get_next_next_output())
       endif
       nullify(diag_buff)
       nullify(field_yaml)
     enddo buff_loop
     deallocate(buff_ids)
 
-    if (finish_writing) then
+    if (unlim_dim_was_increased) then
       call diag_file%write_time_data()
       call diag_file%update_next_write(model_time)
+    endif
+
+    if (finish_writing) then
       call diag_file%update_current_new_file_freq_index(model_time)
-      call diag_file%increase_unlim_dimension_level()
       if (diag_file%is_time_to_close_file(model_time)) call diag_file%close_diag_file(this%FMS_diag_output_buffers, &
         diag_fields = this%FMS_diag_fields)
     else if (force_write) then
+      call diag_file%prepare_for_force_write()
       call diag_file%write_time_data()
       call diag_file%close_diag_file(this%FMS_diag_output_buffers, diag_fields = this%FMS_diag_fields)
     endif
@@ -954,6 +958,8 @@ function fms_diag_do_reduction(this, field_data, diag_field_id, oor_mask, weight
 
     !< Go away if finished doing math for this buffer
     if (buffer_ptr%is_done_with_math()) cycle
+
+    if (present(time)) call file_ptr%set_model_time(time)
 
     bounds_out = bounds
     if (.not. using_blocking) then
@@ -1475,14 +1481,5 @@ function fms_diag_compare_window(this, field, field_id, &
     "you can not use the modern diag manager without compiling with -Duse_yaml")
 #endif
 end function fms_diag_compare_window
-
-!> @brief Update the current model time in the diag object
-subroutine update_current_model_time(this, time)
-  class(fmsDiagObject_type), intent(inout) :: this !< Diag Object
-  type(time_type),           intent(in)    :: time !< Current diag manager time
-#ifdef use_yaml
-  if(time > this%current_model_time) this%current_model_time = time
-#endif
-end subroutine update_current_model_time
 
 end module fms_diag_object_mod

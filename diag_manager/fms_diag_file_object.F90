@@ -63,6 +63,7 @@ integer, parameter :: var_string_len = 25
 type :: fmsDiagFile_type
  private
   integer :: id !< The number associated with this file in the larger array of files
+  TYPE(time_type) :: model_time       !< The last time data was sent for any of the buffers in this file object
   TYPE(time_type) :: start_time       !< The start time for the file
   TYPE(time_type) :: last_output      !< Time of the last time output was writen
   TYPE(time_type) :: next_output      !< Time of the next write
@@ -184,12 +185,15 @@ type fmsDiagFileContainer_type
   procedure :: is_time_to_close_file
   procedure :: write_time_data
   procedure :: update_next_write
+  procedure :: prepare_for_force_write
+  procedure :: init_unlim_dim
   procedure :: update_current_new_file_freq_index
-  procedure :: increase_unlim_dimension_level
   procedure :: get_unlim_dimension_level
   procedure :: get_next_output
   procedure :: get_next_next_output
   procedure :: close_diag_file
+  procedure :: set_model_time
+  procedure :: get_model_time
 end type fmsDiagFileContainer_type
 
 !type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
@@ -252,6 +256,7 @@ logical function fms_diag_files_object_init (files_array)
      obj%done_writing_data = .false.
      obj%start_time = get_base_time()
      obj%last_output = get_base_time()
+     obj%model_time = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
 
@@ -963,12 +968,9 @@ end subroutine define_new_subaxis
 !> @brief adds the start time to the fileobj
 !! @note This should be called from the register field calls. It can be called multiple times (one for each variable)
 !! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
-subroutine add_start_time(this, start_time, model_time)
+subroutine add_start_time(this, start_time)
   class(fmsDiagFile_type), intent(inout)       :: this           !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
-  TYPE(time_type),         intent(out)         :: model_time     !< The current model time
-                                                                 !! this will be set to the start_time
-                                                                 !! at the begining of the run
 
   !< If the start_time sent in is equal to the base_time return because
   !! this%start_time was already set to the base_time
@@ -983,7 +985,7 @@ subroutine add_start_time(this, start_time, model_time)
   else
     !> If the this%start_time is equal to the base_time,
     !! simply update it with the start_time and set up the *_output variables
-    model_time = start_time
+    this%model_time = start_time
     this%start_time = start_time
     this%last_output = start_time
     this%next_output = diag_time_inc(start_time, this%get_file_freq(), this%get_file_frequnit())
@@ -1296,10 +1298,11 @@ subroutine write_time_metadata(this)
 end subroutine write_time_metadata
 
 !> \brief Write out the field data to the file
-subroutine write_field_data(this, field_obj, buffer_obj)
+subroutine write_field_data(this, field_obj, buffer_obj, unlim_dim_was_increased)
   class(fmsDiagFileContainer_type),        intent(in),    target :: this           !< The diag file object to write to
   type(fmsDiagField_type),                 intent(in),    target :: field_obj      !< The field object to write from
   type(fmsDiagOutputBuffer_type),          intent(inout), target :: buffer_obj     !< The buffer object with the data
+  logical, intent(inout) :: unlim_dim_was_increased
 
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(FmsNetcdfFile_t),  pointer     :: fms2io_fileobj !< Fileobj to write to
@@ -1307,6 +1310,14 @@ subroutine write_field_data(this, field_obj, buffer_obj)
 
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
+
+  !< Increase the unlim dimension index for the output buffer and update the output buffer for the file
+  !! if haven't already
+  call buffer_obj%increase_unlim_dim()
+  if (buffer_obj%get_unlim_dim() > diag_file%unlim_dimension_level) then
+    diag_file%unlim_dimension_level = buffer_obj%get_unlim_dim()
+    unlim_dim_was_increased = .true.
+  endif
 
   !TODO This may be offloaded in the future
   if (diag_file%is_static) then
@@ -1317,15 +1328,15 @@ subroutine write_field_data(this, field_obj, buffer_obj)
   else
     if (field_obj%is_static()) then
       !< If the variable is static, only write it the first time
-      if (diag_file%unlim_dimension_level .eq. 1) then
+      if (buffer_obj%get_unlim_dim() .eq. 1) then
         call buffer_obj%write_buffer(fms2io_fileobj)
         diag_file%data_has_been_written = .true.
       endif
     else
-     diag_file%data_has_been_written = .true.
+     if (unlim_dim_was_increased) diag_file%data_has_been_written = .true.
      has_diurnal = buffer_obj%get_diurnal_sample_size() .gt. 1
       call buffer_obj%write_buffer(fms2io_fileobj, &
-                        unlim_dim_level=diag_file%unlim_dimension_level, is_diurnal=has_diurnal)
+                        unlim_dim_level=buffer_obj%get_unlim_dim(), is_diurnal=has_diurnal)
     endif
   endif
 
@@ -1340,7 +1351,11 @@ logical function is_time_to_close_file (this, time_step)
   if (time_step >= this%FMS_diag_file%next_close) then
     is_time_to_close_file = .true.
   else
-    is_time_to_close_file = .false.
+    if (this%FMS_diag_file%is_static) then
+      is_time_to_close_file = .true.
+    else
+      is_time_to_close_file = .false.
+    endif
   endif
 end function
 
@@ -1358,10 +1373,11 @@ logical function is_time_to_write(this, time_step, output_buffers)
       if (this%FMS_diag_file%num_registered_fields .eq. 0) then
         !! If no variables have been registered, write a dummy time dimension for the first level
         !! At least one time level is needed for the combiner to work ...
-        if (this%FMS_diag_file%unlim_dimension_level .eq. 1) then
+        if (this%FMS_diag_file%unlim_dimension_level .eq. 0) then
           call mpp_error(NOTE, this%FMS_diag_file%get_file_fname()//&
             ": diag_manager_mod: This file does not have any variables registered. Fill values will be written")
           this%FMS_diag_file%data_has_been_written = .true.
+          this%FMS_diag_file%unlim_dimension_level = 1
         endif
         is_time_to_write =.false.
       else
@@ -1437,6 +1453,7 @@ subroutine write_time_data(this)
     endif
   endif
 
+  diag_file%data_has_been_written = .false.
 end subroutine write_time_data
 
 !> \brief Updates the current_new_file_freq_index if using a new_file_freq
@@ -1464,6 +1481,8 @@ subroutine update_current_new_file_freq_index(this, time_step)
        diag_file%next_close = diag_file%no_more_data
     endif
   endif
+
+  if (diag_file%is_static) diag_file%done_writing_data = .true.
 end subroutine update_current_new_file_freq_index
 
 !> \brief Set up the next_output and next_next_output variable in a file obj
@@ -1488,13 +1507,32 @@ subroutine update_next_write(this, time_step)
 
 end subroutine update_next_write
 
-!> \brief Increase the unlimited dimension level that the file is currently being written to
-subroutine increase_unlim_dimension_level(this)
+!> \brief Prepare the diag file for the force_write
+subroutine prepare_for_force_write(this)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
 
-  this%FMS_diag_file%unlim_dimension_level = this%FMS_diag_file%unlim_dimension_level + 1
-  this%FMS_diag_file%data_has_been_written = .false.
-end subroutine increase_unlim_dimension_level
+  if (this%FMS_diag_file%unlim_dimension_level .eq. 0) then
+    this%FMS_diag_file%unlim_dimension_level = 1
+    this%FMS_diag_file%data_has_been_written = .true.
+  endif
+end subroutine prepare_for_force_write
+
+!> \brief Initialize the unlim dimension in the file and in its buffer objects to 0
+subroutine init_unlim_dim(this, output_buffers)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+  type(fmsDiagOutputBuffer_type),   intent(in),    target   :: output_buffers(:) !< Array of output buffer.
+
+  class(fmsDiagFile_type),        pointer :: diag_file         !< Diag_file object
+  type(fmsDiagOutputBuffer_type), pointer :: output_buffer_obj !< Buffer object
+  integer :: i !< For looping through buffers
+
+  diag_file => this%FMS_diag_file
+  diag_file%unlim_dimension_level = 0
+  do i = 1, diag_file%number_of_buffers
+    output_buffer_obj => output_buffers(diag_file%buffer_ids(i))
+    call output_buffer_obj%init_buffer_unlim_dim()
+  enddo
+end subroutine init_unlim_dim
 
 !> \brief Get the unlimited dimension level that is in the file
 !! \return The unlimited dimension
@@ -1709,6 +1747,24 @@ subroutine close_diag_file(this, output_buffers, diag_fields)
 
   if (this%FMS_diag_file%has_send_data_been_called(output_buffers, .True., diag_fields)) return
 end subroutine close_diag_file
+
+!> \brief Set the model time for the diag file object
+subroutine set_model_time(this, model_time)
+  class(fmsDiagFileContainer_type), intent(inout)       :: this            !< The file object
+  type(time_type),         intent(in)          :: model_time      !< Model time to add
+
+  if (model_time > this%FMS_diag_file%model_time) this%FMS_diag_file%model_time = model_time
+end subroutine
+
+!> \brief Get the model time from the file object
+!! \result A pointer to the model time
+function get_model_time(this) &
+  result(rslt)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
+  type(time_type), pointer :: rslt
+
+  rslt => this%FMS_diag_file%model_time
+end function get_model_time
 
 !> \brief Gets the buffer_id list from the file object
 pure function get_buffer_ids (this)
