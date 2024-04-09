@@ -364,7 +364,7 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
   class(fmsDiagFile_type),      intent(inout) :: this      !< The file object
   type (diagYamlFilesVar_type), intent(in)    :: VarYaml   !< The variable's yaml file
   logical,                      intent(in)    :: is_static !< Flag indicating if variable is static
-  integer, allocatable :: var_reduct !< temp to hold enumerated reduction type 
+  integer, allocatable :: var_reduct !< temp to hold enumerated reduction type
 
   !< Go away if the file is static
   if (this%is_static) return
