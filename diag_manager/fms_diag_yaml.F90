@@ -954,9 +954,9 @@ end function get_file_unlimdim
 !! @return file_sub_region of a diag_yaml_file_obj
 function get_file_sub_region (this) &
 result (res)
- class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
- type(subRegion_type) :: res !< What is returned
-  res = this%file_sub_region
+ class (diagYamlFiles_type), target, intent(in) :: this !< The object being inquiried
+ type(subRegion_type), pointer :: res !< What is returned
+  res => this%file_sub_region
 end function get_file_sub_region
 !> @brief Inquiry for diag_files_obj%file_new_file_freq
 !! @return file_new_file_freq of a diag_yaml_file_obj
