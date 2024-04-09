@@ -261,9 +261,9 @@ contains
 !! @return a copy of the diag_yaml module variable
 function get_diag_yaml_obj() &
 result(res)
-  type (diagYamlObject_type) :: res
+  type (diagYamlObject_type), pointer :: res
 
-  res= diag_yaml
+  res => diag_yaml
 end function get_diag_yaml_obj
 
 !> @brief get the basedate of a diag_yaml type
@@ -1476,7 +1476,7 @@ subroutine dump_diag_yaml_obj( filename )
   character(len=*), optional, intent(in)        :: filename !< optional name of logfile to write to, otherwise
                                                             !! prints to stdout
   type(diagyamlfilesvar_type), allocatable      :: fields(:)
-  type(diagyamlfiles_type), allocatable         :: files(:)
+  type(diagyamlfiles_type), pointer :: files(:)
   integer                                       :: i, unit_num
   if( present(filename)) then
     open(newunit=unit_num, file=trim(filename), action='WRITE')
@@ -1490,8 +1490,7 @@ subroutine dump_diag_yaml_obj( filename )
     if( diag_yaml%has_diag_basedate()) write(unit_num, *) 'basedate array:', diag_yaml%diag_basedate
     write(unit_num, *) 'FILES'
     allocate(fields(SIZE(diag_yaml%get_diag_fields())))
-    allocate(files(SIZE(diag_yaml%get_diag_files())))
-    files = diag_yaml%get_diag_files()
+    files => diag_yaml%diag_files 
     fields = diag_yaml%get_diag_fields()
     do i=1, SIZE(files)
       write(unit_num, *) 'File: ', files(i)%get_file_fname()
@@ -1528,7 +1527,8 @@ subroutine dump_diag_yaml_obj( filename )
       if(fields(i)%has_pow_value()) write(unit_num, *) 'pow_value:', fields(i)%get_pow_value()
       if(fields(i)%has_var_attributes()) write(unit_num, *) 'is_var_attributes:', fields(i)%is_var_attributes()
     enddo
-    deallocate(files, fields)
+    deallocate(fields)
+    nullify(files)
     if( present(filename)) then
       close(unit_num)
     endif

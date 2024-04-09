@@ -53,10 +53,9 @@ integer :: io_status !< The status after reading the input.nml
 integer, allocatable :: indices(:) !< Array of indices
 
 #ifdef use_yaml
-type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from the diag_yaml
+type(diagYamlFiles_type), pointer, dimension (:) :: diag_files !< Files from the diag_yaml
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
-type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
-type(diagYamlObject_type) :: ans     !< expected diagYamlObject
+type(diagYamlObject_type), pointer :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
 integer, ALLOCATABLE :: diag_files_ids(:) !< Ids of the diag_files
 #endif
 
@@ -76,7 +75,7 @@ call set_calendar_type(JULIAN)
 call diag_data_init()
 call diag_yaml_object_init(DIAG_ALL)
 
-my_yaml = get_diag_yaml_obj()
+my_yaml => get_diag_yaml_obj()
 
 if (.not. checking_crashes) then
   call compare_result("base_date", my_yaml%get_basedate(), (/2, 1, 1, 0, 0 , 0 /))
@@ -84,7 +83,7 @@ if (.not. checking_crashes) then
 
   call compare_result("title", my_yaml%get_title(), "test_diag_manager")
 
-  diag_files = my_yaml%get_diag_files()
+  diag_files => my_yaml%diag_files
   call compare_result("nfiles", size(diag_files), 3) !< the fourth file has file_write = false so it doesn't count
   call compare_diag_files(diag_files)
 
@@ -95,7 +94,7 @@ if (.not. checking_crashes) then
   !< Check that get_num_unique_fields is getting the correct number of unique fields
   call compare_result("number of unique fields", get_num_unique_fields(), 2)
 
-  deallocate(diag_files)
+  nullify(diag_files)
   deallocate(diag_fields)
 
   indices = find_diag_field("sst", "test_diag_manager_mod")
@@ -112,14 +111,12 @@ if (.not. checking_crashes) then
   deallocate(diag_fields)
 
   diag_files_ids = get_diag_files_id(indices)
-  allocate(diag_files(size(diag_files_ids)))
 
-  diag_files(1) = my_yaml%diag_files(diag_files_ids(1))
-  diag_files(2) = my_yaml%diag_files(diag_files_ids(2))
+  diag_files => my_yaml%diag_files(1:2)
   call compare_result("sst - nfiles", size(diag_files), 2)
-  call compare_result("sst - filename", diag_files(1)%get_file_fname(), "normal")
-  call compare_result("sst - filename", diag_files(2)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")
-  deallocate(diag_files)
+  call compare_result("sst - filename", diag_files(2)%get_file_fname(), "normal")
+  call compare_result("sst - filename", diag_files(1)%get_file_fname(), "wild_card_name%4yr%2mo%2dy%2hr")
+  nullify(diag_files)
   deallocate(indices)
 
   indices = find_diag_field("sstt", "test_diag_manager_mod")
