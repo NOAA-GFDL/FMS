@@ -152,11 +152,11 @@ subroutine fms_diag_object_end (this, time)
 
   integer                   :: i
 #ifdef use_yaml
-  ! write output yaml
-  call fms_diag_yaml_out()
-
   !TODO: loop through files and force write
   if (.not. this%initialized) return
+
+  ! write output yaml
+  call fms_diag_yaml_out()
 
   call this%do_buffer_math()
   call this%fms_diag_do_io(end_time=time)

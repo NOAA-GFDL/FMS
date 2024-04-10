@@ -30,7 +30,6 @@
 !> @{
 module fms_diag_yaml_mod
 
-#define DEBUG .false.
 #ifdef use_yaml
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
@@ -40,7 +39,7 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
 use fms_yaml_output_mod, only: fmsYamlOutKeys_type, fmsYamlOutValues_type, write_yaml_from_struct_3, &
-                               yaml_out_add_level2key, initialize_key_struct, initialize_val_struct 
+                               yaml_out_add_level2key, initialize_key_struct, initialize_val_struct
 use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string, &
@@ -462,7 +461,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
       if(diag_yaml%diag_fields(var_count)%has_var_outname()) then
         diag_yaml%diag_files(file_count)%file_outlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_outname
       else
-        diag_yaml%diag_files(file_count)%file_outlist(file_var_count) = "" 
+        diag_yaml%diag_files(file_count)%file_outlist(file_var_count) = ""
       endif
 
       !> Save the variable name and the module name in the variable_list
@@ -1630,7 +1629,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
     call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
     tmpstr1 = ''
-    do k=1, SIZE(fileptr%file_freq) 
+    do k=1, SIZE(fileptr%file_freq)
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_freq(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1638,7 +1637,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(vals2(i)%val2, adjustl(tmpstr1))
     call fms_f2c_string(vals2(i)%val3, get_diag_unit_string(fileptr%file_frequnit))
     tmpstr1 = ''
-    do k=1, SIZE(fileptr%file_new_file_freq) 
+    do k=1, SIZE(fileptr%file_new_file_freq)
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_new_file_freq(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1648,7 +1647,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(vals2(i)%val8, trim(fileptr%get_file_start_time()))
     st_vals(i) = fileptr%get_file_start_time()
     tmpstr1 = ''
-    do k=1, SIZE(fileptr%file_duration) 
+    do k=1, SIZE(fileptr%file_duration)
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_duration(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1667,8 +1666,6 @@ subroutine fms_diag_yaml_out()
         !! find the variable object from the list
         varptr => NULL()
         do varnum_i=1, SIZE(diag_yaml%diag_fields)
-          if(DEBUG) print *, 'diag_obj', trim(diag_yaml%diag_fields(varnum_i)%var_varname)
-          if(DEBUG) print *, 'file obj', trim(diag_yaml%diag_fields(varnum_i)%var_varname)
           if( trim(diag_yaml%diag_fields(varnum_i)%var_varname ) .eq. trim(fileptr%file_varlist(j)) .and. &
               trim(diag_yaml%diag_fields(varnum_i)%var_fname) .eq. trim(fileptr%file_fname)) then
             ! if theres a output name, that should match as well
@@ -1873,8 +1870,6 @@ subroutine fms_diag_yaml_out()
   enddo
   tier2size = i
 
-  if (DEBUG) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
-                                                      & 'tier3size', tier3size, 'tier3each', tier3each
   call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
                                  tier3size, tier3each, keys3, vals3,       &
@@ -1891,7 +1886,7 @@ pure function get_diag_unit_string( unit_param )
     character(len=7) :: tmp
     integer :: i
     get_diag_unit_string = ' '
-    do i=1, SIZE(unit_param) 
+    do i=1, SIZE(unit_param)
         select case(unit_param(i))
             case (DIAG_SECONDS)
                 tmp = 'seconds'
@@ -1905,13 +1900,12 @@ pure function get_diag_unit_string( unit_param )
                 tmp = 'months'
             case (DIAG_YEARS)
                 tmp = 'years'
-            case default 
-                tmp = 'null' 
+            case default
+                tmp = 'null'
         end select
         get_diag_unit_string = trim(get_diag_unit_string)//" "//trim(tmp)
     enddo
     get_diag_unit_string = adjustl(get_diag_unit_string)
-    
 end function
 
 !> private function for getting reduction type string from parameter values
@@ -1921,7 +1915,7 @@ pure function get_diag_reduction_string( reduction_val )
     character(len=8 * MAX_FREQ) :: get_diag_reduction_string
     character(len=7) :: tmp
     get_diag_reduction_string = ''
-    do i=1, SIZE(reduction_val) 
+    do i=1, SIZE(reduction_val)
         select case (reduction_val(i))
             case (time_none)
                 tmp = 'none'
@@ -1938,7 +1932,7 @@ pure function get_diag_reduction_string( reduction_val )
             case (time_diurnal)
                 tmp = 'diurnal'
             case default
-                exit 
+                exit
         end select
         get_diag_reduction_string = trim(get_diag_reduction_string) //" "//trim(tmp)
     enddo
