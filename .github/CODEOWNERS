@@ -52,7 +52,7 @@ cmake            @mlee03
 /block_control/          @bensonr
 /test_fms/block_control/ @bensonr @rem1776
 
-#/data_override/ Currently no code owner 
+#/data_override/ Currently no code owner
 /test_fms/data_override/ @rem1776
 
 /diag_manager            @thomas-robinson
