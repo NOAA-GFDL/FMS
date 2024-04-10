@@ -451,7 +451,7 @@ subroutine init_buffer_unlim_dim(this)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
 
   this%unlmited_dimension = 0
-end subroutine
+end subroutine init_buffer_unlim_dim
 
 !> @brief Write the buffer to the file
 subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
