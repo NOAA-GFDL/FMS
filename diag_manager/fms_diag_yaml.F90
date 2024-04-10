@@ -531,6 +531,8 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
   character(len=:), ALLOCATABLE :: grid_type !< grid_type as it is read in from the yaml
   character(len=:), ALLOCATABLE :: buffer      !< buffer to store any *_units as it is read from the yaml
 
+  yaml_fileobj%file_frequnit = 0
+
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", yaml_fileobj%file_fname)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq", buffer)
   call parse_key(yaml_fileobj%file_fname, buffer, yaml_fileobj%file_freq, yaml_fileobj%file_frequnit, "freq")
@@ -1643,7 +1645,7 @@ subroutine fms_diag_yaml_out()
     enddo
     call fms_f2c_string(vals2(i)%val6, adjustl(tmpstr1))
     call fms_f2c_string(vals2(i)%val7, get_diag_unit_string(fileptr%file_new_file_freq_units))
-    call fms_f2c_string(vals(i)%val8, trim(fileptr%get_file_start_time()))
+    call fms_f2c_string(vals2(i)%val8, trim(fileptr%get_file_start_time()))
     st_vals(i) = fileptr%get_file_start_time()
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_duration) 
@@ -1870,13 +1872,6 @@ subroutine fms_diag_yaml_out()
     endif
   enddo
   tier2size = i
-  ! gcc bug seems to occasionally ignore the start_time key when its set in the loop above
-  ! so we'll just set them again
-  do i=1, SIZE(keys2)
-    call fms_f2c_string(keys2(i)%key8, 'start_time')
-    call fms_f2c_string(vals2(i)%val8, st_vals(i))
-  enddo
-  call fms_f2c_string(keys3(1)%key4, 'kind') !! also misses the first kind key unless its set again
 
   if (DEBUG) print *, 'tier1size', 1, 'tier2size', SIZE(diag_yaml%diag_files), &
                                                       & 'tier3size', tier3size, 'tier3each', tier3each
