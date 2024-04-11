@@ -1,0 +1,32 @@
+name: Run MOM6 test suite
+
+# runs on PR's or when manually triggered
+on: [workflow_dispatch, pull_request]
+
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+    steps:
+    - name: Checkout MOM6 repository
+      uses: actions/checkout@v4
+      with:
+        repository: 'NOAA-GFDL/MOM6'
+        submodules: recursive
+    - name: Checkout FMS into MOM build
+      uses: actions/checkout@v4
+      with:
+        path: .testing/deps/fms/src
+    - name: Build FMS and MOM test suite
+      run: make -C .testing -j
+    - name: Run MOM tests
+      run: make -C .testing -j test
