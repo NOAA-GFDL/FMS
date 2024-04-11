@@ -34,7 +34,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
-                         middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype
+                         middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype, null_gridtype
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -364,6 +364,7 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
   class(fmsDiagFile_type),      intent(inout) :: this      !< The file object
   type (diagYamlFilesVar_type), intent(in)    :: VarYaml   !< The variable's yaml file
   logical,                      intent(in)    :: is_static !< Flag indicating if variable is static
+  integer, allocatable :: var_reduct !< temp to hold enumerated reduction type
 
   !< Go away if the file is static
   if (this%is_static) return
@@ -375,7 +376,8 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
                             " has variables that are time averaged and instantaneous")
     endif
   else
-    select case (VarYaml%get_var_reduction())
+    var_reduct = VarYaml%get_var_reduction()
+    select case (var_reduct)
       case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
         this%time_ops = .true.
     end select
@@ -514,24 +516,28 @@ pure function get_file_unlimdim (this) result(res)
 end function get_file_unlimdim
 
 !> \brief Returns a copy of file_sub_region from the yaml object
-!! \return Copy of file_sub_region
+!! \return Pointer to file_sub_region
 function get_file_sub_region (obj) result(res)
- class(fmsDiagFile_type), intent(in) :: obj !< The file object
- type(subRegion_type) :: res
-  res = obj%diag_yaml_file%get_file_sub_region()
+ class(fmsDiagFile_type), target, intent(in) :: obj !< The file object
+ type(subRegion_type), pointer :: res
+  res => obj%diag_yaml_file%get_file_sub_region()
 end function get_file_sub_region
 
 !< @brief Query for the subregion grid type (latlon or index)
-!! @return subregion grid type
+!! @return Pointer to subregion grid type
 function get_file_sub_region_grid_type(this) &
   result(res)
   class(fmsDiagFile_type), intent(in) :: this !< Diag file object
   integer :: res
 
-  type(subRegion_type) :: subregion !< Subregion type
+  type(subRegion_type), pointer :: subregion !< Subregion type
 
-  subregion = this%diag_yaml_file%get_file_sub_region()
-  res = subregion%grid_type
+  if(this%diag_yaml_file%has_file_sub_region()) then
+    subregion => this%diag_yaml_file%get_file_sub_region()
+    res = subregion%grid_type
+  else
+    res = null_gridtype
+  endif
 end function get_file_sub_region_grid_type
 
 !> \brief Returns a copy of file_new_file_freq from the yaml object
@@ -718,7 +724,7 @@ end subroutine set_domain_from_axis
 subroutine set_file_domain(this, domain, type_of_domain)
   class(fmsDiagFile_type), intent(inout)       :: this            !< The file object
   integer,                 INTENT(in)          :: type_of_domain !< fileobj_type to use
-  CLASS(diagDomain_t),     INTENT(in), target  :: domain         !< Domain
+  CLASS(diagDomain_t),     INTENT(in), pointer :: domain         !< Domain
 
   if (type_of_domain .ne. this%type_of_domain) then
   !! If the current type_of_domain in the file obj is not the same as the variable calling this subroutine

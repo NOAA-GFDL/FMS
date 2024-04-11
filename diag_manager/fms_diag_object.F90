@@ -22,7 +22,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
                          &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
                          &time_none, time_max, time_min, time_sum, time_average, time_diurnal, &
-                         &time_power, time_rms, r8
+                         &time_power, time_rms, r8, NO_DOMAIN
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -257,7 +257,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      fileptr => this%FMS_diag_files(file_ids(i))%FMS_diag_file
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
-     call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
+     if(fieldptr%get_type_of_domain() .eq. NO_DOMAIN) then
+       call fileptr%set_file_domain(NULL(), fieldptr%get_type_of_domain())
+     else
+       call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
+     endif
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
        fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
@@ -270,7 +274,11 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
-     call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
+     if(fieldptr%get_type_of_domain() .eq. NO_DOMAIN) then
+       call fileptr%set_file_domain(NULL(), fieldptr%get_type_of_domain())
+     else
+       call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
+     endif
      call fileptr%add_axes(axes, this%diag_axis, this%registered_axis, diag_field_indices(i), &
        fieldptr%buffer_ids(i), this%FMS_diag_output_buffers)
      call fileptr%set_file_time_ops (fieldptr%diag_field(i), fieldptr%is_static())
