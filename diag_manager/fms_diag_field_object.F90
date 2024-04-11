@@ -1193,6 +1193,8 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
   character(len=120)                       :: cell_methods!< Cell methods attribute to write
   integer                                  :: i           !< For do loops
   character (len=MAX_STR_LEN), allocatable :: yaml_field_attributes(:,:) !< Variable attributes defined in the yaml
+  character(len=:), allocatable :: interp_method_tmp !< temp to hold the name of the interpolation method
+  integer :: interp_method_len !< length of the above string
 
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   var_name = field_yaml%get_var_outname()
@@ -1235,8 +1237,10 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
   endif
 
   if (this%has_interp_method()) then
-    call register_variable_attribute(fms2io_fileobj, var_name, "interp_method", this%get_interp_method(), &
-      str_len=len_trim(this%get_interp_method()))
+    interp_method_tmp = this%interp_method
+    interp_method_len = len_trim(interp_method_tmp)
+    call register_variable_attribute(fms2io_fileobj, var_name, "interp_method", interp_method_tmp, &
+      str_len=interp_method_len)
   endif
 
   cell_methods = ""
@@ -1797,12 +1801,18 @@ function find_missing_value(this, missing_val) &
   result(res)
   class(fmsDiagField_type), intent(in) :: this !< field object to get missing value for
   class(*), allocatable, intent(out) :: missing_val !< outputted netcdf missing value (oriignal type)
-  real(r8_kind) :: res !< returned r8 copy of missing_val
+  real(r8_kind), allocatable :: res !< returned r8 copy of missing_val
+  integer :: vtype !< temp to hold enumerated variable type
 
   if(this%has_missing_value()) then
     missing_val = this%get_missing_value(this%get_vartype())
   else
-    missing_val = get_default_missing_value(this%get_vartype())
+    vtype = this%get_vartype()
+    if(vtype .eq. r8) then
+      missing_val = CMOR_MISSING_VALUE
+    else
+      missing_val = real(CMOR_MISSING_VALUE, r4_kind)
+    endif
   endif
 
   select type(missing_val)

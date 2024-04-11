@@ -31,8 +31,8 @@ use platform_mod
 
 implicit none
 
-type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
-type(diagYamlFiles_type), allocatable, dimension (:) :: diag_files !< Files from the diag_yaml
+type(diagYamlObject_type), pointer :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
+type(diagYamlFiles_type), pointer, dimension (:) :: diag_files !< Files from the diag_yaml
 type(diagYamlFilesVar_type), allocatable, dimension(:) :: diag_fields !< Fields from the diag_yaml
 character(len=10), allocatable :: file_names(:) !< The expected names of the files
 character(len=10), allocatable :: var_names(:) !< The expected names of the variables
@@ -69,8 +69,8 @@ endif
 
 call diag_manager_init(diag_model_subset=diag_subset)
 
-my_yaml = get_diag_yaml_obj()
-diag_files = my_yaml%get_diag_files()
+my_yaml => get_diag_yaml_obj()
+diag_files => my_yaml%diag_files
 if (size(diag_files) .ne. nfiles) call mpp_error(FATAL, "The number of files should be "//string(nfiles))
 
 do i = 1, nfiles
@@ -88,7 +88,7 @@ do i = 1, nvariables
       &trim(var_names(i))//" not "//diag_fields(i)%get_var_varname())
 end do
 
-deallocate(diag_files)
+nullify(diag_files)
 deallocate(diag_fields)
 deallocate(file_names)
 deallocate(var_names)
