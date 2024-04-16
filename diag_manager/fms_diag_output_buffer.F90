@@ -62,6 +62,7 @@ type :: fmsDiagOutputBuffer_type
   integer               :: diurnal_section= -1 !< the diurnal section (ie 5th index) calculated from the current model
                                               !! time and sample size if using a diurnal reduction
   logical, allocatable  :: send_data_called   !< .True. if send_data has been called
+  integer               :: unlmited_dimension !< Unlimited dimension index of the last write for this output buffer
   type(time_type)       :: time               !< The last time the data was received
   type(time_type)       :: next_output        !< The next time to output the data
 
@@ -81,6 +82,9 @@ type :: fmsDiagOutputBuffer_type
   procedure :: is_done_with_math
   procedure :: set_done_with_math
   procedure :: write_buffer
+  procedure :: init_buffer_unlim_dim
+  procedure :: increase_unlim_dim
+  procedure :: get_unlim_dim
   !! These are needed because otherwise the write_data calls will go into the wrong interface
   procedure :: write_buffer_wrapper_netcdf
   procedure :: write_buffer_wrapper_domain
@@ -352,22 +356,37 @@ subroutine init_buffer_time(this, time)
 
   if (present(time)) then
     this%time = time
+    this%next_output = time
   else
     this%time = get_base_time()
+    this%next_output = this%time
   endif
 end subroutine init_buffer_time
 
 !> @brief Sets the next output
-subroutine set_next_output(this, time, is_static)
-  class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
-  type(time_type),                 intent(in)    :: time        !< time to add to the buffer
-  logical, optional,               intent(in)    :: is_static   !< .True. if the field is static
+subroutine set_next_output(this, next_output, next_next_output, is_static)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this             !< Buffer object
+  type(time_type),                 intent(in)    :: next_output      !< The current next_output in the file obj
+  type(time_type),                 intent(in)    :: next_next_output !< The current next_next_output in the file obj
+  logical, optional,               intent(in)    :: is_static        !< .True. if the field is static
 
-  this%next_output = time
   if (present(is_static)) then
     !< If the field is static set the next_output to be equal to time
     !! this should only be used in the init, so next_output will be equal to the the init time
-    if (is_static) this%next_output = this%time
+    if (is_static) then
+      this%next_output = this%time
+      return
+    endif
+  endif
+
+  !< If the file's next_output is greater than the buffer's next output set
+  !! the buffer's next output to the file's next_ouput, otherwise use the file's
+  !! next_next_output
+  !! This is needed for when file have fields that get data send data sent at different frequencies
+  if (next_output > this%next_output) then
+    this%next_output = next_output
+  else
+    this%next_output = next_next_output
   endif
 end subroutine set_next_output
 
@@ -409,6 +428,30 @@ function get_yaml_id(this) &
 
   res = this%yaml_id
 end function get_yaml_id
+
+!> @brief Get the unlim dimension index of the buffer object
+!! @return The unlim dimension index of the buffer object
+function get_unlim_dim(this) &
+  result(res)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this            !< buffer object to write
+  integer :: res
+
+  res = this%unlmited_dimension
+end function get_unlim_dim
+
+!> @brief Increase the unlim dimension index of the buffer object
+subroutine increase_unlim_dim(this)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
+
+  this%unlmited_dimension = this%unlmited_dimension + 1
+end subroutine increase_unlim_dim
+
+!> @brief Init the unlim dimension index of the buffer object to 0
+subroutine init_buffer_unlim_dim(this)
+  class(fmsDiagOutputBuffer_type), intent(inout) :: this            !< buffer object to write
+
+  this%unlmited_dimension = 0
+end subroutine init_buffer_unlim_dim
 
 !> @brief Write the buffer to the file
 subroutine write_buffer(this, fms2io_fileobj, unlim_dim_level, is_diurnal)
