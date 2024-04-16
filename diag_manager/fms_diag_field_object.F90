@@ -17,7 +17,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
 use fms_string_utils_mod, only: int2str=>string
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
-  & find_diag_field, get_num_unique_fields, diag_yaml, variable_list
+  & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
   & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type
 use time_manager_mod, ONLY: time_type, get_date
@@ -261,9 +261,10 @@ subroutine fms_register_diag_field_obj &
  LOGICAL,          OPTIONAL,     INTENT(in)    :: static                !< Set to true if it is a static field
  LOGICAL,          OPTIONAL,     INTENT(in)    :: multiple_send_data    !< .True. if send data is called, multiple
                                                                         !! times for the same time
- integer :: i, j
+ integer :: i, j !< for looponig over field/axes indices
  character(len=:), allocatable, target :: a_name_tmp !< axis name tmp
- integer :: yaml_field_id
+ integer :: yaml_field_id !< yaml field/var index (within diag_yaml%diag_fields)
+ type(diagYamlFilesVar_type), pointer :: yaml_var_ptr
 
 !> Fill in information from the register call
   this%varname = trim(varname)
@@ -271,7 +272,6 @@ subroutine fms_register_diag_field_obj &
 
 !> Add the yaml info to the diag_object
   this%diag_field = get_diag_fields_entries(diag_field_indices)
-
 
   if (present(static)) then
     this%static = static
@@ -282,52 +282,47 @@ subroutine fms_register_diag_field_obj &
 !> Add axis and domain information
   if (present(axes)) then
 
-    print *, "registering field ", trim(varname), " axes ids: ", axes
     this%scalar = .false.
     this%axis_ids = axes
     call get_domain_and_domain_type(diag_axis, this%axis_ids, this%type_of_domain, this%domain, this%varname)
 
-    ! Add axis names to stored list for output yaml
-    do i=1, SIZE(diag_field_indices) 
-      yaml_field_id = variable_list%diag_field_indices(diag_field_indices(i))
+    ! store dim names for output
+    ! cant use diag fields when
+    do i=1, SIZE(diag_field_indices)
+      yaml_var_ptr => diag_yaml%get_diag_field_from_id(diag_field_indices(i))
+      ! add dim names from axes
       do j=1, SIZE(axes)
-        a_name_tmp = diag_axis(axes(j))%axis%get_axis_name( & 
-                      diag_yaml%diag_fields(yaml_field_id)%var_file_is_subregional) 
-        ! need to adjust dim name for zbounds sub-axis if used
-        if(diag_yaml%diag_fields(yaml_field_id)%has_var_zbounds() .and. a_name_tmp .eq. 'z') & 
+        a_name_tmp = diag_axis(axes(j))%axis%get_axis_name( yaml_var_ptr%is_file_subregional())
+        if(yaml_var_ptr%has_var_zbounds() .and. a_name_tmp .eq. 'z') &
           a_name_tmp = trim(a_name_tmp)//"_sub01"
-        call diag_yaml%diag_fields(yaml_field_id)%add_axis_name(a_name_tmp) 
-        print *, "added name: ", a_name_tmp, " to diag field: ", &
-                 diag_yaml%diag_fields(yaml_field_id)%get_var_varname(), &
-                " file: ", diag_yaml%diag_fields(yaml_field_id)%get_var_fname()
+        call yaml_var_ptr%add_axis_name(a_name_tmp)
       enddo
-      ! add time_of_day_N if diurnal
-      if(diag_yaml%diag_fields(yaml_field_id)%has_n_diurnal()) then
-        a_name_tmp = "time_of_day_"// int2str(diag_yaml%diag_fields(yaml_field_id)%get_n_diurnal())
-        call diag_yaml%diag_fields(yaml_field_id)%add_axis_name(a_name_tmp) 
+      ! add time_of_day_N dimension if diurnal
+      if(yaml_var_ptr%has_n_diurnal()) then
+        a_name_tmp = "time_of_day_"// int2str(yaml_var_ptr%get_n_diurnal())
+        call yaml_var_ptr%add_axis_name(a_name_tmp)
       endif
-      ! add time dimension to list if not static
+      ! add time dimension if not static
       if(.not. this%static) then
         a_name_tmp = "time"
-        yaml_field_id = variable_list%diag_field_indices(diag_field_indices(i))
-        call diag_yaml%diag_fields(yaml_field_id)%add_axis_name(a_name_tmp) 
+        call yaml_var_ptr%add_axis_name(a_name_tmp)
       endif
     enddo
   else
-    print *, "registering field ", trim(varname), " as scalar"
     !> The variable is a scalar
     this%scalar = .true.
     this%type_of_domain = NO_DOMAIN
     this%domain => null()
-    ! if not static, always has time dimension
+    ! store dim name for output (just the time if not static and no axes)
     if(.not. this%static) then
-      do i=1, SIZE(diag_field_indices) 
+      do i=1, SIZE(diag_field_indices)
         a_name_tmp = "time"
-        yaml_field_id = variable_list%diag_field_indices(diag_field_indices(i))
-        call diag_yaml%diag_fields(yaml_field_id)%add_axis_name(a_name_tmp) 
+        yaml_var_ptr => diag_yaml%get_diag_field_from_id(diag_field_indices(i))
+        call yaml_var_ptr%add_axis_name(a_name_tmp)
       enddo
     endif
   endif
+  nullify(yaml_var_ptr)
 
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname))      this%longname      = trim(longname)

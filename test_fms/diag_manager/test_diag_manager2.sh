@@ -831,7 +831,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
-    dimensions: z 
+    dimensions: z
   sub_region:
   - grid_type: null
     tile: -999
@@ -1104,7 +1104,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
-    dimensions: time y x 
+    dimensions: time y x
   sub_region:
   - grid_type: null
     tile: -999

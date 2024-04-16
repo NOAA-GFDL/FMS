@@ -29,7 +29,6 @@
 !> @addtogroup fms_diag_yaml_mod
 !> @{
 module fms_diag_yaml_mod
-
 #ifdef use_yaml
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
@@ -195,7 +194,8 @@ type diagYamlFilesVar_type
                                                        !! 0 if var_reduction is not "diurnalXX"
   integer          , private              :: pow_value !< The power value
                                                        !! 0 if pow_value is not "powXX"
-  logical                         :: var_file_is_subregional !< true if the file this entry belongs to is subregional
+  logical          , private              :: var_file_is_subregional !< true if the file this entry
+                                                                     !! belongs to is subregional
 
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), dimension (:, :), private, allocatable :: var_attributes !< Attributes to overwrite or
@@ -231,6 +231,7 @@ type diagYamlFilesVar_type
   procedure :: has_n_diurnal
   procedure :: has_pow_value
   procedure :: add_axis_name
+  procedure :: is_file_subregional
 
 end type diagYamlFilesVar_type
 
@@ -258,7 +259,7 @@ type diagYamlObject_type
 end type diagYamlObject_type
 
 type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
-type (varList_type), save, public :: variable_list !< List of all the variables in the diag_table.yaml
+type (varList_type),  save :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
 logical, private :: diag_yaml_module_initialized = .false.
@@ -1514,7 +1515,7 @@ subroutine dump_diag_yaml_obj( filename )
     if( diag_yaml%has_diag_basedate()) write(unit_num, *) 'basedate array:', diag_yaml%diag_basedate
     write(unit_num, *) 'FILES'
     allocate(fields(SIZE(diag_yaml%get_diag_fields())))
-    files => diag_yaml%diag_files 
+    files => diag_yaml%diag_files
     fields = diag_yaml%get_diag_fields()
     do i=1, SIZE(files)
       write(unit_num, *) 'File: ', files(i)%get_file_fname()
@@ -1951,11 +1952,19 @@ end function
 subroutine add_axis_name( this, axis_name )
     class(diagYamlFilesVar_type), intent(inout) :: this
     character(len=:), allocatable, intent(in)   :: axis_name
-    character(len=:), allocatable   :: tmp_str 
+    character(len=:), allocatable   :: tmp_str
 
     this%var_axes_names = trim(axis_name)//" "//trim(this%var_axes_names)
 
 end subroutine add_axis_name
+
+pure function is_file_subregional( this ) &
+  result(res)
+  class(diagYamlFilesVar_type), intent(in) :: this
+  logical                                  :: res
+
+  res = this%var_file_is_subregional
+end function is_file_subregional
 
 #endif
 end module fms_diag_yaml_mod
