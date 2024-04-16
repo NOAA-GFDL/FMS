@@ -263,8 +263,7 @@ subroutine fms_register_diag_field_obj &
                                                                         !! times for the same time
  integer :: i, j !< for looponig over field/axes indices
  character(len=:), allocatable, target :: a_name_tmp !< axis name tmp
- integer :: yaml_field_id !< yaml field/var index (within diag_yaml%diag_fields)
- type(diagYamlFilesVar_type), pointer :: yaml_var_ptr
+ type(diagYamlFilesVar_type), pointer :: yaml_var_ptr !< pointer this fields yaml variable entries 
 
 !> Fill in information from the register call
   this%varname = trim(varname)
@@ -287,7 +286,7 @@ subroutine fms_register_diag_field_obj &
     call get_domain_and_domain_type(diag_axis, this%axis_ids, this%type_of_domain, this%domain, this%varname)
 
     ! store dim names for output
-    ! cant use diag fields when
+    ! cant use this%diag_field since they are copies
     do i=1, SIZE(diag_field_indices)
       yaml_var_ptr => diag_yaml%get_diag_field_from_id(diag_field_indices(i))
       ! add dim names from axes
