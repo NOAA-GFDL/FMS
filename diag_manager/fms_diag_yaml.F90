@@ -195,10 +195,12 @@ type diagYamlFilesVar_type
                                                        !! 0 if var_reduction is not "diurnalXX"
   integer          , private              :: pow_value !< The power value
                                                        !! 0 if pow_value is not "powXX"
+  logical                         :: var_file_is_subregional !< true if the file this entry belongs to is subregional
 
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), dimension (:, :), private, allocatable :: var_attributes !< Attributes to overwrite or
                                                                                         !! add from diag_yaml
+  character(len=:), allocatable :: var_axes_names !< list of axes names
  contains
  !> All getter functions (functions named get_x(), for member field named x)
  !! return copies of the member variables unless explicitly noted.
@@ -228,6 +230,7 @@ type diagYamlFilesVar_type
   procedure :: has_var_attributes
   procedure :: has_n_diurnal
   procedure :: has_pow_value
+  procedure :: add_axis_name
 
 end type diagYamlFilesVar_type
 
@@ -255,7 +258,7 @@ type diagYamlObject_type
 end type diagYamlObject_type
 
 type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
-type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
+type (varList_type), save, public :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
 logical, private :: diag_yaml_module_initialized = .false.
@@ -453,6 +456,10 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       !> Save the filename in the diag_field type
       diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(file_count)%file_fname
+
+      !> initialize axes string
+      diag_yaml%diag_fields(var_count)%var_axes_names = ""
+      diag_yaml%diag_fields(var_count)%var_file_is_subregional = diag_yaml%diag_files(file_count)%has_file_sub_region()
 
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
 
@@ -1692,6 +1699,7 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(keys3(key3_i)%key8, 'zbounds')
         call fms_f2c_string(keys3(key3_i)%key9, 'n_diurnal')
         call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
+        call fms_f2c_string(keys3(key3_i)%key11, 'dimensions')
         if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
         if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
         if (varptr%has_var_reduction()) then
@@ -1721,7 +1729,8 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
         tmpstr1 = ''; tmpstr1 = string(varptr%pow_value)
         call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
-
+        tmpstr1 = ''; tmpstr1 = varptr%var_axes_names
+        call fms_f2c_string(vals3(key3_i)%val11, trim(adjustl(tmpstr1)))
       enddo
     endif
 
@@ -1938,6 +1947,15 @@ pure function get_diag_reduction_string( reduction_val )
     enddo
     get_diag_reduction_string = adjustl(get_diag_reduction_string)
 end function
+
+subroutine add_axis_name( this, axis_name )
+    class(diagYamlFilesVar_type), intent(inout) :: this
+    character(len=:), allocatable, intent(in)   :: axis_name
+    character(len=:), allocatable   :: tmp_str 
+
+    this%var_axes_names = trim(axis_name)//" "//trim(this%var_axes_names)
+
+end subroutine add_axis_name
 
 #endif
 end module fms_diag_yaml_mod

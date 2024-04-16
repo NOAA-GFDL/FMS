@@ -58,7 +58,7 @@ type fmsDiagObject_type
 private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
-  class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
+  type(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
   type(fmsDiagOutputBuffer_type), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
                                                                        !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension

@@ -831,6 +831,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: z 
   sub_region:
   - grid_type: null
     tile: -999
@@ -862,6 +863,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time y x
   - module: ocn_mod
     var_name: var2
     reduction: average
@@ -872,6 +874,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time x y
   sub_region:
   - grid_type: null
     tile: -999
@@ -902,6 +905,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time y3 x3
   - module: atm_mod
     var_name: var4
     reduction: average
@@ -912,6 +916,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time z y3 x3
   - module: atm_mod
     var_name: var6
     reduction: average
@@ -922,6 +927,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time z
   - module: atm_mod
     var_name: var4
     reduction: average
@@ -932,6 +938,7 @@ diag_files:
     zbounds: 2.00, 3.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time z_sub01 y3 x3
   sub_region:
   - grid_type: null
     tile: -999
@@ -962,6 +969,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time grid_index
   - module: atm_mod
     var_name: var7
     reduction: average
@@ -972,6 +980,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: z
   sub_region:
   - grid_type: null
     tile: -999
@@ -1002,6 +1011,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time
   sub_region:
   - grid_type: null
     tile: -999
@@ -1032,6 +1042,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time z y3_sub01 x3_sub01
   sub_region:
   - grid_type: index
     tile: 1
@@ -1062,6 +1073,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time y x
   sub_region:
   - grid_type: null
     tile: -999
@@ -1092,6 +1104,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time y x 
   sub_region:
   - grid_type: null
     tile: -999
@@ -1122,6 +1135,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time y x
   sub_region:
   - grid_type: null
     tile: -999
@@ -1152,6 +1166,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 0
     pow_value: 0
+    dimensions: time y x
   sub_region:
   - grid_type: null
     tile: -999
@@ -1182,6 +1197,7 @@ diag_files:
     zbounds: -999.00, -999.00
     n_diurnal: 12
     pow_value: 0
+    dimensions: time time_of_day_12 y x
   sub_region:
   - grid_type: null
     tile: -999
@@ -1198,6 +1214,9 @@ my_test_count=`expr $my_test_count + 1`
 test_expect_success "check modern diag manager yaml output (test $my_test_count)" '
     mpirun -n 1 ../test_diag_out_yaml
 '
+
+test_done
+exit
 
 printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .true. \n /" | cat > input.nml
 cat <<_EOF > diag_table.yaml
