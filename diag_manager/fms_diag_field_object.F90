@@ -263,7 +263,7 @@ subroutine fms_register_diag_field_obj &
                                                                         !! times for the same time
  integer :: i, j !< for looponig over field/axes indices
  character(len=:), allocatable, target :: a_name_tmp !< axis name tmp
- type(diagYamlFilesVar_type), pointer :: yaml_var_ptr !< pointer this fields yaml variable entries 
+ type(diagYamlFilesVar_type), pointer :: yaml_var_ptr !< pointer this fields yaml variable entries
 
 !> Fill in information from the register call
   this%varname = trim(varname)
