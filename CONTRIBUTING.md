@@ -94,6 +94,33 @@ long-term, portability, and the scope of the impact on the code base. Therefore,
 Modeling Systems does not guarantee that all pull requests will be accepted,
 even if the changes pass the initial testing phases, and are otherwise correct.
 
+## Reviewing Pull Requests
+
+When reviewing a pull request, members of MSD should look for the following:
+
+- Design
+  - Does the code change belong in the FMS library or does it better belong elsewhere such as a component repository or the FMScoupler?
+  - Could existing routines/modules be utilized to reduce redundancy?
+  - Temporary changes/fixes meant to be removed should be avoided whenever possible
+- Functionality
+  - Does this PR do what is intended (and stated)
+  - Are the changes good for both end-users and developers?
+  - Will the code change impact existing end-users needlessly?
+- Complexity
+  - Are the changes easily understood by the reader / reviewer?
+- Testing
+  - Code changes should include a test program or a modification to a test program to ensure the code is covered by the test suite
+- Comments
+  - Inline comments for complex code segments or intricacies to make the purpose of the code reasonably clear
+- Style and Consistency
+  - Code should follow the syle guide in general, but should also be consistent to the file the change is made in
+- Documentation
+  - If a PR changes the behaviour or instructions, accompanying documentation should also change
+- Thoroughness
+  - Reviews should be done line by line, and the surrounding context/file should be taken into account
+
+Comments on pull requests should be courteous and constructive, giving useful feedback and explanations for why changes should be made. See the [code of conduct](CODE_OF_CONDUCT.md) for more information.
+
 ## Tests
 
 FMS uses TravisCI and gitlab-CI to run build tests for libFMS.  Users may create
