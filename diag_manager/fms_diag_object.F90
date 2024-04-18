@@ -32,7 +32,7 @@ use fms_diag_file_object_mod, only: fmsDiagFileContainer_type, fmsDiagFile_type,
 use fms_diag_field_object_mod, only: fmsDiagField_type, fms_diag_fields_object_init, get_default_missing_value, &
                                      check_for_slices
 use fms_diag_yaml_mod, only: diag_yaml_object_init, diag_yaml_object_end, find_diag_field, &
-                           & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type
+                           & get_diag_files_id, diag_yaml, get_diag_field_ids, DiagYamlFilesVar_type, fms_diag_yaml_out
 use fms_diag_axis_object_mod, only: fms_diag_axis_object_init, fmsDiagAxis_type, fmsDiagSubAxis_type, &
                                    &diagDomain_t, get_domain_and_domain_type, diagDomain2d_t, &
                                    &fmsDiagAxisContainer_type, fms_diag_axis_object_end, fmsDiagFullAxis_type, &
@@ -58,7 +58,7 @@ type fmsDiagObject_type
 private
 !TODO: Remove FMS prefix from variables in this type
   class(fmsDiagFileContainer_type), allocatable :: FMS_diag_files (:) !< array of diag files
-  class(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
+  type(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
   type(fmsDiagOutputBuffer_type), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
                                                                        !! one for each variable in the diag_table.yaml
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
@@ -151,6 +151,9 @@ subroutine fms_diag_object_end (this, time)
 #ifdef use_yaml
   !TODO: loop through files and force write
   if (.not. this%initialized) return
+
+  ! write output yaml
+  call fms_diag_yaml_out()
 
   call this%do_buffer_math()
   call this%fms_diag_do_io(end_time=time)
