@@ -37,10 +37,13 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
                            middle_time, begin_time, end_time, MAX_STR_LEN
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name
+use fms_yaml_output_mod, only: fmsYamlOutKeys_type, fmsYamlOutValues_type, write_yaml_from_struct_3, &
+                               yaml_out_add_level2key, initialize_key_struct, initialize_val_struct
 use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
-use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string
-use platform_mod, only: r4_kind, i4_kind
+use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string, &
+                                fms_f2c_string
+use platform_mod, only: r4_kind, i4_kind, r8_kind, i8_kind
 use fms_mod, only: lowercase
 
 implicit none
@@ -54,6 +57,7 @@ public :: diagYamlFiles_type, diagYamlFilesVar_type
 public :: get_num_unique_fields, find_diag_field, get_diag_fields_entries, get_diag_files_id
 public :: get_diag_field_ids
 public :: dump_diag_yaml_obj
+public :: fms_diag_yaml_out
 public :: MAX_SUBAXES
 !> @}
 
@@ -128,6 +132,9 @@ type diagYamlFiles_type
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), allocatable :: file_varlist(:)            !< An array of variable names
                                                                          !! within a file
+  character (len=MAX_STR_LEN), allocatable :: file_outlist(:)            !< An array of variable output names
+                                                                         !! within a file, used to distinguish
+                                                                         !! varlist names for yaml output
   character (len=MAX_STR_LEN), allocatable :: file_global_meta(:,:)      !< Array of key(dim=1)
                                                                          !! and values(dim=2) to be
                                                                          !! added as global meta data to
@@ -187,10 +194,13 @@ type diagYamlFilesVar_type
                                                        !! 0 if var_reduction is not "diurnalXX"
   integer          , private              :: pow_value !< The power value
                                                        !! 0 if pow_value is not "powXX"
+  logical          , private              :: var_file_is_subregional !< true if the file this entry
+                                                                     !! belongs to is subregional
 
   !< Need to use `MAX_STR_LEN` because not all filenames/global attributes are the same length
   character (len=MAX_STR_LEN), dimension (:, :), private, allocatable :: var_attributes !< Attributes to overwrite or
                                                                                         !! add from diag_yaml
+  character(len=:), allocatable :: var_axes_names !< list of axes names
  contains
  !> All getter functions (functions named get_x(), for member field named x)
  !! return copies of the member variables unless explicitly noted.
@@ -220,6 +230,8 @@ type diagYamlFilesVar_type
   procedure :: has_var_attributes
   procedure :: has_n_diurnal
   procedure :: has_pow_value
+  procedure :: add_axis_name
+  procedure :: is_file_subregional
 
 end type diagYamlFilesVar_type
 
@@ -247,7 +259,7 @@ type diagYamlObject_type
 end type diagYamlObject_type
 
 type (diagYamlObject_type), target :: diag_yaml  !< Obj containing the contents of the diag_table.yaml
-type (varList_type), save :: variable_list !< List of all the variables in the diag_table.yaml
+type (varList_type),  save :: variable_list !< List of all the variables in the diag_table.yaml
 type (fileList_type), save :: file_list !< List of all files in the diag_table.yaml
 
 logical, private :: diag_yaml_module_initialized = .false.
@@ -434,6 +446,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
     call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
     file_var_count = 0
     allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
+    allocate(diag_yaml%diag_files(file_count)%file_outlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
     nvars_loop: do j = 1, nvars
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
@@ -445,10 +458,19 @@ subroutine diag_yaml_object_init(diag_subset_output)
       !> Save the filename in the diag_field type
       diag_yaml%diag_fields(var_count)%var_fname = diag_yaml%diag_files(file_count)%file_fname
 
+      !> initialize axes string
+      diag_yaml%diag_fields(var_count)%var_axes_names = ""
+      diag_yaml%diag_fields(var_count)%var_file_is_subregional = diag_yaml%diag_files(file_count)%has_file_sub_region()
+
       call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count))
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
+      if(diag_yaml%diag_fields(var_count)%has_var_outname()) then
+        diag_yaml%diag_files(file_count)%file_outlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_outname
+      else
+        diag_yaml%diag_files(file_count)%file_outlist(file_var_count) = ""
+      endif
 
       !> Save the variable name and the module name in the variable_list
       variable_list%var_name(var_count) = trim(diag_yaml%diag_fields(var_count)%var_varname)//&
@@ -477,6 +499,7 @@ subroutine diag_yaml_object_end()
 
   do i = 1, size(diag_yaml%diag_files, 1)
     if(allocated(diag_yaml%diag_files(i)%file_varlist)) deallocate(diag_yaml%diag_files(i)%file_varlist)
+    if(allocated(diag_yaml%diag_files(i)%file_outlist)) deallocate(diag_yaml%diag_files(i)%file_outlist)
     if(allocated(diag_yaml%diag_files(i)%file_global_meta)) deallocate(diag_yaml%diag_files(i)%file_global_meta)
     if(allocated(diag_yaml%diag_files(i)%file_sub_region%corners)) &
       deallocate(diag_yaml%diag_files(i)%file_sub_region%corners)
@@ -514,6 +537,8 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
   integer, allocatable :: key_ids(:) !< Id of the gloabl atttributes key/value pairs
   character(len=:), ALLOCATABLE :: grid_type !< grid_type as it is read in from the yaml
   character(len=:), ALLOCATABLE :: buffer      !< buffer to store any *_units as it is read from the yaml
+
+  yaml_fileobj%file_frequnit = 0
 
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "file_name", yaml_fileobj%file_fname)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "freq", buffer)
@@ -1489,7 +1514,7 @@ subroutine dump_diag_yaml_obj( filename )
     if( diag_yaml%has_diag_basedate()) write(unit_num, *) 'basedate array:', diag_yaml%diag_basedate
     write(unit_num, *) 'FILES'
     allocate(fields(SIZE(diag_yaml%get_diag_fields())))
-    files => diag_yaml%diag_files 
+    files => diag_yaml%diag_files
     fields = diag_yaml%get_diag_fields()
     do i=1, SIZE(files)
       write(unit_num, *) 'File: ', files(i)%get_file_fname()
@@ -1533,6 +1558,423 @@ subroutine dump_diag_yaml_obj( filename )
     endif
   endif
 end subroutine
+
+!> Writes an output yaml with all available information on the written files.
+!! Will only write with root pe.
+!! Global attributes are limited to 16 per file.
+subroutine fms_diag_yaml_out()
+  type(diagYamlFiles_type), pointer :: fileptr !< pointer for individual variables
+  type(diagYamlFilesVar_type), pointer :: varptr !< pointer for individual variables
+  type (fmsyamloutkeys_type), allocatable :: keys(:), keys2(:), keys3(:)
+  type (fmsyamloutvalues_type), allocatable :: vals(:), vals2(:), vals3(:)
+  integer :: i, j, k
+  character(len=128) :: tmpstr1, tmpstr2 !< string to store output fields
+  integer, parameter :: tier1size = 3 !< size of first tier, will always be 3 for basedate, title and diag_files
+  integer :: tier2size, tier3size !< size of each 'tier'(based one numbers of tabs) in the yaml
+  integer, allocatable :: tier3each(:) !< tier 3 list sizes corresponding to where they are in the second tier
+  integer, dimension(basedate_size) :: basedate_loc !< local copy of basedate to loop through
+  integer :: varnum_i, key3_i, gm
+  character(len=32), allocatable :: st_vals(:) !< start times for gcc bug
+
+  if( mpp_pe() .ne. mpp_root_pe()) return
+
+  allocate(tier3each(SIZE(diag_yaml%diag_files) * 3))
+  tier3size = 0; tier3each = 0
+
+  !! allocations for key+val structs
+  allocate(keys(1))
+  allocate(vals(1))
+  allocate(keys2(SIZE(diag_yaml%diag_files)))
+  allocate(vals2(SIZE(diag_yaml%diag_files)))
+  allocate(st_vals(SIZE(diag_yaml%diag_files)))
+  do i=1, SIZE(diag_yaml%diag_files)
+    call initialize_key_struct(keys2(i))
+    call initialize_val_struct(vals2(i))
+    if (allocated(diag_yaml%diag_files(i)%file_varlist) ) then
+      do j=1, SIZE(diag_yaml%diag_files(i)%file_varlist)
+        tier3size = tier3size + 1
+      enddo
+    endif
+    tier3size = tier3size + 2
+  enddo
+  allocate(keys3(tier3size))
+  allocate(vals3(tier3size))
+
+  !! tier 1 - title, basedate, diag_files
+  call initialize_key_struct(keys(1))
+  call initialize_val_struct(vals(1))
+  call fms_f2c_string( keys(1)%key1, 'title')
+  call fms_f2c_string( vals(1)%val1, diag_yaml%diag_title)
+  call fms_f2c_string( keys(1)%key2, 'base_date')
+  basedate_loc = diag_yaml%get_basedate()
+  tmpstr1 = ''; tmpstr2 = ''
+  tmpstr1 = string(basedate_loc(1))
+  tmpstr2 = trim(tmpstr1)
+  do i=2, basedate_size
+    tmpstr1 = string(basedate_loc(i))
+    tmpstr2 = trim(tmpstr2) // ' ' // trim(tmpstr1)
+  enddo
+  call fms_f2c_string(vals(1)%val2, trim(tmpstr2))
+  call yaml_out_add_level2key('diag_files', keys(1))
+  key3_i = 0
+  !! tier 2 - diag files
+  do i=1, SIZE(diag_yaml%diag_files)
+    fileptr => diag_yaml%diag_files(i)
+
+    call fms_f2c_string(keys2(i)%key1, 'file_name')
+    call fms_f2c_string(keys2(i)%key2, 'freq')
+    call fms_f2c_string(keys2(i)%key3, 'freq_units')
+    call fms_f2c_string(keys2(i)%key4, 'time_units')
+    call fms_f2c_string(keys2(i)%key5, 'unlimdim')
+    call fms_f2c_string(keys2(i)%key6, 'new_file_freq')
+    call fms_f2c_string(keys2(i)%key7, 'new_file_freq_units')
+    call fms_f2c_string(keys2(i)%key8, 'start_time')
+    call fms_f2c_string(keys2(i)%key9, 'file_duration')
+    call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
+
+    call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
+    call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
+    call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
+    tmpstr1 = ''
+    do k=1, SIZE(fileptr%file_freq)
+        if(fileptr%file_freq(k) .eq. diag_null) exit
+        tmpstr2 = ''
+        tmpstr2 = string(fileptr%file_freq(k))
+        tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
+    enddo
+    call fms_f2c_string(vals2(i)%val2, adjustl(tmpstr1))
+    call fms_f2c_string(vals2(i)%val3, get_diag_unit_string(fileptr%file_frequnit))
+    tmpstr1 = ''
+    do k=1, SIZE(fileptr%file_new_file_freq)
+        if(fileptr%file_new_file_freq(k) .eq. diag_null) exit
+        tmpstr2 = ''
+        tmpstr2 = string(fileptr%file_new_file_freq(k))
+        tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
+    enddo
+    call fms_f2c_string(vals2(i)%val6, adjustl(tmpstr1))
+    call fms_f2c_string(vals2(i)%val7, get_diag_unit_string(fileptr%file_new_file_freq_units))
+    call fms_f2c_string(vals2(i)%val8, trim(fileptr%get_file_start_time()))
+    st_vals(i) = fileptr%get_file_start_time()
+    tmpstr1 = ''
+    do k=1, SIZE(fileptr%file_duration)
+        if(fileptr%file_duration(k) .eq. diag_null) exit
+        tmpstr2 = ''
+        tmpstr2 = string(fileptr%file_duration(k))
+        tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
+    enddo
+    call fms_f2c_string(vals2(i)%val9, adjustl(tmpstr1))
+    call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
+
+    !! tier 3 - varlists, subregion, global metadata
+    call yaml_out_add_level2key('varlist', keys2(i))
+    j = 0
+    if( SIZE(fileptr%file_varlist) .gt. 0) then
+      do j=1, SIZE(fileptr%file_varlist)
+        key3_i = key3_i + 1
+        call initialize_key_struct(keys3(key3_i))
+        call initialize_val_struct(vals3(key3_i))
+        !! find the variable object from the list
+        varptr => NULL()
+        do varnum_i=1, SIZE(diag_yaml%diag_fields)
+          if( trim(diag_yaml%diag_fields(varnum_i)%var_varname ) .eq. trim(fileptr%file_varlist(j)) .and. &
+              trim(diag_yaml%diag_fields(varnum_i)%var_fname) .eq. trim(fileptr%file_fname)) then
+            ! if theres a output name, that should match as well
+            if(diag_yaml%diag_fields(varnum_i)%has_var_outname()) then
+              if(trim(diag_yaml%diag_fields(varnum_i)%var_outname) .eq. trim(fileptr%file_outlist(j))) then
+                varptr => diag_yaml%diag_fields(varnum_i)
+                exit
+              endif
+            else
+              varptr => diag_yaml%diag_fields(varnum_i)
+              exit
+            endif
+          endif
+        enddo
+        if( .not. associated(varptr)) call mpp_error(FATAL, "diag_yaml_output: could not find variable in list."//&
+                                                            " var: "// trim(fileptr%file_varlist(j)))
+        call fms_f2c_string(keys3(key3_i)%key1, 'module')
+        call fms_f2c_string(keys3(key3_i)%key2, 'var_name')
+        call fms_f2c_string(keys3(key3_i)%key3, 'reduction')
+        call fms_f2c_string(keys3(key3_i)%key4, 'kind')
+        call fms_f2c_string(keys3(key3_i)%key5, 'output_name')
+        call fms_f2c_string(keys3(key3_i)%key6, 'long_name')
+        call fms_f2c_string(keys3(key3_i)%key7, 'units')
+        call fms_f2c_string(keys3(key3_i)%key8, 'zbounds')
+        call fms_f2c_string(keys3(key3_i)%key9, 'n_diurnal')
+        call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
+        call fms_f2c_string(keys3(key3_i)%key11, 'dimensions')
+        if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
+        if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
+        if (varptr%has_var_reduction()) then
+            call fms_f2c_string(vals3(key3_i)%val3, &
+                    get_diag_reduction_string((/varptr%var_reduction/)))
+        endif
+        if (varptr%has_var_outname())  call fms_f2c_string(vals3(key3_i)%val5, varptr%var_outname)
+        if (varptr%has_var_longname()) call fms_f2c_string(vals3(key3_i)%val6, varptr%var_longname)
+        if (varptr%has_var_units()) call fms_f2c_string(vals3(key3_i)%val7, varptr%var_units)
+        if (varptr%has_var_kind()) then
+          select case(varptr%var_kind)
+            case(i4)
+              call fms_f2c_string(vals3(key3_i)%val4, 'i4')
+            case(i8)
+              call fms_f2c_string(vals3(key3_i)%val4, 'i8')
+            case(r4)
+              call fms_f2c_string(vals3(key3_i)%val4, 'r4')
+            case(r8)
+              call fms_f2c_string(vals3(key3_i)%val4, 'r8')
+          end select
+        endif
+
+        if( abs(varptr%var_zbounds(1) - real(diag_null, r4_kind)) .gt. 1.0e-5 ) then
+          tmpstr2 = string(varptr%var_zbounds(1), "F8.2") // ' ' // string(varptr%var_zbounds(2), "F8.2")
+          call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
+        endif
+
+        if( varptr%n_diurnal .gt. 0) then
+          tmpstr1 = ''; tmpstr1 = string(varptr%n_diurnal)
+          call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
+        endif
+        
+        if( varptr%pow_value .gt. 0) then
+          tmpstr1 = ''; tmpstr1 = string(varptr%pow_value)
+          call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
+        endif
+
+        tmpstr1 = ''; tmpstr1 = varptr%var_axes_names
+        call fms_f2c_string(vals3(key3_i)%val11, trim(adjustl(tmpstr1)))
+      enddo
+    endif
+
+    key3_i = key3_i + 1
+    tier3each(i*3-2) = j-1 ! j-1 structs to print for varlist keys
+    tier3each(i*3-1) = 1   ! 1 struct per sub_region key
+    tier3each(i*3) = 1     ! 1 struct per global metadata key
+    call initialize_key_struct(keys3(key3_i))
+    call initialize_val_struct(vals3(key3_i))
+    !! sub region
+    call yaml_out_add_level2key('sub_region', keys2(i))
+    call fms_f2c_string(keys3(key3_i)%key1, 'grid_type')
+    call fms_f2c_string(keys3(key3_i)%key2, 'tile')
+    call fms_f2c_string(keys3(key3_i)%key3, 'corner1')
+    call fms_f2c_string(keys3(key3_i)%key4, 'corner2')
+    call fms_f2c_string(keys3(key3_i)%key5, 'corner3')
+    call fms_f2c_string(keys3(key3_i)%key6, 'corner4')
+
+    select case (fileptr%file_sub_region%grid_type)
+      case(latlon_gridtype)
+        call fms_f2c_string(vals3(key3_i)%val1, 'latlon')
+      case(index_gridtype)
+        call fms_f2c_string(vals3(key3_i)%val1, 'index')
+    end select
+    if(fileptr%file_sub_region%tile .ne. diag_null) then
+      tmpstr1 = ''; tmpstr1 = string(fileptr%file_sub_region%tile)
+      call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
+    endif
+    if(fileptr%has_file_sub_region()) then
+      if( allocated(fileptr%file_sub_region%corners)) then
+        select type (corners => fileptr%file_sub_region%corners)
+        type is (real(r8_kind))
+          tmpstr1 = ''; tmpstr1 = string(corners(1,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(1,2))
+          call fms_f2c_string(vals3(key3_i)%val3, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(2,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(2,2))
+          call fms_f2c_string(vals3(key3_i)%val4, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(3,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(3,2))
+          call fms_f2c_string(vals3(key3_i)%val5, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(4,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(4,2))
+          call fms_f2c_string(vals3(key3_i)%val6, trim(tmpstr1)//' '//trim(tmpstr2))
+        type is (real(r4_kind))
+          tmpstr1 = ''; tmpstr1 = string(corners(1,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(1,2))
+          call fms_f2c_string(vals3(key3_i)%val3, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(2,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(2,2))
+          call fms_f2c_string(vals3(key3_i)%val4, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(3,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(3,2))
+          call fms_f2c_string(vals3(key3_i)%val5, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(4,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(4,2))
+          call fms_f2c_string(vals3(key3_i)%val6, trim(tmpstr1)//' '//trim(tmpstr2))
+        type is (integer(i4_kind))
+          tmpstr1 = ''; tmpstr1 = string(corners(1,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(1,2))
+          call fms_f2c_string(vals3(key3_i)%val3, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(2,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(2,2))
+          call fms_f2c_string(vals3(key3_i)%val4, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(3,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(3,2))
+          call fms_f2c_string(vals3(key3_i)%val5, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(4,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(4,2))
+          call fms_f2c_string(vals3(key3_i)%val6, trim(tmpstr1)//' '//trim(tmpstr2))
+        type is (integer(i8_kind))
+          tmpstr1 = ''; tmpstr1 = string(corners(1,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(1,2))
+          call fms_f2c_string(vals3(key3_i)%val3, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(2,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(2,2))
+          call fms_f2c_string(vals3(key3_i)%val4, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(3,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(3,2))
+          call fms_f2c_string(vals3(key3_i)%val5, trim(tmpstr1)//' '//trim(tmpstr2))
+          tmpstr1 = ''; tmpstr1 = string(corners(4,1))
+          tmpstr2 = ''; tmpstr2 = string(corners(4,2))
+          call fms_f2c_string(vals3(key3_i)%val6, trim(tmpstr1)//' '//trim(tmpstr2))
+        end select
+      endif
+    endif
+    !! global metadata
+    key3_i = key3_i + 1
+    call initialize_key_struct(keys3(key3_i))
+    call initialize_val_struct(vals3(key3_i))
+    call yaml_out_add_level2key('global_meta', keys2(i))
+    if ( fileptr%has_file_global_meta()) then
+      do gm=1, SIZE(fileptr%file_global_meta, 1)
+        select case(gm)
+          case (1)
+            call fms_f2c_string(keys3(key3_i)%key1, fileptr%file_global_meta(1,1))
+            call fms_f2c_string(vals3(key3_i)%val1, fileptr%file_global_meta(1,2))
+          case (2)
+            call fms_f2c_string(keys3(key3_i)%key2, fileptr%file_global_meta(2,1))
+            call fms_f2c_string(vals3(key3_i)%val2, fileptr%file_global_meta(2,2))
+          case (3)
+            call fms_f2c_string(keys3(key3_i)%key3, fileptr%file_global_meta(3,1))
+            call fms_f2c_string(vals3(key3_i)%val3, fileptr%file_global_meta(3,2))
+          case (4)
+            call fms_f2c_string(keys3(key3_i)%key4, fileptr%file_global_meta(4,1))
+            call fms_f2c_string(vals3(key3_i)%val4, fileptr%file_global_meta(4,2))
+          case (5)
+            call fms_f2c_string(keys3(key3_i)%key5, fileptr%file_global_meta(5,1))
+            call fms_f2c_string(vals3(key3_i)%val5, fileptr%file_global_meta(5,2))
+          case (6)
+            call fms_f2c_string(keys3(key3_i)%key6, fileptr%file_global_meta(6,1))
+            call fms_f2c_string(vals3(key3_i)%val6, fileptr%file_global_meta(6,2))
+          case (7)
+            call fms_f2c_string(keys3(key3_i)%key7, fileptr%file_global_meta(7,1))
+            call fms_f2c_string(vals3(key3_i)%val7, fileptr%file_global_meta(7,2))
+          case (8)
+            call fms_f2c_string(keys3(key3_i)%key8, fileptr%file_global_meta(8,1))
+            call fms_f2c_string(vals3(key3_i)%val8, fileptr%file_global_meta(8,2))
+          case (9)
+            call fms_f2c_string(keys3(key3_i)%key9, fileptr%file_global_meta(9,1))
+            call fms_f2c_string(vals3(key3_i)%val9, fileptr%file_global_meta(9,2))
+          case (10)
+            call fms_f2c_string(keys3(key3_i)%key10, fileptr%file_global_meta(10,1))
+            call fms_f2c_string(vals3(key3_i)%val10, fileptr%file_global_meta(10,2))
+          case (11)
+            call fms_f2c_string(keys3(key3_i)%key11, fileptr%file_global_meta(11,1))
+            call fms_f2c_string(vals3(key3_i)%val11, fileptr%file_global_meta(11,2))
+          case (12)
+            call fms_f2c_string(keys3(key3_i)%key12, fileptr%file_global_meta(12,1))
+            call fms_f2c_string(vals3(key3_i)%val12, fileptr%file_global_meta(12,2))
+          case (13)
+            call fms_f2c_string(keys3(key3_i)%key13, fileptr%file_global_meta(13,1))
+            call fms_f2c_string(vals3(key3_i)%val13, fileptr%file_global_meta(13,2))
+          case (14)
+            call fms_f2c_string(keys3(key3_i)%key14, fileptr%file_global_meta(14,1))
+            call fms_f2c_string(vals3(key3_i)%val14, fileptr%file_global_meta(14,2))
+          case (15)
+            call fms_f2c_string(keys3(key3_i)%key15, fileptr%file_global_meta(15,1))
+            call fms_f2c_string(vals3(key3_i)%val15, fileptr%file_global_meta(15,2))
+          case (16)
+            call fms_f2c_string(keys3(key3_i)%key16, fileptr%file_global_meta(16,1))
+            call fms_f2c_string(vals3(key3_i)%val16, fileptr%file_global_meta(16,2))
+        end select
+      enddo
+    endif
+  enddo
+  tier2size = i
+
+  call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
+                                 SIZE(diag_yaml%diag_files), keys2, vals2, &
+                                 tier3size, tier3each, keys3, vals3,       &
+                                 (/size(diag_yaml%diag_files), 0, 0, 0, 0, 0, 0, 0/))
+  deallocate( keys, keys2, keys3, vals, vals2, vals3)
+
+end subroutine
+
+!> private function for getting unit string from diag_data parameter values
+pure function get_diag_unit_string( unit_param )
+    integer, intent(in) :: unit_param(:) !< diag unit parameter values from diag_data_mod.
+                                      !! <br>eg. DIAG_SECONDS, DIAG_MINUTES,DIAG_HOURS, DIAG_DAYS, DIAG_YEARS
+    character(len=8 * SIZE(unit_param)) :: get_diag_unit_string
+    character(len=7) :: tmp
+    integer :: i
+    get_diag_unit_string = ' '
+    do i=1, SIZE(unit_param)
+        select case(unit_param(i))
+            case (DIAG_SECONDS)
+                tmp = 'seconds'
+            case (DIAG_MINUTES)
+                tmp = 'minutes'
+            case (DIAG_HOURS)
+                tmp = 'hours'
+            case (DIAG_DAYS)
+                tmp = 'days'
+            case (DIAG_MONTHS)
+                tmp = 'months'
+            case (DIAG_YEARS)
+                tmp = 'years'
+            case default
+                exit
+        end select
+        get_diag_unit_string = trim(get_diag_unit_string)//" "//trim(tmp)
+    enddo
+    get_diag_unit_string = adjustl(get_diag_unit_string)
+end function
+
+!> private function for getting reduction type string from parameter values
+pure function get_diag_reduction_string( reduction_val )
+    integer, intent(in) :: reduction_val(:) !< reduction types (eg. time_average)
+    integer :: i
+    character(len=8 * MAX_FREQ) :: get_diag_reduction_string
+    character(len=7) :: tmp
+    get_diag_reduction_string = ''
+    do i=1, SIZE(reduction_val)
+        select case (reduction_val(i))
+            case (time_none)
+                tmp = 'none'
+            case (time_average)
+                tmp = 'average'
+            case (time_min)
+                tmp = 'min'
+            case (time_max)
+                tmp = 'max'
+            case (time_rms)
+                tmp = 'rms'
+            case (time_sum)
+                tmp = 'sum'
+            case (time_diurnal)
+                tmp = 'diurnal'
+            case default
+                exit
+        end select
+        get_diag_reduction_string = trim(get_diag_reduction_string) //" "//trim(tmp)
+    enddo
+    get_diag_reduction_string = adjustl(get_diag_reduction_string)
+end function
+
+subroutine add_axis_name( this, axis_name )
+    class(diagYamlFilesVar_type), intent(inout) :: this
+    character(len=:), allocatable, intent(in)   :: axis_name
+    character(len=:), allocatable   :: tmp_str
+
+    this%var_axes_names = trim(axis_name)//" "//trim(this%var_axes_names)
+
+end subroutine add_axis_name
+
+pure function is_file_subregional( this ) &
+  result(res)
+  class(diagYamlFilesVar_type), intent(in) :: this
+  logical                                  :: res
+
+  res = this%var_file_is_subregional
+end function is_file_subregional
 
 #endif
 end module fms_diag_yaml_mod
