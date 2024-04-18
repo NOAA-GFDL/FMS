@@ -1638,6 +1638,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_freq)
+        if(fileptr%file_freq(k) .eq. -999) exit
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_freq(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1646,6 +1647,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(vals2(i)%val3, get_diag_unit_string(fileptr%file_frequnit))
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_new_file_freq)
+        if(fileptr%file_new_file_freq(k) .eq. -999) exit
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_new_file_freq(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1656,6 +1658,7 @@ subroutine fms_diag_yaml_out()
     st_vals(i) = fileptr%get_file_start_time()
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_duration)
+        if(fileptr%file_duration(k) .eq. -999) exit
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_duration(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1723,13 +1726,21 @@ subroutine fms_diag_yaml_out()
           end select
         endif
 
-        tmpstr2 = string(varptr%var_zbounds(1), "F8.2") // ', ' // string(varptr%var_zbounds(2), "F8.2")
-        call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
+        if( abs(varptr%var_zbounds(1) + 999.00) .gt. 1.0e-5 ) then
+          tmpstr2 = string(varptr%var_zbounds(1), "F8.2") // ' ' // string(varptr%var_zbounds(2), "F8.2")
+          call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
+        endif
 
-        tmpstr1 = ''; tmpstr1 = string(varptr%n_diurnal)
-        call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
-        tmpstr1 = ''; tmpstr1 = string(varptr%pow_value)
-        call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
+        if( varptr%n_diurnal .gt. 0) then
+          tmpstr1 = ''; tmpstr1 = string(varptr%n_diurnal)
+          call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
+        endif
+        
+        if( varptr%pow_value .gt. 0) then
+          tmpstr1 = ''; tmpstr1 = string(varptr%pow_value)
+          call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
+        endif
+
         tmpstr1 = ''; tmpstr1 = varptr%var_axes_names
         call fms_f2c_string(vals3(key3_i)%val11, trim(adjustl(tmpstr1)))
       enddo
@@ -1755,11 +1766,11 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(vals3(key3_i)%val1, 'latlon')
       case(index_gridtype)
         call fms_f2c_string(vals3(key3_i)%val1, 'index')
-      case default
-        call fms_f2c_string(vals3(key3_i)%val1, 'null')
     end select
-    tmpstr1 = ''; tmpstr1 = string(fileptr%file_sub_region%tile)
-    call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
+    if(fileptr%file_sub_region%tile .ne. -999) then
+      tmpstr1 = ''; tmpstr1 = string(fileptr%file_sub_region%tile)
+      call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
+    endif
     if(fileptr%has_file_sub_region()) then
       if( allocated(fileptr%file_sub_region%corners)) then
         select type (corners => fileptr%file_sub_region%corners)
@@ -1911,7 +1922,7 @@ pure function get_diag_unit_string( unit_param )
             case (DIAG_YEARS)
                 tmp = 'years'
             case default
-                tmp = 'null'
+                exit
         end select
         get_diag_unit_string = trim(get_diag_unit_string)//" "//trim(tmp)
     enddo

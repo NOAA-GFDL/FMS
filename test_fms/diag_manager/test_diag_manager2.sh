@@ -811,15 +811,15 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 diag_files:
 - file_name: static_file
-  freq: -1 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: days null null null null null null null null null null null
+  freq: -1
+  freq_units: days
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: atm_mod
     var_name: var7
@@ -828,13 +828,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: z
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -843,15 +843,15 @@ diag_files:
   - is_important: False
     has_important: True
 - file_name: file1
-  freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours null null null null null null null null null null null
+  freq: 6
+  freq_units: hours
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -860,9 +860,9 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time y x
   - module: ocn_mod
     var_name: var2
@@ -871,13 +871,13 @@ diag_files:
     output_name: potato
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time x y
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -885,15 +885,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file2
-  freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours null null null null null null null null null null null
+  freq: 6
+  freq_units: hours
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: atm_mod
     var_name: var3
@@ -902,9 +902,9 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time y3 x3
   - module: atm_mod
     var_name: var4
@@ -913,9 +913,9 @@ diag_files:
     output_name: i_on_a_sphere
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time z y3 x3
   - module: atm_mod
     var_name: var6
@@ -924,9 +924,9 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time z
   - module: atm_mod
     var_name: var4
@@ -935,13 +935,13 @@ diag_files:
     output_name: var4_bounded
     long_name:
     units:
-    zbounds: 2.00, 3.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds: 2.00 3.00
+    n_diurnal:
+    pow_value:
     dimensions: time z_sub01 y3 x3
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -949,15 +949,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file3
-  freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours null null null null null null null null null null null
+  freq: 6
+  freq_units: hours
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: lnd_mod
     var_name: var5
@@ -966,9 +966,9 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time grid_index
   - module: atm_mod
     var_name: var7
@@ -977,13 +977,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: z
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -991,15 +991,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file4
-  freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours null null null null null null null null null null null
+  freq: 6
+  freq_units: hours
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: lnd_mod
     var_name: var1
@@ -1008,13 +1008,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1022,15 +1022,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file5
-  freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours null null null null null null null null null null null
+  freq: 6
+  freq_units: hours
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: atm_mod
     var_name: var4
@@ -1039,9 +1039,9 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time z y3_sub01 x3_sub01
   sub_region:
   - grid_type: index
@@ -1053,15 +1053,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file6%4yr%2mo%2dy%2hr
-  freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours null null null null null null null null null null null
+  freq: 6
+  freq_units: hours
   time_units: hours
   unlimdim: time
-  new_file_freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: hours null null null null null null null null null null null
+  new_file_freq: 6
+  new_file_freq_units: hours
   start_time: 2 1 1 0 0 0
-  file_duration: 12 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: hours null null null null null null null null null null null
+  file_duration: 12
+  file_duration_units: hours
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1070,13 +1070,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time y x
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1084,15 +1084,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file7
-  freq: 6 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours null null null null null null null null null null null
+  freq: 6
+  freq_units: hours
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1101,13 +1101,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time y x
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1115,15 +1115,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file8%4yr%2mo%2dy%2hr%2min
-  freq: 1 1 1 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours hours hours null null null null null null null null null
+  freq: 1 1 1
+  freq_units: hours hours hours
   time_units: hours
   unlimdim: time
-  new_file_freq: 6 3 1 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: hours hours hours null null null null null null null null null
+  new_file_freq: 6 3 1
+  new_file_freq_units: hours hours hours
   start_time: 2 1 1 0 0 0
-  file_duration: 12 3 9 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: hours hours hours null null null null null null null null null
+  file_duration: 12 3 9
+  file_duration_units: hours hours hours
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1132,13 +1132,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time y x
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1146,15 +1146,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file9%4yr%2mo%2dy%2hr%2min
-  freq: 1 1 1 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: hours hours hours null null null null null null null null null
+  freq: 1 1 1
+  freq_units: hours hours hours
   time_units: hours
   unlimdim: time
-  new_file_freq: 6 3 1 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: hours hours hours null null null null null null null null null
+  new_file_freq: 6 3 1
+  new_file_freq_units: hours hours hours
   start_time: 2 1 1 0 0 0
-  file_duration: 12 3 9 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: hours hours hours null null null null null null null null null
+  file_duration: 12 3 9
+  file_duration_units: hours hours hours
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1163,13 +1163,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
-    n_diurnal: 0
-    pow_value: 0
+    zbounds:
+    n_diurnal:
+    pow_value:
     dimensions: time y x
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1177,15 +1177,15 @@ diag_files:
   global_meta:
   - {}
 - file_name: file10_diurnal
-  freq: 1 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  freq_units: days null null null null null null null null null null null
+  freq: 1
+  freq_units: days
   time_units: hours
   unlimdim: time
-  new_file_freq: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  new_file_freq_units: null null null null null null null null null null null null
+  new_file_freq:
+  new_file_freq_units:
   start_time:
-  file_duration: -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999 -999
-  file_duration_units: null null null null null null null null null null null null
+  file_duration:
+  file_duration_units:
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1194,13 +1194,13 @@ diag_files:
     output_name:
     long_name:
     units:
-    zbounds: -999.00, -999.00
+    zbounds:
     n_diurnal: 12
-    pow_value: 0
+    pow_value:
     dimensions: time time_of_day_12 y x
   sub_region:
-  - grid_type: null
-    tile: -999
+  - grid_type:
+    tile:
     corner1:
     corner2:
     corner3:
@@ -1214,9 +1214,6 @@ my_test_count=`expr $my_test_count + 1`
 test_expect_success "check modern diag manager yaml output (test $my_test_count)" '
     mpirun -n 1 ../test_diag_out_yaml
 '
-
-test_done
-exit
 
 printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .true. \n /" | cat > input.nml
 cat <<_EOF > diag_table.yaml
