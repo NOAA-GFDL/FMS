@@ -50,6 +50,7 @@ integer                                    :: nhalox=2, nhaloy=2
 integer                                    :: io_status
 integer, parameter                         :: ongrid = 1
 integer, parameter                         :: bilinear = 2
+integer, parameter                         :: scalar = 3
 integer                                    :: test_case = ongrid
 
 namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case
@@ -83,6 +84,8 @@ case (ongrid)
   call generate_ongrid_input_file ()
 case (bilinear)
   call generate_bilinear_input_file ()
+case (scalar)
+  call generate_scalar_input_file ()
 end select
 
 call mpp_sync()
@@ -96,6 +99,8 @@ case (ongrid)
   call ongrid_test()
 case (bilinear)
   call bilinear_test()
+case (scalar)
+  call scalar_test()
 end select
 
 call mpp_exit
@@ -437,4 +442,74 @@ subroutine bilinear_test()
   enddo
   deallocate(runoff_decreasing, runoff_increasing)
 end subroutine bilinear_test
+
+!> @brief Generates the input for the bilinear data_override test_case
+subroutine generate_scalar_input_file()
+  if (mpp_pe() .eq. mpp_root_pe()) then
+    call create_grid_spec_file ()
+    call create_ocean_mosaic_file()
+    call create_ocean_hgrid_file()
+    call create_scalar_data_file()
+  endif
+  call mpp_sync()
+end subroutine generate_scalar_input_file
+
+subroutine create_scalar_data_file()
+  type(FmsNetcdfFile_t) :: fileobj
+  character(len=10) :: dimnames(1)
+  real(lkind), allocatable, dimension(:)     :: co2_in
+  real(lkind), allocatable, dimension(:)     :: time_data
+  integer :: i
+
+  allocate(co2_in(10))
+  allocate(time_data(10))
+  do i = 1, 10
+    co2_in(i) = real(i, lkind)
+  enddo
+  time_data = (/1., 2., 3., 5., 6., 7., 8., 9., 10., 11./)
+
+  dimnames(1) = 'time'
+
+  if (open_file(fileobj, 'INPUT/scalar.nc', 'overwrite')) then
+    call register_axis(fileobj, "time", unlimited)
+    call register_field(fileobj, "time", "float", (/"time"/))
+    call register_variable_attribute(fileobj, "time", "cartesian_axis", "T", str_len=1)
+    call register_variable_attribute(fileobj, "time", "calendar", "noleap", str_len=6)
+    call register_variable_attribute(fileobj, "time", "units", "days since 0001-01-01 00:00:00", str_len=30)
+
+    call register_field(fileobj, "co2", "float", dimnames)
+    call write_data(fileobj, "co2", co2_in)
+    call write_data(fileobj, "time", time_data)
+    call close_file(fileobj)
+  else
+    call mpp_error(FATAL, "Error opening the file: 'INPUT/scalar.nc' to write")
+  endif
+  deallocate(co2_in)
+end subroutine create_scalar_data_file
+
+subroutine scalar_test()
+  real(lkind)                                :: expected_result  !< Expected result from data_override
+  type(time_type)                            :: Time             !< Time
+  real(lkind)                                :: co2              !< Data to be written
+
+  co2 = 999._lkind
+  !< Run it when time=3
+  Time = set_date(1,1,4,0,0,0)
+  call data_override('OCN','co2',co2, Time)
+  !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
+  !! equal to the data at time=3, which is 3.
+  expected_result = 3._lkind
+  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
+
+  !< Run it when time=4
+  co2 = 999._lkind
+  Time = set_date(1,1,5,0,0,0)
+  call data_override('OCN','co2',co2, Time)
+  !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
+  !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
+  expected_result = (3._lkind + 4._lkind) / 2._lkind
+  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
+
+end subroutine scalar_test
+
 end program test_data_override_ongrid
