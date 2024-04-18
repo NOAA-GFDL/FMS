@@ -1638,7 +1638,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_freq)
-        if(fileptr%file_freq(k) .eq. -999) exit
+        if(fileptr%file_freq(k) .eq. diag_null) exit
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_freq(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1647,7 +1647,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(vals2(i)%val3, get_diag_unit_string(fileptr%file_frequnit))
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_new_file_freq)
-        if(fileptr%file_new_file_freq(k) .eq. -999) exit
+        if(fileptr%file_new_file_freq(k) .eq. diag_null) exit
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_new_file_freq(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1658,7 +1658,7 @@ subroutine fms_diag_yaml_out()
     st_vals(i) = fileptr%get_file_start_time()
     tmpstr1 = ''
     do k=1, SIZE(fileptr%file_duration)
-        if(fileptr%file_duration(k) .eq. -999) exit
+        if(fileptr%file_duration(k) .eq. diag_null) exit
         tmpstr2 = ''
         tmpstr2 = string(fileptr%file_duration(k))
         tmpstr1 = trim(tmpstr1)//" "//trim(tmpstr2)
@@ -1726,7 +1726,7 @@ subroutine fms_diag_yaml_out()
           end select
         endif
 
-        if( abs(varptr%var_zbounds(1) + 999.00) .gt. 1.0e-5 ) then
+        if( abs(varptr%var_zbounds(1) - real(diag_null, r4_kind)) .gt. 1.0e-5 ) then
           tmpstr2 = string(varptr%var_zbounds(1), "F8.2") // ' ' // string(varptr%var_zbounds(2), "F8.2")
           call fms_f2c_string(vals3(key3_i)%val8, trim(tmpstr2))
         endif
@@ -1767,7 +1767,7 @@ subroutine fms_diag_yaml_out()
       case(index_gridtype)
         call fms_f2c_string(vals3(key3_i)%val1, 'index')
     end select
-    if(fileptr%file_sub_region%tile .ne. -999) then
+    if(fileptr%file_sub_region%tile .ne. diag_null) then
       tmpstr1 = ''; tmpstr1 = string(fileptr%file_sub_region%tile)
       call fms_f2c_string(vals3(key3_i)%val2, tmpstr1)
     endif
