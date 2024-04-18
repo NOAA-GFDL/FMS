@@ -39,10 +39,8 @@ cmake            @mlee03
 
 # Files specific to GitHub or GitLab
 /.github/        @rem1776
-/.gitlab/        @rem1776
 
 # Testing files
-/.gitlab-ci.yml  @uramirez8707 @mlee03 @bensonr @thomas-robinson @rem1776
 /test_fms/       @uramirez8707 @mlee03 @bensonr @thomas-robinson @rem1776
 
 # Specific component directories
@@ -57,8 +55,6 @@ cmake            @mlee03
 
 /diag_manager            @thomas-robinson
 /test_fms/diag_manager/  @thomas-robinson
-
-/fv3gfs/          @bensonr
 
 /fms/             @thomas-robinson @rem1776
 /test_fms/fms/    @thomas-robinson @rem1776
