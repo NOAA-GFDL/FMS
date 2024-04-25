@@ -240,6 +240,7 @@ use platform_mod
   USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
   USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
    & fieldbuff_copy_fieldvals
+  USE fms_string_utils_mod, ONLY: string
 
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 
@@ -3926,7 +3927,7 @@ CONTAINS
 
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
-      open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
+      open(newunit=diag_log_unit, file='diag_field_log.out.'//string(mpp_pe()), action='WRITE')
       WRITE (diag_log_unit,'(777a)') &
            & 'Module',         FIELD_LOG_SEPARATOR, 'Field',     FIELD_LOG_SEPARATOR, &
            & 'Long Name',      FIELD_LOG_SEPARATOR, 'Units',     FIELD_LOG_SEPARATOR, &
