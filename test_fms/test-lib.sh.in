@@ -261,7 +261,7 @@ match_pattern_list_ () {
           break
       fi
       if test $num -ge $first -a $num -le $last ; then
-          return 0
+          test "$tNameArg" = "$tNamePattern" && return 0
       fi
     fi
   done
