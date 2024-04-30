@@ -415,6 +415,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
         else
           call diag_get_value_from_key(diag_yaml_id, diag_file_ids(i), "file_name", filename)
           call mpp_error(NOTE, "diag_manager_mod:: the file:"//trim(filename)//" has no variables defined. Ignoring!")
+          if (allocated(filename)) deallocate(filename)
           ignore(i) = .True.
         endif
     endif
@@ -1735,7 +1736,7 @@ subroutine fms_diag_yaml_out()
           tmpstr1 = ''; tmpstr1 = string(varptr%n_diurnal)
           call fms_f2c_string(vals3(key3_i)%val9, tmpstr1)
         endif
-        
+
         if( varptr%pow_value .gt. 0) then
           tmpstr1 = ''; tmpstr1 = string(varptr%pow_value)
           call fms_f2c_string(vals3(key3_i)%val10, tmpstr1)
