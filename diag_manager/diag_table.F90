@@ -250,12 +250,10 @@
 MODULE diag_table_mod
 
   USE fms2_io_mod, ONLY: ascii_read
-  USE fms_mod, ONLY: fms_error_handler, error_mesg, stdlog, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase
-  USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
-  USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
-
-  USE diag_data_mod, ONLY: global_descriptor, base_time, base_year, base_month, base_day, base_hour, base_minute, &
-                         & base_second, DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
+  USE fms_mod, ONLY: fms_error_handler, error_mesg, mpp_pe, mpp_root_pe, FATAL, WARNING, lowercase
+  USE time_manager_mod, ONLY: set_date, time_type
+  USE diag_data_mod, ONLY: global_descriptor, get_base_time, set_base_time, &
+                         & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
   USE diag_util_mod, ONLY: init_file, check_duplicate_output_fields, init_input_field, init_output_field
 
   IMPLICIT NONE
@@ -325,7 +323,6 @@ CONTAINS
 
     INTEGER, PARAMETER :: DT_LINE_LENGTH = 256
 
-    INTEGER :: stdlog_unit !< Fortran file unit number for the stdlog file.
     INTEGER :: record_len !< String length of the diag_table line read in.
     INTEGER :: num_lines !< Number of lines in diag_table
     INTEGER :: line_num !< Integer representation of the line number.
@@ -337,10 +334,10 @@ CONTAINS
     INTEGER, POINTER :: pstat !< pointer that points to istat if preset, otherwise, points to mystat.
 
     CHARACTER(len=5) :: line_number !< String representation of the line number.
-    CHARACTER(len=9) :: amonth !< Month name
     CHARACTER(len=256) :: record_line !< Current line from the diag_table.
     CHARACTER(len=256) :: local_err_msg !< Sting to hold local error messages.
     CHARACTER(len=:), DIMENSION(:), ALLOCATABLE :: diag_table
+    integer :: base_time_int(6) !< The base time as read in from the table [year month day hour min sec]
 
     TYPE(file_description_type) :: temp_file
     TYPE(field_description_type) :: temp_field
@@ -360,9 +357,6 @@ CONTAINS
        diag_subset_output = DIAG_ALL
     END IF
 
-    ! get the stdlog unit number
-    stdlog_unit = stdlog()
-
     call ascii_read('diag_table', diag_table, num_lines=num_lines)
 
     ! Read in the global file labeling string
@@ -374,36 +368,14 @@ CONTAINS
     END IF
 
     ! Read in the base date
-    READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_year, base_month, base_day, base_hour, base_minute, &
-         &  base_second
+    READ (UNIT=diag_table(2), FMT=*, IOSTAT=mystat) base_time_int
     IF ( mystat /= 0 ) THEN
        pstat = mystat
        IF ( fms_error_handler('diag_manager_init', 'Error reading the base date from the diagnostic table.', &
           &  err_msg) ) RETURN
     END IF
 
-    ! Set up the time type for base time
-    IF ( get_calendar_type() /= NO_CALENDAR ) THEN
-       IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
-          pstat = 101
-          IF ( fms_error_handler('diag_table_mod::parse_diag_table', &
-             &  'The base_year/month/day can not equal zero', err_msg) ) RETURN
-       END IF
-       base_time = set_date(base_year, base_month, base_day, base_hour, base_minute, base_second)
-       amonth = month_name(base_month)
-    ELSE
-       ! No calendar - ignore year and month
-       base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, &
-                           &  base_day)
-       base_year = 0
-       base_month = 0
-       amonth = 'day'
-    END IF
-
-    IF ( mpp_pe() == mpp_root_pe() ) THEN
-       WRITE (stdlog_unit,'("base date used = ",I4,1X,A,2I3,2(":",I2.2)," gmt")') base_year, TRIM(amonth), base_day, &
-            & base_hour, base_minute, base_second
-    END IF
+    call set_base_time(base_time_int)
 
     nfiles=0
     nfields=0
@@ -656,7 +628,7 @@ CONTAINS
              parse_file_line%iFile_duration_units = parse_file_line%iNew_file_freq_units
           END IF
        ELSE
-          parse_file_line%start_time = base_time
+          parse_file_line%start_time = get_base_time()
           parse_file_line%file_duration = parse_file_line%new_file_freq
           parse_file_line%iFile_duration_units = parse_file_line%iNew_file_freq_units
        END IF

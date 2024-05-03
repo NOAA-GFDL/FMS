@@ -45,6 +45,7 @@ SUBDIRS = \
   mosaic2 \
   fms \
   parser \
+  string_utils \
   affinity \
   mosaic \
   time_manager \

@@ -38,7 +38,7 @@ test_tracer_manager_r8_SOURCES = test_tracer_manager.F90
 test_tracer_manager_r4_CPPFLAGS=-DTEST_TM_KIND_=4 -I$(MODDIR)
 test_tracer_manager_r8_CPPFLAGS=-DTEST_TM_KIND_=8 -I$(MODDIR)
 
-if SKIP_PARSER_TESTS
+if USING_YAML
 skipflag="skip"
 else
 skipflag=""

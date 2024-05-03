@@ -42,9 +42,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   USE diag_data_mod, ONLY: output_fields, input_fields, files, do_diag_field_log, diag_log_unit,&
        & VERY_LARGE_AXIS_LENGTH, time_zero, VERY_LARGE_FILE_FREQ, END_OF_RUN, EVERY_TIME,&
-       & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, base_time,&
-       & time_unit_list, max_files, base_year, base_month, base_day, base_hour, base_minute,&
-       & base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
+       & DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, DIAG_YEARS, get_base_time,&
+       & time_unit_list, max_files, get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,&
+       & get_base_second, num_files, max_files, max_fields_per_file, max_out_per_in_field,&
        & max_input_fields,num_input_fields, max_output_fields, num_output_fields, coord_type,&
        & mix_snapshot_average_fields, global_descriptor, CMOR_MISSING_VALUE, use_cmor, pack_size,&
        & debug_diag_manager, flush_nc_files, output_field_type, max_field_attributes, max_file_attributes,&
@@ -57,8 +57,9 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
        & get_axis_reqfld, axis_is_compressed, get_compressed_axes_ids
   USE diag_output_mod, ONLY: diag_output_init, write_axis_meta_data,&
        & write_field_meta_data, done_meta_data, diag_flush
-  USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io use_mpp_io=.false.
+  USE diag_output_mod, ONLY: diag_field_write, diag_write_time !<fms2_io
   USE diag_grid_mod, ONLY: get_local_indexes
+  USE fms_diag_time_utils_mod, ONLY: diag_time_inc, get_time_string, get_date_dif
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, mpp_pe, mpp_root_pe, lowercase, fms_error_handler,&
        & string, write_version_number
   USE mpp_domains_mod,ONLY: domain1d, domain2d, mpp_get_compute_domain, null_domain1d, null_domain2d,&
@@ -76,11 +77,11 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
   IMPLICIT NONE
   PRIVATE
-  PUBLIC get_subfield_size, log_diag_field_info, init_file, diag_time_inc,&
+  PUBLIC get_subfield_size, log_diag_field_info, update_bounds, check_out_of_bounds,&
+       & check_bounds_are_exact_dynamic, check_bounds_are_exact_static, init_file, diag_time_inc,&
        & find_input_field, init_input_field, init_output_field, diag_data_out, write_static,&
        & check_duplicate_output_fields, get_date_dif, get_subfield_vert_size, sync_file_times,&
        & prepend_attribute, attribute_init, diag_util_init,&
-       & update_bounds, check_out_of_bounds, check_bounds_are_exact_dynamic, check_bounds_are_exact_static,&
        & fms_diag_check_out_of_bounds, &
        & fms_diag_check_bounds_are_exact_dynamic, fms_diag_check_bounds_are_exact_static, get_file_start_time
 
@@ -107,6 +108,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
 !> @addtogroup diag_util_mod
 !> @{
+
   ! Include variable "version" to be written to log file.
 #include <file_version.h>
 
@@ -645,10 +647,11 @@ CONTAINS
     CHARACTER(len=256) :: lmodule, lfield, lname, lunits
     CHARACTER(len=64)  :: lmissval, lmin, lmax
     CHARACTER(len=8)   :: numaxis, timeaxis
+    CHARACTER(len=1)   :: sep = '|'
+    CHARACTER(len=256) :: axis_name, axes_list
     INTEGER :: i
     REAL :: missing_value_use !< Local copy of missing_value
     REAL, DIMENSION(2) :: range_use !< Local copy of range
-    CHARACTER(len=256) :: axis_name, axes_list
 
     IF ( .NOT.do_diag_field_log ) RETURN
     IF ( mpp_pe().NE.mpp_root_pe() ) RETURN
@@ -1194,7 +1197,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     files(num_files)%long_name = TRIM(long_name)
     files(num_files)%num_fields = 0
     files(num_files)%local = .FALSE.
-    files(num_files)%last_flush = base_time
+    files(num_files)%last_flush = get_base_time()
     files(num_files)%file_unit = -1
     files(num_files)%new_file_freq = new_file_freq1
     files(num_files)%new_file_freq_units = new_file_freq_units1
@@ -1208,7 +1211,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     IF ( PRESENT(start_time) ) THEN
        files(num_files)%start_time = start_time
     ELSE
-       files(num_files)%start_time = base_time
+       files(num_files)%start_time = get_base_time()
     END IF
     files(num_files)%next_open=diag_time_inc(files(num_files)%start_time,new_file_freq1,new_file_freq_units1)
     files(num_files)%close_time = diag_time_inc(files(num_files)%start_time,file_duration1, file_duration_units1)
@@ -1222,8 +1225,8 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     END IF
 
     ! add time_axis_id and time_bounds_id here
-    WRITE(time_units_str, 11) TRIM(time_unit_list(files(num_files)%time_units)), base_year,&
-         & base_month, base_day, base_hour, base_minute, base_second
+    WRITE(time_units_str, 11) TRIM(time_unit_list(files(num_files)%time_units)), get_base_year(),&
+         & get_base_month(), get_base_day(), get_base_hour(), get_base_minute(), get_base_second()
 11  FORMAT(a, ' since ', i4.4, '-', i2.2, '-', i2.2, ' ', i2.2, ':', i2.2, ':', i2.2)
     files(num_files)%time_axis_id = diag_axis_init (TRIM(long_name), tdata, time_units_str, 'T',&
          & TRIM(long_name) , set_name=TRIM(name) )
@@ -1265,75 +1268,6 @@ END SUBROUTINE check_bounds_are_exact_dynamic
        END IF
     END DO
   END SUBROUTINE sync_file_times
-
-  !> @brief Return the next time data/file is to be written based on the frequency and units.
-  TYPE(time_type) FUNCTION diag_time_inc(time, output_freq, output_units, err_msg)
-    TYPE(time_type), INTENT(in) :: time !< Current model time.
-    INTEGER, INTENT(in):: output_freq !< Output frequency number value.
-    INTEGER, INTENT(in):: output_units !< Output frequency unit.
-    CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg !< Function error message.
-                                                       !! An empty string indicates the next output
-                                                       !! time was found successfully.
-
-    CHARACTER(len=128) :: error_message_local
-
-    IF ( PRESENT(err_msg) ) err_msg = ''
-    error_message_local = ''
-
-    ! special values for output frequency are -1 for output at end of run
-    ! and 0 for every timestep.  Need to check for these here?
-    ! Return zero time increment, hopefully this value is never used
-    IF ( output_freq == END_OF_RUN .OR. output_freq == EVERY_TIME ) THEN
-       diag_time_inc = time
-       RETURN
-    END IF
-
-    ! Make sure calendar was not set after initialization
-    IF ( output_units == DIAG_SECONDS ) THEN
-       IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          diag_time_inc = increment_time(time, output_freq, 0, err_msg=error_message_local)
-       ELSE
-          diag_time_inc = increment_date(time, 0, 0, 0, 0, 0, output_freq, err_msg=error_message_local)
-       END IF
-    ELSE IF ( output_units == DIAG_MINUTES ) THEN
-       IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          diag_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_MINUTE), 0, &
-               &err_msg=error_message_local)
-       ELSE
-          diag_time_inc = increment_date(time, 0, 0, 0, 0, output_freq, 0, err_msg=error_message_local)
-       END IF
-    ELSE IF ( output_units == DIAG_HOURS ) THEN
-       IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          diag_time_inc = increment_time(time, NINT(output_freq*SECONDS_PER_HOUR), 0, err_msg=error_message_local)
-       ELSE
-          diag_time_inc = increment_date(time, 0, 0, 0, output_freq, 0, 0, err_msg=error_message_local)
-       END IF
-    ELSE IF ( output_units == DIAG_DAYS ) THEN
-       IF (get_calendar_type() == NO_CALENDAR) THEN
-          diag_time_inc = increment_time(time, 0, output_freq, err_msg=error_message_local)
-       ELSE
-          diag_time_inc = increment_date(time, 0, 0, output_freq, 0, 0, 0, err_msg=error_message_local)
-       END IF
-    ELSE IF ( output_units == DIAG_MONTHS ) THEN
-       IF (get_calendar_type() == NO_CALENDAR) THEN
-          error_message_local = 'output units of months NOT allowed with no calendar'
-       ELSE
-          diag_time_inc = increment_date(time, 0, output_freq, 0, 0, 0, 0, err_msg=error_message_local)
-       END IF
-    ELSE IF ( output_units == DIAG_YEARS ) THEN
-       IF ( get_calendar_type() == NO_CALENDAR ) THEN
-          error_message_local = 'output units of years NOT allowed with no calendar'
-       ELSE
-          diag_time_inc = increment_date(time, output_freq, 0, 0, 0, 0, 0, err_msg=error_message_local)
-       END IF
-    ELSE
-       error_message_local = 'illegal output units'
-    END IF
-
-    IF ( error_message_local /= '' ) THEN
-       IF ( fms_error_handler('diag_time_inc',error_message_local,err_msg) ) RETURN
-    END IF
-  END FUNCTION diag_time_inc
 
   !> @brief Return the file number for file name and tile.
   !! @return Integer find_file
@@ -1738,8 +1672,8 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     match_req_fields = .FALSE.
 
     ! Here is where time_units string must be set up; time since base date
-    WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), base_year,&
-         & base_month, base_day, base_hour, base_minute, base_second
+    WRITE (time_units, 11) TRIM(time_unit_list(files(file)%time_units)), get_base_year(),&
+         & get_base_month(), get_base_day(), get_base_hour(), get_base_minute(), get_base_second()
 11  FORMAT(A, ' since ', I4.4, '-', I2.2, '-', I2.2, ' ', I2.2, ':', I2.2, ':', I2.2)
     base_name = files(file)%name
     IF ( files(file)%new_file_freq < VERY_LARGE_FILE_FREQ ) THEN
@@ -2118,195 +2052,6 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     if (associated(fileob)) nullify(fileob)
   END SUBROUTINE opening_file
 
-  !> @brief This function determines a string based on current time.
-  !!     This string is used as suffix in output file name
-  !! @return Character(len=128) get_time_string
-  CHARACTER(len=128) FUNCTION get_time_string(filename, current_time)
-    CHARACTER(len=128), INTENT(in) :: filename !< File name.
-    TYPE(time_type), INTENT(in) :: current_time !< Current model time.
-
-    INTEGER :: yr1 !< get from current time
-    INTEGER :: mo1 !< get from current time
-    INTEGER :: dy1 !< get from current time
-    INTEGER :: hr1 !< get from current time
-    INTEGER :: mi1 !< get from current time
-    INTEGER :: sc1 !< get from current time
-    INTEGER :: yr2 !< for computing next_level time unit
-    INTEGER :: dy2 !< for computing next_level time unit
-    INTEGER :: hr2 !< for computing next_level time unit
-    INTEGER :: mi2 !< for computing next_level time unit
-    INTEGER :: yr1_s !< actual values to write string
-    INTEGER :: mo1_s !< actual values to write string
-    INTEGER :: dy1_s !< actual values to write string
-    INTEGER :: hr1_s !< actual values to write string
-    INTEGER :: mi1_s !< actual values to write string
-    INTEGER :: sc1_s !< actual values to write string
-    INTEGER :: abs_day              !< component of current_time
-    INTEGER :: abs_sec              !< component of current_time
-    INTEGER :: days_per_month(12) = (/31,28,31,30,31,30,31,31,30,31,30,31/)
-    INTEGER :: julian_day, i, position, len, first_percent
-    CHARACTER(len=1) :: width  !< width of the field in format write
-    CHARACTER(len=10) :: format
-    CHARACTER(len=20) :: yr !< string of current time (output)
-    CHARACTER(len=20) :: mo !< string of current time (output)
-    CHARACTER(len=20) :: dy !< string of current time (output)
-    CHARACTER(len=20) :: hr !< string of current time (output)
-    CHARACTER(len=20) :: mi !< string of current time (output)
-    CHARACTER(len=20) :: sc !< string of current time (output)
-    CHARACTER(len=128) :: filetail
-
-    format = '("_",i*.*)'
-    CALL get_date(current_time, yr1, mo1, dy1, hr1, mi1, sc1)
-    len = LEN_TRIM(filename)
-    first_percent = INDEX(filename, '%')
-    filetail = filename(first_percent:len)
-    ! compute year string
-    position = INDEX(filetail, 'yr')
-    IF ( position > 0 ) THEN
-       width = filetail(position-1:position-1)
-       yr1_s = yr1
-       format(7:9) = width//'.'//width
-       WRITE(yr, format) yr1_s
-       yr2 = 0
-    ELSE
-       yr = ' '
-       yr2 = yr1 - 1
-    END IF
-    ! compute month string
-    position = INDEX(filetail, 'mo')
-    IF ( position > 0 ) THEN
-       width = filetail(position-1:position-1)
-       mo1_s = yr2*12 + mo1
-       format(7:9) = width//'.'//width
-       WRITE(mo, format) mo1_s
-    ELSE
-       mo = ' '
-    END IF
-    ! compute day string
-    IF ( LEN_TRIM(mo) > 0 ) THEN ! month present
-       dy1_s = dy1
-       dy2 = dy1_s - 1
-    ELSE IF ( LEN_TRIM(yr) >0 )  THEN ! no month, year present
-       ! compute julian day
-       IF ( mo1 == 1 ) THEN
-          dy1_s = dy1
-       ELSE
-          julian_day = 0
-          DO i = 1, mo1-1
-             julian_day = julian_day + days_per_month(i)
-          END DO
-          IF ( leap_year(current_time) .AND. mo1 > 2 ) julian_day = julian_day + 1
-          julian_day = julian_day + dy1
-          dy1_s = julian_day
-       END IF
-       dy2 = dy1_s - 1
-    ELSE ! no month, no year
-       CALL get_time(current_time, abs_sec, abs_day)
-       dy1_s = abs_day
-       dy2 = dy1_s
-    END IF
-    position = INDEX(filetail, 'dy')
-    IF ( position > 0 ) THEN
-       width = filetail(position-1:position-1)
-       FORMAT(7:9) = width//'.'//width
-       WRITE(dy, FORMAT) dy1_s
-    ELSE
-       dy = ' '
-    END IF
-    ! compute hour string
-    IF ( LEN_TRIM(dy) > 0 ) THEN
-       hr1_s = hr1
-    ELSE
-       hr1_s = dy2*24 + hr1
-    END IF
-    hr2 = hr1_s
-    position = INDEX(filetail, 'hr')
-    IF ( position > 0 ) THEN
-       width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
-       WRITE(hr, format) hr1_s
-    ELSE
-       hr = ' '
-    END IF
-    ! compute minute string
-    IF ( LEN_TRIM(hr) > 0 ) THEN
-       mi1_s = mi1
-    ELSE
-       mi1_s = hr2*60 + mi1
-    END IF
-    mi2 = mi1_s
-    position = INDEX(filetail, 'mi')
-    IF(position>0) THEN
-       width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
-       WRITE(mi, format) mi1_s
-    ELSE
-       mi = ' '
-    END IF
-    ! compute second string
-    IF ( LEN_TRIM(mi) > 0 ) THEN
-       sc1_s = sc1
-    ELSE
-       sc1_s = NINT(mi2*SECONDS_PER_MINUTE) + sc1
-    END IF
-    position = INDEX(filetail, 'sc')
-    IF ( position > 0 ) THEN
-       width = filetail(position-1:position-1)
-       format(7:9) = width//'.'//width
-       WRITE(sc, format) sc1_s
-    ELSE
-       sc = ' '
-    ENDIF
-    get_time_string = TRIM(yr)//TRIM(mo)//TRIM(dy)//TRIM(hr)//TRIM(mi)//TRIM(sc)
-  END FUNCTION get_time_string
-
-  !> @brief Return the difference between two times in units.
-  !! @return Real get_data_dif
-  REAL FUNCTION get_date_dif(t2, t1, units)
-    TYPE(time_type), INTENT(in) :: t2 !< Most recent time.
-    TYPE(time_type), INTENT(in) :: t1 !< Most distant time.
-    INTEGER, INTENT(in) :: units !< Unit of return value.
-
-    INTEGER :: dif_seconds, dif_days
-    TYPE(time_type) :: dif_time
-
-    ! Compute time axis label value
-    ! <ERROR STATUS="FATAL">
-    !   variable t2 is less than in variable t1
-    ! </ERROR>
-    IF ( t2 < t1 ) CALL error_mesg('diag_util_mod::get_date_dif', &
-         & 'in variable t2 is less than in variable t1', FATAL)
-
-    dif_time = t2 - t1
-
-    CALL get_time(dif_time, dif_seconds, dif_days)
-
-    IF ( units == DIAG_SECONDS ) THEN
-       get_date_dif = dif_seconds + SECONDS_PER_DAY * dif_days
-    ELSE IF ( units == DIAG_MINUTES ) THEN
-       get_date_dif = 1440 * dif_days + dif_seconds / SECONDS_PER_MINUTE
-    ELSE IF ( units == DIAG_HOURS ) THEN
-       get_date_dif = 24 * dif_days + dif_seconds / SECONDS_PER_HOUR
-    ELSE IF ( units == DIAG_DAYS ) THEN
-       get_date_dif = dif_days + dif_seconds / SECONDS_PER_DAY
-    ELSE IF ( units == DIAG_MONTHS ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   months not supported as output units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::get_date_dif', 'months not supported as output units', FATAL)
-    ELSE IF ( units == DIAG_YEARS ) THEN
-       ! <ERROR STATUS="FATAL">
-       !   years not suppored as output units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::get_date_dif', 'years not supported as output units', FATAL)
-    ELSE
-       ! <ERROR STATUS="FATAL">
-       !   illegal time units
-       ! </ERROR>
-       CALL error_mesg('diag_util_mod::diag_date_dif', 'illegal time units', FATAL)
-    END IF
-  END FUNCTION get_date_dif
-
   !> @brief Write data out to file, and if necessary flush the buffers.
   SUBROUTINE diag_data_out(file, field, dat, time, final_call_in, static_write_in, filename_time)
     INTEGER, INTENT(in) :: file !< File ID.
@@ -2332,7 +2077,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     static_write = .FALSE.
     IF ( PRESENT(static_write_in) ) static_write = static_write_in
 !> dif is the time as a real that is evaluated
-    dif = get_date_dif(time, base_time, files(file)%time_units)
+    dif = get_date_dif(time, get_base_time(), files(file)%time_units)
 
     ! get file_unit, open new file and close curent file if necessary
     IF ( .NOT.static_write .OR. files(file)%file_unit < 0 ) &
@@ -2367,9 +2112,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     IF ( .NOT.output_fields(field)%written_once ) output_fields(field)%written_once = .TRUE.
     ! *** inserted this line because start_dif < 0 for static fields ***
     IF ( .NOT.output_fields(field)%static ) THEN
-       start_dif = get_date_dif(output_fields(field)%last_output, base_time,files(file)%time_units)
+       start_dif = get_date_dif(output_fields(field)%last_output, get_base_time(),files(file)%time_units)
        IF ( .NOT.mix_snapshot_average_fields ) THEN
-          end_dif = get_date_dif(output_fields(field)%next_output, base_time, files(file)%time_units)
+          end_dif = get_date_dif(output_fields(field)%next_output, get_base_time(), files(file)%time_units)
        ELSE
           end_dif = dif
        END IF

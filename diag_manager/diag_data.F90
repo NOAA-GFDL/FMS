@@ -48,10 +48,12 @@
 MODULE diag_data_mod
 use platform_mod
 
-  USE time_manager_mod, ONLY: time_type
+  USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
+  USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
-  USE fms_mod, ONLY: WARNING, write_version_number
+  USE fms_mod, ONLY: write_version_number
   USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
+  use mpp_mod, ONLY: mpp_error, FATAL, WARNING, mpp_pe, mpp_root_pe, stdlog
 
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
@@ -62,6 +64,29 @@ use platform_mod
   PUBLIC
 
   ! Specify storage limits for fixed size tables used for pointers, etc.
+  integer, parameter :: diag_null = -999 !< Integer represening NULL in the diag_object
+  character(len=1), parameter :: diag_null_string = " "
+  integer, parameter :: diag_not_found = -1
+  integer, parameter :: diag_not_registered = 0
+  integer, parameter :: diag_registered_id = 10
+  !> Supported averaging intervals
+  integer, parameter :: monthly = 30
+  integer, parameter :: daily = 24
+  integer, parameter :: diurnal = 2
+  integer, parameter :: yearly = 12
+  integer, parameter :: no_diag_averaging = 0
+  integer, parameter :: instantaneous = 0
+  integer, parameter :: three_hourly = 3
+  integer, parameter :: six_hourly = 6
+  !integer, parameter :: seasonally = 180
+  !> Supported type/kind of the variable
+  !integer, parameter :: r16=16
+  integer, parameter :: r8 = 8
+  integer, parameter :: r4 = 4
+  integer, parameter :: i8 = -8
+  integer, parameter :: i4 = -4
+  integer, parameter :: string = 19 !< s is the 19th letter of the alphabet
+  integer, parameter :: null_type_int = -999
   INTEGER, PARAMETER :: MAX_FIELDS_PER_FILE = 300 !< Maximum number of fields per file.
   INTEGER, PARAMETER :: DIAG_OTHER = 0
   INTEGER, PARAMETER :: DIAG_OCEAN = 1
@@ -73,13 +98,37 @@ use platform_mod
   INTEGER, PARAMETER :: DIAG_SECONDS = 1, DIAG_MINUTES = 2, DIAG_HOURS = 3
   INTEGER, PARAMETER :: DIAG_DAYS = 4, DIAG_MONTHS = 5, DIAG_YEARS = 6
   INTEGER, PARAMETER :: MAX_SUBAXES = 10
+  INTEGER, PARAMETER :: NO_DOMAIN    = 1 !< Use the FmsNetcdfFile_t fileobj
+  INTEGER, PARAMETER :: TWO_D_DOMAIN = 2 !< Use the FmsNetcdfDomainFile_t fileobj
+  INTEGER, PARAMETER :: UG_DOMAIN    = 3 !< Use the FmsNetcdfUnstructuredDomainFile_t fileobj
+  INTEGER, PARAMETER :: SUB_REGIONAL = 4 !< This is a file with a sub_region use the FmsNetcdfFile_t fileobj
+  INTEGER, PARAMETER :: DIRECTION_UP   = 1  !< The axis points up if positive
+  INTEGER, PARAMETER :: DIRECTION_DOWN = -1 !< The axis points down if positive
   INTEGER, PARAMETER :: GLO_REG_VAL = -999 !< Value used in the region specification of the diag_table
                                            !! to indicate to use the full axis instead of a sub-axis
   INTEGER, PARAMETER :: GLO_REG_VAL_ALT = -1 !< Alternate value used in the region specification of the
                                              !! diag_table to indicate to use the full axis instead of a sub-axis
-  REAL, PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
+  REAL(r8_kind), PARAMETER :: CMOR_MISSING_VALUE = 1.0e20 !< CMOR standard missing value
   INTEGER, PARAMETER :: DIAG_FIELD_NOT_FOUND = -1 !< Return value for a diag_field that isn't found in the diag_table
-
+  INTEGER, PARAMETER :: latlon_gridtype = 1
+  INTEGER, PARAMETER :: index_gridtype = 2
+  INTEGER, PARAMETER :: null_gridtype = DIAG_NULL
+  INTEGER, PARAMETER :: time_none    = 0 !< There is no reduction method
+  INTEGER, PARAMETER :: time_min     = 1 !< The reduction method is min value
+  INTEGER, PARAMETER :: time_max     = 2 !< The reduction method is max value
+  INTEGER, PARAMETER :: time_sum     = 3 !< The reduction method is sum of values
+  INTEGER, PARAMETER :: time_average= 4 !< The reduction method is average of values
+  INTEGER, PARAMETER :: time_rms     = 5 !< The reudction method is root mean square of values
+  INTEGER, PARAMETER :: time_diurnal = 6 !< The reduction method is diurnal
+  INTEGER, PARAMETER :: time_power   = 7 !< The reduction method is average with exponents
+  CHARACTER(len=7)   :: avg_name = 'average' !< Name of the average fields
+  CHARACTER(len=8)   :: no_units = "NO UNITS"!< String indicating that the variable has no units
+  INTEGER, PARAMETER :: begin_time  = 1 !< Use the begining of the time average bounds
+  INTEGER, PARAMETER :: middle_time = 2 !< Use the middle of the time average bounds
+  INTEGER, PARAMETER :: end_time    = 3 !< Use the end of the time average bounds
+  INTEGER, PARAMETER :: MAX_STR_LEN = 255 !< Max length for a string
+  INTEGER, PARAMETER :: is_x_axis = 1 !< integer indicating that it is a x axis
+  INTEGER, PARAMETER :: is_y_axis = 2 !< integer indicating that it is a y axis
   !> @}
 
   !> @brief Contains the coordinates of the local domain to output.
@@ -280,6 +329,15 @@ use platform_mod
      CHARACTER(len=128)   :: tile_name='N/A'
   END TYPE diag_global_att_type
 
+  !> @brief Type to hold the attributes of the field/axis/file
+  !> @ingroup diag_data_mod
+  type fmsDiagAttribute_type
+    class(*), allocatable         :: att_value(:) !< Value of the attribute
+    character(len=:), allocatable :: att_name     !< Name of the attribute
+    contains
+      procedure :: add => fms_add_attribute
+      procedure :: write_metadata
+  end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -330,24 +388,38 @@ use platform_mod
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
-
+  LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
+  LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
+                                         !! For example, if doing daily averages and your start the simulation in
+                                         !! day1_hour3, it will do the average between day1_hour3 to day2_hour 0
+                                         !! the default behavior will do the average between day1 hour3 to day2 hour3
   ! <!-- netCDF variable -->
 
   REAL :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
                                     !! netCDF module, otherwise will be 9.9692099683868690e+36.
                                     ! from file /usr/local/include/netcdf.inc
 
+  !! @note `pack_size` and `pack_size_str` are set in diag_manager_init depending on how FMS was compiled
+  !! if FMS was compiled with default reals as 64bit, it will be set to 1 and "double",
+  !! if FMS was compiled with default reals as 32bit, it will set to 2 and "float"
+  !! The time variables will written in the precision defined by `pack_size_str`
+  !! This is to reproduce previous diag manager behavior.
+  !TODO This may not be mixed precision friendly
   INTEGER :: pack_size = 1 !< 1 for double and 2 for float
+  CHARACTER(len=6) :: pack_size_str="double" !< Pack size as a string to be used in fms2_io register call
+                                             !! set to "double" or "float"
 
   ! <!-- REAL public variables -->
-  REAL :: EMPTY = 0.0
-  REAL :: MAX_VALUE, MIN_VALUE
+  REAL(r8_kind) :: EMPTY = 0.0
+  REAL(r8_kind) :: MAX_VALUE, MIN_VALUE
 
   ! <!-- Global data for all files -->
   TYPE(time_type) :: diag_init_time !< Time diag_manager_init called.  If init_time not included in
                                     !! diag_manager_init call, then same as base_time
-  TYPE(time_type) :: base_time
-  INTEGER :: base_year, base_month, base_day, base_hour, base_minute, base_second
+  TYPE(time_type), private :: base_time !< The base_time read from diag_table
+  logical, private :: base_time_set !< Flag indicating that the base_time is set
+                                    !! This is to prevent users from calling set_base_time multiple times
+  INTEGER, private :: base_year, base_month, base_day, base_hour, base_minute, base_second
   CHARACTER(len = 256):: global_descriptor
 
   ! <!-- ALLOCATABLE variables -->
@@ -381,10 +453,200 @@ CONTAINS
 
     ! Write version number out to log file
     call write_version_number("DIAG_DATA_MOD", version)
+    module_is_initialized = .true.
+    base_time_set = .false.
+
   END SUBROUTINE diag_data_init
 
+  !> @brief Set the module variable base_time
+  subroutine set_base_time(base_time_int)
+    integer :: base_time_int(6) !< base_time as an array [year month day hour min sec]
 
+    CHARACTER(len=9) :: amonth !< Month name
+    INTEGER :: stdlog_unit !< Fortran file unit number for the stdlog file.
 
+    if (.not. module_is_initialized) call mpp_error(FATAL, "set_base_time: diag_data is not initialized")
+    if (base_time_set) call mpp_error(FATAL, "set_base_time: the base_time is already set!")
+
+    base_year = base_time_int(1)
+    base_month = base_time_int(2)
+    base_day = base_time_int(3)
+    base_hour = base_time_int(4)
+    base_minute = base_time_int(5)
+    base_second = base_time_int(6)
+
+    ! Set up the time type for base time
+    IF ( get_calendar_type() /= NO_CALENDAR ) THEN
+      IF ( base_year==0 .OR. base_month==0 .OR. base_day==0 ) THEN
+         call mpp_error(FATAL, 'diag_data_mod::set_base_time'//&
+            &  'The base_year/month/day can not equal zero')
+      END IF
+      base_time = set_date(base_year, base_month, base_day, base_hour, base_minute, base_second)
+      amonth = month_name(base_month)
+    ELSE
+      ! No calendar - ignore year and month
+      base_time = set_time(NINT(base_hour*SECONDS_PER_HOUR)+NINT(base_minute*SECONDS_PER_MINUTE)+base_second, &
+                          &  base_day)
+      base_year = 0
+      base_month = 0
+      amonth = 'day'
+    END IF
+
+    ! get the stdlog unit number
+    stdlog_unit = stdlog()
+
+    IF ( mpp_pe() == mpp_root_pe() ) THEN
+      WRITE (stdlog_unit,'("base date used = ",I4,1X,A,2I3,2(":",I2.2)," gmt")') base_year, TRIM(amonth), base_day, &
+           & base_hour, base_minute, base_second
+    END IF
+
+    base_time_set = .true.
+
+  end subroutine set_base_time
+
+  !> @brief gets the module variable base_time
+  !> @return the base_time
+  function get_base_time() &
+  result(res)
+     TYPE(time_type) :: res
+     res = base_time
+  end function get_base_time
+
+  !> @brief gets the module variable base_year
+  !> @return the base_year
+  function get_base_year() &
+    result(res)
+    integer :: res
+    res = base_year
+  end function get_base_year
+
+  !> @brief gets the module variable base_month
+  !> @return the base_month
+  function get_base_month() &
+    result(res)
+    integer :: res
+    res = base_month
+  end function get_base_month
+
+  !> @brief gets the module variable base_day
+  !> @return the base_day
+  function get_base_day() &
+    result(res)
+    integer :: res
+    res = base_day
+  end function get_base_day
+
+  !> @brief gets the module variable base_hour
+  !> @return the base_hour
+  function get_base_hour() &
+    result(res)
+    integer :: res
+    res = base_hour
+  end function get_base_hour
+
+  !> @brief gets the module variable base_minute
+  !> @return the base_minute
+  function get_base_minute() &
+    result(res)
+    integer :: res
+    res = base_minute
+  end function get_base_minute
+
+  !> @brief gets the module variable base_second
+  !> @return the base_second
+  function get_base_second() &
+    result(res)
+    integer :: res
+    res = base_second
+  end function get_base_second
+
+  !> @brief Adds an attribute to the attribute type
+  subroutine fms_add_attribute(this, att_name, att_value)
+    class(fmsDiagAttribute_type), intent(inout) :: this         !< Diag attribute type
+    character(len=*),             intent(in)    :: att_name     !< Name of the attribute
+    class(*),                     intent(in)    :: att_value(:) !< The attribute value to add
+
+    integer :: natt !< the size of att_value
+
+    natt = size(att_value)
+    this%att_name = att_name
+    select type (att_value)
+    type is (integer(kind=i4_kind))
+      allocate(integer(kind=i4_kind) :: this%att_value(natt))
+      this%att_value = att_value
+    type is (integer(kind=i8_kind))
+      allocate(integer(kind=i8_kind) :: this%att_value(natt))
+      this%att_value = att_value
+    type is (real(kind=r4_kind))
+      allocate(real(kind=r4_kind) :: this%att_value(natt))
+      this%att_value = att_value
+    type is (real(kind=r8_kind))
+      allocate(real(kind=r8_kind) :: this%att_value(natt))
+      this%att_value = att_value
+    type is (character(len=*))
+      allocate(character(len=len(att_value)) :: this%att_value(natt))
+      select type(aval => this%att_value)
+        type is (character(len=*))
+          aval = att_value
+      end select
+    end select
+  end subroutine fms_add_attribute
+
+  !> @brief gets the type of a variable
+  !> @return the type of the variable (r4,r8,i4,i8,string)
+  function get_var_type(var) &
+  result(var_type)
+    class(*), intent(in) :: var      !< Variable to get the type for
+    integer              :: var_type !< The variable's type
+
+    select type(var)
+    type is (real(r4_kind))
+      var_type = r4
+    type is (real(r8_kind))
+      var_type = r8
+    type is (integer(i4_kind))
+      var_type = i4
+    type is (integer(i8_kind))
+      var_type = i8
+    type is (character(len=*))
+      var_type = string
+    class default
+      call mpp_error(FATAL, "get_var_type:: The variable does not have a supported type. "&
+                           &"The supported types are r4, r8, i4, i8 and string.")
+    end select
+  end function get_var_type
+
+  !> @brief Writes out the attributes from an fmsDiagAttribute_type
+  subroutine write_metadata(this, fileobj, var_name, cell_methods)
+    class(fmsDiagAttribute_type),      intent(inout) :: this          !< Diag attribute type
+    class(FmsNetcdfFile_t),            INTENT(INOUT) :: fileobj       !< Fms2_io fileobj to write to
+    character(len=*),                  intent(in)    :: var_name      !< The name of the variable to write to
+    character(len=*),        optional, intent(inout) :: cell_methods  !< The cell methods attribute
+
+    select type (att_value =>this%att_value)
+    type is (character(len=*))
+      !< If the attribute is cell methods append to the current cell_methods attribute value
+      !! This will be writen once all of the cell_methods attributes are gathered ...
+      if (present(cell_methods)) then
+        if (trim(this%att_name) .eq. "cell_methods") then
+          cell_methods = trim(cell_methods)//" "//trim(att_value(1))
+          return
+        endif
+      endif
+
+      call register_variable_attribute(fileobj, var_name, this%att_name, trim(att_value(1)), &
+                                       str_len=len_trim(att_value(1)))
+    type is (real(kind=r8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r8_kind))
+    type is (real(kind=r4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, real(att_value, kind=r4_kind))
+    type is (integer(kind=i4_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i4_kind))
+    type is (integer(kind=i8_kind))
+      call register_variable_attribute(fileobj, var_name, this%att_name, int(att_value, kind=i8_kind))
+    end select
+
+  end subroutine write_metadata
 END MODULE diag_data_mod
 !> @}
 ! close documentation grouping

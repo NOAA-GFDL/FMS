@@ -39,7 +39,7 @@ test_field_table_read_SOURCES = test_field_table_read.F90
 test_field_manager_r4_CPPFLAGS=-DTEST_FM_KIND_=4 -I$(MODDIR)
 test_field_manager_r8_CPPFLAGS=-DTEST_FM_KIND_=8 -I$(MODDIR)
 
-if SKIP_PARSER_TESTS
+if USING_YAML
 skipflag="skip"
 else
 skipflag=""
