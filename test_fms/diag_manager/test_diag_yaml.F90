@@ -21,7 +21,6 @@
 !! in fms_diag_yaml_mod
 program test_diag_yaml
 
-#ifdef use_yaml
 use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
 use diag_data_mod, only: DIAG_NULL, DIAG_ALL, get_base_year, get_base_month, get_base_day, get_base_hour, &
@@ -48,8 +47,6 @@ subroutine compare_result_1d(key_name, res, expected_res)
 end subroutine compare_result_1d
 end interface compare_result
 
-type(diagYamlObject_type) :: my_yaml !< diagYamlObject obtained from diag_yaml_object_init
-type(diagYamlObject_type) :: ans     !< expected diagYamlObject
 logical :: checking_crashes = .false.!< Flag indicating that you are checking crashes
 integer :: i !< For do loops
 integer :: io_status !< The status after reading the input.nml
