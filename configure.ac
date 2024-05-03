@@ -265,7 +265,7 @@ AC_MSG_CHECKING([if HDF5 version causes floating point exceptions with set flags
 AC_RUN_IFELSE([AC_LANG_PROGRAM([], [[
       use netcdf
       integer i, j
-      j = nf90_open("test.nc", NC_WRITE, i)
+      j = nf90_create("test.nc", NC_WRITE, i)
 ]])], [hdf5_fpe_bug=no], [hdf5_fpe_bug=yes])
 AC_MSG_RESULT([$hdf5_fpe_bug])
 if test $hdf5_fpe_bug = yes; then
