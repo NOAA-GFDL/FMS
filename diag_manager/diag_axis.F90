@@ -41,9 +41,7 @@ use platform_mod
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
        & first_send_data_call, diag_atttype, use_modern_diag
   use fms_diag_object_mod, only:fms_diag_object
-#ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
-#endif
 
   IMPLICIT NONE
 
@@ -140,7 +138,7 @@ CONTAINS
     if (use_modern_diag) then
       !TODO Passing in the axis_length because of a gnu issue where inside fms_diag_axis_init, the size of DATA
       !was 2 which was causing the axis_data to not be written correctly...
-      diag_axis_init = fms_diag_object%fms_diag_axis_init(name, DATA, units, cart_name, size(DATA(:)),  &
+      diag_axis_init = fms_diag_object%fms_diag_axis_init(name, array_data, units, cart_name, size(array_data(:)),  &
        & long_name=long_name, direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, &
        & DomainU=DomainU, aux=aux, req=req, tile_count=tile_count, domain_position=domain_position)
       return

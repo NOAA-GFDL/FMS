@@ -643,7 +643,8 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field)
     enddo
     deallocate(key_ids)
   elseif (natt .ne. 0) then
-      call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//" has multiple attribute blocks")
+      call mpp_error(FATAL, "diag_yaml_object_init: variable "//trim(field%var_varname)//&
+                            " has multiple attribute blocks")
   endif
 
   !> Set the zbounds if they exist

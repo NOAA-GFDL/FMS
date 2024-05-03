@@ -483,7 +483,6 @@ test_expect_success "wildcard filenames (test $my_test_count)" '
   mpirun -n 1 ../test_diag_manager_time
 '
 
-
 rm -f input.nml diag_table
 
 touch input.nml

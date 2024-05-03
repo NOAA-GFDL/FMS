@@ -31,20 +31,13 @@ noinst_LTLIBRARIES = libdiag_manager.la
 
 # Each convenience library depends on its source.
 libdiag_manager_la_SOURCES = \
-  diag_data.F90 \
   diag_axis.F90 \
+  diag_data.F90 \
   diag_grid.F90 \
   diag_manager.F90 \
   diag_output.F90 \
   diag_table.F90 \
   diag_util.F90 \
-  fms_diag_time_reduction.F90 \
-  fms_diag_outfield.F90 \
-  fms_diag_elem_weight_procs.F90 \
-  fms_diag_fieldbuff_update.F90 \
-  fms_diag_bbox.F90 \
-  include/fms_diag_fieldbuff_update.inc \
-  include/fms_diag_fieldbuff_update.fh \
   fms_diag_time_utils.F90 \
   fms_diag_file_object.F90 \
   fms_diag_field_object.F90 \
@@ -57,7 +50,7 @@ libdiag_manager_la_SOURCES = \
   fms_diag_outfield.F90 \
   fms_diag_elem_weight_procs.F90 \
   fms_diag_fieldbuff_update.F90 \
-	fms_diag_bbox.F90 \
+		fms_diag_bbox.F90 \
   fms_diag_reduction_methods.F90 \
   include/fms_diag_fieldbuff_update.inc \
   include/fms_diag_fieldbuff_update.fh \
@@ -70,10 +63,10 @@ libdiag_manager_la_SOURCES = \
 
 # Some mods are dependant on other mods in this dir.
 diag_data_mod.$(FC_MODEXT): fms_diag_bbox_mod.$(FC_MODEXT)
-diag_axis_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_axis_object_mod.$(FC_MODEXT) fms_diag_object_mod.$(FC_MODEXT)
+diag_axis_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) fms_diag_object_mod.$(FC_MODEXT)
 diag_output_mod.$(FC_MODEXT): diag_axis_mod.$(FC_MODEXT) diag_data_mod.$(FC_MODEXT)
 diag_util_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_axis_mod.$(FC_MODEXT) diag_output_mod.$(FC_MODEXT) \
-                            diag_grid_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT)
+                            diag_grid_mod.$(FC_MODEXT) fms_diag_time_utils_mod.$(FC_MODEXT) fms_diag_bbox_mod.$(FC_MODEXT)
 fms_diag_time_utils_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
 diag_table_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT) diag_util_mod.$(FC_MODEXT)
 fms_diag_yaml_mod.$(FC_MODEXT): diag_data_mod.$(FC_MODEXT)
@@ -117,14 +110,6 @@ MODFILES = \
   diag_util_mod.$(FC_MODEXT) \
   fms_diag_time_utils_mod.$(FC_MODEXT) \
   diag_table_mod.$(FC_MODEXT) \
-  fms_diag_time_reduction_mod.$(FC_MODEXT) \
-  fms_diag_outfield_mod.$(FC_MODEXT) \
-  fms_diag_bbox_mod.$(FC_MODEXT) \
-  fms_diag_elem_weight_procs_mod.$(FC_MODEXT) \
-  fms_diag_fieldbuff_update_mod.$(FC_MODEXT) \
-  diag_manager_mod.$(FC_MODEXT) \
-  include/fms_diag_fieldbuff_update.inc \
-  include/fms_diag_fieldbuff_update.fh
   fms_diag_yaml_mod.$(FC_MODEXT) \
   fms_diag_file_object_mod.$(FC_MODEXT) \
   fms_diag_field_object_mod.$(FC_MODEXT) \

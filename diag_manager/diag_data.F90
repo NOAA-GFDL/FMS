@@ -51,13 +51,14 @@ use platform_mod
   USE time_manager_mod, ONLY: get_calendar_type, NO_CALENDAR, set_date, set_time, month_name, time_type
   USE constants_mod, ONLY: SECONDS_PER_HOUR, SECONDS_PER_MINUTE
   USE mpp_domains_mod, ONLY: domain1d, domain2d, domainUG
-  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
   USE fms_mod, ONLY: write_version_number
+  USE fms_diag_bbox_mod, ONLY: fmsDiagIbounds_type
   use mpp_mod, ONLY: mpp_error, FATAL, WARNING, mpp_pe, mpp_root_pe, stdlog
+
   ! NF90_FILL_REAL has value of 9.9692099683868690e+36.
   USE netcdf, ONLY: NF_FILL_REAL => NF90_FILL_REAL
   use fms2_io_mod
-  use  iso_c_binding
+
   IMPLICIT NONE
 
   PUBLIC
@@ -385,6 +386,8 @@ use platform_mod
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
+  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
+  LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
                                          !! For example, if doing daily averages and your start the simulation in
@@ -392,13 +395,9 @@ use platform_mod
                                          !! the default behavior will do the average between day1 hour3 to day2 hour3
   ! <!-- netCDF variable -->
 
-#ifdef use_netCDF
-  REAL(r8_kind) :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
+  REAL :: FILL_VALUE = NF_FILL_REAL !< Fill value used.  Value will be <TT>NF90_FILL_REAL</TT> if using the
                                     !! netCDF module, otherwise will be 9.9692099683868690e+36.
                                     ! from file /usr/local/include/netcdf.inc
-#else
-  REAL(r8_kind) :: FILL_VALUE = 9.9692099683868690e+36
-#endif
 
   !! @note `pack_size` and `pack_size_str` are set in diag_manager_init depending on how FMS was compiled
   !! if FMS was compiled with default reals as 64bit, it will be set to 1 and "double",

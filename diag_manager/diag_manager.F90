@@ -201,6 +201,9 @@ use platform_mod
   !     The values are defined as <TT>GLO_REG_VAL</TT> (-999) and <TT>GLO_REG_VAL_ALT</TT>
   !     (-1) in <TT>diag_data_mod</TT>.
   !   </DATA>
+  !   <DATA NAME="use_mpp_io" TYPE="LOGICAL" DEFAULT=".false.">
+  !    Set to true, diag_manager uses mpp_io.  Default is fms2_io.
+  !   </DATA>
   ! </NAMELIST>
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
@@ -230,7 +233,8 @@ use platform_mod
        & diag_log_unit, time_unit_list, pelist_name, max_axes, module_is_initialized, max_num_axis_sets,&
        & use_cmor, issue_oor_warnings, oor_warnings_fatal, oor_warning, pack_size,&
        & max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes, output_field_type,&
-       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time,diag_data_init,&
+       & max_file_attributes, max_axis_attributes, prepend_date, DIAG_FIELD_NOT_FOUND, diag_init_time, diag_data_init,&
+       & use_mpp_io, use_refactored_send, &
        & use_modern_diag, use_clock_average, diag_null, pack_size_str
   USE diag_data_mod, ONLY:  fileobj, fileobjU, fnum_for_domain, fileobjND
   USE diag_table_mod, ONLY: parse_diag_table
@@ -374,6 +378,7 @@ use platform_mod
 !> @addtogroup diag_manager_mod
 !> @{
 CONTAINS
+
   !> @brief Registers a scalar field
   !! @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_scalar(module_name, field_name, init_time, &
@@ -385,8 +390,8 @@ CONTAINS
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
@@ -395,6 +400,13 @@ CONTAINS
     LOGICAL,          OPTIONAL, INTENT(in) :: multiple_send_data !< .True. if send data is called, multiple times
                                                                  !! for the same time
 
+    ! Fatal error if range is present and its extent is not 2.
+    IF ( PRESENT(range) ) THEN
+       IF ( SIZE(range) .NE. 2 ) THEN
+          ! <ERROR STATUS="FATAL">extent of range should be 2</ERROR>
+          CALL error_mesg ('diag_manager_mod::register_diag_field', 'extent of range should be 2', FATAL)
+       END IF
+    END IF
     if (use_modern_diag) then
       if( do_diag_field_log) then
          if ( PRESENT(do_not_log) ) THEN
@@ -417,7 +429,7 @@ CONTAINS
     endif
   end function register_diag_field_scalar
 
-    !> @brief Registers an array field
+  !> @brief Registers an array field
   !> @return field index for subsequent call to send_data.
   INTEGER FUNCTION register_diag_field_array(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
@@ -537,8 +549,8 @@ END FUNCTION register_static_field
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
+    CLASS(*),         OPTIONAL, INTENT(in) :: range(:)      !< Range to add a variable attribute
     LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
     CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
     INTEGER,          OPTIONAL, INTENT(in) :: area          !< Id of the area field
@@ -559,22 +571,20 @@ END FUNCTION register_static_field
     END IF
   END FUNCTION register_diag_field_scalar_old
 
-INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, init_time, &
+  !> @brief Registers an array field
+  !> @return field index for subsequent call to send_data.
+  INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, init_time, &
        & long_name, units, missing_value, range, mask_variant, standard_name, verbose,&
        & do_not_log, err_msg, interp_method, tile_count, area, volume, realm)
-    CHARACTER(len=*),           INTENT(in) :: module_name   !< Module where the field comes from
-    CHARACTER(len=*),           INTENT(in) :: field_name    !< Name of the field
-    INTEGER,                    INTENT(in) :: axes(:)       !< Ids corresponding to the variable axis
-    TYPE(time_type),  OPTIONAL, INTENT(in) :: init_time     !< Time to start writing data from
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name     !< Long_name to add as a variable attribute
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: units         !< Units to add as a variable_attribute
-    REAL,             OPTIONAL, INTENT(in) :: missing_value !< Missing value to add as a variable attribute
-    REAL,             OPTIONAL, INTENT(in) :: range(2)      !< Range to add a variable attribute
-    LOGICAL,          OPTIONAL, INTENT(in) :: mask_variant  !< Mask variant
-    CHARACTER(len=*), OPTIONAL, INTENT(in) :: standard_name !< Standard_name to name the variable in the file
-    LOGICAL,          OPTIONAL, INTENT(in) :: verbose       !< Print more information
-    LOGICAL,          OPTIONAL, INTENT(in) :: do_not_log    !< If TRUE, field information is not logged
-    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg       !< Error_msg from call
+    CHARACTER(len=*), INTENT(in) :: module_name, field_name
+    INTEGER, INTENT(in) :: axes(:)
+    TYPE(time_type), INTENT(in) :: init_time
+    CHARACTER(len=*), OPTIONAL, INTENT(in) :: long_name, units, standard_name
+    CLASS(*), OPTIONAL, INTENT(in) :: missing_value
+    CLASS(*), DIMENSION(:), OPTIONAL, INTENT(in) :: range
+    LOGICAL, OPTIONAL, INTENT(in) :: mask_variant,verbose
+    LOGICAL, OPTIONAL, INTENT(in) :: do_not_log !< if TRUE, field info is not logged
+    CHARACTER(len=*), OPTIONAL, INTENT(out):: err_msg
     CHARACTER(len=*), OPTIONAL, INTENT(in) :: interp_method !< The interp method to be used when
                                                             !! regridding the field in post-processing.
                                                             !! Valid options are "conserve_order1",
@@ -589,6 +599,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
+    TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -787,7 +798,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     LOGICAL :: mask_variant1, dynamic1, allow_log
     CHARACTER(len=128) :: msg
     INTEGER :: domain_type, i
-    character(len=256) :: axes_list, axis_name
+    character(len=256) :: axis_name
 
     ! Fatal error if the module has not been initialized.
     IF ( .NOT.module_is_initialized ) THEN
@@ -847,7 +858,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     ! only writes log if do_diag_field_log is true in the namelist (default false)
     ! if do_diag_field_log is true and do_not_log arg is present as well, it will only print if do_not_log = false
     IF ( do_diag_field_log.AND.allow_log ) THEN
-        CALL log_diag_field_info (module_name, field_name, axes,          &
+        CALL log_diag_field_info (module_name, field_name, axes, &
             & long_name, units, missing_value=missing_value, range=range, &
             & DYNAMIC=dynamic1)
     END IF
@@ -1646,7 +1657,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
   LOGICAL FUNCTION send_data_3d(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), TARGET, CONTIGUOUS :: field
+    CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
@@ -1669,12 +1680,13 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
                                ie_in=ie_in, je_in=je_in, ke_in=ke_in, weight=weight, err_msg=err_msg)
     endif
   END FUNCTION send_data_3d
+
   !> @return true if send is successful
 !TODO documentation, seperate the old and new
   LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    CLASS(*), DIMENSION(:,:,:), INTENT(in) :: field
+    CLASS(*), DIMENSION(:,:,:), INTENT(in),TARGET,CONTIGUOUS :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
@@ -1757,10 +1769,6 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
-    if (use_modern_diag) then !> Set up array lengths for remapping
-
-
-    endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
        field_out = field
@@ -4060,6 +4068,7 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
     INTEGER, DIMENSION(6), OPTIONAL, INTENT(IN) :: time_init !< Model time diag_manager initialized
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
+    CHARACTER(len=*), PARAMETER :: SEP = '|'
 
     INTEGER, PARAMETER :: FltKind = R4_KIND
     INTEGER, PARAMETER :: DblKind = R8_KIND
@@ -4074,8 +4083,8 @@ INTEGER FUNCTION register_diag_field_array_old(module_name, field_name, axes, in
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&
          & oor_warnings_fatal, max_out_per_in_field, flush_nc_files, region_out_use_alt_value, max_field_attributes,&
-         & max_file_attributes, max_axis_attributes, prepend_date, field_log_separator, use_modern_diag, &
-         & use_clock_average
+         & max_file_attributes, max_axis_attributes, prepend_date, use_modern_diag, use_clock_average, &
+         & field_log_separator, use_refactored_send
 
     ! If the module was already initialized do nothing
     IF ( module_is_initialized ) RETURN

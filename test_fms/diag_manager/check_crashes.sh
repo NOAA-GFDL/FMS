@@ -23,7 +23,6 @@
 # execute tests in the test_fms/data_override directory.
 
 # Set common test settings.
-. ../test_common.sh
 
 printf "&check_crashes_nml \n checking_crashes = .true. \n/" | cat > input.nml
 sed '/tile/d' diag_table.yaml_base > diag_table.yaml
@@ -61,7 +60,7 @@ test_expect_failure "freq is less than -1" '
   mpirun -n 1 ../test_diag_yaml
 '
 
-sed 's/kind: float/kind: mullions/g' diag_table.yaml_base > diag_table.yaml
+sed 's/kind: r4/kind: mullions/g' diag_table.yaml_base > diag_table.yaml
 test_expect_failure "kind is not valid" '
   mpirun -n 1 ../test_diag_yaml
 '
@@ -95,5 +94,3 @@ sed 's/grid_type: latlon/grid_type: ice_cream/g' diag_table.yaml_base > diag_tab
 test_expect_failure "the sub_region grid_type is not valid" '
   mpirun -n 1 ../test_diag_yaml
 '
-
-test_done
