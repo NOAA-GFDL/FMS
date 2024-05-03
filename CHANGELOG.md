@@ -16,7 +16,7 @@ sequential patch number (starting from `01`).
 	- Expected output file changes:
 		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
 		- A `scalar_axis` dimension will not be added to scalar variables
-		- The `_FillValue` and `missing_value` attributes will not be added for `average_T1`, `average_T2`, and `average_DT` variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
  		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
 		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
 		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
