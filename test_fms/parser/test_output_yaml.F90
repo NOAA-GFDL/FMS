@@ -203,11 +203,11 @@ if(test_lvl2keys) then
   call yaml_out_add_level2key( "order 4",k1(1))
   call yaml_out_add_level2key( "sides", k2(1))
   call yaml_out_add_level2key( "specials",  k2(2))
-  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, (/1, 1, 1, 1, 2, 1/), k3, v3, &
+  call write_yaml_from_struct_3 (trim(filename), 1, k1, v1, a2, k2, v2, a3, (/1, 1, 1, 1, 2, 1/), k3, v3, &
                                & (/ 1, 1, 1 , 1, 0 ,0 ,0 ,0/))
 else
   !> Write the yaml
-  call write_yaml_from_struct_3 (filename, 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3, (/ 3, 0, 0 , 0, 0 ,0 ,0 ,0/))
+  call write_yaml_from_struct_3 (trim(filename), 1, k1, v1, a2, k2, v2, a3, a3each, k3, v3,(/3, 0, 0, 0, 0, 0, 0, 0/))
 endif
 
 !> Check yaml output against reference
