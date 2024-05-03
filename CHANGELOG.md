@@ -12,7 +12,7 @@ sequential patch number (starting from `01`).
 - Diag Manager Rewrite:
 	- If two empty files are present in the diag_table.yaml file the code will crash with a allocation error (#1506)
 	- Setting an output frequency of '0 days' does not work as expected and may cause an error stating a time_step has been skipped (#1502)
-	- The `flush_nc_files` and `mix_snapshot_average_fields` nml options are not yet functional. The `mix_snapshot_average_fields` option is planned will to be deprecated (for the rewritten diag_manager only).
+	- The `flush_nc_files` and `mix_snapshot_average_fields` nml options are not yet functional. The `mix_snapshot_average_fields` option is planned to be deprecated (for the rewritten diag_manager only).
 	- Expected output file changes:
 		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
 		- A `scalar_axis` dimension will not be added to scalar variables
