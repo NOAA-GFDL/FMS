@@ -618,10 +618,10 @@ endif
 ! Define my_table object and read in number of fields
 my_table = fmTable_t(trim(tbl_name))
 call my_table%get_blocks
-call my_table%create_children
-do h=1,my_table%nchildren
-  do i=1,my_table%children(h)%nchildren
-    do j=1,my_table%children(h)%children(i)%nchildren
+call my_table%create_types
+do h=1,my_table%ntypes
+  do i=1,my_table%types(h)%nmodels
+    do j=1,my_table%types(h)%models(i)%nvars
       num_fields = num_fields + 1
     end do
   end do
@@ -630,9 +630,9 @@ end do
 allocate(fields(num_fields))
 
 current_field = 0
-do h=1,my_table%nchildren
-  do i=1,my_table%children(h)%nchildren
-    select case (my_table%children(h)%children(i)%name)
+do h=1,my_table%ntypes
+  do i=1,my_table%types(h)%nmodels
+    select case (my_table%types(h)%models(i)%name)
     case ('coupler_mod')
        model = MODEL_COUPLER
     case ('atmos_mod')
@@ -645,58 +645,58 @@ do h=1,my_table%nchildren
        model = MODEL_ICE
     case default
       call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : &
-        &'//trim(my_table%children(h)%children(i)%name))
+        &'//trim(my_table%types(h)%models(i)%name))
     end select
-    do j=1,my_table%children(h)%children(i)%nchildren
+    do j=1,my_table%types(h)%models(i)%nvars
       current_field = current_field + 1
-      list_name = list_sep//lowercase(trim(my_table%children(h)%children(i)%name))//list_sep//&
-               lowercase(trim(my_table%children(h)%name))//list_sep//&
-               lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
+      list_name = list_sep//lowercase(trim(my_table%types(h)%models(i)%name))//list_sep//&
+               lowercase(trim(my_table%types(h)%name))//list_sep//&
+               lowercase(trim(my_table%types(h)%models(i)%variables(j)%name))
       index_list_name = fm_new_list(list_name, create = .true.)
       if ( index_list_name == NO_FIELD ) &
         call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
       fm_success = fm_change_list(list_name)
       fields(current_field)%model       = model
-      fields(current_field)%field_name  = lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
-      fields(current_field)%field_type  = lowercase(trim(my_table%children(h)%name))
-      fields(current_field)%num_methods = size(my_table%children(h)%children(i)%children(j)%key_ids)
+      fields(current_field)%field_name  = lowercase(trim(my_table%types(h)%models(i)%variables(j)%name))
+      fields(current_field)%field_type  = lowercase(trim(my_table%types(h)%name))
+      fields(current_field)%num_methods = size(my_table%types(h)%models(i)%variables(j)%key_ids)
       allocate(fields(current_field)%methods(fields(current_field)%num_methods))
       if(fields(current_field)%num_methods.gt.0) then
-        if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
-        do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
+        if (my_table%types(h)%models(i)%variables(j)%nattrs .gt. 0) subparams = .true.
+        do k=1,size(my_table%types(h)%models(i)%variables(j)%keys)
           fields(current_field)%methods(k)%method_type = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+            lowercase(trim(my_table%types(h)%models(i)%variables(j)%keys(k)))
           fields(current_field)%methods(k)%method_name = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+            lowercase(trim(my_table%types(h)%models(i)%variables(j)%values(k)))
           if (.not.subparams) then
-            call new_name_yaml(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
-              my_table%children(h)%children(i)%children(j)%values(k) )
+            call new_name(list_name, my_table%types(h)%models(i)%variables(j)%keys(k),&
+              my_table%types(h)%models(i)%variables(j)%values(k) )
           else
             subparamindex=-1
-            do l=1,my_table%children(h)%children(i)%children(j)%nchildren
-              if(lowercase(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname)).eq.&
+            do l=1,my_table%types(h)%models(i)%variables(j)%nattrs
+              if(lowercase(trim(my_table%types(h)%models(i)%variables(j)%attributes(l)%paramname)).eq.&
                 lowercase(trim(fields(current_field)%methods(k)%method_type))) then
                   subparamindex = l
                   exit
               end if
             end do
             if (subparamindex.eq.-1) then
-              call new_name_yaml(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
-                my_table%children(h)%children(i)%children(j)%values(k) )
+              call new_name(list_name, my_table%types(h)%models(i)%variables(j)%keys(k),&
+                my_table%types(h)%models(i)%variables(j)%values(k) )
             else
-              do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
+              do m=1,size(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%keys)
                 method_control = " "
                 subparamvalue = " "
-                if (trim(my_table%children(h)%children(i)%children(j)%values(k)).eq.'fm_yaml_null') then
+                if (trim(my_table%types(h)%models(i)%variables(j)%values(k)).eq.'fm_yaml_null') then
                   fm_yaml_null = ''
                 else
-                  fm_yaml_null = trim(my_table%children(h)%children(i)%children(j)%values(k))//'/'
+                  fm_yaml_null = trim(my_table%types(h)%models(i)%variables(j)%values(k))//'/'
                 end if
-                method_control = trim(my_table%children(h)%children(i)%children(j)%keys(k))//"/"//&
+                method_control = trim(my_table%types(h)%models(i)%variables(j)%keys(k))//"/"//&
                   &trim(fm_yaml_null)//&
-                  &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
-                subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
-                call new_name_yaml(list_name, method_control, subparamvalue)
+                  &trim(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%keys(m))
+                subparamvalue = trim(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%values(m))
+                call new_name(list_name, method_control, subparamvalue)
               end do
             end if
           end if
