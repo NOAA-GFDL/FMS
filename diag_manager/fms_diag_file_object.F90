@@ -158,6 +158,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_buffer_ids
  procedure, public :: get_number_of_buffers
  procedure, public :: has_send_data_been_called
+ procedure, public :: check_buffer_times
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
@@ -382,10 +383,17 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
     endif
   else
     var_reduct = VarYaml%get_var_reduction()
-    select case (var_reduct)
-      case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
-        this%time_ops = .true.
-    end select
+    if (this%num_registered_fields .eq. 1) then
+      select case (var_reduct)
+        case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
+          this%time_ops = .true.
+      end select
+    else
+      if (var_reduct .ne. time_none .and. .not. is_static) &
+        call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
+                              " has variables that are time averaged and instantaneous")
+    endif
+
   endif
 
 end subroutine set_file_time_ops
@@ -1366,17 +1374,31 @@ logical function is_time_to_close_file (this, time_step)
 end function
 
 !> \brief Determine if it is time to "write" to the file
-logical function is_time_to_write(this, time_step, output_buffers)
+logical function is_time_to_write(this, time_step, output_buffers, do_not_write)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
   TYPE(time_type),                  intent(in)              :: time_step         !< Current model step time
   type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffer.
                                                                                  !! This is needed for error messages!
+  logical,                          intent(out)             :: do_not_write      !< .True. only if this is not a new
+                                                                                 !! time step and you are writting
+                                                                                 !! at every time step
 
+  do_not_write = .false.
   if (time_step > this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
     if (time_step > this%FMS_diag_file%next_next_output) then
-      if (this%FMS_diag_file%num_registered_fields .eq. 0) then
+      if (this%FMS_diag_file%get_file_freq() .eq. 0) then
+        !! If the diag file is being written at every time step
+        if (time_step .ne. this%FMS_diag_file%next_output) then
+          !! Only write and update the next_output if it is a new time
+          call this%FMS_diag_file%check_buffer_times(output_buffers)
+          this%FMS_diag_file%next_output = time_step
+          this%FMS_diag_file%next_next_output = time_step
+          is_time_to_write = .true.
+        endif
+        return
+      elseif (this%FMS_diag_file%num_registered_fields .eq. 0) then
         !! If no variables have been registered, write a dummy time dimension for the first level
         !! At least one time level is needed for the combiner to work ...
         if (this%FMS_diag_file%unlim_dimension_level .eq. 0) then
@@ -1400,6 +1422,8 @@ logical function is_time_to_write(this, time_step, output_buffers)
     if (this%FMS_diag_file%is_static) then
       ! This is to ensure that static files get finished in the begining of the run
       if (this%FMS_diag_file%unlim_dimension_level .eq. 1) is_time_to_write = .true.
+    else if(this%FMS_diag_file%get_file_freq() .eq. 0) then
+      do_not_write = .true.
     endif
   endif
 end function is_time_to_write
@@ -1787,6 +1811,29 @@ pure function get_number_of_buffers(this)
   integer :: get_number_of_buffers !< returned number of buffers
   get_number_of_buffers = this%number_of_buffers
 end function get_number_of_buffers
+
+!> Check to ensure that send_data was called at the time step for every output buffer in the file
+!! This is only needed when you are output data at every time step
+subroutine check_buffer_times(this, output_buffers)
+  class(fmsDiagFile_type),        intent(in)           :: this              !< file object
+  type(fmsDiagOutputBuffer_type), intent(in), target   :: output_buffers(:) !< Array of output buffers
+
+  integer :: i
+  type(time_type) :: current_buffer_time
+  character(len=:), allocatable :: field_name
+
+  do i = 1, this%number_of_buffers
+    if (i .eq. 1) then
+      current_buffer_time = output_buffers(this%buffer_ids(i))%get_buffer_time()
+      field_name = output_buffers(this%buffer_ids(i))%get_buffer_name()
+    else
+      if (current_buffer_time .ne. output_buffers(this%buffer_ids(i))%get_buffer_time()) &
+        call mpp_error(FATAL, "Send data has not been called at the same time steps for the fields:"//&
+                              field_name//" and "//output_buffers(this%buffer_ids(i))%get_buffer_name()//&
+                              " in file:"//this%get_file_fname())
+    endif
+  enddo
+end subroutine
 
 !> @brief Determine if send_data has been called for any fields in the file. Prints out warnings, if indicated
 !! @return .True. if send_data has been called for any fields in the file

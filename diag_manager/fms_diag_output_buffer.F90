@@ -67,6 +67,7 @@ type :: fmsDiagOutputBuffer_type
   type(time_type)       :: next_output        !< The next time to output the data
 
   contains
+  procedure :: get_buffer_name
   procedure :: add_axis_ids
   procedure :: get_axis_ids
   procedure :: set_field_id
@@ -76,6 +77,7 @@ type :: fmsDiagOutputBuffer_type
   procedure :: init_buffer_time
   procedure :: set_next_output
   procedure :: update_buffer_time
+  procedure :: get_buffer_time
   procedure :: is_there_data_to_write
   procedure :: is_time_to_finish_reduction
   procedure :: set_send_data_called
@@ -301,6 +303,17 @@ subroutine initialize_buffer (this, reduction_method, field_name)
 
 end subroutine initialize_buffer
 
+!> @brief Get the name of the field for the output buffer
+!! @return Name of the field for the output buffer
+function get_buffer_name(this) &
+  result(rslt)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
+
+  character(len=:), allocatable :: rslt
+
+  rslt = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+end function get_buffer_name
+
 !> @brief Adds the axis ids to the buffer object
 subroutine add_axis_ids(this, axis_ids)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
@@ -399,6 +412,16 @@ subroutine update_buffer_time(this, time)
     this%time = time
   endif
 end subroutine update_buffer_time
+
+!> @brief Get the buffer_time from a output buffer object
+!! @return The buffer time
+function get_buffer_time(this) &
+  result(rslt)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
+  type(time_type) :: rslt
+
+  rslt = this%time
+end function get_buffer_time
 
 !> @brief Determine if finished with math
 !! @return this%done_with_math

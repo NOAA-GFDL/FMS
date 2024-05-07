@@ -1769,6 +1769,10 @@ END FUNCTION register_static_field
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
+    if (use_modern_diag) then !> Set up array lengths for remapping
+
+
+    endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
        field_out = field
@@ -4169,11 +4173,15 @@ END FUNCTION register_static_field
     END IF
 
     IF ( mix_snapshot_average_fields ) THEN
-       IF ( mpp_pe() == mpp_root_pe() ) THEN
+       IF ( .not. use_modern_diag ) THEN
           CALL error_mesg('diag_manager_mod::diag_manager_init', 'Setting diag_manager_nml variable '//&
                & 'mix_snapshot_average_fields = .TRUE. will cause ERRORS in the time coordinates '//&
                & 'of all time averaged fields.  Strongly recommend setting mix_snapshot_average_fields '//&
-               & '= .FALSE.', WARNING)
+               & '= .FALSE.', NOTE)
+       ELSE
+          CALL error_mesg('diag_manager_mod::diag_manager_init', 'mix_snapshot_average_fields = .TRUE. is not '//&
+               & 'supported if use_modern_diag = .TRUE. Please set mix_snapshot_average_fields '//&
+               & 'to .FALSE. and put instantaneous and averaged fields in seperate files!', FATAL)
        END IF
     END IF
     ALLOCATE(output_fields(max_output_fields))
