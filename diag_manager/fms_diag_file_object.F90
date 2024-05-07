@@ -94,7 +94,7 @@ type :: fmsDiagFile_type
   integer :: number_of_axis !< Number of axis in the file
   integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_buffers !< Number of buffers that have been added to the file
-  logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
+  logical, allocatable :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: data_has_been_written !< .True. if data has been written for the current unlimited dimension level
   logical :: is_static !< .True. if the frequency is -1
@@ -119,6 +119,7 @@ type :: fmsDiagFile_type
   procedure, public :: add_start_time
   procedure, public :: set_file_time_ops
   procedure, public :: has_field_ids
+  procedure, public :: get_time_ops
   procedure, public :: get_id
 ! TODO  procedure, public :: get_fileobj ! TODO
 ! TODO  procedure, public :: get_diag_yaml_file ! TODO
@@ -276,7 +277,6 @@ logical function fms_diag_files_object_init (files_array)
        obj%no_more_data = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
      endif
 
-     obj%time_ops = .false.
      obj%unlim_dimension_level = 0
      obj%is_static = obj%get_file_freq() .eq. -1
      obj%nz_subaxis = 0
@@ -374,28 +374,31 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
 
   !< Go away if the file is static
   if (this%is_static) return
+  if (is_static) return
 
-  if (this%time_ops) then
-    if (is_static) return
-    if (VarYaml%get_var_reduction() .eq. time_none) then
-      call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
-                            " has variables that are time averaged and instantaneous")
-    endif
-  else
+  ! Set time_ops the first time this subroutine it is called
+  if (.not. allocated(this%time_ops)) then
     var_reduct = VarYaml%get_var_reduction()
-    if (this%num_registered_fields .eq. 1) then
-      select case (var_reduct)
-        case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
-          this%time_ops = .true.
-      end select
-    else
-      if (var_reduct .ne. time_none .and. .not. is_static) &
-        call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
-                              " has variables that are time averaged and instantaneous")
-    endif
 
+    select case (var_reduct)
+    case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
+      this%time_ops = .true.
+    case (time_none)
+      this%time_ops = .false.
+    end select
+
+    return
   endif
 
+  if (this%time_ops) then
+    if (VarYaml%get_var_reduction() .eq. time_none) &
+      call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
+                            " has variables that are time averaged and instantaneous")
+  else
+    if (VarYaml%get_var_reduction() .ne. time_none) &
+      call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
+                            " has variables that are time averaged and instantaneous")
+  endif
 end subroutine set_file_time_ops
 
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
@@ -450,6 +453,19 @@ pure function get_id (this) result (res)
   integer :: res
   res = this%id
 end function get_id
+
+!> \brief Returns a copy of the value of time_ops
+!! \return A copy of time_ops
+pure function get_time_ops (this) result (res)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
+  logical :: res
+
+  if (.not. allocated(this%time_ops)) then
+    res = .false.
+  else
+    res = this%time_ops
+  endif
+end function get_time_ops
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! TODO
@@ -1294,7 +1310,7 @@ subroutine write_time_metadata(this)
   call register_variable_attribute(fms2io_fileobj, time_var_name, "calendar", &
     lowercase(trim(calendar)), str_len=len_trim(calendar))
 
-  if (diag_file%time_ops) then
+  if (diag_file%get_time_ops()) then
     call register_variable_attribute(fms2io_fileobj, time_var_name, "bounds", &
       trim(time_var_name)//"_bnds", str_len=len_trim(time_var_name//"_bnds"))
 
@@ -1461,7 +1477,7 @@ subroutine write_time_data(this)
   !! that at least one time level is written (this is needed for the combiner)
   if (.not. diag_file%data_has_been_written .and. diag_file%unlim_dimension_level .ne. 1) return
 
-  if (diag_file%time_ops) then
+  if (diag_file%get_time_ops()) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2
     dif = get_date_dif(middle_time, get_base_time(), diag_file%get_file_timeunit())
   else
@@ -1471,7 +1487,7 @@ subroutine write_time_data(this)
   call write_data(fms2io_fileobj, diag_file%get_file_unlimdim(), dif, &
     unlim_dim_level=diag_file%unlim_dimension_level)
 
-  if (diag_file%time_ops) then
+  if (diag_file%get_time_ops()) then
     T1 = get_date_dif(diag_file%last_output, get_base_time(), diag_file%get_file_timeunit())
     T2 = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
 
