@@ -1769,10 +1769,6 @@ END FUNCTION register_static_field
             & SIZE(field,1), SIZE(field,2), SIZE(field,3), status
        IF ( fms_error_handler('diag_manager_mod::send_data_3d', err_msg_local, err_msg) ) RETURN
     END IF
-    if (use_modern_diag) then !> Set up array lengths for remapping
-
-
-    endif
     SELECT TYPE (field)
     TYPE IS (real(kind=r4_kind))
        field_out = field
