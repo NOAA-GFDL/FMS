@@ -344,7 +344,7 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   logical, intent(in)                :: has_mask !< indicates if mask is used so missing values can be skipped
   logical, intent(in)                :: mask_variant !< Indicates if the mask changes over time
   integer, optional, intent(in)      :: n_diurnal_samples !< number of diurnal samples as set in reduction method
-  real(FMS_TRM_KIND_), allocatable :: wsum(:,:,:,:) !< local cp of weight_sum, only changed if using diurnal
+  integer, allocatable :: wsum(:,:,:,:) !< local cp of weight_sum, only changed if using diurnal
   !! TODO replace conditional in the `where` with passed in and ajusted mask from the original call
   !logical, optional, intent(in)      :: mask(:,:,:,:) !< logical mask from accept data call, if using one.
   !logical                            :: has_mask !< whether or not mask is present
@@ -358,7 +358,6 @@ subroutine SUM_UPDATE_DONE_(out_buffer_data, weight_sum, reduction_method, missi
   if(reduction_method .eq. time_diurnal) then
     if(.not. present(n_diurnal_samples)) call mpp_error(FATAL, &
       "SUM_UPDATE_DONE_ :: reduction method is diurnal but no sample size was given")
-    print *, "N_diurnal_samples:", n_diurnal_samples, "SUM", weight_sum
     wsum = weight_sum / n_diurnal_samples
   else
     wsum = weight_sum
