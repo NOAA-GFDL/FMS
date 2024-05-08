@@ -47,7 +47,6 @@ subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, lon, lat, min_lon, m
   call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
   call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
 
-#ifdef _DEBUG
   if (lbound(lon,1).ne.isc .or. lbound(lon,2).ne.jsc) then
     call mpp_error(FATAL, "get_grid_version_1: Incorrect lower-bound dimensions of lon(isc:,jsc:)")
   endif
@@ -55,7 +54,6 @@ subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, lon, lat, min_lon, m
   if (lbound(lat,1).ne.isc .or. lbound(lat,2).ne.jsc) then
     call mpp_error(FATAL, "get_grid_version_1: Incorrect lower-bound dimensions of lat(isc:,jsc:)")
   endif
-#endif
 
   select case(mod_name)
   case('ocn', 'ice')
@@ -178,7 +176,6 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, lon, lat, min_lon, max
 
   call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
 
-#ifdef _DEBUG
   if (lbound(lon,1).ne.isc .or. lbound(lon,2).ne.jsc) then
     call mpp_error(FATAL, "get_grid_version_2: Incorrect lower-bound dimensions of lon(isc:,jsc:)")
   endif
@@ -186,7 +183,6 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, lon, lat, min_lon, max
   if (lbound(lat,1).ne.isc .or. lbound(lat,2).ne.jsc) then
     call mpp_error(FATAL, "get_grid_version_2: Incorrect lower-bound dimensions of lat(isc:,jsc:)")
   endif
-#endif
 
   ! get the grid file to read
 
