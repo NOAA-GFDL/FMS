@@ -1,0 +1,101 @@
+{
+  "title": "Data table schema for data_override",
+  "type": "object",
+  "properties": {
+    "data_table": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "grid_name": {
+            "type": "string",
+            "enum": ["OCN", "LND", "ATM", "ICE"]
+          },
+          "fieldname_in_model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "override_file": {
+            "type": "object",
+            "properties": {
+              "file_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "fieldname_in_file": {
+                "type": "string",
+                "minLength": 1
+              },
+              "interp_method": {
+                "type": "string",
+                "enum": ["bilinear", "bicubic", "none"]
+              },
+              "multi_file": {
+                "type": "object",
+                "properties": {
+                  "next_file_name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "prev_file_name": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["next_file_name", "prev_file_name"],
+                "additionalProperties": false
+              },
+              "external_weights": {
+                "type": "object",
+                "properties": {
+                  "file_name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["file_name", "source"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["file_name", "fieldname_in_file", "interp_method"],
+            "additionalProperties": false
+          },
+          "factor": {
+            "type": "number"
+          },
+          "subregion": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["inside_region", "outside_region"]
+              },
+              "lon_start": {
+                "type": "number"
+              },
+              "lon_end": {
+                "type": "number"
+              },
+              "lat_start": {
+                "type": "number"
+              },
+              "lat_end": {
+                "type": "number"
+              }
+            },
+            "required": ["type", "lon_start", "lon_end", "lat_start", "lat_end"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["grid_name", "fieldname_in_model", "factor"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["data_table"],
+  "additionalProperties": false
+}
