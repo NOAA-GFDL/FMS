@@ -18,14 +18,13 @@
 !***********************************************************************
 
 !> Get global lon and lat of three model (target) grids, with a given file name
-subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, lon, lat, min_lon, max_lon)
   integer, parameter :: lkind = FMS_GET_GRID_VERSION_KIND_
 
   character(len=*), intent(in) :: grid_file !< name of grid file
   character(len=*), intent(in) :: mod_name !< module name
   type(domain2d),   intent(in) :: domain !< 2D domain
-  integer,          intent(in) :: isc, iec, jsc, jec
-  real(lkind), dimension(isc:,jsc:), intent(out) :: lon, lat
+  real(lkind), dimension(:,:), intent(out) :: lon, lat
   real(lkind),                       intent(out) :: min_lon, max_lon
 
   integer                     :: i, j, siz(4)
@@ -34,8 +33,8 @@ subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, isc, iec, jsc, jec, 
   real(lkind), dimension(:), allocatable :: glon, glat  !< lon and lat of 1-D grid of atm/lnd
   logical                     :: is_new_grid
   integer                     :: is, ie, js, je
-  integer                     :: isd, ied, jsd, jed
   integer                     :: isg, ieg, jsg, jeg
+  integer                     :: isc, iec, jsc, jec
   character(len=3)            :: xname, yname
   integer                     :: start(2), nread(2)
   type(FmsNetcdfDomainFile_t) :: fileobj
@@ -45,8 +44,18 @@ subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, isc, iec, jsc, jec, 
      call mpp_error(FATAL, 'data_override_mod(get_grid_version_1): Error in opening file '//trim(grid_file))
   endif
 
-  call mpp_get_data_domain(domain, isd, ied, jsd, jed)
   call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
+  call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+
+#ifdef _DEBUG
+  if (lbound(lon,1).ne.isc .or. lbound(lon,2).ne.jsc) then
+    call mpp_error(FATAL, "get_grid_version_1: Incorrect lower-bound dimensions of lon(isc:,jsc:)")
+  endif
+
+  if (lbound(lat,1).ne.isc .or. lbound(lat,2).ne.jsc) then
+    call mpp_error(FATAL, "get_grid_version_1: Incorrect lower-bound dimensions of lat(isc:,jsc:)")
+  endif
+#endif
 
   select case(mod_name)
   case('ocn', 'ice')
@@ -143,21 +152,19 @@ end subroutine GET_GRID_VERSION_1_
 
 !> Get global lon and lat of three model (target) grids from mosaic.nc.
 !! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
-subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, lon, lat, min_lon, max_lon)
   integer, parameter :: lkind = FMS_GET_GRID_VERSION_KIND_
 
   type(FmsNetcdfFile_t), intent(in) :: fileobj !< file object for grid file
   character(len=*),      intent(in) :: mod_name !< module name
   type(domain2d),        intent(in) :: domain !< 2D domain
-  integer,               intent(in) :: isc, iec, jsc, jec
-  real(lkind), dimension(isc:,jsc:), intent(out) :: lon, lat
+  real(lkind), dimension(:,:), intent(out) :: lon, lat
   real(lkind),                       intent(out) :: min_lon, max_lon
 
   integer                   :: i, j, siz(2)
   integer                   :: nlon, nlat             ! size of global grid
   integer                   :: nlon_super, nlat_super ! size of global supergrid.
-  integer                   :: isd, ied, jsd, jed
-  integer                   :: isg, ieg, jsg, jeg
+  integer,                  :: isc, iec, jsc, jec
   integer                   :: isc2, iec2, jsc2, jec2
   character(len=256)        :: solo_mosaic_file, grid_file
   real(lkind), allocatable  :: tmpx(:,:), tmpy(:,:)
@@ -169,8 +176,17 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lo
      trim(mod_name) .NE. 'ice' .AND. trim(mod_name) .NE. 'lnd' ) call mpp_error(FATAL, &
         "data_override_mod: mod_name should be 'atm', 'ocn', 'ice' or 'lnd' ")
 
-  call mpp_get_data_domain(domain, isd, ied, jsd, jed)
-  call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
+  call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+
+#ifdef _DEBUG
+  if (lbound(lon,1).ne.isc .or. lbound(lon,2).ne.jsc) then
+    call mpp_error(FATAL, "get_grid_version_2: Incorrect lower-bound dimensions of lon(isc:,jsc:)")
+  endif
+
+  if (lbound(lat,1).ne.isc .or. lbound(lat,2).ne.jsc) then
+    call mpp_error(FATAL, "get_grid_version_2: Incorrect lower-bound dimensions of lat(isc:,jsc:)")
+  endif
+#endif
 
   ! get the grid file to read
 
@@ -179,7 +195,7 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lo
 
      solo_mosaic_file = 'INPUT/'//trim(solo_mosaic_file)
      if(.not. open_file(mosaicfileobj, solo_mosaic_file, 'read')) then
-        call mpp_error(FATAL, 'data_override_mod(get_grid_version_2: Error in opening solo mosaic file '// &
+        call mpp_error(FATAL, 'data_override_mod(get_grid_version_2): Error in opening solo mosaic file '// &
                        & trim(solo_mosaic_file))
      endif
      open_solo_mosaic=.true.
@@ -191,7 +207,7 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lo
   call get_mosaic_tile_grid(grid_file, mosaicfileobj, domain)
 
   if(.not. open_file(tilefileobj, grid_file, 'read')) then
-     call mpp_error(FATAL, 'data_override_mod(get_grid_version_2: Error in opening tile file '//trim(grid_file))
+     call mpp_error(FATAL, 'data_override_mod(get_grid_version_2): Error in opening tile file '//trim(grid_file))
   endif
 
   call get_variable_size(tilefileobj, 'area', siz)
