@@ -164,7 +164,7 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, lon, lat, min_lon, max
   integer                   :: i, j, siz(2)
   integer                   :: nlon, nlat             ! size of global grid
   integer                   :: nlon_super, nlat_super ! size of global supergrid.
-  integer,                  :: isc, iec, jsc, jec
+  integer                   :: isc, iec, jsc, jec
   integer                   :: isc2, iec2, jsc2, jec2
   character(len=256)        :: solo_mosaic_file, grid_file
   real(lkind), allocatable  :: tmpx(:,:), tmpy(:,:)
