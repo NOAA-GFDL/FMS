@@ -45,6 +45,7 @@ SUBDIRS = \
   mosaic2 \
   fms \
   parser \
+  string_utils \
   affinity \
   mosaic \
   time_manager \
@@ -125,10 +126,10 @@ check-code-coverage: check
 .PHONY: check-code-coverage
 
 clean-local:
-	-rm -rf .mods coverage-data coverage-report
+	-rm -rf .mods coverage-data coverage-report test.nc
 else
 clean-local:
-	-rm -rf .mods
+	-rm -rf .mods test.nc
 endif
 
 install-data-hook:

@@ -6,6 +6,61 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2024.01] - 2024-05-03
+
+### Known Issues
+- Diag Manager Rewrite:
+	- If two empty files are present in the diag_table.yaml file the code will crash with a allocation error (#1506)
+	- Setting an output frequency of '0 days' does not work as expected and may cause an error stating a time_step has been skipped (#1502)
+	- The `flush_nc_files` and `mix_snapshot_average_fields` nml options are not yet functional. The `mix_snapshot_average_fields` option is planned to be deprecated (for the rewritten diag_manager only).
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+ 		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- TESTS: `test_mpp_gatscat.F90` fails to compile with the Intel Oneapi 2024.01's version of ifort
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+
+### Added
+- DIAG_MANAGER: The diag manager has been rewritten with a object oriented design. The old diag_manager code has been kept intact and will be used by default. The rewritten diag manager can be enabled via `use_modern_diag = .true.` to your `diag_manager_nml`. New features include:
+	- Self-describing YAML formatting for diag_table's
+	- Allows 4d variables
+  - Support defining subregions with indices
+  - More flexibility when adding metadata and defining output frequency
+- FMS2_IO: Adds support for collective parallel reads to improve model startup time. The collective reads are disabled by default and enabled via the `use_collective` flag in `netcdf_io_mod`.
+- DATA_OVERRIDE: Adds multifile support for using 3 input netcdf files instead of one. Three keys have been added to the data_table: `is_multi_file` to be set to true to enable the feature, as well as `prev_file_name` and `next_file_name` to set to the names of the additional files.
+- INTERPOLATOR: Adds support for yearly/annual data
+- DATA_OVERRIDE: Adds support for monotonically increasing/decreasing arrays
+- DOCS: Add documentation for the exchange grid (xgrid_mod) and update the contribution guide to add a section on code reviews
+- MPP: MPI sub-communicators for domains are now accessible via `mpp_get_domain_tile_commid` and `mpp_get_domain_commid` in `mpp_domains_mod`
+
+### Changed
+- DATA_OVERRIDE: Changes behavior to crash if both data_table and data_table.yaml are present and adds error checking when reading in yaml files
+- FIELD_MANAGER: Changes behavior to crash if both field_table and field_table.yaml are present as well as adds a namelist flag (`use_field_table_yaml`) to enable support for the yaml input.
+
+### Fixed
+- DATA_OVERRIDE: Fixes allocation error with scalar routine and replaces pointers with allocatables
+- INTERPOLATOR: Increase max string size for file paths
+- AXIS_UTILS: Improves performance of `nearest_index` routine
+- CMAKE: Fixes macOS linking issues with OpenMP
+
+### Tag Commit Hashes
+- 2024.01-beta5  d3bab5a84b6a51eddd46ab6fb65eaa532830c6c7
+- 2024.01-beta4  ac363ddfd3075637cecae30ddfbae7a78751197b
+- 2024.01-alpha6 2ace94564a08aec4d7ab7eca0e57c0289e52d5b1
+- 2024.01-alpha5 5ed0bd373cc59a9681052fa837cb83a67169d102
+- 2024.01-alpha4 8dd90d72b58f0de3632dc62920f8adfb996b2265
+- 2024.01-beta3  f71405a075102aef42f5811dc09e239ddd002637
+- 2024.01-beta2  bb6de937f70a08a440f5e63b8553b047c1921509
+- 2024.01-beta1  913f8aaecca374d5e10280056de862d5e4a7a668
+- 2024.01-alpha3 085c6bfc945a6f1c586b842ca6268fca442884d8
+- 2024.01-alpha2 38bfde30e1cb8bf5222410a9c37e71529567bf69
+- 2024.01-alpha1 ac0d086296ea8b9196552463655cb9a848db39fe
+
 ## [2023.04] - 2023-12-04
 ### Known Issues
 - GCC 9 and below as well as GCC 11.1.0 are unsupported due to compilation issues. See prior releases for more details.

@@ -103,6 +103,33 @@ Descriptive commit messages within PR’s should still be used, and some project
 The commit message on the main branch must follow the guidelines of [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), meaning it includes a ‘type’ prefix (ie. usually fix or feat(ure)) and a footer for any API-breaking changes.
 Additionally, commits should include the number of the pull request in parentheses (this is automatically added on github) to allow easier tracking of each commit.
 
+## Reviewing Pull Requests
+
+When reviewing a pull request, members of MSD should look for the following:
+
+- Design
+  - Does the code change belong in the FMS library or does it better belong elsewhere such as a component repository or the FMScoupler?
+  - Could existing routines/modules be utilized to reduce redundancy?
+  - Temporary changes/fixes meant to be removed should be avoided whenever possible
+- Functionality
+  - Does this PR do what is intended (and stated)
+  - Are the changes good for both end-users and developers?
+  - Will the code change impact existing end-users needlessly?
+- Complexity
+  - Are the changes easily understood by the reader / reviewer?
+- Testing
+  - Code changes should include a test program or a modification to a test program to ensure the code is covered by the test suite
+- Comments
+  - Inline comments for complex code segments or intricacies to make the purpose of the code reasonably clear
+- Style and Consistency
+  - Code should follow the syle guide in general, but should also be consistent to the file the change is made in
+- Documentation
+  - If a PR changes the behaviour or instructions, accompanying documentation should also change
+- Thoroughness
+  - Reviews should be done line by line, and the surrounding context/file should be taken into account
+
+Comments on pull requests should be courteous and constructive, giving useful feedback and explanations for why changes should be made. See the [code of conduct](CODE_OF_CONDUCT.md) for more information.
+
 ## Tests
 
 FMS uses github actions workflows to run build, runtime, and code linting tests for libFMS.  Users may be required to create

@@ -69,9 +69,9 @@ type data_type
    logical            :: multifile = .false.
    character(len=512) :: prev_file_name   !< name of netCDF data file for previous segment
    character(len=512) :: next_file_name   !< name of netCDF data file for next segment
-   type(time_type), dimension(:), pointer :: time_records => NULL()
-   type(time_type), dimension(:), pointer :: time_prev_records => NULL()
-   type(time_type), dimension(:), pointer :: time_next_records => NULL()
+   type(time_type), dimension(:), allocatable :: time_records
+   type(time_type), dimension(:), allocatable :: time_prev_records
+   type(time_type), dimension(:), allocatable :: time_next_records
 end type data_type
 
 !> Private type for holding various data fields for performing data overrides
@@ -900,13 +900,17 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
 
   !10 do time interp to get data in compute_domain
 
-  first_record = data_table(index1)%time_records(1)
-  last_record = data_table(index1)%time_records(dims(4))
-
   ! if using consecutive files, allow to perform time interpolation between the last record of previous
   ! file and first record of current file OR between the last record of current file and first record of
   ! next file hence "bridging" over files.
   if_multi2: if (multifile) then
+    dims = get_external_field_size(id_time)
+    if (.not. allocated(data_table(index1)%time_records)) allocate(data_table(index1)%time_records(dims(4)))
+    call get_time_axis(id_time,data_table(index1)%time_records)
+
+    first_record = data_table(index1)%time_records(1)
+    last_record = data_table(index1)%time_records(dims(4))
+
     if_time2: if (time<first_record) then
       if (id_time_prev<0) call mpp_error(FATAL,'data_override:previous file needed with multifile')
       prev_dims = get_external_field_size(id_time_prev)
@@ -1438,7 +1442,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
 
 
   dims = get_external_field_size(id_time)
-  if (.not. associated(data_table(index1)%time_records)) allocate(data_table(index1)%time_records(dims(4)))
+  if (.not. allocated(data_table(index1)%time_records)) allocate(data_table(index1)%time_records(dims(4)))
   call get_time_axis(id_time,data_table(index1)%time_records)
 
   first_record = data_table(index1)%time_records(1)

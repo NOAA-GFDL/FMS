@@ -26,7 +26,7 @@ set(CMAKE_Fortran_FLAGS_DEBUG)
 
 # Define the CMake project
 project(FMS
-  VERSION 2023.04.0
+  VERSION 2024.01.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -125,11 +125,20 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_output.F90
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
+  diag_manager/fms_diag_time_utils.F90
+  diag_manager/fms_diag_object.F90
+  diag_manager/fms_diag_yaml.F90
+  diag_manager/fms_diag_file_object.F90
+  diag_manager/fms_diag_field_object.F90
+  diag_manager/fms_diag_axis_object.F90
+  diag_manager/fms_diag_output_buffer.F90
+  diag_manager/fms_diag_input_buffer.F90
   diag_manager/fms_diag_time_reduction.F90
   diag_manager/fms_diag_outfield.F90
   diag_manager/fms_diag_elem_weight_procs.F90
   diag_manager/fms_diag_fieldbuff_update.F90
   diag_manager/fms_diag_bbox.F90
+  diag_manager/fms_diag_reduction_methods.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90
@@ -345,9 +354,12 @@ foreach(kind ${kinds})
     target_link_libraries(${libTgt}_f PRIVATE OpenMP::OpenMP_Fortran)
   endif()
 
-  # Check if gnu 10 or higher with mpich
+  # Check if gnu 10 or higher
+  # this should only be needed with mpich, but wasn't able to find a good way to find the MPI flavor consistently
   if ( CMAKE_Fortran_COMPILER_VERSION MATCHES "1[0-9]\.[0-9]*\.[0-9]*" AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    if(MPI_C_COMPILER MATCHES ".*mpich.*" )
+    include(CheckFortranCompilerFlag)
+    check_fortran_compiler_flag("-fallow-argument-mismatch" _arg_mismatch_flag)
+    if(_arg_mismatch_flag)
       message(STATUS "Adding -fallow-argument-mismatch flag to compile with GCC >=10 and MPICH")
       target_compile_options(${libTgt}_f PRIVATE "-fallow-argument-mismatch;-w")
     endif()

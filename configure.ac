@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2023.04.00-dev],
+  [2024.01.00-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -191,9 +191,9 @@ if test $with_yaml = yes; then
   #If the test pass, define use_yaml macro
   AC_DEFINE([use_yaml], [1], [This is required to use yaml parser])
 
-  AM_CONDITIONAL([SKIP_PARSER_TESTS], false )
+  AM_CONDITIONAL([USING_YAML], true)
 else
-  AM_CONDITIONAL([SKIP_PARSER_TESTS], true )
+  AM_CONDITIONAL([USING_YAML], false)
 fi
 
 # Require netCDF
@@ -258,6 +258,21 @@ AM_CONDITIONAL(COV, [test "$enable_code_coverage" = yes])
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
+
+# Check if we get a floating point exception with netcdf
+# this will only get triggered if you have FPE traps enabled via FCFLAGS
+AC_MSG_CHECKING([if HDF5 version causes floating point exceptions with set flags])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([], [[
+      use netcdf
+      integer i, j
+      j = nf90_create("test.nc", NC_WRITE, i)
+]])], [hdf5_fpe_bug=no], [hdf5_fpe_bug=yes])
+AC_MSG_RESULT([$hdf5_fpe_bug])
+if test $hdf5_fpe_bug = yes; then
+  AC_MSG_ERROR([The HDF5 version used to build netcdf is incompatible with the set FCFLAGS. dnl
+NetCDF must be built with a HDF5 version other than 1.14.3 to support floating point exception traps.])
+fi
+
 
 # Check if Fortran compiler has the Class, Character array assign bug
 GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()

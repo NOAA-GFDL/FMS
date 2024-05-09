@@ -58,10 +58,10 @@ test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
 test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 
-if SKIP_PARSER_TESTS
-skipflag="skip"
-else
+if USING_YAML
 skipflag=""
+else
+skipflag="skip"
 endif
 
 TEST_EXTENSIONS = .sh
@@ -72,10 +72,12 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@" \
 
 # Run the test program.
 
-TESTS = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh
+TESTS = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
+        test_data_override2_scalar.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh
+EXTRA_DIST = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
+             test_data_override2_scalar.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*
