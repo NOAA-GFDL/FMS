@@ -189,6 +189,24 @@ cat <<_EOF > diag_table.yaml
 title: test_none
 base_date: 2 1 1 0 0 0
 diag_files:
+- file_name: test_empty_file
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+- file_name: test_empty_file2
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Testing diag manager that defined 2 diag file with no variables (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+cat <<_EOF > diag_table.yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
 - file_name: test_unregistered_data
   time_units: hours
   unlimdim: time
