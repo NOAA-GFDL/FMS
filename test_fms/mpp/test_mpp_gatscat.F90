@@ -23,7 +23,6 @@
 !> @author Miguel Zuniga
 !> @brief Test various mpp_gather and mpp_routines.
 !> @note  Some of the tested mpp_gather routines are legavy routines originally in file test_mpp.F90.
-!> @todo  Routine test_gather_2DV is a legacy routine with legacy issues. See associated comments.
 program test_mpp_gatscat
 
 #ifdef sgi_mipspro
@@ -72,9 +71,6 @@ program test_mpp_gatscat
   if( pe.EQ.root ) print *, '------------------> Calling test_gather <------------------'
   call test_gather(npes,pe,root,out_unit)
   call test_gatherV(npes,pe,root,out_unit)
-
-  !!test_gather_2DV does not always work and does not make sense.
-  !call test_gather2DV(npes,pe,root,out_unit)
 
   if( pe.EQ.root ) print *, '------------------> Finished test_gather <------------------'
 
@@ -776,123 +772,5 @@ end subroutine test_scatter_2D_R8
      write(out_unit,*) "Test gatherV with reduced pelist successful"
      deallocate(sdata,rdata,ref)
   end subroutine test_gatherV
-
-  !> @brief  Test the 2D vector mpp_gather routine.
-  !> @todo   This is a legacy routine which does not work in all conditions. For the gcc version,
-  !> the use of cray pointers is suspect to causing a crash at the call to mpp_gather.
-subroutine test_gather2DV(npes,pe,root,out_unit)
-  implicit none
-     integer, intent(in) :: npes,pe,root,out_unit
-
-     integer :: pelist(npes),rsize(npes)
-     integer :: pelist2(npes),rsize2(npes)
-     integer :: i,j,k,l,nz,ssize,nelems
-     real,allocatable,dimension(:,:) :: gather_data, cdata, sbuff,rbuff
-     real,allocatable :: ref(:,:)
-     integer, parameter :: KSIZE=10
-
-     real :: sbuff1D(size(sbuff))
-     real :: rbuff1D(size(rbuff))
-     pointer(sptr,sbuff1D); pointer(rptr,rbuff1D)
-
-
-     if(npes < 3)then
-       call mpp_error(FATAL, "Test_gather2DV: minimum of 3 ranks required. Not testing gather; too few ranks.")
-     elseif(npes > 9999)then
-       call mpp_error(FATAL, "Test_gather2DV: maximum of 9999 ranks supported. Not testing gather2DV; too many ranks.")
-       return
-     endif
-     write(out_unit,*)
-
-     ssize = pe+1
-     allocate(gather_data(ssize,KSIZE))
-     do k=1,KSIZE; do i=1,ssize
-       gather_data(i,k) = 10000.0*k + pe + 0.0001*i
-     enddo; enddo
-     do i=1,npes
-       pelist(i) = i-1
-       rsize(i) = i
-     enddo
-
-     nz = KSIZE
-     nelems = sum(rsize(:))
-
-     allocate(rbuff(nz,nelems)); rbuff = -1.0
-     allocate(ref(nelems,nz),cdata(nelems,nz))
-     ref = 0.0; cdata = 0.0
-     if(pe == root)then
-       do k=1,KSIZE
-       l=1
-       do j=1,npes
-         do i=1,rsize(j)
-            ref(l,k) = 10000.0*k + pelist(j) + 0.0001*i
-            l = l+1
-       enddo; enddo;enddo
-     endif
-     allocate(sbuff(nz,ssize))
-     ! this matrix inversion makes for easy gather to the IO root
-     ! and a clear, concise unpack
-     do j=1,ssize
-       do i=1,nz
-         sbuff(i,j) = gather_data(j,i)
-     enddo; enddo
-
-  !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size
-     sptr = LOC(sbuff); rptr = LOC(rbuff)
-     call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*rsize(:))
-
-     if(pe == root)then
-        do j=1,nz
-           do i=1,nelems
-             cdata(i,j) = rbuff(j,i)
-        enddo; enddo
-        do j=1,nz
-           do i=1,nelems
-            if(cdata(i,j) /= ref(i,j))then
-               write(6,*) "Gathered data ",cdata(i,j), " NE reference ",ref(i,j), "at i,j=",i,j
-               call mpp_error(FATAL, "Test gather2DV global pelist failed")
-            endif
-       enddo;enddo
-     endif
-
-     call mpp_sync()
-     write(out_unit,*) "Test gather2DV with global pelist successful"
-
-     do i=1,npes
-       pelist2(i) = pelist(npes-i+1)
-       rsize2(i) = rsize(npes-i+1)
-     enddo
-
-     rbuff = -1.0
-     ref = 0.0; cdata = 0.0
-     if(pe == pelist2(1))then
-       do k=1,KSIZE
-       l=1
-       do j=1,npes
-         do i=1,rsize2(j)
-            ref(l,k) = 10000.0*k + pelist2(j) + 0.0001*i
-            l = l+1
-       enddo; enddo;enddo
-     endif
-
-     call mpp_gather(sbuff1D,size(sbuff),rbuff1D,nz*rsize2(:),pelist2)
-
-     if(pe == pelist2(1))then
-        do j=1,nz
-           do i=1,nelems
-             cdata(i,j) = rbuff(j,i)
-        enddo; enddo
-        do j=1,nz
-           do i=1,nelems
-            if(cdata(i,j) /= ref(i,j))then
-               write(6,*) "Gathered data ",cdata(i,j), " NE reference ",ref(i,j), "at i,j=",i,j
-               call mpp_error(FATAL, "Test gather2DV with reversed pelist failed")
-            endif
-       enddo;enddo
-     endif
-     call mpp_sync()
-     write(out_unit,*) "Test gather2DV with reversed pelist successful"
-     deallocate(gather_data,sbuff,rbuff,cdata,ref)
-  end subroutine test_gather2DV
 
 end program test_mpp_gatscat

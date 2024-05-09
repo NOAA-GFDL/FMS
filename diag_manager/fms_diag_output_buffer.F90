@@ -67,6 +67,7 @@ type :: fmsDiagOutputBuffer_type
   type(time_type)       :: next_output        !< The next time to output the data
 
   contains
+  procedure :: get_buffer_name
   procedure :: add_axis_ids
   procedure :: get_axis_ids
   procedure :: set_field_id
@@ -76,6 +77,7 @@ type :: fmsDiagOutputBuffer_type
   procedure :: init_buffer_time
   procedure :: set_next_output
   procedure :: update_buffer_time
+  procedure :: get_buffer_time
   procedure :: is_there_data_to_write
   procedure :: is_time_to_finish_reduction
   procedure :: set_send_data_called
@@ -301,6 +303,17 @@ subroutine initialize_buffer (this, reduction_method, field_name)
 
 end subroutine initialize_buffer
 
+!> @brief Get the name of the field for the output buffer
+!! @return Name of the field for the output buffer
+function get_buffer_name(this) &
+  result(rslt)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
+
+  character(len=:), allocatable :: rslt
+
+  rslt = diag_yaml%diag_fields(this%yaml_id)%get_var_outname()
+end function get_buffer_name
+
 !> @brief Adds the axis ids to the buffer object
 subroutine add_axis_ids(this, axis_ids)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this        !< Buffer object
@@ -399,6 +412,16 @@ subroutine update_buffer_time(this, time)
     this%time = time
   endif
 end subroutine update_buffer_time
+
+!> @brief Get the buffer_time from a output buffer object
+!! @return The buffer time
+function get_buffer_time(this) &
+  result(rslt)
+  class(fmsDiagOutputBuffer_type), intent(in) :: this        !< Buffer object
+  type(time_type) :: rslt
+
+  rslt = this%time
+end function get_buffer_time
 
 !> @brief Determine if finished with math
 !! @return this%done_with_math
@@ -693,7 +716,7 @@ end function do_time_max_wrapper
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
 function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bounds_in, bounds_out, missing_value, &
-                             has_missing_value, pow_value) &
+                             has_missing_value, pow_value, weight) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
@@ -708,6 +731,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
   integer, optional,               intent(in)    :: pow_value           !< power value, will calculate field_data^pow
                                                                         !! before adding to buffer should only be
                                                                         !! present if using pow reduction method
+  real(kind=r8_kind), optional,    intent(in)    :: weight              !< The weight to use when suming
   character(len=150) :: err_msg
 
   !TODO This will be expanded for integers
@@ -722,7 +746,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
         endif
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
                                 bounds_in, bounds_out, missing_value, this%diurnal_section, &
-                                pow=pow_value)
+                                pow=pow_value, weight=weight)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
@@ -735,7 +759,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
         endif
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
                                 bounds_in, bounds_out, real(missing_value, kind=r4_kind), &
-                                this%diurnal_section, pow=pow_value)
+                                this%diurnal_section, pow=pow_value, weight=weight)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
