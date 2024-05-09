@@ -807,6 +807,7 @@ subroutine fms_diag_do_io(this, end_time)
   real(r8_kind) :: mval !< r8 copy of missing value
   character(len=128) :: error_string !< outputted error string from reducti
   logical :: unlim_dim_was_increased !< .True. if the unlimited dimension index was increased for any of the buffers
+  logical :: do_not_write !< .True. only if this is not a new time step and you are writting at every time step
 
   force_write = .false.
 
@@ -836,7 +837,7 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers)
+    finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers, do_not_write)
     unlim_dim_was_increased = .false.
 
     ! finish reduction method if its time to write
@@ -850,7 +851,7 @@ subroutine fms_diag_do_io(this, end_time)
       ! Go away if there is no data to write
       if (.not. diag_buff%is_there_data_to_write()) cycle
 
-      if ( diag_buff%is_time_to_finish_reduction(end_time)) then
+      if ( diag_buff%is_time_to_finish_reduction(end_time) .and. .not. do_not_write) then
         ! sets missing value
         mval = diag_field%find_missing_value(missing_val)
         ! time_average and greater values all involve averaging so need to be "finished" before written

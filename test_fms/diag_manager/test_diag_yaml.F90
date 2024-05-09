@@ -25,7 +25,7 @@ use FMS_mod, only: fms_init, fms_end
 use fms_diag_yaml_mod
 use diag_data_mod, only: DIAG_NULL, DIAG_ALL, get_base_year, get_base_month, get_base_day, get_base_hour, &
                        & get_base_minute, get_base_second, diag_data_init, DIAG_HOURS, DIAG_NULL, DIAG_DAYS, &
-                       & time_average, r4, middle_time, end_time
+                       & time_average, r4, middle_time, end_time, time_none
 use  time_manager_mod, only: set_calendar_type, JULIAN
 use mpp_mod
 use platform_mod
@@ -165,7 +165,7 @@ subroutine compare_diag_fields(res)
 
   call compare_result("var_reduction 1", res(1)%get_var_reduction(), time_average)
   call compare_result("var_reduction 2", res(2)%get_var_reduction(), time_average)
-  call compare_result("var_reduction 3", res(3)%get_var_reduction(), time_average)
+  call compare_result("var_reduction 3", res(3)%get_var_reduction(), time_none)
 
   call compare_result("var_module 1", res(1)%get_var_module(), "test_diag_manager_mod")
   call compare_result("var_module 2", res(2)%get_var_module(), "test_diag_manager_mod")
