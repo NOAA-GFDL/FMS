@@ -716,7 +716,7 @@ end function do_time_max_wrapper
 !> @brief Does the time_sum reduction method on the buffer object
 !! @return Error message if the math was not successful
 function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bounds_in, bounds_out, missing_value, &
-                             has_missing_value, pow_value) &
+                             has_missing_value, pow_value, weight) &
   result(err_msg)
   class(fmsDiagOutputBuffer_type), intent(inout) :: this                !< buffer object to write
   class(*),                        intent(in)    :: field_data(:,:,:,:) !< Buffer data for current time
@@ -731,6 +731,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
   integer, optional,               intent(in)    :: pow_value           !< power value, will calculate field_data^pow
                                                                         !! before adding to buffer should only be
                                                                         !! present if using pow reduction method
+  real(kind=r8_kind), optional,    intent(in)    :: weight              !< The weight to use when suming
   character(len=150) :: err_msg
 
   !TODO This will be expanded for integers
@@ -745,7 +746,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
         endif
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
                                 bounds_in, bounds_out, missing_value, this%diurnal_section, &
-                                pow=pow_value)
+                                pow=pow_value, weight=weight)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r8_kind)"
       end select
@@ -758,7 +759,7 @@ function do_time_sum_wrapper(this, field_data, mask, is_masked, mask_variant, bo
         endif
         call do_time_sum_update(output_buffer, this%weight_sum, field_data, mask, is_masked, mask_variant, &
                                 bounds_in, bounds_out, real(missing_value, kind=r4_kind), &
-                                this%diurnal_section, pow=pow_value)
+                                this%diurnal_section, pow=pow_value, weight=weight)
       class default
         err_msg="do_time_sum_wrapper::the output buffer and the buffer send in are not of the same type (r4_kind)"
       end select
