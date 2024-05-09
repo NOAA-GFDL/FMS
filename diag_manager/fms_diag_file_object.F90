@@ -94,7 +94,8 @@ type :: fmsDiagFile_type
   integer :: number_of_axis !< Number of axis in the file
   integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_buffers !< Number of buffers that have been added to the file
-  logical, allocatable :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
+  logical, allocatable :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average,
+                                   !! or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: data_has_been_written !< .True. if data has been written for the current unlimited dimension level
   logical :: is_static !< .True. if the frequency is -1
