@@ -1,4 +1,5 @@
 program generic_blocks
+#ifdef use_yaml
   use fms_mod, only: fms_init, fms_end
   use mpp_mod, only: mpp_error, FATAL
   use yaml_parser_mod
@@ -15,7 +16,7 @@ program generic_blocks
   character(len=50)    :: variable_name      !< The variable name
   character(len=50)    :: model_type_name    !< The model type
   character(len=50)    :: block_name         !< The name of the block
-  character(len=50)    :: key_name           !< The name of the key 
+  character(len=50)    :: key_name           !< The name of the key
   character(len=50)    :: key_value          !< The value of the key
   character(len=50)    :: varnames(2)        !< The expected names of the variables
   character(len=50)    :: blocknames1(1)     !< The expected names of the blocks for the first variable
@@ -57,7 +58,7 @@ program generic_blocks
 
       allocate(varlist_ids(get_num_blocks(yaml_id, "varlist", parent_block_id=modlist_ids(j))))
       call get_block_ids(yaml_id, "varlist", varlist_ids, modlist_ids(j))
-      
+
       do k = 1, size(varlist_ids)
         call get_value_from_key(yaml_id, varlist_ids(k), "variable", variable_name)
         print *, "Variable::", trim(variable_name)
@@ -106,4 +107,5 @@ program generic_blocks
     deallocate(modlist_ids)
   enddo
   call fms_end()
+#endif
 end program generic_blocks
