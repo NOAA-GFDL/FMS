@@ -33,9 +33,12 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  test_flexible_time test_diag_update_buffer test_reduction_methods check_time_none \
  check_time_min check_time_max check_time_sum check_time_avg test_diag_diurnal check_time_diurnal \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
- check_var_masks test_multiple_send_data test_diag_out_yaml
+ check_var_masks test_multiple_send_data test_diag_out_yaml test_output_every_freq \
+ test_dm_weights
 
 # This is the source code for the test.
+test_output_every_freq_SOURCES = test_output_every_freq.F90
+test_dm_weights_SOURCES = test_dm_weights.F90
 test_diag_manager_SOURCES = test_diag_manager.F90
 test_diag_manager_time_SOURCES = test_diag_manager_time.F90
 test_diag_update_buffer_SOURCES= test_diag_update_buffer.F90
@@ -69,7 +72,8 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 # Run the test.
 TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh test_time_sum.sh \
         test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh test_cell_measures.sh \
-        test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_flush_nc_file.sh
+        test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_output_every_freq.sh \
+        test_dm_weights.sh test_flush_nc_file.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
@@ -77,7 +81,7 @@ testing_utils.mod: testing_utils.$(OBJEXT)
 EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_min.sh test_time_max.sh \
              test_time_sum.sh test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh \
              test_cell_measures.sh test_subregional.sh test_var_masks.sh test_multiple_send_data.sh \
-             test_flush_nc_file.sh
+             test_flush_nc_file.sh test_dm_weights.sh test_output_every_freq.sh
 
 if USING_YAML
 skipflag=""

@@ -192,6 +192,39 @@ test_expect_success "Checking answers for the "avg" reduction method with halo o
   mpirun -n 1 ../check_time_avg
 '
 
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n mix_snapshot_average_fields = .true. \n /" | cat > input.nml
+test_expect_failure "Running diag_manager with with mix_snapshot_average_fields = .true. (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+
+cat <<_EOF > diag_table.yaml
+title: test_avg
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name:  test_avg
+  time_units: hours
+  unlimdim: time
+  freq: 6 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var0
+    output_name: var0_avg
+    reduction: average
+    kind: r4
+  - module: ocn_mod
+    var_name: var0
+    output_name: var0_none
+    reduction: none
+    kind: r4
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n /" | cat > input.nml
+test_expect_failure "Running diag_manager with with a file with instantaneous and averaged output (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+
 cat <<_EOF > diag_table.yaml
 title: test_avg
 base_date: 2 1 1 0 0 0

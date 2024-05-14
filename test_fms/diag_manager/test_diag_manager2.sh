@@ -560,13 +560,13 @@ diag_files:
   - module: test_diag_manager_mod
     var_name: sstt
     output_name: sstt
-    reduction: average
+    reduction: none
     kind: r4
     long_name: S S T
   - module: test_diag_manager_mod
     var_name: sstt2
     output_name: sstt2
-    reduction: average
+    reduction: none
     kind: r4
     long_name: S S T
     write_var: false
