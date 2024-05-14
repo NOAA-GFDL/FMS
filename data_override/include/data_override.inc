@@ -606,11 +606,10 @@ subroutine read_table_yaml(data_table)
 	 call check_interpol_method(data_table(i)%interpol_method, data_table(i)%file_name, &
 	      & data_table(i)%fieldname_file)
 
-	 mentries = get_num_blocks(file_id, "multi_file", parent_block_id=sub_block_id(1)
+	 mentries = get_num_blocks(file_id, "multi_file", parent_block_id=sub_block_id(1))
          if(mentries.gt.1) call mpp_error(FATAL, "Too many multi_file blocks in tata table. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname//":"//&
               trim(data_table(i)%fieldname_code))
-         call get_num_blocks(file_id, "multi_file", parent_block_id=sub_block_id(1))
 
 	 data_table(i)%multifile = .false.
          if(mentries.gt.0) data_table(i)%multifile = .true.
@@ -633,15 +632,23 @@ subroutine read_table_yaml(data_table)
 	 if(mentries.gt.1) call mpp_error(FATAL, "Too many external_weight blocks in data table. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname//":"//&
               trim(data_table(i)%fieldname_code))
-	 call get_block_ids(file_id, "external_weights", sub2_block_id, parent_block_id=sub_block_id(1))
 
-	 data_table(i)%ext_weights_file_name = ""
-	 call get_value_from_key(file_id, sub2_block_id(1), "file_name", data_table(i)ext_weights_file_name, &
-	      & is_optional=.true.)
+	 data_table(i)%ext_weights = .false.
+	 if(mentries.gt.0) data_table(i)%ext_weights = .true.
 
-	 data_table(i)%ext_weights_source = ""
-         call get_value_from_key(file_id, sub2_block_id(1), "source", data_table(i)ext_weights_source, &
-              & is_optional=.true.)
+	 if (data_table(i)%ext_weights) then
+	  call get_block_ids(file_id, "external_weights", sub2_block_id, parent_block_id=sub_block_id(1))
+	  data_table(i)%ext_weights_file_name = ""
+	  data_table(i)%ext_weights_source = ""
+	  call get_value_from_key(file_id, sub2_block_id(1), "file_name", data_table(i)ext_weights_file_name, &
+	       & is_optional=.true.)
+          call get_value_from_key(file_id, sub2_block_id(1), "source", data_table(i)ext_weights_source, &
+               & is_optional=.true.)
+	  if (trim(data_table(i)%ext_weights_file_name) .eq. "" .and. trim(data_table(i)%ext_weights_source) .eq. "") &
+            call mpp_error(FATAL, "The file_name and source must be present when using external weights"//&
+              "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+              trim(data_table(i)%fieldname_code))
+	 endif
 
          call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
 
