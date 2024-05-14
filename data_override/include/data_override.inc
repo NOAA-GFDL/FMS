@@ -63,6 +63,7 @@ type data_type
    character(len=128) :: fieldname_file  !< fieldname used in the netcdf data file
    character(len=512) :: file_name       !< name of netCDF data file
    character(len=128) :: interpol_method !< interpolation method (default "bilinear")
+   logical            :: ext_weights     
    character(len=128) :: ext_weights_file_name
    character(len=128) :: ext_weights_source 
    real(FMS_DATA_OVERRIDE_KIND_)        :: factor          !< For unit conversion, default=1, see OVERVIEW above
