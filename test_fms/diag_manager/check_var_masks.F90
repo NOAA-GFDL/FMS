@@ -34,6 +34,7 @@ program check_var_masks
   real                               :: ans_var_mask
   real                               :: ans_var
   integer                            :: i, j
+  real                               :: time_data(2)
 
   call fms_init()
 
@@ -48,6 +49,14 @@ program check_var_masks
 
   call get_dimension_size(fileobj, "y", ny)
   if (ny .ne. 180) call mpp_error(FATAL, "y is not the correct size!")
+
+  call read_data(fileobj, "time", time_data(1))
+  if (time_data(1) .ne. real(12.))&
+    call mpp_error(FATAL, "The time data is not the expected result")
+
+  call read_data(fileobj, "time_bnds", time_data)
+  if (time_data(1) .ne. real(0.) .or. time_data(2) .ne. real(24.)) &
+    call mpp_error(FATAL, "The time bnds data is not the expected result")
 
   allocate(vardata(nx,ny))
 
