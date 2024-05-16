@@ -22,14 +22,16 @@ program test_output_every_freq
 
   use fms_mod,          only: fms_init, fms_end, string
   use diag_manager_mod, only: diag_axis_init, send_data, diag_send_complete, diag_manager_set_time_end, &
-                              register_diag_field, diag_manager_init, diag_manager_end
+                              register_diag_field, diag_manager_init, diag_manager_end, register_static_field, &
+                              diag_axis_init
   use time_manager_mod, only: time_type, operator(+), JULIAN, set_time, set_calendar_type, set_date
   use mpp_mod,          only: FATAL, mpp_error
   use fms2_io_mod,      only: FmsNetcdfFile_t, open_file, close_file, read_data, get_dimension_size
 
   implicit none
 
-  integer         :: id_var0, id_var1 !< diag field ids
+  integer         :: id_var0, id_var1, id_var2 !< diag field ids
+  integer         :: id_axis1         !< Id for axis
   logical         :: used             !< for send_data calls
   integer         :: ntimes = 48      !< Number of time steps
   real            :: vdata            !< Buffer to store the data
@@ -45,9 +47,12 @@ program test_output_every_freq
   Time_step = set_time (3600,0) !< 1 hour
   call diag_manager_set_time_end(set_date(2,1,3,0,0,0))
 
+  id_axis1 = diag_axis_init('dummy_axis', (/real(1.)/), "mullions", "X")
   id_var0 = register_diag_field  ('ocn_mod', 'var0', Time)
   id_var1 = register_diag_field  ('ocn_mod', 'var1', Time)
+  id_var2 = register_static_field ('ocn_mod', 'var2', (/id_axis1/))
 
+  used = send_data(id_var2, real(123.456))
   do i = 1, ntimes
     Time = Time + Time_step
     vdata = real(i)
