@@ -28,13 +28,14 @@ module fms_diag_file_object_mod
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
                        get_instance_filename, open_file, close_file, get_mosaic_tile_file, unlimited, &
                        register_axis, register_field, register_variable_attribute, write_data, &
-                       dimension_exists, register_global_attribute
+                       dimension_exists, register_global_attribute, flush_file
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
-                         middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype, null_gridtype
+                         middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype, &
+                         null_gridtype, flush_nc_files
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -192,6 +193,7 @@ type fmsDiagFileContainer_type
   procedure :: init_unlim_dim
   procedure :: update_current_new_file_freq_index
   procedure :: get_unlim_dimension_level
+  procedure :: flush_diag_file
   procedure :: get_next_output
   procedure :: get_next_next_output
   procedure :: close_diag_file
@@ -1588,6 +1590,15 @@ result(res)
 
   res = this%FMS_diag_file%unlim_dimension_level
 end function
+
+!> \brief Flushes the netcdf file to disk if flush_nc_files is set to .True. in the namelist
+subroutine flush_diag_file(this)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+
+  if (flush_nc_files) then
+    call flush_file(this%FMS_diag_file%fms2io_fileobj)
+  endif
+end subroutine flush_diag_file
 
 !> \brief Get the next_output for the file object
 !! \return The next_output
