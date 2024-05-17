@@ -2944,10 +2944,12 @@ contains
 
 
   !> @brief Write out all diagnostics of elements of a coupler_2d_bc_type
-  !! TODO this should really be a function in order to return the status of send_data call
-  subroutine CT_send_data_2d(var, Time)
+  subroutine CT_send_data_2d(var, Time, return_statuses)
     type(coupler_2d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
     type(time_type),          intent(in) :: time !< The current model time
+    logical, allocatable, optional, intent(out) :: return_statuses(:,:) !< Return status of send data calls
+                                                          !! first index is index of boundary condition
+                                                          !! second index is field/value within that boundary condition
 
     integer :: m, n
     logical :: used
@@ -2966,18 +2968,33 @@ contains
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
+
+      ! allocate array for returned send data statuses
+      if( present(return_statuses) .and. var%num_bcs .gt. 0) then
+        allocate(return_statuses(var%num_bcs, var%bc(1)%num_fields))
+      endif
+
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+            if(allocated(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
+
     else if(associated(var%bc_r4)) then
+
+      ! allocate array for returned send data statuses
+      if( present(return_statuses) .and. var%num_bcs .gt. 0) then
+        allocate(return_statuses(var%num_bcs, var%bc_r4(1)%num_fields))
+      endif
+
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           if (var%bc_r4(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc_r4(n)%field(m)%id_diag, var%bc_r4(n)%field(m)%values, Time)
+            if(allocated(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
@@ -2988,10 +3005,12 @@ contains
   end subroutine CT_send_data_2d
 
   !> @brief Write out all diagnostics of elements of a coupler_3d_bc_type
-  !! TODO this should really be a function in order to return the status of send_data call
-  subroutine CT_send_data_3d(var, Time)
+  subroutine CT_send_data_3d(var, Time, return_statuses)
     type(coupler_3d_bc_type), intent(in) :: var  !< BC_type structure with the diagnostics to write
     type(time_type),          intent(in) :: time !< The current model time
+    logical, allocatable, optional, intent(out) :: return_statuses(:,:) !< Return status of send data calls
+                                                          !! first index is index of boundary condition
+                                                          !! second index is field/value within that boundary condition
 
     integer :: m, n
     logical :: used
@@ -3010,18 +3029,32 @@ contains
 
     ! num_bcs .lt. 1 -> loop doesn't run but shouldn't error out
     if(associated(var%bc) .or. var%num_bcs .lt. 1) then
+
+      ! allocate array for returned send data statuses
+      if( present(return_statuses) .and. var%num_bcs .gt. 0) then
+        allocate(return_statuses(var%num_bcs, var%bc(1)%num_fields))
+      endif
+
       do n = 1, var%num_bcs
         do m = 1, var%bc(n)%num_fields
           if (var%bc(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc(n)%field(m)%id_diag, var%bc(n)%field(m)%values, Time)
+            if(allocated(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
     else if(associated(var%bc_r4)) then
+
+      ! allocate array for returned send data statuses
+      if( present(return_statuses) .and. var%num_bcs .gt. 0) then
+        allocate(return_statuses(var%num_bcs, var%bc_r4(1)%num_fields))
+      endif
+
       do n = 1, var%num_bcs
         do m = 1, var%bc_r4(n)%num_fields
           if (var%bc_r4(n)%field(m)%id_diag > 0) then
             used = send_data(var%bc_r4(n)%field(m)%id_diag, var%bc_r4(n)%field(m)%values, Time)
+            if(allocated(return_statuses)) return_statuses(n,m) = used
           endif
         enddo
       enddo
