@@ -41,7 +41,7 @@ subroutine register_global_attribute_0d(fileobj, &
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &
                                    trim(attribute_name), &
-                                   trim(attribute_value(1:str_len)))
+                                   trim(attribute_value))
             type is (integer(kind=i4_kind))
                 err = nf90_put_att(fileobj%ncid, &
                                    nf90_global, &

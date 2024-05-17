@@ -59,7 +59,7 @@ AC_COMPILE_IFELSE([[      subroutine test_sub(ctype)
 
         select type(ctype)
           type is (character(len=*))
-            ctype(:) = ""
+            ctype = ""
         end select
       end subroutine test_sub]],
      [gx_cv_class_char_array_bug_check=no])

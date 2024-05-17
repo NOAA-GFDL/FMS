@@ -53,7 +53,7 @@ subroutine register_variable_attribute_0d(fileobj, variable_name, attribute_name
       type is (character(len=*))
         if (.not. present(str_len)) call error("Need to include str length:"//trim(append_error_msg))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
-                           trim(attribute_value(1:str_len)))
+                           trim(attribute_value))
       type is (integer(kind=i4_kind))
         err = nf90_put_att(fileobj%ncid, varid, trim(attribute_name), &
                            attribute_value)
