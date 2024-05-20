@@ -873,6 +873,7 @@ subroutine fms_diag_do_io(this, end_time)
 
     if (unlim_dim_was_increased) then
       call diag_file%write_time_data()
+      call diag_file%flush_diag_file()
       call diag_file%update_next_write(model_time)
     endif
 
