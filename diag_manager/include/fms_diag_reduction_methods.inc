@@ -247,7 +247,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
                      !! will be 1 unless using a diurnal reduction
 
   if(present(weight)) then
-    weight_scale = weight
+    weight_scale = real(weight, kind=kindl)
   else
     weight_scale = 1.0_kindl
   endif

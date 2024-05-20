@@ -28,13 +28,14 @@ module fms_diag_file_object_mod
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
                        get_instance_filename, open_file, close_file, get_mosaic_tile_file, unlimited, &
                        register_axis, register_field, register_variable_attribute, write_data, &
-                       dimension_exists, register_global_attribute
+                       dimension_exists, register_global_attribute, flush_file
 use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_time, DIAG_NOT_REGISTERED, &
                          TWO_D_DOMAIN, UG_DOMAIN, prepend_date, DIAG_DAYS, VERY_LARGE_FILE_FREQ, &
                          get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute, &
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
-                         middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype, null_gridtype
+                         middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype, &
+                         null_gridtype, flush_nc_files
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -94,7 +95,8 @@ type :: fmsDiagFile_type
   integer :: number_of_axis !< Number of axis in the file
   integer, dimension(:), allocatable :: buffer_ids !< array of buffer ids associated with the file
   integer :: number_of_buffers !< Number of buffers that have been added to the file
-  logical :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average or time_sum
+  logical, allocatable :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average,
+                                   !! or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
   logical :: data_has_been_written !< .True. if data has been written for the current unlimited dimension level
   logical :: is_static !< .True. if the frequency is -1
@@ -119,6 +121,7 @@ type :: fmsDiagFile_type
   procedure, public :: add_start_time
   procedure, public :: set_file_time_ops
   procedure, public :: has_field_ids
+  procedure, public :: get_time_ops
   procedure, public :: get_id
 ! TODO  procedure, public :: get_fileobj ! TODO
 ! TODO  procedure, public :: get_diag_yaml_file ! TODO
@@ -158,6 +161,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_buffer_ids
  procedure, public :: get_number_of_buffers
  procedure, public :: has_send_data_been_called
+ procedure, public :: check_buffer_times
 end type fmsDiagFile_type
 
 type, extends (fmsDiagFile_type) :: subRegionalFile_type
@@ -189,6 +193,7 @@ type fmsDiagFileContainer_type
   procedure :: init_unlim_dim
   procedure :: update_current_new_file_freq_index
   procedure :: get_unlim_dimension_level
+  procedure :: flush_diag_file
   procedure :: get_next_output
   procedure :: get_next_next_output
   procedure :: close_diag_file
@@ -275,7 +280,6 @@ logical function fms_diag_files_object_init (files_array)
        obj%no_more_data = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
      endif
 
-     obj%time_ops = .false.
      obj%unlim_dimension_level = 0
      obj%is_static = obj%get_file_freq() .eq. -1
      obj%nz_subaxis = 0
@@ -373,21 +377,31 @@ subroutine set_file_time_ops(this, VarYaml, is_static)
 
   !< Go away if the file is static
   if (this%is_static) return
+  if (is_static) return
 
-  if (this%time_ops) then
-    if (is_static) return
-    if (VarYaml%get_var_reduction() .eq. time_none) then
-      call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
-                            " has variables that are time averaged and instantaneous")
-    endif
-  else
+  ! Set time_ops the first time this subroutine it is called
+  if (.not. allocated(this%time_ops)) then
     var_reduct = VarYaml%get_var_reduction()
+
     select case (var_reduct)
-      case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
-        this%time_ops = .true.
+    case (time_average, time_rms, time_max, time_min, time_sum, time_diurnal, time_power)
+      this%time_ops = .true.
+    case (time_none)
+      this%time_ops = .false.
     end select
+
+    return
   endif
 
+  if (this%time_ops) then
+    if (VarYaml%get_var_reduction() .eq. time_none) &
+      call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
+                            " has variables that are time averaged and instantaneous")
+  else
+    if (VarYaml%get_var_reduction() .ne. time_none) &
+      call mpp_error(FATAL, "The file: "//this%get_file_fname()//&
+                            " has variables that are time averaged and instantaneous")
+  endif
 end subroutine set_file_time_ops
 
 !> \brief Logical function to determine if the variable file_metadata_from_model has been allocated or associated
@@ -442,6 +456,19 @@ pure function get_id (this) result (res)
   integer :: res
   res = this%id
 end function get_id
+
+!> \brief Returns a copy of the value of time_ops
+!! \return A copy of time_ops
+pure function get_time_ops (this) result (res)
+  class(fmsDiagFile_type), intent(in) :: this !< The file object
+  logical :: res
+
+  if (.not. allocated(this%time_ops)) then
+    res = .false.
+  else
+    res = this%time_ops
+  endif
+end function get_time_ops
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! TODO
@@ -1286,7 +1313,7 @@ subroutine write_time_metadata(this)
   call register_variable_attribute(fms2io_fileobj, time_var_name, "calendar", &
     lowercase(trim(calendar)), str_len=len_trim(calendar))
 
-  if (diag_file%time_ops) then
+  if (diag_file%get_time_ops()) then
     call register_variable_attribute(fms2io_fileobj, time_var_name, "bounds", &
       trim(time_var_name)//"_bnds", str_len=len_trim(time_var_name//"_bnds"))
 
@@ -1366,17 +1393,31 @@ logical function is_time_to_close_file (this, time_step)
 end function
 
 !> \brief Determine if it is time to "write" to the file
-logical function is_time_to_write(this, time_step, output_buffers)
+logical function is_time_to_write(this, time_step, output_buffers, do_not_write)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
   TYPE(time_type),                  intent(in)              :: time_step         !< Current model step time
   type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffer.
                                                                                  !! This is needed for error messages!
+  logical,                          intent(out)             :: do_not_write      !< .True. only if this is not a new
+                                                                                 !! time step and you are writting
+                                                                                 !! at every time step
 
+  do_not_write = .false.
   if (time_step > this%FMS_diag_file%next_output) then
     is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
     if (time_step > this%FMS_diag_file%next_next_output) then
-      if (this%FMS_diag_file%num_registered_fields .eq. 0) then
+      if (this%FMS_diag_file%get_file_freq() .eq. 0) then
+        !! If the diag file is being written at every time step
+        if (time_step .ne. this%FMS_diag_file%next_output) then
+          !! Only write and update the next_output if it is a new time
+          call this%FMS_diag_file%check_buffer_times(output_buffers)
+          this%FMS_diag_file%next_output = time_step
+          this%FMS_diag_file%next_next_output = time_step
+          is_time_to_write = .true.
+        endif
+        return
+      elseif (this%FMS_diag_file%num_registered_fields .eq. 0) then
         !! If no variables have been registered, write a dummy time dimension for the first level
         !! At least one time level is needed for the combiner to work ...
         if (this%FMS_diag_file%unlim_dimension_level .eq. 0) then
@@ -1400,6 +1441,8 @@ logical function is_time_to_write(this, time_step, output_buffers)
     if (this%FMS_diag_file%is_static) then
       ! This is to ensure that static files get finished in the begining of the run
       if (this%FMS_diag_file%unlim_dimension_level .eq. 1) is_time_to_write = .true.
+    else if(this%FMS_diag_file%get_file_freq() .eq. 0) then
+      do_not_write = .true.
     endif
   endif
 end function is_time_to_write
@@ -1432,12 +1475,10 @@ subroutine write_time_data(this)
   diag_file => this%FMS_diag_file
   fms2io_fileobj => diag_file%fms2io_fileobj
 
-  !< If data has not been written for the current unlimited dimension
-  !! ignore this. The diag_file%unlim_dimension_level .ne. 1 is there to ensure
-  !! that at least one time level is written (this is needed for the combiner)
-  if (.not. diag_file%data_has_been_written .and. diag_file%unlim_dimension_level .ne. 1) return
+  !< If data has not been written for the current unlimited dimension leave the subroutine
+  if (.not. diag_file%data_has_been_written) return
 
-  if (diag_file%time_ops) then
+  if (diag_file%get_time_ops()) then
     middle_time = (diag_file%last_output+diag_file%next_output)/2
     dif = get_date_dif(middle_time, get_base_time(), diag_file%get_file_timeunit())
   else
@@ -1447,7 +1488,7 @@ subroutine write_time_data(this)
   call write_data(fms2io_fileobj, diag_file%get_file_unlimdim(), dif, &
     unlim_dim_level=diag_file%unlim_dimension_level)
 
-  if (diag_file%time_ops) then
+  if (diag_file%get_time_ops()) then
     T1 = get_date_dif(diag_file%last_output, get_base_time(), diag_file%get_file_timeunit())
     T2 = get_date_dif(diag_file%next_output, get_base_time(), diag_file%get_file_timeunit())
 
@@ -1549,6 +1590,15 @@ result(res)
 
   res = this%FMS_diag_file%unlim_dimension_level
 end function
+
+!> \brief Flushes the netcdf file to disk if flush_nc_files is set to .True. in the namelist
+subroutine flush_diag_file(this)
+  class(fmsDiagFileContainer_type), intent(inout), target   :: this            !< The file object
+
+  if (flush_nc_files) then
+    call flush_file(this%FMS_diag_file%fms2io_fileobj)
+  endif
+end subroutine flush_diag_file
 
 !> \brief Get the next_output for the file object
 !! \return The next_output
@@ -1787,6 +1837,29 @@ pure function get_number_of_buffers(this)
   integer :: get_number_of_buffers !< returned number of buffers
   get_number_of_buffers = this%number_of_buffers
 end function get_number_of_buffers
+
+!> Check to ensure that send_data was called at the time step for every output buffer in the file
+!! This is only needed when you are output data at every time step
+subroutine check_buffer_times(this, output_buffers)
+  class(fmsDiagFile_type),        intent(in)           :: this              !< file object
+  type(fmsDiagOutputBuffer_type), intent(in), target   :: output_buffers(:) !< Array of output buffers
+
+  integer :: i
+  type(time_type) :: current_buffer_time
+  character(len=:), allocatable :: field_name
+
+  do i = 1, this%number_of_buffers
+    if (i .eq. 1) then
+      current_buffer_time = output_buffers(this%buffer_ids(i))%get_buffer_time()
+      field_name = output_buffers(this%buffer_ids(i))%get_buffer_name()
+    else
+      if (current_buffer_time .ne. output_buffers(this%buffer_ids(i))%get_buffer_time()) &
+        call mpp_error(FATAL, "Send data has not been called at the same time steps for the fields:"//&
+                              field_name//" and "//output_buffers(this%buffer_ids(i))%get_buffer_name()//&
+                              " in file:"//this%get_file_fname())
+    endif
+  enddo
+end subroutine
 
 !> @brief Determine if send_data has been called for any fields in the file. Prints out warnings, if indicated
 !! @return .True. if send_data has been called for any fields in the file
