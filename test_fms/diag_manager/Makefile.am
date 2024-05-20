@@ -29,7 +29,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = test_diag_manager test_diag_manager_time \
- test_diag_yaml test_diag_ocean test_modern_diag test_diag_buffer \
+ test_diag_yaml test_diag_ocean test_modern_diag test_diag_buffer test_flush_nc_file\
  test_flexible_time test_diag_update_buffer test_reduction_methods check_time_none \
  check_time_min check_time_max check_time_sum check_time_avg test_diag_diurnal check_time_diurnal \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
@@ -47,6 +47,7 @@ test_diag_ocean_SOURCES = test_diag_ocean.F90
 test_modern_diag_SOURCES = test_modern_diag.F90
 test_diag_buffer_SOURCES= test_diag_buffer.F90
 test_flexible_time_SOURCES = test_flexible_time.F90
+test_flush_nc_file_SOURCES = test_flush_nc_file.F90
 test_diag_out_yaml_SOURCES = test_diag_out_yaml.F90
 test_reduction_methods_SOURCES = testing_utils.F90 test_reduction_methods.F90
 test_diag_diurnal_SOURCES = testing_utils.F90 test_diag_diurnal.F90
@@ -72,7 +73,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh test_time_sum.sh \
         test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh test_cell_measures.sh \
         test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_output_every_freq.sh \
-        test_dm_weights.sh
+        test_dm_weights.sh test_flush_nc_file.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
@@ -80,7 +81,7 @@ testing_utils.mod: testing_utils.$(OBJEXT)
 EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_min.sh test_time_max.sh \
              test_time_sum.sh test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh \
              test_cell_measures.sh test_subregional.sh test_var_masks.sh test_multiple_send_data.sh \
-             test_dm_weights.sh test_output_every_freq.sh
+             test_flush_nc_file.sh test_dm_weights.sh test_output_every_freq.sh
 
 if USING_YAML
 skipflag=""
