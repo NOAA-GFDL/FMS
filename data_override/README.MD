@@ -10,26 +10,25 @@
 
 #### 1. YAML Data Table format:
 Each entry in the data_table has the following key values:
-- **gridname:** Name of the grid to interpolate the data to. The acceptable values are "ICE", "OCN", "ATM", and "LND"
-- **fieldname_code:** Name of the field as it is in the code to interpolate.
-- **fieldname_file:** Name of the field as it is writen in the file. **Required** only if overriding from a file
-- **file_name:** Name of the file where the variable is located, including the directory. **Required** only if overriding from a file
-- **interpol_method:** Method used to interpolate the field. The acceptable values are "bilinear", "bicubic", and "none". "none" implies that the field in the file is already in the model grid. The LIMA format is no longer supported. **Required** only if overriding from a file
+- **grid_name:** Name of the grid to interpolate the data to. The acceptable values are "ICE", "OCN", "ATM", and "LND"
+- **fieldname_in_model:** Name of the field as it is in the code to interpolate.
+- **override_file:** The parent key containing the nested keys related to overriding data from file. **Required** only if overriding from a file
+  - **file_name:** Name of the file where the variable is located, including the directory
+  - **fieldname_in_file:** Name of the field as it is writen in the file
+  - **interp_method:** Method used to interpolate the field. The acceptable values are "bilinear", "bicubic", and "none". "none" implies that the field in the file is already in the model grid. The LIMA format is no longer supported
+  - **multi_file:** The parent key if it is desired to use multiple(3) input netcdf files instead of 1. Note that **file_name** must be the second file in the set. **Optional**
+    - **prev_file_name:** The name of the first file in the set
+    - **next_file_name:** The name of the third file in the set
+  - **external_weights:** The parent key if it is desired to external weights from file. **Optional**
+    - **file_name:** Name of the file where the external weights are located, including the directory
+    - **source:** Name of the source that generated the external weights. The acceptable values are "esmf" and "fregrid"
 - **factor:** Factor that will be multiplied after the data is interpolated
-
-If it is desired to interpolate the data to a region of the model grid. The following **optional** arguments are available.
-- **region_type:** The region type. The acceptable values are "inside_region" and "outside_region"
-- **lon_start:** The starting latitude in the same units as the grid data in the file
-- **lon_end:** The ending latitude in the same units as the grid data in the file
-- **lat_start:** The starting longitude in the same units as the grid data in the file
-- **lon_end:** The ending longitude in the same units as the grid data in the file
-
-If it is desired to use multiple(3) input netcdf files instead of 1. The following **optional** keys are available.
-- **is_multi_file:** Set to `True` is using the multi-file feature
-- **prev_file_name:** The name of the first file in the set
-- **next_file_name:** The name of the third file in the set
-
-Note that **file_name** must be the second file in the set. **prev_file_name** and/or **next_file_name** are required if **is_multi_file** is set to `True`
+- **subregion:** The parent key if it is desired to interpolate the data to a region of the model grid. **Optional**
+  - **type:** The region type. The acceptable values are "inside_region" and "outside_region"
+  - **lon_start:** The starting latitude in the same units as the grid data in the file
+  - **lon_end:** The ending latitude in the same units as the grid data in the file
+  - **lat_start:** The starting longitude in the same units as the grid data in the file
+  - **lon_end:** The ending longitude in the same units as the grid data in the file
 
 #### 2. How to use it?
 In order to use the yaml data format, [libyaml](https://github.com/yaml/libyaml) needs to be installed and linked with FMS. Additionally, FMS must be compiled with -Duse_yaml macro. If using autotools, you can add `--with-yaml`, which will add the macro for you and check that libyaml is linked correctly.
@@ -55,20 +54,21 @@ In the **legacy format**, the data_table will look like:
 In the **yaml format**, the data_table will look like
 ```
 data_table:
- - gridname          : ICE
-   fieldname_code    : sic_obs
-   fieldname_file    : sic
-   file_name         : INPUT/hadisst_ice.data.nc
-   interpol_method   : bilinear
-   factor            : 0.01
+ - grid_name           : ICE
+   fieldname_in_model  : sic_obs
+   data_override:
+   - file_name         : INPUT/hadisst_ice.data.nc
+     fieldname_in_file : sic
+     interp_method     : bilinear
+   factor              : 0.01
 ```
 Which corresponds to the following model code:
 ```F90
 call data_override('ICE', 'sic_obs', icec, Spec_Time)
 ```
 where:
-- `ICE` corresponds to the gridname in the data_table
-- `sic_obs` corresponds to the fieldname_code in the data_table
+- `ICE` corresponds to the grid_name in the data_table
+- `sic_obs` corresponds to the fieldname_in_model in the data_table
 - `icec` is the variable to write the data to
 - `Spec_Time` is the time to interpolate the data to.
 
@@ -82,15 +82,15 @@ call data_override_init(Ice_domain_in=Ice_domain)
 
 In the **legacy format**, the data_table will look like:
 ```
-"ICE", "sit_obs", "",    "INPUT/hadisst_ice.data.nc", "none",     2.0
+"ICE", "sit_obs", "", "INPUT/hadisst_ice.data.nc", "none",     2.0
 ```
 
 In the **yaml format**, the data_table will look like:
 ```
 data_table:
- - gridname          : ICE
-   fieldname_code    : sit_obs
-   factor            : 0.01
+ - grid_name          : ICE
+   fieldname_in_model : sit_obs
+   factor             : 0.01
 ```
 
 Which corresponds to the following model code:
@@ -98,8 +98,8 @@ Which corresponds to the following model code:
 call data_override('ICE', 'sit_obs', icec, Spec_Time)
 ```
 where:
-- `ICE` corresponds to the gridname in the data_table
-- `sit_obs` corresponds to the fieldname_code in the data_table
+- `ICE` corresponds to the grid_name in the data_table
+- `sit_obs` corresponds to the fieldname_in_model in the data_table
 - `icec` is the variable to write the data to
 - `Spec_Time` is the time to interpolate the data to.
 
@@ -119,12 +119,13 @@ In the **legacy format**, the data_table will look like:
 In the **yaml format**, the data_table will look like:
 ```
 data_table:
- - gridname          : OCN
-   fieldname_code    : runoff
-   fieldname_file    : runoff
-   file_name         : INPUT/runoff.daitren.clim.nc
-   interpol_method   : none
-   factor            : 1.0
+ - grid_name           : OCN
+   fieldname_in_model  : runoff
+   data_override:
+   - file_name         : INPUT/runoff.daitren.clim.nc
+     fieldname_in_file : runoff
+     interp_method     : none
+   factor              : 1.0
 ```
 
 Which corresponds to the following model code:
@@ -132,8 +133,8 @@ Which corresponds to the following model code:
 call data_override('OCN', 'runoff', runoff_data, Spec_Time)
 ```
 where:
-- `OCN` corresponds to the gridname in the data_table
-- `runoff` corresponds to the fieldname_code in the data_table
+- `OCN` corresponds to the grid_name in the data_table
+- `runoff` corresponds to the fieldname_in_model in the data_table
 - `runoff_data` is the variable to write the data to
 - `Spec_Time` is the time to interpolate the data to.
 
