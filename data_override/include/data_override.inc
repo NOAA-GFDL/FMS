@@ -654,15 +654,17 @@ subroutine read_table_yaml(data_table)
          call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
 
          mentries = get_num_blocks(file_id, "subregion", parent_block_id=entry_id(i))
-	 if(mentries.gt.1) call mpp_err(FATAL, "Too many subregion blocks in data table. "//&
+	 if(mentries.gt.1) call mpp_error(FATAL, "Too many subregion blocks in data table. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
-	 call get_block_ids(file_id, "subregion", sub_block_id, parent_block_id=entry_id(i))
 
          buffer = ""
-         call get_value_from_key(file_id, sub_block_id(1), "type", buffer, is_optional=.true.)
-         call check_and_set_region_type(buffer, data_table(i)%region_type)
+	 if(mentries.gt.0) then
+	  call get_block_ids(file_id, "subregion", sub_block_id, parent_block_id=entry_id(i))
+	  call get_value_from_key(file_id, sub_block_id(1), "type", buffer, is_optional=.true.)
+	 endif
 
+	 call check_and_set_region_type(buffer, data_table(i)%region_type)
          if (data_table(i)%region_type .ne. NO_REGION) then
           call get_value_from_key(file_id, sub_block_id(1), "lon_start", data_table(i)%lon_start, is_optional=.true.)
           call get_value_from_key(file_id, sub_block_id(1), "lon_end", data_table(i)%lon_end, is_optional=.true.)
