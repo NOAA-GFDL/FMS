@@ -48,11 +48,12 @@ use_data_table_yaml=.True.
 _EOF
 cat <<_EOF > data_table.yaml
 data_table:
- - gridname          : OCN
-   fieldname_code    : co2
-   fieldname_file    : co2
-   file_name         : INPUT/scalar.nc
-   interpol_method   : none
+ - grid_name: OCN
+   fieldname_in_model: co2
+   override_file:
+   - fieldname_in_file: co2
+     file_name: INPUT/scalar.nc
+     interp_method: none
    factor            : 1.0
 _EOF
 fi
