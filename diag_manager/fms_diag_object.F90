@@ -837,7 +837,8 @@ subroutine fms_diag_do_io(this, end_time)
       call diag_file%write_axis_data(this%diag_axis)
     endif
 
-    finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers, do_not_write)
+    finish_writing = diag_file%is_time_to_write(model_time, this%FMS_diag_output_buffers, &
+      this%FMS_diag_fields, do_not_write)
     unlim_dim_was_increased = .false.
 
     ! finish reduction method if its time to write
