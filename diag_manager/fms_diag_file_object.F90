@@ -1393,11 +1393,12 @@ logical function is_time_to_close_file (this, time_step)
 end function
 
 !> \brief Determine if it is time to "write" to the file
-logical function is_time_to_write(this, time_step, output_buffers, do_not_write)
+logical function is_time_to_write(this, time_step, output_buffers, diag_fields, do_not_write)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
   TYPE(time_type),                  intent(in)              :: time_step         !< Current model step time
   type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffer.
                                                                                  !! This is needed for error messages!
+  type(fmsDiagField_type),          intent(in)              :: diag_fields(:)    !< Array of diag_fields objects
   logical,                          intent(out)             :: do_not_write      !< .True. only if this is not a new
                                                                                  !! time step and you are writting
                                                                                  !! at every time step
@@ -1411,7 +1412,7 @@ logical function is_time_to_write(this, time_step, output_buffers, do_not_write)
         !! If the diag file is being written at every time step
         if (time_step .ne. this%FMS_diag_file%next_output) then
           !! Only write and update the next_output if it is a new time
-          call this%FMS_diag_file%check_buffer_times(output_buffers)
+          call this%FMS_diag_file%check_buffer_times(output_buffers, diag_fields)
           this%FMS_diag_file%next_output = time_step
           this%FMS_diag_file%next_next_output = time_step
           is_time_to_write = .true.
@@ -1840,22 +1841,29 @@ end function get_number_of_buffers
 
 !> Check to ensure that send_data was called at the time step for every output buffer in the file
 !! This is only needed when you are output data at every time step
-subroutine check_buffer_times(this, output_buffers)
+subroutine check_buffer_times(this, output_buffers, diag_fields)
   class(fmsDiagFile_type),        intent(in)           :: this              !< file object
   type(fmsDiagOutputBuffer_type), intent(in), target   :: output_buffers(:) !< Array of output buffers
+  type(fmsDiagField_type),        intent(in)           :: diag_fields(:)    !< Array of diag_fields
 
-  integer :: i
-  type(time_type) :: current_buffer_time
-  character(len=:), allocatable :: field_name
+  integer                       :: i                   !< For do loop
+  type(time_type)               :: current_buffer_time !< The buffer time for the current buffer in the do loop
+  character(len=:), allocatable :: field_name          !< The field name (for error messages)
+  logical                       :: buffer_time_set     !< .True. if current_buffer_time has been set
+  type(fmsDiagOutputBuffer_type), pointer :: output_buffer_obj !< Pointer to the output buffer
 
+  buffer_time_set = .false.
   do i = 1, this%number_of_buffers
-    if (i .eq. 1) then
-      current_buffer_time = output_buffers(this%buffer_ids(i))%get_buffer_time()
-      field_name = output_buffers(this%buffer_ids(i))%get_buffer_name()
+    output_buffer_obj => output_buffers(this%buffer_ids(i))
+    if (diag_fields(output_buffer_obj%get_field_id())%is_static()) cycle
+    if (.not. buffer_time_set) then
+      current_buffer_time = output_buffer_obj%get_buffer_time()
+      field_name = output_buffer_obj%get_buffer_name()
+      buffer_time_set = .true.
     else
-      if (current_buffer_time .ne. output_buffers(this%buffer_ids(i))%get_buffer_time()) &
+      if (current_buffer_time .ne. output_buffer_obj%get_buffer_time()) &
         call mpp_error(FATAL, "Send data has not been called at the same time steps for the fields:"//&
-                              field_name//" and "//output_buffers(this%buffer_ids(i))%get_buffer_name()//&
+                              field_name//" and "//output_buffer_obj%get_buffer_name()//&
                               " in file:"//this%get_file_fname())
     endif
   enddo
