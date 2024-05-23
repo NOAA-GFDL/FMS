@@ -41,6 +41,10 @@ diag_files:
     var_name: var0
     reduction: none
     kind: r4
+  - module: ocn_mod
+    var_name: var2
+    reduction: none
+    kind: r4
 _EOF
 
 my_test_count=1
@@ -64,6 +68,10 @@ diag_files:
     kind: r4
   - module: ocn_mod
     var_name: var1
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var2
     reduction: none
     kind: r4
 _EOF
