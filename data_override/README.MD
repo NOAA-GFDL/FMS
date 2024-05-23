@@ -67,9 +67,9 @@ Which corresponds to the following model code:
 call data_override('ICE', 'sic_obs', icec, Spec_Time)
 ```
 where:
-- `ICE` corresponds to the grid_name in the data_table
+- `ICE` is the component domain for which the variable is being interpolated and corresponds to the grid_name in the data_table
 - `sic_obs` corresponds to the fieldname_in_model in the data_table
-- `icec` is the variable to write the data to
+- `icec` is the storage array that holds the interpolated data
 - `Spec_Time` is the time to interpolate the data to.
 
 Additionally, it is required to call data_override_init (in this case with the ICE domain). The grid_spec.nc file must also contain the coordinate information for the domain being used.
@@ -98,9 +98,9 @@ Which corresponds to the following model code:
 call data_override('ICE', 'sit_obs', icec, Spec_Time)
 ```
 where:
-- `ICE` corresponds to the grid_name in the data_table
+- `ICE` is the component domain for which the variable is being interpolated and corresponds to the grid_name in the data_table
 - `sit_obs` corresponds to the fieldname_in_model in the data_table
-- `icec` is the variable to write the data to
+- `icec` is the storage array that holds the interpolated data
 - `Spec_Time` is the time to interpolate the data to.
 
 Additionally, it is required to call data_override_init (in this case with the ICE domain). The grid_spec.nc file is still required to initialize data_override with the ICE domain.
@@ -133,9 +133,9 @@ Which corresponds to the following model code:
 call data_override('OCN', 'runoff', runoff_data, Spec_Time)
 ```
 where:
-- `OCN` corresponds to the grid_name in the data_table
+- `OCN` is the component domain for which the variable is being interpolated and corresponds to the grid_name in the data_table
 - `runoff` corresponds to the fieldname_in_model in the data_table
-- `runoff_data` is the variable to write the data to
+- `runoff_data` is the storage array that holds the interpolated data
 - `Spec_Time` is the time to interpolate the data to.
 
 Additionally, it is required to call data_override_init (in this case with the ocean domain). The grid_spec.nc file is still required to initialize data_override with the ocean domain and to determine if the data in the file is in the same grid as the ocean.
