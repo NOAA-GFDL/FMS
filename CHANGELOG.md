@@ -69,9 +69,10 @@ sequential patch number (starting from `01`).
   - Support defining subregions with indices
   - More flexibility when adding metadata and defining output frequency
 - FMS2_IO: Adds support for collective parallel reads to improve model startup time. The collective reads are disabled by default and enabled via the `use_collective` flag in `netcdf_io_mod`.
-- DATA_OVERRIDE: Adds multifile support for using 3 input netcdf files instead of one. Three keys have been added to the data_table: `is_multi_file` to be set to true to enable the feature, as well as `prev_file_name` and `next_file_name` to set to the names of the additional files.
+- DATA_OVERRIDE: Adds option to use multiple data files for one field within data_override in order to use annual data files in yearly runs without having to append/prepend timesteps from previous and next year. With the legacy data_table, filenames  can be set in order and separated with `:` ie. `prev_year.nc:curr_year.nc:next_year.nc`. With the data_table.yaml format, the key `is_multi_file` enables the functionality and `prev_file_name` and `next_file_name` sets the file paths.
+
 - INTERPOLATOR: Adds support for yearly/annual data
-- DATA_OVERRIDE: Adds support for monotonically increasing/decreasing arrays
+- DATA_OVERRIDE: Adds support for monotonically decreasing arrays for `nearest_index`, `axis_edges`, `horiz_interp`(bilinear), and `data_override` (#1388)
 - DOCS: Add documentation for the exchange grid (xgrid_mod) and update the contribution guide to add a section on code reviews
 - MPP: MPI sub-communicators for domains are now accessible via `mpp_get_domain_tile_commid` and `mpp_get_domain_commid` in `mpp_domains_mod`
 
