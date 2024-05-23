@@ -6,6 +6,43 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2024.01.01] - 2024-05-27
+
+### Known Issues
+- Diag Manager Rewrite:
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- DIAG_MANAGER: Implements `flush_nc_files` functionality from legacy diag_manager.
+
+### Changed
+- FMS2_IO: Changed `register_unlimited_compressed_axis` to use a collective gather rather than send and recieves to improve efficiency when reading in iceberg restarts.
+
+### Fixed
+- DIAG_MANAGER: Fixes 0 day output frequencies causing error stating a time_step was skipped. Also adds checks to crash if averaged fields have -1 or 0 day frequencies or if mixing averaged and non-averaged fields in the same file.
+- DIAG_MANAGER: Fixes issue with the weight argument not getting passed through to reduction methods.
+- DIAG_MANAGER: Allocation errors when using two empty files.
+- DIAG_MANAGER: `time` and `time_bnds` being larger than expected when running for 1 day and using daily data.
+- DIAG_MANAGER: Allows for mixing static and non-static fields when frequency is 0 days.
+- TESTS: Fixes compile failure with ifort 2024.01 from test_mpp_gatscat.F90.
+
+### Removed
+- DIAG_MANAGER: The `mix_snapshot_average_fields` option is deprecated for the rewritten diag_manager only.
+
+### Tag Commit Hashes
+- 2024.01.01-beta2 c00367fa810960e87610162f0f012c5da724c5a9
+- 2024.01.01-beta1 42f8506512e1b5b43982320f5b9d4ca1ca9cbebd
+
 ## [2024.01] - 2024-05-03
 
 ### Known Issues
