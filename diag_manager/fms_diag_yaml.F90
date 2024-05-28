@@ -143,8 +143,8 @@ type diagYamlFiles_type
                                                              !! This may be overriden if the precison was defined
                                                              !! at the variable level
   character (len=:),    allocatable :: default_var_reduction !< The reduction for all of the variables in the file
-                                                             !! This may be overriden if the reduction was defined at the
-                                                             !! variable level
+                                                             !! This may be overriden if the reduction was defined at
+                                                             !! the variable level
   character (len=:),    allocatable :: default_var_module    !< The module for all of the variables in the file
                                                              !! This may be overriden if the modules was defined at the
                                                              !! variable level
