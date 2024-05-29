@@ -215,6 +215,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     endif
     !-----------------------------------------------------------------------
 
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+
   end subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_
 
   !#######################################################################
@@ -384,6 +386,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
 
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+
   end subroutine HORIZ_INTERP_CONSERVE_NEW_1DX2D_
 
   !#######################################################################
@@ -493,6 +497,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area)
 
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+
   end subroutine HORIZ_INTERP_CONSERVE_NEW_2DX1D_
 
   !#######################################################################
@@ -599,6 +605,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     end if
 
     deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, dst_area )
+
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
 
   end subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_
 

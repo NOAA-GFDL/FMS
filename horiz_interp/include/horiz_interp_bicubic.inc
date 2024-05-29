@@ -190,6 +190,7 @@
 !          xf > xcu, no valid boundary point')
         enddo
       enddo
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
   end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_
 
   !> @brief Creates a new @ref horiz_interp_type
@@ -343,6 +344,7 @@
 !          xcu, no valid boundary point')
         enddo
       enddo
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
 
   end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_
 
@@ -426,6 +428,7 @@
 !!        dff_y(i,j) = val2
       enddo
     enddo
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
   return
   end subroutine HORIZ_INTERP_BICUBIC_NEW_
 
