@@ -143,7 +143,8 @@ end subroutine GET_GRID_VERSION_1_
 
 !> Get global lon and lat of three model (target) grids from mosaic.nc.
 !! Currently we assume the refinement ratio is 2 and there is one tile on each pe.
-subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon)
+subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lon, lat, min_lon, max_lon, &
+                               use_center_grid_points)
   integer, parameter :: lkind = FMS_GET_GRID_VERSION_KIND_
 
   type(FmsNetcdfFile_t), intent(in) :: fileobj !< file object for grid file
@@ -152,6 +153,11 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lo
   integer,               intent(in) :: isc, iec, jsc, jec
   real(lkind), dimension(isc:,jsc:), intent(out) :: lon, lat
   real(lkind),                       intent(out) :: min_lon, max_lon
+  logical, optional, intent(in) :: use_center_grid_points !< Flag indicating whether or not to use the
+                                                          !! centroid values of the supergrid from the
+                                                          !! grid file as opposed to calcuating it by
+                                                          !! taking the average of the four corner points.
+                                                          !! This is only relevant to OCN and ICE grids.
 
   integer                   :: i, j, siz(2)
   integer                   :: nlon, nlat             ! size of global grid
@@ -164,6 +170,10 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lo
   logical                   :: open_solo_mosaic
   type(FmsNetcdfFile_t)     :: mosaicfileobj, tilefileobj
   integer                   :: start(2), nread(2)
+  logical :: use_center_grid_points_local
+
+  use_center_grid_points_local = .false.
+  if (present(use_center_grid_points)) use_center_grid_points_local = use_center_grid_points
 
   if(trim(mod_name) .NE. 'atm' .AND. trim(mod_name) .NE. 'ocn' .AND. &
      trim(mod_name) .NE. 'ice' .AND. trim(mod_name) .NE. 'lnd' ) call mpp_error(FATAL, &
@@ -215,20 +225,20 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lo
   call read_data( tilefileobj, 'y', tmpy, corner=start,edge_lengths=nread)
 
   ! copy data onto model grid
-  if(trim(mod_name) == 'ocn' .OR. trim(mod_name) == 'ice') then
-     do j = jsc, jec
-        do i = isc, iec
-           lon(i,j) = (tmpx(i*2-1,j*2-1)+tmpx(i*2+1,j*2-1)+tmpx(i*2+1,j*2+1)+tmpx(i*2-1,j*2+1))*0.25_lkind
-           lat(i,j) = (tmpy(i*2-1,j*2-1)+tmpy(i*2+1,j*2-1)+tmpy(i*2+1,j*2+1)+tmpy(i*2-1,j*2+1))*0.25_lkind
-        end do
-     end do
+  if(trim(mod_name) == 'atm' .OR. trim(mod_name) == 'lnd' .OR. use_center_grid_points_local) then
+    do j = jsc, jec
+      do i = isc, iec
+        lon(i,j) = tmpx(i*2,j*2)
+        lat(i,j) = tmpy(i*2,j*2)
+      end do
+    end do
   else
-     do j = jsc, jec
-        do i = isc, iec
-           lon(i,j) = tmpx(i*2,j*2)
-           lat(i,j) = tmpy(i*2,j*2)
-        end do
-     end do
+    do j = jsc, jec
+      do i = isc, iec
+        lon(i,j) = (tmpx(i*2-1,j*2-1)+tmpx(i*2+1,j*2-1)+tmpx(i*2+1,j*2+1)+tmpx(i*2-1,j*2+1))*0.25_lkind
+        lat(i,j) = (tmpy(i*2-1,j*2-1)+tmpy(i*2+1,j*2-1)+tmpy(i*2+1,j*2+1)+tmpy(i*2-1,j*2+1))*0.25_lkind
+      end do
+    end do
   endif
 
   ! convert to radian

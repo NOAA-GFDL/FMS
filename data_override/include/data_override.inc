@@ -124,9 +124,15 @@ logical                                    :: reproduce_null_char_bug = .false. 
                                               !! to reproduce the mpp_io bug where lat/lon_bnd were
                                               !! not read correctly if null characters are present in
                                               !! the netcdf file
+logical                                    :: use_center_grid_points=.false. !< Flag indicating
+                                              !! whether or not to use the centroid values of the
+                                              !! supergrid from the grid file as opposed to calculating it
+                                              !! by taking the average of the four corner points.
+                                              !! This is only relevant to OCN and ICE grids.
 logical                                    :: use_data_table_yaml = .false.
 
-namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_data_table_yaml
+namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_data_table_yaml, &
+                             use_center_grid_points
 
 public :: DATA_OVERRIDE_INIT_IMPL_, DATA_OVERRIDE_UNSET_ATM_, DATA_OVERRIDE_UNSET_OCN_, &
         & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_, &
@@ -324,7 +330,7 @@ end if
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
        call get_grid_version_2(fileobj, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
-                               min_glo_lon_ocn, max_glo_lon_ocn )
+                               min_glo_lon_ocn, max_glo_lon_ocn, use_center_grid_points)
    endif
 
    if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
@@ -338,7 +344,7 @@ end if
        call mpp_get_compute_domain( ice_domain,is,ie,js,je)
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
        call get_grid_version_2(fileobj, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
-                               min_glo_lon_ice, max_glo_lon_ice )
+                               min_glo_lon_ice, max_glo_lon_ice, use_center_grid_points )
    endif
  end if
  if(use_get_grid_version .EQ. 2) then
