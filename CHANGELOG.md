@@ -6,6 +6,43 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2024.01.01] - 2024-05-30
+
+### Known Issues
+- Diag Manager Rewrite:
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- DIAG_MANAGER: Implements `flush_nc_files` functionality from legacy diag_manager.
+
+### Changed
+- FMS2_IO: Changed `register_unlimited_compressed_axis` to use a collective gather rather than send and recieves to improve efficiency when reading in iceberg restarts.
+
+### Fixed
+- DIAG_MANAGER: Fixes 0 day output frequencies causing error stating a time_step was skipped. Also adds checks to crash if averaged fields have -1 or 0 day frequencies or if mixing averaged and non-averaged fields in the same file.
+- DIAG_MANAGER: Fixes issue with the weight argument not getting passed through to reduction methods.
+- DIAG_MANAGER: Allocation errors when using two empty files.
+- DIAG_MANAGER: `time` and `time_bnds` being larger than expected when running for 1 day and using daily data.
+- DIAG_MANAGER: Allows for mixing static and non-static fields when frequency is 0 days.
+- TESTS: Fixes compile failure with ifort 2024.01 from test_mpp_gatscat.F90.
+
+### Removed
+- DIAG_MANAGER: The `mix_snapshot_average_fields` option is deprecated for the rewritten diag_manager only.
+
+### Tag Commit Hashes
+- 2024.01.01-beta2 c00367fa810960e87610162f0f012c5da724c5a9
+- 2024.01.01-beta1 42f8506512e1b5b43982320f5b9d4ca1ca9cbebd
+
 ## [2024.01] - 2024-05-03
 
 ### Known Issues
@@ -32,9 +69,10 @@ sequential patch number (starting from `01`).
   - Support defining subregions with indices
   - More flexibility when adding metadata and defining output frequency
 - FMS2_IO: Adds support for collective parallel reads to improve model startup time. The collective reads are disabled by default and enabled via the `use_collective` flag in `netcdf_io_mod`.
-- DATA_OVERRIDE: Adds multifile support for using 3 input netcdf files instead of one. Three keys have been added to the data_table: `is_multi_file` to be set to true to enable the feature, as well as `prev_file_name` and `next_file_name` to set to the names of the additional files.
+- DATA_OVERRIDE: Adds option to use multiple data files for one field within data_override in order to use annual data files in yearly runs without having to append/prepend timesteps from previous and next year. With the legacy data_table, filenames  can be set in order and separated with `:` ie. `prev_year.nc:curr_year.nc:next_year.nc`. With the data_table.yaml format, the key `is_multi_file` enables the functionality and `prev_file_name` and `next_file_name` sets the file paths.
+
 - INTERPOLATOR: Adds support for yearly/annual data
-- DATA_OVERRIDE: Adds support for monotonically increasing/decreasing arrays
+- DATA_OVERRIDE: Adds support for monotonically decreasing arrays for `nearest_index`, `axis_edges`, `horiz_interp`(bilinear), and `data_override` (#1388)
 - DOCS: Add documentation for the exchange grid (xgrid_mod) and update the contribution guide to add a section on code reviews
 - MPP: MPI sub-communicators for domains are now accessible via `mpp_get_domain_tile_commid` and `mpp_get_domain_commid` in `mpp_domains_mod`
 
