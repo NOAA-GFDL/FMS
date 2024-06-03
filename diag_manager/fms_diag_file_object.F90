@@ -35,7 +35,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
                          middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype, &
-                         null_gridtype, flush_nc_files
+                         null_gridtype, flush_nc_files, diag_init_time
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -259,7 +259,11 @@ logical function fms_diag_files_object_init (files_array)
 
      !> Set the start_time of the file to the base_time and set up the *_output variables
      obj%done_writing_data = .false.
-     obj%start_time = get_base_time()
+
+     !! Set this to the time passed in to diag_manager_init
+     !! This will be the base_time if nothing was passed in
+     !! This time is appended to the filename if the prepend_date namelist is .True.
+     obj%start_time = diag_init_time
      obj%last_output = get_base_time()
      obj%model_time = get_base_time()
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
