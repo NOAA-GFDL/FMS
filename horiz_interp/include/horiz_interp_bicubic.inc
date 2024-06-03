@@ -351,9 +351,9 @@
   end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_
 
   !> @brief Perform bicubic horizontal interpolation
-  subroutine HORIZ_INTERP_BICUBIC_NEW_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
+  subroutine HORIZ_INTERP_BICUBIC_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
                                  &  missing_permit)
-    type (horiz_interp_type), intent(inout)        :: Interp
+    type (horiz_interp_type), intent(in)        :: Interp
     real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in
     real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out
     integer, intent(in),               optional :: verbose
@@ -430,10 +430,8 @@
 !!        dff_y(i,j) = val2
       enddo
     enddo
-    Interp% HI_KIND_TYPE_ % is_allocated = .true.
-    Interp%interp_method = BICUBIC
   return
-  end subroutine HORIZ_INTERP_BICUBIC_NEW_
+  end subroutine HORIZ_INTERP_BICUBIC_
 
 !---------------------------------------------------------------------------
 

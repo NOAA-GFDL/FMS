@@ -29,7 +29,7 @@
       real(FMS_TI_KIND_), dimension(:,:), intent(inout) :: data_in
       integer, intent(in), optional :: interp
       logical, intent(in), optional :: verbose
-      type(horiz_interp_type),intent(inout), optional :: horz_interp
+      type(horiz_interp_type),intent(in), optional :: horz_interp
       logical, dimension(:,:), intent(out), optional :: mask_out !< set to true where output data is valid
       integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in
       integer,                  intent(in), optional :: window_id
@@ -61,7 +61,7 @@
         real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout)           :: time_data !< global or local data array
         integer,                    intent(in), optional :: interp
         logical,                    intent(in), optional :: verbose !< flag for debugging
-        type(horiz_interp_type),    intent(inout), optional :: horz_interp
+        type(horiz_interp_type),    intent(in), optional :: horz_interp
         logical, dimension(:,:,:), intent(out), optional :: mask_out !< set to true where output data is valid
         integer,                    intent(in), optional :: is_in, ie_in, js_in, je_in
         integer,                    intent(in), optional :: window_id

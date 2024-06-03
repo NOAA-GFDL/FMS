@@ -753,7 +753,7 @@ module time_interp_external2_mod
 subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id_in)
   type(ext_fieldtype),     intent(inout)        :: field
   integer            ,     intent(in)           :: rec    ! record number
-  type(horiz_interp_type), intent(inout), optional :: interp
+  type(horiz_interp_type), intent(in), optional :: interp
   integer,                 intent(in), optional :: is_in, ie_in, js_in, je_in
   integer,                 intent(in), optional :: window_id_in
 
