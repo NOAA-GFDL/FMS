@@ -99,7 +99,8 @@ program test_prepend_date
       call mpp_error(FATAL, "Error opening file:00020101.test_static.nc to read")
 
     call read_data(fileobj, "var2", var_data(1))
-    if (var_data(1) .ne. real(123.456, kind=r4_kind)) call mpp_error(FATAL, "The variable data for var2 is not the correct value!")
+    if (var_data(1) .ne. real(123.456, kind=r4_kind)) call mpp_error(FATAL, &
+      "The variable data for var2 is not the correct value!")
 
     call close_file(fileobj)
 

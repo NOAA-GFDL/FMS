@@ -264,8 +264,8 @@ logical function fms_diag_files_object_init (files_array)
      !! This will be the base_time if nothing was passed in
      !! This time is appended to the filename if the prepend_date namelist is .True.
      obj%start_time = diag_init_time
-     obj%last_output = get_base_time()
-     obj%model_time = get_base_time()
+     obj%last_output = diag_init_time
+     obj%model_time = diag_init_time
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
 
@@ -1009,18 +1009,18 @@ subroutine add_start_time(this, start_time)
   class(fmsDiagFile_type), intent(inout)       :: this           !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
 
-  !< If the start_time sent in is equal to the base_time return because
-  !! this%start_time was already set to the base_time
-  if (start_time .eq. get_base_time()) return
+  !< If the start_time sent in is equal to the diag_init_time return because
+  !! this%start_time was already set to the diag_init_time
+  if (start_time .eq. diag_init_time) return
 
-  if (this%start_time .ne. get_base_time()) then
-    !> If the this%start_time is not equal to the base_time from the diag_table
+  if (this%start_time .ne. diag_init_time) then
+    !> If the this%start_time is not equal to the diag_init_time from the diag_table
     !! this%start_time was already updated so make sure it is the same or error out
     if (this%start_time .ne. start_time)&
       call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have"&
       &" different start_time")
   else
-    !> If the this%start_time is equal to the base_time,
+    !> If the this%start_time is equal to the diag_init_time,
     !! simply update it with the start_time and set up the *_output variables
     this%model_time = start_time
     this%start_time = start_time
