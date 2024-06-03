@@ -429,7 +429,7 @@
                                    mask_in, mask_out, missing_value, missing_permit, &
                                    err_msg, new_missing_handle )
 !-----------------------------------------------------------------------
-   type (horiz_interp_type), intent(in) :: Interp
+   type (horiz_interp_type), intent(inout) :: Interp
       real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
       real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
    integer, intent(in),                   optional :: verbose
@@ -477,7 +477,7 @@
    !   uses 3d arrays for data and mask
    !   this allows for multiple interpolations with one call
    !-----------------------------------------------------------------------
-   type (horiz_interp_type), intent(in)           :: Interp
+   type (horiz_interp_type), intent(inout)           :: Interp
    real(FMS_HI_KIND_), intent(in),  dimension(:,:,:)            :: data_in
    real(FMS_HI_KIND_), intent(out), dimension(:,:,:)            :: data_out
    integer, intent(in),                  optional :: verbose
