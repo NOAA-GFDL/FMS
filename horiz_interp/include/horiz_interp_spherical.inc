@@ -189,7 +189,7 @@
     Interp%nlon_src = map_src_xsize; Interp%nlat_src = map_src_ysize
     Interp%nlon_dst = map_dst_xsize; Interp%nlat_dst = map_dst_ysize
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
-    Interp% interp_method = SPHERICA 
+    Interp% interp_method = SPHERICA
 
     return
 

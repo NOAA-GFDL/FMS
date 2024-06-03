@@ -1071,7 +1071,7 @@ implicit none
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
-        ! test deletion after direct calls 
+        ! test deletion after direct calls
         call horiz_interp_conserve_new(Interp_new1, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d)
         call horiz_interp_del(Interp_new1)
         call horiz_interp_conserve_new(Interp_new1, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d)
@@ -1102,7 +1102,7 @@ implicit none
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
-        ! test deletion after direct calls 
+        ! test deletion after direct calls
         ! this set up is usually done within horiz_interp_new
         nlon_in  = size(lon_in_1d(:))-1;  nlat_in  = size(lat_in_1d(:))-1
         nlon_out = size(lon_out_1d(:))-1; nlat_out = size(lat_out_1d(:))-1

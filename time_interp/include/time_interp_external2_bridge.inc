@@ -30,7 +30,7 @@
       real(FMS_TI_KIND_), dimension(:,:), intent(inout) :: data_in !< global or local data array
       integer, intent(in), optional :: interp !< hardcoded to linear
       logical, intent(in), optional :: verbose !< flag for debugging
-      type(horiz_interp_type),intent(in), optional :: horz_interp !< horizontal interpolation type
+      type(horiz_interp_type),intent(inout), optional :: horz_interp !< horizontal interpolation type
       logical, dimension(:,:), intent(out), optional :: mask_out !< set to true where output data is valid
       integer,                  intent(in), optional :: is_in, ie_in, js_in, je_in !< horizontal indices for load_record
       integer,                  intent(in), optional :: window_id !< harcoded to 1 in load_record
@@ -60,7 +60,7 @@
       real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout) :: time_data !< global or local data array
       integer,                    intent(in), optional :: interp !< hardcoded to linear
       logical,                    intent(in), optional :: verbose !< flag for debugging
-      type(horiz_interp_type),    intent(in), optional :: horz_interp !< horizontal interpolation type
+      type(horiz_interp_type),    intent(inout), optional :: horz_interp !< horizontal interpolation type
       logical, dimension(:,:,:), intent(out), optional :: mask_out !< set to true where output data is valid
       integer,                    intent(in), optional :: is_in, ie_in !<  x horizontal indices for load_record
       integer,                    intent(in), optional :: js_in, je_in !< y horizontal indices for load_record
