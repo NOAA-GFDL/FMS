@@ -1273,7 +1273,9 @@ private
   logical              :: mpp_record_timing_data=.TRUE.
   type(clock),save     :: clocks(MAX_CLOCKS)
   integer              :: log_unit, etc_unit
-  character(len=32)    :: configfile='logfile'
+  integer              :: warn_unit !< unit number of the warning log 
+  character(len=32), parameter    :: configfile='logfile'
+  character(len=32), parameter    :: warnfile='warnfile' !< base name for warninglog (appends ".<PE>.out")
   integer              :: peset_num=0, current_peset_num=0
   integer              :: world_peset_num                  !<the world communicator
   integer              :: error
