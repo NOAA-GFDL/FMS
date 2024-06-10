@@ -27,6 +27,8 @@
 # Set common test settings.
 . ../test-lib.sh
 
+output_dir
+
 # ensure input.nml file present
 cat <<_EOF  > input.nml
 &test_stdlog_nml
@@ -35,16 +37,16 @@ cat <<_EOF  > input.nml
 _EOF
 # Run test with one processor
 test_expect_success "test stdlog and stdwarn" '
-    mpirun -n 2 ./test_stdlog
+    mpirun -n 2 ../test_stdlog
 '
 sed -i 's/1/2/' input.nml
 test_expect_failure "test stdlog and stdwarn with fatal output" '
-    mpirun -n 2 ./test_stdlog
+    mpirun -n 2 ../test_stdlog
 '
 # move file so we don't overwrite
 mv warnfile.000000.out warnfile.000000.out.old
 sed -i 's/2/3/' input.nml
 test_expect_success "check stdwarn output" '
-    mpirun -n 1 ./test_stdlog
+    mpirun -n 1 ../test_stdlog
 '
 test_done
