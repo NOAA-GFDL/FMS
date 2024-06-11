@@ -43,6 +43,10 @@ sed -i 's/1/2/' input.nml
 test_expect_failure "test stdlog and stdwarn with fatal output" '
     mpirun -n 2 ../test_stdlog
 '
+# sync the filesystem and sleep for a sec so the slower systems(CI)
+# can mv and read the output from the previous test
+sync
+sleep 1
 # move file so we don't overwrite
 mv warnfile.000000.out warnfile.000000.out.old
 sed -i 's/2/3/' input.nml

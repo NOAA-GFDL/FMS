@@ -136,6 +136,19 @@
   end if
   end subroutine mpp_init_warninglog
 
+  !> @brief This function returns unit number for the warning log
+  !! if on the root pe, otherwise returns the etc_unit value (usually /dev/null)
+  function warnlog()
+    integer :: warnlog
+    if(.not. module_is_initialized) call mpp_error(FATAL, "mpp_mod: warnlog cannot be called before mpp_init") 
+    if(root_pe .eq. pe) then
+      warnlog = warn_unit
+    else
+      warnlog = etc_unit
+    endif
+    return
+  end function warnlog 
+
   !#####################################################################
   subroutine mpp_set_warn_level(flag)
     integer, intent(in) :: flag

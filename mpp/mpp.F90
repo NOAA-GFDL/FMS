@@ -202,7 +202,7 @@ private
   public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
 
   !--- public interface from mpp_util.h ------------------------------
-  public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
+  public :: stdin, stdout, stderr, stdlog, warnlog, lowercase, uppercase, mpp_error, mpp_error_state
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_pe
   public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
