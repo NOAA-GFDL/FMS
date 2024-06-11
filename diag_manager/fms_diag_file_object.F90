@@ -1007,7 +1007,7 @@ end subroutine define_new_subaxis
 !! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
 subroutine add_start_time(this, start_time)
   class(fmsDiagFile_type), intent(inout)       :: this           !< The file object
-  TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
+  TYPE(time_type),         intent(in)          :: start_time     !< Start time passed into register_diag_field
 
   !< If the start_time sent in is equal to the diag_init_time return because
   !! this%start_time was already set to the diag_init_time
@@ -1015,7 +1015,8 @@ subroutine add_start_time(this, start_time)
 
   if (this%start_time .ne. diag_init_time) then
     !> If the this%start_time is not equal to the diag_init_time from the diag_table
-    !! this%start_time was already updated so make sure it is the same or error out
+    !! this%start_time was already updated so make sure it is the same for the current variable
+    !! or error out
     if (this%start_time .ne. start_time)&
       call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have"&
       &" different start_time")

@@ -58,5 +58,30 @@ test_expect_success "Running diag_manager and checking that the date was prepend
   mpirun -n 1 ../test_prepend_date
 '
 
+cat <<_EOF > diag_table.yaml
+title: test_prepend_date
+base_date: 1 1 1 0 0 0
+diag_files:
+- file_name: test_non_static
+  time_units: hours
+  unlimdim: time
+  freq: 1 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var0
+    reduction: average
+    kind: r4
+  - module: ocn_mod
+    var_name: var1
+    reduction: average
+    kind: r4
+_EOF
+
+printf "&diag_manager_nml \n use_modern_diag=.true. \n/ \n &test_prepend_date_nml \n pass_diag_time=.false. \n /" | cat > input.nml
+
+test_expect_failure "Running diag_manager with fields that have a different start time (test $my_test_count)" '
+  mpirun -n 1 ../test_prepend_date
+'
+
 fi
 test_done
