@@ -31,493 +31,320 @@
 !> @{
 module fm_yaml_mod
 #ifdef use_yaml
+
 use yaml_parser_mod
+use mpp_mod, only: mpp_error, fatal
 implicit none
 private
 
-integer :: i, table_i, type_i, model_i, var_i, var_j, attr_j !< counters
+public :: build_fmTable
 
-!> @}
-! close documentation grouping
-
-!> @brief This type represents the subparameters for a given variable parameter.
-!> This type contains the name of the associated parameter, the key / value pairs for this subparameter,
-!! and the following methods: getting names and properties, and self destruction.
-!> @ingroup fm_yaml_mod
+!> @brief This type represents a subparameter block for a given variable parameter.
+!> This type contains the name of the associated parameter and the subparameter key/value pairs
 type, public :: fmAttr_t
-  integer                                     :: yfid                  !< file id of a yaml file
   integer                                     :: id                    !< block id of this var
   character(len=:), allocatable               :: paramname             !< name of associated parameter
-  character(len=:), dimension(:), allocatable :: keys                  !< name of the variable
-  character(len=:), dimension(:), allocatable :: values                !< name of the variable
-  contains
-    procedure :: destruct => destruct_fmAttr_t
-    procedure :: get_names_and_props => get_name_fmAttr_t
+  character(len=:), dimension(:), allocatable :: keys                  !< name of the attribute
+  character(len=:), dimension(:), allocatable :: values                !< value of the attribute
 end type fmAttr_t
 
 !> @brief This type represents the entries for a given variable, e.g. dust.
-!> This type contains the name of the variable, the block id, the key / value pairs for this variable's parameters,
-!! any applicable subparameters, and the following methods:
-!! getting blocks, getting names and properties, creating attributes, and self destruction.
-!> @ingroup fm_yaml_mod
+!> This type contains the name of the variable, the block id, the key/value pairs for the
+!! variable's parameters, and any applicable subparameters
 type, public :: fmVar_t
-  integer                                     :: yfid                  !< file id of a yaml file
   integer                                     :: id                    !< block id of this var
   character(len=:), allocatable               :: name                  !< name of the variable
-  integer, dimension(:), allocatable          :: key_ids               !< key ids for params
   character(len=:), dimension(:), allocatable :: keys                  !< names of params
   character(len=:), dimension(:), allocatable :: values                !< values of params
-  character(len=9)                            :: blockname="subparams" !< name of the root block
-  integer                                     :: nattrs                !< number of attributes
-  integer, allocatable                        :: attr_ids(:)           !< array of attribute ids
   type (fmAttr_t), allocatable                :: attributes(:)         !< attributes in this var
-  contains
-    procedure :: get_blocks => get_blocks_fmVar_t
-    procedure :: destruct => destruct_fmVar_t
-    procedure :: get_names_and_props => get_name_fmVar_t
-    procedure :: create_attributes => create_attributes_fmVar_t
 end type fmVar_t
 
 !> @brief This type represents the entries for a given model, e.g. land, ocean, atmosphere.
-!> This type contains the name of the model, the block id, the variables within this model,
-!! and the following methods: getting blocks, getting the name, creating variables, and self destruction.
-!> @ingroup fm_yaml_mod
+!> This type contains the name of the model, the block id, and the variables within this model
 type, public :: fmModel_t
-  integer                       :: yfid                !< file id of a yaml file
   integer                       :: id                  !< block id of this model
   character(len=:), allocatable :: name                !< name of the model
-  character(len=7)              :: blockname="varlist" !< name of the root block
-  integer                       :: nvars               !< number of var types
-  integer, allocatable          :: var_ids(:)          !< array of var ids
   type (fmVar_t), allocatable   :: variables(:)        !< variables in this model
-  contains
-    procedure :: get_blocks => get_blocks_fmModel_t
-    procedure :: destruct => destruct_fmModel_t
-    procedure :: get_name => get_name_fmModel_t
-    procedure :: create_variables => create_variables_fmModel_t
 end type fmModel_t
 
 !> @brief This type represents the entries for a specific field type, e.g. a tracer.
-!> This type contains the name of the field type, the block id, the models within this field type,
-!! and the following methods: getting blocks, getting the name, creating models, and self destruction.
-!> @ingroup fm_yaml_mod
+!> This type contains the name of the field type, the block id, and the models within this field type
 type, public :: fmType_t
-  integer                       :: yfid                !< file id of a yaml file
   integer                       :: id                  !< block id of this type
   character(len=:), allocatable :: name                !< name of the type
-  character(len=7)              :: blockname="modlist" !< name of the root block
-  integer                       :: nmodels             !< number of model types
-  integer, allocatable          :: model_ids(:)        !< array of model ids
   type (fmModel_t), allocatable :: models(:)           !< models in this type
-  contains
-    procedure :: get_blocks => get_blocks_fmType_t
-    procedure :: destruct => destruct_fmType_t
-    procedure :: get_name => get_name_fmType_t
-    procedure :: create_models => create_models_fmType_t
 end type fmType_t
 
-!> @brief This type represents the entirety of the field table.
-!> This type contains the file id of the yaml file, the field types within this table, and the following methods:
-!! getting blocks, creating field types, and self destruction.
-!> @ingroup fm_yaml_mod
+!> @brief This type contains the field types within a field table.
 type, public :: fmTable_t
-  integer                       :: yfid                    !< file id of a yaml file
-  character(len=11)             :: blockname="field_table" !< name of the root block
-  integer                       :: ntypes                  !< number of field types
-  integer, allocatable          :: type_ids(:)             !< array of type ids
-  type (fmType_t), allocatable  :: types(:)                !< field types in this table
-  contains
-    procedure :: get_blocks => get_blocks_fmTable_t
-    procedure :: destruct => destruct_fmTable_t
-    procedure :: create_types => create_types_fmTable_t
+  type (fmType_t), allocatable :: types(:) !< field types in this table
 end type fmTable_t
-
-!> @brief Interface to construct the fmTable type.
-!> @ingroup fm_yaml_mod
-interface fmTable_t
-  module procedure construct_fmTable_t
-end interface fmTable_t
-
-!> @brief Interface to construct the fmType type.
-!> @ingroup fm_yaml_mod
-interface fmType_t
-  module procedure construct_fmType_t
-end interface fmType_t
-
-!> @brief Interface to construct the fmModel type.
-!> @ingroup fm_yaml_mod
-interface fmModel_t
-  module procedure construct_fmModel_t
-end interface fmModel_t
-
-!> @brief Interface to construct the fmVar type.
-!> @ingroup fm_yaml_mod
-interface fmVar_t
-  module procedure construct_fmVar_t
-end interface fmVar_t
-
-!> @brief Interface to construct the fmAttr type.
-!> @ingroup fm_yaml_mod
-interface fmAttr_t
-  module procedure construct_fmAttr_t
-end interface fmAttr_t
 
 contains
 
-!> @addtogroup fm_yaml_mod
-!> @{
-
-!> @brief Function to construct the fmTable_t type.
-!!
-!> Given an optional filename, construct the fmTable type using routines from the yaml parser.
-!! @returns the fmTable type
-function construct_fmTable_t(filename) result(this)
-  type (fmTable_t)                       :: this     !< the field table
+!> @brief Subroutine to populate an fmTable by reading a yaml file, given an optional filename.
+subroutine build_fmTable(fmTable, filename)
+  type(fmTable_t), intent(out)           :: fmTable  !< the field table
   character(len=*), intent(in), optional :: filename !< the name of the yaml file
+  integer                                :: yfid     !< file id of the yaml file
+  integer                                :: ntypes   !< number of field types attached to this table
+  integer                                :: i        !< Loop counter
 
   if (.not. present(filename)) then
-    this%yfid = open_and_parse_file("field_table.yaml")
+    yfid = open_and_parse_file("field_table.yaml")
   else
-    this%yfid = open_and_parse_file(trim(filename))
+    yfid = open_and_parse_file(trim(filename))
   endif
-  this%ntypes = get_num_blocks(this%yfid, this%blockname)
-  allocate(this%type_ids(this%ntypes))
-end function construct_fmTable_t
 
-!> @brief Function to construct the fmType_t type.
-!!
-!> Given the appropriate block id, construct the fmType type using routines from the yaml parser.
-!! @returns the fmType type
-function construct_fmType_t(in_yfid, in_id) result(this)
-  type (fmType_t)     :: this    !< the type object
-  integer, intent(in) :: in_yfid !< yaml file id
-  integer, intent(in) :: in_id   !< block_id of type from parent
+  ntypes = get_num_blocks(yfid, "field_table", 0)
+  allocate(fmTable%types(ntypes))
 
-  this%yfid = in_yfid
-  this%id = in_id
-  this%nmodels = get_num_blocks(this%yfid, this%blockname, this%id)
-  allocate(this%model_ids(this%nmodels))
-end function construct_fmType_t
+  ! Gets the block ids for the associated types of fmTable.
+  call get_block_ids(yfid, "field_table", fmTable%types(:)%id)
 
-!> @brief Function to construct the fmModel_t type.
-!!
-!> Given the appropriate block id, construct the fmModel type using routines from the yaml parser.
-!! @returns the fmModel type
-function construct_fmModel_t(in_yfid, in_id) result(this)
-  type (fmModel_t)    :: this    !< the model object
-  integer, intent(in) :: in_yfid !< yaml file id
-  integer, intent(in) :: in_id   !< block_id of model from parent
+  do i=1,ntypes
+    call build_fmType(fmTable%types(i), yfid)
+  enddo
+end subroutine build_fmTable
 
-  this%yfid = in_yfid
-  this%id = in_id
-  this%nvars = get_num_blocks(this%yfid, this%blockname, this%id)
-  allocate(this%var_ids(this%nvars))
-end function construct_fmModel_t
+!> @brief Populates an fmType, which is assumed to already have its `id` parameter set.
+subroutine build_fmType(fmType, yfid)
+  type(fmType_t), intent(inout) :: fmType    !< type object
+  integer, intent(in)           :: yfid      !< file id of the yaml file
+  integer, dimension(1)         :: key_ids   !< array of key ids
+  character(len=256)            :: key_name  !< the name of a key
+  character(len=256)            :: key_value !< the value of a key
+  integer                       :: nmodels   !< number of models attached to this type
+  integer                       :: i         !< Loop counter
 
-!> @brief Function to construct the fmVar_t type.
-!!
-!> Given the appropriate block id, construct the fmVar type using routines from the yaml parser.
-!! @returns the fmVar type
-function construct_fmVar_t(in_yfid, in_id) result(this)
-  type (fmVar_t)      :: this    !< the var object
-  integer, intent(in) :: in_yfid !< yaml file id
-  integer, intent(in) :: in_id   !< block_id of var from parent
+  nmodels = get_num_blocks(yfid, "modlist", fmType%id)
+  allocate(fmType%models(nmodels))
 
-  this%yfid = in_yfid
-  this%id = in_id
-  this%nattrs = get_num_blocks(this%yfid, this%blockname, this%id)
-  allocate(this%attr_ids(this%nattrs))
-end function construct_fmVar_t
+  ! Gets the block ids for the associated models of fmType.
+  call get_block_ids(yfid, "modlist", fmType%models(:)%id, fmType%id)
 
-!> @brief Function to construct the fmAttr_t type.
-!!
-!> Given the appropriate block id, construct the fmAttr type using routines from the yaml parser.
-!! @returns the fmAttr type
-function construct_fmAttr_t(in_yfid, in_id) result(this)
-  type (fmAttr_t)      :: this    !< the var object
-  integer, intent(in) :: in_yfid !< yaml file id
-  integer, intent(in) :: in_id   !< block_id of Attr from parent
+  if (get_nkeys(yfid, fmType%id).ne.1) then
+    call mpp_error(FATAL, "fm_yaml_mod: A single `field_type` key is expected")
+  endif
 
-  this%yfid = in_yfid
-  this%id = in_id
-end function construct_fmAttr_t
+  call get_key_ids(yfid, fmType%id, key_ids)
+  call get_key_name(yfid, key_ids(1), key_name)
+  call get_key_value(yfid, key_ids(1), key_value)
 
-!> @brief Subroutine to destruct the fmTable_t type.
-!!
-!> Deallocates fmTable_t's allocatables and calls the destruct routine for fmTable_t's associated types.
-subroutine destruct_fmTable_t(this)
-  class (fmTable_t) :: this       !< the field table
+  if (trim(key_name).ne."field_type") then
+    call mpp_error(FATAL, "fm_yaml_mod: A single `field_type` key is expected")
+  endif
 
-  if (allocated(this%type_ids)) deallocate(this%type_ids)
-  if (allocated(this%types)) then
-    do table_i=1,this%ntypes
-    call destruct_fmType_t(this%types(table_i))
-    end do
-  end if
-  if (allocated(this%types)) deallocate(this%types)
-end subroutine destruct_fmTable_t
+  fmType%name = trim(key_value)
 
-!> @brief Subroutine to destruct the fmType_t type.
-!!
-!> Deallocates fmType_t's allocatables and calls the destruct routine for fmType_t's associated models.
-subroutine destruct_fmType_t(this)
-  class (fmType_t) :: this !< type object
+  do i=1,nmodels
+    call build_fmModel(fmType%models(i), yfid)
+  enddo
+end subroutine build_fmType
 
-  if (allocated(this%name)) deallocate(this%name)
-  if (allocated(this%model_ids)) deallocate(this%model_ids)
-  if (allocated(this%models)) then
-    do type_i=1,this%nmodels
-      call destruct_fmModel_t(this%models(type_i))
-    end do
-  end if
-  if (allocated(this%models)) deallocate(this%models)
-end subroutine destruct_fmType_t
+!> @brief Populates an fmModel, which is assumed to already have its `id` parameter set.
+subroutine build_fmModel(fmModel, yfid)
+  type(fmModel_t), intent(inout) :: fmModel   !< model object
+  integer, intent(in)            :: yfid      !< file id of the yaml file
+  integer, dimension(1)          :: key_ids   !< array of key ids
+  character(len=256)             :: key_name  !< the name of a key
+  character(len=256)             :: key_value !< the value of a key
+  integer                        :: nvars     !< number of variables attached to this model
+  integer                        :: i         !< Loop counter
 
-!> @brief Subroutine to destruct the fmModel_t type.
-!!
-!> Deallocates fmModel_t's allocatables and calls the destruct routine for fmModel_t's associated variables.
-subroutine destruct_fmModel_t(this)
-  class (fmModel_t) :: this !< model object
+  nvars = get_num_blocks(yfid, "varlist", fmModel%id)
+  allocate(fmModel%variables(nvars))
 
-  if (allocated(this%name)) deallocate(this%name)
-  if (allocated(this%var_ids)) deallocate(this%var_ids)
-  if (allocated(this%variables)) then
-    do model_i=1,this%nvars
-      call destruct_fmVar_t(this%variables(model_i))
-    end do
-  end if
-  if (allocated(this%variables)) deallocate(this%variables)
-end subroutine destruct_fmModel_t
+  ! gets the block ids for the associated variables of fmModel.
+  call get_block_ids(yfid, "varlist", fmModel%variables(:)%id, fmModel%id)
 
-!> @brief Subroutine to destruct the fmVar_t type.
-!!
-!> Deallocates fmVar_t's allocatables and calls the destruct routine for fmVar_t's associated attributes.
-subroutine destruct_fmVar_t(this)
-  class (fmVar_t) :: this !< variable object
+  if (get_nkeys(yfid, fmModel%id).ne.1) then
+    call mpp_error(FATAL, "fm_yaml_mod: A single `model_type` key is expected")
+  endif
 
-  if (allocated(this%name)) deallocate(this%name)
-  if (allocated(this%key_ids)) deallocate(this%key_ids)
-  if (allocated(this%keys)) deallocate(this%keys)
-  if (allocated(this%values)) deallocate(this%values)
-  if (allocated(this%attr_ids)) deallocate(this%attr_ids)
-  if (allocated(this%attributes)) then
-    do var_i=1,this%nattrs
-      call destruct_fmAttr_t(this%attributes(var_i))
-    end do
-  end if
-  if (allocated(this%attributes)) deallocate(this%attributes)
-end subroutine destruct_fmVar_t
+  call get_key_ids(yfid, fmModel%id, key_ids)
+  call get_key_name(yfid, key_ids(1), key_name)
+  call get_key_value(yfid, key_ids(1), key_value)
 
-!> @brief Subroutine to destruct the fmAttr_t type.
-!!
-!> Deallocates fmAttr_t's allocatables.
-subroutine destruct_fmAttr_t(this)
-  class (fmAttr_t) :: this !< variable object
+  if (trim(key_name).ne."model_type") then
+    call mpp_error(FATAL, "fm_yaml_mod: A single `model_type` key is expected")
+  endif
 
-  if (allocated(this%paramname)) deallocate(this%paramname)
-  if (allocated(this%keys)) deallocate(this%keys)
-  if (allocated(this%values)) deallocate(this%values)
-end subroutine destruct_fmAttr_t
+  fmModel%name = trim(key_value)
 
-!> @brief gets the block ids for the associated types of fmTable_t.
-subroutine get_blocks_fmTable_t(this)
-  class (fmTable_t) :: this !< field table object
+  do i=1,nvars
+    call build_fmVar(fmModel%variables(i), yfid)
+  enddo
+end subroutine build_fmModel
 
-  call get_block_ids(this%yfid, this%blockname, this%type_ids)
-end subroutine get_blocks_fmTable_t
+!> @brief Populates an fmVar and creates any associated fmAttrs
+subroutine build_fmVar(fmVar, yfid)
+  type(fmVar_t), intent(inout) :: fmVar                 !< variable object
+  integer, intent(in)          :: yfid                  !< file id of the yaml file
+  integer                      :: nkeys                 !< number of keys defined for this var
+  integer, allocatable         :: key_ids(:)            !< array of key ids
+  character(len=256)           :: key_name              !< the name of a key
+  character(len=256)           :: key_value             !< the value of a key
+  integer                      :: nattrs                !< number of attribute blocks attached to this var
+  integer                      :: nmethods              !< total number of methods attached to this var
+  integer                      :: maxln                 !< max string length of method names
+  integer                      :: maxlv                 !< max string length of method values
+  character(:), allocatable    :: attr_method_keys(:)   !< Keys of methods defined in attribute blocks
+  character(:), allocatable    :: attr_method_values(:) !< Values of methods defined in attribute blocks
+  integer                      :: i_name                !< Index of the key containing the variable's name
+  integer                      :: i, j                  !< Loop indices
 
-!> @brief gets the block ids for the associated models of fmType_t.
-subroutine get_blocks_fmType_t(this)
-  class (fmType_t) :: this !< type object
+  ! Read attribute blocks attached to this variable
+  call fmVar_read_attrs(fmVar, yfid, attr_method_keys, attr_method_values)
+  nattrs = size(attr_method_keys)
 
-  call get_block_ids(this%yfid, this%blockname, this%model_ids, this%id)
-end subroutine get_blocks_fmType_t
-
-!> @brief Gets the name of this field type and adds it to the fmType_t.
-!! Note that there should only be one key value pair (which is why the get_key_value call uses key_ids(1)).
-subroutine get_name_fmType_t(this)
-  class (fmType_t)     :: this !< type object
-  integer              :: nkeys !< numkeys
-  integer, allocatable :: key_ids(:) !< array of key ids
-  character(len=256)   :: key_value  !< the value of a key
-
-  nkeys = get_nkeys(this%yfid, this%id)
+  nkeys = get_nkeys(yfid, fmVar%id)
   allocate(key_ids(nkeys))
-  call get_key_ids(this%yfid, this%id, key_ids)
-  call get_key_value(this%yfid, key_ids(1), key_value)
-  this%name = trim(key_value)
-end subroutine get_name_fmType_t
+  call get_key_ids(yfid, fmVar%id, key_ids)
 
-!> @brief gets the block ids for the associated variables of fmModel_t.
-subroutine get_blocks_fmModel_t(this)
-  class (fmModel_t) :: this !< model object
+  maxln = len(attr_method_keys)
+  maxlv = len(attr_method_values)
+  i_name = -1
 
-  call get_block_ids(this%yfid, this%blockname, this%var_ids, this%id)
-end subroutine get_blocks_fmModel_t
+  do i=1,nkeys
+    call get_key_name(yfid, key_ids(i), key_name)
+    call get_key_value(yfid, key_ids(i), key_value)
 
-!> @brief Gets the name of this model and adds it to the fmModel_t.
-!! Note that there should only be one key value pair (which is why the get_key_value call uses key_ids(1)).
-subroutine get_name_fmModel_t(this)
-  class (fmModel_t)    :: this !< model object
-  integer              :: nkeys !< numkeys
-  integer, allocatable :: key_ids(:) !< array of key ids
-  character(len=256)   :: key_value  !< the value of a key
+    if (trim(key_name) .eq. "variable") then
+      if (i_name .ne. -1) then
+        call mpp_error(FATAL, "fm_yaml_mod: A variable can have only one `variable` key")
+      endif
 
-  nkeys = get_nkeys(this%yfid, this%id)
-  allocate(key_ids(nkeys))
-  call get_key_ids(this%yfid, this%id, key_ids)
-  call get_key_value(this%yfid, key_ids(1), key_value)
-  this%name = trim(key_value)
-end subroutine get_name_fmModel_t
-
-!> @brief gets the block ids for the associated attributes of fmVar_t.
-subroutine get_blocks_fmVar_t(this)
-  class (fmVar_t) :: this !< variable object
-
-  call get_block_ids(this%yfid, this%blockname, this%attr_ids, this%id)
-end subroutine get_blocks_fmVar_t
-
-!> @brief Gets the name of this variable as well as the associated parameters and adds them to fmVar_t.
-!! Note that the length of the character arrays for the parameter names and values are allocatable.
-!! This is why they are read twice.
-subroutine get_name_fmVar_t(this)
-  class (fmVar_t)      :: this       !< variable object
-  integer              :: nkeys      !< numkeys
-  integer              :: maxln      !< max string length names
-  integer              :: maxlv      !< max string length values
-  integer, allocatable :: key_ids(:) !< array of key ids
-  character(len=256)   :: key_name   !< the name of a key
-  character(len=256)   :: key_value  !< the value of a key
-
-  nkeys = get_nkeys(this%yfid, this%id)
-  allocate(key_ids(nkeys))
-  call get_key_ids(this%yfid, this%id, key_ids)
-  call get_key_value(this%yfid, key_ids(1), key_value)
-  this%name = trim(key_value)
-  if (nkeys .gt. 1) then
-    maxln = 0
-    maxlv = 0
-    do var_j=2,nkeys
-      call get_key_name(this%yfid, key_ids(var_j), key_name)
-      call get_key_value(this%yfid, key_ids(var_j), key_value)
+      fmVar%name = trim(key_value)
+      i_name = i
+    else
       maxln = max(maxln, len_trim(key_name))
       maxlv = max(maxlv, len_trim(key_value))
-    end do
-    allocate(this%key_ids(nkeys-1))
-    allocate(character(len=maxln)::this%keys(nkeys-1))
-    allocate(character(len=maxlv)::this%values(nkeys-1))
-    do var_j=2,nkeys
-      this%key_ids(var_j-1) = key_ids(var_j)
-      call get_key_name(this%yfid, key_ids(var_j), key_name)
-      call get_key_value(this%yfid, key_ids(var_j), key_value)
-      this%keys(var_j-1) = trim(key_name)
-      this%values(var_j-1) = trim(key_value)
-    end do
-  else
-    allocate(this%key_ids(0))
-  end if
-end subroutine get_name_fmVar_t
+    endif
+  enddo
 
-!> @brief Gets the name of the parameter and the key value pairs for the subparameters and adds them to fmAttr_t.
-!! Note that the length of the character arrays for the subparameter names and values are allocatable.
-!! This is why they are read twice.
-subroutine get_name_fmAttr_t(this)
-  class (fmAttr_t)     :: this       !< variable object
-  integer              :: nkeys      !< numkeys
-  integer              :: maxln      !< max string length names
-  integer              :: maxlv      !< max string length values
-  integer, allocatable :: key_ids(:) !< array of key ids
-  character(len=256)   :: key_name   !< the name of a key
-  character(len=256)   :: key_value  !< the value of a key
-  character(len=256)   :: paramname  !< the value of a key
+  if (i_name .eq. -1) then
+    call mpp_error(FATAL, "fm_yaml_mod: Every variable must have a `variable` key")
+  endif
 
-  call get_key_name(this%yfid, this%id-1, paramname)
-  allocate(character(len=len_trim(paramname))::this%paramname)
-  this%paramname = trim(paramname)
-  nkeys = get_nkeys(this%yfid, this%id)
-  allocate(key_ids(nkeys))
-  call get_key_ids(this%yfid, this%id, key_ids)
-  maxln = 0
-  maxlv = 0
-  do attr_j=1,nkeys
-    call get_key_name(this%yfid, key_ids(attr_j), key_name)
-    call get_key_value(this%yfid, key_ids(attr_j), key_value)
-    maxln = max(maxln, len_trim(key_name))
-    maxlv = max(maxlv, len_trim(key_value))
-  end do
-  allocate(character(len=maxln)::this%keys(nkeys))
-  allocate(character(len=maxlv)::this%values(nkeys))
-  do attr_j=1,nkeys
-    call get_key_name(this%yfid, key_ids(attr_j), key_name)
-    call get_key_value(this%yfid, key_ids(attr_j), key_value)
-    this%keys(attr_j) = trim(key_name)
-    this%values(attr_j) = trim(key_value)
-  end do
-end subroutine get_name_fmAttr_t
+  ! Number of methods is the number of keys (excluding `variable`), plus one for each attribute block.
+  nmethods = nkeys - 1 + nattrs
 
-!> @brief Creates the associated field types (fmType_t) of this fmTable_t.
-!!
-!! Note that this includes the creation function as well as the routines necessary to populate the associated fmType_t,
-!! including calling the create_types routine for the fmType_t (this makes it somewhat recursive).
-subroutine create_types_fmTable_t(this)
-  class (fmTable_t) :: this !< the field table
+  allocate(character(len=maxln)::fmVar%keys(nmethods))
+  allocate(character(len=maxlv)::fmVar%values(nmethods))
 
-  allocate(this%types(this%ntypes))
-  do table_i=1,this%ntypes
-    this%types(table_i) = fmType_t(this%yfid, this%type_ids(table_i))
-    call this%types(table_i)%get_blocks
-    call this%types(table_i)%get_name
-    call this%types(table_i)%create_models
-  end do
-end subroutine create_types_fmTable_t
+  j = 1
+  do i=1,nkeys
+    if (i.eq.i_name) cycle ! Exclude `variable` key
 
-!> @brief Creates the associated models (fmModel_t) of this fmType_t.
-!!
-!! Note that this includes the creation function as well as the routines necessary to populate the associated fmModel_t,
-!! including calling the create_models routine for the fmModel_t (this makes it somewhat recursive).
-subroutine create_models_fmType_t(this)
-  class (fmType_t) :: this !< type object
+    call get_key_name(yfid, key_ids(i), key_name)
+    call get_key_value(yfid, key_ids(i), key_value)
+    fmVar%keys(j) = trim(key_name)
+    fmVar%values(j) = trim(key_value)
 
-  allocate(this%models(this%nmodels))
-  do type_i=1,this%nmodels
-    this%models(type_i) = fmModel_t(this%yfid, this%model_ids(type_i))
-    call this%models(type_i)%get_blocks
-    call this%models(type_i)%get_name
-    call this%models(type_i)%create_variables
-  end do
-end subroutine create_models_fmType_t
+    j = j + 1
+  enddo
 
-!> @brief Creates the associated variables (fmVar_t) of this fmModel_t.
-!!
-!! Note that this includes the creation function as well as the routines necessary to populate the associated fmVar_t,
-!! including calling the create_variables routine for the fmVar_t (this makes it somewhat recursive).
-subroutine create_variables_fmModel_t(this)
-  class (fmModel_t) :: this !< model object
+  ! Add methods defined within attribute blocks.
+  fmVar%keys(j:) = attr_method_keys
+  fmVar%values(j:) = attr_method_values
+end subroutine build_fmVar
 
-  allocate(this%variables(this%nvars))
-  do model_i=1,this%nvars
-    this%variables(model_i) = fmVar_t(this%yfid, this%var_ids(model_i))
-    call this%variables(model_i)%get_blocks
-    call this%variables(model_i)%get_names_and_props
-    call this%variables(model_i)%create_attributes
-  end do
-end subroutine create_variables_fmModel_t
+!> @brief Reads the attribute blocks attached to a variable and populates the associated fmAttr structures.
+!! Returns two arrays containing key/value pairs of all methods defined via attribute blocks.
+subroutine fmVar_read_attrs(fmVar, yfid, method_keys, method_values)
+  type(fmVar_t), intent(inout)           :: fmVar            !< variable object
+  integer, intent(in)                    :: yfid             !< file id of the yaml file
+  character(:), allocatable, intent(out) :: method_keys(:)   !< Method keys (names of attribute blocks)
+  character(:), allocatable, intent(out) :: method_values(:) !< Method values from attribute blocks
+  integer                                :: nattrs           !< number of attribute blocks
+  integer                                :: nkeys            !< number of keys in an attribute block
+  integer, allocatable                   :: key_ids(:)       !< array of key ids
+  character(len=256)                     :: key_name         !< the name of a key
+  character(len=256)                     :: key_value        !< the value of a key
+  integer                                :: maxln_m          !< max string length of method names
+  integer                                :: maxlv_m          !< max string length of method values
+  integer                                :: maxln_a          !< max string length of subparameter names
+  integer                                :: maxlv_a          !< max string length of subparameter values
+  integer,allocatable                    :: name_key_id(:)   !< Indices of attribute `value` keys
+  integer                                :: i, j, k          !< Loop counters
 
-!> @brief Creates the associated attributes (fmAttr_t) of this fmVar_t.
-!!
-!! Note that this includes the creation function as well as the routines necessary to populate the associated fmAttr_t.
-subroutine create_attributes_fmVar_t(this)
-  class (fmVar_t) :: this !< var object
+  nattrs = get_num_unique_blocks(yfid, fmVar%id)
+  allocate(fmVar%attributes(nattrs))
+  allocate(name_key_id(nattrs))
 
-  if (this%nattrs .gt. 0) then
-    allocate(this%attributes(this%nattrs))
-    do var_i=1,this%nattrs
-      this%attributes(var_i) = fmAttr_t(this%yfid, this%attr_ids(var_i))
-      call this%attributes(var_i)%get_names_and_props
-  end do
-  end if
-end subroutine create_attributes_fmVar_t
+  ! gets the block ids for the associated attributes of fmVar.
+  call get_unique_block_ids(yfid, fmVar%attributes(:)%id, fmVar%id)
+
+  maxln_m = 0
+  maxlv_m = 0
+  name_key_id = -1
+
+  do i=1,nattrs
+    associate (fmAttr => fmVar%attributes(i))
+      call get_block_name(yfid, fmAttr%id, key_value)
+      fmAttr%paramname = trim(key_value)
+
+      nkeys = get_nkeys(yfid, fmAttr%id)
+      allocate(key_ids(nkeys))
+      call get_key_ids(yfid, fmAttr%id, key_ids)
+
+      maxln_a = 0
+      maxlv_a = 0
+
+      do j=1,nkeys
+        call get_key_name(yfid, key_ids(j), key_name)
+        call get_key_value(yfid, key_ids(j), key_value)
+
+        if (trim(key_name) .eq. "value") then
+          if (name_key_id(i) .ne. -1) then
+            call mpp_error(FATAL, "fm_yaml_mod: A variable attribute block can only have one `value` key")
+          endif
+
+          maxln_m = max(maxln_m, len(fmAttr%paramname))
+          maxlv_m = max(maxlv_m, len_trim(key_value))
+
+          name_key_id(i) = key_ids(j)
+        else
+          maxln_a = max(maxln_a, len_trim(key_name))
+          maxlv_a = max(maxlv_a, len_trim(key_value))
+        endif
+      enddo
+
+      if (name_key_id(i) .eq. -1) then
+        call mpp_error(FATAL, "fm_yaml_mod: Every variable attribute must have a `value` key")
+      endif
+
+      allocate(character(len=maxln_a)::fmAttr%keys(nkeys - 1))
+      allocate(character(len=maxlv_a)::fmAttr%values(nkeys - 1))
+
+      k = 1
+      do j=1,nkeys
+        if (key_ids(j).eq.name_key_id(i)) cycle
+
+        call get_key_name(yfid, key_ids(j), key_name)
+        call get_key_value(yfid, key_ids(j), key_value)
+        fmAttr%keys(k) = trim(key_name)
+        fmAttr%values(k) = trim(key_value)
+
+        k = k + 1
+      enddo
+
+      deallocate(key_ids)
+    end associate
+  enddo
+
+  allocate(character(len=maxln_m)::method_keys(nattrs))
+  allocate(character(len=maxlv_m)::method_values(nattrs))
+
+  do i=1,nattrs
+    method_keys(i) = fmVar%attributes(i)%paramname
+    call get_key_value(yfid, name_key_id(i), method_values(i))
+  enddo
+end subroutine fmVar_read_attrs
+
 #endif
 end module fm_yaml_mod
+
 !> @}
 ! close documentation grouping

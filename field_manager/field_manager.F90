@@ -593,7 +593,7 @@ character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the
 character(len=fm_string_len)    :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
 integer                         :: h, i, j, k, l, m !< dummy integer buffer
-type (fmTable_t)                :: my_table       !< the field table
+type (fmTable_t)                :: my_table !< the field table
 integer                         :: model !< model assocaited with the current field
 character(len=fm_path_name_len) :: list_name !< field_manager list name
 character(len=fm_string_len)    :: subparamvalue !< subparam value to be used when defining new name
@@ -614,14 +614,12 @@ if (.not. file_exists(trim(tbl_name))) then
   return
 endif
 
+! Construct my_table object
+call build_fmTable(my_table, trim(tbl_name))
 
-! Define my_table object and read in number of fields
-my_table = fmTable_t(trim(tbl_name))
-call my_table%get_blocks
-call my_table%create_types
-do h=1,my_table%ntypes
-  do i=1,my_table%types(h)%nmodels
-    do j=1,my_table%types(h)%models(i)%nvars
+do h=1,size(my_table%types)
+  do i=1,size(my_table%types(h)%models)
+    do j=1,size(my_table%types(h)%models(i)%variables)
       num_fields = num_fields + 1
     end do
   end do
@@ -630,8 +628,8 @@ end do
 allocate(fields(num_fields))
 
 current_field = 0
-do h=1,my_table%ntypes
-  do i=1,my_table%types(h)%nmodels
+do h=1,size(my_table%types)
+  do i=1,size(my_table%types(h)%models)
     select case (my_table%types(h)%models(i)%name)
     case ('coupler_mod')
        model = MODEL_COUPLER
@@ -647,7 +645,7 @@ do h=1,my_table%ntypes
       call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : &
         &'//trim(my_table%types(h)%models(i)%name))
     end select
-    do j=1,my_table%types(h)%models(i)%nvars
+    do j=1,size(my_table%types(h)%models(i)%variables)
       current_field = current_field + 1
       list_name = list_sep//lowercase(trim(my_table%types(h)%models(i)%name))//list_sep//&
                lowercase(trim(my_table%types(h)%name))//list_sep//&
@@ -659,10 +657,10 @@ do h=1,my_table%ntypes
       fields(current_field)%model       = model
       fields(current_field)%field_name  = lowercase(trim(my_table%types(h)%models(i)%variables(j)%name))
       fields(current_field)%field_type  = lowercase(trim(my_table%types(h)%name))
-      fields(current_field)%num_methods = size(my_table%types(h)%models(i)%variables(j)%key_ids)
+      fields(current_field)%num_methods = size(my_table%types(h)%models(i)%variables(j)%keys)
       allocate(fields(current_field)%methods(fields(current_field)%num_methods))
       if(fields(current_field)%num_methods.gt.0) then
-        if (my_table%types(h)%models(i)%variables(j)%nattrs .gt. 0) subparams = .true.
+        subparams = (size(my_table%types(h)%models(i)%variables(j)%attributes) .gt. 0)
         do k=1,size(my_table%types(h)%models(i)%variables(j)%keys)
           fields(current_field)%methods(k)%method_type = &
             lowercase(trim(my_table%types(h)%models(i)%variables(j)%keys(k)))
@@ -673,7 +671,7 @@ do h=1,my_table%ntypes
               my_table%types(h)%models(i)%variables(j)%values(k) )
           else
             subparamindex=-1
-            do l=1,my_table%types(h)%models(i)%variables(j)%nattrs
+            do l=1,size(my_table%types(h)%models(i)%variables(j)%attributes)
               if(lowercase(trim(my_table%types(h)%models(i)%variables(j)%attributes(l)%paramname)).eq.&
                 lowercase(trim(fields(current_field)%methods(k)%method_type))) then
                   subparamindex = l
@@ -707,7 +705,6 @@ do h=1,my_table%ntypes
 end do
 
 if (present(nfields)) nfields = num_fields
-call my_table%destruct
 end subroutine read_field_table_yaml
 
 !> @brief Subroutine to add new values to list parameters.
