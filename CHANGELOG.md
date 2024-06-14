@@ -6,6 +6,25 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2024.01.02] - 2024-06-14
+
+### Known Issues
+- Diag Manager Rewrite:
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Fixed
+- DIAG_MANAGER: Fixes incorrect dates being appended to static file names
+
 ## [2024.01.01] - 2024-05-30
 
 ### Known Issues
