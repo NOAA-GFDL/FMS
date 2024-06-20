@@ -1,0 +1,53 @@
+name: AM5 test
+on:
+  push:
+    tags:
+      - '*alpha*'
+      - '*beta*'
+  workflow_dispatch:
+jobs:
+  compile_AM5:
+    runs-on: [self-hosted, pw-platform]
+    strategy:
+      fail-fast: false
+    steps:
+    - name: Setup source and build directories
+      run: |
+        mkdir am5_src
+        mkdir am5_build
+        ln -s /contrib/am5/ci/src_am5f7b12r1/am5_phys am5_src/am5_phys
+        ln -s /contrib/am5/ci/src_am5f7b12r1/atmos_drivers am5_src/atmos_drivers
+        ln -s /contrib/am5/ci/src_am5f7b12r1/GFDL_atmos_cubed_sphere am5_src/GFDL_atmos_cubed_sphere
+        ln -s /contrib/am5/ci/src_am5f7b12r1/GRTCODE am5_src/GRTCODE
+        ln -s /contrib/am5/ci/src_am5f7b12r1/ice_param am5_src/ice_param
+        ln -s /contrib/am5/ci/src_am5f7b12r1/land_lad2 am5_src/land_lad2
+        ln -s /contrib/am5/ci/src_am5f7b12r1/mom6 am5_src/mom6
+        ln -s /contrib/am5/ci/src_am5f7b12r1/ocean_BGC am5_src/ocean_BGC
+        ln -s /contrib/am5/ci/src_am5f7b12r1/rte-ecckd am5_src/rte-ecckd
+        ln -s /contrib/am5/ci/src_am5f7b12r1/rte-rrtmgp am5_src/rte-rrtmgp
+    - name: Checkout FMS
+      uses: actions/checkout@v4
+      with:
+        path: am5_src/FMS
+    - name: Checkout FMScoupler
+      uses: actions/checkout@v4
+      with:
+        repository: NOAA-GFDL/FMScoupler
+        path: am5_src/FMScoupler
+    - name: Build AM5 in Intel container
+      run: /contrib/am5/ci/build.sh ${GITHUB_WORKSPACE}/am5_build
+
+  run_AM5:
+    runs-on: [self-hosted, pw-platform]
+    strategy:
+      fail-fast: false
+    needs: [compile_AM5]
+    steps:
+      - name: Setup run directory
+        run: |
+          mkdir am5_run
+          cd am5_run
+          ln -s /contrib/am5/ci/nmls_and_tables_am5f7b12r1/prod-omp-rts/* .
+          ln -s /contrib/am5/newWork/INPUT/ ./INPUT
+      - name: Launch runscript
+        run: srun -n 288 -p n384 /contrib/am5/ci/run.sh
