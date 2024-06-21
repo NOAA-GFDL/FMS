@@ -50,4 +50,4 @@ jobs:
           ln -s /contrib/am5/ci/nmls_and_tables_am5f7b12r1/prod-omp-rts/* .
           ln -s /contrib/am5/newWork/INPUT/ ./INPUT
       - name: Launch runscript
-        run: srun -n 288 -p n384 /contrib/am5/ci/run.sh
+        run: /contrib/am5/ci/run.sh
