@@ -35,7 +35,7 @@ jobs:
         repository: NOAA-GFDL/FMScoupler
         path: am5_src/FMScoupler
     - name: Build AM5 in Intel container
-      run: /contrib/am5/ci/build.sh ${GITHUB_WORKSPACE}/am5_build
+      run: /contrib/am5/ci/container_build.sh ${GITHUB_WORKSPACE}/am5_build
 
   run_AM5:
     runs-on: [self-hosted, pw-platform]
