@@ -4210,7 +4210,7 @@ END FUNCTION register_static_field
     END IF
 
     if (use_modern_diag) then
-      CALL fms_diag_object%init(diag_subset_output)
+      CALL fms_diag_object%init(diag_subset_output, time_init)
     endif
    if (.not. use_modern_diag) then
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
