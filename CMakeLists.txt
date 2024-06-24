@@ -21,9 +21,6 @@
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
-# add build type for debug, overrides default flags (set with $FCFLAGS, $CFLAGS)
-set(CMAKE_Fortran_FLAGS_DEBUG)
-
 # Define the CMake project
 project(FMS
   VERSION 2024.01.01
@@ -339,11 +336,8 @@ foreach(kind ${kinds})
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
-  string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
-  if (NOT build_type STREQUAL debug)
-    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS
-                                               "${${kind}_flags}")
-  endif()
+  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
+
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
 

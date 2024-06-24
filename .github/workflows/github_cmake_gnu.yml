@@ -15,10 +15,11 @@ jobs:
         omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
         libyaml-flag: [ "", -DWITH_YAML=on ]
         io-flag: [ "", -DUSE_DEPRECATED_IO=on ]
+        build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
     container:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
-        CMAKE_FLAGS: "${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
+        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
