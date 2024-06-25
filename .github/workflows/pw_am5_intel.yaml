@@ -33,7 +33,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: NOAA-GFDL/FMScoupler
-        path: am5_src/FMScoupler
+        path: am5_src/coupler
     - name: Build AM5 in Intel container
       run: /contrib/am5/ci/container_build.sh ${GITHUB_WORKSPACE}/am5_build
 
