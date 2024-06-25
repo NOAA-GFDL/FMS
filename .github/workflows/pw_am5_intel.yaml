@@ -27,11 +27,11 @@ jobs:
         ln -s /contrib/am5/ci/src_am5f7b12r1/rte-ecckd am5_src/rte-ecckd
         ln -s /contrib/am5/ci/src_am5f7b12r1/rte-rrtmgp am5_src/rte-rrtmgp
     - name: Checkout FMS
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
       with:
         path: am5_src/FMS
     - name: Checkout FMScoupler
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
       with:
         repository: NOAA-GFDL/FMScoupler
         path: am5_src/coupler
@@ -46,6 +46,7 @@ jobs:
     steps:
       - name: Setup run directory
         run: |
+          rm -rf am5_run
           mkdir am5_run
           cd am5_run
           ln -s /contrib/am5/ci/nmls_and_tables_am5f7b12r1/prod-omp-rts/* .
