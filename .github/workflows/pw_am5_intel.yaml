@@ -13,6 +13,7 @@ jobs:
     steps:
     - name: Setup source and build directories
       run: |
+        rm -rf am5_src am5_build
         mkdir am5_src
         mkdir am5_build
         ln -s /contrib/am5/ci/src_am5f7b12r1/am5_phys am5_src/am5_phys
