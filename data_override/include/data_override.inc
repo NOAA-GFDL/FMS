@@ -289,55 +289,55 @@ end if
     if (atm_on .and. .not. allocated(lon_local_atm) ) then
        call mpp_get_compute_domain( atm_domain,is,ie,js,je)
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
+       call get_grid_version_1(grid_file, 'atm', atm_domain, lon_local_atm, lat_local_atm, &
           min_glo_lon_atm, max_glo_lon_atm )
     endif
     if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
+       call get_grid_version_1(grid_file, 'ocn', ocn_domain, lon_local_ocn, lat_local_ocn, &
           min_glo_lon_ocn, max_glo_lon_ocn )
     endif
 
     if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
        call mpp_get_compute_domain( lnd_domain,is,ie,js,je)
        allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
+       call get_grid_version_1(grid_file, 'lnd', lnd_domain, lon_local_lnd, lat_local_lnd, &
           min_glo_lon_lnd, max_glo_lon_lnd )
     endif
 
     if (ice_on .and. .not. allocated(lon_local_ice) ) then
        call mpp_get_compute_domain( ice_domain,is,ie,js,je)
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'ice', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
+       call get_grid_version_1(grid_file, 'ice', ice_domain, lon_local_ice, lat_local_ice, &
           min_glo_lon_ice, max_glo_lon_ice )
     endif
  else
    if (atm_on .and. .not. allocated(lon_local_atm) ) then
        call mpp_get_compute_domain(atm_domain,is,ie,js,je)
        allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
+       call get_grid_version_2(fileobj, 'atm', atm_domain, lon_local_atm, lat_local_atm, &
                                min_glo_lon_atm, max_glo_lon_atm )
    endif
 
    if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
+       call get_grid_version_2(fileobj, 'ocn', ocn_domain, lon_local_ocn, lat_local_ocn, &
                                min_glo_lon_ocn, max_glo_lon_ocn )
    endif
 
    if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
        call mpp_get_compute_domain( lnd_domain,is,ie,js,je)
        allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
+       call get_grid_version_2(fileobj, 'lnd', lnd_domain, lon_local_lnd, lat_local_lnd, &
                                min_glo_lon_lnd, max_glo_lon_lnd )
    endif
 
    if (ice_on .and. .not. allocated(lon_local_ice) ) then
        call mpp_get_compute_domain( ice_domain,is,ie,js,je)
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
+       call get_grid_version_2(fileobj, 'ocn', ice_domain, lon_local_ice, lat_local_ice, &
                                min_glo_lon_ice, max_glo_lon_ice )
    endif
  end if

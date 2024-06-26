@@ -87,8 +87,7 @@ call mpp_get_compute_domain(Domain,is,ie,js,je)
 
 !< Call "get_grid_version_1" on a "atm" grid
 allocate(lon(is:ie,js:je), lat(is:ie,js:je))
-call get_grid_version_1("grid_spec.nc", "atm", Domain, is, ie, js, je, lon, lat, &
-                        min_lon, max_lon)
+call get_grid_version_1("grid_spec.nc", "atm", Domain, lon, lat, min_lon, max_lon)
 
 !< Error checking:
 if (lon(1,1) .ne. lon_in(1)*real(DEG_TO_RAD, lkind)) &
@@ -100,8 +99,7 @@ if (lat(1,1) .ne. lat_in(1)*real(DEG_TO_RAD, lkind)) &
 lat = 0.
 lon = 0.
 
-call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat, &
-                        min_lon, max_lon)
+call get_grid_version_1("grid_spec.nc", "ocn", Domain, lon, lat, min_lon, max_lon)
 
 !< Try again with ocean, "new_grid"
 allocate(lat_vert_in(1,1,4), lon_vert_in(1,1,4))
@@ -127,8 +125,7 @@ if (mpp_pe() .eq. mpp_root_pe()) then
 endif
 call mpp_sync()
 
-call get_grid_version_1("grid_spec.nc", "ocn", Domain, is, ie, js, je, lon, lat, &
-                        min_lon, max_lon)
+call get_grid_version_1("grid_spec.nc", "ocn", Domain, lon, lat, min_lon, max_lon)
 
 !< Error checking:
 if (lon(1,1) .ne. sum(lon_vert_in)/4._lkind * real(DEG_TO_RAD, lkind) ) then
