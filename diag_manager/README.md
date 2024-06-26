@@ -1,4 +1,4 @@
-The purpose of this document is to document the differences between the old diag manager and the new (modern) diag manager. 
+The purpose of this document is to document the differences between the old diag manager and the new (modern) diag manager.
 
 ## Contents
 - [1. Diag Table Format](README.md#1-diag-table-format)
@@ -10,7 +10,9 @@ The purpose of this document is to document the differences between the old diag
 - [7. History files data output "changes"](README.md#7-history-files-data-output-changes)
 
 ### 1. Diag Table Format
-The modern diag manager uses a YAML format instead of the legacy ascii table. A description of the YAML diag table can be found [here](diag_yaml_format.md).
+The modern diag manager uses a YAML format instead of the legacy ascii table. A description of the YAML diag table can
+be found [here](diag_yaml_format.md). A formal specification, in the form of a JSON schema, can be found in the
+[gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas) repository on Github.
 
 ### 2. Scalar Axis
 The old diag manager was adding a `scalar_axis` dimension of size 1 for scalar variables
@@ -70,7 +72,7 @@ This time_bounds variable is refernced as a variable attribute of time:
 ### 4. Subregional Files
 
 #### A. `is_subregional` global attribute:
-Subregional files will have a global NetCDF attribute `is_subregional = True` set for non-global history files. This attribute will be used in PP tools. 
+Subregional files will have a global NetCDF attribute `is_subregional = True` set for non-global history files. This attribute will be used in PP tools.
 
 #### B. Subregional dimension names:
 In some cases, the old diag manager was adding `sub0X` to the dimension names where X is a number greater than 1. This was causing problems in PP tools that were expecting the dimension to have `sub01` in the name. The new diag manager will not have this problem.
