@@ -38,7 +38,7 @@ use mpp_domains_mod,  only : mpp_domains_init, domain2d
 use fms_mod,          only : check_nml_error, fms_init
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
 use horiz_interp_mod, only : horiz_interp, horiz_interp_type
-use horiz_interp_type_mod, only: SPHERICA
+use horiz_interp_type_mod, only: SPHERICAL
 use constants_mod,    only : constants_init, PI
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_wght, horiz_interp_spherical_new
@@ -1274,7 +1274,7 @@ implicit none
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: mask_in")
             endif
             !! only set during spherical
-            if(interp_1%interp_method .eq. SPHERICA) then
+            if(interp_1%interp_method .eq. SPHERICAL) then
                 if( interp_2%horizInterpReals4_type%max_src_dist .ne. interp_1%horizInterpReals4_type%max_src_dist) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
             endif
@@ -1336,7 +1336,7 @@ implicit none
             endif
 
             !! only set during spherical
-            if(interp_1%interp_method .eq. SPHERICA) then
+            if(interp_1%interp_method .eq. SPHERICAL) then
                 if( interp_2%horizInterpReals8_type%max_src_dist .ne. interp_1%horizInterpReals8_type%max_src_dist) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
             endif
