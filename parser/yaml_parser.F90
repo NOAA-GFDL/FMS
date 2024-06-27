@@ -39,6 +39,9 @@ implicit none
 private
 
 public :: open_and_parse_file
+public :: get_num_unique_blocks
+public :: get_unique_block_ids
+public :: get_block_name
 public :: get_num_blocks
 public :: get_block_ids
 public :: get_value_from_key
@@ -127,6 +130,17 @@ function get_value(file_id, key_id) bind(c) &
    type(c_ptr) :: key_value
 end function get_value
 
+!> @brief Private c function that get the block name from a block_id in a yaml file
+!! @return String containing the value obtained
+function get_block(file_id, block_id) bind(c) &
+  result(block_name)
+  use iso_c_binding, only: c_ptr, c_int, c_bool
+  integer(kind=c_int), intent(in) :: file_id  !< File id corresponding to the yaml file that was opened
+  integer(kind=c_int), intent(in) :: block_id !< Block_id to get the block name for
+
+  type(c_ptr) :: block_name
+end function get_block
+
 !> @brief Private c function that determines the value of a key in yaml_file (see yaml_parser_binding.c)
 !! @return c pointer with the value obtained
 function get_value_from_key_wrap(file_id, block_id, key_name, success) bind(c) &
@@ -194,6 +208,26 @@ function is_valid_block_id(file_id, block_id) bind(c) &
    logical(kind=c_bool) :: is_valid !< Flag indicating if the file_id is valid
 end function is_valid_block_id
 
+!> @brief Private c function that determines the number of unique blocks that belong to
+!! a parent block with parent_block_id in the yaml file (see yaml_parser_binding.c)
+!! @return Number of unique blocks
+function get_num_unique_blocks_bind(file_id, parent_block_id) bind(c) &
+  result(nblocks)
+  use iso_c_binding, only: c_char, c_int, c_bool
+  integer(kind=c_int), intent(in) :: file_id         !< File id of the yaml file to search
+  integer(kind=c_int)             :: parent_block_id !< Id of the parent block
+
+  integer(kind=c_int) :: nblocks
+end function get_num_unique_blocks_bind
+
+!> @brief Private c function that gets the the ids of the unique blocks in the yaml file
+!! (see yaml_parser_binding.c)
+subroutine get_unique_block_ids_bind(file_id, block_ids, parent_block_id) bind(c)
+  use iso_c_binding, only: c_char, c_int, c_bool, c_ptr
+  integer(kind=c_int), intent(in)    :: file_id         !< File id corresponding to the yaml file that was opened
+  integer(kind=c_int), intent(inout) :: block_ids(*)    !< Id of the parent_block
+  integer(kind=c_int)                :: parent_block_id !< Id of the parent block
+end subroutine get_unique_block_ids_bind
 end interface
 
 !> @addtogroup yaml_parser_mod
@@ -463,6 +497,52 @@ subroutine get_key_ids (file_id, block_id, key_ids)
    call get_key_ids_binding (file_id, block_id, key_ids)
 end subroutine get_key_ids
 
+!> @brief Gets the number of unique blocks
+!! @return The number of unique blocks
+function get_num_unique_blocks(file_id, parent_block_id) &
+  result(nblocks)
+  integer, intent(in)           :: file_id !< File id corresponding to the yaml file that was opened
+  integer, intent(in), optional :: parent_block_id !< Id of the parent_block
+  integer :: nblocks
+
+  if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+    &  "The file id in your get_num_unique_blocks call is invalid! Check your call.")
+
+  if (.not. present(parent_block_id)) then
+    nblocks = get_num_unique_blocks_bind(file_id, 0)
+  else
+    if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, &
+        &  "The parent_block id in your get_block_ids call is invalid! Check your call.")
+    nblocks = get_num_unique_blocks_bind(file_id, parent_block_id)
+  endif
+end function
+
+!> @brief Gets the ids of the unique block ids
+subroutine get_unique_block_ids(file_id, block_ids, parent_block_id)
+  integer, intent(in)             :: file_id         !< File id corresponding to the yaml file that was opened
+  integer, intent(inout)          :: block_ids(:)    !< Ids of each unique block
+  integer, intent(in),   optional :: parent_block_id !< Id of the parent_block
+
+  if (.not. is_valid_file_id(file_id)) call mpp_error(FATAL, &
+    &  "The file id in your get_num_unique_blocks_ids call is invalid! Check your call.")
+
+  if (.not. present(parent_block_id)) then
+    call get_unique_block_ids_bind(file_id, block_ids, 0)
+  else
+    if (.not. is_valid_block_id(file_id, parent_block_id)) call mpp_error(FATAL, &
+        &  "The parent_block id in your get_block_ids call is invalid! Check your call.")
+    call get_unique_block_ids_bind(file_id, block_ids, parent_block_id)
+  endif
+end subroutine get_unique_block_ids
+
+!> @brief Gets the block name form the block id
+subroutine get_block_name(file_id, block_id, block_name)
+  integer,          intent(in)  :: file_id    !< File id corresponding to the yaml file that was opened
+  integer,          intent(in)  :: block_id   !< Id of the block to get the name from
+  character(len=*), intent(out) :: block_name !< Name of the block
+
+  block_name = fms_c2f_string(get_block(file_id, block_id))
+end subroutine
 #endif
 end module yaml_parser_mod
 !> @}
