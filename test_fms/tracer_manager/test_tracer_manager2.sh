@@ -75,25 +75,25 @@ field_table:
     - variable: radon
       longname: radon-222
       units: VMR*1E21
-      profile_type: fixed
-      subparams:
-      - surface_value: 0.0e+00
+      profile_type:
+      - value: fixed
+        surface_value: 0.0e+00
       convection: all
   - model_type: atmos_mod
     varlist:
     - variable: immadeup
       longname: im_made_up_for_testing
       units: hbar
-      profile_type: profile
-      subparams:
-      - surface_value: 1.02e-12
+      profile_type:
+      - value: profile
+        surface_value: 1.02e-12
         top_value: 1.0e-15
   - model_type: ocean_mod
     varlist:
     - variable: biotic1
-      diff_horiz: linear
-      subparams:
-      - slope: ok
+      diff_horiz:
+      - value: linear
+        slope: ok
       longname: biotic one
     - variable: age_ctl
   - model_type: ocean_mod
@@ -101,9 +101,9 @@ field_table:
     - variable: immadeup2
       longname: im_made_up2_for_testing
       units: hbar
-      profile_type: profile
-      subparams:
-      - surface_value: 1.0e-12
+      profile_type:
+      - value: profile
+        surface_value: 1.0e-12
         bottom_value: 1.0e-9
   - model_type: land_mod
     varlist:

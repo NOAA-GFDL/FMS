@@ -268,4 +268,30 @@ test_expect_failure "wrong buffer size block id" '
   mpirun -n 1 ./check_crashes
 '
 
+cat <<_EOF > sample.yaml
+field_table:
+- field_type: tracer
+  modlist:
+  - model_type: atmos_mod
+    varlist:
+    - variable: sphum
+      longname: specific humidity
+      units: kg/kg
+      profile_type:
+      - value: fixed
+        surface_value: 3.0e-06
+    - variable: soa
+      longname: SOA tracer
+      units: mmr
+      convection: all
+      chem_param:
+      - value: aerosol
+      profile_type:
+      - value: fixed
+        surface_value: 1.0e-32
+_EOF
+
+test_expect_success "Generic blocks names" '
+  mpirun -n 1 ./generic_blocks
+'
 test_done
