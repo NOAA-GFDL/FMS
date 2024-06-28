@@ -190,6 +190,8 @@
 !          xf > xcu, no valid boundary point')
         enddo
       enddo
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp%interp_method = BICUBIC
   end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_
 
   !> @brief Creates a new @ref horiz_interp_type
@@ -343,11 +345,13 @@
 !          xcu, no valid boundary point')
         enddo
       enddo
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp%interp_method = BICUBIC
 
   end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_
 
   !> @brief Perform bicubic horizontal interpolation
-  subroutine HORIZ_INTERP_BICUBIC_NEW_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
+  subroutine HORIZ_INTERP_BICUBIC_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &
                                  &  missing_permit)
     type (horiz_interp_type), intent(in)        :: Interp
     real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in
@@ -427,7 +431,7 @@
       enddo
     enddo
   return
-  end subroutine HORIZ_INTERP_BICUBIC_NEW_
+  end subroutine HORIZ_INTERP_BICUBIC_
 
 !---------------------------------------------------------------------------
 

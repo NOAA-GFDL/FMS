@@ -120,7 +120,7 @@
           deallocate(lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d)
        endif
     case ("spherical")
-       Interp%interp_method = SPHERICA
+       Interp%interp_method = SPHERICAL
        nlon_in  = size(lon_in(:));   nlat_in  = size(lat_in(:))
        nlon_out  = size(lon_out(:)); nlat_out = size(lat_out(:))
        allocate(lon_src(nlon_in,nlat_in), lat_src(nlon_in,nlat_in))
@@ -246,7 +246,7 @@
          deallocate(lon_src_1d,lat_src_1d)
       endif
    case ("spherical")
-      Interp%interp_method = SPHERICA
+      Interp%interp_method = SPHERICAL
       nlon_in  = size(lon_in(:));  nlat_in  = size(lat_in(:))
       allocate(lon_src(nlon_in,nlat_in), lat_src(nlon_in,nlat_in))
       do i = 1, nlon_in
@@ -329,7 +329,7 @@
       end if
 
    case ("spherical")
-      Interp%interp_method = SPHERICA
+      Interp%interp_method = SPHERICAL
       call horiz_interp_spherical_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                     num_nbrs, max_dist, src_modulo )
    case ("bilinear")
@@ -409,7 +409,7 @@
       call horiz_interp_bilinear_new ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
            verbose, src_modulo )
    case ("spherical")
-      Interp%interp_method = SPHERICA
+      Interp%interp_method = SPHERICAL
       call horiz_interp_spherical_new ( Interp, lon_in, lat_in, lon_dst, lat_dst, &
            num_nbrs, max_dist, src_modulo)
    case default
@@ -454,7 +454,7 @@
    case(BICUBIC)
       call horiz_interp_bicubic(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value, missing_permit )
-   case(SPHERICA)
+   case(SPHERICAL)
       call horiz_interp_spherical(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value )
    case default
