@@ -122,11 +122,10 @@
 
   !> Opens the warning log file, called during mpp_init
   subroutine mpp_init_warninglog()
-  integer :: p
   logical :: exist
   character(len=11) :: this_pe
   if( pe.EQ.root_pe )then
-    write(this_pe,'(a,i6.6,a)') '.',p,'.out'
+    write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
     inquire( file=trim(warnfile)//this_pe, exist=exist )
     if(exist)then
       open(newunit=warn_unit, file=trim(warnfile)//this_pe, status='REPLACE' )
