@@ -52,7 +52,8 @@ jobs:
           ln -s /contrib/am5/ci/nmls_and_tables_am5f7b12r1_576x1/* .
           mkdir INPUT
           ln -s /contrib/am5/newWork/INPUT/* ./INPUT
-          rm -f INPUT/MOM_*
+          rm -f INPUT/MOM_* INPUT/*.txt
           cp /contrib/am5/newWork/INPUT/MOM_* ./INPUT
+          cp /contrib/am5/newWork/INPUT/*.txt ./INPUT
       - name: Launch runscript
         run: /contrib/am5/ci/run.sh
