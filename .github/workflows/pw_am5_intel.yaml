@@ -49,7 +49,10 @@ jobs:
           rm -rf am5_run
           mkdir am5_run
           cd am5_run
-          ln -s /contrib/am5/ci/nmls_and_tables_am5f7b12r1/prod-omp-rts/* .
-          ln -s /contrib/am5/newWork/INPUT/ ./INPUT
+          ln -s /contrib/am5/ci/nmls_and_tables_am5f7b12r1_576x1/* .
+          mkdir INPUT
+          ln -s /contrib/am5/newWork/INPUT/* ./INPUT
+          rm -f INPUT/MOM_*
+          cp /contrib/am5/newWork/INPUT/MOM_* ./INPUT
       - name: Launch runscript
         run: /contrib/am5/ci/run.sh
