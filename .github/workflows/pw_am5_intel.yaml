@@ -52,6 +52,7 @@ jobs:
       - name: Setup run directory
         run: |
           cd am5_run
+          rm -f *.nc.* RESTART/*.nc.*
           cp -f /contrib/am5/ci/nmls_and_tables_am5f7b12r1_576x1/* .
       - name: Launch runscript
         run: /contrib/am5/ci/run.sh
