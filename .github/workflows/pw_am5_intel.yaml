@@ -41,18 +41,19 @@ jobs:
       run: /contrib/am5/ci/container_build.sh ${GITHUB_WORKSPACE}/am5_build
     - name: Check build succeeded
       run: stat ${GITHUB_WORKSPACE}/am5_build/fms_am5f7b12r1_compile.x
-
-  run_AM5:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: [self-hosted, pw-platform]
-    strategy:
-      fail-fast: false
-    needs: [compile_AM5]
-    steps:
-      - name: Setup run directory
-        run: |
-          cd am5_run
-          rm -f *.nc.* RESTART/*.nc.*
-          cp -f /contrib/am5/ci/nmls_and_tables_am5f7b12r1_576x1/* .
-      - name: Launch runscript
-        run: /contrib/am5/ci/run.sh
+      
+# TODO this can be used to run the model once we get more cloud allocation
+#  run_AM5:
+#    if: github.event_name == 'workflow_dispatch'
+#    runs-on: [self-hosted, pw-platform]
+#    strategy:
+#      fail-fast: false
+#    needs: [compile_AM5]
+#    steps:
+#      - name: Setup run directory
+#        run: |
+#          cd am5_run
+#          rm -f *.nc.* RESTART/*.nc.*
+#          cp -f /contrib/am5/ci/nmls_and_tables_am5f7b12r1_576x1/* .
+#      - name: Launch runscript
+#        run: /contrib/am5/ci/run.sh
