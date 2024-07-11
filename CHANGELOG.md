@@ -6,6 +6,31 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2024.02] - 2024-07-11
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- TIME_INTERP: Enables use of `verbose` option in `time_interp_external2` calls from `data_override`. The option is enabled in `data_override_nml` by setting `debug_data_override` to true. (#1516)
+- COUPLER: Adds optional argument to `coupler_types_send_data` routine that contains the return statuses for any calls made to the diag_manager's `send_data` routine. (#1530)
+- MPP: Adds a separate error log file `warnfile.<root pe num>.out` that only holds output from any `mpp_error` calls made during a run (#1544)
+### Changed
+- DIAG_MANAGER: The `diag_field_log.out` output file of all registered fields will now include the PE number of the root PE at the time of writing (ie. diag_field_log.out.0). This is to prevent overwritting the file in cases where the root PE may change. (#1497)
+
+### Fixed
+- CMAKE: Fixes real kind flags being overwritten when using the Debug release type (#1532)
+- HORIZ_INTERP: Fixes allocation issues when using method-specific horiz_interp_new routines (such as `horiz_interp_bilinear_new`) by setting `is_allocated` and the `method_type` during initialization for each method. (#1538)
+
+
+### Tag Commit Hashes
+- 2024.02-alpha1 5757c7813f1170efd28f5a4206395534894095b4
+- 2024.02-alpha2 5757c7813f1170efd28f5a4206395534894095b4
+- 2024.02-beta1  ca592ef8f47c246f4dc56d348d62235bd0ceaa9d
+- 2024.02-beta2  ca592ef8f47c246f4dc56d348d62235bd0ceaa9d
+
 ## [2024.01.02] - 2024-06-14
 
 ### Known Issues
