@@ -936,8 +936,8 @@ result(time_units_int)
     time_units_int = DIAG_YEARS
   case default
     time_units_int =DIAG_NULL
-    call mpp_error(FATAL, trim(error_msg)//" is not valid. Acceptable values are "&
-                   "seconds, minutes, hours, days, months, years")
+    call mpp_error(FATAL, trim(error_msg)//" is not valid. Acceptable values are &
+                          &seconds, minutes, hours, days, months, years")
   end select
 end function set_valid_time_units
 

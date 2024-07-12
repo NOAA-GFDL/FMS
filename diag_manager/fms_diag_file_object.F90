@@ -1018,8 +1018,8 @@ subroutine add_start_time(this, start_time)
     !! this%start_time was already updated so make sure it is the same for the current variable
     !! or error out
     if (this%start_time .ne. start_time)&
-      call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have"&
-      &" different start_time")
+      call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have &
+                            &different start_time")
   else
     !> If the this%start_time is equal to the diag_init_time,
     !! simply update it with the start_time and set up the *_output variables
