@@ -1212,6 +1212,8 @@
 
   end subroutine
 
+  !> Subroutine for reading a weight file and use it to fill in the horiz interp type
+  !! for the bilinear interpolation method.
   subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
                                                  weight_file_source, interp_method, isw, iew, jsw, jew)
     type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
@@ -1251,6 +1253,8 @@
         &" is not a supported weight file source. fregrid is the only supported weight file source." )
     end select
 
+    !! lon_out and lat_out are the global model grid
+    !! so get the grid for just this PE
     lon_local => lon_out(isw:iew, jsw:jew)
     lat_local => lat_out(isw:iew, jsw:jew)
 
@@ -1262,9 +1266,13 @@
     Interp%nlon_src = size(lon_in(:)) ;  Interp%nlat_src = size(lat_in(:))
     Interp%nlon_dst = nlon; Interp%nlat_dst = nlat
 
+    !! Three is for lon, lat, tile
+    !! Currently, interpolation is only supported from lat,lon input data
     allocate(var(nlon, nlat, 3))
     call read_data(weight_fileobj, "index", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 3/))
 
+    !! Each point has a lon (i), and lat(j) index
+    !! From there the four corners are (i,j), (i,j+1) (i+1) (i+1,j+1)
     Interp % i_lon (:,:,1) = var(:,:,1)
     Interp % i_lon (:,:,2) = Interp % i_lon (:,:,1) + 1
     where (Interp % i_lon (:,:,2) > size(lon_in(:))) Interp % i_lon (:,:,2) = 1
@@ -1278,6 +1286,11 @@
     allocate(var(nlon, nlat, 4))
     call read_data(weight_fileobj, "weight", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 4/))
 
+    !! The weights for the four corners
+    !! var(:,:,1) -> (i,j)
+    !! var(:,:,2) -> (i,j+1)
+    !! var(:,:,3) -> (i+1,j)
+    !! var(:,:,4) -> (i+1,j+1)
     Interp % HI_KIND_TYPE_ % wti = var(:,:,1:2)
     Interp % HI_KIND_TYPE_ % wtj = var(:,:,3:4)
     deallocate(var)

@@ -45,7 +45,7 @@ use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, N
 use time_manager_mod, only: time_type, OPERATOR(>), OPERATOR(<)
 use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
                             read_data, fms2_io_init, variable_exists, &
-                            get_mosaic_tile_file, file_exists, get_dimension_size
+                            get_mosaic_tile_file, file_exists
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 use fms_string_utils_mod, only: string
 

@@ -138,6 +138,8 @@ use platform_mod,               only: r4_kind, r8_kind
     module procedure horiz_interp_new_1d_dst_r8
  end interface
 
+ !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
+ !! calculating it
  interface horiz_interp_read_weights
    module procedure horiz_interp_read_weights_r4
    module procedure horiz_interp_read_weights_r8

@@ -841,6 +841,8 @@
     return
  end function IS_LAT_LON_
 
+ !> Subroutine for reading a weight file and use it to fill in the horiz interp type
+!! for the bilinear interpolation method.
  subroutine HORIZ_INTERP_READ_WEIGHTS_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
                                        weight_file_source, interp_method, isw, iew, jsw, jew)
    type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
@@ -862,6 +864,10 @@
 
    select case (trim(interp_method))
    case ("bilinear")
+     !! This is to reproduce the behavior in horiz_interp_new
+     !! The subroutine assumes that the data grid (lon_in, lat_in) are
+     !! the edges and not the centers.
+     !! Data_override passes in the edges, which are calculated from axis_edges
      nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
      allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
      do i = 1, nlon_in
