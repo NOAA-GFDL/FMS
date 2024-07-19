@@ -45,5 +45,8 @@
 #undef INTERSECT_
 #define INTERSECT_ intersect_r8
 
+#undef HORIZ_INTERP_READ_WEIGHTS_BILINEAR_
+#define HORIZ_INTERP_READ_WEIGHTS_BILINEAR_ horiz_interp_read_weights_bilinear_r8
+
 #include "horiz_interp_bilinear.inc"
 !> @}

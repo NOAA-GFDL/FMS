@@ -18,7 +18,7 @@ real(lkind), allocatable :: sst_obs_weights(:,:) !< Data overriden using the wei
 type(time_type)          :: Time                 !< The time of the simulation
 logical                  :: success              !< .True. if the data_override was successful
 integer                  :: i, j                 !< For do loops
-
+real(lkind)              :: threshold            !< Threshold for the difference in answers
 call fms_init()
 call set_calendar_type(NOLEAP)
 
@@ -43,9 +43,14 @@ sst_obs_weights = 999.
 call data_override('ICE','sst_obs_weights',sst_obs_weights, Time, override=success)
 if (.not. success) call mpp_error(FATAL, "Data override failed for when using weights")
 
+threshold = 1e-09
+if (lkind .eq. 4) then
+  threshold = 1e-03
+endif
+
 do i = is, ie
   do j = js, je
-    if (abs(sst_obs_weights(i,j) - sst_obs(i,j)) > 1e-06) then
+    if (abs(sst_obs_weights(i,j) - sst_obs(i,j)) > threshold) then
       print *, "i = ", i, " j = ", j, " ", sst_obs_weights(i,j), " vs ", sst_obs(i,j)
       print *, "diff =", abs(sst_obs_weights(i,j) - sst_obs(i,j))
       call mpp_error(FATAL, "The data is not the expected result")

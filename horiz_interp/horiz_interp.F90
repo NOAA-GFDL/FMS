@@ -45,7 +45,6 @@ module horiz_interp_mod
 
 use fms_mod,                    only: write_version_number, fms_error_handler
 use fms_mod,                    only: check_nml_error
-use fms2_io_mod
 use mpp_mod,                    only: mpp_error, FATAL, stdout, stdlog, mpp_min
 use mpp_mod,                    only: input_nml_file, WARNING, mpp_pe, mpp_root_pe
 use constants_mod,              only: pi
@@ -55,6 +54,7 @@ use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init, horiz_interp_c
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_new, horiz_interp_conserve_del
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new, horiz_interp_bilinear_del
+use horiz_interp_bilinear_mod,  only: horiz_interp_read_weights_bilinear
 use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_init, horiz_interp_bicubic
 use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_new, horiz_interp_bicubic_del
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_init, horiz_interp_spherical

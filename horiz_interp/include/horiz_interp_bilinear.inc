@@ -1211,4 +1211,81 @@
     return
 
   end subroutine
+
+  subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
+                                                 weight_file_source, interp_method, isw, iew, jsw, jew)
+    type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
+    character(len=*),        intent(in)    :: weight_filename    !< Name of the weight file
+    real(FMS_HI_KIND_), target,     intent(in)    :: lat_out(:,:)       !< Output (model) latitude
+    real(FMS_HI_KIND_), target,      intent(in)    :: lon_out(:,:)       !< Output (model) longitude
+    real(FMS_HI_KIND_),      intent(in)    :: lat_in(:)          !< Input (data) latitude
+    real(FMS_HI_KIND_),      intent(in)    :: lon_in(:)          !< Input (data) longitude
+    character(len=*),        intent(in)    :: weight_file_source !< Source of the weight file
+    character(len=*),        intent(in)    :: interp_method      !< The interp method to use
+    integer,                 intent(in)    :: isw, iew, jsw, jew !< Starting and ending indices of the compute domain
+
+    real(FMS_HI_KIND_), allocatable :: var(:,:,:)     !< Dummy variable to read the indices and weight into
+    type(FmsNetcdfFile_t)           :: weight_fileobj !< FMS2io fileob for the weight file
+    integer                         :: nlon           !< Number of longitudes in the model grid
+    integer                         :: nlat           !< Number of latitude in the model grid
+    real(FMS_HI_KIND_), pointer     :: lon_local(:,:) !< model longitudes for the current pe
+    real(FMS_HI_KIND_), pointer     :: lat_local(:,:) !< model latitudes for the current pe
+
+    if (.not. open_file(weight_fileobj, weight_filename, "read" )) &
+      call mpp_error(FATAL, "Error opening the weight file:"//&
+        &trim(weight_filename))
+
+    !< Check that weight file has the correct dimensions
+    select case (trim(weight_file_source))
+    case ("fregrid")
+      call get_dimension_size(weight_fileobj, "nlon", nlon)
+      if (nlon .ne. size(lon_out,1)) &
+        call mpp_error(FATAL, "The nlon from the weight file is not the same as in the input grid."//&
+                             &" From weight file:"//string(nlon)//" from input grid:"//string(size(lon_out,1)))
+      call get_dimension_size(weight_fileobj, "nlat", nlat)
+      if (nlat .ne. size(lon_out,2)) &
+        call mpp_error(FATAL, "The nlat from the weight file is not the same as in the input grid."//&
+                   &" From weight file:"//string(nlat)//" from input grid:"//string(size(lon_out,2)))
+    case default
+      call mpp_error(FATAL, trim(weight_file_source)//&
+        &" is not a supported weight file source. fregrid is the only supported weight file source." )
+    end select
+
+    lon_local => lon_out(isw:iew, jsw:jew)
+    lat_local => lat_out(isw:iew, jsw:jew)
+
+    allocate ( Interp % HI_KIND_TYPE_ % wti (size(lon_local,1),size(lon_local,2),2),   &
+              Interp % HI_KIND_TYPE_ % wtj (size(lon_local,1),size(lon_local,2),2),   &
+              Interp % i_lon (size(lon_local,1),size(lon_local,2),2), &
+              Interp % j_lat (size(lon_local,1),size(lon_local,2),2))
+
+    Interp%nlon_src = size(lon_in(:)) ;  Interp%nlat_src = size(lat_in(:))
+    Interp%nlon_dst = nlon; Interp%nlat_dst = nlat
+
+    allocate(var(nlon, nlat, 3))
+    call read_data(weight_fileobj, "index", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 3/))
+
+    Interp % i_lon (:,:,1) = var(:,:,1)
+    Interp % i_lon (:,:,2) = Interp % i_lon (:,:,1) + 1
+    where (Interp % i_lon (:,:,2) > size(lon_in(:))) Interp % i_lon (:,:,2) = 1
+
+    Interp % j_lat (:,:,1) = var(:,:,2)
+    Interp % j_lat (:,:,2) = Interp % j_lat (:,:,1) + 1
+    where (Interp % j_lat (:,:,2) > size(lat_in(:))) Interp % j_lat (:,:,2) = 1
+
+    deallocate(var)
+
+    allocate(var(nlon, nlat, 4))
+    call read_data(weight_fileobj, "weight", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 4/))
+
+    Interp % HI_KIND_TYPE_ % wti = var(:,:,1:2)
+    Interp % HI_KIND_TYPE_ % wtj = var(:,:,3:4)
+    deallocate(var)
+
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp% interp_method = BILINEAR
+    Interp% I_am_initialized = .True.
+    call close_file(weight_fileobj)
+  end subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_
+
 !> @}

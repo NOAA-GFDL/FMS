@@ -98,10 +98,12 @@ type override_type
 end type override_type
 
 !> Private type for holding horiz_interp_type for a weight file
+!! This is needed so that if variables use the same weight file,
+!! then we won't have to read the weight file again
 !> @ingroup data_override_mod
 type fmsExternalWeights_type
-  character(len=:), allocatable :: weight_filename
-  type(horiz_interp_type)       :: horiz_interp
+  character(len=:), allocatable :: weight_filename !< Name of the weight file
+  type(horiz_interp_type)       :: horiz_interp    !< Horiz interp type read in from the weight file
 end type fmsExternalWeights_type
 
 integer, parameter :: lkind = FMS_DATA_OVERRIDE_KIND_
@@ -1083,9 +1085,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   integer :: endingj !< Ending y index for the compute domain relative to the input buffer
   integer :: nhalox !< Number of halos in the x direction
   integer :: nhaloy !< Number of halos in the y direction
-  logical :: found_horiz_interp
-  type(FmsNetcdfFile_t) :: weight_fileobj
-  integer :: nlon, nlat
+  logical :: found_weight_file !< .True. if the weight file has already been read
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -1479,43 +1479,27 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
      end select
 
      if (data_table(index1)%ext_weights) then
-      found_horiz_interp = .false.
+      found_weight_file = .false.
       do i = 1, nweight_files
         if (external_weights(i)%weight_filename .eq. trim(data_table(index1)%ext_weights_file_name)) then
           override_array(curr_position)%horz_interp(window_id) = external_weights(i)%horiz_interp
-          found_horiz_interp = .true.
+          found_weight_file = .true.
           exit
         endif
       enddo
 
-      if (.not. found_horiz_interp) then
+      if (.not. found_weight_file) then
         nweight_files = nweight_files + 1
         external_weights(nweight_files)%weight_filename = trim(data_table(index1)%ext_weights_file_name)
-        if (.not. open_file(weight_fileobj, external_weights(nweight_files)%weight_filename, "read" )) &
-          call mpp_error(FATAL, "Error opening the weight file:"//&
-            &trim(external_weights(nweight_files)%weight_filename))
-
-        select case (trim(data_table(index1)%ext_weights_source))
-        case ("fregrid")
-          call get_dimension_size(weight_fileobj, "nlon", nlon)
-          call check_grid_dimension(nlon, size(lon_local, 1), "nlon")
-          call get_dimension_size(weight_fileobj, "nlat", nlat)
-          call check_grid_dimension(nlat, size(lat_local, 2), "nlat")
-        case default
-          call mpp_error(FATAL, trim(data_table(index1)%ext_weights_source)//&
-            &" is not a supported weight file source. fregrid is the only supported weight file source.")
-        end select
 
         call horiz_interp_read_weights(external_weights(nweight_files)%horiz_interp, &
-          lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), &
+          external_weights(nweight_files)%weight_filename, lon_local, lat_local, &
           override_array(curr_position)%lon_in(is_src:ie_src+1), &
           override_array(curr_position)%lat_in(js_src:je_src+1), &
-          weight_fileobj, data_table(index1)%ext_weights_source, &
+          data_table(index1)%ext_weights_source, &
           data_table(index1)%interpol_method, isw, iew, jsw, jew)
 
         override_array(curr_position)%horz_interp(window_id) = external_weights(nweight_files)%horiz_interp
-
-        call close_file(weight_fileobj)
       endif
      else
       select case (data_table(index1)%interpol_method)
@@ -1962,13 +1946,3 @@ subroutine DATA_OVERRIDE_UG_2D_(gridname,fieldname,return_data,time,override)
 
   deallocate(data_SG, data_UG)
 end subroutine DATA_OVERRIDE_UG_2D_
-
-subroutine check_grid_dimension(dim_weight_size, dim_local_size, err_msg)
-  integer, intent(in) :: dim_weight_size
-  integer, intent(in) :: dim_local_size
-  character(len=*), intent(in) :: err_msg
-
-  if (dim_weight_size .ne. dim_local_size) &
-    call mpp_error(FATAL, "The "//trim(err_msg)//" from the weight file is not the same as in the input grid."//&
-                   &" From weight file:"//string(dim_weight_size)//" from input grid:"//string(dim_local_size))
-end subroutine check_grid_dimension
