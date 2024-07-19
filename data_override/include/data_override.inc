@@ -27,7 +27,7 @@ use constants_mod, only: DEG_TO_RAD
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
-                             assignment(=)
+                             assignment(=), horiz_interp_read_weights
 use time_interp_external2_mod, only: time_interp_external_init, &
                                      time_interp_external, &
                                      time_interp_external_bridge, get_time_axis, &
@@ -45,7 +45,7 @@ use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, N
 use time_manager_mod, only: time_type, OPERATOR(>), OPERATOR(<)
 use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
                             read_data, fms2_io_init, variable_exists, &
-                            get_mosaic_tile_file, file_exists
+                            get_mosaic_tile_file, file_exists, get_dimension_size
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 use fms_string_utils_mod, only: string
 
@@ -97,10 +97,19 @@ type override_type
    integer                          :: is_src, ie_src, js_src, je_src
 end type override_type
 
+!> Private type for holding horiz_interp_type for a weight file
+!> @ingroup data_override_mod
+type fmsExternalWeights_type
+  character(len=:), allocatable :: weight_filename
+  type(horiz_interp_type)       :: horiz_interp
+end type fmsExternalWeights_type
+
 integer, parameter :: lkind = FMS_DATA_OVERRIDE_KIND_
 integer, parameter :: max_table=100, max_array=100
 
 integer            :: table_size !< actual size of data table
+integer            :: nweight_files !< Number of weight files that have been used
+type(fmsExternalWeights_type), allocatable, target :: external_weights(:) !< External weights types
 logical            :: module_is_initialized = .FALSE.
 
 type(domain2D) :: ocn_domain,atm_domain,lnd_domain, ice_domain
@@ -220,6 +229,8 @@ end if
        if (file_exists("data_table")) &
          call mpp_error(FATAL, "You cannot have the legacy data_table if use_data_table_yaml=.true.")
        call read_table_yaml(data_table)
+       allocate(external_weights(table_size))
+       nweight_files = 0
     else
        if (file_exists("data_table.yaml"))&
          call mpp_error(FATAL, "You cannot have the yaml data_table if use_data_table_yaml=.false.")
@@ -1072,6 +1083,9 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   integer :: endingj !< Ending y index for the compute domain relative to the input buffer
   integer :: nhalox !< Number of halos in the x direction
   integer :: nhaloy !< Number of halos in the y direction
+  logical :: found_horiz_interp
+  type(FmsNetcdfFile_t) :: weight_fileobj
+  integer :: nlon, nlat
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -1464,18 +1478,59 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         call mpp_error(FATAL,'error: gridname not recognized in data_override')
      end select
 
-     select case (data_table(index1)%interpol_method)
-     case ('bilinear')
+     if (data_table(index1)%ext_weights) then
+      found_horiz_interp = .false.
+      do i = 1, nweight_files
+        if (external_weights(i)%weight_filename .eq. trim(data_table(index1)%ext_weights_file_name)) then
+          override_array(curr_position)%horz_interp(window_id) = external_weights(i)%horiz_interp
+          found_horiz_interp = .true.
+          exit
+        endif
+      enddo
+
+      if (.not. found_horiz_interp) then
+        nweight_files = nweight_files + 1
+        external_weights(nweight_files)%weight_filename = trim(data_table(index1)%ext_weights_file_name)
+        if (.not. open_file(weight_fileobj, external_weights(nweight_files)%weight_filename, "read" )) &
+          call mpp_error(FATAL, "Error opening the weight file:"//&
+            &trim(external_weights(nweight_files)%weight_filename))
+
+        select case (trim(data_table(index1)%ext_weights_source))
+        case ("fregrid")
+          call get_dimension_size(weight_fileobj, "nlon", nlon)
+          call check_grid_dimension(nlon, size(lon_local, 1), "nlon")
+          call get_dimension_size(weight_fileobj, "nlat", nlat)
+          call check_grid_dimension(nlat, size(lat_local, 2), "nlat")
+        case default
+          call mpp_error(FATAL, trim(data_table(index1)%ext_weights_source)//&
+            &" is not a supported weight file source. fregrid is the only supported weight file source.")
+        end select
+
+        call horiz_interp_read_weights(external_weights(nweight_files)%horiz_interp, &
+          lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), &
+          override_array(curr_position)%lon_in(is_src:ie_src+1), &
+          override_array(curr_position)%lat_in(js_src:je_src+1), &
+          weight_fileobj, data_table(index1)%ext_weights_source, &
+          data_table(index1)%interpol_method, isw, iew, jsw, jew)
+
+        override_array(curr_position)%horz_interp(window_id) = external_weights(nweight_files)%horiz_interp
+
+        call close_file(weight_fileobj)
+      endif
+     else
+      select case (data_table(index1)%interpol_method)
+      case ('bilinear')
         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bilinear")
-     case ('bicubic')
+      case ('bicubic')
         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bicubic")
-     end select
+      end select
+    endif
      override_array(curr_position)%need_compute(window_id) = .false.
   endif
 
@@ -1907,3 +1962,13 @@ subroutine DATA_OVERRIDE_UG_2D_(gridname,fieldname,return_data,time,override)
 
   deallocate(data_SG, data_UG)
 end subroutine DATA_OVERRIDE_UG_2D_
+
+subroutine check_grid_dimension(dim_weight_size, dim_local_size, err_msg)
+  integer, intent(in) :: dim_weight_size
+  integer, intent(in) :: dim_local_size
+  character(len=*), intent(in) :: err_msg
+
+  if (dim_weight_size .ne. dim_local_size) &
+    call mpp_error(FATAL, "The "//trim(err_msg)//" from the weight file is not the same as in the input grid."//&
+                   &" From weight file:"//string(dim_weight_size)//" from input grid:"//string(dim_local_size))
+end subroutine check_grid_dimension

@@ -962,8 +962,10 @@
     if(max_missing .gt. 3 .or. max_missing .lt. 0) call mpp_error(FATAL, &
          'horiz_interp_bilinear_mod: missing_permit should be between 0 and 3')
 
-    if (size(data_in,1) /= nlon_in .or. size(data_in,2) /= nlat_in) &
+    if (size(data_in,1) /= nlon_in .or. size(data_in,2) /= nlat_in) then
+         print *, size(data_in,1), nlon_in, size(data_in,2), nlat_in
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: size of input array incorrect')
+    endif
 
     if (size(data_out,1) /= nlon_out .or. size(data_out,2) /= nlat_out) &
          call mpp_error(FATAL,'horiz_interp_bilinear_mod: size of output array incorrect')

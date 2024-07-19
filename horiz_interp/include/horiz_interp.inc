@@ -840,4 +840,70 @@
 
     return
  end function IS_LAT_LON_
+
+ subroutine HORIZ_INTERP_READ_WEIGHTS_(Interp, lon_out, lat_out, lon_in, lat_in, &
+                                       fileobj, weight_file_source, &
+                                       interp_method, isw, iew, jsw, jew)
+   type(horiz_interp_type), intent(inout) :: Interp
+   real(FMS_HI_KIND_), intent(in) :: lat_out(:,:)
+   real(FMS_HI_KIND_), intent(in) :: lon_out(:,:)
+   real(FMS_HI_KIND_), intent(in) :: lat_in(:)
+   real(FMS_HI_KIND_), intent(in) :: lon_in(:)
+   type(FmsNetcdfFile_t), intent(in) :: fileobj
+   character(len=*),   intent(in) :: weight_file_source
+   character(len=*),   intent(in) :: interp_method
+   integer, intent(in) :: isw, iew, jsw, jew
+
+   real(FMS_HI_KIND_), allocatable :: var(:,:,:)
+
+   select case (trim(interp_method))
+   case ("bilinear")
+   case default
+     call mpp_error(FATAL, "Reading weight from file is not supported for the "//&
+      trim(interp_method)//" method. It is currently only supported for bilinear")
+   end select
+
+   select case (trim(weight_file_source))
+   case ("fregrid")
+   case default
+     call mpp_error(FATAL, trim(weight_file_source)//&
+       &" is not a supported weight file source. fregrid is the only supported weight file source." )
+   end select
+
+   if (.not. check_if_open(fileobj)) call mpp_error(FATAL, &
+    "The fileobj passed in horiz_interp_read_weights is not opened.")
+
+   allocate ( Interp % HI_KIND_TYPE_ % wti (size(lon_out,1),size(lon_out,2),2),   &
+              Interp % HI_KIND_TYPE_ % wtj (size(lon_out,1),size(lon_out,2),2),   &
+              Interp % i_lon (size(lon_out,1),size(lon_out,2),2), &
+              Interp % j_lat (size(lon_out,1),size(lon_out,2),2))
+
+   Interp%nlon_src = size(lon_in(:)) -1 ;  Interp%nlat_src = size(lat_in(:)) - 1
+   Interp%nlon_dst = size(lon_out, 1); Interp%nlat_dst = size(lon_out, 2)
+
+   allocate(var(size(lon_out, 1), size(lon_out, 2), 3))
+   call read_data(fileobj, "index", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 3/))
+
+   Interp % i_lon (:,:,1) = var(:,:,1)
+   Interp % i_lon (:,:,2) = Interp % i_lon (:,:,1) + 1
+   where (Interp % i_lon (:,:,2) > size(lon_in(:))) Interp % i_lon (:,:,2) = 1
+
+   Interp % j_lat (:,:,1) = var(:,:,2)
+   Interp % j_lat (:,:,2) = Interp % j_lat (:,:,1) + 1
+   where (Interp % j_lat (:,:,2) > size(lat_in(:))) Interp % j_lat (:,:,2) = 1
+
+   deallocate(var)
+
+   allocate(var(size(lon_out, 1), size(lon_out, 2), 4))
+   call read_data(fileobj, "weight", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 4/))
+
+   Interp % HI_KIND_TYPE_ % wti = var(:,:,1:2)
+   Interp % HI_KIND_TYPE_ % wtj = var(:,:,3:4)
+   deallocate(var)
+
+   Interp% HI_KIND_TYPE_ % is_allocated = .true.
+   Interp% interp_method = BILINEAR
+   Interp% I_am_initialized = .True.
+
+ end subroutine HORIZ_INTERP_READ_WEIGHTS_
 !> @}

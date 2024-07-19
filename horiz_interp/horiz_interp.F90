@@ -45,6 +45,7 @@ module horiz_interp_mod
 
 use fms_mod,                    only: write_version_number, fms_error_handler
 use fms_mod,                    only: check_nml_error
+use fms2_io_mod
 use mpp_mod,                    only: mpp_error, FATAL, stdout, stdlog, mpp_min
 use mpp_mod,                    only: input_nml_file, WARNING, mpp_pe, mpp_root_pe
 use constants_mod,              only: pi
@@ -66,7 +67,7 @@ use platform_mod,               only: r4_kind, r8_kind
 !---- interfaces ----
 
  public   horiz_interp_type, horiz_interp, horiz_interp_new, horiz_interp_del, &
-          horiz_interp_init, horiz_interp_end, assignment(=)
+          horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights
 
 !> Allocates space and initializes a derived-type variable
 !! that contains pre-computed interpolation indices and weights.
@@ -137,6 +138,10 @@ use platform_mod,               only: r4_kind, r8_kind
     module procedure horiz_interp_new_1d_dst_r8
  end interface
 
+ interface horiz_interp_read_weights
+   module procedure horiz_interp_read_weights_r4
+   module procedure horiz_interp_read_weights_r8
+ end interface horiz_interp_read_weights
 
 !> Subroutine for performing the horizontal interpolation between two grids.
 !!
