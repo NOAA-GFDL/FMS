@@ -111,6 +111,7 @@
   if (t_level == 3) return
 
   call mpp_init_logfile()
+  call mpp_init_warninglog()
   if (present(alt_input_nml_path)) then
      call read_input_nml(alt_input_nml_path=alt_input_nml_path)
   else
@@ -205,6 +206,7 @@ subroutine mpp_exit()
 
      call mpp_sync()
      call FLUSH( out_unit )
+     close(warn_unit)
 
      if( pe.EQ.root_pe )then
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'

@@ -17,7 +17,7 @@ jobs:
         CC: mpiicc
         FC: mpiifort
         CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback ${{ matrix.io-flag }}"
+        FCFLAGS: "-I/libs/include -g -traceback"
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
@@ -55,7 +55,10 @@ jobs:
     - name: checkout
       uses: actions/checkout@v4
     - name: Configure
-      run: autoreconf -if ./configure.ac && ./configure --with-yaml
+      run: |
+        autoreconf -if ./configure.ac
+        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+        ./configure --with-yaml ${{ matrix.io-flag }}
     - name: Compile
       run: make -j || make
     - name: Run test suite

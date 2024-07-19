@@ -35,7 +35,7 @@ use diag_data_mod, only: DIAG_NULL, NO_DOMAIN, max_axes, SUB_REGIONAL, get_base_
                          get_base_second, time_unit_list, time_average, time_rms, time_max, time_min, time_sum, &
                          time_diurnal, time_power, time_none, avg_name, no_units, pack_size_str, &
                          middle_time, begin_time, end_time, MAX_STR_LEN, index_gridtype, latlon_gridtype, &
-                         null_gridtype, flush_nc_files
+                         null_gridtype, flush_nc_files, diag_init_time
 use time_manager_mod, only: time_type, operator(>), operator(/=), operator(==), get_date, get_calendar_type, &
                             VALID_CALENDAR_TYPES, operator(>=), date_to_string, &
                             OPERATOR(/), OPERATOR(+), operator(<)
@@ -259,9 +259,13 @@ logical function fms_diag_files_object_init (files_array)
 
      !> Set the start_time of the file to the base_time and set up the *_output variables
      obj%done_writing_data = .false.
-     obj%start_time = get_base_time()
-     obj%last_output = get_base_time()
-     obj%model_time = get_base_time()
+
+     !! Set this to the time passed in to diag_manager_init
+     !! This will be the base_time if nothing was passed in
+     !! This time is appended to the filename if the prepend_date namelist is .True.
+     obj%start_time = diag_init_time
+     obj%last_output = diag_init_time
+     obj%model_time = diag_init_time
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
 
@@ -1003,20 +1007,21 @@ end subroutine define_new_subaxis
 !! So it needs to make sure that the start_time is the same for each variable. The initial value is the base_time
 subroutine add_start_time(this, start_time)
   class(fmsDiagFile_type), intent(inout)       :: this           !< The file object
-  TYPE(time_type),         intent(in)          :: start_time     !< Start time to add to the fileobj
+  TYPE(time_type),         intent(in)          :: start_time     !< Start time passed into register_diag_field
 
-  !< If the start_time sent in is equal to the base_time return because
-  !! this%start_time was already set to the base_time
-  if (start_time .eq. get_base_time()) return
+  !< If the start_time sent in is equal to the diag_init_time return because
+  !! this%start_time was already set to the diag_init_time
+  if (start_time .eq. diag_init_time) return
 
-  if (this%start_time .ne. get_base_time()) then
-    !> If the this%start_time is not equal to the base_time from the diag_table
-    !! this%start_time was already updated so make sure it is the same or error out
+  if (this%start_time .ne. diag_init_time) then
+    !> If the this%start_time is not equal to the diag_init_time from the diag_table
+    !! this%start_time was already updated so make sure it is the same for the current variable
+    !! or error out
     if (this%start_time .ne. start_time)&
       call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have"&
       &" different start_time")
   else
-    !> If the this%start_time is equal to the base_time,
+    !> If the this%start_time is equal to the diag_init_time,
     !! simply update it with the start_time and set up the *_output variables
     this%model_time = start_time
     this%start_time = start_time

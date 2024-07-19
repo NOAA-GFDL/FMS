@@ -49,7 +49,7 @@ use mpp_mod,                    only: mpp_error, FATAL, stdout, stdlog, mpp_min
 use mpp_mod,                    only: input_nml_file, WARNING, mpp_pe, mpp_root_pe
 use constants_mod,              only: pi
 use horiz_interp_type_mod,      only: horiz_interp_type, assignment(=)
-use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICA, BICUBIC
+use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICAL, BICUBIC
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init, horiz_interp_conserve
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_new, horiz_interp_conserve_del
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
@@ -294,7 +294,7 @@ contains
       call horiz_interp_bilinear_del(Interp )
    case (BICUBIC)
       call horiz_interp_bicubic_del(Interp )
-   case (SPHERICA)
+   case (SPHERICAL)
       call horiz_interp_spherical_del(Interp )
    end select
 
