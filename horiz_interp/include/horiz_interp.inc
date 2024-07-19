@@ -867,7 +867,7 @@
      !! This is to reproduce the behavior in horiz_interp_new
      !! The subroutine assumes that the data grid (lon_in, lat_in) are
      !! the edges and not the centers.
-     !! Data_override passes in the edges, which are calculated from axis_edges
+     !! Data_override passes in the edges, which are calculated using the axis_edges subroutine
      nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
      allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
      do i = 1, nlon_in
