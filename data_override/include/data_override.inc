@@ -562,6 +562,7 @@ subroutine read_table(data_table)
           data_entry%lat_end   = -1.0_lkind
           data_entry%region_type = NO_REGION
        endif
+       data_entry%ext_weights = .false.
        data_table(ntable) = data_entry
     enddo
     call mpp_error(FATAL,'too many enries in data_table')
