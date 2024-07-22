@@ -6,6 +6,12 @@ on:
       - '*beta*'
   pull_request:
   workflow_dispatch:
+
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   compile_AM5:
     runs-on: [self-hosted, pw-platform]
