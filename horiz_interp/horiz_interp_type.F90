@@ -38,10 +38,10 @@ private
 ! parameter to determine interpolation method
  integer, parameter :: CONSERVE = 1
  integer, parameter :: BILINEAR = 2
- integer, parameter :: SPHERICA = 3
+ integer, parameter :: SPHERICAL = 3
  integer, parameter :: BICUBIC  = 4
 
-public :: CONSERVE, BILINEAR, SPHERICA, BICUBIC
+public :: CONSERVE, BILINEAR, SPHERICAL, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
 
 !> @}

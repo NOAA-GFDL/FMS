@@ -14,6 +14,7 @@ The purpose of this document is to explain the diag_table yaml format.
 - [2.5 Global Meta Data Section](diag_yaml_format.md#25-global-meta-data-section)
 - [2.6 Sub_region Section](diag_yaml_format.md#26-sub_region-section)
 - [3. More examples](diag_yaml_format.md#3-more-examples)
+- [4. Schema](diag_yaml_format.md#4-schema)
 
 ### 1. Converting from legacy ascii diag_table format
 
@@ -340,3 +341,8 @@ diag_files:
   unlimdim: records
   write_file: false
 ```
+
+### 4. Schema
+A formal specification of the file format, in the form of a JSON schema, can be
+found in the [gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas)
+repository on Github.

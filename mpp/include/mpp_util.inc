@@ -119,6 +119,35 @@
      end do
   end if
   end subroutine mpp_init_logfile
+
+  !> Opens the warning log file, called during mpp_init
+  subroutine mpp_init_warninglog()
+  logical :: exist
+  character(len=11) :: this_pe
+  if( pe.EQ.root_pe )then
+    write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
+    inquire( file=trim(warnfile)//this_pe, exist=exist )
+    if(exist)then
+      open(newunit=warn_unit, file=trim(warnfile)//this_pe, status='REPLACE' )
+    else
+      open(newunit=warn_unit, file=trim(warnfile)//this_pe, status='NEW' )
+    endif
+  end if
+  end subroutine mpp_init_warninglog
+
+  !> @brief This function returns unit number for the warning log
+  !! if on the root pe, otherwise returns the etc_unit value (usually /dev/null)
+  function warnlog()
+    integer :: warnlog
+    if(.not. module_is_initialized) call mpp_error(FATAL, "mpp_mod: warnlog cannot be called before mpp_init")
+    if(root_pe .eq. pe) then
+      warnlog = warn_unit
+    else
+      warnlog = etc_unit
+    endif
+    return
+  end function warnlog
+
   !#####################################################################
   subroutine mpp_set_warn_level(flag)
     integer, intent(in) :: flag

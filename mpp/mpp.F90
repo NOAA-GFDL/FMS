@@ -202,7 +202,7 @@ private
   public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
 
   !--- public interface from mpp_util.h ------------------------------
-  public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
+  public :: stdin, stdout, stderr, stdlog, warnlog, lowercase, uppercase, mpp_error, mpp_error_state
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_pe
   public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
@@ -1273,7 +1273,9 @@ private
   logical              :: mpp_record_timing_data=.TRUE.
   type(clock),save     :: clocks(MAX_CLOCKS)
   integer              :: log_unit, etc_unit
-  character(len=32)    :: configfile='logfile'
+  integer              :: warn_unit !< unit number of the warning log
+  character(len=32), parameter    :: configfile='logfile'
+  character(len=32), parameter    :: warnfile='warnfile' !< base name for warninglog (appends ".<PE>.out")
   integer              :: peset_num=0, current_peset_num=0
   integer              :: world_peset_num                  !<the world communicator
   integer              :: error
