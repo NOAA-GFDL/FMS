@@ -454,15 +454,21 @@ end subroutine
 subroutine create_weight_file()
   type(FmsNetcdfFile_t) :: fileobj
   real(kind=r8_kind), allocatable :: vdata(:,:,:)
+  character(len=5) :: dim_names(3)
 
+  dim_names(1) = "nlon"
+  dim_names(2) = "nlat"
   if (open_file(fileobj, "INPUT/remap_file.nc", "overwrite")) then
     call register_axis(fileobj, "nlon", nlon)
     call register_axis(fileobj, "nlat", nlat)
     call register_axis(fileobj, "three", 3)
     call register_axis(fileobj, "four", 4)
 
-    call register_field(fileobj, "index", "int", (/"nlon", "nlat", "three"/))
-    call register_field(fileobj, "weight", "double", (/"nlon", "nlat", "four"/))
+    dim_names(3) = "three"
+    call register_field(fileobj, "index", "int", dim_names)
+
+    dim_names(3) = "four"
+    call register_field(fileobj, "weight", "double", dim_names)
 
     allocate(vdata(nlon,nlat,3))
     vdata(1,:,1) = 1
