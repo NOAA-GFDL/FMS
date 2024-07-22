@@ -1213,7 +1213,7 @@
   !> Subroutine for reading a weight file and use it to fill in the horiz interp type
   !! for the bilinear interpolation method.
   subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
-                                                 weight_file_source, interp_method, isw, iew, jsw, jew)
+                                                 weight_file_source, interp_method, isw, iew, jsw, jew, nglon, nglat)
     type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
     character(len=*),        intent(in)    :: weight_filename    !< Name of the weight file
     real(FMS_HI_KIND_), target,     intent(in)    :: lat_out(:,:)       !< Output (model) latitude
@@ -1223,13 +1223,16 @@
     character(len=*),        intent(in)    :: weight_file_source !< Source of the weight file
     character(len=*),        intent(in)    :: interp_method      !< The interp method to use
     integer,                 intent(in)    :: isw, iew, jsw, jew !< Starting and ending indices of the compute domain
+    integer,                 intent(in)    :: nglon              !< Number of longitudes in the global domain
+    integer,                 intent(in)    :: nglat              !< Number of latitudes in the globl domain
+
 
     real(FMS_HI_KIND_), allocatable :: var(:,:,:)     !< Dummy variable to read the indices and weight into
     type(FmsNetcdfFile_t)           :: weight_fileobj !< FMS2io fileob for the weight file
-    integer                         :: nlon           !< Number of longitudes in the model grid
-    integer                         :: nlat           !< Number of latitude in the model grid
-    real(FMS_HI_KIND_), pointer     :: lon_local(:,:) !< model longitudes for the current pe
-    real(FMS_HI_KIND_), pointer     :: lat_local(:,:) !< model latitudes for the current pe
+    integer                         :: nlon           !< Number of longitudes in the model grid as read
+                                                      !! from the weight file
+    integer                         :: nlat           !< Number of latitude in the model grid as read
+                                                      !! from the weight file
 
     if (.not. open_file(weight_fileobj, weight_filename, "read" )) &
       call mpp_error(FATAL, "Error opening the weight file:"//&
@@ -1239,11 +1242,11 @@
     select case (trim(weight_file_source))
     case ("fregrid")
       call get_dimension_size(weight_fileobj, "nlon", nlon)
-      if (nlon .ne. size(lon_out,1)) &
+      if (nlon .ne. nglon) &
         call mpp_error(FATAL, "The nlon from the weight file is not the same as in the input grid."//&
                              &" From weight file:"//string(nlon)//" from input grid:"//string(size(lon_out,1)))
       call get_dimension_size(weight_fileobj, "nlat", nlat)
-      if (nlat .ne. size(lon_out,2)) &
+      if (nlat .ne. nglat) &
         call mpp_error(FATAL, "The nlat from the weight file is not the same as in the input grid."//&
                    &" From weight file:"//string(nlat)//" from input grid:"//string(size(lon_out,2)))
     case default
@@ -1251,22 +1254,18 @@
         &" is not a supported weight file source. fregrid is the only supported weight file source." )
     end select
 
-    !! lon_out and lat_out are the global model grid
-    !! so get the grid for just this PE
-    lon_local => lon_out(isw:iew, jsw:jew)
-    lat_local => lat_out(isw:iew, jsw:jew)
-
-    allocate ( Interp % HI_KIND_TYPE_ % wti (size(lon_local,1),size(lon_local,2),2),   &
-              Interp % HI_KIND_TYPE_ % wtj (size(lon_local,1),size(lon_local,2),2),   &
-              Interp % i_lon (size(lon_local,1),size(lon_local,2),2), &
-              Interp % j_lat (size(lon_local,1),size(lon_local,2),2))
-
     Interp%nlon_src = size(lon_in(:)) ;  Interp%nlat_src = size(lat_in(:))
-    Interp%nlon_dst = nlon; Interp%nlat_dst = nlat
+    Interp%nlon_dst = size(lon_out,1); Interp%nlat_dst = size(lon_out,2)
+
+    allocate ( Interp % HI_KIND_TYPE_ % wti (Interp%nlon_dst,Interp%nlat_dst,2),   &
+              Interp % HI_KIND_TYPE_ % wtj (Interp%nlon_dst,Interp%nlat_dst,2),   &
+              Interp % i_lon (Interp%nlon_dst,Interp%nlat_dst,2), &
+              Interp % j_lat (Interp%nlon_dst,Interp%nlat_dst,2))
+
 
     !! Three is for lon, lat, tile
     !! Currently, interpolation is only supported from lat,lon input data
-    allocate(var(nlon, nlat, 3))
+    allocate(var(Interp%nlon_dst,Interp%nlat_dst, 3))
     call read_data(weight_fileobj, "index", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 3/))
 
     !! Each point has a lon (i), and lat(j) index
@@ -1281,7 +1280,7 @@
 
     deallocate(var)
 
-    allocate(var(nlon, nlat, 4))
+    allocate(var(Interp%nlon_dst,Interp%nlat_dst, 4))
     call read_data(weight_fileobj, "weight", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 4/))
 
     !! The weights for the four corners

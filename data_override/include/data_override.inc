@@ -1086,6 +1086,8 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   integer :: nhalox !< Number of halos in the x direction
   integer :: nhaloy !< Number of halos in the y direction
   logical :: found_weight_file !< .True. if the weight file has already been read
+  integer :: nglat !< Number of latitudes in the global domain
+  integer :: nglon !< Number of longitudes in the global domain
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -1492,12 +1494,14 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         nweight_files = nweight_files + 1
         external_weights(nweight_files)%weight_filename = trim(data_table(index1)%ext_weights_file_name)
 
+        call mpp_get_global_domain(domain, xsize=nglon, ysize=nglat)
         call horiz_interp_read_weights(external_weights(nweight_files)%horiz_interp, &
-          external_weights(nweight_files)%weight_filename, lon_local, lat_local, &
+          external_weights(nweight_files)%weight_filename, &
+          lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), &
           override_array(curr_position)%lon_in(is_src:ie_src+1), &
           override_array(curr_position)%lat_in(js_src:je_src+1), &
           data_table(index1)%ext_weights_source, &
-          data_table(index1)%interpol_method, isw, iew, jsw, jew)
+          data_table(index1)%interpol_method, isw, iew, jsw, jew, nglon, nglat)
 
         override_array(curr_position)%horz_interp(window_id) = external_weights(nweight_files)%horiz_interp
       endif

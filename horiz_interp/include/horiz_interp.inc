@@ -844,7 +844,7 @@
  !> Subroutine for reading a weight file and use it to fill in the horiz interp type
 !! for the bilinear interpolation method.
  subroutine HORIZ_INTERP_READ_WEIGHTS_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
-                                       weight_file_source, interp_method, isw, iew, jsw, jew)
+                                       weight_file_source, interp_method, isw, iew, jsw, jew, nglon, nglat)
    type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
    character(len=*),        intent(in)    :: weight_filename    !< Name of the weight file
    real(FMS_HI_KIND_),      intent(in)    :: lat_out(:,:)       !< Output (model) latitude
@@ -854,6 +854,8 @@
    character(len=*),        intent(in)    :: weight_file_source !< Source of the weight file
    character(len=*),        intent(in)    :: interp_method      !< The interp method to use
    integer,                 intent(in)    :: isw, iew, jsw, jew !< Starting and ending indices of the compute domain
+   integer,                 intent(in)    :: nglon              !< Number of longitudes in the global domain
+   integer,                 intent(in)    :: nglat              !< Number of latitudes in the globl domain
 
    integer                           :: i, j                 !< For do loops
    integer                           :: nlon_in              !< Number of longitude in the data
@@ -879,7 +881,7 @@
 
      call horiz_interp_read_weights_bilinear(Interp, weight_filename, lon_out, lat_out, &
       lon_src_1d, lat_src_1d, weight_file_source, interp_method, &
-      isw, iew, jsw, jew)
+      isw, iew, jsw, jew, nglon, nglat)
      deallocate(lon_src_1d,lat_src_1d)
    case default
      call mpp_error(FATAL, "Reading weight from file is not supported for the "//&

@@ -29,18 +29,18 @@ output_dir
 
 cat <<_EOF > data_table.yaml
 data_table:
-- grid_name: ICE
-  fieldname_in_model: sst_obs
+- grid_name: OCN
+  fieldname_in_model: runoff_obs
   override_file:
-  - fieldname_in_file: sst
-    file_name: ./INPUT/hadisst_sst.data.nc
+  - fieldname_in_file: runoff
+    file_name: ./INPUT/bilinear_increasing.nc
     interp_method: bilinear
   factor: 1.0
-- grid_name: ICE
-  fieldname_in_model: sst_obs_weights
+- grid_name: OCN
+  fieldname_in_model: runoff_obs_weights
   override_file:
-  - fieldname_in_file: sst
-    file_name: ./INPUT/hadisst_sst.data.nc
+  - fieldname_in_file: runoff
+    file_name: ./INPUT/bilinear_increasing.nc
     interp_method: bilinear
     external_weights:
     - file_name: ./INPUT/remap_file.nc
@@ -52,20 +52,24 @@ cat <<_EOF > input.nml
 &data_override_nml
   use_data_table_yaml = .True.
 /
-_EOF
 
-#TODO This needs to be handled differently
-cp /home/Uriel.Ramirez/DEV/WEIGHTS/INPUT . -r
+&test_data_override_ongrid_nml
+  test_case = 4
+  nlon = 5
+  nlat = 6
+  layout = 1, 2
+/
+_EOF
 
 #The test only runs with yaml
 if [ -z $parser_skip ]; then
   for KIND in r4 r8
   do
-    test_expect_success "test_data_override with and without yaml  -yaml (${KIND})" '
-      mpirun -n 1 ../test_data_override_weights_${KIND}
+    rm -rf INPUT/.
+    test_expect_success "test_data_override with and without weight files  -yaml (${KIND})" '
+      mpirun -n 2 ../test_data_override_ongrid_${KIND}
       '
   done
 fi
 
-#rm -rf INPUT
 test_done
