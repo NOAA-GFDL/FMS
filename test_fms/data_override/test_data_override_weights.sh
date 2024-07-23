@@ -72,4 +72,5 @@ if [ -z $parser_skip ]; then
   done
 fi
 
+rm -rf INPUT
 test_done
