@@ -22,7 +22,7 @@ use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_r
                          &DIAG_FIELD_NOT_FOUND, diag_not_registered, max_axes, TWO_D_DOMAIN, &
                          &get_base_time, NULL_AXIS_ID, get_var_type, diag_not_registered, &
                          &time_none, time_max, time_min, time_sum, time_average, time_diurnal, &
-                         &time_power, time_rms, r8, NO_DOMAIN
+                         &time_power, time_rms, r8, NO_DOMAIN, diag_init_time
 
   USE time_manager_mod, ONLY: set_time, set_date, get_time, time_type, OPERATOR(>=), OPERATOR(>),&
        & OPERATOR(<), OPERATOR(==), OPERATOR(/=), OPERATOR(/), OPERATOR(+), ASSIGNMENT(=), get_date, &
@@ -118,14 +118,23 @@ contains
 !! Reads the diag_table.yaml and fills in the yaml object
 !! Allocates the diag manager object arrays for files, fields, and buffers
 !! Initializes variables
-subroutine fms_diag_object_init (this,diag_subset_output)
+subroutine fms_diag_object_init (this,diag_subset_output, time_init)
  class(fmsDiagObject_type) :: this !< Diag mediator/controller object
  integer :: diag_subset_output !< Subset of the diag output?
+ INTEGER, DIMENSION(6), OPTIONAL, INTENT(IN) :: time_init !< Model time diag_manager initialized
+
 #ifdef use_yaml
  if (this%initialized) return
 
 ! allocate(diag_objs(get_num_unique_fields()))
   CALL diag_yaml_object_init(diag_subset_output)
+
+  !! Doing this here, because the base_time is not set until the yaml is parsed
+  !! if time_init is present, it will be set in diag_manager_init
+  if (.not. present(time_init)) then
+    diag_init_time = get_base_time()
+  endif
+
   this%axes_initialized = fms_diag_axis_object_init(this%diag_axis)
   this%files_initialized = fms_diag_files_object_init(this%FMS_diag_files)
   this%fields_initialized = fms_diag_fields_object_init(this%FMS_diag_fields)

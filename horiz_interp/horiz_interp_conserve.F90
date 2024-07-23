@@ -44,7 +44,7 @@ module horiz_interp_conserve_mod
   use fms_mod,               only: write_version_number
   use grid2_mod,             only: get_great_circle_algorithm
   use constants_mod,         only: PI
-  use horiz_interp_type_mod, only: horiz_interp_type
+  use horiz_interp_type_mod, only: horiz_interp_type, CONSERVE
 
 
   implicit none

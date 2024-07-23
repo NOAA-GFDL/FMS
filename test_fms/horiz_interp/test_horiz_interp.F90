@@ -38,9 +38,12 @@ use mpp_domains_mod,  only : mpp_domains_init, domain2d
 use fms_mod,          only : check_nml_error, fms_init
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
 use horiz_interp_mod, only : horiz_interp, horiz_interp_type
-use horiz_interp_spherical_mod, only: horiz_interp_spherical_wght
-use horiz_interp_type_mod, only: SPHERICA
+use horiz_interp_type_mod, only: SPHERICAL
 use constants_mod,    only : constants_init, PI
+use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new
+use horiz_interp_spherical_mod, only: horiz_interp_spherical_wght, horiz_interp_spherical_new
+use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_new
+use horiz_interp_conserve_mod,  only: horiz_interp_conserve_new
 use platform_mod
 
 implicit none
@@ -957,28 +960,30 @@ implicit none
     !> Tests the assignment overload for horiz_interp_type
     !! creates some new instances of the derived type for the different methods
     !! and tests equality of fields after initial weiht calculations
+    !! Also tests creating the types via the method-specific *_new routines to ensure
+    !! they can be created/deleted without allocation errors.
     subroutine test_assignment()
         type(horiz_interp_type) :: Interp_new1, Interp_new2, Interp_cp, intp_3
-        !! grid data points
-        real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
-        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
-        !! output data points
-        real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D
-        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D
-        real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_out_bil, lon_out_bil
-        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_bil, lon_in_bil
-        !! array sizes and number of lat/lon per index
-        real(HI_TEST_KIND_) :: nlon_in, nlat_in
-        real(HI_TEST_KIND_) :: nlon_out, nlat_out
-        real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
-        !! parameters for lon/lat setup
-        real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
-        real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
-        real(HI_TEST_KIND_) :: lon_dst_beg = 0.0_lkind, lon_dst_end = 360._lkind
-        real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
-        real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-        real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
-        real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
+        real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D !< 1D grid data points
+        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D !< 2D grid data points
+        real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D !< 1D grid output points
+        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D !< 2D grid output points
+        integer :: nlon_in, nlat_in !< array sizes for input grids
+        integer :: nlon_out, nlat_out !< array sizes for output grids
+        real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst !< lon/lat size per data point
+        real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind!< source grid starting/ending
+                                                                                  !! longitudes
+        real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind !< source grid starting/ending
+                                                                                  !! latitudes
+        real(HI_TEST_KIND_) :: lon_dst_beg = 0.0_lkind, lon_dst_end = 360._lkind  !< destination grid
+                                                                                  !! starting/ending longitudes
+        real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind !< destination grid
+                                                                                  !! starting/ending latitudes
+        real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind !< radians per degree
+        real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_) !< degrees per radian
+        real(HI_TEST_KIND_), allocatable :: lon_src_1d(:), lat_src_1d(:) !< src data used for bicubic test
+        real(HI_TEST_KIND_), allocatable :: lon_dst_1d(:), lat_dst_1d(:) !< destination data used for bicubic test
+
 
         ! set up longitude and latitude of source/destination grid.
         dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, lkind)
@@ -1062,6 +1067,15 @@ implicit none
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
+        ! test deletion after direct calls
+        call horiz_interp_conserve_new(Interp_new1, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d)
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_conserve_new(Interp_new1, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d)
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_conserve_new(Interp_new1, lon_in_2d, lat_in_2d, lon_out_1d, lat_out_1d)
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_conserve_new(Interp_new1, lon_in_2d, lat_in_2d, lon_out_2d, lat_out_2d)
+        call horiz_interp_del(Interp_new1)
 
         ! bicubic only works with 1d src
         ! 1dx1d
@@ -1084,6 +1098,28 @@ implicit none
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
+        ! test deletion after direct calls
+        ! this set up is usually done within horiz_interp_new
+        nlon_in  = size(lon_in_1d(:))-1;  nlat_in  = size(lat_in_1d(:))-1
+        nlon_out = size(lon_out_1d(:))-1; nlat_out = size(lat_out_1d(:))-1
+        allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
+        allocate(lon_dst_1d(nlon_out), lat_dst_1d(nlat_out))
+        do i = 1, nlon_in
+          lon_src_1d(i) = (lon_in_1d(i) + lon_in_1d(i+1)) * 0.5_lkind
+        enddo
+        do j = 1, nlat_in
+          lat_src_1d(j) = (lat_in_1d(j) + lat_in_1d(j+1)) * 0.5_lkind
+        enddo
+        do i = 1, nlon_out
+          lon_dst_1d(i) = (lon_out_1d(i) + lon_out_1d(i+1)) * 0.5_lkind
+        enddo
+        do j = 1, nlat_out
+          lat_dst_1d(j) = (lat_out_1d(j) + lat_out_1d(j+1)) * 0.5_lkind
+        enddo
+        call horiz_interp_bicubic_new(Interp_new1, lon_src_1d, lat_src_1d, lon_out_2d, lat_out_2d)
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_bicubic_new(Interp_new1, lon_src_1d, lat_src_1d, lon_dst_1d, lat_dst_1d)
+        call horiz_interp_del(Interp_new1)
 
         deallocate(lon_out_2D, lat_out_2D, lon_in_2D, lat_in_2D)
         allocate(lon_out_2D(ni_dst, nj_dst), lat_out_2D(ni_dst, nj_dst))
@@ -1117,11 +1153,14 @@ implicit none
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
+        ! check deletion after direct calls
+        call horiz_interp_spherical_new(Interp_new1, lon_in_2d, lat_in_2d, lon_out_2d, lat_out_2d)
+        call horiz_interp_del(Interp_new1)
 
         ! bilinear
         ! 1dx1d
-        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_in_1D, lat_in_1D, interp_method="bilinear")
-        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_in_1D, lat_in_1D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1130,8 +1169,8 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 1dx2d
-        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_in_2D, lat_in_2D, interp_method="bilinear")
-        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1160,8 +1199,8 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 2dx2d
-        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
-        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_in_2D, lat_in_2D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="bilinear")
+        call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1169,6 +1208,11 @@ implicit none
         call horiz_interp_del(Interp_new1)
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
+        ! check deletion after direct calls
+        call horiz_interp_bilinear_new(Interp_new1, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d)
+        call horiz_interp_del(Interp_new1)
+        call horiz_interp_bilinear_new(Interp_new1, lon_in_2d, lat_in_2d, lon_out_2d, lat_out_2d)
+        call horiz_interp_del(Interp_new1)
 
    end subroutine
     !> helps assignment test with derived type comparisons
@@ -1230,7 +1274,7 @@ implicit none
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: mask_in")
             endif
             !! only set during spherical
-            if(interp_1%interp_method .eq. SPHERICA) then
+            if(interp_1%interp_method .eq. SPHERICAL) then
                 if( interp_2%horizInterpReals4_type%max_src_dist .ne. interp_1%horizInterpReals4_type%max_src_dist) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
             endif
@@ -1292,7 +1336,7 @@ implicit none
             endif
 
             !! only set during spherical
-            if(interp_1%interp_method .eq. SPHERICA) then
+            if(interp_1%interp_method .eq. SPHERICAL) then
                 if( interp_2%horizInterpReals8_type%max_src_dist .ne. interp_1%horizInterpReals8_type%max_src_dist) &
                     call mpp_error(FATAL, "Invalid value for copied horiz_interp_type field: max_src_dist")
             endif

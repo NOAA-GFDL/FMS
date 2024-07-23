@@ -60,13 +60,21 @@ subroutine mpp_error_basic( errortype, errormsg )
 !$OMP CRITICAL (MPP_ERROR_CRITICAL)
   select case( errortype )
   case(NOTE)
-     if(pe==root_pe)write( out_unit,'(a)' )trim(text)
+     if(pe==root_pe) then
+       write( out_unit,'(a)' )trim(text)
+       write( warn_unit,'(a)' )trim(text)
+     endif
   case default
      errunit = stderr()
      write( errunit, '(/a/)' )trim(text)
-     if(pe==root_pe)write( out_unit,'(/a/)' )trim(text)
+     if(pe==root_pe) then
+       write( out_unit,'(/a/)' )trim(text)
+       write( warn_unit,'(/a/)' )trim(text)
+     endif
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
         FLUSH(out_unit)
+        FLUSH(warn_unit)
+        close(warn_unit)
 #ifdef __INTEL_COMPILER
   ! Get traceback and return quietly for correct abort
         call TRACEBACKQQ(user_exit_code=-1)
