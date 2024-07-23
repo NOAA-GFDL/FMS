@@ -27,7 +27,7 @@ use constants_mod, only: DEG_TO_RAD
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
-                             assignment(=), horiz_interp_read_weights
+                             horiz_interp_read_weights
 use time_interp_external2_mod, only: time_interp_external_init, &
                                      time_interp_external, &
                                      time_interp_external_bridge, get_time_axis, &
