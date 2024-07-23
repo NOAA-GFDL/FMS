@@ -26,6 +26,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
+rm -f input.nml
 touch input.nml
 
 # diag_table for test
@@ -109,6 +110,25 @@ test_expect_success "coupler types interfaces (r4_kind)" '
 '
 
 test_expect_success "coupler types interfaces (r8_kind)" '
+  mpirun -n 4 ./test_coupler_types_r8
+'
+
+# delete lines from the table to make sure we see the difference in the send_data return status
+sed -i '8,12{d}' diag_table
+sed -i '10,13{d}' diag_table.yaml
+sed -i '18,25{d}' diag_table.yaml
+cat <<_EOF > input.nml
+&test_coupler_types_nml
+   fail_return_status=.true.
+/
+_EOF
+
+
+test_expect_success "coupler types interfaces - check send_data return vals (r4_kind)" '
+  mpirun -n 4 ./test_coupler_types_r4
+'
+
+test_expect_success "coupler types interfaces - check send_data return vals (r8_kind)" '
   mpirun -n 4 ./test_coupler_types_r8
 '
 

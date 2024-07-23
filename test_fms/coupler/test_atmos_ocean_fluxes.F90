@@ -23,7 +23,7 @@
 !! @description This program tests the two main subroutines in atmos_ocean_fluxes.
 program test_atmos_ocean_fluxes
 
-  use fms_mod, only: fms_init
+  use fms_mod, only: fms_init, fms_end
   use coupler_types_mod, only: coupler_1d_bc_type
   use field_manager_mod, only: fm_exists, fm_get_value
   use fm_util_mod, only: fm_util_get_real_array
@@ -81,6 +81,7 @@ program test_atmos_ocean_fluxes
   call test_atmos_ocean_fluxes_init
   !> checking gas_fluxes, gas_fields_atm, and gas_fields_ice have been initialized correctly
   call test_coupler_1d_bc_type
+  call fms_end
 
 contains
   !--------------------------------------

@@ -191,6 +191,8 @@
             '    data required between latitudes:', glt_min, glt_max,   &
             '      data set is between latitudes:', lat_in(1), lat_in(nlat_in)
     endif
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp% interp_method = BILINEAR
 
     return
 
@@ -396,6 +398,8 @@
        enddo
     enddo
 
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp% interp_method = BILINEAR
   end subroutine
 
   !#######################################################################
