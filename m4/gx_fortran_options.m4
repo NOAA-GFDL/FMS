@@ -439,7 +439,7 @@ if test -f "FOO.mod"; then
     gx_cv_fc_mod_case_flag="-ef"
   fi
 else
-  gx_cv_fc_mod_case_flag="notneeded"
+  gx_cv_fc_mod_case_flag=
 fi
 
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -449,7 +449,7 @@ FCFLAGS=$gx_mod_case_flag_FCFLAGS_save
 if test "x$gx_cv_fc_mod_case_flag" = "xunknown"; then
   m4_default([$2],
               [AC_MSG_ERROR([No working flag found to disable .mod filename capitalization])])
-elif test "x$gx_cv_fc_mod_case_flag" != "notneeded"; then
+elif test "x$gx_cv_fc_mod_case_flag" != "x"; then
   AC_DEFINE([NEEDS_MOD_OUTPUT_CASE_FLAG], 1,
             [Define to 1 if your Fortran compiler requires a flag to match case of module names])
   FC_MOD_CASE_FLAG=$gx_cv_fc_mod_case_flag
