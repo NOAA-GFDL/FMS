@@ -254,12 +254,10 @@ if test "$enable_code_coverage" = yes; then
 fi
 AM_CONDITIONAL(COV, [test "$enable_code_coverage" = yes])
 
-
 # Require netCDF
 GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran module.  Set CPPFLAGS/FCFLAGS])])
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
-
 
 # Check if we get a floating point exception with netcdf
 # this will only get triggered if you have FPE traps enabled via FCFLAGS
@@ -275,7 +273,7 @@ if test $hdf5_fpe_bug = yes; then
 NetCDF must be built with a HDF5 version other than 1.14.3 to support floating point exception traps.])
 fi
 
-rm test.nc
+rm -f test.nc
 
 # Check if we need a flag to not capitalize module output (needed with cray compiler)
 GX_FC_MOD_CASE_FLAG([FCFLAGS="$FCFLAGS $FC_MOD_CASE_FLAG"])
