@@ -430,16 +430,16 @@ end module foo]],
                   AC_MSG_ERROR(["Failed to compile test module with -c"]))
 
 # if output .mod file is capitalized, add the flag and check that it works
-if test -f "FOO.mod"; then
+if test -f "FOO.${FC_MODEXT}"; then
   FCFLAGS="$gx_mod_case_flag_FCFLAGS_save -c -ef"
   AC_COMPILE_IFELSE([[module foo
                     end module mod]],
     [])
-  if test -f "foo.mod"; then
+  if test -f "foo.${FC_MODEXT}"; then
     gx_cv_fc_mod_case_flag="-ef"
   fi
 else
-  gx_cv_fc_mod_case_flag=
+  gx_cv_fc_mod_case_flag=no
 fi
 
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -448,14 +448,12 @@ FCFLAGS=$gx_mod_case_flag_FCFLAGS_save
 
 if test "x$gx_cv_fc_mod_case_flag" = "xunknown"; then
   m4_default([$2],
-              [AC_MSG_ERROR([No working flag found to disable .mod filename capitalization])])
-elif test "x$gx_cv_fc_mod_case_flag" != "x"; then
-  AC_DEFINE([NEEDS_MOD_OUTPUT_CASE_FLAG], 1,
-            [Define to 1 if your Fortran compiler requires a flag to match case of module names])
+              [AC_MSG_ERROR([No working flag found to disable module filename capitalization])])
+elif test "x$gx_cv_fc_mod_case_flag" != "xno"; then
   FC_MOD_CASE_FLAG=$gx_cv_fc_mod_case_flag
+  AC_SUBST([FC_MOD_CASE_FLAG])
   $1
 fi
 AC_LANG_POP([Fortran])
-AC_SUBST([FC_MOD_CASE_FLAG])
 ])
 
