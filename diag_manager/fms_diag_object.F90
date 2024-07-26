@@ -224,6 +224,7 @@ integer function fms_register_diag_field_obj &
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
+ class(diagDomain_t), pointer :: null_ptr => NULL() !< Workaround for a Cray compiler bug
 #endif
 #ifndef use_yaml
 fms_register_diag_field_obj = DIAG_FIELD_NOT_FOUND
@@ -267,7 +268,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      if(fieldptr%get_type_of_domain() .eq. NO_DOMAIN) then
-       call fileptr%set_file_domain(NULL(), fieldptr%get_type_of_domain())
+       call fileptr%set_file_domain(null_ptr, fieldptr%get_type_of_domain())
      else
        call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      endif
@@ -284,7 +285,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      if(fieldptr%get_type_of_domain() .eq. NO_DOMAIN) then
-       call fileptr%set_file_domain(NULL(), fieldptr%get_type_of_domain())
+       call fileptr%set_file_domain(null_ptr, fieldptr%get_type_of_domain())
      else
        call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      endif
