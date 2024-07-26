@@ -511,8 +511,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   type is (fmsDiagFullAxis_type)
     if(present(edges)) then
       if (edges < 0 .or. edges > this%registered_axis) &
-        call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. "&
-                               "Call diag_axis_init for the edge axis first")
+        call mpp_error(FATAL, "diag_axit_init: The edge axis has not been defined. &
+                              &Call diag_axis_init for the edge axis first")
       select type (edges_axis => this%diag_axis(edges)%axis)
       type is (fmsDiagFullAxis_type)
         edges_name = edges_axis%get_axis_name()

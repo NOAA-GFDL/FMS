@@ -1033,8 +1033,8 @@ module fms_diag_axis_object_mod
     select case (domain_position)
     case (CENTER, NORTH, EAST)
     case default
-        call mpp_error(FATAL, "diag_axit_init: Invalid domain_positon. "&
-                             "The acceptable values are NORTH, EAST, CENTER")
+        call mpp_error(FATAL, "diag_axit_init: Invalid domain_positon. &
+                              &The acceptable values are NORTH, EAST, CENTER")
     end select
   end subroutine check_if_valid_domain_position
 
@@ -1045,8 +1045,8 @@ module fms_diag_axis_object_mod
     select case(direction)
     case(-1, 0, 1)
     case default
-      call mpp_error(FATAL, "diag_axit_init: Invalid direction. "&
-                             "The acceptable values are-1 0 1")
+      call mpp_error(FATAL, "diag_axit_init: Invalid direction. &
+                            &The acceptable values are-1 0 1")
     end select
   end subroutine check_if_valid_direction
 
