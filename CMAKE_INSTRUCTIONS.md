@@ -50,17 +50,18 @@ make install
 ```
 
 ### User configurable options:
-By default, FMS is built without `OpenMP` and in `single precision (r4)`
+By default, FMS is built without `OpenMP`, in `single precision (r4)` and delivered in static library files.
 
 The 64BIT and 32BIT precision options will build distinct libraries when enabled with the given default
 real size, libfms_r4 or libfms_r8.
 
 The following build options are available:
 ```
--DOPENMP   "Build FMS with OpenMP support"        DEFAULT: OFF
--D32BIT    "Build 32-bit (r4) FMS library"        DEFAULT: ON
--D64BIT    "Build 64-bit (r8) FMS library"        DEFAULT: OFF
--DFPIC     "Build with position independent code" DEFAULT: OFF
+-DOPENMP      "Build FMS with OpenMP support"        DEFAULT: OFF
+-D32BIT       "Build 32-bit (r4) FMS library"        DEFAULT: ON
+-D64BIT       "Build 64-bit (r8) FMS library"        DEFAULT: OFF
+-DFPIC        "Build with position independent code" DEFAULT: OFF
+-DSHARED_LIBS "Build shared/dynamic libraries"       DEFAULT: OFF
 
 -DCONSTANTS             "Build with <X> constants parameter definitions"     DEFAULT:GFDL  OPTIONS:GFS|GEOS|GFDL
 -DINTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"     DEFAULT: ON
