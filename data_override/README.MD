@@ -7,6 +7,7 @@
 - [How to use it?](README.MD#2-how-to-use-it)
 - [Converting legacy data_table to data_table.yaml](README.MD#3-converting-legacy-data_table-to-data_tableyaml)
 - [Examples](README.MD#4-examples)
+- [External Weight File Structure](README.MD#5-external-weight-file-structure)
 
 #### 1. YAML Data Table format:
 Each entry in the data_table has the following key values:
@@ -21,7 +22,7 @@ Each entry in the data_table has the following key values:
     - **next_file_name:** The name of the third file in the set
   - **external_weights:** The external weights parent key. **Required** only if it is desired to use external weights from file
     - **file_name:** Name of the file where the external weights are located, including the directory
-    - **source:** Name of the source that generated the external weights. The acceptable values are "esmf" and "fregrid"
+    - **source:** Name of the source that generated the external weights. The only acceptable value is "fregrid"
 - **factor:** Factor that will be multiplied after the data is interpolated
 - **subregion:** The subregion parent key. **Required** only if it is desired to interpolate the data to a region of the model grid
   - **type:** The region type. The acceptable values are "inside_region" and "outside_region"
@@ -86,7 +87,7 @@ In the **legacy format**, the data_table will look like:
 ```
 
 In the **yaml format**, the data_table will look like:
-```
+``` yaml
 data_table:
  - grid_name          : ICE
    fieldname_in_model : sit_obs
@@ -117,7 +118,7 @@ In the **legacy format**, the data_table will look like:
 ```
 
 In the **yaml format**, the data_table will look like:
-```
+``` yaml
 data_table:
  - grid_name           : OCN
    fieldname_in_model  : runoff
@@ -143,3 +144,59 @@ Additionally, it is required to call data_override_init (in this case with the o
 ```F90
 call data_override_init(Ocn_domain_in=Ocn_domain)
 ```
+
+**4.4** The following example uses the multi-file capability
+``` yaml
+data_table:
+ - grid_name           : ICE
+   fieldname_in_model  : sic_obs
+   override_file:
+   - file_name         : INPUT/hadisst_ice.data_yr1.nc
+     fieldname_in_file : sic
+     interp_method     : bilinear
+     multi_file:
+     - next_file_name: INPUT/hadisst_ice.data_yr2.nc
+       prev_file_name: INPUT/hadisst_ice.data_yr0.nc
+   factor              : 0.01
+```
+Data override determines which file to use depending on the model time. This is to prevent having to combine the 3 yearly files into one, since the end of the previous file and the beginning of the next file are needed for yearly simulations.
+
+**4.5** The following example uses the external weight file capability
+``` yaml
+data_table:
+ - grid_name           : ICE
+   fieldname_in_model  : sic_obs
+   override_file:
+   - file_name         : INPUT/hadisst_ice.data.nc
+     fieldname_in_file : sic
+     interp_method     : bilinear
+     external_weights:
+     - file_name: INPUT/remamp_file.nc
+       source: fregrid
+   factor              : 0.01
+```
+
+#### 5. External Weight File Structure
+
+**5.1** Bilinear weight file example from fregrid
+
+```
+dimensions:
+        nlon = 5 ;
+        nlat = 6 ;
+        three = 3 ;
+        four = 4 ;
+variables:
+        int index(three, nlat, nlon) ;
+        double weight(four, nlat, nlon) ;
+```
+- `nlon` and `nlat` must be equal to the size of the global domain.
+- `index(1,:,:)` corresponds to the index (i) of the longitudes point in the data file, closest to each model lon, lat
+- `index(2,:,:)` corresponds to the index (j) of the lattidude point in the data file, closest to each model lon, lat
+- `index(3,:,:)` corresponds to the tile (it should be 1 since data_override does not support interpolation **from** cubesphere grids)
+  - From there the four corners are (i,j), (i,j+1) (i+1) (i+1,j+1)
+- The weights for the four corners
+  - var(:,:,1) -> (i,j)
+  - var(:,:,2) -> (i,j+1)
+  - var(:,:,3) -> (i+1,j)
+  - var(:,:,4) -> (i+1,j+1)
