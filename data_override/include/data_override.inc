@@ -597,96 +597,91 @@ subroutine read_table_yaml(data_table)
       call get_block_ids(file_id, "data_table", entry_id)
 
       do i = 1, nentries
-         call get_value_from_key(file_id, entry_id(i), "grid_name", data_table(i)%gridname)
-         call check_for_valid_gridname(data_table(i)%gridname)
-         call get_value_from_key(file_id, entry_id(i), "fieldname_in_model", data_table(i)%fieldname_code)
+        call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+        call get_value_from_key(file_id, entry_id(i), "grid_name", data_table(i)%gridname)
+        call check_for_valid_gridname(data_table(i)%gridname)
+        call get_value_from_key(file_id, entry_id(i), "fieldname_in_model", data_table(i)%fieldname_code)
 
-         mentries = get_num_blocks(file_id, "override_file", parent_block_id=entry_id(i))
-         if(mentries.gt.1) call mpp_error(FATAL, "Too many override_file blocks in data table. "//&
+        mentries = get_num_blocks(file_id, "override_file", parent_block_id=entry_id(i))
+        data_table(i)%file_name = ""
+        data_table(i)%fieldname_file = ""
+        data_table(i)%interpol_method = "none"
+        data_table(i)%multifile = .false.
+        data_table(i)%ext_weights = .false.
+        data_table(i)%region_type = NO_REGION
+        data_table(i)%prev_file_name = ""
+        data_table(i)%next_file_name = ""
+        data_table(i)%ext_weights_file_name = ""
+        data_table(i)%ext_weights_source = ""
+
+        ! If there is no override_file block, then not overriding from file, so move on to the next entry
+        if (mentries .eq. 0) cycle
+
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many override_file blocks in data table. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
-         call get_block_ids(file_id, "override_file", sub_block_id, parent_block_id=entry_id(i))
+        call get_block_ids(file_id, "override_file", sub_block_id, parent_block_id=entry_id(i))
 
-         data_table(i)%file_name = ""
-         call get_value_from_key(file_id, sub_block_id(1), "file_name", data_table(i)%file_name, &
-              & is_optional=.true.)
-
-         data_table(i)%fieldname_file = ""
-         call get_value_from_key(file_id, sub_block_id(1), "fieldname_in_file", data_table(i)%fieldname_file, &
-              & is_optional=.true.)
-
-         data_table(i)%interpol_method = "none"
-         call get_value_from_key(file_id, sub_block_id(1), "interp_method", data_table(i)%interpol_method, &
-              & is_optional=.true.)
-         call check_interpol_method(data_table(i)%interpol_method, data_table(i)%file_name, &
+        call get_value_from_key(file_id, sub_block_id(1), "file_name", data_table(i)%file_name)
+        call get_value_from_key(file_id, sub_block_id(1), "fieldname_in_file", data_table(i)%fieldname_file)
+        call get_value_from_key(file_id, sub_block_id(1), "interp_method", data_table(i)%interpol_method)
+        call check_interpol_method(data_table(i)%interpol_method, data_table(i)%file_name, &
               & data_table(i)%fieldname_file)
 
-         mentries = get_num_blocks(file_id, "multi_file", parent_block_id=sub_block_id(1))
-         if(mentries.gt.1) call mpp_error(FATAL, "Too many multi_file blocks in tata table. "//&
+        mentries = get_num_blocks(file_id, "multi_file", parent_block_id=sub_block_id(1))
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many multi_file blocks in tata table. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
 
-         data_table(i)%multifile = .false.
-         if(mentries.gt.0) data_table(i)%multifile = .true.
+        if(mentries.gt.0) data_table(i)%multifile = .true.
 
-         if (data_table(i)%multifile) then
+        if (data_table(i)%multifile) then
           call get_block_ids(file_id, "multi_file", sub2_block_id, parent_block_id=sub_block_id(1))
-          data_table(i)%prev_file_name = ""
-          data_table(i)%next_file_name = ""
-          call get_value_from_key(file_id, sub2_block_id(1), "prev_file_name", data_table(i)%prev_file_name, &
-               & is_optional=.true.)
-          call get_value_from_key(file_id, sub2_block_id(1), "next_file_name", data_table(i)%next_file_name, &
-               & is_optional=.true.)
+          call get_value_from_key(file_id, sub2_block_id(1), "prev_file_name", data_table(i)%prev_file_name)
+          call get_value_from_key(file_id, sub2_block_id(1), "next_file_name", data_table(i)%next_file_name)
           if (trim(data_table(i)%prev_file_name) .eq. "" .and. trim(data_table(i)%next_file_name) .eq. "") &
             call mpp_error(FATAL, "The prev_file_name and next_file_name must be present if is_multi_file. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
-         endif
+        endif
 
-         mentries = get_num_blocks(file_id, "external_weights", parent_block_id=sub_block_id(1))
-         if(mentries.gt.1) call mpp_error(FATAL, "Too many external_weight blocks in data table. "//&
+        mentries = get_num_blocks(file_id, "external_weights", parent_block_id=sub_block_id(1))
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many external_weight blocks in data table. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
 
-         data_table(i)%ext_weights = .false.
-         if(mentries.gt.0) data_table(i)%ext_weights = .true.
+        if(mentries.gt.0) data_table(i)%ext_weights = .true.
 
-         if (data_table(i)%ext_weights) then
+        if (data_table(i)%ext_weights) then
           call get_block_ids(file_id, "external_weights", sub2_block_id, parent_block_id=sub_block_id(1))
-          data_table(i)%ext_weights_file_name = ""
-          data_table(i)%ext_weights_source = ""
-          call get_value_from_key(file_id, sub2_block_id(1), "file_name", data_table(i)%ext_weights_file_name, &
-               & is_optional=.true.)
-          call get_value_from_key(file_id, sub2_block_id(1), "source", data_table(i)%ext_weights_source, &
-               & is_optional=.true.)
+          call get_value_from_key(file_id, sub2_block_id(1), "file_name", data_table(i)%ext_weights_file_name)
+          call get_value_from_key(file_id, sub2_block_id(1), "source", data_table(i)%ext_weights_source)
           if (trim(data_table(i)%ext_weights_file_name) .eq. "" .and. trim(data_table(i)%ext_weights_source) .eq. "") &
             call mpp_error(FATAL, "The file_name and source must be present when using external weights"//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
-         endif
+        endif
 
-         call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+        mentries = get_num_blocks(file_id, "subregion", parent_block_id=entry_id(i))
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many subregion blocks in data table. "//&
+          "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+          trim(data_table(i)%fieldname_code))
 
-         mentries = get_num_blocks(file_id, "subregion", parent_block_id=entry_id(i))
-         if(mentries.gt.1) call mpp_error(FATAL, "Too many subregion blocks in data table. "//&
-              "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
-              trim(data_table(i)%fieldname_code))
-
-         buffer = ""
-         if(mentries.gt.0) then
+        buffer = ""
+        if(mentries.gt.0) then
           call get_block_ids(file_id, "subregion", sub_block_id, parent_block_id=entry_id(i))
-          call get_value_from_key(file_id, sub_block_id(1), "type", buffer, is_optional=.true.)
-         endif
+          call get_value_from_key(file_id, sub_block_id(1), "type", buffer)
+        endif
 
-         call check_and_set_region_type(buffer, data_table(i)%region_type)
-         if (data_table(i)%region_type .ne. NO_REGION) then
-          call get_value_from_key(file_id, sub_block_id(1), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-          call get_value_from_key(file_id, sub_block_id(1), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-          call get_value_from_key(file_id, sub_block_id(1), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-          call get_value_from_key(file_id, sub_block_id(1), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+        call check_and_set_region_type(buffer, data_table(i)%region_type)
+        if (data_table(i)%region_type .ne. NO_REGION) then
+          call get_value_from_key(file_id, sub_block_id(1), "lon_start", data_table(i)%lon_start)
+          call get_value_from_key(file_id, sub_block_id(1), "lon_end", data_table(i)%lon_end)
+          call get_value_from_key(file_id, sub_block_id(1), "lat_start", data_table(i)%lat_start)
+          call get_value_from_key(file_id, sub_block_id(1), "lat_end", data_table(i)%lat_end)
           call check_valid_lat_lon(data_table(i)%lon_start, data_table(i)%lon_end, &
                                    data_table(i)%lat_start, data_table(i)%lat_end)
-         endif
+        endif
       end do
 
     end if
