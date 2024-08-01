@@ -13,18 +13,18 @@
 Each entry in the data_table has the following key values:
 - **grid_name:** Name of the grid to interpolate the data to. The acceptable values are "ICE", "OCN", "ATM", and "LND"
 - **fieldname_in_model:** Name of the field as it is in the code to interpolate.
-- **override_file:** The parent key containing the nested keys related to overriding data from file. **Required** only if overriding from a file
+- **override_file:** Optional subsection with key/value pairs defining how to override from a netcdf file.
   - **file_name:** Name of the file where the variable is located, including the directory
   - **fieldname_in_file:** Name of the field as it is writen in the file
   - **interp_method:** Method used to interpolate the field. The acceptable values are "bilinear", "bicubic", and "none". "none" implies that the field in the file is already in the model grid. The LIMA format is no longer supported
-  - **multi_file:** The multifile parent key. **Required** only if it is desired to use multiple(3) input netcdf files instead of 1. Note that **file_name** must be the second file in the set when using multiple input netcdf files
+  - **multi_file:** Optional subsection with key/value pairs to use multiple(3) input netcdf files instead of 1. Note that **file_name** must be the second file in the set when using multiple input netcdf files
     - **prev_file_name:** The name of the first file in the set
     - **next_file_name:** The name of the third file in the set
-  - **external_weights:** The external weights parent key. **Required** only if it is desired to use external weights from file
+  - **external_weights:** Optional subsection with key/value pairs defining the external weights file to used for the interpolation.
     - **file_name:** Name of the file where the external weights are located, including the directory
     - **source:** Name of the source that generated the external weights. The only acceptable value is "fregrid"
 - **factor:** Factor that will be multiplied after the data is interpolated
-- **subregion:** The subregion parent key. **Required** only if it is desired to interpolate the data to a region of the model grid
+- **subregion:** Optional subsection with key/value pairs that define a subregion of the model grid to interpolate the data to.
   - **type:** The region type. The acceptable values are "inside_region" and "outside_region"
   - **lon_start:** The starting latitude in the same units as the grid data in the file
   - **lon_end:** The ending latitude in the same units as the grid data in the file
