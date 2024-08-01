@@ -39,7 +39,6 @@ character(len=255)   :: key_value      !< The value of a key
 character(len=255)   :: key_name       !< The name of a key
 
 call fms_init
-call fms_end
 
 diag_yaml_id = open_and_parse_file("diag_table.yaml")
 print *, ""
@@ -102,6 +101,7 @@ do i = 1, nfiles
    print *, ""
 enddo
 deallocate(file_ids)
+call fms_end
 
 #endif
 

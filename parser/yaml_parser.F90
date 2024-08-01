@@ -59,6 +59,12 @@ interface get_value_from_key
   module procedure get_value_from_key_1d
 end interface get_value_from_key
 
+!! Error codes from open_and_parse_file_wrap
+integer, parameter :: MISSING_FILE = -1       !< Error code if the yaml file is missing
+integer, parameter :: PARSER_INIT_ERROR = -2  !< Error code if unable to create a parser object
+integer, parameter :: INVALID_YAML = -3       !< Error code if unable to parse a yaml file
+integer, parameter :: SUCCESSFUL = 1          !< "Error" code if the parsing was successful
+
 !> @brief c functions binding
 !> @ingroup yaml_parser_mod
 interface
@@ -66,11 +72,11 @@ interface
 !> @brief Private c function that opens and parses a yaml file (see yaml_parser_binding.c)
 !! @return Flag indicating if the read was successful
 function open_and_parse_file_wrap(filename, file_id) bind(c) &
-   result(success)
+   result(error_code)
    use iso_c_binding, only: c_char, c_int, c_bool
    character(kind=c_char), intent(in) :: filename(*) !< Filename of the yaml file
    integer(kind=c_int), intent(out) :: file_id !< File id corresponding to the yaml file that was opened
-   logical(kind=c_bool) :: success !< Flag indicating if the read was successful
+   logical(kind=c_int) :: error_code !< Flag indicating the error message (1 if sucessful)
 end function open_and_parse_file_wrap
 
 !> @brief Private c function that checks if a file_id is valid (see yaml_parser_binding.c)
@@ -240,7 +246,7 @@ function open_and_parse_file(filename) &
    result(file_id)
 
    character(len=*), intent(in) :: filename !< Filename of the yaml file
-   logical :: success !< Flag indicating if the read was successful
+   integer :: error_code !< Flag indicating any errors in the parsing or 1 if sucessful
    logical :: yaml_exists !< Flag indicating whether the yaml exists
 
    integer :: file_id
@@ -251,10 +257,27 @@ function open_and_parse_file(filename) &
       call mpp_error(NOTE, "The yaml file:"//trim(filename)//" does not exist, hopefully this is your intent!")
       return
    end if
-   success = open_and_parse_file_wrap(trim(filename)//c_null_char, file_id)
-   if (.not. success) call mpp_error(FATAL, "Error opening the yaml file:"//trim(filename)//". Check the file!")
+   error_code = open_and_parse_file_wrap(trim(filename)//c_null_char, file_id)
+   call check_error_code(error_code, filename)
 
 end function open_and_parse_file
+
+!> @brief Checks the error code from a open_and_parse_file_wrap function call
+subroutine check_error_code(error_code, filename)
+   integer, intent(in) :: error_code
+   character(len=*), intent(in) :: filename
+
+   select case (error_code)
+   case (SUCCESSFUL)
+      return
+   case (MISSING_FILE)
+      call mpp_error(FATAL, "Error opening the yaml file:"//trim(filename))
+   case (PARSER_INIT_ERROR)
+      call mpp_error(FATAL, "Error initializing the parser for the file:"//trim(filename))
+   case (INVALID_YAML)
+      call mpp_error(FATAL, "Error parsing the file:"//trim(filename)//". Check that your yaml file is valid")
+   end select
+end subroutine check_error_code
 
 !> @brief Gets the key from a file id
 subroutine get_key_name(file_id, key_id, key_name)

@@ -300,7 +300,7 @@ bool is_valid_file_id(int *file_id)
 
 /* @brief Private c function that opens and parses a yaml file and saves it in a struct
    @return Flag indicating if the read was sucessful */
-bool open_and_parse_file_wrap(char *filename, int *file_id)
+int open_and_parse_file_wrap(char *filename, int *file_id)
 {
   yaml_parser_t parser;
   yaml_token_t  token;
@@ -330,9 +330,9 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
 
 /*  printf("Opening file: %s.\nThere are %i files opened.\n", filename, j); */
   file = fopen(filename, "r");
-  if (file == NULL) return false;
+  if (file == NULL) return -1;
 
-  if(!yaml_parser_initialize(&parser)) return false;
+  if(!yaml_parser_initialize(&parser)) return -2;
 
   my_files.files[j].keys = (key_value_pairs*)calloc(1, sizeof(key_value_pairs));
 
@@ -341,7 +341,9 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
   /* Set input file */
   yaml_parser_set_input_file(&parser, file);
   do {
-    yaml_parser_scan(&parser, &token);
+    if (!yaml_parser_scan(&parser, &token)) {
+      return -3;
+    }
     switch(token.type)
     {
     case YAML_KEY_TOKEN:
@@ -420,7 +422,7 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
 /*  printf("closing file: %s\n", filename); */
   fclose(file);
 
-  return true;
+  return 1;
 }
 
 #endif
