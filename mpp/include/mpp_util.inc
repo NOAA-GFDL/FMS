@@ -1228,7 +1228,7 @@ end function rarray_to_char
     integer, dimension(2) :: lines_and_length
     logical :: file_exist
     character(len=len(peset(current_peset_num)%name)) :: pelist_name
-    character(len=128) :: filename
+    character(len=FMS_PATH_LEN) :: filename
 
 ! check the status of input_nml_file
     if ( allocated(input_nml_file) ) then
