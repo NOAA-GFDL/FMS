@@ -196,7 +196,7 @@ variables:
 - `index(3,:,:)` corresponds to the tile (it should be 1 since data_override does not support interpolation **from** cubesphere grids)
   - From there the four corners are (i,j), (i,j+1) (i+1) (i+1,j+1)
 - The weights for the four corners
-  - var(:,:,1) -> (i,j)
-  - var(:,:,2) -> (i,j+1)
-  - var(:,:,3) -> (i+1,j)
-  - var(:,:,4) -> (i+1,j+1)
+  - weight(:,:,1) -> (i,j)
+  - weight(:,:,2) -> (i,j+1)
+  - weight(:,:,3) -> (i+1,j)
+  - weight(:,:,4) -> (i+1,j+1)
