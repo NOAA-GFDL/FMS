@@ -590,14 +590,14 @@ end subroutine field_manager_init
 !> @brief Routine to read and parse the field table yaml
 subroutine read_field_table_yaml(nfields, table_name)
 integer,                      intent(out), optional :: nfields    !< number of fields
-character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
+character(len=FMS_PATH_LEN),  intent(in),  optional :: table_name !< Name of the field table file, default is 'field_table.yaml'
 
-character(len=fm_string_len)    :: tbl_name !< field_table yaml file
+character(len=FMS_PATH_LEN)     :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
 integer                         :: h, i, j, k, l, m !< dummy integer buffer
 type (fmTable_t)                :: my_table !< the field table
 integer                         :: model !< model assocaited with the current field
-character(len=FMS_PATH_LEN) :: list_name !< field_manager list name
+character(len=FMS_PATH_LEN)     :: list_name !< field_manager list name
 character(len=fm_string_len)    :: subparamvalue !< subparam value to be used when defining new name
 character(len=fm_string_len)    :: fm_yaml_null !< useful hack when OG subparam does not contain an equals sign
 integer                         :: current_field !< field index within loop

@@ -48,6 +48,7 @@ use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
                             get_mosaic_tile_file, file_exists
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 use fms_string_utils_mod, only: string
+use platform_mod
 
 implicit none
 private
@@ -61,14 +62,14 @@ type data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code  !< fieldname used in user's code (model)
    character(len=128) :: fieldname_file  !< fieldname used in the netcdf data file
-   character(len=512) :: file_name       !< name of netCDF data file
+   character(len=FMS_PATH_LEN) :: file_name       !< name of netCDF data file
    character(len=128) :: interpol_method !< interpolation method (default "bilinear")
    real(FMS_DATA_OVERRIDE_KIND_)        :: factor          !< For unit conversion, default=1, see OVERVIEW above
    real(FMS_DATA_OVERRIDE_KIND_)        :: lon_start, lon_end, lat_start, lat_end
    integer            :: region_type
    logical            :: multifile = .false.
-   character(len=512) :: prev_file_name   !< name of netCDF data file for previous segment
-   character(len=512) :: next_file_name   !< name of netCDF data file for next segment
+   character(len=FMS_PATH_LEN) :: prev_file_name   !< name of netCDF data file for previous segment
+   character(len=FMS_PATH_LEN) :: next_file_name   !< name of netCDF data file for next segment
    type(time_type), dimension(:), allocatable :: time_records
    type(time_type), dimension(:), allocatable :: time_prev_records
    type(time_type), dimension(:), allocatable :: time_next_records
@@ -152,7 +153,7 @@ subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_i
   type (domain2d), intent(in), optional :: Land_domain_in   !> Land domain
   type(domainUG) , intent(in), optional :: Land_domainUG_in !> Land domain, unstructured grid
 
-  character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
+  character(len=18), parameter    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,use_get_grid_version
   integer               :: i, iunit, io_status, ierr
   logical               :: atm_on, ocn_on, lnd_on, ice_on, lndUG_on
@@ -786,9 +787,9 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
 
   type(time_type)    :: first_record !< first record of "current" file
   type(time_type)    :: last_record !< last record of "current" file
-  character(len=512) :: filename !< file containing source data
-  character(len=512) :: prevfilename !< file containing previous source data, when using multiple files
-  character(len=512) :: nextfilename !< file containing next source data, when using multiple files
+  character(len=FMS_PATH_LEN) :: filename !< file containing source data
+  character(len=FMS_PATH_LEN) :: prevfilename !< file containing previous source data, when using multiple files
+  character(len=FMS_PATH_LEN) :: nextfilename !< file containing next source data, when using multiple files
   character(len=128) :: fieldname !< fieldname used in the data file
   integer :: index1 !< field index in data_table
   integer            :: dims(4)
@@ -980,12 +981,12 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
-  character(len=512) :: filename !< file containing source data
-  character(len=512) :: filename2 !< file containing source data
-  character(len=512) :: prevfilename !< file containing source data for previous file
-  character(len=512) :: prevfilename2 !< file containing source data for previous file
-  character(len=512) :: nextfilename !< file containing source data for next file
-  character(len=512) :: nextfilename2 !< file containing source data for next file
+  character(len=FMS_PATH_LEN) :: filename !< file containing source data
+  character(len=FMS_PATH_LEN) :: filename2 !< file containing source data
+  character(len=FMS_PATH_LEN) :: prevfilename !< file containing source data for previous file
+  character(len=FMS_PATH_LEN) :: prevfilename2 !< file containing source data for previous file
+  character(len=FMS_PATH_LEN) :: nextfilename !< file containing source data for next file
+  character(len=FMS_PATH_LEN) :: nextfilename2 !< file containing source data for next file
   character(len=128) :: fieldname !< fieldname used in the data file
   integer            :: i,j
   integer            :: dims(4)

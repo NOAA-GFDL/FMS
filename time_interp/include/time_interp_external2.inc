@@ -69,7 +69,8 @@
         integer :: nx, ny, nz, interp_method, t1, t2
         integer :: i1, i2, isc, iec, jsc, jec, mod_time
         integer :: yy, mm, dd, hh, min, ss
-        character(len=256) :: err_msg, filename
+        character(len=256) :: err_msg
+        character(len=FMS_PATH_LEN) :: filename
 
         integer :: isw, iew, jsw, jew, nxw, nyw
             ! these are boundaries of the updated portion of the "data" argument
@@ -236,7 +237,8 @@
       integer :: t1, t2
       integer :: i1, i2, mod_time
       integer :: yy, mm, dd, hh, min, ss
-      character(len=256) :: err_msg, filename
+      character(len=256) :: err_msg
+      character(len=FMS_PATH_LEN) :: filename
 
       real(FMS_TI_KIND_) :: w1,w2
       logical :: verb

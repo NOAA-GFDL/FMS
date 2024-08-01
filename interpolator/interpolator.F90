@@ -81,7 +81,7 @@ use time_manager_mod,  only : time_type,   &
                               decrement_time
 use time_interp_mod,   only : time_interp, YEAR
 use constants_mod,     only : grav, PI, SECONDS_PER_DAY
-use platform_mod,      only : r4_kind, r8_kind, r16_kind
+use platform_mod,      only : r4_kind, r8_kind, r16_kind, FMS_PATH_LEN, FMS_FILE_LEN
 
 !--------------------------------------------------------------------
 
@@ -296,7 +296,7 @@ type(interpolate_r8_type) :: r8_type
 type(horiz_interp_type)  :: interph                         !< No description
 type(time_type), allocatable :: time_slice(:) !< An array of the times within the climatology.
 type(FmsNetcdfFile_t)    :: fileobj       ! object that stores opened file information
-character(len=64)        :: file_name     !< Climatology filename
+character(len=FMS_PATH_LEN) :: file_name     !< Climatology filename
 integer                  :: TIME_FLAG     !< Linear or seaonal interpolation?
 integer                  :: level_type    !< Pressure or Sigma level
 integer                  :: is,ie,js,je       !< No description
