@@ -59,17 +59,19 @@ _EOF
 
 cat <<_EOF > data_table.yaml
 data_table:
-- gridname: OCN
-  fieldname_code: runoff_increasing
-  fieldname_file: runoff
-  file_name: ./INPUT/bilinear_increasing.nc
-  interpol_method: bilinear
+- grid_name: OCN
+  fieldname_in_model: runoff_increasing
+  override_file:
+  - fieldname_in_file: runoff
+    file_name: ./INPUT/bilinear_increasing.nc
+    interp_method: bilinear
   factor: 1.0
-- gridname: OCN
-  fieldname_code: runoff_decreasing
-  fieldname_file: runoff
-  file_name: ./INPUT/bilinear_decreasing.nc
-  interpol_method: bilinear
+- grid_name: OCN
+  fieldname_in_model: runoff_decreasing
+  override_file:
+  - fieldname_in_file: runoff
+    file_name: ./INPUT/bilinear_decreasing.nc
+    interp_method: bilinear
   factor: 1.0
 _EOF
 

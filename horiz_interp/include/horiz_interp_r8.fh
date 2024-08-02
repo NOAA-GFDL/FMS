@@ -60,5 +60,8 @@
 #undef IS_LAT_LON_
 #define IS_LAT_LON_ is_lat_lon_r8
 
+#undef HORIZ_INTERP_READ_WEIGHTS_
+#define HORIZ_INTERP_READ_WEIGHTS_ horiz_interp_read_weights_r8
+
 #include "horiz_interp.inc"
 !> @}
