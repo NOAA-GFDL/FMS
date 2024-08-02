@@ -41,7 +41,7 @@ module coupler_types_mod
   use mpp_domains_mod,   only: domain2D, mpp_redistribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_chksum
   use fms_string_utils_mod,  only: string
-  use platform_mod,      only: r4_kind, r8_kind, i8_kind, FMS_PATH_LEN
+  use platform_mod,      only: r4_kind, r8_kind, i8_kind, FMS_FILE_LEN, FMS_PATH_LEN
 
   implicit none
   private
@@ -103,8 +103,8 @@ module coupler_types_mod
     character(len=128)                :: implementation = ' ' !< implementation
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
     integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_PATH_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_PATH_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
+    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
 #ifdef use_deprecated_io
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
@@ -146,8 +146,8 @@ module coupler_types_mod
     character(len=128)                :: implementation = ' ' !< implementation
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
     integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_PATH_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_PATH_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
+    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
 #ifdef use_deprecated_io
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
@@ -207,8 +207,8 @@ module coupler_types_mod
     real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
     integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_PATH_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_PATH_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
+    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
 #ifdef use_deprecated_io
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
@@ -253,8 +253,8 @@ module coupler_types_mod
     real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
     logical, pointer, dimension(:)    :: flag => NULL() !< flag
     integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_PATH_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_PATH_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
+    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
 #ifdef use_deprecated_io
     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
                                                              !! that is used for this field.
@@ -309,8 +309,8 @@ module coupler_types_mod
     real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_PATH_LEN)    :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_PATH_LEN)    :: ocean_restart_file = ' ' !< ocean_restart_file
+    character(len=FMS_FILE_LEN)    :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=FMS_FILE_LEN)    :: ocean_restart_file = ' ' !< ocean_restart_file
     logical                        :: use_atm_pressure !< use_atm_pressure
     logical                        :: use_10m_wind_speed !< use_10m_wind_speed
     logical                        :: pass_through_ice !< pass_through_ice
@@ -350,8 +350,8 @@ module coupler_types_mod
     real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
     logical, pointer, dimension(:) :: flag => NULL() !< flag
     integer                        :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_PATH_LEN)    :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_PATH_LEN)    :: ocean_restart_file = ' ' !< ocean_restart_file
+    character(len=FMS_FILE_LEN)    :: ice_restart_file = ' ' !< ice_restart_file
+    character(len=FMS_FILE_LEN)    :: ocean_restart_file = ' ' !< ocean_restart_file
     logical                        :: use_atm_pressure !< use_atm_pressure
     logical                        :: use_10m_wind_speed !< use_10m_wind_speed
     logical                        :: pass_through_ice !< pass_through_ice
@@ -3076,8 +3076,8 @@ contains
     logical,         optional,intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
     character(len=*),optional,intent(in)  :: directory      !< Directory where to open the file
 
-    character(len=FMS_PATH_LEN), dimension(max(1,var%num_bcs)) :: rest_file_names
-    character(len=FMS_PATH_LEN) :: file_nm
+    character(len=FMS_FILE_LEN), dimension(max(1,var%num_bcs)) :: rest_file_names
+    character(len=FMS_FILE_LEN) :: file_nm
     logical :: ocn_rest
     integer :: f, n, m
 
@@ -3358,8 +3358,8 @@ contains
     logical,         optional,intent(in)  :: ocean_restart  !< If true, use the ocean restart file name.
     character(len=*),optional,intent(in)  :: directory      !< Directory where to open the file
 
-    character(len=FMS_PATH_LEN), dimension(max(1,var%num_bcs)) :: rest_file_names
-    character(len=FMS_PATH_LEN) :: file_nm
+    character(len=FMS_FILE_LEN), dimension(max(1,var%num_bcs)) :: rest_file_names
+    character(len=FMS_FILE_LEN) :: file_nm
     logical :: ocn_rest
     integer :: f, n, m
 
