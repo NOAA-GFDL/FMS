@@ -1899,7 +1899,7 @@ subroutine generate_associated_files_att(this, att, start_time)
   type(time_type),                   intent(in)            :: start_time !< The start_time for the field's file
 
   character(len=:), allocatable :: field_name !< Name of the area/volume field
-  character(len=FMS_PATH_LEN) :: file_name !< Name of the file the area/volume field is in!
+  character(len=FMS_FILE_LEN) :: file_name !< Name of the file the area/volume field is in!
   character(len=128) :: start_date !< Start date to append to the begining of the filename
 
   integer :: year, month, day, hour, minute, second

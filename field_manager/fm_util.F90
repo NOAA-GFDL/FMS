@@ -1602,7 +1602,7 @@ integer, intent(in)                                     :: length
 integer, intent(in)                                     :: ival(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
-character(len=FMS_PATH_LEN), intent(in), optional       :: good_name_list
+character(len=*), intent(in), optional                  :: good_name_list
 
 !
 !       Local parameters
@@ -1759,7 +1759,7 @@ integer, intent(in)                                     :: length
 logical, intent(in)                                     :: lval(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
-character(len=FMS_PATH_LEN), intent(in), optional       :: good_name_list
+character(len=*), intent(in), optional                  :: good_name_list
 
 !
 !       Local parameters
@@ -1916,7 +1916,7 @@ integer, intent(in)                                     :: length
 character(len=*), intent(in)                            :: sval(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
-character(len=FMS_PATH_LEN), intent(in), optional       :: good_name_list
+character(len=*), intent(in), optional       :: good_name_list
 
 !
 !       Local parameters

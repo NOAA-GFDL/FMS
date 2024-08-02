@@ -135,8 +135,8 @@ contains
     integer                                                 :: length
     integer                                                 :: num_parameters
     integer                                                 :: outunit
-    character(len=FMS_PATH_LEN)                             :: coupler_list
-    character(len=FMS_PATH_LEN)                             :: current_list
+    character(len=FMS_PATH_LEN)                            :: coupler_list
+    character(len=FMS_PATH_LEN)                            :: current_list
     character(len=fm_string_len)                            :: flux_type_test
     character(len=fm_string_len)                            :: implementation_test
     character(len=256)                                      :: error_header

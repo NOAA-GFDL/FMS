@@ -191,7 +191,7 @@ use    fms_mod, only : lowercase,   &
                        write_version_number, &
                        check_nml_error
 use fms2_io_mod, only: file_exists
-use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN
+use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
 #ifdef use_yaml
 use fm_yaml_mod
 #endif
@@ -590,9 +590,9 @@ end subroutine field_manager_init
 !> @brief Routine to read and parse the field table yaml
 subroutine read_field_table_yaml(nfields, table_name)
 integer,                      intent(out), optional :: nfields    !< number of fields
-character(len=FMS_PATH_LEN),  intent(in),  optional :: table_name !< Name of the field table file, default is 'field_table.yaml'
+character(len=*),  intent(in),  optional :: table_name !< Name of the field table file, default is 'field_table.yaml'
 
-character(len=FMS_PATH_LEN)     :: tbl_name !< field_table yaml file
+character(len=FMS_FILE_LEN)     :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
 integer                         :: h, i, j, k, l, m !< dummy integer buffer
 type (fmTable_t)                :: my_table !< the field table

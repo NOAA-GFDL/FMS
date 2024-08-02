@@ -870,7 +870,7 @@ end function rarray_to_char
     integer           :: SD_UNIT, total_calls
     integer           :: j,k,ct, msg_cnt
     character(len=2)  :: u
-    character(len=20) :: filename
+    character(len=FMS_FILE_LEN) :: filename
     character(len=20),dimension(MAX_BINS),save :: bin
 
     data bin( 1)  /'  0   -    8    B:  '/
@@ -1348,8 +1348,8 @@ end function rarray_to_char
     integer, dimension(2) :: get_ascii_file_num_lines_and_length !< number of lines (1) and
                                                                  !! max line length (2)
     integer :: num_lines, max_length
-    integer, parameter :: LENGTH=1024
-    character(len=LENGTH) :: str_tmp
+    integer, parameter :: LENGTH=FMS_FILE_LEN
+    character(len=FMS_FILE_LEN) :: str_tmp
     character(len=5) :: text
     integer :: status, f_unit, from_pe
     logical :: file_exist
@@ -1389,10 +1389,10 @@ end function rarray_to_char
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Error reading line '//trim(text)// &
                         ' in file '//trim(FILENAME)//'.')
                 end if
-                if ( len_trim(str_tmp) == LENGTH ) then
+                if ( len_trim(str_tmp) == FMS_FILE_LEN ) then
                    write(UNIT=text, FMT='(I5)') length
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
-                                       & ' is too small. Increase the LENGTH value.')
+                                       & ' is too small. Increase the FMS_MAX_FILE_LEN cpp value.')
                 end if
                 if (len_trim(str_tmp) > max_length) max_length = len_trim(str_tmp)
                 num_lines = num_lines + 1

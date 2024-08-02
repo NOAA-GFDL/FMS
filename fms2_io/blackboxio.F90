@@ -68,7 +68,7 @@ subroutine get_new_filename(path, new_path, directory, timestamp, new_name)
 
   character(len=FMS_PATH_LEN) :: dir
   character(len=FMS_FILE_LEN) :: tstamp
-  character(len=FMS_FILE_LEN) :: nname
+  character(len=FMS_PATH_LEN) :: nname
 
   dir = ""
   if (present(directory)) then

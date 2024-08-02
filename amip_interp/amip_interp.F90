@@ -135,7 +135,7 @@ use           fms_mod, only: error_mesg, write_version_number,  &
                              NOTE, mpp_error, fms_error_handler
 
 use     constants_mod, only: TFREEZE, pi
-use      platform_mod, only: r4_kind, r8_kind, i2_kind, FMS_PATH_LEN
+use      platform_mod, only: r4_kind, r8_kind, i2_kind, FMS_FILE_LEN
 use mpp_mod,           only: input_nml_file
 use fms2_io_mod,       only: FmsNetcdfFile_t, fms2_io_file_exists=>file_exists, open_file, close_file, &
                              get_dimension_size, fms2_io_read_data=>read_data
@@ -304,7 +304,7 @@ end type amip_interp_type
 !  ---- global unit & date ----
 
    integer :: iunit
-   character(len=FMS_PATH_LEN) :: file_name_sst, file_name_ice
+   character(len=FMS_FILE_LEN) :: file_name_sst, file_name_ice
    type(FmsNetcdfFile_t), target :: fileobj_sst, fileobj_ice
 
    type (date_type) :: Curr_date = date_type( -99, -99, -99 )

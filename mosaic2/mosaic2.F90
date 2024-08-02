@@ -48,7 +48,6 @@ character(len=*), parameter :: &
 
 integer, parameter :: &
      MAX_NAME = 256,  & !> max length of the variable names
-     FMS_PATH_LEN = 1024, & !> max length of the file names
      X_REFINE = 2,    & !> supergrid size/model grid size in x-direction
      Y_REFINE = 2       !> supergrid size/model grid size in y-direction
 
