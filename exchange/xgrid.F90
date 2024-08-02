@@ -147,7 +147,7 @@ integer, parameter :: FIRST_ORDER        = 1
 integer, parameter :: SECOND_ORDER       = 2
 integer, parameter :: VERSION1           = 1 !< grid spec file
 integer, parameter :: VERSION2           = 2 !< mosaic grid file
-integer, parameter :: MAX_FIELDS         = 80
+integer, parameter :: MAX_FIELDS         = 100
 
 logical :: make_exchange_reproduce = .false. !< Set to .true. to make <TT>xgrid_mod</TT> reproduce answers on different
                                              !! numbers of PEs.  This option has a considerable performance impact.
