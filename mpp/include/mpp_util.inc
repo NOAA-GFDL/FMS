@@ -1348,7 +1348,6 @@ end function rarray_to_char
     integer, dimension(2) :: get_ascii_file_num_lines_and_length !< number of lines (1) and
                                                                  !! max line length (2)
     integer :: num_lines, max_length
-    integer, parameter :: LENGTH=FMS_FILE_LEN
     character(len=FMS_FILE_LEN) :: str_tmp
     character(len=5) :: text
     integer :: status, f_unit, from_pe
@@ -1390,7 +1389,7 @@ end function rarray_to_char
                         ' in file '//trim(FILENAME)//'.')
                 end if
                 if ( len_trim(str_tmp) == FMS_FILE_LEN ) then
-                   write(UNIT=text, FMT='(I5)') length
+                   write(UNIT=text, FMT='(I5)') FMS_FILE_LEN
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
                                        & ' is too small. Increase the FMS_MAX_FILE_LEN cpp value.')
                 end if

@@ -48,7 +48,6 @@ use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
                             get_mosaic_tile_file, file_exists
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 use fms_string_utils_mod, only: string
-use platform_mod
 
 implicit none
 private
