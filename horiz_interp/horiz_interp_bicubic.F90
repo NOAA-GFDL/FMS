@@ -47,7 +47,7 @@ module horiz_interp_bicubic_mod
 
   use mpp_mod,               only: mpp_error, FATAL, stdout, mpp_pe, mpp_root_pe
   use fms_mod,               only: write_version_number
-  use horiz_interp_type_mod, only: horiz_interp_type
+  use horiz_interp_type_mod, only: horiz_interp_type, BICUBIC
   use constants_mod,         only: PI
   use platform_mod,          only: r4_kind, r8_kind
 

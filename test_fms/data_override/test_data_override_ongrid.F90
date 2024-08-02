@@ -39,8 +39,8 @@ implicit none
 
 integer, parameter                         :: lkind = DO_TEST_KIND_
 integer, dimension(2)                      :: layout = (/2,3/) !< Domain layout
-integer                                    :: nlon             !< Number of points in x axis
-integer                                    :: nlat             !< Number of points in y axis
+integer                                    :: nlon = 360       !< Number of points in x axis
+integer                                    :: nlat = 180       !< Number of points in y axis
 type(domain2d)                             :: Domain           !< Domain with mask table
 integer                                    :: is               !< Starting x index
 integer                                    :: ie               !< Ending x index
@@ -51,9 +51,10 @@ integer                                    :: io_status
 integer, parameter                         :: ongrid = 1
 integer, parameter                         :: bilinear = 2
 integer, parameter                         :: scalar = 3
+integer, parameter                         :: weight_file = 4
 integer                                    :: test_case = ongrid
 
-namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case
+namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout
 
 call mpp_init
 call fms2_io_init
@@ -61,17 +62,12 @@ call fms2_io_init
 read (input_nml_file, test_data_override_ongrid_nml, iostat=io_status)
 if (io_status > 0) call mpp_error(FATAL,'=>test_data_override_ongrid: Error reading input.nml')
 
-
-
 !< Wait for the root PE to catch up
 call mpp_sync
 
 !< This is the actual test code:
 
 call set_calendar_type(NOLEAP)
-
-nlon = 360
-nlat = 180
 
 !< Create a domain nlonXnlat with mask
 call mpp_domains_set_stack_size(17280000)
@@ -86,6 +82,8 @@ case (bilinear)
   call generate_bilinear_input_file ()
 case (scalar)
   call generate_scalar_input_file ()
+case (weight_file)
+  call generate_weight_input_file ()
 end select
 
 call mpp_sync()
@@ -101,6 +99,8 @@ case (bilinear)
   call bilinear_test()
 case (scalar)
   call scalar_test()
+case (weight_file)
+  call weight_file_test()
 end select
 
 call mpp_exit
@@ -442,6 +442,99 @@ subroutine bilinear_test()
   enddo
   deallocate(runoff_decreasing, runoff_increasing)
 end subroutine bilinear_test
+
+subroutine generate_weight_input_file()
+  call create_grid_spec_file ()
+  call create_ocean_mosaic_file()
+  call create_ocean_hgrid_file()
+  call create_bilinear_data_file(.true.)
+  call create_weight_file()
+end subroutine
+
+subroutine create_weight_file()
+  type(FmsNetcdfFile_t) :: fileobj
+  real(kind=r8_kind), allocatable :: vdata(:,:,:)
+  character(len=5) :: dim_names(3)
+
+  dim_names(1) = "nlon"
+  dim_names(2) = "nlat"
+  if (open_file(fileobj, "INPUT/remap_file.nc", "overwrite")) then
+    call register_axis(fileobj, "nlon", nlon)
+    call register_axis(fileobj, "nlat", nlat)
+    call register_axis(fileobj, "three", 3)
+    call register_axis(fileobj, "four", 4)
+
+    dim_names(3) = "three"
+    call register_field(fileobj, "index", "int", dim_names)
+
+    dim_names(3) = "four"
+    call register_field(fileobj, "weight", "double", dim_names)
+
+    allocate(vdata(nlon,nlat,3))
+    vdata(1,:,1) = 1
+    vdata(2,:,1) = 2
+    vdata(3,:,1) = 3
+    vdata(4,:,1) = 4
+    vdata(5,:,1) = 5
+    vdata(:,1:2,2) = 1
+    vdata(:,3,2) = 2
+    vdata(:,4,2) = 3
+    vdata(:,5,2) = 4
+    vdata(:,6,2) = 5
+    vdata(:,:,3) = 1
+    call write_data(fileobj, "index", vdata)
+    deallocate(vdata)
+
+    allocate(vdata(nlon,nlat,4))
+    vdata = 0.5_r8_kind
+    vdata(:,1,3) = 1_r8_kind
+    vdata(:,6,3) = 1_r8_kind
+    vdata(:,1,4) = 0_r8_kind
+    vdata(:,6,4) = 0_r8_kind
+
+    call write_data(fileobj, "weight", vdata)
+    deallocate(vdata)
+
+    call close_file(fileobj)
+  endif
+end subroutine create_weight_file
+
+subroutine weight_file_test()
+  type(time_type)                            :: Time              !< Time
+  real(lkind), allocatable, dimension(:,:)   :: runoff            !< Data from normal override
+  real(lkind), allocatable, dimension(:,:)   :: runoff_weight     !< Data from weight file override
+  real(lkind)                                :: threshold         !< Threshold for the difference in answers
+
+  integer :: i, j, k
+  logical :: success
+
+  allocate(runoff(is:ie,js:je))
+  allocate(runoff_weight(is:ie,js:je))
+
+  runoff = 999_lkind
+  runoff_weight = 999_lkind
+  Time = set_date(1,1,4,0,0,0)
+  call data_override('OCN','runoff_obs',runoff, Time, override=success)
+  if (.not. success) call mpp_error(FATAL, "Data override failed")
+  call data_override('OCN','runoff_obs_weights',runoff_weight, Time, override=success)
+  if (.not. success) call mpp_error(FATAL, "Data override failed")
+
+  threshold = 1e-09
+  if (lkind .eq. 4) then
+    threshold = 1e-03
+  endif
+
+  do i = is, ie
+    do j =  js, je
+      if (abs(runoff(i,j) - runoff_weight(i,j)) .gt. threshold) then
+        call mpp_error(FATAL, "The data is not the same: "// &
+        string(i)//","//string(j)//":"// &
+        string(runoff(i,j))//" vs "//string(runoff_weight(i,j)))
+      endif
+    enddo
+  enddo
+  deallocate(runoff, runoff_weight)
+end subroutine weight_file_test
 
 !> @brief Generates the input for the bilinear data_override test_case
 subroutine generate_scalar_input_file()

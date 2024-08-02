@@ -14,6 +14,7 @@ The purpose of this document is to explain the diag_table yaml format.
 - [2.5 Global Meta Data Section](diag_yaml_format.md#25-global-meta-data-section)
 - [2.6 Sub_region Section](diag_yaml_format.md#26-sub_region-section)
 - [3. More examples](diag_yaml_format.md#3-more-examples)
+- [4. Schema](diag_yaml_format.md#4-schema)
 
 ### 1. Converting from legacy ascii diag_table format
 
@@ -99,6 +100,9 @@ Below are some *optional* keys that may be added.
 - **new_file_freq** is a string that defines the frequency and the frequency units (with a space between the frequency number and units) for closing the existing file
 - **start_time** is an array of 6 integer indicating when to start the file for the first time. It is in the format [year month day hour minute second]. Requires “new_file_freq”
 - **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will use the begining of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
+- **reduction** is the reduction method that will be used for all the variables in the file. This is overriden if the reduction is specified at the variable level. The acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (whre XX is the power level), min, max, none, rms, and sum.
+- **kind** is a string that defines the type of variable  as it will be written out in the file. This is overriden if the kind is specified at the variable level. Acceptable values are r4, r8, i4, and i8.
+- **module** is a string that defines the module where the variable is registered in the model code. This is overriden if the module is specified at the variable level.
 
 **Example:** The following will create a new file every 6 hours starting at Jan 1 2020. Variable data will be written to the file every 6 hours.
 
@@ -340,3 +344,8 @@ diag_files:
   unlimdim: records
   write_file: false
 ```
+
+### 4. Schema
+A formal specification of the file format, in the form of a JSON schema, can be
+found in the [gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas)
+repository on Github.

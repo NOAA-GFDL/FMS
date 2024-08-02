@@ -21,12 +21,9 @@
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
-# add build type for debug, overrides default flags (set with $FCFLAGS, $CFLAGS)
-set(CMAKE_Fortran_FLAGS_DEBUG)
-
 # Define the CMake project
 project(FMS
-  VERSION 2024.01.01
+  VERSION 2024.02.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -55,10 +52,11 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build options
-option(OPENMP "Build FMS with OpenMP support"        OFF)
-option(32BIT  "Build 32-bit (r4) FMS library"         ON)
-option(64BIT  "Build 64-bit (r8) FMS library"        OFF)
-option(FPIC   "Build with position independent code" OFF)
+option(OPENMP      "Build FMS with OpenMP support"        OFF)
+option(32BIT       "Build 32-bit (r4) FMS library"         ON)
+option(64BIT       "Build 64-bit (r8) FMS library"        OFF)
+option(FPIC        "Build with position independent code" OFF)
+option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
@@ -339,11 +337,8 @@ foreach(kind ${kinds})
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
-  string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
-  if (NOT build_type STREQUAL debug)
-    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS
-                                               "${${kind}_flags}")
-  endif()
+  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
+
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
 
@@ -366,8 +361,15 @@ foreach(kind ${kinds})
   endif()
 
   # FMS (C + Fortran)
-  add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
-                               $<TARGET_OBJECTS:${libTgt}_f>)
+  if (SHARED_LIBS)
+      message(STATUS "Shared library target: ${libTgt}")
+      add_library(${libTgt} SHARED $<TARGET_OBJECTS:${libTgt}_c>
+                                   $<TARGET_OBJECTS:${libTgt}_f>)
+  else ()
+      message(STATUS "Static library target: ${libTgt}")
+      add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
+                                   $<TARGET_OBJECTS:${libTgt}_f>)
+  endif ()
 
   target_include_directories(${libTgt} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -403,7 +405,8 @@ foreach(kind ${kinds})
   target_compile_definitions(${libTgt} PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt} PRIVATE "${${kind}_defs}")
 
-  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_Fortran
+  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
+                                         NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
 
   if(OpenMP_Fortran_FOUND)

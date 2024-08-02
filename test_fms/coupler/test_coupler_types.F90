@@ -31,7 +31,7 @@
 program test_coupler_types
 
 use   fms_mod,            only: fms_init, fms_end, stdout, string
-use   mpp_mod,            only: mpp_error, mpp_pe, mpp_root_pe, FATAL, mpp_sync, mpp_init
+use   mpp_mod,            only: mpp_error, mpp_pe, mpp_root_pe, FATAL, mpp_sync, mpp_init, input_nml_file
 use   mpp_domains_mod,    only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, domain1D
 use   mpp_domains_mod,    only: mpp_domains_set_stack_size
 use   coupler_types_mod,  only: coupler_3d_bc_type, coupler_2d_bc_type, coupler_1d_bc_type
@@ -70,12 +70,21 @@ integer :: id_x, id_y, id_z, chksum_unit
 character(len=128) :: chksum_2d, chksum_3d
 real(FMS_CP_TEST_KIND_), allocatable :: expected_2d(:,:), expected_3d(:,:,:)
 integer :: err, ncid, dim1D, varid, day
+logical, allocatable :: return_stats(:,:)
+
+logical :: fail_return_status = .false. !< if true checks for one of the coupler_type_send_data calls to fail and
+                                        !! return a false value
+
+NAMELIST /test_coupler_types_nml/ fail_return_status
 
 call fms_init
 call time_manager_init
 call fms2_io_init
 call mpp_init
 call set_calendar_type(JULIAN)
+
+read(input_nml_file, test_coupler_types_nml, iostat=err)
+if(err > 0) call mpp_error(FATAL, "test_coupler_types:: error reading test input nml")
 
 ! basic domain set up
 nlat=60; nlon=60; nz=12
@@ -216,8 +225,22 @@ do day=1,31
   time_t = set_date(1, 1, day)
   call coupler_type_increment_data(bc_2d_cp, bc_2d_new) ! increment _new with cp
   call coupler_type_increment_data(bc_3d_cp, bc_3d_new)
-  call coupler_type_send_data(bc_2d_new, time_t)
-  call coupler_type_send_data(bc_3d_new, time_t)
+  call coupler_type_send_data(bc_2d_new, time_t, return_stats)
+  if( fail_return_status ) then
+    if( ALL(return_stats) ) call mpp_error(FATAL, "test_coupler_types:: send_data calls returned true, "// &
+                                                  "expected false return value from incorrect diag_table")
+  else
+    if( .not. ALL(return_stats) ) call mpp_error(FATAL, &
+                                  "test_coupler_types:: coupler_type_send_data returned false with valid diag_table")
+  endif
+  call coupler_type_send_data(bc_3d_new, time_t, return_stats)
+  if( fail_return_status ) then
+    if( ALL(return_stats) ) call mpp_error(FATAL, "test_coupler_types:: send_data calls returned true, "// &
+                                                  "expected false return value from incorrect diag_table")
+  else
+    if( .not. ALL(return_stats) ) call mpp_error(FATAL, &
+                                  "test_coupler_types:: coupler_type_send_data returned false with valid diag_table")
+  endif
 enddo
 time_t = set_date(1, 2, 1)
 call diag_manager_end(time_t)
