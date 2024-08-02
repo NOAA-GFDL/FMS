@@ -50,6 +50,7 @@ use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase, NOTE
+use platform_mod, only: FMS_FILE_LEN 
 
 implicit none
 private
