@@ -1390,7 +1390,7 @@ end function rarray_to_char
                         ' in file '//trim(FILENAME)//'.')
                 end if
                 if ( len_trim(str_tmp) == LENGTH) then
-                   write(UNIT=text, FMT='(I5)') LENGTH 
+                   write(UNIT=text, FMT='(I5)') LENGTH
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
                                        & ' is too small. Increase the LENGTH value.')
                 end if
