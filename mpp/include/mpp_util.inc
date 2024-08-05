@@ -870,7 +870,7 @@ end function rarray_to_char
     integer           :: SD_UNIT, total_calls
     integer           :: j,k,ct, msg_cnt
     character(len=2)  :: u
-    character(len=20) :: filename
+    character(len=FMS_FILE_LEN) :: filename
     character(len=20),dimension(MAX_BINS),save :: bin
 
     data bin( 1)  /'  0   -    8    B:  '/
@@ -1228,7 +1228,7 @@ end function rarray_to_char
     integer, dimension(2) :: lines_and_length
     logical :: file_exist
     character(len=len(peset(current_peset_num)%name)) :: pelist_name
-    character(len=128) :: filename
+    character(len=FMS_PATH_LEN) :: filename
 
 ! check the status of input_nml_file
     if ( allocated(input_nml_file) ) then
@@ -1389,8 +1389,8 @@ end function rarray_to_char
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Error reading line '//trim(text)// &
                         ' in file '//trim(FILENAME)//'.')
                 end if
-                if ( len_trim(str_tmp) == LENGTH ) then
-                   write(UNIT=text, FMT='(I5)') length
+                if ( len_trim(str_tmp) == LENGTH) then
+                   write(UNIT=text, FMT='(I5)') LENGTH
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
                                        & ' is too small. Increase the LENGTH value.')
                 end if

@@ -88,5 +88,12 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 #define QUAD_KIND DOUBLE_KIND
 #endif
 
+!Max string sizes for paths and files
+#ifndef FMS_MAX_PATH_LEN
+#define FMS_MAX_PATH_LEN 1024
+#endif
+#ifndef FMS_MAX_FILE_LEN
+#define FMS_MAX_FILE_LEN 255
+#endif
 
 #endif

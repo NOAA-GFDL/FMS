@@ -165,7 +165,7 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, isc, iec, jsc, jec, lo
   integer                   :: isd, ied, jsd, jed
   integer                   :: isg, ieg, jsg, jeg
   integer                   :: isc2, iec2, jsc2, jec2
-  character(len=256)        :: solo_mosaic_file, grid_file
+  character(len=FMS_PATH_LEN) :: solo_mosaic_file, grid_file
   real(lkind), allocatable  :: tmpx(:,:), tmpy(:,:)
   logical                   :: open_solo_mosaic
   type(FmsNetcdfFile_t)     :: mosaicfileobj, tilefileobj

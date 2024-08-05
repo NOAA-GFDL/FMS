@@ -46,7 +46,7 @@ subroutine GET_AMIP_SST_ (Time, Interp, sst, err_msg, lon_model, lat_model)
     integer, dimension(:), allocatable :: ryr, rmo, rdy
     character(len=30) :: time_unit
     real(FMS_AMIP_INTERP_KIND_), dimension(:), allocatable :: timeval
-    character(len=maxc) :: ncfilename
+    character(len=FMS_FILE_LEN) :: ncfilename
     type(FmsNetcdfFile_t) :: fileobj
     logical :: the_file_exists
 ! end add by JHC
@@ -652,7 +652,8 @@ endif
      integer(I2_KIND) :: idat(mobs,nobs)
      integer :: nrecords, yr, mo, dy, ierr, k
      integer, dimension(:), allocatable :: ryr, rmo, rdy
-     character(len=maxc) :: ncfilename, ncfieldname
+     character(len=FMS_FILE_LEN)  :: ncfilename
+     character(len=NF90_MAX_NAME) :: ncfieldname
      type(FmsNetcdfFile_t), pointer :: fileobj
      integer, parameter :: lkind = FMS_AMIP_INTERP_KIND_
 

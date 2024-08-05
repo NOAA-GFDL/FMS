@@ -1415,7 +1415,7 @@ END FUNCTION register_static_field
     INTEGER :: year, month, day, hour, minute, second
     INTEGER :: n
     CHARACTER(len=25) :: date_prefix
-    CHARACTER(len=256) :: asso_file_name
+    CHARACTER(len=FMS_FILE_LEN) :: asso_file_name
 
     ! Create the date_string
     IF ( prepend_date ) THEN

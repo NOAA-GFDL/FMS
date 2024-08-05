@@ -48,7 +48,7 @@ module  atmos_ocean_fluxes_mod
   use coupler_types_mod, only: ind_runoff
   use coupler_types_mod, only: ind_flux, ind_deltap, ind_kw, ind_flux0
 
-  use field_manager_mod, only: fm_path_name_len, fm_string_len, fm_exists, fm_get_index
+  use field_manager_mod, only: fm_string_len, fm_exists, fm_get_index
   use field_manager_mod, only: fm_new_list, fm_get_current_list, fm_change_list
   use field_manager_mod, only: fm_field_name_len, fm_type_name_len, fm_dump_list
   use field_manager_mod, only: fm_loop_over_list
@@ -63,7 +63,7 @@ module  atmos_ocean_fluxes_mod
   use fm_util_mod,       only: fm_util_get_real_array, fm_util_get_real, fm_util_get_integer
   use fm_util_mod,       only: fm_util_get_logical, fm_util_get_logical_array
   use fms_io_utils_mod,  only: get_data_type_string
-  use platform_mod,      only: r4_kind, r8_kind
+  use platform_mod,      only: r4_kind, r8_kind, FMS_PATH_LEN
 
   implicit none
   private
@@ -135,8 +135,8 @@ contains
     integer                                                 :: length
     integer                                                 :: num_parameters
     integer                                                 :: outunit
-    character(len=fm_path_name_len)                         :: coupler_list
-    character(len=fm_path_name_len)                         :: current_list
+    character(len=FMS_PATH_LEN)                            :: coupler_list
+    character(len=FMS_PATH_LEN)                            :: current_list
     character(len=fm_string_len)                            :: flux_type_test
     character(len=fm_string_len)                            :: implementation_test
     character(len=256)                                      :: error_header
