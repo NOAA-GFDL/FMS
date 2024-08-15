@@ -12,7 +12,7 @@ sequential patch number (starting from `01`).
 - Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
 - BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
 - GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
-- INTEL: The `-check noinit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
 
 ### Added
 - DATA_OVERRIDE: Adds a namelist flag `use_center_grid_points` which, if true, enables reading the centroid values from the grid spec for ocean and ice models. This fixes issues with grid files that have longitudes ranges from 0:180 and then -180:0, but will cause answer changes if enabled. (#1566)
