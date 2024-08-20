@@ -90,8 +90,8 @@ void keyerror(yaml_event_t * event, yaml_emitter_t * emitter){
   fprintf(stdout, "WARNING: YAML_OUTPUT: Failed to emit event %d: %s\n", event->type, emitter->problem);
 }
 /* \brief Writes the key/value pairs of the fmsyamloutkeys and fmsyamloutvalues structs
- * \note If any values start with '[' it will be assumed the value is a yaml array
- * There may be slight differences in spacing for array outputs
+ * \note If second value (val2) in struct starts with '[' it will be assumed the value is a yaml array
+ * There may be slight differences in spacing for array outputs vs what is read in.
  * \param emitter The libyaml emitter for this file
  * \param event The libyaml eent pointer
  * \param aindex The index of keys and vals that are being written currently
