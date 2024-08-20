@@ -28,7 +28,7 @@ output_dir
 
 cat <<_EOF > diag_table.yaml
 title: test_prepend_date
-base_date: 1 1 1 0 0 0
+base_date: [1, 1, 1, 0, 0, 0]
 diag_files:
 - file_name: test_non_static
   time_units: hours

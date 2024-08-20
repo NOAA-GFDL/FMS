@@ -28,7 +28,7 @@ output_dir
 
 cat <<_EOF > diag_table.yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0]
 
 diag_files:
 - file_name: static_file

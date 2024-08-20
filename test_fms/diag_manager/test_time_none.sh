@@ -30,7 +30,7 @@ output_dir
 
 cat <<_EOF > diag_table.yaml
 title: test_none
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0]
 diag_files:
 - file_name: test_none
   freq: 6 hours

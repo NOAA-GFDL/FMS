@@ -31,7 +31,7 @@ output_dir
 #TODO replace with yaml diag_table and set diag_manager_nml::use_modern_diag=.true.
 cat <<_EOF > diag_table.yaml
 title: test_max
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0]
 diag_files:
 - file_name: test_max
   time_units: hours

@@ -43,7 +43,7 @@ diag_files:
 ### 2.1 Global Section
 The diag_yaml requires “title” and the “baseDate”.
 - The **title** is a string that labels the diag yaml.  The equivalent in the legacy diag_table would be the experiment.  It is recommended that each diag_yaml have a separate title label that is descriptive of the experiment that is using it.
-- The **basedate** is an array of 6 integers indicating the base_date in the format [year, month, day, hour, minute, second].
+- The **base_date** is a comma-separated array of 6 integers indicating the base_date in the format [year, month, day, hour, minute, second]. Spacing is not significant.
 
 **Example:**
 

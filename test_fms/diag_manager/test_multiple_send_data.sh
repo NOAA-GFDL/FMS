@@ -28,7 +28,7 @@ output_dir
 
 cat <<_EOF > diag_table.yaml
 title: test_multiple_sends
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0]
 diag_files:
 - file_name: test_multiple_sends
   time_units: hours
