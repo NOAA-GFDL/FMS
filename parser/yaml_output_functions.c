@@ -89,7 +89,9 @@ void keyerror(yaml_event_t * event, yaml_emitter_t * emitter){
   fprintf(stderr, "WARNING: YAML_OUTPUT: Failed to emit event %d: %s\n", event->type, emitter->problem);
   fprintf(stdout, "WARNING: YAML_OUTPUT: Failed to emit event %d: %s\n", event->type, emitter->problem);
 }
-/* \breif Writes the key/value pairs of the fmsyamloutkeys and fmsyamloutvalues structs
+/* \brief Writes the key/value pairs of the fmsyamloutkeys and fmsyamloutvalues structs
+ * \note If any values start with '[' it will be assumed the value is a yaml array
+ * There may be slight differences in spacing for array outputs 
  * \param emitter The libyaml emitter for this file
  * \param event The libyaml eent pointer
  * \param aindex The index of keys and vals that are being written currently
@@ -124,11 +126,58 @@ void write_keys_vals_yaml (yaml_emitter_t * emitter, yaml_event_t * event , int 
       keyerror(event, emitter);
       return;
     }
-    yaml_scalar_event_initialize(event, NULL, (yaml_char_t *)YAML_STR_TAG,
-        (yaml_char_t *)vals[aindex].val2, strlen(vals[aindex].val2), 1, 0, YAML_PLAIN_SCALAR_STYLE);
-    if (!yaml_emitter_emit(emitter, event)){
-      keyerror(event, emitter);
-      return;
+
+    // check if we're writing an array
+    if(vals[aindex].val2[0] != '['){
+      yaml_scalar_event_initialize(event, NULL, NULL,
+          (yaml_char_t *)vals[aindex].val2, strlen(vals[aindex].val2), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+      if (!yaml_emitter_emit(emitter, event)){
+        keyerror(event, emitter);
+        return;
+      }
+    } else {
+      // parse the string for individual elements
+      char *buff = vals[aindex].val2;
+      char cbuff[2]; // single char buffer for appending
+      cbuff[1] = '\0';
+      char elements[16][255];
+      int ecount=0; // count of elements
+      strcpy(elements[0], "");
+      for(int i=1; i< strlen(buff)-1; i++){
+        if(buff[i] != ' ' && buff[i] != ','){
+          cbuff[0] = buff[i];
+          strcat(elements[ecount], cbuff);
+        }
+        if(buff[i] == ','){
+          ecount++;
+          if(ecount >= 16) {
+            printf("Error: element count in write_keys_vals_yaml greater than max value of 16");
+            return;
+          }
+          strcpy(elements[ecount], "");
+        }
+      }
+      // start flow sequence
+      yaml_sequence_start_event_initialize(event, NULL, NULL, 1, YAML_FLOW_SEQUENCE_STYLE);
+      if (!yaml_emitter_emit(emitter, event)){
+        keyerror(event, emitter);
+        return;
+      }
+      // loop through and write elements
+      for (int i=0; i <= ecount; i++){
+        yaml_scalar_event_initialize(event, NULL, NULL,
+            (yaml_char_t *)elements[i], strlen(elements[i]), 1, 0, YAML_PLAIN_SCALAR_STYLE);
+        if (!yaml_emitter_emit(emitter, event)){
+          keyerror(event, emitter);
+          return;
+        }
+      }
+      // end flow sequence
+      yaml_sequence_end_event_initialize(event);
+      if (!yaml_emitter_emit(emitter, event)){
+        keyerror(event, emitter);
+        return;
+      }
     }
   }
   if (keys[aindex].key3[0] !='\0')  {

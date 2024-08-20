@@ -43,14 +43,14 @@ diag_files:
 ### 2.1 Global Section
 The diag_yaml requires “title” and the “baseDate”.
 - The **title** is a string that labels the diag yaml.  The equivalent in the legacy diag_table would be the experiment.  It is recommended that each diag_yaml have a separate title label that is descriptive of the experiment that is using it.
-- The **basedate** is an array of 6 integers indicating the base_date in the format [year month day hour minute second].
+- The **basedate** is an array of 6 integers indicating the base_date in the format [year, month, day, hour, minute, second].
 
 **Example:**
 
 In the YAML format:
 ```yaml
 title: ESM4_piControl
-base_date: 2022 5 26 12 3 1
+base_date: [2022, 5, 26, 12, 3, 1]
 ```
 
 In the legacy ascii format:
@@ -281,7 +281,7 @@ The sub region can be listed under the sub_region section as a dashed array. The
 Bellow is a complete example of diag_table.yaml:
 ```yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0]
 diag_files:
 - file_name: wild_card_name%4yr%2mo%2dy%2hr
   freq: 6 hours

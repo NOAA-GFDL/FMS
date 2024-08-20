@@ -316,6 +316,9 @@ int open_and_parse_file_wrap(char *filename, int *file_id)
   char current_layername[255]; /* Name of the current block */
   int i;                       /* To minimize the typing :) */
   int j;                       /* To minimize the typing :) */
+  bool is_flow_sequence = false;/* Flag indicating if within a flow sequence (aka a yaml array ie. [1, 2, 3, 4] or - tabbed list)*/
+  bool is_first = false;        /* Flag indicating if current item is the first item in the flow sequence*/
+  char buff[255];               /* String buffer for individual array values*/
 
   if (nfiles == 0 )
   {
@@ -356,6 +359,19 @@ int open_and_parse_file_wrap(char *filename, int *file_id)
         is_key = false;
         break;
        }
+    case YAML_FLOW_SEQUENCE_START_TOKEN:
+       {
+         is_key = false;
+         is_flow_sequence = true;
+         is_first = true;
+         break;
+       }
+    case YAML_FLOW_SEQUENCE_END_TOKEN:
+       {
+         is_key = false;
+         is_flow_sequence = false;
+         break;
+       }
     case YAML_BLOCK_ENTRY_TOKEN:
        {
         layer = layer + 1;
@@ -386,19 +402,28 @@ int open_and_parse_file_wrap(char *filename, int *file_id)
        {
         if ( ! is_key)
         {
-         current_parent = parent[layer];
-         strcpy(current_layername, "");
-         key_count = key_count + 1;
-         i = key_count;
-         my_files.files[j].keys = realloc(my_files.files[j].keys, (i+1)*sizeof(key_value_pairs));
-         my_files.files[j].keys[i].key_number=i;
-         my_files.files[j].keys[i].parent_key = current_parent;
-         strcpy(my_files.files[j].keys[i].parent_name, current_layername);
-         strcpy(my_files.files[j].keys[i].key, key_value);
-         strcpy(my_files.files[j].keys[i].value, token.data.scalar.value);
-         my_files.files[j].nkeys = key_count;
-         /* printf("----> LAYER:%i LAYER_NAME=%s PARENT:%i, KEYCOUNT:%i KEY: %s VALUE: %s \n", layer, current_layername, current_parent, key_count, key_value, token.data.scalar.value); */
-         strcpy(key_value,"");
+         if (! is_flow_sequence || is_first) // if either a normal value or the first element in a flow sequence
+         {
+            current_parent = parent[layer];
+            strcpy(current_layername, "");
+            key_count = key_count + 1;
+            i = key_count;
+            my_files.files[j].keys = realloc(my_files.files[j].keys, (i+1)*sizeof(key_value_pairs));
+            my_files.files[j].keys[i].key_number=i;
+            my_files.files[j].keys[i].parent_key = current_parent;
+            strcpy(my_files.files[j].keys[i].parent_name, current_layername);
+            strcpy(my_files.files[j].keys[i].key, key_value);
+            strcpy(my_files.files[j].keys[i].value, token.data.scalar.value);
+            my_files.files[j].nkeys = key_count;
+            /* printf("----> LAYER:%i LAYER_NAME=%s PARENT:%i, KEYCOUNT:%i KEY: %s VALUE: %s \n", layer, current_layername, current_parent, key_count, key_value, token.data.scalar.value); */
+            strcpy(key_value,"");
+            is_first = false;
+         } else { // if an item in a flow sequence
+            strcpy(buff, token.data.scalar.value);
+            strcat(my_files.files[j].keys[i].value, " ");
+            strcat(my_files.files[j].keys[i].value, buff);
+         }
+
         }
         else
          {strcpy(key_value,token.data.scalar.value);}

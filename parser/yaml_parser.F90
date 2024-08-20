@@ -70,6 +70,8 @@ integer, parameter :: SUCCESSFUL = 1          !< "Error" code if the parsing was
 interface
 
 !> @brief Private c function that opens and parses a yaml file (see yaml_parser_binding.c)
+!! Any arrays (formatted as [a, b, c] or a multiline '-' tabbed list) will be
+!! read in as a space-separated list of characters
 !! @return Flag indicating if the read was successful
 function open_and_parse_file_wrap(filename, file_id) bind(c) &
    result(error_code)

@@ -1667,13 +1667,14 @@ subroutine fms_diag_yaml_out()
   call fms_f2c_string( keys(1)%key2, 'base_date')
   basedate_loc = diag_yaml%get_basedate()
   tmpstr1 = ''; tmpstr2 = ''
-  tmpstr1 = string(basedate_loc(1))
+  tmpstr1 = '[ '//string(basedate_loc(1))
   tmpstr2 = trim(tmpstr1)
   do i=2, basedate_size
     tmpstr1 = string(basedate_loc(i))
-    tmpstr2 = trim(tmpstr2) // ' ' // trim(tmpstr1)
+    tmpstr2 = trim(tmpstr2) // ', ' // trim(tmpstr1)
   enddo
-  call fms_f2c_string(vals(1)%val2, trim(tmpstr2))
+  tmpstr1 = trim(tmpstr2) // ']'
+  call fms_f2c_string(vals(1)%val2, trim(tmpstr1))
   call yaml_out_add_level2key('diag_files', keys(1))
   key3_i = 0
   !! tier 2 - diag files

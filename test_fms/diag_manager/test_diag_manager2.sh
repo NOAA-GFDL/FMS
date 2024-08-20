@@ -514,7 +514,7 @@ if [ -z "${skipflag}" ]; then
 
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [ 2, 1, 1, 0, 0, 0 ]
 diag_files:
 - file_name: wild_card_name%4yr%2mo%2dy%2hr
   filename_time: end
@@ -592,7 +592,7 @@ my_test_count=`expr $my_test_count + 1`
 
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0 ]
 diag_files:
 - file_name: wild_card_name%4yr%2mo%2dy%2hr
   filename_time: end
@@ -673,7 +673,7 @@ _EOF
   printf "&diag_manager_nml \n use_modern_diag = .true. \n/" | cat > input.nml
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0 ]
 diag_files:
 - file_name: file1
   freq: 6 hours
@@ -722,7 +722,7 @@ _EOF
   printf "&diag_manager_nml \n use_modern_diag = .true. \n do_diag_field_log = .true. \n/" | cat > input.nml
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0 ]
 
 diag_files:
 - file_name: static_file
@@ -886,7 +886,7 @@ _EOF
   cat <<_EOF > diag_out_ref.yaml
 ---
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0]
 diag_files:
 - file_name: static_file
   freq: -1
@@ -1296,7 +1296,7 @@ test_expect_success "check modern diag manager yaml output (test $my_test_count)
 printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .true. \n /" | cat > input.nml
 cat <<_EOF > diag_table.yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0 ]
 
 diag_files:
 - file_name: file1_clock
@@ -1318,7 +1318,7 @@ my_test_count=`expr $my_test_count + 1`
 printf "&diag_manager_nml \n use_modern_diag = .true. \n use_clock_average = .false. \n /" | cat > input.nml
 cat <<_EOF > diag_table.yaml
 title: test_diag_manager
-base_date: 2 1 1 0 0 0
+base_date: [2, 1, 1, 0, 0, 0 ]
 
 diag_files:
 - file_name: file1_forecast
