@@ -1,5 +1,4 @@
-
-!>simple routine to pass non-tracer fields across components (regridding)
+!>simple routine to pass non-tracer fields across components (regrid)
 
 module gex_mod
 
@@ -15,7 +14,7 @@ use mpp_mod,             only: mpp_root_pe, mpp_pe
 
 implicit none ; private
 
-public :: gex_init, gex_get_index,gex_get_n, gex_get_p, gex_name, gex_units
+public :: gex_init, gex_get_index,gex_get_n_ex, gex_get_property, gex_name, gex_units
 
 character(3) :: module_name = 'gex'
 logical      :: initialized = .FALSE.
@@ -26,6 +25,7 @@ integer, parameter :: gex_units = 2
 type gex_type
    character(fm_field_name_len):: name
    character(fm_string_len)    :: units
+   logical                     :: set
 end type gex_type
 type gex_type_r
    type(gex_type), allocatable:: field(:)
@@ -49,18 +49,24 @@ subroutine gex_init()
 
    n_gex(:,:) = 0
 
-   if (mpp_pe()==mpp_root_pe()) write(*,*) ''
-   if (mpp_pe()==mpp_root_pe()) write(*,*) '####################################'
-   if (mpp_pe()==mpp_root_pe()) write(*,*) '#  generic exchanged fields [gex]  #'
-   if (mpp_pe()==mpp_root_pe()) write(*,*) '####################################'
-   if (mpp_pe()==mpp_root_pe()) write(*,*) ''
+   if (mpp_pe()==mpp_root_pe()) then
+      write(*,*) ''
+      write(*,*) '####################################'
+      write(*,*) '#  generic exchanged fields [gex]  #'
+      write(*,*) '####################################'
+      write(*,*) ''
+   end if
+   
 
-   call gex_read_field_table('/coupler_mod/atm_lnd_ex',MODEL_ATMOS,MODEL_LAND)
-   call gex_read_field_table('/coupler_mod/lnd_atm_ex',MODEL_LAND,MODEL_ATMOS)
-   if (mpp_pe()==mpp_root_pe()) write(*,*) ''
-   if (mpp_pe()==mpp_root_pe()) write(*,*) '####################################'
-   if (mpp_pe()==mpp_root_pe()) write(*,*) ''
+   call gex_read_field_table('/coupler_mod/atm_to_lnd_ex',MODEL_ATMOS,MODEL_LAND)
+   call gex_read_field_table('/coupler_mod/lnd_to_atm_ex',MODEL_LAND,MODEL_ATMOS)
 
+   if (mpp_pe()==mpp_root_pe()) then
+      write(*,*) ''      
+      write(*,*) '####################################'
+      write(*,*) ''      
+   end if
+   
    initialized = .TRUE.
 
 end subroutine gex_init
@@ -84,12 +90,13 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
    integer :: n   
 
    if(fm_dump_list(listroot, recursive=.TRUE.)) then
-      n_gex(MODEL_SRC,MODEL_REC) = fm_get_length(listroot)
-      allocate(gex_fields(MODEL_SRC,MODEL_REC)%field(n_gex(MODEL_SRC,MODEL_REC)))
+      n_gex(MODEL_SRC,MODEL_REC) = fm_get_length(listroot)      
+      allocate(gex_fields(MODEL_SRC,MODEL_REC)%field(n_gex(MODEL_SRC,MODEL_REC)))      
    
       call fm_init_loop(listroot,iter)
       do while (fm_loop_over_list(iter, name, ftype, n))
          gex_fields(MODEL_SRC,MODEL_REC)%field(n)%name = trim(name)
+         gex_fields(MODEL_SRC,MODEL_REC)%field(n)%set  = .FALSE.
          if (mpp_pe()==mpp_root_pe()) write(*,*) listroot,n,trim(name)
    
          ! save current position in the field manager tree to restore it on exit
@@ -111,7 +118,7 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
          endif
       end do
    else
-      call error_mesg('flux_exchange','Cannot dump field list "/coupler_mod/lnd_atm_ex". No additional field will be exchanged from land to atmosphere',NOTE)
+      call error_mesg('flux_exchange','Cannot dump field list '//listroot//'. No additional field will be exchanged from land to atmosphere',NOTE)
    end if
    
 end subroutine   
@@ -121,12 +128,12 @@ end subroutine
 !> Generic exchange between model components - return number of fields exchanged
 !#######################################################################   
 
-function gex_get_n(MODEL_SRC,MODEL_REC)
+function gex_get_n_ex(MODEL_SRC,MODEL_REC)   
 
    integer, intent(in)                         :: MODEL_SRC, MODEL_REC
-   integer gex_get_n
+   integer gex_get_n_ex
 
-   gex_get_n = n_gex(MODEL_SRC,MODEL_REC)
+   gex_get_n_ex = n_gex(MODEL_SRC,MODEL_REC)
 
    return
 
@@ -136,17 +143,17 @@ end function
 !> Generic exchange between model components - return name of field
 !#######################################################################   
 
-function gex_get_p(MODEL_SRC,MODEL_REC,index,property)
+function gex_get_property(MODEL_SRC,MODEL_REC,index,property)
 
    integer, intent(in)   :: MODEL_SRC, MODEL_REC,index
    integer               :: property
-   character(len=64)     :: gex_get_p
+   character(len=64)     :: gex_get_property
 
    if (index.le.n_gex(MODEL_SRC,MODEL_REC)) then
       if (property .eq. gex_name) then
-         gex_get_p = trim(gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name)
+         gex_get_property = trim(gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name)
       elseif (property .eq. gex_units) then
-         gex_get_p = trim(gex_fields(MODEL_SRC,MODEL_REC)%field(index)%units)
+         gex_get_property = trim(gex_fields(MODEL_SRC,MODEL_REC)%field(index)%units)
       else
          call error_mesg('flux_exchange|gex','property does not exist: '//gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name,FATAL)
       end if
@@ -162,10 +169,11 @@ end function
 !> Generic exchange between model components - return index of exchange field
 !#######################################################################      
 
-function gex_get_index(MODEL_SRC,MODEL_REC,name)
+function gex_get_index(MODEL_SRC,MODEL_REC,name,record)
 
    character(len=*), intent(in)                :: name !< name of the tracer                                                                                                                                          
    integer, intent(in)                         :: MODEL_SRC, MODEL_REC
+   logical, intent(in), optional               :: record    !record that this exchanged has been found and will be set
 
    integer :: i
    integer :: gex_get_index
@@ -175,10 +183,21 @@ function gex_get_index(MODEL_SRC,MODEL_REC,name)
    do i = 1, n_gex(MODEL_SRC,MODEL_REC)
       if (lowercase(trim(name)) == trim(gex_fields(MODEL_SRC,MODEL_REC)%field(i)%name))then
          gex_get_index = i
+
+         if (present(record)) then
+            if (record) then
+               gex_fields(MODEL_SRC,MODEL_REC)%field(i)%set = .TRUE.
+            end if
+         else
+            if (.not. gex_fields(MODEL_SRC,MODEL_REC)%field(i)%set) then
+               call error_mesg('flux_exchange|gex','requested flux was never set',FATAL)    
+            end if
+         end if
+         
          exit
       endif
    enddo
-
+   
    return   
 
 end function gex_get_index
