@@ -112,6 +112,13 @@ AS_IF([test ${enable_r8_default:-yes} = yes],
   [enable_r8_default=yes],
   [enable_r8_default=no])
 
+AC_ARG_ENABLE([portable-kinds],
+  [AS_HELP_STRING([--enable-portable-kinds],
+    [Enables compilation with -DPORTABLE_KINDS with iso_c_binding KIND type parameters])])
+AS_IF([test ${enable_portable_kinds:-no} = yes],
+  [enable_portable_kinds=yes],
+  [enable_portable_kinds=no])
+
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
 AC_ARG_ENABLE([test-input],
@@ -340,6 +347,11 @@ if test $enable_setting_flags = yes; then
   fi
   if test $enable_8byte_int = yes; then
     AC_DEFINE([no_8byte_integers], [1], [Set to disable 8 byte integer Fortran routines])
+  fi
+
+  # Builds with C data types
+  if test $enable_portable_kinds = yes; then
+    AC_DEFINE([PORTABLE_KINDS], [1], [Set to define KIND parameters to iso_c_binding KIND parameters])
   fi
 
   # Add Cray Pointer support flag
