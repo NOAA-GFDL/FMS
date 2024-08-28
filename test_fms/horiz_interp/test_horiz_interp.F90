@@ -1101,8 +1101,8 @@ implicit none
         call horiz_interp_del(Interp_cp)
         ! test deletion after direct calls
         ! this set up is usually done within horiz_interp_new
-        nlon_in  = size(lon_in_1d(:));  nlat_in  = size(lat_in_1d(:))
-        nlon_out = size(lon_out_1d(:)); nlat_out = size(lat_out_1d(:))
+        nlon_in  = size(lon_in_1d(:))-1;  nlat_in  = size(lat_in_1d(:))-1
+        nlon_out = size(lon_out_1d(:))-1; nlat_out = size(lat_out_1d(:))-1
         allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
         allocate(lon_dst_1d(nlon_out), lat_dst_1d(nlat_out))
         do i = 1, nlon_in-1
