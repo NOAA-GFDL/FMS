@@ -280,6 +280,13 @@ if test $hdf5_fpe_bug = yes; then
 NetCDF must be built with a HDF5 version other than 1.14.3 to support floating point exception traps.])
 fi
 
+rm -f test.nc
+
+# Check if we need a flag to not capitalize module output (needed with cray compiler)
+GX_FC_MOD_CASE_FLAG([FCFLAGS="$FCFLAGS $FC_MOD_CASE_FLAG"])
+
+# Check if new unit is supported
+GX_FC_08_OPEN_NEWUNIT([], [AC_MSG_ERROR([Compiler support for use of newunit argument is required to build FMS])])
 
 # Check if Fortran compiler has the Class, Character array assign bug
 GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
