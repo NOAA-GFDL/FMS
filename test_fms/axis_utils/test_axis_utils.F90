@@ -143,13 +143,23 @@ subroutine test_get_axis_cart
   character(:), allocatable :: var_name, attr_name, attr_value
   integer :: i, j
 
-  character(*), parameter, dimension(*) :: &
-    & special_axis_names_x = [character(12) :: "lon", "x", "degrees_e", "degrees_east", "degreese"], &
-    & special_axis_names_y = [character(13) :: "lat", "y", "degrees_n", "degrees_north", "degreesn"], &
-    & special_axis_names_z = [character(6) :: "depth", "height", "z", "cm", "m", "pa", "hpa"], &
-    & special_axis_names_t = [character(4) :: "time", "t", "sec", "min", "hou", "day", "mon", "yea"], &
-    & attr_names           = [character(14) :: "cartesian_axis", "axis"], &
-    & xyzt_uc              = ["X", "Y", "Z", "T"]
+  character(12), dimension(*), parameter :: special_axis_names_x = &
+  & [character(12) :: "lon", "x", "degrees_e", "degrees_east", "degreese"]
+
+  character(13), dimension(*), parameter :: special_axis_names_y = &
+  & [character(13) :: "lat", "y", "degrees_n", "degrees_north", "degreesn"]
+
+  character( 6), dimension(*), parameter :: special_axis_names_z = &
+  & [character(6) :: "depth", "height", "z", "cm", "m", "pa", "hpa"]
+
+  character( 4), dimension(*), parameter :: special_axis_names_t = &
+  & [character(4) :: "time", "t", "sec", "min", "hou", "day", "mon", "yea"]
+
+  character(14), dimension(*), parameter :: attr_names           = &
+  & [character(14) :: "cartesian_axis", "axis"]
+
+  character( 1), dimension(*), parameter :: xyzt_uc              = &
+  & ["X", "Y", "Z", "T"]
 
   call open_netcdf_w(test%fileobj)
   call register_axis(test%fileobj, "dim1", 1)
