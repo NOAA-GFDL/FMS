@@ -37,7 +37,7 @@ use mpp_domains_mod,  only : mpp_define_layout, mpp_define_domains, mpp_get_comp
 use mpp_domains_mod,  only : mpp_domains_init, domain2d
 use fms_mod,          only : check_nml_error, fms_init
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_del
-use horiz_interp_mod, only : horiz_interp, horiz_interp_type
+use horiz_interp_mod, only : horiz_interp, horiz_interp_type, assignment(=)
 use horiz_interp_type_mod, only: SPHERICAL
 use constants_mod,    only : constants_init, PI
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new
@@ -111,7 +111,7 @@ implicit none
   subroutine test_horiz_interp_spherical
     !! grid data
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
-    type(horiz_interp_type)                       :: interp_t
+    type(horiz_interp_type)                       :: interp_t, interp_copy
     !! input data
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
     !! output data
@@ -170,6 +170,7 @@ implicit none
         call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
         call horiz_interp(interp_t, data_src, data_dst)
         call horiz_interp_spherical_wght(interp_t, wghts, verbose=1)
+        interp_copy = interp_t
     else
         call horiz_interp(data_src, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, data_dst, interp_method="spherical")
     endif
@@ -185,7 +186,9 @@ implicit none
     enddo
     if(.not. test_solo) then
         call horiz_interp_del(interp_t)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp_t)
+        call check_dealloc(interp_copy)
     endif
     deallocate(data_src, data_dst)
     deallocate(lat_in_2D, lon_in_2D)
@@ -205,7 +208,7 @@ implicit none
     real(HI_TEST_KIND_), parameter :: D2R = real(PI,lkind)/180._lkind
     real(HI_TEST_KIND_), parameter :: R2D = 180._lkind/real(PI,lkind)
 
-    type(horiz_interp_type) :: interp
+    type(horiz_interp_type) :: interp, interp_copy
 
     if (decreasing_lat) then
         lon_src_beg = 360.0_lkind
@@ -256,6 +259,7 @@ implicit none
     if (.not. test_solo) then
         call horiz_interp_new(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
         call horiz_interp(interp, data_src, data_dst)
+        interp_copy = interp
     else
         call horiz_interp(data_src, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, data_dst, interp_method = "bilinear")
     endif
@@ -313,7 +317,9 @@ implicit none
     end do
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp)
+        call check_dealloc(interp_copy)
     endif
 
     ! --- 1dx2d version bilinear interpolation
@@ -329,6 +335,7 @@ implicit none
     if(.not. test_solo) then
         call horiz_interp_new(interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
         call horiz_interp(interp, data_src, data_dst)
+        interp_copy = interp
     else
         call horiz_interp(data_src, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, data_dst,interp_method="bilinear")
     endif
@@ -386,7 +393,9 @@ implicit none
     end do
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp)
+        call check_dealloc(interp_copy)
     endif
 
     if (decreasing_lat) return
@@ -405,6 +414,7 @@ implicit none
         call horiz_interp_new(interp,lon2D_src,lat2D_src,lon1D_dst(1:ni_src),lat1D_dst(1:nj_src), &
                               interp_method = "bilinear")
         call horiz_interp(interp, data_src, data_dst)
+        interp_copy = interp
     else
         call horiz_interp(data_src, lon2D_src, lat2d_src, lon1D_dst(1:ni_src),lat1D_dst(1:nj_src), data_dst, &
                           interp_method="bilinear")
@@ -502,7 +512,9 @@ implicit none
     end do
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp)
+        call check_dealloc(interp_copy)
     endif
 
     ! --- 2dx2d version bilinear interpolation
@@ -514,6 +526,7 @@ implicit none
     if(.not. test_solo) then
         call horiz_interp_new(interp, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
         call horiz_interp(interp, data_src, data_dst)
+        interp_copy = interp
     else
         call horiz_interp(data_src, lon2D_src, lat2d_src, lon2D_dst, lat2D_dst, data_dst, interp_method="bilinear")
     endif
@@ -601,7 +614,9 @@ implicit none
     endif
     if(.not. test_solo) then
         call horiz_interp_del(interp)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp)
+        call check_dealloc(interp_copy)
     endif
     !check that data are equal
     do j=1, nj_src
@@ -621,7 +636,7 @@ implicit none
     !! grid data
     real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
-    type(horiz_interp_type)                       :: interp_t
+    type(horiz_interp_type)                       :: interp_t, interp_copy
     !! input data
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
     !! output data
@@ -691,6 +706,7 @@ implicit none
     if(.not. test_solo) then
         call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d, interp_method="bicubic")
         call horiz_interp(interp_t, data_src, data_dst)
+        interp_copy = interp_t
     else
         call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, data_dst, interp_method="bicubic")
     endif
@@ -719,7 +735,9 @@ implicit none
             enddo
         enddo
         call horiz_interp_del(interp_t)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp_t)
+        call check_dealloc(interp_copy)
     endif
     do i=isc, iec
         do j=jsc, jec
@@ -737,6 +755,7 @@ implicit none
     if(.not. test_solo) then
         call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d, interp_method="bicubic")
         call horiz_interp(interp_t, data_src, data_dst)
+        interp_copy = interp_t
     else
         call horiz_interp(data_src, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, data_dst, interp_method="bicubic")
     endif
@@ -762,7 +781,9 @@ implicit none
             enddo
         enddo
         call horiz_interp_del(interp_t)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp_t)
+        call check_dealloc(interp_copy)
     endif
     do i=isc, iec
         do j=jsc, jec
@@ -789,7 +810,7 @@ implicit none
     real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
     real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
-    type(horiz_interp_type)           :: interp_conserve
+    type(horiz_interp_type)           :: interp_conserve, interp_copy
 
     allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )
     allocate(lon1D_src(ni_src+1), lat1D_src(nj_src+1), data_src(ni_src, nj_src) )
@@ -861,13 +882,17 @@ implicit none
         call horiz_interp_new(interp_conserve, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, &
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data1_dst)
+        interp_copy = interp_conserve
         call horiz_interp_del(interp_conserve)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp_conserve)
+        call check_dealloc(interp_copy)
     else
         call horiz_interp(data_src, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, data1_dst, &
                           interp_method="conservative")
     endif
     call mpp_clock_end(id1)
+
 
     ! --- 1dx2d version conservative interpolation
     call mpp_clock_begin(id2)
@@ -875,8 +900,11 @@ implicit none
         call horiz_interp_new(interp_conserve, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, &
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data2_dst)
+        interp_copy = interp_conserve
         call horiz_interp_del(interp_conserve)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp_conserve)
+        call check_dealloc(interp_copy)
     else
         call horiz_interp(data_src, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, data2_dst, &
                           interp_method="conservative")
@@ -889,8 +917,11 @@ implicit none
         call horiz_interp_new(interp_conserve, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, &
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data3_dst)
+        interp_copy = interp_conserve
         call horiz_interp_del(interp_conserve)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp_conserve)
+        call check_dealloc(interp_copy)
     else
         call horiz_interp(data_src, lon2D_src, lat2D_src, lon1D_dst, lat1D_dst, data3_dst, &
                           interp_method="conservative")
@@ -903,8 +934,11 @@ implicit none
         call horiz_interp_new(interp_conserve, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, &
                               interp_method = "conservative")
         call horiz_interp(interp_conserve, data_src, data4_dst)
+        interp_copy = interp_conserve
         call horiz_interp_del(interp_conserve)
+        call horiz_interp_del(interp_copy)
         call check_dealloc(interp_conserve)
+        call check_dealloc(interp_copy)
     else
         call horiz_interp(data_src, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, data4_dst, &
                           interp_method="conservative")
