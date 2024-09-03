@@ -809,6 +809,9 @@ subroutine get_instance_filename(name_in,name_out)
   length = len_trim(name_in)
   name_out = name_in(1:length)
 
+  !< If the filename_appendix is not set just return
+  if (trim(filename_appendix) .eq. "") return
+
   if(len_trim(filename_appendix) > 0) then
      !< If .tileXX is in the filename add the appendix before it
      if (has_domain_tile_string(name_in)) then
@@ -822,8 +825,14 @@ subroutine get_instance_filename(name_in,name_out)
      if ( i .ne. 0 ) then
         name_out = name_in(1:i-1)//'.'//trim(filename_appendix)//name_in(i:length)
      else
-     !< If .nc is not in the name, add the appendix at the end of the file
-        name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+        i = index(trim(name_in), ".yaml", back=.true.)
+        if (i .ne. 0) then
+          !< If .yaml is in the filename add the appendix before it
+          name_out = name_in(1:i-1)//'.'//trim(filename_appendix)//name_in(i:length)
+        else
+          !< If .nc  and .yaml are not in the name, add the appendix at the end of the file
+          name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+        endif
      end if
   end if
 
