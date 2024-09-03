@@ -40,11 +40,11 @@ program test_ens_runs
   type(time_type) :: Time             !< "Model" time
   type(time_type) :: Time_step        !< Time step for the "simulation"
   integer         :: i                !< For do loops
-  integer         :: npes
-  integer, allocatable :: pelist(:)
-  integer :: ensemble_id
-  integer :: ens_siz(6)
-  character(len=10) :: text
+  integer         :: npes             !< Number of pes in the current pelist
+  integer, allocatable :: pelist(:)   !< Full pelist
+  integer         :: ensemble_id      !< The ensemble id
+  integer         :: ens_siz(6)       !< The size of the ensemble
+  character(len=10) :: text           !< The filename appendix
 
   call fms_init
   call ensemble_manager_init
