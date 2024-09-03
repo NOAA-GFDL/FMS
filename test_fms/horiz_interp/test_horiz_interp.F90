@@ -125,7 +125,6 @@ implicit none
     real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
     real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
     real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
 
     ! set up longitude and latitude of source/destination grid.
@@ -206,7 +205,6 @@ implicit none
     real(HI_TEST_KIND_) :: lon_src_beg =  0._lkind,  lon_src_end = 360.0_lkind
     real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
     real(HI_TEST_KIND_), parameter :: D2R = real(PI,lkind)/180._lkind
-    real(HI_TEST_KIND_), parameter :: R2D = 180._lkind/real(PI,lkind)
 
     type(horiz_interp_type) :: interp, interp_copy
 
@@ -635,7 +633,6 @@ implicit none
   subroutine test_horiz_interp_bicubic
     !! grid data
     real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
     type(horiz_interp_type)                       :: interp_t, interp_copy
     !! input data
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
@@ -652,7 +649,6 @@ implicit none
     real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
     real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_)
     real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
 
     ! set up longitude and latitude of source/destination grid.
@@ -803,7 +799,6 @@ implicit none
     real(HI_TEST_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
     real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data1_solo, data2_solo, data3_solo, data4_solo
     real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
     real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
     real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
@@ -997,7 +992,7 @@ implicit none
     !! Also tests creating the types via the method-specific *_new routines to ensure
     !! they can be created/deleted without allocation errors.
     subroutine test_assignment()
-        type(horiz_interp_type) :: Interp_new1, Interp_new2, Interp_cp, intp_3
+        type(horiz_interp_type) :: Interp_new1, Interp_new2, Interp_cp
         real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D !< 1D grid data points
         real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D !< 2D grid data points
         real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D !< 1D grid output points
@@ -1014,7 +1009,6 @@ implicit none
         real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind !< destination grid
                                                                                   !! starting/ending latitudes
         real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind !< radians per degree
-        real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_) !< degrees per radian
         real(HI_TEST_KIND_), allocatable :: lon_src_1d(:), lat_src_1d(:) !< src data used for bicubic test
         real(HI_TEST_KIND_), allocatable :: lon_dst_1d(:), lat_dst_1d(:) !< destination data used for bicubic test
         integer :: icount !< index for setting the output array when taking midpoints for bilinear
