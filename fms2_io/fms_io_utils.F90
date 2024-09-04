@@ -811,9 +811,6 @@ subroutine get_instance_filename(name_in,name_out)
   length = len_trim(name_in)
   name_out = name_in(1:length)
 
-  !< If the filename_appendix is not set just return
-  if (trim(filename_appendix) .eq. "") return
-
   if(len_trim(filename_appendix) > 0) then
      !< If .tileXX is in the filename add the appendix before it
      if (has_domain_tile_string(name_in)) then

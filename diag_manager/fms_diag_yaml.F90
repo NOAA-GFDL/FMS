@@ -388,7 +388,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   ! If doing and ensemble or nest run add the filename appendix (ens_XX or nest_XX) to the filename
   call get_instance_filename("diag_table.yaml", yamlfilename)
-  if (trim(yamlfilename) .ne. "diag_table.yaml") then
+  if (index(trim(yamlfilename), "ens_") .ne. 0) then
     if (file_exists(yamlfilename) .and. file_exists("diag_table.yaml")) &
       call mpp_error(FATAL, "Both diag_table.yaml and "//trim(yamlfilename)//" exists, pick one!")
   endif

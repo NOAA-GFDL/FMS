@@ -615,7 +615,7 @@ else
 endif
 
 call get_instance_filename(tbl_name, filename)
-if (trim(filename) .ne. tbl_name) then
+if (index(trim(filename), "ens_") .ne. 0) then
   if (file_exists(filename) .and. file_exists(tbl_name)) &
     call mpp_error(FATAL, "Both "//trim(tbl_name)//" and "//trim(filename)//" exists, pick one!")
 endif
