@@ -190,7 +190,7 @@ use    mpp_mod, only : mpp_error,   &
 use    fms_mod, only : lowercase,   &
                        write_version_number, &
                        check_nml_error
-use fms2_io_mod, only: file_exists
+use fms2_io_mod, only: file_exists, get_instance_filename
 use platform_mod, only: r4_kind, r8_kind
 #ifdef use_yaml
 use fm_yaml_mod
@@ -604,18 +604,27 @@ integer                         :: subparamindex !< index to identify whether su
 logical                         :: fm_success !< logical for whether fm_change_list was a success
 logical                         :: subparams !< logical whether subparams exist in this iteration
 
+character(len=255) :: filename !< Name of the expected field_table.yaml
+
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table.yaml'
 else
    tbl_name = trim(table_name)
 endif
-if (.not. file_exists(trim(tbl_name))) then
+
+call get_instance_filename(tbl_name, filename)
+if (trim(filename) .ne. tbl_name) then
+  if (file_exists(filename) .and. file_exists(tbl_name)) &
+    call mpp_error(FATAL, "Both "//trim(tbl_name)//" and "//trim(filename)//" exists, pick one!")
+endif
+
+if (.not. file_exists(trim(filename))) then
   if(present(nfields)) nfields = 0
   return
 endif
 
 ! Construct my_table object
-call build_fmTable(my_table, trim(tbl_name))
+call build_fmTable(my_table, trim(filename))
 
 do h=1,size(my_table%types)
   do i=1,size(my_table%types(h)%models)
