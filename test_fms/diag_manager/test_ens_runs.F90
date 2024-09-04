@@ -45,6 +45,7 @@ program test_ens_runs
   integer         :: ensemble_id      !< The ensemble id
   integer         :: ens_siz(6)       !< The size of the ensemble
   character(len=10) :: text           !< The filename appendix
+  integer :: expected_ntimes
 
   call fms_init
   call ensemble_manager_init
@@ -63,9 +64,11 @@ program test_ens_runs
     !< PE 0 is the first ensemble
     ensemble_id = 1
     call mpp_set_current_pelist((/0/))
+    expected_ntimes = 48
   else
     ensemble_id = 2
     call mpp_set_current_pelist((/1/))
+    expected_ntimes = 24
   endif
 
   write( text,'(a,i2.2)' ) 'ens_', ensemble_id
@@ -82,7 +85,7 @@ program test_ens_runs
 
   do i = 1, ntimes
     Time = Time + Time_step
-    vdata = real(i) + real(ensemble_id/10.)
+    vdata = real(i)
 
     used = send_data(id_var0, vdata, Time)
     call diag_send_complete(Time_step)
@@ -103,20 +106,19 @@ program test_ens_runs
     integer               :: j           !< For looping
     character(len=255)    :: filename    !< Name of the diag file
 
-    call get_instance_filename("test_0days.nc", filename)
+    call get_instance_filename("test_ens.nc", filename)
     if (.not. open_file(fileobj, filename, "read")) &
       call mpp_error(FATAL, "Error opening file:"//trim(filename)//" to read")
 
     call get_dimension_size(fileobj, "time", var_size)
-    if (var_size .ne. 48) call mpp_error(FATAL, "The dimension of time in the file:test_0days is not the "//&
-                                                 "correct size!")
+    if (var_size .ne. expected_ntimes) call mpp_error(FATAL, "The dimension of time in the file:"//&
+                                                             "test_ens is not the correct size!")
     allocate(var_data(var_size))
     var_data = -999.99
 
     call read_data(fileobj, "var0", var_data)
     do j = 1, var_size
-      print *, var_data(j), (real(j)+ real(ensemble_id/10.))
-      if (var_data(j) .ne. (real(j)+ real(ensemble_id/10.)))&
+      if (var_data(j) .ne. real(j * ensemble_id))&
         call mpp_error(FATAL, "The variable data for var1 at time level:"//&
                               string(j)//" is not the correct value!")
     enddo

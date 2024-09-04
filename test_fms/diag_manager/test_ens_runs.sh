@@ -32,10 +32,10 @@ cat <<_EOF > diag_table.ens_01.yaml
 title: test_diag_manager_01
 base_date: 2 1 1 0 0 0
 diag_files:
-- file_name: test_0days
+- file_name: test_ens
   time_units: days
   unlimdim: time
-  freq: 0 days
+  freq: 1 hours
   varlist:
   - module: ocn_mod
     var_name: var0
@@ -47,10 +47,10 @@ cat <<_EOF > diag_table.ens_02.yaml
 title: test_diag_manager_01
 base_date: 2 1 1 0 0 0
 diag_files:
-- file_name: test_0days
+- file_name: test_ens
   time_units: days
   unlimdim: time
-  freq: 0 days
+  freq: 2 hours
   varlist:
   - module: ocn_mod
     var_name: var0
