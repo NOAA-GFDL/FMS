@@ -24,7 +24,7 @@
 !> @{
 module get_grid_version_mod
 use constants_mod, only: DEG_TO_RAD
-use platform_mod, only: r4_kind, r8_kind
+use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN
 use mpp_mod, only : mpp_error,FATAL,NOTE, mpp_min, mpp_max
 use mpp_domains_mod, only : domain2d, operator(.NE.),operator(.EQ.)
 use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain

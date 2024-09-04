@@ -43,7 +43,7 @@ use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string, &
                                 fms_f2c_string
-use platform_mod, only: r4_kind, i4_kind, r8_kind, i8_kind
+use platform_mod, only: r4_kind, i4_kind, r8_kind, i8_kind, FMS_FILE_LEN
 use fms_mod, only: lowercase
 use fms2_io_mod, only: file_exists, get_instance_filename
 
@@ -78,7 +78,7 @@ end type
 
 !> @brief type to hold an array of sorted diag_files
 type fileList_type
-  character(len=255), allocatable :: file_name(:) !< Array of diag_field
+  character(len=FMS_FILE_LEN), allocatable :: file_name(:) !< Array of diag_field
   type(c_ptr), allocatable :: file_pointer(:) !< Array of pointers
   integer, allocatable :: diag_file_indices(:)  !< Index of the file in the diag_file array
 end type
@@ -1533,7 +1533,7 @@ function get_diag_files_id(indices) &
 
   integer :: field_id !< Indices of the field in the diag_yaml field array
   integer :: i !< For do loops
-  character(len=120) :: filename !< Filename of the field
+  character(len=FMS_FILE_LEN) :: filename !< Filename of the field
   integer, allocatable :: file_indices(:) !< Indices of the file in the sorted variable_list
 
   allocate(file_id(size(indices)))

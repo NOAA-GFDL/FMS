@@ -28,7 +28,7 @@ module diag_integral_mod
 
 !###############################################################################
 
-use platform_mod,     only:  i8_kind
+use platform_mod,     only:  i8_kind, FMS_FILE_LEN
 use time_manager_mod, only:  time_type, get_time, set_time,  &
                              time_manager_init, &
                              operator(+),  operator(-),      &
@@ -135,16 +135,13 @@ private         &
 !-------------------------------------------------------------------------------
 !------ namelist -------
 
-integer, parameter  ::    &
-                      mxch = 64    !< maximum number of characters in
-                                   !! the optional output file name
 real(r8_kind)       ::    &
          output_interval = -1.0_r8_kind !< time interval at which integrals
                                         !! are to be output
 character(len=8)    ::    &
             time_units = 'hours'   !< time units associated with
                                    !! output_interval
-character(len=mxch) ::    &
+character(len=FMS_FILE_LEN) ::    &
                  file_name = ' '   !< optional integrals output file name
 logical             ::    &
            print_header = .true.   !< print a header for the integrals
@@ -1081,14 +1078,14 @@ end function vert_diag_integral
 !> @brief Adds .ens_## to the diag_integral.out file name
 !! @return character array updated_file_name
 function ensemble_file_name(fname) result(updated_file_name)
-     character (len=mxch), intent(inout) :: fname
-     character (len=mxch) :: updated_file_name
+     character (len=*), intent(inout) :: fname
+     character (len=FMS_FILE_LEN) :: updated_file_name
      integer :: ensemble_id_int
      character(len=7) :: ensemble_suffix
      character(len=2) :: ensemble_id_char
      integer :: i
      !> Make sure the file name short enough to handle adding the ensemble number
-     if (len(trim(fname)) > mxch-7) call error_mesg ('diag_integral_mod :: ensemble_file_name',  &
+     if (len(trim(fname)) > FMS_FILE_LEN-7) call error_mesg ('diag_integral_mod :: ensemble_file_name',  &
           trim(fname)//" is too long and can not support adding ens_XX.  Please shorten the "//&
           "file_name in the diag_integral_nml", FATAL)
      !> Get the ensemble ID and convert it to a string
@@ -1107,7 +1104,7 @@ function ensemble_file_name(fname) result(updated_file_name)
      !> Loop through to find the last period
           do i=len(trim(fname)),2,-1
                if (fname(i:i) == ".") then
-                    updated_file_name = fname(1:i-1)//trim(ensemble_suffix)//fname(i:mxch)
+                    updated_file_name = fname(1:i-1)//trim(ensemble_suffix)//fname(i:len(fname))
                     return
                endif
           enddo

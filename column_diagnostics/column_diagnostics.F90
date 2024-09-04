@@ -32,7 +32,7 @@ use time_manager_mod,       only:  time_manager_init, month_name, &
                                    get_date, time_type
 use constants_mod,          only:  constants_init, PI, RADIAN
 use mpp_mod,                only:  input_nml_file
-use platform_mod,           only:  r4_kind, r8_kind
+use platform_mod,           only:  r4_kind, r8_kind, FMS_FILE_LEN
 !-------------------------------------------------------------------
 
 implicit none
