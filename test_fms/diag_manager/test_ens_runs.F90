@@ -116,8 +116,9 @@ program test_ens_runs
     call read_data(fileobj, "var0", var_data)
     do j = 1, var_size
       print *, var_data(j), (real(j)+ real(ensemble_id/10.))
-      if (var_data(j) .ne. (real(j)+ real(ensemble_id/10.))) call mpp_error(FATAL, "The variable data for var1 at time level:"//&
-                                                          string(j)//" is not the correct value!")
+      if (var_data(j) .ne. (real(j)+ real(ensemble_id/10.)))&
+        call mpp_error(FATAL, "The variable data for var1 at time level:"//&
+                              string(j)//" is not the correct value!")
     enddo
 
     call close_file(fileobj)

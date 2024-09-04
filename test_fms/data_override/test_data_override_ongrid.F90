@@ -722,8 +722,9 @@ subroutine ensemble_test()
   runoff = 999._lkind
   Time = set_date(1,1,5,0,0,0)
   call data_override('OCN','runoff',runoff, Time)
-  !< You are getting the data when time=4, the data at time=3 is 3+ensemble_id. and at time=5 is 4+ensemble_id., so the expected result
-  !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
+  !< You are getting the data when time=4, the data at time=3 is 3+ensemble_id. and at time=5 is 4+ensemble_id.,
+  !! so the expected result is the average of the 2 (because this is is an "ongrid" case and there
+  !! is no horizontal interpolation).
   expected_result = (3._lkind + real(ensemble_id,kind=lkind) + 4._lkind + real(ensemble_id,kind=lkind)) / 2._lkind
   call compare_data(Domain, runoff, expected_result)
 

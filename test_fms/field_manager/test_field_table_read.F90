@@ -51,7 +51,7 @@ integer, allocatable :: pelist(:)
 integer :: ens_siz(6)
 integer :: ensemble_id
 character(len=10) :: text
-integer, parameter :: default_test = 0 
+integer, parameter :: default_test = 0
 integer, parameter :: ensemble_test = 1
 
 ! namelist parameters
@@ -103,7 +103,7 @@ if (nfields .ne. nfields_expected) &
 select case (test_case)
 case (ensemble_test)
   call mpp_set_current_pelist(pelist)
-end select 
+end select
 
 call fms_end
 end program test_field_table_read
