@@ -596,8 +596,10 @@ subroutine read_table_yaml(data_table)
 
     ! If doing and ensemble or nest run add the filename appendix (ens_XX or nest_XX) to the filename
     call get_instance_filename("data_table.yaml", filename)
-    if (file_exists(filename) .and. file_exists("data_table.yaml")) &
-      call mpp_error(FATAL, "Both data_table.yaml and "//trim(filename)//" exists, pick one!")
+    if (trim(filename) .ne. "data_table.yaml") then
+      if (file_exists(filename) .and. file_exists("data_table.yaml")) &
+        call mpp_error(FATAL, "Both data_table.yaml and "//trim(filename)//" exists, pick one!")
+    endif
 
     file_id = open_and_parse_file(trim(filename))
 
