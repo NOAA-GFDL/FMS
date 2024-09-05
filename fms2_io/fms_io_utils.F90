@@ -678,7 +678,8 @@ subroutine get_mosaic_tile_file_sg(file_in, file_out, is_no_domain, domain, tile
   type(domain2D),   intent(in), optional, target :: domain !< domain provided
   integer,          intent(in), optional  :: tile_count !< tile count
 
-  character(len=256)                             :: basefile, tilename
+  character(len=FMS_FILE_LEN)                    :: basefile
+  character(len=6)                               :: tilename
   character(len=2)                               :: my_tile_str
   integer                                        :: lens, ntiles, ntileMe, tile, my_tile_id
   integer, dimension(:), allocatable             :: tile_id
@@ -735,7 +736,8 @@ subroutine get_mosaic_tile_file_ug(file_in, file_out, domain)
   character(len=*), intent(out)          :: file_out !< name of tile file
   type(domainUG),   intent(in), optional :: domain !< domain provided
 
-  character(len=256)                     :: basefile, tilename
+  character(len=FMS_FILE_LEN)            :: basefile
+  character(len=6)                       :: tilename
   character(len=2)                       :: my_tile_str
   integer                                :: lens, ntiles, my_tile_id
 

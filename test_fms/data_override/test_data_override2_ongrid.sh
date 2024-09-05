@@ -52,12 +52,13 @@ use_data_table_yaml=.True.
 _EOF
 cat <<_EOF > data_table.yaml
 data_table:
- - gridname          : OCN
-   fieldname_code    : runoff
-   fieldname_file    : runoff
-   file_name         : INPUT/runoff.daitren.clim.1440x1080.v20180328.nc
-   interpol_method   : none
-   factor            : 1.0
+ - grid_name: OCN
+   fieldname_in_model: runoff
+   override_file:
+   - fieldname_in_file: runoff
+     file_name: INPUT/runoff.daitren.clim.1440x1080.v20180328.nc
+     interp_method: none
+   factor: 1.0
 _EOF
 fi
 

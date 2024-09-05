@@ -117,7 +117,7 @@ logical                          :: create_t
 integer                          :: i
 integer                          :: index_t
 real(r8_kind), allocatable, dimension(:) :: temp_r_value
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)      :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p
 type (field_def), pointer, save  :: temp_field_p

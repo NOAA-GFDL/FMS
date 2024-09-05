@@ -27,6 +27,7 @@
 #   GX_FC_CRAY_POINTER_FLAG([ACTION-IF-SUCCESS], [ACTION-IF-FAILURE = FAILURE])
 #   GX_FC_INTERNAL_FILE_NML()
 #   GX_FC_CHECK_MOD(module-name, [only], [action-if-found], [action-if-not-found])
+#   GX_FC_MOD_OUTPUT_CASE([ACTION-IF-SUCCESS], [ACTION-IF-FAILURE])
 #
 # DESCRIPTION
 #
@@ -405,3 +406,54 @@ AC_DEFUN([_GX_FORTRAN_PP_SRCEXT_POP], [
 AS_VAR_SET_IF([_gx_fortran_pp_srcext_save], [ac_ext=${_gx_fortran_pp_srcext_save}], [ac_ext="f"])
 unset _gx_fortran_pp_srcext_save
 ])# _GX_FORTRAN_PP_SRCEXT_POP
+
+
+# GX_FC_MOD_CASE_FLAG([ACTION-IF-SUCCESS], [ACTION-IF-FAILURE])
+# -----------------------------------------------------------------------------
+# Checks if the output .mod files are in uppercase by default.
+# This has only been seen with cray compiler. A flag is required to disable the uppercase output
+# and instead follow the case of the module name as written in the source file.
+#
+# Sets the variable FC_MOD_CASE_FLAG to hold the flag that disables the behavior.
+#
+AC_DEFUN([GX_FC_MOD_CASE_FLAG],[
+AC_LANG_PUSH([Fortran])
+AC_FC_SRCEXT(F90)
+AC_CACHE_CHECK([if Fortran flag needed for module output case], [gx_cv_fc_mod_case_flag],[
+gx_cv_fc_mod_case_flag="unknown"
+gx_mod_case_flag_FCFLAGS_save=$FCFLAGS
+
+FCFLAGS="$gx_mod_case_flag_FCFLAGS_save -c"
+AC_COMPILE_IFELSE([[module foo
+end module foo]],
+                  [],
+                  AC_MSG_ERROR(["Failed to compile test module with -c"]))
+
+# if output .mod file is capitalized, add the flag and check that it works
+if test -f "FOO.${FC_MODEXT}"; then
+  FCFLAGS="$gx_mod_case_flag_FCFLAGS_save -c -ef"
+  AC_COMPILE_IFELSE([[module foo
+                    end module mod]],
+    [])
+  if test -f "foo.${FC_MODEXT}"; then
+    gx_cv_fc_mod_case_flag="-ef"
+  fi
+else
+  gx_cv_fc_mod_case_flag=no
+fi
+
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+FCFLAGS=$gx_mod_case_flag_FCFLAGS_save
+])
+
+if test "x$gx_cv_fc_mod_case_flag" = "xunknown"; then
+  m4_default([$2],
+              [AC_MSG_ERROR([No working flag found to disable module filename capitalization])])
+elif test "x$gx_cv_fc_mod_case_flag" != "xno"; then
+  FC_MOD_CASE_FLAG=$gx_cv_fc_mod_case_flag
+  AC_SUBST([FC_MOD_CASE_FLAG])
+  $1
+fi
+AC_LANG_POP([Fortran])
+])
+

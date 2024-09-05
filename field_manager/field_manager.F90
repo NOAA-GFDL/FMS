@@ -191,7 +191,7 @@ use    fms_mod, only : lowercase,   &
                        write_version_number, &
                        check_nml_error
 use fms2_io_mod, only: file_exists
-use platform_mod, only: r4_kind, r8_kind
+use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
 #ifdef use_yaml
 use fm_yaml_mod
 #endif
@@ -258,8 +258,10 @@ private :: make_list           ! (list_p, name) return field pointer
 
 !> The length of a character string representing the field name.
 integer, parameter, public :: fm_field_name_len = 48
+!! TODO this should be removed in favor of the global FMS_PATH_LEN
+!! when possible, currently used in ocean_BGC and land_lad2
 !> The length of a character string representing the field path.
-integer, parameter, public :: fm_path_name_len  = 512
+integer, parameter, public :: fm_path_name_len  = FMS_PATH_LEN
 !> The length of a character string representing character values for the field.
 integer, parameter, public :: fm_string_len     = 1024
 !> The length of a character string representing the various types that the values of the field can take.
@@ -509,7 +511,7 @@ end type field_def
 
 type(field_mgr_type), dimension(:), allocatable, private :: fields !< fields of field_mgr_type
 
-character(len=fm_path_name_len)  :: loop_list
+character(len=FMS_PATH_LEN)  :: loop_list
 character(len=fm_type_name_len)  :: field_type_name(num_types)
 character(len=fm_field_name_len) :: save_root_name
 ! The string set is the set of characters.
@@ -588,14 +590,14 @@ end subroutine field_manager_init
 !> @brief Routine to read and parse the field table yaml
 subroutine read_field_table_yaml(nfields, table_name)
 integer,                      intent(out), optional :: nfields    !< number of fields
-character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
+character(len=*),  intent(in),  optional :: table_name !< Name of the field table file, default is 'field_table.yaml'
 
-character(len=fm_string_len)    :: tbl_name !< field_table yaml file
+character(len=FMS_FILE_LEN)     :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
 integer                         :: h, i, j, k, l, m !< dummy integer buffer
-type (fmTable_t)                :: my_table       !< the field table
+type (fmTable_t)                :: my_table !< the field table
 integer                         :: model !< model assocaited with the current field
-character(len=fm_path_name_len) :: list_name !< field_manager list name
+character(len=FMS_PATH_LEN)     :: list_name !< field_manager list name
 character(len=fm_string_len)    :: subparamvalue !< subparam value to be used when defining new name
 character(len=fm_string_len)    :: fm_yaml_null !< useful hack when OG subparam does not contain an equals sign
 integer                         :: current_field !< field index within loop
@@ -614,14 +616,12 @@ if (.not. file_exists(trim(tbl_name))) then
   return
 endif
 
+! Construct my_table object
+call build_fmTable(my_table, trim(tbl_name))
 
-! Define my_table object and read in number of fields
-my_table = fmTable_t(trim(tbl_name))
-call my_table%get_blocks
-call my_table%create_children
-do h=1,my_table%nchildren
-  do i=1,my_table%children(h)%nchildren
-    do j=1,my_table%children(h)%children(i)%nchildren
+do h=1,size(my_table%types)
+  do i=1,size(my_table%types(h)%models)
+    do j=1,size(my_table%types(h)%models(i)%variables)
       num_fields = num_fields + 1
     end do
   end do
@@ -630,9 +630,9 @@ end do
 allocate(fields(num_fields))
 
 current_field = 0
-do h=1,my_table%nchildren
-  do i=1,my_table%children(h)%nchildren
-    select case (my_table%children(h)%children(i)%name)
+do h=1,size(my_table%types)
+  do i=1,size(my_table%types(h)%models)
+    select case (my_table%types(h)%models(i)%name)
     case ('coupler_mod')
        model = MODEL_COUPLER
     case ('atmos_mod')
@@ -645,58 +645,58 @@ do h=1,my_table%nchildren
        model = MODEL_ICE
     case default
       call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : &
-        &'//trim(my_table%children(h)%children(i)%name))
+        &'//trim(my_table%types(h)%models(i)%name))
     end select
-    do j=1,my_table%children(h)%children(i)%nchildren
+    do j=1,size(my_table%types(h)%models(i)%variables)
       current_field = current_field + 1
-      list_name = list_sep//lowercase(trim(my_table%children(h)%children(i)%name))//list_sep//&
-               lowercase(trim(my_table%children(h)%name))//list_sep//&
-               lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
+      list_name = list_sep//lowercase(trim(my_table%types(h)%models(i)%name))//list_sep//&
+               lowercase(trim(my_table%types(h)%name))//list_sep//&
+               lowercase(trim(my_table%types(h)%models(i)%variables(j)%name))
       index_list_name = fm_new_list(list_name, create = .true.)
       if ( index_list_name == NO_FIELD ) &
         call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
       fm_success = fm_change_list(list_name)
       fields(current_field)%model       = model
-      fields(current_field)%field_name  = lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
-      fields(current_field)%field_type  = lowercase(trim(my_table%children(h)%name))
-      fields(current_field)%num_methods = size(my_table%children(h)%children(i)%children(j)%key_ids)
+      fields(current_field)%field_name  = lowercase(trim(my_table%types(h)%models(i)%variables(j)%name))
+      fields(current_field)%field_type  = lowercase(trim(my_table%types(h)%name))
+      fields(current_field)%num_methods = size(my_table%types(h)%models(i)%variables(j)%keys)
       allocate(fields(current_field)%methods(fields(current_field)%num_methods))
       if(fields(current_field)%num_methods.gt.0) then
-        if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
-        do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
+        subparams = (size(my_table%types(h)%models(i)%variables(j)%attributes) .gt. 0)
+        do k=1,size(my_table%types(h)%models(i)%variables(j)%keys)
           fields(current_field)%methods(k)%method_type = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+            lowercase(trim(my_table%types(h)%models(i)%variables(j)%keys(k)))
           fields(current_field)%methods(k)%method_name = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+            lowercase(trim(my_table%types(h)%models(i)%variables(j)%values(k)))
           if (.not.subparams) then
-            call new_name_yaml(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
-              my_table%children(h)%children(i)%children(j)%values(k) )
+            call new_name(list_name, my_table%types(h)%models(i)%variables(j)%keys(k),&
+              my_table%types(h)%models(i)%variables(j)%values(k) )
           else
             subparamindex=-1
-            do l=1,my_table%children(h)%children(i)%children(j)%nchildren
-              if(lowercase(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname)).eq.&
+            do l=1,size(my_table%types(h)%models(i)%variables(j)%attributes)
+              if(lowercase(trim(my_table%types(h)%models(i)%variables(j)%attributes(l)%paramname)).eq.&
                 lowercase(trim(fields(current_field)%methods(k)%method_type))) then
                   subparamindex = l
                   exit
               end if
             end do
             if (subparamindex.eq.-1) then
-              call new_name_yaml(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
-                my_table%children(h)%children(i)%children(j)%values(k) )
+              call new_name(list_name, my_table%types(h)%models(i)%variables(j)%keys(k),&
+                my_table%types(h)%models(i)%variables(j)%values(k) )
             else
-              do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
+              do m=1,size(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%keys)
                 method_control = " "
                 subparamvalue = " "
-                if (trim(my_table%children(h)%children(i)%children(j)%values(k)).eq.'fm_yaml_null') then
+                if (trim(my_table%types(h)%models(i)%variables(j)%values(k)).eq.'fm_yaml_null') then
                   fm_yaml_null = ''
                 else
-                  fm_yaml_null = trim(my_table%children(h)%children(i)%children(j)%values(k))//'/'
+                  fm_yaml_null = trim(my_table%types(h)%models(i)%variables(j)%values(k))//'/'
                 end if
-                method_control = trim(my_table%children(h)%children(i)%children(j)%keys(k))//"/"//&
+                method_control = trim(my_table%types(h)%models(i)%variables(j)%keys(k))//"/"//&
                   &trim(fm_yaml_null)//&
-                  &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
-                subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
-                call new_name_yaml(list_name, method_control, subparamvalue)
+                  &trim(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%keys(m))
+                subparamvalue = trim(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%values(m))
+                call new_name(list_name, method_control, subparamvalue)
               end do
             end if
           end if
@@ -707,7 +707,6 @@ do h=1,my_table%nchildren
 end do
 
 if (present(nfields)) nfields = num_fields
-call my_table%destruct
 end subroutine read_field_table_yaml
 
 !> @brief Subroutine to add new values to list parameters.
@@ -860,7 +859,7 @@ character(len=fm_string_len), intent(in), optional :: table_name !< Name of the 
 
 character(len=1024)              :: record
 character(len=fm_string_len)     :: control_str
-character(len=fm_path_name_len)  :: list_name
+character(len=FMS_PATH_LEN)  :: list_name
 character(len=fm_string_len)     :: method_name
 character(len=fm_string_len)     :: name_str
 character(len=fm_string_len)     :: type_str
@@ -1908,8 +1907,8 @@ character(len=*), intent(in)     :: path !< path to the list of interest
 type (field_def), pointer        :: relative_p !< pointer to the list to which "path" is relative to
 logical,          intent(in)     :: create !< If the list does not exist, it will be created if set to true
 
-character(len=fm_path_name_len)  :: working_path
-character(len=fm_path_name_len)  :: rest
+character(len=FMS_PATH_LEN)  :: working_path
+character(len=FMS_PATH_LEN)  :: rest
 character(len=fm_field_name_len) :: this_list
 integer                          :: i, out_unit
 type (field_def), pointer, save  :: working_path_p
@@ -2175,7 +2174,7 @@ end function  fm_get_index
 !> @returns The path corresponding to the current list
 function  fm_get_current_list()                                        &
           result (path)
-character(len=fm_path_name_len) :: path
+character(len=FMS_PATH_LEN) :: path
 
 type (field_def), pointer, save :: temp_list_p
 !        Initialize the field manager if needed
@@ -2585,7 +2584,7 @@ logical,          intent(in), optional :: keep !< If present and true, make this
 
 logical                          :: create_t
 logical                          :: keep_t
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p
 integer                         :: out_unit
@@ -2655,7 +2654,7 @@ logical                          :: create_t
 integer                          :: i
 integer                          :: index_t
 integer, pointer, dimension(:)   :: temp_i_value
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p
 type (field_def), pointer, save  :: temp_field_p
@@ -2791,7 +2790,7 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
-character(len=fm_path_name_len)      :: path
+character(len=FMS_PATH_LEN)      :: path
 character(len=fm_field_name_len)     :: base
 integer                              :: i
 integer                              :: index_t
@@ -2925,7 +2924,7 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
 
 character(len=fm_string_len), dimension(:), pointer :: temp_s_value
-character(len=fm_path_name_len)                     :: path
+character(len=FMS_PATH_LEN)                     :: path
 character(len=fm_field_name_len)                    :: base
 integer                                             :: i
 integer                                             :: index_t
@@ -3089,7 +3088,7 @@ character(len=*), intent(in)     :: name !< The name of a list that the user wis
 type (field_def), pointer        :: this_list_p !< A pointer to a list that serves as the base point
                                                 !! for searching for name
 
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_p
 
@@ -3125,7 +3124,7 @@ character(len=*), intent(in)     :: oldname !< The name of a field that the user
 character(len=*), intent(in)     :: newname !< The name that the user wishes to change the name of
                                             !! the field to.
 
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: list_p
 type (field_def), pointer, save  :: temp_p
@@ -3266,9 +3265,9 @@ character(len=*), intent(in)  :: name !< name of a list that the user wishes to 
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 
-character(len=fm_path_name_len) :: path
-character(len=fm_path_name_len) :: base
-character(len=fm_path_name_len) :: name_loc
+character(len=FMS_PATH_LEN) :: path
+character(len=FMS_PATH_LEN) :: base
+character(len=FMS_PATH_LEN) :: name_loc
 logical                         :: recursive_t
 type (field_def), pointer, save :: temp_list_p
 type (field_def), pointer, save :: temp_value_p
@@ -3574,7 +3573,7 @@ integer,          intent(inout)             :: num_meth !< The number of methods
 character(len=*), intent(out), dimension(:) :: method !< The methods associated with the field pointed to by list_p
 character(len=*), intent(out), dimension(:) :: control !< The control parameters for the methods found
 
-character(len=fm_path_name_len) :: scratch
+character(len=FMS_PATH_LEN) :: scratch
 integer                         :: i
 integer                         :: n
 type (field_def), pointer, save :: this_field_p

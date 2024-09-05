@@ -43,7 +43,7 @@ use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, stdout
 use, intrinsic :: iso_c_binding, only : c_ptr, c_null_char
 use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_sort_this, fms_find_unique, string, &
                                 fms_f2c_string
-use platform_mod, only: r4_kind, i4_kind, r8_kind, i8_kind
+use platform_mod, only: r4_kind, i4_kind, r8_kind, i8_kind, FMS_FILE_LEN
 use fms_mod, only: lowercase
 
 implicit none
@@ -77,7 +77,7 @@ end type
 
 !> @brief type to hold an array of sorted diag_files
 type fileList_type
-  character(len=255), allocatable :: file_name(:) !< Array of diag_field
+  character(len=FMS_FILE_LEN), allocatable :: file_name(:) !< Array of diag_field
   type(c_ptr), allocatable :: file_pointer(:) !< Array of pointers
   integer, allocatable :: diag_file_indices(:)  !< Index of the file in the diag_file array
 end type
@@ -139,6 +139,15 @@ type diagYamlFiles_type
                                                                          !! and values(dim=2) to be
                                                                          !! added as global meta data to
                                                                          !! the file
+  character (len=:),    allocatable :: default_var_precision !< The precision for all of the variables in the file
+                                                             !! This may be overriden if the precison was defined
+                                                             !! at the variable level
+  character (len=:),    allocatable :: default_var_reduction !< The reduction for all of the variables in the file
+                                                             !! This may be overriden if the reduction was defined at
+                                                             !! the variable level
+  character (len=:),    allocatable :: default_var_module    !< The module for all of the variables in the file
+                                                             !! This may be overriden if the modules was defined at the
+                                                             !! variable level
  contains
 
  !> All getter functions (functions named get_x(), for member field named x)
@@ -468,7 +477,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
       diag_yaml%diag_fields(var_count)%var_axes_names = ""
       diag_yaml%diag_fields(var_count)%var_file_is_subregional = diag_yaml%diag_files(file_count)%has_file_sub_region()
 
-      call fill_in_diag_fields(diag_yaml_id, var_ids(j), diag_yaml%diag_fields(var_count), allow_averages)
+      call fill_in_diag_fields(diag_yaml_id, diag_yaml%diag_files(file_count), var_ids(j), &
+        diag_yaml%diag_fields(var_count), allow_averages)
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
@@ -604,12 +614,19 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
                          &" has multiple global_meta blocks")
   endif
 
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "reduction", yaml_fileobj%default_var_reduction, &
+    is_optional=.true.)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "kind", yaml_fileobj%default_var_precision, &
+    is_optional=.true.)
+  call diag_get_value_from_key(diag_yaml_id, diag_file_id, "module", yaml_fileobj%default_var_module, &
+    is_optional=.true.)
 end subroutine
 
 !> @brief Fills in a diagYamlFilesVar_type with the contents of a variable block in
 !! diag_table.yaml
-subroutine fill_in_diag_fields(diag_file_id, var_id, field, allow_averages)
+subroutine fill_in_diag_fields(diag_file_id, yaml_fileobj, var_id, field, allow_averages)
   integer,                        intent(in)  :: diag_file_id !< Id of the file block in the yaml file
+  type(diagYamlFiles_type),       intent(in)  :: yaml_fileobj !< The yaml file obj for the variables
   integer,                        intent(in)  :: var_id       !< Id of the variable block in the yaml file
   type(diagYamlFilesVar_type), intent(inout)  :: field        !< diagYamlFilesVar_type obj to read the contents into
   logical,                        intent(in)  :: allow_averages !< .True. if averages are allowed for this file
@@ -623,8 +640,17 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field, allow_averages)
   character(len=:), ALLOCATABLE :: buffer    !< buffer to store the reduction method as it is read from the yaml
 
   call diag_get_value_from_key(diag_file_id, var_id, "var_name", field%var_varname)
-  call diag_get_value_from_key(diag_file_id, var_id, "reduction", buffer)
+
+  if (yaml_fileobj%default_var_reduction .eq. "") then
+    !! If there is no default, the reduction method is required
+    call diag_get_value_from_key(diag_file_id, var_id, "reduction", buffer)
+  else
+    call diag_get_value_from_key(diag_file_id, var_id, "reduction", buffer, is_optional=.true.)
+    !! If the reduction was not set for the variable, override it with the default
+    if (trim(buffer) .eq. "") buffer = yaml_fileobj%default_var_reduction
+  endif
   call set_field_reduction(field, buffer)
+  deallocate(buffer)
 
   if (.not. allow_averages) then
     if (field%var_reduction .ne. time_none) &
@@ -633,9 +659,27 @@ subroutine fill_in_diag_fields(diag_file_id, var_id, field, allow_averages)
         "Check your diag_table.yaml for the field:"//trim(field%var_varname))
   endif
 
-  call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
-  deallocate(buffer)
-  call diag_get_value_from_key(diag_file_id, var_id, "kind", buffer)
+  if (yaml_fileobj%default_var_module .eq. "") then
+    call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
+  else
+    call diag_get_value_from_key(diag_file_id, var_id, "module", buffer, is_optional=.true.)
+    !! If the module was set for the variable, override it with the default
+    if (trim(buffer) .eq. "") then
+      field%var_module = yaml_fileobj%default_var_module
+    else
+      field%var_module = trim(buffer)
+    endif
+    deallocate(buffer)
+  endif
+
+  if (yaml_fileobj%default_var_precision .eq. "") then
+    !! If there is no default, the kind is required
+    call diag_get_value_from_key(diag_file_id, var_id, "kind", buffer)
+  else
+    call diag_get_value_from_key(diag_file_id, var_id, "kind", buffer, is_optional=.true.)
+    !! If the kind was set for the variable, override it with the default
+    if (trim(buffer) .eq. "") buffer = yaml_fileobj%default_var_precision
+  endif
   call set_field_kind(field, buffer)
 
   call diag_get_value_from_key(diag_file_id, var_id, "output_name", field%var_outname, is_optional=.true.)
@@ -936,8 +980,8 @@ result(time_units_int)
     time_units_int = DIAG_YEARS
   case default
     time_units_int =DIAG_NULL
-    call mpp_error(FATAL, trim(error_msg)//" is not valid. Acceptable values are "&
-                   "seconds, minutes, hours, days, months, years")
+    call mpp_error(FATAL, trim(error_msg)//" is not valid. Acceptable values are &
+                          &seconds, minutes, hours, days, months, years")
   end select
 end function set_valid_time_units
 
@@ -1481,7 +1525,7 @@ function get_diag_files_id(indices) &
 
   integer :: field_id !< Indices of the field in the diag_yaml field array
   integer :: i !< For do loops
-  character(len=120) :: filename !< Filename of the field
+  character(len=FMS_FILE_LEN) :: filename !< Filename of the field
   integer, allocatable :: file_indices(:) !< Indices of the file in the sorted variable_list
 
   allocate(file_id(size(indices)))

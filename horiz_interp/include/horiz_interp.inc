@@ -840,4 +840,52 @@
 
     return
  end function IS_LAT_LON_
+
+ !> Subroutine for reading a weight file and use it to fill in the horiz interp type
+!! for the bilinear interpolation method.
+ subroutine HORIZ_INTERP_READ_WEIGHTS_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
+                                       weight_file_source, interp_method, isw, iew, jsw, jew, nglon, nglat)
+   type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
+   character(len=*),        intent(in)    :: weight_filename    !< Name of the weight file
+   real(FMS_HI_KIND_),      intent(in)    :: lat_out(:,:)       !< Output (model) latitude
+   real(FMS_HI_KIND_),      intent(in)    :: lon_out(:,:)       !< Output (model) longitude
+   real(FMS_HI_KIND_),      intent(in)    :: lat_in(:)          !< Input (data) latitude
+   real(FMS_HI_KIND_),      intent(in)    :: lon_in(:)          !< Input (data) longitude
+   character(len=*),        intent(in)    :: weight_file_source !< Source of the weight file
+   character(len=*),        intent(in)    :: interp_method      !< The interp method to use
+   integer,                 intent(in)    :: isw, iew, jsw, jew !< Starting and ending indices of the compute domain
+   integer,                 intent(in)    :: nglon              !< Number of longitudes in the global domain
+   integer,                 intent(in)    :: nglat              !< Number of latitudes in the globl domain
+
+   integer                           :: i, j                 !< For do loops
+   integer                           :: nlon_in              !< Number of longitude in the data
+   integer                           :: nlat_in              !< Number of latitude in the data grid
+   real(FMS_HI_KIND_), allocatable   :: lon_src_1d(:)        !< Center points of the longitude data grid
+   real(FMS_HI_KIND_), allocatable   :: lat_src_1d(:)        !< Center points of the lattiude data grid
+   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
+
+   select case (trim(interp_method))
+   case ("bilinear")
+     !! This is to reproduce the behavior in horiz_interp_new
+     !! The subroutine assumes that the data grid (lon_in, lat_in) are
+     !! the edges and not the centers.
+     !! Data_override passes in the edges, which are calculated using the axis_edges subroutine
+     nlon_in  = size(lon_in(:))-1;  nlat_in  = size(lat_in(:))-1
+     allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
+     do i = 1, nlon_in
+       lon_src_1d(i) = (lon_in(i) + lon_in(i+1)) * 0.5_kindl
+     enddo
+     do j = 1, nlat_in
+       lat_src_1d(j) = (lat_in(j) + lat_in(j+1)) * 0.5_kindl
+     enddo
+
+     call horiz_interp_read_weights_bilinear(Interp, weight_filename, lon_out, lat_out, &
+      lon_src_1d, lat_src_1d, weight_file_source, interp_method, &
+      isw, iew, jsw, jew, nglon, nglat)
+     deallocate(lon_src_1d,lat_src_1d)
+   case default
+     call mpp_error(FATAL, "Reading weight from file is not supported for the "//&
+      trim(interp_method)//" method. It is currently only supported for bilinear")
+   end select
+ end subroutine HORIZ_INTERP_READ_WEIGHTS_
 !> @}

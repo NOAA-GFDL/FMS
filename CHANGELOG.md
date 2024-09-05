@@ -6,6 +6,36 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2024.03] - 2024-08-22
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Added
+- DATA_OVERRIDE: Adds a namelist flag `use_center_grid_points` which, if true, enables reading the centroid values from the grid spec for ocean and ice models. This fixes issues with grid files that have longitudes ranges from 0:180 and then -180:0, but will cause answer changes if enabled. (#1566)
+- DATA_OVERRIDE: Adds support for reading external weight files. Currently only supported for fregrid generated files while using the bilinear interpolation method. Documentation for this feature can be found in `data_override/README.md`. (#1556)
+- PLATFORM: Adds two constants `FMS_PATH_LEN` and `FMS_FILE_LEN` and uses it across the code for any file path or file name character strings. They default to 1024 and 255 but can also be set by the `FMS_MAX_PATH_LEN` and `FMS_MAX_FILE_LEN` CPP macros. (#1567)
+- CMAKE: Adds Cmake option to support building shared libraries (#1559)
+
+### Changed
+- DIAG_MANAGER: Simplifies the diag_table.yaml format by allowing `module`, `reduction`, and `kind` to be set on a file level, with the ability to override for a specific field. (#1545)
+- FIELD_MANAGER: Updated and refactored the `fm_yaml_mod` module for a new table format to remove the `subparams` key. (#1547)
+- DATA_OVERRIDE: Updates the yaml format to be improve readablity and to be more consistent in key names. Additional documentation for the new format can be found in `data_override/README.md`. (#1556)
+
+### Fixed
+- PARSER: Adds error code checks to the yaml parser to prevent code from hanging on invalid yamls (#1563)
+- PARSER: Adds ability to read in generic blocks to support `field_manager` updates. (#1519)
+- CRAY COMPILER SUPPORT: Updated any multi-line string literals to be compatible with the cray compiler. (#1554)
+
+### Removed
+- DIAG_MANAGER: Removed diag_table schemas from FMS and moved them to the `gfdl_msd_schemas` repository, and updates the `diag_manager` documentation markdowns. (#1543)
+
+### Tag Commit Hashes
+- 2024.03-beta1 a5de6a54abeb00be2443db4cf07aa267b7faa724
+
 ## [2024.02] - 2024-07-11
 
 ### Known Issues

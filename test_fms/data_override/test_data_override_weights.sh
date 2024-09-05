@@ -25,48 +25,52 @@
 . ../test-lib.sh
 
 output_dir
-rm -rf data_table data_table.yaml input.nml input_base.nml
+[ ! -d "INPUT" ] && mkdir -p "INPUT"
 
-if [ ! -z $parser_skip ]; then
-  cat <<_EOF > input.nml
-&data_override_nml
-use_data_table_yaml=.False.
-/
-&test_data_override_ongrid_nml
-  test_case = 3
-/
-_EOF
-  printf '"OCN", "co2", "co2", "./INPUT/scalar.nc", "none" ,  1.0' | cat > data_table
-else
-cat <<_EOF > input.nml
-&data_override_nml
-use_data_table_yaml=.True.
-/
-&test_data_override_ongrid_nml
-  test_case = 3
-/
-_EOF
 cat <<_EOF > data_table.yaml
 data_table:
- - grid_name: OCN
-   fieldname_in_model: co2
-   override_file:
-   - fieldname_in_file: co2
-     file_name: INPUT/scalar.nc
-     interp_method: none
-   factor            : 1.0
+- grid_name: OCN
+  fieldname_in_model: runoff_obs
+  override_file:
+  - fieldname_in_file: runoff
+    file_name: ./INPUT/bilinear_increasing.nc
+    interp_method: bilinear
+  factor: 1.0
+- grid_name: OCN
+  fieldname_in_model: runoff_obs_weights
+  override_file:
+  - fieldname_in_file: runoff
+    file_name: ./INPUT/bilinear_increasing.nc
+    interp_method: bilinear
+    external_weights:
+    - file_name: ./INPUT/remap_file.nc
+      source: fregrid
+  factor: 1.0
 _EOF
+
+cat <<_EOF > input.nml
+&data_override_nml
+  use_data_table_yaml = .True.
+/
+
+&test_data_override_ongrid_nml
+  test_case = 4
+  nlon = 5
+  nlat = 6
+  layout = 1, 2
+/
+_EOF
+
+#The test only runs with yaml
+if [ -z $parser_skip ]; then
+  for KIND in r4 r8
+  do
+    rm -rf INPUT/.
+    test_expect_success "test_data_override with and without weight files  -yaml (${KIND})" '
+      mpirun -n 2 ../test_data_override_ongrid_${KIND}
+      '
+  done
 fi
 
-[ ! -d "INPUT" ] && mkdir -p "INPUT"
-for KIND in r4 r8
-do
-rm -rf INPUT/*
-test_expect_success "data_override scalar field (${KIND})" '
-  mpirun -n 6 ../test_data_override_ongrid_${KIND}
-'
-
-done
-rm -rf INPUT *.nc # remove any leftover files to reduce size
-
+rm -rf INPUT
 test_done

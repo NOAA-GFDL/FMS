@@ -50,6 +50,7 @@ use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase, NOTE
+use platform_mod, only: FMS_FILE_LEN
 
 implicit none
 private
@@ -1018,8 +1019,8 @@ subroutine add_start_time(this, start_time)
     !! this%start_time was already updated so make sure it is the same for the current variable
     !! or error out
     if (this%start_time .ne. start_time)&
-      call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have"&
-      &" different start_time")
+      call mpp_error(FATAL, "The variables associated with the file:"//this%get_file_fname()//" have &
+                            &different start_time")
   else
     !> If the this%start_time is equal to the diag_init_time,
     !! simply update it with the start_time and set up the *_output variables
@@ -1115,10 +1116,10 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   class(fmsDiagFile_type), pointer     :: diag_file      !< Diag_file object to open
   class(diagDomain_t),     pointer     :: domain         !< The domain used in the file
   character(len=:),        allocatable :: diag_file_name !< The file name as defined in the yaml
-  character(len=128)                   :: base_name      !< The file name as defined in the yaml
+  character(len=FMS_FILE_LEN)          :: base_name      !< The file name as defined in the yaml
                                                          !! without the wildcard definition
-  character(len=128)                   :: file_name      !< The file name as it will be written to disk
-  character(len=128)                   :: temp_name      !< Temp variable to store the file_name
+  character(len=FMS_FILE_LEN)          :: file_name      !< The file name as it will be written to disk
+  character(len=FMS_FILE_LEN)          :: temp_name      !< Temp variable to store the file_name
   character(len=128)                   :: start_date     !< The start_time as a string that will be added to
                                                          !! the begining of the filename (start_date.filename)
   character(len=128)                   :: suffix         !< The current time as a string that will be added to
@@ -1694,7 +1695,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   logical            :: is_regional   !< Flag indicating if the field is in a regional file
   character(len=255) :: cell_measures !< cell_measures attributes for the field
   logical            :: need_associated_files !< .True. if the 'associated_files' global attribute is needed
-  character(len=255) :: associated_files !< Associated files attribute to add
+  character(len=FMS_FILE_LEN) :: associated_files !< Associated files attribute to add
 
   is_regional = this%is_regional()
 

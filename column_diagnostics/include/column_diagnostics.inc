@@ -99,7 +99,7 @@ integer, dimension(:), intent(out)   :: diag_units            !< unit number for
       real(FMS_CD_KIND_) ::  ref_lat
       real(FMS_CD_KIND_) ::  current_distance
       character(len=8)   ::  char         !< character string for diaganostic column index
-      character(len=32)  ::  filename     !< filename for output file for diagnostic column
+      character(len=FMS_FILE_LEN)  ::  filename     !< filename for output file for diagnostic column
       logical            ::  allow_ij_input
       logical            ::  open_file
       integer            ::  io

@@ -21,13 +21,13 @@
 ! modules. These modules are not intended to be used directly - they should be
 ! used through the data_override_mod API. See data_override.F90 for details.
 
-use platform_mod, only: r4_kind, r8_kind
+use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN
 use yaml_parser_mod
 use constants_mod, only: DEG_TO_RAD
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
 use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
-                             assignment(=)
+                             horiz_interp_read_weights
 use time_interp_external2_mod, only: time_interp_external_init, &
                                      time_interp_external, &
                                      time_interp_external_bridge, get_time_axis, &
@@ -61,14 +61,17 @@ type data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code  !< fieldname used in user's code (model)
    character(len=128) :: fieldname_file  !< fieldname used in the netcdf data file
-   character(len=512) :: file_name       !< name of netCDF data file
+   character(len=FMS_PATH_LEN) :: file_name       !< name of netCDF data file
    character(len=128) :: interpol_method !< interpolation method (default "bilinear")
+   logical            :: ext_weights
+   character(len=128) :: ext_weights_file_name
+   character(len=128) :: ext_weights_source
    real(FMS_DATA_OVERRIDE_KIND_)        :: factor          !< For unit conversion, default=1, see OVERVIEW above
    real(FMS_DATA_OVERRIDE_KIND_)        :: lon_start, lon_end, lat_start, lat_end
    integer            :: region_type
    logical            :: multifile = .false.
-   character(len=512) :: prev_file_name   !< name of netCDF data file for previous segment
-   character(len=512) :: next_file_name   !< name of netCDF data file for next segment
+   character(len=FMS_PATH_LEN) :: prev_file_name   !< name of netCDF data file for previous segment
+   character(len=FMS_PATH_LEN) :: next_file_name   !< name of netCDF data file for next segment
    type(time_type), dimension(:), allocatable :: time_records
    type(time_type), dimension(:), allocatable :: time_prev_records
    type(time_type), dimension(:), allocatable :: time_next_records
@@ -94,10 +97,21 @@ type override_type
    integer                          :: is_src, ie_src, js_src, je_src
 end type override_type
 
+!> Private type for holding horiz_interp_type for a weight file
+!! This is needed so that if variables use the same weight file,
+!! then we won't have to read the weight file again
+!> @ingroup data_override_mod
+type fmsExternalWeights_type
+  character(len=:), allocatable :: weight_filename !< Name of the weight file
+  type(horiz_interp_type)       :: horiz_interp    !< Horiz interp type read in from the weight file
+end type fmsExternalWeights_type
+
 integer, parameter :: lkind = FMS_DATA_OVERRIDE_KIND_
 integer, parameter :: max_table=100, max_array=100
 
 integer            :: table_size !< actual size of data table
+integer            :: nweight_files !< Number of weight files that have been used
+type(fmsExternalWeights_type), allocatable, target :: external_weights(:) !< External weights types
 logical            :: module_is_initialized = .FALSE.
 
 type(domain2D) :: ocn_domain,atm_domain,lnd_domain, ice_domain
@@ -124,9 +138,15 @@ logical                                    :: reproduce_null_char_bug = .false. 
                                               !! to reproduce the mpp_io bug where lat/lon_bnd were
                                               !! not read correctly if null characters are present in
                                               !! the netcdf file
+logical                                    :: use_center_grid_points=.false. !< Flag indicating
+                                              !! whether or not to use the centroid values of the
+                                              !! supergrid from the grid file as opposed to calculating it
+                                              !! by taking the average of the four corner points.
+                                              !! This is only relevant to OCN and ICE grids.
 logical                                    :: use_data_table_yaml = .false.
 
-namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_data_table_yaml
+namelist /data_override_nml/ debug_data_override, grid_center_bug, reproduce_null_char_bug, use_data_table_yaml, &
+                             use_center_grid_points
 
 public :: DATA_OVERRIDE_INIT_IMPL_, DATA_OVERRIDE_UNSET_ATM_, DATA_OVERRIDE_UNSET_OCN_, &
         & DATA_OVERRIDE_UNSET_LND_, DATA_OVERRIDE_UNSET_ICE_, DATA_OVERRIDE_0D_, &
@@ -152,7 +172,7 @@ subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_i
   type (domain2d), intent(in), optional :: Land_domain_in   !> Land domain
   type(domainUG) , intent(in), optional :: Land_domainUG_in !> Land domain, unstructured grid
 
-  character(len=128)    :: grid_file = 'INPUT/grid_spec.nc'
+  character(len=18), parameter    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: is,ie,js,je,use_get_grid_version
   integer               :: i, iunit, io_status, ierr
   logical               :: atm_on, ocn_on, lnd_on, ice_on, lndUG_on
@@ -217,6 +237,8 @@ end if
        if (file_exists("data_table")) &
          call mpp_error(FATAL, "You cannot have the legacy data_table if use_data_table_yaml=.true.")
        call read_table_yaml(data_table)
+       allocate(external_weights(table_size))
+       nweight_files = 0
     else
        if (file_exists("data_table.yaml"))&
          call mpp_error(FATAL, "You cannot have the yaml data_table if use_data_table_yaml=.false.")
@@ -324,7 +346,7 @@ end if
        call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
        allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
        call get_grid_version_2(fileobj, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
-                               min_glo_lon_ocn, max_glo_lon_ocn )
+                               min_glo_lon_ocn, max_glo_lon_ocn, use_center_grid_points)
    endif
 
    if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
@@ -338,7 +360,7 @@ end if
        call mpp_get_compute_domain( ice_domain,is,ie,js,je)
        allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
        call get_grid_version_2(fileobj, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
-                               min_glo_lon_ice, max_glo_lon_ice )
+                               min_glo_lon_ice, max_glo_lon_ice, use_center_grid_points )
    endif
  end if
  if(use_get_grid_version .EQ. 2) then
@@ -546,6 +568,7 @@ subroutine read_table(data_table)
           data_entry%lat_end   = -1.0_lkind
           data_entry%region_type = NO_REGION
        endif
+       data_entry%ext_weights = .false.
        data_table(ntable) = data_entry
     enddo
     call mpp_error(FATAL,'too many enries in data_table')
@@ -564,7 +587,8 @@ subroutine read_table_yaml(data_table)
     type(data_type), dimension(:), allocatable, intent(out) :: data_table !< Contents of the data_table.yaml
 
     integer, allocatable :: entry_id(:)
-    integer :: nentries
+    integer :: sub_block_id(1), sub2_block_id(1)
+    integer :: nentries, mentries
     integer :: i
     character(len=50) :: buffer
     integer :: file_id
@@ -579,53 +603,90 @@ subroutine read_table_yaml(data_table)
       call get_block_ids(file_id, "data_table", entry_id)
 
       do i = 1, nentries
-         call get_value_from_key(file_id, entry_id(i), "gridname", data_table(i)%gridname)
-         call check_for_valid_gridname(data_table(i)%gridname)
-         call get_value_from_key(file_id, entry_id(i), "fieldname_code", data_table(i)%fieldname_code)
+        call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
+        call get_value_from_key(file_id, entry_id(i), "grid_name", data_table(i)%gridname)
+        call check_for_valid_gridname(data_table(i)%gridname)
+        call get_value_from_key(file_id, entry_id(i), "fieldname_in_model", data_table(i)%fieldname_code)
 
-         data_table(i)%fieldname_file = ""
-         call get_value_from_key(file_id, entry_id(i), "fieldname_file", data_table(i)%fieldname_file, &
-           & is_optional=.true.)
+        mentries = get_num_blocks(file_id, "override_file", parent_block_id=entry_id(i))
+        data_table(i)%file_name = ""
+        data_table(i)%fieldname_file = ""
+        data_table(i)%interpol_method = "none"
+        data_table(i)%multifile = .false.
+        data_table(i)%ext_weights = .false.
+        data_table(i)%region_type = NO_REGION
+        data_table(i)%prev_file_name = ""
+        data_table(i)%next_file_name = ""
+        data_table(i)%ext_weights_file_name = ""
+        data_table(i)%ext_weights_source = ""
 
-         data_table(i)%multifile = .false.
-         call get_value_from_key(file_id, entry_id(i), "is_multi_file", data_table(i)%multifile, &
-           & is_optional=.true.)
+        ! If there is no override_file block, then not overriding from file, so move on to the next entry
+        if (mentries .eq. 0) cycle
 
-         if (data_table(i)%multifile) then
-          data_table(i)%prev_file_name = ""
-          data_table(i)%next_file_name = ""
-          call get_value_from_key(file_id, entry_id(i), "prev_file_name", data_table(i)%prev_file_name, &
-            & is_optional=.true.)
-          call get_value_from_key(file_id, entry_id(i), "next_file_name", data_table(i)%next_file_name, &
-            & is_optional=.true.)
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many override_file blocks in data table. "//&
+              "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+              trim(data_table(i)%fieldname_code))
+        call get_block_ids(file_id, "override_file", sub_block_id, parent_block_id=entry_id(i))
+
+        call get_value_from_key(file_id, sub_block_id(1), "file_name", data_table(i)%file_name)
+        call get_value_from_key(file_id, sub_block_id(1), "fieldname_in_file", data_table(i)%fieldname_file)
+        call get_value_from_key(file_id, sub_block_id(1), "interp_method", data_table(i)%interpol_method)
+        call check_interpol_method(data_table(i)%interpol_method, data_table(i)%file_name, &
+              & data_table(i)%fieldname_file)
+
+        mentries = get_num_blocks(file_id, "multi_file", parent_block_id=sub_block_id(1))
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many multi_file blocks in tata table. "//&
+              "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+              trim(data_table(i)%fieldname_code))
+
+        if(mentries.gt.0) data_table(i)%multifile = .true.
+
+        if (data_table(i)%multifile) then
+          call get_block_ids(file_id, "multi_file", sub2_block_id, parent_block_id=sub_block_id(1))
+          call get_value_from_key(file_id, sub2_block_id(1), "prev_file_name", data_table(i)%prev_file_name)
+          call get_value_from_key(file_id, sub2_block_id(1), "next_file_name", data_table(i)%next_file_name)
           if (trim(data_table(i)%prev_file_name) .eq. "" .and. trim(data_table(i)%next_file_name) .eq. "") &
             call mpp_error(FATAL, "The prev_file_name and next_file_name must be present if is_multi_file. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
-         endif
+        endif
 
-         data_table(i)%file_name = ""
-         call get_value_from_key(file_id, entry_id(i), "file_name", data_table(i)%file_name, &
-           & is_optional=.true.)
+        mentries = get_num_blocks(file_id, "external_weights", parent_block_id=sub_block_id(1))
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many external_weight blocks in data table. "//&
+              "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+              trim(data_table(i)%fieldname_code))
 
-         data_table(i)%interpol_method = "none"
-         call get_value_from_key(file_id, entry_id(i), "interpol_method", data_table(i)%interpol_method, &
-           & is_optional=.true.)
-         call check_interpol_method(data_table(i)%interpol_method, data_table(i)%file_name, &
-            data_table(i)%fieldname_file)
+        if(mentries.gt.0) data_table(i)%ext_weights = .true.
 
-         call get_value_from_key(file_id, entry_id(i), "factor", data_table(i)%factor)
-         buffer = ""
-         call get_value_from_key(file_id, entry_id(i), "region_type", buffer, is_optional=.true.)
-         call check_and_set_region_type(buffer, data_table(i)%region_type)
+        if (data_table(i)%ext_weights) then
+          call get_block_ids(file_id, "external_weights", sub2_block_id, parent_block_id=sub_block_id(1))
+          call get_value_from_key(file_id, sub2_block_id(1), "file_name", data_table(i)%ext_weights_file_name)
+          call get_value_from_key(file_id, sub2_block_id(1), "source", data_table(i)%ext_weights_source)
+          if (trim(data_table(i)%ext_weights_file_name) .eq. "" .and. trim(data_table(i)%ext_weights_source) .eq. "") &
+            call mpp_error(FATAL, "The file_name and source must be present when using external weights"//&
+              "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+              trim(data_table(i)%fieldname_code))
+        endif
 
+        mentries = get_num_blocks(file_id, "subregion", parent_block_id=entry_id(i))
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many subregion blocks in data table. "//&
+          "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
+          trim(data_table(i)%fieldname_code))
+
+        buffer = ""
+        if(mentries.gt.0) then
+          call get_block_ids(file_id, "subregion", sub_block_id, parent_block_id=entry_id(i))
+          call get_value_from_key(file_id, sub_block_id(1), "type", buffer)
+        endif
+
+        call check_and_set_region_type(buffer, data_table(i)%region_type)
         if (data_table(i)%region_type .ne. NO_REGION) then
-          call get_value_from_key(file_id, entry_id(i), "lon_start", data_table(i)%lon_start, is_optional=.true.)
-          call get_value_from_key(file_id, entry_id(i), "lon_end", data_table(i)%lon_end, is_optional=.true.)
-          call get_value_from_key(file_id, entry_id(i), "lat_start", data_table(i)%lat_start, is_optional=.true.)
-          call get_value_from_key(file_id, entry_id(i), "lat_end", data_table(i)%lat_end, is_optional=.true.)
+          call get_value_from_key(file_id, sub_block_id(1), "lon_start", data_table(i)%lon_start)
+          call get_value_from_key(file_id, sub_block_id(1), "lon_end", data_table(i)%lon_end)
+          call get_value_from_key(file_id, sub_block_id(1), "lat_start", data_table(i)%lat_start)
+          call get_value_from_key(file_id, sub_block_id(1), "lat_end", data_table(i)%lat_end)
           call check_valid_lat_lon(data_table(i)%lon_start, data_table(i)%lon_end, &
-            data_table(i)%lat_start, data_table(i)%lat_end)
+                                   data_table(i)%lat_start, data_table(i)%lat_end)
         endif
       end do
 
@@ -786,9 +847,9 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
 
   type(time_type)    :: first_record !< first record of "current" file
   type(time_type)    :: last_record !< last record of "current" file
-  character(len=512) :: filename !< file containing source data
-  character(len=512) :: prevfilename !< file containing previous source data, when using multiple files
-  character(len=512) :: nextfilename !< file containing next source data, when using multiple files
+  character(len=FMS_PATH_LEN) :: filename !< file containing source data
+  character(len=FMS_PATH_LEN) :: prevfilename !< file containing previous source data, when using multiple files
+  character(len=FMS_PATH_LEN) :: nextfilename !< file containing next source data, when using multiple files
   character(len=128) :: fieldname !< fieldname used in the data file
   integer :: index1 !< field index in data_table
   integer            :: dims(4)
@@ -980,12 +1041,12 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
   logical, dimension(:,:,:),   allocatable :: mask_out
 
-  character(len=512) :: filename !< file containing source data
-  character(len=512) :: filename2 !< file containing source data
-  character(len=512) :: prevfilename !< file containing source data for previous file
-  character(len=512) :: prevfilename2 !< file containing source data for previous file
-  character(len=512) :: nextfilename !< file containing source data for next file
-  character(len=512) :: nextfilename2 !< file containing source data for next file
+  character(len=FMS_PATH_LEN) :: filename !< file containing source data
+  character(len=FMS_PATH_LEN) :: filename2 !< file containing source data
+  character(len=FMS_PATH_LEN) :: prevfilename !< file containing source data for previous file
+  character(len=FMS_PATH_LEN) :: prevfilename2 !< file containing source data for previous file
+  character(len=FMS_PATH_LEN) :: nextfilename !< file containing source data for next file
+  character(len=FMS_PATH_LEN) :: nextfilename2 !< file containing source data for next file
   character(len=128) :: fieldname !< fieldname used in the data file
   integer            :: i,j
   integer            :: dims(4)
@@ -1026,6 +1087,9 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
   integer :: endingj !< Ending y index for the compute domain relative to the input buffer
   integer :: nhalox !< Number of halos in the x direction
   integer :: nhaloy !< Number of halos in the y direction
+  logical :: found_weight_file !< .True. if the weight file has already been read
+  integer :: nglat !< Number of latitudes in the global domain
+  integer :: nglon !< Number of longitudes in the global domain
 
   use_comp_domain = .false.
   if(.not.module_is_initialized) &
@@ -1418,18 +1482,45 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
         call mpp_error(FATAL,'error: gridname not recognized in data_override')
      end select
 
-     select case (data_table(index1)%interpol_method)
-     case ('bilinear')
+     if (data_table(index1)%ext_weights) then
+      found_weight_file = .false.
+      do i = 1, nweight_files
+        if (external_weights(i)%weight_filename .eq. trim(data_table(index1)%ext_weights_file_name)) then
+          override_array(curr_position)%horz_interp(window_id) = external_weights(i)%horiz_interp
+          found_weight_file = .true.
+          exit
+        endif
+      enddo
+
+      if (.not. found_weight_file) then
+        nweight_files = nweight_files + 1
+        external_weights(nweight_files)%weight_filename = trim(data_table(index1)%ext_weights_file_name)
+
+        call mpp_get_global_domain(domain, xsize=nglon, ysize=nglat)
+        call horiz_interp_read_weights(external_weights(nweight_files)%horiz_interp, &
+          external_weights(nweight_files)%weight_filename, &
+          lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), &
+          override_array(curr_position)%lon_in(is_src:ie_src+1), &
+          override_array(curr_position)%lat_in(js_src:je_src+1), &
+          data_table(index1)%ext_weights_source, &
+          data_table(index1)%interpol_method, isw, iew, jsw, jew, nglon, nglat)
+
+        override_array(curr_position)%horz_interp(window_id) = external_weights(nweight_files)%horiz_interp
+      endif
+     else
+      select case (data_table(index1)%interpol_method)
+      case ('bilinear')
         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bilinear")
-     case ('bicubic')
+      case ('bicubic')
         call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bicubic")
-     end select
+      end select
+    endif
      override_array(curr_position)%need_compute(window_id) = .false.
   endif
 

@@ -983,6 +983,7 @@ implicit none
         real(HI_TEST_KIND_) :: R2D = 180._lkind/real(PI,HI_TEST_KIND_) !< degrees per radian
         real(HI_TEST_KIND_), allocatable :: lon_src_1d(:), lat_src_1d(:) !< src data used for bicubic test
         real(HI_TEST_KIND_), allocatable :: lon_dst_1d(:), lat_dst_1d(:) !< destination data used for bicubic test
+        integer :: icount !< index for setting the output array when taking midpoints for bilinear
 
 
         ! set up longitude and latitude of source/destination grid.
@@ -1104,17 +1105,21 @@ implicit none
         nlon_out = size(lon_out_1d(:))-1; nlat_out = size(lat_out_1d(:))-1
         allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
         allocate(lon_dst_1d(nlon_out), lat_dst_1d(nlat_out))
-        do i = 1, nlon_in
+        do i = 1, nlon_in-1
           lon_src_1d(i) = (lon_in_1d(i) + lon_in_1d(i+1)) * 0.5_lkind
         enddo
-        do j = 1, nlat_in
+        do j = 1, nlat_in-1
           lat_src_1d(j) = (lat_in_1d(j) + lat_in_1d(j+1)) * 0.5_lkind
         enddo
-        do i = 1, nlon_out
-          lon_dst_1d(i) = (lon_out_1d(i) + lon_out_1d(i+1)) * 0.5_lkind
+        icount = 1
+        do i = isc, iec
+          lon_dst_1d(icount) = (lon_out_1d(i) + lon_out_1d(i+1)) * 0.5_lkind
+          icount = icount + 1
         enddo
-        do j = 1, nlat_out
-          lat_dst_1d(j) = (lat_out_1d(j) + lat_out_1d(j+1)) * 0.5_lkind
+        icount = 1
+        do j = jsc, jec
+          lat_dst_1d(icount) = (lat_out_1d(j) + lat_out_1d(j+1)) * 0.5_lkind
+          icount = icount + 1
         enddo
         call horiz_interp_bicubic_new(Interp_new1, lon_src_1d, lat_src_1d, lon_out_2d, lat_out_2d)
         call horiz_interp_del(Interp_new1)

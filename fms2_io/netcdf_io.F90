@@ -126,7 +126,7 @@ endtype dimension_information
 !> @brief Netcdf file type.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
-  character(len=256) :: path !< File path.
+  character(len=FMS_PATH_LEN) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
   character(len=256) :: nc_format !< Netcdf file format.
@@ -569,8 +569,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   integer :: err
   integer :: netcdf4 !< Query the file for the _IsNetcdf4 global attribute in the event
                      !! that the open for collective reads fails
-  character(len=256) :: buf !< Filename with .res in the filename if it is a restart
-  character(len=256) :: buf2 !< Filename with the filename appendix if there is one
+  character(len=FMS_PATH_LEN) :: buf !< File path with .res in the filename if it is a restart
+  character(len=FMS_PATH_LEN) :: buf2 !< File path with the filename appendix if there is one
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
@@ -1090,8 +1090,8 @@ subroutine netcdf_save_restart(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("write_restart:: file "//trim(fileobj%path)//" is not a restart file."&
-              &" Be sure the file was opened with is_restart=.true.")
+    call error("write_restart:: file "//trim(fileobj%path)//" is not a restart file. &
+               &Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -1132,8 +1132,8 @@ subroutine netcdf_restore_state(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("read_restart:: file "//trim(fileobj%path)//" is not a restart file."&
-              &" Be sure the file was opened with is_restart=.true.")
+    call error("read_restart:: file "//trim(fileobj%path)//" is not a restart file. &
+               &Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -1283,8 +1283,8 @@ subroutine get_dimension_names(fileobj, names, broadcast)
     ndims = get_num_dimensions(fileobj, broadcast=.false.)
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions."&
-                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of dimensions. &
+                   &Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
@@ -1304,8 +1304,8 @@ subroutine get_dimension_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions."&
-                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of dimensions. &
+                   &Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
@@ -1507,8 +1507,8 @@ subroutine get_variable_names(fileobj, names, broadcast)
     nvars = get_num_variables(fileobj, broadcast=.false.)
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("'names' has to be the same size of the number of variables."&
-                   &" Check your get_variable_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of variables. &
+                   &Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
@@ -1528,8 +1528,8 @@ subroutine get_variable_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("'names' has to be the same size of the number of variables."&
-                   &" Check your get_variable_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of variables. &
+                   &Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
@@ -1641,9 +1641,9 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
     call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'names' has to be the same size of the number of dimensions for the variable. &
+                   &Check your get_variable_dimension_names call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)&
@@ -1664,9 +1664,9 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'names' has to be the same size of the number of dimensions for the variable. &
+                   & Check your get_variable_dimension_names call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)&
@@ -1707,9 +1707,9 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
     call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable. &
+                   &Check your get_variable_size call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
@@ -1729,9 +1729,9 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable. &
+                   &Check your get_variable_size call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
@@ -2227,8 +2227,8 @@ function is_registered_to_restart(fileobj, variable_name) &
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file. "&
-              //"Add is_restart=.true. to your open_file call")
+    call error("file "//trim(fileobj%path)//" is not a restart file. &
+               &Add is_restart=.true. to your open_file call")
   endif
   is_registered = .false.
   do i = 1, fileobj%num_restart_vars
@@ -2320,8 +2320,8 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
   integer :: i !< No description
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file. "&
-               &"Add is_restart=.true. to your open_file call")
+    call error("file "//trim(fileobj%path)//" is not a restart file. &
+               &Add is_restart=.true. to your open_file call")
   endif
 
  !> Loop through the variables, root pe gathers the data from the other pes and writes out the checksum.

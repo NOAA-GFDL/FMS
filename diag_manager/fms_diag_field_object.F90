@@ -383,18 +383,18 @@ subroutine fms_register_diag_field_obj &
 
   if (present(area)) then
     if (area < 0) call mpp_error("fms_register_diag_field_obj", &
-                     "The area id passed with field_name"//trim(varname)//" has not been registered."&
-                     "Check that there is a register_diag_field call for the AREA measure and that is in the"&
-                     "diag_table.yaml", FATAL)
+                     "The area id passed with field_name"//trim(varname)//" has not been registered. &
+                     &Check that there is a register_diag_field call for the AREA measure and that is in the &
+                     &diag_table.yaml", FATAL)
     allocate(this%area)
     this%area = area
   endif
 
   if (present(volume)) then
     if (volume < 0) call mpp_error("fms_register_diag_field_obj", &
-                     "The volume id passed with field_name"//trim(varname)//" has not been registered."&
-                     "Check that there is a register_diag_field call for the VOLUME measure and that is in the"&
-                     "diag_table.yaml", FATAL)
+                     "The volume id passed with field_name"//trim(varname)//" has not been registered. &
+                     &Check that there is a register_diag_field call for the VOLUME measure and that is in the &
+                     &diag_table.yaml", FATAL)
     allocate(this%volume)
     this%volume = volume
   endif
@@ -1610,9 +1610,9 @@ subroutine add_area_volume(this, area, volume)
     if (area > 0) then
       this%area = area
     else
-      call mpp_error(FATAL, "diag_field_add_cell_measures: the area id is not valid. "&
-                           &"Verify that the area_id passed in to the field:"//this%varname//&
-                           &" is valid and that the field is registered and in the diag_table.yaml")
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the area id is not valid. &
+                            &Verify that the area_id passed in to the field:"//this%varname// &
+                            " is valid and that the field is registered and in the diag_table.yaml")
     endif
   endif
 
@@ -1620,9 +1620,9 @@ subroutine add_area_volume(this, area, volume)
     if (volume > 0) then
       this%volume = volume
     else
-      call mpp_error(FATAL, "diag_field_add_cell_measures: the volume id is not valid. "&
-                           &"Verify that the volume_id passed in to the field:"//this%varname//&
-                           &" is valid and that the field is registered and in the diag_table.yaml")
+      call mpp_error(FATAL, "diag_field_add_cell_measures: the volume id is not valid. &
+                            &Verify that the volume_id passed in to the field:"//this%varname// &
+                            " is valid and that the field is registered and in the diag_table.yaml")
     endif
   endif
 
@@ -1899,7 +1899,7 @@ subroutine generate_associated_files_att(this, att, start_time)
   type(time_type),                   intent(in)            :: start_time !< The start_time for the field's file
 
   character(len=:), allocatable :: field_name !< Name of the area/volume field
-  character(len=MAX_STR_LEN) :: file_name !< Name of the file the area/volume field is in!
+  character(len=FMS_FILE_LEN) :: file_name !< Name of the file the area/volume field is in!
   character(len=128) :: start_date !< Start date to append to the begining of the filename
 
   integer :: year, month, day, hour, minute, second
