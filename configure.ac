@@ -533,6 +533,7 @@ AC_CONFIG_FILES([
   test_fms/random_numbers/Makefile
   test_fms/topography/Makefile
   test_fms/column_diagnostics/Makefile
+  test_fms/block_control/Makefile
   FMS.pc
   ])
 
