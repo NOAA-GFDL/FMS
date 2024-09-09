@@ -49,7 +49,7 @@ program test_block_control
   if (message) &
     call mpp_error(FATAL, "test_block_control::define_blocks did not output the warning message"//&
                           " about uneven blocks")
-  
+
   !Expected size of each block for every PE
   ncy = (/11, 10, 11/)
   expected_endingy = jsc-1
