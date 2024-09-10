@@ -135,6 +135,7 @@ program test_reduction_methods
     ddata = allocate_buffer(isd, ied, jsd, jed, nz, nw)
     call init_buffer(ddata, isc, iec, jsc, jec, 2) !< The halos never get set
   case (test_openmp)
+    message = .true.
     if (mpp_pe() .eq. mpp_root_pe()) print *, "Testing the send_data calls with openmp blocks"
      call define_blocks ('testing_model', my_block, isc, iec, jsc, jec, kpts=0, &
                          nx_block=1, ny_block=4, message=message)
