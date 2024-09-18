@@ -473,7 +473,11 @@ set(FCFLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
 set(LDFLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS_${CMAKE_BUILD_TYPE}}")
 
 set(VERSION ${PROJECT_VERSION})
-#set(LIBS ?)
+# TODO: Find static libraries that FMS depends on.
+if(NOT ${NetCDF_Fortran_LIBRARY_SHARED})
+  # autotools: Libs.private: -lnetcdff -lnetcdf
+  set(LIBS ${NetCDF_Fortran_LIBRARIES})
+endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/FMS.pc.in
                ${CMAKE_CURRENT_BINARY_DIR}/FMS.pc @ONLY)
