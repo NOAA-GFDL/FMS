@@ -591,7 +591,7 @@ subroutine read_table_yaml(data_table)
     integer :: nentries, mentries
     integer :: i
     character(len=50) :: buffer
-    character(len=255) :: filename !< Name of the expected data_table.yaml
+    character(len=FMS_FILE_LEN) :: filename !< Name of the expected data_table.yaml
     integer :: file_id
 
     ! If doing and ensemble or nest run add the filename appendix (ens_XX or nest_XX) to the filename

@@ -382,7 +382,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
                                            !! outputing data at every frequency)
   character(len=:), allocatable :: filename!< Diag file name (for error messages)
   logical              :: is_instantaneous !< .True. if the file is instantaneous (i.e no averaging)
-  character(len=255)   :: yamlfilename     !< Name of the expected diag_table.yaml
+  character(len=FMS_FILE_LEN)   :: yamlfilename     !< Name of the expected diag_table.yaml
 
   if (diag_yaml_module_initialized) return
 

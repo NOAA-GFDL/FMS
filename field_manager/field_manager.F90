@@ -606,7 +606,7 @@ integer                         :: subparamindex !< index to identify whether su
 logical                         :: fm_success !< logical for whether fm_change_list was a success
 logical                         :: subparams !< logical whether subparams exist in this iteration
 
-character(len=255) :: filename !< Name of the expected field_table.yaml
+character(len=FMS_FILE_LEN) :: filename !< Name of the expected field_table.yaml
 
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table.yaml'
