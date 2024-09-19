@@ -21,7 +21,7 @@
 ! modules. These modules are not intended to be used directly - they should be
 ! used through the data_override_mod API. See data_override.F90 for details.
 
-use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN
+use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
 use yaml_parser_mod
 use constants_mod, only: DEG_TO_RAD
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
