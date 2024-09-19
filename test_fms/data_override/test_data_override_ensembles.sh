@@ -72,7 +72,6 @@ if [ -z $parser_skip ]; then
       mpirun -n 12 ../test_data_override_ongrid_${KIND}
       '
   done
-fi
 
 cat <<_EOF > data_table.yaml
 data_table:
@@ -85,8 +84,9 @@ data_table:
    factor: 1.0
 _EOF
 
-test_expect_failure "test_data_override with both data_table.yaml and data_table.ens_xx.yaml files" '
+    test_expect_failure "test_data_override with both data_table.yaml and data_table.ens_xx.yaml files" '
       mpirun -n 12 ../test_data_override_ongrid_${KIND}
       '
 rm -rf INPUT
+fi
 test_done
