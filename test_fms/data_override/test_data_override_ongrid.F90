@@ -36,7 +36,7 @@ use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_endde
                              nf90_double, nf90_unlimited
 use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
 
-use fms_mod, only: string
+use fms_mod, only: string, fms_init, fms_end
 
 implicit none
 
@@ -61,10 +61,12 @@ integer                                    :: npes
 integer, allocatable                       :: pelist(:)
 integer, allocatable                       :: pelist_ens(:)
 integer                                    :: ensemble_id
+logical                                    :: write_only=.false. !< True if creating the input files only
+                                                                 !! False if running the tests only
 
-namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout
+namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout, write_only
 
-call mpp_init
+call fms_init
 call fms2_io_init
 
 read (input_nml_file, test_data_override_ongrid_nml, iostat=io_status)
@@ -98,46 +100,49 @@ case (ensemble_case)
   call mpp_set_current_pelist(pelist)
 end select
 
-select case (test_case)
-case (ongrid)
-  call generate_ongrid_input_file ()
-case (bilinear)
-  call generate_bilinear_input_file ()
-case (scalar)
-  call generate_scalar_input_file ()
-case (weight_file)
-  call generate_weight_input_file ()
-case (ensemble_case)
-  call generate_ensemble_input_file()
-end select
+if (write_only) then
+  select case (test_case)
+  case (ongrid)
+    call generate_ongrid_input_file ()
+  case (bilinear)
+    call generate_bilinear_input_file ()
+  case (scalar)
+    call generate_scalar_input_file ()
+  case (weight_file)
+    call generate_weight_input_file ()
+  case (ensemble_case)
+    call generate_ensemble_input_file()
+  end select
 
-call mpp_sync()
-call mpp_error(NOTE, "Finished creating INPUT Files")
+  call mpp_sync()
+  call mpp_error(NOTE, "Finished creating INPUT Files")
 
-select case (test_case)
-case (ensemble_case)
-  !< Go back to the ensemble pelist
-  call mpp_set_current_pelist(pelist_ens)
-end select
+else
+  select case (test_case)
+  case (ensemble_case)
+    !< Go back to the ensemble pelist
+    call mpp_set_current_pelist(pelist_ens)
+  end select
 
-!< Initiliaze data_override
-call data_override_init(Ocean_domain_in=Domain, mode=lkind)
+  !< Initiliaze data_override
+  call data_override_init(Ocean_domain_in=Domain, mode=lkind)
 
-select case (test_case)
-case (ongrid)
-  call ongrid_test()
-case (bilinear)
-  call bilinear_test()
-case (scalar)
-  call scalar_test()
-case (weight_file)
-  call weight_file_test()
-case (ensemble_case)
-  call ensemble_test()
-  call mpp_set_current_pelist(pelist)
-end select
+  select case (test_case)
+  case (ongrid)
+    call ongrid_test()
+  case (bilinear)
+    call bilinear_test()
+  case (scalar)
+    call scalar_test()
+  case (weight_file)
+    call weight_file_test()
+  case (ensemble_case)
+    call ensemble_test()
+    call mpp_set_current_pelist(pelist)
+  end select
+endif
 
-call mpp_exit
+call fms_end
 
 contains
 

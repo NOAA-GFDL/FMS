@@ -49,13 +49,14 @@ data_table:
    factor: 1.0
 _EOF
 
-cat <<_EOF > input.nml
+cat <<_EOF > input_base.nml
 &data_override_nml
   use_data_table_yaml = .True.
 /
 
 &test_data_override_ongrid_nml
   test_case = 5
+  write_only = .False.
 /
 
 &ensemble_nml
@@ -68,6 +69,12 @@ if [ -z $parser_skip ]; then
   for KIND in r4 r8
   do
     rm -rf INPUT/.
+    sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+    test_expect_success "Creating input files (${KIND})" '
+      mpirun -n 12 ../test_data_override_ongrid_${KIND}
+    '
+
+    cp input_base.nml input.nml
     test_expect_success "test_data_override with two ensembles  -yaml (${KIND})" '
       mpirun -n 12 ../test_data_override_ongrid_${KIND}
       '
