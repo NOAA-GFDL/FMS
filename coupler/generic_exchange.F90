@@ -31,7 +31,7 @@ type gex_type_r
    type(gex_type), allocatable:: field(:)
 end type gex_type_r
 
-integer, allocatable :: n_gex(:,:)
+integer,          allocatable :: n_gex(:,:)
 type(gex_type_r), allocatable :: gex_fields(:,:)
 
 contains
