@@ -33,7 +33,7 @@ use time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
 use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
                              nf90_close, nf90_put_att, nf90_clobber, nf90_64bit_offset, nf90_char, &
                              nf90_double, nf90_unlimited
-use fms_mod, only: string
+use fms_mod, only: string, fms_init, fms_end
 
 implicit none
 
@@ -57,7 +57,7 @@ logical                                    :: write_only=.false. !< True if crea
 
 namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout, write_only
 
-call mpp_init
+call fms_init
 call fms2_io_init
 
 read (input_nml_file, test_data_override_ongrid_nml, iostat=io_status)
@@ -107,7 +107,7 @@ else
   end select
 endif
 
-call mpp_exit
+call fms_end
 
 contains
 
