@@ -27,9 +27,10 @@
 output_dir
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 
-cat <<_EOF > input.nml
+cat <<_EOF > input_base.nml
 &test_data_override_ongrid_nml
   test_case = 2
+  write_only = .False.
 /
 _EOF
 
@@ -41,6 +42,12 @@ _EOF
 for KIND in r4 r8
 do
   rm -rf INPUT/*
+  sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+  test_expect_success "Creating input files (${KIND})" '
+      mpirun -n 6 ../test_data_override_ongrid_${KIND}
+      '
+
+  cp input_base.nml input.nml
   test_expect_success "test_data_override with monotonically increasing and decreasing data sets (${KIND})" '
     mpirun -n 6 ../test_data_override_ongrid_${KIND}
     '
@@ -48,9 +55,10 @@ done
 
 rm -rf data_table
 
-cat <<_EOF > input.nml
+cat <<_EOF > input_base.nml
 &test_data_override_ongrid_nml
   test_case = 2
+  write_only = .False.
 /
 &data_override_nml
   use_data_table_yaml = .True.
@@ -80,6 +88,12 @@ if [ -z $parser_skip ]; then
   for KIND in r4 r8
   do
     rm -rf INPUT/*
+    sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+    test_expect_success "Creating input files (${KIND})" '
+      mpirun -n 6 ../test_data_override_ongrid_${KIND}
+      '
+
+    cp input_base.nml input.nml
     test_expect_success "test_data_override with monotonically increasing and decreasing data sets  -yaml (${KIND})" '
       mpirun -n 6 ../test_data_override_ongrid_${KIND}
       '
