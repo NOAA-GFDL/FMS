@@ -28,22 +28,24 @@ output_dir
 rm -rf data_table data_table.yaml input.nml input_base.nml
 
 if [ ! -z $parser_skip ]; then
-  cat <<_EOF > input.nml
+  cat <<_EOF > input_base.nml
 &data_override_nml
 use_data_table_yaml=.False.
 /
 &test_data_override_ongrid_nml
   test_case = 3
+  write_only = .False.
 /
 _EOF
   printf '"OCN", "co2", "co2", "./INPUT/scalar.nc", "none" ,  1.0' | cat > data_table
 else
-cat <<_EOF > input.nml
+cat <<_EOF > input_base.nml
 &data_override_nml
 use_data_table_yaml=.True.
 /
 &test_data_override_ongrid_nml
   test_case = 3
+  write_only = .False.
 /
 _EOF
 cat <<_EOF > data_table.yaml
@@ -62,6 +64,12 @@ fi
 for KIND in r4 r8
 do
 rm -rf INPUT/*
+sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+test_expect_success "Creating input files (${KIND})" '
+  mpirun -n 6 ../test_data_override_ongrid_${KIND}
+'
+
+cp input_base.nml input.nml
 test_expect_success "data_override scalar field (${KIND})" '
   mpirun -n 6 ../test_data_override_ongrid_${KIND}
 '

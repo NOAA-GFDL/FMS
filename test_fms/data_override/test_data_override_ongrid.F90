@@ -53,8 +53,9 @@ integer, parameter                         :: bilinear = 2
 integer, parameter                         :: scalar = 3
 integer, parameter                         :: weight_file = 4
 integer                                    :: test_case = ongrid
+logical                                    :: write_only=.false. !< True if creating the input files only
 
-namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout
+namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout, write_only
 
 call mpp_init
 call fms2_io_init
@@ -75,33 +76,36 @@ call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, xhalo=nhalox, yhalo=
 call mpp_define_io_domain(Domain, (/1,1/))
 call mpp_get_data_domain(Domain, is, ie, js, je)
 
-select case (test_case)
-case (ongrid)
-  call generate_ongrid_input_file ()
-case (bilinear)
-  call generate_bilinear_input_file ()
-case (scalar)
-  call generate_scalar_input_file ()
-case (weight_file)
-  call generate_weight_input_file ()
-end select
+if (write_only) then
+  select case (test_case)
+  case (ongrid)
+    call generate_ongrid_input_file ()
+  case (bilinear)
+    call generate_bilinear_input_file ()
+  case (scalar)
+    call generate_scalar_input_file ()
+  case (weight_file)
+    call generate_weight_input_file ()
+  end select
 
-call mpp_sync()
-call mpp_error(NOTE, "Finished creating INPUT Files")
+  call mpp_sync()
+  call mpp_error(NOTE, "Finished creating INPUT Files")
 
-!< Initiliaze data_override
-call data_override_init(Ocean_domain_in=Domain, mode=lkind)
+else
+  !< Initiliaze data_override
+  call data_override_init(Ocean_domain_in=Domain, mode=lkind)
 
-select case (test_case)
-case (ongrid)
-  call ongrid_test()
-case (bilinear)
-  call bilinear_test()
-case (scalar)
-  call scalar_test()
-case (weight_file)
-  call weight_file_test()
-end select
+  select case (test_case)
+  case (ongrid)
+    call ongrid_test()
+  case (bilinear)
+    call bilinear_test()
+  case (scalar)
+    call scalar_test()
+  case (weight_file)
+    call weight_file_test()
+  end select
+endif
 
 call mpp_exit
 
