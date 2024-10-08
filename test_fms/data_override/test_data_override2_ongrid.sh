@@ -36,6 +36,7 @@ use_data_table_yaml=.False.
 &test_data_override_ongrid_nml
   nhalox=halo_size
   nhaloy=halo_size
+  write_only = .False.
 /
 _EOF
   printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
@@ -48,6 +49,7 @@ use_data_table_yaml=.True.
 &test_data_override_ongrid_nml
   nhalox=halo_size
   nhaloy=halo_size
+  write_only = .False.
 /
 _EOF
 cat <<_EOF > data_table.yaml
@@ -65,13 +67,17 @@ fi
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 for KIND in r4 r8
 do
-rm -rf INPUT/*
+sed -e 's/halo_size/2/g ; s/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+
+test_expect_success "Creating input files (${KIND})" '
+  mpirun -n 6 ../test_data_override_ongrid_${KIND}
+'
+
 sed 's/halo_size/2/g' input_base.nml > input.nml
 test_expect_success "data_override on grid with 2 halos in x and y (${KIND})" '
   mpirun -n 6 ../test_data_override_ongrid_${KIND}
 '
 
-rm -rf INPUT/*
 sed 's/halo_size/0/g' input_base.nml > input.nml
 test_expect_success "data_override on grid with 0 halos in x and y (${KIND})" '
   mpirun -n 6 ../test_data_override_ongrid_${KIND}
