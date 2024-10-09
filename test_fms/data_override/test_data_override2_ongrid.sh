@@ -67,7 +67,6 @@ fi
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 for KIND in r4 r8
 do
-rm -rf INPUT/*
 sed -e 's/halo_size/2/g ; s/write_only = .False./write_only = .True./g' input_base.nml > input.nml
 
 test_expect_success "Creating input files (${KIND})" '

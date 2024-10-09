@@ -76,7 +76,7 @@ function open_and_parse_file_wrap(filename, file_id) bind(c) &
    use iso_c_binding, only: c_char, c_int, c_bool
    character(kind=c_char), intent(in) :: filename(*) !< Filename of the yaml file
    integer(kind=c_int), intent(out) :: file_id !< File id corresponding to the yaml file that was opened
-   logical(kind=c_int) :: error_code !< Flag indicating the error message (1 if sucessful)
+   integer(kind=c_int) :: error_code !< Flag indicating the error message (1 if sucessful)
 end function open_and_parse_file_wrap
 
 !> @brief Private c function that checks if a file_id is valid (see yaml_parser_binding.c)

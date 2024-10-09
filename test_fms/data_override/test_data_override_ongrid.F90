@@ -35,7 +35,6 @@ use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_endde
                              nf90_close, nf90_put_att, nf90_clobber, nf90_64bit_offset, nf90_char, &
                              nf90_double, nf90_unlimited
 use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
-
 use fms_mod, only: string, fms_init, fms_end
 
 implicit none
@@ -62,7 +61,6 @@ integer, allocatable                       :: pelist(:)
 integer, allocatable                       :: pelist_ens(:)
 integer                                    :: ensemble_id
 logical                                    :: write_only=.false. !< True if creating the input files only
-                                                                 !! False if running the tests only
 
 namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout, write_only
 
