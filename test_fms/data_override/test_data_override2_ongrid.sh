@@ -83,6 +83,7 @@ test_expect_success "data_override on grid with 0 halos in x and y (${KIND})" '
   mpirun -n 6 ../test_data_override_ongrid_${KIND}
 '
 
+rm -rf INPUT/*
 test_expect_success "data_override get_grid_v1 (${KIND})" '
   mpirun -n 1 ../test_get_grid_v1_${KIND}
 '
