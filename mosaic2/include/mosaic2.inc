@@ -86,14 +86,12 @@
   !> <br>Example usage:
   !!            call calc_mosaic_grid_area(lon, lat, area)
   subroutine CALC_MOSAIC_GRID_AREA_(lon, lat, area)
-     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)    :: lon
-     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)    :: lat
-     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(inout) :: area
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)  :: lon
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(in)  :: lat
+     real(kind=FMS_MOS_KIND_), dimension(:,:), intent(out) :: area
      integer :: nlon, nlat
 
      real(r8_kind) :: area_r8(size(area,1),size(area,2))
-
-     area_r8=real(area,r8_kind)
 
      nlon = size(area,1)
      nlat = size(area,2)
