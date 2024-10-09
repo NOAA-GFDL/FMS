@@ -67,6 +67,7 @@ if [ -z $parser_skip ]; then
   for KIND in r4 r8
   do
     rm -rf INPUT/.
+
     sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
     test_expect_success "Creating input files (${KIND})" '
       mpirun -n 2 ../test_data_override_ongrid_${KIND}
