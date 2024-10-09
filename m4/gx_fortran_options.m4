@@ -90,13 +90,12 @@ for ac_flag in none \
                '-qrealsize=8'; do
   test "x$ac_flag" != xnone && FCFLAGS="$gx_fc_default_real_kind8_flag_FCFLAGS_save ${ac_flag}"
   AC_COMPILE_IFELSE([[      program test
-      interface
+      real :: b=1.0
+      call test_sub(b)
+      contains
       subroutine test_sub(a)
       real(kind=selected_real_kind(15,307)) :: a
       end subroutine test_sub
-      end interface
-      real :: b=1.0
-      call test_sub(b)
       end program test]],
      [gx_cv_fc_default_real_kind8_flag=$ac_flag; break])
 done
@@ -148,13 +147,12 @@ for ac_flag in none \
                '-qrealsize=4'; do
   test "x$ac_flag" != xnone && FCFLAGS="$gx_fc_default_real_kind4_flag_FCFLAGS_save ${ac_flag}"
   AC_COMPILE_IFELSE([[      program test
-      interface
+      real :: b=1.0
+      call test_sub(b)
+      contains
       subroutine test_sub(a)
       real(kind=selected_real_kind(6, 37)) :: a
       end subroutine test_sub
-      end interface
-      real :: b=1.0
-      call test_sub(b)
       end program test]],
      [gx_cv_fc_default_real_kind4_flag=$ac_flag; break])
 done
