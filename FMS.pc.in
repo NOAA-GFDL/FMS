@@ -35,7 +35,7 @@ Name: FMS
 Description: The Flexible Modeling System Infrastructure Library
 URL: https://www.gfdl.noaa.gov/fms
 Version: @VERSION@
-Libs: -L$(libdir) -lFMS
+Libs: -L${libdir} -lFMS
 Libs.private: @LIBS@
 Cflags: -I${includedir}
 Fflags: -I${includedir}
