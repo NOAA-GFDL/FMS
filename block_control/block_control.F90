@@ -23,8 +23,9 @@
 
 module block_control_mod
 
-use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL
+use mpp_mod,         only: mpp_error, NOTE, WARNING, FATAL, mpp_sum, mpp_npes
 use mpp_domains_mod, only: mpp_compute_extent
+use fms_string_utils_mod, only: string
 implicit none
 
 public block_control_type
@@ -104,15 +105,19 @@ contains
     integer, dimension(ny_block) :: j1, j2
     character(len=256) :: text
     integer :: i, j, nblks, ix, ii, jj
+    integer :: non_uniform_blocks !< Number of non uniform blocks
 
     if (message) then
+      non_uniform_blocks = 0
       if ((mod(iec-isc+1,nx_block) .ne. 0) .or. (mod(jec-jsc+1,ny_block) .ne. 0)) then
-        write( text,'(a,a,2i4,a,2i4,a)' ) trim(component),'define_blocks: domain (',&
-             (iec-isc+1), (jec-jsc+1),') is not an even divisor with definition (',&
-             nx_block, ny_block,') - blocks will not be uniform'
-        call mpp_error (WARNING, trim(text))
+        non_uniform_blocks = 1
       endif
-      message = .false.
+      call mpp_sum(non_uniform_blocks)
+      if (non_uniform_blocks > 0 ) then
+        call mpp_error(NOTE, string(non_uniform_blocks)//" out of "//string(mpp_npes())//" total domains "//&
+                       "have non-uniform blocks for block size ("//string(nx_block)//","//string(ny_block)//")")
+        message = .false.
+      endif
     endif
 
 !--- set up blocks
