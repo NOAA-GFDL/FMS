@@ -45,6 +45,7 @@ use fms_string_utils_mod, only: fms_array_to_pointer, fms_find_my_string, fms_so
                                 fms_f2c_string
 use platform_mod, only: r4_kind, i4_kind, r8_kind, i8_kind, FMS_FILE_LEN
 use fms_mod, only: lowercase
+use fms2_io_mod, only: file_exists, get_instance_filename
 
 implicit none
 
@@ -381,10 +382,17 @@ subroutine diag_yaml_object_init(diag_subset_output)
                                            !! outputing data at every frequency)
   character(len=:), allocatable :: filename!< Diag file name (for error messages)
   logical              :: is_instantaneous !< .True. if the file is instantaneous (i.e no averaging)
+  character(len=FMS_FILE_LEN)   :: yamlfilename     !< Name of the expected diag_table.yaml
 
   if (diag_yaml_module_initialized) return
 
-  diag_yaml_id = open_and_parse_file("diag_table.yaml")
+  ! If doing and ensemble or nest run add the filename appendix (ens_XX or nest_XX) to the filename
+  call get_instance_filename("diag_table.yaml", yamlfilename)
+  if (index(trim(yamlfilename), "ens_") .ne. 0) then
+    if (file_exists(yamlfilename) .and. file_exists("diag_table.yaml")) &
+      call mpp_error(FATAL, "Both diag_table.yaml and "//trim(yamlfilename)//" exists, pick one!")
+  endif
+  diag_yaml_id = open_and_parse_file(trim(yamlfilename))
 
   call diag_get_value_from_key(diag_yaml_id, 0, "title", diag_yaml%diag_title)
   call get_value_from_key(diag_yaml_id, 0, "base_date", diag_yaml%diag_basedate)

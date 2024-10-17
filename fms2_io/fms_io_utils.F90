@@ -824,8 +824,14 @@ subroutine get_instance_filename(name_in,name_out)
      if ( i .ne. 0 ) then
         name_out = name_in(1:i-1)//'.'//trim(filename_appendix)//name_in(i:length)
      else
-     !< If .nc is not in the name, add the appendix at the end of the file
-        name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+        i = index(trim(name_in), ".yaml", back=.true.)
+        if (i .ne. 0) then
+          !< If .yaml is in the filename add the appendix before it
+          name_out = name_in(1:i-1)//'.'//trim(filename_appendix)//name_in(i:length)
+        else
+          !< If .nc  and .yaml are not in the name, add the appendix at the end of the file
+          name_out = name_in(1:length)  //'.'//trim(filename_appendix)
+        endif
      end if
   end if
 
