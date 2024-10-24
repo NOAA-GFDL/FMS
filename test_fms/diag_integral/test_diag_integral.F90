@@ -51,14 +51,14 @@ program test_diag_integral
   character(9), parameter :: field_nameh='immadeuph' !> made up field name to test
   character(8), parameter :: std_digits   = 'e23.15e3' !> write out precision for r8_kind data
 
-  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy)     !> array to test sum_field_2d
-  real(TEST_DI_KIND_) :: immadeup3(nxy,nxy,nxy) !> array to test sum_field_3d
-  real(TEST_DI_KIND_) :: immadeupw(nxy,nxy,nxy) !> array to test sum_field_wght_3d
-  real(TEST_DI_KIND_) :: weight(nxy,nxy,nxy)    !> weights required to test sum_field_wght_3d
-  real(TEST_DI_KIND_) :: immadeuph(nxy,nxy)     !> array to test sum_field_2d_hemi
+  real(TEST_DI_KIND_), save :: immadeup2(nxy,nxy)     !> array to test sum_field_2d
+  real(TEST_DI_KIND_), save :: immadeup3(nxy,nxy,nxy) !> array to test sum_field_3d
+  real(TEST_DI_KIND_), save :: immadeupw(nxy,nxy,nxy) !> array to test sum_field_wght_3d
+  real(TEST_DI_KIND_), save :: weight(nxy,nxy,nxy)    !> weights required to test sum_field_wght_3d
+  real(TEST_DI_KIND_), save :: immadeuph(nxy,nxy)     !> array to test sum_field_2d_hemi
 
-  real(r8_kind) :: lat(nxyp,nxyp), lon(nxyp,nxyp)
-  real(r8_kind) :: area(nxy,nxy)
+  real(r8_kind), save :: lat(nxyp,nxyp), lon(nxyp,nxyp)
+  real(r8_kind), save :: area(nxy,nxy)
   type(time_type) :: Time_init, Time
 
   !testing and generating answers
@@ -175,12 +175,13 @@ contains
   !-------------------------------------
   subroutine read_diag_integral_file
 
-    character(*), parameter :: di_file='diag_integral.out'
-    integer :: iunit
+    character(17), parameter :: di_file='diag_integral.out'
+    integer, parameter  :: iunit=100
+
     character(100) :: cline1, cline2, cline3, cline4, cline5, clin6
 
     !> read in computed values
-    open(newunit=iunit, file=di_file)
+    open(unit=iunit,file=trim(di_file))
     read(iunit,*) cline1, cline2, cline3, cline4, cline5, clin6
     read(iunit,*) itime, field_avg2, field_avg3, field_avgw, field_avgh
     close(iunit)
