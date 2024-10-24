@@ -175,13 +175,12 @@ contains
   !-------------------------------------
   subroutine read_diag_integral_file
 
-    character(17), parameter :: di_file='diag_integral.out'
-    integer, parameter  :: iunit=100
-
+    character(*), parameter :: di_file='diag_integral.out'
+    integer :: iunit
     character(100) :: cline1, cline2, cline3, cline4, cline5, clin6
 
     !> read in computed values
-    open(unit=iunit,file=trim(di_file))
+    open(newunit=iunit, file=di_file)
     read(iunit,*) cline1, cline2, cline3, cline4, cline5, clin6
     read(iunit,*) itime, field_avg2, field_avg3, field_avgw, field_avgh
     close(iunit)
