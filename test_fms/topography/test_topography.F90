@@ -54,8 +54,8 @@ program test_top
   integer, parameter        :: lkind = TEST_TOP_KIND_      ! kind parameter for mixed precision
 
   real(kind=TEST_TOP_KIND_), parameter        :: deg2rad = real(pi, TEST_TOP_KIND_)/180.0_lkind
-  real(kind=TEST_TOP_KIND_), dimension(2,2)   :: lon2d, lat2d   ! in radians
-  real(kind=TEST_TOP_KIND_), dimension(2)     :: lon1d, lat1d   ! in radians
+  real(kind=TEST_TOP_KIND_), dimension(2,2), save   :: lon2d, lat2d   ! in radians
+  real(kind=TEST_TOP_KIND_), dimension(2), save     :: lon1d, lat1d   ! in radians
 
   call fms_init
   call topography_init
