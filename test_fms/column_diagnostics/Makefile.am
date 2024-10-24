@@ -34,8 +34,8 @@ check_PROGRAMS = test_column_diagnostics_r4 test_column_diagnostics_r8
 test_column_diagnostics_r4_SOURCES = test_column_diagnostics.F90
 test_column_diagnostics_r8_SOURCES = test_column_diagnostics.F90
 
-test_column_diagnostics_r4_CPPFLAGS=-DTEST_CD_KIND_=4 -I$(AM_CPPFLAGS)
-test_column_diagnostics_r8_CPPFLAGS=-DTEST_CD_KIND_=8 -I$(AM_CPPFLAGS)
+test_column_diagnostics_r4_CPPFLAGS=$(AM_CPPFLAGS) -DTEST_CD_KIND_=4
+test_column_diagnostics_r8_CPPFLAGS=$(AM_CPPFLAGS) -DTEST_CD_KIND_=8
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh
