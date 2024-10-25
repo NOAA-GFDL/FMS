@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2024.02-dev],
+  [2024.03-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -111,6 +111,13 @@ AC_ARG_ENABLE([r8-default],
 AS_IF([test ${enable_r8_default:-yes} = yes],
   [enable_r8_default=yes],
   [enable_r8_default=no])
+
+AC_ARG_ENABLE([portable-kinds],
+  [AS_HELP_STRING([--enable-portable-kinds],
+    [Enables compilation with -DPORTABLE_KINDS with iso_c_binding KIND type parameters])])
+AS_IF([test ${enable_portable_kinds:-no} = yes],
+  [enable_portable_kinds=yes],
+  [enable_portable_kinds=no])
 
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
@@ -273,6 +280,13 @@ if test $hdf5_fpe_bug = yes; then
 NetCDF must be built with a HDF5 version other than 1.14.3 to support floating point exception traps.])
 fi
 
+rm -f test.nc
+
+# Check if we need a flag to not capitalize module output (needed with cray compiler)
+GX_FC_MOD_CASE_FLAG([FCFLAGS="$FCFLAGS $FC_MOD_CASE_FLAG"])
+
+# Check if new unit is supported
+GX_FC_08_OPEN_NEWUNIT([], [AC_MSG_ERROR([Compiler support for use of newunit argument is required to build FMS])])
 
 # Check if Fortran compiler has the Class, Character array assign bug
 GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
@@ -340,6 +354,11 @@ if test $enable_setting_flags = yes; then
   fi
   if test $enable_8byte_int = yes; then
     AC_DEFINE([no_8byte_integers], [1], [Set to disable 8 byte integer Fortran routines])
+  fi
+
+  # Builds with C data types
+  if test $enable_portable_kinds = yes; then
+    AC_DEFINE([PORTABLE_KINDS], [1], [Set to define KIND parameters to iso_c_binding KIND parameters])
   fi
 
   # Add Cray Pointer support flag

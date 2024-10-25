@@ -55,7 +55,7 @@ module time_interp_external2_mod
   use time_interp_mod, only : time_interp, time_interp_init
   use axis_utils2_mod, only : get_axis_cart, get_axis_modulo, get_axis_modulo_times
   use fms_mod, only : lowercase, check_nml_error
-  use platform_mod, only: r8_kind
+  use platform_mod, only: r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
   use horiz_interp_mod, only : horiz_interp, horiz_interp_type
   use fms2_io_mod,      only : Valid_t, FmsNetcdfDomainFile_t, open_file, get_unlimited_dimension_name, &
                                variable_att_exists, FmsNetcdfFile_t, &
@@ -126,7 +126,7 @@ module time_interp_external2_mod
     !> Holds filename and file object
     !> @ingroup time_interp_external2_mod
     type, private :: filetype
-        character(len=128) :: filename = ''
+        character(len=FMS_FILE_LEN) :: filename = ''
         type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
     end type filetype
 

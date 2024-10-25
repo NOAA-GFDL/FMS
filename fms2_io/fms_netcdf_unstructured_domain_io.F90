@@ -27,6 +27,7 @@ use netcdf
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
+use platform_mod
 implicit none
 private
 
@@ -34,7 +35,7 @@ private
 !> @ingroup fms_netcdf_unstructured_domain_io_mod
 type, public, extends(FmsNetcdfFile_t) :: FmsNetcdfUnstructuredDomainFile_t
   type(domainug) :: domain !< Unstructured domain.
-  character(len=256) :: non_mangled_path !< Non-domain-mangled path.
+  character(len=FMS_PATH_LEN) :: non_mangled_path !< Non-domain-mangled path.
 endtype FmsNetcdfUnstructuredDomainFile_t
 
 !> @addtogroup fms_netcdf_unstructured_domain_io_mod
@@ -94,8 +95,8 @@ function open_unstructured_domain_file(fileobj, path, mode, domain, nc_format, &
   type(domainug), pointer :: io_domain
   integer :: pelist_size
   integer, dimension(:), allocatable :: pelist
-  character(len=256) :: buf
-  character(len=256) :: buf2
+  character(len=FMS_PATH_LEN) :: buf
+  character(len=FMS_PATH_LEN) :: buf2
   integer :: tile_id
 
   !Get the input domain's I/O domain pelist.

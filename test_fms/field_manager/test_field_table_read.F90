@@ -36,15 +36,74 @@ program test_field_table_read
 
 use field_manager_mod, only: field_manager_init
 use fms_mod,           only: fms_init, fms_end
-use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_error, NOTE, FATAL
+use fms2_io_mod,       only: set_filename_appendix
+use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
+use mpp_mod,           only : mpp_pe, mpp_root_pe, mpp_error, NOTE, FATAL, input_nml_file, mpp_npes, &
+                              mpp_set_current_pelist, mpp_get_current_pelist
 
 implicit none
 
 integer :: nfields
+integer :: nfields_expected
+integer :: io_status
+integer :: npes
+integer, allocatable :: pelist(:)
+integer :: ens_siz(6)
+integer :: ensemble_id
+character(len=10) :: text
+integer, parameter :: default_test = 0
+integer, parameter :: ensemble_test = 1
+
+! namelist parameters
+integer :: test_case = default_test
+
+namelist / test_field_table_read_nml / test_case
 
 call fms_init
+read (input_nml_file, test_field_table_read_nml, iostat=io_status)
+if (io_status > 0) call mpp_error(FATAL,'=>test_field_table_read: Error reading input.nml')
+
+npes = mpp_npes()
+allocate(pelist(npes))
+call mpp_get_current_pelist(pelist)
+
+nfields_expected = 4
+select case (test_case)
+case (ensemble_test)
+  if (npes .ne. 2) &
+    call mpp_error(FATAL, "test_field_table_read:: this test requires 2 PEs!")
+
+  call ensemble_manager_init
+  ens_siz = get_ensemble_size()
+  if (ens_siz(1) .ne. 2) &
+    call mpp_error(FATAL, "This test requires 2 ensembles")
+
+  if (mpp_pe() .eq. 0) then
+    !PEs 0 is the first ensemble
+    ensemble_id = 1
+    call mpp_set_current_pelist((/0/))
+    nfields_expected = 3
+  else
+    !PEs 1 is the second ensemble
+    ensemble_id = 2
+    call mpp_set_current_pelist((/1/))
+    nfields_expected = 4
+  endif
+
+  write( text,'(a,i2.2)' ) 'ens_', ensemble_id
+  call set_filename_appendix(trim(text))
+
+end select
+
 call field_manager_init(nfields)
-if (nfields .ne. 4) &
+print *, nfields
+if (nfields .ne. nfields_expected) &
   call mpp_error(FATAL, "test_field_table_read:: The number fields returned is not the expected result")
+
+select case (test_case)
+case (ensemble_test)
+  call mpp_set_current_pelist(pelist)
+end select
+
 call fms_end
 end program test_field_table_read

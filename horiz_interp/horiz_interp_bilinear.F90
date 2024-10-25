@@ -35,13 +35,15 @@ module horiz_interp_bilinear_mod
   use horiz_interp_type_mod, only: horiz_interp_type, stats, BILINEAR
   use platform_mod,          only: r4_kind, r8_kind
   use axis_utils2_mod,       only: nearest_index
+  use fms2_io_mod,           only: open_file, close_file, read_data, FmsNetcdfFile_t, get_dimension_size
+  use fms_string_utils_mod,  only: string
 
   implicit none
   private
 
 
   public :: horiz_interp_bilinear_new, horiz_interp_bilinear, horiz_interp_bilinear_del
-  public :: horiz_interp_bilinear_init
+  public :: horiz_interp_bilinear_init, horiz_interp_read_weights_bilinear
 
   !> Creates a @ref horiz_interp_type for bilinear interpolation.
   !> @ingroup horiz_interp_bilinear_mod
@@ -50,6 +52,14 @@ module horiz_interp_bilinear_mod
     module procedure horiz_interp_bilinear_new_1d_r8
     module procedure horiz_interp_bilinear_new_2d_r4
     module procedure horiz_interp_bilinear_new_2d_r8
+  end interface
+
+  !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
+  !! calculating it
+  !> @ingroup horiz_interp_bilinear_mod
+  interface horiz_interp_read_weights_bilinear
+    module procedure horiz_interp_read_weights_bilinear_r4
+    module procedure horiz_interp_read_weights_bilinear_r8
   end interface
 
   interface horiz_interp_bilinear

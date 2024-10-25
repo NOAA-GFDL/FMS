@@ -180,7 +180,7 @@ use platform_mod
   !> @brief Type to define the diagnostic files that will be written as defined by the diagnostic table.
   !> @ingroup diag_data_mod
   TYPE file_type
-     CHARACTER(len=128) :: name !< Name of the output file.
+     CHARACTER(len=FMS_FILE_LEN) :: name !< Name of the output file.
      CHARACTER(len=128) :: long_name
      INTEGER, DIMENSION(max_fields_per_file) :: fields
      INTEGER :: num_fields

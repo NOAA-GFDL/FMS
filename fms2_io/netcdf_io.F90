@@ -126,7 +126,7 @@ endtype dimension_information
 !> @brief Netcdf file type.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
-  character(len=256) :: path !< File path.
+  character(len=FMS_PATH_LEN) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
   character(len=256) :: nc_format !< Netcdf file format.
@@ -569,8 +569,8 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   integer :: err
   integer :: netcdf4 !< Query the file for the _IsNetcdf4 global attribute in the event
                      !! that the open for collective reads fails
-  character(len=256) :: buf !< Filename with .res in the filename if it is a restart
-  character(len=256) :: buf2 !< Filename with the filename appendix if there is one
+  character(len=FMS_PATH_LEN) :: buf !< File path with .res in the filename if it is a restart
+  character(len=FMS_PATH_LEN) :: buf2 !< File path with the filename appendix if there is one
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 

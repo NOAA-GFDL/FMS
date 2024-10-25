@@ -36,7 +36,7 @@ integer, intent(in)                                     :: length
 real(FMS_FM_KIND_), intent(in)                          :: rval(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
-character(len=fm_path_name_len), intent(in), optional   :: good_name_list
+character(len=FMS_PATH_LEN), intent(in), optional       :: good_name_list
 
 !
 !       Local parameters
@@ -57,7 +57,7 @@ integer                         :: field_index
 integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: add_name
 
 integer, parameter :: lkind=FMS_FM_KIND_
@@ -218,7 +218,7 @@ character(len=32)               :: str_error
 integer                         :: field_index
 logical                         :: no_overwrite_use
 integer                         :: field_length
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: create
 logical                         :: add_name
 

@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2024.02.0
+  VERSION 2024.03.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -52,14 +52,16 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build options
-option(OPENMP "Build FMS with OpenMP support"        OFF)
-option(32BIT  "Build 32-bit (r4) FMS library"         ON)
-option(64BIT  "Build 64-bit (r8) FMS library"        OFF)
-option(FPIC   "Build with position independent code" OFF)
+option(OPENMP      "Build FMS with OpenMP support"        OFF)
+option(32BIT       "Build 32-bit (r4) FMS library"         ON)
+option(64BIT       "Build 64-bit (r8) FMS library"        OFF)
+option(FPIC        "Build with position independent code" OFF)
+option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
 option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
+option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
@@ -266,6 +268,10 @@ if(ENABLE_QUAD_PRECISION)
   list(APPEND fms_defs ENABLE_QUAD_PRECISION)
 endif()
 
+if(PORTABLE_KINDS)
+  list(APPEND fms_defs PORTABLE_KINDS)
+endif()
+
 if(LARGEFILE)
   list(APPEND fms_defs use_LARGEFILE)
 endif()
@@ -360,8 +366,15 @@ foreach(kind ${kinds})
   endif()
 
   # FMS (C + Fortran)
-  add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
-                               $<TARGET_OBJECTS:${libTgt}_f>)
+  if (SHARED_LIBS)
+      message(STATUS "Shared library target: ${libTgt}")
+      add_library(${libTgt} SHARED $<TARGET_OBJECTS:${libTgt}_c>
+                                   $<TARGET_OBJECTS:${libTgt}_f>)
+  else ()
+      message(STATUS "Static library target: ${libTgt}")
+      add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
+                                   $<TARGET_OBJECTS:${libTgt}_f>)
+  endif ()
 
   target_include_directories(${libTgt} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -397,7 +410,8 @@ foreach(kind ${kinds})
   target_compile_definitions(${libTgt} PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt} PRIVATE "${${kind}_defs}")
 
-  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_Fortran
+  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
+                                         NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
 
   if(OpenMP_Fortran_FOUND)
@@ -415,13 +429,13 @@ endforeach()
 install(
   TARGETS ${LIB_TARGETS}
   EXPORT FMSExports
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib)
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ### Package config
 include(CMakePackageConfigHelpers)
-set(CONFIG_INSTALL_DESTINATION lib/cmake/fms)
+set(CONFIG_INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/fms)
 
 export(EXPORT FMSExports
   NAMESPACE FMS::

@@ -109,7 +109,7 @@ CONTAINS
     integer, allocatable, dimension(:) :: current_pelist
     integer :: mype  !< The pe you are on
     character(len=9) :: mype_string !< a string to store the pe
-    character(len=128) :: filename_tile !< Filename with the tile number included
+    character(len=FMS_FILE_LEN) :: filename_tile !< Filename with the tile number included
                                         !! It is needed for subregional diagnostics
 
     !---- initialize mpp_io ----

@@ -28,14 +28,14 @@
 !> @{
 module fm_util_mod  !{
 
-use field_manager_mod, only: fm_string_len, fm_path_name_len, fm_field_name_len, fm_type_name_len
+use field_manager_mod, only: fm_string_len, fm_field_name_len, fm_type_name_len
 use field_manager_mod, only: fm_get_type, fm_get_index, fm_get_length
 use field_manager_mod, only: fm_get_current_list, fm_new_list, fm_change_list, fm_loop_over_list
 use field_manager_mod, only: fm_new_value, fm_get_value
 use field_manager_mod, only: fm_exists, fm_dump_list
 use fms_mod,           only: FATAL, stdout
 use mpp_mod,           only: mpp_error
-use platform_mod,      only: r4_kind, r8_kind
+use platform_mod,      only: r4_kind, r8_kind, FMS_PATH_LEN
 
 implicit none
 
@@ -93,9 +93,9 @@ character(len=128)              :: default_good_name_list = ' '
 character(len=128)              :: save_default_good_name_list = ' '
 logical                         :: default_no_overwrite = .false.
 logical                         :: save_default_no_overwrite = .false.
-character(len=fm_path_name_len) :: save_current_list
-character(len=fm_path_name_len) :: save_path
-character(len=fm_path_name_len) :: save_name
+character(len=FMS_PATH_LEN)     :: save_current_list
+character(len=FMS_PATH_LEN)     :: save_path
+character(len=FMS_PATH_LEN)     :: save_name
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -1602,7 +1602,7 @@ integer, intent(in)                                     :: length
 integer, intent(in)                                     :: ival(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
-character(len=fm_path_name_len), intent(in), optional   :: good_name_list
+character(len=*), intent(in), optional                  :: good_name_list
 
 !
 !       Local parameters
@@ -1623,7 +1623,7 @@ integer                         :: field_index
 integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: add_name
 
 !
@@ -1759,7 +1759,7 @@ integer, intent(in)                                     :: length
 logical, intent(in)                                     :: lval(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
-character(len=fm_path_name_len), intent(in), optional   :: good_name_list
+character(len=*), intent(in), optional                  :: good_name_list
 
 !
 !       Local parameters
@@ -1780,7 +1780,7 @@ integer                         :: field_index
 integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: add_name
 
 !
@@ -1916,7 +1916,7 @@ integer, intent(in)                                     :: length
 character(len=*), intent(in)                            :: sval(length)
 character(len=*), intent(in), optional                  :: caller
 logical, intent(in), optional                           :: no_overwrite
-character(len=fm_path_name_len), intent(in), optional   :: good_name_list
+character(len=*), intent(in), optional       :: good_name_list
 
 !
 !       Local parameters
@@ -1937,7 +1937,7 @@ integer                         :: field_index
 integer                         :: field_length
 integer                         :: n
 logical                         :: no_overwrite_use
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: add_name
 
 !
@@ -2096,7 +2096,7 @@ character(len=32)               :: str_error
 integer                         :: field_index
 logical                         :: no_overwrite_use
 integer                         :: field_length
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: create
 logical                         :: add_name
 
@@ -2268,7 +2268,7 @@ character(len=32)               :: str_error
 integer                         :: field_index
 logical                         :: no_overwrite_use
 integer                         :: field_length
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: create
 logical                         :: add_name
 
@@ -2439,7 +2439,7 @@ character(len=32)               :: str_error
 integer                         :: field_index
 logical                         :: no_overwrite_use
 integer                         :: field_length
-character(len=fm_path_name_len) :: good_name_list_use
+character(len=FMS_PATH_LEN)     :: good_name_list_use
 logical                         :: create
 logical                         :: add_name
 
@@ -2600,7 +2600,7 @@ character(len=48), parameter  :: sub_name = 'fm_util_start_namelist'
 !
 
 integer                         :: namelist_index
-character(len=fm_path_name_len) :: path_name
+character(len=FMS_PATH_LEN)     :: path_name
 character(len=256)              :: error_header
 character(len=256)              :: warn_header
 character(len=256)              :: note_header
@@ -2764,7 +2764,7 @@ character(len=48), parameter  :: sub_name = 'fm_util_end_namelist'
 !
 
 character(len=fm_string_len), pointer, dimension(:)     :: good_list => NULL()
-character(len=fm_path_name_len)                         :: path_name
+character(len=FMS_PATH_LEN)                             :: path_name
 character(len=256)                                      :: error_header
 character(len=256)                                      :: warn_header
 character(len=256)                                      :: note_header

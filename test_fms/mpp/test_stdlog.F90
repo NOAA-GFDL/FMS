@@ -83,6 +83,8 @@ program test_stdlog
     do i=1, 7
       read(u_num_warn, '(A)') line
       if (trim(line) == '') cycle
+      !! if we're testing with the old io enabled, we'll have some additional output we can skip
+      if (trim(line) == 'NOTE from PE     0: MPP_IO_SET_STACK_SIZE: stack size set to     131072.') cycle
       if(trim(line) .ne. trim(ref_line(ref_num))) call mpp_error(FATAL, "warnfile output does not match reference data"&
                                                                 //"reference line:"//ref_line(ref_num) &
                                                                 //"output line:"//line)
@@ -92,3 +94,4 @@ program test_stdlog
   end subroutine check_write
 
 end program test_stdlog
+
