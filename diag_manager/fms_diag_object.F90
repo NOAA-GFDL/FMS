@@ -680,8 +680,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !$omp end critical
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, oor_mask, field_weight, &
                                                              is, js, ks, ie, je, ke)
-    fms_diag_accept_data = .TRUE.
-    return
   else
 
     !< At this point if we are no longer in an openmp region or running with 1 thread
@@ -709,11 +707,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
       call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
     call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info)
-    return
   end if main_if
   !> Return false if nothing is done
-  fms_diag_accept_data = .FALSE.
-  return
+  fms_diag_accept_data = .TRUE.
 #endif
 end function fms_diag_accept_data
 
