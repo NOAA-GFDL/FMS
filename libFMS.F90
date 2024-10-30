@@ -742,6 +742,7 @@ module fms
                                   fms_string_utils_sort_this => fms_sort_this, &
                                   fms_string_utils_find_my_string => fms_find_my_string, &
                                   fms_string_utils_find_unique => fms_find_unique, &
+                                  fms_string_utils_f2c_string => fms_f2c_string, &
                                   fms_string_utils_c2f_string => fms_c2f_string, &
                                   fms_string_utils_cstring2cpointer => fms_cstring2cpointer, &
                                   fms_string_utils_copy => string_copy

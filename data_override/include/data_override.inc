@@ -21,7 +21,7 @@
 ! modules. These modules are not intended to be used directly - they should be
 ! used through the data_override_mod API. See data_override.F90 for details.
 
-use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN
+use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
 use yaml_parser_mod
 use constants_mod, only: DEG_TO_RAD
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
@@ -45,7 +45,7 @@ use mpp_domains_mod, only : domainUG, mpp_pass_SG_to_UG, mpp_get_UG_SG_domain, N
 use time_manager_mod, only: time_type, OPERATOR(>), OPERATOR(<)
 use fms2_io_mod,     only : FmsNetcdfFile_t, open_file, close_file, &
                             read_data, fms2_io_init, variable_exists, &
-                            get_mosaic_tile_file, file_exists
+                            get_mosaic_tile_file, file_exists, get_instance_filename
 use get_grid_version_mod, only: get_grid_version_1, get_grid_version_2
 use fms_string_utils_mod, only: string
 
@@ -591,9 +591,18 @@ subroutine read_table_yaml(data_table)
     integer :: nentries, mentries
     integer :: i
     character(len=50) :: buffer
+    character(len=FMS_FILE_LEN) :: filename !< Name of the expected data_table.yaml
     integer :: file_id
 
-    file_id = open_and_parse_file("data_table.yaml")
+    ! If doing and ensemble or nest run add the filename appendix (ens_XX or nest_XX) to the filename
+    call get_instance_filename("data_table.yaml", filename)
+    if (index(trim(filename), "ens_") .ne. 0) then
+      if (file_exists(filename) .and. file_exists("data_table.yaml")) &
+        call mpp_error(FATAL, "Both data_table.yaml and "//trim(filename)//" exists, pick one!")
+    endif
+
+    file_id = open_and_parse_file(trim(filename))
+
     if (file_id==999) then
       nentries = 0
     else
