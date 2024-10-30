@@ -317,7 +317,6 @@ if test $enable_deprecated_io = yes; then
   # this macro was only removed from non-deprecated code so still needs to be set
   AC_DEFINE([use_netCDF], [1], [This has been removed elsewhere but is still required to build with deprecated io])
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
-  AC_MSG_WARN(FMS_io will be deprecated in a future release. Please update to use fms2_io and remove --enable-deprecated-io from your configure options)
 else
   AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
 fi
@@ -538,3 +537,7 @@ AC_CONFIG_FILES([
   ])
 
 AC_OUTPUT()
+
+if test $enable_deprecated_io = yes; then
+  AC_MSG_WARN(FMS_IO WILL BE DEPRECATED IN A FUTURE RLEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS)
+fi

@@ -257,8 +257,8 @@ if(WITH_YAML)
 endif()
 
 if(USE_DEPRECATED_IO)
-  message( WARNING "FMS_io will be deprecated in a future release. Please update to use fms2_io and remove "
-                   "-DUSE_DEPRECATED_IO=on from your options")
+  message( WARNING "fms_io WILL BE DEPRECATED IN A FUTURE RELEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE "
+                   "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS")
   list(APPEND fms_defs use_deprecated_io)
 endif()
 
