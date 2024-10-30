@@ -199,6 +199,7 @@ call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
 call allocate_dummy_data(var_data, domain, Domain_cube_sph, land_domain, nz)
 Time_step = set_time (3600,0) !< 1 hour
+call set_dummy_data(var_data, 666)
 used = send_data(id_var8, var_data%var6, Time)
 do i=1,23
   Time = Time + Time_step
