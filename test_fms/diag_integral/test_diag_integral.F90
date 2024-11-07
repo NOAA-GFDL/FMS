@@ -97,7 +97,7 @@ program test_diag_integral
 
 contains
   !-------------------------------------
-  !------------------------------------- 
+  !-------------------------------------
   subroutine initialize_arrays
 
     !> made up numbers
