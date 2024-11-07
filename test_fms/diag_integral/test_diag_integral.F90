@@ -194,7 +194,7 @@ contains
   subroutine read_diag_integral_file
 
     character(*), parameter :: di_file='diag_integral.out'
-    integer, parameter  :: iunit
+    integer :: iunit
 
     character(100) :: cline1, cline2, cline3, cline4, cline5, clin6
 
