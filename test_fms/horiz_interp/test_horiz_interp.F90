@@ -1131,7 +1131,7 @@ implicit none
         ! this set up is usually done within horiz_interp_new
         nlon_in  = size(lon_in_1d(:))-1;  nlat_in  = size(lat_in_1d(:))-1
         nlon_out = size(lon_out_1d(:))-1; nlat_out = size(lat_out_1d(:))-1
-        allocate(lon_src_1d(nlon_in), lat_src_1d(nlat_in))
+        allocate(lon_src_1d(nlon_in-1), lat_src_1d(nlat_in-1))
         allocate(lon_dst_1d(nlon_out), lat_dst_1d(nlat_out))
         do i = 1, nlon_in-1
           lon_src_1d(i) = (lon_in_1d(i) + lon_in_1d(i+1)) * 0.5_lkind
@@ -1213,7 +1213,7 @@ implicit none
         call horiz_interp_del(Interp_cp)
         ! 2dx1d
         deallocate(lon_out_1D, lat_out_1D)
-        allocate(lon_out_1D(ni_dst+1), lat_out_1D(nj_dst+1))
+        allocate(lon_out_1D(ni_dst), lat_out_1D(nj_dst))
         do i=1, ni_dst
             lon_out_1d(i) = real(i-1, HI_TEST_KIND_) * dlon_dst + lon_dst_beg
         enddo
