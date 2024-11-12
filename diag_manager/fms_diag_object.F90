@@ -537,7 +537,7 @@ end function fms_diag_axis_init
 !! multithreaded case.
 !! \note If some of the diag manager is offloaded in the future, then it should be treated similarly
 !! to the multi-threaded option for processing later
-logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rmask, &
+subroutine fms_diag_accept_data (this, diag_field_id, field_data, mask, rmask, &
                                        time, is_in, js_in, ks_in, &
                                        ie_in, je_in, ke_in, weight, err_msg)
   class(fmsDiagObject_type),TARGET,      INTENT(inout)          :: this          !< Diaj_obj to fill
@@ -710,9 +710,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info)
   end if main_if
   !> Return false if nothing is done
-  fms_diag_accept_data = .TRUE.
 #endif
-end function fms_diag_accept_data
+end subroutine fms_diag_accept_data
 
 !< @brief Do the math for all the buffers
 subroutine do_buffer_math(this)

@@ -1789,7 +1789,7 @@ END FUNCTION register_static_field
       allocate(mask_remap(1:size(mask,1), 1:size(mask,2), 1:size(mask,3), 1))
       mask_remap(:,:,:,1) = mask
     endif
-    diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_remap, mask_remap, rmask_remap, &
+    call fms_diag_object%fms_diag_accept_data(diag_field_id, field_remap, mask_remap, rmask_remap, &
                                                           time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
                                                           err_msg)
     deallocate (field_remap)
@@ -3518,7 +3518,7 @@ END FUNCTION register_static_field
     if (present(mask)) mask_local = mask
     if (present(rmask)) rmask_local = rmask
 
-    send_data_4d = fms_diag_object%fms_diag_accept_data(diag_field_id, field, mask_local, rmask_local, &
+    call fms_diag_object%fms_diag_accept_data(diag_field_id, field, mask_local, rmask_local, &
                                                           time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
                                                           err_msg)
 
