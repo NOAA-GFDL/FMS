@@ -23,16 +23,16 @@ jobs:
         rm -rf am5_src am5_build
         mkdir am5_src
         mkdir am5_build
-        ln -s /contrib/am5/src_am5f7c1r0/am5_phys am5_src/am5_phys
-        ln -s /contrib/am5/src_am5f7c1r0/atmos_drivers am5_src/atmos_drivers
-        ln -s /contrib/am5/src_am5f7c1r0/GFDL_atmos_cubed_sphere am5_src/GFDL_atmos_cubed_sphere
-        ln -s /contrib/am5/src_am5f7c1r0/GRTCODE am5_src/GRTCODE
-        ln -s /contrib/am5/src_am5f7c1r0/ice_param am5_src/ice_param
-        ln -s /contrib/am5/src_am5f7c1r0/land_lad2 am5_src/land_lad2
-        ln -s /contrib/am5/src_am5f7c1r0/mom6 am5_src/mom6
-        ln -s /contrib/am5/src_am5f7c1r0/ocean_BGC am5_src/ocean_BGC
-        ln -s /contrib/am5/src_am5f7c1r0/rte-ecckd am5_src/rte-ecckd
-        ln -s /contrib/am5/src_am5f7c1r0/rte-rrtmgp am5_src/rte-rrtmgp
+        ln -s /contrib/am5/ci/am5f8d1r0/src/am5_phys am5_src/am5_phys
+        ln -s /contrib/am5/ci/am5f8d1r0/src/atmos_drivers am5_src/atmos_drivers
+        ln -s /contrib/am5/ci/am5f8d1r0/src/GFDL_atmos_cubed_sphere am5_src/GFDL_atmos_cubed_sphere
+        ln -s /contrib/am5/ci/am5f8d1r0/src/GRTCODE am5_src/GRTCODE
+        ln -s /contrib/am5/ci/am5f8d1r0/src/ice_param am5_src/ice_param
+        ln -s /contrib/am5/ci/am5f8d1r0/src/land_lad2 am5_src/land_lad2
+        ln -s /contrib/am5/ci/am5f8d1r0/src/mom6 am5_src/mom6
+        ln -s /contrib/am5/ci/am5f8d1r0/src/ocean_BGC am5_src/ocean_BGC
+        ln -s /contrib/am5/ci/am5f8d1r0/src/rte-ecckd am5_src/rte-ecckd
+        ln -s /contrib/am5/ci/am5f8d1r0/src/rte-rrtmgp am5_src/rte-rrtmgp
     - name: Checkout FMS
       uses: actions/checkout@v4
       with:
@@ -43,12 +43,11 @@ jobs:
         repository: NOAA-GFDL/FMScoupler
         path: am5_src/coupler
     - name: Build AM5 in Intel container
-      run: /contrib/am5/ci/container_build.sh ${GITHUB_WORKSPACE}/am5_build
+      run: /contrib/am5/ci/am5f8d1r0/container_build.sh
     - name: Check build succeeded
       run: stat ${GITHUB_WORKSPACE}/am5_build/fms_am5f7b12r1_compile.x
       
   run_AM5:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: [self-hosted, pw-platform]
     strategy:
       fail-fast: false
@@ -59,4 +58,4 @@ jobs:
           cd am5_run
           rm -f *.nc.* RESTART/*.nc.*
       - name: Launch runscript
-        run: /contrib/am5/ci/run.sh
+        run: /contrib/am5/ci/am5f8d1r0/run.sh
