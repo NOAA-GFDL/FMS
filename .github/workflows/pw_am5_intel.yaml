@@ -41,7 +41,7 @@ jobs:
     - name: Build AM5 in Intel container
       run: /contrib/am5/ci/am5f8d1r0/container_build.sh
     - name: Check build succeeded
-      run: stat ${GITHUB_WORKSPACE}/am5_build/fms_am5f7b12r1_compile.x
+      run: stat ${GITHUB_WORKSPACE}/am5_build/fms_am5f8d1r0_compile.x
       
   run_AM5:
     runs-on: [self-hosted, pw-platform]
