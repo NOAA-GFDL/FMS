@@ -537,3 +537,7 @@ AC_CONFIG_FILES([
   ])
 
 AC_OUTPUT()
+
+if test $enable_deprecated_io = yes; then
+  AC_MSG_WARN(FMS_IO WILL BE DEPRECATED IN A FUTURE RLEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS)
+fi
