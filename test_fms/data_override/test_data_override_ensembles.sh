@@ -27,25 +27,26 @@
 output_dir
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 
-cat <<_EOF > data_table.yaml
+cat <<_EOF > data_table.ens_01.yaml
 data_table:
-- grid_name: OCN
-  fieldname_in_model: runoff_obs
-  override_file:
-  - fieldname_in_file: runoff
-    file_name: ./INPUT/bilinear_increasing.nc
-    interp_method: bilinear
-  factor: 1.0
-- grid_name: OCN
-  fieldname_in_model: runoff_obs_weights
-  override_file:
-  - fieldname_in_file: runoff
-    file_name: ./INPUT/bilinear_increasing.nc
-    interp_method: bilinear
-    external_weights:
-    - file_name: ./INPUT/remap_file.nc
-      source: fregrid
-  factor: 1.0
+ - grid_name: OCN
+   fieldname_in_model: runoff
+   override_file:
+   - fieldname_in_file: runoff
+     file_name: INPUT/runoff.daitren.clim.1440x1080.v20180328_ens_01.nc
+     interp_method: none
+   factor: 1.0
+_EOF
+
+cat <<_EOF > data_table.ens_02.yaml
+data_table:
+ - grid_name: OCN
+   fieldname_in_model: runoff
+   override_file:
+   - fieldname_in_file: runoff
+     file_name: INPUT/runoff.daitren.clim.1440x1080.v20180328_ens_02.nc
+     interp_method: none
+   factor: 1.0
 _EOF
 
 cat <<_EOF > input_base.nml
@@ -54,11 +55,12 @@ cat <<_EOF > input_base.nml
 /
 
 &test_data_override_ongrid_nml
-  test_case = 4
-  nlon = 5
-  nlat = 6
-  layout = 1, 2
+  test_case = 5
   write_only = .False.
+/
+
+&ensemble_nml
+   ensemble_size = 2
 /
 _EOF
 
@@ -67,18 +69,31 @@ if [ -z $parser_skip ]; then
   for KIND in r4 r8
   do
     rm -rf INPUT/.
-
     sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
     test_expect_success "Creating input files (${KIND})" '
-      mpirun -n 2 ../test_data_override_ongrid_${KIND}
+      mpirun -n 12 ../test_data_override_ongrid_${KIND}
     '
 
     cp input_base.nml input.nml
-    test_expect_success "test_data_override with and without weight files  -yaml (${KIND})" '
-      mpirun -n 2 ../test_data_override_ongrid_${KIND}
+    test_expect_success "test_data_override with two ensembles  -yaml (${KIND})" '
+      mpirun -n 12 ../test_data_override_ongrid_${KIND}
       '
   done
-fi
 
+cat <<_EOF > data_table.yaml
+data_table:
+ - grid_name: OCN
+   fieldname_in_model: runoff
+   override_file:
+   - fieldname_in_file: runoff
+     file_name: INPUT/runoff.daitren.clim.1440x1080.v20180328_ens_02.nc
+     interp_method: none
+   factor: 1.0
+_EOF
+
+    test_expect_failure "test_data_override with both data_table.yaml and data_table.ens_xx.yaml files" '
+      mpirun -n 12 ../test_data_override_ongrid_${KIND}
+      '
 rm -rf INPUT
+fi
 test_done

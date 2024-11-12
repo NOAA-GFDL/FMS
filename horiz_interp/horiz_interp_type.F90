@@ -164,58 +164,131 @@ contains
       call mpp_error(FATAL,'horiz_interp_type_eq: horiz_interp_type variable on right hand side is unassigned')
     endif
 
-    horiz_interp_out%ilon            = horiz_interp_in%ilon
-    horiz_interp_out%jlat            = horiz_interp_in%jlat
-    horiz_interp_out%i_lon           = horiz_interp_in%i_lon
-    horiz_interp_out%j_lat           = horiz_interp_in%j_lat
-    horiz_interp_out%found_neighbors = horiz_interp_in%found_neighbors
-    horiz_interp_out%num_found       = horiz_interp_in%num_found
-    horiz_interp_out%nlon_src        =  horiz_interp_in%nlon_src
-    horiz_interp_out%nlat_src        =  horiz_interp_in%nlat_src
-    horiz_interp_out%nlon_dst        =  horiz_interp_in%nlon_dst
-    horiz_interp_out%nlat_dst        =  horiz_interp_in%nlat_dst
+    if( allocated(horiz_interp_in%ilon )) &
+      horiz_interp_out%ilon = horiz_interp_in%ilon
+
+    if( allocated(horiz_interp_in%jlat )) &
+      horiz_interp_out%jlat = horiz_interp_in%jlat
+
+    if( allocated(horiz_interp_in%i_lon )) &
+      horiz_interp_out%i_lon = horiz_interp_in%i_lon
+
+    if( allocated(horiz_interp_in%j_lat )) &
+      horiz_interp_out%j_lat = horiz_interp_in%j_lat
+
+    if( allocated(horiz_interp_in%found_neighbors )) &
+      horiz_interp_out%found_neighbors = horiz_interp_in%found_neighbors
+
+    if( allocated(horiz_interp_in%num_found )) &
+      horiz_interp_out%num_found = horiz_interp_in%num_found
+
+    if( allocated(horiz_interp_in%i_src )) &
+      horiz_interp_out%i_src = horiz_interp_in%i_src
+
+    if( allocated(horiz_interp_in%j_src )) &
+      horiz_interp_out%j_src = horiz_interp_in%j_src
+
+    if( allocated(horiz_interp_in%i_dst )) &
+      horiz_interp_out%i_dst = horiz_interp_in%i_dst
+
+    if( allocated(horiz_interp_in%j_dst )) &
+      horiz_interp_out%j_dst = horiz_interp_in%j_dst
+
+    horiz_interp_out%nlon_src =  horiz_interp_in%nlon_src
+    horiz_interp_out%nlat_src =  horiz_interp_in%nlat_src
+    horiz_interp_out%nlon_dst =  horiz_interp_in%nlon_dst
+    horiz_interp_out%nlat_dst =  horiz_interp_in%nlat_dst
     horiz_interp_out%interp_method   =  horiz_interp_in%interp_method
     horiz_interp_out%I_am_initialized = .true.
-    horiz_interp_out%i_src           = horiz_interp_in%i_src
-    horiz_interp_out%j_src           = horiz_interp_in%j_src
-    horiz_interp_out%i_dst           = horiz_interp_in%i_dst
-    horiz_interp_out%j_dst           = horiz_interp_in%j_dst
 
     if(horiz_interp_in%horizInterpReals8_type%is_allocated) then
-      horiz_interp_out%horizInterpReals8_type%faci            = horiz_interp_in%horizInterpReals8_type%faci
-      horiz_interp_out%horizInterpReals8_type%facj            = horiz_interp_in%horizInterpReals8_type%facj
-      horiz_interp_out%horizInterpReals8_type%area_src        = horiz_interp_in%horizInterpReals8_type%area_src
-      horiz_interp_out%horizInterpReals8_type%area_dst        = horiz_interp_in%horizInterpReals8_type%area_dst
-      horiz_interp_out%horizInterpReals8_type%wti             = horiz_interp_in%horizInterpReals8_type%wti
-      horiz_interp_out%horizInterpReals8_type%wtj             = horiz_interp_in%horizInterpReals8_type%wtj
-      horiz_interp_out%horizInterpReals8_type%src_dist        = horiz_interp_in%horizInterpReals8_type%src_dist
-      horiz_interp_out%horizInterpReals8_type%rat_x           = horiz_interp_in%horizInterpReals8_type%rat_x
-      horiz_interp_out%horizInterpReals8_type%rat_y           = horiz_interp_in%horizInterpReals8_type%rat_y
-      horiz_interp_out%horizInterpReals8_type%lon_in          = horiz_interp_in%horizInterpReals8_type%lon_in
-      horiz_interp_out%horizInterpReals8_type%lat_in          = horiz_interp_in%horizInterpReals8_type%lat_in
-      horiz_interp_out%horizInterpReals8_type%area_frac_dst   = horiz_interp_in%horizInterpReals8_type%area_frac_dst
-      horiz_interp_out%horizInterpReals8_type%max_src_dist    =  horiz_interp_in%horizInterpReals8_type%max_src_dist
-      horiz_interp_out%horizInterpReals8_type%is_allocated    = .true.
+
+      if( allocated(horiz_interp_in%horizInterpReals8_type%faci)) &
+        horiz_interp_out%horizInterpReals8_type%faci = horiz_interp_in%horizInterpReals8_type%faci
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%facj)) &
+        horiz_interp_out%horizInterpReals8_type%facj = horiz_interp_in%horizInterpReals8_type%facj
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%area_src)) &
+        horiz_interp_out%horizInterpReals8_type%area_src = horiz_interp_in%horizInterpReals8_type%area_src
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%area_dst)) &
+        horiz_interp_out%horizInterpReals8_type%area_dst = horiz_interp_in%horizInterpReals8_type%area_dst
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%wti)) &
+        horiz_interp_out%horizInterpReals8_type%wti = horiz_interp_in%horizInterpReals8_type%wti
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%wtj)) &
+        horiz_interp_out%horizInterpReals8_type%wtj = horiz_interp_in%horizInterpReals8_type%wtj
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%src_dist)) &
+        horiz_interp_out%horizInterpReals8_type%src_dist = horiz_interp_in%horizInterpReals8_type%src_dist
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%rat_x)) &
+        horiz_interp_out%horizInterpReals8_type%rat_x = horiz_interp_in%horizInterpReals8_type%rat_x
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%rat_y)) &
+        horiz_interp_out%horizInterpReals8_type%rat_y = horiz_interp_in%horizInterpReals8_type%rat_y
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%lon_in)) &
+        horiz_interp_out%horizInterpReals8_type%lon_in = horiz_interp_in%horizInterpReals8_type%lon_in
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%lat_in)) &
+        horiz_interp_out%horizInterpReals8_type%lat_in = horiz_interp_in%horizInterpReals8_type%lat_in
+
+      if( allocated(  horiz_interp_in%horizInterpReals8_type%area_frac_dst)) &
+        horiz_interp_out%horizInterpReals8_type%area_frac_dst = horiz_interp_in%horizInterpReals8_type%area_frac_dst
+
+      horiz_interp_out%horizInterpReals8_type%max_src_dist =  horiz_interp_in%horizInterpReals8_type%max_src_dist
+
+      horiz_interp_out%horizInterpReals8_type%is_allocated = .true.
       ! this was left out previous to mixed mode
-      horiz_interp_out%horizInterpReals8_type%mask_in         = horiz_interp_in%horizInterpReals8_type%mask_in
+      if( allocated(horiz_interp_in%horizInterpReals8_type%mask_in)) &
+        horiz_interp_out%horizInterpReals8_type%mask_in = horiz_interp_in%horizInterpReals8_type%mask_in
 
     else if (horiz_interp_in%horizInterpReals4_type%is_allocated) then
-      horiz_interp_out%horizInterpReals4_type%faci            = horiz_interp_in%horizInterpReals4_type%faci
-      horiz_interp_out%horizInterpReals4_type%facj            = horiz_interp_in%horizInterpReals4_type%facj
-      horiz_interp_out%horizInterpReals4_type%area_src        = horiz_interp_in%horizInterpReals4_type%area_src
-      horiz_interp_out%horizInterpReals4_type%area_dst        = horiz_interp_in%horizInterpReals4_type%area_dst
-      horiz_interp_out%horizInterpReals4_type%wti             = horiz_interp_in%horizInterpReals4_type%wti
-      horiz_interp_out%horizInterpReals4_type%wtj             = horiz_interp_in%horizInterpReals4_type%wtj
-      horiz_interp_out%horizInterpReals4_type%src_dist        = horiz_interp_in%horizInterpReals4_type%src_dist
-      horiz_interp_out%horizInterpReals4_type%rat_x           = horiz_interp_in%horizInterpReals4_type%rat_x
-      horiz_interp_out%horizInterpReals4_type%rat_y           = horiz_interp_in%horizInterpReals4_type%rat_y
-      horiz_interp_out%horizInterpReals4_type%lon_in          = horiz_interp_in%horizInterpReals4_type%lon_in
-      horiz_interp_out%horizInterpReals4_type%lat_in          = horiz_interp_in%horizInterpReals4_type%lat_in
-      horiz_interp_out%horizInterpReals4_type%area_frac_dst   = horiz_interp_in%horizInterpReals4_type%area_frac_dst
-      horiz_interp_out%horizInterpReals4_type%max_src_dist    =  horiz_interp_in%horizInterpReals4_type%max_src_dist
-      horiz_interp_out%horizInterpReals4_type%is_allocated    = .true.
+      if( allocated(horiz_interp_in%horizInterpReals4_type%faci)) &
+        horiz_interp_out%horizInterpReals4_type%faci = horiz_interp_in%horizInterpReals4_type%faci
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%facj)) &
+        horiz_interp_out%horizInterpReals4_type%facj = horiz_interp_in%horizInterpReals4_type%facj
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%area_src)) &
+        horiz_interp_out%horizInterpReals4_type%area_src = horiz_interp_in%horizInterpReals4_type%area_src
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%area_dst)) &
+        horiz_interp_out%horizInterpReals4_type%area_dst = horiz_interp_in%horizInterpReals4_type%area_dst
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%wti)) &
+        horiz_interp_out%horizInterpReals4_type%wti = horiz_interp_in%horizInterpReals4_type%wti
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%wtj)) &
+        horiz_interp_out%horizInterpReals4_type%wtj = horiz_interp_in%horizInterpReals4_type%wtj
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%src_dist)) &
+        horiz_interp_out%horizInterpReals4_type%src_dist = horiz_interp_in%horizInterpReals4_type%src_dist
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%rat_x)) &
+        horiz_interp_out%horizInterpReals4_type%rat_x = horiz_interp_in%horizInterpReals4_type%rat_x
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%rat_y)) &
+        horiz_interp_out%horizInterpReals4_type%rat_y = horiz_interp_in%horizInterpReals4_type%rat_y
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%lon_in)) &
+        horiz_interp_out%horizInterpReals4_type%lon_in = horiz_interp_in%horizInterpReals4_type%lon_in
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%lat_in)) &
+        horiz_interp_out%horizInterpReals4_type%lat_in = horiz_interp_in%horizInterpReals4_type%lat_in
+
+      if( allocated(  horiz_interp_in%horizInterpReals4_type%area_frac_dst)) &
+        horiz_interp_out%horizInterpReals4_type%area_frac_dst  = horiz_interp_in%horizInterpReals4_type%area_frac_dst
+
+      horiz_interp_out%horizInterpReals4_type%max_src_dist =  horiz_interp_in%horizInterpReals4_type%max_src_dist
+
+      horiz_interp_out%horizInterpReals4_type%is_allocated = .true.
       ! this was left out previous to mixed mode
-      horiz_interp_out%horizInterpReals4_type%mask_in         = horiz_interp_in%horizInterpReals4_type%mask_in
+      if( allocated(horiz_interp_in%horizInterpReals4_type%mask_in)) &
+        horiz_interp_out%horizInterpReals4_type%mask_in = horiz_interp_in%horizInterpReals4_type%mask_in
 
     else
         call mpp_error(FATAL, "horiz_interp_type_eq: cannot assign unallocated real values from horiz_interp_in")

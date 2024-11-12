@@ -106,7 +106,8 @@ contains
 
     character(100) :: cresults, thelist
     real(FMS_CP_TEST_KIND_) :: rresults, rresults2(num_bcs)
-    integer :: i, success, n
+    integer :: i, n
+    logical :: success
 
     write(*,*) "*** TEST_AOF_SET_COUPLER_FLUX ***"
 
