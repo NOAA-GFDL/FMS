@@ -28,7 +28,6 @@ program test_domains_simple
   use mpp_mod
   use mpp_domains_mod
   use platform_mod
-
   implicit none
 
   integer :: pe, npes     !> This pe and the total number of pes.

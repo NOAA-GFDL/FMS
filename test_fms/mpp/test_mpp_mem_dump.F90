@@ -30,7 +30,6 @@ program test_mpp_mem_dump
 
   use mpp_memutils_mod, only: mpp_mem_dump
   use platform_mod
-
   implicit none
 
   real :: memuse
