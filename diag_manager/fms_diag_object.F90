@@ -224,6 +224,7 @@ integer function fms_register_diag_field_obj &
  integer, allocatable :: file_ids(:) !< The file IDs for this variable
  integer :: i !< For do loops
  integer, allocatable :: diag_field_indices(:) !< indices where the field was found in the yaml
+ class(diagDomain_t), pointer :: null_diag_domain => NULL() !< Workaround for a Cray bug which will be fixed in CCE 19
 #endif
 #ifndef use_yaml
 fms_register_diag_field_obj = DIAG_FIELD_NOT_FOUND
@@ -267,7 +268,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_field_and_yaml_id(fieldptr%get_id(), diag_field_indices(i))
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      if(fieldptr%get_type_of_domain() .eq. NO_DOMAIN) then
-       call fileptr%set_file_domain(NULL(), fieldptr%get_type_of_domain())
+       call fileptr%set_file_domain(null_diag_domain, fieldptr%get_type_of_domain())
      else
        call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      endif
@@ -284,7 +285,7 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
      call fileptr%add_buffer_id(fieldptr%buffer_ids(i))
      call fileptr%init_diurnal_axis(this%diag_axis, this%registered_axis, diag_field_indices(i))
      if(fieldptr%get_type_of_domain() .eq. NO_DOMAIN) then
-       call fileptr%set_file_domain(NULL(), fieldptr%get_type_of_domain())
+       call fileptr%set_file_domain(null_diag_domain, fieldptr%get_type_of_domain())
      else
        call fileptr%set_file_domain(fieldptr%get_domain(), fieldptr%get_type_of_domain())
      endif
@@ -536,7 +537,7 @@ end function fms_diag_axis_init
 !! multithreaded case.
 !! \note If some of the diag manager is offloaded in the future, then it should be treated similarly
 !! to the multi-threaded option for processing later
-logical function fms_diag_accept_data (this, diag_field_id, field_data, mask, rmask, &
+subroutine fms_diag_accept_data (this, diag_field_id, field_data, mask, rmask, &
                                        time, is_in, js_in, ks_in, &
                                        ie_in, je_in, ke_in, weight, err_msg)
   class(fmsDiagObject_type),TARGET,      INTENT(inout)          :: this          !< Diaj_obj to fill
@@ -680,8 +681,6 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
 !$omp end critical
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, oor_mask, field_weight, &
                                                              is, js, ks, ie, je, ke)
-    fms_diag_accept_data = .TRUE.
-    return
   else
 
     !< At this point if we are no longer in an openmp region or running with 1 thread
@@ -709,13 +708,10 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     if(.not. this%FMS_diag_fields(diag_field_id)%has_mask_allocated()) &
       call this%FMS_diag_fields(diag_field_id)%allocate_mask(oor_mask)
     call this%FMS_diag_fields(diag_field_id)%set_mask(oor_mask, field_info)
-    return
   end if main_if
   !> Return false if nothing is done
-  fms_diag_accept_data = .FALSE.
-  return
 #endif
-end function fms_diag_accept_data
+end subroutine fms_diag_accept_data
 
 !< @brief Do the math for all the buffers
 subroutine do_buffer_math(this)

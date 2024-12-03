@@ -199,6 +199,8 @@ call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
 call allocate_dummy_data(var_data, domain, Domain_cube_sph, land_domain, nz)
 Time_step = set_time (3600,0) !< 1 hour
+call set_dummy_data(var_data, 666)
+used = send_data(id_var8, var_data%var6, Time)
 do i=1,23
   Time = Time + Time_step
   call set_dummy_data(var_data, i)
@@ -209,9 +211,6 @@ do i=1,23
   used = send_data(id_var5, var_data%var5, Time)
   used = send_data(id_var6, var_data%var6, Time)
   used = send_data(id_var7, var_data%var6, Time)
-
-  !TODO I don't know about this (scalar field) or how this is suppose to work #WUT
-  used = send_data(id_var8, var_data%var6, Time)
 
   call diag_send_complete(Time_step)
 enddo

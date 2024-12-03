@@ -693,6 +693,11 @@ subroutine fms_io_init()
      call mpp_error(FATAL,'=>fms_io_init: Error reading input nml file')
   endif
 
+  call mpp_error(NOTE, "fms_io_init: fms_io WILL BE DEPRECATED IN A FUTURE RELEASE! "//&
+                       "PLEASE REMOVE -Duse_deprecated_io FROM YOUR COMPILE FLAGS "// &
+                       "AND MOVE TO FMS2_IO. CONTACT YOUR MODEL LIASISON IF YOU NEED "// &
+                       "ASSISTANCE")
+
 ! take namelist options if present
 ! read_data_bug is no longer supported.
   if (read_data_bug) then
@@ -801,6 +806,11 @@ subroutine fms_io_exit()
     type(domain2d), pointer :: io_domain =>NULL()
 
     if( .NOT.module_is_initialized )return !make sure it's only called once per PE
+
+    call mpp_error(NOTE, "fms_io_exit: fms_io WILL BE DEPRECATED IN A FUTURE RELEASE! "//&
+                         "PLEASE REMOVE -Duse_deprecated_io FROM YOUR COMPILE FLAGS "// &
+                         "AND MOVE TO FMS2_IO. CONTACT YOUR MODEL LIASISON IF YOU NEED "// &
+                         "ASSISTANCE")
 
     do i=1,max_axis_size
        axisdata(i) = i

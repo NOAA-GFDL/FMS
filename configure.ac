@@ -533,7 +533,12 @@ AC_CONFIG_FILES([
   test_fms/random_numbers/Makefile
   test_fms/topography/Makefile
   test_fms/column_diagnostics/Makefile
+  test_fms/block_control/Makefile
   FMS.pc
   ])
 
 AC_OUTPUT()
+
+if test $enable_deprecated_io = yes; then
+  AC_MSG_WARN(FMS_IO WILL BE DEPRECATED IN A FUTURE RLEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS)
+fi

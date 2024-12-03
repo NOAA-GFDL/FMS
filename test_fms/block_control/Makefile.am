@@ -17,17 +17,31 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is an automake file for the test_fms/block_control directory of the
+# FMS package.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Find the fms and mpp mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp mpp_io time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal block_control
+# Link to the FMS library.
+LDADD = $(top_builddir)/libFMS/libFMS.la
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# Build this test program.
+check_PROGRAMS = \
+  test_block_control
+
+# This is the source code for the test.
+test_block_control_SOURCES = test_block_control.F90
+
+# Run the test program.
+TESTS = test_block_control.sh
+
+# Copy over other needed files to the srcdir
+EXTRA_DIST = test_block_control.sh
+
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                  $(abs_top_srcdir)/test_fms/tap-driver.sh
+
+# Clean up
+CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl

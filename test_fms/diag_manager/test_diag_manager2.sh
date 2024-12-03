@@ -786,7 +786,7 @@ diag_files:
     kind: r4
   - module: atm_mod
     var_name: var7
-    reduction: average
+    reduction: none
     kind: r4
 - file_name: file4
   freq: 6 hours
@@ -1050,7 +1050,7 @@ diag_files:
     dimensions: time grid_index
   - module: atm_mod
     var_name: var7
-    reduction: average
+    reduction: none
     kind: r4
     output_name:
     long_name:
