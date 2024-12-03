@@ -1892,7 +1892,7 @@
 
  ind = int( dtinvll*(temp-tminll+tepsll) )
  if (ind < 0 .or. ind > nlim) then
-   write(output_msg,'(a,e10.3,a,i6)') 'Bad temperature=',temp,' pe=',mpp_pe()
+   write(output_msg,'(a,e10.3)') 'Bad temperature=',temp
    call mpp_error(WARNING, output_msg)
  endif
 
@@ -1917,7 +1917,7 @@
  do i=1,size(temp)
    ind = int( dtinvll*(temp(i)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-     write(output_msg,'(a,e10.3,a,i4,a,i6)') 'Bad temperature=',temp(i),'  at i=',i,' pe=',mpp_pe()
+     write(output_msg,'(a,e10.3,a,i4)') 'Bad temperature=',temp(i),'  at i=',i
      call mpp_error(WARNING,output_msg)
    endif
  enddo
@@ -1944,7 +1944,7 @@
  do i=1,size(temp,1)
    ind = int( dtinvll*(temp(i,j)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-     write(output_msg,'(a,e10.3,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j,' pe=',mpp_pe()
+     write(output_msg,'(a,e10.3,a,i4,a,i4)') 'Bad temperature=',temp(i,j),'  at i=',i,' j=',j
      call mpp_error(WARNING, output_msg)
    endif
  enddo
@@ -1973,8 +1973,7 @@
  do i=1,size(temp,1)
    ind = int( dtinvll*(temp(i,j,k)-tminll+tepsll) )
    if (ind < 0 .or. ind > nlim) then
-     write(output_msg,'(a,e10.3,a,i4,a,i4,a,i4,a,i6)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k, &
-          & ' pe=',mpp_pe()
+     write(output_msg,'(a,e10.3,a,i4,a,i4,a,i4)') 'Bad temperature=',temp(i,j,k),'  at i=',i,' j=',j,' k=',k
      call mpp_error(WARNING, output_msg)
    endif
  enddo
