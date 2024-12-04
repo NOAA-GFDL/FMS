@@ -20,10 +20,10 @@ jobs:
     steps:
     - name: Setup source and build directories
       run: |
-        mkdir ${GITHUB_SHA}
+        mkdir -p ${GITHUB_SHA}
         cd ${GITHUB_SHA}
-        mkdir am5_src
-        mkdir am5_build
+        mkdir -p am5_src
+        mkdir -p am5_build
         ln -s /contrib/am5/ci/latest/src/am5_phys am5_src/am5_phys
         ln -s /contrib/am5/ci/latest/src/atmos_drivers am5_src/atmos_drivers
         ln -s /contrib/am5/ci/latest/src/GFDL_atmos_cubed_sphere am5_src/GFDL_atmos_cubed_sphere
@@ -53,6 +53,6 @@ jobs:
       - name: Create run directory
         run: |
           cd ${GITHUB_SHA}
-          mkdir am5_run
+          mkdir -p am5_run
       - name: Launch runscript
         run: /contrib/am5/ci/latest/run.sh
