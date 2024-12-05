@@ -40,7 +40,7 @@ use fms_mod,          only:  error_mesg, &
                              fms_init, &
                              mpp_pe, mpp_root_pe,&
                              FATAL, write_version_number, &
-                             stdlog
+                             stdlog, string
 use fms2_io_mod,      only:  file_exists
 use constants_mod,    only:  radius, constants_init
 use mpp_mod,          only:  mpp_sum, mpp_init
@@ -195,7 +195,6 @@ integer                     :: field_count  (max_num_field) !< number of values 
 !-------------------------------------------------------------------------------
 character(len=160) :: format_text !< format statement for header
 character(len=160) :: format_data !< format statement for data output
-logical            :: do_format_data = .true. !< a data format needs to be generated ?
 integer            :: nd !< number of characters in data format statement
 integer            :: nt !< number of characters in text format statement
 
@@ -711,6 +710,8 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
       integer :: nn, ninc, nst, nend, fields_to_print
       integer :: i, kount
       integer(i8_kind) :: icount
+      character(len=128) :: xtime_str
+      logical :: use_exp_format
 
 !-------------------------------------------------------------------------------
 !    each header and data format may be different and must be generated
@@ -765,6 +766,12 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
       xtime = get_axis_time (Time-Time_init_save, time_units)
 
 !-------------------------------------------------------------------------------
+!    check if the time value is too long for decimal output
+!-------------------------------------------------------------------------------
+      xtime_str = trim(string(xtime))
+      use_exp_format = len_trim(xtime_str(1:INDEX(xtime_str, "."))) .ge. 9
+
+!-------------------------------------------------------------------------------
 !    generate the new header and data formats.
 !-------------------------------------------------------------------------------
       nst = 1
@@ -774,7 +781,7 @@ type (time_type), intent(in) :: Time !< integral time stamp at the current time
         nst = 1 + (nn-1)*fields_per_print_line
         nend = MIN (nn*fields_per_print_line, num_field)
         if (print_header)  call format_text_init (nst, nend)
-        call format_data_init (nst, nend)
+        call format_data_init (nst, nend, use_exp_format)
         if (diag_unit /= 0) then
           write (diag_unit,format_data(1:nd)) &
                  xtime, (field_avg(i),i=nst,nend)
@@ -890,18 +897,22 @@ end subroutine format_text_init
 !! <b> Parameters: </b>
 !!
 !! @code{.f90}
-!! integer, intent(in), optional :: nst_in, nend_in
+!! integer, intent(in) :: nst_in, nend_in
 !! @endcode
 !!
 !! @param [in] <nst_in, nend_in> starting/ending integral index which will be
 !!        included in this format statement
+!! @param [in] <use_exp_format>  if true, uses exponent notation for the first format code
+!!        to avoid overflow with larger time values
 !!
-subroutine format_data_init (nst_in, nend_in)
+subroutine format_data_init (nst_in, nend_in, use_exp_format)
 
-integer, intent(in), optional :: nst_in !< starting/ending integral index which will be
+integer, intent(in) :: nst_in !< starting/ending integral index which will be
                                                  !! included in this format statement
-integer, intent(in), optional :: nend_in !< starting/ending integral index which will be
+integer, intent(in) :: nend_in !< starting/ending integral index which will be
                                                  !! included in this format statement
+logical, intent(in) :: use_exp_format !< if true, uses exponent notation for the first format code
+                                      !! to avoid overflow with larger time values
 
 !-------------------------------------------------------------------------------
 ! local variables:
@@ -917,19 +928,18 @@ integer, intent(in), optional :: nend_in !< starting/ending integral index which
 !    integrals. this section is 9 characters long.
 !-------------------------------------------------------------------------------
       nd = 9
-      format_data(1:nd) = '(1x,f10.2'
+      if( use_exp_format ) then
+        format_data(1:nd) = '(1x,e10.2'
+      else
+        format_data(1:nd) = '(1x,f10.2'
+      endif
 
 !-------------------------------------------------------------------------------
 !    define the indices of the integrals that are to be written by this
 !    format statement.
 !-------------------------------------------------------------------------------
-      if ( present (nst_in) ) then
-        nst = nst_in
-        nend = nend_in
-      else
-        nst = 1
-        nend = num_field
-      endif
+      nst = nst_in
+      nend = nend_in
 
 !-------------------------------------------------------------------------------
 !    complete the data format. use the format defined for the
@@ -937,8 +947,8 @@ integer, intent(in), optional :: nend_in !< starting/ending integral index which
 !-------------------------------------------------------------------------------
       do i=nst,nend
          nc = len_trim(field_format(i))
-         format_data(nd+1:nd+nc+5) =  ',1x,' // field_format(i)(1:nc)
-         nd = nd+nc+5
+         format_data(nd+1:nd+nc+4) =  ',1x,' // field_format(i)(1:nc)
+         nd = nd+nc+4
       end do
 
 !-------------------------------------------------------------------------------

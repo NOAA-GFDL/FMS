@@ -62,7 +62,6 @@ program test_diag_integral
   type(time_type) :: Time_init, Time
 
   !testing and generating answers
-  integer :: i, j, k !> counters for do loop
   real(r8_kind) :: area_sum !> global area.  sum of the grid cell areas.
   real(r8_kind) :: itime    !> made up time
   !> The field_avg* values are only declared as r8_kind because they correspond to the values

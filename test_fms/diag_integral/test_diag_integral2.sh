@@ -30,11 +30,8 @@ EOF
 mkdir -p INPUT
 
 test_expect_success "test_diag_integral r4" 'mpirun -n 1 ./test_diag_integral_r4'
-rm diag_integral.out
 test_expect_success "test_diag_integral r8" 'mpirun -n 1 ./test_diag_integral_r8'
-rm diag_integral.out
 
-rm input.nml
 rm -rf INPUT
 
 test_done
