@@ -902,8 +902,8 @@ end subroutine format_text_init
 !!
 !! @param [in] <nst_in, nend_in> starting/ending integral index which will be
 !!        included in this format statement
-!! @param [in] <nst_in, nend_in> starting/ending integral index which will be
-!!        included in this format statement
+!! @param [in] <use_exp_format>  if true, uses exponent notation for the first format code
+!!        to avoid overflow with larger time values
 !!
 subroutine format_data_init (nst_in, nend_in, use_exp_format)
 
