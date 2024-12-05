@@ -334,7 +334,10 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
                       msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
+  if (present(corner)) c = corner
+
   e(:) = shape(vdata)
+  if (present(edge_lengths)) e = edge_lengths
 
   call mpp_get_global_domain(io_domain, xbegin=xgbegin, xsize=xgsize, position=xpos)
   call mpp_get_global_domain(io_domain, ybegin=ygbegin, ysize=ygsize, position=ypos)
@@ -503,6 +506,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                       msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
+  if (present(edge_lengths)) e = edge_lengths
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
@@ -515,6 +519,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_global_domain(io_domain, xbegin=xgmin, position=xpos)
     call mpp_get_global_domain(io_domain, ybegin=ygmin, position=ypos)
     do i = 1, size(fileobj%pelist)
+      if (present(corner)) c = corner
       c(xdim_index) = pe_isc(i)
       c(ydim_index) = pe_jsc(i)
       if (fileobj%adjust_indices) then
@@ -532,13 +537,11 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
             !Root rank stores data directly.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_i4_kind, vdata, c, e)
           else
@@ -555,13 +558,11 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
             !Root rank stores data directly.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_i8_kind, vdata, c, e)
           else
@@ -578,13 +579,11 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
             !Root rank stores data directly.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_r4_kind, vdata, c, e)
           else
@@ -601,13 +600,11 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
             !Root rank stores data directly.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_r8_kind, vdata, c, e)
           else
@@ -626,6 +623,7 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
   else
+    c = 1
     if (buffer_includes_halos) then
       c(xdim_index) = isc - isd + 1
       c(ydim_index) = jsc - jsd + 1
@@ -724,6 +722,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                       msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
+  if (present(edge_lengths)) e = edge_lengths
 
   !I/O root reads in the data and scatters it.
   if (fileobj%is_root) then
@@ -737,6 +736,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     call mpp_get_global_domain(io_domain, ybegin=ygmin, position=ypos)
     do i = 1, size(fileobj%pelist)
       !Calculate the indices of the domain-decomposed chunk relative to its position in the file.
+      if (present(corner)) c = corner
       c(xdim_index) = pe_isc(i)
       c(ydim_index) = pe_jsc(i)
       if (fileobj%adjust_indices) then
@@ -755,13 +755,11 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
           if (i .eq. 1) then
             !Root rank stores data directly.  Re-adjust the indicies relative
             !to the input buffer vdata.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_i4_kind, vdata, c, e)
           else
@@ -778,13 +776,11 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
             !Root rank stores data directly.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_i8_kind, vdata, c, e)
           else
@@ -801,13 +797,11 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
             !Root rank stores data directly.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_r4_kind, vdata, c, e)
           else
@@ -824,13 +818,11 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                                 corner=c, edge_lengths=e, broadcast=.false.)
           if (i .eq. 1) then
             !Root rank stores data directly.
+            c = 1
             if (buffer_includes_halos) then
               !Adjust if the input buffer has room for halos.
               c(xdim_index) = isc - isd + 1
               c(ydim_index) = jsc - jsd + 1
-            else
-              c(xdim_index) = 1
-              c(ydim_index) = 1
             endif
             call put_array_section(buf_r8_kind, vdata, c, e)
           else
@@ -849,6 +841,7 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     deallocate(pe_jsc)
     deallocate(pe_jcsize)
   else
+    c = 1
     if (buffer_includes_halos) then
       c(xdim_index) = isc - isd + 1
       c(ydim_index) = jsc - jsd + 1

@@ -131,6 +131,9 @@ program test_domain_read
     call read_data_wrapper(fileobj, "var3", 3, var_data_out, var_data_in)
     call read_data_wrapper(fileobj, "var4", 4, var_data_out, var_data_in)
     call read_data_wrapper(fileobj, "var5", 5, var_data_out, var_data_in)
+    call read_data_wrapper(fileobj, "var3", 6, var_data_out, var_data_in)
+    call read_data_wrapper(fileobj, "var4", 7, var_data_out, var_data_in)
+    call read_data_wrapper(fileobj, "var5", 8, var_data_out, var_data_in)
 
     call close_file(fileobj)
   endif
@@ -295,6 +298,72 @@ program test_domain_read
 
       call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,:,:,:))
       call compare_var_data(mpp_chksum(var_data%var_i8(:,:,:,:,:)), mpp_chksum(ref_data%var_i8(:,:,:,:,:)), "var5_i8")
+    case(6)
+      !Only read the second third dimension (3d case)
+      call var_data_init(var_data)
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,1:1,1,1), &
+        corner=(/1, 1, 2/), edge_lengths=(/ nx, ny, 1/))
+      call compare_var_data(mpp_chksum(var_data%var_r4(:,:,1:1,1,1)), mpp_chksum(ref_data%var_r4(:,:,2:2,1,1)), &
+        "var3_r4-slice")
+
+      call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,1:1,1,1), &
+        corner=(/1, 1, 2/), edge_lengths=(/ nx, ny, 1/))
+      call compare_var_data(mpp_chksum(var_data%var_r8(:,:,1:1,1,1)), mpp_chksum(ref_data%var_r8(:,:,2:2,1,1)), &
+        "var3_r8-slice")
+
+      call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,1:1,1,1), &
+        corner=(/1, 1, 2/), edge_lengths=(/ nx, ny, 1/))
+      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,1:1,1,1)), mpp_chksum(ref_data%var_i4(:,:,2:2,1,1)), &
+        "var3_i4-slice")
+
+      call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,1:1,1,1), &
+        corner=(/1, 1, 2/), edge_lengths=(/ nx, ny, 1/))
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,1:1,1,1)), mpp_chksum(ref_data%var_i8(:,:,2:2,1,1)), &
+        "var3_i8-slice")
+    case(7)
+      !Only read the second third dimension (4d case)
+      call var_data_init(var_data)
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,1:1,:,1), &
+        corner=(/1, 1, 2, 1/), edge_lengths=(/ nx, ny, 1, ndim4/))
+      call compare_var_data(mpp_chksum(var_data%var_r4(:,:,1:1,:,1)), mpp_chksum(ref_data%var_r4(:,:,2:2,:,1)), &
+        "var4_r4-slice")
+
+      call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,1:1,:,1), &
+        corner=(/1, 1, 2, 1/), edge_lengths=(/ nx, ny, 1, ndim4/))
+      call compare_var_data(mpp_chksum(var_data%var_r8(:,:,1:1,:,1)), mpp_chksum(ref_data%var_r8(:,:,2:2,:,1)), &
+        "var4_r8-slice")
+
+      call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,1:1,:,1), &
+        corner=(/1, 1, 2, 1/), edge_lengths=(/ nx, ny, 1, ndim4/))
+      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,1:1,:,1)), mpp_chksum(ref_data%var_i4(:,:,2:2,:,1)), &
+        "var4_i4-slice")
+
+      call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,1:1,:,1), &
+        corner=(/1, 1, 2, 1/), edge_lengths=(/ nx, ny, 1, ndim4/))
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,1:1,:,1)), mpp_chksum(ref_data%var_i8(:,:,2:2,:,1)), &
+        "var4_i8-slice")
+    case(8)
+      !Only read the second third dimension (5d case)
+      call var_data_init(var_data)
+      call read_data(fileob, trim(var_name)//"_r4", var_data%var_r4(:,:,1:1,:,:), &
+        corner=(/1, 1, 2, 1, 1/), edge_lengths=(/ nx, ny, 1, ndim4, ndim5/))
+      call compare_var_data(mpp_chksum(var_data%var_r4(:,:,1:1,:,:)), mpp_chksum(ref_data%var_r4(:,:,2:2,:,:)), &
+        "var5_r4-slice")
+
+      call read_data(fileob, trim(var_name)//"_r8", var_data%var_r8(:,:,1:1,:,:), &
+        corner=(/1, 1, 2, 1, 1/), edge_lengths=(/ nx, ny, 1, ndim4, ndim5/))
+      call compare_var_data(mpp_chksum(var_data%var_r8(:,:,1:1,:,:)), mpp_chksum(ref_data%var_r8(:,:,2:2,:,:)), &
+        "var5_r8-slice")
+
+      call read_data(fileob, trim(var_name)//"_i4", var_data%var_i4(:,:,1:1,:,:), &
+        corner=(/1, 1, 2, 1, 1/), edge_lengths=(/ nx, ny, 1, ndim4, ndim5/))
+      call compare_var_data(mpp_chksum(var_data%var_i4(:,:,1:1,:,:)), mpp_chksum(ref_data%var_i4(:,:,2:2,:,:)), &
+        "var5_i4-slice")
+
+      call read_data(fileob, trim(var_name)//"_i8", var_data%var_i8(:,:,1:1,:,:), &
+        corner=(/1, 1, 2, 1, 1/), edge_lengths=(/ nx, ny, 1, ndim4, ndim5/))
+      call compare_var_data(mpp_chksum(var_data%var_i8(:,:,1:1,:,:)), mpp_chksum(ref_data%var_i8(:,:,2:2,:,:)), &
+        "var5_i8-slice")
     end select
 
   end subroutine read_data_wrapper
