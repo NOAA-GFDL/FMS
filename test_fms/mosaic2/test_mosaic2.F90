@@ -96,6 +96,7 @@ subroutine test_get_mosaic_grid_sizes
 
   allocate( nx_out(c1_ntiles), ny_out(c1_ntiles) )
   call get_mosaic_grid_sizes(fileobj, nx_out, ny_out)
+  ntiles = get_mosaic_ntiles(fileobj)
   do n=1, ntiles
      call check_answer(c1_nx/2, nx_out(n), 'atm TEST_GET_MOSAIC_GRID_SIZES')
      call check_answer(c1_nx/2, ny_out(n), 'atm TEST_GET_MOSAIC_GRID_SIZES')
