@@ -917,7 +917,7 @@ integer, intent(in), optional :: nend_in !< starting/ending integral index which
 !    integrals. this section is 9 characters long.
 !-------------------------------------------------------------------------------
       nd = 9
-      format_data(1:nd) = '(1x,f10.2'
+      format_data(1:nd) = '(1x,e10.2'
 
 !-------------------------------------------------------------------------------
 !    define the indices of the integrals that are to be written by this
@@ -937,8 +937,8 @@ integer, intent(in), optional :: nend_in !< starting/ending integral index which
 !-------------------------------------------------------------------------------
       do i=nst,nend
          nc = len_trim(field_format(i))
-         format_data(nd+1:nd+nc+5) =  ',1x,' // field_format(i)(1:nc)
-         nd = nd+nc+5
+         format_data(nd+1:nd+nc+4) =  ',1x,' // field_format(i)(1:nc)
+         nd = nd+nc+4
       end do
 
 !-------------------------------------------------------------------------------
