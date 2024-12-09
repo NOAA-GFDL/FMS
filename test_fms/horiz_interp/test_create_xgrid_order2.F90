@@ -16,10 +16,10 @@
 ! You should have received a copy of the GNU Lesser General Public
 ! License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !**********************************************************************/
-!> This program is a simple test to ensure grid_utils consist of all functions that
-!! are necessary for creating the exchange grid for second order remapping.
+!> This program ensures all necessary functions exist in grid_utils for
+!! creating the exchange grid for second order remapping.
 !! The first order exchange grid creation is tested in test_horiz_interp.
-!! This test is a rudimentary and only checks to see if create_xgrid_order2 returns
+!! This test is rudimentary and only checks that create_xgrid_order2 returns
 !! without failure.
 
 program test_create_xgrid_order2
