@@ -76,7 +76,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh test_time_sum.sh \
         test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh test_cell_measures.sh \
         test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_output_every_freq.sh \
-        test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh
+        test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh test_diag_attribute_add.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
@@ -85,7 +85,7 @@ EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_
              test_time_sum.sh test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh \
              test_cell_measures.sh test_subregional.sh test_var_masks.sh test_multiple_send_data.sh \
              test_flush_nc_file.sh test_dm_weights.sh test_output_every_freq.sh test_prepend_date.sh \
-             test_ens_runs.sh
+             test_ens_runs.sh test_diag_attribute_add.sh
 
 if USING_YAML
 skipflag=""
