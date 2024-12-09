@@ -125,7 +125,7 @@ use mosaic2_mod,          only: get_mosaic_xgrid, get_mosaic_xgrid_size, &
                                get_mosaic_tile_grid
 use stock_constants_mod, only: ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE, STOCK_NAMES, &
                                STOCK_UNITS, NELEMS, stocks_file, stock_type
-use gradient_mod,        only: gradient_cubic
+use gradient_mod,    only: gradient_cubic
 use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
 use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
 use fms2_io_mod,         only: get_variable_units, dimension_exists
