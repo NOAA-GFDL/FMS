@@ -47,8 +47,8 @@ rm -f *.nc
 
 my_test_count=1
 cat <<_EOF > input.nml
-&diag_manager_nml 
- use_modern_diag=.true. 
+&diag_manager_nml
+ use_modern_diag=.true.
  max_field_attributes = 10
 /
 _EOF
