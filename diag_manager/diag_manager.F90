@@ -369,11 +369,8 @@ use platform_mod
   !> @brief Add a attribute to the output field
   !> @ingroup diag_manager_mod
   INTERFACE diag_field_add_attribute
-     MODULE PROCEDURE diag_field_add_attribute_scalar_r
-     MODULE PROCEDURE diag_field_add_attribute_scalar_i
-     MODULE PROCEDURE diag_field_add_attribute_scalar_c
-     MODULE PROCEDURE diag_field_add_attribute_r1d
-     MODULE PROCEDURE diag_field_add_attribute_i1d
+     MODULE PROCEDURE diag_field_add_attribute_1d
+     MODULE PROCEDURE diag_field_add_attribute_0d
   END INTERFACE diag_field_add_attribute
 
 !> @addtogroup diag_manager_mod
@@ -4560,6 +4557,46 @@ END FUNCTION register_static_field
       CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
     endif
   END SUBROUTINE diag_field_add_attribute_i1d
+
+  !> @brief Add a scalr attribute to the diag field corresponding to a given id
+  subroutine diag_field_add_attribute_0d(diag_field_id, att_name, att_value)
+    INTEGER,          INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name      !< new attribute name
+    class(*),         INTENT(in) :: att_value     !< new attribute value
+
+    select type(att_value)
+    type is (real(kind=r4_kind))
+      call diag_field_add_attribute_scalar_r(diag_field_id, att_name, real(att_value))
+    type is (real(kind=r8_kind))
+      call diag_field_add_attribute_scalar_r(diag_field_id, att_name, real(att_value))
+    type is (integer(kind=i4_kind))
+      call diag_field_add_attribute_scalar_i(diag_field_id, att_name, att_value)
+    type is (character(len=*))
+      call diag_field_add_attribute_scalar_c(diag_field_id, att_name, att_value)
+    class default
+      call mpp_error(FATAL, "Diag_field_add_attribute 0d:: unsupported type. The acceptable types "//&
+                            "are float, double, integer, and string")
+    end select
+  end subroutine diag_field_add_attribute_0d
+
+  !> @brief Add an 1D array attribute to the diag field corresponding to a given id
+  subroutine diag_field_add_attribute_1d(diag_field_id, att_name, att_value)
+    INTEGER,          INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name      !< new attribute name
+    class(*),         INTENT(in) :: att_value(:)  !< new attribute value
+
+    select type(att_value)
+    type is (real(kind=r4_kind))
+      call diag_field_add_attribute_r1d(diag_field_id, att_name, real(att_value))
+    type is (real(kind=r8_kind))
+      call diag_field_add_attribute_r1d(diag_field_id, att_name, real(att_value))
+    type is (integer(kind=i4_kind))
+      call diag_field_add_attribute_i1d(diag_field_id, att_name, att_value)
+    class default
+      call mpp_error(FATAL, "Diag_field_add_attribute 1d:: unsupported type. The acceptable types "//&
+                            "are float, double, and integer")
+    end select
+  end subroutine diag_field_add_attribute_1d
 
   !> @brief Add the cell_measures attribute to a diag out field
   !!
