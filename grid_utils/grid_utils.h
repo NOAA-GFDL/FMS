@@ -100,6 +100,10 @@ int get_maxxgrid(void);
 
 int get_maxxgrid_(void);
 
+double get_global_area(void);
+
+double get_global_area_(void);
+
 double poly_area(const double lon[], const double lat[], int n);
 
 double poly_area_dimensionless(const double x[], const double y[], int n);
