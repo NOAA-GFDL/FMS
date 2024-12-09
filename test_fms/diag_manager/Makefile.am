@@ -34,7 +34,7 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  check_time_min check_time_max check_time_sum check_time_avg test_diag_diurnal check_time_diurnal \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
  check_var_masks test_multiple_send_data test_diag_out_yaml test_output_every_freq \
- test_dm_weights test_prepend_date test_ens_runs
+ test_dm_weights test_prepend_date test_ens_runs test_diag_attribute_add
 
 # This is the source code for the test.
 test_output_every_freq_SOURCES = test_output_every_freq.F90
@@ -66,6 +66,7 @@ check_var_masks_SOURCES = check_var_masks.F90
 test_multiple_send_data_SOURCES = test_multiple_send_data.F90
 test_prepend_date_SOURCES = test_prepend_date.F90
 test_ens_runs_SOURCES = test_ens_runs.F90
+test_diag_attribute_add_SOURCES = test_diag_attribute_add.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
