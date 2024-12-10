@@ -29,7 +29,5 @@
 . ../test-lib.sh
 
 
-test_expect_success "create_xgrid order2" '
-  ./test_create_xgrid_order2_r8
-'
+test_expect_success "create_xgrid order2" './test_create_xgrid_order2_r8'
 test_done

@@ -77,12 +77,12 @@ contains
     dlat = 180._lkind/real(nlat, HI_TEST_KIND_) * DEG_TO_RAD
     dlon = 360._lkind/real(nlon, HI_TEST_KIND_) * DEG_TO_RAD
 
-    igridpt = 0
+    igridpt = 1
     do ilat=1, nlat+1
       do ilon=1, nlon+1
-        igridpt = igridpt + 1
         lon(igridpt) = lon_start + real(ilon-1, HI_TEST_KIND_)*dlon
         lat(igridpt) = lat_start + real(ilat-1, HI_TEST_KIND_)*dlat
+        igridpt = igridpt + 1
       end do
     end do
 
