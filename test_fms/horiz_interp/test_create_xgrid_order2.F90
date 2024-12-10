@@ -72,7 +72,7 @@ contains
 
     integer :: ilon, ilat, igridpt
     real :: dlat=0.0_lkind, dlon=0.0_lkind
-    real :: lon_start=0.0_lkind, lat_start=-90.0_lkind
+    real :: lon_start=0.0_lkind, lat_start=-90.0_lkind*DEG_TO_RAD
 
     dlat = 180._lkind/real(nlat, HI_TEST_KIND_) * DEG_TO_RAD
     dlon = 360._lkind/real(nlon, HI_TEST_KIND_) * DEG_TO_RAD
