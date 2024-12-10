@@ -19,7 +19,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "constant.h"
-#include "mosaic_util.h"
+#include "grid_utils.h"
 #include "gradient_c2l.h"
 #include <stdio.h>
 

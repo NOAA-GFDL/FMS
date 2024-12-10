@@ -479,7 +479,7 @@ AC_CONFIG_FILES([
   tridiagonal/Makefile
   tracer_manager/Makefile
   topography/Makefile
-  mosaic/Makefile
+  grid_utils/Makefile
   mosaic2/Makefile
   monin_obukhov/Makefile
   memutils/Makefile
