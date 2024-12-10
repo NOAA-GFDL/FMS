@@ -27,8 +27,6 @@
 #define MASK_THRESH (0.5)
 #define MAX_V 8
 
-/* this value is small compare to earth area */
-
 int create_xgrid_1dx2d_order1(const int *nlon_in, const int *nlat_in, const int *nlon_out, const int *nlat_out, const double *lon_in,
                               const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *i_out,

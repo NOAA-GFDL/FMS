@@ -42,7 +42,7 @@ program xgrid_test
   use mosaic2_mod,     only : get_mosaic_ntiles, get_mosaic_grid_sizes
   use mosaic2_mod,     only : get_mosaic_ncontacts, get_mosaic_contact, get_mosaic_tile_grid
   use grid2_mod,       only : get_grid_comp_area
-  use gradient_mod,         only : calc_cubic_grid_info
+  use gradient_mod,    only : calc_cubic_grid_info
   use ensemble_manager_mod, only : ensemble_manager_init, ensemble_pelist_setup
   use ensemble_manager_mod, only : get_ensemble_size
   use platform_mod,         only: r8_kind, i8_kind
