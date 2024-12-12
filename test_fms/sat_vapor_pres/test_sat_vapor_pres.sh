@@ -23,7 +23,8 @@ cat << EOF > input.nml
 &sat_vapor_pres_nml
       construct_table_wrt_liq = .true.,
       construct_table_wrt_liq_and_ice = .true.,
-      use_exact_qs = .true.
+      use_exact_qs = .true.,
+      show_all_bad_values = .true.
 /
 EOF
 
@@ -111,6 +112,52 @@ test_expect_success "test_lookup_es3_des3_r4" '
   '
 test_expect_success "test_lookup_es3_des3_r8" '
       mpirun -n 1 ./test_sat_vapor_pres_r8
+  '
+
+## test failures when out of range temps are used
+cat <<EOF > test_sat_vapor_pres.nml
+&test_sat_vapor_pres_nml
+  test1=.false.
+  test2=.false.
+  test3=.true.
+  test4=.false.
+  test5=.false.
+  test_show_all_bad = 0
+ /
+EOF
+
+test_expect_failure "check bad temperature values 0d r4" '
+      mpirun -n 2 ./test_sat_vapor_pres_r4
+  '
+test_expect_failure "check bad temperature values 0d r8" '
+      mpirun -n 2 ./test_sat_vapor_pres_r8
+  '
+
+sed -i 's/test_show_all_bad = 0/test_show_all_bad = 1/' test_sat_vapor_pres.nml
+
+test_expect_failure "check bad temperature values 1d r4" '
+      mpirun -n 2 ./test_sat_vapor_pres_r4
+  '
+test_expect_failure "check bad temperature values 1d r8" '
+      mpirun -n 2 ./test_sat_vapor_pres_r8
+  '
+
+sed -i 's/test_show_all_bad = 1/test_show_all_bad = 2/' test_sat_vapor_pres.nml
+
+test_expect_failure "check bad temperature values 2d r4" '
+      mpirun -n 2 ./test_sat_vapor_pres_r4
+  '
+test_expect_failure "check bad temperature values 2d r8" '
+      mpirun -n 2 ./test_sat_vapor_pres_r8
+  '
+
+sed -i 's/test_show_all_bad = 2/test_show_all_bad = 3/' test_sat_vapor_pres.nml
+
+test_expect_failure "check bad temperature values 3d r4" '
+      mpirun -n 2 ./test_sat_vapor_pres_r4
+  '
+test_expect_failure "check bad temperature values 3d r8" '
+      mpirun -n 2 ./test_sat_vapor_pres_r8
   '
 
 test_done
