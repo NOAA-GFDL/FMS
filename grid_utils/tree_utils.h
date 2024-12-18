@@ -22,16 +22,12 @@
 
     contact: Zhi.Liang@noaa.gov
 ***********************************************************************/
-#ifndef MOSAIC_UTIL_H_
-#define MOSAIC_UTIL_H_
+#ifndef TREE_UTILS_H_
+#define TREE_UTILS_H_
 
-#ifndef RANGE_CHECK_CRITERIA
-#define RANGE_CHECK_CRITERIA 0.05
+#ifndef MAXNODELIST
+#define MAXNODELIST 100
 #endif
-
-#define min(a,b) (a<b ? a:b)
-#define max(a,b) (a>b ? a:b)
-#define SMALL_VALUE ( 1.e-10 )
 
 struct Node{
   double x, y, z, u, u_clip;
@@ -43,72 +39,6 @@ struct Node{
   int clip_index; /* the index of clip point that an intersection follow */
   struct Node *Next;
 };
-
-
-void error_handler(const char *msg);
-
-int nearest_index(double value, const double *array, int ia);
-
-int lon_fix(double *x, double *y, int n_in, double tlon);
-
-double minval_double(int size, const double *data);
-
-double maxval_double(int size, const double *data);
-
-double avgval_double(int size, const double *data);
-
-void latlon2xyz(int size, const double *lon, const double *lat, double *x, double *y, double *z);
-
-void xyz2latlon(int size, const double *x, const double *y, const double *z, double *lon, double *lat);
-
-double box_area(double ll_lon, double ll_lat, double ur_lon, double ur_lat);
-
-double poly_area(const double lon[], const double lat[], int n);
-
-int delete_vtx(double x[], double y[], int n, int n_del);
-
-int insert_vtx(double x[], double y[], int n, int n_ins, double lon_in, double lat_in);
-
-double poly_area_dimensionless(const double lon[], const double lat[], int n);
-
-double poly_area_no_adjust(const double x[], const double y[], int n);
-
-int fix_lon(double lon[], double lat[], int n, double tlon);
-
-void tokenize(const char * const string, const char *tokens, unsigned int varlen,
-              unsigned int maxvar, char * pstring, unsigned int * const nstr);
-
-double great_circle_distance(double *p1, double *p2);
-
-double spherical_excess_area(const double* p_ll, const double* p_ul,
-                             const double* p_lr, const double* p_ur, double radius);
-
-void vect_cross(const double *p1, const double *p2, double *e );
-
-double spherical_angle(const double *v1, const double *v2, const double *v3);
-
-void normalize_vect(double *e);
-
-void unit_vect_latlon(int size, const double *lon, const double *lat, double *vlon, double *vlat);
-
-double great_circle_area(int n, const double *x, const double *y, const double *z);
-
-double * cross(const double *p1, const double *p2);
-
-double dot(const double *p1, const double *p2);
-
-int intersect_tri_with_line(const double *plane, const double *l1, const double *l2, double *p,
-                            double *t);
-
-int invert_matrix_3x3(long double m[], long double m_inv[]);
-
-void mult(long double m[], long double v[], long double out_v[]);
-
-double metric(const double *p);
-
-int insidePolygon(struct Node *node, struct Node *list );
-
-int inside_a_polygon( double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
 
 void rewindList(void);
 
@@ -122,8 +52,6 @@ int addIntersect(struct Node *list, double x, double y, double z, int intersect,
                  int inbound, int is1, int ie1, int is2, int ie2);
 
 int length(struct Node *list);
-
-int samePoint(double x1, double y1, double z1, double x2, double y2, double z2);
 
 int sameNode(struct Node node1, struct Node node2);
 
@@ -165,6 +93,6 @@ void setInbound(struct Node *interList, struct Node *list);
 
 int isInside(struct Node *node);
 
-int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
+int insidePolygon( struct Node *node, struct Node *list);
 
 #endif
