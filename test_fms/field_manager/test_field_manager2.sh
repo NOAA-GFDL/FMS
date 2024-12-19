@@ -106,6 +106,48 @@ else
   test_expect_success "field table read with use_field_table.yaml = .true." 'mpirun -n 1 ./test_field_table_read'
   test_expect_success "field manager functional r4 with yaml table" 'mpirun -n 2 ./test_field_manager_r4'
   test_expect_success "field manager functional r8 with yaml table" 'mpirun -n 2 ./test_field_manager_r8'
+
+  cat <<_EOF > field_table.ens_01.yaml
+field_table:
+- field_type: tracer
+  modlist:
+  - model_type: atmos_mod
+    varlist:
+    - variable: radon
+    - variable: radon2
+    - variable: radon3
+      longname: bad radon!
+_EOF
+
+  cat <<_EOF > field_table.ens_02.yaml
+field_table:
+- field_type: tracer
+  modlist:
+  - model_type: atmos_mod
+    varlist:
+    - variable: radon
+    - variable: radon2
+    - variable: radon3
+      longname: bad radon!
+    - variable: radon4
+      longname: REALLY bad radon!
+_EOF
+cat <<_EOF > input.nml
+&field_manager_nml
+  use_field_table_yaml = .true.
+/
+&test_field_table_read_nml
+  test_case = 1
+/
+&ensemble_nml
+   ensemble_size = 2
+/
+_EOF
+  test_expect_failure "field manager test with both field_table.yaml and field_table.ens_XX.yaml files present" 'mpirun -n 2 ./test_field_table_read'
+
+  rm -rf field_table.yaml
+
+  test_expect_success "field manager test with 2 ensembles" 'mpirun -n 2 ./test_field_table_read'
 fi
 
 test_done

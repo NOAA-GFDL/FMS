@@ -17,39 +17,31 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/horiz_interp directory of
-# the FMS package.
+# This is an automake file for the test_fms/block_control directory of the
+# FMS package.
 
-# uramirez, Ed Hartnett
-
-# Find the needed mod files.
-AM_CPPFLAGS = -I$(MODDIR)
+# Find the fms and mpp mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
-# Build these test programs.
-check_PROGRAMS = test_horiz_interp_r4 test_horiz_interp_r8 test_create_xgrid_order2_r8
+# Build this test program.
+check_PROGRAMS = \
+  test_block_control
 
-# These are the sources for the tests.
-test_horiz_interp_r4_SOURCES = test_horiz_interp.F90
-test_horiz_interp_r8_SOURCES = test_horiz_interp.F90
-test_create_xgrid_order2_r8_SOURCES = test_create_xgrid_order2.F90
+# This is the source code for the test.
+test_block_control_SOURCES = test_block_control.F90
 
-test_horiz_interp_r4_CPPFLAGS=-DHI_TEST_KIND=4 -I$(MODDIR)
-test_horiz_interp_r8_CPPFLAGS=-DHI_TEST_KIND=8 -I$(MODDIR)
-test_create_xgrid_order2_r8_CPPFLAGS=-DHI_TEST_KIND_=8 -I$(MODDIR)
+# Run the test program.
+TESTS = test_block_control.sh
+
+# Copy over other needed files to the srcdir
+EXTRA_DIST = test_block_control.sh
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
-TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
-
-# Run the test programs.
-TESTS = test_horiz_interp2.sh test_create_xgrid_order2.sh
-
-# These files will also be included in the distribution.
-EXTRA_DIST = test_horiz_interp2.sh test_create_xgrid_order2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl

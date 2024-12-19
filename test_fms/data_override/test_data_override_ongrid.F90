@@ -26,14 +26,16 @@ use platform_mod,      only: r4_kind, r8_kind
 use mpp_domains_mod,   only: mpp_define_domains, mpp_define_io_domain, mpp_get_data_domain, &
                              mpp_domains_set_stack_size, mpp_get_compute_domain, domain2d
 use mpp_mod,           only: mpp_init, mpp_exit, mpp_pe, mpp_root_pe, mpp_error, FATAL, &
-                             input_nml_file, mpp_sync, NOTE
+                             input_nml_file, mpp_sync, NOTE, mpp_npes, mpp_get_current_pelist, &
+                             mpp_set_current_pelist
 use data_override_mod, only: data_override_init, data_override
 use fms2_io_mod
 use time_manager_mod,  only: set_calendar_type, time_type, set_date, NOLEAP
 use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_enddef, nf90_put_var, &
                              nf90_close, nf90_put_att, nf90_clobber, nf90_64bit_offset, nf90_char, &
                              nf90_double, nf90_unlimited
-use fms_mod, only: string
+use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
+use fms_mod, only: string, fms_init, fms_end
 
 implicit none
 
@@ -52,11 +54,17 @@ integer, parameter                         :: ongrid = 1
 integer, parameter                         :: bilinear = 2
 integer, parameter                         :: scalar = 3
 integer, parameter                         :: weight_file = 4
+integer, parameter                         :: ensemble_case = 5
 integer                                    :: test_case = ongrid
+integer                                    :: npes
+integer, allocatable                       :: pelist(:)
+integer, allocatable                       :: pelist_ens(:)
+integer                                    :: ensemble_id
+logical                                    :: write_only=.false. !< True if creating the input files only
 
-namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout
+namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout, write_only
 
-call mpp_init
+call fms_init
 call fms2_io_init
 
 read (input_nml_file, test_data_override_ongrid_nml, iostat=io_status)
@@ -69,6 +77,15 @@ call mpp_sync
 
 call set_calendar_type(NOLEAP)
 
+npes = mpp_npes()
+allocate(pelist(npes))
+call mpp_get_current_pelist(pelist)
+
+select case (test_case)
+case (ensemble_case)
+  call set_up_ensemble_case()
+end select
+
 !< Create a domain nlonXnlat with mask
 call mpp_domains_set_stack_size(17280000)
 call mpp_define_domains( (/1,nlon,1,nlat/), layout, Domain, xhalo=nhalox, yhalo=nhaloy, name='test_data_override_emc')
@@ -76,34 +93,54 @@ call mpp_define_io_domain(Domain, (/1,1/))
 call mpp_get_data_domain(Domain, is, ie, js, je)
 
 select case (test_case)
-case (ongrid)
-  call generate_ongrid_input_file ()
-case (bilinear)
-  call generate_bilinear_input_file ()
-case (scalar)
-  call generate_scalar_input_file ()
-case (weight_file)
-  call generate_weight_input_file ()
+case (ensemble_case)
+  ! Go back to the full pelist
+  call mpp_set_current_pelist(pelist)
 end select
 
-call mpp_sync()
-call mpp_error(NOTE, "Finished creating INPUT Files")
+if (write_only) then
+  select case (test_case)
+  case (ongrid)
+    call generate_ongrid_input_file ()
+  case (bilinear)
+    call generate_bilinear_input_file ()
+  case (scalar)
+    call generate_scalar_input_file ()
+  case (weight_file)
+    call generate_weight_input_file ()
+  case (ensemble_case)
+    call generate_ensemble_input_file()
+  end select
 
-!< Initiliaze data_override
-call data_override_init(Ocean_domain_in=Domain, mode=lkind)
+  call mpp_sync()
+  call mpp_error(NOTE, "Finished creating INPUT Files")
 
-select case (test_case)
-case (ongrid)
-  call ongrid_test()
-case (bilinear)
-  call bilinear_test()
-case (scalar)
-  call scalar_test()
-case (weight_file)
-  call weight_file_test()
-end select
+else
+  select case (test_case)
+  case (ensemble_case)
+    !< Go back to the ensemble pelist
+    call mpp_set_current_pelist(pelist_ens)
+  end select
 
-call mpp_exit
+  !< Initiliaze data_override
+  call data_override_init(Ocean_domain_in=Domain, mode=lkind)
+
+  select case (test_case)
+  case (ongrid)
+    call ongrid_test()
+  case (bilinear)
+    call bilinear_test()
+  case (scalar)
+    call scalar_test()
+  case (weight_file)
+    call weight_file_test()
+  case (ensemble_case)
+    call ensemble_test()
+    call mpp_set_current_pelist(pelist)
+  end select
+endif
+
+call fms_end
 
 contains
 
@@ -214,17 +251,29 @@ subroutine create_ocean_hgrid_file()
   endif
 end subroutine create_ocean_hgrid_file
 
-subroutine create_ongrid_data_file()
+subroutine create_ongrid_data_file(is_ensemble)
+  logical, intent(in), optional :: is_ensemble
   type(FmsNetcdfFile_t) :: fileobj
   character(len=10) :: dimnames(3)
   real(lkind), allocatable, dimension(:,:,:) :: runoff_in
   real(lkind), allocatable, dimension(:)     :: time_data
+  integer :: offset
+  character(len=256), allocatable :: appendix
+
   integer :: i
+
+  offset = 0
+  appendix = ""
+  if (present(is_ensemble)) then
+    offset = ensemble_id
+    call get_filename_appendix(appendix)
+    appendix = "_"//trim(appendix)
+  endif
 
   allocate(runoff_in(nlon, nlat, 10))
   allocate(time_data(10))
   do i = 1, 10
-    runoff_in(:,:,i) = real(i, lkind)
+    runoff_in(:,:,i) = real(i+offset, lkind)
   enddo
   time_data = (/1., 2., 3., 5., 6., 7., 8., 9., 10., 11./)
 
@@ -232,7 +281,7 @@ subroutine create_ongrid_data_file()
   dimnames(2) = 'j'
   dimnames(3) = 'time'
 
-  if (open_file(fileobj, 'INPUT/runoff.daitren.clim.1440x1080.v20180328.nc', 'overwrite')) then
+  if (open_file(fileobj, 'INPUT/runoff.daitren.clim.1440x1080.v20180328'//trim(appendix)//'.nc', 'overwrite')) then
     call register_axis(fileobj, "i", nlon)
     call register_axis(fileobj, "j", nlat)
     call register_axis(fileobj, "time", unlimited)
@@ -604,5 +653,85 @@ subroutine scalar_test()
   if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
 
 end subroutine scalar_test
+
+subroutine set_up_ensemble_case()
+  integer :: ens_siz(6)
+  character(len=10) :: text
+
+  if (npes .ne. 12) &
+    call mpp_error(FATAL, "This test requires 12 pes to run")
+
+  if (layout(1)*layout(2) .ne. 6) &
+    call mpp_error(FATAL, "The two members of the layout do not equal 6")
+
+  call ensemble_manager_init
+  ens_siz = get_ensemble_size()
+  if (ens_siz(1) .ne. 2) &
+    call mpp_error(FATAL, "This test requires 2 ensembles")
+
+  if (mpp_pe() < 6) then
+    !PEs 0-5 are the first ensemble
+    ensemble_id = 1
+    allocate(pelist_ens(npes/ens_siz(1)))
+    pelist_ens = pelist(1:6)
+    call mpp_set_current_pelist(pelist_ens)
+  else
+    !PEs 6-11 are the second ensemble
+    ensemble_id = 2
+    allocate(pelist_ens(npes/ens_siz(1)))
+    pelist_ens = pelist(7:)
+    call mpp_set_current_pelist(pelist_ens)
+  endif
+
+  write( text,'(a,i2.2)' ) 'ens_', ensemble_id
+  call set_filename_appendix(trim(text))
+
+  if (mpp_pe() .eq. mpp_root_pe()) &
+  print *, "ensemble_id:", ensemble_id, ":: ", pelist_ens
+end subroutine
+
+subroutine generate_ensemble_input_file()
+  if (mpp_pe() .eq. mpp_root_pe()) then
+    call create_grid_spec_file ()
+    call create_ocean_mosaic_file()
+    call create_ocean_hgrid_file()
+  endif
+
+  !< Go back to the ensemble pelist so that each root pe can write its own input file
+  call mpp_set_current_pelist(pelist_ens)
+  if (mpp_pe() .eq. mpp_root_pe()) then
+    call create_ongrid_data_file(is_ensemble=.true.)
+  endif
+  call mpp_set_current_pelist(pelist)
+end subroutine
+
+subroutine ensemble_test()
+  real(lkind)                                :: expected_result  !< Expected result from data_override
+  type(time_type)                            :: Time             !< Time
+  real(lkind), allocatable, dimension(:,:)   :: runoff           !< Data to be written
+
+  allocate(runoff(is:ie,js:je))
+
+  runoff = 999._lkind
+  !< Run it when time=3
+  Time = set_date(1,1,4,0,0,0)
+  call data_override('OCN','runoff',runoff, Time)
+  !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
+  !! equal to the data at time=3, which is 3+ensemble_id.
+  expected_result = 3._lkind + real(ensemble_id,kind=lkind)
+  call compare_data(Domain, runoff, expected_result)
+
+  !< Run it when time=4
+  runoff = 999._lkind
+  Time = set_date(1,1,5,0,0,0)
+  call data_override('OCN','runoff',runoff, Time)
+  !< You are getting the data when time=4, the data at time=3 is 3+ensemble_id. and at time=5 is 4+ensemble_id.,
+  !! so the expected result is the average of the 2 (because this is is an "ongrid" case and there
+  !! is no horizontal interpolation).
+  expected_result = (3._lkind + real(ensemble_id,kind=lkind) + 4._lkind + real(ensemble_id,kind=lkind)) / 2._lkind
+  call compare_data(Domain, runoff, expected_result)
+
+  deallocate(runoff)
+end subroutine ensemble_test
 
 end program test_data_override_ongrid

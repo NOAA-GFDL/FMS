@@ -8,6 +8,7 @@
 - [Converting legacy data_table to data_table.yaml](README.MD#3-converting-legacy-data_table-to-data_tableyaml)
 - [Examples](README.MD#4-examples)
 - [External Weight File Structure](README.MD#5-external-weight-file-structure)
+- [Ensemble and Nest Support](README.MD#6-ensemble-and-nest-support)
 
 #### 1. YAML Data Table format:
 Each entry in the data_table has the following key values:
@@ -200,3 +201,7 @@ variables:
   - weight(:,:,2) -> (i,j+1)
   - weight(:,:,3) -> (i+1,j)
   - weight(:,:,4) -> (i+1,j+1)
+
+#### 6. Ensemble and Nest Support
+
+It may be desired to have each member of an ensemble use a different forcing file. In other to support this, FMS allows for each ensemble member to have its own data_table.yaml. For example, for a run with 2 ensemble members, fms will search for data_table_ens_01.yaml and data_table_ens_02.yaml. However, if both the data_table.yaml and the data_table_ens_* files are present, the code will crash as only 1 option is allowed. Similary, each nest can have its own data_table (data_table_nest_01.yaml), but in this case FMS will not crash if both data_table_nest_01.yaml and data_table.yaml are present. The main grid will use the data_table.yaml and the first nest will use the data_table_nest_01.yaml file.

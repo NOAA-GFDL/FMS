@@ -23,7 +23,7 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/horiz_interp/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/horiz_interp/include -I$(top_srcdir)/grid_utils
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
@@ -44,6 +44,8 @@ libhoriz_interp_la_SOURCES = \
   include/horiz_interp_spherical.inc \
   include/horiz_interp_type.inc \
   include/horiz_interp_bicubic_r4.fh \
+  include/horiz_interp_conserve_xgrid.h \
+  include/horiz_interp_conserve_xgrid.c \
   include/horiz_interp_bilinear_r4.fh \
   include/horiz_interp_conserve_r4.fh \
   include/horiz_interp_r4.fh \

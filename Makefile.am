@@ -47,7 +47,7 @@ SUBDIRS = \
   parser \
   string_utils \
   affinity \
-  mosaic \
+  grid_utils \
   time_manager \
   axis_utils \
   diag_manager \
@@ -147,4 +147,3 @@ install-data-hook:
 	@echo '| please see our page: https://www.github.com/NOAA-GFDL/FMS   |'
 	@echo '+-------------------------------------------------------------+'
 	@echo ''
-

@@ -28,10 +28,10 @@
 !! This test will exit with status zero if successful.  The script launching this test
 !! program may, if desired, check if the memory output numbers are sane.
 program test_mpp_memutils_init_end
-#include "../../include/fms_platform.h"
 
   use mpp_mod, only : mpp_init, mpp_exit
   use mpp_memutils_mod, only: mpp_memuse_begin, mpp_memuse_end
+  use platform_mod
   implicit none
 
   real, dimension(:), allocatable :: ralloc_mem

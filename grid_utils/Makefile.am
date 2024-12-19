@@ -28,32 +28,20 @@ AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build these uninstalled convenience libraries.
 
-noinst_LTLIBRARIES = libmosaic.la
+noinst_LTLIBRARIES = libgrid_utils.la
 
-libmosaic_la_SOURCES = \
-mosaic.F90 \
-grid.F90 \
-gradient.F90 \
-create_xgrid.c \
+libgrid_utils_la_SOURCES = \
+grid_utils.c \
+grid_utils.h \
+tree_utils.c \
+tree_utils.h \
 gradient_c2l.c \
-interp.c \
-mosaic_util.c \
-read_mosaic.c \
-constant.h \
-create_xgrid.h \
 gradient_c2l.h \
-interp.h \
-mosaic_util.h \
-read_mosaic.h
-
-# Some mods are dependant on other mods in this dir.
-grid_mod.$(FC_MODEXT): mosaic_mod.$(FC_MODEXT)
+gradient.F90 \
+constant.h
 
 # Mod files are built and then installed as headers.
-MODFILES = \
-	mosaic_mod.$(FC_MODEXT) \
-	grid_mod.$(FC_MODEXT) \
-	gradient_mod.$(FC_MODEXT)
+MODFILES = 	gradient_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)
 

@@ -168,9 +168,7 @@ list(APPEND fms_fortran_src_files
   memutils/memutils.F90
   monin_obukhov/monin_obukhov_inter.F90
   monin_obukhov/monin_obukhov.F90
-  mosaic/gradient.F90
-  mosaic/grid.F90
-  mosaic/mosaic.F90
+  grid_utils/gradient.F90
   mosaic2/grid2.F90
   mosaic2/mosaic2.F90
   mpp/mpp.F90
@@ -205,11 +203,10 @@ list(APPEND fms_fortran_src_files
 list(APPEND fms_c_src_files
   affinity/affinity.c
   fms/fms_stacksize.c
-  mosaic/create_xgrid.c
-  mosaic/gradient_c2l.c
-  mosaic/interp.c
-  mosaic/mosaic_util.c
-  mosaic/read_mosaic.c
+  grid_utils/gradient_c2l.c
+  grid_utils/grid_utils.c
+  grid_utils/tree_utils.c
+  horiz_interp/include/horiz_interp_conserve_xgrid.c
   mpp/mpp_memuse.c
   parser/yaml_parser_binding.c
   parser/yaml_output_functions.c
@@ -257,6 +254,8 @@ if(WITH_YAML)
 endif()
 
 if(USE_DEPRECATED_IO)
+  message( WARNING "fms_io WILL BE DEPRECATED IN A FUTURE RELEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE "
+                   "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS")
   list(APPEND fms_defs use_deprecated_io)
 endif()
 
@@ -298,7 +297,8 @@ foreach(kind ${kinds})
   # C
   add_library(${libTgt}_c OBJECT ${fms_c_src_files})
 
-  target_include_directories(${libTgt}_c PRIVATE include)
+  target_include_directories(${libTgt}_c PRIVATE include
+                                                 grid_utils)
   target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
 
   target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
@@ -386,6 +386,7 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monin_obukhov/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/grid_utils>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/horiz_interp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
@@ -429,13 +430,13 @@ endforeach()
 install(
   TARGETS ${LIB_TARGETS}
   EXPORT FMSExports
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib)
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ### Package config
 include(CMakePackageConfigHelpers)
-set(CONFIG_INSTALL_DESTINATION lib/cmake/fms)
+set(CONFIG_INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/fms)
 
 export(EXPORT FMSExports
   NAMESPACE FMS::
@@ -458,3 +459,34 @@ install(EXPORT FMSExports
   NAMESPACE FMS::
   FILE fms-targets.cmake
   DESTINATION ${CONFIG_INSTALL_DESTINATION})
+
+# pkgconf
+set(prefix ${CMAKE_INSTALL_PREFIX})
+set(exec_prefix ${CMAKE_INSTALL_PREFIX})
+set(libdir ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+set(includedir ${CMAKE_INSTALL_PREFIX}/${includeDir})
+
+set(CC ${CMAKE_C_COMPILER})
+set(FC ${CMAKE_Fortran_COMPILER})
+set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+set(CPPFLAGS "${CMAKE_CPP_FLAGS} ${CMAKE_CPP_FLAGS_${CMAKE_BUILD_TYPE}}")
+set(FCFLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
+set(LDFLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+set(VERSION ${PROJECT_VERSION})
+
+# TODO: If FMS depends on a library that is built as a static library, it
+#       should be listed here as an ldflag.
+set(LIBS "")
+
+if(NOT ${NetCDF_Fortran_LIBRARY_SHARED})
+  # autotools: Libs.private: -lnetcdff -lnetcdf
+  string(APPEND LIBS ${NetCDF_Fortran_LIBRARIES})
+endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/FMS.pc.in
+               ${CMAKE_CURRENT_BINARY_DIR}/FMS.pc @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/FMS.pc
+              DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+              COMPONENT utilities)

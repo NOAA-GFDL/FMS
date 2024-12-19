@@ -96,6 +96,7 @@ subroutine test_get_mosaic_grid_sizes
 
   allocate( nx_out(c1_ntiles), ny_out(c1_ntiles) )
   call get_mosaic_grid_sizes(fileobj, nx_out, ny_out)
+  ntiles = get_mosaic_ntiles(fileobj)
   do n=1, ntiles
      call check_answer(c1_nx/2, nx_out(n), 'atm TEST_GET_MOSAIC_GRID_SIZES')
      call check_answer(c1_nx/2, ny_out(n), 'atm TEST_GET_MOSAIC_GRID_SIZES')
@@ -254,7 +255,7 @@ subroutine test_is_inside_polygon
   z2(1)=2.0_lkind ; z2(2)=4.0_lkind ; z2(3)=4.0_lkind ; z2(4)=2.0_lkind ; z2(5)=2.0_lkind
   do i=1, n
      r = sqrt( x2(i)**2 + y2(i)**2 + z2(i)**2 )
-     lon2(i)=atan(y2(i)/x2(i))
+     lon2(i)=atan2(y2(i), x2(i))
      lat2(i)=asin(z2(i)/r)
   end do
 
@@ -263,7 +264,7 @@ subroutine test_is_inside_polygon
   y1=5.0_lkind
   z1=4.2_lkind
   r = sqrt(x1**2+y1**2+z1**2)
-  lon1=atan(y1/x1)
+  lon1=atan2(y1, x1)
   lat1=asin(z1/r)
 
   answer=.false.
@@ -275,7 +276,7 @@ subroutine test_is_inside_polygon
   y1=3.0_lkind
   z1=2.5_lkind
   r = sqrt(x1**2+y1**2+z1**2)
-  lon1=atan(y1/x1)
+  lon1=atan2(y1, x1)
   lat1=asin(z1/r)
 
   answer=.true.
