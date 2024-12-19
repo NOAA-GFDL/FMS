@@ -168,9 +168,7 @@ list(APPEND fms_fortran_src_files
   memutils/memutils.F90
   monin_obukhov/monin_obukhov_inter.F90
   monin_obukhov/monin_obukhov.F90
-  mosaic/gradient.F90
-  mosaic/grid.F90
-  mosaic/mosaic.F90
+  grid_utils/gradient.F90
   mosaic2/grid2.F90
   mosaic2/mosaic2.F90
   mpp/mpp.F90
@@ -205,11 +203,10 @@ list(APPEND fms_fortran_src_files
 list(APPEND fms_c_src_files
   affinity/affinity.c
   fms/fms_stacksize.c
-  mosaic/create_xgrid.c
-  mosaic/gradient_c2l.c
-  mosaic/interp.c
-  mosaic/mosaic_util.c
-  mosaic/read_mosaic.c
+  grid_utils/gradient_c2l.c
+  grid_utils/grid_utils.c
+  grid_utils/tree_utils.c
+  horiz_interp/include/horiz_interp_conserve_xgrid.c
   mpp/mpp_memuse.c
   parser/yaml_parser_binding.c
   parser/yaml_output_functions.c
@@ -300,7 +297,8 @@ foreach(kind ${kinds})
   # C
   add_library(${libTgt}_c OBJECT ${fms_c_src_files})
 
-  target_include_directories(${libTgt}_c PRIVATE include)
+  target_include_directories(${libTgt}_c PRIVATE include
+                                                 grid_utils)
   target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
 
   target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
@@ -388,6 +386,7 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monin_obukhov/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/grid_utils>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/horiz_interp/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
