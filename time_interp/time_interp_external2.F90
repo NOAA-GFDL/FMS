@@ -768,7 +768,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   real(r8_kind), allocatable :: mask_out(:,:,:)
   real(r4_kind), allocatable :: hi_tmp_data(:,:,:,:) !< used to hold a copy of field%domain_data if using r4_kind
   real(r4_kind), allocatable :: hi_tmp_msk_out(:,:,:) !< used return the field mask if using r4_kind
-  real(r4_kind), allocatable :: hi_tmp_src_data(:,:,:,:) !< used return the field mask if using r4_kind
 
   window_id = 1
   if( PRESENT(window_id_in) ) window_id = window_id_in
@@ -848,15 +847,10 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
                                  LBOUND(field%domain_data,2):UBOUND(field%domain_data,2), &
                                  LBOUND(field%domain_data,3):UBOUND(field%domain_data,3), &
                                  LBOUND(field%domain_data,4):UBOUND(field%domain_data,4)))
-            allocate(hi_tmp_src_data(LBOUND(field%src_data,1):UBOUND(field%src_data,1), &
-                                     LBOUND(field%src_data,2):UBOUND(field%src_data,2), &
-                                     LBOUND(field%src_data,3):UBOUND(field%src_data,3), &
-                                     LBOUND(field%src_data,4):UBOUND(field%src_data,4)))
-            ! assign if needed
+            ! copy over to r4
             hi_tmp_data = real(field%domain_data, r4_kind)
-            hi_tmp_src_data = real(field%src_data, r4_kind)
             ! do interpolation
-            call horiz_interp(interp, hi_tmp_src_data(:,:,:,ib), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
+            call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
                               mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
             ! assign any output
             field%domain_data = real(hi_tmp_data, r8_kind)
@@ -864,7 +858,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
 
             if(allocated(hi_tmp_data))     deallocate(hi_tmp_data)
             if(allocated(hi_tmp_msk_out))  deallocate(hi_tmp_msk_out)
-            if(allocated(hi_tmp_src_data)) deallocate(hi_tmp_src_data)
         else
             allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
             call horiz_interp(interp, field%src_data(:,:,:,ib),field%domain_data(isw:iew,jsw:jew,:,ib), &
