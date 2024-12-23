@@ -1,0 +1,58 @@
+name: AM5 test
+on:
+  push:
+    tags:
+      - '*alpha*'
+      - '*beta*'
+  pull_request:
+  workflow_dispatch:
+
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compile_AM5:
+    runs-on: [self-hosted, pw-platform]
+    strategy:
+      fail-fast: false
+    steps:
+    - name: Setup source and build directories
+      run: |
+        mkdir -p ${GITHUB_SHA}
+        cd ${GITHUB_SHA}
+        mkdir -p am5_src
+        mkdir -p am5_build
+        ln -s /contrib/am5/ci/latest/src/am5_phys am5_src/am5_phys
+        ln -s /contrib/am5/ci/latest/src/atmos_drivers am5_src/atmos_drivers
+        ln -s /contrib/am5/ci/latest/src/GFDL_atmos_cubed_sphere am5_src/GFDL_atmos_cubed_sphere
+        ln -s /contrib/am5/ci/latest/src/GRTCODE am5_src/GRTCODE
+        ln -s /contrib/am5/ci/latest/src/ice_param am5_src/ice_param
+        ln -s /contrib/am5/ci/latest/src/land_lad2 am5_src/land_lad2
+        ln -s /contrib/am5/ci/latest/src/mom6 am5_src/mom6
+        ln -s /contrib/am5/ci/latest/src/ocean_BGC am5_src/ocean_BGC
+        ln -s /contrib/am5/ci/latest/src/rte-ecckd am5_src/rte-ecckd
+        ln -s /contrib/am5/ci/latest/src/rte-rrtmgp am5_src/rte-rrtmgp
+        ln -s /contrib/am5/ci/latest/src/coupler am5_src/coupler
+    - name: Checkout FMS
+      uses: actions/checkout@v4
+      with:
+        path: ${{github.sha}}/am5_src/FMS
+    - name: Build AM5 in Intel container
+      run: /contrib/am5/ci/latest/container_build.sh
+    - name: Check build succeeded
+      run: stat ${GITHUB_WORKSPACE}/${GITHUB_SHA}/am5_build/fms_am5*_compile.x
+
+  run_AM5:
+    runs-on: [self-hosted, pw-platform]
+    strategy:
+      fail-fast: false
+    needs: [compile_AM5]
+    steps:
+      - name: Create run directory
+        run: |
+          cd ${GITHUB_SHA}
+          mkdir -p am5_run
+      - name: Launch runscript
+        run: /contrib/am5/ci/latest/run.sh
