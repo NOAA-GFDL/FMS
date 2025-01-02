@@ -47,4 +47,4 @@ TESTS = test_sat_vapor_pres.sh
 EXTRA_DIST = test_sat_vapor_pres.sh
 
 # Clean up
-CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl
+CLEANFILES = *.nml *.out* *.dpi *.spi *.dyn *.spl fort.0
