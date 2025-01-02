@@ -369,11 +369,8 @@ use platform_mod
   !> @brief Add a attribute to the output field
   !> @ingroup diag_manager_mod
   INTERFACE diag_field_add_attribute
-     MODULE PROCEDURE diag_field_add_attribute_scalar_r
-     MODULE PROCEDURE diag_field_add_attribute_scalar_i
-     MODULE PROCEDURE diag_field_add_attribute_scalar_c
-     MODULE PROCEDURE diag_field_add_attribute_r1d
-     MODULE PROCEDURE diag_field_add_attribute_i1d
+     MODULE PROCEDURE diag_field_add_attribute_1d
+     MODULE PROCEDURE diag_field_add_attribute_0d
   END INTERFACE diag_field_add_attribute
 
 !> @addtogroup diag_manager_mod
@@ -4496,70 +4493,66 @@ END FUNCTION register_static_field
     END IF
   END SUBROUTINE diag_field_attribute_init
 
-  !> @brief Add a scalar real attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_scalar_r(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    REAL, INTENT(in) :: att_value !< new attribute value
+  !> @brief Add a scalr attribute to the diag field corresponding to a given id
+  subroutine diag_field_add_attribute_0d(diag_field_id, att_name, att_value)
+    INTEGER,          INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name      !< new attribute name
+    class(*),         INTENT(in) :: att_value     !< new attribute value
 
     if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      select type(att_value)
+      type is (real(kind=r4_kind))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      type is (real(kind=r8_kind))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      type is (integer(kind=i4_kind))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      type is (character(len=*))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      class default
+         call mpp_error(FATAL, "Diag_field_add_attribute 0d:: unsupported type. The acceptable types "//&
+                            "are float, double, integer, and string")
+      end select
     else
-      CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+      select type(att_value)
+      type is (real(kind=r4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real((/att_value/)))
+      type is (real(kind=r8_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real((/att_value/)))
+      type is (integer(kind=i4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=(/att_value/))
+      type is (character(len=*))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
+      class default
+         call mpp_error(FATAL, "Diag_field_add_attribute 0d:: unsupported type. The acceptable types "//&
+                            "are float, double, integer, and string")
+      end select
     endif
-  END SUBROUTINE diag_field_add_attribute_scalar_r
 
-  !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_scalar_i(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    INTEGER, INTENT(in) :: att_value !< new attribute value
+  end subroutine diag_field_add_attribute_0d
 
-    if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
-    else
-      CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
-    endif
-  END SUBROUTINE diag_field_add_attribute_scalar_i
-
-  !> @brief Add a scalar character attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_scalar_c(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
-
-    if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
-    else
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
-    endif
-  END SUBROUTINE diag_field_add_attribute_scalar_c
-
-  !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_r1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
-
-    if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, att_value)
-    else
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
-    endif
-  END SUBROUTINE diag_field_add_attribute_r1d
-
-  !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_i1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    INTEGER, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
+  !> @brief Add an 1D array attribute to the diag field corresponding to a given id
+  subroutine diag_field_add_attribute_1d(diag_field_id, att_name, att_value)
+    INTEGER,          INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name      !< new attribute name
+    class(*),         INTENT(in) :: att_value(:)  !< new attribute value
 
     if (use_modern_diag) then
       call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, att_value)
     else
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+      select type(att_value)
+      type is (real(kind=r4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real(att_value))
+      type is (real(kind=r8_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real(att_value))
+      type is (integer(kind=i4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+      class default
+         call mpp_error(FATAL, "Diag_field_add_attribute 1d:: unsupported type. The acceptable types "//&
+                               "are float, double, and integer")
+      end select
     endif
-  END SUBROUTINE diag_field_add_attribute_i1d
+  end subroutine diag_field_add_attribute_1d
 
   !> @brief Add the cell_measures attribute to a diag out field
   !!
