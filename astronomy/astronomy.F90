@@ -768,7 +768,7 @@ subroutine astronomy_end
     !----------------------------------------------------------------------
     !>    deallocate module variables.
     !----------------------------------------------------------------------
-    deallocate (orb_angle)
+    if (allocated(orb_angle)) deallocate (orb_angle)
     if (allocated(cosz_ann) ) then
         deallocate (cosz_ann)
         deallocate (fracday_ann)
