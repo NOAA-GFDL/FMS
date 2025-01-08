@@ -3859,6 +3859,9 @@ END FUNCTION register_static_field
     TYPE (time_type), INTENT(in) :: Time_end_in
 
     Time_end = Time_end_in
+    if (use_modern_diag) then
+      call fms_diag_object%set_time_end(time_end_in)
+    endif
 
   END SUBROUTINE diag_manager_set_time_end
 

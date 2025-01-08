@@ -27,7 +27,7 @@
 module fms_diag_time_utils_mod
 
 use time_manager_mod, only: time_type, increment_date, increment_time, get_calendar_type, NO_CALENDAR, leap_year, &
-                            get_date, get_time,  operator(>), operator(<), operator(-), set_date
+                            get_date, get_time,  operator(>), operator(<), operator(-), set_date, set_time
 use diag_data_mod,    only: END_OF_RUN, EVERY_TIME, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, DIAG_MONTHS, &
                             DIAG_YEARS, use_clock_average
 USE constants_mod,    ONLY: SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE
@@ -40,6 +40,7 @@ private
 public :: diag_time_inc
 public :: get_time_string
 public :: get_date_dif
+public :: set_time_type
 
 contains
 
@@ -383,4 +384,38 @@ contains
        CALL mpp_error(FATAL, 'diag_util_mod::diag_date_dif illegal time units')
     END IF
   END FUNCTION get_date_dif
+
+!> @brief Sets up a time_type based on 6 member array of integers defining the
+!! [year month day hour min sec]
+subroutine set_time_type(time_int, time)
+  integer,         intent(in)    :: time_int(6) !< The time in the format [year month day hour min second]
+  type(time_type), intent(inout) :: time        !< The time converted to the time_type
+
+  integer :: year   !< Year of the time type
+  integer :: month  !< Month of the time type
+  integer :: day    !< Day of the time type
+  integer :: hour   !< Hour of the time type
+  integer :: minute !< Minute of the time type
+  integer :: second !< Second of the time type
+
+  year = time_int(1)
+  month = time_int(2)
+  day = time_int(3)
+  hour = time_int(4)
+  minute = time_int(5)
+  second = time_int(6)
+
+  ! Set up the time type for time passed in
+  IF ( get_calendar_type() /= NO_CALENDAR ) THEN
+    IF ( year==0 .OR. month==0 .OR. day==0 ) THEN
+       call mpp_error(FATAL, 'fms_diag_time_utils_mod::set_time_type'//&
+          &  'The year/month/day can not equal zero')
+    END IF
+    time = set_date(year, month, day, hour, minute, second)
+  ELSE
+    ! No calendar - ignore year and month
+    time = set_time(NINT(hour*SECONDS_PER_HOUR)+NINT(minute*SECONDS_PER_MINUTE)+second, &
+                        &  day)
+  END IF
+end subroutine set_time_type
 end module fms_diag_time_utils_mod
