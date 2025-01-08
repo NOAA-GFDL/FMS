@@ -71,6 +71,27 @@ module fms_diag_reduction_methods_mod
     module procedure sum_update_done_r4, sum_update_done_r8
   end interface
 
+  !> @brief Updates the buffer for any reductions that involve summation
+  !! (ie. time_sum, avg, rms, pow)
+  !! In this case the mask is present
+  interface sum_mask
+    module procedure sum_mask_r4, sum_mask_r8
+  end interface
+
+  !> @brief Updates the buffer for any reductions that involve summation
+  !! (ie. time_sum, avg, rms, pow)
+  !! In this case the mask is present and it varies over time
+  interface sum_mask_variant
+    module procedure sum_mask_variant_r4, sum_mask_variant_r8
+  end interface sum_mask_variant
+
+  !> @brief Updates the buffer for any reductions that involve summation
+  !! (ie. time_sum, avg, rms, pow)
+  !! In this case the mask is not present
+  interface sum_no_mask
+    module procedure sum_no_mask_r4, sum_no_mask_r8
+  end interface sum_no_mask
+
   contains
 
   !> @brief Checks improper combinations of is, ie, js, and je.
