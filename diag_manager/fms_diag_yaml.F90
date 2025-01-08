@@ -396,7 +396,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
     if (.not. file_exists(yamlfilename)) yamlfilename = "diag_table.yaml"
   endif
   diag_yaml_id = open_and_parse_file(trim(yamlfilename))
-  if (diag_yaml_id .eq. missing_file_error_code) call mpp_error(FATAL, "The "//trim(yamlfilename)//" is not present and it is required!")
+  if (diag_yaml_id .eq. missing_file_error_code) &
+    call mpp_error(FATAL, "The "//trim(yamlfilename)//" is not present and it is required!")
 
   call diag_get_value_from_key(diag_yaml_id, 0, "title", diag_yaml%diag_title)
   call get_value_from_key(diag_yaml_id, 0, "base_date", diag_yaml%diag_basedate)
