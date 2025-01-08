@@ -55,6 +55,7 @@ integer, parameter                         :: bilinear = 2
 integer, parameter                         :: scalar = 3
 integer, parameter                         :: weight_file = 4
 integer, parameter                         :: ensemble_case = 5
+integer, parameter                         :: ensemble_same_yaml = 6
 integer                                    :: test_case = ongrid
 integer                                    :: npes
 integer, allocatable                       :: pelist(:)
@@ -82,7 +83,7 @@ allocate(pelist(npes))
 call mpp_get_current_pelist(pelist)
 
 select case (test_case)
-case (ensemble_case)
+case (ensemble_case, ensemble_same_yaml)
   call set_up_ensemble_case()
 end select
 
@@ -93,7 +94,7 @@ call mpp_define_io_domain(Domain, (/1,1/))
 call mpp_get_data_domain(Domain, is, ie, js, je)
 
 select case (test_case)
-case (ensemble_case)
+case (ensemble_case, ensemble_same_yaml)
   ! Go back to the full pelist
   call mpp_set_current_pelist(pelist)
 end select
@@ -108,7 +109,7 @@ if (write_only) then
     call generate_scalar_input_file ()
   case (weight_file)
     call generate_weight_input_file ()
-  case (ensemble_case)
+  case (ensemble_case, ensemble_same_yaml)
     call generate_ensemble_input_file()
   end select
 
@@ -117,7 +118,7 @@ if (write_only) then
 
 else
   select case (test_case)
-  case (ensemble_case)
+  case (ensemble_case, ensemble_same_yaml)
     !< Go back to the ensemble pelist
     call mpp_set_current_pelist(pelist_ens)
   end select
@@ -134,7 +135,7 @@ else
     call scalar_test()
   case (weight_file)
     call weight_file_test()
-  case (ensemble_case)
+  case (ensemble_case, ensemble_same_yaml)
     call ensemble_test()
     call mpp_set_current_pelist(pelist)
   end select
@@ -709,26 +710,34 @@ subroutine ensemble_test()
   real(lkind)                                :: expected_result  !< Expected result from data_override
   type(time_type)                            :: Time             !< Time
   real(lkind), allocatable, dimension(:,:)   :: runoff           !< Data to be written
+  integer                                    :: scale_fac        !< Scale factor to use when determining
+                                                                 !! the expected answer
+  logical :: sucessful !< .True. if the data_override was sucessful
 
   allocate(runoff(is:ie,js:je))
+
+  scale_fac = ensemble_id
+  if (test_case .eq. ensemble_same_yaml) scale_fac = 1
 
   runoff = 999._lkind
   !< Run it when time=3
   Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff',runoff, Time)
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
   !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
-  !! equal to the data at time=3, which is 3+ensemble_id.
-  expected_result = 3._lkind + real(ensemble_id,kind=lkind)
+  !! equal to the data at time=3, which is 3+scale_fac.
+  expected_result = 3._lkind + real(scale_fac,kind=lkind)
   call compare_data(Domain, runoff, expected_result)
 
   !< Run it when time=4
   runoff = 999._lkind
   Time = set_date(1,1,5,0,0,0)
-  call data_override('OCN','runoff',runoff, Time)
-  !< You are getting the data when time=4, the data at time=3 is 3+ensemble_id. and at time=5 is 4+ensemble_id.,
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
+  !< You are getting the data when time=4, the data at time=3 is 3+scale_fac. and at time=5 is 4+scale_fac.,
   !! so the expected result is the average of the 2 (because this is is an "ongrid" case and there
   !! is no horizontal interpolation).
-  expected_result = (3._lkind + real(ensemble_id,kind=lkind) + 4._lkind + real(ensemble_id,kind=lkind)) / 2._lkind
+  expected_result = (3._lkind + real(scale_fac,kind=lkind) + 4._lkind + real(scale_fac,kind=lkind)) / 2._lkind
   call compare_data(Domain, runoff, expected_result)
 
   deallocate(runoff)

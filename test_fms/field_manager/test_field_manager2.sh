@@ -148,6 +148,33 @@ _EOF
   rm -rf field_table.yaml
 
   test_expect_success "field manager test with 2 ensembles" 'mpirun -n 2 ./test_field_table_read'
+
+cat <<_EOF > input.nml
+&field_manager_nml
+  use_field_table_yaml = .true.
+/
+&test_field_table_read_nml
+  test_case = 2
+/
+&ensemble_nml
+   ensemble_size = 2
+/
+_EOF
+
+  cat <<_EOF > field_table.yaml
+field_table:
+- field_type: tracer
+  modlist:
+  - model_type: atmos_mod
+    varlist:
+    - variable: radon
+    - variable: radon2
+    - variable: radon3
+      longname: bad radon!
+_EOF
+
+rm -rf field_table.ens_01.yaml field_table.ens_02.yaml
+test_expect_success "field manager test with 2 ensembles same yaml" 'mpirun -n 2 ./test_field_table_read'
 fi
 
 test_done

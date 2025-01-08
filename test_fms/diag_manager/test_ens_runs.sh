@@ -77,10 +77,10 @@ cat <<_EOF > diag_table.yaml
 title: test_diag_manager_01
 base_date: 2 1 1 0 0 0
 diag_files:
-- file_name: test_0days
+- file_name: test_ens
   time_units: days
   unlimdim: time
-  freq: 0 days
+  freq: 1 hours
   varlist:
   - module: ocn_mod
     var_name: var0
@@ -90,6 +90,25 @@ _EOF
 
 my_test_count=`expr $my_test_count + 1`
 test_expect_failure "Running diag_manager with both diag_table.yaml and diag_table.ens_xx.yaml files present (test $my_test_count)" '
+  mpirun -n 2 ../test_ens_runs
+'
+
+# Both ensembles have the same diag table yaml
+cat <<_EOF > input.nml
+&diag_manager_nml
+  use_modern_diag = .True.
+/
+
+&ensemble_nml
+   ensemble_size = 2
+/
+&test_ens_runs_nml
+  using_ens_yaml = .false.
+/
+_EOF
+rm -rf diag_table.ens_01.yaml diag_table.ens_02.yaml
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Running diag_manager with 2 ensembles, both ensembles have the same yaml (test $my_test_count)" '
   mpirun -n 2 ../test_ens_runs
 '
 

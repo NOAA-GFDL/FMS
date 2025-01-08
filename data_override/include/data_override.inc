@@ -599,6 +599,10 @@ subroutine read_table_yaml(data_table)
     if (index(trim(filename), "ens_") .ne. 0) then
       if (file_exists(filename) .and. file_exists("data_table.yaml")) &
         call mpp_error(FATAL, "Both data_table.yaml and "//trim(filename)//" exists, pick one!")
+
+      !< If the end_* file does not exist, revert back to "data_table.yaml"
+      !! where every ensemble is using the same yaml
+      if (.not. file_exists(filename)) filename = "data_table.yaml"
     endif
 
     file_id = open_and_parse_file(trim(filename))

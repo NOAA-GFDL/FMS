@@ -618,6 +618,10 @@ call get_instance_filename(tbl_name, filename)
 if (index(trim(filename), "ens_") .ne. 0) then
   if (file_exists(filename) .and. file_exists(tbl_name)) &
     call mpp_error(FATAL, "Both "//trim(tbl_name)//" and "//trim(filename)//" exists, pick one!")
+
+  !< If the end_* file does not exist, revert back to tbl_name
+  !! where every ensemble is using the same yaml
+  if (.not. file_exists(filename)) filename = tbl_name
 endif
 
 if (.not. file_exists(trim(filename))) then
