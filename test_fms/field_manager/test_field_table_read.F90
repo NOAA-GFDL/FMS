@@ -53,6 +53,7 @@ integer :: ensemble_id
 character(len=10) :: text
 integer, parameter :: default_test = 0
 integer, parameter :: ensemble_test = 1
+integer, parameter :: ensemble_same_yaml_test = 2
 
 ! namelist parameters
 integer :: test_case = default_test
@@ -69,7 +70,7 @@ call mpp_get_current_pelist(pelist)
 
 nfields_expected = 4
 select case (test_case)
-case (ensemble_test)
+case (ensemble_test, ensemble_same_yaml_test)
   if (npes .ne. 2) &
     call mpp_error(FATAL, "test_field_table_read:: this test requires 2 PEs!")
 
@@ -78,16 +79,16 @@ case (ensemble_test)
   if (ens_siz(1) .ne. 2) &
     call mpp_error(FATAL, "This test requires 2 ensembles")
 
+  nfields_expected = 3
   if (mpp_pe() .eq. 0) then
     !PEs 0 is the first ensemble
     ensemble_id = 1
     call mpp_set_current_pelist((/0/))
-    nfields_expected = 3
   else
     !PEs 1 is the second ensemble
     ensemble_id = 2
     call mpp_set_current_pelist((/1/))
-    nfields_expected = 4
+    if (test_case .eq. ensemble_test) nfields_expected = 4
   endif
 
   write( text,'(a,i2.2)' ) 'ens_', ensemble_id

@@ -25,7 +25,8 @@ program test_ens_runs
                               register_diag_field, diag_manager_init, diag_manager_end, register_static_field, &
                               diag_axis_init
   use time_manager_mod, only: time_type, operator(+), JULIAN, set_time, set_calendar_type, set_date
-  use mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_get_current_pelist, mpp_set_current_pelist
+  use mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_get_current_pelist, mpp_set_current_pelist, &
+                              input_nml_file
   use fms2_io_mod,      only: FmsNetcdfFile_t, open_file, close_file, read_data, get_dimension_size, &
                               set_filename_appendix, get_instance_filename
   use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
@@ -47,7 +48,18 @@ program test_ens_runs
   character(len=10) :: text           !< The filename appendix
   integer :: expected_ntimes
 
+  integer                            :: io_status       !< Status after reading the namelist
+
+  !< Configuration parameters
+  logical :: using_ens_yaml = .true.      !< Indicates whether or not ensembles yamls are used in the test
+
+  namelist / test_ens_runs_nml / using_ens_yaml
+
   call fms_init
+
+  read (input_nml_file, test_ens_runs_nml, iostat=io_status)
+  if (io_status > 0) call mpp_error(FATAL,'=>test_ens_runs: Error reading input.nml')
+
   call ensemble_manager_init
   npes = mpp_npes()
   if (npes .ne. 2) &
@@ -69,6 +81,7 @@ program test_ens_runs
     ensemble_id = 2
     call mpp_set_current_pelist((/1/))
     expected_ntimes = 24
+    if (.not. using_ens_yaml) expected_ntimes = 48
   endif
 
   write( text,'(a,i2.2)' ) 'ens_', ensemble_id
@@ -105,6 +118,7 @@ program test_ens_runs
     real, allocatable     :: var_data(:) !< Buffer to read variable data to
     integer               :: j           !< For looping
     character(len=255)    :: filename    !< Name of the diag file
+    integer               :: scale_fac   !< Scale factor to use when determining the expected answer
 
     call get_instance_filename("test_ens.nc", filename)
     if (.not. open_file(fileobj, filename, "read")) &
@@ -116,9 +130,12 @@ program test_ens_runs
     allocate(var_data(var_size))
     var_data = -999.99
 
+    scale_fac = 1
+    if (using_ens_yaml) scale_fac = ensemble_id
+
     call read_data(fileobj, "var0", var_data)
     do j = 1, var_size
-      if (var_data(j) .ne. real(j * ensemble_id))&
+      if (var_data(j) .ne. real(j * scale_fac))&
         call mpp_error(FATAL, "The variable data for var1 at time level:"//&
                               string(j)//" is not the correct value!")
     enddo

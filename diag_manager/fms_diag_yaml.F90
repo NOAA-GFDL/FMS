@@ -36,7 +36,7 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
                            time_diurnal, time_power, time_none, r8, i8, r4, i4, DIAG_NOT_REGISTERED, &
                            middle_time, begin_time, end_time, MAX_STR_LEN
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
-                           get_block_ids, get_key_value, get_key_ids, get_key_name
+                           get_block_ids, get_key_value, get_key_ids, get_key_name, missing_file_error_code
 use fms_yaml_output_mod, only: fmsYamlOutKeys_type, fmsYamlOutValues_type, write_yaml_from_struct_3, &
                                yaml_out_add_level2key, initialize_key_struct, initialize_val_struct
 use mpp_mod,         only: mpp_error, FATAL, NOTE, mpp_pe, mpp_root_pe, stdout
@@ -394,8 +394,13 @@ subroutine diag_yaml_object_init(diag_subset_output)
   if (index(trim(yamlfilename), "ens_") .ne. 0) then
     if (file_exists(yamlfilename) .and. file_exists("diag_table.yaml")) &
       call mpp_error(FATAL, "Both diag_table.yaml and "//trim(yamlfilename)//" exists, pick one!")
+    !< If the end_* file does not exist, revert back to "diag_table.yaml"
+    !! where every ensemble is using the same yaml
+    if (.not. file_exists(yamlfilename)) yamlfilename = "diag_table.yaml"
   endif
   diag_yaml_id = open_and_parse_file(trim(yamlfilename))
+  if (diag_yaml_id .eq. missing_file_error_code) &
+    call mpp_error(FATAL, "The "//trim(yamlfilename)//" is not present and it is required!")
 
   call diag_get_value_from_key(diag_yaml_id, 0, "title", diag_yaml%diag_title)
   call get_value_from_key(diag_yaml_id, 0, "base_date", diag_yaml%diag_basedate)

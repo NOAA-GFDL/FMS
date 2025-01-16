@@ -39,6 +39,7 @@ implicit none
 private
 
 public :: open_and_parse_file
+public :: missing_file_error_code
 public :: get_num_unique_blocks
 public :: get_unique_block_ids
 public :: get_block_name
@@ -51,6 +52,8 @@ public :: get_key_name
 public :: get_key_value
 !public :: clean_up
 !> @}
+
+integer, parameter :: missing_file_error_code = 999
 
 !> @brief Dermine the value of a key from a keyname
 !> @ingroup yaml_parser_mod
@@ -253,7 +256,7 @@ function open_and_parse_file(filename) &
 
    inquire(file=trim(filename), EXIST=yaml_exists)
    if (.not. yaml_exists) then
-      file_id = 999
+      file_id = missing_file_error_code
       call mpp_error(NOTE, "The yaml file:"//trim(filename)//" does not exist, hopefully this is your intent!")
       return
    end if
