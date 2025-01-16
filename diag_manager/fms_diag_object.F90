@@ -61,6 +61,8 @@ private
   type(fmsDiagField_type), allocatable :: FMS_diag_fields(:) !< Array of diag fields
   type(fmsDiagOutputBuffer_type), allocatable :: FMS_diag_output_buffers(:) !< array of output buffer objects
                                                                        !! one for each variable in the diag_table.yaml
+  logical, private :: data_was_send !< True if send_data has been successfully called for at least one variable
+                                    !< diag_send_complete does nothing if it is .false.
   integer, private :: registered_buffers = 0 !< number of registered buffers, per dimension
   class(fmsDiagAxisContainer_type), allocatable :: diag_axis(:) !< Array of diag_axis
   integer, private :: registered_variables !< Number of registered variables
@@ -144,6 +146,7 @@ subroutine fms_diag_object_init (this,diag_subset_output, time_init)
   this%buffers_initialized =fms_diag_output_buffer_init(this%FMS_diag_output_buffers,SIZE(diag_yaml%get_diag_fields()))
   this%registered_variables = 0
   this%registered_axis = 0
+  this%data_was_send = .false.
   this%initialized = .true.
 #else
   call mpp_error("fms_diag_object_init",&
@@ -657,6 +660,8 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   main_if: if (buffer_the_data) then
 !> Only 1 thread allocates the output buffer and sets set_math_needs_to_be_done
 !$omp critical
+    !< Let diag_send_complete that there is new data to procress
+    if (.not. this%data_was_send) this%data_was_send = .true.
 
     !< These set_* calls need to be done inside an omp_critical to avoid any race conditions
     !! and allocation issues
@@ -685,6 +690,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
     call this%FMS_diag_fields(diag_field_id)%set_data_buffer(field_data, oor_mask, field_weight, &
                                                              is, js, ks, ie, je, ke)
   else
+
+    !< Let diag_send_complete that there is new data to procress
+    if (.not. this%data_was_send) this%data_was_send = .true.
 
     !< At this point if we are no longer in an openmp region or running with 1 thread
     !! so it is safe to have these set_* calls
@@ -783,8 +791,13 @@ subroutine fms_diag_send_complete(this, time_step)
 #ifndef use_yaml
 CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling with -Duse_yaml")
 #else
+  !< Go away if there is no new data
+  if (.not. this%data_was_send) return
+
   call this%do_buffer_math()
   call this%fms_diag_do_io()
+
+  this%data_was_send = .false.
 #endif
 
 end subroutine fms_diag_send_complete

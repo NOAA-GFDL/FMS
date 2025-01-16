@@ -41,6 +41,15 @@
 #undef SUM_UPDATE_DONE_
 #define SUM_UPDATE_DONE_ sum_update_done_r8
 
+#undef SUM_MASK_
+#define SUM_MASK_ sum_mask_r8
+
+#undef SUM_NO_MASK_
+#define SUM_NO_MASK_ sum_no_mask_r8
+
+#undef SUM_MASK_VARIANT_
+#define SUM_MASK_VARIANT_ sum_mask_variant_r8
+
 #include "fms_diag_reduction_methods.inc"
 
 !> @}

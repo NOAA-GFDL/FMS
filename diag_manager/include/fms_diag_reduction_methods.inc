@@ -235,13 +235,7 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
   integer ,optional, intent(in) :: pow                            !< Used for pow(er) reduction,
                                                                   !! calculates field_data^pow before adding to buffer
 
-  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
-                                                            !! the input buffer
-  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
-                                                            !! the output buffer
-  integer :: i, j, k, l !< For looping
   real(FMS_TRM_KIND_) :: weight_scale !< local copy of optional weight
-  integer :: pow_loc !> local copy of optional pow value (set if using pow reduction)
   integer, parameter  :: kindl = FMS_TRM_KIND_ !< real kind size as set by macro
   integer :: diurnal !< diurnal index to indicate which daily section is updated
                      !! will be 1 unless using a diurnal reduction
@@ -252,17 +246,48 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
     weight_scale = 1.0_kindl
   endif
 
-  if(present(pow)) then
-    pow_loc = pow
-  else
-    pow_loc = 1.0_kindl
-  endif
-
   if(diurnal_section .lt. 0) then
     diurnal = 1
   else
     diurnal = diurnal_section
   endif
+
+  if (is_masked) then
+    if (mask_variant) then
+      ! Mask changes over time so the weight is an array
+      call sum_mask_variant(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, weight_scale, pow)
+    else
+      call sum_mask(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, &
+        missing_value, weight_scale, pow)
+    endif
+  else
+    call sum_no_mask(data_out, data_in, weight_sum, bounds_in, bounds_out, diurnal, weight_scale, pow)
+  endif
+end subroutine DO_TIME_SUM_UPDATE_
+
+subroutine SUM_MASK_(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, missing_value, &
+  weight_scale, pow)
+  real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
+  real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
+  real(r8_kind),             intent(inout) :: weight_sum(:,:,:,:) !< Sum of weights from the output buffer object
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
+                                                                  !! of the input buffer
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
+                                                                  !! of the output buffer
+  logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  integer,                   intent(in)    :: diurnal             !< diurnal index to indicate which daily section is
+                                                                  !! updated will be 1 unless using a diurnal reduction
+  real(FMS_TRM_KIND_),       intent(in)    :: missing_value       !< Missing_value for data points that are masked
+  real(FMS_TRM_KIND_),       intent(in)    :: weight_scale        !< weight scale to use
+  integer ,optional,         intent(in)    :: pow                 !< Used for pow(er) reduction,
+                                                                  !! calculates field_data^pow before adding to buffer
+
+  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
+                                                            !! the input buffer
+  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
+                                                            !! the output buffer
+  integer :: pow_loc !> local copy of optional pow value (set if using pow reduction)
+  integer :: i, j, k, l !< For looping
 
   is_out = bounds_out%get_imin()
   ie_out = bounds_out%get_imax()
@@ -278,56 +303,167 @@ subroutine DO_TIME_SUM_UPDATE_(data_out, weight_sum, data_in, mask, is_masked, m
   ks_in = bounds_in%get_kmin()
   ke_in = bounds_in%get_kmax()
 
-  !> Seperated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
-  !! then mask will always be .True. so the if (mask) is redudant.
-  ! TODO check if performance gain by not doing weight and pow if not needed
-  if (is_masked) then
-    if (mask_variant) then
-      ! Mask changes over time so the weight is an array
-      do k = 0, ke_out - ks_out
-        do j = 0, je_out - js_out
-          do i = 0, ie_out - is_out
-            where (mask(is_in + i, js_in + j, ks_in + k, :))
-              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
-                       data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
-              !Increase the weight sum for the grid point that was not masked
-              weight_sum(is_out + i, js_out + j, ks_out + k, :) = &
-                weight_sum(is_out + i, js_out + j, ks_out + k, :) + weight_scale
-            endwhere
-          enddo
-        enddo
-      enddo
-    else
-      weight_sum = weight_sum + weight_scale
-      do k = 0, ke_out - ks_out
-        do j = 0, je_out - js_out
-          do i = 0, ie_out - is_out
-            where (mask(is_in + i, js_in + j, ks_in + k, :))
-              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
-                       data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-                     + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
-            elsewhere
-              data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
-            endwhere
-          enddo
-        enddo
-      enddo
-    endif
-  else
-    weight_sum = weight_sum + weight_scale
-    ! doesn't need to loop through l if no mask, just sums the 1d slices
+  weight_sum = weight_sum + weight_scale
+  if (present(pow)) then
     do k = 0, ke_out - ks_out
       do j = 0, je_out - js_out
         do i = 0, ie_out - is_out
-          data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal) =  &
-             data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
-            + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow_loc
+          where (mask(is_in + i, js_in + j, ks_in + k, :))
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
+                   data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
+                 + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow
+          elsewhere
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
+          endwhere
+        enddo
+      enddo
+    enddo
+  else
+    do k = 0, ke_out - ks_out
+      do j = 0, je_out - js_out
+        do i = 0, ie_out - is_out
+          where (mask(is_in + i, js_in + j, ks_in + k, :))
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
+                   data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
+                 + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale)
+          elsewhere
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) = missing_value
+          endwhere
         enddo
       enddo
     enddo
   endif
-end subroutine DO_TIME_SUM_UPDATE_
+end subroutine SUM_MASK_
+
+subroutine SUM_MASK_VARIANT_(data_out, data_in, weight_sum, bounds_in, bounds_out, mask, diurnal, weight_scale, pow)
+  real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
+  real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
+  real(r8_kind),             intent(inout) :: weight_sum(:,:,:,:) !< Sum of weights from the output buffer object
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
+                                                                  !! of the input buffer
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
+                                                                  !! of the output buffer
+  logical,                   intent(in)    :: mask(:,:,:,:)       !< mask
+  integer,                   intent(in)    :: diurnal             !< diurnal index to indicate which daily section is
+                                                                  !! updated will be 1 unless using a diurnal reduction
+  real(FMS_TRM_KIND_),       intent(in)    :: weight_scale        !< weight scale to use
+  integer ,optional,         intent(in)    :: pow                 !< Used for pow(er) reduction,
+                                                                  !! calculates field_data^pow before adding to buffer
+
+  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
+                                                            !! the input buffer
+  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
+                                                            !! the output buffer
+  integer :: pow_loc !> local copy of optional pow value (set if using pow reduction)
+  integer :: i, j, k, l !< For looping
+
+  is_out = bounds_out%get_imin()
+  ie_out = bounds_out%get_imax()
+  js_out = bounds_out%get_jmin()
+  je_out = bounds_out%get_jmax()
+  ks_out = bounds_out%get_kmin()
+  ke_out = bounds_out%get_kmax()
+
+  is_in = bounds_in%get_imin()
+  ie_in = bounds_in%get_imax()
+  js_in = bounds_in%get_jmin()
+  je_in = bounds_in%get_jmax()
+  ks_in = bounds_in%get_kmin()
+  ke_in = bounds_in%get_kmax()
+
+  if (present(pow)) then
+    do k = 0, ke_out - ks_out
+      do j = 0, je_out - js_out
+        do i = 0, ie_out - is_out
+          where (mask(is_in + i, js_in + j, ks_in + k, :))
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
+                   data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
+                 + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow
+
+            !Increase the weight sum for the grid point that was not masked
+            weight_sum(is_out + i, js_out + j, ks_out + k, :) = &
+              weight_sum(is_out + i, js_out + j, ks_out + k, :) + weight_scale
+          endwhere
+        enddo
+      enddo
+    enddo
+  else
+    do k = 0, ke_out - ks_out
+      do j = 0, je_out - js_out
+        do i = 0, ie_out - is_out
+          where (mask(is_in + i, js_in + j, ks_in + k, :))
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal) =           &
+                   data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
+                 + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale)
+
+            !Increase the weight sum for the grid point that was not masked
+            weight_sum(is_out + i, js_out + j, ks_out + k, :) = &
+              weight_sum(is_out + i, js_out + j, ks_out + k, :) + weight_scale
+          endwhere
+        enddo
+      enddo
+    enddo
+  endif
+end subroutine SUM_MASK_VARIANT_
+
+subroutine SUM_NO_MASK_(data_out, data_in, weight_sum, bounds_in, bounds_out, diurnal, weight_scale, pow)
+  real(FMS_TRM_KIND_),       intent(inout) :: data_out(:,:,:,:,:) !< output data
+  real(FMS_TRM_KIND_),       intent(in)    :: data_in(:,:,:,:)    !< data to update the buffer with
+  real(r8_kind),             intent(inout) :: weight_sum(:,:,:,:) !< Sum of weights from the output buffer object
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_in           !< indices indicating the correct portion
+                                                                  !! of the input buffer
+  type(fmsDiagIbounds_type), intent(in)    :: bounds_out          !< indices indicating the correct portion
+                                                                  !! of the output buffer
+  integer,                   intent(in)    :: diurnal             !< diurnal index to indicate which daily section is
+                                                                  !! updated will be 1 unless using a diurnal reduction
+  real(FMS_TRM_KIND_),       intent(in)    :: weight_scale        !< weight scale to use
+  integer ,optional,         intent(in)    :: pow                 !< Used for pow(er) reduction,
+                                                                  !! calculates field_data^pow before adding to buffer
+
+  integer :: is_in, ie_in, js_in, je_in, ks_in, ke_in       !< Starting and ending indices of each dimention for
+                                                            !! the input buffer
+  integer :: is_out, ie_out, js_out, je_out, ks_out, ke_out !< Starting and ending indices of each dimention for
+                                                            !! the output buffer
+  integer :: i, j, k, l !< For looping
+
+  is_out = bounds_out%get_imin()
+  ie_out = bounds_out%get_imax()
+  js_out = bounds_out%get_jmin()
+  je_out = bounds_out%get_jmax()
+  ks_out = bounds_out%get_kmin()
+  ke_out = bounds_out%get_kmax()
+
+  is_in = bounds_in%get_imin()
+  ie_in = bounds_in%get_imax()
+  js_in = bounds_in%get_jmin()
+  je_in = bounds_in%get_jmax()
+  ks_in = bounds_in%get_kmin()
+  ke_in = bounds_in%get_kmax()
+
+  weight_sum = weight_sum + weight_scale
+
+  if (present(pow)) then
+    do k = 0, ke_out - ks_out
+      do j = 0, je_out - js_out
+        do i = 0, ie_out - is_out
+          data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal) =  &
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
+            + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale) ** pow
+        enddo
+      enddo
+    enddo
+  else
+    do k = 0, ke_out - ks_out
+      do j = 0, je_out - js_out
+        do i = 0, ie_out - is_out
+          data_out(is_out + i, js_out + j, ks_out + k,  :, diurnal) =  &
+            data_out(is_out + i, js_out + j, ks_out + k, :, diurnal)  &
+            + (data_in(is_in +i, js_in + j, ks_in + k, :) * weight_scale)
+        enddo
+      enddo
+    enddo
+  endif
+end subroutine SUM_NO_MASK_
 
 !> To be called with diag_send_complete, finishes reductions
 !! Just divides the buffer by the counter array(which is just the sum of the weights used in the buffer's reduction)
