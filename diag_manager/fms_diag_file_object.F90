@@ -186,7 +186,7 @@ type fmsDiagFileContainer_type
   procedure :: write_field_metadata
   procedure :: write_axis_data
   procedure :: writing_on_this_pe
-  procedure :: is_time_to_write
+  procedure :: check_file_times
   procedure :: is_time_to_close_file
   procedure :: write_time_data
   procedure :: update_next_write
@@ -200,6 +200,7 @@ type fmsDiagFileContainer_type
   procedure :: close_diag_file
   procedure :: set_model_time
   procedure :: get_model_time
+  procedure :: time_to_start_doing_math
 end type fmsDiagFileContainer_type
 
 !type(fmsDiagFile_type), dimension (:), allocatable, target :: FMS_diag_file !< The array of diag files
@@ -264,8 +265,12 @@ logical function fms_diag_files_object_init (files_array)
      !! Set this to the time passed in to diag_manager_init
      !! This will be the base_time if nothing was passed in
      !! This time is appended to the filename if the prepend_date namelist is .True.
-     obj%start_time = diag_init_time
-     obj%last_output = diag_init_time
+     if (obj%has_file_start_time()) then
+       obj%start_time = obj%get_file_start_time()
+     else
+       obj%start_time = diag_init_time
+     endif
+     obj%last_output = obj%start_time
      obj%model_time = diag_init_time
      obj%next_output = diag_time_inc(obj%start_time, obj%get_file_freq(), obj%get_file_frequnit())
      obj%next_next_output = diag_time_inc(obj%next_output, obj%get_file_freq(), obj%get_file_frequnit())
@@ -274,7 +279,12 @@ logical function fms_diag_files_object_init (files_array)
        obj%next_close = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
                                         obj%get_file_new_file_freq_units())
      else
-       obj%next_close = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+       if (obj%has_file_duration()) then
+         obj%next_close = diag_time_inc(obj%start_time, obj%get_file_duration(), &
+                                        obj%get_file_duration_units())
+       else
+         obj%next_close = diag_time_inc(obj%start_time, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+       endif
      endif
      obj%is_file_open = .false.
 
@@ -597,7 +607,7 @@ end function get_file_new_file_freq_units
 !! \return Copy of file_start_time
 pure function get_file_start_time (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
- character (len=:), allocatable :: res
+ type(time_type):: res
   res = this%diag_yaml_file%get_file_start_time()
 end function get_file_start_time
 
@@ -639,6 +649,7 @@ pure function is_done_writing_data (this) result(res)
  class(fmsDiagFile_type), intent(in) :: this !< The file object
  logical :: res
   res = this%done_writing_data
+  if (this%is_file_open) res = .false.
 end function is_done_writing_data
 
 !> \brief Checks if file_fname is allocated in the yaml object
@@ -1014,6 +1025,11 @@ subroutine add_start_time(this, start_time)
   !! this%start_time was already set to the diag_init_time
   if (start_time .eq. diag_init_time) return
 
+  !< If the start_time sent is is greater than or equal to the start time already
+  !! in the diag file obj return because either this%start_time was already updated
+  !! or the file has start_time defined in the yaml
+  if (this%start_time >= start_time) return
+
   if (this%start_time .ne. diag_init_time) then
     !> If the this%start_time is not equal to the diag_init_time from the diag_table
     !! this%start_time was already updated so make sure it is the same for the current variable
@@ -1383,11 +1399,14 @@ end subroutine write_field_data
 
 !> \brief Determine if it is time to close the file
 !! \return .True. if it is time to close the file
-logical function is_time_to_close_file (this, time_step)
+logical function is_time_to_close_file (this, time_step, force_close)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
+  logical,                          intent(in)           :: force_close     !< if .true. return true
 
-  if (time_step >= this%FMS_diag_file%next_close) then
+  if (force_close) then
+    is_time_to_close_file = .true.
+  elseif (time_step >= this%FMS_diag_file%next_close) then
     is_time_to_close_file = .true.
   else
     if (this%FMS_diag_file%is_static) then
@@ -1398,8 +1417,18 @@ logical function is_time_to_close_file (this, time_step)
   endif
 end function
 
+!> \brief Determine if it is time to start doing mathz
+!! \return .True. if it is time to start doing mathz
+logical function time_to_start_doing_math (this)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  time_to_start_doing_math = .false.
+  if (this%FMS_diag_file%model_time >= this%FMS_diag_file%start_time) then
+    time_to_start_doing_math = .true.
+  endif
+end function
+
 !> \brief Determine if it is time to "write" to the file
-logical function is_time_to_write(this, time_step, output_buffers, diag_fields, do_not_write)
+subroutine check_file_times(this, time_step, output_buffers, diag_fields, do_not_write)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
   TYPE(time_type),                  intent(in)              :: time_step         !< Current model step time
   type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffer.
@@ -1411,7 +1440,6 @@ logical function is_time_to_write(this, time_step, output_buffers, diag_fields, 
 
   do_not_write = .false.
   if (time_step > this%FMS_diag_file%next_output) then
-    is_time_to_write = .true.
     if (this%FMS_diag_file%is_static) return
     if (time_step > this%FMS_diag_file%next_next_output) then
       if (this%FMS_diag_file%get_file_freq() .eq. 0) then
@@ -1421,9 +1449,7 @@ logical function is_time_to_write(this, time_step, output_buffers, diag_fields, 
           call this%FMS_diag_file%check_buffer_times(output_buffers, diag_fields)
           this%FMS_diag_file%next_output = time_step
           this%FMS_diag_file%next_next_output = time_step
-          is_time_to_write = .true.
         endif
-        return
       elseif (this%FMS_diag_file%num_registered_fields .eq. 0) then
         !! If no variables have been registered, write a dummy time dimension for the first level
         !! At least one time level is needed for the combiner to work ...
@@ -1433,26 +1459,20 @@ logical function is_time_to_write(this, time_step, output_buffers, diag_fields, 
           this%FMS_diag_file%data_has_been_written = .true.
           this%FMS_diag_file%unlim_dimension_level = 1
         endif
-        is_time_to_write =.false.
       else
         !! Only fail if send data has actually been called for at least one variable
         if (this%FMS_diag_file%has_send_data_been_called(output_buffers, .false.)) &
           call mpp_error(FATAL, this%FMS_diag_file%get_file_fname()//&
             ": diag_manager_mod: You skipped a time_step. Be sure that diag_send_complete is called at every "//&
             "time_step needed by the file.")
-        is_time_to_write =.false.
       endif
     endif
   else
-    is_time_to_write = .false.
-    if (this%FMS_diag_file%is_static) then
-      ! This is to ensure that static files get finished in the begining of the run
-      if (this%FMS_diag_file%unlim_dimension_level .eq. 1) is_time_to_write = .true.
-    else if(this%FMS_diag_file%get_file_freq() .eq. 0) then
+    if(this%FMS_diag_file%get_file_freq() .eq. 0) then
       do_not_write = .true.
     endif
   endif
-end function is_time_to_write
+end subroutine check_file_times
 
 !> \brief Determine if the current PE has data to write
 logical function writing_on_this_pe(this)
@@ -1532,7 +1552,6 @@ subroutine update_current_new_file_freq_index(this, time_step)
        diag_file%next_output = diag_file%no_more_data
        diag_file%next_next_output = diag_file%no_more_data
        diag_file%last_output = diag_file%no_more_data
-       diag_file%next_close = diag_file%no_more_data
     endif
   endif
 
@@ -1776,10 +1795,11 @@ subroutine write_axis_data(this, diag_axis)
 end subroutine write_axis_data
 
 !< @brief Closes the diag_file
-subroutine close_diag_file(this, output_buffers, diag_fields)
+subroutine close_diag_file(this, output_buffers, model_end_time, diag_fields)
   class(fmsDiagFileContainer_type), intent(inout), target   :: this              !< The file object
   type(fmsDiagOutputBuffer_type),   intent(in)              :: output_buffers(:) !< Array of output buffers
                                                                                  !! This is needed for error checking
+  type(time_type),                  intent(in)              :: model_end_time    !< Time that simulation ends
   type(fmsDiagField_type),          intent(in),    optional :: diag_fields(:)    !< Array of diag fields
                                                                                  !! This is needed for error checking
 
@@ -1805,9 +1825,11 @@ subroutine close_diag_file(this, output_buffers, diag_fields)
                                         this%FMS_diag_file%get_file_new_file_freq(), &
                                         this%FMS_diag_file%get_file_new_file_freq_units())
   else
-    this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, VERY_LARGE_FILE_FREQ, DIAG_DAYS)
+    this%FMS_diag_file%next_close = model_end_time
   endif
 
+  if (this%FMS_diag_file%model_time >= model_end_time) &
+    this%FMS_diag_file%done_writing_data = .true.
   if (this%FMS_diag_file%has_send_data_been_called(output_buffers, .True., diag_fields)) return
 end subroutine close_diag_file
 

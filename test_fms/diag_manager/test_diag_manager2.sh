@@ -1137,7 +1137,7 @@ diag_files:
   unlimdim: time
   new_file_freq: 6
   new_file_freq_units: hours
-  start_time: 2 1 1 0 0 0
+  start_time: 00020101.000000
   file_duration: 12
   file_duration_units: hours
   varlist:
@@ -1199,7 +1199,7 @@ diag_files:
   unlimdim: time
   new_file_freq: 6 3 1
   new_file_freq_units: hours hours hours
-  start_time: 2 1 1 0 0 0
+  start_time: 00020101.000000
   file_duration: 12 3 9
   file_duration_units: hours hours hours
   varlist:
@@ -1230,7 +1230,7 @@ diag_files:
   unlimdim: time
   new_file_freq: 6 3 1
   new_file_freq_units: hours hours hours
-  start_time: 2 1 1 0 0 0
+  start_time: 00020101.000000
   file_duration: 12 3 9
   file_duration_units: hours hours hours
   varlist:

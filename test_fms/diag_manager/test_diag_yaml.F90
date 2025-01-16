@@ -26,7 +26,7 @@ use fms_diag_yaml_mod
 use diag_data_mod, only: DIAG_NULL, DIAG_ALL, get_base_year, get_base_month, get_base_day, get_base_hour, &
                        & get_base_minute, get_base_second, diag_data_init, DIAG_HOURS, DIAG_NULL, DIAG_DAYS, &
                        & time_average, r4, middle_time, end_time, time_none
-use  time_manager_mod, only: set_calendar_type, JULIAN
+use  time_manager_mod, only: set_calendar_type, JULIAN, date_to_string
 use mpp_mod
 use platform_mod
 
@@ -243,9 +243,9 @@ subroutine compare_diag_files(res)
   call compare_result("file_duration_units 2", res(2)%get_file_duration_units(), DIAG_NULL)
   call compare_result("file_duration_units 3", res(3)%get_file_duration_units(), DIAG_NULL)
 
-  call compare_result("file_start_time 1", res(1)%get_file_start_time(), "2 1 1 0 0 0")
-  call compare_result("file_start_time 2", res(2)%get_file_start_time(), "")
-  call compare_result("file_start_time 3", res(3)%get_file_start_time(), "")
+  call compare_result("file_start_time 1", date_to_string(res(1)%get_file_start_time()), "00020101.000000")
+  if (res(2)%has_file_start_time()) call mpp_error(FATAL, "The second file should not have a start time")
+  if (res(3)%has_file_start_time()) call mpp_error(FATAL, "The third file should not have a start time")
 
   varlist = res(1)%get_file_varlist()
   if (.not. allocated(varlist)) call mpp_error(FATAL, "The varlist for the first file was not set")
