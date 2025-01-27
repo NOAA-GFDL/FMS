@@ -135,11 +135,11 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
     mode_flags = ior(r4_kind, r8_kind)
   endif
 
-  if (iand(mode_flags, r4_kind)) then
+  if (iand(mode_flags, r4_kind).eq.r4_kind) then
     call data_override_init_r4(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
   endif
 
-  if (iand(mode_flags, r8_kind)) then
+  if (iand(mode_flags, r8_kind).eq.r8_kind) then
     call data_override_init_r8(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
   endif
 
@@ -166,8 +166,8 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
     if (atm_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
       "data_override_unset_domains: attempted to unset an Atm_domain that has not been set.")
 
-    if (iand(atm_mode, r4_kind)) call data_override_unset_atm_r4
-    if (iand(atm_mode, r8_kind)) call data_override_unset_atm_r8
+    if (iand(atm_mode, r4_kind).eq.r4_kind) call data_override_unset_atm_r4
+    if (iand(atm_mode, r8_kind).eq.r8_kind) call data_override_unset_atm_r8
 
     atm_mode = 0
   endif ; endif
@@ -175,8 +175,8 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
     if (ocn_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
       "data_override_unset_domains: attempted to unset an Ocn_domain that has not been set.")
 
-    if (iand(ocn_mode, r4_kind)) call data_override_unset_ocn_r4
-    if (iand(ocn_mode, r8_kind)) call data_override_unset_ocn_r8
+    if (iand(ocn_mode, r4_kind).eq.r4_kind) call data_override_unset_ocn_r4
+    if (iand(ocn_mode, r8_kind).eq.r8_kind) call data_override_unset_ocn_r8
 
     ocn_mode = 0
   endif ; endif
@@ -184,8 +184,8 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
     if (lnd_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
       "data_override_unset_domains: attempted to unset an Land_domain that has not been set.")
 
-    if (iand(lnd_mode, r4_kind)) call data_override_unset_lnd_r4
-    if (iand(lnd_mode, r8_kind)) call data_override_unset_lnd_r8
+    if (iand(lnd_mode, r4_kind).eq.r4_kind) call data_override_unset_lnd_r4
+    if (iand(lnd_mode, r8_kind).eq.r8_kind) call data_override_unset_lnd_r8
 
     lnd_mode = 0
   endif ; endif
@@ -193,8 +193,8 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
     if (ice_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
       "data_override_unset_domains: attempted to unset an Ice_domain that has not been set.")
 
-    if (iand(ice_mode, r4_kind)) call data_override_unset_ice_r4
-    if (iand(ice_mode, r8_kind)) call data_override_unset_ice_r8
+    if (iand(ice_mode, r4_kind).eq.r4_kind) call data_override_unset_ice_r4
+    if (iand(ice_mode, r8_kind).eq.r8_kind) call data_override_unset_ice_r8
 
     ice_mode = 0
   endif ; endif
