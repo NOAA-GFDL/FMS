@@ -90,7 +90,9 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
    integer :: n
 
    if(.not.fm_dump_list(listroot, recursive=.TRUE.)) then
-      call error_mesg('gex_read_field_table','Cannot dump field list "'//listroot//'". No additional field will be exchanged from land to atmosphere',NOTE)
+      call error_mesg('gex_read_field_table', &
+      'Cannot dump field list "'//listroot//'". No additional field will be exchanged from land to atmosphere',&
+      NOTE)
       return
    endif
 
@@ -167,7 +169,8 @@ function gex_get_property(MODEL_SRC,MODEL_REC,index,property)
       elseif (property .eq. gex_units) then
          gex_get_property = trim(gex_fields(MODEL_SRC,MODEL_REC)%field(index)%units)
       else
-         call error_mesg('flux_exchange|gex','property does not exist: '//gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name,FATAL)
+         call error_mesg('flux_exchange|gex','property does not exist: '// &
+              gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name,FATAL)
       end if
    else
       call error_mesg('flux_exchange|gex','requested tracer does not exist',FATAL)

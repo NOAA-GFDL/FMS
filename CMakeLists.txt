@@ -112,6 +112,7 @@ list(APPEND fms_fortran_src_files
   constants4/constantsr4.F90
   constants4/fmsconstantsr4.F90
   coupler/atmos_ocean_fluxes.F90
+  coupler/gex.F90  
   coupler/coupler_types.F90
   coupler/ensemble_manager.F90
   data_override/get_grid_version.F90
