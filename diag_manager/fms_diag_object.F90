@@ -872,6 +872,7 @@ subroutine fms_diag_do_io(this, end_time)
 
       ! Go away if there is no data to write
       if (.not. diag_buff%is_there_data_to_write()) cycle
+      if (diag_field%is_static() .and. diag_file%get_unlim_dimension_level() > 1) cycle
 
       if ( diag_buff%is_time_to_finish_reduction(end_time) .and. .not. do_not_write) then
         ! sets missing value
