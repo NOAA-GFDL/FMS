@@ -19,15 +19,16 @@ sequential patch number (starting from `01`).
 - BUILD: Adds options to set `PORTABLE_KINDS` macro in CMake and autotools builds (#1572)
 - BUILD(autotools): Adds check for cray compiler .mod file capitalization and will now run a previously added, but unused, m4 check for `newunit` support. (#1561)
 - BUILD(cmake): Adds CMake functionality to generate a pkgconfig file (#1565)
-- FMS2_IO: Modfies `diag_field_add_attribute` to accept both r4 and r8 values (#1625)
+- DIAG_MANAGER: Modifies `diag_field_add_attribute` to accept both r4 and r8 values (#1625)
 
 ### Changed
-- MPP_IO/FMS_IO: A deprecation warning will now be output when using these modules or enabling the `-Duse_deprecated_io` flag via the build systems. Usage of these modules will be deprecated in the next release.
+- MPP_IO/FMS_IO: A deprecation warning will now be output when using these modules or enabling the `-Duse_deprecated_io` flag via the build systems. Usage of these modules will be deprecated in the next release. (#1609)
 - DIAG_MANAGER: Made changes to the reduction routine to improve performance of loop and to reduce unnecessary calls if there isn't any new data to process (#1634)
 - MOSAIC/GRID_UTILS: The `mosaic` directory has been refactored and is now called `grid_utils`. (#1626) As part of these updates:
 	- The `create_xgrid.c/h` files have been moved to the `horiz_interp/include` directory
 	- Any any unused `.c`/`.h` files or functions from `mosaic` have been removed
 	- C functions have been moved between the `grid_utils.c`, `tree_utils.c` and `create_xgrid.c` files depending on the functions usage
+- DIAG_MANAGER: Changes `fms_diag_accept_data` from a function to a subroutine (#1610)
 
 ### Fixed
 - DIAG_MANAGER: Fixes functionality of the `new_file_freq`, `start_time`, and `file_duration` keys in the diag_manager. (#1633)
@@ -40,7 +41,6 @@ sequential patch number (starting from `01`).
 - LIBFMS: Adds missed `f2c_string` routine to libFMS.F90 (#1601)
 - BUILD(autotools): Fixes false `./configure` failures when using intel compilers and the `-warn` flag (#1583)
 - BLOCK_CONTROL: Updates non-uniform block size warning to only output on the root pe (#1588)
-- DIAG_MANAGER: Changes `fms_diag_accept_data` from a function to an arugment (#1610)
 - FMS2_IO: Fixes z-axis domain reads when edge lengths and corners are specified (#1620)
 - MPP: Fixes temporary array compiler warning during `mpp_init` (#1628)
 - SAT_VAPOR_PRES: Fixes bad temperature output not printing on non-root pe's (#1619)
