@@ -1,4 +1,33 @@
-!>simple routine to pass non-tracer fields across components (regrid)
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+!> @defgroup gex_mod gex_mod
+!> @ingroup gex
+!> @brief Simple generic exchange (gex) interface to pass (non-tracer) fields across components
+!> @author Fabien Paulot
+!!
+
+!> @file
+!> @brief File for @ref gex_mod
+
+!> @addtogroup gex_mod
+!> @{
 
 module gex_mod
 
@@ -16,17 +45,22 @@ implicit none ; private
 
 public :: gex_init, gex_get_index,gex_get_n_ex, gex_get_property, gex_name, gex_units
 
-character(3) :: module_name = 'gex'
-logical      :: initialized = .FALSE.
+character(3) :: module_name = 'gex'    !< module name
+logical      :: initialized = .FALSE.  !< is module initialized
 
-integer, parameter :: gex_name  = 1
-integer, parameter :: gex_units = 2
+integer, parameter :: gex_name  = 1    !< internal index for gex_name
+integer, parameter :: gex_units = 2    !< internal index for gex unit
 
+
+!> @brief This type represents the entries for a specific exchanged field
+!> @ingroup gex_mod
 type gex_type
    character(fm_field_name_len):: name  = ''
    character(fm_string_len)    :: units = ''
    logical                     :: set   = .FALSE.
 end type gex_type
+!> @brief This type stores information about all the exchanged fields
+!> @ingroup gex_mod
 type gex_type_r
    type(gex_type), allocatable:: field(:)
 end type gex_type_r
@@ -36,10 +70,9 @@ type(gex_type_r), allocatable :: gex_fields(:,:)
 
 contains
 
-!#######################################################################
-!> Generic exchange between model components (initiatization)
-!#######################################################################
-
+!> @addtogroup gex_mod
+  !> @{
+!> @brief Subroutine to initialize generic exchange between model components
 subroutine gex_init()
 
    if (initialized) return
@@ -71,10 +104,7 @@ subroutine gex_init()
 
 end subroutine gex_init
 
-!#######################################################################
-!> Generic exchange between model components - process fields for a given exchange
-!#######################################################################
-
+!> @brief Subroutine to fields for a given exchange
 subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
 
    character(len=*), intent(in) :: listroot  ! name of the field manager list
@@ -138,10 +168,7 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
 end subroutine
 
 
-!#######################################################################
-!> Generic exchange between model components - return number of fields exchanged
-!#######################################################################
-
+!> @brief Function to return number of fields exchanged
 function gex_get_n_ex(MODEL_SRC,MODEL_REC)
 
    integer, intent(in)                         :: MODEL_SRC, MODEL_REC
@@ -153,10 +180,7 @@ function gex_get_n_ex(MODEL_SRC,MODEL_REC)
 
 end function
 
-!#######################################################################
-!> Generic exchange between model components - return name of field
-!#######################################################################
-
+!> @brief Function to return name of field
 function gex_get_property(MODEL_SRC,MODEL_REC,index,property)
 
    integer, intent(in)   :: MODEL_SRC, MODEL_REC,index
@@ -180,10 +204,7 @@ function gex_get_property(MODEL_SRC,MODEL_REC,index,property)
 
 end function
 
-!#######################################################################
-!> Generic exchange between model components - return index of exchange field
-!#######################################################################
-
+!> @brief Function to return index of exchanged field
 function gex_get_index(MODEL_SRC,MODEL_REC,name,record)
 
    character(len=*), intent(in)                :: name !< name of the tracer
@@ -218,3 +239,7 @@ function gex_get_index(MODEL_SRC,MODEL_REC,name,record)
 end function gex_get_index
 
 end module gex_mod
+
+
+!> @}
+! close documentation grouping
