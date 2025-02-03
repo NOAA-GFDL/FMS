@@ -10,10 +10,15 @@
 * A copy of the [Gnu Lesser General Public License](https://www.gnu.org/licenses/lgpl-3.0.en.html)
   must be included at the top of each file.
 * Documentation should be written so that it can be parsed by [Doxygen](http://www.doxygen.nl/).
+* Files, modules, and public routines should be prefixed with `fms_subfolder_` where `subfolder` is
+  the name of the subfolder that the file is in.  Shorten subfolder names (ie diag) are acceptable
+  as long as they are consistent within the subfolder.
 * All variables should be defined, and include units. Unit-less variables should be marked `unitless`
 * Provide detailed descriptions of modules, interfaces, functions, and subroutines
 * Define all function/subroutine arguments, and function results (see below)
 * Follow coding style of the current file, as much as possible.
+* Add public routines to be used ouside of FMS to the libFMS.F90 file so they can be accessed 
+  through `use FMS`.
 
 ## Fortran
 
