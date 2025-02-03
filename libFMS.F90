@@ -805,12 +805,12 @@ module fms
 
   !> generic exchange
   use gex_mod,          only: fms_gex_init => gex_init, &
-                              fms_gex_get_index => gex_get_index, &       
+                              fms_gex_get_index => gex_get_index, &
                               fms_gex_get_n_ex => gex_get_n_ex, &
                               fms_gex_get_property => gex_get_property, &
                               fms_gex_name => gex_name, &
                               fms_gex_units => gex_units
-  
+
   !> topography
   use gaussian_topog_mod, only: fms_gaussian_topog_init => gaussian_topog_init, &
                                 fms_get_gaussian_topog => get_gaussian_topog
