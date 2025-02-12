@@ -55,7 +55,7 @@
 !!Two things need to happen:
 !!
 !!- At initialization, obtain index of exchanged field via:
-!!    
+!!
 !!      GEX_INDEX = gex_get_index(SENDING_COMPONENT,RECEIVING_COMPONENT,GEX_NAME)
 !!
 !!  Returns `NO_TRACER` if `gex_name` is not found
@@ -91,7 +91,7 @@
 !!
 !!      gex_array(:,:,GEX_INDEX)
 !!
-!!  `gex array` is an array that contains all exchanged fields in the receiving component. 
+!!  `gex array` is an array that contains all exchanged fields in the receiving component.
 !!  It needs to be made available in the routine where the field of interest is needed
 !!
 !> @file
