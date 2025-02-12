@@ -30,11 +30,11 @@
 !! successful.  The script calling the program can check if the numbers are sane, if
 !! desired.
 program test_mpp_mem_print_stats_stderr
-#include "../../include/fms_platform.h"
 
   use mpp_mod, only : mpp_init, mpp_exit
   use mpp_memutils_mod, only: mpp_memuse_begin, mpp_memuse_end
   use mpp_memutils_mod, only: mpp_print_memuse_stats
+  use platform_mod
   implicit none
 
   real, dimension(:), allocatable :: ralloc_mem1, ralloc_mem2

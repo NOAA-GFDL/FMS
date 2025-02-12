@@ -6,6 +6,235 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2024.03] - 2024-08-22
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Added
+- DATA_OVERRIDE: Adds a namelist flag `use_center_grid_points` which, if true, enables reading the centroid values from the grid spec for ocean and ice models. This fixes issues with grid files that have longitudes ranges from 0:180 and then -180:0, but will cause answer changes if enabled. (#1566)
+- DATA_OVERRIDE: Adds support for reading external weight files. Currently only supported for fregrid generated files while using the bilinear interpolation method. Documentation for this feature can be found in `data_override/README.md`. (#1556)
+- PLATFORM: Adds two constants `FMS_PATH_LEN` and `FMS_FILE_LEN` and uses it across the code for any file path or file name character strings. They default to 1024 and 255 but can also be set by the `FMS_MAX_PATH_LEN` and `FMS_MAX_FILE_LEN` CPP macros. (#1567)
+- CMAKE: Adds Cmake option to support building shared libraries (#1559)
+
+### Changed
+- DIAG_MANAGER: Simplifies the diag_table.yaml format by allowing `module`, `reduction`, and `kind` to be set on a file level, with the ability to override for a specific field. (#1545)
+- FIELD_MANAGER: Updated and refactored the `fm_yaml_mod` module for a new table format to remove the `subparams` key. (#1547)
+- DATA_OVERRIDE: Updates the yaml format to be improve readablity and to be more consistent in key names. Additional documentation for the new format can be found in `data_override/README.md`. (#1556)
+
+### Fixed
+- PARSER: Adds error code checks to the yaml parser to prevent code from hanging on invalid yamls (#1563)
+- PARSER: Adds ability to read in generic blocks to support `field_manager` updates. (#1519)
+- CRAY COMPILER SUPPORT: Updated any multi-line string literals to be compatible with the cray compiler. (#1554)
+
+### Removed
+- DIAG_MANAGER: Removed diag_table schemas from FMS and moved them to the `gfdl_msd_schemas` repository, and updates the `diag_manager` documentation markdowns. (#1543)
+
+### Tag Commit Hashes
+- 2024.03-beta1 a5de6a54abeb00be2443db4cf07aa267b7faa724
+
+## [2024.02] - 2024-07-11
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- TIME_INTERP: Enables use of `verbose` option in `time_interp_external2` calls from `data_override`. The option is enabled in `data_override_nml` by setting `debug_data_override` to true. (#1516)
+- COUPLER: Adds optional argument to `coupler_types_send_data` routine that contains the return statuses for any calls made to the diag_manager's `send_data` routine. (#1530)
+- MPP: Adds a separate error log file `warnfile.<root pe num>.out` that only holds output from any `mpp_error` calls made during a run (#1544)
+### Changed
+- DIAG_MANAGER: The `diag_field_log.out` output file of all registered fields will now include the PE number of the root PE at the time of writing (ie. diag_field_log.out.0). This is to prevent overwritting the file in cases where the root PE may change. (#1497)
+
+### Fixed
+- CMAKE: Fixes real kind flags being overwritten when using the Debug release type (#1532)
+- HORIZ_INTERP: Fixes allocation issues when using method-specific horiz_interp_new routines (such as `horiz_interp_bilinear_new`) by setting `is_allocated` and the `method_type` during initialization for each method. (#1538)
+
+
+### Tag Commit Hashes
+- 2024.02-alpha1 5757c7813f1170efd28f5a4206395534894095b4
+- 2024.02-alpha2 5757c7813f1170efd28f5a4206395534894095b4
+- 2024.02-beta1  ca592ef8f47c246f4dc56d348d62235bd0ceaa9d
+- 2024.02-beta2  ca592ef8f47c246f4dc56d348d62235bd0ceaa9d
+
+## [2024.01.02] - 2024-06-14
+
+### Known Issues
+- Diag Manager Rewrite:
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Fixed
+- DIAG_MANAGER: Fixes incorrect dates being appended to static file names
+
+## [2024.01.01] - 2024-05-30
+
+### Known Issues
+- Diag Manager Rewrite:
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- DIAG_MANAGER: Implements `flush_nc_files` functionality from legacy diag_manager.
+
+### Changed
+- FMS2_IO: Changed `register_unlimited_compressed_axis` to use a collective gather rather than send and recieves to improve efficiency when reading in iceberg restarts.
+
+### Fixed
+- DIAG_MANAGER: Fixes 0 day output frequencies causing error stating a time_step was skipped. Also adds checks to crash if averaged fields have -1 or 0 day frequencies or if mixing averaged and non-averaged fields in the same file.
+- DIAG_MANAGER: Fixes issue with the weight argument not getting passed through to reduction methods.
+- DIAG_MANAGER: Allocation errors when using two empty files.
+- DIAG_MANAGER: `time` and `time_bnds` being larger than expected when running for 1 day and using daily data.
+- DIAG_MANAGER: Allows for mixing static and non-static fields when frequency is 0 days.
+- TESTS: Fixes compile failure with ifort 2024.01 from test_mpp_gatscat.F90.
+
+### Removed
+- DIAG_MANAGER: The `mix_snapshot_average_fields` option is deprecated for the rewritten diag_manager only.
+
+### Tag Commit Hashes
+- 2024.01.01-beta2 c00367fa810960e87610162f0f012c5da724c5a9
+- 2024.01.01-beta1 42f8506512e1b5b43982320f5b9d4ca1ca9cbebd
+
+## [2024.01] - 2024-05-03
+
+### Known Issues
+- Diag Manager Rewrite:
+	- If two empty files are present in the diag_table.yaml file the code will crash with a allocation error (#1506)
+	- Setting an output frequency of '0 days' does not work as expected and may cause an error stating a time_step has been skipped (#1502)
+	- The `flush_nc_files` and `mix_snapshot_average_fields` nml options are not yet functional. The `mix_snapshot_average_fields` option is planned to be deprecated (for the rewritten diag_manager only).
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+ 		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- TESTS: `test_mpp_gatscat.F90` fails to compile with the Intel Oneapi 2024.01's version of ifort
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+
+### Added
+- DIAG_MANAGER: The diag manager has been rewritten with a object oriented design. The old diag_manager code has been kept intact and will be used by default. The rewritten diag manager can be enabled via `use_modern_diag = .true.` to your `diag_manager_nml`. New features include:
+	- Self-describing YAML formatting for diag_table's
+	- Allows 4d variables
+  - Support defining subregions with indices
+  - More flexibility when adding metadata and defining output frequency
+- FMS2_IO: Adds support for collective parallel reads to improve model startup time. The collective reads are disabled by default and enabled via the `use_collective` flag in `netcdf_io_mod`.
+- DATA_OVERRIDE: Adds option to use multiple data files for one field within data_override in order to use annual data files in yearly runs without having to append/prepend timesteps from previous and next year. With the legacy data_table, filenames  can be set in order and separated with `:` ie. `prev_year.nc:curr_year.nc:next_year.nc`. With the data_table.yaml format, the key `is_multi_file` enables the functionality and `prev_file_name` and `next_file_name` sets the file paths.
+
+- INTERPOLATOR: Adds support for yearly/annual data
+- DATA_OVERRIDE: Adds support for monotonically decreasing arrays for `nearest_index`, `axis_edges`, `horiz_interp`(bilinear), and `data_override` (#1388)
+- DOCS: Add documentation for the exchange grid (xgrid_mod) and update the contribution guide to add a section on code reviews
+- MPP: MPI sub-communicators for domains are now accessible via `mpp_get_domain_tile_commid` and `mpp_get_domain_commid` in `mpp_domains_mod`
+
+### Changed
+- DATA_OVERRIDE: Changes behavior to crash if both data_table and data_table.yaml are present and adds error checking when reading in yaml files
+- FIELD_MANAGER: Changes behavior to crash if both field_table and field_table.yaml are present as well as adds a namelist flag (`use_field_table_yaml`) to enable support for the yaml input.
+
+### Fixed
+- DATA_OVERRIDE: Fixes allocation error with scalar routine and replaces pointers with allocatables
+- INTERPOLATOR: Increase max string size for file paths
+- AXIS_UTILS: Improves performance of `nearest_index` routine
+- CMAKE: Fixes macOS linking issues with OpenMP
+
+### Tag Commit Hashes
+- 2024.01-beta5  d3bab5a84b6a51eddd46ab6fb65eaa532830c6c7
+- 2024.01-beta4  ac363ddfd3075637cecae30ddfbae7a78751197b
+- 2024.01-alpha6 2ace94564a08aec4d7ab7eca0e57c0289e52d5b1
+- 2024.01-alpha5 5ed0bd373cc59a9681052fa837cb83a67169d102
+- 2024.01-alpha4 8dd90d72b58f0de3632dc62920f8adfb996b2265
+- 2024.01-beta3  f71405a075102aef42f5811dc09e239ddd002637
+- 2024.01-beta2  bb6de937f70a08a440f5e63b8553b047c1921509
+- 2024.01-beta1  913f8aaecca374d5e10280056de862d5e4a7a668
+- 2024.01-alpha3 085c6bfc945a6f1c586b842ca6268fca442884d8
+- 2024.01-alpha2 38bfde30e1cb8bf5222410a9c37e71529567bf69
+- 2024.01-alpha1 ac0d086296ea8b9196552463655cb9a848db39fe
+
+## [2023.04] - 2023-12-04
+### Known Issues
+- GCC 9 and below as well as GCC 11.1.0 are unsupported due to compilation issues. See prior releases for more details.
+- `NO_QUAD_PRECISION` macro is no longer set by FMS, the `ENABLE_QUAD_PRECISION` macro has replaced prior usage of `NO_QUAD_PRECISION`. `-DENABLE_QUAD_PRECISION` should be set if quad precision is to be used, otherwise FMS will not use quad precision reals where applicable.
+
+### Added
+- DATA_OVERRIDE: A new namelist flag `use_data_table_yaml` has been added to enable usage of the yaml format data_override tables. This allows an executable built with yaml support be able to accept either format.
+
+### Changed
+- RESERVED KEYWORD CHANGES: Various routines in FMS have been updated to not use fortran keywords for variable names. The names changed were: `data`, `unit`, and `value`. This may affect usage of external code if argument names are explicitly used. Only required arguement names were changed to mitigate any breaking changes.
+- TESTS: Changes the testing scripts to allow for the `MPI_LAUNCHER` environment variable override to work with any provided arguments.
+
+### Fixed
+- CMAKE: Fixed build issue with CMake where precision default flags were being overwritten when using GNU and MPICH.
+- AUTOTOOLS: Fixes issue affecting installs where the global libFMS.F90 module was not being installed correctly and adds post-install message.
+- DIAG_MANAGER: Fixes issue with incorrect start_time functionality (from the 2023.02.01 patch)
+
+### Tag Commit Hashes
+- 2023.04-beta1 be1856c45accfe2fb15953c5f51e0d58a8816882
+
+## [2023.03] - 2023-10-27
+### Known Issues
+- GCC 9 and below as well as GCC 11.1.0 are unsupported due to compilation issues. See prior releases for more details.
+- `NO_QUAD_PRECISION` macro is no longer set by FMS, the `ENABLE_QUAD_PRECISION` macro has replaced prior usage of `NO_QUAD_PRECISION`. `-DENABLE_QUAD_PRECISION` should be set if quad precision is to be used, otherwise FMS will not use quad precision reals where applicable.
+
+### Added
+- UNIT_TESTS: New unit tests have been created or and existing ones expanded on for any modules utilizing mixed precision support.
+
+### Changed
+- MIXED PRECISION: Most subroutines and functions in FMS have been updated to simultaneously accept both 4 byte and 8 byte reals as arguments. This deprecates the `--enable-mixed-mode` option, which enabled similar functionality but was limited to certain directories and was not enabled by default. To facilitate easier testing of these code changes, the CMake precision options for default real size were left in (along with an equivalent `--disable-r8-default` flag for autotools). The resulting libraries will support mixed-precision real kinds regardless of default real size. It should also be noted that many routines that accept real arguments have been moved to include files along with headers in order to be compiled with both kinds. Most module level variables were explicitly declared as r8_kind for these updates.
+- Some type/module changes were made to facilitate mixed precision support. They are **intended** to have minimal impact to other codebases:
+  - COUPLER_TYPES: In coupler_types.F90,  `coupler_nd_field_type` and `coupler_nd_values_type` have been renamed to indicate real kind value: `coupler_nd_real4/8_field_type` and `coupler_nd_real4/8_values_type`. The `bc` field within `coupler_nd_bc_type` was modified to use r8_kind within the value and field types, and an additional field added `bc_r4` to use r4_kind values.
+  - TRIDIAGONAL: Module state between r4 and r8 calls are distinct (ie. subsequent calls will only be affected by calls of the same precision). This behaviour can be changed via the `save_both_kinds` optional argument to `tri_invert`.
+- CODE_STYLE: has been updated to reflect the formatting used for the mixed precision support updates.
+
+### Fixed
+- DIAG_MANAGER: Tile number (ie. tileX) will now be added to filenames for sub-regional diagnostics.
+- MPP: Bug affecting non-intel compilers coming from uninitialized pointer in the `nest_domain_type`
+- MPP: Bug fix for unallocated field causing seg faults in `mpp_check_field`
+- FMS2_IO: Fixed segfault occuring from use of cray pointer remapping along with mpp_scatter/gather
+- TEST_FMS: Added various fixes for different compilers within test programs for fms2_io, mpp, diag_manager, parser, and sat_vapor_pres.
+- INTERPOLATOR: Deallocates fields in the type that were previously left out in `interpolator_end`
+
+### Removed
+- CPP MACROS:
+  - `no_4byte_reals` was removed and will not set any additional macros if used. `no_8byte_integers` is still functional.
+  - `NO_QUAD_PRECISION` was removed. It was conditionally set if ENABLE_QUAD_PRECISION was undefined. ENABLE_QUAD_PRECISION should be used in model components instead (logic is flipped)
+  - `use_netCDF` was set by autotools previously but wasn't consistently used in the code. FMS should always be compiled with netcdf installed so this was removed with the exception of its use in deprecated IO modules.
+- DRIFTERS: The drifters subdirectory has been deprecated. It will only be compiled if using the `-Duse_drifters` CPP flag.
+
+### Tag Commit Hashes
+- 2023.03-beta1  06b94a7f574e7794684b8584391744ded68e2989
+- 2023.03-alpha3 b25a7c52a27dfd52edc10bc0ebe12776af0f03df
+- 2023.03-alpha2 9983ce308e62e9f7215b04c227cebd30fd75e784
+- 2023.03-alpha1 a46bd94fd8dd1f6f021501e29179003ff28180ec
+
+
+## [2023.02.01] - 2023-10-13
+### Fixed
+- DIAG_MANAGER: Fixes issue with incorrect start_time functionality
+
+
 ## [2023.02] - 2023-07-27
 ### Known Issues
 - GCC 11.1.0 is unsupported due to compilation issues with select type. The issue is resolved in later GCC releases.
@@ -20,7 +249,7 @@ sequential patch number (starting from `01`).
 - LIBFMS: The libFMS.F90 file (module name `fms`) meant to provide global access has been updated to include 'fms' and it's module/subdirectory name as prefixes for all names. This will only affect external codes that are already using the global module (via `use fms`) and not individual modules.
 - MIXED PRECISION: Updates the axis_utils2, horiz_interp, sat_vapor_pressure, and axis_utils subdirectories to support mixed precision real values.
 - FMS2_IO: Added in mpp_scatter and mpp_gather performance changes from the 2023.01.01 patch. See below for more details.
-- FMS2_IO: Improved error messages to give more debugging information 
+- FMS2_IO: Improved error messages to give more debugging information
 - FMS_MOD: Changed fms_init to include a system call to set the stack size to unlimited, removed previously added stack size fixes
 - MONIN_OBUKHOV: Restructures the subroutines in `stable_mix` interface so that 1d calls the underlying implementation, and 2 and 3d call it on 1d slices of the data as opposed to passing in mismatched arrays.
 - MPP: Updates from JEDI for ajoint version the mpp halo filling (mpp_do_update_ad.fh), adds checkpoint for forward buffer information.

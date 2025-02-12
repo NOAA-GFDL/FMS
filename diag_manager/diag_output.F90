@@ -44,9 +44,7 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   USE time_manager_mod, ONLY: get_calendar_type, valid_calendar_types
   USE fms_mod, ONLY: error_mesg, mpp_pe, write_version_number, fms_error_handler, FATAL, note
 
-#ifdef use_netCDF
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
-#endif
 
   use mpp_domains_mod, only: mpp_get_UG_io_domain
   use mpp_domains_mod, only: mpp_get_UG_domain_npes
@@ -111,6 +109,9 @@ CONTAINS
     integer, allocatable, dimension(:) :: current_pelist
     integer :: mype  !< The pe you are on
     character(len=9) :: mype_string !< a string to store the pe
+    character(len=FMS_FILE_LEN) :: filename_tile !< Filename with the tile number included
+                                        !! It is needed for subregional diagnostics
+
     !---- initialize mpp_io ----
     IF ( .NOT.module_is_initialized ) THEN
        module_is_initialized = .TRUE.
@@ -135,8 +136,13 @@ CONTAINS
        fileob => fileobjND
        mype = mpp_pe()
        write(mype_string,'(I0.4)') mype
+       !! Add the tile number to the subregional file
+       !! This is needed for the combiner to work correctly
+       call get_mosaic_tile_file(file_name, filename_tile, .true., domain)
+       filename_tile = trim(filename_tile)//"."//trim(mype_string)
+
         if (.not.check_if_open(fileob)) then
-               call open_check(open_file(fileobjND, trim(file_name)//".nc."//trim(mype_string), "overwrite", &
+               call open_check(open_file(fileobjND, trim(filename_tile), "overwrite", &
                             is_restart=.false.))
                !< For regional subaxis add the NumFilesInSet attribute, which is added by fms2_io for (other)
                !< domains with sufficient decomposition info. Note mppnccombine will work with an entry of zero.

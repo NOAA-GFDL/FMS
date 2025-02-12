@@ -143,14 +143,20 @@ module fms
                                fms_coupler_type_set_data          => coupler_type_set_data, &
                                fms_coupler_type_copy_1d_2d        => coupler_type_copy_1d_2d, &
                                fms_coupler_type_copy_1d_3d        => coupler_type_copy_1d_3d, &
-                               FmsCoupler3dValues_type         => coupler_3d_values_type, &
-                               FmsCoupler3dField_type          => coupler_3d_field_type, &
+                               FmsCoupler3dValuesReals8_type         => coupler_3d_real8_values_type, &
+                               FmsCoupler3dFieldReals8_type          => coupler_3d_real8_field_type, &
+                               FmsCoupler2dValuesReals8_type         => coupler_2d_real8_values_type, &
+                               FmsCoupler2dFieldReals8_type          => coupler_2d_real8_field_type, &
+                               FmsCoupler1dValuesReals8_type         => coupler_1d_real8_values_type, &
+                               FmsCoupler1dFieldReals8_type          => coupler_1d_real8_field_type, &
+                               FmsCoupler3dValuesReals4_type         => coupler_3d_real4_values_type, &
+                               FmsCoupler3dFieldReals4_type          => coupler_3d_real4_field_type, &
+                               FmsCoupler2dValuesReals4_type         => coupler_2d_real4_values_type, &
+                               FmsCoupler2dFieldReals4_type          => coupler_2d_real4_field_type, &
+                               FmsCoupler1dValuesReals4_type         => coupler_1d_real4_values_type, &
+                               FmsCoupler1dFieldReals4_type          => coupler_1d_real4_field_type, &
                                FmsCoupler3dBC_type             => coupler_3d_bc_type, &
-                               FmsCoupler2dValues_type         => coupler_2d_values_type, &
-                               FmsCoupler2dField_type          => coupler_2d_field_type, &
                                FmsCoupler2dBC_type             => coupler_2d_bc_type, &
-                               FmsCoupler1dValues_type         => coupler_1d_values_type, &
-                               FmsCoupler1dField_type          => coupler_1d_field_type, &
                                FmsCoupler1dBC_type             => coupler_1d_bc_type, &
                                fms_coupler_ind_pcair                      => ind_pcair, &
                                fms_coupler_ind_u10                        => ind_u10, &
@@ -400,8 +406,7 @@ module fms
                               fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
                               fms_horiz_interp_end => horiz_interp_end
   use horiz_interp_type_mod, only: FmsHorizInterp_type => horiz_interp_type, &
-                              assignment(=), CONSERVE, BILINEAR, SPHERICA, BICUBIC, &
-                              fms_horiz_interp_type_stats => stats
+                              assignment(=), fms_horiz_interp_type_stats => stats
   !! used via horiz_interp
   ! horiz_interp_bicubic_mod, horiz_interp_bilinear_mod
   ! horiz_interp_conserve_mod, horiz_interp_spherical_mod
@@ -729,6 +734,7 @@ module fms
                                   fms_string_utils_sort_this => fms_sort_this, &
                                   fms_string_utils_find_my_string => fms_find_my_string, &
                                   fms_string_utils_find_unique => fms_find_unique, &
+                                  fms_string_utils_f2c_string => fms_f2c_string, &
                                   fms_string_utils_c2f_string => fms_c2f_string, &
                                   fms_string_utils_cstring2cpointer => fms_cstring2cpointer, &
                                   fms_string_utils_copy => string_copy

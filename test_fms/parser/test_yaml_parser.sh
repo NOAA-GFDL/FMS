@@ -26,7 +26,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parser_skip ]; then
-  SKIP_TESTS='test_yaml_parser.[1-23]'
+  SKIP_TESTS='test_yaml_parser.[1-25]'
 fi
 
 touch input.nml
@@ -268,4 +268,65 @@ test_expect_failure "wrong buffer size block id" '
   mpirun -n 1 ./check_crashes
 '
 
+cat <<_EOF > sample.yaml
+field_table:
+- field_type: tracer
+  modlist:
+  - model_type: atmos_mod
+    varlist:
+    - variable: sphum
+      longname: specific humidity
+      units: kg/kg
+      profile_type:
+      - value: fixed
+        surface_value: 3.0e-06
+    - variable: soa
+      longname: SOA tracer
+      units: mmr
+      convection: all
+      chem_param:
+      - value: aerosol
+      profile_type:
+      - value: fixed
+        surface_value: 1.0e-32
+_EOF
+
+test_expect_success "Generic blocks names" '
+  mpirun -n 1 ./generic_blocks
+'
+
+cat <<_EOF > diag_table.yaml
+title: c384L49_esm5PIcontrol
+baseDate: [1960 1 1 1 1 1 1]
+diag_files:
+-    fileName: "atmos_daily"
+     freq: 24
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - varName: tdata
+       reduction: False
+       module: mullions
+       mullions: 10
+       fill_value: -999.9
+     - varName: pdata
+       outName:pressure
+       reduction: False
+       kind: double
+       module: "moist"
+-    fileName: atmos_8xdaily
+     freq: 3
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - varName: tdata
+       reduction: False
+       module: "moist"
+_EOF
+
+test_expect_failure "Use an invalid yaml" '
+  mpirun -n 1 ./parser_demo
+'
 test_done

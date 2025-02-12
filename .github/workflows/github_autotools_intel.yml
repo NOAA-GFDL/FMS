@@ -1,7 +1,16 @@
 on: pull_request
+
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   intel-autotools:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
@@ -44,9 +53,12 @@ jobs:
         ./configure --prefix=/libs
         make -j install && cd
     - name: checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Configure
-      run: autoreconf -if ./configure.ac && ./configure --with-yaml
+      run: |
+        autoreconf -if ./configure.ac
+        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+        ./configure --with-yaml ${{ matrix.io-flag }}
     - name: Compile
       run: make -j || make
     - name: Run test suite

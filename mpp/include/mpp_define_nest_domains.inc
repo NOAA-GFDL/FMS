@@ -1350,22 +1350,22 @@ subroutine compute_overlap_fine_to_coarse(nest_domain, overlap, position, name)
 
 end subroutine compute_overlap_fine_to_coarse
 
-function find_index(array, data, start_pos)
+function find_index(array, index_data, start_pos)
   integer, intent(in) :: array(:)
-  integer, intent(in) :: data
+  integer, intent(in) :: index_data
   integer, intent(in) :: start_pos
   integer             :: find_index
   integer             :: i
 
   find_index = 0
   do i = start_pos, size(array)
-     if(array(i) == data) then
+     if(array(i) == index_data) then
         find_index = i
         exit
      endif
   enddo
   if(find_index == 0) then
-     print*, "start_pos = ", start_pos, data, array
+     print*, "start_pos = ", start_pos, index_data, array
      call mpp_error(FATAL, "mpp_define_nest_domains.inc: can not find data in array")
   endif
 

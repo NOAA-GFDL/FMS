@@ -49,11 +49,12 @@ use mpp_mod,                    only: mpp_error, FATAL, stdout, stdlog, mpp_min
 use mpp_mod,                    only: input_nml_file, WARNING, mpp_pe, mpp_root_pe
 use constants_mod,              only: pi
 use horiz_interp_type_mod,      only: horiz_interp_type, assignment(=)
-use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICA, BICUBIC
+use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICAL, BICUBIC
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init, horiz_interp_conserve
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_new, horiz_interp_conserve_del
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new, horiz_interp_bilinear_del
+use horiz_interp_bilinear_mod,  only: horiz_interp_read_weights_bilinear
 use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_init, horiz_interp_bicubic
 use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_new, horiz_interp_bicubic_del
 use horiz_interp_spherical_mod, only: horiz_interp_spherical_init, horiz_interp_spherical
@@ -66,7 +67,7 @@ use platform_mod,               only: r4_kind, r8_kind
 !---- interfaces ----
 
  public   horiz_interp_type, horiz_interp, horiz_interp_new, horiz_interp_del, &
-          horiz_interp_init, horiz_interp_end, assignment(=)
+          horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights
 
 !> Allocates space and initializes a derived-type variable
 !! that contains pre-computed interpolation indices and weights.
@@ -137,6 +138,12 @@ use platform_mod,               only: r4_kind, r8_kind
     module procedure horiz_interp_new_1d_dst_r8
  end interface
 
+ !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
+ !! calculating it
+ interface horiz_interp_read_weights
+   module procedure horiz_interp_read_weights_r4
+   module procedure horiz_interp_read_weights_r8
+ end interface horiz_interp_read_weights
 
 !> Subroutine for performing the horizontal interpolation between two grids.
 !!
@@ -246,7 +253,7 @@ contains
 
   !> Initialize module and writes version number to logfile.out
   subroutine horiz_interp_init
-  integer :: unit, ierr, io
+  integer :: iunit, ierr, io
 
   if(module_is_initialized) return
   call write_version_number("HORIZ_INTERP_MOD", version)
@@ -254,8 +261,8 @@ contains
   read (input_nml_file, horiz_interp_nml, iostat=io)
   ierr = check_nml_error(io,'horiz_interp_nml')
   if (mpp_pe() == mpp_root_pe() ) then
-     unit = stdlog()
-     write (unit, nml=horiz_interp_nml)
+     iunit = stdlog()
+     write (iunit, nml=horiz_interp_nml)
   endif
 
   if (reproduce_siena) then
@@ -294,7 +301,7 @@ contains
       call horiz_interp_bilinear_del(Interp )
    case (BICUBIC)
       call horiz_interp_bicubic_del(Interp )
-   case (SPHERICA)
+   case (SPHERICAL)
       call horiz_interp_spherical_del(Interp )
    end select
 

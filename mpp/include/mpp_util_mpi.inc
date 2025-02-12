@@ -60,13 +60,21 @@ subroutine mpp_error_basic( errortype, errormsg )
 !$OMP CRITICAL (MPP_ERROR_CRITICAL)
   select case( errortype )
   case(NOTE)
-     if(pe==root_pe)write( out_unit,'(a)' )trim(text)
+     if(pe==root_pe) then
+       write( out_unit,'(a)' )trim(text)
+       write( warn_unit,'(a)' )trim(text)
+     endif
   case default
      errunit = stderr()
      write( errunit, '(/a/)' )trim(text)
-     if(pe==root_pe)write( out_unit,'(/a/)' )trim(text)
+     if(pe==root_pe) then
+       write( out_unit,'(/a/)' )trim(text)
+       write( warn_unit,'(/a/)' )trim(text)
+     endif
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
         FLUSH(out_unit)
+        FLUSH(warn_unit)
+        close(warn_unit)
 #ifdef __INTEL_COMPILER
   ! Get traceback and return quietly for correct abort
         call TRACEBACKQQ(user_exit_code=-1)
@@ -93,7 +101,6 @@ function get_peset(pelist)
   integer, intent(in), optional :: pelist(:)
   integer                       :: errunit
   integer                       :: i, n
-  integer,          allocatable :: sorted(:)
 
   if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
      get_peset = current_peset_num; return
@@ -106,17 +113,14 @@ function get_peset(pelist)
     enddo
   endif
 
-  allocate( sorted(size(pelist(:))) )
-  sorted = pelist
   errunit = stderr()
   if( debug )write( errunit,* )'pelist=', pelist
 
   !find if this array matches any existing peset
   do i = 1,peset_num
      if( debug )write( errunit,'(a,3i6)' )'pe, i, peset_num=', pe, i, peset_num
-     if( size(sorted(:)).EQ.size(peset(i)%list(:)) )then
-        if( ALL(sorted.EQ.peset(i)%list) )then
-           deallocate(sorted)
+     if( size(pelist(:)).EQ.size(peset(i)%list(:)) )then
+        if( ALL(pelist.EQ.peset(i)%list) )then
            get_peset = i; return
         end if
      end if
@@ -126,14 +130,13 @@ function get_peset(pelist)
   if( peset_num > current_peset_max ) call expand_peset()
   i = peset_num             !shorthand
   !create list
-  allocate( peset(i)%list(size(sorted(:))) )
-  peset(i)%list(:) = sorted(:)
-  peset(i)%count = size(sorted(:))
+  allocate( peset(i)%list(size(pelist(:))) )
+  peset(i)%list(:) = pelist(:)
+  peset(i)%count = size(pelist(:))
 
-  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(sorted(:)), sorted-mpp_root_pe(), peset(i)%group, error )
+  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(pelist(:)), pelist-mpp_root_pe(), peset(i)%group, error )
   call MPI_COMM_CREATE_GROUP(peset(current_peset_num)%id, peset(i)%group, &
                              DEFAULT_TAG, peset(i)%id, error )
-  deallocate(sorted)
   get_peset = i
 
   return

@@ -111,6 +111,7 @@
   if (t_level == 3) return
 
   call mpp_init_logfile()
+  call mpp_init_warninglog()
   if (present(alt_input_nml_path)) then
      call read_input_nml(alt_input_nml_path=alt_input_nml_path)
   else
@@ -205,6 +206,7 @@ subroutine mpp_exit()
 
      call mpp_sync()
      call FLUSH( out_unit )
+     close(warn_unit)
 
      if( pe.EQ.root_pe )then
         write( out_unit,'(/a,i6,a)' ) 'Tabulating mpp_clock statistics across ', npes, ' PEs...'
@@ -319,13 +321,13 @@ end subroutine mpp_exit
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !> Broadcasts a character string from the given pe to it's pelist
-    subroutine mpp_broadcast_char(data, length, from_pe, pelist )
-      character(len=*), intent(inout) :: data(:) !< Character string to send
+    subroutine mpp_broadcast_char(char_data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: char_data(:) !< Character string to send
       integer, intent(in) :: length  !< length of given data to broadcast
       integer, intent(in) :: from_pe !< pe to broadcast from
       integer, intent(in), optional :: pelist(:) !< optional pelist to broadcast to
       integer :: n, i, from_rank
-      character    :: str1D(length*size(data(:)))
+      character    :: str1D(length*size(char_data(:)))
       pointer(lptr, str1D)
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_broadcast_text: You must first call mpp_init.' )
@@ -351,8 +353,9 @@ end subroutine mpp_exit
              exit
          endif
       enddo
-      lptr = LOC (data)
-      if( mpp_npes().GT.1 ) call MPI_BCAST( data, length*size(data(:)), MPI_CHARACTER, from_rank, peset(n)%id, error )
+      lptr = LOC (char_data)
+      if( mpp_npes().GT.1 ) call MPI_BCAST( char_data, length*size(char_data(:)), &
+         MPI_CHARACTER, from_rank, peset(n)%id, error )
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length )
       return
     end subroutine mpp_broadcast_char

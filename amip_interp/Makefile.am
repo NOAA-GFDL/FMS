@@ -23,14 +23,18 @@
 # Ed Hartnett 2/22/19
 
 # Include .h and .mod files.
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/amip_interp/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 # Build this uninstalled convenience library.
 noinst_LTLIBRARIES = libamip_interp.la
 
 # The convenience library depends on its source.
-libamip_interp_la_SOURCES = amip_interp.F90
+libamip_interp_la_SOURCES = \
+  amip_interp.F90 \
+  include/amip_interp.inc \
+  include/amip_interp_r4.fh \
+  include/amip_interp_r8.fh
 
 BUILT_SOURCES = amip_interp_mod.$(FC_MODEXT)
 nodist_include_HEADERS = amip_interp_mod.$(FC_MODEXT)

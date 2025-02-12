@@ -35,8 +35,8 @@ endif
 # Make targets will be run in each subdirectory. Order is significant.
 SUBDIRS = \
   platform \
-  tridiagonal \
   mpp \
+  tridiagonal \
   constants \
   constants4 \
   memutils \
@@ -45,6 +45,7 @@ SUBDIRS = \
   mosaic2 \
   fms \
   parser \
+  string_utils \
   affinity \
   mosaic \
   time_manager \
@@ -79,7 +80,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = FMS.pc
 
 ## Build libFMS module
-AM_CPPFLAGS = -I${top_srcdir}/include -I${top_srcdir}/mpp/include
+AM_CPPFLAGS = -I${top_srcdir}/include
 AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
 noinst_LTLIBRARIES = libFMS_mod.la
@@ -87,7 +88,7 @@ libFMS_mod_la_SOURCES = libFMS.F90
 
 fms.$(FC_MODEXT): .mods/*_mod.$(FC_MODEXT)
 
-nodist_include_HEADERS = libFMS_mod.la
+nodist_include_HEADERS = .mods/fms.$(FC_MODEXT)
 
 include $(top_srcdir)/mkmods.mk
 
@@ -125,8 +126,25 @@ check-code-coverage: check
 .PHONY: check-code-coverage
 
 clean-local:
-	-rm -rf .mods coverage-data coverage-report
+	-rm -rf .mods coverage-data coverage-report test.nc
 else
 clean-local:
-	-rm -rf .mods
+	-rm -rf .mods test.nc
 endif
+
+install-data-hook:
+	@echo ''
+	@echo '+-------------------------------------------------------------+'
+	@echo '| Congratulations! You have successfully installed the FMS    |'
+	@echo '| Fortran library.                                            |'
+	@echo '|                                                             |'
+	@echo '| After the installed include and link paths have been        |'
+	@echo '| specified, code using FMS should be compiled using the      |'
+	@echo '| "-lFMS" flag.                                               |'
+	@echo '|                                                             |'
+	@echo '| FMS is developed and maintained at the GFDL publicly on     |'
+	@echo '| Github. To report an issue or view available documentation, |'
+	@echo '| please see our page: https://www.github.com/NOAA-GFDL/FMS   |'
+	@echo '+-------------------------------------------------------------+'
+	@echo ''
+

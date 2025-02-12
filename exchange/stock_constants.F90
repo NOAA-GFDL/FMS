@@ -29,6 +29,7 @@ module stock_constants_mod
   use time_manager_mod, only : time_type, get_time
   use time_manager_mod, only : operator(+), operator(-)
   use diag_manager_mod, only : register_diag_field,send_data
+  use platform_mod,     only : r8_kind
 
   implicit none
 
@@ -50,14 +51,14 @@ module stock_constants_mod
   !> @brief Holds stocks amounts per PE values
   !> @ingroup stock_constants_mod
   type stock_type
-     real  :: q_start = 0.0    !< total stocks at start time
-     real  :: q_now   = 0.0    !< total stocks at time t
+     real(r8_kind)  :: q_start = 0.0_r8_kind    !< total stocks at start time
+     real(r8_kind)  :: q_now   = 0.0_r8_kind    !< total stocks at time t
 
      ! The dq's below are the stocks increments at the present time
      ! delta_t * surf integr of flux
      ! one for each side (ISTOCK_TOP, ISTOCK_BOTTOM, ISTOCK_SIDE)
-     real  :: dq(NSIDES)    = 0.0    !< stock increments at present time on the Ice   grid
-     real  :: dq_IN(NSIDES) = 0.0    !< stock increments at present time on the Ocean grid
+     real(r8_kind)  :: dq(NSIDES)    = 0.0_r8_kind    !< stock increments at present time on the Ice   grid
+     real(r8_kind)  :: dq_IN(NSIDES) = 0.0_r8_kind    !< stock increments at present time on the Ocean grid
   end type stock_type
   !> @addtogroup stock_constants_mod
   !> @{
@@ -69,9 +70,9 @@ module stock_constants_mod
   public stocks_report_init
   public stocks_set_init_time
 
-  integer,private,   parameter                :: NCOMPS=4
-  integer,private,   parameter                :: ISTOCK_ATM=1,ISTOCK_LND=2,ISTOCK_ICE=3,ISTOCK_OCN=4
-  character(len=3) , parameter, dimension(NCOMPS)  :: COMP_NAMES=(/'ATM', 'LND', 'ICE', 'OCN'/)
+  integer,private,  parameter                     :: NCOMPS=4
+  integer,private,  parameter                     :: ISTOCK_ATM=1,ISTOCK_LND=2,ISTOCK_ICE=3,ISTOCK_OCN=4
+  character(len=3), parameter, dimension(NCOMPS)  :: COMP_NAMES=(/'ATM', 'LND', 'ICE', 'OCN'/)
 
 
   character(len=5) , parameter, dimension(NELEMS)  :: STOCK_NAMES=(/'water', 'heat ', 'salt '/)
@@ -82,11 +83,11 @@ contains
 
     !> Starts a stock report
     subroutine stocks_report_init(Time)
-    type(time_type)               , intent(in) :: Time !< Model time
+    type(time_type), intent(in) :: Time !< Model time
 
-    character(len=80) :: formatString,space
-    integer :: i,s
-    real, dimension(NELEMS) :: val_atm, val_lnd, val_ice, val_ocn
+    character(len=80)                :: formatString,space
+    integer                          :: i,s
+    real(r8_kind), dimension(NELEMS) :: val_atm, val_lnd, val_ice, val_ocn
 
     ! Write the version of this file to the log file
     call write_version_number('STOCK_CONSTANTS_MOD', version)
@@ -169,12 +170,12 @@ contains
   subroutine stocks_report(Time)
     type(time_type)               , intent(in) :: Time !< Model time
 
-    type(stock_type) :: stck
-    real, dimension(NCOMPS) :: f_value, f_ice_grid, f_ocn_grid, f_ocn_btf, q_start, q_now,c_value
-    character(len=80) :: formatString
-    integer :: iday0, isec0, iday, isec, hours
-    real    :: days
-    integer :: diagID , comp,elem,i
+    type(stock_type)                 :: stck
+    real(r8_kind), dimension(NCOMPS) :: f_value, f_ice_grid, f_ocn_grid, f_ocn_btf, q_start, q_now,c_value
+    character(len=80)                :: formatString
+    integer                          :: iday0, isec0, iday, isec, hours
+    real(r8_kind)                    :: days
+    integer                          :: diagID , comp,elem,i
     integer, parameter :: initID = -2 !< initial value for diag IDs. Must not be equal to the value
                                       !! that register_diag_field returns when it can't register
                                       !! the filed -- otherwise the registration
@@ -185,8 +186,8 @@ contains
     integer, dimension(NCOMPS,NELEMS), save :: fmc_valueDiagID = initID
     integer, dimension(NCOMPS,NELEMS), save :: f_lostDiagID = initID
 
-    real :: diagField
-    logical :: used
+    real(r8_kind)     :: diagField
+    logical           :: used
     character(len=30) :: field_name, units
 
     if(mpp_pe()==mpp_root_pe()) then
@@ -194,7 +195,7 @@ contains
        call get_time(Time, isec, iday)
 
        hours = iday*24 + isec/3600 - iday0*24 - isec0/3600
-       days  = hours/24.
+       days  = real(hours, r8_kind)/24.0_r8_kind
        write(stocks_file,*) '==============================================='
        write(stocks_file,'(a,f12.3)') 't = TimeSinceStart[days]= ',days
        write(stocks_file,*) '==============================================='

@@ -843,7 +843,7 @@
                      is = domain%x(1)%global%begin - 1
                   end if
                   if( is.GT.isd )then
-                     if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift  ) &
+                     if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift  ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
@@ -859,7 +859,7 @@
                case(CGRID_NE)
                   is = domain%x(1)%global%begin
                   if( is.GT.isd )then
-                     if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
+                     if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldy = f_addrsy(l, 1)
@@ -908,14 +908,15 @@
                                                                                                !! boundary fold
          ! NOTE: symmetry is assumed for fold-south boundary
          j = domain%y(1)%global%begin
-         if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
+         !fold is within domain
+         if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE.domain%y(1)%domain_data%end+shift )then
             midpoint = (domain%x(1)%global%begin+domain%x(1)%global%end-1+shift)/2
             !poles set to 0: BGRID only
             if( gridtype.EQ.BGRID_NE )then
                j  = domain%y(1)%global%begin
                is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
                do i = is ,ie, midpoint
-                  if( domain%x(1)%data%begin.LE.i .AND. i.LE. domain%x(1)%data%end+shift )then
+                  if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)
@@ -936,15 +937,15 @@
                select case(gridtype)
                case(BGRID_NE)
                   is = domain%x(1)%global%begin
-                  if( is.GT.domain%x(1)%data%begin )then
+                  if( is.GT.domain%x(1)%domain_data%begin )then
 
-                     if( 2*is-domain%x(1)%data%begin.GT.domain%x(1)%data%end+shift ) &
+                     if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-south BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
-                           do i = domain%x(1)%data%begin,is-1
+                           do i = domain%x(1)%domain_data%begin,is-1
                               fieldx(i,j,k) = fieldx(2*is-i,j,k)
                               fieldy(i,j,k) = fieldy(2*is-i,j,k)
                            end do
@@ -953,13 +954,13 @@
                   end if
                case(CGRID_NE)
                   is = domain%x(1)%global%begin
-                  if( is.GT.domain%x(1)%data%begin )then
-                     if( 2*is-domain%x(1)%data%begin-1.GT.domain%x(1)%data%end ) &
+                  if( is.GT.domain%x(1)%domain_data%begin )then
+                     if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-south CGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
-                           do i = domain%x(1)%data%begin,is-1
+                           do i = domain%x(1)%domain_data%begin,is-1
                               fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
                            end do
                         end do
@@ -970,8 +971,8 @@
 
             !off east edge
             is = domain%x(1)%global%end
-            if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%data%end )then
-               ie = domain%x(1)%data%end
+            if(domain%x(1)%cyclic .AND. is.LT.domain%x(1)%domain_data%end )then
+               ie = domain%x(1)%domain_data%end
                is = is + 1
                select case(gridtype)
                case(BGRID_NE)
@@ -1003,14 +1004,15 @@
                                                                                               !! boundary fold
          ! NOTE: symmetry is assumed for fold-west boundary
          i = domain%x(1)%global%begin
-         if( domain%x(1)%data%begin.LE.i .AND. i.LE.domain%x(1)%data%end+shift )then !fold is within domain
+         !fold is within domain
+         if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE.domain%x(1)%domain_data%end+shift )then
             midpoint = (domain%y(1)%global%begin+domain%y(1)%global%end-1+shift)/2
             !poles set to 0: BGRID only
             if( gridtype.EQ.BGRID_NE )then
                i  = domain%x(1)%global%begin
                js = domain%y(1)%global%begin; je = domain%y(1)%global%end+shift
                do j = js ,je, midpoint
-                  if( domain%y(1)%data%begin.LE.j .AND. j.LE. domain%y(1)%data%end+shift )then
+                  if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE. domain%y(1)%domain_data%end+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)
@@ -1031,15 +1033,15 @@
                select case(gridtype)
                case(BGRID_NE)
                   js = domain%y(1)%global%begin
-                  if( js.GT.domain%y(1)%data%begin )then
+                  if( js.GT.domain%y(1)%domain_data%begin )then
 
-                     if( 2*js-domain%y(1)%data%begin.GT.domain%y(1)%data%end+shift ) &
+                     if( 2*js-domain%y(1)%domain_data%begin.GT.domain%y(1)%domain_data%end+shift ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-west BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
-                           do j = domain%y(1)%data%begin,js-1
+                           do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i,2*js-j,k)
                               fieldy(i,j,k) = fieldy(i,2*js-j,k)
                            end do
@@ -1048,13 +1050,13 @@
                   end if
                case(CGRID_NE)
                   js = domain%y(1)%global%begin
-                  if( js.GT.domain%y(1)%data%begin )then
-                     if( 2*js-domain%y(1)%data%begin-1.GT.domain%y(1)%data%end ) &
+                  if( js.GT.domain%y(1)%domain_data%begin )then
+                     if( 2*js-domain%y(1)%domain_data%begin-1.GT.domain%y(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-west CGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         do k = 1,ke
-                           do j = domain%y(1)%data%begin,js-1
+                           do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i, 2*js-j-1,k)
                            end do
                         end do
@@ -1065,8 +1067,8 @@
 
             !off north edge
             js = domain%y(1)%global%end
-            if(domain%y(1)%cyclic .AND. js.LT.domain%y(1)%data%end )then
-               je = domain%y(1)%data%end
+            if(domain%y(1)%cyclic .AND. js.LT.domain%y(1)%domain_data%end )then
+               je = domain%y(1)%domain_data%end
                js = js + 1
                select case(gridtype)
                case(BGRID_NE)
@@ -1098,14 +1100,15 @@
                                                                                               !! boundary fold
          ! NOTE: symmetry is assumed for fold-west boundary
          i = domain%x(1)%global%end+shift
-         if( domain%x(1)%data%begin.LE.i .AND. i.LE.domain%x(1)%data%end+shift )then !fold is within domain
+         !fold is within domain
+         if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE.domain%x(1)%domain_data%end+shift )then
             midpoint = (domain%y(1)%global%begin+domain%y(1)%global%end-1+shift)/2
             !poles set to 0: BGRID only
             if( gridtype.EQ.BGRID_NE )then
                i  = domain%x(1)%global%end+shift
                js = domain%y(1)%global%begin; je = domain%y(1)%global%end+shift
                do j = js ,je, midpoint
-                  if( domain%y(1)%data%begin.LE.j .AND. j.LE. domain%y(1)%data%end+shift )then
+                  if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE. domain%y(1)%domain_data%end+shift )then
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)
@@ -1126,15 +1129,15 @@
                select case(gridtype)
                case(BGRID_NE)
                   js = domain%y(1)%global%begin
-                  if( js.GT.domain%y(1)%data%begin )then
+                  if( js.GT.domain%y(1)%domain_data%begin )then
 
-                     if( 2*js-domain%y(1)%data%begin.GT.domain%y(1)%data%end+shift ) &
+                     if( 2*js-domain%y(1)%domain_data%begin.GT.domain%y(1)%domain_data%end+shift ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-east BGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         ptr_fieldy = f_addrsy(l, 1)
                         do k = 1,ke
-                           do j = domain%y(1)%data%begin,js-1
+                           do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i,2*js-j,k)
                               fieldy(i,j,k) = fieldy(i,2*js-j,k)
                            end do
@@ -1143,13 +1146,13 @@
                   end if
                case(CGRID_NE)
                   js = domain%y(1)%global%begin
-                  if( js.GT.domain%y(1)%data%begin )then
-                     if( 2*js-domain%y(1)%data%begin-1.GT.domain%y(1)%data%end ) &
+                  if( js.GT.domain%y(1)%domain_data%begin )then
+                     if( 2*js-domain%y(1)%domain_data%begin-1.GT.domain%y(1)%domain_data%end ) &
                           call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-east CGRID_NE west edge ubound error.' )
                      do l=1,l_size
                         ptr_fieldx = f_addrsx(l, 1)
                         do k = 1,ke
-                           do j = domain%y(1)%data%begin,js-1
+                           do j = domain%y(1)%domain_data%begin,js-1
                               fieldx(i,j,k) = fieldx(i, 2*js-j-1,k)
                            end do
                         end do
@@ -1160,8 +1163,8 @@
 
             !off north edge
             js = domain%y(1)%global%end
-            if(domain%y(1)%cyclic .AND. js.LT.domain%y(1)%data%end )then
-               je = domain%y(1)%data%end
+            if(domain%y(1)%cyclic .AND. js.LT.domain%y(1)%domain_data%end )then
+               je = domain%y(1)%domain_data%end
                js = js + 1
                select case(gridtype)
                case(BGRID_NE)

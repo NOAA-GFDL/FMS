@@ -21,12 +21,9 @@
 
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
-# add build type for debug, overrides default flags (set with $FCFLAGS, $CFLAGS)
-set(CMAKE_Fortran_FLAGS_DEBUG)
-
 # Define the CMake project
 project(FMS
-  VERSION 2023.02.0
+  VERSION 2024.03.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -55,14 +52,16 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build options
-option(OPENMP "Build FMS with OpenMP support"        OFF)
-option(32BIT  "Build 32-bit (r4) FMS library"         ON)
-option(64BIT  "Build 64-bit (r8) FMS library"        OFF)
-option(FPIC   "Build with position independent code" OFF)
+option(OPENMP      "Build FMS with OpenMP support"        OFF)
+option(32BIT       "Build 32-bit (r4) FMS library"         ON)
+option(64BIT       "Build 64-bit (r8) FMS library"        OFF)
+option(FPIC        "Build with position independent code" OFF)
+option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
 option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
+option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
@@ -125,11 +124,20 @@ list(APPEND fms_fortran_src_files
   diag_manager/diag_output.F90
   diag_manager/diag_table.F90
   diag_manager/diag_util.F90
+  diag_manager/fms_diag_time_utils.F90
+  diag_manager/fms_diag_object.F90
+  diag_manager/fms_diag_yaml.F90
+  diag_manager/fms_diag_file_object.F90
+  diag_manager/fms_diag_field_object.F90
+  diag_manager/fms_diag_axis_object.F90
+  diag_manager/fms_diag_output_buffer.F90
+  diag_manager/fms_diag_input_buffer.F90
   diag_manager/fms_diag_time_reduction.F90
   diag_manager/fms_diag_outfield.F90
   diag_manager/fms_diag_elem_weight_procs.F90
   diag_manager/fms_diag_fieldbuff_update.F90
   diag_manager/fms_diag_bbox.F90
+  diag_manager/fms_diag_reduction_methods.F90
   drifters/cloud_interpolator.F90
   drifters/drifters.F90
   drifters/drifters_comm.F90
@@ -249,6 +257,8 @@ if(WITH_YAML)
 endif()
 
 if(USE_DEPRECATED_IO)
+  message( WARNING "fms_io WILL BE DEPRECATED IN A FUTURE RELEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE "
+                   "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS")
   list(APPEND fms_defs use_deprecated_io)
 endif()
 
@@ -258,6 +268,10 @@ endif()
 
 if(ENABLE_QUAD_PRECISION)
   list(APPEND fms_defs ENABLE_QUAD_PRECISION)
+endif()
+
+if(PORTABLE_KINDS)
+  list(APPEND fms_defs PORTABLE_KINDS)
 endif()
 
 if(LARGEFILE)
@@ -305,20 +319,33 @@ foreach(kind ${kinds})
                                                  fms2_io/include
                                                  string_utils/include
                                                  mpp/include
+                                                 column_diagnostics/include
+                                                 monin_obukhov/include
                                                  sat_vapor_pres/include
                                                  horiz_interp/include
+                                                 diag_integral/include
+                                                 random_numbers/include
                                                  diag_manager/include
                                                  constants4
+                                                 topography/include
+                                                 axis_utils/include
+                                                 mosaic2/include
                                                  constants
-                                                 axis_utils/include)
+                                                 astronomy/include
+                                                 field_manager/include
+                                                 time_interp/include
+                                                 tracer_manager/include
+                                                 tridiagonal/include
+                                                 interpolator/include
+                                                 coupler/include
+                                                 data_override/include
+                                                 amip_interp/include)
+
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
 
-  string(TOLOWER ${CMAKE_BUILD_TYPE} build_type)
-  if (NOT build_type STREQUAL debug)
-    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS
-                                               "${${kind}_flags}")
-  endif()
+  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
+
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
 
@@ -329,28 +356,54 @@ foreach(kind ${kinds})
     target_link_libraries(${libTgt}_f PRIVATE OpenMP::OpenMP_Fortran)
   endif()
 
-  # Check if gnu 10 or higher with mpich
+  # Check if gnu 10 or higher
+  # this should only be needed with mpich, but wasn't able to find a good way to find the MPI flavor consistently
   if ( CMAKE_Fortran_COMPILER_VERSION MATCHES "1[0-9]\.[0-9]*\.[0-9]*" AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-    if(MPI_C_COMPILER MATCHES ".*mpich.*" )
+    include(CheckFortranCompilerFlag)
+    check_fortran_compiler_flag("-fallow-argument-mismatch" _arg_mismatch_flag)
+    if(_arg_mismatch_flag)
       message(STATUS "Adding -fallow-argument-mismatch flag to compile with GCC >=10 and MPICH")
-      set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "-fallow-argument-mismatch -w")
+      target_compile_options(${libTgt}_f PRIVATE "-fallow-argument-mismatch;-w")
     endif()
   endif()
 
   # FMS (C + Fortran)
-  add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
-                               $<TARGET_OBJECTS:${libTgt}_f>)
+  if (SHARED_LIBS)
+      message(STATUS "Shared library target: ${libTgt}")
+      add_library(${libTgt} SHARED $<TARGET_OBJECTS:${libTgt}_c>
+                                   $<TARGET_OBJECTS:${libTgt}_f>)
+  else ()
+      message(STATUS "Static library target: ${libTgt}")
+      add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
+                                   $<TARGET_OBJECTS:${libTgt}_f>)
+  endif ()
 
   target_include_directories(${libTgt} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/column_diagnostics/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/astronomy/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monin_obukhov/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/horiz_interp/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>)
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/topography/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/random_numbers/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_integral/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tracer_manager/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interpolator/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/coupler/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/data_override/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tridiagonal/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amip_interp/include>)
 
   target_include_directories(${libTgt} INTERFACE
     $<BUILD_INTERFACE:${moduleDir}>
@@ -359,11 +412,12 @@ foreach(kind ${kinds})
   target_compile_definitions(${libTgt} PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt} PRIVATE "${${kind}_defs}")
 
-  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_Fortran
+  target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
+                                         NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
 
   if(OpenMP_Fortran_FOUND)
-    target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_Fortran)
+    target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
   endif()
 
   add_library(FMS::${libTgt} ALIAS ${libTgt})
@@ -377,13 +431,13 @@ endforeach()
 install(
   TARGETS ${LIB_TARGETS}
   EXPORT FMSExports
-  RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
-  ARCHIVE DESTINATION lib)
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 ### Package config
 include(CMakePackageConfigHelpers)
-set(CONFIG_INSTALL_DESTINATION lib/cmake/fms)
+set(CONFIG_INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/fms)
 
 export(EXPORT FMSExports
   NAMESPACE FMS::
@@ -406,3 +460,34 @@ install(EXPORT FMSExports
   NAMESPACE FMS::
   FILE fms-targets.cmake
   DESTINATION ${CONFIG_INSTALL_DESTINATION})
+
+# pkgconf
+set(prefix ${CMAKE_INSTALL_PREFIX})
+set(exec_prefix ${CMAKE_INSTALL_PREFIX})
+set(libdir ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+set(includedir ${CMAKE_INSTALL_PREFIX}/${includeDir})
+
+set(CC ${CMAKE_C_COMPILER})
+set(FC ${CMAKE_Fortran_COMPILER})
+set(CFLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+set(CPPFLAGS "${CMAKE_CPP_FLAGS} ${CMAKE_CPP_FLAGS_${CMAKE_BUILD_TYPE}}")
+set(FCFLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
+set(LDFLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_SHARED_LINKER_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+set(VERSION ${PROJECT_VERSION})
+
+# TODO: If FMS depends on a library that is built as a static library, it
+#       should be listed here as an ldflag.
+set(LIBS "")
+
+if(NOT ${NetCDF_Fortran_LIBRARY_SHARED})
+  # autotools: Libs.private: -lnetcdff -lnetcdf
+  string(APPEND LIBS ${NetCDF_Fortran_LIBRARIES})
+endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/FMS.pc.in
+               ${CMAKE_CURRENT_BINARY_DIR}/FMS.pc @ONLY)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/FMS.pc
+              DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+              COMPONENT utilities)
