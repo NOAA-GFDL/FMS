@@ -28,7 +28,7 @@ jobs:
         DEBUG_FLAGS: "-O0 -g -fbounds-check -ffpe-trap=invalid,zero,overflow" # debug compiler flags taken from the mkmf template
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build
