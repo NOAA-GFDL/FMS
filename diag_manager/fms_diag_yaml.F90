@@ -1976,7 +1976,7 @@ subroutine fms_diag_yaml_out()
   enddo
   tier2size = i
 
-  call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
+  call write_yaml_from_struct_3( 'diag_yaml.out'//c_null_char,  1, keys, vals,          &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
                                  tier3size, tier3each, keys3, vals3,       &
                                  (/size(diag_yaml%diag_files), 0, 0, 0, 0, 0, 0, 0/))
