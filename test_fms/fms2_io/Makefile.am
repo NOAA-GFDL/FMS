@@ -31,7 +31,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_file_appendix test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
                  test_packed_reads test_bc_restart test_get_mosaic_tile_grid test_read_ascii_file test_unlimit_compressed test_chunksizes \
-                 test_domain_io test_compressed_writes
+                 test_domain_io test_compressed_writes test_collective_io
 
 # This is the source code for the test.
 test_get_is_valid_SOURCES = test_get_is_valid.F90
@@ -53,8 +53,10 @@ test_chunksizes_SOURCES = test_chunksizes.F90
 test_packed_reads_SOURCES = test_packed_reads.F90
 test_compressed_writes_SOURCES = test_compressed_writes.F90
 test_domain_io_SOURCES = test_domain_io.F90
+test_collective_io_SOURCES = test_collective_io.F90
 
-EXTRA_DIST = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh test_read_ascii_file.sh
+EXTRA_DIST = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh test_read_ascii_file.sh \
+             test_collective_io.sh
 
 # fixes issue with make implicitly trying to use m2c for argparse
 %.o: %.mod
@@ -67,7 +69,8 @@ test_io_simple.$(OBJEXT): setup.mod
 test_fms2_io.$(OBJEXT): argparse.mod
 
 # Run the test program.
-TESTS = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh test_read_ascii_file.sh
+TESTS = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_io_with_mask.sh test_global_att.sh test_read_ascii_file.sh \
+        test_collective_io.sh
 
 if SKIP_NCDUMP_CHECKS
 skipflag="skip"
