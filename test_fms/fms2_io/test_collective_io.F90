@@ -42,7 +42,7 @@ program test_collective_io
                                                         !! (it uses an io_layout of 1,1)
   type(domain2d)                        :: Domain_read  !< Domain of the data for when reading the file
                                                         !! (it uses an io_layout equal to the layout)
-  character(len=6), dimension(2)        :: names        !< Dimension names for the dummy variables
+  character(len=6), dimension(3)        :: names        !< Dimension names for the dummy variables
   real, allocatable, dimension(:,:,:)   :: sst_in       !< Data to be written
   real, allocatable, dimension(:,:,:)   :: sst_out      !< Data read in
   real, allocatable, dimension(:,:)     :: sst2d_in       !< Data to be written
