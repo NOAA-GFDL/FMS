@@ -45,7 +45,7 @@
 !!*Example*
 !!
 !!    "atm_to_lnd_ex","coupler_mod","dryoa"
-!!    unit=kg/m2/s,
+!!    units=kg/m2/s,
 !!    /
 !!
 !!
@@ -100,18 +100,20 @@
 
 module gex_mod
 
-use fms_mod,             only: lowercase, error_mesg, FATAL, NOTE
-use tracer_manager_mod,  only: NO_TRACER
-use field_manager_mod,   only: MODEL_LAND, MODEL_ATMOS, MODEL_OCEAN, NUM_MODELS
-use field_manager_mod,   only: fm_list_iter_type, fm_dump_list, fm_field_name_len, &
-                               fm_type_name_len, fm_get_length,fm_loop_over_list, fm_init_loop, &
-                               fm_string_len, fm_get_current_list, fm_path_name_len, fm_change_list
-use fm_util_mod,         only: fm_util_get_real, fm_util_get_logical, fm_util_get_string
-use mpp_mod,             only: mpp_root_pe, mpp_pe
+use fms_mod,              only: lowercase, error_mesg, FATAL, NOTE
+use tracer_manager_mod,   only: NO_TRACER
+use field_manager_mod,    only: MODEL_LAND, MODEL_ATMOS, MODEL_OCEAN, NUM_MODELS
+use field_manager_mod,    only: fm_list_iter_type, fm_dump_list, fm_field_name_len, &
+                                fm_type_name_len, fm_get_length,fm_loop_over_list, fm_init_loop, &
+                                fm_string_len, fm_get_current_list, fm_path_name_len, fm_change_list, &
+                                field_manager_init
+use fm_util_mod,          only: fm_util_get_real, fm_util_get_logical, fm_util_get_string
+use mpp_mod,              only: mpp_root_pe, mpp_pe
+use fms_string_utils_mod, only: string
 
 implicit none ; private
 
-public :: gex_init, gex_get_index,gex_get_n_ex, gex_get_property, gex_name, gex_units
+public :: gex_init, gex_get_index, gex_get_n_ex, gex_get_property, gex_name, gex_units
 
 character(3) :: module_name = 'gex'    !< module name
 logical      :: initialized = .FALSE.  !< is module initialized
@@ -122,14 +124,14 @@ integer, parameter :: gex_units = 2    !< internal index for gex unit
 !> @brief This type represents the entries for a specific exchanged field
 !> @ingroup gex_mod
 type gex_type
-   character(fm_field_name_len):: name  = '' !< gex name
-   character(fm_string_len)    :: units = '' !< units (optional)
+  character(fm_field_name_len):: name  = '' !< gex name
+  character(fm_string_len)    :: units = '' !< units (optional)
 end type gex_type
 
 !> @brief This type stores information about all the exchanged fields
 !> @ingroup gex_mod
 type gex_type_r
-   type(gex_type), allocatable:: field(:)
+  type(gex_type), allocatable:: field(:)
 end type gex_type_r
 
 integer,          allocatable :: n_gex(:,:)
@@ -141,141 +143,145 @@ contains
 
 !> @brief Subroutine to initialize generic exchange between model components
 subroutine gex_init()
+  if (initialized) return
 
-   if (initialized) return
+  call field_manager_init
 
-   allocate(n_gex(NUM_MODELS,NUM_MODELS))
-   allocate(gex_fields(NUM_MODELS,NUM_MODELS))
+  allocate(n_gex(NUM_MODELS,NUM_MODELS))
+  allocate(gex_fields(NUM_MODELS,NUM_MODELS))
 
-   n_gex(:,:) = 0
+  n_gex(:,:) = 0
 
-   if (mpp_pe()==mpp_root_pe()) then
-      write(*,*) ''
-      write(*,*) '####################################'
-      write(*,*) '#  generic exchanged fields [gex]  #'
-      write(*,*) '####################################'
-      write(*,*) ''
-   end if
+  if (mpp_pe()==mpp_root_pe()) then
+    write(*,*) ''
+    write(*,*) '####################################'
+    write(*,*) '#  generic exchanged fields [gex]  #'
+    write(*,*) '####################################'
+    write(*,*) ''
+  end if
 
-   call gex_read_field_table('/coupler_mod/atm_to_lnd_ex',MODEL_ATMOS,MODEL_LAND)
-   call gex_read_field_table('/coupler_mod/lnd_to_atm_ex',MODEL_LAND,MODEL_ATMOS)
-   call gex_read_field_table('/coupler_mod/atm_to_ocn_ex',MODEL_ATMOS,MODEL_OCEAN)
-   call gex_read_field_table('/coupler_mod/ocn_to_atm_ex',MODEL_OCEAN,MODEL_ATMOS)
+  call gex_read_field_table('/coupler_mod/atm_to_lnd_ex',MODEL_ATMOS,MODEL_LAND)
+  call gex_read_field_table('/coupler_mod/lnd_to_atm_ex',MODEL_LAND,MODEL_ATMOS)
+  call gex_read_field_table('/coupler_mod/atm_to_ocn_ex',MODEL_ATMOS,MODEL_OCEAN)
+  call gex_read_field_table('/coupler_mod/ocn_to_atm_ex',MODEL_OCEAN,MODEL_ATMOS)
 
-   if (mpp_pe()==mpp_root_pe()) then
-      write(*,*) ''
-      write(*,*) '####################################'
-      write(*,*) ''
-   end if
+  if (mpp_pe()==mpp_root_pe()) then
+    write(*,*) ''
+    write(*,*) '####################################'
+    write(*,*) ''
+  end if
 
-   initialized = .TRUE.
-
+  initialized = .TRUE.
 end subroutine gex_init
 
 !> @brief Subroutine to fields for a given exchange
 subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
+  character(len=*), intent(in) :: listroot  !< name of the field manager list
+  integer,          intent(in) :: MODEL_SRC !< index of the model where the field comes FROM
+  integer,          intent(in) :: MODEL_REC !< index of the model where the field goes TO
 
-   character(len=*), intent(in) :: listroot  !< name of the field manager list
-   integer,          intent(in) :: MODEL_SRC !< index of the model where the field comes FROM
-   integer,          intent(in) :: MODEL_REC !< index of the model where the field goes TO
+  type(fm_list_iter_type)      :: iter ! iterator over the list of tracers
+  character(fm_field_name_len) :: name = '' ! name of the tracer
+  character(fm_type_name_len)  :: ftype ! type of the field table entry (not used)
+  character(fm_path_name_len)  :: listname  ! name of the field manager list for each tracer
 
-   type(fm_list_iter_type)      :: iter ! iterator over the list of tracers
-   character(fm_field_name_len) :: name = '' ! name of the tracer
-   character(fm_type_name_len)  :: ftype ! type of the field table entry (not used)
-   character(fm_path_name_len)  :: listname  ! name of the field manager list for each tracer
+  integer :: n
 
-   integer :: n
+  if(.not.fm_dump_list(listroot, recursive=.TRUE.)) then
+    call error_mesg('gex_read_field_table', &
+    'Cannot dump field list "'//listroot//'". No additional field will be exchanged', &
+    NOTE)
+    return
+  endif
 
-   if(.not.fm_dump_list(listroot, recursive=.TRUE.)) then
-      call error_mesg('gex_read_field_table', &
-      'Cannot dump field list "'//listroot//'". No additional field will be exchanged',&
-      NOTE)
-      return
-   endif
+  n_gex(MODEL_SRC,MODEL_REC) = fm_get_length(listroot)
+  allocate(gex_fields(MODEL_SRC,MODEL_REC)%field(n_gex(MODEL_SRC,MODEL_REC)))
 
-   n_gex(MODEL_SRC,MODEL_REC) = fm_get_length(listroot)
-   allocate(gex_fields(MODEL_SRC,MODEL_REC)%field(n_gex(MODEL_SRC,MODEL_REC)))
+  call fm_init_loop(listroot,iter)
+  do while (fm_loop_over_list(iter, name, ftype, n))
+    associate(fld=>gex_fields(MODEL_SRC,MODEL_REC)%field(n)) ! define a shorthand, to avoid very long expressions
+      fld%name = trim(name)
+      ! switch to the list of tracer parameters
+      listname = trim(listroot)//'/'//trim(name)
+      if (.not.fm_change_list(listname)) then
+        call error_mesg(module_name,'Cannot change fm list to "'//trim(listname)//'"', FATAL)
+      endif
+      ! read parameters
+      fld%units = fm_util_get_string('units', caller = module_name, default_value = '', scalar = .true.)
+      ! other parameters can be read here, for example:
 
-   call fm_init_loop(listroot,iter)
-   do while (fm_loop_over_list(iter, name, ftype, n))
-      associate(fld=>gex_fields(MODEL_SRC,MODEL_REC)%field(n)) ! define a shorthand, to avoid very long expressions
-         fld%name = trim(name)
-         ! switch to the list of tracer parameters
-         listname = trim(listroot)//'/'//trim(name)
-         if (.not.fm_change_list(listname)) then
-            call error_mesg(module_name,'Cannot change fm list to "'//trim(listname)//'"', FATAL)
-         endif
-         ! read parameters
-         fld%units = fm_util_get_string('units', caller = module_name, default_value = '', scalar = .true.)
-         ! other parameters can be read here, for example:
-
-         if (mpp_pe()==mpp_root_pe()) write(*,*) listroot,n,&
-            ' name="'//trim(fld%name)//'"', &
-            ' units="'//trim(fld%units)//'"'
-      end associate
-   end do
+      if (mpp_pe()==mpp_root_pe()) write(*,*) listroot,n, &
+         ' name="'//trim(fld%name)//'"', &
+         ' units="'//trim(fld%units)//'"'
+    end associate
+  end do
 end subroutine gex_read_field_table
 
 !> @brief Function to return number of fields exchanged
 function gex_get_n_ex(MODEL_SRC,MODEL_REC)
+  integer, intent(in)   :: MODEL_SRC !<  index of the model where the field comes FROM
+  integer, intent(in)   :: MODEL_REC !<  index of the model where the filed goes TO
+  integer               :: gex_get_n_ex
 
-   integer, intent(in)   :: MODEL_SRC !<  index of the model where the field comes FROM
-   integer, intent(in)   :: MODEL_REC !<  index of the model where the filed goes TO
-   integer               :: gex_get_n_ex
+  call gex_assert_valid_index(MODEL_SRC, "MODEL_SRC", 1, NUM_MODELS)
+  call gex_assert_valid_index(MODEL_REC, "MODEL_REC", 1, NUM_MODELS)
 
-   gex_get_n_ex = n_gex(MODEL_SRC,MODEL_REC)
-
-   return
+  gex_get_n_ex = n_gex(MODEL_SRC,MODEL_REC)
 end function gex_get_n_ex
 
 !> @brief Function to return property value (string)
-function gex_get_property(MODEL_SRC,MODEL_REC,index,property)
+function gex_get_property(MODEL_SRC,MODEL_REC,gex_index,property)
+  integer, intent(in)   :: MODEL_SRC !< index of the model where the field comes FROM
+  integer, intent(in)   :: MODEL_REC !< index of the model where the filed goes TO
+  integer, intent(in)   :: gex_index !< gex index
+  integer, intent(in)   :: property  !< requested property
+  character(len=64)     :: gex_get_property
+  integer               :: n
 
-   integer, intent(in)   :: MODEL_SRC !<  index of the model where the field comes FROM
-   integer, intent(in)   :: MODEL_REC !<  index of the model where the filed goes TO
-   integer, intent(in)   :: index     !< gex index
-   integer, intent(in)   :: property  !< requested property
-   character(len=64)     :: gex_get_property
+  n = gex_get_n_ex(MODEL_SRC, MODEL_REC)
+  call gex_assert_valid_index(gex_index, "tracer", 1, n)
 
-   if (index.le.n_gex(MODEL_SRC,MODEL_REC)) then
-      if (property .eq. gex_name) then
-         gex_get_property = trim(gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name)
-      elseif (property .eq. gex_units) then
-         gex_get_property = trim(gex_fields(MODEL_SRC,MODEL_REC)%field(index)%units)
-      else
-         call error_mesg('flux_exchange|gex','property does not exist: '// &
-              gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name,FATAL)
-      end if
-   else
-      call error_mesg('flux_exchange|gex','requested tracer does not exist',FATAL)
-   end if
-
-   return
-
+  associate (field => gex_fields(MODEL_SRC,MODEL_REC)%field(gex_index))
+    if (property.eq.gex_name) then
+      gex_get_property = trim(field%name)
+    elseif (property.eq.gex_units) then
+      gex_get_property = trim(field%units)
+    else
+      call error_mesg('flux_exchange|gex','property does not exist: ' // field%name,FATAL)
+    end if
+  end associate
 end function gex_get_property
 
 !> @brief Function to return index of exchanged field
 function gex_get_index(MODEL_SRC,MODEL_REC,name)
+  character(len=*), intent(in)                :: name !< name of the tracer
+  integer, intent(in)                         :: MODEL_SRC !<  index of the model where the field comes FROM
+  integer, intent(in)                         :: MODEL_REC !<  index of the model where the filed goes TO
 
-   character(len=*), intent(in)                :: name !< name of the tracer
-   integer, intent(in)                         :: MODEL_SRC !<  index of the model where the field comes FROM
-   integer, intent(in)                         :: MODEL_REC !<  index of the model where the filed goes TO
+  integer :: i
+  integer :: gex_get_index
 
-   integer :: i
-   integer :: gex_get_index
+  gex_get_index = NO_TRACER
 
-   gex_get_index = NO_TRACER
-
-   do i = 1, n_gex(MODEL_SRC,MODEL_REC)
-      if (lowercase(trim(name)) == trim(gex_fields(MODEL_SRC,MODEL_REC)%field(i)%name)) then
-         gex_get_index = i
-         exit
-      endif
-   enddo
-
-   return
-
+  do i = 1, gex_get_n_ex(MODEL_SRC,MODEL_REC)
+    if (lowercase(trim(name)) == trim(gex_fields(MODEL_SRC,MODEL_REC)%field(i)%name)) then
+      gex_get_index = i
+      exit
+    endif
+  enddo
 end function gex_get_index
+
+!> @brief Check that an index falls within a range of valid values
+subroutine gex_assert_valid_index(indx, name, lb, ub)
+  integer, intent(in) :: indx !< Index to check
+  integer, intent(in) :: lb !< Lower bound of valid indices
+  integer, intent(in) :: ub !< Upper bound of valid indices
+  character(*), intent(in) :: name !< Name of the index
+
+  if (indx.lt.lb .or. indx.gt.ub) then
+    call error_mesg(module_name, "Invalid " // name // " index: " // string(indx), FATAL)
+  endif
+end subroutine gex_assert_valid_index
 
 end module gex_mod
 
