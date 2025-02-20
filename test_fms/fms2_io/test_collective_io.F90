@@ -36,6 +36,8 @@ program test_collective_io
   integer               :: ny = 96                    !< Size of the "y" dimension
   integer               :: nz = 65                    !< Size of the "z" dimension
 
+  character(len=10)     :: nc_format = "netcdf4"
+
   !< Other local variables
   type(FmsNetcdfDomainFile_t)           :: fileobj      !< FMS2_io fileobj
   type(domain2d)                        :: Domain_write !< Domain of the data for when writing the file
@@ -52,7 +54,7 @@ program test_collective_io
   integer                               :: is, ie, js, je !< Starting and ending indices
   integer                               :: i, j, k
 
-  namelist / test_collective_io_nml / layout, io_layout, nx, ny, nz
+  namelist / test_collective_io_nml / layout, io_layout, nx, ny, nz, nc_format
 
   call fms_init()
   read (input_nml_file, test_collective_io_nml, iostat=io_status)
@@ -87,7 +89,7 @@ program test_collective_io
   sst_out = real(-999.99)
   sst2d_out = real(-999.99)
 
-  if (open_file(fileobj, "test_collective_io.nc", "overwrite", Domain_write, nc_format="netcdf4")) then
+  if (open_file(fileobj, "test_collective_io.nc", "overwrite", Domain_write, nc_format=nc_format)) then
     call register_axis(fileobj, names(1), "x")
     call register_axis(fileobj, names(2), "y")
     call register_axis(fileobj, names(3), nz)
@@ -106,7 +108,7 @@ program test_collective_io
 
   fileobj%use_collective = .true.
   fileobj%tile_comm = mpp_get_domain_tile_commid(Domain_read)
-  if (open_file(fileobj, "test_collective_io.nc", "read", Domain_read, nc_format="netcdf4")) then
+  if (open_file(fileobj, "test_collective_io.nc", "read", Domain_read, nc_format=nc_format)) then
     names(1) = "lon"
     names(2) = "lat"
     call register_axis(fileobj, "lon", "x")

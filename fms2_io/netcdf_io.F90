@@ -678,14 +678,17 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
           call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not &
                                netCDF-4 format."// &
                               " Falling back to parallel independent for file "// trim(fileobj%path))
+          fileobj%use_collective = .false.
+          fileobj%tile_comm = MPP_COMM_NULL
+        else
+#ifdef NO_NC_PARALLEL4
+          call mpp_error(FATAL, "netCDF was not build with HDF5 parallel I/O features, "//&
+                                "so collective netcdf io is not allowed. Please turn collective read off for file "//&
+                                trim(fileobj%path))
+#endif
         endif
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
-      else
-#ifdef NO_NC_PARALLEL4
-        call mpp_error(FATAL, "netCDF was not build with HDF5 parallel I/O features, "//&
-                              "so collective netcdf io is not allowed")
-#endif
-      endif
+       endif
     elseif (string_compare(mode, "write", .true.)) then
       call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective write"// &
                               " This feature is not implemented"// trim(fileobj%path))

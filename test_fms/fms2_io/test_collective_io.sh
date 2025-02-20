@@ -27,7 +27,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parallel_skip ]; then
-  SKIP_TESTS='test_collective_io.[1]'
+  SKIP_TESTS="test_collective_io.1"
 fi
 
 # Create and enter output directory
@@ -42,8 +42,8 @@ test_expect_success "Test the collective netcdf io functionality" '
 rm -rf *.nc*
 # The code should still run if not using netcdf4 files, it just won't use collective io
 cat <<_EOF > input.nml
-&fms2_io_nml
-  netcdf_default_format = "64bit"
+&test_collective_io_nml
+  nc_format = "64bit"
 /
 _EOF
 
