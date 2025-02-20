@@ -682,7 +682,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
         err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
       else
 #ifdef NO_NC_PARALLEL4
-        call mpp_error(FATAL, "netCDF was not build with HDF5 parallel I/O features, "//
+        call mpp_error(FATAL, "netCDF was not build with HDF5 parallel I/O features, "//&
                               "so collective netcdf io is not allowed")
 #endif
       endif

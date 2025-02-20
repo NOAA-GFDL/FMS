@@ -454,9 +454,10 @@ AC_MSG_RESULT([$nc_has_parallel4])
 
 if test $nc_has_parallel4 = no; then
   AC_MSG_WARN(netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed)
-  AM_CONDITIONAL([NO_NC_PARALLEL4], true)
+  AC_DEFINE([NO_NC_PARALLEL4], [1], [HDF5 parallel I/O features not allowed])
+  AM_CONDITIONAL([SKIP_PARALLEL_TEST], true)
 else
-  AM_CONDITIONAL([NO_NC_PARALLEL4], false)
+  AM_CONDITIONAL([SKIP_PARALLEL_TEST], false)
 fi
 
 #####

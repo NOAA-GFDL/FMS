@@ -26,6 +26,10 @@
 # Set common test settings.
 . ../test-lib.sh
 
+if [ ! -z $parallel_skip ]; then
+  SKIP_TESTS='test_collective_io.[1]'
+fi
+
 # Create and enter output directory
 output_dir
 
