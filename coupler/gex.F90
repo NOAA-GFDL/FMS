@@ -270,7 +270,7 @@ function gex_get_index(MODEL_SRC,MODEL_REC,name,record)
    character(len=*), intent(in)                :: name !< name of the tracer
    integer, intent(in)                         :: MODEL_SRC !<  index of the model where the field comes FROM
    integer, intent(in)                         :: MODEL_REC !<  index of the model where the filed goes TO
-   logical, intent(in), optional               :: record    !<  register that the field was accessed from a sending routine
+   logical, intent(in), optional               :: record    !<  register that the field was accessed
    integer :: i
    integer :: gex_get_index
 
@@ -293,16 +293,14 @@ function check_gex_name(MODEL_SRC,MODEL_REC,name)
 
    integer, intent(in)                         :: MODEL_SRC !<  index of the model where the field comes FROM
    integer, intent(in)                         :: MODEL_REC !<  index of the model where the filed goes TO
-  
    character(len=*), intent(in)                :: name !< name of the tracer
 
-   logical                                     :: check_gex_name 
+   logical                                     :: check_gex_name
 
    integer :: index
 
    index          = gex_get_index(MODEL_SRC,MODEL_REC,name)
    check_gex_name = .FALSE.
-   
    if (index.eq.NO_TRACER) then
          call error_mesg('flux_exchange|gex','requested gex field does not exist '// &
               name,FATAL)
@@ -314,7 +312,7 @@ function check_gex_name(MODEL_SRC,MODEL_REC,name)
               name,FATAL)
       end if
    end if
-   
+
  end function check_gex_name
 
 !> @brief Function to check if gex index is properly set
@@ -322,11 +320,11 @@ function check_gex_index(MODEL_SRC,MODEL_REC,index)
 
    integer, intent(in)                         :: MODEL_SRC !<  index of the model where the field comes FROM
    integer, intent(in)                         :: MODEL_REC !<  index of the model where the filed goes TO
-   integer, intent(in)                         :: index     !<  gex index  
+   integer, intent(in)                         :: index     !<  gex index
    logical                                     :: check_gex_index
 
    check_gex_index = .FALSE.
-   
+
    if (index.eq.NO_TRACER) then
       call error_mesg('flux_exchange|gex','requested gex field does not exist '// &
            gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name,FATAL)
@@ -338,7 +336,6 @@ function check_gex_index(MODEL_SRC,MODEL_REC,index)
               gex_fields(MODEL_SRC,MODEL_REC)%field(index)%name,FATAL)
       end if
    end if
-   
  end function check_gex_index
 
 
