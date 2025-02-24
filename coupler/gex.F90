@@ -263,7 +263,6 @@ function gex_get_property(MODEL_SRC,MODEL_REC,gex_index,property)
 end function gex_get_property
 
 !> @brief Function to return index of exchanged field
-<<<<<<< HEAD
 function gex_get_index(MODEL_SRC,MODEL_REC,name,record)
 
    character(len=*), intent(in)                :: name !< name of the tracer
