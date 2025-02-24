@@ -321,14 +321,6 @@ module fms
                          fms_fm_util_get_real_array => fm_util_get_real_array, &
                          fms_fm_util_get_string_array => fm_util_get_string_array, &
                          fms_fm_util_set_value => fm_util_set_value, &
-                         fms_fm_util_set_value_integer_array => fm_util_set_value_integer_array, &
-                         fms_fm_util_set_value_logical_array => fm_util_set_value_logical_array, &
-                         fms_fm_util_set_value_real_array => fm_util_set_value_real_array, &
-                         fms_fm_util_set_value_string_array => fm_util_set_value_string_array, &
-                         fms_fm_util_set_value_integer => fm_util_set_value_integer, &
-                         fms_fm_util_set_value_logical => fm_util_set_value_logical, &
-                         fms_fm_util_set_value_real => fm_util_set_value_real, &
-                         fms_fm_util_set_value_string => fm_util_set_value_string, &
                          fms_fm_util_get_index_list => fm_util_get_index_list, &
                          fms_fm_util_get_index_string => fm_util_get_index_string, &
                          fms_fm_util_default_caller => fm_util_default_caller
