@@ -32,7 +32,8 @@ LDADD = ${top_builddir}/libFMS/libFMS.la
 check_PROGRAMS = test_coupler_2d_r4 test_coupler_2d_r8 \
                  test_coupler_3d_r4 test_coupler_3d_r8 \
                  test_coupler_types_r4 test_coupler_types_r8 \
-                 test_atmos_ocean_fluxes_r4 test_atmos_ocean_fluxes_r8
+                 test_atmos_ocean_fluxes_r4 test_atmos_ocean_fluxes_r8 \
+                 test_gex
 
 # This is the source code for the test.
 test_coupler_2d_r4_SOURCES = test_coupler_2d.F90 test_coupler_utils.inc
@@ -43,6 +44,7 @@ test_coupler_types_r4_SOURCES = test_coupler_types.F90 test_coupler_utils.inc
 test_coupler_types_r8_SOURCES = test_coupler_types.F90 test_coupler_utils.inc
 test_atmos_ocean_fluxes_r4_SOURCES = test_atmos_ocean_fluxes.F90
 test_atmos_ocean_fluxes_r8_SOURCES = test_atmos_ocean_fluxes.F90
+test_gex_SOURCES = test_gex.F90
 
 # add macro flags for kind and r4/r8 child type
 test_coupler_2d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
@@ -53,16 +55,17 @@ test_coupler_types_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=b
 test_coupler_types_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
 test_atmos_ocean_fluxes_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
 test_atmos_ocean_fluxes_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_gex_CPPFLAGS = -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 # Run the test program.
-TESTS = test_coupler.sh
+TESTS = test_coupler.sh test_gex.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = test_coupler.sh
+EXTRA_DIST = test_coupler.sh test_gex.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc
