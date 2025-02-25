@@ -164,10 +164,16 @@ function get_ntimes_per_file(this) &
 
   integer :: i !< For looping through the files
 
+#ifdef use_yaml
   allocate(ntimes(size(this%FMS_diag_files)))
   do i = 1, size(this%FMS_diag_files)
     ntimes(i) = this%FMS_diag_files(i)%get_num_time_levels()
   enddo
+#else
+  allocate(ntimes(1))
+  ntimes = diag_null
+  call mpp_error(FATAL, "You can not call fms_diag_object%get_ntimes_per_file without compiling with yaml")
+#endif
 
 end function get_ntimes_per_file
 
