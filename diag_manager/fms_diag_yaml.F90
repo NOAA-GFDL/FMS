@@ -1715,7 +1715,7 @@ subroutine fms_diag_yaml_out(ntimes)
     call fms_f2c_string(keys2(i)%key8, 'start_time')
     call fms_f2c_string(keys2(i)%key9, 'file_duration')
     call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
-    call fms_f2c_string(keys2(i)%key11, 'number of timelevels')
+    call fms_f2c_string(keys2(i)%key11, 'number_of_timelevels')
 
     call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
     call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)

@@ -898,7 +898,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 1
+  number_of_timelevels: 1
   varlist:
   - module: atm_mod
     var_name: var7
@@ -931,7 +931,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 3
+  number_of_timelevels: 3
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -974,7 +974,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 3
+  number_of_timelevels: 3
   varlist:
   - module: atm_mod
     var_name: var3
@@ -1039,7 +1039,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 3
+  number_of_timelevels: 3
   varlist:
   - module: lnd_mod
     var_name: var5
@@ -1082,7 +1082,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 3
+  number_of_timelevels: 3
   varlist:
   - module: lnd_mod
     var_name: var1
@@ -1114,7 +1114,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 3
+  number_of_timelevels: 3
   varlist:
   - module: atm_mod
     var_name: var4
@@ -1146,7 +1146,7 @@ diag_files:
   start_time: 00020101.000000
   file_duration: 12
   file_duration_units: hours
-  number of timelevels: 2
+  number_of_timelevels: 2
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1178,7 +1178,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 3
+  number_of_timelevels: 3
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1210,7 +1210,7 @@ diag_files:
   start_time: 00020101.000000
   file_duration: 12 3 9
   file_duration_units: hours hours hours
-  number of timelevels: 24
+  number_of_timelevels: 24
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1242,7 +1242,7 @@ diag_files:
   start_time: 00020101.000000
   file_duration: 12 3 9
   file_duration_units: hours hours hours
-  number of timelevels: 24
+  number_of_timelevels: 24
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1274,7 +1274,7 @@ diag_files:
   start_time:
   file_duration:
   file_duration_units:
-  number of timelevels: 1
+  number_of_timelevels: 1
   varlist:
   - module: ocn_mod
     var_name: var1
