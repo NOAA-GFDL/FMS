@@ -277,7 +277,9 @@ function gex_get_index(MODEL_SRC,MODEL_REC,name,record)
    do i = 1, n_gex(MODEL_SRC,MODEL_REC)
       if (lowercase(trim(name)) == trim(gex_fields(MODEL_SRC,MODEL_REC)%field(i)%name)) then
          gex_get_index = i
-         if (record) gex_fields(MODEL_SRC,MODEL_REC)%field(i)%set = .TRUE.
+         if (present(record)) then
+            if (record) gex_fields(MODEL_SRC,MODEL_REC)%field(i)%set = .TRUE.
+         endif
          exit
       endif
    enddo
