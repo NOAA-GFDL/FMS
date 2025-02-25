@@ -22,6 +22,11 @@
 # Set common test settings.
 . ../test-lib.sh
 
+if [ ! -z $skip_yaml ]
+then
+  SKIP_TESTS='test_gex.2'
+fi
+
 test_cmd="mpirun -n 1 ./test_gex"
 
 # Create input.nml and field table (legacy field table)
@@ -81,16 +86,16 @@ test_expect_success "Test gex with atm_to_lnd tracer (legacy field_table)" "$tes
 prepare_yaml default_test
 test_expect_success "Test gex with atm_to_lnd tracer (YAML field_table)" "$test_cmd"
 
-prepare_yaml get_n_ex_invalid_model_src
+prepare_legacy get_n_ex_invalid_model_src
 test_expect_failure "Test gex_get_n_ex with invalid model_src" "$test_cmd"
 
-prepare_yaml get_n_ex_invalid_model_rec
+prepare_legacy get_n_ex_invalid_model_rec
 test_expect_failure "Test gex_get_n_ex with invalid model_rec" "$test_cmd"
 
-prepare_yaml get_property_invalid_tracer
+prepare_legacy get_property_invalid_tracer
 test_expect_failure "Test gex_get_property with invalid tracer ID" "$test_cmd"
 
-prepare_yaml get_property_invalid_property
+prepare_legacy get_property_invalid_property
 test_expect_failure "Test gex_get_property with invalid property ID" "$test_cmd"
 
 test_done
