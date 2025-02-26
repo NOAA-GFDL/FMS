@@ -1832,7 +1832,7 @@ subroutine close_diag_file(this, output_buffers, model_end_time, diag_fields)
   !< Keep track of the number of time levels that were written to the file
   !! If the file is using the new_file_freq key, it will be closing the file multiple
   !! time, so this ensures that we keep a running count
-  !! This is going writen to the output yaml, after all the files are closed
+  !! This is going be written to the output yaml, after all the files are closed
   this%FMS_diag_file%num_time_levels = this%FMS_diag_file%num_time_levels + &
                                        this%FMS_diag_file%unlim_dimension_level
 

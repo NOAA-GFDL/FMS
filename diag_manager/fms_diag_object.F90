@@ -172,7 +172,7 @@ function get_ntimes_per_file(this) &
 #else
   allocate(ntimes(1))
   ntimes = diag_null
-  call mpp_error(FATAL, "You can not call fms_diag_object%get_ntimes_per_file without compiling with yaml")
+  call mpp_error(FATAL, "You must compile with -Duse_yaml to call fms_diag_object%get_ntimes_per_file!")
 #endif
 
 end function get_ntimes_per_file
