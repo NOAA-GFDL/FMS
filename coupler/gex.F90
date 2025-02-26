@@ -45,7 +45,7 @@
 !!*Example*
 !!
 !!    "atm_to_lnd_ex","coupler_mod","dryoa"
-!!    units=kg/m2/s,
+!!                    "units","kg/m2/s"
 !!    /
 !!
 !!
@@ -196,7 +196,7 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
   character(fm_path_name_len)  :: listname  ! name of the field manager list for each tracer
 
   integer :: n
-
+  
   if(.not.fm_dump_list(listroot, recursive=.TRUE.)) then
     call error_mesg('gex_read_field_table', &
     'Cannot dump field list "'//listroot//'". No additional field will be exchanged', &
@@ -233,6 +233,8 @@ function gex_get_n_ex(MODEL_SRC,MODEL_REC)
   integer, intent(in)   :: MODEL_REC !<  index of the model where the filed goes TO
   integer               :: gex_get_n_ex
 
+  if (.not. initialized) call error_mesg('flux_exchange|gex_get_n_ex','gex not initialized',FATAL)
+  
   call gex_assert_valid_index(MODEL_SRC, "MODEL_SRC", 1, NUM_MODELS)
   call gex_assert_valid_index(MODEL_REC, "MODEL_REC", 1, NUM_MODELS)
 
@@ -248,6 +250,8 @@ function gex_get_property(MODEL_SRC,MODEL_REC,gex_index,property)
   character(len=64)     :: gex_get_property
   integer               :: n
 
+   if (.not. initialized) call error_mesg('flux_exchange|check_gex_property','gex not initialized',FATAL)
+  
   n = gex_get_n_ex(MODEL_SRC, MODEL_REC)
   call gex_assert_valid_index(gex_index, "tracer", 1, n)
 
@@ -274,10 +278,12 @@ function gex_get_index(MODEL_SRC,MODEL_REC,name,record)
 
    gex_get_index = NO_TRACER
 
+   if (.not. initialized) call error_mesg('flux_exchange|gex_get_index','gex not initialized',FATAL)   
+
    do i = 1, n_gex(MODEL_SRC,MODEL_REC)
       if (lowercase(trim(name)) == trim(gex_fields(MODEL_SRC,MODEL_REC)%field(i)%name)) then
          gex_get_index = i
-         if (record) gex_fields(MODEL_SRC,MODEL_REC)%field(i)%set = .TRUE.
+         if (present(record) .and. record) gex_fields(MODEL_SRC,MODEL_REC)%field(i)%set = .TRUE.
          exit
       endif
    enddo
@@ -296,6 +302,8 @@ function check_gex_name(MODEL_SRC,MODEL_REC,name)
 
    integer :: index
 
+   if (.not. initialized) call error_mesg('flux_exchange|check_gex_name','gex not initialized',FATAL)
+   
    index          = gex_get_index(MODEL_SRC,MODEL_REC,name)
    check_gex_name = .FALSE.
    if (index.eq.NO_TRACER) then
