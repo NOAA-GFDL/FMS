@@ -99,6 +99,7 @@ private
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
     procedure :: set_time_end
+    procedure :: get_ntimes_per_file
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -154,6 +155,28 @@ subroutine fms_diag_object_init (this,diag_subset_output, time_init)
 #endif
 end subroutine fms_diag_object_init
 
+!> @brief Determines the number of time levels that were written each file
+!! @return The number of time levels that were written each file
+function get_ntimes_per_file(this) &
+  result(ntimes)
+  class(fmsDiagObject_type) :: this !< Diag object
+  integer, allocatable :: ntimes(:)
+
+  integer :: i !< For looping through the files
+
+#ifdef use_yaml
+  allocate(ntimes(size(this%FMS_diag_files)))
+  do i = 1, size(this%FMS_diag_files)
+    ntimes(i) = this%FMS_diag_files(i)%get_num_time_levels()
+  enddo
+#else
+  allocate(ntimes(1))
+  ntimes = diag_null
+  call mpp_error(FATAL, "You must compile with -Duse_yaml to call fms_diag_object%get_ntimes_per_file!")
+#endif
+
+end function get_ntimes_per_file
+
 !> \description Loops through all files and does one final write.
 !! Closes all files
 !! Deallocates all buffers, fields, and files
@@ -161,17 +184,20 @@ end subroutine fms_diag_object_init
 subroutine fms_diag_object_end (this, time)
   class(fmsDiagObject_type) :: this
   TYPE(time_type), INTENT(in) :: time
+  integer, allocatable :: ntimes(:) !< Number of time steps per file
 
   integer                   :: i
 #ifdef use_yaml
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-  ! write output yaml
-  call fms_diag_yaml_out()
-
   call this%do_buffer_math()
   call this%fms_diag_do_io(end_time=time)
+
+  ! write output yaml
+  ntimes = this%get_ntimes_per_file()
+  call fms_diag_yaml_out(ntimes)
+
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_output_buffers)
     call this%FMS_diag_output_buffers(i)%flush_buffer()

@@ -1645,7 +1645,8 @@ end subroutine
 !> Writes an output yaml with all available information on the written files.
 !! Will only write with root pe.
 !! Global attributes are limited to 16 per file.
-subroutine fms_diag_yaml_out()
+subroutine fms_diag_yaml_out(ntimes)
+  integer, intent(in) :: ntimes(:) !< The number of time levels that were written for each file
   type(diagYamlFiles_type), pointer :: fileptr !< pointer for individual variables
   type(diagYamlFilesVar_type), pointer :: varptr !< pointer for individual variables
   type (fmsyamloutkeys_type), allocatable :: keys(:), keys2(:), keys3(:)
@@ -1714,6 +1715,7 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(keys2(i)%key8, 'start_time')
     call fms_f2c_string(keys2(i)%key9, 'file_duration')
     call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
+    call fms_f2c_string(keys2(i)%key11, 'number_of_timelevels')
 
     call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
     call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
@@ -1750,6 +1752,7 @@ subroutine fms_diag_yaml_out()
     enddo
     call fms_f2c_string(vals2(i)%val9, adjustl(tmpstr1))
     call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
+    call fms_f2c_string(vals2(i)%val11, string(ntimes(i)))
 
     !! tier 3 - varlists, subregion, global metadata
     call yaml_out_add_level2key('varlist', keys2(i))
