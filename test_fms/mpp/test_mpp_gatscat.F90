@@ -614,7 +614,7 @@ end subroutine test_scatter_2D_R8
 
      rdata = -1.0
      if(ANY(pe == pelist(2:npes)))call mpp_gather((/val/),rdata(2:npes),pelist(2:npes))
-     print *, 'pe: ', pe, 'rdata: ', rdata 
+     print *, 'pe: ', pe, 'rdata: ', rdata
      if(pe == pelist(2))then
        do i=2,npes
         if(INT(rdata(i)) /= pelist(i))then

@@ -34,7 +34,7 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
 !  If pelist is provided, the first position must be the operation root, w.r.t. new comm, op_root = 0
    if(PRESENT(pelist))then
       if(.not.ANY(mpp_pe().eq.pelist(:))) return
-      op_root = 0 
+      op_root = 0
       nproc = size(pelist)
       call mpp_declare_pelist( pelist, commID=commID )
    else
@@ -85,7 +85,7 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
 
    call MPI_GATHERV(sbuf, ssize, MPI_TYPE_, &
                     rbuf, rsize, displs, MPI_TYPE_, 0, commID, ierr)
-   
+
    !call mpp_sync_self(check=EVENT_RECV)
    call mpp_sync_self()
    if(pe .eq. op_root) deallocate(displs)

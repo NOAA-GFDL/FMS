@@ -138,7 +138,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
    call mpp_sync_self()
 
    if (is_root_pe) deallocate(temp)
-   
+
    return
 
 end subroutine MPP_SCATTER_PELIST_3D_
