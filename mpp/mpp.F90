@@ -204,7 +204,7 @@ private
   !--- public interface from mpp_util.h ------------------------------
   public :: stdin, stdout, stderr, stdlog, warnlog, lowercase, uppercase, mpp_error, mpp_error_state
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_pe
-  public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
+  public :: mpp_npes, mpp_root_pe, mpp_commID, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
