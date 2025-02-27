@@ -29,7 +29,7 @@ subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, input_data,
    integer,                           intent(in)    :: is, ie, js, je !< indices of segment array
    integer,   dimension(:),           intent(in)    :: pelist !<PE list of target pes,
                                                               !! must be in monotonic increasing order
-   MPP_TYPE_, dimension(:,:), target, intent(inout)  :: array_seg !< 2D array of output data
+   MPP_TYPE_, dimension(is:ie,js:je), target, intent(inout)  :: array_seg !< 2D array of output data
    MPP_TYPE_, dimension(:,:), contiguous, target, intent(in) :: input_data !< 2D array of input data
    logical,                           intent(in)    :: is_root_pe !< operational root pe
 
@@ -50,12 +50,11 @@ subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, input_data,
 end subroutine MPP_SCATTER_PELIST_2D_
 
 subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_data, is_root_pe)
-   integer,                                intent(in)    :: is, ie, js, je, nk !< indices of segment array
-   integer,   dimension(:),                intent(in)    :: pelist !<PE list of target pes,
-                                                                   !! must be in monotonic increasing order
-   MPP_TYPE_, dimension(:,:,:),            intent(inout) :: array_seg !< 3D array of output data
-   MPP_TYPE_, dimension(:,:,:),            intent(in)    :: input_data !< 3D array of input data
-   logical,                                intent(in)    :: is_root_pe !< operational root pe
+   integer,                                intent(in)    :: is, ie, js, je, nk
+   integer,   dimension(:),                intent(in)    :: pelist
+   MPP_TYPE_, dimension(:,:,:),            intent(inout) :: array_seg
+   MPP_TYPE_, dimension(:,:,:),            intent(in)    :: input_data
+   logical,                                intent(in)    :: is_root_pe
 
    integer :: i, j, n, m, k, ierr, base_idx
    integer :: i1, i2, j1, j2
