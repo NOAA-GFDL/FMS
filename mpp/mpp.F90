@@ -696,9 +696,19 @@ private
   !!                    call mpp_gather(is, ie, js, je, pelist, array_seg, data, is_root_pe)
   !!
   interface mpp_gather
+     module procedure mpp_gather_logical4
+     module procedure mpp_gatherv_logical4
      module procedure mpp_gather_logical_1d
+     module procedure mpp_gather_int4
+     module procedure mpp_gather_int8
+     module procedure mpp_gatherv_int4
+     module procedure mpp_gatherv_int8
      module procedure mpp_gather_int4_1d
      module procedure mpp_gather_int8_1d
+     module procedure mpp_gather_real4
+     module procedure mpp_gather_real8
+     module procedure mpp_gatherv_real4
+     module procedure mpp_gatherv_real8
      module procedure mpp_gather_real4_1d
      module procedure mpp_gather_real8_1d
      module procedure mpp_gather_logical_1dv
@@ -736,12 +746,16 @@ private
   !!                    call mpp_scatter(is, ie, js, je, pelist, segment, data, .true.)
   !!
   interface mpp_scatter
+     module procedure mpp_scatterv_int4
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
+     module procedure mpp_scatterv_int8
      module procedure mpp_scatter_pelist_int8_2d
      module procedure mpp_scatter_pelist_int8_3d
+     module procedure mpp_scatterv_real4
      module procedure mpp_scatter_pelist_real4_2d
      module procedure mpp_scatter_pelist_real4_3d
+     module procedure mpp_scatterv_real8
      module procedure mpp_scatter_pelist_real8_2d
      module procedure mpp_scatter_pelist_real8_3d
   end interface

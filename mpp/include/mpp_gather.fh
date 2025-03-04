@@ -27,29 +27,32 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
    MPP_TYPE_, dimension(:), intent(inout) :: rbuf
    integer,   dimension(:),    intent(in), optional :: pelist(:)
 
-   integer :: cnt, op_root, nproc, commID, ierr
+   integer :: cnt, l, nproc, op_root, ierr
+   integer, allocatable :: pelist2(:)
 
    if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_NEW_GATHER: You must first call mpp_init.' )
 
 !  If pelist is provided, the first position must be the operation root, w.r.t. new comm, op_root = 0
    if(PRESENT(pelist))then
       if(.not.ANY(mpp_pe().eq.pelist(:))) return
-      op_root = 0
       nproc = size(pelist)
-      call mpp_declare_pelist( pelist, commID=commID )
+      allocate(pelist2(nproc))
+      pelist2 = pelist
    else
-      op_root = mpp_root_pe()
       nproc = mpp_npes()
-      commID = mpp_commID()
+      allocate(pelist2(nproc))
+      pelist2 = (/ (l, l=root_pe, nproc-1+root_pe) /)
    endif
+   op_root = pelist2(1)
 
    cnt = size(sbuf(:))
    if(size(rbuf(:)) < cnt*nproc) call mpp_error(FATAL, &
           "MPP_NEW_GATHER_1D_: size(rbuf) must be at least npes*size(sbuf) ")
-   call MPI_GATHER(sbuf, cnt, MPI_TYPE_, &
-                   rbuf, cnt, MPI_TYPE_, op_root, commID, ierr)
-   !call mpp_sync_self(check=EVENT_RECV)
-   !call mpp_sync_self()
+
+   call mpp_gather( sbuff, size(sbuf,1), rbuf, size(rbuf,1), 0, pelist2, ierr)
+
+   call mpp_sync_self()
+   deallocate(pelist2)
 end subroutine MPP_GATHER_1D_
 
 subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
@@ -59,20 +62,22 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
    integer,   dimension(:),    intent(in) :: rsize
    integer,   dimension(:),    intent(in), optional :: pelist(:)
 
-   integer :: i, op_root, nproc, commID, ierr
+   integer :: l, nproc, op_root, ierr
    integer, dimension(:), allocatable :: displs
+   integer, dimension(:), allocatable :: pelist2
 
 !  If pelist is provided, the first position must be
 !  the operation root
    if(PRESENT(pelist))then
-      op_root = pelist(1)
       nproc = size(pelist)
-      call mpp_declare_pelist( pelist, commID=commID )
+      allocate(pelist2(nproc))
+      pelist2 = pelist
    else
-      op_root = mpp_root_pe()
       nproc = mpp_npes()
-      commID = mpp_commID()
+      allocate(pelist2(nproc))
+      pelist2 = (/ (l, l=root_pe, nproc-1+root_pe) /)
    endif
+   op_root = pelist2(1)
 
    if(pe .eq. op_root) then
       allocate(displs(nproc))
@@ -83,11 +88,10 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
       enddo
    endif
 
-   call MPI_GATHERV(sbuf, ssize, MPI_TYPE_, &
-                    rbuf, rsize, displs, MPI_TYPE_, 0, commID, ierr)
+   call mpp_gather( sbuf, size(sbuf), displs, rbuf, size(rbuf), root_pe, pelist2, ierr)
 
-   !call mpp_sync_self(check=EVENT_RECV)
    call mpp_sync_self()
+   deallocate(pelist2)
    if(pe .eq. op_root) deallocate(displs)
 end subroutine MPP_GATHER_1DV_
 

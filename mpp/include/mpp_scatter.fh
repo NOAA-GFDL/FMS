@@ -58,7 +58,7 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
 
    integer :: i, j, n, m, k, ierr, base_idx
    integer :: i1, i2, j1, j2
-   integer :: root_pe, root_pe_test, commID, recv_size
+   integer :: root_pe, root_pe_test, commID, recv_count
    integer :: sub_size(2)
    integer, dimension(size(pelist)) :: counts, displs
    integer, dimension(4*size(pelist)) :: gind
@@ -67,7 +67,6 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
    if (.not.ANY(mpp_pe().eq.pelist(:))) return
 
    if (is_root_pe) then
-     print *, 'begin scatter'
      root_pe = mpp_pe()
      root_pe_test = 999
      if (.not.ANY(pelist(:).eq.root_pe)) call mpp_error(FATAL, &
@@ -87,10 +86,6 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
       if ((is_root_pe) .and. (mpp_pe().ne.root_pe)) call mpp_error(FATAL, &
                 "fms_io(mpp_scatter_pelist): too many root_pes specified")
    endif
-
-   ! Get CommID and get root_pe w.r.t scatter communicator
-   call mpp_declare_pelist( pelist, commID=commID )
-   root_pe = findloc(pelist, root_pe, dim=1) - 1
 
    ! Gather Indices on root pe
    call mpp_gather((/is, ie, js, je/), gind, pelist)
@@ -127,12 +122,10 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
 
    endif
 
-   ! Compute recv_size on each rank
-   recv_size = (ie-is+1)*(je-js+1)*nk
+   ! Compute recv_count on each rank
+   recv_count = (ie-is+1)*(je-js+1)*nk
 
-   ! Scatter using send buffer
-   call MPI_SCATTERV(temp, counts, displs, MPI_TYPE_, &
-                     array_seg, recv_size, MPI_TYPE_, root_pe, commID, ierr)
+   call mpp_scatter( temp, counts, displs, recv_data, recv_count, root_pe, pelist, ierr)
 
    call mpp_sync_self()
 
