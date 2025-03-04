@@ -61,20 +61,18 @@ _EOF
 fi
 
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
-for KIND in r4 r8
-do
+
 rm -rf INPUT/*
 sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
-test_expect_success "Creating input files (${KIND})" '
-  mpirun -n 6 ../test_data_override_ongrid_${KIND}
+test_expect_success "Creating input files" '
+  mpirun -n 6 ../test_data_override_ongrid
 '
 
 cp input_base.nml input.nml
-test_expect_success "data_override scalar field (${KIND})" '
-  mpirun -n 6 ../test_data_override_ongrid_${KIND}
+test_expect_success "data_override scalar field" '
+  mpirun -n 6 ../test_data_override_ongrid
 '
 
-done
 rm -rf INPUT *.nc # remove any leftover files to reduce size
 
 test_done

@@ -39,7 +39,6 @@ use fms_mod, only: string, fms_init, fms_end
 
 implicit none
 
-integer, parameter                         :: lkind = DO_TEST_KIND_
 integer, dimension(2)                      :: layout = (/2,3/) !< Domain layout
 integer                                    :: nlon = 360       !< Number of points in x axis
 integer                                    :: nlat = 180       !< Number of points in y axis
@@ -57,13 +56,15 @@ integer, parameter                         :: weight_file = 4
 integer, parameter                         :: ensemble_case = 5
 integer, parameter                         :: ensemble_same_yaml = 6
 integer                                    :: test_case = ongrid
+logical                                    :: init_with_mode = .false.
 integer                                    :: npes
 integer, allocatable                       :: pelist(:)
 integer, allocatable                       :: pelist_ens(:)
 integer                                    :: ensemble_id
 logical                                    :: write_only=.false. !< True if creating the input files only
 
-namelist / test_data_override_ongrid_nml / nhalox, nhaloy, test_case, nlon, nlat, layout, write_only
+namelist /test_data_override_ongrid_nml/ nhalox, nhaloy, test_case, init_with_mode, nlon, nlat, layout, &
+                                         write_only
 
 call fms_init
 call fms2_io_init
@@ -123,20 +124,31 @@ else
     call mpp_set_current_pelist(pelist_ens)
   end select
 
-  !< Initiliaze data_override
-  call data_override_init(Ocean_domain_in=Domain, mode=lkind)
+  if (init_with_mode) then
+    ! Initialize data_override_mod with explicit mode arguments
+    call data_override_init(Ocean_domain_in=Domain, mode=r4_kind)
+    call data_override_init(Ocean_domain_in=Domain, mode=r8_kind)
+  else
+    ! Initialize data_override_mod with no mode argument
+    call data_override_init(Ocean_domain_in=Domain)
+  endif
 
   select case (test_case)
   case (ongrid)
-    call ongrid_test()
+    call ongrid_test_r4
+    call ongrid_test_r8
   case (bilinear)
-    call bilinear_test()
+    call bilinear_test_r4
+    call bilinear_test_r8
   case (scalar)
-    call scalar_test()
+    call scalar_test_r4
+    call scalar_test_r8
   case (weight_file)
-    call weight_file_test()
+    call weight_file_test_r4
+    call weight_file_test_r8
   case (ensemble_case, ensemble_same_yaml)
-    call ensemble_test()
+    call ensemble_test_r4
+    call ensemble_test_r8
     call mpp_set_current_pelist(pelist)
   end select
 endif
@@ -145,46 +157,7 @@ call fms_end
 
 contains
 
-subroutine compare_data(Domain_in, actual_result, expected_result)
-type(domain2d), intent(in)              :: Domain_in        !< Domain with mask table
-real(lkind), intent(in)                 :: expected_result  !< Expected result from data_override
-real(lkind), dimension(:,:), intent(in) :: actual_result    !< Result from data_override
-integer                                 :: xsizec, ysizec   !< Size of the compute domain
-integer                                 :: xsized, ysized   !< Size of the data domain
-integer                                 :: nx, ny           !< Size of acual_result
-integer                                 :: nhx, nhy   !< Size of the halos
-integer                                 :: i, j             !< Helper indices
-
-!< Data is only expected to be overriden for the compute domain -not at the halos.
-call mpp_get_compute_domain(Domain_in, xsize=xsizec, ysize=ysizec)
-call mpp_get_data_domain(Domain_in, xsize=xsized, ysize=ysized)
-
-!< Note that actual_result has indices at (1:nx,1:ny) not (is:ie,js:je)
-nhx= (xsized-xsizec)/2
-nhy = (ysized-ysizec)/2
-nx = size(actual_result, 1)
-ny = size(actual_result, 2)
-
-do i = 1, nx
-   do j = 1, ny
-      if (i <= nhx .or. i > (nx-nhx) .or. j <= nhy .or. j > (ny-nhy)) then
-         !< This is the result at the halos it should 999.
-         if (actual_result(i,j) .ne. 999._lkind) then
-            print *, "for i=", i, " and j=", j, " result=", actual_result(i,j)
-            call mpp_error(FATAL, "test_data_override_ongrid: Data was overriden in the halos!!")
-         endif
-      else
-         if (actual_result(i,j) .ne. expected_result) then
-            print *, "for i=", i, " and j=", j, " result=", actual_result(i,j), " expected=", expected_result
-            call mpp_error(FATAL, "test_data_override_ongrid: Result is different from expected answer!")
-         endif
-      endif
-   enddo
-enddo
-
-end subroutine
-
-subroutine create_grid_spec_file()
+subroutine create_grid_spec_file
   type(FmsNetcdfFile_t) :: fileobj
 
   if (open_file(fileobj, 'INPUT/grid_spec.nc', 'overwrite')) then
@@ -197,7 +170,7 @@ subroutine create_grid_spec_file()
   endif
 end subroutine create_grid_spec_file
 
-subroutine create_ocean_mosaic_file()
+subroutine create_ocean_mosaic_file
   type(FmsNetcdfFile_t) :: fileobj
   character(len=10) :: dimnames(2)
 
@@ -214,26 +187,26 @@ subroutine create_ocean_mosaic_file()
   endif
 end subroutine create_ocean_mosaic_file
 
-subroutine create_ocean_hgrid_file()
+subroutine create_ocean_hgrid_file
   type(FmsNetcdfFile_t) :: fileobj
-
-  real(lkind), allocatable, dimension(:,:) :: xdata, ydata
+  real(r4_kind), allocatable, dimension(:,:) :: xdata, ydata
   integer :: nx, nxp, ny, nyp, i, j
+
   nx = nlon*2
   nxp = nx+1
   ny = nlat*2
   nyp = ny+1
 
   allocate(xdata(nxp, nyp))
-  xdata(1,:) = 0.0_lkind
+  xdata(1,:) = 0_r4_kind
   do i = 2, nxp
-    xdata(i,:) = xdata(i-1,:) + 0.5
+    xdata(i,:) = xdata(i-1,:) + 0.5_r4_kind
   enddo
 
   allocate(ydata(nxp, nyp))
-  ydata(:,1) = -90.0_lkind
+  ydata(:,1) = -90.0_r4_kind
   do i = 2, nyp
-    ydata(:,i) = ydata(:, i-1) + 0.5
+    ydata(:,i) = ydata(:, i-1) + 0.5_r4_kind
   enddo
 
   if (open_file(fileobj, 'INPUT/ocean_hgrid.nc', 'overwrite')) then
@@ -256,8 +229,8 @@ subroutine create_ongrid_data_file(is_ensemble)
   logical, intent(in), optional :: is_ensemble
   type(FmsNetcdfFile_t) :: fileobj
   character(len=10) :: dimnames(3)
-  real(lkind), allocatable, dimension(:,:,:) :: runoff_in
-  real(lkind), allocatable, dimension(:)     :: time_data
+  real(r4_kind), allocatable, dimension(:,:,:) :: runoff_in
+  real(r4_kind), allocatable, dimension(:)     :: time_data
   integer :: offset
   character(len=256), allocatable :: appendix
 
@@ -265,6 +238,7 @@ subroutine create_ongrid_data_file(is_ensemble)
 
   offset = 0
   appendix = ""
+
   if (present(is_ensemble)) then
     offset = ensemble_id
     call get_filename_appendix(appendix)
@@ -273,10 +247,16 @@ subroutine create_ongrid_data_file(is_ensemble)
 
   allocate(runoff_in(nlon, nlat, 10))
   allocate(time_data(10))
+
   do i = 1, 10
-    runoff_in(:,:,i) = real(i+offset, lkind)
+    runoff_in(:,:,i) = real(i+offset, r4_kind)
   enddo
-  time_data = (/1., 2., 3., 5., 6., 7., 8., 9., 10., 11./)
+
+  time_data = (/1_r4_kind, 2_r4_kind, &
+                3_r4_kind, 5_r4_kind, &
+                6_r4_kind, 7_r4_kind, &
+                8_r4_kind, 9_r4_kind, &
+                10_r4_kind, 11_r4_kind/)
 
   dimnames(1) = 'i'
   dimnames(2) = 'j'
@@ -308,7 +288,7 @@ subroutine create_ongrid_data_file(is_ensemble)
   deallocate(runoff_in)
 end subroutine create_ongrid_data_file
 
-subroutine generate_ongrid_input_file()
+subroutine generate_ongrid_input_file
   !< Create some files needed by data_override!
   if (mpp_pe() .eq. mpp_root_pe()) then
     call create_grid_spec_file()
@@ -317,58 +297,25 @@ subroutine generate_ongrid_input_file()
     call create_ongrid_data_file()
   endif
   call mpp_sync()
-end subroutine
-
-!> @brief Tests ongrid data overrides.
-!! In the first case there is no time interpolation
-!! In the second case there is time interpolation
-subroutine ongrid_test()
-  real(lkind)                                :: expected_result  !< Expected result from data_override
-  type(time_type)                            :: Time             !< Time
-  real(lkind), allocatable, dimension(:,:)   :: runoff           !< Data to be written
-
-  allocate(runoff(is:ie,js:je))
-
-  runoff = 999._lkind
-  !< Run it when time=3
-  Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff',runoff, Time)
-  !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
-  !! equal to the data at time=3, which is 3.
-  expected_result = 3._lkind
-  call compare_data(Domain, runoff, expected_result)
-
-  !< Run it when time=4
-  runoff = 999._lkind
-  Time = set_date(1,1,5,0,0,0)
-  call data_override('OCN','runoff',runoff, Time)
-  !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
-  !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
-  expected_result = (3._lkind + 4._lkind) / 2._lkind
-  call compare_data(Domain, runoff, expected_result)
-
-  deallocate(runoff)
-end subroutine ongrid_test
+end subroutine generate_ongrid_input_file
 
 !> @brief Creates an input netcdf data file to use for the ongrid data_override test case
 !! with either an increasing or decreasing lat, lon grid
 subroutine create_bilinear_data_file(increasing_grid)
   logical, intent(in) :: increasing_grid !< .true. if increasing a file with an increasing lat/lon
 
-  type(FmsNetcdfFile_t)           :: fileobj          !< Fms2_io fileobj
-  character(len=10)               :: dimnames(3)      !< dimension names for the variable
-  real(lkind),      allocatable   :: runoff_in(:,:,:) !< Data to write
-  real(lkind),      allocatable   :: time_data(:)     !< Time dimension data
-  real(lkind),      allocatable   :: lat_data(:)      !< Lat dimension data
-  real(lkind),      allocatable   :: lon_data(:)      !< Lon dimension data
-  character(len=:), allocatable   :: filename         !< Name of the file
-  integer                         :: factor           !< This is used when creating the grid data
+  type(FmsNetcdfFile_t)         :: fileobj          !< Fms2_io fileobj
+  character(len=10)             :: dimnames(3)      !< dimension names for the variable
+  real(r4_kind), allocatable    :: runoff_in(:,:,:) !< Data to write
+  real(r4_kind), allocatable    :: time_data(:)     !< Time dimension data
+  real(r4_kind), allocatable    :: lat_data(:)      !< Lat dimension data
+  real(r4_kind), allocatable    :: lon_data(:)      !< Lon dimension data
+  character(len=:), allocatable :: filename         !< Name of the file
+  integer                       :: factor           !< This is used when creating the grid data
                                                       !! -1 if the grid is decreasing
                                                       !! +1 if the grid is increasing
-  integer                         :: i, j, k          !< For looping through variables
-
-  integer :: nlon_data
-  integer :: nlat_data
+  integer                       :: i, j, k          !< For looping through variables
+  integer                       :: nlon_data, nlat_data
 
   nlon_data = nlon + 1
   nlat_data = nlat - 1
@@ -379,42 +326,46 @@ subroutine create_bilinear_data_file(increasing_grid)
 
   if (.not. increasing_grid) then
     filename = 'INPUT/bilinear_decreasing.nc'
-    lon_data(1) = 360.0_lkind
-    lat_data(1) = 89.0_lkind
+    lon_data(1) = 360.0_r4_kind
+    lat_data(1) = 89.0_r4_kind
     factor = -1
     do i = 1, nlon_data
       do j = 1, nlat_data
         do k = 1, 10
-          runoff_in(i, j, k) = real(362-i, kind=lkind) * 1000._lkind + &
-            real(180-j, kind=lkind) + real(k, kind=lkind)/100._lkind
+          runoff_in(i, j, k) = real(362-i, kind=r4_kind) * 1000._r4_kind + &
+            real(180-j, kind=r4_kind) + real(k, kind=r4_kind)/100._r4_kind
         enddo
       enddo
     enddo
   else
     filename = 'INPUT/bilinear_increasing.nc'
-    lon_data(1) = 0.0_lkind
-    lat_data(1) = -89.0_lkind
+    lon_data(1) = 0.0_r4_kind
+    lat_data(1) = -89.0_r4_kind
     factor = 1
 
     do i = 1, nlon_data
       do j = 1, nlat_data
         do k = 1, 10
-          runoff_in(i, j, k) = real(i, kind=lkind) * 1000._lkind + real(j, kind=lkind) + &
-            real(k, kind=lkind)/100._lkind
+          runoff_in(i, j, k) = real(i, kind=r4_kind) * 1000._r4_kind + real(j, kind=r4_kind) + &
+            real(k, kind=r4_kind)/100._r4_kind
         enddo
       enddo
     enddo
   endif
 
   do i = 2, nlon_data
-    lon_data(i) = real(lon_data(i-1) + 1*factor, lkind)
+    lon_data(i) = real(lon_data(i-1) + 1*factor, r4_kind)
   enddo
 
   do i = 2, nlat_data
-    lat_data(i) =real(lat_data(i-1) + 1*factor, lkind)
+    lat_data(i) =real(lat_data(i-1) + 1*factor, r4_kind)
   enddo
 
-  time_data = (/1., 2., 3., 5., 6., 7., 8., 9., 10., 11./)
+  time_data = (/1_r4_kind, 2_r4_kind, &
+                3_r4_kind, 5_r4_kind, &
+                6_r4_kind, 7_r4_kind, &
+                8_r4_kind, 9_r4_kind, &
+                10_r4_kind, 11_r4_kind/)
 
   dimnames(1) = 'i'
   dimnames(2) = 'j'
@@ -449,7 +400,7 @@ subroutine create_bilinear_data_file(increasing_grid)
 end subroutine create_bilinear_data_file
 
 !> @brief Generates the input for the bilinear data_override test_case
-subroutine generate_bilinear_input_file()
+subroutine generate_bilinear_input_file
   if (mpp_pe() .eq. mpp_root_pe()) then
     call create_grid_spec_file ()
     call create_ocean_mosaic_file()
@@ -460,48 +411,15 @@ subroutine generate_bilinear_input_file()
   call mpp_sync()
 end subroutine generate_bilinear_input_file
 
-!> @brief Tests bilinear data_override with and increasing and decreasing grid case
-!! and comares the output betweeen the cases to ensure it is correct
-subroutine bilinear_test()
-  type(time_type)                            :: Time              !< Time
-  real(lkind), allocatable, dimension(:,:)   :: runoff_decreasing !< Data to be written
-  real(lkind), allocatable, dimension(:,:)   :: runoff_increasing !< Data to be written
-
-  integer :: i, j, k
-  logical :: success
-
-  allocate(runoff_decreasing(is:ie,js:je))
-  allocate(runoff_increasing(is:ie,js:je))
-
-  runoff_decreasing = 999_lkind
-  runoff_increasing = 999_lkind
-  Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff_increasing',runoff_increasing, Time, override=success)
-  if (.not. success) call mpp_error(FATAL, "Data override failed")
-  call data_override('OCN','runoff_decreasing',runoff_decreasing, Time, override=success)
-  if (.not. success) call mpp_error(FATAL, "Data override failed")
-
-  do i = is, ie
-    do j =  js, je
-      if (abs(runoff_decreasing(i,j) - runoff_increasing(i,j)) .gt. 1) then
-        call mpp_error(FATAL, "The data is not the same: "// &
-        string(i)//","//string(j)//":"// &
-        string(runoff_decreasing(i,j))//" vs "//string(runoff_increasing(i,j)))
-      endif
-    enddo
-  enddo
-  deallocate(runoff_decreasing, runoff_increasing)
-end subroutine bilinear_test
-
-subroutine generate_weight_input_file()
+subroutine generate_weight_input_file
   call create_grid_spec_file ()
   call create_ocean_mosaic_file()
   call create_ocean_hgrid_file()
   call create_bilinear_data_file(.true.)
   call create_weight_file()
-end subroutine
+end subroutine generate_weight_input_file
 
-subroutine create_weight_file()
+subroutine create_weight_file
   type(FmsNetcdfFile_t) :: fileobj
   real(kind=r8_kind), allocatable :: vdata(:,:,:)
   character(len=5) :: dim_names(3)
@@ -549,45 +467,8 @@ subroutine create_weight_file()
   endif
 end subroutine create_weight_file
 
-subroutine weight_file_test()
-  type(time_type)                            :: Time              !< Time
-  real(lkind), allocatable, dimension(:,:)   :: runoff            !< Data from normal override
-  real(lkind), allocatable, dimension(:,:)   :: runoff_weight     !< Data from weight file override
-  real(lkind)                                :: threshold         !< Threshold for the difference in answers
-
-  integer :: i, j, k
-  logical :: success
-
-  allocate(runoff(is:ie,js:je))
-  allocate(runoff_weight(is:ie,js:je))
-
-  runoff = 999_lkind
-  runoff_weight = 999_lkind
-  Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff_obs',runoff, Time, override=success)
-  if (.not. success) call mpp_error(FATAL, "Data override failed")
-  call data_override('OCN','runoff_obs_weights',runoff_weight, Time, override=success)
-  if (.not. success) call mpp_error(FATAL, "Data override failed")
-
-  threshold = 1e-09
-  if (lkind .eq. 4) then
-    threshold = 1e-03
-  endif
-
-  do i = is, ie
-    do j =  js, je
-      if (abs(runoff(i,j) - runoff_weight(i,j)) .gt. threshold) then
-        call mpp_error(FATAL, "The data is not the same: "// &
-        string(i)//","//string(j)//":"// &
-        string(runoff(i,j))//" vs "//string(runoff_weight(i,j)))
-      endif
-    enddo
-  enddo
-  deallocate(runoff, runoff_weight)
-end subroutine weight_file_test
-
 !> @brief Generates the input for the bilinear data_override test_case
-subroutine generate_scalar_input_file()
+subroutine generate_scalar_input_file
   if (mpp_pe() .eq. mpp_root_pe()) then
     call create_grid_spec_file ()
     call create_ocean_mosaic_file()
@@ -597,19 +478,25 @@ subroutine generate_scalar_input_file()
   call mpp_sync()
 end subroutine generate_scalar_input_file
 
-subroutine create_scalar_data_file()
+subroutine create_scalar_data_file
   type(FmsNetcdfFile_t) :: fileobj
   character(len=10) :: dimnames(1)
-  real(lkind), allocatable, dimension(:)     :: co2_in
-  real(lkind), allocatable, dimension(:)     :: time_data
+  real(r4_kind), allocatable, dimension(:)     :: co2_in
+  real(r4_kind), allocatable, dimension(:)     :: time_data
   integer :: i
 
   allocate(co2_in(10))
   allocate(time_data(10))
+
   do i = 1, 10
-    co2_in(i) = real(i, lkind)
+    co2_in(i) = real(i, r4_kind)
   enddo
-  time_data = (/1., 2., 3., 5., 6., 7., 8., 9., 10., 11./)
+
+  time_data = (/1_r4_kind, 2_r4_kind, &
+                3_r4_kind, 5_r4_kind, &
+                6_r4_kind, 7_r4_kind, &
+                8_r4_kind, 9_r4_kind, &
+                10_r4_kind, 11_r4_kind/)
 
   dimnames(1) = 'time'
 
@@ -630,32 +517,7 @@ subroutine create_scalar_data_file()
   deallocate(co2_in)
 end subroutine create_scalar_data_file
 
-subroutine scalar_test()
-  real(lkind)                                :: expected_result  !< Expected result from data_override
-  type(time_type)                            :: Time             !< Time
-  real(lkind)                                :: co2              !< Data to be written
-
-  co2 = 999._lkind
-  !< Run it when time=3
-  Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','co2',co2, Time)
-  !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
-  !! equal to the data at time=3, which is 3.
-  expected_result = 3._lkind
-  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
-
-  !< Run it when time=4
-  co2 = 999._lkind
-  Time = set_date(1,1,5,0,0,0)
-  call data_override('OCN','co2',co2, Time)
-  !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
-  !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
-  expected_result = (3._lkind + 4._lkind) / 2._lkind
-  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
-
-end subroutine scalar_test
-
-subroutine set_up_ensemble_case()
+subroutine set_up_ensemble_case
   integer :: ens_siz(6)
   character(len=10) :: text
 
@@ -689,9 +551,9 @@ subroutine set_up_ensemble_case()
 
   if (mpp_pe() .eq. mpp_root_pe()) &
   print *, "ensemble_id:", ensemble_id, ":: ", pelist_ens
-end subroutine
+end subroutine set_up_ensemble_case
 
-subroutine generate_ensemble_input_file()
+subroutine generate_ensemble_input_file
   if (mpp_pe() .eq. mpp_root_pe()) then
     call create_grid_spec_file ()
     call create_ocean_mosaic_file()
@@ -704,43 +566,9 @@ subroutine generate_ensemble_input_file()
     call create_ongrid_data_file(is_ensemble=.true.)
   endif
   call mpp_set_current_pelist(pelist)
-end subroutine
+end subroutine generate_ensemble_input_file
 
-subroutine ensemble_test()
-  real(lkind)                                :: expected_result  !< Expected result from data_override
-  type(time_type)                            :: Time             !< Time
-  real(lkind), allocatable, dimension(:,:)   :: runoff           !< Data to be written
-  integer                                    :: scale_fac        !< Scale factor to use when determining
-                                                                 !! the expected answer
-  logical :: sucessful !< .True. if the data_override was sucessful
-
-  allocate(runoff(is:ie,js:je))
-
-  scale_fac = ensemble_id
-  if (test_case .eq. ensemble_same_yaml) scale_fac = 1
-
-  runoff = 999._lkind
-  !< Run it when time=3
-  Time = set_date(1,1,4,0,0,0)
-  call data_override('OCN','runoff',runoff, Time, override=sucessful)
-  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
-  !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
-  !! equal to the data at time=3, which is 3+scale_fac.
-  expected_result = 3._lkind + real(scale_fac,kind=lkind)
-  call compare_data(Domain, runoff, expected_result)
-
-  !< Run it when time=4
-  runoff = 999._lkind
-  Time = set_date(1,1,5,0,0,0)
-  call data_override('OCN','runoff',runoff, Time, override=sucessful)
-  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
-  !< You are getting the data when time=4, the data at time=3 is 3+scale_fac. and at time=5 is 4+scale_fac.,
-  !! so the expected result is the average of the 2 (because this is is an "ongrid" case and there
-  !! is no horizontal interpolation).
-  expected_result = (3._lkind + real(scale_fac,kind=lkind) + 4._lkind + real(scale_fac,kind=lkind)) / 2._lkind
-  call compare_data(Domain, runoff, expected_result)
-
-  deallocate(runoff)
-end subroutine ensemble_test
+#include "test_data_override_ongrid_r4.fh"
+#include "test_data_override_ongrid_r8.fh"
 
 end program test_data_override_ongrid
