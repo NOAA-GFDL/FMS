@@ -83,8 +83,8 @@ interface data_override_UG
      module procedure data_override_UG_2d_r8
 end interface
 
-integer, parameter :: mode_r4 = z'1' !> Indicates that a domain has been enabled for r4 mode
-integer, parameter :: mode_r8 = z'2' !> Indicates that a domain has been enabled for r8 mode
+integer, parameter :: mode_r4 = 1 !> Indicates that a domain has been enabled for r4 mode
+integer, parameter :: mode_r8 = 2 !> Indicates that a domain has been enabled for r8 mode
 
 integer :: atm_mode = 0 !> Atmosphere mode: possible values are 0 (uninitialized),
                         !! mode_r4, mode_r8, or ior(mode_r4, mode_r8)
