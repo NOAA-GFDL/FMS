@@ -66,20 +66,17 @@ _EOF
 
 #The test only runs with yaml
 if [ -z $parser_skip ]; then
-  for KIND in r4 r8
-  do
-    rm -rf INPUT/.
+  rm -rf INPUT/.
 
-    sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
-    test_expect_success "Creating input files (${KIND})" '
-      mpirun -n 12 ../test_data_override_ongrid_${KIND}
-    '
+  sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+  test_expect_success "Creating input files" '
+    mpirun -n 12 ../test_data_override_ongrid
+  '
 
-    cp input_base.nml input.nml
-    test_expect_success "test_data_override with two ensembles  -yaml (${KIND})" '
-      mpirun -n 12 ../test_data_override_ongrid_${KIND}
-    '
-  done
+  cp input_base.nml input.nml
+  test_expect_success "test_data_override with two ensembles  -yaml" '
+    mpirun -n 12 ../test_data_override_ongrid
+  '
 
   cat <<_EOF > data_table.yaml
 data_table:
@@ -92,12 +89,9 @@ data_table:
    factor: 1.0
 _EOF
 
-  for KIND in r4 r8
-  do
-    test_expect_failure "test_data_override with both data_table.yaml and data_table.ens_xx.yaml files" '
-      mpirun -n 12 ../test_data_override_ongrid_${KIND}
-    '
-  done
+  test_expect_failure "test_data_override with both data_table.yaml and data_table.ens_xx.yaml files" '
+    mpirun -n 12 ../test_data_override_ongrid
+  '
 
   cat <<_EOF > input.nml
 &data_override_nml
@@ -117,12 +111,9 @@ _EOF
   rm -rf INPUT/.
   rm -rf data_table.ens_01.yaml data_table.ens_02.yaml
 
-  for KIND in r4 r8
-  do
-    test_expect_success "test_data_override with two ensembles, same yaml file (${KIND})" '
-      mpirun -n 12 ../test_data_override_ongrid_${KIND}
-    '
-  done
+  test_expect_success "test_data_override with two ensembles, same yaml file" '
+    mpirun -n 12 ../test_data_override_ongrid
+  '
 
   rm -rf INPUT
 fi
