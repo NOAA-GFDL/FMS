@@ -99,6 +99,7 @@ type :: fmsDiagFile_type
   logical, allocatable :: time_ops !< .True. if file contains variables that are time_min, time_max, time_average,
                                    !! or time_sum
   integer :: unlim_dimension_level !< The unlimited dimension level currently being written
+  integer :: num_time_levels !< The number of time levels that were actually written to the file
   logical :: data_has_been_written !< .True. if data has been written for the current unlimited dimension level
   logical :: is_static !< .True. if the frequency is -1
   integer :: nz_subaxis !< The number of Z axis currently added to the file
@@ -194,6 +195,7 @@ type fmsDiagFileContainer_type
   procedure :: init_unlim_dim
   procedure :: update_current_new_file_freq_index
   procedure :: get_unlim_dimension_level
+  procedure :: get_num_time_levels
   procedure :: flush_diag_file
   procedure :: get_next_output
   procedure :: get_next_next_output
@@ -296,6 +298,7 @@ logical function fms_diag_files_object_init (files_array)
      endif
 
      obj%unlim_dimension_level = 0
+     obj%num_time_levels = 0
      obj%is_static = obj%get_file_freq() .eq. -1
      obj%nz_subaxis = 0
 
@@ -1607,6 +1610,16 @@ subroutine init_unlim_dim(this, output_buffers)
   enddo
 end subroutine init_unlim_dim
 
+!> \brief Get the number of time levels that were actually written to the file
+!! \return Number of time levels that were actually written to the file
+pure function get_num_time_levels(this) &
+result(res)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  integer :: res
+
+  res = this%FMS_diag_file%num_time_levels
+end function
+
 !> \brief Get the unlimited dimension level that is in the file
 !! \return The unlimited dimension
 pure function get_unlim_dimension_level(this) &
@@ -1815,6 +1828,13 @@ subroutine close_diag_file(this, output_buffers, model_end_time, diag_fields)
   type is (FmsNetcdfUnstructuredDomainFile_t)
     call close_file(fms2io_fileobj)
   end select
+
+  !< Keep track of the number of time levels that were written to the file
+  !! If the file is using the new_file_freq key, it will be closing the file multiple
+  !! time, so this ensures that we keep a running count
+  !! This is going be written to the output yaml, after all the files are closed
+  this%FMS_diag_file%num_time_levels = this%FMS_diag_file%num_time_levels + &
+                                       this%FMS_diag_file%unlim_dimension_level
 
   !< Reset the unlimited dimension level back to 0, in case the fms2io_fileobj is re-used
   this%FMS_diag_file%unlim_dimension_level = 0

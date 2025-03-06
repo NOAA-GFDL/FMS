@@ -41,7 +41,7 @@ subroutine check_output_yaml
   integer, parameter :: yaml_len = 402
   character(len=128) :: out_yaml_line, ref_yaml_line
   character(len=17), parameter :: ref_fname = 'diag_out_ref.yaml'
-  character(len=13), parameter :: out_fname = 'diag_out.yaml'
+  character(len=20), parameter :: out_fname = 'diag_manifest.yaml.0'
   if( mpp_root_pe() .ne. mpp_pe()) return
   open(newunit=un_out, file=out_fname, status="old", action="read")
   open(newunit=un_ref, file=ref_fname, status="old", action="read")
