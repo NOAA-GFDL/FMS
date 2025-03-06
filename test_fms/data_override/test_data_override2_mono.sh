@@ -39,21 +39,18 @@ cat <<_EOF > data_table
 "OCN", "runoff_decreasing", "runoff", "./INPUT/bilinear_decreasing.nc", "bilinear" ,  1.0
 _EOF
 
-for KIND in r4 r8
-do
-  rm -rf INPUT/*
-  sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
-  test_expect_success "Creating input files (${KIND})" '
-      mpirun -n 6 ../test_data_override_ongrid_${KIND}
-      '
+rm -rf INPUT/*
+sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+test_expect_success "Creating input files" '
+  mpirun -n 6 ../test_data_override_ongrid
+'
 
-  cp input_base.nml input.nml
-  test_expect_success "test_data_override with monotonically increasing and decreasing data sets (${KIND})" '
-    mpirun -n 6 ../test_data_override_ongrid_${KIND}
-    '
-  rm -f INPUT/*
-  sync
-done
+cp input_base.nml input.nml
+test_expect_success "test_data_override with monotonically increasing and decreasing data sets" '
+  mpirun -n 6 ../test_data_override_ongrid
+'
+rm -f INPUT/*
+sync
 
 rm -rf data_table
 
@@ -87,19 +84,16 @@ _EOF
 
 #Repeat the test with yaml if needed
 if [ -z $parser_skip ]; then
-  for KIND in r4 r8
-  do
-    rm -rf INPUT/*
-    sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
-    test_expect_success "Creating input files (${KIND})" '
-      mpirun -n 6 ../test_data_override_ongrid_${KIND}
-      '
+  rm -rf INPUT/*
+  sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+  test_expect_success "Creating input files" '
+    mpirun -n 6 ../test_data_override_ongrid
+  '
 
-    cp input_base.nml input.nml
-    test_expect_success "test_data_override with monotonically increasing and decreasing data sets  -yaml (${KIND})" '
-      mpirun -n 6 ../test_data_override_ongrid_${KIND}
-      '
-  done
+  cp input_base.nml input.nml
+  test_expect_success "test_data_override with monotonically increasing and decreasing data sets  -yaml" '
+    mpirun -n 6 ../test_data_override_ongrid
+  '
 fi
 
 rm -rf INPUT
