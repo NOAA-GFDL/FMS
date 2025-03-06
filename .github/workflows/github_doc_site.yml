@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
       - name: Setup repo
         run: | # do autotool's job for substitutes since we don't need a full build environement
           mkdir gen_docs
@@ -24,7 +24,7 @@ jobs:
           sudo apt -y install doxygen graphviz
           doxygen gen_docs/Doxyfile
       - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3.0.1
         with:
           path: 'gen_docs/html'
   deploy:
@@ -45,4 +45,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4.0.5

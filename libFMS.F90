@@ -321,14 +321,6 @@ module fms
                          fms_fm_util_get_real_array => fm_util_get_real_array, &
                          fms_fm_util_get_string_array => fm_util_get_string_array, &
                          fms_fm_util_set_value => fm_util_set_value, &
-                         fms_fm_util_set_value_integer_array => fm_util_set_value_integer_array, &
-                         fms_fm_util_set_value_logical_array => fm_util_set_value_logical_array, &
-                         fms_fm_util_set_value_real_array => fm_util_set_value_real_array, &
-                         fms_fm_util_set_value_string_array => fm_util_set_value_string_array, &
-                         fms_fm_util_set_value_integer => fm_util_set_value_integer, &
-                         fms_fm_util_set_value_logical => fm_util_set_value_logical, &
-                         fms_fm_util_set_value_real => fm_util_set_value_real, &
-                         fms_fm_util_set_value_string => fm_util_set_value_string, &
                          fms_fm_util_get_index_list => fm_util_get_index_list, &
                          fms_fm_util_get_index_string => fm_util_get_index_string, &
                          fms_fm_util_default_caller => fm_util_default_caller
@@ -802,6 +794,14 @@ module fms
                               fms_time_manager_get_date_no_leap => get_date_no_leap, &
                               fms_time_manager_date_to_string => date_to_string
   use get_cal_time_mod, only: fms_get_cal_time => get_cal_time
+
+  !> generic exchange
+  use gex_mod,          only: fms_gex_init => gex_init, &
+                              fms_gex_get_index => gex_get_index, &
+                              fms_gex_get_n_ex => gex_get_n_ex, &
+                              fms_gex_get_property => gex_get_property, &
+                              fms_gex_name => gex_name, &
+                              fms_gex_units => gex_units
 
   !> topography
   use gaussian_topog_mod, only: fms_gaussian_topog_init => gaussian_topog_init, &

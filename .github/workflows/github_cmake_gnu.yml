@@ -22,7 +22,7 @@ jobs:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.io-flag  }} ${{ matrix.libyaml-flag }} -D64BIT=on"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
     - name: Generate makefiles with CMake
       run: cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view
     - name: Build the library
