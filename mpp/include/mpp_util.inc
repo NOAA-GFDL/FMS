@@ -435,6 +435,15 @@ end function rarray_to_char
   end function mpp_root_pe
 
   !#####################################################################
+  function mpp_commID()
+    integer :: mpp_commID
+
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_COMMID: You must first call mpp_init.' )
+    mpp_commID = peset(current_peset_num)%id
+    return
+  end function mpp_commID
+
+  !#####################################################################
   subroutine mpp_set_root_pe(num)
     integer, intent(in) :: num
 

@@ -197,6 +197,76 @@
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_BROADCAST_
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!                                MPP_SCATTER                                  !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    subroutine MPP_SCATTERV_( send_data, send_counts, displs, recv_data, recv_count, root_pe, pelist, ierr)
+      MPP_TYPE_, intent(in) :: send_data(*)
+      MPP_TYPE_, intent(inout) :: recv_data(*)
+      integer, intent(in) :: recv_count, root_pe
+      integer, intent(in) :: send_counts(:), displs(:), pelist(:)
+      integer, intent(inout) :: ierr
+
+      integer :: commID
+
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
+
+      call mpp_declare_pelist( pelist, commID=commID )
+      ! Rank number should be in reference to new comm (usually zero)
+      root_pe = findloc(pelist, root_pe, dim=1) - 1
+
+      call MPI_SCATTERV(send_data, send_counts, displs, MPI_TYPE_, &
+                        recv_data, recv_count, MPI_TYPE_, root_pe, commID, ierr)
+
+    end subroutine MPP_SCATTERV_
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                                                                             !
+!                                MPP_GATHER                                   !
+!                                                                             !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    subroutine MPP_GATHER_( send_data, send_count, recv_data, recv_count, root_pe, pelist, ierr)
+      MPP_TYPE_, intent(in) :: send_data(*)
+      MPP_TYPE_, intent(inout) :: recv_data(*)
+      integer, intent(in) :: send_count, recv_count, root_pe
+      integer, intent(in) :: pelist(:)
+      integer, intent(inout) :: ierr
+
+      integer :: commID
+
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
+
+      call mpp_declare_pelist( pelist, commID=commID )
+      ! Rank number should be in reference to new comm (usually zero)
+      root_pe = findloc(pelist, root_pe, dim=1) - 1
+
+      call MPI_GATHER(send_data, send_count, MPI_TYPE_, &
+                      recv_data, recv_counts, MPI_TYPE_, root_pe, commID, ierr)
+
+    end subroutine MPP_GATHER_
+
+    subroutine MPP_GATHERV_( send_data, send_count, displs, recv_data, recv_counts, root_pe, pelist, ierr)
+      MPP_TYPE_, intent(in) :: send_data(*)
+      MPP_TYPE_, intent(inout) :: recv_data(*)
+      integer, intent(in) :: send_count, root_pe
+      integer, intent(in) :: recv_counts, displs(:), pelist(:)
+      integer, intent(inout) :: ierr
+
+      integer :: commID
+
+      if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
+
+      call mpp_declare_pelist( pelist, commID=commID )
+      ! Rank number should be in reference to new comm (usually zero)
+      root_pe = findloc(pelist, root_pe, dim=1) - 1
+
+      call MPI_GATHERV(send_data, send_count, MPI_TYPE_, &
+                       recv_data, recv_counts, MPI_TYPE_, root_pe, commID, ierr)
+
+    end subroutine MPP_GATHERV_
 !> @}
 !####################################################################################
 #include <mpp_transmit.inc>
