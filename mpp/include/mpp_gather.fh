@@ -49,7 +49,7 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
    if(size(rbuf(:)) < cnt*nproc) call mpp_error(FATAL, &
           "MPP_NEW_GATHER_1D_: size(rbuf) must be at least npes*size(sbuf) ")
 
-   call mpp_gather( sbuff, size(sbuf,1), rbuf, size(rbuf,1), 0, pelist2, ierr)
+   call mpp_gather( sbuf, rbuf, size(sbuf), op_root, pelist2, ierr )
 
    call mpp_sync_self()
    deallocate(pelist2)
@@ -83,12 +83,12 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
       allocate(displs(nproc))
 
       displs(1) = 0
-      do i = 2, nproc
-         displs(i) = displs(i-1) + rsize(i-1)
+      do l = 2, nproc
+         displs(l) = displs(l-1) + rsize(l-1)
       enddo
    endif
 
-   call mpp_gather( sbuf, size(sbuf), displs, rbuf, size(rbuf), root_pe, pelist2, ierr)
+   call mpp_gather( sbuf, ssize, rbuf, rsize, displs, op_root, pelist2, ierr )
 
    call mpp_sync_self()
    deallocate(pelist2)
