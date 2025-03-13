@@ -165,7 +165,7 @@
 
       integer :: n, i, j, k
 
-      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTERV: You must first call mpp_init.' )
 
       n = 1
       do k = 1, size(recv_data, 3)

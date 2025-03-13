@@ -30,7 +30,7 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
    integer :: cnt, l, nproc, op_root, ierr
    integer, allocatable :: pelist2(:)
 
-   if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_NEW_GATHER: You must first call mpp_init.' )
+   if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_GATHER_1D_: You must first call mpp_init.' )
 
 !  If pelist is provided, the first position must be the operation root, w.r.t. new comm, op_root = 0
    if(PRESENT(pelist))then
@@ -47,7 +47,7 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
 
    cnt = size(sbuf(:))
    if(size(rbuf(:)) < cnt*nproc) call mpp_error(FATAL, &
-          "MPP_NEW_GATHER_1D_: size(rbuf) must be at least npes*size(sbuf) ")
+          "MPP_GATHER_1D_: size(rbuf) must be at least npes*size(sbuf) ")
 
    call mpp_gather( sbuf, rbuf, size(sbuf), op_root, pelist2, ierr )
 

@@ -215,24 +215,12 @@
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
 
       call mpp_declare_pelist( pelist, commID=commID )
-      ! Rank number should be in reference to new comm (usually zero)
+      ! Rank number should be in reference to new comm
       root_pe2 = findloc(pelist, root_pe, dim=1) - 1
 
 
-      if(mpp_pe().eq.pelist(1)) then
-        print *, mpp_pe(), 'send_data(1)', send_data(1)
-        print *, mpp_pe(), 'send_counts', send_counts
-        print *, mpp_pe(), 'displs', displs
-      endif
-
-      print *, mpp_pe(), 'root_pe', root_pe2
-
       call MPI_SCATTERV(send_data, send_counts, displs, MPI_TYPE_, &
                         recv_data, recv_count, MPI_TYPE_, root_pe2, commID, ierr)
-
-      print *, mpp_pe(), 'recv_data(1,1,1)', recv_data(1,1,1)
-      print *, mpp_pe(), 'recv_count', recv_count
-      print *, mpp_pe(), 'ierr', ierr
 
     end subroutine MPP_SCATTERV_
 

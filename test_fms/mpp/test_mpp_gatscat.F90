@@ -123,7 +123,7 @@ contains
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
-    integer :: id, jd, xsize, ysize
+    integer :: id, jd
 
     DS = 7 !! DS should be less than 10 for the tests below to make sense.
     SS = 4
@@ -222,7 +222,7 @@ end subroutine test_scatter_2D_R4
     integer :: DS, SS  !!Source data size and segment size
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
-    integer :: id, jd, xsize, ysize
+    integer :: id, jd
 
 
     DS = 7 !! DS should be less than 10 for the tests below to make sense.
@@ -330,7 +330,7 @@ end subroutine test_scatter_2D_R8
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
     integer :: id, jd, kd
-    integer :: NZ, xsize, ysize
+    integer :: NZ
     integer :: dAmount, dCount
 
     NZ = 11 !! Depth of the square tube to be scattered.
@@ -452,7 +452,7 @@ end subroutine test_scatter_2D_R8
     integer :: iz, jz  !!The zeroth element to be scattered is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be scattered is (ie - is)*(je - js)
     integer :: id, jd, kd
-    integer :: NZ, xsize, ysize
+    integer :: NZ
     integer :: dAmount, dCount
 
     NZ = 11 !! Depth of the square tube to be scattered.
@@ -599,7 +599,6 @@ end subroutine test_scatter_2D_R8
      enddo
 
      call mpp_gather((/val/),rdata)
-     print *, 'pe: ', pe, 'rdata: ', rdata
      if(pe == root)then
        do i=1,npes
         if(INT(rdata(i)) /= pelist(i))then
@@ -614,7 +613,6 @@ end subroutine test_scatter_2D_R8
 
      rdata = -1.0
      if(ANY(pe == pelist(2:npes)))call mpp_gather((/val/),rdata(2:npes),pelist(2:npes))
-     print *, 'pe: ', pe, 'rdata: ', rdata
      if(pe == pelist(2))then
        do i=2,npes
         if(INT(rdata(i)) /= pelist(i))then
