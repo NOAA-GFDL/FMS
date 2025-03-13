@@ -113,6 +113,7 @@ contains
 
   !> @brief Test the mpp_scatter functions with FLOAT_KIND data arguments.
   subroutine test_scatter_2D_R4(npes,pe,root,out_unit)
+    use mpi
     integer, intent(in) :: npes,pe,root,out_unit
 
     integer :: pelist(npes)
@@ -125,7 +126,7 @@ contains
     integer :: id, jd
 
     DS = 7 !! DS should be less than 10 for the tests below to make sense.
-    SS = 6
+    SS = 4
     allocate(scatter_data(DS, DS))
     allocate(segment(SS, SS))
 
@@ -146,12 +147,6 @@ contains
              scatter_data(i,j) = i*10 + j
           enddo
        enddo
-       !! And re-initalize segment on the root pe.
-       do i = 1,SS
-          do j = 1,SS
-             segment(i,j) = i * 10 + j
-          enddo
-       enddo
     endif
 
     !! Scatter from the source pe a subset of the data array.
@@ -159,20 +154,20 @@ contains
     !! The data to scatter is "moved" in a 1D array of size
     !! S=(ie - is) * (je - js) and starts with the data at
     !! position (iz,jz). Recall Fortran is column-major order.
-    iz = 2
-    jz = 3
-    is = 2
-    ie = 3
-    js = 2
-    je = 3
+    iz = 0
+    jz = 0
+    is = 1
+    ie = 4
+    js = 1
+    je = 4
+
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .true.)
     else
-       call mpp_scatter(is, ie, js, je, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .false.)
     endif
 
-    call mpp_sync() !
-
+    call mpp_sync()
 
     !! Verify that the segment array has been updated on the target pes (i,e, those
     !! in the pelist, which does not include pe numbered npes)
@@ -183,14 +178,13 @@ contains
        do jd = js + jz, je + jz
           do id = is + iz, ie + iz
              if (segment(i,j) /= ( id * 10 + jd )) then
-                !!write(6,*) i, j, id, jd
                 call mpp_error(FATAL, "Test scatter 2D R4 failed in general scatter section.")
              endif
              !! Do to the next data element in segment
              !! If just done the bottom element of a column:
-             if(i == SS) then
+             if(i == ie) then
                 i = is
-                j = MOD(j + 1, SS) ! next column of segement()
+                j = j + 1 ! next column of segement()
              else
                 i = i + 1 ! next row of segemnt()
              endif
@@ -212,7 +206,7 @@ contains
        end do
     endif
 
-    call mpp_sync() !
+    call mpp_sync()
     write(out_unit,*) "Test test_scatter_2D_R4  successful ."
 
 end subroutine test_scatter_2D_R4
@@ -232,7 +226,7 @@ end subroutine test_scatter_2D_R4
 
 
     DS = 7 !! DS should be less than 10 for the tests below to make sense.
-    SS = 6
+    SS = 4
     allocate(scatter_data(DS, DS))
     allocate(segment(SS, SS))
 
@@ -266,16 +260,17 @@ end subroutine test_scatter_2D_R4
     !! The data to scatter is "moved" in a 1D array of size
     !! S=(ie - is) * (je - js) and starts with the data at
     !! position (iz,jz). Recall Fortran is column-major order.
-    iz = 2
-    jz = 3
-    is = 2
-    ie = 3
-    js = 2
-    je = 3
+    iz = 0
+    jz = 0
+    is = 1
+    ie = 4
+    js = 1
+    je = 4
+
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .true.)
     else
-       call mpp_scatter(is, ie, js, je, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, pelist(1:npes-1), segment, scatter_data, .false.)
     endif
 
     call mpp_sync()
@@ -290,14 +285,13 @@ end subroutine test_scatter_2D_R4
        do jd = js + jz, je + jz
           do id = is + iz, ie + iz
              if (segment(i,j) /= ( id * 10 + jd )) then
-                !!write(6,*) i, j, id, jd
                 call mpp_error(FATAL, "Test scatter 2D R8 failed in general scatter section.")
              endif
              !! Do to the next data element in segment
              !! If just done the bottom element of a column:
-             if(i == SS) then
+             if(i == ie) then
                 i = is
-                j = MOD(j + 1, SS) ! next column of segement()
+                j = j + 1 ! next column of segement()
              else
                 i = i + 1 ! next row of segemnt()
              endif
@@ -341,7 +335,7 @@ end subroutine test_scatter_2D_R8
 
     NZ = 11 !! Depth of the square tube to be scattered.
     DS = 6 !! DS should be less than 10 for the tests below to make sense.
-    SS = 5 !! Can be different that DS, but see retrictions.
+    SS = 4 !! Can be different that DS, but see retrictions.
     allocate(scatter_data(DS, DS, NZ))
     allocate(segment(SS, SS, NZ))
 
@@ -360,17 +354,9 @@ end subroutine test_scatter_2D_R8
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-             scatter_data(i,j, k) = k*100 + j*10 + i
+               scatter_data(i,j, k) = k*100 + j*10 + i
+             enddo
           enddo
-       enddo
-       enddo
-       !! And re-initalize segment on the root pe.
-       do i = 1,SS
-          do j = 1,SS
-             do k = 1,NZ
-             segment(i,j, k) = scatter_data(i,j, k)
-          enddo
-       enddo
        enddo
     endif
 
@@ -379,16 +365,17 @@ end subroutine test_scatter_2D_R8
     !! The data to scatter is "moved" in a 1D array of size
     !! S=((ie - is +1) * (je - js + 1) * NZ )and starts with the data at
     !! position (iz,jz, kz). Recall Fortran is column-major order.
-    iz = 2
-    jz = 2
-    is = 2
-    ie = 3
-    js = 2
-    je = 3
+    iz = 0
+    jz = 0
+    is = 1
+    ie = 4
+    js = 1
+    je = 4
+
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .true.)
     else
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .false.)
     endif
 
     call mpp_sync()
@@ -405,11 +392,10 @@ end subroutine test_scatter_2D_R8
        id = is + iz !!increases fastest (4,5)
        !!Note below row (id index of "data() equivalent or formula") changing fastest.
        do k = 1,  NZ
-          do j = 1, SS !(je -js + 1)
-             do i = 1, SS !(ie - is + 1)
+          do j = 1, (je - js + 1)
+             do i = 1, (ie - is + 1)
                 if(dCount < dAmount) then
                    dCount = dCount + 1
-                   !!write(6,*) k, j, i, kd, jd, id
                    if (segment(i,j, k) /= ( kd * 100 + jd*10 + id )) then
                       call mpp_error(FATAL, "Test scatter 3D R4 failed - basic copy area.")
                    endif
@@ -471,7 +457,7 @@ end subroutine test_scatter_2D_R8
 
     NZ = 11 !! Depth of the square tube to be scattered.
     DS = 6 !! DS should be less than 10 for the tests below to make sense.
-    SS = 5 !! Can be different that DS, but see retrictions.
+    SS = 4 !! Can be different that DS, but see retrictions.
     allocate(scatter_data(DS, DS, NZ))
     allocate(segment(SS, SS, NZ))
 
@@ -490,17 +476,9 @@ end subroutine test_scatter_2D_R8
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-             scatter_data(i,j, k) = k*100 + j*10 + i
+                scatter_data(i,j, k) = k*100 + j*10 + i
+             enddo
           enddo
-       enddo
-       enddo
-       !! And re-initalize segment on the root pe.
-       do i = 1,SS
-          do j = 1,SS
-             do k = 1,NZ
-             segment(i,j, k) = scatter_data(i,j, k)
-          enddo
-       enddo
        enddo
     endif
 
@@ -509,16 +487,17 @@ end subroutine test_scatter_2D_R8
     !! The data to scatter is "moved" in a 1D array of size
     !! S=((ie - is +1) * (je - js + 1) * NZ )and starts with the data at
     !! position (iz,jz, kz). Recall Fortran is column-major order.
-    iz = 2
-    jz = 2
-    is = 2
-    ie = 3
-    js = 2
-    je = 3
+    iz = 0
+    jz = 0
+    is = 1
+    ie = 4
+    js = 1
+    je = 4
+
     if(pe .eq. root) then
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .true., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .true.)
     else
-       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes -1), segment, scatter_data, .false., iz, jz)
+       call mpp_scatter(is, ie, js, je, NZ, pelist(1:npes-1), segment, scatter_data, .false.)
     endif
 
     call mpp_sync()
@@ -535,11 +514,10 @@ end subroutine test_scatter_2D_R8
        id = is + iz !!increases fastest (4,5)
        !!Note below row (id index of "data() equivalent or formula") changing fastest.
        do k = 1,  NZ
-          do j = 1, SS !(je -js + 1)
-             do i = 1, SS !(ie - is + 1)
+          do j = 1, (je - js + 1)
+             do i = 1, (ie - is + 1)
                 if(dCount < dAmount) then
                    dCount = dCount + 1
-                   !!write(6,*) k, j, i, kd, jd, id
                    if (segment(i,j, k) /= ( kd * 100 + jd*10 + id )) then
                       call mpp_error(FATAL, "Test scatter 3D R8 failed - basic copy area.")
                    endif
@@ -648,8 +626,6 @@ end subroutine test_scatter_2D_R8
 
   end subroutine test_gather_R4
 
-
-  !> @brief  Test the scalar mpp_gather routine with DOUBLE_KIND data.
     subroutine test_gather_R8(npes,pe,root,out_unit)
      integer, intent(in) :: npes,pe,root,out_unit
 

@@ -384,6 +384,8 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_logical_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_logical_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_LOGICAL
 #include <mpp_gather.fh>
 
 #undef MPP_GATHER_1D_
@@ -396,6 +398,8 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_int4_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_int4_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_gather.fh>
 
 
@@ -409,6 +413,8 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_int8_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_int8_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_gather.fh>
 
 
@@ -422,6 +428,8 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_real4_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_real4_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL4
 #include <mpp_gather.fh>
 
 #undef MPP_GATHER_1D_
@@ -434,6 +442,8 @@
 #undef  MPP_GATHER_PELIST_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_real8_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_real8_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL8
 #include <mpp_gather.fh>
 
 !#################################################
@@ -443,6 +453,8 @@
 #define MPP_TYPE_ integer(i4_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int4_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int4_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
@@ -451,6 +463,8 @@
 #define MPP_TYPE_ integer(i8_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int8_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int8_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
@@ -459,6 +473,8 @@
 #define MPP_TYPE_ real(r4_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real4_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real4_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL4
 #include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
@@ -467,5 +483,7 @@
 #define MPP_TYPE_ real(r8_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real8_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real8_3d
+#undef MPI_TYPE_
+#define MPI_TYPE_ MPI_REAL8
 #include <mpp_scatter.fh>
 !> @}
