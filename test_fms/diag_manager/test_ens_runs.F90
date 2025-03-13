@@ -28,7 +28,7 @@ program test_ens_runs
   use mpp_mod,          only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_get_current_pelist, mpp_set_current_pelist, &
                               input_nml_file
   use fms2_io_mod,      only: FmsNetcdfFile_t, open_file, close_file, read_data, get_dimension_size, &
-                              set_filename_appendix, get_instance_filename
+                              set_filename_appendix, get_instance_filename, file_exists
   use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
 
   implicit none
@@ -141,5 +141,12 @@ program test_ens_runs
     enddo
 
     call close_file(fileobj)
+
+    !! Check that the diag manifest files were written with the expected name
+    if (mpp_pe() .eq. 0 .and. .not. file_exists("diag_manifest.ens_01.yaml.0")) &
+      call mpp_error(FATAL, "The diag manifest file: diag_manifest.ens_01.yaml.0 was not written")
+
+    if (mpp_pe() .eq. 1 .and. .not. file_exists("diag_manifest.ens_02.yaml.1")) &
+      call mpp_error(FATAL, "The diag manifest file: diag_manifest.ens_02.yaml.1 was not written")
   end subroutine check_output
 end program test_ens_runs
