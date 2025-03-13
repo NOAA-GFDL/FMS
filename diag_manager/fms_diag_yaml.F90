@@ -1645,8 +1645,11 @@ end subroutine
 !> Writes an output yaml with all available information on the written files.
 !! Will only write with root pe.
 !! Global attributes are limited to 16 per file.
-subroutine fms_diag_yaml_out(ntimes)
-  integer, intent(in) :: ntimes(:) !< The number of time levels that were written for each file
+subroutine fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
+  integer, intent(in) :: ntimes(:)            !< The number of time levels that were written for each file
+  integer, intent(in) :: ntiles(:)            !< The number of tiles for each file domain
+  integer, intent(in) :: ndistributedfiles(:) !< The number of distributed files
+
   type(diagYamlFiles_type), pointer :: fileptr !< pointer for individual variables
   type(diagYamlFilesVar_type), pointer :: varptr !< pointer for individual variables
   type (fmsyamloutkeys_type), allocatable :: keys(:), keys2(:), keys3(:)
@@ -1659,6 +1662,10 @@ subroutine fms_diag_yaml_out(ntimes)
   integer, dimension(basedate_size) :: basedate_loc !< local copy of basedate to loop through
   integer :: varnum_i, key3_i, gm
   character(len=32), allocatable :: st_vals(:) !< start times for gcc bug
+  character(len=FMS_FILE_LEN) :: filename !< Name of the diag manifest file
+                                !! When there are more than 1 ensemble the filename is
+                                !! diag_manifest_ens_xx.yaml.yy (where xx is the ensembles number, yy is the root pe)
+                                !! otherwhise the filename is diag_manifest.yaml.yy
 
   if( mpp_pe() .ne. mpp_root_pe()) return
 
@@ -1715,7 +1722,20 @@ subroutine fms_diag_yaml_out(ntimes)
     call fms_f2c_string(keys2(i)%key8, 'start_time')
     call fms_f2c_string(keys2(i)%key9, 'file_duration')
     call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
+
+    !! The number of timelevels that were written for the file
     call fms_f2c_string(keys2(i)%key11, 'number_of_timelevels')
+
+    !! The number of tiles in the file's domain
+    !! When the number of tiles is greater than 1, the name of the diag file
+    !! is filename_tileXX.nc, where XX is the tile number, (1 to the number of tiles)
+    call fms_f2c_string(keys2(i)%key12, 'number_of_tiles')
+
+    !! This is the number of distributed files
+    !! If the diag files were not combined, the name of the diag file is going to be
+    !! filename_tileXX.nc.YY, where YY is the distributed file number 
+    !! (1 to the number of distributed files)
+    call fms_f2c_string(keys2(i)%key13, 'number_of_distributed_files')
 
     call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
     call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
@@ -1753,6 +1773,8 @@ subroutine fms_diag_yaml_out(ntimes)
     call fms_f2c_string(vals2(i)%val9, adjustl(tmpstr1))
     call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
     call fms_f2c_string(vals2(i)%val11, string(ntimes(i)))
+    call fms_f2c_string(vals2(i)%val12, string(ntiles(i)))
+    call fms_f2c_string(vals2(i)%val13, string(ndistributedfiles(i)))
 
     !! tier 3 - varlists, subregion, global metadata
     call yaml_out_add_level2key('varlist', keys2(i))
@@ -1979,7 +2001,8 @@ subroutine fms_diag_yaml_out(ntimes)
   enddo
   tier2size = i
 
-  call write_yaml_from_struct_3( 'diag_manifest.yaml.'//string(mpp_pe())//c_null_char,  1, keys, vals, &
+  call get_instance_filename('diag_manifest.yaml.'//string(mpp_pe()), filename)
+  call write_yaml_from_struct_3( trim(filename)//c_null_char,  1, keys, vals, &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
                                  tier3size, tier3each, keys3, vals3,       &
                                  (/size(diag_yaml%diag_files), 0, 0, 0, 0, 0, 0, 0/))
