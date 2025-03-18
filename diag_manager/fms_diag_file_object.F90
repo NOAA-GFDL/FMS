@@ -51,7 +51,8 @@ use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
                    uppercase, lowercase, NOTE
 use platform_mod, only: FMS_FILE_LEN
-
+use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_UG_domain_ntiles, mpp_get_io_domain_layout, &
+                           mpp_get_io_domain_UG_layout
 implicit none
 private
 
@@ -196,6 +197,8 @@ type fmsDiagFileContainer_type
   procedure :: update_current_new_file_freq_index
   procedure :: get_unlim_dimension_level
   procedure :: get_num_time_levels
+  procedure :: get_num_tiles
+  procedure :: get_ndistributedfiles
   procedure :: flush_diag_file
   procedure :: get_next_output
   procedure :: get_next_next_output
@@ -1619,6 +1622,48 @@ result(res)
 
   res = this%FMS_diag_file%num_time_levels
 end function
+
+!> \brief Get the number of tiles in the file's domain
+!! \return Number of tiles in the file's domain
+function get_num_tiles(this) &
+result(res)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  integer :: res
+
+  select case(this%FMS_diag_file%type_of_domain)
+  case (TWO_D_DOMAIN, UG_DOMAIN)
+    select type(domain => this%FMS_diag_file%domain)
+    type is (diagDomain2d_t)
+      res = mpp_get_ntile_count(domain%Domain2)
+    type is (diagDomainUg_t)
+      res = mpp_get_UG_domain_ntiles(domain%DomainUG)
+    end select
+  case default
+    res = 1
+  end select
+end function get_num_tiles
+
+!> \brief Get number of distributed files that were written
+!! \return The number of distributed files that were written
+function get_ndistributedfiles(this) &
+result(res)
+  class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
+  integer :: res
+  integer :: io_layout(2) !< The io_layout
+
+  select case(this%FMS_diag_file%type_of_domain)
+  case (TWO_D_DOMAIN, UG_DOMAIN)
+    select type(domain => this%FMS_diag_file%domain)
+    type is (diagDomain2d_t)
+      io_layout = mpp_get_io_domain_layout(domain%Domain2)
+      res = io_layout(1) * io_layout(2)
+    type is (diagDomainUg_t)
+      res = mpp_get_io_domain_UG_layout(domain%DomainUG)
+    end select
+  case default
+    res = 1
+  end select
+end function get_ndistributedfiles
 
 !> \brief Get the unlimited dimension level that is in the file
 !! \return The unlimited dimension
