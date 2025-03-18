@@ -1630,8 +1630,6 @@ result(res)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   integer :: res
 
-  type(fmsDiagFile_type), pointer :: diag_file
-
   select case(this%FMS_diag_file%type_of_domain)
   case (TWO_D_DOMAIN, UG_DOMAIN)
     select type(domain => this%FMS_diag_file%domain)
@@ -1652,8 +1650,6 @@ result(res)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   integer :: res
   integer :: io_layout(2) !< The io_layout
-
-  type(fmsDiagFile_type), pointer :: diag_file
 
   select case(this%FMS_diag_file%type_of_domain)
   case (TWO_D_DOMAIN, UG_DOMAIN)
