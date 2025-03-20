@@ -22,7 +22,7 @@
 
 
 program test   !test various aspects of mpp_mod
-  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, stdout
+  use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, mpp_commID, stdout
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
   use mpp_mod, only : mpp_declare_pelist, mpp_set_current_pelist, mpp_set_stack_size
   use mpp_mod, only : mpp_broadcast, mpp_transmit, mpp_sum, mpp_max, mpp_chksum, ALL_PES
@@ -48,6 +48,10 @@ program test   !test various aspects of mpp_mod
   out_unit = stdout()
 
   call SYSTEM_CLOCK( count_rate=ticks_per_sec )
+
+  if( pe.EQ.root ) print *, '------------------> Calling test_mpp_commID <------------------'
+    call test_mpp_commID()
+  if( pe.EQ.root ) print *, '------------------> Finished test_mpp_commID <------------------'
 
   if( pe.EQ.root ) print *, '------------------> Calling test_mpp_max <------------------'
     call test_mpp_max()
@@ -104,8 +108,29 @@ contains
   end if
   call mpp_set_current_pelist()
 
-   end subroutine test_mpp_max
+  end subroutine test_mpp_max
 
+  subroutine test_mpp_commID
+    integer :: i, commID
+    integer, allocatable :: pelist(:)
+
+    ! Check if commID is valid (checks peset%id for default value, -1)
+    if (mpp_commID().EQ.-1) then
+       call mpp_error( 'test_mpp_commID', 'CommID Test after mpp_init Failed: mpp_commID returned an invalid ID', FATAL )
+    end if
+
+    ! Get commID for current pelist (should be global pelist) via and compare with mpp_commID
+    allocate(pelist(npes))
+    pelist = (/ (i, i=0, npes-1) /)
+    call mpp_declare_pelist(pelist, commID = commID)
+
+    if(mpp_commID().NE.commID) then
+      call mpp_error( 'test_mpp_commID', 'Test failed: mpp_commID returned a different ID than expected.', FATAL )
+    endif
+
+    deallocate(pelist)
+
+  end subroutine test_mpp_commID
 
   subroutine test_shared_pointers(locd,n)
     integer(i8_kind), intent(in) :: locd
