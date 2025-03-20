@@ -116,7 +116,7 @@ contains
 
     ! Check if commID is valid (checks peset%id for default value, -1)
     if (mpp_commID().EQ.-1) then
-       call mpp_error( 'test_mpp_commID', 'CommID Test after mpp_init Failed: mpp_commID returned an invalid ID', FATAL )
+       call mpp_error('test_mpp_commID', 'CommID Test after mpp_init Failed: mpp_commID returned an invalid ID', FATAL)
     end if
 
     ! Get commID for current pelist (should be global pelist) via and compare with mpp_commID
@@ -125,7 +125,7 @@ contains
     call mpp_declare_pelist(pelist, commID = commID)
 
     if(mpp_commID().NE.commID) then
-      call mpp_error( 'test_mpp_commID', 'Test failed: mpp_commID returned a different ID than expected.', FATAL )
+      call mpp_error('test_mpp_commID', 'Test failed: mpp_commID returned a different ID than expected.', FATAL)
     endif
 
     deallocate(pelist)
