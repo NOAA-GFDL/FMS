@@ -899,6 +899,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 1
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: atm_mod
     var_name: var7
@@ -932,6 +934,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 3
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -975,6 +979,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 3
+  number_of_tiles: 6
+  number_of_distributed_files: 1
   varlist:
   - module: atm_mod
     var_name: var3
@@ -1040,6 +1046,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 3
+  number_of_tiles: 6
+  number_of_distributed_files: 1
   varlist:
   - module: lnd_mod
     var_name: var5
@@ -1083,6 +1091,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 3
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: lnd_mod
     var_name: var1
@@ -1115,6 +1125,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 3
+  number_of_tiles: 6
+  number_of_distributed_files: 1
   varlist:
   - module: atm_mod
     var_name: var4
@@ -1147,6 +1159,8 @@ diag_files:
   file_duration: 12
   file_duration_units: hours
   number_of_timelevels: 2
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1179,6 +1193,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 3
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1211,6 +1227,8 @@ diag_files:
   file_duration: 12 3 9
   file_duration_units: hours hours hours
   number_of_timelevels: 24
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1243,6 +1261,8 @@ diag_files:
   file_duration: 12 3 9
   file_duration_units: hours hours hours
   number_of_timelevels: 24
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: ocn_mod
     var_name: var1
@@ -1275,6 +1295,8 @@ diag_files:
   file_duration:
   file_duration_units:
   number_of_timelevels: 1
+  number_of_tiles: 1
+  number_of_distributed_files: 1
   varlist:
   - module: ocn_mod
     var_name: var1

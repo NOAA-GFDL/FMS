@@ -99,7 +99,7 @@ private
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
     procedure :: set_time_end
-    procedure :: get_ntimes_per_file
+    procedure :: write_diag_manifest
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -155,27 +155,35 @@ subroutine fms_diag_object_init (this,diag_subset_output, time_init)
 #endif
 end subroutine fms_diag_object_init
 
-!> @brief Determines the number of time levels that were written each file
-!! @return The number of time levels that were written each file
-function get_ntimes_per_file(this) &
-  result(ntimes)
+!> @brief Writes out the diag manifest file
+subroutine write_diag_manifest(this)
   class(fmsDiagObject_type) :: this !< Diag object
-  integer, allocatable :: ntimes(:)
+
+  integer, allocatable :: ntimes(:) !< Number of times written in each file
+  integer, allocatable :: ntiles(:) !< Number of tiles for each file domain
+  integer, allocatable :: ndistributedfiles(:)  !< Number of distributed files
 
   integer :: i !< For looping through the files
+  integer :: nfiles !< Number of files in the diag object
 
 #ifdef use_yaml
-  allocate(ntimes(size(this%FMS_diag_files)))
+  nfiles = size(this%FMS_diag_files)
+  allocate(ntimes(nfiles))
+  allocate(ntiles(nfiles))
+  allocate(ndistributedfiles(nfiles))
+
   do i = 1, size(this%FMS_diag_files)
     ntimes(i) = this%FMS_diag_files(i)%get_num_time_levels()
+    ntiles(i) = this%FMS_diag_files(i)%get_num_tiles()
+    ndistributedfiles(i) = this%FMS_diag_files(i)%get_ndistributedfiles()
   enddo
+  call fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
+
 #else
-  allocate(ntimes(1))
-  ntimes = diag_null
-  call mpp_error(FATAL, "You must compile with -Duse_yaml to call fms_diag_object%get_ntimes_per_file!")
+  call mpp_error(FATAL, "You must compile with -Duse_yaml to call fms_diag_object%write_diag_manifest!")
 #endif
 
-end function get_ntimes_per_file
+end subroutine write_diag_manifest
 
 !> \description Loops through all files and does one final write.
 !! Closes all files
@@ -184,7 +192,6 @@ end function get_ntimes_per_file
 subroutine fms_diag_object_end (this, time)
   class(fmsDiagObject_type) :: this
   TYPE(time_type), INTENT(in) :: time
-  integer, allocatable :: ntimes(:) !< Number of time steps per file
 
   integer                   :: i
 #ifdef use_yaml
@@ -194,9 +201,7 @@ subroutine fms_diag_object_end (this, time)
   call this%do_buffer_math()
   call this%fms_diag_do_io(end_time=time)
 
-  ! write output yaml
-  ntimes = this%get_ntimes_per_file()
-  call fms_diag_yaml_out(ntimes)
+  call this%write_diag_manifest()
 
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_output_buffers)
@@ -898,6 +903,7 @@ subroutine fms_diag_do_io(this, end_time)
 
       ! Go away if there is no data to write
       if (.not. diag_buff%is_there_data_to_write()) cycle
+      if (diag_field%is_static() .and. diag_buff%get_unlim_dim() > 0) cycle
 
       if ( diag_buff%is_time_to_finish_reduction(end_time) .and. .not. do_not_write) then
         ! sets missing value
