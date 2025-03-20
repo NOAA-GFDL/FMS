@@ -3518,6 +3518,7 @@ END FUNCTION register_static_field
     call fms_diag_object%fms_diag_accept_data(diag_field_id, field, mask_local, rmask_local, &
                                                           time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
                                                           err_msg)
+    send_data_4d = .true.
 
     if (present(err_msg)) then
       if (err_msg .ne. "") then

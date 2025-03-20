@@ -22,11 +22,11 @@ jobs:
         LDFLAGS: '-L/opt/view/lib'
     steps:
     - name: Checkout FMS
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
       with:
         path: FMS
     - name: Checkout FMScoupler
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
       with:
         repository: 'NOAA-GFDL/FMScoupler'
         path: FMScoupler

@@ -18,12 +18,12 @@ jobs:
         password: ${{ secrets.github_token }}
     steps:
     - name: Checkout MOM6 repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
       with:
         repository: 'NOAA-GFDL/MOM6'
         submodules: recursive
     - name: Checkout FMS into MOM build
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
       with:
         path: .testing/deps/fms/src
     - name: Build FMS and MOM test suite

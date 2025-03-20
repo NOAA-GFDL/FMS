@@ -6,6 +6,80 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2025.01.02] - 2025-03-06
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Changed
+- DIAG_MANAGER: Change name of yaml output file to include the root PE number at the end in order to prevent overwrites (#1654)
+
+## [2025.01.01] - 2025-02-26
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Changed
+- DIAG_MANAGER: Change name of yaml output file from "diag_out.yaml" to "diag_manifest.yaml" (#1646)
+
+### Added
+- DIAG_MANAGER: Added field to the yaml output file to specify the number of time levels written to a given file (#1648)
+
+
+## [2025.01] - 2025-01-30
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Added
+- ENSEMBLE YAML SUPPORT: Adds functionality to the diag_manager, field_manager, and data_override to support unique yaml tables for each member of an ensemble or nest. More information can be found in in the [diag_manager](diag_manager/README.md) and [data_override](data_override/README.MD) README files (#1585)
+- BUILD: Adds options to set `PORTABLE_KINDS` macro in CMake and autotools builds (#1572)
+- BUILD(autotools): Adds check for cray compiler .mod file capitalization and will now run a previously added, but unused, m4 check for `newunit` support. (#1561)
+- BUILD(cmake): Adds CMake functionality to generate a pkgconfig file (#1565)
+- DIAG_MANAGER: Modifies `diag_field_add_attribute` to accept both r4 and r8 values (#1625)
+
+### Changed
+- MPP_IO/FMS_IO: A deprecation warning will now be output when using these modules or enabling the `-Duse_deprecated_io` flag via the build systems. Usage of these modules will be deprecated in the next release. (#1609)
+- DIAG_MANAGER: Made changes to the reduction routine to improve performance of loop and to reduce unnecessary calls if there isn't any new data to process (#1634)
+- MOSAIC/GRID_UTILS: The `mosaic` directory has been refactored and is now called `grid_utils`. (#1626) As part of these updates:
+	- The `create_xgrid.c/h` files have been moved to the `horiz_interp/include` directory
+	- Any any unused `.c`/`.h` files or functions from `mosaic` have been removed
+	- C functions have been moved between the `grid_utils.c`, `tree_utils.c` and `create_xgrid.c` files depending on the functions usage
+- DIAG_MANAGER: Changes `fms_diag_accept_data` from a function to a subroutine (#1610)
+
+### Fixed
+- DIAG_MANAGER: Fixes functionality of the `new_file_freq`, `start_time`, and `file_duration` keys in the diag_manager. (#1633)
+- MOSAIC2: Fixes argument intent for `calc_mosaic_grid_area` and makes changes to the test to avoid divide-by-zero errors (#1597)
+- YAML_PARSER: Fixes incorrect argument type in c-binding causing type mismatch errors with the cray compiler (#1580)
+- BUILD(CMake): Removes usage of hardcoded `lib` directory path (#1589)
+- HORIZ_INTERP: Adds allocation checks before checking fields for `horiz_interp_type_eq` (#1584)
+- BUILD: Fixed syntax error in `column_diagnostics` Makefile.am (#1598)
+- DIAG_MANAGER: Adds a workaround for a cray compiler bug where the `NULL()` intrinsic causes a type mismatch when passed in as an argument (#1560)
+- LIBFMS: Adds missed `f2c_string` routine to libFMS.F90 (#1601)
+- BUILD(autotools): Fixes false `./configure` failures when using intel compilers and the `-warn` flag (#1583)
+- BLOCK_CONTROL: Updates non-uniform block size warning to only output on the root pe (#1588)
+- FMS2_IO: Fixes z-axis domain reads when edge lengths and corners are specified (#1620)
+- MPP: Fixes temporary array compiler warning during `mpp_init` (#1628)
+- SAT_VAPOR_PRES: Fixes bad temperature output not printing on non-root pe's (#1619)
+- ASTRONOMY: Adds allocation checks for module variables before being deallocated in `astronomy_end` (#1629)
+- TESTS: Fixes multiple unit test failures, including any failing tests when compiled with GNU debug flags (#1575, #1595, #1579, #1607, #1622)
+- TESTS: Fixes multiple compilation and runtime errors from the unit tests when compiled with the cray compiler (#1599, #1602, #1603, #1604, #1605)
+- TESTS: Replaces usage of `fms_platform.h` includes with `platform_mod` in mpp unit tests (#1616)
+- TESTS: Add workaround for ifx failures in `diag_integral` and `topography` tests (#1606)
+
+### Tag Commit Hashes
+- 2025.01-beta1  15ec0c735cba2780d3da37f4e1e3b5d4a969b4ff
+- 2025.01-alpha1 95c02333387e673c33ec66e9e78042ef4772cf3a
+
 ## [2024.03] - 2024-08-22
 
 ### Known Issues

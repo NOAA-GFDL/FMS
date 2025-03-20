@@ -99,6 +99,7 @@ private
     procedure :: allocate_diag_field_output_buffers
     procedure :: fms_diag_compare_window
     procedure :: set_time_end
+    procedure :: write_diag_manifest
 #ifdef use_yaml
     procedure :: get_diag_buffer
 #endif
@@ -154,6 +155,36 @@ subroutine fms_diag_object_init (this,diag_subset_output, time_init)
 #endif
 end subroutine fms_diag_object_init
 
+!> @brief Writes out the diag manifest file
+subroutine write_diag_manifest(this)
+  class(fmsDiagObject_type) :: this !< Diag object
+
+  integer, allocatable :: ntimes(:) !< Number of times written in each file
+  integer, allocatable :: ntiles(:) !< Number of tiles for each file domain
+  integer, allocatable :: ndistributedfiles(:)  !< Number of distributed files
+
+  integer :: i !< For looping through the files
+  integer :: nfiles !< Number of files in the diag object
+
+#ifdef use_yaml
+  nfiles = size(this%FMS_diag_files)
+  allocate(ntimes(nfiles))
+  allocate(ntiles(nfiles))
+  allocate(ndistributedfiles(nfiles))
+
+  do i = 1, size(this%FMS_diag_files)
+    ntimes(i) = this%FMS_diag_files(i)%get_num_time_levels()
+    ntiles(i) = this%FMS_diag_files(i)%get_num_tiles()
+    ndistributedfiles(i) = this%FMS_diag_files(i)%get_ndistributedfiles()
+  enddo
+  call fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
+
+#else
+  call mpp_error(FATAL, "You must compile with -Duse_yaml to call fms_diag_object%write_diag_manifest!")
+#endif
+
+end subroutine write_diag_manifest
+
 !> \description Loops through all files and does one final write.
 !! Closes all files
 !! Deallocates all buffers, fields, and files
@@ -167,11 +198,11 @@ subroutine fms_diag_object_end (this, time)
   !TODO: loop through files and force write
   if (.not. this%initialized) return
 
-  ! write output yaml
-  call fms_diag_yaml_out()
-
   call this%do_buffer_math()
   call this%fms_diag_do_io(end_time=time)
+
+  call this%write_diag_manifest()
+
   !TODO: Deallocate diag object arrays and clean up all memory
   do i=1, size(this%FMS_diag_output_buffers)
     call this%FMS_diag_output_buffers(i)%flush_buffer()

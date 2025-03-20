@@ -19,7 +19,7 @@ find_dependency(MPI COMPONENTS Fortran)
 
 # ON/OFF implies FMS was compiled with/without OpenMP
 if(@OPENMP@)
-  find_dependency(OpenMP COMPONENTS Fortran)
+  find_dependency(OpenMP COMPONENTS C Fortran)
 endif()
 
 find_dependency(NetCDF COMPONENTS C Fortran)

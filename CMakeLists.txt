@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2024.03.0
+  VERSION 2025.01.02
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -112,6 +112,7 @@ list(APPEND fms_fortran_src_files
   constants4/constantsr4.F90
   constants4/fmsconstantsr4.F90
   coupler/atmos_ocean_fluxes.F90
+  coupler/gex.F90
   coupler/coupler_types.F90
   coupler/ensemble_manager.F90
   data_override/get_grid_version.F90
