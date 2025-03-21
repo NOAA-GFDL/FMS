@@ -20,20 +20,21 @@
 
 !> @addtogroup mpp_mod
 !> @{
-subroutine MPP_GATHER_1D_(sbuf, rbuf,pelist)
+subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
 ! JWD: Did not create mpp_gather_2d because have no requirement for it
 ! JWD: See mpp_gather_2dv below
    MPP_TYPE_, dimension(:),    intent(in) :: sbuf
    MPP_TYPE_, dimension(:), intent(inout) :: rbuf
    integer,   dimension(:),    intent(in), optional :: pelist(:)
 
-   integer :: cnt, l, nproc, op_root
+   integer :: cnt, l, nproc, op_root, ierr
    integer, allocatable :: pelist2(:)
 
+   if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_GATHER_1D_: You must first call mpp_init.' )
 
-!  If pelist is provided, the first position must be
-!  the operation root
+!  If pelist is provided, the first position must be the operation root, w.r.t. new comm, op_root = 0
    if(PRESENT(pelist))then
+      if(.not.ANY(mpp_pe().eq.pelist(:))) return
       nproc = size(pelist)
       allocate(pelist2(nproc))
       pelist2 = pelist
@@ -48,17 +49,8 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf,pelist)
    if(size(rbuf(:)) < cnt*nproc) call mpp_error(FATAL, &
           "MPP_GATHER_1D_: size(rbuf) must be at least npes*size(sbuf) ")
 
-   !--- pre-post receiving
-   if(pe == op_root) then
-      rbuf(1:cnt) = sbuf
-      do l = 2, nproc
-         call mpp_recv(rbuf((l-1)*cnt+1), glen=cnt, from_pe=pelist2(l), block=.FALSE., tag=COMM_TAG_1 )
-      enddo
-   else
-      call mpp_send(sbuf(1), plen=cnt, to_pe=op_root, tag=COMM_TAG_1)
-   endif
+   call mpp_gather( sbuf, rbuf, size(sbuf), op_root, pelist2, ierr )
 
-   call mpp_sync_self(check=EVENT_RECV)
    call mpp_sync_self()
    deallocate(pelist2)
 end subroutine MPP_GATHER_1D_
@@ -70,8 +62,9 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
    integer,   dimension(:),    intent(in) :: rsize
    integer,   dimension(:),    intent(in), optional :: pelist(:)
 
-   integer :: l, nproc, pos, op_root
-   integer, allocatable :: pelist2(:)
+   integer :: l, nproc, op_root, ierr
+   integer, dimension(:), allocatable :: displs
+   integer, dimension(:), allocatable :: pelist2
 
 !  If pelist is provided, the first position must be
 !  the operation root
@@ -82,30 +75,24 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
    else
       nproc = mpp_npes()
       allocate(pelist2(nproc))
-      pelist2 = (/ (l, l=0+root_pe, nproc-1+root_pe) /)
+      pelist2 = (/ (l, l=root_pe, nproc-1+root_pe) /)
    endif
    op_root = pelist2(1)
 
+   if(pe .eq. op_root) then
+      allocate(displs(nproc))
 
-   !--- pre-post receiving
-   if (pe .eq. op_root) then
-       pos = 1
-       do l = 1,nproc   ! include op_root to simplify logic
-           if (rsize(l) == 0) then
-               cycle  ! avoid ranks with no data
-           endif
-           call mpp_recv(rbuf(pos),glen=rsize(l),from_pe=pelist2(l), &
-                         block=.FALSE.,tag=COMM_TAG_2)
-           pos = pos + rsize(l)
-       enddo
-   endif
-   if (ssize .gt. 0) then
-       call mpp_send(sbuf(1),plen=ssize,to_pe=op_root,tag=COMM_TAG_2) !avoid ranks with no data
+      displs(1) = 0
+      do l = 2, nproc
+         displs(l) = displs(l-1) + rsize(l-1)
+      enddo
    endif
 
-   call mpp_sync_self(check=EVENT_RECV)
+   call mpp_gather( sbuf, ssize, rbuf, rsize, displs, op_root, pelist2, ierr )
+
    call mpp_sync_self()
    deallocate(pelist2)
+   if(pe .eq. op_root) deallocate(displs)
 end subroutine MPP_GATHER_1DV_
 
 
