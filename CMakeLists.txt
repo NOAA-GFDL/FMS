@@ -65,7 +65,7 @@ option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"      
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
-option(USE_DEPRECATED_IO     "Enable compiler definition -Duse_deprecated_io (compile with fms_io/mpp_io)"   OFF)
+option(USE_DEPRECATED_IO     "THIS OPTION HAS BEEN DEPRECATED AND NO LONGER SUPPORTED!"   OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -103,7 +103,6 @@ list(APPEND fms_fortran_src_files
   affinity/fms_affinity.F90
   amip_interp/amip_interp.F90
   astronomy/astronomy.F90
-  axis_utils/axis_utils.F90
   axis_utils/axis_utils2.F90
   block_control/block_control.F90
   column_diagnostics/column_diagnostics.F90
@@ -151,7 +150,6 @@ list(APPEND fms_fortran_src_files
   field_manager/field_manager.F90
   field_manager/fm_util.F90
   field_manager/fm_yaml.F90
-  fms/fms_io.F90
   fms/fms.F90
   fms2_io/blackboxio.F90
   fms2_io/fms_io_utils.F90
@@ -176,7 +174,6 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_data.F90
   mpp/mpp_domains.F90
   mpp/mpp_efp.F90
-  mpp/mpp_io.F90
   mpp/mpp_memutils.F90
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
@@ -188,7 +185,6 @@ list(APPEND fms_fortran_src_files
   sat_vapor_pres/sat_vapor_pres_k.F90
   sat_vapor_pres/sat_vapor_pres.F90
   string_utils/fms_string_utils.F90
-  time_interp/time_interp_external.F90
   time_interp/time_interp_external2.F90
   time_interp/time_interp.F90
   time_manager/get_cal_time.F90
@@ -255,9 +251,8 @@ if(WITH_YAML)
 endif()
 
 if(USE_DEPRECATED_IO)
-  message( WARNING "fms_io WILL BE DEPRECATED IN A FUTURE RELEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE "
+  message( FATAL_ERROR "FMS_IO HAS BEEN DEPRECATED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE  "
                    "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS")
-  list(APPEND fms_defs use_deprecated_io)
 endif()
 
 if(INTERNAL_FILE_NML)
