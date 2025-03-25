@@ -321,7 +321,7 @@ subroutine fms_init (localcomm, alt_input_nml_path)
     call mpp_domains_init()
     call fms2_io_init()
 #ifdef use_deprecated_io
-      call mpp_error(NOTE, "fms_io_init: fms_io WILL BE DEPRECATED IN A FUTURE RELEASE! "//&
+      call mpp_error(NOTE, "fms_io_init: fms_io HAS BEEN DEPRECATED! "//&
                            "PLEASE REMOVE -Duse_deprecated_io FROM YOUR COMPILE FLAGS "// &
                            "AND MOVE TO FMS2_IO. CONTACT YOUR MODEL LIASISON IF YOU NEED "// &
                            "ASSISTANCE")
