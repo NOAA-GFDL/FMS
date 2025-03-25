@@ -37,6 +37,7 @@ program test_interpolator
 
 use mpp_mod
 use mpp_domains_mod
+use fms_mod
 use time_manager_mod
 use diag_manager_mod
 use interpolator_mod
