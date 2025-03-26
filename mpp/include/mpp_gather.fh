@@ -86,13 +86,15 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
       do l = 2, nproc
          displs(l) = displs(l-1) + rsize(l-1)
       enddo
+   else
+      allocate(displs(1))
    endif
 
    call mpp_gather( sbuf, ssize, rbuf, rsize, displs, op_root, pelist2, ierr )
 
    call mpp_sync_self()
    deallocate(pelist2)
-   if(pe .eq. op_root) deallocate(displs)
+   deallocate(displs)
 end subroutine MPP_GATHER_1DV_
 
 
