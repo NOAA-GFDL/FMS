@@ -561,13 +561,13 @@ if (use_field_table_yaml) then
   if (file_exists("field_table")) &
     call mpp_error(FATAL, "You cannot have the legacy field_table if use_field_table_yaml=.true.")
 
-  call mpp_error(NOTE, "You are using the yaml version of the field_table")
+  call mpp_error(NOTE, "field_manager_init:: You are using the yaml version of the field_table")
   call read_field_table_yaml(nfields, table_name)
 #endif
 else
   if (file_exists("field_table.yaml")) &
     call mpp_error(FATAL, "You cannot have the yaml field_table if use_field_table_yaml=.false.")
-  call mpp_error(NOTE, "You are using the legacy version of the field_table")
+  call mpp_error(NOTE, "field_manager_init:: You are using the legacy version of the field_table")
   call read_field_table_legacy(nfields, table_name)
 endif
 
