@@ -4212,9 +4212,13 @@ END FUNCTION register_static_field
     END IF
 
     if (use_modern_diag) then
+      CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'You are using the yaml version of the diag table', NOTE)
       CALL fms_diag_object%init(diag_subset_output, time_init)
     endif
    if (.not. use_modern_diag) then
+     CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'You are using the legacy version of the diag table', NOTE)
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
      IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
