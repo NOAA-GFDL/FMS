@@ -194,9 +194,9 @@ if (grid_center_bug) then
 endif
 
 if (use_data_table_yaml) then
-   call mpp_error(NOTE, "You are using YAML.")
+   call mpp_error(NOTE, "data_override_init: You are using the yaml version of the data table.")
 else
-   call mpp_error(NOTE, "You are using the legacy table.")
+   call mpp_error(NOTE, "data_override_init: You are using the legacy version of the data table.")
 end if
 
   atm_on = PRESENT(Atm_domain_in)
