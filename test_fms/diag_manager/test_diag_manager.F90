@@ -228,12 +228,8 @@ PROGRAM test
   USE mpp_domains_mod, ONLY: mpp_domains_init, mpp_domains_set_stack_size
   USE fms_mod, ONLY: fms_init, fms_end, mpp_npes, check_nml_error
   USE fms_mod, ONLY: error_mesg, FATAL, WARNING, NOTE, stdlog, stdout
+  USE fms2_io_mod, only: set_filename_appendix
   USE mpp_mod, ONLY: input_nml_file
-#ifdef use_deprecated_io
-  USE fms_io_mod, ONLY: fms_io_init, file_exist, open_file
-  USE fms_io_mod, ONLY: fms_io_exit, set_filename_appendix
-  use mpp_io_mod, only: mpp_io_init
-#endif
   USE constants_mod, ONLY: constants_init, PI, RAD_TO_DEG
 
   USE time_manager_mod, ONLY: time_type, set_calendar_type, set_date, decrement_date, OPERATOR(+), set_time
@@ -374,15 +370,6 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
     else
         call mpp_domains_init()
     endif
-
-   !Initialize the mpp_io module.
-#ifdef use_deprecated_io
-    if (debug) then
-        call mpp_io_init(MPP_DEBUG)
-    else
-        call mpp_io_init()
-    endif
-#endif
 
    !Set the mpp and mpp_domains stack sizes.
     call mpp_set_stack_size(stackmax)
@@ -547,9 +534,7 @@ SELECT CASE ( test_number ) ! Closes just before the CONTAINS block.
 
   IF ( test_number == 16 ) THEN
      ! Test 16 tests the filename appendix
-#ifdef use_deprecated_io
      CALL set_filename_appendix('g01')
-#endif
   END IF
   id_dat1 = register_diag_field('test_diag_manager_mod', 'dat1', (/id_lon1,id_lat1,id_pfull/), Time, 'sample data','K')
   IF ( test_number == 18 ) THEN
