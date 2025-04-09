@@ -22,7 +22,10 @@ if(@OPENMP@)
   find_dependency(OpenMP COMPONENTS C Fortran)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 find_dependency(NetCDF COMPONENTS C Fortran)
+list(REMOVE_ITEM CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+
 
 set(FMSVersion "${PACKAGE_VERSION}")
 set_and_check(FMS_INSTALL_PREFIX "${PACKAGE_PREFIX_DIR}")
