@@ -47,9 +47,6 @@ program test
  use   mpp_domains_mod, only: domain2d, mpp_define_domains, mpp_define_io_domain, mpp_get_compute_domain, &
                            &  mpp_define_layout
  use           fms_mod, only: fms_init, fms_end, mpp_npes, check_nml_error, error_mesg, FATAL
-#ifdef use_deprecated_io
- use           fms_mod, only:   field_exist, field_size, file_exist
-#endif
  use  fms_affinity_mod, only: fms_affinity_set
  use       fms2_io_mod, only: read_data, variable_exists, get_variable_size, FmsNetcdfFile_t, open_file
  use     constants_mod, only: constants_init, pi
