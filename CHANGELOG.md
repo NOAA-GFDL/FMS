@@ -10,7 +10,7 @@ sequential patch number (starting from `01`).
 
 ### Known Issues
 - INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
-- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
 - BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
 - GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
 
@@ -20,7 +20,7 @@ sequential patch number (starting from `01`).
 - GENERIC_EXCHANGE: Adds a new "gex" module to the `coupler` subdirectory to provide a generic interface to pass (non-tracer) diagnostic fields across components. (#1637)
 
 ### Changed
-- MPP: Optimized `mpp_gather` and `mpp_scatter` interfaces by leveraging native MPI collectives in `mpp_pelist_scatter` and `mpp_gather_1D(\_V)` routines. (#1655)
+- MPP: Optimized `mpp_gather` and `mpp_scatter` interfaces by leveraging native MPI collectives in `mpp_pelist_scatter` and `mpp_gather_1D(_V)` routines. (#1655)
 - DIAG_MANAGER: `diag_out.yaml` output file has been renamed to `diag_manifest` and will include the root PE number and ensemble number. ie: `diag_manifest.yaml.0` or `diag_manager.ens_01.yaml.0` when using an ensemble. (#1661) (#1654) (#1646)
 - EXCHANGE: Increased max number of fields for exchange grid from 80 to 100 (#1637)
 - DATA_OVERRIDE: Initializes both r4 and r8 versions of the module by default if no `mode` argument is given to specialize a specific real size.(#1638)
