@@ -6,6 +6,39 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2025.02] - 2025-04-17
+
+### Known Issues
+- INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- YAML SUPPORT: Messages indicating which table format being used (yaml or legacy) will now be output by the `diag_manager`, `field_manager`, and `data_override` modules. (#1676)
+- DIAG_MANAGER: Adds the number of tiles, number of distributed files, and number of time levels written for a given file to the output diag manifest yaml file. (#1661) + (#1648)
+- GENERIC_EXCHANGE: Adds a new "gex" module to the `coupler` subdirectory to provide a generic interface to pass (non-tracer) diagnostic fields across components. (#1637)
+
+### Changed
+- MPP: Optimized `mpp_gather` and `mpp_scatter` interfaces by leveraging native MPI collectives in `mpp_pelist_scatter` and `mpp_gather_1D(\_V)` routines. (#1655)
+- DIAG_MANAGER: `diag_out.yaml` output file has been renamed to `diag_manifest` and will include the root PE number and ensemble number. ie: `diag_manifest.yaml.0` or `diag_manager.ens_01.yaml.0` when using an ensemble. (#1661) (#1654) (#1646)
+- EXCHANGE: Increased max number of fields for exchange grid from 80 to 100 (#1637)
+- DATA_OVERRIDE: Initializes both r4 and r8 versions of the module by default if no `mode` argument is given to specialize a specific real size.(#1638)
+
+### Fixed
+- MPP: Errors from unallocated data on non-root pes in mpp_scatter/gather routines. (#1672)
+- DIAG_MANAGER(legacy): Bug with instantaneous output variables where incorrect time steps would be output when using intervals larger than the physics timestep of 30 minutes. (#1667)
+- DIAG_MANAGER: Issue causing an extra unlimited dimension to be written out in history files when mixing static and non-static variables.(#1668)
+- CMAKE BUILD: Fixes missing "C" component for OpenMP libraries in FMS export configuration file (#1663)
+
+### Removed
+- FIELD_MANAGER: Removed public declarations for routines that are already included in public interfaces. (#1317)
+
+### Tag Commit Hashes
+- 2025.02-beta2  e8b8c19c5d67b35440acc10b3180f535e3c6e7d6
+- 2025.02-beta1  2df70639e371ab8d11edbbfed937951ad4e97c9d
+- 2025.02-alpha1 71957e9d79fbd832c4e25ee452eb211669e0df1d
+
 ## [2025.01.02] - 2025-03-06
 
 ### Known Issues
