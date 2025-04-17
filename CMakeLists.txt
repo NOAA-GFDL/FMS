@@ -30,12 +30,12 @@ project(FMS
 
 include(GNUInstallDirs)
 
-if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
+if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel|DebugUFS)$")
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE
       "Release"
       CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "DebugUFS")
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang|IntelLLVM)$")
@@ -212,6 +212,7 @@ list(APPEND fms_c_src_files
   parser/yaml_parser_binding.c
   parser/yaml_output_functions.c
   string_utils/fms_string_utils_binding.c
+  test_fms/fms/test_fmsC.c # TODO just easier to lump this with the rest of the C src
 )
 
 # Collect FMS header files
@@ -405,6 +406,7 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tridiagonal/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amip_interp/include>)
 
+  set(moduleDir "${CMAKE_CURRENT_BINARY_DIR}/${includeDir}")
   target_include_directories(${libTgt} INTERFACE
     $<BUILD_INTERFACE:${moduleDir}>
     $<INSTALL_INTERFACE:${includeDir}>)
@@ -434,6 +436,97 @@ install(
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+### Unit Testing
+include(CTest)
+
+# parse and add build info to test script util functions (test-lib-cmake.sh.in)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib-cmake.sh.in ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib.sh
+               @ONLY)
+
+# single test for reference
+#add_executable(test_mpp test_fms/mpp/test_mpp.F90)
+#target_link_libraries(test_mpp FMS::fms_r4)
+#target_include_directories(test_mpp PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include_r4)
+#add_test(NAME test_mpp
+#         COMMAND test_mpp2.sh
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mpp)
+
+
+# first we need to build any helper modules that are used by unit tests
+list(APPEND TEST_MODS_SRC
+  test_fms/diag_manager/testing_utils.F90
+  test_fms/fms/test_fms.F90
+  test_fms/fms2_io/argparse.F90
+  test_fms/fms2_io/setup.F90
+  test_fms/mosaic2/write_files.F90
+  test_fms/mpp/compare_data_checksums.F90
+  test_fms/mpp/compare_data_checksums_int.F90
+  test_fms/mpp/fill_halo.F90
+  test_fms/mpp/test_domains_utility_mod.F90
+  test_fms/mpp/test_mpp_update_domains_int.F90
+  test_fms/mpp/test_mpp_update_domains_real.F90
+  test_fms/mpp/test_system_clock.F90) 
+
+
+add_library(testLibs "${TEST_MODS_SRC}")
+target_link_libraries(testLibs FMS::fms_r4)
+target_compile_definitions(testLibs PRIVATE TEST_MOS_KIND_=r8_kind)
+target_include_directories(testLibs PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include_r4
+                                    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/include
+                                    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/include
+                                    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
+                                    PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+set_target_properties(testLibs PROPERTIES Fortran_MODULE_DIRECTORY
+                                               ${moduleDir})
+
+# find any test source files and compile them
+file(GLOB_RECURSE TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/*/*.F90)
+foreach (testFile ${TEST_SRC})
+  get_filename_component (TName ${testFile} NAME_WE)
+
+  add_executable(${TName} ${testFile})
+  # openmp/ mpi ?
+  target_link_libraries(${TName} PUBLIC FMS::fms_r4
+   
+                                 PRIVATE testLibs)
+
+  set_target_properties(${TName} PROPERTIES Fortran_MODULE_DIRECTORY
+                                               ${moduleDir})
+  target_include_directories(${TName} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include_r4
+                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/include
+                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/include
+                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
+                                       PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+  # TODO we'll need to compile the tests with both precisions and change the executable names accordingly
+  # this is just to get the compile working
+  target_compile_definitions(${TName} PRIVATE TEST_MOS_KIND_=r8_kind
+                                     PRIVATE AU_TEST_KIND_=r8_kind
+                                     PRIVATE FMS_TEST_BC_TYPE_=bc
+                                     PRIVATE FMS_CP_TEST_KIND_=r8_kind
+                                     PRIVATE DO_TEST_KIND_=r8_kind
+                                     PRIVATE HI_TEST_KIND_=r8_kind
+                                     PRIVATE MO_TEST_KIND_=r8_kind
+                                     PRIVATE TEST_AST_KIND_=r8_kind
+                                     PRIVATE TEST_CD_KIND_=r8_kind
+                                     PRIVATE TI_TEST_KIND_=r8_kind
+                                     PRIVATE TEST_SVP_KIND_=r8_kind
+                                     PRIVATE TEST_TOP_KIND_=r8_kind
+                                     PRIVATE TEST_INTP_KIND_=r8_kind
+                                     PRIVATE TEST_FM_KIND_=r8_kind
+                                     PRIVATE TEST_RN_KIND_=r8_kind
+                                     PRIVATE TEST_DI_KIND_=r8_kind
+                                     PRIVATE TEST_TM_KIND_=r8_kind)
+endforeach ()
+
+# TODO find any test scripts and run them 
+#file(GLOB_RECURSE TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/*/*.sh)
+#foreach (testScript ${TEST_SCRIPTS})
+#  get_filename_component(TSName ${testScript} NAME_WE)
+#  get_
+#endforeach()
+
+
 
 ### Package config
 include(CMakePackageConfigHelpers)
