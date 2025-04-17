@@ -54,12 +54,103 @@ module drifters_io_mod
      integer              :: ncid
      integer              :: nc_positions, nc_fields, nc_ids, nc_time, nc_index_time
      logical              :: enddef
+   contains
+     procedure :: get_time
+     procedure :: get_it
+     procedure :: get_it_id
+     procedure :: get_ncid
+     procedure :: get_nc_positions
+     procedure :: get_nc_fields
+     procedure :: get_nc_ids
+     procedure :: get_nc_time
+     procedure :: get_nc_index_time
+     procedure :: get_enddef
   end type drifters_io_type
 !> @addtogroup drifters_io_mod
 !> @{
 contains
 
 !###############################################################################
+  function get_time(this) result(time)
+    class(drifters_io_type) :: this
+    real                    :: time
+
+    time = this%time
+
+  end function get_time
+
+  function get_it(this) result(it)
+    class(drifters_io_type) :: this
+    integer                 :: it
+
+    it = this%it
+
+  end function get_it
+
+  function get_it_id(this) result(it_id)
+    class(drifters_io_type) :: this
+    integer                 :: it_id
+
+    it_id = this%it_id
+
+  end function get_it_id
+
+  function get_ncid(this) result(ncid)
+    class(drifters_io_type) :: this
+    integer                 :: ncid
+
+    ncid = this%ncid
+
+  end function get_ncid
+
+  function get_nc_positions(this) result(nc_positions)
+    class(drifters_io_type) :: this
+    integer                 :: nc_positions
+
+    nc_positions = this%nc_positions
+
+  end function get_nc_positions
+
+  function get_nc_fields(this) result(nc_fields)
+    class(drifters_io_type) :: this
+    integer                 :: nc_fields
+
+    nc_fields = this%nc_fields
+
+  end function get_nc_fields
+
+  function get_nc_ids(this) result(nc_ids)
+    class(drifters_io_type) :: this
+    integer                 :: nc_ids
+
+    nc_ids = this%nc_ids
+
+  end function get_nc_ids
+
+  function get_nc_time(this) result(nc_time)
+    class(drifters_io_type) :: this
+    integer                 :: nc_time
+
+    nc_time = this%nc_time
+
+  end function get_nc_time
+
+  function get_nc_index_time(this) result(nc_index_time)
+    class(drifters_io_type) :: this
+    integer                 :: nc_index_time
+
+    nc_index_time = this%nc_index_time
+
+  end function get_nc_index_time
+
+  function get_nc_enddef(this) result(nc_enddef)
+    class(drifters_io_type) :: this
+    logical                 :: nc_enddef
+
+    nc_enddef = this%nc_enddef
+
+  end function get_nc_enddef
+
   subroutine drifters_io_new(self, filename, nd, nf, ermesg)
     type(drifters_io_type)        :: self
     character(len=*), intent(in)  :: filename
