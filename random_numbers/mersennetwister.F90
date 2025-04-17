@@ -116,6 +116,9 @@ module MersenneTwister_mod
   type randomNumberSequence
     integer                            :: currentElement ! = blockSize
     integer, dimension(0:blockSize -1) :: state ! = 0
+   contains
+    procedure :: get_currentElement
+    procedure :: get_state
   end type randomNumberSequence
 
   !> @ingroup mersennetwister_mod
@@ -130,6 +133,19 @@ module MersenneTwister_mod
 !> @{
 ! -------------------------------------------------------------
 contains
+  function get_currentElement(this) result(currentElement)
+    class(randomNumberSequence) :: this
+    integer                     :: currentElement
+
+    currentElement = this%currentElement
+  end function get_currentElement
+
+  function get_state(this) result(state)
+    class(randomNumberSequence)       :: this
+    integer, dimension(0:blockSize-1) :: state
+
+    state = this%state
+  end function get_state
   ! -------------------------------------------------------------
   ! Private functions
   ! ---------------------------
