@@ -26,6 +26,7 @@ program test_create_xgrid_order2
 
   use horiz_interp_mod
   use constants_mod, only: DEG_TO_RAD
+  use platform_mod
   implicit none
 
   integer, parameter :: lkind = HI_TEST_KIND_

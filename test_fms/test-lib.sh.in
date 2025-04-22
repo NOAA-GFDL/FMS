@@ -26,8 +26,8 @@
 # Thank you Junio.
 
 # Useful locations
-top_srcdir='@abs_top_srcdir@'
-top_buildir='@abs_top_builddir@'
+top_srcdir='@abs_top_srcdir@@CMAKE_CURRENT_SOURCE_DIR@'
+top_buildir='@abs_top_builddir@@CMAKE_CURRENT_SOURCE_DIR@'
 
 TEST_NAME="$(basename "$0" .sh)"
 TEST_NUMBER="${TEST_NAME%%-*}"

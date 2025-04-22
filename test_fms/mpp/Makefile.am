@@ -37,7 +37,7 @@ check_PROGRAMS = test_mpp \
   test_mpp_print_memuse_stats_file \
   test_mpp_memutils_begin_2x \
   test_mpp_memutils_end_before_begin \
-  test_read_ascii_file \
+  test_mpp_read_ascii_file \
   test_read_input_nml \
   test_stdout \
   test_stderr \
@@ -87,7 +87,7 @@ test_mpp_print_memuse_stats_stderr_SOURCES = test_mpp_print_memuse_stats_stderr.
 test_mpp_print_memuse_stats_file_SOURCES = test_mpp_print_memuse_stats_file.F90
 test_mpp_memutils_begin_2x_SOURCES = test_mpp_memutils_begin_2x.F90
 test_mpp_memutils_end_before_begin_SOURCES = test_mpp_memutils_end_before_begin.F90
-test_read_ascii_file_SOURCES = test_read_ascii_file.F90
+test_read_ascii_file_SOURCES = test_mpp_read_ascii_file.F90
 test_read_input_nml_SOURCES = test_read_input_nml.F90
 test_stdout_SOURCES = test_stdout.F90
 test_stderr_SOURCES = test_stderr.F90

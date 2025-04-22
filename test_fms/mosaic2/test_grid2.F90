@@ -21,8 +21,6 @@
 !! with C1 tiles where tiles 1-6 are identical.  The tile points are made up with
 !! values that result in simple answers.  See write_files module for grid details.
 
-#include "write_files.inc" !> including write_files.mod because I don't know how to compile when write_files.mod is
-                           !! in a separate file.
 program test_mosaic
 
 use mpp_mod,      only : mpp_init, mpp_error, FATAL, mpp_npes, mpp_pe, mpp_root_pe

@@ -440,8 +440,11 @@ install(
 ### Unit Testing
 include(CTest)
 
+# TODO set these like autotools
+set(MPI_LAUNCHER "mpirun")
+
 # parse and add build info to test script util functions (test-lib-cmake.sh.in)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib-cmake.sh.in ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib.sh
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib.sh.in ${CMAKE_CURRENT_SOURCE_DIR}/test-lib.sh
                @ONLY)
 
 # single test for reference
@@ -466,7 +469,7 @@ list(APPEND TEST_MODS_SRC
   test_fms/mpp/test_domains_utility_mod.F90
   test_fms/mpp/test_mpp_update_domains_int.F90
   test_fms/mpp/test_mpp_update_domains_real.F90
-  test_fms/mpp/test_system_clock.F90) 
+  test_fms/mpp/test_system_clock.F90)
 
 
 add_library(testLibs "${TEST_MODS_SRC}")
@@ -488,7 +491,7 @@ foreach (testFile ${TEST_SRC})
   add_executable(${TName} ${testFile})
   # openmp/ mpi ?
   target_link_libraries(${TName} PUBLIC FMS::fms_r4
-   
+
                                  PRIVATE testLibs)
 
   set_target_properties(${TName} PROPERTIES Fortran_MODULE_DIRECTORY
@@ -519,12 +522,18 @@ foreach (testFile ${TEST_SRC})
                                      PRIVATE TEST_TM_KIND_=r8_kind)
 endforeach ()
 
-# TODO find any test scripts and run them 
-#file(GLOB_RECURSE TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/*/*.sh)
-#foreach (testScript ${TEST_SCRIPTS})
-#  get_filename_component(TSName ${testScript} NAME_WE)
-#  get_
-#endforeach()
+
+# find any test scripts and run them
+file(GLOB_RECURSE TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mpp/*.sh)
+#list(FILTER ${TEST_SCRIPTS} EXCLUDE REGEX "test-lib*")
+#list(FILTER ${TEST_SCRIPTS} EXCLUDE REGEX "tap-driver.*")
+
+foreach (testScript ${TEST_SCRIPTS})
+  get_filename_component(testName ${testScript} NAME_WE)
+  add_test(NAME ${testName}
+           COMMAND ${testScript}
+           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endforeach()
 
 
 
