@@ -124,16 +124,16 @@ module coupler_types_mod
       procedure :: get_num_fields
       procedure :: get_flux_type
       procedure :: get_implementation
-      procedure :: get_flag
+      procedure :: get_flag,               has_flag
       procedure :: get_atm_tr_index
       procedure :: get_ice_restart_file
       procedure :: get_ocean_restart_file
-      !procedure :: get_rest_type
-      procedure :: get_fms2_io_rest_type
+      !procedure :: get_rest_type,          has_rest_type
+      procedure :: get_fms2_io_rest_type,  has_fms2_io_rest_type
       procedure :: get_use_atm_pressure
       procedure :: get_use_10m_wind_speed
       procedure :: get_pass_through_ice
-      procedure :: get_param
+      procedure :: get_param,              has_param
       procedure :: get_mol_wt
   end type coupler_field_type
 
@@ -154,6 +154,7 @@ module coupler_types_mod
                                            !! should be changed to allocatable
    contains
     procedure :: get_values => get_values_3d_r8
+    procedure :: has_values => has_values_3d_r8
   end type coupler_3d_real8_values_type
 
   !> Coupler data for 3D fields
@@ -162,6 +163,7 @@ module coupler_types_mod
     type(coupler_3d_real8_values_type), pointer, dimension(:) :: field => NULL() !< field
    contains
     procedure :: get_field => get_field_3d_r8
+    procedure :: has_field => has_field_3d_r8
   end type coupler_3d_real8_field_type
 
   !> Coupler data for 3D values
@@ -172,6 +174,7 @@ module coupler_types_mod
                                            !! should be changed to allocatable
    contains
     procedure :: get_values => get_values_3d_r4
+    procedure :: has_values => has_values_3d_r4
   end type coupler_3d_real4_values_type
 
   !> Coupler data for 3D fields
@@ -180,6 +183,7 @@ module coupler_types_mod
     type(coupler_3d_real4_values_type), pointer, dimension(:) :: field => NULL() !< field
    contains
     procedure :: get_field => get_field_3d_r4
+    procedure :: has_field => has_field_3d_r4
   end type coupler_3d_real4_field_type
 
   !> Coupler data for 3D boundary conditions
@@ -193,15 +197,17 @@ module coupler_types_mod
     integer    :: ks, ke              !< The k-direction index ranges for this type
    contains
     procedure :: get_bc => get_bc_3d
+    procedure :: has_bc => has_bc_3d
     procedure :: get_bc_r4 => get_bc_r4_3d
-    procedure :: get_isd
-    procedure :: get_isc
-    procedure :: get_iec
-    procedure :: get_ied
-    procedure :: get_jsd
-    procedure :: get_jsc
-    procedure :: get_jec
-    procedure :: get_jed
+    procedure :: has_bc_r4 => has_bc_r4_3d
+    procedure :: get_isd => get_isd_3d
+    procedure :: get_isc => get_isc_3d
+    procedure :: get_iec => get_iec_3d
+    procedure :: get_ied => get_ied_3d
+    procedure :: get_jsd => get_jsd_3d
+    procedure :: get_jsc => get_jsc_3d
+    procedure :: get_jec => get_jec_3d
+    procedure :: get_jed => get_jed_3d
     procedure :: get_ks
     procedure :: get_ke
   end type coupler_3d_bc_type
@@ -215,6 +221,7 @@ module coupler_types_mod
                                            !! should be changed to allocatable
    contains
     procedure :: get_values => get_values_2d_r8
+    procedure :: has_values => has_values_2d_r8
   end type coupler_2d_real8_values_type
 
   !> Coupler data for 2D fields
@@ -223,6 +230,7 @@ module coupler_types_mod
     type(coupler_2d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
    contains
     procedure :: get_field => get_field_2d_r8
+    procedure :: has_field => has_field_2d_r8
   end type coupler_2d_real8_field_type
 
   !> Coupler data for 2D values
@@ -233,6 +241,7 @@ module coupler_types_mod
                                            !! should be changed to allocatable
    contains
     procedure :: get_values => get_values_2d_r4
+    procedure :: has_values => has_values_2d_r4
   end type coupler_2d_real4_values_type
 
   !> Coupler data for 2D fields
@@ -241,6 +250,7 @@ module coupler_types_mod
     type(coupler_2d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
    contains
     procedure :: get_field => get_field_2d_r4
+    procedure :: has_field => has_field_2d_r4
   end type coupler_2d_real4_field_type
 
   !> Coupler data for 2D boundary conditions
@@ -254,15 +264,17 @@ module coupler_types_mod
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
    contains
     procedure :: get_bc => get_bc_2d
+    procedure :: has_bc => has_bc_2d
     procedure :: get_bc_r4 => get_bc_r4_2d
-    procedure :: get_isd
-    procedure :: get_isc
-    procedure :: get_iec
-    procedure :: get_ied
-    procedure :: get_jsd
-    procedure :: get_jsc
-    procedure :: get_jec
-    procedure :: get_jed
+    procedure :: has_bc_r4 => has_bc_r4_2d
+    procedure :: get_isd => get_isd_2d
+    procedure :: get_isc => get_isc_2d
+    procedure :: get_iec => get_iec_2d
+    procedure :: get_ied => get_ied_2d
+    procedure :: get_jsd => get_jsd_2d
+    procedure :: get_jsc => get_jsc_2d
+    procedure :: get_jec => get_jec_2d
+    procedure :: get_jed => get_jed_2d
   end type coupler_2d_bc_type
 
   !> Coupler data for 1D values
@@ -271,6 +283,7 @@ module coupler_types_mod
     real(r8_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
    contains
     procedure :: get_values => get_values_1d_r8
+    procedure :: has_values => has_values_1d_r8
   end type coupler_1d_real8_values_type
 
   !> Coupler data for 1D fields
@@ -279,6 +292,7 @@ module coupler_types_mod
     type(coupler_1d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
    contains
     procedure :: get_field => get_field_1d_r8
+    procedure :: has_field => has_field_1d_r8
   end type coupler_1d_real8_field_type
 
   !> Coupler data for 1D values
@@ -287,6 +301,7 @@ module coupler_types_mod
     real(r4_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
    contains
     procedure :: get_values => get_values_1d_r4
+    procedure :: has_values => has_values_1d_r4
   end type coupler_1d_real4_values_type
 
   !> Coupler data for 1D fields
@@ -295,6 +310,7 @@ module coupler_types_mod
     type(coupler_1d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
    contains
      procedure :: get_field => get_field_1d_r4
+     procedure :: has_field => has_field_1d_r4
  end type coupler_1d_real4_field_type
 
   !> Coupler data for 1D boundary conditions
@@ -306,7 +322,9 @@ module coupler_types_mod
                                                                        !! condition fields
    contains
     procedure :: get_bc => get_bc_1d
+    procedure :: has_bc => has_bc_1d
     procedure :: get_bc_r4 => get_bc_r4_1d
+    procedure :: has_bc_r4 => has_bc_r4_1d
   end type coupler_1d_bc_type
 
   !> @addtogroup coupler_types_mod
@@ -461,6 +479,13 @@ contains
     bc_ptr => this%bc(bc_idx)
   end function get_bc_3d
 
+  function has_bc_3d(this) result(has)
+    class(coupler_3d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc)
+  end function has_bc_3d
+
   function get_bc_r4_3d(this, bc_idx) result(bc_ptr)
     class(coupler_3d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -468,6 +493,13 @@ contains
 
     bc_ptr => this%bc_r4(bc_idx)
   end function get_bc_r4_3d
+
+  function has_bc_r4_3d(this) result(has)
+    class(coupler_3d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc_r4)
+  end function has_bc_r4_3d
 
   function get_bc_2d(this, bc_idx) result(bc_ptr)
     class(coupler_2d_bc_type),      intent(in) :: this
@@ -477,6 +509,13 @@ contains
     bc_ptr => this%bc(bc_idx)
   end function get_bc_2d
 
+  function has_bc_2d(this) result(has)
+    class(coupler_2d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc)
+  end function has_bc_2d
+
   function get_bc_r4_2d(this, bc_idx) result(bc_ptr)
     class(coupler_2d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -484,6 +523,13 @@ contains
 
     bc_ptr => this%bc_r4(bc_idx)
   end function get_bc_r4_2d
+
+  function has_bc_r4_2d(this) result(has)
+    class(coupler_2d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc_r4)
+  end function has_bc_r4_2d
 
   function get_bc_1d(this, bc_idx) result(bc_ptr)
     class(coupler_1d_bc_type),      intent(in) :: this
@@ -493,6 +539,13 @@ contains
     bc_ptr => this%bc(bc_idx)
   end function get_bc_1d
 
+  function has_bc_1d(this) result(has)
+    class(coupler_1d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc)
+  end function has_bc_1d
+
   function get_bc_r4_1d(this, bc_idx) result(bc_ptr)
     class(coupler_1d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -501,101 +554,124 @@ contains
     bc_ptr => this%bc_r4(bc_idx)
   end function get_bc_r4_1d
 
-  function get_isd(this) result(isd)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: isd
+  function has_bc_r4_1d(this) result(has)
+    class(coupler_1d_bc_type),      intent(in) :: this
+    logical                                    :: has
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       isd = this%isd
-    TYPE IS(coupler_2d_bc_type)
-       isd = this%isd
-    END SELECT
-  end function get_isd
+    has = associated(this%bc_r4)
+  end function has_bc_r4_1d
 
-  function get_isc(this) result(isc)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: isc
+  function get_isd_2d(this) result(isd)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: isd
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       isc = this%isc
-    TYPE IS(coupler_2d_bc_type)
-       isc = this%isc
-    END SELECT
-  end function get_isc
+    isd = this%isd
+  end function get_isd_2d
 
-  function get_ied(this) result(ied)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: ied
+  function get_isd_3d(this) result(isd)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: isd
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       ied = this%ied
-    TYPE IS(coupler_2d_bc_type)
-       ied = this%ied
-    END SELECT
-  end function get_ied
+    isd = this%isd
+  end function get_isd_3d
 
-  function get_iec(this) result(iec)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: iec
+  function get_isc_2d(this) result(isc)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: isc
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       iec = this%iec
-    TYPE IS(coupler_2d_bc_type)
-       iec = this%iec
-    END SELECT
-  end function get_iec
+    isc = this%isc
+  end function get_isc_2d
 
-  function get_jsd(this) result(jsd)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: jsd
+  function get_isc_3d(this) result(isc)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: isc
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       jsd = this%jsd
-    TYPE IS(coupler_2d_bc_type)
-       jsd = this%jsd
-    END SELECT
-  end function get_jsd
+    isc = this%isc
+  end function get_isc_3d
 
-  function get_jsc(this) result(jsc)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: jsc
+  function get_ied_2d(this) result(ied)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: ied
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       jsc = this%jsc
-    TYPE IS(coupler_2d_bc_type)
-       jsc = this%jsc
-    END SELECT
-  end function get_jsc
+    ied = this%ied
+  end function get_ied_2d
 
-  function get_jed(this) result(jed)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: jed
+  function get_ied_3d(this) result(ied)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: ied
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       jed = this%jed
-    TYPE IS(coupler_2d_bc_type)
-       jed = this%jed
-    END SELECT
-  end function get_jed
+    ied = this%ied
+  end function get_ied_3d
 
-  function get_jec(this) result(jec)
-    class(coupler_bc_type), intent(in) :: this
-    integer                            :: jec
+  function get_iec_2d(this) result(iec)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: iec
 
-    SELECT TYPE(this)
-    TYPE IS(coupler_1d_bc_type)
-       jec = this%jec
-    TYPE IS(coupler_2d_bc_type)
-       jec = this%jec
-    END SELECT
-  end function get_jec
+    iec = this%iec
+  end function get_iec_2d
+
+  function get_iec_3d(this) result(iec)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: iec
+
+    iec = this%iec
+  end function get_iec_3d
+
+  function get_jsd_2d(this) result(jsd)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jsd
+
+    jsd = this%jsd
+  end function get_jsd_2d
+
+  function get_jsd_3d(this) result(jsd)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jsd
+
+    jsd = this%jsd
+  end function get_jsd_3d
+
+  function get_jsc_2d(this) result(jsc)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jsc
+
+    jsc = this%jsc
+  end function get_jsc_2d
+
+  function get_jsc_3d(this) result(jsc)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jsc
+
+    jsc = this%jsc
+  end function get_jsc_3d
+
+  function get_jed_2d(this) result(jed)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jed
+
+    jed = this%jed
+  end function get_jed_2d
+
+  function get_jed_3d(this) result(jed)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jed
+
+    jed = this%jed
+  end function get_jed_3d
+
+  function get_jec_2d(this) result(jec)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jec
+
+    jec = this%jec
+  end function get_jec_2d
+
+  function get_jec_3d(this) result(jec)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jec
+
+    jec = this%jec
+  end function get_jec_3d
 
   function get_ks(this) result(ks)
     class(coupler_3d_bc_type), intent(in) :: this
@@ -667,6 +743,13 @@ contains
     flag_ptr => this%flag
   end function get_flag
 
+  function has_flag(this) result(has)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: has
+
+    has = associated(this%flag)
+  end function has_flag
+
   !> @brief Gets atm_tr_index for coupler_field_type
   function get_atm_tr_index(this) result(atm_tr_index)
     class(coupler_field_type), intent(in) :: this
@@ -698,6 +781,13 @@ contains
 
     fms2_io_rest_type_ptr => this%fms2_io_rest_type
   end function get_fms2_io_rest_type
+
+  function has_fms2_io_rest_type(this) result(has)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: has
+
+    has = associated(this%fms2_io_rest_type)
+  end function has_fms2_io_rest_type
 
   !> @brief Gets use_atm_pressure for coupler_field_type
   function get_use_atm_pressure(this) result(use_atm_pressure)
@@ -731,6 +821,13 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_3d_r8
 
+  function has_field_3d_r8(this) result(has)
+    class(coupler_3d_real8_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_3d_r8
+
   function get_field_3d_r4(this, field_idx) result(field_ptr)
     class(coupler_3d_real4_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -738,6 +835,13 @@ contains
 
     field_ptr => this%field(field_idx)
   end function get_field_3d_r4
+
+  function has_field_3d_r4(this) result(has)
+    class(coupler_3d_real4_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_3d_r4
 
   function get_field_2d_r8(this, field_idx) result(field_ptr)
     class(coupler_2d_real8_field_type), intent(in) :: this
@@ -747,6 +851,13 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_2d_r8
 
+  function has_field_2d_r8(this) result(has)
+    class(coupler_2d_real8_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_2d_r8
+
   function get_field_2d_r4(this, field_idx) result(field_ptr)
     class(coupler_2d_real4_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -754,6 +865,13 @@ contains
 
     field_ptr => this%field(field_idx)
   end function get_field_2d_r4
+
+  function has_field_2d_r4(this) result(has)
+    class(coupler_2d_real4_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_2d_r4
 
   function get_field_1d_r8(this, field_idx) result(field_ptr)
     class(coupler_1d_real8_field_type), intent(in) :: this
@@ -763,6 +881,13 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_1d_r8
 
+  function has_field_1d_r8(this) result(has)
+    class(coupler_1d_real8_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_1d_r8
+
   function get_field_1d_r4(this, field_idx) result(field_ptr)
     class(coupler_1d_real4_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -771,6 +896,13 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_1d_r4
 
+  function has_field_1d_r4(this) result(has)
+    class(coupler_1d_real4_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_1d_r4
+
   !> @brief Gets param for coupler_field_type
   function get_param(this) result(param_ptr)
     class(coupler_field_type), intent(in) :: this
@@ -778,6 +910,13 @@ contains
 
     param_ptr => this%param
   end function get_param
+
+  function has_param(this) result(has)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: has
+
+    has = associated(this%param)
+  end function has_param
 
   !> @brief Gets mol_wt for coupler_field_type
   function get_mol_wt(this) result(mol_wt)
@@ -866,6 +1005,13 @@ contains
     values = this%values
   end function get_values_3d_r8
 
+  function has_values_3d_r8(this) result(has)
+    class(coupler_3d_real8_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_3d_r8
+
   function get_values_3d_r4(this) result(values)
     class(coupler_3d_real4_values_type), intent(in) :: this
     real(r4_kind), dimension(:,:,:), allocatable    :: values
@@ -881,6 +1027,13 @@ contains
     values = this%values
   end function get_values_3d_r4
 
+  function has_values_3d_r4(this) result(has)
+    class(coupler_3d_real4_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_3d_r4
+
   function get_values_2d_r8(this) result(values)
     class(coupler_2d_real8_values_type), intent(in) :: this
     real(r8_kind), dimension(:,:), allocatable      :: values
@@ -894,6 +1047,13 @@ contains
 
     values = this%values
   end function get_values_2d_r8
+
+  function has_values_2d_r8(this) result(has)
+    class(coupler_2d_real8_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_2d_r8
 
   function get_values_2d_r4(this) result(values)
     class(coupler_2d_real4_values_type), intent(in) :: this
@@ -909,6 +1069,13 @@ contains
     values = this%values
   end function get_values_2d_r4
 
+  function has_values_2d_r4(this) result(has)
+    class(coupler_2d_real4_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_2d_r4
+
   function get_values_1d_r8(this) result(values)
     class(coupler_1d_real8_values_type), intent(in) :: this
     real(r8_kind), dimension(:), allocatable        :: values
@@ -922,6 +1089,13 @@ contains
     values = this%values
   end function get_values_1d_r8
 
+  function has_values_1d_r8(this) result(has)
+    class(coupler_1d_real8_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_1d_r8
+
   function get_values_1d_r4(this) result(values)
     class(coupler_1d_real4_values_type), intent(in) :: this
     real(r4_kind), dimension(:), allocatable        :: values
@@ -934,6 +1108,13 @@ contains
 
     values = this%values
   end function get_values_1d_r4
+
+  function has_values_1d_r4(this) result(has)
+    class(coupler_1d_real4_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_1d_r4
 
   !> @brief Initialize the coupler types
   subroutine coupler_types_init
