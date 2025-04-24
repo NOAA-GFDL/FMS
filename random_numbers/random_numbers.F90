@@ -39,9 +39,7 @@ module random_numbers_mod
   !> @brief Type to hold a stream of randomly generated numbers
   !> @ingroup random_numbers_mod
   type randomNumberStream
-    type(randomNumberSequence), target :: theNumbers
-   contains
-    procedure :: get_theNumbers
+    type(randomNumberSequence) :: theNumbers
   end type randomNumberStream
 
   !> Returns scalar, 1 or 2 D random real numbers
@@ -69,13 +67,6 @@ module random_numbers_mod
 !> @{
 
 contains
-  function get_theNumbers(this) result(theNumbers)
-    class(randomNumberStream)          :: this
-    type(randomNumberSequence), target :: theNumbers
-
-    theNumbers => this%theNumbers
-
-  end function get_theNumbers
 
   !> Initialization
   function initializeRandomNumberStream_S(seed) result(new)
