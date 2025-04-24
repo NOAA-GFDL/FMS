@@ -79,7 +79,7 @@ module coupler_types_mod
   type, abstract, private :: coupler_values_type
       character(len=48)     :: name = ' ' !< The diagnostic name for this array
       character(len=128)    :: long_name = ' ' !< The diagnostic long_name for this array
-      character(len=128)    :: units = ' ' !< The units for this array    
+      character(len=128)    :: units = ' ' !< The units for this array 
       logical               :: mean = .true. !< mean
       logical               :: override = .false. !< override
       logical               :: may_init = .true. !< If true, there is an internal method
