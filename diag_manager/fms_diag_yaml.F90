@@ -202,6 +202,7 @@ type diagYamlFilesVar_type
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
   character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
   character (len=:), private, allocatable :: var_units !< Overwrites the units
+  character (len=:), private, allocatable :: standard_name !< Standard_name (saved from the register_diag_field call)
   real(kind=r4_kind), private             :: var_zbounds(2)  !< The z axis limits [vert_min, vert_max]
   integer          , private              :: n_diurnal !< Number of diurnal samples
                                                        !! 0 if var_reduction is not "diurnalXX"
@@ -243,8 +244,10 @@ type diagYamlFilesVar_type
   procedure :: has_var_attributes
   procedure :: has_n_diurnal
   procedure :: has_pow_value
+  procedure :: has_standname
   procedure :: add_axis_name
   procedure :: is_file_subregional
+  procedure :: add_standname
 
 end type diagYamlFilesVar_type
 
@@ -1453,6 +1456,12 @@ pure logical function has_pow_value(this)
   class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
   has_pow_value = (this%pow_value .ne. 0)
 end function has_pow_value
+!> @brief Checks if diag_file_obj%standname is set
+!! @return true if diag_file_obj%standname is set
+pure logical function has_standname(this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
+  has_standname = (this%standard_name .ne. "")
+end function has_standname
 
 !> @brief Checks if diag_file_obj%diag_title is allocated
 !! @return true if diag_file_obj%diag_title is allocated
@@ -1814,6 +1823,7 @@ subroutine fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
         call fms_f2c_string(keys3(key3_i)%key9, 'n_diurnal')
         call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
         call fms_f2c_string(keys3(key3_i)%key11, 'dimensions')
+        call fms_f2c_string(keys3(key3_i)%key12, 'standard_name')
         if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
         if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
         if (varptr%has_var_reduction()) then
@@ -1853,6 +1863,9 @@ subroutine fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
 
         tmpstr1 = ''; tmpstr1 = varptr%var_axes_names
         call fms_f2c_string(vals3(key3_i)%val11, trim(adjustl(tmpstr1)))
+
+        if(diag_yaml%diag_fields(varnum_i)%has_standname())&
+          call fms_f2c_string(vals3(key3_i)%val12, diag_yaml%diag_fields(varnum_i)%standard_name)
       enddo
     endif
 
@@ -2079,6 +2092,18 @@ subroutine add_axis_name( this, axis_name )
     this%var_axes_names = trim(axis_name)//" "//trim(this%var_axes_names)
 
 end subroutine add_axis_name
+
+!> @brief Adds the standname for the DiagYamlFilesVar_type
+subroutine add_standname (this, standard_name)
+  class(diagYamlFilesVar_type), intent(inout) :: this
+  character(len=*), optional, intent(in) :: standard_name
+
+  if (present(standard_name)) then
+    this%standard_name = standard_name(1:len_trim(standard_name))
+  else
+    this%standard_name = ""
+  endif
+end subroutine add_standname
 
 pure function is_file_subregional( this ) &
   result(res)
