@@ -87,7 +87,7 @@ test_mpp_print_memuse_stats_stderr_SOURCES = test_mpp_print_memuse_stats_stderr.
 test_mpp_print_memuse_stats_file_SOURCES = test_mpp_print_memuse_stats_file.F90
 test_mpp_memutils_begin_2x_SOURCES = test_mpp_memutils_begin_2x.F90
 test_mpp_memutils_end_before_begin_SOURCES = test_mpp_memutils_end_before_begin.F90
-test_read_ascii_file_SOURCES = test_mpp_read_ascii_file.F90
+test_mpp_read_ascii_file_SOURCES = test_mpp_read_ascii_file.F90
 test_read_input_nml_SOURCES = test_read_input_nml.F90
 test_stdout_SOURCES = test_stdout.F90
 test_stderr_SOURCES = test_stderr.F90
@@ -150,7 +150,7 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_memuse.sh \
   test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
-  test_read_ascii_file.sh \
+  test_mpp_read_ascii_file.sh \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
@@ -193,7 +193,7 @@ EXTRA_DIST = test_mpp_domains2.sh \
   test_mpp_memuse.sh \
   test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
-  test_read_ascii_file.sh \
+  test_mpp_read_ascii_file.sh \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \

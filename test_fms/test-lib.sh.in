@@ -319,6 +319,14 @@ test_expect_success () {
 
 test_done () {
   EXIT_OK=t
+  cmake="@USING_CMAKE@"
+  if test $cmake
+  then
+    if test $test_failure != 0
+    then
+      exit 1
+    fi
+  fi
   say "1..$test_count"
 }
 # creates and enters output dir and deletes previous if present
