@@ -6,6 +6,6 @@ set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpp -fno-alias -auto -safe-cray
 
 set(CMAKE_Fortran_FLAGS_RELEASE "-O2 -debug minimal -nowarn -qoverride-limits -qno-opt-dynamic-align")
 
-set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv")
+set(CMAKE_Fortran_FLAGS_DEBUGUFS "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv")
 
 set(CMAKE_Fortran_LINK_FLAGS "")
