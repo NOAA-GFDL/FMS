@@ -75,7 +75,8 @@ module coupler_types_mod
   !! Arrays (values + field) are typically directly allocated and then 'spawn' can be used to create a new type
   !! from a previously allocated 'template' type
 
-  !> Coupler values class
+  !> Coupler values abstract type
+  !> @ingroup coupler_types_mod
   type, abstract, private :: coupler_values_type
       character(len=48)     :: name = ' ' !< The diagnostic name for this array
       character(len=128)    :: long_name = ' ' !< The diagnostic long_name for this array
@@ -98,7 +99,8 @@ module coupler_types_mod
       procedure :: get_id_rest
   end type coupler_values_type
 
-  !> Coupler field class
+  !> Coupler field abstract type
+  !> @ingroup coupler_types_mod
   type, abstract, private :: coupler_field_type
       character(len=48)                :: name = ' ' !< name
       integer                          :: num_fields = 0 !< num_fields
@@ -137,10 +139,11 @@ module coupler_types_mod
       procedure :: get_mol_wt
   end type coupler_field_type
 
-  !> Coupler bc class
+  !> Coupler bc abstract type
+  !> @ingroup coupler_types_mod
   type, abstract, private :: coupler_bc_type
-      integer                                    :: num_bcs = 0
-      logical                                    :: set = .false.
+      integer                         :: num_bcs = 0   !< The number of boundary condition fields
+      logical                         :: set = .false. !< If true, this type has been initialized
     contains
       procedure :: get_num_bcs
       procedure :: get_set
@@ -471,6 +474,8 @@ contains
 
 !> @addtogroup coupler_types_mod
 !> @{
+
+  !> Return a pointer to the 3D boundary condition field at the given index.
   function get_bc_3d(this, bc_idx) result(bc_ptr)
     class(coupler_3d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -479,6 +484,7 @@ contains
     bc_ptr => this%bc(bc_idx)
   end function get_bc_3d
 
+  !> Return true if the 3D real*8 boundary condition field is associated.
   function has_bc_3d(this) result(has)
     class(coupler_3d_bc_type),      intent(in) :: this
     logical                                    :: has
@@ -486,6 +492,7 @@ contains
     has = associated(this%bc)
   end function has_bc_3d
 
+  !> Return a pointer to the 3D boundary condition field (real*4) at the given index.
   function get_bc_r4_3d(this, bc_idx) result(bc_ptr)
     class(coupler_3d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -494,6 +501,7 @@ contains
     bc_ptr => this%bc_r4(bc_idx)
   end function get_bc_r4_3d
 
+  !> Return true if the 3D real*4 boundary condition field is associated.
   function has_bc_r4_3d(this) result(has)
     class(coupler_3d_bc_type),      intent(in) :: this
     logical                                    :: has
@@ -501,6 +509,7 @@ contains
     has = associated(this%bc_r4)
   end function has_bc_r4_3d
 
+  !> Return a pointer to the 2D boundary condition field at the given index.
   function get_bc_2d(this, bc_idx) result(bc_ptr)
     class(coupler_2d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -509,6 +518,7 @@ contains
     bc_ptr => this%bc(bc_idx)
   end function get_bc_2d
 
+  !> Return true if the 2D real*8 boundary condition field is associated.
   function has_bc_2d(this) result(has)
     class(coupler_2d_bc_type),      intent(in) :: this
     logical                                    :: has
@@ -516,6 +526,7 @@ contains
     has = associated(this%bc)
   end function has_bc_2d
 
+  !> Return a pointer to the 2D boundary condition field (real*4) at the given index.
   function get_bc_r4_2d(this, bc_idx) result(bc_ptr)
     class(coupler_2d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -524,6 +535,7 @@ contains
     bc_ptr => this%bc_r4(bc_idx)
   end function get_bc_r4_2d
 
+  !> Return true if the 2D real*4 boundary condition field is associated.
   function has_bc_r4_2d(this) result(has)
     class(coupler_2d_bc_type),      intent(in) :: this
     logical                                    :: has
@@ -531,6 +543,7 @@ contains
     has = associated(this%bc_r4)
   end function has_bc_r4_2d
 
+  !> Return a pointer to the 1D boundary condition field at the given index.
   function get_bc_1d(this, bc_idx) result(bc_ptr)
     class(coupler_1d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -539,6 +552,7 @@ contains
     bc_ptr => this%bc(bc_idx)
   end function get_bc_1d
 
+  !> Return true if the 1D real*8 boundary condition field is associated.
   function has_bc_1d(this) result(has)
     class(coupler_1d_bc_type),      intent(in) :: this
     logical                                    :: has
@@ -546,6 +560,7 @@ contains
     has = associated(this%bc)
   end function has_bc_1d
 
+  !> Return a pointer to the 1D boundary condition field (real*4) at the given index.
   function get_bc_r4_1d(this, bc_idx) result(bc_ptr)
     class(coupler_1d_bc_type),      intent(in) :: this
     integer,                        intent(in) :: bc_idx
@@ -554,6 +569,7 @@ contains
     bc_ptr => this%bc_r4(bc_idx)
   end function get_bc_r4_1d
 
+  !> Return true if the 1D real*4 boundary condition field is associated.
   function has_bc_r4_1d(this) result(has)
     class(coupler_1d_bc_type),      intent(in) :: this
     logical                                    :: has
@@ -561,6 +577,7 @@ contains
     has = associated(this%bc_r4)
   end function has_bc_r4_1d
 
+  !> Return the starting index (isd) for 2D boundary condition fields.
   function get_isd_2d(this) result(isd)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: isd
@@ -568,6 +585,7 @@ contains
     isd = this%isd
   end function get_isd_2d
 
+  !> Return the starting index (isd) for 3D boundary condition fields.
   function get_isd_3d(this) result(isd)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: isd
@@ -575,6 +593,7 @@ contains
     isd = this%isd
   end function get_isd_3d
 
+  !> Return the starting index (isc) for 2D core data fields.
   function get_isc_2d(this) result(isc)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: isc
@@ -582,6 +601,7 @@ contains
     isc = this%isc
   end function get_isc_2d
 
+  !> Return the starting index (isc) for 3D core data fields.
   function get_isc_3d(this) result(isc)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: isc
@@ -589,6 +609,7 @@ contains
     isc = this%isc
   end function get_isc_3d
 
+  !> Return the ending index (ied) for 2D boundary condition fields.
   function get_ied_2d(this) result(ied)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: ied
@@ -596,6 +617,7 @@ contains
     ied = this%ied
   end function get_ied_2d
 
+  !> Return the ending index (ied) for 3D boundary condition fields.
   function get_ied_3d(this) result(ied)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: ied
@@ -603,6 +625,7 @@ contains
     ied = this%ied
   end function get_ied_3d
 
+  !> Return the ending index (iec) for 2D core data fields.
   function get_iec_2d(this) result(iec)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: iec
@@ -610,6 +633,7 @@ contains
     iec = this%iec
   end function get_iec_2d
 
+  !> Return the ending index (iec) for 3D core data fields.
   function get_iec_3d(this) result(iec)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: iec
@@ -617,6 +641,7 @@ contains
     iec = this%iec
   end function get_iec_3d
 
+  !> Return the starting j-index (jsd) for 2D boundary condition fields.
   function get_jsd_2d(this) result(jsd)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: jsd
@@ -624,6 +649,7 @@ contains
     jsd = this%jsd
   end function get_jsd_2d
 
+  !> Return the starting j-index (jsd) for 3D boundary condition fields.
   function get_jsd_3d(this) result(jsd)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: jsd
@@ -631,6 +657,7 @@ contains
     jsd = this%jsd
   end function get_jsd_3d
 
+  !> Return the starting j-index (jsc) for 2D core data fields.
   function get_jsc_2d(this) result(jsc)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: jsc
@@ -638,6 +665,7 @@ contains
     jsc = this%jsc
   end function get_jsc_2d
 
+  !> Return the starting j-index (jsc) for 3D core data fields.
   function get_jsc_3d(this) result(jsc)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: jsc
@@ -645,6 +673,7 @@ contains
     jsc = this%jsc
   end function get_jsc_3d
 
+  !> Return the ending j-index (jed) for 2D boundary condition fields.
   function get_jed_2d(this) result(jed)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: jed
@@ -652,6 +681,7 @@ contains
     jed = this%jed
   end function get_jed_2d
 
+  !> Return the ending j-index (jed) for 3D boundary condition fields.
   function get_jed_3d(this) result(jed)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: jed
@@ -659,6 +689,7 @@ contains
     jed = this%jed
   end function get_jed_3d
 
+  !> Return the ending j-index (jec) for 2D core data fields.
   function get_jec_2d(this) result(jec)
     class(coupler_2d_bc_type), intent(in) :: this
     integer                               :: jec
@@ -666,6 +697,7 @@ contains
     jec = this%jec
   end function get_jec_2d
 
+  !> Return the ending j-index (jec) for 3D core data fields.
   function get_jec_3d(this) result(jec)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: jec
@@ -673,6 +705,7 @@ contains
     jec = this%jec
   end function get_jec_3d
 
+  !> Return the starting k-index (ks) for 3D fields.
   function get_ks(this) result(ks)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: ks
@@ -680,6 +713,7 @@ contains
     ks = this%ks
   end function get_ks
 
+  !> Return the ending k-index (ke) for 3D fields.
   function get_ke(this) result(ke)
     class(coupler_3d_bc_type), intent(in) :: this
     integer                               :: ke
@@ -687,7 +721,7 @@ contains
     ke = this%ke
   end function get_ke
 
-  !> @brief Gets num_bcs for coupler_bc_type
+  !> Return num_bcs for coupler_bc_type
   function get_num_bcs(this) result(num_bcs)
     class(coupler_bc_type), intent(in) :: this
     integer                            :: num_bcs
@@ -695,7 +729,7 @@ contains
     num_bcs = this%num_bcs
   end function get_num_bcs
 
-  !> @brief Gets num_bcs for coupler_bc_type
+  !> Returns true if coupler_bc_type is set
   function get_set(this) result(set)
     class(coupler_bc_type), intent(in) :: this
     logical                            :: set
@@ -703,7 +737,7 @@ contains
     set = this%set
   end function get_set
 
-  !> @brief Gets name for coupler_field_type
+  !> Returns name for coupler_field_type
   function get_field_name(this) result(field_name)
     class(coupler_field_type), intent(in) :: this
     character(len=48)                     :: field_name
@@ -711,7 +745,7 @@ contains
     field_name = this%name
   end function get_field_name
 
-  !> @brief Gets num_fields for coupler_field_type
+  !> Returns num_fields for coupler_field_type
   function get_num_fields(this) result(num_fields)
     class(coupler_field_type), intent(in) :: this
     integer                               :: num_fields
@@ -719,7 +753,7 @@ contains
     num_fields = this%num_fields
   end function get_num_fields
 
-  !> @brief Gets flux_type for coupler_field_type
+  !> Returns flux_type for coupler_field_type
   function get_flux_type(this) result(flux_type)
     class(coupler_field_type), intent(in) :: this
     character(len=128)                    :: flux_type
@@ -727,7 +761,7 @@ contains
     flux_type = this%flux_type
   end function get_flux_type
 
-  !> @brief Gets implementation for coupler_field_type
+  !> Returns implementation for coupler_field_type
   function get_implementation(this) result(implementation)
     class(coupler_field_type), intent(in) :: this
     character(len=128)                    :: implementation
@@ -735,7 +769,7 @@ contains
     implementation = this%implementation
   end function get_implementation
 
-  !> @brief Gets flag for coupler_field_type
+  !> Returns pointer to coupler_field_type flag
   function get_flag(this) result(flag_ptr)
     class(coupler_field_type), intent(in) :: this
     logical, pointer, dimension(:)        :: flag_ptr
@@ -743,6 +777,7 @@ contains
     flag_ptr => this%flag
   end function get_flag
 
+  !> Returns true if the field has an associated flag.
   function has_flag(this) result(has)
     class(coupler_field_type), intent(in) :: this
     logical                               :: has
@@ -750,7 +785,7 @@ contains
     has = associated(this%flag)
   end function has_flag
 
-  !> @brief Gets atm_tr_index for coupler_field_type
+  !> Returns atm_tr_index for coupler_field_type
   function get_atm_tr_index(this) result(atm_tr_index)
     class(coupler_field_type), intent(in) :: this
     integer                               :: atm_tr_index
@@ -758,7 +793,7 @@ contains
     atm_tr_index = this%atm_tr_index
   end function get_atm_tr_index
 
-  !> @brief Gets ice_restart_file for coupler_field_type
+  !> Returns ice_restart_file for coupler_field_type
   function get_ice_restart_file(this) result(ice_restart_file)
     class(coupler_field_type), intent(in) :: this
     character(len=128)                    :: ice_restart_file
@@ -766,7 +801,7 @@ contains
     ice_restart_file = this%ice_restart_file
   end function get_ice_restart_file
 
-  !> @brief Gets ocean_restart_file for coupler_field_type
+  !> Returns ocean_restart_file for coupler_field_type
   function get_ocean_restart_file(this) result(ocean_restart_file)
     class(coupler_field_type), intent(in) :: this
     character(len=128)                    :: ocean_restart_file
@@ -774,7 +809,7 @@ contains
     ocean_restart_file = this%ocean_restart_file
   end function get_ocean_restart_file
 
-  !> @brief Gets fms2_io_rest_type for coupler_field_type
+  !> Returns fms2_io_rest_type for coupler_field_type
   function get_fms2_io_rest_type(this) result(fms2_io_rest_type_ptr)
     class(coupler_field_type), intent(in) :: this
     type(FmsNetcdfDomainFile_t), pointer  :: fms2_io_rest_type_ptr
@@ -782,6 +817,7 @@ contains
     fms2_io_rest_type_ptr => this%fms2_io_rest_type
   end function get_fms2_io_rest_type
 
+  !> Returns true if fms2_io_rest_type for coupler_field_type is associated
   function has_fms2_io_rest_type(this) result(has)
     class(coupler_field_type), intent(in) :: this
     logical                               :: has
@@ -789,7 +825,7 @@ contains
     has = associated(this%fms2_io_rest_type)
   end function has_fms2_io_rest_type
 
-  !> @brief Gets use_atm_pressure for coupler_field_type
+  !> Returns true if use_atm_pressure = .true. for coupler_field_type
   function get_use_atm_pressure(this) result(use_atm_pressure)
     class(coupler_field_type), intent(in) :: this
     logical                               :: use_atm_pressure
@@ -797,7 +833,7 @@ contains
     use_atm_pressure = this%use_atm_pressure
   end function get_use_atm_pressure
 
-  !> @brief Gets use_10m_wind_speed for coupler_field_type
+  !> Returns true if use_10m_wind_speed = .true. for coupler_field_type
   function get_use_10m_wind_speed(this) result(use_10m_wind_speed)
     class(coupler_field_type), intent(in) :: this
     logical                               :: use_10m_wind_speed
@@ -805,7 +841,7 @@ contains
     use_10m_wind_speed = this%use_10m_wind_speed
   end function get_use_10m_wind_speed
 
-  !> @brief Gets pass_through_ice for coupler_field_type
+  !> Returns true if pass_through_ice = .true. for coupler_field_type
   function get_pass_through_ice(this) result(pass_through_ice)
     class(coupler_field_type), intent(in) :: this
     logical                               :: pass_through_ice
@@ -813,6 +849,7 @@ contains
     pass_through_ice = this%pass_through_ice
   end function get_pass_through_ice
 
+  !> Returns pointer to field for field index (field_idx) for coupler_3d_r8_field_type
   function get_field_3d_r8(this, field_idx) result(field_ptr)
     class(coupler_3d_real8_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -821,6 +858,7 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_3d_r8
 
+  !> Returns true if field array is associated for coupler_3d_r8_field_type
   function has_field_3d_r8(this) result(has)
     class(coupler_3d_real8_field_type), intent(in) :: this
     logical                                        :: has
@@ -828,6 +866,7 @@ contains
     has = associated(this%field)
   end function has_field_3d_r8
 
+  !> Returns pointer to field for field index (field_idx) for coupler_3d_r4_field_type
   function get_field_3d_r4(this, field_idx) result(field_ptr)
     class(coupler_3d_real4_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -836,6 +875,7 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_3d_r4
 
+  !> Returns true if field array is associated for coupler_3d_r4_field_type
   function has_field_3d_r4(this) result(has)
     class(coupler_3d_real4_field_type), intent(in) :: this
     logical                                        :: has
@@ -843,6 +883,7 @@ contains
     has = associated(this%field)
   end function has_field_3d_r4
 
+  !> Returns pointer to field for field index (field_idx) for coupler_2d_r8_field_type
   function get_field_2d_r8(this, field_idx) result(field_ptr)
     class(coupler_2d_real8_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -851,6 +892,7 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_2d_r8
 
+  !> Returns true if field array is associated for coupler_2d_r8_field_type
   function has_field_2d_r8(this) result(has)
     class(coupler_2d_real8_field_type), intent(in) :: this
     logical                                        :: has
@@ -858,6 +900,7 @@ contains
     has = associated(this%field)
   end function has_field_2d_r8
 
+  !> Returns pointer to field for field index (field_idx) for coupler_2d_r4_field_type
   function get_field_2d_r4(this, field_idx) result(field_ptr)
     class(coupler_2d_real4_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -866,6 +909,7 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_2d_r4
 
+  !> Returns true if field array is associated for coupler_2d_r4_field_type
   function has_field_2d_r4(this) result(has)
     class(coupler_2d_real4_field_type), intent(in) :: this
     logical                                        :: has
@@ -873,6 +917,7 @@ contains
     has = associated(this%field)
   end function has_field_2d_r4
 
+  !> Returns pointer to field for field index (field_idx) for coupler_1d_r8_field_type
   function get_field_1d_r8(this, field_idx) result(field_ptr)
     class(coupler_1d_real8_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -881,6 +926,7 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_1d_r8
 
+  !> Returns true if field array is associated for coupler_2d_r8_field_type
   function has_field_1d_r8(this) result(has)
     class(coupler_1d_real8_field_type), intent(in) :: this
     logical                                        :: has
@@ -888,6 +934,7 @@ contains
     has = associated(this%field)
   end function has_field_1d_r8
 
+  !> Returns pointer to field for field index (field_idx) for coupler_1d_r4_field_type
   function get_field_1d_r4(this, field_idx) result(field_ptr)
     class(coupler_1d_real4_field_type), intent(in) :: this
     integer,                            intent(in) :: field_idx
@@ -896,6 +943,7 @@ contains
     field_ptr => this%field(field_idx)
   end function get_field_1d_r4
 
+  !> Returns true if field array is associated for coupler_1d_r4_field_type
   function has_field_1d_r4(this) result(has)
     class(coupler_1d_real4_field_type), intent(in) :: this
     logical                                        :: has
@@ -903,7 +951,7 @@ contains
     has = associated(this%field)
   end function has_field_1d_r4
 
-  !> @brief Gets param for coupler_field_type
+  !> Returns pointer to param for coupler_field_type
   function get_param(this) result(param_ptr)
     class(coupler_field_type), intent(in) :: this
     real(r8_kind), pointer, dimension(:)  :: param_ptr
@@ -911,6 +959,7 @@ contains
     param_ptr => this%param
   end function get_param
 
+  !> Returns true if param is associated for coupler_field_type
   function has_param(this) result(has)
     class(coupler_field_type), intent(in) :: this
     logical                               :: has
@@ -918,7 +967,7 @@ contains
     has = associated(this%param)
   end function has_param
 
-  !> @brief Gets mol_wt for coupler_field_type
+  !> Returns mol_wt for coupler_field_type
   function get_mol_wt(this) result(mol_wt)
     class(coupler_field_type), intent(in) :: this
     real(r8_kind)                         :: mol_wt
@@ -926,7 +975,7 @@ contains
     mol_wt = this%mol_wt
   end function get_mol_wt
 
-  !> @brief Gets name for coupler_values_type
+  !> Returns name for coupler_values_type
   function get_values_name(this) result(values_name)
     class(coupler_values_type), intent(in) :: this
     character(len=48)                      :: values_name
@@ -934,7 +983,7 @@ contains
     values_name = this%name
   end function get_values_name
 
-  !> @brief Gets long_name for coupler_values_type
+  !> Returns long_name for coupler_values_type
   function get_long_name(this) result(long_name)
     class(coupler_values_type), intent(in) :: this
     character(len=128)                     :: long_name
@@ -942,7 +991,7 @@ contains
     long_name = this%long_name
   end function get_long_name
 
-  !> @brief Gets units for coupler_values_type
+  !> Returnsunits for coupler_values_type
   function get_units(this) result(units)
     class(coupler_values_type), intent(in) :: this
     character(len=128)                     :: units
@@ -950,7 +999,7 @@ contains
     units = this%units
   end function get_units
 
-  !> @brief Gets mean for coupler_values_type
+  !> Returns true if mean = .true. for coupler_values_type
   function get_mean(this) result(mean)
     class(coupler_values_type), intent(in) :: this
     logical                                :: mean
@@ -958,7 +1007,7 @@ contains
     mean = this%mean
   end function get_mean
 
-  !> @brief Gets may_init for coupler_values_type
+  !> Returns true if may_init = .true. for coupler_values_type
   function get_may_init(this) result(may_init)
     class(coupler_values_type), intent(in) :: this
     logical                                :: may_init
@@ -966,7 +1015,7 @@ contains
     may_init = this%may_init
   end function get_may_init
 
-  !> @brief Gets override for coupler_values_type
+  !> Returns true if override = .true. for coupler_values_type
   function get_override(this) result(override)
     class(coupler_values_type), intent(in) :: this
     logical                                :: override
@@ -974,7 +1023,7 @@ contains
     override = this%override
   end function get_override
 
-  !> @brief Gets id_diag for coupler_values_type
+  !> Returns id_diag for coupler_values_type
   function get_id_diag(this) result(id_diag)
     class(coupler_values_type), intent(in) :: this
     integer                                :: id_diag
@@ -982,7 +1031,7 @@ contains
     id_diag = this%id_diag
   end function get_id_diag
 
-   !> @brief Gets id_rest for coupler_values_type
+   !> Returns id_rest for coupler_values_type
   function get_id_rest(this) result(id_rest)
     class(coupler_values_type), intent(in) :: this
     integer                                :: id_rest
@@ -990,6 +1039,7 @@ contains
     id_rest = this%id_rest
   end function get_id_rest
 
+  !> Returns values for coupler_3d_r8_values_type
   function get_values_3d_r8(this) result(values)
     class(coupler_3d_real8_values_type), intent(in) :: this
     real(r8_kind), dimension(:,:,:), allocatable    :: values
@@ -1005,6 +1055,7 @@ contains
     values = this%values
   end function get_values_3d_r8
 
+  !> Returns true if values is associated for coupler_3d_r8_values_type
   function has_values_3d_r8(this) result(has)
     class(coupler_3d_real8_values_type), intent(in) :: this
     logical                                         :: has
@@ -1012,6 +1063,7 @@ contains
     has = associated(this%values)
   end function has_values_3d_r8
 
+  !> Returns values for coupler_3d_r4_values_type
   function get_values_3d_r4(this) result(values)
     class(coupler_3d_real4_values_type), intent(in) :: this
     real(r4_kind), dimension(:,:,:), allocatable    :: values
@@ -1027,6 +1079,7 @@ contains
     values = this%values
   end function get_values_3d_r4
 
+  !> Returns true if values is associated for coupler_3d_r4_values_type
   function has_values_3d_r4(this) result(has)
     class(coupler_3d_real4_values_type), intent(in) :: this
     logical                                         :: has
@@ -1034,6 +1087,7 @@ contains
     has = associated(this%values)
   end function has_values_3d_r4
 
+  !> Returns values for coupler_2d_r8_values_type
   function get_values_2d_r8(this) result(values)
     class(coupler_2d_real8_values_type), intent(in) :: this
     real(r8_kind), dimension(:,:), allocatable      :: values
@@ -1048,6 +1102,7 @@ contains
     values = this%values
   end function get_values_2d_r8
 
+  !> Returns true if values is associated for coupler_2d_r8_values_type
   function has_values_2d_r8(this) result(has)
     class(coupler_2d_real8_values_type), intent(in) :: this
     logical                                         :: has
@@ -1055,6 +1110,7 @@ contains
     has = associated(this%values)
   end function has_values_2d_r8
 
+  !> Returns values for coupler_2d_r4_values_type
   function get_values_2d_r4(this) result(values)
     class(coupler_2d_real4_values_type), intent(in) :: this
     real(r4_kind), dimension(:,:), allocatable      :: values
@@ -1069,6 +1125,7 @@ contains
     values = this%values
   end function get_values_2d_r4
 
+  !> Returns true if values is associated for coupler_2d_r4_values_type
   function has_values_2d_r4(this) result(has)
     class(coupler_2d_real4_values_type), intent(in) :: this
     logical                                         :: has
@@ -1076,6 +1133,7 @@ contains
     has = associated(this%values)
   end function has_values_2d_r4
 
+  !> Returns values for coupler_1d_r8_values_type
   function get_values_1d_r8(this) result(values)
     class(coupler_1d_real8_values_type), intent(in) :: this
     real(r8_kind), dimension(:), allocatable        :: values
@@ -1089,6 +1147,7 @@ contains
     values = this%values
   end function get_values_1d_r8
 
+  !> Returns true if values is associated for coupler_1d_r8_values_type
   function has_values_1d_r8(this) result(has)
     class(coupler_1d_real8_values_type), intent(in) :: this
     logical                                         :: has
@@ -1096,6 +1155,7 @@ contains
     has = associated(this%values)
   end function has_values_1d_r8
 
+  !> Returns values for coupler_1d_r4_values_type
   function get_values_1d_r4(this) result(values)
     class(coupler_1d_real4_values_type), intent(in) :: this
     real(r4_kind), dimension(:), allocatable        :: values
@@ -1109,6 +1169,7 @@ contains
     values = this%values
   end function get_values_1d_r4
 
+  !> Returns true if values is associated for coupler_1d_r4_values_type
   function has_values_1d_r4(this) result(has)
     class(coupler_1d_real4_values_type), intent(in) :: this
     logical                                         :: has
