@@ -23,7 +23,7 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and include files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR) -I./INPUT -I$(top_srcdir)/mosaic -I./
+AM_CPPFLAGS = -I$(abs_top_srcdir)/test_fms/mosaic2 -I$(top_srcdir)/include -I$(MODDIR)
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la

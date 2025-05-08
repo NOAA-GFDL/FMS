@@ -593,7 +593,7 @@ list(APPEND TEST_MODS_SRC
   test_fms/fms/test_fms.F90
   test_fms/fms2_io/argparse.F90
   test_fms/fms2_io/setup.F90
-  test_fms/mosaic2/write_files.F90
+#  test_fms/mosaic2/write_files.F90
   test_fms/mpp/compare_data_checksums.F90
   test_fms/mpp/compare_data_checksums_int.F90
   test_fms/mpp/fill_halo.F90

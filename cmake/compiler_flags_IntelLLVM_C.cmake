@@ -4,6 +4,6 @@ set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -traceback")
 
 set( CMAKE_C_FLAGS_RELEASE "-qno-opt-dynamic-align -O2 -debug minimal")
 
-set( CMAKE_C_FLAGS_DEBUGUFS "-O0 -g -ftrapuv")
+set( CMAKE_C_FLAGS_DEBUGUFS "-O0 -g -ftrapv")
 
 set( CMAKE_C_LINK_FLAGS "")
