@@ -199,8 +199,8 @@ end type horizInterpReals4_type
    procedure :: get_j_src
    procedure :: get_i_dst
    procedure :: get_j_dst
-   procedure :: get_horizInterpReals8_type
-   procedure :: get_horizInterpReals4_type
+   !procedure :: get_horizInterpReals8_type
+   !procedure :: get_horizInterpReals4_type
  end type
 
 !> @addtogroup horiz_interp_type_mod
@@ -664,21 +664,21 @@ contains
 
  end function get_j_dst
 
- function get_horizInterpReals8_type(this) result(horizInterpReals8_type)
-    class(horiz_interp_type)     :: this
-    type(horizInterpReals8_type) :: horizInterpReals8_type
+ !function get_horizInterpReals8_type(this) result(horizInterpReals8_type)
+ !   class(horiz_interp_type)     :: this
+ !   type(horizInterpReals8_type) :: horizInterpReals8_type
 
     !horizInterpReals8_type => this%horizInterpReals8_type
 
- end function get_horizInterpReals8_type
+ !end function get_horizInterpReals8_type
 
- function get_horizInterpReals4_type(this) result(horizInterpReals4_type)
-    class(horiz_interp_type)     :: this
-    type(horizInterpReals4_type) :: horizInterpReals4_type
+ !function get_horizInterpReals4_type(this) result(horizInterpReals4_type)
+ !   class(horiz_interp_type)     :: this
+ !   type(horizInterpReals4_type) :: horizInterpReals4_type
 
     !horizInterpReals4_type => this%horizInterpReals4_type
 
- end function get_horizInterpReals4_type
+ !end function get_horizInterpReals4_type
 
 !> @brief horiz_interp_type_eq creates a copy of the horiz_interp_type object
  subroutine horiz_interp_type_eq(horiz_interp_out, horiz_interp_in)
