@@ -161,11 +161,13 @@ id_var3 = register_diag_field  ('atm_mod', 'var3', (/id_x3, id_y3/), Time, 'Var 
 id_var4 = register_diag_field  ('atm_mod', 'var4', (/id_x3, id_y3, id_z/), Time, &
                                 '3D var in a cube sphere domain', 'mullions')
 id_var5 = register_diag_field  ('lnd_mod', 'var5', (/id_ug/), Time, 'Var in a UG domain', 'mullions')
-id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not domain decomposed', 'mullions')
+id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not domain decomposed', 'mullions', &
+                                standard_name="I hope this is the MDTF tables")
 
 !< This has the same name as var1, but it should have a different id because the module is different
 !! so it should have its own diag_obj
-id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions')
+id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions', &
+                                 standard_name="Land is important!")
 id_var8 = register_static_field ('atm_mod', 'var7', (/id_z/), "Be static!", "none")
 
 if (.not. debug) then
