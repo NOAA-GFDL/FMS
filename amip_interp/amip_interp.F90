@@ -156,9 +156,8 @@ integer :: i_sst = 1200
 integer :: j_sst = 600
 real(r8_kind), parameter:: big_number = 1.E30_r8_kind
 logical :: forecast_mode = .false.
-real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep, sst_anom
 
-public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
+public i_sst, j_sst, forecast_mode, use_ncep_sst
 
 !-----------------------------------------------------------------------
 !--------------------- private below here ------------------------------
@@ -460,14 +459,6 @@ contains
 !--- Added by SJL ----------------------------------------------
         if ( use_ncep_sst ) then
              mobs = i_sst;  nobs = j_sst
-            if (.not. allocated (sst_ncep)) then
-                allocate (sst_ncep(i_sst,j_sst))
-                sst_ncep(:,:) = big_number
-            endif
-            if (.not. allocated (sst_anom)) then
-                allocate (sst_anom(i_sst,j_sst))
-                sst_anom(:,:) = big_number
-            endif
         else
              mobs = 360;    nobs = 180
         endif
