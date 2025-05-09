@@ -179,7 +179,7 @@ end subroutine register_unstructured_dimension
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine register_unstructured_domain_variable(fileobj, variable_name, &
-                                                 variable_type, dimensions)
+                                                 variable_type, dimensions, chunksizes)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -187,8 +187,9 @@ subroutine register_unstructured_domain_variable(fileobj, variable_name, &
                                                 !! values are: "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+  integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable (netcdf4 only)
 
-  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, chunksizes)
 end subroutine register_unstructured_domain_variable
 
 

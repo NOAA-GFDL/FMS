@@ -2077,7 +2077,7 @@ end subroutine netcdf_file_close_wrap
 
 
 !> @brief Wrapper to distinguish interfaces.
-subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimensions)
+subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimensions, chunksizes)
 
   type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -2085,8 +2085,9 @@ subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimen
                                                 !! values are: "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+  integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable (netcdf4 only)
 
-  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, chunksizes)
 end subroutine netcdf_add_variable_wrap
 
 !> @brief Wrapper to distinguish interfaces.
