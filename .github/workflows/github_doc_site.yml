@@ -1,0 +1,48 @@
+name: Generate and deploy documentation on GH pages
+
+# update on releases or when triggered manually(must have write access)
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+      - name: Setup repo
+        run: | # do autotool's job for substitutes since we don't need a full build environement
+          mkdir gen_docs
+          sed 's/@abs_top_builddir@\/docs/gen_docs/g' docs/Doxyfile.in > gen_docs/Doxyfile
+          sed -i 's/@abs_top_srcdir@/./g' gen_docs/Doxyfile
+          # grab version number from configure.ac
+          export VER="`awk '/AC_INIT/{getline;print}' configure.ac | cut -d "[" -f2 | cut -d "]" -f1`"
+          sed -i "s/@PACKAGE_VERSION@/$VER/g" gen_docs/Doxyfile
+      - name: Install and run doxygen
+        run: |
+          sudo apt -y install doxygen graphviz
+          doxygen gen_docs/Doxyfile
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3.0.1
+        with:
+          path: 'gen_docs/html'
+  deploy:
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4.0.5

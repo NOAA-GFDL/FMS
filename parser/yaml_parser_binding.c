@@ -97,6 +97,14 @@ char *get_value(int *file_id, int *key_id)
   return my_files.files[j].keys[*key_id].value;
 }
 
+/* @brief Private c functions get gets the block name from a block id
+   @return String containing the value obtained */
+char *get_block(int *file_id, int *block_id)
+{
+  int j = *file_id;   /* To minimize the typing :) */
+  return my_files.files[j].keys[*block_id].parent_name;
+}
+
 /* @brief Private c function that determines they value of a key in yaml_file
    @return c pointer with the value obtained */
 char *get_value_from_key_wrap(int *file_id, int *block_id, char *key_name, int *sucess) /*, char *key_name) */
@@ -136,6 +144,82 @@ int get_num_blocks_all(int *file_id, char *block_name)
   return nblocks;
 }
 
+/* @brief Private c function that determines the number of unique blocks (i.e diag_files, varlist, etc)
+   @return The number of unique blocks */
+int get_num_unique_blocks_bind(int *file_id, int *parent_block_id)
+{
+  int nblocks = 0;    /* Number of blocks */
+  int i;              /* For loops */
+  int j = *file_id;   /* To minimize the typing :) */
+  char block_names[my_files.files[j].nkeys][255]; /* Array that stores the names of the unique blocks*/
+  bool found;         /* True if the block name was already found (i.e it not unqiue)*/
+  int k;              /* For loops */
+
+  for ( i = 1; i <= my_files.files[j].nkeys; i++ )
+  {
+    if (my_files.files[j].keys[i].parent_key == *parent_block_id )
+    {
+      if (strcmp(my_files.files[j].keys[i].parent_name, "") == 0){
+        continue;
+      }
+      found = false;
+      for (k = 1; k <= nblocks; k++)
+      {
+        if (strcmp(block_names[k], my_files.files[j].keys[i].parent_name) == 0)
+        {
+          found = true;
+          break;
+        }
+      }
+
+      if (found) continue;
+
+      nblocks = nblocks + 1;
+      strcpy(block_names[nblocks], my_files.files[j].keys[i].parent_name);
+      // printf("Block names: %s \n", block_names[nblocks]);
+    }
+  }
+  return nblocks;
+}
+
+/* @brief Private c function that determines the ids of the unique blocks (i.e diag_files, varlist, etc)
+   @return The ids of the unique blocks */
+void get_unique_block_ids_bind(int *file_id, int *block_ids, int *parent_block_id)
+{
+  int nblocks = 0;    /* Number of blocks */
+  int i;              /* For loops */
+  int j = *file_id;   /* To minimize the typing :) */
+  char block_names[my_files.files[j].nkeys][255]; /* Array that stores the names of the unique blocks*/
+  bool found;         /* True if the block name was already found (i.e it not unqiue)*/
+  int k;              /* For loops */
+
+  for ( i = 1; i <= my_files.files[j].nkeys; i++ )
+  {
+    if (my_files.files[j].keys[i].parent_key == *parent_block_id )
+    {
+      if (strcmp(my_files.files[j].keys[i].parent_name, "") == 0){
+        continue;
+      }
+      found = false;
+      for (k = 1; k <= nblocks; k++)
+      {
+        if (strcmp(block_names[k], my_files.files[j].keys[i].parent_name) == 0)
+        {
+          found = true;
+          break;
+        }
+      }
+
+      if (found) continue;
+
+      nblocks = nblocks + 1;
+      block_ids[nblocks - 1] = my_files.files[j].keys[i].key_number;
+      strcpy(block_names[nblocks], my_files.files[j].keys[i].parent_name);
+      //printf("Block names: %s \n", block_names[nblocks]);
+    }
+  }
+  return;
+}
 /* @brief Private c function that determines the number of blocks with block_name that belong to
    a parent block with parent_block_id in the yaml file
    @return Number of blocks with block_name */
@@ -216,7 +300,7 @@ bool is_valid_file_id(int *file_id)
 
 /* @brief Private c function that opens and parses a yaml file and saves it in a struct
    @return Flag indicating if the read was sucessful */
-bool open_and_parse_file_wrap(char *filename, int *file_id)
+int open_and_parse_file_wrap(char *filename, int *file_id)
 {
   yaml_parser_t parser;
   yaml_token_t  token;
@@ -246,9 +330,9 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
 
 /*  printf("Opening file: %s.\nThere are %i files opened.\n", filename, j); */
   file = fopen(filename, "r");
-  if (file == NULL) return false;
+  if (file == NULL) return -1;
 
-  if(!yaml_parser_initialize(&parser)) return false;
+  if(!yaml_parser_initialize(&parser)) return -2;
 
   my_files.files[j].keys = (key_value_pairs*)calloc(1, sizeof(key_value_pairs));
 
@@ -257,7 +341,9 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
   /* Set input file */
   yaml_parser_set_input_file(&parser, file);
   do {
-    yaml_parser_scan(&parser, &token);
+    if (!yaml_parser_scan(&parser, &token)) {
+      return -3;
+    }
     switch(token.type)
     {
     case YAML_KEY_TOKEN:
@@ -336,7 +422,7 @@ bool open_and_parse_file_wrap(char *filename, int *file_id)
 /*  printf("closing file: %s\n", filename); */
   fclose(file);
 
-  return true;
+  return 1;
 }
 
 #endif

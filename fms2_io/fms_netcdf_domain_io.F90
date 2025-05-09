@@ -65,7 +65,7 @@ type, extends(FmsNetcdfFile_t), public :: FmsNetcdfDomainFile_t
                                                               !! with the "y" axis
                                                               !! of a 2d domain.
   integer :: ny !< Number of "y" dimensions.
-  character(len=256) :: non_mangled_path !< Non-domain-mangled file path.
+  character(len=FMS_PATH_LEN) :: non_mangled_path !< Non-domain-mangled file path.
   logical :: adjust_indices !< Flag telling if indices need to be adjusted
                             !! for domain-decomposed read.
 endtype FmsNetcdfDomainFile_t
@@ -346,9 +346,9 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
 
   integer, dimension(2) :: io_layout
   integer, dimension(1) :: tile_id
-  character(len=256) :: combined_filepath
+  character(len=FMS_PATH_LEN) :: combined_filepath
   type(domain2d), pointer :: io_domain
-  character(len=256) :: distributed_filepath
+  character(len=FMS_PATH_LEN) :: distributed_filepath
   integer :: pelist_size
   integer, dimension(:), allocatable :: pelist
   logical :: success2

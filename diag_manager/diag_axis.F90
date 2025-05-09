@@ -39,10 +39,9 @@ use platform_mod
        & fms_error_handler, FATAL, NOTE
   USE diag_data_mod, ONLY: diag_axis_type, max_subaxes, max_axes,&
        & max_num_axis_sets, max_axis_attributes, debug_diag_manager,&
-       & first_send_data_call, diag_atttype
-#ifdef use_netCDF
+       & first_send_data_call, diag_atttype, use_modern_diag
+  use fms_diag_object_mod, only:fms_diag_object
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
-#endif
 
   IMPLICIT NONE
 
@@ -54,7 +53,7 @@ use platform_mod
        & get_axis_num, get_diag_axis_domain_name, diag_axis_add_attribute,&
        & get_domainUG, axis_compatible_check, axis_is_compressed, &
        & get_compressed_axes_ids, get_axis_reqfld, &
-       & NORTH, EAST, CENTER
+       & NORTH, EAST, CENTER, diag_axis_type
 
   ! Include variable "version" to be written to log file
 #include<file_version.h>
@@ -107,10 +106,10 @@ CONTAINS
   !! increments the axis counter and fills in the axes
   !!
   !! @return integer axis ID
-  INTEGER FUNCTION diag_axis_init(name, DATA, units, cart_name, long_name, direction,&
+  INTEGER FUNCTION diag_axis_init(name, array_data, units, cart_name, long_name, direction,&
        & set_name, edges, Domain, Domain2, DomainU, aux, req, tile_count, domain_position )
     CHARACTER(len=*), INTENT(in) :: name !< Short name for axis
-    CLASS(*), DIMENSION(:), INTENT(in) :: DATA !< Array of coordinate values
+    CLASS(*), DIMENSION(:), INTENT(in) :: array_data !< Array of coordinate values
     CHARACTER(len=*), INTENT(in) :: units !< Units for the axis
     CHARACTER(len=*), INTENT(in) :: cart_name !< Cartesian axis ("X", "Y", "Z", "T")
     CHARACTER(len=*), INTENT(in), OPTIONAL :: long_name !< Long name for the axis.
@@ -136,6 +135,14 @@ CONTAINS
        CALL write_version_number("DIAG_AXIS_MOD", version)
     ENDIF
 
+    if (use_modern_diag) then
+      !TODO Passing in the axis_length because of a gnu issue where inside fms_diag_axis_init, the size of DATA
+      !was 2 which was causing the axis_data to not be written correctly...
+      diag_axis_init = fms_diag_object%fms_diag_axis_init(name, array_data, units, cart_name, size(array_data(:)),  &
+       & long_name=long_name, direction=direction, set_name=set_name, edges=edges, Domain=Domain, Domain2=Domain2, &
+       & DomainU=DomainU, aux=aux, req=req, tile_count=tile_count, domain_position=domain_position)
+      return
+    endif
     IF ( PRESENT(tile_count)) THEN
        tile = tile_count
     ELSE
@@ -222,17 +229,17 @@ CONTAINS
     IF ( Axes(diag_axis_init)%cart_name == 'T' ) THEN
        axlen = 0
     ELSE
-       axlen = SIZE(DATA(:))
+       axlen = SIZE(array_data(:))
     END IF
-    ALLOCATE ( Axes(diag_axis_init)%data(1:axlen) )
+    ALLOCATE ( Axes(diag_axis_init)%diag_type_data(1:axlen) )
 
     ! Initialize Axes(diag_axis_init)
     Axes(diag_axis_init)%name   = TRIM(name)
-    SELECT TYPE (DATA)
+    SELECT TYPE (array_data)
     TYPE IS (real(kind=r4_kind))
-       Axes(diag_axis_init)%data = DATA(1:axlen)
+       Axes(diag_axis_init)%diag_type_data = array_data(1:axlen)
     TYPE IS (real(kind=r8_kind))
-       Axes(diag_axis_init)%data = real(DATA(1:axlen))
+       Axes(diag_axis_init)%diag_type_data = real(array_data(1:axlen))
     CLASS DEFAULT
        CALL error_mesg('diag_axis_mod::diag_axis_init',&
             & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -457,7 +464,7 @@ CONTAINS
   END FUNCTION diag_subaxes_init
   !> @brief Return information about the axis with index ID
   SUBROUTINE get_diag_axis(id, name, units, long_name, cart_name,&
-       & direction, edges, Domain, DomainU, DATA, num_attributes, attributes, domain_position)
+       & direction, edges, Domain, DomainU, array_data, num_attributes, attributes, domain_position)
     CHARACTER(len=*), INTENT(out) :: name, units, long_name, cart_name
     INTEGER, INTENT(in) :: id !< Axis ID
     TYPE(domain1d), INTENT(out) :: Domain
@@ -465,7 +472,7 @@ CONTAINS
     INTEGER, INTENT(out) :: direction !< Direction of data. (See <TT>@ref diag_axis_init</TT> for a description of
                                       !! allowed values)
     INTEGER, INTENT(out) :: edges !< Axis ID for the previously defined "edges axis".
-    CLASS(*), DIMENSION(:), INTENT(out) :: DATA !< Array of coordinate values for this axis.
+    CLASS(*), DIMENSION(:), INTENT(out) :: array_data !< Array of coordinate values for this axis.
     INTEGER, INTENT(out), OPTIONAL :: num_attributes
     TYPE(diag_atttype), ALLOCATABLE, DIMENSION(:), INTENT(out), OPTIONAL :: attributes
     INTEGER, INTENT(out), OPTIONAL :: domain_position
@@ -482,15 +489,15 @@ CONTAINS
     Domain    = Axes(id)%Domain
     DomainU   = Axes(id)%DomainUG
     if (present(domain_position)) domain_position = Axes(id)%domain_position
-    IF ( Axes(id)%length > SIZE(DATA(:)) ) THEN
+    IF ( Axes(id)%length > SIZE(array_data(:)) ) THEN
        ! <ERROR STATUS="FATAL">array data is too small.</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis', 'array data is too small', FATAL)
     ELSE
-       SELECT TYPE (DATA)
+       SELECT TYPE (array_data)
        TYPE IS (real(kind=r4_kind))
-          DATA(1:Axes(id)%length) = real(Axes(id)%data(1:Axes(id)%length), kind=r4_kind)
+          array_data(1:Axes(id)%length) = real(Axes(id)%diag_type_data(1:Axes(id)%length), kind=r4_kind)
        TYPE IS (real(kind=r8_kind))
-          DATA(1:Axes(id)%length) = Axes(id)%data(1:Axes(id)%length)
+          array_data(1:Axes(id)%length) = Axes(id)%diag_type_data(1:Axes(id)%length)
        CLASS DEFAULT
           CALL error_mesg('diag_axis_mod::get_diag_axis',&
                & 'The axis data is not one of the supported types of real(kind=4) or real(kind=8)', FATAL)
@@ -564,26 +571,30 @@ CONTAINS
   END SUBROUTINE get_diag_axis_cart
 
   !> @brief Return the axis data.
-  SUBROUTINE get_diag_axis_data(id, DATA)
+  SUBROUTINE get_diag_axis_data(id, axis_data)
     INTEGER, INTENT(in) :: id !< Axis ID
-    REAL, DIMENSION(:), INTENT(out) :: DATA !< Axis data
+    REAL, DIMENSION(:), INTENT(out) :: axis_data !< Axis data
 
     CALL valid_id_check(id, 'get_diag_axis_data')
-    IF (Axes(id)%length > SIZE(DATA(:))) THEN
+    IF (Axes(id)%length > SIZE(axis_data(:))) THEN
        ! <ERROR STATUS="FATAL">array data is too small</ERROR>
        CALL error_mesg('diag_axis_mod::get_diag_axis_data', 'array data is too small', FATAL)
     ELSE
-       DATA(1:Axes(id)%length) = Axes(id)%data
+       axis_data(1:Axes(id)%length) = Axes(id)%diag_type_data
     END IF
   END SUBROUTINE get_diag_axis_data
 
   !> @brief Return the short name of the axis.
-  SUBROUTINE get_diag_axis_name(id, name)
+  SUBROUTINE get_diag_axis_name(id, axis_name)
     INTEGER         , INTENT(in)  :: id !< Axis ID
-    CHARACTER(len=*), INTENT(out) :: name !< Axis short name
+    CHARACTER(len=*), INTENT(out) :: axis_name !< Axis short name
 
-    CALL valid_id_check(id, 'get_diag_axis_name')
-    name = Axes(id)%name
+    if (use_modern_diag) then
+      axis_name = fms_diag_object%fms_get_axis_name_from_id(id)
+    else
+      CALL valid_id_check(id, 'get_diag_axis_name')
+      axis_name = Axes(id)%name
+    endif
   END SUBROUTINE get_diag_axis_name
 
   !> @brief Return the name of the axis' domain
@@ -601,14 +612,18 @@ CONTAINS
     INTEGER, INTENT(in) :: id !< Axis ID
     INTEGER :: length
 
-    CALL valid_id_check(id, 'get_axis_length')
-    IF ( Axes(id)%Domain .NE. null_domain1d ) THEN
-       CALL mpp_get_compute_domain(Axes(id)%Domain,size=length)
-       !---one extra point is needed for some case. ( like symmetry domain )
-       get_axis_length = length + Axes(id)%shift
-    ELSE
-       get_axis_length = Axes(id)%length
-    END IF
+    if (use_modern_diag) then
+      get_axis_length = fms_diag_object%fms_get_axis_length(id)
+    else
+      CALL valid_id_check(id, 'get_axis_length')
+      IF ( Axes(id)%Domain .NE. null_domain1d ) THEN
+         CALL mpp_get_compute_domain(Axes(id)%Domain,size=length)
+         !---one extra point is needed for some case. ( like symmetry domain )
+         get_axis_length = length + Axes(id)%shift
+      ELSE
+         get_axis_length = Axes(id)%length
+      END IF
+   endif
   END FUNCTION get_axis_length
 
   !> @brief Return the auxiliary name for the axis.
@@ -690,6 +705,12 @@ CONTAINS
        ! <ERROR STATUS="FATAL">input argument has incorrect size.</ERROR>
        CALL error_mesg('diag_axis_mod::get_domain2d', 'input argument has incorrect size', FATAL)
     END IF
+
+    if (use_modern_diag) then
+       get_domain2d = fms_diag_object%fms_get_domain2d(ids)
+      return
+    endif
+
     get_domain2d = null_domain2d
     flag = 0
     DO i = 1, SIZE(ids(:))
@@ -1042,7 +1063,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     REAL, INTENT(in) :: att_value
 
-    CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_add_attribute_r1d(diag_axis_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_r
 
   SUBROUTINE diag_axis_add_attribute_scalar_i(diag_axis_id, att_name, att_value)
@@ -1050,7 +1075,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, INTENT(in) :: att_value
 
-    CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
+    if (use_modern_diag) then
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_add_attribute_i1d(diag_axis_id, att_name, (/ att_value /))
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_i
 
   SUBROUTINE diag_axis_add_attribute_scalar_c(diag_axis_id, att_name, att_value)
@@ -1058,7 +1087,11 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     CHARACTER(len=*), INTENT(in) :: att_value
 
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, (/ att_value /))
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_CHAR, cval=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_scalar_c
 
   SUBROUTINE diag_axis_add_attribute_r1d(diag_axis_id, att_name, att_value)
@@ -1066,15 +1099,22 @@ CONTAINS
     CHARACTER(len=*), INTENT(in) :: att_name
     REAL, DIMENSION(:), INTENT(in) :: att_value
 
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
+    if (use_modern_diag) then
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_FLOAT, rval=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_r1d
 
   SUBROUTINE diag_axis_add_attribute_i1d(diag_axis_id, att_name, att_value)
     INTEGER, INTENT(in) :: diag_axis_id
     CHARACTER(len=*), INTENT(in) :: att_name
     INTEGER, DIMENSION(:), INTENT(in) :: att_value
-
-    CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
+    if (use_modern_diag) then
+      call fms_diag_object%fms_diag_axis_add_attribute(diag_axis_id, att_name, att_value)
+    else
+      CALL diag_axis_attribute_init(diag_axis_id, att_name, NF90_INT, ival=att_value)
+    endif
   END SUBROUTINE diag_axis_add_attribute_i1d
 
   !> @brief Allocates memory in out_file for the attributes.  Will <TT>FATAL</TT> if err_msg is not included

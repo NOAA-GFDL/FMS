@@ -81,8 +81,6 @@ module fms
                              assignment(=), &
                              fms_amip_interp_i_sst        => i_sst, &
                              fms_amip_interp_j_sst        => j_sst, &
-                             fms_amip_interp_sst_ncep     => sst_ncep, &
-                             fms_amip_interp_sst_anom     => sst_anom, &
                              fms_amip_interp_forecast_mode=> forecast_mode, &
                              fms_amip_interp_use_ncep_sst => use_ncep_sst
   !> astronomy
@@ -143,14 +141,20 @@ module fms
                                fms_coupler_type_set_data          => coupler_type_set_data, &
                                fms_coupler_type_copy_1d_2d        => coupler_type_copy_1d_2d, &
                                fms_coupler_type_copy_1d_3d        => coupler_type_copy_1d_3d, &
-                               FmsCoupler3dValues_type         => coupler_3d_values_type, &
-                               FmsCoupler3dField_type          => coupler_3d_field_type, &
+                               FmsCoupler3dValuesReals8_type         => coupler_3d_real8_values_type, &
+                               FmsCoupler3dFieldReals8_type          => coupler_3d_real8_field_type, &
+                               FmsCoupler2dValuesReals8_type         => coupler_2d_real8_values_type, &
+                               FmsCoupler2dFieldReals8_type          => coupler_2d_real8_field_type, &
+                               FmsCoupler1dValuesReals8_type         => coupler_1d_real8_values_type, &
+                               FmsCoupler1dFieldReals8_type          => coupler_1d_real8_field_type, &
+                               FmsCoupler3dValuesReals4_type         => coupler_3d_real4_values_type, &
+                               FmsCoupler3dFieldReals4_type          => coupler_3d_real4_field_type, &
+                               FmsCoupler2dValuesReals4_type         => coupler_2d_real4_values_type, &
+                               FmsCoupler2dFieldReals4_type          => coupler_2d_real4_field_type, &
+                               FmsCoupler1dValuesReals4_type         => coupler_1d_real4_values_type, &
+                               FmsCoupler1dFieldReals4_type          => coupler_1d_real4_field_type, &
                                FmsCoupler3dBC_type             => coupler_3d_bc_type, &
-                               FmsCoupler2dValues_type         => coupler_2d_values_type, &
-                               FmsCoupler2dField_type          => coupler_2d_field_type, &
                                FmsCoupler2dBC_type             => coupler_2d_bc_type, &
-                               FmsCoupler1dValues_type         => coupler_1d_values_type, &
-                               FmsCoupler1dField_type          => coupler_1d_field_type, &
                                FmsCoupler1dBC_type             => coupler_1d_bc_type, &
                                fms_coupler_ind_pcair                      => ind_pcair, &
                                fms_coupler_ind_u10                        => ind_u10, &
@@ -315,14 +319,6 @@ module fms
                          fms_fm_util_get_real_array => fm_util_get_real_array, &
                          fms_fm_util_get_string_array => fm_util_get_string_array, &
                          fms_fm_util_set_value => fm_util_set_value, &
-                         fms_fm_util_set_value_integer_array => fm_util_set_value_integer_array, &
-                         fms_fm_util_set_value_logical_array => fm_util_set_value_logical_array, &
-                         fms_fm_util_set_value_real_array => fm_util_set_value_real_array, &
-                         fms_fm_util_set_value_string_array => fm_util_set_value_string_array, &
-                         fms_fm_util_set_value_integer => fm_util_set_value_integer, &
-                         fms_fm_util_set_value_logical => fm_util_set_value_logical, &
-                         fms_fm_util_set_value_real => fm_util_set_value_real, &
-                         fms_fm_util_set_value_string => fm_util_set_value_string, &
                          fms_fm_util_get_index_list => fm_util_get_index_list, &
                          fms_fm_util_get_index_string => fm_util_get_index_string, &
                          fms_fm_util_default_caller => fm_util_default_caller
@@ -408,8 +404,7 @@ module fms
                               fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
                               fms_horiz_interp_end => horiz_interp_end
   use horiz_interp_type_mod, only: FmsHorizInterp_type => horiz_interp_type, &
-                              assignment(=), CONSERVE, BILINEAR, SPHERICA, BICUBIC, &
-                              fms_horiz_interp_type_stats => stats
+                              assignment(=), fms_horiz_interp_type_stats => stats
   !! used via horiz_interp
   ! horiz_interp_bicubic_mod, horiz_interp_bilinear_mod
   ! horiz_interp_conserve_mod, horiz_interp_spherical_mod
@@ -737,6 +732,7 @@ module fms
                                   fms_string_utils_sort_this => fms_sort_this, &
                                   fms_string_utils_find_my_string => fms_find_my_string, &
                                   fms_string_utils_find_unique => fms_find_unique, &
+                                  fms_string_utils_f2c_string => fms_f2c_string, &
                                   fms_string_utils_c2f_string => fms_c2f_string, &
                                   fms_string_utils_cstring2cpointer => fms_cstring2cpointer, &
                                   fms_string_utils_copy => string_copy
@@ -796,6 +792,14 @@ module fms
                               fms_time_manager_get_date_no_leap => get_date_no_leap, &
                               fms_time_manager_date_to_string => date_to_string
   use get_cal_time_mod, only: fms_get_cal_time => get_cal_time
+
+  !> generic exchange
+  use gex_mod,          only: fms_gex_init => gex_init, &
+                              fms_gex_get_index => gex_get_index, &
+                              fms_gex_get_n_ex => gex_get_n_ex, &
+                              fms_gex_get_property => gex_get_property, &
+                              fms_gex_name => gex_name, &
+                              fms_gex_units => gex_units
 
   !> topography
   use gaussian_topog_mod, only: fms_gaussian_topog_init => gaussian_topog_init, &

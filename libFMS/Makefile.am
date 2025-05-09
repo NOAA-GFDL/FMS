@@ -28,7 +28,7 @@ lib_LTLIBRARIES = libFMS.la
 # These linker flags specify libtool version info.
 # See http://www.gnu.org/software/libtool/manual/libtool.html#Libtool-versioning
 # for information regarding incrementing `-version-info`.
-libFMS_la_LDFLAGS = -version-info 15:0:0
+libFMS_la_LDFLAGS = -version-info 23:0:0
 
 # Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = $(top_builddir)/platform/libplatform.la
@@ -39,7 +39,7 @@ libFMS_la_LIBADD += $(top_builddir)/memutils/libmemutils.la
 libFMS_la_LIBADD += $(top_builddir)/fms/libfms.la
 libFMS_la_LIBADD += $(top_builddir)/fms2_io/libfms2_io.la
 libFMS_la_LIBADD += $(top_builddir)/affinity/libfms_affinity.la
-libFMS_la_LIBADD += $(top_builddir)/mosaic/libmosaic.la
+libFMS_la_LIBADD += $(top_builddir)/grid_utils/libgrid_utils.la
 libFMS_la_LIBADD += $(top_builddir)/mosaic2/libmosaic2.la
 libFMS_la_LIBADD += $(top_builddir)/coupler/libcoupler.la
 libFMS_la_LIBADD += $(top_builddir)/drifters/libdrifters.la

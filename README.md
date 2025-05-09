@@ -1,4 +1,11 @@
-\page rm General Project Information
+# License Announcement
+
+FMS will switch to the
+[Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)
+with the 2025.04 or 2026.01 release.  Please refer to
+[issue 1683 on changing the license](https://github.com/NOAA-GFDL/FMS/issues/1683)
+to participate in or follow any dicussion on the topic.
+
 # Modeling Framework: Flexible Modeling System (FMS)
 
 Today’s climate models simulate highly complex systems. In response to

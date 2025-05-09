@@ -66,9 +66,9 @@ subroutine get_new_filename(path, new_path, directory, timestamp, new_name)
   character(len=*), intent(in), optional :: timestamp !< Time.
   character(len=*), intent(in), optional :: new_name !< New file basename.
 
-  character(len=256) :: dir
-  character(len=256) :: tstamp
-  character(len=256) :: nname
+  character(len=FMS_PATH_LEN) :: dir
+  character(len=FMS_FILE_LEN) :: tstamp
+  character(len=FMS_PATH_LEN) :: nname
 
   dir = ""
   if (present(directory)) then
@@ -392,7 +392,7 @@ subroutine netcdf_save_restart_wrap2(fileobj, unlim_dim_level, directory, timest
                                                      !! or "netcdf4". Defaults to
                                                      !! "64bit".
 
-  character(len=256) :: new_name
+  character(len=FMS_PATH_LEN) :: new_name
   type(FmsNetcdfFile_t), target :: new_fileobj
   type(FmsNetcdfFile_t), pointer :: p
   logical :: close_new_file
@@ -425,7 +425,7 @@ subroutine netcdf_restore_state_wrap(fileobj, unlim_dim_level, directory, timest
   character(len=*), intent(in), optional :: timestamp !< Model time.
   character(len=*), intent(in), optional :: filename !< New name for the file.
 
-  character(len=256) :: new_name
+  character(len=FMS_PATH_LEN) :: new_name
   type(FmsNetcdfFile_t), target :: new_fileobj
   type(FmsNetcdfFile_t), pointer :: p
   logical :: close_new_file
@@ -534,7 +534,7 @@ subroutine save_domain_restart_wrap(fileobj, unlim_dim_level, directory, timesta
                                                      !! or "netcdf4". Defaults to
                                                      !! "64bit".
 
-  character(len=256) :: new_name
+  character(len=FMS_PATH_LEN) :: new_name
   type(FmsNetcdfDomainFile_t), target :: new_fileobj
   type(FmsNetcdfDomainFile_t), pointer :: p
   logical :: close_new_file
@@ -567,7 +567,7 @@ subroutine restore_domain_state_wrap(fileobj, unlim_dim_level, directory, timest
   character(len=*), intent(in), optional :: filename !< New name for the file.
   logical,          intent(in), optional :: ignore_checksum !< Checksum data integrity flag.
 
-  character(len=256) :: new_name
+  character(len=FMS_PATH_LEN) :: new_name
   type(FmsNetcdfDomainFile_t), target :: new_fileobj
   type(FmsNetcdfDomainFile_t), pointer :: p
   logical :: close_new_file

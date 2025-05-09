@@ -155,16 +155,14 @@
 !> @addtogroup field_manager_mod
 !> @{
 module field_manager_mod
-#ifndef use_yaml
+!TODO this variable can be removed when the legacy table is no longer used
 #ifndef MAXFIELDS_
 #define MAXFIELDS_ 250
 #endif
-#endif
 
-#ifndef use_yaml
+!TODO this variable can be removed when the legacy table is not longer used
 #ifndef MAXFIELDMETHODS_
 #define MAXFIELDMETHODS_ 250
-#endif
 #endif
 
 !
@@ -187,10 +185,13 @@ use    mpp_mod, only : mpp_error,   &
                        mpp_pe,      &
                        mpp_root_pe, &
                        stdlog,      &
-                       stdout
+                       stdout,      &
+                       input_nml_file
 use    fms_mod, only : lowercase,   &
-                       write_version_number
-use fms2_io_mod, only: file_exists
+                       write_version_number, &
+                       check_nml_error
+use fms2_io_mod, only: file_exists, get_instance_filename
+use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
 #ifdef use_yaml
 use fm_yaml_mod
 #endif
@@ -204,8 +205,6 @@ logical            :: module_is_initialized  = .false.
 public :: field_manager_init   !< (nfields, [table_name]) returns number of fields
 public :: field_manager_end    !< ()
 public :: find_field_index     !< (model, field_name) or (list_path)
-public :: find_field_index_old !< (model, field_name) returns index of field_name in
-public :: find_field_index_new
 public :: get_field_info       !< (n,fld_type,fld_name,model,num_methods)
                                !! Returns parameters relating to field n.
 public :: get_field_method     !< (n, m, method) Returns the m-th method of field n
@@ -222,19 +221,11 @@ public :: fm_get_current_list  !< () return path
 public :: fm_get_length        !< (list) return length
 public :: fm_get_type          !< (field) return string
 public :: fm_get_value         !< (entry, value [, index]) return success !! generic
-public :: fm_get_value_integer !<   as above (overloaded function)
-public :: fm_get_value_logical !<   as above (overloaded function)
-public :: fm_get_value_real    !<   as above (overloaded function)
-public :: fm_get_value_string  !<   as above (overloaded function)
 public :: fm_init_loop         !< (list, iter)
 public :: fm_loop_over_list    !< (list, name, type, index) return success
                                !! (iter, name, type, index) return success
 public :: fm_new_list          !< (list [, create] [, keep]) return index
 public :: fm_new_value         !< (entry, value [, create] [, index]) return index !! generic
-public :: fm_new_value_integer !<   as above (overloaded function)
-public :: fm_new_value_logical !<   as above (overloaded function)
-public :: fm_new_value_real    !<   as above (overloaded function)
-public :: fm_new_value_string  !<   as above (overloaded function)
 public :: fm_reset_loop        !< ()
 public :: fm_return_root       !< () return success
 public :: fm_modify_name       !< (oldname, newname) return success
@@ -250,13 +241,15 @@ private :: find_field          ! (field, list_p) return field pointer
 private :: find_head           ! (field, head, rest)
 private :: find_list           ! (list, list_p, create) return field pointer
 private :: get_field           ! (field, list_p) return field pointer
-private :: initialize          ! ()
+private :: initialize_module_variables          ! ()
 private :: make_list           ! (list_p, name) return field pointer
 
 !> The length of a character string representing the field name.
 integer, parameter, public :: fm_field_name_len = 48
+!! TODO this should be removed in favor of the global FMS_PATH_LEN
+!! when possible, currently used in ocean_BGC and land_lad2
 !> The length of a character string representing the field path.
-integer, parameter, public :: fm_path_name_len  = 512
+integer, parameter, public :: fm_path_name_len  = FMS_PATH_LEN
 !> The length of a character string representing character values for the field.
 integer, parameter, public :: fm_string_len     = 1024
 !> The length of a character string representing the various types that the values of the field can take.
@@ -362,8 +355,10 @@ end interface
 !! @endcode
 !> @ingroup field_manager_mod
 interface parse
-  module procedure  parse_real
-  module procedure  parse_reals
+  module procedure  parse_real_r4
+  module procedure  parse_real_r8
+  module procedure  parse_reals_r4
+  module procedure  parse_reals_r8
   module procedure  parse_integer
   module procedure  parse_integers
   module procedure  parse_string
@@ -389,7 +384,8 @@ end interface
 interface  fm_new_value
   module procedure  fm_new_value_integer
   module procedure  fm_new_value_logical
-  module procedure  fm_new_value_real
+  module procedure  fm_new_value_real_r4
+  module procedure  fm_new_value_real_r8
   module procedure  fm_new_value_string
 end interface
 
@@ -407,7 +403,8 @@ end interface
 interface  fm_get_value
   module procedure  fm_get_value_integer
   module procedure  fm_get_value_logical
-  module procedure  fm_get_value_real
+  module procedure  fm_get_value_real_r4
+  module procedure  fm_get_value_real_r8
   module procedure  fm_get_value_string
 end interface
 
@@ -431,12 +428,12 @@ character(len=35), parameter :: warn_header       = '==>Warning from '//trim(mod
 character(len=32), parameter :: note_header       = '==>Note from '//trim(module_name)//': '
 character(len=1),  parameter :: comma             = ","
 character(len=1),  parameter :: list_sep          = '/'
-#ifndef use_yaml
+!TODO these variable can be removed when the legacy table is no longer used
 character(len=1),  parameter :: comment           = '#'
 character(len=1),  parameter :: dquote            = '"'
 character(len=1),  parameter :: equal             = '='
 character(len=1),  parameter :: squote            = "'"
-#endif
+!
 integer,           parameter :: null_type         = 0
 integer,           parameter :: integer_type      = 1
 integer,           parameter :: list_type         = 2
@@ -445,10 +442,10 @@ integer,           parameter :: real_type         = 4
 integer,           parameter :: string_type       = 5
 integer,           parameter :: num_types         = 5
 integer,           parameter :: array_increment   = 10
-#ifndef use_yaml
+!TODO these variable can be removed when the legacy table is no longer used
 integer,           parameter :: MAX_FIELDS        = MAXFIELDS_
 integer,           parameter :: MAX_FIELD_METHODS = MAXFIELDMETHODS_
-#endif
+!
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
@@ -456,20 +453,17 @@ type, private :: field_mgr_type
   character(len=fm_field_name_len)                    :: field_type
   character(len=fm_string_len)                        :: field_name
   integer                                             :: model, num_methods
-#ifdef use_yaml
   type(method_type), dimension(:), allocatable        :: methods !< methods associated with this field name
-#else
-  type(method_type)                                   :: methods(MAX_FIELD_METHODS)
-#endif
 end type field_mgr_type
 
-#ifndef use_yaml
+!TODO These two types: field_names_type and field_names_type_short
+!! will no longer be needed when the legacy field table is not used
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
 type, private :: field_names_type
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
-  character(len=fm_string_len)                    :: fld_name
+  character(len=fm_string_len)                        :: fld_name
 end  type field_names_type
 
 !> @brief Private type for internal use
@@ -478,7 +472,6 @@ type, private :: field_names_type_short
   character(len=fm_field_name_len)                    :: fld_type
   character(len=fm_field_name_len)                    :: mod_name
 end type field_names_type_short
-#endif
 
 !> @brief Private type for internal use
 !> @ingroup field_manager_mod
@@ -492,10 +485,11 @@ type, private :: field_def
   integer                                             :: max_index
   type (field_def), pointer                           :: first_field => NULL()
   type (field_def), pointer                           :: last_field => NULL()
-  integer, pointer, dimension(:)                      :: i_value => NULL()
-  logical, pointer, dimension(:)                      :: l_value => NULL()
-  real, pointer, dimension(:)                         :: r_value => NULL()
-  character(len=fm_string_len), pointer, dimension(:) :: s_value => NULL()
+  integer, allocatable, dimension(:)                  :: i_value
+  logical, allocatable, dimension(:)                  :: l_value
+  real(r8_kind), allocatable, dimension(:)            :: r_value !< string to real conversion will be done at r8;
+                                                                 !! all real values will be stored as r8_kind.
+  character(len=fm_string_len), allocatable, dimension(:) :: s_value
   type (field_def), pointer                           :: next => NULL()
   type (field_def), pointer                           :: prev => NULL()
 end type field_def
@@ -503,13 +497,9 @@ end type field_def
 !> @addtogroup field_manager_mod
 !> @{
 
-#ifdef use_yaml
 type(field_mgr_type), dimension(:), allocatable, private :: fields !< fields of field_mgr_type
-#else
-type(field_mgr_type), private :: fields(MAX_FIELDS)
-#endif
 
-character(len=fm_path_name_len)  :: loop_list
+character(len=FMS_PATH_LEN)  :: loop_list
 character(len=fm_type_name_len)  :: field_type_name(num_types)
 character(len=fm_field_name_len) :: save_root_name
 ! The string set is the set of characters.
@@ -527,9 +517,12 @@ type (field_def), pointer        :: root_p             => NULL()
 type (field_def), pointer        :: save_root_parent_p => NULL()
 type (field_def), target, save   :: root
 
-contains
+logical :: use_field_table_yaml = .false. !< .True. if using the field_table.yaml,
+                                          !! .false. if using the legacy field_table
 
-#ifdef use_yaml
+namelist /field_manager_nml/ use_field_table_yaml
+
+contains
 
 !> @brief Routine to initialize the field manager.
 !!
@@ -552,12 +545,47 @@ subroutine field_manager_init(nfields, table_name)
 integer,                      intent(out), optional :: nfields    !< number of fields
 character(len=fm_string_len), intent(in),  optional :: table_name !< Name of the field table, default
 
-character(len=fm_string_len)    :: tbl_name !< field_table yaml file
+if (module_is_initialized) then
+   if(present(nfields)) nfields = num_fields
+   return
+endif
+
+call initialize_module_variables()
+
+!TODO the use_field_table_yaml namelist can be removed when the legacy table is no longer in used
+if (use_field_table_yaml) then
+  !Crash if you are not compiling with -Duse_yaml or if the field_table is present
+#ifndef use_yaml
+  call mpp_error(FATAL, "You cannot have use_field_table_yaml=.true. without compiling with -Duse_yaml")
+#else
+  if (file_exists("field_table")) &
+    call mpp_error(FATAL, "You cannot have the legacy field_table if use_field_table_yaml=.true.")
+
+  call mpp_error(NOTE, "field_manager_init:: You are using the yaml version of the field_table")
+  call read_field_table_yaml(nfields, table_name)
+#endif
+else
+  if (file_exists("field_table.yaml")) &
+    call mpp_error(FATAL, "You cannot have the yaml field_table if use_field_table_yaml=.false.")
+  call mpp_error(NOTE, "field_manager_init:: You are using the legacy version of the field_table")
+  call read_field_table_legacy(nfields, table_name)
+endif
+
+end subroutine field_manager_init
+
+#ifdef use_yaml
+
+!> @brief Routine to read and parse the field table yaml
+subroutine read_field_table_yaml(nfields, table_name)
+integer,                      intent(out), optional :: nfields    !< number of fields
+character(len=*),  intent(in),  optional :: table_name !< Name of the field table file, default is 'field_table.yaml'
+
+character(len=FMS_FILE_LEN)     :: tbl_name !< field_table yaml file
 character(len=fm_string_len)    :: method_control !< field_table yaml file
 integer                         :: h, i, j, k, l, m !< dummy integer buffer
-type (fmTable_t)                :: my_table       !< the field table
+type (fmTable_t)                :: my_table !< the field table
 integer                         :: model !< model assocaited with the current field
-character(len=fm_path_name_len) :: list_name !< field_manager list name
+character(len=FMS_PATH_LEN)     :: list_name !< field_manager list name
 character(len=fm_string_len)    :: subparamvalue !< subparam value to be used when defining new name
 character(len=fm_string_len)    :: fm_yaml_null !< useful hack when OG subparam does not contain an equals sign
 integer                         :: current_field !< field index within loop
@@ -566,31 +594,35 @@ integer                         :: subparamindex !< index to identify whether su
 logical                         :: fm_success !< logical for whether fm_change_list was a success
 logical                         :: subparams !< logical whether subparams exist in this iteration
 
-if (module_is_initialized) then
-   if(present(nfields)) nfields = num_fields
-   return
-endif
-
-call initialize
+character(len=FMS_FILE_LEN) :: filename !< Name of the expected field_table.yaml
 
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table.yaml'
 else
    tbl_name = trim(table_name)
 endif
-if (.not. file_exists(trim(tbl_name))) then
+
+call get_instance_filename(tbl_name, filename)
+if (index(trim(filename), "ens_") .ne. 0) then
+  if (file_exists(filename) .and. file_exists(tbl_name)) &
+    call mpp_error(FATAL, "Both "//trim(tbl_name)//" and "//trim(filename)//" exists, pick one!")
+
+  !< If the end_* file does not exist, revert back to tbl_name
+  !! where every ensemble is using the same yaml
+  if (.not. file_exists(filename)) filename = tbl_name
+endif
+
+if (.not. file_exists(trim(filename))) then
   if(present(nfields)) nfields = 0
   return
 endif
 
+! Construct my_table object
+call build_fmTable(my_table, trim(filename))
 
-! Define my_table object and read in number of fields
-my_table = fmTable_t(trim(tbl_name))
-call my_table%get_blocks
-call my_table%create_children
-do h=1,my_table%nchildren
-  do i=1,my_table%children(h)%nchildren
-    do j=1,my_table%children(h)%children(i)%nchildren
+do h=1,size(my_table%types)
+  do i=1,size(my_table%types(h)%models)
+    do j=1,size(my_table%types(h)%models(i)%variables)
       num_fields = num_fields + 1
     end do
   end do
@@ -599,9 +631,9 @@ end do
 allocate(fields(num_fields))
 
 current_field = 0
-do h=1,my_table%nchildren
-  do i=1,my_table%children(h)%nchildren
-    select case (my_table%children(h)%children(i)%name)
+do h=1,size(my_table%types)
+  do i=1,size(my_table%types(h)%models)
+    select case (my_table%types(h)%models(i)%name)
     case ('coupler_mod')
        model = MODEL_COUPLER
     case ('atmos_mod')
@@ -614,57 +646,57 @@ do h=1,my_table%nchildren
        model = MODEL_ICE
     case default
       call mpp_error(FATAL, trim(error_header)//'The model name is unrecognised : &
-        &'//trim(my_table%children(h)%children(i)%name))
+        &'//trim(my_table%types(h)%models(i)%name))
     end select
-    do j=1,my_table%children(h)%children(i)%nchildren
+    do j=1,size(my_table%types(h)%models(i)%variables)
       current_field = current_field + 1
-      list_name = list_sep//lowercase(trim(my_table%children(h)%children(i)%name))//list_sep//&
-               lowercase(trim(my_table%children(h)%name))//list_sep//&
-               lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
+      list_name = list_sep//lowercase(trim(my_table%types(h)%models(i)%name))//list_sep//&
+               lowercase(trim(my_table%types(h)%name))//list_sep//&
+               lowercase(trim(my_table%types(h)%models(i)%variables(j)%name))
       index_list_name = fm_new_list(list_name, create = .true.)
       if ( index_list_name == NO_FIELD ) &
         call mpp_error(FATAL, trim(error_header)//'Could not set field list for '//trim(list_name))
       fm_success = fm_change_list(list_name)
       fields(current_field)%model       = model
-      fields(current_field)%field_name  = lowercase(trim(my_table%children(h)%children(i)%children(j)%name))
-      fields(current_field)%field_type  = lowercase(trim(my_table%children(h)%name))
-      fields(current_field)%num_methods = size(my_table%children(h)%children(i)%children(j)%key_ids)
+      fields(current_field)%field_name  = lowercase(trim(my_table%types(h)%models(i)%variables(j)%name))
+      fields(current_field)%field_type  = lowercase(trim(my_table%types(h)%name))
+      fields(current_field)%num_methods = size(my_table%types(h)%models(i)%variables(j)%keys)
       allocate(fields(current_field)%methods(fields(current_field)%num_methods))
       if(fields(current_field)%num_methods.gt.0) then
-        if (my_table%children(h)%children(i)%children(j)%nchildren .gt. 0) subparams = .true.
-        do k=1,size(my_table%children(h)%children(i)%children(j)%keys)
+        subparams = (size(my_table%types(h)%models(i)%variables(j)%attributes) .gt. 0)
+        do k=1,size(my_table%types(h)%models(i)%variables(j)%keys)
           fields(current_field)%methods(k)%method_type = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%keys(k)))
+            lowercase(trim(my_table%types(h)%models(i)%variables(j)%keys(k)))
           fields(current_field)%methods(k)%method_name = &
-            lowercase(trim(my_table%children(h)%children(i)%children(j)%values(k)))
+            lowercase(trim(my_table%types(h)%models(i)%variables(j)%values(k)))
           if (.not.subparams) then
-            call new_name(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
-              my_table%children(h)%children(i)%children(j)%values(k) )
+            call new_name(list_name, my_table%types(h)%models(i)%variables(j)%keys(k),&
+              my_table%types(h)%models(i)%variables(j)%values(k) )
           else
             subparamindex=-1
-            do l=1,my_table%children(h)%children(i)%children(j)%nchildren
-              if(lowercase(trim(my_table%children(h)%children(i)%children(j)%children(l)%paramname)).eq.&
+            do l=1,size(my_table%types(h)%models(i)%variables(j)%attributes)
+              if(lowercase(trim(my_table%types(h)%models(i)%variables(j)%attributes(l)%paramname)).eq.&
                 lowercase(trim(fields(current_field)%methods(k)%method_type))) then
                   subparamindex = l
                   exit
               end if
             end do
             if (subparamindex.eq.-1) then
-              call new_name(list_name, my_table%children(h)%children(i)%children(j)%keys(k),&
-                my_table%children(h)%children(i)%children(j)%values(k) )
+              call new_name(list_name, my_table%types(h)%models(i)%variables(j)%keys(k),&
+                my_table%types(h)%models(i)%variables(j)%values(k) )
             else
-              do m=1,size(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys)
+              do m=1,size(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%keys)
                 method_control = " "
                 subparamvalue = " "
-                if (trim(my_table%children(h)%children(i)%children(j)%values(k)).eq.'fm_yaml_null') then
+                if (trim(my_table%types(h)%models(i)%variables(j)%values(k)).eq.'fm_yaml_null') then
                   fm_yaml_null = ''
                 else
-                  fm_yaml_null = trim(my_table%children(h)%children(i)%children(j)%values(k))//'/'
+                  fm_yaml_null = trim(my_table%types(h)%models(i)%variables(j)%values(k))//'/'
                 end if
-                method_control = trim(my_table%children(h)%children(i)%children(j)%keys(k))//"/"//&
+                method_control = trim(my_table%types(h)%models(i)%variables(j)%keys(k))//"/"//&
                   &trim(fm_yaml_null)//&
-                  &trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%keys(m))
-                subparamvalue = trim(my_table%children(h)%children(i)%children(j)%children(subparamindex)%values(m))
+                  &trim(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%keys(m))
+                subparamvalue = trim(my_table%types(h)%models(i)%variables(j)%attributes(subparamindex)%values(m))
                 call new_name(list_name, method_control, subparamvalue)
               end do
             end if
@@ -676,8 +708,7 @@ do h=1,my_table%nchildren
 end do
 
 if (present(nfields)) nfields = num_fields
-call my_table%destruct
-end subroutine field_manager_init
+end subroutine read_field_table_yaml
 
 !> @brief Subroutine to add new values to list parameters.
 !!
@@ -687,7 +718,7 @@ end subroutine field_manager_init
 !! method_name and is given the value or values in
 !! val_name_in. If there is more than 1 value in
 !! val_name_in, these values should be  comma-separated.
-subroutine new_name ( list_name, method_name_in , val_name_in)
+subroutine new_name_yaml ( list_name, method_name_in , val_name_in)
 character(len=*), intent(in)    :: list_name !< The name of the field that is of interest here.
 character(len=*), intent(in)    :: method_name_in !< The name of the method that values are
                                                   !! being supplied for.
@@ -705,7 +736,8 @@ integer                            :: val_int !< value when converted to integer
 integer                            :: val_type !< value type represented as integer for use in select case
 logical                            :: append_new !< whether or not to append to existing list structure
 logical                            :: val_logic !< value when converted to logical
-real                               :: val_real !< value when converted to real
+real(r8_kind)                      :: val_real !< value when converted to real.
+                                               !! All strings will be converted to r8_kind reals.
 
 call strip_front_blanks(val_name_in)
 method_name = trim(method_name_in)
@@ -810,17 +842,17 @@ enddo
   deallocate(start_val)
   deallocate(end_val)
 
-end subroutine new_name
-#else
+end subroutine new_name_yaml
+#endif
 
-!> @brief Routine to initialize the field manager.
+!> @brief Routine to read and parse the field table yaml
 !!
 !> This routine reads from a file containing formatted strings.
 !! These formatted strings contain information on which schemes are
 !! needed within various modules. The field manager does not
 !! initialize any of those schemes however. It simply holds the
 !! information and is queried by the appropriate  module.
-subroutine field_manager_init(nfields, table_name)
+subroutine read_field_table_legacy(nfields, table_name)
 
 integer,                      intent(out), optional :: nfields !< number of fields
 character(len=fm_string_len), intent(in), optional :: table_name !< Name of the field table, default
@@ -828,7 +860,7 @@ character(len=fm_string_len), intent(in), optional :: table_name !< Name of the 
 
 character(len=1024)              :: record
 character(len=fm_string_len)     :: control_str
-character(len=fm_path_name_len)  :: list_name
+character(len=FMS_PATH_LEN)  :: list_name
 character(len=fm_string_len)     :: method_name
 character(len=fm_string_len)     :: name_str
 character(len=fm_string_len)     :: type_str
@@ -855,13 +887,6 @@ type(method_type_short)          :: text_method_short
 type(method_type)                :: text_method
 type(method_type_very_short)     :: text_method_very_short
 
-if (module_is_initialized) then
-   if(present(nfields)) nfields = num_fields
-   return
-endif
-
-call initialize
-
 if (.not.PRESENT(table_name)) then
    tbl_name = 'field_table'
 else
@@ -871,6 +896,8 @@ if (.not. file_exists(trim(tbl_name))) then
   if(present(nfields)) nfields = 0
   return
 endif
+
+allocate(fields(MAX_FIELDS))
 
 open(newunit=iunit, file=trim(tbl_name), action='READ', iostat=io_status)
 if(io_status/=0) call mpp_error(FATAL, 'field_manager_mod: Error in opening file '//trim(tbl_name))
@@ -953,6 +980,7 @@ do while (.TRUE.)
       fields(num_fields)%field_name  = lowercase(trim(text_names%fld_name))
       fields(num_fields)%field_type  = lowercase(trim(text_names%fld_type))
       fields(num_fields)%num_methods = 0
+      allocate(fields(num_fields)%methods(MAX_FIELD_METHODS))
       call check_for_name_duplication
 
 ! Check to see that the first line is not the only line
@@ -1143,7 +1171,7 @@ return
 
 call mpp_error(FATAL,trim(error_header)//' Error reading field table. Record = '//trim(record))
 
-end subroutine field_manager_init
+end subroutine read_field_table_legacy
 
 subroutine check_for_name_duplication
 integer :: i
@@ -1193,7 +1221,7 @@ integer                        :: val_int
 integer                        :: val_type
 logical                        :: append_new
 logical                        :: val_logic
-real                           :: val_real
+real(r8_kind)                  :: val_real !< all reals converted from string will be in r8_kind precision
 integer                        :: length
 
 call strip_front_blanks(val_name_in)
@@ -1351,26 +1379,20 @@ do i = 1, num_elem
 enddo
 
 end subroutine new_name
-#endif
 
 !> @brief Destructor for field manager.
 !!
 !> This subroutine deallocates allocated variables (if allocated) and
 !! changes the initialized flag to false.
 subroutine field_manager_end
-
-#ifdef use_yaml
 integer :: j
-#endif
 
 module_is_initialized = .false.
 
-#ifdef use_yaml
 do j=1,size(fields)
   if(allocated(fields(j)%methods)) deallocate(fields(j)%methods)
 end do
 if(allocated(fields)) deallocate(fields)
-#endif
 
 end subroutine field_manager_end
 
@@ -1487,14 +1509,6 @@ end subroutine get_field_methods
 !> @returns The number of values that have been decoded. This allows
 !! a user to define a large array and fill it partially with
 !! values from a list. This should be the size of the value array.
-function parse_reals ( text, label, values ) result (parse)
-character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
-character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-real,             intent(out) :: values(:) !< The value or values that have been decoded.
-
-include 'parse.inc'
-end function parse_reals
-
 function parse_integers ( text, label, values ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
@@ -1511,40 +1525,28 @@ character(len=*), intent(out) :: values(:) !< The value or values that have been
 include 'parse.inc'
 end function parse_strings
 
-function parse_real ( text, label, value ) result (parse)
+function parse_integer ( text, label, parse_ival ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-real,             intent(out) :: value !< The value or values that have been decoded.
-integer :: parse
-
-real :: values(1)
-
-   parse = parse_reals ( text, label, values )
-   if (parse > 0) value = values(1)
-end function parse_real
-
-function parse_integer ( text, label, value ) result (parse)
-character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
-character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-integer,          intent(out) :: value !< The value or values that have been decoded.
+integer,          intent(out) :: parse_ival !< The value or values that have been decoded.
 integer :: parse
 
 integer :: values(1)
 
    parse = parse_integers ( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_ival = values(1)
 end function parse_integer
 
-function parse_string ( text, label, value ) result (parse)
+function parse_string ( text, label, parse_sval ) result (parse)
 character(len=*), intent(in)  :: text !< The text string from which the values will be parsed.
 character(len=*), intent(in)  :: label !< A label which describes the values being decoded.
-character(len=*), intent(out) :: value !< The value or values that have been decoded.
+character(len=*), intent(out) :: parse_sval !< The value or values that have been decoded.
 integer :: parse
 
-character(len=len(value)) :: values(1)
+character(len=len(parse_sval)) :: values(1)
 
    parse = parse_strings ( text, label, values )
-   if (parse > 0) value = values(1)
+   if (parse > 0) parse_sval = values(1)
 end function parse_string
 
 !> @brief A function to create a field as a child of parent_p. This will return
@@ -1590,10 +1592,10 @@ list_p%length = 0
 list_p%field_type = null_type
 list_p%max_index = 0
 list_p%array_dim = 0
-if (associated(list_p%i_value)) deallocate(list_p%i_value)
-if (associated(list_p%l_value)) deallocate(list_p%l_value)
-if (associated(list_p%r_value)) deallocate(list_p%r_value)
-if (associated(list_p%s_value)) deallocate(list_p%s_value)
+if (allocated(list_p%i_value))  deallocate(list_p%i_value)
+if (allocated(list_p%l_value))  deallocate(list_p%l_value)
+if (allocated(list_p%r_value))  deallocate(list_p%r_value)
+if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 !        If this is the first field in the parent, then set the pointer
 !        to it, otherwise, update the "next" pointer for the last list
 if (parent_p%length .le. 0) then
@@ -1716,8 +1718,8 @@ logical recursive function dump_list(list_p, recursive, depth, out_unit) result(
                write (scratch,*) this_field_p%r_value(j)
                write (num,*) j
                write (out_unit,'(a,a,a,a,a,a)') blank(1:depthp1), trim(this_field_p%name), &
-                      '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
-            enddo
+                    '[', trim(adjustl(num)), '] = ', trim(adjustl(scratch))
+            end do
          endif
 
      case(string_type)
@@ -1906,8 +1908,8 @@ character(len=*), intent(in)     :: path !< path to the list of interest
 type (field_def), pointer        :: relative_p !< pointer to the list to which "path" is relative to
 logical,          intent(in)     :: create !< If the list does not exist, it will be created if set to true
 
-character(len=fm_path_name_len)  :: working_path
-character(len=fm_path_name_len)  :: rest
+character(len=FMS_PATH_LEN)  :: working_path
+character(len=FMS_PATH_LEN)  :: rest
 character(len=fm_field_name_len) :: this_list
 integer                          :: i, out_unit
 type (field_def), pointer, save  :: working_path_p
@@ -1995,7 +1997,7 @@ character(len=*), intent(in)  :: name !< name of a list to change to
 type (field_def), pointer, save :: temp_p
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Find the list if path is not empty
 temp_p => find_list(name, current_list_p, .false.)
@@ -2028,7 +2030,7 @@ type (field_def), pointer, save :: temp_list_p
 integer :: out_unit
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 out_unit = stdout()
 !        Must supply a field field name
@@ -2088,7 +2090,7 @@ logical function  fm_dump_list(name, recursive, unit) result (success)
 
   recursive_t = .false.
   if (present(recursive)) recursive_t = recursive
-  if (.not. module_is_initialized) call initialize()
+  if (.not. module_is_initialized) call initialize_module_variables()
 
   if (name .eq. ' ') then
     ! If list is empty, then dump the current list
@@ -2122,7 +2124,7 @@ character(len=*), intent(in) :: name !< The name of the field that is being quer
 type (field_def), pointer, save :: dummy_p
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Determine whether the field exists
 dummy_p => get_field(name, current_list_p)
@@ -2148,7 +2150,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
@@ -2173,12 +2175,12 @@ end function  fm_get_index
 !> @returns The path corresponding to the current list
 function  fm_get_current_list()                                        &
           result (path)
-character(len=fm_path_name_len) :: path
+character(len=FMS_PATH_LEN) :: path
 
 type (field_def), pointer, save :: temp_list_p
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Set a pointer to the current list and proceed
 !        up the tree, filling in the name as we go
@@ -2226,7 +2228,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2267,7 +2269,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2288,11 +2290,11 @@ end function  fm_get_type
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_integer(name, value, index)                 &
+function  fm_get_value_integer(name, get_ival, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-integer,          intent(out)          :: value !< The value associated with the named field.
+integer,          intent(out)          :: get_ival !< The value associated with the named field.
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2302,11 +2304,11 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = 0
+  get_ival = 0
   success = .false.
   return
 endif
@@ -2324,20 +2326,20 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. integer_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or index too large
-      value = 0
+      get_ival = 0
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%i_value(index_t)
+      get_ival = temp_field_p%i_value(index_t)
       success = .true.
     endif
   else
 !        Field not corrcet type
-    value = 0
+    get_ival = 0
     success = .false.
   endif
 else
-  value = 0
+  get_ival = 0
   success = .false.
 endif
 
@@ -2345,11 +2347,11 @@ end function  fm_get_value_integer
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_logical(name, value, index)                 &
+function  fm_get_value_logical(name, get_lval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-logical,          intent(out)          :: value !< The value associated with the named field
+logical,          intent(out)          :: get_lval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2359,11 +2361,11 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = .false.
+  get_lval = .false.
   success = .false.
   return
 endif
@@ -2382,20 +2384,20 @@ if (associated(temp_field_p)) then
 
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or too large
-      value = .false.
+      get_lval = .false.
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%l_value(index_t)
+      get_lval = temp_field_p%l_value(index_t)
       success = .true.
     endif
   else
 !        Field not correct type
-    value = .false.
+    get_lval = .false.
     success = .false.
   endif
 else
-  value = .false.
+  get_lval = .false.
   success = .false.
 endif
 
@@ -2403,11 +2405,11 @@ end function  fm_get_value_logical
 
 !> @returns A flag to indicate whether the function operated with (false) or without
 !! (true) errors.
-function  fm_get_value_real(name, value, index)                 &
+function  fm_get_value_string(name, get_sval, index)                 &
           result (success)
 logical                                :: success
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-real,             intent(out)          :: value !< The value associated with the named field
+character(len=*), intent(out)          :: get_sval !< The value associated with the named field
 integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
 
 integer                         :: index_t
@@ -2417,67 +2419,11 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field field name
 if (name .eq. ' ') then
-  value = 0.0
-  success = .false.
-  return
-endif
-!        Set index to retrieve
-if (present(index)) then
-  index_t = index
-else
-  index_t = 1
-endif
-!        Get a pointer to the field
-temp_field_p => get_field(name, current_list_p)
-
-if (associated(temp_field_p)) then
-!        check that the field is the correct type
-  if (temp_field_p%field_type .eq. real_type) then
-    if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
-!        Index is not positive or is too large
-      value = 0.0
-      success = .false.
-    else
-!        extract the value
-      value = temp_field_p%r_value(index_t)
-      success = .true.
-    endif
-  else
-    value = 0.0
-    success = .false.
-  endif
-else
-  value = 0.0
-  success = .false.
-endif
-
-end function  fm_get_value_real
-
-!> @returns A flag to indicate whether the function operated with (false) or without
-!! (true) errors.
-function  fm_get_value_string(name, value, index)                 &
-          result (success)
-logical                                :: success
-character(len=*), intent(in)           :: name !< The name of a field that the user wishes to get a value for.
-character(len=*), intent(out)          :: value !< The value associated with the named field
-integer,          intent(in), optional :: index !< An optional index to retrieve a single value from an array.
-
-integer                         :: index_t
-type (field_def), pointer, save :: temp_field_p
-integer                         :: out_unit
-
-out_unit = stdout()
-!        Initialize the field manager if needed
-if (.not. module_is_initialized) then
-  call initialize
-endif
-!        Must supply a field field name
-if (name .eq. ' ') then
-  value = ''
+  get_sval = ''
   success = .false.
   return
 endif
@@ -2495,20 +2441,20 @@ if (associated(temp_field_p)) then
   if (temp_field_p%field_type .eq. string_type) then
     if (index_t .lt. 1 .or. index_t .gt. temp_field_p%max_index) then
 !        Index is not positive or is too large
-      value = ''
+      get_sval = ''
       success = .false.
     else
 !        extract the value
-      value = temp_field_p%s_value(index_t)
+      get_sval = temp_field_p%s_value(index_t)
         success = .true.
     endif
   else
 !        Field not correct type
-    value = ''
+    get_sval = ''
     success = .false.
   endif
 else
-  value = ''
+  get_sval = ''
   success = .false.
 endif
 
@@ -2530,7 +2476,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 
 if (list .eq. loop_list .and. associated(loop_list_p)) then
@@ -2590,7 +2536,7 @@ subroutine fm_init_loop(loop_list, iter)
   character(len=*)       , intent(in)  :: loop_list !< name of the list to iterate over
   type(fm_list_iter_type), intent(out) :: iter     !< loop iterator
 
-  if (.not.module_is_initialized) call initialize
+  if (.not.module_is_initialized) call initialize_module_variables
 
   if (loop_list==' ') then ! looping over current list
      iter%ptr => current_list_p%first_field
@@ -2610,7 +2556,7 @@ function fm_loop_over_list_new(iter, name, field_type, index) &
   character(len=*), intent(out) :: field_type !< type of the field
   integer         , intent(out) :: index      !< index in the list
 
-  if (.not.module_is_initialized) call initialize
+  if (.not.module_is_initialized) call initialize_module_variables
   if (associated(iter%ptr)) then
      name       = iter%ptr%name
      field_type = field_type_name(iter%ptr%field_type)
@@ -2639,7 +2585,7 @@ logical,          intent(in), optional :: keep !< If present and true, make this
 
 logical                          :: create_t
 logical                          :: keep_t
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p
 integer                         :: out_unit
@@ -2647,7 +2593,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field list name
 if (name .eq. ' ') then
@@ -2691,12 +2637,12 @@ end function  fm_new_list
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_integer(name, value, create, index, append)     &
+function  fm_new_value_integer(name, new_ival, create, index, append)     &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-integer,          intent(in)           :: value !< The value that the user wishes to apply to the
+integer,          intent(in)           :: new_ival !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -2709,7 +2655,7 @@ logical                          :: create_t
 integer                          :: i
 integer                          :: index_t
 integer, pointer, dimension(:)   :: temp_i_value
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_list_p
 type (field_def), pointer, save  :: temp_field_p
@@ -2718,7 +2664,7 @@ integer                          :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2764,7 +2710,8 @@ if (associated(temp_list_p)) then
 !        If not then reset max_index to 0
     if (temp_field_p%field_type == real_type ) then
        ! promote integer input to real
-       field_index = fm_new_value_real(name, real(value), create, index, append)
+       ! all real field values are stored as r8_kind
+       field_index = fm_new_value(name, real(new_ival,r8_kind), create, index, append)
        return
     else if (temp_field_p%field_type /= integer_type ) then
       !  slm: why would we reset index? Is it not an error to have a "list" defined
@@ -2791,7 +2738,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%i_value) .and.        &
+    elseif (.not. allocated(temp_field_p%i_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%i_value(1))
@@ -2805,14 +2752,14 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_i_value(i) = temp_field_p%i_value(i)
       enddo
-      if (associated (temp_field_p%i_value)) deallocate(temp_field_p%i_value)
-      temp_field_p%i_value => temp_i_value
+      if (allocated(temp_field_p%i_value)) deallocate(temp_field_p%i_value)
+      temp_field_p%i_value = temp_i_value
       temp_field_p%max_index = index_t
     endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%i_value(index_t) = value
+      temp_field_p%i_value(index_t) = new_ival
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
@@ -2830,12 +2777,12 @@ end function  fm_new_value_integer
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_logical(name, value, create, index, append) &
+function  fm_new_value_logical(name, new_lval, create, index, append) &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-logical,          intent(in)           :: value !< The value that the user wishes to apply to the
+logical,          intent(in)           :: new_lval !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -2844,7 +2791,7 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
       !! an array of the present values. If present and .true., then index cannot be greater than 0.
 
-character(len=fm_path_name_len)      :: path
+character(len=FMS_PATH_LEN)      :: path
 character(len=fm_field_name_len)     :: base
 integer                              :: i
 integer                              :: index_t
@@ -2857,7 +2804,7 @@ integer                              :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -2924,7 +2871,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%l_value) .and.        &
+    elseif (.not. allocated(temp_field_p%l_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%l_value(1))
@@ -2939,15 +2886,15 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_l_value(i) = temp_field_p%l_value(i)
       enddo
-      if (associated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
-      temp_field_p%l_value => temp_l_value
+      if (allocated(temp_field_p%l_value)) deallocate(temp_field_p%l_value)
+      temp_field_p%l_value = temp_l_value
       temp_field_p%max_index = index_t
 
     endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%l_value(index_t) = value
+      temp_field_p%l_value(index_t) = new_lval
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
@@ -2964,156 +2911,12 @@ end function  fm_new_value_logical
 
 !> @brief Assigns a given value to a given field
 !> @returns An index for the named field
-function  fm_new_value_real(name, value, create, index, append) &
+function  fm_new_value_string(name, new_sval, create, index, append) &
           result (field_index)
 integer                                :: field_index
 character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
                                                !! a value for.
-real,             intent(in)           :: value !< The value that the user wishes to apply to the
-                                                !! named field.
-logical,          intent(in), optional :: create !< If present and .true., then a value for this
-                                                 !! field will be created.
-integer,          intent(in), optional :: index !< The index to an array of values that the user
-                                                !! wishes to apply a new value.
-logical,          intent(in), optional :: append !< If present and .true., then append the value to
-      !! an array of the present values. If present and .true., then index cannot be greater than 0.
-
-logical                          :: create_t
-integer                          :: i
-integer                          :: index_t
-real, pointer, dimension(:)      :: temp_r_value
-character(len=fm_path_name_len)  :: path
-character(len=fm_field_name_len) :: base
-type (field_def), pointer, save  :: temp_list_p
-type (field_def), pointer, save  :: temp_field_p
-integer                          :: out_unit
-
-out_unit = stdout()
-!        Initialize the field manager if needed
-if (.not. module_is_initialized) then
-  call initialize
-endif
-!        Must supply a field name
-if (name .eq. ' ') then
-  field_index = NO_FIELD
-  return
-endif
-!        Check for optional arguments
-if (present(create)) then
-  create_t = create
-else
-  create_t = .false.
-endif
-!        Check that append is not true and index greater than 0
-if (present(index) .and. present(append)) then
-  if (append .and. index .gt. 0) then
-    field_index = NO_FIELD
-    return
-  endif
-endif
-!        Set index to define
-if (present(index)) then
-  index_t = index
-  if (index_t .lt. 0) then
-!        Index is negative
-    field_index = NO_FIELD
-    return
-  endif
-else
-  index_t = 1
-endif
-
-!        Get a pointer to the parent list
-call find_base(name, path, base)
-temp_list_p => find_list(path, current_list_p, create_t)
-
-if (associated(temp_list_p)) then
-  temp_field_p => find_field(base, temp_list_p)
-  if (.not. associated(temp_field_p)) then
-!        Create the field if it doesn't exist
-    temp_field_p => create_field(temp_list_p, base)
-  endif
-  if (associated(temp_field_p)) then
-!        Check if the field_type is the same as previously
-!        If not then reset max_index to 0
-    if (temp_field_p%field_type == integer_type) then
-       ! promote integer field to real
-       allocate(temp_field_p%r_value(size(temp_field_p%i_value)))
-       do i = 1, size(temp_field_p%i_value)
-          temp_field_p%r_value(i) = temp_field_p%i_value(i)
-       enddo
-       temp_field_p%field_type = real_type
-       deallocate(temp_field_p%i_value)
-    else if (temp_field_p%field_type /= real_type ) then
-      ! slm: why reset index to 0? does it make any sense? It sounds like this is the
-      ! case where the values in the array have different types, so is it not an error?
-      ! Or, alternatively, if string follows a real value, should not be the entire
-      ! array converted to string type?
-      temp_field_p%max_index = 0
-    endif
-!        Assign the type
-    temp_field_p%field_type = real_type
-!        Set the index if appending
-    if (present(append)) then
-      if (append) then
-        index_t = temp_field_p%max_index + 1
-      endif
-    endif
-    if (index_t .gt. temp_field_p%max_index + 1) then
-!        Index too large
-      field_index = NO_FIELD
-      return
-    elseif (index_t .eq. 0 .and.                                &
-            temp_field_p%max_index .gt. 0) then
-!        Can't set non-null field to null
-      field_index = NO_FIELD
-      return
-    elseif (.not. associated(temp_field_p%r_value) .and.        &
-            index_t .gt. 0) then
-!        Array undefined, so allocate the array
-      allocate(temp_field_p%r_value(1))
-      temp_field_p%max_index = 1
-      temp_field_p%array_dim = 1
-    elseif (index_t .gt. temp_field_p%array_dim) then
-!        Array is too small, so allocate new array and copy over
-!        old values
-      temp_field_p%array_dim = temp_field_p%array_dim + array_increment
-      allocate (temp_r_value(temp_field_p%array_dim))
-      do i = 1, temp_field_p%max_index
-        temp_r_value(i) = temp_field_p%r_value(i)
-      enddo
-      if (associated(temp_field_p%r_value)) deallocate(temp_field_p%r_value)
-      temp_field_p%r_value => temp_r_value
-      temp_field_p%max_index = index_t
-    endif
-!        Assign the value and set the field_index for return
-!        for non-null fields (index_t > 0)
-    if (index_t .gt. 0) then
-      temp_field_p%r_value(index_t) = value
-      if (index_t .gt. temp_field_p%max_index) then
-        temp_field_p%max_index = index_t
-      endif
-    endif
-    field_index = temp_field_p%index
-  else
-!        Error in making the field
-    field_index = NO_FIELD
-  endif
-else
-!        Error following the path
-  field_index = NO_FIELD
-endif
-
-end function  fm_new_value_real
-
-!> @brief Assigns a given value to a given field
-!> @returns An index for the named field
-function  fm_new_value_string(name, value, create, index, append) &
-          result (field_index)
-integer                                :: field_index
-character(len=*), intent(in)           :: name !< The name of a field that the user wishes to create
-                                               !! a value for.
-character(len=*), intent(in)           :: value !< The value that the user wishes to apply to the
+character(len=*), intent(in)           :: new_sval !< The value that the user wishes to apply to the
                                                 !! named field.
 logical,          intent(in), optional :: create !< If present and .true., then a value for this
                                                  !! field will be created.
@@ -3122,7 +2925,7 @@ integer,          intent(in), optional :: index !< The index to an array of valu
 logical,          intent(in), optional :: append !< If present and .true., then append the value to
 
 character(len=fm_string_len), dimension(:), pointer :: temp_s_value
-character(len=fm_path_name_len)                     :: path
+character(len=FMS_PATH_LEN)                     :: path
 character(len=fm_field_name_len)                    :: base
 integer                                             :: i
 integer                                             :: index_t
@@ -3134,7 +2937,7 @@ integer                         :: out_unit
 out_unit = stdout()
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Must supply a field name
 if (name .eq. ' ') then
@@ -3201,7 +3004,7 @@ if (associated(temp_list_p)) then
       field_index = NO_FIELD
       return
 
-    elseif (.not. associated(temp_field_p%s_value) .and.        &
+    elseif (.not.allocated(temp_field_p%s_value) .and.        &
             index_t .gt. 0) then
 !        Array undefined, so allocate the array
       allocate(temp_field_p%s_value(1))
@@ -3216,15 +3019,15 @@ if (associated(temp_list_p)) then
       do i = 1, temp_field_p%max_index
         temp_s_value(i) = temp_field_p%s_value(i)
       enddo
-      if (associated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
-      temp_field_p%s_value => temp_s_value
+      if (allocated(temp_field_p%s_value)) deallocate(temp_field_p%s_value)
+      temp_field_p%s_value = temp_s_value
       temp_field_p%max_index = index_t
 
     endif
 !        Assign the value and set the field_index for return
 !        for non-null fields (index_t > 0)
     if (index_t .gt. 0) then
-      temp_field_p%s_value(index_t) = value
+      temp_field_p%s_value(index_t) = new_sval
       if (index_t .gt. temp_field_p%max_index) then
         temp_field_p%max_index = index_t
       endif
@@ -3246,7 +3049,7 @@ end function  fm_new_value_string
 subroutine  fm_reset_loop
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        Reset the variables
 loop_list = ' '
@@ -3263,7 +3066,7 @@ end subroutine  fm_reset_loop
 subroutine  fm_return_root
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 !        restore the saved values to the current root
 root_p%name = save_root_name
@@ -3286,7 +3089,7 @@ character(len=*), intent(in)     :: name !< The name of a list that the user wis
 type (field_def), pointer        :: this_list_p !< A pointer to a list that serves as the base point
                                                 !! for searching for name
 
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: temp_p
 
@@ -3322,7 +3125,7 @@ character(len=*), intent(in)     :: oldname !< The name of a field that the user
 character(len=*), intent(in)     :: newname !< The name that the user wishes to change the name of
                                             !! the field to.
 
-character(len=fm_path_name_len)  :: path
+character(len=FMS_PATH_LEN)  :: path
 character(len=fm_field_name_len) :: base
 type (field_def), pointer, save  :: list_p
 type (field_def), pointer, save  :: temp_p
@@ -3353,9 +3156,19 @@ end function fm_modify_name
 
 !> A function to initialize the values of the pointers. This will remove
 !! all fields and reset the field tree to only the root field.
-subroutine initialize
-!        Initialize the root field
-if (.not. module_is_initialized) then
+subroutine initialize_module_variables
+  !        Initialize the root field
+  integer :: io, ierr !< Error codes when reading the namelist
+  integer :: logunit !< Unit number for the log file
+
+  if (.not. module_is_initialized) then
+
+  read (input_nml_file, nml=field_manager_nml, iostat=io)
+  ierr = check_nml_error(io,"field_manager_nml")
+
+  logunit = stdlog()
+  if (mpp_pe() == mpp_root_pe()) write (logunit, nml=field_manager_nml)
+
   root_p => root
 
   field_type_name(integer_type) = 'integer'
@@ -3375,10 +3188,10 @@ if (.not. module_is_initialized) then
   nullify(root%last_field)
   root%max_index = 0
   root%array_dim = 0
-  if (associated(root%i_value)) deallocate(root%i_value)
-  if (associated(root%l_value)) deallocate(root%l_value)
-  if (associated(root%r_value)) deallocate(root%r_value)
-  if (associated(root%s_value)) deallocate(root%s_value)
+  if (allocated(root%i_value)) deallocate(root%i_value)
+  if (allocated(root%l_value)) deallocate(root%l_value)
+  if (allocated(root%r_value)) deallocate(root%r_value)
+  if (allocated(root%s_value)) deallocate(root%s_value)
 
   nullify(root%next)
   nullify(root%prev)
@@ -3395,7 +3208,7 @@ if (.not. module_is_initialized) then
 
 endif
 
-end subroutine initialize
+end subroutine initialize_module_variables
 
 !> This function creates a new field and returns a pointer to that field.
 !!
@@ -3431,10 +3244,10 @@ endif
 !        Initialize the new list
 list_p%length = 0
 list_p%field_type = list_type
-if (associated(list_p%i_value)) deallocate(list_p%i_value)
-if (associated(list_p%l_value)) deallocate(list_p%l_value)
-if (associated(list_p%r_value)) deallocate(list_p%r_value)
-if (associated(list_p%s_value)) deallocate(list_p%s_value)
+if (allocated(list_p%i_value))  deallocate(list_p%i_value)
+if (allocated(list_p%l_value))  deallocate(list_p%l_value)
+if (allocated(list_p%r_value))  deallocate(list_p%r_value)
+if (allocated(list_p%s_value))  deallocate(list_p%s_value)
 
 end function  make_list
 
@@ -3453,9 +3266,9 @@ character(len=*), intent(in)  :: name !< name of a list that the user wishes to 
 character(len=*), intent(out) :: method_name !< name of a parameter associated with the named field
 character(len=*), intent(out) :: method_control !< value of parameters associated with the named field
 
-character(len=fm_path_name_len) :: path
-character(len=fm_path_name_len) :: base
-character(len=fm_path_name_len) :: name_loc
+character(len=FMS_PATH_LEN) :: path
+character(len=FMS_PATH_LEN) :: base
+character(len=FMS_PATH_LEN) :: name_loc
 logical                         :: recursive_t
 type (field_def), pointer, save :: temp_list_p
 type (field_def), pointer, save :: temp_value_p
@@ -3468,7 +3281,7 @@ integer                         :: out_unit
   method_name = " "
   method_control = " "
 !        Initialize the field manager if needed
-if (.not. module_is_initialized) call initialize
+if (.not. module_is_initialized) call initialize_module_variables
 name_loc = lowercase(name)
 call find_base(name_loc, path, base)
 
@@ -3624,7 +3437,7 @@ logical                                                    :: got_value
 logical                                                    :: recursive_t
 logical                                                    :: success
 logical                                                    :: val_logical
-real                                                       :: val_real
+real(r8_kind)                                              :: val_real
 type (field_def), pointer, save                            :: temp_field_p
 type (field_def), pointer, save                            :: temp_list_p
 integer                                                    :: out_unit
@@ -3637,7 +3450,7 @@ list_name_new = trim(list_name)//trim(suffix)
   recursive_t = .true.
 !        Initialize the field manager if needed
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 
 if (list_name .eq. ' ') then
@@ -3678,12 +3491,12 @@ if (success) then
             call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
                                   ' for '//trim(list_name)//trim(suffix))
 
-        case (real_type)
+       case (real_type)
           got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_real)
           if ( fm_new_value( trim(list_name_new)//list_sep//method(n), val_real, &
-                             create = create, append = .true.) < 0 ) &
-            call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
-                                  ' for '//trim(list_name)//trim(suffix))
+               create = create, append = .true.) < 0 ) &
+               call mpp_error(FATAL, trim(error_header)//'Could not set the '//trim(method(n))//&
+               ' for '//trim(list_name)//trim(suffix))
 
         case (string_type)
           got_value = fm_get_value( trim(list_name)//list_sep//method(n), val_str)
@@ -3724,7 +3537,7 @@ num_meth= 1
   recursive_t = .true.
 
 if (.not. module_is_initialized) then
-  call initialize
+  call initialize_module_variables
 endif
 
 if (list_name .eq. ' ') then
@@ -3761,7 +3574,7 @@ integer,          intent(inout)             :: num_meth !< The number of methods
 character(len=*), intent(out), dimension(:) :: method !< The methods associated with the field pointed to by list_p
 character(len=*), intent(out), dimension(:) :: control !< The control parameters for the methods found
 
-character(len=fm_path_name_len) :: scratch
+character(len=FMS_PATH_LEN) :: scratch
 integer                         :: i
 integer                         :: n
 type (field_def), pointer, save :: this_field_p
@@ -3814,7 +3627,7 @@ else
 
     case(real_type)
 
-        write (scratch,*) this_field_p%r_value
+       if(allocated(this_field_p%r_value)) write (scratch,*) this_field_p%r_value
         call strip_front_blanks(scratch)
         write (method(num_meth),'(a,a)') trim(method(num_meth)), &
                 trim(this_field_p%name)
@@ -3845,6 +3658,9 @@ else
 endif
 
 end function find_method
+
+#include "field_manager_r4.fh"
+#include "field_manager_r8.fh"
 
 end module field_manager_mod
 !> @}

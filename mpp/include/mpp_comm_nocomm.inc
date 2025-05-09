@@ -244,8 +244,8 @@ end subroutine mpp_exit
     return
   end subroutine mpp_set_stack_size
 
-    subroutine mpp_broadcast_char(data, length, from_pe, pelist )
-      character(len=*), intent(inout) :: data(:)
+    subroutine mpp_broadcast_char(char_data, length, from_pe, pelist )
+      character(len=*), intent(inout) :: char_data(:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
 
@@ -311,6 +311,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_real8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_real8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_real8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_real8
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r8_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -368,6 +374,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_cmplx8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_cmplx8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_cmplx8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_cmplx8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(c8_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -425,6 +437,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_real4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_real4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_real4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_real4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_real4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -482,6 +500,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_cmplx4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_cmplx4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_cmplx4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_cmplx4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_cmplx4
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(c4_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -541,6 +565,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_int8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_int8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_int8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_int8
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i8_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -597,6 +627,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_int4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_int4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_int4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_int4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_int4
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -655,6 +691,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_logical8_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical8_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_logical8
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_logical8
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_logical8
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l8_kind)
 #undef MPP_TYPE_BYTELEN_
@@ -711,6 +753,12 @@ end subroutine mpp_exit
 #define MPP_BROADCAST_4D_ mpp_broadcast_logical4_4d
 #undef MPP_BROADCAST_5D_
 #define MPP_BROADCAST_5D_ mpp_broadcast_logical4_5d
+#undef MPP_SCATTERV_
+#define MPP_SCATTERV_ mpp_scatterv_logical4
+#undef MPP_GATHER_
+#define MPP_GATHER_ mpp_gather_logical4
+#undef MPP_GATHERV_
+#define MPP_GATHERV_ mpp_gatherv_logical4
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l4_kind)
 #undef MPP_TYPE_BYTELEN_

@@ -27,8 +27,9 @@
 !! Test that the call to mpp_mem_dump is functional.  On a supported OS, the return value
 !! of mpp_mem_dump should be a positive integer.
 program test_mpp_mem_dump
+
   use mpp_memutils_mod, only: mpp_mem_dump
-#include "../../include/fms_platform.h"
+  use platform_mod
   implicit none
 
   real :: memuse

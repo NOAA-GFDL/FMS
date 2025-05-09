@@ -30,8 +30,8 @@
 #undef HORIZ_INTERP_BICUBIC_NEW_1D_
 #define HORIZ_INTERP_BICUBIC_NEW_1D_ horiz_interp_bicubic_new_1d_r8
 
-#undef HORIZ_INTERP_BICUBIC_NEW_
-#define HORIZ_INTERP_BICUBIC_NEW_ horiz_interp_bicubic_r8
+#undef HORIZ_INTERP_BICUBIC_
+#define HORIZ_INTERP_BICUBIC_ horiz_interp_bicubic_r8
 
 #undef BCUINT_
 #define BCUINT_ bcuint_r8

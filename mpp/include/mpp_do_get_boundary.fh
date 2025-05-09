@@ -1012,7 +1012,7 @@ subroutine MPP_DO_GET_BOUNDARY_3D_V_(f_addrsx, f_addrsy, domain, boundx, boundy,
   tMe = 1
   if( BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags,SCALAR_BIT)) )then
      j = domain%y(1)%global%end+shift
-     if( domain%y(1)%data%begin.LE.j .AND. j.LE.domain%y(1)%data%end+shift )then !fold is within domain
+     if( domain%y(1)%domain_data%begin.LE.j .AND. j.LE.domain%y(1)%domain_data%end+shift )then !fold is within domain
         !poles set to 0: BGRID only
         if( gridtype.EQ.BGRID_NE )then
            midpoint = (domain%x(1)%global%begin+domain%x(1)%global%end-1+shift)/2

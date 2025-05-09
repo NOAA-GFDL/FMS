@@ -1,0 +1,34 @@
+name: Test coupler build
+on: [pull_request]
+
+# cancel running jobs if theres a newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coupler-build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+      env:
+        CC: mpicc
+        FC: mpif90
+        CPPFLAGS: '-I/opt/view/include'
+        FFLAGS: '-fallow-argument-mismatch' # mkmf uses FFLAGS instead of FC
+        LDFLAGS: '-L/opt/view/lib'
+    steps:
+    - name: Checkout FMS
+      uses: actions/checkout@v4.2.2
+      with:
+        path: FMS
+    - name: Checkout FMScoupler
+      uses: actions/checkout@v4.2.2
+      with:
+        repository: 'NOAA-GFDL/FMScoupler'
+        path: FMScoupler
+    - name: Test Null build
+      run: FMScoupler/t/null_model_build.sh --local-fms
