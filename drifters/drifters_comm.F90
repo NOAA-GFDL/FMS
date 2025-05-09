@@ -82,6 +82,31 @@ module drifters_comm_mod
      integer        :: pe_NW !< neighbor domains
      integer        :: pe_beg !< starting/ending pe, set this to a value /= 0 if running concurrently
      integer        :: pe_end !< starting/ending pe, set this to a value /= 0 if running concurrently
+   contains
+     procedure :: get_xcmin
+     procedure :: get_xcmax
+     procedure :: get_ycmin
+     procedure :: get_ycmax
+     procedure :: get_xdmin
+     procedure :: get_xdmax
+     procedure :: get_ydmin
+     procedure :: get_ydmax
+     procedure :: get_xgmin
+     procedure :: get_xgmax
+     procedure :: get_ygmin
+     procedure :: get_ygmax
+     procedure :: get_xperiodic
+     procedure :: get_yperiodic
+     procedure :: get_pe_N
+     procedure :: get_pe_S
+     procedure :: get_pe_E
+     procedure :: get_pe_W
+     procedure :: get_pe_NE
+     procedure :: get_pe_SE
+     procedure :: get_pe_SW
+     procedure :: get_pe_NW
+     procedure :: get_pe_beg
+     procedure :: get_pe_end
   end type drifters_comm_type
 
 contains
@@ -89,6 +114,199 @@ contains
 !> @addtogroup drifters_comm_mod
 !> @{
 !===============================================================================
+
+  function get_xcmin(this) result(xcmin)
+    class(drifters_comm_type) :: this
+    real                      :: xcmin
+
+    xcmin = this%xcmin
+
+  end function get_xcmin
+
+  function get_xcmax(this) result(xcmax)
+    class(drifters_comm_type) :: this
+    real                      :: xcmax
+
+    xcmax = this%xcmax
+
+  end function get_xcmax
+
+  function get_ycmin(this) result(ycmin)
+    class(drifters_comm_type) :: this
+    real                      :: ycmin
+
+    ycmin = this%ycmin
+
+  end function get_ycmin
+
+  function get_ycmax(this) result(ycmax)
+    class(drifters_comm_type) :: this
+    real                      :: ycmax
+
+    ycmax = this%ycmax
+
+  end function get_ycmax
+
+  function get_xdmin(this) result(xdmin)
+    class(drifters_comm_type) :: this
+    real                      :: xdmin
+
+    xdmin = this%xdmin
+
+  end function get_xdmin
+
+  function get_xdmax(this) result(xdmax)
+    class(drifters_comm_type) :: this
+    real                      :: xdmax
+
+    xdmax = this%xdmax
+
+  end function get_xdmax
+
+  function get_ydmin(this) result(ydmin)
+    class(drifters_comm_type) :: this
+    real                      :: ydmin
+
+    ydmin = this%ydmin
+
+  end function get_ydmin
+
+  function get_ydmax(this) result(ydmax)
+    class(drifters_comm_type) :: this
+    real                      :: ydmax
+
+    ydmax = this%ydmax
+
+  end function get_ydmax
+
+  function get_xgmin(this) result(xgmin)
+    class(drifters_comm_type) :: this
+    real                      :: xgmin
+
+    xgmin = this%xgmin
+
+  end function get_xgmin
+
+  function get_xgmax(this) result(xgmax)
+    class(drifters_comm_type) :: this
+    real                      :: xgmax
+
+    xgmax = this%xgmax
+
+  end function get_xgmax
+
+  function get_ygmin(this) result(ygmin)
+    class(drifters_comm_type) :: this
+    real                      :: ygmin
+
+    ygmin = this%ygmin
+
+  end function get_ygmin
+
+  function get_ygmax(this) result(ygmax)
+    class(drifters_comm_type) :: this
+    real                      :: ygmax
+
+    ygmax = this%ygmax
+
+  end function get_ygmax
+
+  function get_xperiodic(this) result(xperiodic)
+    class(drifters_comm_type) :: this
+    logical                   :: xperiodic
+
+    xperiodic = this%xperiodic
+
+  end function get_xperiodic
+
+  function get_yperiodic(this) result(yperiodic)
+    class(drifters_comm_type) :: this
+    logical                   :: yperiodic
+
+    yperiodic = this%yperiodic
+
+  end function get_yperiodic
+
+  function get_pe_N(this) result(pe_N)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_N
+
+    pe_N = this%pe_N
+
+  end function get_pe_N
+
+  function get_pe_S(this) result(pe_S)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_S
+
+    pe_S = this%pe_S
+
+  end function get_pe_S
+
+  function get_pe_E(this) result(pe_E)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_E
+
+    pe_E = this%pe_E
+
+  end function get_pe_E
+
+  function get_pe_W(this) result(pe_W)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_W
+
+    pe_W = this%pe_W
+
+  end function get_pe_W
+
+  function get_pe_NE(this) result(pe_NE)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_NE
+
+    pe_NE = this%pe_NE
+
+  end function get_pe_NE
+
+  function get_pe_SE(this) result(pe_SE)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_SE
+
+    pe_SE = this%pe_SE
+
+  end function get_pe_SE
+
+  function get_pe_SW(this) result(pe_SW)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_SW
+
+    pe_SW = this%pe_SW
+
+  end function get_pe_SW
+
+  function get_pe_NW(this) result(pe_NW)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_NW
+
+    pe_NW = this%pe_NW
+
+  end function get_pe_NW
+
+  function get_pe_beg(this) result(pe_beg)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_beg
+
+    pe_beg = this%pe_beg
+
+  end function get_pe_beg
+
+  function get_pe_end(this) result(pe_end)
+    class(drifters_comm_type) :: this
+    integer                   :: pe_end
+
+    pe_end = this%pe_end
+
+  end function get_pe_end
+
   !> @brief Initializes default values for @ref drifters_comm_type in self
   subroutine drifters_comm_new(self)
     type(drifters_comm_type)   :: self !< A new @ref drifters_comm_type

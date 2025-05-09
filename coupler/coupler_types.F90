@@ -75,300 +75,259 @@ module coupler_types_mod
   !! Arrays (values + field) are typically directly allocated and then 'spawn' can be used to create a new type
   !! from a previously allocated 'template' type
 
-  !> Coupler data for 3D values
+  !> Coupler values abstract type
   !> @ingroup coupler_types_mod
-  type, public :: coupler_3d_real8_values_type
-    character(len=48)       :: name = ' '  !< The diagnostic name for this array
-    logical                 :: mean = .true. !< mean
-    logical                 :: override = .false. !< override
-    integer                 :: id_diag = 0 !< The diagnostic id for this array
-    character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
-    character(len=128)      :: units = ' ' !< The units for this array
-    integer                 :: id_rest = 0 !< The id of this array in the restart field
-    logical                 :: may_init = .true. !< If true, there is an internal method
+  type, abstract, private :: coupler_values_type
+      character(len=48)     :: name = ' ' !< The diagnostic name for this array
+      character(len=128)    :: long_name = ' ' !< The diagnostic long_name for this array
+      character(len=128)    :: units = ' ' !< The units for this array
+      logical               :: mean = .true. !< mean
+      logical               :: override = .false. !< override
+      logical               :: may_init = .true. !< If true, there is an internal method
                                            !! that can be used to initialize this field
                                            !! if it can not be read from a restart file
+      integer               :: id_diag = 0 !< The diagnostic id for this array
+      integer               :: id_rest = 0 !< The id of this array in the restart field
+    contains
+      procedure :: get_values_name
+      procedure :: get_long_name
+      procedure :: get_units
+      procedure :: get_mean
+      procedure :: get_override
+      procedure :: get_may_init
+      procedure :: get_id_diag
+      procedure :: get_id_rest
+  end type coupler_values_type
+
+  !> Coupler field abstract type
+  !> @ingroup coupler_types_mod
+  type, abstract, private :: coupler_field_type
+      character(len=48)                :: name = ' ' !< name
+      integer                          :: num_fields = 0 !< num_fields
+      character(len=128)               :: flux_type = ' ' !< flux_type
+      character(len=128)               :: implementation = ' ' !< implementation
+      logical, pointer, dimension(:)   :: flag => NULL() !< flag
+      integer                          :: atm_tr_index = 0 !< atm_tr_index
+      character(len=128)               :: ice_restart_file = ' ' !< ice_restart_file
+      character(len=128)               :: ocean_restart_file = ' ' !< ocean_restart_file
+#ifdef use_deprecated_io
+     type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
+                                                              !! That is used for this field
+#endif
+     type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
+                                                                         !! That is used for this field
+      logical                              :: use_atm_pressure !< use_atm_pressure
+      logical                              :: use_10m_wind_speed !< use_10m_wind_speed
+      logical                              :: pass_through_ice !< pass_through_ice
+      real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
+      real(r8_kind)                        :: mol_wt = 0.0_r8_kind !< mol_wt
+    contains
+      procedure :: get_field_name
+      procedure :: get_num_fields
+      procedure :: get_flux_type
+      procedure :: get_implementation
+      procedure :: get_flag,               has_flag
+      procedure :: get_atm_tr_index
+      procedure :: get_ice_restart_file
+      procedure :: get_ocean_restart_file
+      !procedure :: get_rest_type,          has_rest_type
+      procedure :: get_fms2_io_rest_type,  has_fms2_io_rest_type
+      procedure :: get_use_atm_pressure
+      procedure :: get_use_10m_wind_speed
+      procedure :: get_pass_through_ice
+      procedure :: get_param,              has_param
+      procedure :: get_mol_wt
+  end type coupler_field_type
+
+  !> Coupler bc abstract type
+  !> @ingroup coupler_types_mod
+  type, abstract, private :: coupler_bc_type
+      integer                         :: num_bcs = 0   !< The number of boundary condition fields
+      logical                         :: set = .false. !< If true, this type has been initialized
+    contains
+      procedure :: get_num_bcs
+      procedure :: get_set
+  end type coupler_bc_type
+
+  !> Coupler data for 3D values
+  !> @ingroup coupler_types_mod
+  type, public, extends(coupler_values_type) :: coupler_3d_real8_values_type
     real(r8_kind), pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
+   contains
+    procedure :: get_values => get_values_3d_r8
+    procedure :: has_values => has_values_3d_r8
   end type coupler_3d_real8_values_type
 
   !> Coupler data for 3D fields
   !> @ingroup coupler_types_mod
-  type, public :: coupler_3d_real8_field_type
-    character(len=48)                 :: name = ' ' !< name
-    integer                           :: num_fields = 0 !< num_fields
+  type, public, extends(coupler_field_type) :: coupler_3d_real8_field_type
     type(coupler_3d_real8_values_type), pointer, dimension(:) :: field => NULL() !< field
-    character(len=128)                :: flux_type = ' ' !< flux_type
-    character(len=128)                :: implementation = ' ' !< implementation
-    logical, pointer, dimension(:)    :: flag => NULL() !< flag
-    integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
-#ifdef use_deprecated_io
-    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                             !! that is used for this field.
-#endif
-    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
-                                                                        !! That is used for this field
-    logical                           :: use_atm_pressure !< use_atm_pressure
-    logical                           :: use_10m_wind_speed !< use_10m_wind_speed
-    logical                           :: pass_through_ice !< pass_through_ice
-    real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
+   contains
+    procedure :: get_field => get_field_3d_r8
+    procedure :: has_field => has_field_3d_r8
   end type coupler_3d_real8_field_type
 
   !> Coupler data for 3D values
   !> @ingroup coupler_types_mod
-  type, public :: coupler_3d_real4_values_type
-    character(len=48)       :: name = ' '  !< The diagnostic name for this array
-    logical                 :: mean = .true. !< mean
-    logical                 :: override = .false. !< override
-    integer                 :: id_diag = 0 !< The diagnostic id for this array
-    character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
-    character(len=128)      :: units = ' ' !< The units for this array
-    integer                 :: id_rest = 0 !< The id of this array in the restart field
-    logical                 :: may_init = .true. !< If true, there is an internal method
-                                           !! that can be used to initialize this field
-                                           !! if it can not be read from a restart file
+  type, public, extends(coupler_values_type) :: coupler_3d_real4_values_type
     real(r4_kind), pointer, contiguous, dimension(:,:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
+   contains
+    procedure :: get_values => get_values_3d_r4
+    procedure :: has_values => has_values_3d_r4
   end type coupler_3d_real4_values_type
 
   !> Coupler data for 3D fields
   !> @ingroup coupler_types_mod
-  type, public :: coupler_3d_real4_field_type
-    character(len=48)                 :: name = ' ' !< name
-    integer                           :: num_fields = 0 !< num_fields
+  type, public, extends(coupler_field_type) :: coupler_3d_real4_field_type
     type(coupler_3d_real4_values_type), pointer, dimension(:) :: field => NULL() !< field
-    character(len=128)                :: flux_type = ' ' !< flux_type
-    character(len=128)                :: implementation = ' ' !< implementation
-    logical, pointer, dimension(:)    :: flag => NULL() !< flag
-    integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
-#ifdef use_deprecated_io
-    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                             !! that is used for this field.
-#endif
-    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
-                                                                        !! That is used for this field
-    logical                           :: use_atm_pressure !< use_atm_pressure
-    logical                           :: use_10m_wind_speed !< use_10m_wind_speed
-    logical                           :: pass_through_ice !< pass_through_ice
-    !> precision needs to be r8_kind since this array is retrieved from the field_manager routine
-    !! fm_util_get_real_array which only returns a r8_kind
-    !! Might be able to change to allocatable(?) to do a conversion
-    real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
+   contains
+    procedure :: get_field => get_field_3d_r4
+    procedure :: has_field => has_field_3d_r4
   end type coupler_3d_real4_field_type
 
   !> Coupler data for 3D boundary conditions
   !> @ingroup coupler_types_mod
-  type, public :: coupler_3d_bc_type
-    integer                                            :: num_bcs = 0  !< The number of boundary condition fields
+  type, public, extends(coupler_bc_type) :: coupler_3d_bc_type
     type(coupler_3d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
                                                     !! TODO above should be renamed eventually to indicate kind=8
     type(coupler_3d_real4_field_type), dimension(:), pointer :: bc_r4 => NULL() !< A pointer to the array of boundary
-    logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
     integer    :: ks, ke              !< The k-direction index ranges for this type
+   contains
+    procedure :: get_bc => get_bc_3d
+    procedure :: has_bc => has_bc_3d
+    procedure :: get_bc_r4 => get_bc_r4_3d
+    procedure :: has_bc_r4 => has_bc_r4_3d
+    procedure :: get_isd => get_isd_3d
+    procedure :: get_isc => get_isc_3d
+    procedure :: get_iec => get_iec_3d
+    procedure :: get_ied => get_ied_3d
+    procedure :: get_jsd => get_jsd_3d
+    procedure :: get_jsc => get_jsc_3d
+    procedure :: get_jec => get_jec_3d
+    procedure :: get_jed => get_jed_3d
+    procedure :: get_ks
+    procedure :: get_ke
   end type coupler_3d_bc_type
 
 
   !> Coupler data for 2D values
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_2d_real8_values_type
-    character(len=48)       :: name = ' '  !< The diagnostic name for this array
+  type, public, extends(coupler_values_type) :: coupler_2d_real8_values_type
     real(r8_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
-    logical                 :: mean = .true. !< mean
-    logical                 :: override = .false. !< override
-    integer                 :: id_diag = 0 !< The diagnostic id for this array
-    character(len=128)      :: long_name = ' ' !< The diagnostic long_name for this array
-    character(len=128)      :: units = ' ' !< The units for this array
-    integer                 :: id_rest = 0 !< The id of this array in the restart field
-    logical                 :: may_init = .true. !< If true, there is an internal method
-                                           !! that can be used to initialize this field
-                                           !! if it can not be read from a restart file
+   contains
+    procedure :: get_values => get_values_2d_r8
+    procedure :: has_values => has_values_2d_r8
   end type coupler_2d_real8_values_type
 
   !> Coupler data for 2D fields
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_2d_real8_field_type
-    character(len=48)                 :: name = ' ' !< name
-    integer                           :: num_fields = 0 !< num_fields
+  type, public, extends(coupler_field_type) :: coupler_2d_real8_field_type
     type(coupler_2d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
-    character(len=128)                :: flux_type = ' ' !< flux_type
-    character(len=128)                :: implementation = ' ' !< implementation
-    real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    logical, pointer, dimension(:)    :: flag => NULL() !< flag
-    integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
-#ifdef use_deprecated_io
-    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                             !! that is used for this field.
-#endif
-    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
-                                                                        !! That is used for this field
-    logical                           :: use_atm_pressure !< use_atm_pressure
-    logical                           :: use_10m_wind_speed !< use_10m_wind_speed
-    logical                           :: pass_through_ice !< pass_through_ice
-    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
+   contains
+    procedure :: get_field => get_field_2d_r8
+    procedure :: has_field => has_field_2d_r8
   end type coupler_2d_real8_field_type
 
   !> Coupler data for 2D values
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_2d_real4_values_type
-    character(len=44)       :: name = ' '  !< The diagnostic name for this array
+  type, public, extends(coupler_values_type) :: coupler_2d_real4_values_type
     real(r4_kind), pointer, contiguous, dimension(:,:) :: values => NULL() !< The pointer to the
                                            !! array of values for this field; this
                                            !! should be changed to allocatable
-    logical                 :: mean = .true. !< mean
-    logical                 :: override = .false. !< override
-    integer                 :: id_diag = 0 !< The diagnostic id for this array
-    character(len=124)      :: long_name = ' ' !< The diagnostic long_name for this array
-    character(len=124)      :: units = ' ' !< The units for this array
-    integer                 :: id_rest = 0 !< The id of this array in the restart field
-    logical                 :: may_init = .true. !< If true, there is an internal method
-                                           !! that can be used to initialize this field
-                                           !! if it can not be read from a restart file
+   contains
+    procedure :: get_values => get_values_2d_r4
+    procedure :: has_values => has_values_2d_r4
   end type coupler_2d_real4_values_type
 
   !> Coupler data for 2D fields
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_2d_real4_field_type
-    character(len=44)                 :: name = ' ' !< name
-    integer                           :: num_fields = 0 !< num_fields
+  type, public, extends(coupler_field_type) :: coupler_2d_real4_field_type
     type(coupler_2d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
-    character(len=124)                :: flux_type = ' ' !< flux_type
-    character(len=124)                :: implementation = ' ' !< implementation
-    !> precision needs to be r8_kind since this array is retrieved from the field_manager routine
-    !! fm_util_get_real_array which only returns a r8_kind
-    !! Might be able to change to allocatable(?) to do a conversion
-    real(r8_kind), pointer, dimension(:)       :: param => NULL() !< param
-    logical, pointer, dimension(:)    :: flag => NULL() !< flag
-    integer                           :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_FILE_LEN)       :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_FILE_LEN)       :: ocean_restart_file = ' ' !< ocean_restart_file
-#ifdef use_deprecated_io
-    type(restart_file_type), pointer  :: rest_type => NULL() !< A pointer to the restart_file_type
-                                                             !! that is used for this field.
-#endif
-    type(FmsNetcdfDomainFile_t), pointer :: fms2_io_rest_type => NULL() !< A pointer to the restart_file_type
-                                                                        !! That is used for this field
-    logical                           :: use_atm_pressure !< use_atm_pressure
-    logical                           :: use_10m_wind_speed !< use_10m_wind_speed
-    logical                           :: pass_through_ice !< pass_through_ice
-    real(r8_kind)                              :: mol_wt = 0.0_r8_kind !< mol_wt
+   contains
+    procedure :: get_field => get_field_2d_r4
+    procedure :: has_field => has_field_2d_r4
   end type coupler_2d_real4_field_type
 
   !> Coupler data for 2D boundary conditions
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_2d_bc_type
-    integer                                            :: num_bcs = 0  !< The number of boundary condition fields
+  type, public, extends(coupler_bc_type) :: coupler_2d_bc_type
     type(coupler_2d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
                                                                        !! condition fields
     type(coupler_2d_real4_field_type), dimension(:), pointer :: bc_r4 => NULL() !< A pointer to the array of boundary
                                                                        !! condition fields
-    logical    :: set = .false.       !< If true, this type has been initialized
     integer    :: isd, isc, iec, ied  !< The i-direction data and computational domain index ranges for this type
     integer    :: jsd, jsc, jec, jed  !< The j-direction data and computational domain index ranges for this type
+   contains
+    procedure :: get_bc => get_bc_2d
+    procedure :: has_bc => has_bc_2d
+    procedure :: get_bc_r4 => get_bc_r4_2d
+    procedure :: has_bc_r4 => has_bc_r4_2d
+    procedure :: get_isd => get_isd_2d
+    procedure :: get_isc => get_isc_2d
+    procedure :: get_iec => get_iec_2d
+    procedure :: get_ied => get_ied_2d
+    procedure :: get_jsd => get_jsd_2d
+    procedure :: get_jsc => get_jsc_2d
+    procedure :: get_jec => get_jec_2d
+    procedure :: get_jed => get_jed_2d
   end type coupler_2d_bc_type
 
   !> Coupler data for 1D values
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_1d_real8_values_type
-    character(len=48)           :: name = ' '  !< The diagnostic name for this array
+  type, public, extends(coupler_values_type) :: coupler_1d_real8_values_type
     real(r8_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
-    logical                     :: mean = .true. !< mean
-    logical                     :: override = .false. !< override
-    integer                     :: id_diag = 0 !< The diagnostic id for this array
-    character(len=128)          :: long_name = ' ' !< The diagnostic long_name for this array
-    character(len=128)          :: units = ' ' !< The units for this array
-    logical                     :: may_init = .true. !< If true, there is an internal method
-                                               !! that can be used to initialize this field
-                                               !! if it can not be read from a restart file
+   contains
+    procedure :: get_values => get_values_1d_r8
+    procedure :: has_values => has_values_1d_r8
   end type coupler_1d_real8_values_type
 
   !> Coupler data for 1D fields
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_1d_real8_field_type
-    character(len=48)              :: name = ' ' !< name
-    integer                        :: num_fields = 0 !< num_fields
+  type, public, extends(coupler_field_type) :: coupler_1d_real8_field_type
     type(coupler_1d_real8_values_type), pointer, dimension(:)   :: field => NULL() !< field
-    character(len=128)             :: flux_type = ' ' !< flux_type
-    character(len=128)             :: implementation = ' ' !< implementation
-    !> precision has been explicitly defined
-    !! to be r8_kind during mixedmode update to field_manager
-    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
-    real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
-    logical, pointer, dimension(:) :: flag => NULL() !< flag
-    integer                        :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_FILE_LEN)    :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_FILE_LEN)    :: ocean_restart_file = ' ' !< ocean_restart_file
-    logical                        :: use_atm_pressure !< use_atm_pressure
-    logical                        :: use_10m_wind_speed !< use_10m_wind_speed
-    logical                        :: pass_through_ice !< pass_through_ice
-    !> precision has been explicitly defined
-    !! to be r8_kind during mixedmode update to field_manager
-    !! this explicit definition can be removed during the coupler update and be made into FMS_CP_KIND_
-    real(r8_kind)                  :: mol_wt = 0.0_r8_kind !< mol_wt
-
- end type coupler_1d_real8_field_type
+   contains
+    procedure :: get_field => get_field_1d_r8
+    procedure :: has_field => has_field_1d_r8
+  end type coupler_1d_real8_field_type
 
   !> Coupler data for 1D values
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_1d_real4_values_type
-    character(len=48)           :: name = ' '  !< The diagnostic name for this array
+  type, public, extends(coupler_values_type) :: coupler_1d_real4_values_type
     real(r4_kind), pointer, dimension(:) :: values => NULL() !< The pointer to the array of values
-    logical                     :: mean = .true. !< mean
-    logical                     :: override = .false. !< override
-    integer                     :: id_diag = 0 !< The diagnostic id for this array
-    character(len=128)          :: long_name = ' ' !< The diagnostic long_name for this array
-    character(len=128)          :: units = ' ' !< The units for this array
-    logical                     :: may_init = .true. !< If true, there is an internal method
-                                               !! that can be used to initialize this field
-                                               !! if it can not be read from a restart file
+   contains
+    procedure :: get_values => get_values_1d_r4
+    procedure :: has_values => has_values_1d_r4
   end type coupler_1d_real4_values_type
 
   !> Coupler data for 1D fields
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_1d_real4_field_type
-    character(len=48)              :: name = ' ' !< name
-    integer                        :: num_fields = 0 !< num_fields
+  type, public, extends(coupler_field_type) :: coupler_1d_real4_field_type
     type(coupler_1d_real4_values_type), pointer, dimension(:)   :: field => NULL() !< field
-    character(len=128)             :: flux_type = ' ' !< flux_type
-    character(len=128)             :: implementation = ' ' !< implementation
-    !> precision needs to be r8_kind since this array is retrieved from the field_manager routine
-    !! fm_util_get_real_array which only returns a r8_kind
-    !! Might be able to change to allocatable(?) to do a conversion
-    real(r8_kind), pointer, dimension(:) :: param => NULL() !< param
-    logical, pointer, dimension(:) :: flag => NULL() !< flag
-    integer                        :: atm_tr_index = 0 !< atm_tr_index
-    character(len=FMS_FILE_LEN)    :: ice_restart_file = ' ' !< ice_restart_file
-    character(len=FMS_FILE_LEN)    :: ocean_restart_file = ' ' !< ocean_restart_file
-    logical                        :: use_atm_pressure !< use_atm_pressure
-    logical                        :: use_10m_wind_speed !< use_10m_wind_speed
-    logical                        :: pass_through_ice !< pass_through_ice
-    !> This is also read in r8 from the field manager, but since its not a pointer the conversion is allowed
-    real(r8_kind)                  :: mol_wt = 0.0_r8_kind !< mol_wt
-
+   contains
+     procedure :: get_field => get_field_1d_r4
+     procedure :: has_field => has_field_1d_r4
  end type coupler_1d_real4_field_type
 
   !> Coupler data for 1D boundary conditions
   !> @ingroup coupler_types_mod
-  type, public    :: coupler_1d_bc_type
-    integer                                            :: num_bcs = 0  !< The number of boundary condition fields
+  type, public, extends(coupler_bc_type) :: coupler_1d_bc_type
     type(coupler_1d_real8_field_type), dimension(:), pointer :: bc => NULL() !< A pointer to the array of boundary
                                                                        !! condition fields
     type(coupler_1d_real4_field_type), dimension(:), pointer :: bc_r4 => NULL() !< A pointer to the array of boundary
                                                                        !! condition fields
-    logical    :: set = .false.       !< If true, this type has been initialized
+   contains
+    procedure :: get_bc => get_bc_1d
+    procedure :: has_bc => has_bc_1d
+    procedure :: get_bc_r4 => get_bc_r4_1d
+    procedure :: has_bc_r4 => has_bc_r4_1d
   end type coupler_1d_bc_type
 
   !> @addtogroup coupler_types_mod
@@ -515,6 +474,708 @@ contains
 
 !> @addtogroup coupler_types_mod
 !> @{
+
+  !> Return a pointer to the 3D boundary condition field at the given index.
+  function get_bc_3d(this, bc_idx) result(bc_ptr)
+    class(coupler_3d_bc_type),      intent(in) :: this
+    integer,                        intent(in) :: bc_idx
+    type(coupler_3d_real8_field_type), pointer :: bc_ptr
+
+    bc_ptr => this%bc(bc_idx)
+  end function get_bc_3d
+
+  !> Return true if the 3D real*8 boundary condition field is associated.
+  function has_bc_3d(this) result(has)
+    class(coupler_3d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc)
+  end function has_bc_3d
+
+  !> Return a pointer to the 3D boundary condition field (real*4) at the given index.
+  function get_bc_r4_3d(this, bc_idx) result(bc_ptr)
+    class(coupler_3d_bc_type),      intent(in) :: this
+    integer,                        intent(in) :: bc_idx
+    type(coupler_3d_real4_field_type), pointer :: bc_ptr
+
+    bc_ptr => this%bc_r4(bc_idx)
+  end function get_bc_r4_3d
+
+  !> Return true if the 3D real*4 boundary condition field is associated.
+  function has_bc_r4_3d(this) result(has)
+    class(coupler_3d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc_r4)
+  end function has_bc_r4_3d
+
+  !> Return a pointer to the 2D boundary condition field at the given index.
+  function get_bc_2d(this, bc_idx) result(bc_ptr)
+    class(coupler_2d_bc_type),      intent(in) :: this
+    integer,                        intent(in) :: bc_idx
+    type(coupler_2d_real8_field_type), pointer :: bc_ptr
+
+    bc_ptr => this%bc(bc_idx)
+  end function get_bc_2d
+
+  !> Return true if the 2D real*8 boundary condition field is associated.
+  function has_bc_2d(this) result(has)
+    class(coupler_2d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc)
+  end function has_bc_2d
+
+  !> Return a pointer to the 2D boundary condition field (real*4) at the given index.
+  function get_bc_r4_2d(this, bc_idx) result(bc_ptr)
+    class(coupler_2d_bc_type),      intent(in) :: this
+    integer,                        intent(in) :: bc_idx
+    type(coupler_2d_real4_field_type), pointer :: bc_ptr
+
+    bc_ptr => this%bc_r4(bc_idx)
+  end function get_bc_r4_2d
+
+  !> Return true if the 2D real*4 boundary condition field is associated.
+  function has_bc_r4_2d(this) result(has)
+    class(coupler_2d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc_r4)
+  end function has_bc_r4_2d
+
+  !> Return a pointer to the 1D boundary condition field at the given index.
+  function get_bc_1d(this, bc_idx) result(bc_ptr)
+    class(coupler_1d_bc_type),      intent(in) :: this
+    integer,                        intent(in) :: bc_idx
+    type(coupler_1d_real8_field_type), pointer :: bc_ptr
+
+    bc_ptr => this%bc(bc_idx)
+  end function get_bc_1d
+
+  !> Return true if the 1D real*8 boundary condition field is associated.
+  function has_bc_1d(this) result(has)
+    class(coupler_1d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc)
+  end function has_bc_1d
+
+  !> Return a pointer to the 1D boundary condition field (real*4) at the given index.
+  function get_bc_r4_1d(this, bc_idx) result(bc_ptr)
+    class(coupler_1d_bc_type),      intent(in) :: this
+    integer,                        intent(in) :: bc_idx
+    type(coupler_1d_real4_field_type), pointer :: bc_ptr
+
+    bc_ptr => this%bc_r4(bc_idx)
+  end function get_bc_r4_1d
+
+  !> Return true if the 1D real*4 boundary condition field is associated.
+  function has_bc_r4_1d(this) result(has)
+    class(coupler_1d_bc_type),      intent(in) :: this
+    logical                                    :: has
+
+    has = associated(this%bc_r4)
+  end function has_bc_r4_1d
+
+  !> Return the starting index (isd) for 2D boundary condition fields.
+  function get_isd_2d(this) result(isd)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: isd
+
+    isd = this%isd
+  end function get_isd_2d
+
+  !> Return the starting index (isd) for 3D boundary condition fields.
+  function get_isd_3d(this) result(isd)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: isd
+
+    isd = this%isd
+  end function get_isd_3d
+
+  !> Return the starting index (isc) for 2D core data fields.
+  function get_isc_2d(this) result(isc)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: isc
+
+    isc = this%isc
+  end function get_isc_2d
+
+  !> Return the starting index (isc) for 3D core data fields.
+  function get_isc_3d(this) result(isc)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: isc
+
+    isc = this%isc
+  end function get_isc_3d
+
+  !> Return the ending index (ied) for 2D boundary condition fields.
+  function get_ied_2d(this) result(ied)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: ied
+
+    ied = this%ied
+  end function get_ied_2d
+
+  !> Return the ending index (ied) for 3D boundary condition fields.
+  function get_ied_3d(this) result(ied)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: ied
+
+    ied = this%ied
+  end function get_ied_3d
+
+  !> Return the ending index (iec) for 2D core data fields.
+  function get_iec_2d(this) result(iec)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: iec
+
+    iec = this%iec
+  end function get_iec_2d
+
+  !> Return the ending index (iec) for 3D core data fields.
+  function get_iec_3d(this) result(iec)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: iec
+
+    iec = this%iec
+  end function get_iec_3d
+
+  !> Return the starting j-index (jsd) for 2D boundary condition fields.
+  function get_jsd_2d(this) result(jsd)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jsd
+
+    jsd = this%jsd
+  end function get_jsd_2d
+
+  !> Return the starting j-index (jsd) for 3D boundary condition fields.
+  function get_jsd_3d(this) result(jsd)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jsd
+
+    jsd = this%jsd
+  end function get_jsd_3d
+
+  !> Return the starting j-index (jsc) for 2D core data fields.
+  function get_jsc_2d(this) result(jsc)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jsc
+
+    jsc = this%jsc
+  end function get_jsc_2d
+
+  !> Return the starting j-index (jsc) for 3D core data fields.
+  function get_jsc_3d(this) result(jsc)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jsc
+
+    jsc = this%jsc
+  end function get_jsc_3d
+
+  !> Return the ending j-index (jed) for 2D boundary condition fields.
+  function get_jed_2d(this) result(jed)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jed
+
+    jed = this%jed
+  end function get_jed_2d
+
+  !> Return the ending j-index (jed) for 3D boundary condition fields.
+  function get_jed_3d(this) result(jed)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jed
+
+    jed = this%jed
+  end function get_jed_3d
+
+  !> Return the ending j-index (jec) for 2D core data fields.
+  function get_jec_2d(this) result(jec)
+    class(coupler_2d_bc_type), intent(in) :: this
+    integer                               :: jec
+
+    jec = this%jec
+  end function get_jec_2d
+
+  !> Return the ending j-index (jec) for 3D core data fields.
+  function get_jec_3d(this) result(jec)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: jec
+
+    jec = this%jec
+  end function get_jec_3d
+
+  !> Return the starting k-index (ks) for 3D fields.
+  function get_ks(this) result(ks)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: ks
+
+    ks = this%ks
+  end function get_ks
+
+  !> Return the ending k-index (ke) for 3D fields.
+  function get_ke(this) result(ke)
+    class(coupler_3d_bc_type), intent(in) :: this
+    integer                               :: ke
+
+    ke = this%ke
+  end function get_ke
+
+  !> Return num_bcs for coupler_bc_type
+  function get_num_bcs(this) result(num_bcs)
+    class(coupler_bc_type), intent(in) :: this
+    integer                            :: num_bcs
+
+    num_bcs = this%num_bcs
+  end function get_num_bcs
+
+  !> Returns true if coupler_bc_type is set
+  function get_set(this) result(set)
+    class(coupler_bc_type), intent(in) :: this
+    logical                            :: set
+
+    set = this%set
+  end function get_set
+
+  !> Returns name for coupler_field_type
+  function get_field_name(this) result(field_name)
+    class(coupler_field_type), intent(in) :: this
+    character(len=48)                     :: field_name
+
+    field_name = this%name
+  end function get_field_name
+
+  !> Returns num_fields for coupler_field_type
+  function get_num_fields(this) result(num_fields)
+    class(coupler_field_type), intent(in) :: this
+    integer                               :: num_fields
+
+    num_fields = this%num_fields
+  end function get_num_fields
+
+  !> Returns flux_type for coupler_field_type
+  function get_flux_type(this) result(flux_type)
+    class(coupler_field_type), intent(in) :: this
+    character(len=128)                    :: flux_type
+
+    flux_type = this%flux_type
+  end function get_flux_type
+
+  !> Returns implementation for coupler_field_type
+  function get_implementation(this) result(implementation)
+    class(coupler_field_type), intent(in) :: this
+    character(len=128)                    :: implementation
+
+    implementation = this%implementation
+  end function get_implementation
+
+  !> Returns pointer to coupler_field_type flag
+  function get_flag(this) result(flag_ptr)
+    class(coupler_field_type), intent(in) :: this
+    logical, pointer, dimension(:)        :: flag_ptr
+
+    flag_ptr => this%flag
+  end function get_flag
+
+  !> Returns true if the field has an associated flag.
+  function has_flag(this) result(has)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: has
+
+    has = associated(this%flag)
+  end function has_flag
+
+  !> Returns atm_tr_index for coupler_field_type
+  function get_atm_tr_index(this) result(atm_tr_index)
+    class(coupler_field_type), intent(in) :: this
+    integer                               :: atm_tr_index
+
+    atm_tr_index = this%atm_tr_index
+  end function get_atm_tr_index
+
+  !> Returns ice_restart_file for coupler_field_type
+  function get_ice_restart_file(this) result(ice_restart_file)
+    class(coupler_field_type), intent(in) :: this
+    character(len=128)                    :: ice_restart_file
+
+    ice_restart_file = this%ice_restart_file
+  end function get_ice_restart_file
+
+  !> Returns ocean_restart_file for coupler_field_type
+  function get_ocean_restart_file(this) result(ocean_restart_file)
+    class(coupler_field_type), intent(in) :: this
+    character(len=128)                    :: ocean_restart_file
+
+    ocean_restart_file = this%ocean_restart_file
+  end function get_ocean_restart_file
+
+  !> Returns fms2_io_rest_type for coupler_field_type
+  function get_fms2_io_rest_type(this) result(fms2_io_rest_type_ptr)
+    class(coupler_field_type), intent(in) :: this
+    type(FmsNetcdfDomainFile_t), pointer  :: fms2_io_rest_type_ptr
+
+    fms2_io_rest_type_ptr => this%fms2_io_rest_type
+  end function get_fms2_io_rest_type
+
+  !> Returns true if fms2_io_rest_type for coupler_field_type is associated
+  function has_fms2_io_rest_type(this) result(has)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: has
+
+    has = associated(this%fms2_io_rest_type)
+  end function has_fms2_io_rest_type
+
+  !> Returns true if use_atm_pressure = .true. for coupler_field_type
+  function get_use_atm_pressure(this) result(use_atm_pressure)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: use_atm_pressure
+
+    use_atm_pressure = this%use_atm_pressure
+  end function get_use_atm_pressure
+
+  !> Returns true if use_10m_wind_speed = .true. for coupler_field_type
+  function get_use_10m_wind_speed(this) result(use_10m_wind_speed)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: use_10m_wind_speed
+
+    use_10m_wind_speed = this%use_10m_wind_speed
+  end function get_use_10m_wind_speed
+
+  !> Returns true if pass_through_ice = .true. for coupler_field_type
+  function get_pass_through_ice(this) result(pass_through_ice)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: pass_through_ice
+
+    pass_through_ice = this%pass_through_ice
+  end function get_pass_through_ice
+
+  !> Returns pointer to field for field index (field_idx) for coupler_3d_r8_field_type
+  function get_field_3d_r8(this, field_idx) result(field_ptr)
+    class(coupler_3d_real8_field_type), intent(in) :: this
+    integer,                            intent(in) :: field_idx
+    type(coupler_3d_real8_values_type), pointer    :: field_ptr
+
+    field_ptr => this%field(field_idx)
+  end function get_field_3d_r8
+
+  !> Returns true if field array is associated for coupler_3d_r8_field_type
+  function has_field_3d_r8(this) result(has)
+    class(coupler_3d_real8_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_3d_r8
+
+  !> Returns pointer to field for field index (field_idx) for coupler_3d_r4_field_type
+  function get_field_3d_r4(this, field_idx) result(field_ptr)
+    class(coupler_3d_real4_field_type), intent(in) :: this
+    integer,                            intent(in) :: field_idx
+    type(coupler_3d_real4_values_type), pointer    :: field_ptr
+
+    field_ptr => this%field(field_idx)
+  end function get_field_3d_r4
+
+  !> Returns true if field array is associated for coupler_3d_r4_field_type
+  function has_field_3d_r4(this) result(has)
+    class(coupler_3d_real4_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_3d_r4
+
+  !> Returns pointer to field for field index (field_idx) for coupler_2d_r8_field_type
+  function get_field_2d_r8(this, field_idx) result(field_ptr)
+    class(coupler_2d_real8_field_type), intent(in) :: this
+    integer,                            intent(in) :: field_idx
+    type(coupler_2d_real8_values_type), pointer    :: field_ptr
+
+    field_ptr => this%field(field_idx)
+  end function get_field_2d_r8
+
+  !> Returns true if field array is associated for coupler_2d_r8_field_type
+  function has_field_2d_r8(this) result(has)
+    class(coupler_2d_real8_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_2d_r8
+
+  !> Returns pointer to field for field index (field_idx) for coupler_2d_r4_field_type
+  function get_field_2d_r4(this, field_idx) result(field_ptr)
+    class(coupler_2d_real4_field_type), intent(in) :: this
+    integer,                            intent(in) :: field_idx
+    type(coupler_2d_real4_values_type), pointer    :: field_ptr
+
+    field_ptr => this%field(field_idx)
+  end function get_field_2d_r4
+
+  !> Returns true if field array is associated for coupler_2d_r4_field_type
+  function has_field_2d_r4(this) result(has)
+    class(coupler_2d_real4_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_2d_r4
+
+  !> Returns pointer to field for field index (field_idx) for coupler_1d_r8_field_type
+  function get_field_1d_r8(this, field_idx) result(field_ptr)
+    class(coupler_1d_real8_field_type), intent(in) :: this
+    integer,                            intent(in) :: field_idx
+    type(coupler_1d_real8_values_type), pointer    :: field_ptr
+
+    field_ptr => this%field(field_idx)
+  end function get_field_1d_r8
+
+  !> Returns true if field array is associated for coupler_2d_r8_field_type
+  function has_field_1d_r8(this) result(has)
+    class(coupler_1d_real8_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_1d_r8
+
+  !> Returns pointer to field for field index (field_idx) for coupler_1d_r4_field_type
+  function get_field_1d_r4(this, field_idx) result(field_ptr)
+    class(coupler_1d_real4_field_type), intent(in) :: this
+    integer,                            intent(in) :: field_idx
+    type(coupler_1d_real4_values_type), pointer    :: field_ptr
+
+    field_ptr => this%field(field_idx)
+  end function get_field_1d_r4
+
+  !> Returns true if field array is associated for coupler_1d_r4_field_type
+  function has_field_1d_r4(this) result(has)
+    class(coupler_1d_real4_field_type), intent(in) :: this
+    logical                                        :: has
+
+    has = associated(this%field)
+  end function has_field_1d_r4
+
+  !> Returns pointer to param for coupler_field_type
+  function get_param(this) result(param_ptr)
+    class(coupler_field_type), intent(in) :: this
+    real(r8_kind), pointer, dimension(:)  :: param_ptr
+
+    param_ptr => this%param
+  end function get_param
+
+  !> Returns true if param is associated for coupler_field_type
+  function has_param(this) result(has)
+    class(coupler_field_type), intent(in) :: this
+    logical                               :: has
+
+    has = associated(this%param)
+  end function has_param
+
+  !> Returns mol_wt for coupler_field_type
+  function get_mol_wt(this) result(mol_wt)
+    class(coupler_field_type), intent(in) :: this
+    real(r8_kind)                         :: mol_wt
+
+    mol_wt = this%mol_wt
+  end function get_mol_wt
+
+  !> Returns name for coupler_values_type
+  function get_values_name(this) result(values_name)
+    class(coupler_values_type), intent(in) :: this
+    character(len=48)                      :: values_name
+
+    values_name = this%name
+  end function get_values_name
+
+  !> Returns long_name for coupler_values_type
+  function get_long_name(this) result(long_name)
+    class(coupler_values_type), intent(in) :: this
+    character(len=128)                     :: long_name
+
+    long_name = this%long_name
+  end function get_long_name
+
+  !> Returnsunits for coupler_values_type
+  function get_units(this) result(units)
+    class(coupler_values_type), intent(in) :: this
+    character(len=128)                     :: units
+
+    units = this%units
+  end function get_units
+
+  !> Returns true if mean = .true. for coupler_values_type
+  function get_mean(this) result(mean)
+    class(coupler_values_type), intent(in) :: this
+    logical                                :: mean
+
+    mean = this%mean
+  end function get_mean
+
+  !> Returns true if may_init = .true. for coupler_values_type
+  function get_may_init(this) result(may_init)
+    class(coupler_values_type), intent(in) :: this
+    logical                                :: may_init
+
+    may_init = this%may_init
+  end function get_may_init
+
+  !> Returns true if override = .true. for coupler_values_type
+  function get_override(this) result(override)
+    class(coupler_values_type), intent(in) :: this
+    logical                                :: override
+
+    override = this%override
+  end function get_override
+
+  !> Returns id_diag for coupler_values_type
+  function get_id_diag(this) result(id_diag)
+    class(coupler_values_type), intent(in) :: this
+    integer                                :: id_diag
+
+    id_diag = this%id_diag
+  end function get_id_diag
+
+   !> Returns id_rest for coupler_values_type
+  function get_id_rest(this) result(id_rest)
+    class(coupler_values_type), intent(in) :: this
+    integer                                :: id_rest
+
+    id_rest = this%id_rest
+  end function get_id_rest
+
+  !> Returns values for coupler_3d_r8_values_type
+  function get_values_3d_r8(this) result(values)
+    class(coupler_3d_real8_values_type), intent(in) :: this
+    real(r8_kind), dimension(:,:,:), allocatable    :: values
+
+    integer :: ni, nj, nk
+
+    ni = size(this%values,1)
+    nj = size(this%values,2)
+    nk = size(this%values,3)
+
+    allocate(values(ni,nj,nk))
+
+    values = this%values
+  end function get_values_3d_r8
+
+  !> Returns true if values is associated for coupler_3d_r8_values_type
+  function has_values_3d_r8(this) result(has)
+    class(coupler_3d_real8_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_3d_r8
+
+  !> Returns values for coupler_3d_r4_values_type
+  function get_values_3d_r4(this) result(values)
+    class(coupler_3d_real4_values_type), intent(in) :: this
+    real(r4_kind), dimension(:,:,:), allocatable    :: values
+
+    integer :: ni, nj, nk
+
+    ni = size(this%values,1)
+    nj = size(this%values,2)
+    nk = size(this%values,3)
+
+    allocate(values(ni,nj,nk))
+
+    values = this%values
+  end function get_values_3d_r4
+
+  !> Returns true if values is associated for coupler_3d_r4_values_type
+  function has_values_3d_r4(this) result(has)
+    class(coupler_3d_real4_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_3d_r4
+
+  !> Returns values for coupler_2d_r8_values_type
+  function get_values_2d_r8(this) result(values)
+    class(coupler_2d_real8_values_type), intent(in) :: this
+    real(r8_kind), dimension(:,:), allocatable      :: values
+
+    integer :: ni, nj
+
+    ni = size(this%values,1)
+    nj = size(this%values,2)
+
+    allocate(values(ni,nj))
+
+    values = this%values
+  end function get_values_2d_r8
+
+  !> Returns true if values is associated for coupler_2d_r8_values_type
+  function has_values_2d_r8(this) result(has)
+    class(coupler_2d_real8_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_2d_r8
+
+  !> Returns values for coupler_2d_r4_values_type
+  function get_values_2d_r4(this) result(values)
+    class(coupler_2d_real4_values_type), intent(in) :: this
+    real(r4_kind), dimension(:,:), allocatable      :: values
+
+    integer :: ni, nj
+
+    ni = size(this%values,1)
+    nj = size(this%values,2)
+
+    allocate(values(ni,nj))
+
+    values = this%values
+  end function get_values_2d_r4
+
+  !> Returns true if values is associated for coupler_2d_r4_values_type
+  function has_values_2d_r4(this) result(has)
+    class(coupler_2d_real4_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_2d_r4
+
+  !> Returns values for coupler_1d_r8_values_type
+  function get_values_1d_r8(this) result(values)
+    class(coupler_1d_real8_values_type), intent(in) :: this
+    real(r8_kind), dimension(:), allocatable        :: values
+
+    integer :: ni
+
+    ni = size(this%values,1)
+
+    allocate(values(ni))
+
+    values = this%values
+  end function get_values_1d_r8
+
+  !> Returns true if values is associated for coupler_1d_r8_values_type
+  function has_values_1d_r8(this) result(has)
+    class(coupler_1d_real8_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_1d_r8
+
+  !> Returns values for coupler_1d_r4_values_type
+  function get_values_1d_r4(this) result(values)
+    class(coupler_1d_real4_values_type), intent(in) :: this
+    real(r4_kind), dimension(:), allocatable        :: values
+
+    integer :: ni
+
+    ni = size(this%values,1)
+
+    allocate(values(ni))
+
+    values = this%values
+  end function get_values_1d_r4
+
+  !> Returns true if values is associated for coupler_1d_r4_values_type
+  function has_values_1d_r4(this) result(has)
+    class(coupler_1d_real4_values_type), intent(in) :: this
+    logical                                         :: has
+
+    has = associated(this%values)
+  end function has_values_1d_r4
 
   !> @brief Initialize the coupler types
   subroutine coupler_types_init

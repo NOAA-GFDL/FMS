@@ -114,10 +114,10 @@ module drifters_mod
   type drifters_type
      ! Be sure to update drifters_new, drifters_del and drifters_copy_new
      ! when adding members
-     type(drifters_core_type)  :: core
-     type(drifters_input_type) :: input
-     type(drifters_io_type)    :: io
-     type(drifters_comm_type)  :: comm
+     type(drifters_core_type), target  :: core
+     type(drifters_input_type), target :: input
+     type(drifters_io_type), target    :: io
+     type(drifters_comm_type), target  :: comm
      real    :: dt             !< total dt, over a complete step
      real    :: time
      ! fields
@@ -151,6 +151,35 @@ module drifters_mod
      logical :: rk4_completed !< Runge Kutta stuff
      integer :: nx, ny
      logical, allocatable   :: remove(:)
+   contains
+      procedure :: get_core
+      procedure :: get_input
+      procedure :: get_io
+      procedure :: get_comm
+      procedure :: get_dt
+      procedure :: get_time
+      procedure :: get_fields
+      procedure :: get_xu
+      procedure :: get_yu
+      procedure :: get_zu
+      procedure :: get_xv
+      procedure :: get_yv
+      procedure :: get_zv
+      procedure :: get_xw
+      procedure :: get_yw
+      procedure :: get_zw
+      procedure :: get_temp_pos
+      procedure :: get_rk4_k1
+      procedure :: get_rk4_k2
+      procedure :: get_rk4_k3
+      procedure :: get_rk4_k4
+      procedure :: get_input_file
+      procedure :: get_output_file
+      procedure :: get_rk4_step
+      procedure :: get_rk4_completed
+      procedure :: get_nx
+      procedure :: get_ny
+      procedure :: get_remove
   end type drifters_type
 
   !> @brief Assignment override for @ref drifters_type
@@ -183,6 +212,264 @@ module drifters_mod
 !> @{
 
 contains
+
+  function get_core(this) result(core_ptr)
+    class(drifters_type)              :: this
+    type(drifters_core_type), target  :: core_ptr
+
+    core_ptr => this%core
+
+  end function get_core
+
+  function get_input(this) result(input_ptr)
+    class(drifters_type)               :: this
+    type(drifters_input_type), target  :: input_ptr
+
+    input_ptr => this%input
+
+  end function get_input
+
+  function get_io(this) result(io_ptr)
+    class(drifters_type)            :: this
+    type(drifters_io_type), target  :: io_ptr
+
+    io_ptr => this%io
+
+  end function get_io
+
+  function get_comm(this) result(comm_ptr)
+    class(drifters_type)              :: this
+    type(drifters_comm_type), target  :: comm_ptr
+
+    comm_ptr => this%comm
+
+  end function get_comm
+
+  function get_dt(this) result(dt)
+    class(drifters_type) :: this
+    real                 :: dt
+
+    dt = this%dt
+
+  end function get_dt
+
+  function get_time(this) result(time)
+    class(drifters_type) :: this
+    real                 :: time
+
+    time = this%time
+
+  end function get_time
+
+  function get_fields(this) result(fields)
+    class(drifters_type) :: this
+    real, allocatable    :: fields(:,:)
+
+    if (allocated(this%fields)) then
+      fields = this%fields
+    endif
+
+  end function get_fields
+
+  function get_xu(this) result(xu)
+    class(drifters_type) :: this
+    real, allocatable    :: xu(:)
+
+    if (allocated(this%xu)) then
+      xu = this%xu
+    endif
+
+  end function get_xu
+
+  function get_yu(this) result(yu)
+    class(drifters_type) :: this
+    real, allocatable    :: yu(:)
+
+    if (allocated(this%yu)) then
+      yu = this%yu
+    endif
+
+  end function get_yu
+
+  function get_zu(this) result(zu)
+    class(drifters_type) :: this
+    real, allocatable    :: zu(:)
+
+    if (allocated(this%zu)) then
+      zu = this%zu
+    endif
+
+  end function get_zu
+
+  function get_xv(this) result(xv)
+    class(drifters_type) :: this
+    real, allocatable    :: xv(:)
+
+    if (allocated(this%xv)) then
+      xv = this%xv
+    endif
+
+  end function get_xv
+
+  function get_yv(this) result(yv)
+    class(drifters_type) :: this
+    real, allocatable    :: yv(:)
+
+    if (allocated(this%yv)) then
+      yv = this%yv
+    endif
+
+  end function get_yv
+
+  function get_zv(this) result(zv)
+    class(drifters_type) :: this
+    real, allocatable    :: zv(:)
+
+    if (allocated(this%zv)) then
+      zv = this%zv
+    endif
+
+  end function get_zv
+
+  function get_xw(this) result(xw)
+    class(drifters_type) :: this
+    real, allocatable    :: xw(:)
+
+    if (allocated(this%xw)) then
+      xw = this%xw
+    endif
+
+  end function get_xw
+
+  function get_yw(this) result(yw)
+    class(drifters_type) :: this
+    real, allocatable    :: yw(:)
+
+    if (allocated(this%yw)) then
+      yw = this%yw
+    endif
+
+  end function get_yw
+
+  function get_zw(this) result(zw)
+    class(drifters_type) :: this
+    real, allocatable    :: zw(:)
+
+    if (allocated(this%zw)) then
+      zw = this%zw
+    endif
+
+  end function get_zw
+
+  function get_temp_pos(this) result(temp_pos)
+    class(drifters_type) :: this
+    real, allocatable    :: temp_pos(:,:)
+
+    if (allocated(this%temp_pos)) then
+      temp_pos = this%temp_pos
+    endif
+
+  end function get_temp_pos
+
+  function get_rk4_k1(this) result(rk4_k1)
+    class(drifters_type) :: this
+    real, allocatable    :: rk4_k1(:,:)
+
+    if (allocated(this%rk4_k1)) then
+      rk4_k1 = this%rk4_k1
+    endif
+
+  end function get_rk4_k1
+
+  function get_rk4_k2(this) result(rk4_k2)
+    class(drifters_type) :: this
+    real, allocatable    :: rk4_k2(:,:)
+
+    if (allocated(this%rk4_k2)) then
+      rk4_k2 = this%rk4_k2
+    endif
+
+  end function get_rk4_k2
+
+  function get_rk4_k2(this) result(rk4_k2)
+    class(drifters_type) :: this
+    real, allocatable    :: rk4_k2(:,:)
+
+    if (allocated(this%rk4_k2)) then
+      rk4_k2 = this%rk4_k2
+    endif
+
+  end function get_rk4_k3
+
+  function get_rk4_k4(this) result(rk4_k4)
+    class(drifters_type) :: this
+    real, allocatable    :: rk4_k4(:,:)
+
+    if (allocated(this%rk4_k4)) then
+      rk4_k4 = this%rk4_k4
+    endif
+
+  end function get_rk4_k4
+
+  function get_input_file(this) result(input_file)
+    class(drifters_type)        :: this
+    character(len=FMS_PATH_LEN) :: input_file
+
+    if (allocated(this%input_file)) then
+      input_file = this%input_file
+    endif
+
+  end function get_input_file
+
+  function get_output_file(this) result(output_file)
+    class(drifters_type)        :: this
+    character(len=FMS_PATH_LEN) :: output_file
+
+    if (allocated(this%output_file)) then
+      output_file = this%output_file
+    endif
+
+  end function get_output_file
+
+  function get_rk4_step(this) result(rk4_step)
+    class(drifters_type) :: this
+    integer              :: rk4_step
+
+    rk4_step = this%rk4_step
+
+  end function get_rk4_step
+
+  function get_rk4_completed(this) result(rk4_completed)
+    class(drifters_type) :: this
+    logical              :: rk4_completed
+
+    rk4_completed = this%rk4_completed
+
+  end function get_rk4_completed
+
+  function get_nx(this) result(nx)
+    class(drifters_type) :: this
+    integer              :: nx
+
+    nx = this%nx
+
+  end function get_nx
+
+  function get_ny(this) result(ny)
+    class(drifters_type) :: this
+    integer              :: ny
+
+    ny = this%ny
+
+  end function get_ny
+
+  function get_remove(this) result(remove)
+    class(drifters_type) :: this
+    logical, allocatable :: remove(:)
+
+    remove = this%remove
+
+  end function get_remove
 
   !> @brief Will read positions stored in the netCDF file <TT>input_file</TT>.
   !!

@@ -54,6 +54,17 @@ module drifters_input_mod
      character(len=MAX_STR_LEN)               :: time_units
      character(len=MAX_STR_LEN)               :: title
      character(len=MAX_STR_LEN)               :: version
+   contains
+     procedure :: get_position_names
+     procedure :: get_position_units
+     procedure :: get_field_names
+     procedure :: get_field_units
+     procedure :: get_velocity_names
+     procedure :: get_positions
+     procedure :: get_ids
+     procedure :: get_time_units
+     procedure :: get_title
+     procedure :: get_version
   end type drifters_input_type
 
   !> @brief Assignment override for @ref drifters_input_type
@@ -68,6 +79,101 @@ module drifters_input_mod
   contains
 
 !===============================================================================
+
+  function get_position_names(this) result(position_names)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN), allocatable :: position_names(:)
+
+    if (allocated(this%position_names)) then
+      position_names = this%position_names
+    endif
+
+
+  end function get_position_names
+
+  function get_position_units(this) result(position_units)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN), allocatable :: position_units(:)
+
+    if (allocated(this%position_units)) then
+      position_units = this%position_units
+    endif
+
+  end function get_position_units
+
+  function get_field_names(this) result(field_names)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN), allocatable :: field_names(:)
+
+    if (allocated(this%field_names)) then
+      field_names = this%field_names
+    endif
+
+  end function get_field_names
+
+  function get_field_units(this) result(field_units)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN), allocatable :: field_units(:)
+
+    if (allocated(this%field_units)) then
+      field_units = this%field_units
+    endif
+
+  end function get_field_units
+
+  function get_velocity_names(this) result(velocity_names)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN), allocatable :: velocity_names(:)
+
+    if (allocated(this%velocity_names)) then
+      velocity_names = this%velocity_names
+    endif
+
+  end function get_velocity_names
+
+  function get_positions(this) result(positions)
+    class(drifters_input_type) :: this
+    real, allocatable          :: positions(:,:)
+
+    if (allocated(this%positions)) then
+      positions = this%positions
+    endif
+
+  end function get_positions
+
+  function get_ids(this) result(ids)
+    class(drifters_input_type) :: this
+    integer, allocatable       :: ids(:)
+
+    if (allocated(this%ids)) then
+      ids = this%ids
+    endif
+
+  end function get_ids
+
+  function get_time_units(this) result(time_units)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN) :: time_units
+
+    time_units = this%time_units
+
+  end function get_time_units
+
+  function get_title(this) result(title)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN) :: title
+
+    title = this%title
+
+  end function get_title
+
+  function get_version(this) result(version)
+    class(drifters_input_type) :: this
+    character(len=MAX_STR_LEN) :: version
+
+    version = this%version
+
+  end function get_version
 
   subroutine drifters_input_new(self, filename, ermesg)
     use netcdf

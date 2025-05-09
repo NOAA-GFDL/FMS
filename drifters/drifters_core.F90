@@ -46,6 +46,13 @@ module drifters_core_mod
      integer :: npdim  !< max number of particles (drifters)
      integer, allocatable :: ids(:) !< particle id number
      real   , allocatable :: positions(:,:)
+   contains
+     procedure :: get_it
+     procedure :: get_nd
+     procedure :: get_np
+     procedure :: get_npdim
+     procedure :: get_ids
+     procedure :: get_positions
   end type drifters_core_type
 
   !> @brief Assignment override for @ref drifters_core_type
@@ -59,6 +66,59 @@ contains
 !> @addtogroup drifters_core_mod
 !> @{
 !###############################################################################
+
+  function get_it(this) result(it)
+    class(drifters_core_type) :: this
+    integer(kind=i8_kind)     :: it
+
+    it = this%it
+
+  end function get_it
+
+  function get_nd(this) result(nd)
+    class(drifters_core_type) :: this
+    integer                   :: nd
+
+    nd = this%nd
+
+  end function get_nd
+
+  function get_np(this) result(np)
+    class(drifters_core_type) :: this
+    integer                   :: np
+
+    np = this%np
+
+  end function get_np
+
+  function get_npdim(this) result(npdim)
+    class(drifters_core_type) :: this
+    integer                   :: npdim
+
+    npdim = this%npdim
+
+  end function get_npdim
+
+  function get_ids(this) result(ids)
+    class(drifters_core_type) :: this
+    integer, allocatable      :: ids(:)
+
+    if (allocated(this%ids)) then
+      ids = this%ids
+    endif
+
+  end function get_ids
+
+  function get_positions(this) result(positions)
+    class(drifters_core_type) :: this
+    real, allocatable         :: positions(:,:)
+
+    if (allocated(this%positions)) then
+      positions = this%positions
+    endif
+
+  end function get_positions
+
   !> Create a new @ref drifters_core_type
   subroutine drifters_core_new(self, nd, npdim, ermesg)
     type(drifters_core_type)        :: self !< @ref drifters_core_type to create
