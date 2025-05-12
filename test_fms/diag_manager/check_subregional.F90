@@ -19,6 +19,7 @@
 
 !> @brief Checks the output file after running test_subregional
 program check_subregional
+#ifdef use_yaml
   use fms_mod,           only: fms_init, fms_end, string
   use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file, get_dimension_size, file_exists
   use mpp_mod,           only: mpp_npes, mpp_error, FATAL, mpp_pe
@@ -230,4 +231,5 @@ program check_subregional
     enddo
 
   end subroutine check_manifest
+#endif
 end program
