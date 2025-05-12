@@ -227,7 +227,8 @@ program check_subregional
       ntime_levels = -999
       call get_value_from_key(diag_yaml_id, file_ids(i), "number_of_timelevels", ntime_levels)
 
-      if (ntime_levels .ne. 8) call mpp_error(FATAL, "The number of time levels is not correct:: "//string(ntime_levels))
+      if (ntime_levels .ne. 8)&
+        call mpp_error(FATAL, "The number of time levels is not correct:: "//string(ntime_levels))
     enddo
 
   end subroutine check_manifest
