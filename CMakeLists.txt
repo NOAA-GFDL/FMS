@@ -65,7 +65,7 @@ option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"      
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
-option(USE_DEPRECATED_IO     "THIS OPTION HAS BEEN DEPRECATED AND NO LONGER SUPPORTED!"   OFF)
+option(USE_DEPRECATED_IO     "THIS OPTION HAS NO EFFECT AND WILL BE REMOVED IN A FUTURE RELEASE"   OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -251,8 +251,8 @@ if(WITH_YAML)
 endif()
 
 if(USE_DEPRECATED_IO)
-  message( FATAL_ERROR "FMS_IO HAS BEEN DEPRECATED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE  "
-                   "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS")
+  message( FATAL_ERROR "FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE  "
+                   "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS OR REVERT TO VERSION 2025.02")
 endif()
 
 if(INTERNAL_FILE_NML)

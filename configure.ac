@@ -106,7 +106,7 @@ AS_IF([test ${enable_deprecated_io:-no} = yes],
   [enable_deprecated_io=no])
 
 if test $enable_deprecated_io = yes; then
-  AC_MSG_ERROR(FMS_IO HAS BEEN DEPRECATED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS)
+  AC_MSG_ERROR(FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS OR REVERT TO VERSION 2025.02)
 fi
 
 AC_ARG_ENABLE([r8-default],
