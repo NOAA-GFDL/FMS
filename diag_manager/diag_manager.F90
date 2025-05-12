@@ -2072,19 +2072,31 @@ END FUNCTION register_static_field
 
        ! Initialize output time for fields output every time step
        IF ( freq == EVERY_TIME .AND. .NOT.output_fields(out_num)%static ) THEN
-          IF (output_fields(out_num)%next_output == output_fields(out_num)%last_output) THEN
-             IF(PRESENT(time)) THEN
-                output_fields(out_num)%next_output = time
-             ELSE
-                WRITE (error_string,'(a,"/",a)')&
-                     & TRIM(input_fields(diag_field_id)%module_name),&
-                     & TRIM(output_fields(out_num)%output_name)
-                IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
-                     & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN
-                   DEALLOCATE(field_out)
-                   DEALLOCATE(oor_mask)
-                   RETURN
+          IF (PRESENT(time)) THEN
+             IF ( numthreads .ne. 1 .or. active_omp_level .gt. 1) THEN
+                ! Openmp parallel region:
+                ! Outputs will be done in diag_send_complete
+                ! Always overwrite next_output so that this will be used in files
+                IF ( time > output_fields(out_num)%last_output ) THEN
+                   output_fields(out_num)%next_output = time
                 END IF
+             ELSE
+                ! Non-openmp parallel region:
+                ! Outputs will be done in this function
+                ! Only overwrite next_output time when it is equal to last_output
+                IF ( output_fields(out_num)%next_output == output_fields(out_num)%last_output ) THEN
+                   output_fields(out_num)%next_output = time
+                END IF
+             END IF
+          ELSE IF ( output_fields(out_num)%next_output == output_fields(out_num)%last_output ) THEN
+             WRITE (error_string,'(a,"/",a)')&
+                & TRIM(input_fields(diag_field_id)%module_name),&
+                & TRIM(output_fields(out_num)%output_name)
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN
+                DEALLOCATE(field_out)
+                DEALLOCATE(oor_mask)
+                RETURN
              END IF
           END IF
        END IF

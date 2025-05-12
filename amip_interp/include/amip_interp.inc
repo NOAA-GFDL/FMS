@@ -114,9 +114,6 @@ if ( .not.use_daily ) then
               temp1(:,:) = temp2(:,:)   ! SJL BUG fix: June 24, 2011
           else
               call READ_RECORD_ ('sst', Date1, Udate1, temp1)
-              if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-                   temp1 = temp1 + SST_ANOM_
-              endif
               call horiz_interp ( Interp%Hintrp, temp1, Interp%DATA1_)
               call CLIP_DATA_ ('sst', Interp%DATA1_)
              Interp%Date1 = Date1
@@ -127,9 +124,6 @@ if ( .not.use_daily ) then
 
       if (Date2 /= Interp%Date2) then
           call READ_RECORD_ ('sst', Date2, Udate2, temp2)
-          if ( use_ncep_sst .and. (.not. no_anom_sst) ) then
-               temp2 = temp2 + SST_ANOM_
-          endif
           call horiz_interp ( Interp%Hintrp, temp2, Interp%DATA2_)
           call CLIP_DATA_ ('sst', Interp%DATA2_)
           Interp%Date2 = Date2
@@ -145,11 +139,6 @@ if ( .not.use_daily ) then
 !      Nudging runs: (Note: NCEP SST updated only every 6-hr)
 !      Compute SST anomaly from global SST datasets for subsequent forecast runs
 !-------------------------------------------------------------------------------
-    if ( use_ncep_sst .and. no_anom_sst ) then
-         sst_anom = SST_NCEP_ - (temp1 + fmonth*(temp2 - temp1))
-         call horiz_interp (Interp%Hintrp, SST_NCEP_, sst)
-         call CLIP_DATA_ ('sst', sst)
-    endif
 
 !! DEBUG CODE
     if (DEBUG) then
@@ -380,15 +369,7 @@ else
 !-- SJL -------------------------------------------------------------
 ! Can NOT use ncep_sst to determine sea_ice For seasonal forecast
 ! Use climo sea ice for seasonal runs
-            if ( use_ncep_sst .and. use_ncep_ice ) then
-               where ( SST_NCEP_ <= (real(TFREEZE, FMS_AMIP_INTERP_KIND_)+real(tice_crit, FMS_AMIP_INTERP_KIND_)) )
-                   sice = 1._lkind
-               elsewhere
-                   sice = 0._lkind
-               endwhere
-            else
-               call READ_RECORD_ ('ice', Date1, Udate1, sice)
-            endif
+            call READ_RECORD_ ('ice', Date1, Udate1, sice)
 !--------------------------------------------------------------------
             call horiz_interp ( Interp%Hintrp, sice, Interp%DATA1_)
             call CLIP_DATA_ ('ice', Interp%DATA1_)
@@ -401,15 +382,7 @@ else
     if (Date2 /= Interp%Date2) then
 
 !-- SJL -------------------------------------------------------------
-            if ( use_ncep_sst .and. use_ncep_ice ) then
-               where ( SST_NCEP_ <= (real(TFREEZE, FMS_AMIP_INTERP_KIND_)+real(tice_crit, FMS_AMIP_INTERP_KIND_)) )
-                   sice = 1._lkind
-               elsewhere
-                   sice = 0._lkind
-               endwhere
-            else
-               call READ_RECORD_ ('ice', Date2, Udate2, sice)
-            endif
+            call READ_RECORD_ ('ice', Date2, Udate2, sice)
 !--------------------------------------------------------------------
         call horiz_interp ( Interp%Hintrp, sice, Interp%DATA2_)
         call CLIP_DATA_ ('ice', Interp%DATA2_)
