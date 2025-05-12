@@ -23,6 +23,7 @@ program check_subregional
   use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file, get_dimension_size, file_exists
   use mpp_mod,           only: mpp_npes, mpp_error, FATAL, mpp_pe
   use platform_mod,      only: r4_kind, r8_kind
+  use yaml_parser_mod,   only: open_and_parse_file, get_num_blocks, get_block_ids, get_value_from_key
 
   implicit none
 
@@ -33,6 +34,7 @@ program check_subregional
   call check_subregional_file("test_subregional.nc")
   call check_subregional_file("test_subregional2.nc")
   call check_corner_files()
+  call check_manifest()
 
   call fms_end()
 
@@ -203,4 +205,29 @@ program check_subregional
 
   end subroutine check_corner_files
 
+  !> @brief Check that the number of time levels was written correctly in the diag manifest yaml
+  subroutine check_manifest()
+    integer              :: diag_yaml_id !< Id for the diag manifest yaml
+    integer              :: nfiles       !< Number of diag files in the yaml
+    integer, allocatable :: file_ids(:)  !< Ids for all the diag files in the yaml
+    integer              :: i            !< For do loops
+    integer              :: ntime_levels !< Number of time levels are read from the yaml
+
+    if ( .not. file_exists("diag_manifest.yaml.0")) &
+      call mpp_error(FATAL, "diag manifest file does not exist!")
+
+    diag_yaml_id = open_and_parse_file("diag_manifest.yaml.0")
+
+    nfiles = get_num_blocks(diag_yaml_id, "diag_files")
+    allocate(file_ids(nfiles))
+    call get_block_ids(diag_yaml_id, "diag_files", file_ids)
+
+    do i = 1, nfiles
+      ntime_levels = -999
+      call get_value_from_key(diag_yaml_id, file_ids(i), "number_of_timelevels", ntime_levels)
+
+      if (ntime_levels .ne. 8) call mpp_error(FATAL, "The number of time levels is not correct:: "//string(ntime_levels))
+    enddo
+
+  end subroutine check_manifest
 end program
