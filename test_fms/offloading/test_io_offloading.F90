@@ -80,7 +80,7 @@ program test
       model_domain = create_cubic_domain(nx, ny, 6, io_layout, nhalos=nxhalo)
     end select
 
-    filename = "atmos.daily"
+    filename = "atmos.daily.nc"
     var_r4 = create_dummy_data(model_domain)
   endif
 
@@ -90,6 +90,15 @@ program test
     model_pes, offload_pes, &
     is_model_pe, is_offload_pe)
 
+  call global_metadata_offload(fileobj, "Number of times Fortran made you cry", 20)
+  call global_metadata_offload(fileobj, "Number of lines of code", 19.54326541)
+
+  call register_axis_offload(fileobj, "lon", "x")
+  call register_axis_offload(fileobj, "lat", "x")
+
+  call register_field_offload(fileobj, "mullions", "double", (/"lon", "lat"/))
+  call write_data_offload(fileobj, "mullions", var_r4)
+  call close_file_offload(fileobj)
   call fms_end
 
   contains

@@ -55,7 +55,7 @@ program test
     call mpp_set_current_pelist( model_pes )
     model_domain = create_lat_lon_domain(nx, ny)
     var_r4_model = create_dummy_data(model_domain, is_model_pe)
-    call print_out_var_data(var_r4_model)
+    call print_out_var_data(var_r4_model, model_domain)
     call mpp_define_null_domain(offload_domain)
   endif
 
@@ -63,17 +63,19 @@ program test
     call mpp_set_current_pelist(offload_pes)
     offload_domain = create_lat_lon_domain(nx, ny)
     var_r4_offload = create_dummy_data(offload_domain, is_model_pe)
-    var_r4_offload = -666_r4_kind
+    var_r4_offload = -999_r4_kind
     call mpp_define_null_domain(model_domain)
   endif
 
   call mpp_set_current_pelist(og_pes)
+  call mpp_broadcast_domain(model_domain)
+  call mpp_broadcast_domain(offload_domain)
   call mpp_redistribute( model_domain, var_r4_model,  &
     offload_domain, var_r4_offload &
     )
 
   if (is_offload_pe) then
-    call print_out_var_data(var_r4_offload)
+    call print_out_var_data(var_r4_offload, offload_domain)
   endif
 
   call fms_end()
@@ -87,40 +89,64 @@ program test
     logical, intent(in) :: use_data_domain
     real(kind=r4_kind), allocatable :: dummy_data(:,:)
 
-    integer :: is !< Starting x index
-    integer :: ie !< Ending x index
-    integer :: js !< Starting y index
-    integer :: je !< Ending y index
-
-    integer :: j, k
+    integer :: isd, isc !< Starting x index
+    integer :: ied, iec !< Ending x index
+    integer :: jsd, jsc !< Starting y index
+    integer :: jed, jec !< Ending y index
+    integer :: jhalo, ihalo
+    integer :: a, b
 
     !Allocate the data to the size of the data domain but only fill the compute domain with data
 
     if (use_data_domain) then
-      call mpp_get_data_domain(domain, is, ie, js, je)
+      call mpp_get_data_domain(domain, isd, ied, jsd, jed)
     else
-      call mpp_get_compute_domain(domain, is, ie, js, je)
+      call mpp_get_compute_domain(domain, isd, ied, jsd, jed)
     endif
-    allocate(dummy_data(is:ie, js:je))
+    allocate(dummy_data(isd:ied, jsd:jed))
     dummy_data = -999_r4_kind
 
-    call mpp_get_compute_domain(domain, is, ie, js, je)
-    do j = is, ie
-      do k = js, je
-        dummy_data(j, k) = real(j, kind=r4_kind)* 100_r4_kind + &
-          real(k, kind=r4_kind)
+    call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+
+    ihalo = abs(isd-isc)
+    jhalo = abs(jsd-jsc)
+    do a = isc, iec
+      do b = jsc, jec
+        dummy_data(a, b) = real(a, kind=r4_kind)* 100_r4_kind + &
+          real(b , kind=r4_kind)
+        !write(mpp_pe()+ 100, *) "i = ", string(a), " j = ", string(b), " data=", string(dummy_data(a,b))
       enddo
     enddo
   end function
 
-  subroutine print_out_var_data(var_data)
+  subroutine print_out_var_data(var_data, domain)
     real(kind=r4_kind), intent(in) :: var_data(:,:)
+    type(domain2D), intent(in) :: domain
 
     integer :: a, b
+    integer :: isd, isc !< Starting x index
+    integer :: ied, iec !< Ending x index
+    integer :: jsd, jsc !< Starting y index
+    integer :: jed, jec !< Ending y index
+    integer :: jhalo, ihalo
 
-    do a = 1, size(var_data,1)
-      do b = 1, size(var_data,2)
-        write(mpp_pe()+ 100, *) "i = ", string(a), " j = ", string(b), " data=", string(var_data(a,b))
+    call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+    call mpp_get_data_domain(domain, isd, ied, jsd, jed)
+
+    write(mpp_pe()+ 100, *) "Data domain"
+    write(mpp_pe()+ 100, *) "is=", string(isd), " ie=", string(ied), " js=", string(jsd), " je=", string(jed)
+
+    write(mpp_pe()+ 100, *) "Compute domain"
+    write(mpp_pe()+ 100, *) "is=", string(isc), " ie=", string(iec), " js=", string(jsc), " je=", string(jec)
+  
+    ihalo = abs(isd-isc)
+    jhalo = abs(jsd-jsc)
+
+    write(mpp_pe()+ 100, *) "n halos", ihalo, jhalo
+
+    do a = isc, iec
+      do b = jsc, jec
+        write(mpp_pe()+ 100, *) "i = ", string(a), " j = ", string(b), " data=", string(var_data(a-isc+ihalo+1, b-jsc+jhalo+1))
       enddo
     enddo
   end subroutine

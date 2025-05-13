@@ -30,6 +30,7 @@ module netcdf_io_mod
 #endif
 use netcdf
 use mpp_mod
+use mpp_domains_mod
 use fms_io_utils_mod
 use platform_mod
 implicit none
@@ -124,11 +125,12 @@ type, private :: dimension_information
 endtype dimension_information
 
 type, public :: fmsOffloadingIn_type
-  integer, private, allocatable :: offloading_out_ids(:)
-  integer, private, allocatable :: offloading_pes(:)
-  !TODO global metdata object
-  !TODO variable metada object
-  logical, private :: metadata_written
+  !TODO should be private, need getter functions
+  integer, public :: id
+  integer, public, allocatable :: offloading_pes(:)
+  integer, public, allocatable :: model_pes(:)
+  logical :: is_model_pe
+  type(domain2D) :: domain_in
 
   contains
     procedure :: init
@@ -2369,8 +2371,23 @@ subroutine flush_file(fileobj)
   endif
 end subroutine flush_file
 
-subroutine init(this)
+subroutine init(this, offloading_obj_id, offloading_pes, model_pes, domain)
   class(fmsOffloadingIn_type), intent(inout) :: this
+  integer, intent(in) :: offloading_obj_id
+  integer, intent(in) :: offloading_pes(:)
+  integer, intent(in) :: model_pes(:)
+  type(domain2D) :: domain
+
+  this%id = offloading_obj_id
+  allocate(this%offloading_pes(size(offloading_pes)))
+  this%offloading_pes = offloading_pes
+  allocate(this%model_pes(size(model_pes)))
+  this%model_pes = model_pes
+
+ this%is_model_pe = .false.
+  if (any(model_pes .eq. mpp_pe())) &
+    this%is_model_pe = .true.
+  this%domain_in = domain
 end subroutine
 
 end module netcdf_io_mod
