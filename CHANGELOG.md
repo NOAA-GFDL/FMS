@@ -6,6 +6,18 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2025.02.01] - 2025-05-13
+
+### Known Issues
+- DIAG_MANAGER(legacy): When attempting to use 0 days frequency in the legacy diag manager and the data is send to diag manager from an openmp region, the Time dimension will not be correct.
+- INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Fixed
+- DIAG_MANAGER: add standard name to diag manifest and fix for subregional time levels (#1699)
+
 ## [2025.02] - 2025-04-28
 
 ### Known Issues
