@@ -913,6 +913,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: z
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -948,6 +949,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time y x
+    standard_name:
   - module: ocn_mod
     var_name: var2
     reduction: average
@@ -959,6 +961,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time x y
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -993,6 +996,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time y3 x3
+    standard_name:
   - module: atm_mod
     var_name: var4
     reduction: average
@@ -1004,6 +1008,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time z y3 x3
+    standard_name:
   - module: atm_mod
     var_name: var6
     reduction: average
@@ -1015,6 +1020,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time z
+    standard_name: I hope this is the MDTF tables
   - module: atm_mod
     var_name: var4
     reduction: average
@@ -1026,6 +1032,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time z_sub01 y3 x3
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -1060,6 +1067,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time grid_index
+    standard_name:
   - module: atm_mod
     var_name: var7
     reduction: none
@@ -1071,6 +1079,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: z
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -1105,6 +1114,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time
+    standard_name: Land is important!
   sub_region:
   - grid_type:
     tile:
@@ -1139,6 +1149,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time z y3_sub01 x3_sub01
+    standard_name:
   sub_region:
   - grid_type: index
     tile: 1
@@ -1173,6 +1184,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time y x
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -1207,6 +1219,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time y x
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -1241,6 +1254,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time y x
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -1275,6 +1289,7 @@ diag_files:
     n_diurnal:
     pow_value:
     dimensions: time y x
+    standard_name:
   sub_region:
   - grid_type:
     tile:
@@ -1309,6 +1324,7 @@ diag_files:
     n_diurnal: 12
     pow_value:
     dimensions: time time_of_day_12 y x
+    standard_name:
   sub_region:
   - grid_type:
     tile:
