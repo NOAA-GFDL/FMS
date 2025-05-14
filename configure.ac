@@ -100,10 +100,14 @@ AS_IF([test ${enable_8byte_int:-no} = yes],
 
 AC_ARG_ENABLE([deprecated-io],
   [AS_HELP_STRING([--enable-deprecated-io],
-    [Enables compilation of deprecated mpp_io and fms_io modules in addition to the updated fms2_io modules (default no)])])
+    [THIS OPTION HAS BEEN DEPRECATED!!!])])
 AS_IF([test ${enable_deprecated_io:-no} = yes],
   [enable_deprecated_io=yes],
   [enable_deprecated_io=no])
+
+if test $enable_deprecated_io = yes; then
+  AC_MSG_ERROR(FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS OR REVERT TO VERSION 2025.02)
+fi
 
 AC_ARG_ENABLE([r8-default],
   [AS_HELP_STRING([--disable-r8-default],
@@ -310,17 +314,6 @@ if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
 fi
 
-# check if compiling old io
-if test $enable_deprecated_io = yes; then
-  #If the test pass, define use_deprecated_io macro and skip it's unit tests
-  AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
-  # this macro was only removed from non-deprecated code so still needs to be set
-  AC_DEFINE([use_netCDF], [1], [This has been removed elsewhere but is still required to build with deprecated io])
-  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
-else
-  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
-fi
-
 # Builds with r8 default unless disable flag is given
 if test $enable_r8_default = yes; then
   AM_CONDITIONAL([SKIP_MOSAIC_TESTS], false)
@@ -515,7 +508,6 @@ AC_CONFIG_FILES([
   test_fms/fms2_io/Makefile
   test_fms/fms/Makefile
   test_fms/mpp/Makefile
-  test_fms/mpp_io/Makefile
   test_fms/time_interp/Makefile
   test_fms/time_manager/Makefile
   test_fms/horiz_interp/Makefile
@@ -538,7 +530,3 @@ AC_CONFIG_FILES([
   ])
 
 AC_OUTPUT()
-
-if test $enable_deprecated_io = yes; then
-  AC_MSG_WARN(FMS_IO WILL BE DEPRECATED IN A FUTURE RLEASE. PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS)
-fi
