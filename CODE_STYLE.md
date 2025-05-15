@@ -231,8 +231,6 @@ end module example_mod
 #undef   FMS_EX_KIND_
 #define  FMS_EX_KIND_ r8_kind
 
-change made
-
 #undef  EX_SUBROUTINE_
 #define EX_SUBROUTINE_ ex_subroutine_r8
 
