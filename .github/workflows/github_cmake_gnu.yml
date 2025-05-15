@@ -18,7 +18,7 @@ jobs:
     container:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
-        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }} -D64BIT=on"
+        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }}"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
