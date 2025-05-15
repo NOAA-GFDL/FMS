@@ -30,9 +30,6 @@ module ensemble_manager_mod
   use mpp_mod, only : mpp_pe, mpp_declare_pelist
   use mpp_mod, only : input_nml_file
   use fms2_io_mod, only : fms2_io_set_filename_appendix=>set_filename_appendix
-#ifdef use_deprecated_io
-  use fms_io_mod, only  : fms_io_set_filename_appendix=>set_filename_appendix
-#endif
 
   IMPLICIT NONE
 
@@ -407,12 +404,7 @@ contains
     if (ensemble_size > 1) then
        write( text,'(a,i2.2)' ) 'ens_', ensemble_id
        !Append ensemble_id to the restart filenames
-
-       !< Both calls are needed for cases where both fms2io/fmsio are used
        call fms2_io_set_filename_appendix(trim(text))
-#ifdef use_deprecated_io
-       call fms_io_set_filename_appendix(trim(text))
-#endif
     endif
 
   end subroutine ensemble_pelist_setup
