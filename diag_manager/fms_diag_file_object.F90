@@ -1410,7 +1410,7 @@ logical function is_time_to_close_file (this, time_step, force_close)
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
   logical,                          intent(in)           :: force_close     !< if .true. return true
 
-  if (force_close) then
+  if (force_close .or. this%FMS_diag_file%done_writing_data) then
     is_time_to_close_file = .true.
   elseif (time_step >= this%FMS_diag_file%next_close) then
     is_time_to_close_file = .true.
