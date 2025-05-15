@@ -49,7 +49,7 @@ use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fm
 use fms_diag_field_object_mod, only: fmsDiagField_type
 use fms_diag_output_buffer_mod, only: fmsDiagOutputBuffer_type
 use mpp_mod, only: mpp_get_current_pelist, mpp_npes, mpp_root_pe, mpp_pe, mpp_error, FATAL, stdout, &
-                   uppercase, lowercase, NOTE
+                   uppercase, lowercase, NOTE, mpp_max
 use platform_mod, only: FMS_FILE_LEN
 use mpp_domains_mod, only: mpp_get_ntile_count, mpp_get_UG_domain_ntiles, mpp_get_io_domain_layout, &
                            mpp_get_io_domain_UG_layout
@@ -1615,12 +1615,21 @@ end subroutine init_unlim_dim
 
 !> \brief Get the number of time levels that were actually written to the file
 !! \return Number of time levels that were actually written to the file
-pure function get_num_time_levels(this) &
+function get_num_time_levels(this) &
 result(res)
   class(fmsDiagFileContainer_type), intent(in), target   :: this            !< The file object
   integer :: res
 
-  res = this%FMS_diag_file%num_time_levels
+  if (this%is_regional()) then
+    !! If this is a subregional file, num_time_levels will be set to 0 for
+    !! all PEs that are not in the subregion. If the root pe is not in the subregion
+    !! then the num_time_levels will not be correct, so this is just getting the max
+    !! from all PEs
+    res = this%FMS_diag_file%num_time_levels
+    call mpp_max(res)
+  else
+    res = this%FMS_diag_file%num_time_levels
+  endif
 end function
 
 !> \brief Get the number of tiles in the file's domain

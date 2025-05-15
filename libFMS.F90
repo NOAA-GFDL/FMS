@@ -81,8 +81,6 @@ module fms
                              assignment(=), &
                              fms_amip_interp_i_sst        => i_sst, &
                              fms_amip_interp_j_sst        => j_sst, &
-                             fms_amip_interp_sst_ncep     => sst_ncep, &
-                             fms_amip_interp_sst_anom     => sst_anom, &
                              fms_amip_interp_forecast_mode=> forecast_mode, &
                              fms_amip_interp_use_ncep_sst => use_ncep_sst
   !> astronomy
@@ -395,8 +393,8 @@ module fms
 
   !> fms
   !! routines that don't conflict with fms2_io
-  use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, &
-                     check_nml_error, &
+  use fms_mod, only: fms_init, fms_end, fms_error_mesg => error_mesg, fms_error_handler, &
+                     fms_check_nml_error => check_nml_error, &
                      fms_monotonic_array => monotonic_array, fms_string_array_index => string_array_index, &
                      fms_clock_flag_default => clock_flag_default, fms_print_memory_usage => print_memory_usage, &
                      fms_write_version_number => write_version_number

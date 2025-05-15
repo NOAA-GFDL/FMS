@@ -344,6 +344,12 @@ subroutine fms_register_diag_field_obj &
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname))      this%longname      = trim(longname)
   if (present(standname))     this%standname     = trim(standname)
+  do i=1, SIZE(diag_field_indices)
+    yaml_var_ptr => diag_yaml%get_diag_field_from_id(diag_field_indices(i))
+
+    !! Add standard name to the diag_yaml object, so that it can be used when writing the diag_manifest
+    call yaml_var_ptr%add_standname(standname)
+  enddo
 
   !> Ignore the units if they are set to "none". This is to reproduce previous diag_manager behavior
   if (present(units)) then
