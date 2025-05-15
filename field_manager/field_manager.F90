@@ -246,14 +246,13 @@ private :: make_list           ! (list_p, name) return field pointer
 
 !> The length of a character string representing the field name.
 integer, parameter, public :: fm_field_name_len = 48
-!! TODO this should be removed in favor of the global FMS_PATH_LEN
-!! when possible, currently used in ocean_BGC and land_lad2
-!> The length of a character string representing the field path.
-integer, parameter, public :: fm_path_name_len  = FMS_PATH_LEN
 !> The length of a character string representing character values for the field.
 integer, parameter, public :: fm_string_len     = 1024
 !> The length of a character string representing the various types that the values of the field can take.
-integer, parameter, public :: fm_type_name_len  = 8
+integer, parameter, public :: fm_type_name_len  = 8!! TODO this should be removed in favor of the global FMS_PATH_LEN
+!! when possible, currently used in ocean_BGC and land_lad2
+!> The length of a character string representing the field path.
+integer, parameter, public :: fm_path_name_len  = FMS_PATH_LEN
 !> Number of models (ATMOS, OCEAN, LAND, ICE, COUPLER).
 integer, parameter, public :: NUM_MODELS        = 5
 !> The value returned if a field is not defined.
