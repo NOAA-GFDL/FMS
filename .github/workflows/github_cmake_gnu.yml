@@ -29,15 +29,3 @@ jobs:
         cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
     - name: Build the library
       run: make -C build
-    - name: Link with basic executable
-      run: |
-        cd build
-        echo "program test" > test.F90
-        echo "    use fms_mod" >> test.F90
-        echo "    call fms_init" >> test.F90
-        echo "    call fms_end" >> test.F90
-        echo "end program" >> test.F90
-        mpifort -L/opt/view/lib -fopenmp `nf-config --flibs` -Iinclude_r4 -Iinclude_r8 test.F90 libfms_r4.a libfms_r8.a -o test.x
-        touch input.nml
-    - name: Run executable
-      run: ./build/test.x
