@@ -834,7 +834,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
   !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
-  !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
+  !! which will be added to the list of axis in the file object (axis_ids is intent(in),
   !! which is why the copy was needed)
   var_axis_ids = axis_ids
 
@@ -1441,7 +1441,7 @@ subroutine check_file_times(this, time_step, output_buffers, diag_fields, do_not
                                                                                  !! This is needed for error messages!
   type(fmsDiagField_type),          intent(in)              :: diag_fields(:)    !< Array of diag_fields objects
   logical,                          intent(out)             :: do_not_write      !< .True. only if this is not a new
-                                                                                 !! time step and you are writting
+                                                                                 !! time step and you are writing
                                                                                  !! at every time step
 
   do_not_write = .false.
@@ -1992,7 +1992,7 @@ result(rslt)
         field_id = output_buffers(this%buffer_ids(i))%get_field_id()
         call mpp_error(NOTE, "Send data was never called for field:"//&
           trim(diag_fields(field_id)%get_varname())//" mod: "//trim(diag_fields(field_id)%get_modname())//&
-          " in file: "//trim(this%get_file_fname())//". Writting FILL VALUES!")
+          " in file: "//trim(this%get_file_fname())//". Writing FILL VALUES!")
       endif
     enddo
   else

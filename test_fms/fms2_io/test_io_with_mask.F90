@@ -104,7 +104,7 @@ if (open_file(fileobj, "test_io_with_mask.nc", "overwrite", domain)) then
     !< Close the file
     call close_file(fileobj)
 else
-   call mpp_error(FATAL, "test_io_with_mask: error opening the file for writting")
+   call mpp_error(FATAL, "test_io_with_mask: error opening the file for writing")
 endif
 
 !< Read the file back to check if it was done right!

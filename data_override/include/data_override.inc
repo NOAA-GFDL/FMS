@@ -853,7 +853,7 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
   character(len=3), intent(in) :: gridname !< model grid ID (ocn,ice,atm,lnd)
   character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
                                                  !! different from the name in NetCDF data file)
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   type(time_type), intent(in) :: time !< (target) model time
   real(FMS_DATA_OVERRIDE_KIND_), intent(out) :: data_out !< output data array returned by this call
   integer, intent(in), optional :: data_index
@@ -1015,7 +1015,7 @@ end subroutine DATA_OVERRIDE_0D_
 subroutine DATA_OVERRIDE_2D_(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
   character(len=3), intent(in) :: gridname !< model grid ID
   character(len=*), intent(in) :: fieldname !< field to override
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   type(time_type), intent(in) :: time !<  model time
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data_2D !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
@@ -1047,7 +1047,7 @@ end subroutine DATA_OVERRIDE_2D_
 subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,data_index, is_in, ie_in, js_in, je_in)
   character(len=3),             intent(in) :: gridname !< model grid ID
   character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
-  logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
+  logical,           optional, intent(out) :: override !< true if the field has been overridden succesfully
   type(time_type),              intent(in) :: time !< (target) model time
   integer,           optional,  intent(in) :: data_index
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: return_data !< data returned by this call
@@ -1895,7 +1895,7 @@ subroutine DATA_OVERRIDE_UG_1D_(gridname,fieldname,return_data,time,override)
   character(len=*),   intent(in) :: fieldname !< field to override
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:), intent(inout) :: return_data !< data returned by this call
   type(time_type),    intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   !local vars
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), allocatable ::  data_SG
   type(domainUG) :: UG_domain
@@ -1930,7 +1930,7 @@ subroutine DATA_OVERRIDE_UG_2D_(gridname,fieldname,return_data,time,override)
   character(len=*),     intent(in) :: fieldname !< field to override
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: return_data !< data returned by this call
   type(time_type),      intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   !local vars
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_SG
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:),   allocatable ::  data_UG

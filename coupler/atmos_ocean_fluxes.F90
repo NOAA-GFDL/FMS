@@ -737,7 +737,7 @@ contains
         gas_fields_atm%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
         gas_fields_ice%bc(n)%pass_through_ice = gas_fluxes%bc(n)%pass_through_ice
       !! mixed precision support
-      !! if use_r4_kind is present and true will intialize to the r4_kind type
+      !! if use_r4_kind is present and true will initialize to the r4_kind type
       else
         ! Save and check the flux_type.
         gas_fluxes%bc_r4(n)%flux_type = fm_util_get_string('flux_type', scalar = .true.)
