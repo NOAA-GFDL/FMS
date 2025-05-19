@@ -684,12 +684,20 @@ list(FILTER TEST_SCRIPTS EXCLUDE REGEX "check_crashes.*")
 # add each test
 foreach (testScript ${TEST_SCRIPTS})
   get_filename_component(testName ${testScript} NAME_WE)
+  get_filename_component(testDirNameFull ${testScript} DIRECTORY)
+  get_filename_component(testDirName ${testDirNameFull} NAME_WE)
   add_test(NAME ${testName}
            COMMAND ${testScript}
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  ## add label based on directory name
+  set_property(TEST ${testName} PROPERTY LABELS ${testDirName})
+  # set an environment variable so the scripts know to skip tests that use libyaml
+  if(NOT WITH_YAML)
+    set_property(TEST ${testName} PROPERTY ENVIRONMENT skipflag=skip;parser_skip=skip;skip_yaml=yes)
+  endif()
 endforeach()
 
-
+set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
 ### Package config
 include(CMakePackageConfigHelpers)
