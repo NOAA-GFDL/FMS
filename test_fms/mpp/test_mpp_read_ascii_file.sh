@@ -32,7 +32,12 @@
 output_dir
 
 # create input namelist
-touch input.nml
+cat <<_EOF > input.nml
+&test_mpp_get_ascii_lines_nml
+test_number = <test_num>
+/
+_EOF
+
 touch test_numb_base_ascii.nml
 echo "&test_read_ascii_file_nml" > test_numb_base_ascii.nml
 echo "test_numb = 0" >> test_numb_base_ascii.nml
