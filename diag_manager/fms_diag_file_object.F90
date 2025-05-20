@@ -220,7 +220,6 @@ logical function fms_diag_files_object_init (files_array)
   class(fmsDiagFile_type), pointer :: obj => null() !< Pointer for each member of the array
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
-  type(time_type) :: tmp !< Temporary variable to store a time type
 
   if (diag_yaml%has_diag_files()) then
    nFiles = diag_yaml%size_diag_files()
@@ -285,14 +284,6 @@ logical function fms_diag_files_object_init (files_array)
      if (obj%has_file_new_file_freq()) then
        obj%next_close = diag_time_inc(obj%start_time, obj%get_file_new_file_freq(), &
                                         obj%get_file_new_file_freq_units())
-
-      ! Check for file_duration
-      if (obj%has_file_duration()) then
-        tmp = diag_time_inc(obj%start_time, obj%get_file_duration(), &
-                                        obj%get_file_duration_units())
-        if (tmp < obj%next_close) obj%next_close = tmp
-      endif
-
      else
        if (obj%has_file_duration()) then
          obj%next_close = diag_time_inc(obj%start_time, obj%get_file_duration(), &
@@ -462,14 +453,17 @@ function get_filename_time(this) &
   result(res)
     class(fmsDiagFile_type), intent(in) :: this !< The file object
     type(time_type) :: res
+    type(time_type) :: file_end_time
 
+    file_end_time = this%next_close
+    if (this%next_close > this%no_more_data) file_end_time = this%no_more_data
     select case (this%diag_yaml_file%get_filename_time())
     case (begin_time)
       res = this%last_output
     case (middle_time)
-      res = (this%last_output + this%next_close)/2
+      res = (this%last_output + file_end_time )/2
     case (end_time)
-      res = this%next_close
+      res = file_end_time
     end select
 end function get_filename_time
 
@@ -1037,8 +1031,6 @@ subroutine add_start_time(this, start_time)
   class(fmsDiagFile_type), intent(inout)       :: this           !< The file object
   TYPE(time_type),         intent(in)          :: start_time     !< Start time passed into register_diag_field
 
-  type(time_type) :: tmp !< Temporary variable to store a time type
-
   !< If the start_time sent in is equal to the diag_init_time return because
   !! this%start_time was already set to the diag_init_time
   if (start_time .eq. diag_init_time) return
@@ -1066,12 +1058,6 @@ subroutine add_start_time(this, start_time)
     if (this%has_file_new_file_freq()) then
        this%next_close = diag_time_inc(this%start_time, this%get_file_new_file_freq(), &
                                         this%get_file_new_file_freq_units())
-      ! Check for file_duration
-      if (this%has_file_duration()) then
-        tmp = diag_time_inc(this%start_time, this%get_file_duration(), &
-                                        this%get_file_duration_units())
-        if (tmp < this%next_close) this%next_close = tmp
-      endif
     else
       if (this%is_static) then
         ! If the file is static, set the close time to be equal to the start_time, so that it can be closed
@@ -1887,7 +1873,6 @@ subroutine close_diag_file(this, output_buffers, model_end_time, diag_fields)
   type(time_type),                  intent(in)              :: model_end_time    !< Time that simulation ends
   type(fmsDiagField_type),          intent(in),    optional :: diag_fields(:)    !< Array of diag fields
                                                                                  !! This is needed for error checking
-  type(time_type) :: tmp !< Temporary variable to store a time type
 
   if (.not. this%FMS_diag_file%is_file_open) return
 
@@ -1917,13 +1902,6 @@ subroutine close_diag_file(this, output_buffers, model_end_time, diag_fields)
     this%FMS_diag_file%next_close = diag_time_inc(this%FMS_diag_file%next_close, &
                                         this%FMS_diag_file%get_file_new_file_freq(), &
                                         this%FMS_diag_file%get_file_new_file_freq_units())
-      ! Check for file_duration
-      if (this%FMS_diag_file%has_file_duration()) then
-        tmp = diag_time_inc(this%FMS_diag_file%start_time, &
-                              this%FMS_diag_file%get_file_duration(), &
-                              this%FMS_diag_file%get_file_duration_units())
-        if (tmp < this%FMS_diag_file%next_close) this%FMS_diag_file%next_close = tmp
-      endif
   else
     this%FMS_diag_file%next_close = model_end_time
   endif
