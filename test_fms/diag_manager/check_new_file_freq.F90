@@ -49,8 +49,8 @@ program test_check_new_file_freq
     call mpp_error(FATAL, "unable to open test_none_0002_01_01_06.nc")
 
   call get_dimension_size(fileobj, "time", var_size)
-  if (var_size .ne. 2) call mpp_error(FATAL, "The dimension of time in the file:test_none_0002_01_01_06.nc is not the "//&
-                                                 "correct size!")
+  if (var_size .ne. 2) call mpp_error(FATAL, "The dimension of time in the file:test_none_0002_01_01_06.nc"//&
+                                                 " is not the correct size!")
 
   call close_file(fileobj)
 
@@ -58,8 +58,8 @@ program test_check_new_file_freq
     call mpp_error(FATAL, "unable to open test_none_0002_01_01_15.nc")
 
   call get_dimension_size(fileobj, "time", var_size)
-  if (var_size .ne. 1) call mpp_error(FATAL, "The dimension of time in the file:test_none_0002_01_01_15.nc is not the "//&
-                                                 "correct size!")
+  if (var_size .ne. 1) call mpp_error(FATAL, "The dimension of time in the file:test_none_0002_01_01_15.nc"//&
+                                                 " is not the correct size!")
 
   call close_file(fileobj)
 
