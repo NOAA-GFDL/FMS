@@ -38,7 +38,7 @@ jobs:
     - name: Run executable
       run: ./test.x
   
-  build arm:
+  build_arm:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
