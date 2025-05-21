@@ -73,7 +73,7 @@ enddo
 sst = 666.66
 ice = 619.0
 
-! Set up the intial time
+! Set up the initial time
 Time = set_date(2,1,1,0,0,0)
 
 ! Register the diags

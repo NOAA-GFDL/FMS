@@ -121,7 +121,7 @@ CONTAINS
   !!
   !> In order for the diag_manager to do regional output for grids
   !! other than the standard lat/lon grid, the <TT>
-  !! diag_manager_mod</TT> needs to know the the latitude and
+  !! diag_manager_mod</TT> needs to know the latitude and
   !! longitude values for the entire global grid.  This procedure
   !! is the mechanism the models will use to share their grid with
   !! the diagnostic manager.
@@ -859,7 +859,7 @@ CONTAINS
        END SELECT
     END IF valid
 
-    ! Set the return value for the funtion
+    ! Set the return value for the function
     find_pole_index_agrid = (/indxI, indxJ/)
   END FUNCTION find_pole_index_agrid
 

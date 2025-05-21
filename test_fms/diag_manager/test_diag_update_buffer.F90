@@ -52,7 +52,7 @@ program test_diag_update_buffer
 
    !!Diag_manager::send_data uses CLASS(*) in function signature, SO
    !! we mimic the resulting operations. The set of ClASS(*) data needs to be allocated of same
-   !! type in order to be able to call the math/buffer update funtions.
+   !! type in order to be able to call the math/buffer update functions.
    CLASS(*), ALLOCATABLE, TARGET, DIMENSION(:,:,:,:) :: field_data
    CLASS(*), ALLOCATABLE, TARGET, DIMENSION(:,:,:,:) :: rmask
    CLASS(*), ALLOCATABLE, TARGET :: missvalue
@@ -258,7 +258,7 @@ program test_diag_update_buffer
 
 CONTAINS
 
-   !> @brief Initialized an fms_diag_outfield_index_type by calling member funtion of
+   !> @brief Initialized an fms_diag_outfield_index_type by calling member function of
    !! fms_diag_outfield_index_type input object.
    SUBROUTINE init_ofield_index_cfg(idx_cfg, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4)
       type(fmsDiagOutfieldIndex_type), INTENT(inout)  :: idx_cfg !< The object to initialize.

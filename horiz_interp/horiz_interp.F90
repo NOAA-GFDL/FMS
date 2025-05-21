@@ -25,7 +25,7 @@
 !! This module can interpolate data from any logically rectangular grid
 !! to any logically rectangular grid. Four interpolation schems are used here:
 !! conservative, bilinear, bicubic and inverse of square distance weighted.
-!! The four interpolation schemes are implemented seperately in
+!! The four interpolation schemes are implemented separately in
 !! horiz_interp_conserver_mod, horiz_interp_blinear_mod, horiz_interp_bicubic_mod
 !! and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
 !! is regular lon/lat grid. User can choose the interpolation method in the

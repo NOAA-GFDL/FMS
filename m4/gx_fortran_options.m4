@@ -333,7 +333,7 @@ AS_VAR_POPDEF([gx_header])
 #                        [ACTION-IF-FOUND], [ACTION-IF-NOT-FOUND],
 #                        [OTHER-LIBRARIES])
 # ------------------------------------------------------------------------------
-# Search for a Fortran library defining FUNCTION, if it's not already availabe.
+# Search for a Fortran library defining FUNCTION, if it's not already available.
 #
 # This expands AC_SEARCH_LIBS for Fortran as the AC function does not work in
 # all cases for Fortran.

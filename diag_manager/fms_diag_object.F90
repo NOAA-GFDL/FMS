@@ -859,7 +859,7 @@ subroutine fms_diag_do_io(this, end_time)
   real(r8_kind) :: mval !< r8 copy of missing value
   character(len=128) :: error_string !< outputted error string from reducti
   logical :: unlim_dim_was_increased !< .True. if the unlimited dimension index was increased for any of the buffers
-  logical :: do_not_write !< .True. only if this is not a new time step and you are writting at every time step
+  logical :: do_not_write !< .True. only if this is not a new time step and you are writing at every time step
 
   force_write = .false.
 

@@ -800,7 +800,7 @@ module fms_diag_axis_object_mod
     select type(domain => this%axis_domain)
     type is (diagDomain2d_t)
       if (present(tile_number)) then
-        !< If the the tile number is present and the current PE is not on the tile, then there is no need
+        !< If the tile number is present and the current PE is not on the tile, then there is no need
         !! to define the axis
         if (any(mpp_get_tile_id(domain%Domain2) .ne. tile_number)) then
           need_to_define_axis = .false.

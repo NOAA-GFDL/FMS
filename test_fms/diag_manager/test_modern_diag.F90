@@ -120,7 +120,7 @@ allocate(ug_dim_data(ug_dim_size))
 call mpp_get_UG_domain_grid_index(land_domain, ug_dim_data)
 ug_dim_data = ug_dim_data - 1
 
-! Set up the intial time
+! Set up the initial time
 Time = set_date(2,1,1,0,0,0)
 
 ! Register the diags axis

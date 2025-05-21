@@ -494,7 +494,7 @@ contains
 
     logical, save   :: module_is_initialized = .false.
 
-    ! Return if already intialized
+    ! Return if already initialized
     if (module_is_initialized) then
       return
     endif
@@ -751,7 +751,7 @@ contains
     if(var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both initialized,"//&
                          " only one should be associated per type.")
         else
           call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both uninitialized,"//&
@@ -908,10 +908,10 @@ contains
     if(var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc)) then
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both initialized,"// &
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both uninitialized,"// &
                                 " one must be associated to copy field data")
         endif
       endif
@@ -1068,10 +1068,10 @@ contains
     if(var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both initialized,"// &
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both uninitialized,"// &
                                 " one must be associated to copy field data")
         endif
       endif
@@ -1224,10 +1224,10 @@ contains
       ! check only one kind is used
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both initialized,"// &
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both uninitialized,"// &
                                 " one must be associated to copy field data")
         endif
       endif
@@ -1383,10 +1383,10 @@ contains
       ! check only one kind is used
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both intialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both initialized,"// &
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both unintialized,"// &
+          call mpp_error(FATAL, error_header//"var_in%bc and var_in%bc_r4 are both uninitialized,"// &
                                 " one must be associated to copy field data")
         endif
       endif
@@ -1742,10 +1742,10 @@ contains
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, "CT_copy_data_2d var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_copy_data_2d var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_copy_data_2d var_in%bc and var_in%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_copy_data_2d var_in%bc and var_in%bc_r4 are both uninitialized,"//&
                                 " one must be associated to copy field data.")
         endif
       endif
@@ -1891,10 +1891,10 @@ contains
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, "CT_copy_data_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_copy_data_3d: var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_copy_data_3d: var_in%bc and var_in%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_copy_data_3d: var_in%bc and var_in%bc_r4 are both uninitialized,"//&
                                 " one must be associated to copy field data.")
         endif
       endif
@@ -2039,10 +2039,10 @@ contains
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in%bc and var_in%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_copy_data_2d_3d: var_in%bc and var_in%bc_r4 are both uninitialized,"//&
                                 " one must be associated to copy field data.")
         endif
       endif
@@ -2147,10 +2147,10 @@ contains
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, "CT_redistribute_data_2d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_redistribute_data_2d: var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_redistribute_data_2d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_redistribute_data_2d: var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 " only one must be associated per type to redistribute field data.")
         endif
       endif
@@ -2329,10 +2329,10 @@ contains
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, "CT_redistribute_data_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_redistribute_data_3d: var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_redistribute_data_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_redistribute_data_3d: var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 " only one must be associated per type to redistribute field data.")
         endif
       endif
@@ -2573,10 +2573,10 @@ contains
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in%bc and var_in%bc_r4 are both intialized,"// &
+          call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in%bc and var_in%bc_r4 are both initialized,"// &
                                 " only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in%bc and var_in%bc_r4 are both intialized,"// &
+          call mpp_error(FATAL, "CT_increment_data_2d_2d: var_in%bc and var_in%bc_r4 are both initialized,"// &
                                 " only one must be associated per type to increment field data.")
         endif
       endif
@@ -2735,10 +2735,10 @@ contains
     if(var_in%set .and. var_in%num_bcs .gt. 0) then
       if(associated(var_in%bc) .eqv. associated(var_in%bc_r4)) then
         if( associated(var_in%bc) ) then
-          call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in%bc and var_in%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in%bc and var_in%bc_r4 are both initialized,"//&
                                 "only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in%bc and var_in%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_increment_data_3d_3d: var_in%bc and var_in%bc_r4 are both uninitialized,"//&
                                 " only one must be associated per type to increment field data.")
         endif
       endif
@@ -2827,10 +2827,10 @@ contains
     if(var%set .and. var%num_bcs .gt. 0) then
       if(associated(var%bc) .eqv. associated(var%bc_r4)) then
         if( associated(var%bc) ) then
-          call mpp_error(FATAL, "CT_set_diags_2d: var%bc and var%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_set_diags_2d: var%bc and var%bc_r4 are both initialized,"//&
                                 "only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_set_diags_2d: var%bc and var%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_set_diags_2d: var%bc and var%bc_r4 are both initialized,"//&
                                 "one should be associated per type to register fields with diag manager")
         endif
       endif
@@ -2883,10 +2883,10 @@ contains
     if(var%set .and. var%num_bcs .gt. 0) then
       if(associated(var%bc) .eqv. associated(var%bc_r4)) then
         if( associated(var%bc) ) then
-          call mpp_error(FATAL, "CT_set_diags_3d: var%bc and var%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_set_diags_3d: var%bc and var%bc_r4 are both initialized,"//&
                                 "only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_set_diags_3d: var%bc and var%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_set_diags_3d: var%bc and var%bc_r4 are both uninitialized,"//&
                                 "one should be associated per type to register fields with diag manager")
         endif
       endif
@@ -2930,10 +2930,10 @@ contains
     if(var%set .and. var%num_bcs .gt. 0) then
       if(associated(var%bc) .eqv. associated(var%bc_r4)) then
         if( associated(var%bc) ) then
-          call mpp_error(FATAL, "CT_send_data_2d: var%bc and var%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_send_data_2d: var%bc and var%bc_r4 are both initialized,"//&
                                 "only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_send_data_2d: var%bc and var%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_send_data_2d: var%bc and var%bc_r4 are both uninitialized,"//&
                                 "one should be associated per type to send data to diag fields")
         endif
       endif
@@ -2991,10 +2991,10 @@ contains
     if(var%set .and. var%num_bcs .gt. 0) then
       if(associated(var%bc) .eqv. associated(var%bc_r4)) then
         if( associated(var%bc) ) then
-          call mpp_error(FATAL, "CT_send_data_3d: var%bc and var%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_send_data_3d: var%bc and var%bc_r4 are both initialized,"//&
                                 "only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_send_data_3d: var%bc and var%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_send_data_3d: var%bc and var%bc_r4 are both uninitialized,"//&
                                 "one should be associated per type to send data to diag fields")
         endif
       endif
@@ -3062,10 +3062,10 @@ contains
     if(var%set .and. var%num_bcs .gt. 0) then
       if(associated(var%bc) .eqv. associated(var%bc_r4)) then
         if( associated(var%bc) ) then
-          call mpp_error(FATAL, "CT_register_restarts_2d: var%bc and var%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_register_restarts_2d: var%bc and var%bc_r4 are both initialized,"//&
                                 "only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_register_restarts_2d: var%bc and var%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_register_restarts_2d: var%bc and var%bc_r4 are both uninitialized,"//&
                                 "one should be associated per type to register restart fields")
         endif
       endif
@@ -3272,7 +3272,7 @@ contains
 
   end subroutine register_axis_wrapper_read
 
-  !< If writting a restart, register the variables with dummy axis names
+  !< If writing a restart, register the variables with dummy axis names
   subroutine register_axis_wrapper_write(fileobj, nz)
     type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< Domain decomposed fileobj
     integer, intent(in), optional :: nz !< length of the z dimension
@@ -3345,10 +3345,10 @@ contains
     if(var%set .and. var%num_bcs .gt. 0) then
       if(associated(var%bc) .eqv. associated(var%bc_r4)) then
         if( associated(var%bc) ) then
-          call mpp_error(FATAL, "CT_register_restarts_3d: var%bc and var%bc_r4 are both intialized,"//&
+          call mpp_error(FATAL, "CT_register_restarts_3d: var%bc and var%bc_r4 are both initialized,"//&
                                 "only one should be associated per type")
         else
-          call mpp_error(FATAL, "CT_register_restarts_3d: var%bc and var%bc_r4 are both unintialized,"//&
+          call mpp_error(FATAL, "CT_register_restarts_3d: var%bc and var%bc_r4 are both uninitialized,"//&
                                 "one should be associated per type to register restart fields")
         endif
       endif

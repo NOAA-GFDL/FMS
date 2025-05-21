@@ -103,7 +103,7 @@ program test_mpp_alltoall
        !> initialize receiving array
        rbuf = -one
 
-       !> intialize sending array
+       !> initialize sending array
        do i=0, N
           sbuf(i) = real( 10*pe+i, kind=r4_kind )
        end do
@@ -166,7 +166,7 @@ program test_mpp_alltoall
        !> initialize receiving array
        rbuf = - one
 
-       !> intialize sending array
+       !> initialize sending array
        do i=0, N
           sbuf(i) = real( 10*pe+i, kind=r8_kind )
        end do
@@ -229,7 +229,7 @@ program test_mpp_alltoall
        !> initialize receiving array
        rbuf = - one
 
-       !> intialize sending array
+       !> initialize sending array
        do i=0, N
           sbuf(i) = real( 10*pe+i, kind=i4_kind )
        end do
@@ -292,7 +292,7 @@ program test_mpp_alltoall
        !> initialize receiving array
        rbuf = - one
 
-       !> intialize sending array
+       !> initialize sending array
        do i=0, N
           sbuf(i) = real( 10*pe+i, kind=i8_kind )
        end do

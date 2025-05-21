@@ -646,7 +646,7 @@ Additional information for this module and others can be found in the Doxygen ge
 - get_date_julian
 - get_date_no_leap
 - date_to_string
-- all artithmetic operators for time_type
+- all arithmetic operators for time_type
 - all logical operators for time_type
 ##### Type
 - time_type

@@ -717,7 +717,7 @@
       set_domain_id=d_id + KE_BASE*int(ksize,KIND(d_id))
       if(PRESENT(flags))set_domain_id=set_domain_id+int(flags,KIND(d_id))
       if(PRESENT(gtype))set_domain_id=set_domain_id+GT_BASE*int(gtype,KIND(d_id))  ! Must be i8_kind arithmetic
-      !--- gtype is never been used to set id. we need to add position to calculate id to seperate
+      !--- gtype is never been used to set id. we need to add position to calculate id to separate
       !--- BGRID and CGRID or scalar variable.
       if(present(position)) set_domain_id=set_domain_id+GT_BASE*int(2**position, KIND(d_id))
       !z1l ???? the following calculation may need to be revised

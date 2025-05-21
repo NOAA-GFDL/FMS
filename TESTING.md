@@ -24,7 +24,7 @@ This will compile any code not already compiled and then proceed to run the test
 ### Debugging Output and Test Options
 
 Setting the environment variable TEST_VERBOSE will direct output to stdout as the test runs, while setting VERBOSE will only output on failure.
-Logs are created for each test as well, with the name \<test script name\>.log in it's corresponding test_fms/ directory.
+Logs are created for each test as well, with the name \<test script name\>.log in its corresponding test_fms/ directory.
 
 To run an individual test:
 ```
@@ -43,4 +43,4 @@ for the build system:
      If enabled a coverage report can be generated with `make check-code-coverage`
 -    `--enable-test-input=/path/to/input` turns on test scripts that require input netcdf files (interpolator, xgrid, data_override).
      This option is mainly used internally and in automated testing since we do not host the input data publicly.
--    `--with-yaml` compile with yaml input and enable it's associated tests
+-    `--with-yaml` compile with yaml input and enable its associated tests

@@ -266,7 +266,7 @@ end function determine_if_block_is_in_region
       this%kmax = upper_val
    END SUBROUTINE reset_bounds
 
-   !> @brief Update the the first three (normally  x, y, and z)  min and
+   !> @brief Update the first three (normally  x, y, and z)  min and
    !! max boundaries (array indices) of the instance bounding box
    !! the six specified bounds values.
    SUBROUTINE update_bounds(this, lower_i, upper_i, lower_j, upper_j, lower_k, upper_k)

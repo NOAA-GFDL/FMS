@@ -67,7 +67,7 @@ if (open_file(fileobj, "test_global_att_"//trim(my_format(i))//".nc", "overwrite
 
    call close_file(fileobj)
 else
-   call mpp_error(FATAL, "test_global_att: error opening the file for writting")
+   call mpp_error(FATAL, "test_global_att: error opening the file for writing")
 endif
 
 !< Read the global attributes from the netcdf file

@@ -47,7 +47,7 @@ Output file name without the trailing `.nc`.
 
 A single file description can produce multiple files using special time string
 suffix keywords.  This time string will append the time strings to the base file
-name each time a new file is opened.  They syntax for the time string suffix
+name each time a new file is opened.  The syntax for the time string suffix
 keywords are `%#tt` Where `#` is a mandatory single digit number specifying the
 width of the field, and `tt` can be as follows:
 
@@ -98,7 +98,7 @@ The time units can be one of: `years`, `months`, `days`, `minutes`, `hours`, or
 
 Axis name for the output file time axis.
 
-The character sting must contain the case insensitive string `"time"`.
+The character string must contain the case insensitive string `"time"`.
 
 
 #### `INTEGER, OPTIONAL :: new_file_freq`
@@ -130,7 +130,7 @@ also be present if this field is present.
 
 File duration units.
 
-Units an be one of `years`, `months`, `days`, `minutes`,
+Units can be one of `years`, `months`, `days`, `minutes`,
 `hours`, or `seconds`.  **_NOTE:_** If the `file_duration` field is
 present, then this field must also be present.
 

@@ -238,7 +238,7 @@ int get_num_blocks_child(int *file_id, char *block_name, int *parent_block_id)
 }
 
 
-/* @brief Private c function that gets the the ids of the blocks with block_name in the yaml file */
+/* @brief Private c function that gets the ids of the blocks with block_name in the yaml file */
 void get_block_ids_all(int *file_id, char *block_name, int *block_ids)
 {
   int i;              /* For loops */
@@ -255,7 +255,7 @@ void get_block_ids_all(int *file_id, char *block_name, int *block_ids)
   return;
 }
 
-/* @brief Private c function that gets the the ids of the blocks with block_name and that
+/* @brief Private c function that gets the ids of the blocks with block_name and that
    belong to a parent block id in the yaml file */
 void get_block_ids_child(int *file_id, char *block_name, int *block_ids, int *parent_key_id )
 {

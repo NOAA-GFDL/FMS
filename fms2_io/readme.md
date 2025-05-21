@@ -8,7 +8,7 @@ Before introducing the FMS2_io module, subroutines and functions in fms_io and m
 - [A. FMS2_io Fileobjs](readme.md#a-fms2_io-fileobjs)
 - [B. Writing Restarts](readme.md#b-writing-restarts)
 - [C. Reading Restarts](readme.md#c-reading-restarts)
-- [D. Reading/Writting Non-restarts](readme.md#d-readingwritting-non-restarts)
+- [D. Reading/Writing Non-restarts](readme.md#d-readingwriting-non-restarts)
 - [E. Coupler Type Restarts](readme.md#e-coupler-type-restarts)
 - [F. Boundary Conditions Restarts](readme.md#f-boundary-conditions-restarts)
 - [G. Ascii_io](readme.md#g-ascii_io)
@@ -316,7 +316,7 @@ endif
 
 ```
  *A similar thing can be accomplished with fms_io with [mpp_get_info](https://github.com/NOAA-GFDL/FMS/blob/main/mpp/include/mpp_io_util.inc#L41) and/or [field_size](https://github.com/NOAA-GFDL/FMS/blob/main/fms/fms_io.F90#L4965)*
-### D. Reading/Writting Non-restarts
+### D. Reading/Writing Non-restarts
 Reading and writing netcdf files that are not restarts can be done using `read_data` and `write_data` calls.
 
 #### 1. Domain decomposed read/write:
@@ -529,7 +529,7 @@ Difference from fms_io
 - The file should be closed after writing it by calling `close_file`
 - It is required that the `domain` has an io_domain or the code will fail
 
-#### 2. Writting coupler type restarts
+#### 2. Writing coupler type restarts
 This is done the same way as the reads expect `write_restart` is used instead of `read_restart`.
 
 ### F. Boundary Conditions Restarts

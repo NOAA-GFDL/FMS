@@ -606,7 +606,7 @@ type(time_type), intent(in)   :: Time !< A time interval
 integer, intent(in)           :: seconds !< Decrement of seconds
 integer, intent(in), optional :: days, ticks !< Decrement of days and ticks
 character(len=*), intent(out), optional :: err_msg !< Present and non-blank when a fatal error has
-                                                   !! occured, holds the error message.
+                                                   !! occurred, holds the error message.
 logical, intent(in), optional :: allow_neg_inc !< Throws fatal warning when set to false if
                                                !! negative values are used to decrement. Default
                                                !! is true.
@@ -1434,7 +1434,7 @@ end function get_ticks_per_second
  logical :: set_date_private
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
- character(len=*), intent(out) :: err_msg !< error message, if non-empty an error has occured
+ character(len=*), intent(out) :: err_msg !< error message, if non-empty an error has occurred
 
  if(.not.module_is_initialized) call time_manager_init
 

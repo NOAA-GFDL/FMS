@@ -939,7 +939,7 @@ private
      module procedure mpp_transmit_logical4_4d
      module procedure mpp_transmit_logical4_5d
   end interface
-  !> @brief Recieve data from another PE
+  !> @brief Receive data from another PE
   !!
   !> @param[out] get_data scalar or array to get written with received data
   !> @param get_len size of array to recv from get_data

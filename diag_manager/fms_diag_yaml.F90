@@ -144,13 +144,13 @@ type diagYamlFiles_type
                                                                          !! added as global meta data to
                                                                          !! the file
   character (len=:),    allocatable :: default_var_precision !< The precision for all of the variables in the file
-                                                             !! This may be overriden if the precison was defined
+                                                             !! This may be overridden if the precison was defined
                                                              !! at the variable level
   character (len=:),    allocatable :: default_var_reduction !< The reduction for all of the variables in the file
-                                                             !! This may be overriden if the reduction was defined at
+                                                             !! This may be overridden if the reduction was defined at
                                                              !! the variable level
   character (len=:),    allocatable :: default_var_module    !< The module for all of the variables in the file
-                                                             !! This may be overriden if the modules was defined at the
+                                                             !! This may be overridden if the modules was defined at the
                                                              !! variable level
  contains
 
@@ -417,7 +417,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   ignore = .false.
   total_nvars = 0
-  !< If you are on two seperate pelists
+  !< If you are on two separate pelists
   if(diag_subset_output .ne. DIAG_ALL) then
     do i = 1, nfiles
       is_ocean = .false.
@@ -826,10 +826,10 @@ subroutine parse_key(filename, buffer, file_freq, file_frequnit, var)
   character(len=*),         intent(in)     :: var              !< Name of the key parsing
 
   integer            :: j           !< location of the ",' in the buffer
-  integer            :: k           !< location of the " " that seperated the units
+  integer            :: k           !< location of the " " that separated the units
   logical            :: finished    !< .true. if the parsing is complete
   integer            :: count       !< Number of keys that have been parsed
-  character(len=255) :: str         !< Member of the comma seperated list
+  character(len=255) :: str         !< Member of the comma separated list
   character(len=10)  :: units       !< String to hold the units
   integer            :: err_unit    !< Error key
 

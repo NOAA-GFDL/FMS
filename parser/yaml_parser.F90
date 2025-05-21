@@ -188,7 +188,7 @@ function get_num_blocks_child(file_id, block_name, parent_block_id) bind(c) &
    integer(kind=c_int) :: nblocks
 end function get_num_blocks_child
 
-!> @brief Private c function that gets the the ids of the blocks with block_name in the yaml file
+!> @brief Private c function that gets the ids of the blocks with block_name in the yaml file
 !! (see yaml_parser_binding.c)
 subroutine get_block_ids_all(file_id, block_name, block_ids) bind(c)
    use iso_c_binding, only: c_char, c_int, c_bool
@@ -197,7 +197,7 @@ subroutine get_block_ids_all(file_id, block_name, block_ids) bind(c)
    integer(kind=c_int), intent(inout) :: block_ids(*) !< Id of the parent_block
 end subroutine get_block_ids_all
 
-!> @brief Private c function that gets the the ids of the blocks with block_name and that
+!> @brief Private c function that gets the ids of the blocks with block_name and that
 !! belong to a parent block id in the yaml file (see yaml_parser_binding.c)
 subroutine get_block_ids_child(file_id, block_name, block_ids, parent_block_id) bind(c)
    use iso_c_binding, only: c_char, c_int, c_bool
@@ -229,7 +229,7 @@ function get_num_unique_blocks_bind(file_id, parent_block_id) bind(c) &
   integer(kind=c_int) :: nblocks
 end function get_num_unique_blocks_bind
 
-!> @brief Private c function that gets the the ids of the unique blocks in the yaml file
+!> @brief Private c function that gets the ids of the unique blocks in the yaml file
 !! (see yaml_parser_binding.c)
 subroutine get_unique_block_ids_bind(file_id, block_ids, parent_block_id) bind(c)
   use iso_c_binding, only: c_char, c_int, c_bool, c_ptr
@@ -458,7 +458,7 @@ function get_num_blocks(file_id, block_name, parent_block_id) &
     endif
 end function get_num_blocks
 
-!> @brief Gets the the ids of the blocks with block_name in the yaml file
+!> @brief Gets the ids of the blocks with block_name in the yaml file
 !! If parent_block_id is present, it only gets those that belong to that block
 subroutine get_block_ids(file_id, block_name, block_ids, parent_block_id)
 
