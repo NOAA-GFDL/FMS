@@ -37,7 +37,7 @@ jobs:
         touch input.nml
     - name: Run executable
       run: ./test.x
-  
+
   build_arm:
     runs-on: ubuntu-24.04-arm
     strategy:
