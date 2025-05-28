@@ -18,7 +18,7 @@
 !***********************************************************************
 
 subroutine COMPARE_DATA_ (Domain_in, actual_result, expected_result)
-  integer, parameter                      :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                      :: lkind = DDO_TEST_FMS_KIND_ !< Real precision of the test
   type(domain2d), intent(in)              :: Domain_in             !< Domain with mask table
   real(lkind), intent(in)                 :: expected_result       !< Expected result from data_override
   real(lkind), dimension(:,:), intent(in) :: actual_result         !< Result from data_override
@@ -60,7 +60,7 @@ end subroutine COMPARE_DATA_
 !! In the first case there is no time interpolation
 !! In the second case there is time interpolation
 subroutine ONGRID_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = DDO_TEST_FMS_KIND_ !< Real precision of the test
   real(lkind)                              :: expected_result       !< Expected result from data_override
   type(time_type)                          :: Time                  !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                !< Data to be written
@@ -91,7 +91,7 @@ end subroutine ONGRID_TEST_
 !> @brief Tests bilinear data_override with and increasing and decreasing grid case
 !! and comares the output betweeen the cases to ensure it is correct
 subroutine BILINEAR_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = DDO_TEST_FMS_KIND_ !< Real precision of the test
   type(time_type)                          :: Time              !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff_decreasing !< Data to be written
   real(lkind), allocatable, dimension(:,:) :: runoff_increasing !< Data to be written
@@ -123,7 +123,7 @@ subroutine BILINEAR_TEST_
 end subroutine BILINEAR_TEST_
 
 subroutine WEIGHT_FILE_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = DO_TEST_FMS_KIND_ !< Real precision of the test
   type(time_type)                          :: Time                  !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                !< Data from normal override
   real(lkind), allocatable, dimension(:,:) :: runoff_weight         !< Data from weight file override
@@ -161,7 +161,7 @@ subroutine WEIGHT_FILE_TEST_
 end subroutine WEIGHT_FILE_TEST_
 
 subroutine SCALAR_TEST_
-  integer, parameter :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter :: lkind = DDO_TEST_FMS_KIND_ !< Real precision of the test
   real(lkind)        :: expected_result       !< Expected result from data_override
   type(time_type)    :: Time                  !< Time
   real(lkind)        :: co2                   !< Data to be written
@@ -186,7 +186,7 @@ subroutine SCALAR_TEST_
 end subroutine SCALAR_TEST_
 
 subroutine ENSEMBLE_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = DDO_TEST_FMS_KIND_ !< Real precision of the test
   real(lkind)                              :: expected_result       !< Expected result from data_override
   type(time_type)                          :: Time                  !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                !< Data to be written

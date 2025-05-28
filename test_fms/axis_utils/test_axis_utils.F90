@@ -40,7 +40,7 @@ type GetAxisCartTestCase_t
   type(GetAxisCartTestCase_t), pointer :: next => NULL()
 end type
 
-integer, parameter :: k = AU_TEST_KIND_
+integer, parameter :: k = FMS_TEST_KIND_
 real(k), parameter :: pi = 4._k * atan(1._k)
 
 integer :: i
