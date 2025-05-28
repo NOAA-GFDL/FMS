@@ -1590,7 +1590,7 @@ end subroutine check_message_size
   !> @brief Computes remote domain overlaps
   !!
   !> Assumes only one in each direction
-  !! will calculate the overlapping for T,E,C,N-cell seperately.
+  !! will calculate the overlapping for T,E,C,N-cell separately.
   subroutine compute_overlaps( domain, position, update, check, ishift, jshift, x_cyclic_offset, y_cyclic_offset, &
                                whalo, ehalo, shalo, nhalo )
     type(domain2D), intent(inout) :: domain
@@ -2984,13 +2984,13 @@ end subroutine check_message_size
     integer,            intent(in   ) :: dir
     logical, optional,  intent(in   ) :: reverse, symmetry
 
-    if(js > je) then ! seperate into two regions due to x_cyclic_offset is nonzero, the two region are
+    if(js > je) then ! separate into two regions due to x_cyclic_offset is nonzero, the two region are
        ! (js, jeg) and (jsg, je).
        call insert_update_overlap( overlap, domain%list(m)%pe, &
             is, ie, jsg, je, isc, iec, jsc, jec, dir, reverse, symmetry)
        call insert_update_overlap( overlap, domain%list(m)%pe, &
             is, ie, js, jeg, isc, iec, jsc, jec, dir, reverse, symmetry)
-    else if(is > ie) then ! seperate into two regions due to y_cyclic_offset is nonzero, the two region are
+    else if(is > ie) then ! separate into two regions due to y_cyclic_offset is nonzero, the two region are
        ! (is, ieg) and (isg, ie).
        call insert_update_overlap( overlap, domain%list(m)%pe, &
             is, ieg, js, je, isc, iec, jsc, jec, dir, reverse, symmetry)
@@ -3007,7 +3007,7 @@ end subroutine check_message_size
   !####################################################################################
   !> Computes remote domain overlaps
   !! assumes only one in each direction
-  !! will calculate the overlapping for T,E,C,N-cell seperately.
+  !! will calculate the overlapping for T,E,C,N-cell separately.
   subroutine compute_overlaps_fold_south( domain, position, ishift, jshift)
     type(domain2D), intent(inout) :: domain
     integer, intent(in)           :: position, ishift, jshift
@@ -3652,7 +3652,7 @@ end subroutine check_message_size
   !####################################################################################
   !> Computes remote domain overlaps
   !! assumes only one in each direction
-  !! will calculate the overlapping for T,E,C,N-cell seperately.
+  !! will calculate the overlapping for T,E,C,N-cell separately.
   subroutine compute_overlaps_fold_west( domain, position, ishift, jshift)
     type(domain2D), intent(inout) :: domain
     integer, intent(in)           :: position, ishift, jshift
@@ -4275,7 +4275,7 @@ end subroutine check_message_size
   !###############################################################################
   !> computes remote domain overlaps
   !! assumes only one in each direction
-  !! will calculate the overlapping for T,E,C,N-cell seperately.
+  !! will calculate the overlapping for T,E,C,N-cell separately.
   !! here assume fold-east and y-cyclic boundary condition
   subroutine compute_overlaps_fold_east( domain, position, ishift, jshift )
     type(domain2D), intent(inout) :: domain

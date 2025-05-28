@@ -1637,9 +1637,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     INTEGER, INTENT(in) :: file !< File ID.
     TYPE(time_type), INTENT(in) :: time !< Time for the file time stamp
     TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when
-                                                           !! writting periodic files
+                                                           !! writing periodic files
 
-    TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
+    TYPE(time_type) :: fname_time !< Time used in setting the filename when writing periodic files
     REAL, DIMENSION(2) :: open_file_data
     INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
@@ -2062,7 +2062,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     LOGICAL, OPTIONAL, INTENT(in):: final_call_in !< <TT>.TRUE.</TT> if this is the last write for file.
     LOGICAL, OPTIONAL, INTENT(in):: static_write_in !< <TT>.TRUE.</TT> if static fields are to be written to file.
     type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when
-                                                           !! writting periodic files
+                                                           !! writing periodic files
 
     LOGICAL :: final_call, do_write, static_write
     REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
@@ -2167,7 +2167,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     LOGICAL, INTENT(out) :: do_write !< <TT>.TRUE.</TT> if file is expecting more data to write,
                                      !! <TT>.FALSE.</TT> otherwise.
     TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when
-                                                           !! writting periodic files
+                                                           !! writing periodic files
 
     IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file

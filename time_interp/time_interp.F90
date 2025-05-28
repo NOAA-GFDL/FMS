@@ -108,7 +108,7 @@ public :: time_interp_init, time_interp, fraction_of_year
 !!          hours   per day    = 24
 !!          months  per year   = 12
 !!
-!! @param Time The time at which the the weight is computed.
+!! @param Time The time at which the weight is computed.
 !! @param Time_beg For cyclical interpolation: Time_beg specifies the begining time of a cycle.
 !! @param Time_end For cyclical interpolation: Time_end specifies the ending time of a cycle.
 !! @param Timelist For cyclical interpolation: Timelist is an array of times between Time_beg and Time_end.

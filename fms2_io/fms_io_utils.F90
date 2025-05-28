@@ -445,9 +445,9 @@ subroutine open_check(flag, fname)
 
   if (.not. flag) then
      if (present(fname)) then
-          call mpp_error(fatal, "Error occured while opening file "//trim(fname))
+          call mpp_error(fatal, "Error occurred while opening file "//trim(fname))
      else
-          call mpp_error(fatal, "Error occured while opening file.")
+          call mpp_error(fatal, "Error occurred while opening file.")
      endif
   endif
 end subroutine open_check

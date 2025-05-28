@@ -100,7 +100,7 @@ subroutine DO_TIME_MIN_ (data_out, data_in, mask, is_masked, bounds_in, bounds_o
   ks_in = bounds_in%get_kmin()
   ke_in = bounds_in%get_kmax()
 
-  !> Seperated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
+  !> Separated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
   !! then mask will always be .True. so the if (mask) is redudant.
   if (is_masked) then
     do l = 0, size(data_out, 4) - 1
@@ -171,7 +171,7 @@ subroutine DO_TIME_MAX_ (data_out, data_in, mask, is_masked, bounds_in, bounds_o
   ks_in = bounds_in%get_kmin()
   ke_in = bounds_in%get_kmax()
 
-  !> Seperated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
+  !> Separated this loops for performance. If is_masked = .false. (i.e "mask" and "rmask" were never passed in)
   !! then mask will always be .True. so the if (mask) is redudant.
   if (is_masked) then
     do l = 0, size(data_out, 4) - 1

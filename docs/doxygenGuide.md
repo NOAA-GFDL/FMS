@@ -56,7 +56,7 @@ Full subroutine/function documentation:
 !! Example 2:
 !! @code{.F90}
 !! foo()
-!! endcode (`@` ommitted to not close this example)
+!! endcode (`@` omitted to not close this example)
 subroutine foo()
   integer :: bar !< variable description
   ...
@@ -79,7 +79,7 @@ to a specific objects documentation block, or to enclose any section of code wit
 
 ### Documenting Interfaces and Type Definitions
 
-Interfaces and type definitions can be documentated the in a similar way as subroutines/functions.
+Interfaces and type definitions can be documented in a similar way as subroutines/functions.
 In the documentation they will both be listed data types and will show any included subroutines
 or variables with links if available.
 

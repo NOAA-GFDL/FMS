@@ -156,7 +156,7 @@ sequential patch number (starting from `01`).
 - COUPLER: Adds optional argument to `coupler_types_send_data` routine that contains the return statuses for any calls made to the diag_manager's `send_data` routine. (#1530)
 - MPP: Adds a separate error log file `warnfile.<root pe num>.out` that only holds output from any `mpp_error` calls made during a run (#1544)
 ### Changed
-- DIAG_MANAGER: The `diag_field_log.out` output file of all registered fields will now include the PE number of the root PE at the time of writing (ie. diag_field_log.out.0). This is to prevent overwritting the file in cases where the root PE may change. (#1497)
+- DIAG_MANAGER: The `diag_field_log.out` output file of all registered fields will now include the PE number of the root PE at the time of writing (ie. diag_field_log.out.0). This is to prevent overwriting the file in cases where the root PE may change. (#1497)
 
 ### Fixed
 - CMAKE: Fixes real kind flags being overwritten when using the Debug release type (#1532)
@@ -208,7 +208,7 @@ sequential patch number (starting from `01`).
 - DIAG_MANAGER: Implements `flush_nc_files` functionality from legacy diag_manager.
 
 ### Changed
-- FMS2_IO: Changed `register_unlimited_compressed_axis` to use a collective gather rather than send and recieves to improve efficiency when reading in iceberg restarts.
+- FMS2_IO: Changed `register_unlimited_compressed_axis` to use a collective gather rather than send and receives to improve efficiency when reading in iceberg restarts.
 
 ### Fixed
 - DIAG_MANAGER: Fixes 0 day output frequencies causing error stating a time_step was skipped. Also adds checks to crash if averaged fields have -1 or 0 day frequencies or if mixing averaged and non-averaged fields in the same file.

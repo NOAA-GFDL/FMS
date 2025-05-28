@@ -100,10 +100,10 @@ Below are some *optional* keys that may be added.
 - **write_file** is a logical that indicates if you want the file to be created (default is true). This is a new feature that is not supported by the legacy ascii data_table.
 - **new_file_freq** is a string that defines the frequency and the frequency units (with a space between the frequency number and units) for closing the existing file
 - **start_time** is an array of 6 integer indicating when to start the file for the first time. It is in the format [year month day hour minute second]. Requires “new_file_freq”
-- **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will use the begining of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
-- **reduction** is the reduction method that will be used for all the variables in the file. This is overriden if the reduction is specified at the variable level. The acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (whre XX is the power level), min, max, none, rms, and sum.
-- **kind** is a string that defines the type of variable  as it will be written out in the file. This is overriden if the kind is specified at the variable level. Acceptable values are r4, r8, i4, and i8.
-- **module** is a string that defines the module where the variable is registered in the model code. This is overriden if the module is specified at the variable level.
+- **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will use the beginning of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
+- **reduction** is the reduction method that will be used for all the variables in the file. This is overridden if the reduction is specified at the variable level. The acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (where XX is the power level), min, max, none, rms, and sum.
+- **kind** is a string that defines the type of variable as it will be written out in the file. This is overridden if the kind is specified at the variable level. Acceptable values are r4, r8, i4, and i8.
+- **module** is a string that defines the module where the variable is registered in the model code. This is overridden if the module is specified at the variable level.
 
 **Example:** The following will create a new file every 6 hours starting at Jan 1 2020. Variable data will be written to the file every 6 hours.
 
@@ -138,7 +138,7 @@ ocn_2020_01_01_21.nc for time_bnds [18,24]
 
 ### 2.2.1 Flexible output timings
 
-In order to provide more flexibility in output timings, the diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `new_file_freq`, and  `file_duration` keys to accept a comma seperated list.
+In order to provide more flexibility in output timings, the diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `new_file_freq`, and  `file_duration` keys to accept a comma separated list.
 
 For example,
 ``` yaml
@@ -182,7 +182,7 @@ flexible_timing_0002_01_01_23.nc - using data from hour 23 to hour 24
 ```
 
 ### 2.2.2 Coupled Model Diag Files
-In the *legacy ascii diag_table*, when running a coupled model (ATM + OCN) in a seperate PE list:
+In the *legacy ascii diag_table*, when running a coupled model (ATM + OCN) in a separate PE list:
   - The ATM PEs ignored the files in the diag_table that contain "OCEAN" in the filename
   - The OCN PEs ignored the files in the diag_table that did not contain "OCEAN" in the filename
 
@@ -194,9 +194,9 @@ In the *yaml diag_table*:
 The variables in each file are listed under the varlist section as a dashed array.
 
 - **var_name:**  is a string that defines the variable name as it is defined in the register_diag_field call in the model
-- **reduction:** is a string that describes the data reduction method to perform prior to writing data to disk. Acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (whre XX is the power level), min, max, none, rms, and sum.
+- **reduction:** is a string that describes the data reduction method to perform prior to writing data to disk. Acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (where XX is the power level), min, max, none, rms, and sum.
 - **module:**  is a string that defines the module where the variable is registered in the model code
-- **kind:** is a string that defines the type of variable  as it will be written out in the file. Acceptable values are r4, r8, i4, and i8
+- **kind:** is a string that defines the type of variable as it will be written out in the file. Acceptable values are r4, r8, i4, and i8
 
 **Example:**
 
@@ -220,7 +220,7 @@ which corresponds to the following model code
 id_precip = register_diag_field ( 'moist', 'precip', axes, Time)
 ```
 where:
-- `moist` corresonds to the module key in the diag_table.yaml
+- `moist` corresponds to the module key in the diag_table.yaml
 - `precip` corresponds to the var_name key in the diag_table.yaml
 - `axes` are the ids of the axes the variable is a function of
 - `Time` is the model time
@@ -233,7 +233,7 @@ Below are some *optional* keys that may be added.
 - **zbounds:** is a 2 member array of integers that define the bounds of the z axis (zmin, zmin), optional default is no limits.
 
 ### 2.4 Variable Metadata Section
-Any aditional variable attributes can be added for each variable can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
+Any additional variable attributes can be added for each variable can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
 
 **Example:**
 
@@ -250,7 +250,7 @@ call diag_field_add_attribute(diag_field_id, attribute_name, attribute_value)
 ```
 
 ### 2.5 Global Meta Data Section
-Any aditional global attributes can be added for each file can be listed under the global_meta section as a dashed array.  The key is the attribute name and the value is the attribute value.
+Any additional global attributes can be added for each file can be listed under the global_meta section as a dashed array.  The key is the attribute name and the value is the attribute value.
 
 ```yaml
   global_meta:
@@ -267,7 +267,7 @@ The sub region can be listed under the sub_region section as a dashed array. The
 - **corner4:** is a **required** 2 member array of reals if using (grid_type="latlon") or integers if using (grid_type="indices") defining the x and y points of the fourth corner of a sub_grid.
 - **tile:** is an integer defining the tile number the sub_grid is on. It is **required** only if using (grid_type="indices").
 
-**Exampe:**
+**Example:**
 
 ```yaml
   sub_region:
@@ -279,7 +279,7 @@ The sub region can be listed under the sub_region section as a dashed array. The
 ```
 
 ### 3. More examples
-Bellow is a complete example of diag_table.yaml:
+Below is a complete example of diag_table.yaml:
 ```yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0

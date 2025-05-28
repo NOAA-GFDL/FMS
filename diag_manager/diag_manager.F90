@@ -65,7 +65,7 @@
 !!          @ref send_data for more details.</LI>
 !!     <LI> To check if the diag table is set up correctly, user should set
 !!          <TT>debug_diag_manager=.true.</TT> in diag_manager namelist, then
-!!          the the content of diag_table is printed in stdout.</LI>
+!!          the content of diag_table is printed in stdout.</LI>
 !!     <LI> New optional format of file information in @ref diag_table_mod.
 !!          It is possible to have just
 !!          one file name and reuse it many times. A time string will be appended to
@@ -597,7 +597,7 @@ END FUNCTION register_static_field
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
-    TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
+    TYPE(time_type) :: diag_file_init_time !< The initial time of the diag_file
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -1680,7 +1680,7 @@ END FUNCTION register_static_field
   END FUNCTION send_data_3d
 
   !> @return true if send is successful
-!TODO documentation, seperate the old and new
+!TODO documentation, separate the old and new
   LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -4191,7 +4191,7 @@ END FUNCTION register_static_field
        ELSE
           CALL error_mesg('diag_manager_mod::diag_manager_init', 'mix_snapshot_average_fields = .TRUE. is not '//&
                & 'supported if use_modern_diag = .TRUE. Please set mix_snapshot_average_fields '//&
-               & 'to .FALSE. and put instantaneous and averaged fields in seperate files!', FATAL)
+               & 'to .FALSE. and put instantaneous and averaged fields in separate files!', FATAL)
        END IF
     END IF
     ALLOCATE(output_fields(max_output_fields))

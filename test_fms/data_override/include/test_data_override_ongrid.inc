@@ -28,7 +28,7 @@ subroutine COMPARE_DATA_ (Domain_in, actual_result, expected_result)
   integer                                 :: nhx, nhy              !< Size of the halos
   integer                                 :: i, j                  !< Helper indices
 
-  !< Data is only expected to be overriden for the compute domain -not at the halos.
+  !< Data is only expected to be overridden for the compute domain -not at the halos.
   call mpp_get_compute_domain(Domain_in, xsize=xsizec, ysize=ysizec)
   call mpp_get_data_domain(Domain_in, xsize=xsized, ysize=ysized)
 
@@ -44,7 +44,7 @@ subroutine COMPARE_DATA_ (Domain_in, actual_result, expected_result)
         !< This is the result at the halos it should 999.
         if (actual_result(i,j) .ne. 999._lkind) then
           print *, "for i=", i, " and j=", j, " result=", actual_result(i,j)
-          call mpp_error(FATAL, "test_data_override_ongrid: Data was overriden in the halos!!")
+          call mpp_error(FATAL, "test_data_override_ongrid: Data was overridden in the halos!!")
         endif
       else
         if (actual_result(i,j) .ne. expected_result) then
@@ -173,7 +173,7 @@ subroutine SCALAR_TEST_
   !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
   !! equal to the data at time=3, which is 3.
   expected_result = 3._lkind
-  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
+  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overridden to the correct value!")
 
   !< Run it when time=4
   co2 = 999._lkind
@@ -182,7 +182,7 @@ subroutine SCALAR_TEST_
   !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
   !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
   expected_result = (3._lkind + 4._lkind) / 2._lkind
-  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
+  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overridden to the correct value!")
 end subroutine SCALAR_TEST_
 
 subroutine ENSEMBLE_TEST_
@@ -203,7 +203,7 @@ subroutine ENSEMBLE_TEST_
   !< Run it when time=3
   Time = set_date(1,1,4,0,0,0)
   call data_override('OCN','runoff',runoff, Time, override=sucessful)
-  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
   !! equal to the data at time=3, which is 3+scale_fac.
   expected_result = 3._lkind + real(scale_fac,kind=lkind)
@@ -213,7 +213,7 @@ subroutine ENSEMBLE_TEST_
   runoff = 999._lkind
   Time = set_date(1,1,5,0,0,0)
   call data_override('OCN','runoff',runoff, Time, override=sucessful)
-  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   !< You are getting the data when time=4, the data at time=3 is 3+scale_fac. and at time=5 is 4+scale_fac.,
   !! so the expected result is the average of the 2 (because this is is an "ongrid" case and there
   !! is no horizontal interpolation).

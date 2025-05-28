@@ -188,7 +188,7 @@ contains
 
     gsum_ad_save     = 0.
     gsum_ad_save_bit = 0.
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -250,7 +250,7 @@ contains
 
     gsum_ad_save     = 0.
     gsum_ad_save_bit = 0.
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -312,7 +312,7 @@ contains
 
     gsum_ad_save     = 0.
     gsum_ad_save_bit = 0.
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -396,7 +396,7 @@ contains
 
     gsum_ad_save     = 0.
     gsum_ad_save_bit = 0.
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do j = jsd, jed
       do i = isd, ied
         gsum_ad_save     = gsum_ad_save + x2_ad(i,j)*x2(i,j)
@@ -699,7 +699,7 @@ contains
     call mpp_global_sum_ad( domain, x3_ad, gsum_ad, position = position )
 
     gsum_ad_save     = 0
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -745,7 +745,7 @@ contains
     ! adjoint sum of global field
     call mpp_global_sum_ad( domain, x4_ad, gsum_ad, position = position )
     gsum_ad_save     = 0
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -791,7 +791,7 @@ contains
     call mpp_global_sum_ad( domain, x5_ad, gsum_ad, position = position )
 
     gsum_ad_save     = 0
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -904,7 +904,7 @@ contains
     call mpp_global_sum_ad( domain, x3_ad, gsum_ad, position = position )
 
     gsum_ad_save     = 0
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -950,7 +950,7 @@ contains
     ! adjoint sum of global field
     call mpp_global_sum_ad( domain, x4_ad, gsum_ad, position = position )
     gsum_ad_save     = 0
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
@@ -996,7 +996,7 @@ contains
     call mpp_global_sum_ad( domain, x5_ad, gsum_ad, position = position )
 
     gsum_ad_save     = 0
-    ! sum the the original global sum and the adjoint global sum
+    ! sum the original global sum and the adjoint global sum
     do k = 1,nz
        do j = jsd, jed
          do i = isd, ied
