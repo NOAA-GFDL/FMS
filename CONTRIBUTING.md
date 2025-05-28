@@ -2,9 +2,9 @@
 
 Thank you for taking time to contribute.
 
-libFMS is a software framework for supporting the efficient development,
+libFMS is a software framework for supporting the **seamless** development,
 construction, execution, and scientific interpretation of atmospheric, oceanic,
-and climate system models.
+and land models across timescales.
 
 Contributions to this project are released to the public under the
 [projects open source license](LICENSE.md).
@@ -123,7 +123,7 @@ Comments on pull requests should be courteous and constructive, giving useful fe
 
 ## Tests
 
-FMS uses TravisCI and gitlab-CI to run build tests for libFMS.  Users may create
+FMS uses github actons to run build tests for libFMS.  Users should create
 unit tests, code coverage tests, and regression tests for new and existing code
 in yaml (.yml) files.  Github provides a guide
 (https://help.github.com/en/articles/about-continuous-integration) for
@@ -138,7 +138,8 @@ Code updates should follow the coding style for the project, contained in
 Releases will be tagged using the format `yyyy.rr[.pp]`, where `yyyy` is the
 4-digit year, `rr` is the 2-digit release number, and `pp` is the 2-digit patch
 number.  Preliminary releases mean for testing (i.e., code that is still under
-development) will be marked `yyyy.rr.alpha.pp` or `yyyy.rr.beta.pp`. Alpha tags
+development) will be marked `yyyy.rr-alpha#` or `yyyy.rr-beta#` where `#` is
+the incremented number of the testing tag. Alpha tags
 mark code updates that are intended for developers to include in their baseline
 regression tests to determine whether the code contains bugs not encountered
 during baseline testing. Beta tags are intended for a wider audience of
