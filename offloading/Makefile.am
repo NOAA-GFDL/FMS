@@ -1,5 +1,3 @@
-#!/bin/sh
-
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -19,23 +17,30 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/string_utils directory.
+# This is an automake file for the constants directory of the FMS
+# package.
 
-# Set common test settings.
-. ../test-lib.sh
+# Ryan Mulhall 2025
 
-touch input.nml
-test_expect_success "test_io_offloading" '
-  mpirun -n 7 ./test_io_offloading
-'
+# Include .h and .mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-test_expect_success "test metadata transfer" '
-  mpirun -n 2 ./test_metadata_transfer
-'
+# Build this uninstalled convenience library.
+noinst_LTLIBRARIES = liboffload.la
 
-test_expect_success "test mpp redistribute" '
-  mpirun -n 7 ./test_mpp_redistribute
-'
+# The convenience library depends on its source.
+liboffload_la_SOURCES = \
+  metadata_transfer.F90 \
+  offloading_io.F90
 
-test_done
+MODFILES = \
+  metadata_transfer_mod.$(FC_MODEXT) \
+  offloading_io_mod.$(FC_MODEXT)
+
+offloading_io_mod.$(FC_MODEXT): metadata_transfer_mod.$(FC_MODEXT)
+
+BUILT_SOURCES = $(MODFILES)
+nodist_include_HEADERS = $(MODFILES)
+
+include $(top_srcdir)/mkmods.mk

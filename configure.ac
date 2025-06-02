@@ -464,6 +464,7 @@ AC_CONFIG_FILES([
   diag_integral/Makefile
   sat_vapor_pres/Makefile
   random_numbers/Makefile
+  offloading/Makefile
   libFMS/Makefile
   docs/Makefile
   parser/Makefile

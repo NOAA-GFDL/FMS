@@ -64,6 +64,7 @@ libFMS_la_LIBADD += $(top_builddir)/diag_integral/libdiag_integral.la
 libFMS_la_LIBADD += $(top_builddir)/sat_vapor_pres/libsat_vapor_pres.la
 libFMS_la_LIBADD += $(top_builddir)/parser/libparser.la
 libFMS_la_LIBADD += $(top_builddir)/string_utils/libstring_utils.la
+libFMS_la_LIBADD += $(top_builddir)/offloading/liboffload.la
 libFMS_la_LIBADD += $(top_builddir)/libFMS_mod.la
 
 libFMS_la_SOURCES =

@@ -1,4 +1,4 @@
-program test
+program test_io_offloading
   use fms_mod, only: fms_init, fms_end, string, check_nml_error
   use platform_mod
   use mpp_mod
@@ -129,4 +129,4 @@ program test
       enddo
     enddo
   end function
-end program
+end program test_io_offloading

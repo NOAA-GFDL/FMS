@@ -3,7 +3,7 @@ module offloading_io_mod
   use mpp_domains_mod
   use fms_string_utils_mod, only: string
   use fms2_io_mod
-  use offloading_io_obj_mod
+  use metadata_transfer_mod
   use platform_mod
 
   implicit none
