@@ -242,5 +242,34 @@ my_test_count=`expr $my_test_count + 1`
 test_expect_success "Testing diag manager where send data was never called for any fields in a file (test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
   '
+
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
+cat <<_EOF > diag_table.yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none%4yr%2mo%2dy%2hr
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 12 hours
+  file_duration: 18 hours
+  varlist:
+  - module: ocn_mod
+    var_name: var0
+    output_name: var0_none
+    reduction: none
+    kind: r4
+_EOF
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Testing diag manager new_file_freq and file_durations keys (test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+  '
+
+my_test_count=`expr $my_test_count + 1`
+test_expect_success "Testing diag manager new_file_freq and file_durations keys (test $my_test_count)" '
+  mpirun -n 1 ../check_new_file_freq
+  '
+
 fi
 test_done
