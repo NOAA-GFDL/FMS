@@ -57,12 +57,11 @@ program test_diag_integral
   real(TEST_DI_KIND_) :: weight(nxy,nxy,nxy)    !> weights required to test sum_field_wght_3d
   real(TEST_DI_KIND_) :: immadeuph(nxy,nxy)     !> array to test sum_field_2d_hemi
 
-  real(r8_kind) :: lat(nxyp,nxyp), lon(nxyp,nxyp)
-  real(r8_kind) :: area(nxy,nxy)
+  real(r8_kind)   :: lat(nxyp,nxyp), lon(nxyp,nxyp)
+  real(r8_kind)   :: area(nxy,nxy)
   type(time_type) :: Time_init, Time
 
   !testing and generating answers
-  integer :: i, j, k !> counters for do loop
   real(r8_kind) :: area_sum !> global area.  sum of the grid cell areas.
   real(r8_kind) :: itime    !> made up time
   !> The field_avg* values are only declared as r8_kind because they correspond to the values
@@ -96,6 +95,24 @@ program test_diag_integral
   call test_sum_diag_integral_field !< compare read in values to the expected values.
 
 contains
+  !-------------------------------------
+  !-------------------------------------
+  subroutine initialize_arrays
+
+    !> made up numbers
+
+    implicit none
+
+    lon=1.0_lkind
+    lat=1.0_lkind
+    area=1.0_lkind
+    immadeup2=1.0_lkind
+    immadeup3=1.0_lkind
+    immadeupw=1.0_lkind
+    immadeuph=1.0_lkind
+    weight=1.0_lkind
+
+  end subroutine initialize_arrays
   !-------------------------------------
   !-------------------------------------
   subroutine test_diag_integral_init
@@ -175,13 +192,13 @@ contains
   !-------------------------------------
   subroutine read_diag_integral_file
 
-    character(17), parameter :: di_file='diag_integral.out'
-    integer, parameter  :: iunit=100
+    character(*), parameter :: di_file='diag_integral.out'
+    integer :: iunit
 
     character(100) :: cline1, cline2, cline3, cline4, cline5, clin6
 
     !> read in computed values
-    open(unit=iunit,file=trim(di_file))
+    open(newunit=iunit, file=di_file)
     read(iunit,*) cline1, cline2, cline3, cline4, cline5, clin6
     read(iunit,*) itime, field_avg2, field_avg3, field_avgw, field_avgh
     close(iunit)
@@ -202,24 +219,6 @@ contains
     end if
 
   end subroutine check_answers
-  !-------------------------------------
-  !-------------------------------------
-  subroutine initialize_arrays
-
-    !> made up numbers
-
-    implicit none
-
-    lon=1.0_lkind
-    lat=1.0_lkind
-    area=1.0_lkind
-    immadeup2=1.0_lkind
-    immadeup3=1.0_lkind
-    immadeupw=1.0_lkind
-    immadeuph=1.0_lkind
-    weight=1.0_lkind
-
-  end subroutine initialize_arrays
   !-------------------------------------
   !-------------------------------------
 end program test_diag_integral

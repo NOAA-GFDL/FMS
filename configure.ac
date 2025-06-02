@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2023.02.00-dev],
+  [2025.02-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -100,10 +100,14 @@ AS_IF([test ${enable_8byte_int:-no} = yes],
 
 AC_ARG_ENABLE([deprecated-io],
   [AS_HELP_STRING([--enable-deprecated-io],
-    [Enables compilation of deprecated mpp_io and fms_io modules in addition to the updated fms2_io modules (default no)])])
+    [THIS OPTION HAS BEEN DEPRECATED!!!])])
 AS_IF([test ${enable_deprecated_io:-no} = yes],
   [enable_deprecated_io=yes],
   [enable_deprecated_io=no])
+
+if test $enable_deprecated_io = yes; then
+  AC_MSG_ERROR(FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS OR REVERT TO VERSION 2025.02)
+fi
 
 AC_ARG_ENABLE([r8-default],
   [AS_HELP_STRING([--disable-r8-default],
@@ -111,6 +115,13 @@ AC_ARG_ENABLE([r8-default],
 AS_IF([test ${enable_r8_default:-yes} = yes],
   [enable_r8_default=yes],
   [enable_r8_default=no])
+
+AC_ARG_ENABLE([portable-kinds],
+  [AS_HELP_STRING([--enable-portable-kinds],
+    [Enables compilation with -DPORTABLE_KINDS with iso_c_binding KIND type parameters])])
+AS_IF([test ${enable_portable_kinds:-no} = yes],
+  [enable_portable_kinds=yes],
+  [enable_portable_kinds=no])
 
 # user enabled testing with input files
 AC_MSG_CHECKING([whether to enable tests with input files])
@@ -191,9 +202,9 @@ if test $with_yaml = yes; then
   #If the test pass, define use_yaml macro
   AC_DEFINE([use_yaml], [1], [This is required to use yaml parser])
 
-  AM_CONDITIONAL([SKIP_PARSER_TESTS], false )
+  AM_CONDITIONAL([USING_YAML], true)
 else
-  AM_CONDITIONAL([SKIP_PARSER_TESTS], true )
+  AM_CONDITIONAL([USING_YAML], false)
 fi
 
 # Require netCDF
@@ -259,6 +270,28 @@ GX_FC_CHECK_MOD([netcdf], [], [], [AC_MSG_ERROR([Can't find the netCDF Fortran m
 GX_FORTRAN_SEARCH_LIBS([nf90_create], [netcdff], [use netcdf], [iret = nf90_create('foo.nc', 1, ncid)], [],
   [AC_MSG_ERROR([Can't find the netCDF Fortran library.  Set LDFLAGS/LIBS])])
 
+# Check if we get a floating point exception with netcdf
+# this will only get triggered if you have FPE traps enabled via FCFLAGS
+AC_MSG_CHECKING([if HDF5 version causes floating point exceptions with set flags])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([], [[
+      use netcdf
+      integer i, j
+      j = nf90_create("test.nc", NC_WRITE, i)
+]])], [hdf5_fpe_bug=no], [hdf5_fpe_bug=yes])
+AC_MSG_RESULT([$hdf5_fpe_bug])
+if test $hdf5_fpe_bug = yes; then
+  AC_MSG_ERROR([The HDF5 version used to build netcdf is incompatible with the set FCFLAGS. dnl
+NetCDF must be built with a HDF5 version other than 1.14.3 to support floating point exception traps.])
+fi
+
+rm -f test.nc
+
+# Check if we need a flag to not capitalize module output (needed with cray compiler)
+GX_FC_MOD_CASE_FLAG([FCFLAGS="$FCFLAGS $FC_MOD_CASE_FLAG"])
+
+# Check if new unit is supported
+GX_FC_08_OPEN_NEWUNIT([], [AC_MSG_ERROR([Compiler support for use of newunit argument is required to build FMS])])
+
 # Check if Fortran compiler has the Class, Character array assign bug
 GX_FC_CLASS_CHAR_ARRAY_BUG_CHECK()
 
@@ -279,17 +312,6 @@ AC_LANG_POP(Fortran)
 # We passed all the tests.  Set the required defines.
 if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
-fi
-
-# check if compiling old io
-if test $enable_deprecated_io = yes; then
-  #If the test pass, define use_deprecated_io macro and skip it's unit tests
-  AC_DEFINE([use_deprecated_io], [1], [This is required to use mpp_io and fms_io modules])
-  # this macro was only removed from non-deprecated code so still needs to be set
-  AC_DEFINE([use_netCDF], [1], [This has been removed elsewhere but is still required to build with deprecated io])
-  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], true)
-else
-  AM_CONDITIONAL([SKIP_DEPRECATED_IO_TESTS], false)
 fi
 
 # Builds with r8 default unless disable flag is given
@@ -325,6 +347,11 @@ if test $enable_setting_flags = yes; then
   fi
   if test $enable_8byte_int = yes; then
     AC_DEFINE([no_8byte_integers], [1], [Set to disable 8 byte integer Fortran routines])
+  fi
+
+  # Builds with C data types
+  if test $enable_portable_kinds = yes; then
+    AC_DEFINE([PORTABLE_KINDS], [1], [Set to define KIND parameters to iso_c_binding KIND parameters])
   fi
 
   # Add Cray Pointer support flag
@@ -445,7 +472,7 @@ AC_CONFIG_FILES([
   tridiagonal/Makefile
   tracer_manager/Makefile
   topography/Makefile
-  mosaic/Makefile
+  grid_utils/Makefile
   mosaic2/Makefile
   monin_obukhov/Makefile
   memutils/Makefile
@@ -482,7 +509,6 @@ AC_CONFIG_FILES([
   test_fms/fms2_io/Makefile
   test_fms/fms/Makefile
   test_fms/mpp/Makefile
-  test_fms/mpp_io/Makefile
   test_fms/time_interp/Makefile
   test_fms/time_manager/Makefile
   test_fms/horiz_interp/Makefile
@@ -501,6 +527,7 @@ AC_CONFIG_FILES([
   test_fms/topography/Makefile
   test_fms/column_diagnostics/Makefile
   test_fms/offloading/Makefile
+  test_fms/block_control/Makefile
   FMS.pc
   ])
 

@@ -83,10 +83,17 @@ interface data_override_UG
      module procedure data_override_UG_2d_r8
 end interface
 
-integer :: atm_mode = 0 !> Atmosphere mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
-integer :: ocn_mode = 0 !> Ocean mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
-integer :: lnd_mode = 0 !> Land mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
-integer :: ice_mode = 0 !> Ice mode - possible values are 0 (uninitialized), r4_kind, or r8_kind
+integer, parameter :: mode_r4 = 1 !> Indicates that a domain has been enabled for r4 mode
+integer, parameter :: mode_r8 = 2 !> Indicates that a domain has been enabled for r8 mode
+
+integer :: atm_mode = 0 !> Atmosphere mode: possible values are 0 (uninitialized),
+                        !! mode_r4, mode_r8, or ior(mode_r4, mode_r8)
+integer :: ocn_mode = 0 !> Ocean mode: possible values are 0 (uninitialized),
+                        !! mode_r4, mode_r8, or ior(mode_r4, mode_r8)
+integer :: lnd_mode = 0 !> Land mode: possible values are 0 (uninitialized),
+                        !! mode_r4, mode_r8, or ior(mode_r4, mode_r8)
+integer :: ice_mode = 0 !> Ice mode: possible values are 0 (uninitialized),
+                        !! mode_r4, mode_r8, or ior(mode_r4, mode_r8)
 
 !> @addtogroup data_override_mod
 !> @{
@@ -96,8 +103,8 @@ public :: data_override_UG
 
 contains
 
-!> @brief Initialize either data_override_r4 or data_override_r8
-!! Users should call data_override_init before calling data_override
+!> @brief Initialize data_override. Users should call data_override_init before
+!! calling data_override.
 !!
 !! This subroutine should be called in coupler_init after
 !! (ocean/atmos/land/ice)_model_init have been called.
@@ -105,9 +112,7 @@ contains
 !! data_override_init can be called more than once. In one call the user can pass
 !! up to 4 domains of component models. At least one domain must be present in
 !! any call. The real precision of initialized domains can be specified via the
-!! optional mode argument. If no mode is specified, r8_kind is assumed. Mixed mode
-!! operation can be accomplished via multiple calls to data_override_init with
-!! different mode arguments.
+!! optional mode argument. If no mode is specified, both r4 and r8 modes are initialized.
 !!
 !! Data_table is initialized with default values in DATA_OVERRIDE_INIT_IMPL_. Users should
 !! provide "real" values that will override the default values. Real values can be
@@ -120,28 +125,34 @@ subroutine data_override_init(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Lan
   type (domain2d), intent(in), optional :: Land_domain_in !< Land domain
   type(domainUG) , intent(in), optional :: Land_domainUG_in !< Land domain, unstructured grid
   integer, intent(in), optional :: mode !< Real precision of initialized domains. Possible values are r4_kind or
-                                        !! r8_kind.
-  integer :: mode_selector
+                                        !! r8_kind. If omitted, both r4 and r8 modes are initialized.
+  integer :: mode_flags
 
   if (present(mode)) then
-    mode_selector = mode
+    select case(mode)
+      case (r4_kind)
+        mode_flags = mode_r4
+      case (r8_kind)
+        mode_flags = mode_r8
+      case default
+        call mpp_error(FATAL, "data_override_init: Unsupported mode argument")
+    end select
   else
-    mode_selector = r8_kind
+    mode_flags = ior(mode_r4, mode_r8)
   endif
 
-  select case (mode_selector)
-    case (r4_kind)
-      call data_override_init_r4(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
-    case (r8_kind)
-      call data_override_init_r8(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
-    case default
-      call mpp_error(FATAL, "data_override_init: unsupported mode argument")
-  end select
+  if (iand(mode_flags, mode_r4).ne.0) then
+    call data_override_init_r4(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
+  endif
 
-  if (present(Atm_domain_in))   atm_mode = mode_selector
-  if (present(Ocean_domain_in)) ocn_mode = mode_selector
-  if (present(Ice_domain_in))   ice_mode = mode_selector
-  if (present(Land_domain_in))  lnd_mode = mode_selector
+  if (iand(mode_flags, mode_r8).ne.0) then
+    call data_override_init_r8(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
+  endif
+
+  if (present(Atm_domain_in))   atm_mode = ior(atm_mode, mode_flags)
+  if (present(Ocean_domain_in)) ocn_mode = ior(ocn_mode, mode_flags)
+  if (present(Ice_domain_in))   ice_mode = ior(ice_mode, mode_flags)
+  if (present(Land_domain_in))  lnd_mode = ior(lnd_mode, mode_flags)
 end subroutine data_override_init
 
 !> @brief Unset domains that had previously been set for use by data_override.
@@ -158,51 +169,39 @@ subroutine data_override_unset_domains(unset_Atm, unset_Ocean, &
   fail_if_not_set = .true. ; if (present(must_be_set)) fail_if_not_set = must_be_set
 
   if (present(unset_Atm)) then ; if (unset_Atm) then
-    select case (atm_mode)
-      case (r4_kind)
-        call data_override_unset_atm_r4
-      case (r8_kind)
-        call data_override_unset_atm_r8
-      case default
-        if (fail_if_not_set) call mpp_error(FATAL, &
-          "data_override_unset_domains: attempted to unset an Atm_domain that has not been set.")
-    end select
+    if (atm_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
+      "data_override_unset_domains: attempted to unset an Atm_domain that has not been set.")
+
+    if (iand(atm_mode, mode_r4).ne.0) call data_override_unset_atm_r4
+    if (iand(atm_mode, mode_r8).ne.0) call data_override_unset_atm_r8
+
     atm_mode = 0
   endif ; endif
   if (present(unset_Ocean)) then ; if (unset_Ocean) then
-    select case (ocn_mode)
-      case (r4_kind)
-        call data_override_unset_ocn_r4
-      case (r8_kind)
-        call data_override_unset_ocn_r8
-      case default
-        if (fail_if_not_set) call mpp_error(FATAL, &
-          "data_override_unset_domains: attempted to unset an Ocn_domain that has not been set.")
-    end select
+    if (ocn_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
+      "data_override_unset_domains: attempted to unset an Ocn_domain that has not been set.")
+
+    if (iand(ocn_mode, mode_r4).ne.0) call data_override_unset_ocn_r4
+    if (iand(ocn_mode, mode_r8).ne.0) call data_override_unset_ocn_r8
+
     ocn_mode = 0
   endif ; endif
   if (present(unset_Land)) then ; if (unset_Land) then
-    select case (lnd_mode)
-      case (r4_kind)
-        call data_override_unset_lnd_r4
-      case (r8_kind)
-        call data_override_unset_lnd_r8
-      case default
-        if (fail_if_not_set) call mpp_error(FATAL, &
-          "data_override_unset_domains: attempted to unset an Land_domain that has not been set.")
-    end select
+    if (lnd_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
+      "data_override_unset_domains: attempted to unset an Land_domain that has not been set.")
+
+    if (iand(lnd_mode, mode_r4).ne.0) call data_override_unset_lnd_r4
+    if (iand(lnd_mode, mode_r8).ne.0) call data_override_unset_lnd_r8
+
     lnd_mode = 0
   endif ; endif
   if (present(unset_Ice)) then ; if (unset_Ice) then
-    select case (ice_mode)
-      case (r4_kind)
-        call data_override_unset_ice_r4
-      case (r8_kind)
-        call data_override_unset_ice_r8
-      case default
-        if (fail_if_not_set) call mpp_error(FATAL, &
-          "data_override_unset_domains: attempted to unset an Ice_domain that has not been set.")
-    end select
+    if (ice_mode.eq.0 .and. fail_if_not_set) call mpp_error(FATAL, &
+      "data_override_unset_domains: attempted to unset an Ice_domain that has not been set.")
+
+    if (iand(ice_mode, mode_r4).ne.0) call data_override_unset_ice_r4
+    if (iand(ice_mode, mode_r8).ne.0) call data_override_unset_ice_r8
+
     ice_mode = 0
   endif ; endif
 end subroutine data_override_unset_domains

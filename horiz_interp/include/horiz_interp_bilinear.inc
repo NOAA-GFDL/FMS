@@ -30,15 +30,23 @@
 
     logical :: src_is_modulo
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m
-    integer :: ie, is, je, js, ln_err, lt_err, warns, unit
+    integer :: ie, is, je, js, ln_err, lt_err, warns, iunit
     real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
     real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
     integer,parameter     :: kindl = FMS_HI_KIND_
+    logical               :: decreasing_lat !< .True. if latitude is monotically decreasing
+    logical               :: decreasing_lon !< .True. if longitude is monotically decreasing
 
     warns = 0
     if(present(verbose)) warns = verbose
     src_is_modulo = .true.
     if (present(src_modulo)) src_is_modulo = src_modulo
+
+    decreasing_lat = .false.
+    if (lat_in(1) > lat_in(2)) decreasing_lat = .true.
+
+    decreasing_lon = .false.
+    if (lon_in(1) > lon_in(2)) decreasing_lon = .true.
 
     hpi = 0.5_kindl * real(pi, FMS_HI_KIND_)
     tpi = 4.0_kindl * hpi
@@ -95,11 +103,23 @@
           glt_min = min(lat,glt_min);  glt_max = max(lat,glt_max)
           gln_min = min(lon,gln_min);  gln_max = max(lon,gln_max)
 
-          is = indp(lon, lon_in )
-          if( lon_in(is) .gt. lon ) is = max(is-1,1)
+          is = nearest_index(lon, lon_in )
+          if (decreasing_lon) then
+            ! Lon_in is increasing
+            ! This is so that is is the lower bound.
+            ! For example, if the array is [50 40 30 20 10] and lon is 11, `is` is going to be 5 from `nearest_index`
+            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
+            if( lon_in(is) .lt. lon ) is = max(is-1,1)
+          else
+            ! Lon_in is increasing
+            ! This is so that is is the lower bound.
+            ! For example, if the array is [10 20 30 40 50] and lon is 49, `is` is going to be 5 from `nearest_index`
+            ! but it needs to be 4 so that it can use the data at lon_in(4) and lon_in(5)
+            if( lon_in(is) .gt. lon ) is = max(is-1,1)
+          endif
           if( lon_in(is) .eq. lon .and. is .eq. nlon_in) is = max(is - 1,1)
           ie = min(is+1,nlon_in)
-          if(lon_in(is) .ne. lon_in(ie) .and. lon_in(is) .le. lon) then
+          if(lon_in(is) .ne. lon_in(ie) .and. (decreasing_lon .or. lon_in(is) .le. lon)) then
              wtw = ( lon_in(ie) - lon) / (lon_in(ie) - lon_in(is) )
           else
              !     east or west of the last data value. this could be because a
@@ -115,13 +135,18 @@
           endif
           wte = 1.0_kindl - wtw
 
-          js = indp(lat, lat_in )
-
-          if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
+          js = nearest_index(lat, lat_in )
+          if (decreasing_lat) then
+            ! Lat_in is decreasing
+            if( lat_in(js) .lt. lat ) js = max(js - 1, 1)
+          else
+            ! Lat_in is increasing
+            if( lat_in(js) .gt. lat ) js = max(js - 1, 1)
+          endif
           if( lat_in(js) .eq. lat .and. js .eq. nlat_in) js = max(js - 1, 1)
           je = min(js + 1, nlat_in)
 
-          if ( lat_in(js) .ne. lat_in(je) .and. lat_in(js) .le. lat) then
+          if ( lat_in(js) .ne. lat_in(je) .and. (decreasing_lat .or. lat_in(js) .le. lat)) then
              wts = ( lat_in(je) - lat )/(lat_in(je)-lat_in(js))
           else
              !     north or south of the last data value. this could be because a
@@ -143,29 +168,31 @@
        enddo
     enddo
 
-    unit = stdout()
+    iunit = stdout()
 
     if (ln_err .eq. 1 .and. warns > 0) then
-       write (unit,'(/,(1x,a))')                                      &
+       write (iunit,'(/,(1x,a))')                                      &
             '==> Warning: the geographic data set does not extend far   ', &
             '             enough east or west - a cyclic boundary       ', &
             '             condition was applied. check if appropriate   '
-       write (unit,'(/,(1x,a,2f8.4))')                                &
+       write (iunit,'(/,(1x,a,2f8.4))')                                &
             '    data required between longitudes:', gln_min, gln_max,     &
             '      data set is between longitudes:', lon_in(1), lon_in(nlon_in)
        warns = warns - 1
     endif
 
     if (lt_err .eq. 1 .and. warns > 0) then
-       write (unit,'(/,(1x,a))')                                     &
+       write (iunit,'(/,(1x,a))')                                     &
             '==> Warning: the geographic data set does not extend far   ',&
             '             enough north or south - extrapolation from    ',&
             '             the nearest data was applied. this may create ',&
             '             artificial gradients near a geographic pole   '
-       write (unit,'(/,(1x,a,2f8.4))')                             &
+       write (iunit,'(/,(1x,a,2f8.4))')                             &
             '    data required between latitudes:', glt_min, glt_max,   &
             '      data set is between latitudes:', lat_in(1), lat_in(nlat_in)
     endif
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp% interp_method = BILINEAR
 
     return
 
@@ -371,6 +398,8 @@
        enddo
     enddo
 
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp% interp_method = BILINEAR
   end subroutine
 
   !#######################################################################
@@ -893,7 +922,7 @@
     !-----------------------------------------------------------------------
     integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m,         &
          is, ie, js, je, iverbose, max_missing, num_missing, &
-         miss_in, miss_out, unit
+         miss_in, miss_out, iunit
     real(FMS_HI_KIND_)    :: dwtsum, wtsum, min_in, max_in, avg_in, &
          min_out, max_out, avg_out, wtw, wte, wts, wtn
     real(FMS_HI_KIND_)    :: mask(size(data_in,1), size(data_in,2) )
@@ -1163,12 +1192,12 @@
        call stats (data_out, min_out, max_out, avg_out, miss_out, missing_value, mask_out)
 
        !---- output statistics ----
-       unit = stdout()
-       write (unit,900)
-       write (unit,901)  min_in ,max_in, avg_in
-       if (present(mask_in))  write (unit,903)  miss_in
-       write (unit,902)  min_out,max_out,avg_out
-       if (present(mask_out)) write (unit,903)  miss_out
+       iunit = stdout()
+       write (iunit,900)
+       write (iunit,901)  min_in ,max_in, avg_in
+       if (present(mask_in))  write (iunit,903)  miss_in
+       write (iunit,902)  min_out,max_out,avg_out
+       if (present(mask_out)) write (iunit,903)  miss_out
 
 900    format (/,1x,10('-'),' output from horiz_interp ',10('-'))
 901    format ('  input:  min=',f16.9,'  max=',f16.9,'  avg=',f22.15)
@@ -1181,50 +1210,92 @@
 
   end subroutine
 
+  !> Subroutine for reading a weight file and use it to fill in the horiz interp type
+  !! for the bilinear interpolation method.
+  subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
+                                                 weight_file_source, interp_method, isw, iew, jsw, jew, nglon, nglat)
+    type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
+    character(len=*),        intent(in)    :: weight_filename    !< Name of the weight file
+    real(FMS_HI_KIND_), target,     intent(in)    :: lat_out(:,:)       !< Output (model) latitude
+    real(FMS_HI_KIND_), target,      intent(in)    :: lon_out(:,:)       !< Output (model) longitude
+    real(FMS_HI_KIND_),      intent(in)    :: lat_in(:)          !< Input (data) latitude
+    real(FMS_HI_KIND_),      intent(in)    :: lon_in(:)          !< Input (data) longitude
+    character(len=*),        intent(in)    :: weight_file_source !< Source of the weight file
+    character(len=*),        intent(in)    :: interp_method      !< The interp method to use
+    integer,                 intent(in)    :: isw, iew, jsw, jew !< Starting and ending indices of the compute domain
+    integer,                 intent(in)    :: nglon              !< Number of longitudes in the global domain
+    integer,                 intent(in)    :: nglat              !< Number of latitudes in the globl domain
 
-  !#######################################################################
-  !> @returns index of nearest data point to "value"
-  !! if "value" is outside the domain of "array" then INDP_ = 1
-  !! or "ia" depending on whether array(1) or array(ia) is
-  !! closest to "value"
-  function INDP_ (value, array)
-    integer                        :: INDP_ !< index of nearest data point within "array"
-                                           !! corresponding to "value".
-    real(FMS_HI_KIND_), dimension(:), intent(in) :: array !< array of data points (must be monotonically increasing)
-    real(FMS_HI_KIND_), intent(in)               :: value !< arbitrary data, same units as elements in 'array'
 
-    !=======================================================================
+    real(FMS_HI_KIND_), allocatable :: var(:,:,:)     !< Dummy variable to read the indices and weight into
+    type(FmsNetcdfFile_t)           :: weight_fileobj !< FMS2io fileob for the weight file
+    integer                         :: nlon           !< Number of longitudes in the model grid as read
+                                                      !! from the weight file
+    integer                         :: nlat           !< Number of latitude in the model grid as read
+                                                      !! from the weight file
 
-    integer i, ia, unit
-    logical keep_going
-    !
-    ia = size(array(:))
-    do i=2,ia
-       if (array(i) .lt. array(i-1)) then
-          unit = stdout()
-          write (unit,*) &
-               ' => Error: array must be monotonically increasing in "INDP_"' , &
-               '           when searching for nearest element to value=',value
-          write (unit,*) '           array(i) < array(i-1) for i=',i
-          write (unit,*) '           array(i) for i=1..ia follows:'
-          call mpp_error()
-       endif
-    enddo
-    if (value .lt. array(1) .or. value .gt. array(ia)) then
-       if (value .lt. array(1))  INDP_ = 1
-       if (value .gt. array(ia)) INDP_ = ia
-    else
-       i=1
-       keep_going = .true.
-       do while (i .le. ia .and. keep_going)
-          i = i+1
-          if (value .le. array(i)) then
-             INDP_ = i
-             if (array(i)-value .gt. value-array(i-1)) INDP_ = i-1
-             keep_going = .false.
-          endif
-       enddo
-    endif
-    return
-  end function INDP_
+    if (.not. open_file(weight_fileobj, weight_filename, "read" )) &
+      call mpp_error(FATAL, "Error opening the weight file:"//&
+        &trim(weight_filename))
+
+    !< Check that weight file has the correct dimensions
+    select case (trim(weight_file_source))
+    case ("fregrid")
+      call get_dimension_size(weight_fileobj, "nlon", nlon)
+      if (nlon .ne. nglon) &
+        call mpp_error(FATAL, "The nlon from the weight file is not the same as in the input grid."//&
+                             &" From weight file:"//string(nlon)//" from input grid:"//string(size(lon_out,1)))
+      call get_dimension_size(weight_fileobj, "nlat", nlat)
+      if (nlat .ne. nglat) &
+        call mpp_error(FATAL, "The nlat from the weight file is not the same as in the input grid."//&
+                   &" From weight file:"//string(nlat)//" from input grid:"//string(size(lon_out,2)))
+    case default
+      call mpp_error(FATAL, trim(weight_file_source)//&
+        &" is not a supported weight file source. fregrid is the only supported weight file source." )
+    end select
+
+    Interp%nlon_src = size(lon_in(:)) ;  Interp%nlat_src = size(lat_in(:))
+    Interp%nlon_dst = size(lon_out,1); Interp%nlat_dst = size(lon_out,2)
+
+    allocate ( Interp % HI_KIND_TYPE_ % wti (Interp%nlon_dst,Interp%nlat_dst,2),   &
+              Interp % HI_KIND_TYPE_ % wtj (Interp%nlon_dst,Interp%nlat_dst,2),   &
+              Interp % i_lon (Interp%nlon_dst,Interp%nlat_dst,2), &
+              Interp % j_lat (Interp%nlon_dst,Interp%nlat_dst,2))
+
+
+    !! Three is for lon, lat, tile
+    !! Currently, interpolation is only supported from lat,lon input data
+    allocate(var(Interp%nlon_dst,Interp%nlat_dst, 3))
+    call read_data(weight_fileobj, "index", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 3/))
+
+    !! Each point has a lon (i), and lat(j) index
+    !! From there the four corners are (i,j), (i,j+1) (i+1) (i+1,j+1)
+    Interp % i_lon (:,:,1) = var(:,:,1)
+    Interp % i_lon (:,:,2) = Interp % i_lon (:,:,1) + 1
+    where (Interp % i_lon (:,:,2) > size(lon_in(:))) Interp % i_lon (:,:,2) = 1
+
+    Interp % j_lat (:,:,1) = var(:,:,2)
+    Interp % j_lat (:,:,2) = Interp % j_lat (:,:,1) + 1
+    where (Interp % j_lat (:,:,2) > size(lat_in(:))) Interp % j_lat (:,:,2) = 1
+
+    deallocate(var)
+
+    allocate(var(Interp%nlon_dst,Interp%nlat_dst, 4))
+    call read_data(weight_fileobj, "weight", var, corner=(/isw, jsw, 1/), edge_lengths=(/iew-isw+1, jew-jsw+1, 4/))
+
+    !! The weights for the four corners
+    !! var(:,:,1) -> (i,j)
+    !! var(:,:,2) -> (i,j+1)
+    !! var(:,:,3) -> (i+1,j)
+    !! var(:,:,4) -> (i+1,j+1)
+    Interp % HI_KIND_TYPE_ % wti = var(:,:,1:2)
+    Interp % HI_KIND_TYPE_ % wtj = var(:,:,3:4)
+    deallocate(var)
+
+    Interp% HI_KIND_TYPE_ % is_allocated = .true.
+    Interp% interp_method = BILINEAR
+    Interp% I_am_initialized = .True.
+    call close_file(weight_fileobj)
+  end subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_
+
 !> @}

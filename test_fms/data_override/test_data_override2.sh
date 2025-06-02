@@ -24,62 +24,17 @@
 # Set common test settings.
 . ../test-lib.sh
 
-setup_test_dir () {
-  local halo_size
-  test "$#" = 1 && { halo_size=$1; } ||
-  BUG "required parameter for halo size not present"
-  rm -rf data_table input.nml INPUT
-  cat <<_EOF > data_table
-"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0
-_EOF
-
-cat <<_EOF > input.nml
-&test_data_override_ongrid_nml
-  nhalox=${halo_size}
-  nhaloy=${halo_size}
-/
-_EOF
-  mkdir INPUT
-}
-
-touch input.nml
+output_dir
+rm -rf data_table data_table.yaml input.nml input_base.nml
 
 for KIND in r4 r8
 do
-
-# Run the ongrid test case with 2 halos in x and y
-cat <<_EOF > data_table.yaml
-data_table:
- - gridname          : OCN
-   fieldname_code    : runoff
-   fieldname_file    : runoff
-   file_name         : INPUT/runoff.daitren.clim.1440x1080.v20180328.nc
-   interpol_method   : none
-   factor            : 1.0
-_EOF
-
-printf '"OCN", "runoff", "runoff", "./INPUT/runoff.daitren.clim.1440x1080.v20180328.nc", "none" ,  1.0' | cat > data_table
-[ ! -d "INPUT" ] && mkdir -p "INPUT"
-setup_test_dir 2
-
-test_expect_success "data_override on grid with 2 halos in x and y (${KIND})" '
-  mpirun -n 6 ./test_data_override_ongrid_${KIND}
-'
-
-setup_test_dir 0
-
-test_expect_success "data_override on grid with no halos (${KIND})" '
-  mpirun -n 6 ./test_data_override_ongrid_${KIND}
-'
-
-# Run the get_grid_v1 test:
-test_expect_success "data_override get_grid_v1 (${KIND})" '
-  mpirun -n 1 ./test_get_grid_v1_${KIND}
-'
-
 # Run tests with input if enabled
 # skips if built with yaml parser(tests older behavior)
 if test ! -z "$test_input_path" && test ! -z "$parser_skip"  ; then
+  cat <<_EOF > input.nml
+_EOF
+
   cp -r $test_input_path/data_override/INPUT .
   cat <<_EOF > diag_table
 test_data_override
@@ -100,7 +55,7 @@ _EOF
 _EOF
 
   test_expect_success "data_override on cubic-grid with input (${KIND})" '
-    mpirun -n 6 ./test_data_override_${KIND}
+    mpirun -n 6 ../test_data_override_${KIND}
   '
 
 cat <<_EOF > input.nml
@@ -110,11 +65,10 @@ cat <<_EOF > input.nml
 _EOF
 
   test_expect_success "data_override on latlon-grid with input (${KIND})" '
-    mpirun -n 6 ./test_data_override_${KIND}
+    mpirun -n 6 ../test_data_override_${KIND}
   '
-  rm -rf INPUT *.nc # remove any leftover files to reduce size
 fi
-
 done
+rm -rf INPUT *.nc # remove any leftover files to reduce size
 
 test_done

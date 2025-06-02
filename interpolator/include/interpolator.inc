@@ -127,7 +127,7 @@ integer         , intent(in), optional  :: vert_interp(:)
 character(len=*), intent(out), optional :: clim_units(:)
 logical,          intent(out), optional :: single_year_file
 
-character(len=64)            :: src_file
+character(len=FMS_FILE_LEN)             :: src_file
 !++lwh
 real(FMS_INTP_KIND_)         :: dlat, dlon
 !--lwh
@@ -145,13 +145,22 @@ integer :: model_calendar
 integer :: yr, mo, dy, hr, mn, sc
 integer :: n
 type(time_type) :: Julian_time, Noleap_time
-real(FMS_INTP_KIND_), allocatable :: time_in(:)
+real(r8_kind), allocatable :: time_in(:)
 real(FMS_INTP_KIND_), allocatable, save :: agrid_mod(:,:,:)
 integer :: nx, ny
 type(FmsNetcdfFile_t) :: fileobj
 
 integer, parameter :: lkind=FMS_INTP_KIND_
 real(FMS_INTP_KIND_), parameter :: lPI=real(PI,FMS_INTP_KIND_)
+
+!> variables used to set time
+logical :: yearly !< flags to indicate if time data is in units of months or years
+integer :: num_years !< number of years
+integer :: base_year, base_month, base_day, base_hour, base_minute, base_second
+integer :: nn !< counter
+logical :: noleap_file_calendar !< is the file calendar noleap or julian
+real(r8_kind) :: num_days, frac_year !< variables for yearly=.true.
+type(time_type) :: n_time !< temporary time
 
 clim_type%separate_time_vary_calc = .false.
 
@@ -332,6 +341,7 @@ if(dimension_exists(fileobj, "time")) then
    filehr  = 0
    filemin = 0
    filesec = 0
+   yearly  = .false.
    select case(units(:3))
      case('day')
        fileunits = units(12:) !Assuming "days since YYYY-MM-DD HH:MM:SS"
@@ -363,8 +373,24 @@ if(dimension_exists(fileobj, "time")) then
        read(fileunits(12:13), *)  filehr
        read(fileunits(15:16), *)  filemin
        read(fileunits(18:19), *)  filesec
+    case( 'yea')
+       fileunits = units(13:) !Assuming "years since YYYY-MM-DD HH:MM:SS"
+       if ( len_trim(fileunits) < 19 ) then
+         write(error_mesg, '(A49,A,A51,A)' ) &
+           'Interpolator_init : Incorrect time units in file ', &
+           trim(file_name), '. Expecting years since YYYY-MM-DD HH:MM:SS, found', &
+           trim(units)
+         call mpp_error(FATAL,error_mesg)
+       endif
+       read(fileunits(1:4)  , *)  fileyr
+       read(fileunits(6:7)  , *)  filemon
+       read(fileunits(9:10) , *)  fileday
+       read(fileunits(12:13), *)  filehr
+       read(fileunits(15:16), *)  filemin
+       read(fileunits(18:19), *)  filesec
+       yearly = .true.
      case default
-       call mpp_error(FATAL,'Interpolator_init : Time units not recognised in file '//file_name)
+       call mpp_error(FATAL,'Interpolator_init : Time units not recognized in file '//file_name)
    end select
 
    clim_type%climatological_year = (fileyr == 0)
@@ -375,32 +401,35 @@ if(dimension_exists(fileobj, "time")) then
       !    if file date has a non-zero year in the base time, determine that
       !    base_time based on the netcdf info.
       !----------------------------------------------------------------------
-      if ( (model_calendar == JULIAN .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
-           & (model_calendar == NOLEAP .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
-        call mpp_error (NOTE, 'interpolator_mod: Model and file&
-                  & calendars are the same for file ' //   &
-                  & trim(file_name) // '; no calendar conversion  &
-                  &needed')
-        base_time = set_date (fileyr, filemon, fileday, filehr, &
-                              filemin,filesec)
-      else if ( (model_calendar == JULIAN .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
-        call mpp_error (NOTE, 'interpolator_mod: Using julian &
+      noleap_file_calendar=.false.
+      if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
+         call mpp_error (NOTE, 'interpolator_mod: Model and file&
+              & calendars are the same for file ' //   &
+              & trim(file_name) // '; no calendar conversion  &
+              &needed')
+         base_time = set_date (fileyr, filemon, fileday, filehr,filemin,filesec)
+         noleap_file_calendar=.false.
+      else if((model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
+         call mpp_error (NOTE, 'interpolator_mod: Model and file&
+              & calendars are the same for file ' //   &
+              & trim(file_name) // '; no calendar conversion  &
+              &needed')
+         base_time = set_date (fileyr, filemon, fileday, filehr,filemin,filesec)
+         noleap_file_calendar=.true.
+      else if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
+         call mpp_error (NOTE, 'interpolator_mod: Using julian &
                           &model calendar and noleap file calendar&
                           & for file ' // trim(file_name) //   &
                           &'; calendar conversion needed')
-        base_time = set_date_no_leap (fileyr, filemon, fileday,  &
-             & filehr, filemin, filesec)
-      else if ( (model_calendar == NOLEAP .and.   &
-           & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
+        base_time = set_date_no_leap (fileyr, filemon, fileday,filehr, filemin, filesec)
+        noleap_file_calendar=.true.
+      else if ( (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
         call mpp_error (NOTE, 'interpolator_mod: Using noleap &
                           &model calendar and julian file calendar&
                           & for file ' // trim(file_name) //  &
                           &'; calendar conversion needed')
-        base_time = set_date_julian (fileyr, filemon, fileday,  &
-             & filehr, filemin, filesec)
+        base_time = set_date_julian (fileyr, filemon, fileday,filehr, filemin, filesec)
+        noleap_file_calendar=.false.
       else
         call mpp_error (FATAL , 'interpolator_mod: Model and file&
              & calendars ( ' // trim(file_calendar) // ' ) differ  &
@@ -425,17 +454,38 @@ if(dimension_exists(fileobj, "time")) then
    if (ntime > 0) then
       allocate(time_in(ntime), clim_type%time_slice(ntime))
       allocate(clim_type%clim_times(12,(ntime+11)/12))
-      time_in = 0.0_lkind
+      time_in = 0.0_r8_kind
       clim_type%time_slice = set_time(0,0) + base_time
       clim_type%clim_times = set_time(0,0) + base_time
       call fms2_io_read_data(fileobj, "time", time_in)
       ntime_in = ntime
+      !> convert the number of years passed to days if yearly=.true.
+      if(yearly) then
+         do n = 1, ntime
+            if(.not.noleap_file_calendar) then
+               ! Julian calendar
+               num_years  = int(time_in(n))
+               frac_year = time_in(n) - real(num_years, r8_kind)
+               call get_date_julian(base_time, base_year, base_month, base_day, base_hour, base_minute, base_second)
+               num_days = 0.0_r8_kind
+               do nn=1, num_years
+                  if( mod(base_year+nn-1,4)==0) num_days = num_days + 366._r8_kind
+                  if( mod(base_year+nn-1,4)/=0) num_days = num_days + 365._r8_kind
+               end do
+               if( mod(base_year+num_years,4)==0) num_days = num_days + 366._r8_kind*frac_year
+               if( mod(base_year+num_years,4)/=0) num_days = num_days + 365._r8_kind*frac_year
+            else
+               num_days = time_in(n)*365._r8_kind
+            end if
+            time_in(n)=num_days
+         end do
+      end if
       ! determine whether the data is a continuous set of monthly values or
       ! a series of annual cycles spread throughout the period of data
       non_monthly = .false.
       do n = 1, ntime-1
          !  Assume that the times in the data file correspond to days only.
-         if (time_in(n+1) > (time_in(n) + 32._lkind)) then
+         if (time_in(n+1) > (time_in(n) + 32._r8_kind)) then
            non_monthly = .true.
            exit
          endif
@@ -458,9 +508,8 @@ if(dimension_exists(fileobj, "time")) then
            !! time_interp_list with the optional argument modtime=YEAR, so that
            !! the time that is needed in time_slice is the displacement into the
            !! year, not the displacement from a base_time.
-           clim_type%time_slice(n) = &
-               set_time( INT( (time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
-                               *real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n)))
+            clim_type%time_slice(n) = set_time( INT( (time_in(n)-real(INT(time_in(n)),r8_kind))*SECONDS_PER_DAY), &
+                 INT(time_in(n)))
          else
 
            !--------------------------------------------------------------------
@@ -472,59 +521,47 @@ if(dimension_exists(fileobj, "time")) then
            !    include the base_time; values will be generated relative to the
            !    "real" time.
            !--------------------------------------------------------------------
-           if ( (model_calendar == JULIAN .and.   &
-                & trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
-                & (model_calendar == NOLEAP .and.   &
-                & trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
+           if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'julian')  .or. &
+                & (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'noleap') )  then
 
              !---------------------------------------------------------------------
              !    no calendar conversion needed.
              !---------------------------------------------------------------------
              clim_type%time_slice(n) = &
-               set_time( INT( (time_in(n)-real(INT(time_in(n)),FMS_INTP_KIND_)) &
-                               *real(SECONDS_PER_DAY,FMS_INTP_KIND_)), INT(time_in(n))) &
-                 + base_time
+               set_time( INT( (time_in(n)-real(INT(time_in(n)),r8_kind))*SECONDS_PER_DAY), &
+               INT(time_in(n))) + base_time
 
            !---------------------------------------------------------------------
            !    convert file times from noleap to julian.
            !---------------------------------------------------------------------
-           else if ( (model_calendar == JULIAN .and.   &
-                & trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
+           else if ( (model_calendar == JULIAN .and. trim(adjustl(lowercase(file_calendar))) == 'noleap')) then
              Noleap_time = set_time (0, INT(time_in(n))) + base_time
-             call get_date_no_leap (Noleap_time, yr, mo, dy, hr,  &
-                                    mn, sc)
-             clim_type%time_slice(n) = set_date_julian (yr, mo, dy,  &
-                                                        hr, mn, sc)
+             call get_date_no_leap (Noleap_time, yr, mo, dy, hr, mn, sc)
+             clim_type%time_slice(n) = set_date_julian (yr, mo, dy, hr, mn, sc)
              if (n == 1) then
                call print_date (clim_type%time_slice(1), &
-                       str= 'for file ' // trim(file_name) // ', the &
-                             &first time slice is mapped to :')
+                       str= 'for file ' // trim(file_name) // ', the first time slice is mapped to :')
              endif
              if (n == ntime) then
                call print_date (clim_type%time_slice(ntime), &
-                        str= 'for file ' // trim(file_name) // ', the &
-                              &last time slice is mapped to:')
+                        str= 'for file ' // trim(file_name) // ', the last time slice is mapped to:')
              endif
 
 
            !---------------------------------------------------------------------
            !    convert file times from julian to noleap.
            !---------------------------------------------------------------------
-           else if ( (model_calendar == NOLEAP .and.   &
-                      & trim(adjustl(lowercase(file_calendar))) == 'julian')) then
+           else if ( (model_calendar == NOLEAP .and. trim(adjustl(lowercase(file_calendar))) == 'julian')) then
              Julian_time = set_time (0, INT(time_in(n))) + base_time
              call get_date_julian (Julian_time, yr, mo, dy, hr, mn, sc)
-             clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy, &
-                                                         hr, mn, sc)
+             clim_type%time_slice(n) = set_date_no_leap (yr, mo, dy,hr, mn, sc)
              if (n == 1) then
                call print_date (clim_type%time_slice(1), &
-                                str= 'for file ' // trim(file_name) // ', the &
-                                &first time slice is mapped to :')
+                                str= 'for file ' // trim(file_name) // ', the first time slice is mapped to :')
              endif
              if (n == ntime) then
                call print_date (clim_type%time_slice(ntime), &
-                                str= 'for file ' // trim(file_name) // ', the &
-                                &last time slice is mapped to:')
+                                str= 'for file ' // trim(file_name) // ', the last time slice is mapped to:')
              endif
 
            !---------------------------------------------------------------------
@@ -540,7 +577,7 @@ if(dimension_exists(fileobj, "time")) then
    else
       allocate(time_in(1), clim_type%time_slice(1))
       allocate(clim_type%clim_times(1,1))
-      time_in = 0.0_lkind
+      time_in = 0.0_r8_kind
       clim_type%time_slice = set_time(0,0) + base_time
       clim_type%clim_times(1,1) = set_time(0,0) + base_time
    endif
@@ -601,7 +638,7 @@ select case(ntime)
 
  if (non_monthly) then
 ! We have a broken time-line. e.g. We have monthly data but only for years ending in 0. 1960,1970 etc.
-!   allocate(clim_type%data(size(lonb_mod(:))-1, size(latb_mod(:))-1, nlev, 2, num_fields))
+!   allocate(clim_type%data5d(size(lonb_mod(:))-1, size(latb_mod(:))-1, nlev, 2, num_fields))
    allocate(clim_type%FMS_INTP_TYPE_%pmon_pyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, num_fields))
    allocate(clim_type%FMS_INTP_TYPE_%pmon_nyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, num_fields))
    allocate(clim_type%FMS_INTP_TYPE_%nmon_nyear(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, num_fields))
@@ -614,12 +651,12 @@ select case(ntime)
 else
 ! We have a continuous time-line so treat as for 5-12 timelevels as below.
    if ( .not. read_all_on_init) then
-   allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
+   allocate(clim_type%FMS_INTP_TYPE_%data5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
-   allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
+   allocate(clim_type%FMS_INTP_TYPE_%data5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
             ntime, num_fields))
    endif
-   clim_type%FMS_INTP_TYPE_%data = 0.0_lkind
+   clim_type%FMS_INTP_TYPE_%data5d = 0.0_lkind
    clim_type%TIME_FLAG = LINEAR
 endif
 
@@ -631,26 +668,26 @@ endif
 ! Assume we have monthly or higher time resolution datasets (climatology or time series)
 ! So we only need to read 2 datasets and apply linear temporal interpolation.
    if ( .not. read_all_on_init) then
-   allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
+   allocate(clim_type%FMS_INTP_TYPE_%data5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 2, num_fields))
    else
-   allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
+   allocate(clim_type%FMS_INTP_TYPE_%data5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, &
             ntime, num_fields))
    endif
-   clim_type%FMS_INTP_TYPE_%data = 0.0_lkind
+   clim_type%FMS_INTP_TYPE_%data5d = 0.0_lkind
    clim_type%TIME_FLAG = LINEAR
 !++lwh
 !case (1:4)
 ! Assume we have seasonal data and read in all the data.
 ! We can apply sine curves to these data.
 
-!  allocate(clim_type%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, ntime, num_fields))
-!  clim_type%data = 0.0
+!  allocate(clim_type%data5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, ntime, num_fields))
+!  clim_type%data5d = 0.0
 !  clim_type%TIME_FLAG = SEASONAL
 !--lwh
 ! case (default)
  case(:0)
    clim_type%TIME_FLAG = NOTIME
-   allocate(clim_type%FMS_INTP_TYPE_%data(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 1, num_fields))
+   allocate(clim_type%FMS_INTP_TYPE_%data5d(size(lonb_mod,1)-1, size(latb_mod,2)-1, nlev, 1, num_fields))
 end select
 
 
@@ -777,7 +814,7 @@ if( clim_type%TIME_FLAG .eq. SEASONAL ) then
    do i=1,num_fields
       do n = 1, ntime
          call read_data( clim_type, clim_type%field_name(i), &
-                         clim_type%FMS_INTP_TYPE_%data(:,:,:,n,i), n, i, base_time )
+                         clim_type%FMS_INTP_TYPE_%data5d(:,:,:,n,i), n, i, base_time )
       enddo
    enddo
 endif
@@ -787,7 +824,7 @@ if( clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) then
    do i=1,num_fields
       do n = 1, ntime
          call read_data( clim_type, clim_type%field_name(i), &
-                         clim_type%FMS_INTP_TYPE_%data(:,:,:,n,i), n, i, base_time )
+                         clim_type%FMS_INTP_TYPE_%data5d(:,:,:,n,i), n, i, base_time )
       enddo
    enddo
 
@@ -798,7 +835,7 @@ if( clim_type%TIME_FLAG .eq. NOTIME ) then
 ! Read all the data at this point.
    do i=1,num_fields
      call read_data_no_time_axis( clim_type, clim_type%field_name(i), &
-                                  clim_type%FMS_INTP_TYPE_%data(:,:,:,1,i), i )
+                                  clim_type%FMS_INTP_TYPE_%data5d(:,:,:,1,i), i )
    enddo
    call close_file (fileobj)
 endif
@@ -809,14 +846,14 @@ endif
 
 end subroutine FMS2IO_INTERPOLATOR_INIT_
 
-subroutine GET_AXIS_LATLON_DATA_(fileobj, name, data)
+subroutine GET_AXIS_LATLON_DATA_(fileobj, name, latlon_data)
    type(FmsNetcdfFile_t), intent(in) :: fileobj
    character(len=*),      intent(in) :: name
-   real(FMS_INTP_KIND_), dimension(:),   intent(out) :: data
+   real(FMS_INTP_KIND_), dimension(:),   intent(out) :: latlon_data
 
 
    if(variable_exists(fileobj, name)) then
-      call fms2_io_read_data(fileobj, name, data)
+      call fms2_io_read_data(fileobj, name, latlon_data)
    else
       call mpp_error(FATAL,'get_axis_latlon_data: variable '// &
                      & trim(name)//' does not exist in file '//trim(fileobj%path) )
@@ -824,7 +861,7 @@ subroutine GET_AXIS_LATLON_DATA_(fileobj, name, data)
    call get_variable_units(fileobj, name, units)
    select case(units(1:6))
    case('degree')
-      data = data*real(DTR,FMS_INTP_KIND_)
+      latlon_data = latlon_data*real(DTR,FMS_INTP_KIND_)
    case('radian')
    case default
       call mpp_error(FATAL, "get_axis_latlon_data : Units for '// &
@@ -834,10 +871,10 @@ subroutine GET_AXIS_LATLON_DATA_(fileobj, name, data)
  end subroutine GET_AXIS_LATLON_DATA_
 
 
-subroutine GET_AXIS_LEVEL_DATA_(fileobj, name, data, level_type, vertical_indices)
+subroutine GET_AXIS_LEVEL_DATA_(fileobj, name, level_data, level_type, vertical_indices)
    type(FmsNetcdfFile_t), intent(in) :: fileobj
    character(len=*),      intent(in) :: name
-   real(FMS_INTP_KIND_), dimension(:),   intent(out) :: data
+   real(FMS_INTP_KIND_), dimension(:),   intent(out) :: level_data
    integer,              intent(out) :: level_type, vertical_indices
    real(FMS_INTP_KIND_), dimension(:), allocatable   :: alpha
    integer                           :: n, nlev
@@ -845,7 +882,7 @@ subroutine GET_AXIS_LEVEL_DATA_(fileobj, name, data, level_type, vertical_indice
    integer, parameter :: lkind=FMS_INTP_KIND_
 
    if(variable_exists(fileobj, name)) then
-      call fms2_io_read_data(fileobj, name, data)
+      call fms2_io_read_data(fileobj, name, level_data)
    else
       call mpp_error(FATAL,'get_axis_level_data: variable '// &
                      & trim(name)//' does not exist in file '//trim(fileobj%path) )
@@ -854,9 +891,9 @@ subroutine GET_AXIS_LEVEL_DATA_(fileobj, name, data, level_type, vertical_indice
    level_type = PRESSURE
    ! Convert to Pa
    if( trim(adjustl(lowercase(chomp(units)))) == "mb" .or. trim(adjustl(lowercase(chomp(units)))) == "hpa") then
-      data = data * 100._lkind
+      level_data = level_data * 100._lkind
    endif
-   nlev = size(data(:))
+   nlev = size(level_data(:))
    sense = get_variable_sense(fileobj, name)
 ! define the direction of the vertical data axis
 ! switch index order if necessary so that indx 1 is at lowest pressure,
@@ -865,10 +902,10 @@ subroutine GET_AXIS_LEVEL_DATA_(fileobj, name, data, level_type, vertical_indice
         vertical_indices = INCREASING_UPWARD
         allocate (alpha(nlev))
         do n = 1, nlev
-          alpha(n) = data(nlev-n+1)
+          alpha(n) = level_data(nlev-n+1)
         end do
         do n = 1, nlev
-          data(n) = alpha(n)
+          level_data(n) = alpha(n)
         end do
         deallocate (alpha)
       else
@@ -1314,10 +1351,10 @@ integer, parameter :: lkind=FMS_INTP_KIND_
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
       do i=1, size(clim_type%field_name(:))
-          call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,1,i), taum,i,Time)
+          call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,1,i), taum,i,Time)
                clim_type%time_init(i,1) = taum
                clim_type%itaum = 1
-          call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,2,i), taup,i,Time)
+          call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,2,i), taup,i,Time)
                clim_type%time_init(i,2) = taup
                clim_type%itaup = 2
       end do
@@ -1333,7 +1370,7 @@ integer, parameter :: lkind=FMS_INTP_KIND_
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
         do i=1, size(clim_type%field_name(:))
            call read_data(clim_type,clim_type%field_name(i), &
-                          clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+                          clim_type%FMS_INTP_TYPE_%data5d(:,:,:,clim_type%itaup,i), taup,i, Time)
            clim_type%time_init(i,clim_type%itaup)=taup
         end do
       endif
@@ -1663,10 +1700,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
     do i=1, size(clim_type%field_name(:))
-    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,1,i), taum,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
-    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,2,i), taup,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
     end do
@@ -1682,7 +1719,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
     do i=1, size(clim_type%field_name(:))
         call read_data(clim_type,clim_type%field_name(i), &
-                       clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+                       clim_type%FMS_INTP_TYPE_%data5d(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
      end do
       endif
@@ -1698,9 +1735,9 @@ select case(clim_type%TIME_FLAG)
   case (LINEAR)
     do n=1, size(clim_type%field_name(:))
       hinterp_data(:,:,:,n) = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight)*  &
-                clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaum,n)  +  &
+                clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,clim_type%itaum,n)  +  &
                                  clim_type%FMS_INTP_TYPE_%tweight*   &
-                clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaup,n)
+                clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,clim_type%itaup,n)
     end do
 ! case (SEASONAL)
 ! Do sine fit to data at this point
@@ -2119,10 +2156,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
-    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,1,i), taum,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
-    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,2,i), taup,i,Time)
+    call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
@@ -2136,7 +2173,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
         call read_data(clim_type,clim_type%field_name(i), &
-                       clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+                       clim_type%FMS_INTP_TYPE_%data5d(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
       endif
 
@@ -2147,9 +2184,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
     hinterp_data = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight) * &
-                    clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaum,i) + &
+                    clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,clim_type%itaum,i) + &
                     clim_type%FMS_INTP_TYPE_%tweight * &
-                    clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaup,i)
+                    clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,clim_type%itaup,i)
 ! case (SEASONAL)
 ! Do sine fit to data at this point
   case (BILINEAR)
@@ -2574,10 +2611,10 @@ if ( .not. clim_type%separate_time_vary_calc) then
       !Set up
       ! field(:,:,:,1) as the previous time slice.
       ! field(:,:,:,2) as the next time slice.
-        call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,1,i), taum,i,Time)
+        call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
-        call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data(:,:,:,2,i), taup,i,Time)
+        call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,2,i), taup,i,Time)
           clim_type%time_init(i,2) = taup
           clim_type%itaup = 2
       endif ! clim_type%itaum.eq.clim_type%itaup.eq.0
@@ -2591,7 +2628,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
         call read_data(clim_type,clim_type%field_name(i), &
-                       clim_type%FMS_INTP_TYPE_%data(:,:,:,clim_type%itaup,i), taup,i, Time)
+                       clim_type%FMS_INTP_TYPE_%data5d(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
       endif
     endif! TIME_FLAG .eq. LINEAR .and. (.not. read_all_on_init)
@@ -2603,8 +2640,9 @@ if ( .not. clim_type%separate_time_vary_calc) then
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
     hinterp_data = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight)*&
-         clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaum,i) &
-         + clim_type%FMS_INTP_TYPE_%tweight*clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,clim_type%itaup,i)
+         clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,clim_type%itaum,i) &
+         + clim_type%FMS_INTP_TYPE_%tweight*clim_type%FMS_INTP_TYPE_%data5d &
+         (istart:iend,jstart:jend,:,clim_type%itaup,i)
 ! case (SEASONAL)
 ! Do sine fit to data at this point
   case (BILINEAR)
@@ -2743,7 +2781,7 @@ if(present(clim_units)) then
 endif
 
 do n=1, size(clim_type%field_name(:))
-  hinterp_data(:,:,:,n) = clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,1,n)
+  hinterp_data(:,:,:,n) = clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,1,n)
 end do
 
 select case(clim_type%level_type)
@@ -2894,7 +2932,7 @@ do i= 1,size(clim_type%field_name(:))
       clim_units = chomp(clim_units)
     endif
 
-    hinterp_data = clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,1,i)
+    hinterp_data = clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,1,i)
 
 select case(clim_type%level_type)
   case(PRESSURE)
@@ -3024,7 +3062,7 @@ do i= 1,size(clim_type%field_name(:))
       clim_units = chomp(clim_units)
     endif
 
-    hinterp_data = clim_type%FMS_INTP_TYPE_%data(istart:iend,jstart:jend,:,1,i)
+    hinterp_data = clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,1,i)
 
     interp_data(:,:) = hinterp_data(:,:,1)
 

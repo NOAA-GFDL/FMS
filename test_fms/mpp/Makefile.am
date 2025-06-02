@@ -67,7 +67,8 @@ check_PROGRAMS = test_mpp \
   test_mpp_init_logfile \
   test_mpp_clock_begin_end_id \
   test_mpp_nesting \
-  test_mpp_chksum
+  test_mpp_chksum \
+  test_stdlog
 
 # These are the sources for the tests.
 test_mpp_SOURCES = test_mpp.F90
@@ -133,6 +134,7 @@ test_mpp_init_logfile_SOURCES=test_mpp_init_logfile.F90
 test_mpp_clock_begin_end_id_SOURCES=test_mpp_clock_begin_end_id.F90
 test_super_grid_SOURCES = test_super_grid.F90
 test_mpp_chksum_SOURCES = test_mpp_chksum.F90
+test_stdlog_SOURCES = test_stdlog.F90
 
 # ifort gets a internal error during compilation for this test, issue #1071
 # we'll just remove the openmp flag if present since it doesn't use openmp at all
@@ -177,7 +179,8 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_clock_begin_end_id.sh \
   test_super_grid.sh \
   test_mpp_nesting.sh \
-  test_mpp_chksum.sh
+  test_mpp_chksum.sh \
+  test_stdlog.sh
 
 # Define test file extensions and log driver
 TEST_EXTENSIONS = .sh
@@ -221,7 +224,8 @@ EXTRA_DIST = test_mpp_domains2.sh \
   test_mpp_clock_begin_end_id.sh \
   test_super_grid.sh \
   test_mpp_nesting.sh \
-  test_mpp_chksum.sh
+  test_mpp_chksum.sh \
+  test_stdlog.sh
 
 fill_halo.mod: fill_halo.$(OBJEXT)
 compare_data_checksums.mod: compare_data_checksums.$(OBJEXT)

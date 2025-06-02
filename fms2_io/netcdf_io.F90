@@ -139,7 +139,7 @@ endtype fmsOffloadingIn_type
 !> @brief Netcdf file type.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
-  character(len=256) :: path !< File path.
+  character(len=FMS_PATH_LEN) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
   integer :: ncid !< Netcdf file id.
   character(len=256) :: nc_format !< Netcdf file format.
@@ -163,6 +163,11 @@ type, public :: FmsNetcdfFile_t
   type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
                                                !! restart variables
   type(fmsOffloadingIn_type) :: offloading_obj_in
+  logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
+                                      !! this should be set to .true. in the user application if they want
+                                      !! collective reads (put before open_file())
+  integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
+                                      !! To be replaced with a real communicator at user request
 
 endtype FmsNetcdfFile_t
 
@@ -576,8 +581,10 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   integer :: nc_format_param
   integer :: err
-  character(len=256) :: buf !< Filename with .res in the filename if it is a restart
-  character(len=256) :: buf2 !< Filename with the filename appendix if there is one
+  integer :: netcdf4 !< Query the file for the _IsNetcdf4 global attribute in the event
+                     !! that the open for collective reads fails
+  character(len=FMS_PATH_LEN) :: buf !< File path with .res in the filename if it is a restart
+  character(len=FMS_PATH_LEN) :: buf2 !< File path with the filename appendix if there is one
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
@@ -633,30 +640,30 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%is_root = mpp_pe() .eq. fileobj%io_root
 
   fileobj%is_netcdf4 = .false.
-  !Open the file with netcdf if this rank is the I/O root.
-  if (fileobj%is_root) then
-    if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
-    if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
+  if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
+  if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
 
-    if (present(nc_format)) then
-      if (string_compare(nc_format, "64bit", .true.)) then
-        nc_format_param = nf90_64bit_offset
-      elseif (string_compare(nc_format, "classic", .true.)) then
-        nc_format_param = nf90_classic_model
-      elseif (string_compare(nc_format, "netcdf4", .true.)) then
-        fileobj%is_netcdf4 = .true.
-        nc_format_param = nf90_netcdf4
-      else
-        call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
-                   &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
-      endif
-      call string_copy(fileobj%nc_format, nc_format)
+  if (present(nc_format)) then
+    if (string_compare(nc_format, "64bit", .true.)) then
+      nc_format_param = nf90_64bit_offset
+    elseif (string_compare(nc_format, "classic", .true.)) then
+      nc_format_param = nf90_classic_model
+    elseif (string_compare(nc_format, "netcdf4", .true.)) then
+      fileobj%is_netcdf4 = .true.
+      nc_format_param = nf90_netcdf4
     else
-      call string_copy(fileobj%nc_format, trim(fms2_nc_format))
-      nc_format_param = fms2_nc_format_param
-      fileobj%is_netcdf4 = fms2_is_netcdf4
+      call error("unrecognized netcdf file format: '"//trim(nc_format)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are 64bit, classic, netcdf4")
     endif
+    call string_copy(fileobj%nc_format, nc_format)
+  else
+    call string_copy(fileobj%nc_format, trim(fms2_nc_format))
+    nc_format_param = fms2_nc_format_param
+    fileobj%is_netcdf4 = fms2_is_netcdf4
+  endif
 
+  !Open the file with netcdf if this rank is the I/O root.
+  if (fileobj%is_root .and. .not.(fileobj%use_collective)) then
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
@@ -665,6 +672,39 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, chunksize=fms2_ncchksz)
+    else
+      call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are read, append, write, overwrite")
+    endif
+    call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
+  elseif(fileobj%use_collective .and. (fileobj%tile_comm /= MPP_COMM_NULL)) then
+    if(string_compare(mode, "read", .true.)) then
+      ! Open the file for collective reads if the user requested that treatment in their application.
+      ! NetCDF does not have the ability to specify collective I/O at the file basis
+      ! so we must activate each variable in netcdf_read_data_2d() and netcdf_read_data_3d()
+      err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, &
+                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+      if(err /= nf90_noerr) then
+        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
+        err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", netcdf4)
+        err = nf90_close(fileobj%ncid)
+        if(netcdf4 /= 1) then
+          call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not &
+                               netCDF-4 format."// &
+                              " Falling back to parallel independent for file "// trim(fileobj%path))
+        endif
+        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
+      endif
+    elseif (string_compare(mode, "write", .true.)) then
+      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective write"// &
+                              " This feature is not implemented"// trim(fileobj%path))
+      !err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
+      !                  comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+    elseif (string_compare(mode,"overwrite",.true.)) then
+      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective overwrite"// &
+                              " This feature is not implemented"// trim(fileobj%path))
+      !err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
+      !                  comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     else
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
@@ -812,16 +852,9 @@ subroutine register_unlimited_compressed_axis(fileobj, dimension_name, dimension
   !Gather all local dimension lengths on the I/O root pe.
   allocate(npes_start(size(fileobj%pelist)))
   allocate(npes_count(size(fileobj%pelist)))
-  do i = 1, size(fileobj%pelist)
-    if (fileobj%pelist(i) .eq. mpp_pe()) then
-      npes_count(i) = dimension_length
-    else
-      call mpp_recv(npes_count(i), fileobj%pelist(i), block=.false.)
-      call mpp_send(dimension_length, fileobj%pelist(i))
-    endif
-  enddo
-  call mpp_sync_self(check=event_recv)
-  call mpp_sync_self(check=event_send)
+
+  call mpp_gather((/dimension_length/),npes_count,pelist=fileobj%pelist)
+
   npes_start(1) = 1
   do i = 1, size(fileobj%pelist)-1
      npes_start(i+1) = npes_start(i) + npes_count(i)
@@ -1071,8 +1104,8 @@ subroutine netcdf_save_restart(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("write_restart:: file "//trim(fileobj%path)//" is not a restart file."&
-              &" Be sure the file was opened with is_restart=.true.")
+    call error("write_restart:: file "//trim(fileobj%path)//" is not a restart file. &
+               &Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -1113,8 +1146,8 @@ subroutine netcdf_restore_state(fileobj, unlim_dim_level)
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("read_restart:: file "//trim(fileobj%path)//" is not a restart file."&
-              &" Be sure the file was opened with is_restart=.true.")
+    call error("read_restart:: file "//trim(fileobj%path)//" is not a restart file. &
+               &Be sure the file was opened with is_restart=.true.")
   endif
   do i = 1, fileobj%num_restart_vars
     if (associated(fileobj%restart_vars(i)%data0d)) then
@@ -1264,8 +1297,8 @@ subroutine get_dimension_names(fileobj, names, broadcast)
     ndims = get_num_dimensions(fileobj, broadcast=.false.)
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions."&
-                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of dimensions. &
+                   &Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
@@ -1285,8 +1318,8 @@ subroutine get_dimension_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions."&
-                   &" Check your get_dimension_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of dimensions. &
+                   &Check your get_dimension_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_dimension_names: the file "//trim(fileobj%path)//" does not have any dimensions")
@@ -1488,8 +1521,8 @@ subroutine get_variable_names(fileobj, names, broadcast)
     nvars = get_num_variables(fileobj, broadcast=.false.)
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("'names' has to be the same size of the number of variables."&
-                   &" Check your get_variable_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of variables. &
+                   &Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
@@ -1509,8 +1542,8 @@ subroutine get_variable_names(fileobj, names, broadcast)
   if (.not. fileobj%is_root) then
     if (nvars .gt. 0) then
       if (size(names) .ne. nvars) then
-        call error("'names' has to be the same size of the number of variables."&
-                   &" Check your get_variable_names call for file "//trim(fileobj%path))
+        call error("'names' has to be the same size of the number of variables. &
+                   &Check your get_variable_names call for file "//trim(fileobj%path))
       endif
     else
       call error("get_variable_names: the file "//trim(fileobj%path)//" does not have any variables")
@@ -1622,9 +1655,9 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
     call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'names' has to be the same size of the number of dimensions for the variable. &
+                   &Check your get_variable_dimension_names call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)&
@@ -1645,9 +1678,9 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_names) .ne. ndims) then
-        call error("'names' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_dimension_names call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'names' has to be the same size of the number of dimensions for the variable. &
+                   & Check your get_variable_dimension_names call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_dimension_names: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)&
@@ -1688,9 +1721,9 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
     call check_netcdf_code(err, append_error_msg)
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable. &
+                   &Check your get_variable_size call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
@@ -1710,9 +1743,9 @@ subroutine get_variable_size(fileobj, variable_name, dim_sizes, broadcast)
   if (.not. fileobj%is_root) then
     if (ndims .gt. 0) then
       if (size(dim_sizes) .ne. ndims) then
-        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable."&
-                   &" Check your get_variable_size call for file "//trim(fileobj%path)//&
-                   &" and variable:"//trim(variable_name))
+        call error("'dim_sizes' has to be the same size of the number of dimensions for the variable. &
+                   &Check your get_variable_size call for file "//trim(fileobj%path)// &
+                   " and variable:"//trim(variable_name))
       endif
     else
       call error("get_variable_size: the variable: "//trim(variable_name)//" in file: "//trim(fileobj%path)//&
@@ -2058,7 +2091,7 @@ end subroutine netcdf_file_close_wrap
 
 
 !> @brief Wrapper to distinguish interfaces.
-subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimensions)
+subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimensions, chunksizes)
 
   type(FmsNetcdfFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -2066,8 +2099,9 @@ subroutine netcdf_add_variable_wrap(fileobj, variable_name, variable_type, dimen
                                                 !! values are: "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+  integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable (netcdf4 only)
 
-  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, chunksizes)
 end subroutine netcdf_add_variable_wrap
 
 !> @brief Wrapper to distinguish interfaces.
@@ -2208,8 +2242,8 @@ function is_registered_to_restart(fileobj, variable_name) &
   integer :: i
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file. "&
-              //"Add is_restart=.true. to your open_file call")
+    call error("file "//trim(fileobj%path)//" is not a restart file. &
+               &Add is_restart=.true. to your open_file call")
   endif
   is_registered = .false.
   do i = 1, fileobj%num_restart_vars
@@ -2301,8 +2335,8 @@ subroutine write_restart_bc(fileobj, unlim_dim_level)
   integer :: i !< No description
 
   if (.not. fileobj%is_restart) then
-    call error("file "//trim(fileobj%path)//" is not a restart file. "&
-               &"Add is_restart=.true. to your open_file call")
+    call error("file "//trim(fileobj%path)//" is not a restart file. &
+               &Add is_restart=.true. to your open_file call")
   endif
 
  !> Loop through the variables, root pe gathers the data from the other pes and writes out the checksum.

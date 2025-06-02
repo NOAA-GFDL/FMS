@@ -27,6 +27,7 @@ use netcdf
 use mpp_domains_mod
 use fms_io_utils_mod
 use netcdf_io_mod
+use platform_mod
 implicit none
 private
 
@@ -34,7 +35,7 @@ private
 !> @ingroup fms_netcdf_unstructured_domain_io_mod
 type, public, extends(FmsNetcdfFile_t) :: FmsNetcdfUnstructuredDomainFile_t
   type(domainug) :: domain !< Unstructured domain.
-  character(len=256) :: non_mangled_path !< Non-domain-mangled path.
+  character(len=FMS_PATH_LEN) :: non_mangled_path !< Non-domain-mangled path.
 endtype FmsNetcdfUnstructuredDomainFile_t
 
 !> @addtogroup fms_netcdf_unstructured_domain_io_mod
@@ -94,8 +95,8 @@ function open_unstructured_domain_file(fileobj, path, mode, domain, nc_format, &
   type(domainug), pointer :: io_domain
   integer :: pelist_size
   integer, dimension(:), allocatable :: pelist
-  character(len=256) :: buf
-  character(len=256) :: buf2
+  character(len=FMS_PATH_LEN) :: buf
+  character(len=FMS_PATH_LEN) :: buf2
   integer :: tile_id
 
   !Get the input domain's I/O domain pelist.
@@ -178,7 +179,7 @@ end subroutine register_unstructured_dimension
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine register_unstructured_domain_variable(fileobj, variable_name, &
-                                                 variable_type, dimensions)
+                                                 variable_type, dimensions, chunksizes)
 
   type(FmsNetcdfUnstructuredDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -186,8 +187,9 @@ subroutine register_unstructured_domain_variable(fileobj, variable_name, &
                                                 !! values are: "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+  integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable (netcdf4 only)
 
-  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+  call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, chunksizes)
 end subroutine register_unstructured_domain_variable
 
 

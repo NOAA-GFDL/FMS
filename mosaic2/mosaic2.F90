@@ -38,7 +38,7 @@ use mpp_domains_mod, only : domain2D, mpp_get_current_ntile, mpp_get_tile_id
 use constants_mod, only : PI, RADIUS
 use fms2_io_mod,   only : FmsNetcdfFile_t, open_file, close_file, get_dimension_size
 use fms2_io_mod,   only : read_data, variable_exists
-use platform_mod,  only : r4_kind, r8_kind
+use platform_mod,  only : r4_kind, r8_kind, FMS_PATH_LEN
 
 implicit none
 private
@@ -48,7 +48,6 @@ character(len=*), parameter :: &
 
 integer, parameter :: &
      MAX_NAME = 256,  & !> max length of the variable names
-     MAX_FILE = 1024, & !> max length of the file names
      X_REFINE = 2,    & !> supergrid size/model grid size in x-direction
      Y_REFINE = 2       !> supergrid size/model grid size in y-direction
 
@@ -174,7 +173,7 @@ end subroutine mosaic_init
     type(FmsNetcdfFile_t), intent(in)    :: fileobj
     integer, dimension(:), intent(inout) :: nx, ny
 
-    character(len=MAX_FILE) :: gridfile
+    character(len=FMS_PATH_LEN) :: gridfile
     integer                 :: ntiles, n
     type(FmsNetcdfFile_t)   :: gridobj
 
@@ -376,14 +375,14 @@ function transfer_to_model_index(istart, iend, refine_ratio)
 
 end function transfer_to_model_index
 !#####################################################################
-function parse_string(string, set, value)
+function parse_string(string, set, sval)
    character(len=*),  intent(in) :: string
    character(len=*),  intent(in) :: set
-   character(len=*), intent(out) :: value(:)
+   character(len=*), intent(out) :: sval(:)
    integer                       :: parse_string
    integer :: nelem, length, first, last
 
-   nelem = size(value(:))
+   nelem = size(sval(:))
    length = len_trim(string)
 
    first = 1; last = 0
@@ -392,17 +391,17 @@ function parse_string(string, set, value)
    do while(first .LE. length)
       parse_string = parse_string + 1
       if(parse_string>nelem) then
-         call mpp_error(FATAL, "mosaic_mod(parse_string) : number of element is greater than size(value(:))")
+         call mpp_error(FATAL, "mosaic_mod(parse_string) : number of element is greater than size(sval(:))")
       endif
       last = first - 1 + scan(string(first:length), set)
       if(last == first-1 ) then  ! not found, end of string
-         value(parse_string) = string(first:length)
+         sval(parse_string) = string(first:length)
          exit
       else
          if(last <= first) then
             call mpp_error(FATAL, "mosaic_mod(parse_string) : last <= first")
          endif
-         value(parse_string) = string(first:(last-1))
+         sval(parse_string) = string(first:(last-1))
          first = last + 1
          ! scan to make sure the next is not the character in the set
          do while (first == last+1)

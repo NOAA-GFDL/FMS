@@ -119,11 +119,11 @@ contains
 
     integer :: pelist(npes)
     integer :: i,j, p
-    real(kind=r4_kind), allocatable, dimension(:,:)  ::  data     !!Data to be sendrecved
+    real(kind=r4_kind), allocatable, dimension(:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS
 
     DS = 9
-    allocate(data(DS, DS))
+    allocate(sendrecv_data (DS, DS))
 
     !!The full PE list [0, ...,npes-1]
     do i=0,npes-1
@@ -131,14 +131,14 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1.0
+    sendrecv_data = -1.0
     !! Re-initialize data on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4) is 34.000, etc.
     if (pe == root) then
        do i = 1,DS
           do j = 1,DS
-             data(i,j) = i*10.0 + j*1.0
+             sendrecv_data(i,j) = i*10.0 + j*1.0
           enddo
        enddo
     endif
@@ -147,10 +147,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS, p )
+          call mpp_send( sendrecv_data, DS* DS, p )
        end do
     else
-       call mpp_recv( data, DS * DS, 0 )
+       call mpp_recv( sendrecv_data, DS * DS, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -159,7 +159,7 @@ contains
     if(ANY(pe == pelist(1:npes-1))) then
        do j = 1, DS
           do i = 1, DS
-             if (data(i,j) /= ( i*10.0 + j*1.0)) then
+             if (sendrecv_data(i,j) /= ( i*10.0 + j*1.0)) then
                 call mpp_error(FATAL, "Test sendrecv 2D R4 failed - basic copy area.")
              endif
           enddo
@@ -177,11 +177,11 @@ contains
 
     integer :: pelist(npes)
     integer :: i,j, p
-    real(kind=r8_kind), allocatable, dimension(:,:)  ::  data     !!Data to be sendrecved
+    real(kind=r8_kind), allocatable, dimension(:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS
 
     DS = 9
-    allocate(data(DS, DS))
+    allocate(sendrecv_data(DS, DS))
 
     !!The full PE list [0, ...,npes-1]
     do i=0,npes-1
@@ -189,14 +189,14 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1.0
+    sendrecv_data = -1.0
     !! Re-initialize data on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4) is 34.000, etc.
     if (pe == root) then
        do i = 1,DS
           do j = 1,DS
-             data(i,j) = i*10.0 + j*1.0
+             sendrecv_data(i,j) = i*10.0 + j*1.0
           enddo
        enddo
     endif
@@ -205,10 +205,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS, p )
+          call mpp_send( sendrecv_data, DS* DS, p )
        end do
     else
-       call mpp_recv( data, DS * DS, 0 )
+       call mpp_recv( sendrecv_data, DS * DS, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -218,7 +218,7 @@ contains
     if(ANY(pe == pelist(1:npes-1))) then
        do j = 1, DS
           do i = 1, DS
-             if (data(i,j) /= ( i*10.0 + j*1.0)) then
+             if (sendrecv_data(i,j) /= ( i*10.0 + j*1.0)) then
                 call mpp_error(FATAL, "Test sendrecv 2D R8 failed - basic copy area.")
              endif
           enddo
@@ -236,7 +236,7 @@ contains
 
     integer :: pelist(npes)
     integer :: i,j,k, p
-    real(kind=r4_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be sendrecved
+    real(kind=r4_kind), allocatable, dimension(:,:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS
     integer :: iz, jz  !!The zeroth element to be sendrecved is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be sendrecved is (ie - is)*(je - js)
@@ -245,7 +245,7 @@ contains
 
     NZ = 9 !! Depth of the square tube to be sendrecved.
     DS = 8 !! DS should be less than 10 for the tests below to make sense.
-    allocate(data(DS, DS, NZ))
+    allocate(sendrecv_data(DS, DS, NZ))
 
     !!The full PE list is [0, ...,npes-1]
     do i=0,npes-1
@@ -253,7 +253,7 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1.0
+    sendrecv_data = -1.0
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4,5) is 543.000, etc.
@@ -261,7 +261,7 @@ contains
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-                data(i,j, k) = k*100.0 + j*10.0 + i*1.0
+                sendrecv_data(i,j, k) = k*100.0 + j*10.0 + i*1.0
              enddo
           enddo
        enddo
@@ -272,10 +272,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS* NZ, p )
+          call mpp_send( sendrecv_data, DS* DS* NZ, p )
        end do
     else
-       call mpp_recv( data, DS * DS * NZ, 0 )
+       call mpp_recv( sendrecv_data, DS * DS * NZ, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -286,7 +286,7 @@ contains
        do k = 1,  NZ
           do j = 1, DS
              do i = 1, DS
-                if (data(i,j, k) /= ( k*100.0 + j*10.0 + i*1.0 )) then
+                if (sendrecv_data(i,j, k) /= ( k*100.0 + j*10.0 + i*1.0 )) then
                    call mpp_error(FATAL, "Test sendrecv 3D R4 failed - basic copy area.")
                 endif
              enddo
@@ -307,7 +307,7 @@ contains
 
     integer :: pelist(npes)
     integer :: i,j,k, p
-    real(kind=r8_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be sendrecved
+    real(kind=r8_kind), allocatable, dimension(:,:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS
     integer :: iz, jz  !!The zeroth element to be sendrecved is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be sendrecved is (ie - is)*(je - js)
@@ -316,7 +316,7 @@ contains
 
     NZ = 9 !! Depth of the square tube to be sendrecved.
     DS = 8 !! DS should be less than 10 for the tests below to make sense.
-    allocate(data(DS, DS, NZ))
+    allocate(sendrecv_data(DS, DS, NZ))
 
     !!The full PE list is [0, ...,npes-1]
     do i=0,npes-1
@@ -324,7 +324,7 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1.0
+    sendrecv_data = -1.0
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4,5) is 543.000, etc.
@@ -332,7 +332,7 @@ contains
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-                data(i,j, k) = k*100.0 + j*10.0 + i*1.0
+                sendrecv_data(i,j, k) = k*100.0 + j*10.0 + i*1.0
              enddo
           enddo
        enddo
@@ -343,10 +343,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS* NZ, p )
+          call mpp_send( sendrecv_data, DS* DS* NZ, p )
        end do
     else
-       call mpp_recv( data, DS * DS * NZ, 0 )
+       call mpp_recv( sendrecv_data, DS * DS * NZ, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -357,7 +357,7 @@ contains
        do k = 1,  NZ
           do j = 1, DS
              do i = 1, DS
-                if (data(i,j, k) /= ( k*100.0 + j*10.0 + i*1.0 )) then
+                if (sendrecv_data(i,j, k) /= ( k*100.0 + j*10.0 + i*1.0 )) then
                    call mpp_error(FATAL, "Test sendrecv 3D R8 failed - basic copy area.")
                 endif
              enddo
@@ -377,11 +377,11 @@ contains
 
     integer :: pelist(npes)
     integer(kind=i4_kind) :: i,j
-    integer(kind=i4_kind), allocatable, dimension(:,:)  ::  data     !!Data to be sendrecved
+    integer(kind=i4_kind), allocatable, dimension(:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS, p
 
     DS = 9
-    allocate(data(DS, DS))
+    allocate(sendrecv_data(DS, DS))
 
     !!The full PE list [0, ...,npes-1]
     do i=0,npes-1
@@ -389,14 +389,14 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    sendrecv_data = -1
     !! Re-initialize data on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4) is 34.000, etc.
     if (pe == root) then
        do i = 1,DS
           do j = 1,DS
-             data(i,j) = i*10 + j
+             sendrecv_data(i,j) = i*10 + j
           enddo
        enddo
     endif
@@ -405,10 +405,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS, p )
+          call mpp_send( sendrecv_data, DS* DS, p )
        end do
     else
-       call mpp_recv( data, DS * DS, 0 )
+       call mpp_recv( sendrecv_data, DS * DS, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -417,7 +417,7 @@ contains
     if(ANY(pe == pelist(1:npes-1))) then
        do j = 1, DS
           do i = 1, DS
-             if (data(i,j) /= ( i * 10 + j  )) then
+             if (sendrecv_data(i,j) /= ( i * 10 + j  )) then
                 call mpp_error(FATAL, "Test sendrecv 2D I4 failed - basic copy area.")
              endif
           enddo
@@ -435,11 +435,11 @@ contains
 
     integer :: pelist(npes)
     integer(kind=i8_kind) :: i,j
-    integer(kind=i8_kind), allocatable, dimension(:,:)  ::  data     !!Data to be sendrecved
+    integer(kind=i8_kind), allocatable, dimension(:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS, p
 
     DS = 9
-    allocate(data(DS, DS))
+    allocate(sendrecv_data(DS, DS))
 
     !!The full PE list [0, ...,npes-1]
     do i=0,npes-1
@@ -447,14 +447,14 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    sendrecv_data = -1
     !! Re-initialize data on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4) is 34.000, etc.
     if (pe == root) then
        do i = 1,DS
           do j = 1,DS
-             data(i,j) = i*10 + j
+             sendrecv_data(i,j) = i*10 + j
           enddo
        enddo
     endif
@@ -463,10 +463,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS, p )
+          call mpp_send( sendrecv_data, DS* DS, p )
        end do
     else
-       call mpp_recv( data, DS * DS, 0 )
+       call mpp_recv( sendrecv_data, DS * DS, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -475,7 +475,7 @@ contains
     if(ANY(pe == pelist(1:npes-1))) then
        do j = 1, DS
           do i = 1, DS
-             if (data(i,j) /= ( i * 10 + j  )) then
+             if (sendrecv_data(i,j) /= ( i * 10 + j  )) then
                 call mpp_error(FATAL, "Test sendrecv 2D I8 failed - basic copy area.")
              endif
           enddo
@@ -493,7 +493,7 @@ contains
 
     integer :: pelist(npes)
     integer(kind=i4_kind) :: i,j,k
-    integer(kind=i4_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be sendrecved
+    integer(kind=i4_kind), allocatable, dimension(:,:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS
     integer :: iz, jz  !!The zeroth element to be sendrecved is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be sendrecved is (ie - is)*(je - js)
@@ -502,7 +502,7 @@ contains
 
     NZ = 9 !! Depth of the square tube to be sendrecved.
     DS = 8 !! DS should be less than 10 for the tests below to make sense.
-    allocate(data(DS, DS, NZ))
+    allocate(sendrecv_data(DS, DS, NZ))
 
     !!The full PE list is [0, ...,npes-1]
     do i=0,npes-1
@@ -510,7 +510,7 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    sendrecv_data = -1
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4,5) is 543.000, etc.
@@ -518,7 +518,7 @@ contains
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-                data(i,j, k) = k*100 + j*10 + i
+                sendrecv_data(i,j, k) = k*100 + j*10 + i
              enddo
           enddo
        enddo
@@ -529,10 +529,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS* NZ, p )
+          call mpp_send( sendrecv_data, DS* DS* NZ, p )
        end do
     else
-       call mpp_recv( data, DS * DS * NZ, 0 )
+       call mpp_recv( sendrecv_data, DS * DS * NZ, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -543,7 +543,7 @@ contains
        do k = 1,  NZ
           do j = 1, DS
              do i = 1, DS
-                if (data(i,j, k) /= ( k * 100 + j*10 + i )) then
+                if (sendrecv_data(i,j, k) /= ( k * 100 + j*10 + i )) then
                    call mpp_error(FATAL, "Test sendrecv 3D I4 failed - basic copy area.")
                 endif
              enddo
@@ -563,7 +563,7 @@ contains
 
     integer :: pelist(npes)
     integer(kind=i8_kind) :: i,j,k
-    integer(kind=i8_kind), allocatable, dimension(:,:,:)  ::  data     !!Data to be sendrecved
+    integer(kind=i8_kind), allocatable, dimension(:,:,:)  ::  sendrecv_data     !!Data to be sendrecved
     integer :: DS
     integer :: iz, jz  !!The zeroth element to be sendrecved is at pos data(is+iz, js+jz)
     integer :: is, ie, js, je !!The amount of data to be sendrecved is (ie - is)*(je - js)
@@ -572,7 +572,7 @@ contains
 
     NZ = 9 !! Depth of the square tube to be sendrecved.
     DS = 8 !! DS should be less than 10 for the tests below to make sense.
-    allocate(data(DS, DS, NZ))
+    allocate(sendrecv_data(DS, DS, NZ))
 
     !!The full PE list is [0, ...,npes-1]
     do i=0,npes-1
@@ -580,7 +580,7 @@ contains
     enddo
 
     !!Initialize all data on all PEs
-    data = -1
+    sendrecv_data = -1
     !! Re-initialize data  on the root PE only.
     !! Data is such that we can calculate what it should be with a Formula
     !! using the indecies. E.g.. data(3,4,5) is 543.000, etc.
@@ -588,7 +588,7 @@ contains
        do i = 1,DS
           do j = 1,DS
              do k = 1,NZ
-                data(i,j, k) = k*100 + j*10 + i
+                sendrecv_data(i,j, k) = k*100 + j*10 + i
              enddo
           enddo
        enddo
@@ -599,10 +599,10 @@ contains
     !! And receive from all other pes
     if ( pe == root ) then
        do p = 1,npes-1
-          call mpp_send( data, DS* DS* NZ, p )
+          call mpp_send( sendrecv_data, DS* DS* NZ, p )
        end do
     else
-       call mpp_recv( data, DS * DS * NZ, 0 )
+       call mpp_recv( sendrecv_data, DS * DS * NZ, 0 )
     end if
 
     call mpp_sync() ! Needed ?
@@ -613,7 +613,7 @@ contains
        do k = 1,  NZ
           do j = 1, DS
              do i = 1, DS
-                if (data(i,j, k) /= ( k * 100 + j*10 + i )) then
+                if (sendrecv_data(i,j, k) /= ( k * 100 + j*10 + i )) then
                    call mpp_error(FATAL, "Test sendrecv 3D I8 failed - basic copy area.")
                 endif
              enddo

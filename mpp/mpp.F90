@@ -196,15 +196,15 @@ private
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
+  public :: MPP_FILL_INT,MPP_FILL_DOUBLE,MPP_INFO_NULL,MPP_COMM_NULL
   public :: mpp_init_test_full_init, mpp_init_test_init_true_only, mpp_init_test_peset_allocated
   public :: mpp_init_test_clocks_init, mpp_init_test_datatype_list_init, mpp_init_test_logfile_init
   public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
 
   !--- public interface from mpp_util.h ------------------------------
-  public :: stdin, stdout, stderr, stdlog, lowercase, uppercase, mpp_error, mpp_error_state
+  public :: stdin, stdout, stderr, stdlog, warnlog, lowercase, uppercase, mpp_error, mpp_error_state
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_pe
-  public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
+  public :: mpp_npes, mpp_root_pe, mpp_commID, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
@@ -696,9 +696,19 @@ private
   !!                    call mpp_gather(is, ie, js, je, pelist, array_seg, data, is_root_pe)
   !!
   interface mpp_gather
+     module procedure mpp_gather_logical4
+     module procedure mpp_gatherv_logical4
      module procedure mpp_gather_logical_1d
+     module procedure mpp_gather_int4
+     module procedure mpp_gather_int8
+     module procedure mpp_gatherv_int4
+     module procedure mpp_gatherv_int8
      module procedure mpp_gather_int4_1d
      module procedure mpp_gather_int8_1d
+     module procedure mpp_gather_real4
+     module procedure mpp_gather_real8
+     module procedure mpp_gatherv_real4
+     module procedure mpp_gatherv_real8
      module procedure mpp_gather_real4_1d
      module procedure mpp_gather_real8_1d
      module procedure mpp_gather_logical_1dv
@@ -736,12 +746,16 @@ private
   !!                    call mpp_scatter(is, ie, js, je, pelist, segment, data, .true.)
   !!
   interface mpp_scatter
+     module procedure mpp_scatterv_int4
      module procedure mpp_scatter_pelist_int4_2d
      module procedure mpp_scatter_pelist_int4_3d
+     module procedure mpp_scatterv_int8
      module procedure mpp_scatter_pelist_int8_2d
      module procedure mpp_scatter_pelist_int8_3d
+     module procedure mpp_scatterv_real4
      module procedure mpp_scatter_pelist_real4_2d
      module procedure mpp_scatter_pelist_real4_3d
+     module procedure mpp_scatterv_real8
      module procedure mpp_scatter_pelist_real8_2d
      module procedure mpp_scatter_pelist_real8_3d
   end interface
@@ -1273,7 +1287,9 @@ private
   logical              :: mpp_record_timing_data=.TRUE.
   type(clock),save     :: clocks(MAX_CLOCKS)
   integer              :: log_unit, etc_unit
-  character(len=32)    :: configfile='logfile'
+  integer              :: warn_unit !< unit number of the warning log
+  character(len=32), parameter    :: configfile='logfile'
+  character(len=32), parameter    :: warnfile='warnfile' !< base name for warninglog (appends ".<PE>.out")
   integer              :: peset_num=0, current_peset_num=0
   integer              :: world_peset_num                  !<the world communicator
   integer              :: error
@@ -1325,6 +1341,23 @@ private
   integer, parameter :: mpp_init_test_etc_unit = 6
   integer, parameter :: mpp_init_test_requests_allocated = 7
 
+!> MPP_INFO_NULL acts as an analagous mpp-macro for MPI_INFO_NULL to share with fms2_io NetCDF4
+!! mpi-io.  The default value for the no-mpi case comes from Intel MPI and MPICH.  OpenMPI sets
+!! a default value of '0'
+#if defined(use_libMPI)
+  integer, parameter ::  MPP_INFO_NULL = MPI_INFO_NULL
+#else
+  integer, parameter ::  MPP_INFO_NULL = 469762048
+#endif
+
+!> MPP_COMM_NULL acts as an analagous mpp-macro for MPI_COMM_NULL to share with fms2_io NetCDF4
+!! mpi-io.  The default value for the no-mpi case comes from Intel MPI and MPICH.  OpenMPI sets
+!! a default value of '2'
+#if defined(use_libMPI)
+  integer, parameter ::  MPP_COMM_NULL = MPI_COMM_NULL
+#else
+  integer, parameter ::  MPP_COMM_NULL = 67108864
+#endif
 
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)

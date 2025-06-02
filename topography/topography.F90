@@ -51,7 +51,7 @@ use        fms2_io_mod, only: read_data, FmsNetcdfFile_t, file_exists, open_file
 
 use      constants_mod, only: PI
 use            mpp_mod, only: input_nml_file
-use platform_mod,       only: r4_kind, r8_kind
+use platform_mod,       only: r4_kind, r8_kind, FMS_PATH_LEN
 
 implicit none
 private
@@ -217,8 +217,8 @@ end interface determine_ocean_points
 !> @addtogroup topography_mod
 !> @{
 
-character(len=128) :: topog_file = 'DATA/navy_topography.data', &
-                      water_file = 'DATA/navy_pctwater.data'
+character(len=FMS_PATH_LEN) :: topog_file = 'DATA/navy_topography.data', &
+                               water_file = 'DATA/navy_pctwater.data'
 namelist /topography_nml/ topog_file, water_file
 
 integer, parameter    :: TOPOG_INDEX = 1
@@ -343,7 +343,7 @@ end function open_water_file
 !! and initializes constants
 subroutine read_namelist
 
-integer :: unit, ierr, io
+integer :: iunit, ierr, io
 
 !  read namelist
 
@@ -353,8 +353,8 @@ ierr = check_nml_error(io,'topography_nml')
 !  write version and namelist to log file
 
 if (mpp_pe() == mpp_root_pe()) then
-   unit = stdlog()
-   write (unit, nml=topography_nml)
+   iunit = stdlog()
+   write (iunit, nml=topography_nml)
 endif
 
 end subroutine read_namelist

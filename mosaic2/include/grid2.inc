@@ -88,7 +88,7 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
      xgrid_name, & ! name of the variable holding xgrid names
      tile_name,  & ! name of the tile
      mosaic_name ! name of the mosaic
-  character(len=MAX_FILE) :: &
+  character(len=FMS_PATH_LEN) :: &
      tilefile,   & ! name of current tile file
      xgrid_file  ! name of the current xgrid file
   character(len=4096)     :: attvalue
@@ -301,7 +301,7 @@ subroutine GET_GRID_CELL_VERTICES_1D_(component, tile, glonb, glatb)
   integer                      :: nlon, nlat
   integer                      :: start(4), nread(4)
   real(kind=FMS_MOS_KIND_), allocatable :: tmp(:,:), x_vert_t(:,:,:), y_vert_t(:,:,:)
-  character(len=MAX_FILE)      :: tilefile
+  character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
@@ -392,7 +392,7 @@ subroutine GET_GRID_CELL_VERTICES_2D_(component, tile, lonb, latb, domain)
   integer :: i0,j0 ! offsets for coordinates
   integer :: isg, jsg
   integer :: start(4), nread(4)
-  character(len=MAX_FILE)      :: tilefile
+  character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
@@ -581,7 +581,7 @@ subroutine GET_GRID_CELL_CENTERS_1D_(component, tile, glon, glat)
   integer                      :: nlon, nlat
   integer                      :: start(4), nread(4)
   real(kind=FMS_MOS_KIND_), allocatable :: tmp(:,:)
-  character(len=MAX_FILE)      :: tilefile
+  character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
@@ -657,7 +657,7 @@ subroutine GET_GRID_CELL_CENTERS_2D_(component, tile, lon, lat, domain)
   integer :: i0,j0 ! offsets for coordinates
   integer :: isg, jsg
   integer :: start(4), nread(4)
-  character(len=MAX_FILE)      :: tilefile
+  character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)

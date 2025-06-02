@@ -81,8 +81,6 @@ module fms
                              assignment(=), &
                              fms_amip_interp_i_sst        => i_sst, &
                              fms_amip_interp_j_sst        => j_sst, &
-                             fms_amip_interp_sst_ncep     => sst_ncep, &
-                             fms_amip_interp_sst_anom     => sst_anom, &
                              fms_amip_interp_forecast_mode=> forecast_mode, &
                              fms_amip_interp_use_ncep_sst => use_ncep_sst
   !> astronomy
@@ -321,14 +319,6 @@ module fms
                          fms_fm_util_get_real_array => fm_util_get_real_array, &
                          fms_fm_util_get_string_array => fm_util_get_string_array, &
                          fms_fm_util_set_value => fm_util_set_value, &
-                         fms_fm_util_set_value_integer_array => fm_util_set_value_integer_array, &
-                         fms_fm_util_set_value_logical_array => fm_util_set_value_logical_array, &
-                         fms_fm_util_set_value_real_array => fm_util_set_value_real_array, &
-                         fms_fm_util_set_value_string_array => fm_util_set_value_string_array, &
-                         fms_fm_util_set_value_integer => fm_util_set_value_integer, &
-                         fms_fm_util_set_value_logical => fm_util_set_value_logical, &
-                         fms_fm_util_set_value_real => fm_util_set_value_real, &
-                         fms_fm_util_set_value_string => fm_util_set_value_string, &
                          fms_fm_util_get_index_list => fm_util_get_index_list, &
                          fms_fm_util_get_index_string => fm_util_get_index_string, &
                          fms_fm_util_default_caller => fm_util_default_caller
@@ -403,8 +393,8 @@ module fms
 
   !> fms
   !! routines that don't conflict with fms2_io
-  use fms_mod, only: fms_init, fms_end, error_mesg, fms_error_handler, &
-                     check_nml_error, &
+  use fms_mod, only: fms_init, fms_end, fms_error_mesg => error_mesg, fms_error_handler, &
+                     fms_check_nml_error => check_nml_error, &
                      fms_monotonic_array => monotonic_array, fms_string_array_index => string_array_index, &
                      fms_clock_flag_default => clock_flag_default, fms_print_memory_usage => print_memory_usage, &
                      fms_write_version_number => write_version_number
@@ -414,8 +404,7 @@ module fms
                               fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
                               fms_horiz_interp_end => horiz_interp_end
   use horiz_interp_type_mod, only: FmsHorizInterp_type => horiz_interp_type, &
-                              assignment(=), CONSERVE, BILINEAR, SPHERICA, BICUBIC, &
-                              fms_horiz_interp_type_stats => stats
+                              assignment(=), fms_horiz_interp_type_stats => stats
   !! used via horiz_interp
   ! horiz_interp_bicubic_mod, horiz_interp_bilinear_mod
   ! horiz_interp_conserve_mod, horiz_interp_spherical_mod
@@ -743,6 +732,7 @@ module fms
                                   fms_string_utils_sort_this => fms_sort_this, &
                                   fms_string_utils_find_my_string => fms_find_my_string, &
                                   fms_string_utils_find_unique => fms_find_unique, &
+                                  fms_string_utils_f2c_string => fms_f2c_string, &
                                   fms_string_utils_c2f_string => fms_c2f_string, &
                                   fms_string_utils_cstring2cpointer => fms_cstring2cpointer, &
                                   fms_string_utils_copy => string_copy
@@ -802,6 +792,14 @@ module fms
                               fms_time_manager_get_date_no_leap => get_date_no_leap, &
                               fms_time_manager_date_to_string => date_to_string
   use get_cal_time_mod, only: fms_get_cal_time => get_cal_time
+
+  !> generic exchange
+  use gex_mod,          only: fms_gex_init => gex_init, &
+                              fms_gex_get_index => gex_get_index, &
+                              fms_gex_get_n_ex => gex_get_n_ex, &
+                              fms_gex_get_property => gex_get_property, &
+                              fms_gex_name => gex_name, &
+                              fms_gex_units => gex_units
 
   !> topography
   use gaussian_topog_mod, only: fms_gaussian_topog_init => gaussian_topog_init, &

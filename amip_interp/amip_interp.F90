@@ -135,10 +135,11 @@ use           fms_mod, only: error_mesg, write_version_number,  &
                              NOTE, mpp_error, fms_error_handler
 
 use     constants_mod, only: TFREEZE, pi
-use      platform_mod, only: r4_kind, r8_kind, i2_kind
+use      platform_mod, only: r4_kind, r8_kind, i2_kind, FMS_FILE_LEN
 use mpp_mod,           only: input_nml_file
 use fms2_io_mod,       only: FmsNetcdfFile_t, fms2_io_file_exists=>file_exists, open_file, close_file, &
                              get_dimension_size, fms2_io_read_data=>read_data
+use netcdf,            only: NF90_MAX_NAME
 
 implicit none
 private
@@ -155,9 +156,8 @@ integer :: i_sst = 1200
 integer :: j_sst = 600
 real(r8_kind), parameter:: big_number = 1.E30_r8_kind
 logical :: forecast_mode = .false.
-real(r8_kind), allocatable, dimension(:,:) ::  sst_ncep, sst_anom
 
-public i_sst, j_sst, sst_ncep, sst_anom, forecast_mode, use_ncep_sst
+public i_sst, j_sst, forecast_mode, use_ncep_sst
 
 !-----------------------------------------------------------------------
 !--------------------- private below here ------------------------------
@@ -302,9 +302,8 @@ end type amip_interp_type
 
 !  ---- global unit & date ----
 
-   integer, parameter :: maxc = 128
-   integer :: unit
-   character(len=maxc) :: file_name_sst, file_name_ice
+   integer :: iunit
+   character(len=FMS_FILE_LEN) :: file_name_sst, file_name_ice
    type(FmsNetcdfFile_t), target :: fileobj_sst, fileobj_ice
 
    type (date_type) :: Curr_date = date_type( -99, -99, -99 )
@@ -367,7 +366,7 @@ contains
 
  !> initialize @ref amip_interp_mod for use
  subroutine amip_interp_init
-   integer :: unit,io,ierr
+   integer :: iunit,io,ierr
 
 !-----------------------------------------------------------------------
 
@@ -381,9 +380,9 @@ contains
 !  ----- write namelist/version info -----
     call write_version_number("AMIP_INTERP_MOD", version)
 
-    unit = stdlog ( )
+    iunit = stdlog ( )
     if (mpp_pe() == 0) then
-        write (unit,nml=amip_interp_nml)
+        write (iunit,nml=amip_interp_nml)
     endif
 
     if (use_mpp_io) then
@@ -460,14 +459,6 @@ contains
 !--- Added by SJL ----------------------------------------------
         if ( use_ncep_sst ) then
              mobs = i_sst;  nobs = j_sst
-            if (.not. allocated (sst_ncep)) then
-                allocate (sst_ncep(i_sst,j_sst))
-                sst_ncep(:,:) = big_number
-            endif
-            if (.not. allocated (sst_anom)) then
-                allocate (sst_anom(i_sst,j_sst))
-                sst_anom(:,:) = big_number
-            endif
         else
              mobs = 360;    nobs = 180
         endif

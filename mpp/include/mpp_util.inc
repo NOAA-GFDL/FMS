@@ -119,6 +119,35 @@
      end do
   end if
   end subroutine mpp_init_logfile
+
+  !> Opens the warning log file, called during mpp_init
+  subroutine mpp_init_warninglog()
+  logical :: exist
+  character(len=11) :: this_pe
+  if( pe.EQ.root_pe )then
+    write(this_pe,'(a,i6.6,a)') '.',pe,'.out'
+    inquire( file=trim(warnfile)//this_pe, exist=exist )
+    if(exist)then
+      open(newunit=warn_unit, file=trim(warnfile)//this_pe, status='REPLACE' )
+    else
+      open(newunit=warn_unit, file=trim(warnfile)//this_pe, status='NEW' )
+    endif
+  end if
+  end subroutine mpp_init_warninglog
+
+  !> @brief This function returns unit number for the warning log
+  !! if on the root pe, otherwise returns the etc_unit value (usually /dev/null)
+  function warnlog()
+    integer :: warnlog
+    if(.not. module_is_initialized) call mpp_error(FATAL, "mpp_mod: warnlog cannot be called before mpp_init")
+    if(root_pe .eq. pe) then
+      warnlog = warn_unit
+    else
+      warnlog = etc_unit
+    endif
+    return
+  end function warnlog
+
   !#####################################################################
   subroutine mpp_set_warn_level(flag)
     integer, intent(in) :: flag
@@ -156,20 +185,20 @@ subroutine mpp_error_noargs()
 end subroutine mpp_error_noargs
 
 !#####################################################################
-subroutine mpp_error_Is(errortype, errormsg1, value, errormsg2)
+subroutine mpp_error_Is(errortype, errormsg1, mpp_ival, errormsg2)
   integer,          intent(in) :: errortype
-  INTEGER,          intent(in) :: value
+  INTEGER,          intent(in) :: mpp_ival
   character(len=*), intent(in) :: errormsg1
   character(len=*),      intent(in), optional :: errormsg2
-  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+  call mpp_error( errortype, errormsg1, (/mpp_ival/), errormsg2)
 end subroutine mpp_error_Is
 !#####################################################################
-subroutine mpp_error_Rs(errortype, errormsg1, value, errormsg2)
+subroutine mpp_error_Rs(errortype, errormsg1, mpp_rval, errormsg2)
   integer,          intent(in) :: errortype
-  REAL,             intent(in) :: value
+  REAL,             intent(in) :: mpp_rval
   character(len=*), intent(in) :: errormsg1
   character(len=*),      intent(in), optional :: errormsg2
-  call mpp_error( errortype, errormsg1, (/value/), errormsg2)
+  call mpp_error( errortype, errormsg1, (/mpp_rval/), errormsg2)
 end subroutine mpp_error_Rs
 !#####################################################################
 subroutine mpp_error_Ia(errortype, errormsg1, array, errormsg2)
@@ -406,6 +435,15 @@ end function rarray_to_char
   end function mpp_root_pe
 
   !#####################################################################
+  function mpp_commID()
+    integer :: mpp_commID
+
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_COMMID: You must first call mpp_init.' )
+    mpp_commID = peset(current_peset_num)%id
+    return
+  end function mpp_commID
+
+  !#####################################################################
   subroutine mpp_set_root_pe(num)
     integer, intent(in) :: num
 
@@ -428,15 +466,18 @@ end function rarray_to_char
   !!
   !! This call implies synchronization across the PEs in the current
   !! pelist, of which <TT>pelist</TT> is a subset.
-  subroutine mpp_declare_pelist( pelist, name )
-    integer,                    intent(in) :: pelist(:)
-    character(len=*), intent(in), optional :: name
+  subroutine mpp_declare_pelist( pelist, name, commID )
+    integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
+    character(len=*), intent(in), optional :: name      !> unique name for an input pelist
+    integer,         intent(out), optional :: commID    !> return of current MPI comm group communicator ID
     integer :: i
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
     i = get_peset(pelist)
     write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
     if( PRESENT(name) )peset(i)%name = name
+    if( PRESENT(commID) )commID = peset(i)%id
+
     return
   end subroutine mpp_declare_pelist
 
@@ -838,7 +879,7 @@ end function rarray_to_char
     integer           :: SD_UNIT, total_calls
     integer           :: j,k,ct, msg_cnt
     character(len=2)  :: u
-    character(len=20) :: filename
+    character(len=FMS_FILE_LEN) :: filename
     character(len=20),dimension(MAX_BINS),save :: bin
 
     data bin( 1)  /'  0   -    8    B:  '/
@@ -1196,7 +1237,7 @@ end function rarray_to_char
     integer, dimension(2) :: lines_and_length
     logical :: file_exist
     character(len=len(peset(current_peset_num)%name)) :: pelist_name
-    character(len=128) :: filename
+    character(len=FMS_PATH_LEN) :: filename
 
 ! check the status of input_nml_file
     if ( allocated(input_nml_file) ) then
@@ -1357,8 +1398,8 @@ end function rarray_to_char
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Error reading line '//trim(text)// &
                         ' in file '//trim(FILENAME)//'.')
                 end if
-                if ( len_trim(str_tmp) == LENGTH ) then
-                   write(UNIT=text, FMT='(I5)') length
+                if ( len_trim(str_tmp) == LENGTH) then
+                   write(UNIT=text, FMT='(I5)') LENGTH
                    call mpp_error(FATAL, 'get_ascii_file_num_lines: Length of output string ('//trim(text)//&
                                        & ' is too small. Increase the LENGTH value.')
                 end if

@@ -24,11 +24,12 @@
 
 !> @author Ed Hartnett 6/22/20
 program test_domains_simple
+
   use mpp_mod
   use mpp_domains_mod
-
+  use platform_mod
   implicit none
-#include "../../include/fms_platform.h"
+
   integer :: pe, npes     !> This pe and the total number of pes.
   integer :: nx=40, ny=40 !> Size of our 2D domain.
   integer :: layout(2)    !> Layout of our 2D domain.

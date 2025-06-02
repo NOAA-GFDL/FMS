@@ -35,7 +35,7 @@ for p in r4 r8
 do
   cp ${top_srcdir}/test_fms/monin_obukhov/input.${p}.nml input.nml
   test_expect_success "test monin_obukhov_mod (${p})" "mpirun -n 1 ./test_monin_obukhov_${p}"
-  rm input.nml
+  rm -f input.nml
 done
 
 test_done

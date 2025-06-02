@@ -38,7 +38,6 @@ integer              :: int_buffer     !< Buffer to read integers to
 real(kind=r8_kind)   :: r8_buffer      !< Buffer to read r8 to
 
 call fms_init
-call fms_end
 
 diag_yaml_id = open_and_parse_file("diag_table.yaml")
 print *, ""
@@ -113,6 +112,7 @@ do i = 1, nfiles
    print *, ""
 enddo
 deallocate(file_ids)
+call fms_end
 
 #endif
 end program parser_demo

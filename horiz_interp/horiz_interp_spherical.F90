@@ -36,7 +36,7 @@ module horiz_interp_spherical_mod
   use fms_mod,               only : write_version_number
   use fms_mod,               only : check_nml_error
   use constants_mod,         only : pi
-  use horiz_interp_type_mod, only : horiz_interp_type, stats
+  use horiz_interp_type_mod, only : horiz_interp_type, stats, SPHERICAL
 
   implicit none
   private

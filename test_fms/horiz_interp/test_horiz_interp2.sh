@@ -111,13 +111,30 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "bilinear method with real kind=4" '
+test_expect_success "bilinear method with real kind=4 increasing latitude/longitude" '
   mpirun -n 2 ./test_horiz_interp_r4
 '
-test_expect_success "bilinear method with real kind=8" '
+test_expect_success "bilinear method with real kind=8 increasing latitude/longitude" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_bilinear= .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+  decreasing_lat = .true.
+/
+_EOF
+
+test_expect_success "bilinear method with real kind=4 decreasing latitude/longitude" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+test_expect_success "bilinear method with real kind=8 decreasing latitude/longitude" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
 cat <<_EOF > input.nml
 &test_horiz_interp_nml
   test_bilinear= .true.
@@ -129,10 +146,29 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-test_expect_success "bilinear method solo wrapper with real kind=4" '
+test_expect_success "bilinear method solo wrapper with real kind=4 increasing latitude/longitude" '
   mpirun -n 2 ./test_horiz_interp_r4
 '
-test_expect_success "bilinear method solo wrapper with real kind=8" '
+test_expect_success "bilinear method solo wrapper with real kind=8 increasing latitude/longitude" '
+  mpirun -n 2 ./test_horiz_interp_r8
+'
+
+cat <<_EOF > input.nml
+&test_horiz_interp_nml
+  test_bilinear= .true.
+  test_solo = .true.
+  ni_src = 360
+  nj_src = 180
+  ni_dst = 144
+  nj_dst = 72
+  decreasing_lat = .true.
+/
+_EOF
+
+test_expect_success "bilinear method solo wrapper with real kind=4 decreasing latitude/longitude" '
+  mpirun -n 2 ./test_horiz_interp_r4
+'
+test_expect_success "bilinear method solo wrapper with real kind=8 decreasing latitude/longitude" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 

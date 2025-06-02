@@ -641,7 +641,7 @@ contains
     integer, allocatable ::  nps(:)
     real    :: x, y
     real, allocatable :: lons0(:), lats0(:), recvbuf(:,:)
-    real    :: data(drfts%nd+3, drfts%np)
+    real    :: com_data(drfts%nd+3, drfts%np) !communication data
 
     comm    = MPI_COMM_WORLD
     if(present(mycomm)) comm = mycomm
@@ -668,10 +668,10 @@ contains
        if( x <= self%xcmax .and. x >= self%xcmin .and. &
         &  y <= self%ycmax .and. y >= self%ycmin) then
           npf = npf + 1
-          data(1       , npf)   = real(drfts%ids(ip))
-          data(1+1:1+nd, npf)   =      drfts%positions(:, ip)
-          data(    2+nd, npf)   = lons(ip)
-          data(    3+nd, npf)   = lats(ip)
+          com_data(1       , npf)   = real(drfts%ids(ip))
+          com_data(1+1:1+nd, npf)   =      drfts%positions(:, ip)
+          com_data(    2+nd, npf)   = lons(ip)
+          com_data(    3+nd, npf)   = lats(ip)
        endif
     enddo
 
@@ -700,12 +700,12 @@ contains
 
     ! Each PE sends data to recvbuf on root_pe.
 #ifdef _USE_MPI
-    call mpi_gather(         data  ,     npf*(nd+3), MPI_REAL8, &
+    call mpi_gather(         com_data  ,     npf*(nd+3), MPI_REAL8, &
          &                  recvbuf,   npmax*(nd+3), MPI_REAL8, &
          &          root_pe, comm, ier)
     !!if(ier/=0) ermesg = 'drifters_write_restart: ERROR while gathering "data"'
 #else
-    if(npf > 0) call mpp_send(data(1,1), plen=npf*(nd+3), to_pe=root_pe, tag=COMM_TAG_4)
+    if(npf > 0) call mpp_send(com_data(1,1), plen=npf*(nd+3), to_pe=root_pe, tag=COMM_TAG_4)
     if(pe==root_pe) then
        do i = self%pe_beg, self%pe_end
           if(nps(i) > 0) call mpp_recv(recvbuf(1, i), glen=nps(i)*(nd+3), from_pe=i, tag=COMM_TAG_4)

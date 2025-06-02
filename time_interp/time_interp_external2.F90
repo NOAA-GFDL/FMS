@@ -47,7 +47,7 @@ module time_interp_external2_mod
   use mpp_mod, only : mpp_error,FATAL,WARNING,mpp_pe, stdout, stdlog, NOTE
   use mpp_mod, only : input_nml_file, mpp_npes, mpp_root_pe, mpp_broadcast, mpp_get_current_pelist
   use time_manager_mod, only : time_type, get_date, set_date, operator ( >= ) , operator ( + ) , days_in_month, &
-                            operator( - ), operator ( / ) , days_in_year, increment_time, &
+                            operator( - ), operator ( / ), operator ( // ) , days_in_year, increment_time, &
                             set_time, get_time, operator( > ), get_calendar_type, NO_CALENDAR
   use get_cal_time_mod, only : get_cal_time
   use mpp_domains_mod, only : domain2d, mpp_get_compute_domain, mpp_get_data_domain, &
@@ -55,7 +55,7 @@ module time_interp_external2_mod
   use time_interp_mod, only : time_interp, time_interp_init
   use axis_utils2_mod, only : get_axis_cart, get_axis_modulo, get_axis_modulo_times
   use fms_mod, only : lowercase, check_nml_error
-  use platform_mod, only: r8_kind
+  use platform_mod, only: r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
   use horiz_interp_mod, only : horiz_interp, horiz_interp_type
   use fms2_io_mod,      only : Valid_t, FmsNetcdfDomainFile_t, open_file, get_unlimited_dimension_name, &
                                variable_att_exists, FmsNetcdfFile_t, &
@@ -85,6 +85,7 @@ module time_interp_external2_mod
        time_interp_external_exit, get_external_field_size, get_time_axis, get_external_field_missing
   public set_override_region, reset_src_data_region
   public get_external_fileobj
+  public time_interp_external_bridge
 
   private find_buf_index,&
          set_time_modulo
@@ -102,7 +103,7 @@ module time_interp_external2_mod
         type(time_type), dimension(:), pointer :: start_time =>NULL(), end_time =>NULL()
         type(time_type), dimension(:), pointer :: period =>NULL()
         logical :: modulo_time !< denote climatological time axis
-        real(r8_kind), dimension(:,:,:,:), pointer :: data =>NULL() !< defined over data domain or global domain
+        real(r8_kind), dimension(:,:,:,:), pointer :: domain_data =>NULL() !< defined over data domain or global domain
         logical, dimension(:,:,:,:), pointer :: mask =>NULL() !< defined over data domain or global domain
         integer, dimension(:), pointer :: ibuf  =>NULL() !< record numbers associated with buffers
         real(r8_kind), dimension(:,:,:,:), pointer :: src_data  =>NULL() !< input data buffer
@@ -125,7 +126,7 @@ module time_interp_external2_mod
     !> Holds filename and file object
     !> @ingroup time_interp_external2_mod
     type, private :: filetype
-        character(len=128) :: filename = ''
+        character(len=FMS_FILE_LEN) :: filename = ''
         type(FmsNetcdfFile_t), pointer :: fileobj => NULL()
     end type filetype
 
@@ -148,6 +149,15 @@ module time_interp_external2_mod
       module procedure time_interp_external_0d_r8
       module procedure time_interp_external_2d_r8
       module procedure time_interp_external_3d_r8
+  end interface
+
+  interface time_interp_external_bridge
+     module procedure time_interp_external_bridge_0d_r4
+     module procedure time_interp_external_bridge_2d_r4
+     module procedure time_interp_external_bridge_3d_r4
+     module procedure time_interp_external_bridge_0d_r8
+     module procedure time_interp_external_bridge_2d_r8
+     module procedure time_interp_external_bridge_3d_r8
   end interface
 
   !> @addtogroup time_interp_external2_mod
@@ -556,10 +566,10 @@ module time_interp_external2_mod
       allocate(loaded_fields(num_fields)%need_compute(nbuf, numwindows))
       loaded_fields(num_fields)%need_compute = .true.
 
-      allocate(loaded_fields(num_fields)%data(isdata:iedata,jsdata:jedata,siz(3),nbuf),&
+      allocate(loaded_fields(num_fields)%domain_data(isdata:iedata,jsdata:jedata,siz(3),nbuf),&
                loaded_fields(num_fields)%mask(isdata:iedata,jsdata:jedata,siz(3),nbuf) )
       loaded_fields(num_fields)%mask = .false.
-      loaded_fields(num_fields)%data = 0.0_r8_kind
+      loaded_fields(num_fields)%domain_data = 0.0_r8_kind
          slope=1.0_r8_kind;intercept=0.0_r8_kind
 !             if (units /= 'same') call convert_units(trim(field(num_fields)%units),trim(units),slope,intercept)
 !             if (verb.and.units /= 'same') then
@@ -756,9 +766,8 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   integer :: window_id
   real(r8_kind)    :: mask_in(size(field%src_data,1),size(field%src_data,2),size(field%src_data,3))
   real(r8_kind), allocatable :: mask_out(:,:,:)
-  real(r4_kind), allocatable :: hi_tmp_data(:,:,:,:) !< used to hold a copy of field%data if using r4_kind
+  real(r4_kind), allocatable :: hi_tmp_data(:,:,:,:) !< used to hold a copy of field%domain_data if using r4_kind
   real(r4_kind), allocatable :: hi_tmp_msk_out(:,:,:) !< used return the field mask if using r4_kind
-  real(r4_kind), allocatable :: hi_tmp_src_data(:,:,:,:) !< used return the field mask if using r4_kind
 
   window_id = 1
   if( PRESENT(window_id_in) ) window_id = window_id_in
@@ -773,7 +782,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
   else
      ! calculate current buffer number in round-robin fasion
      field%nbuf = field%nbuf + 1
-     if(field%nbuf > size(field%data,4).or.field%nbuf <= 0) field%nbuf = 1
+     if(field%nbuf > size(field%domain_data,4).or.field%nbuf <= 0) field%nbuf = 1
      ib = field%nbuf
      field%ibuf(ib) = rec
      field%need_compute(ib,:) = .true.
@@ -834,30 +843,24 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         if (interp%horizInterpReals4_type%is_allocated) then
             ! allocate (there may be a better way to do this, had issues with gnu)
             allocate(hi_tmp_msk_out(isw:iew,jsw:jew, SIZE(field%src_data,3)))
-            allocate(hi_tmp_data(LBOUND(field%data,1):UBOUND(field%data,1), &
-                                 LBOUND(field%data,2):UBOUND(field%data,2), &
-                                 LBOUND(field%data,3):UBOUND(field%data,3), &
-                                 LBOUND(field%data,4):UBOUND(field%data,4)))
-            allocate(hi_tmp_src_data(LBOUND(field%src_data,1):UBOUND(field%src_data,1), &
-                                     LBOUND(field%src_data,2):UBOUND(field%src_data,2), &
-                                     LBOUND(field%src_data,3):UBOUND(field%src_data,3), &
-                                     LBOUND(field%src_data,4):UBOUND(field%src_data,4)))
-            ! assign if needed
-            hi_tmp_data = real(field%data, r4_kind)
-            hi_tmp_src_data = real(field%src_data, r4_kind)
+            allocate(hi_tmp_data(LBOUND(field%domain_data,1):UBOUND(field%domain_data,1), &
+                                 LBOUND(field%domain_data,2):UBOUND(field%domain_data,2), &
+                                 LBOUND(field%domain_data,3):UBOUND(field%domain_data,3), &
+                                 LBOUND(field%domain_data,4):UBOUND(field%domain_data,4)))
+            ! copy over to r4
+            hi_tmp_data = real(field%domain_data, r4_kind)
             ! do interpolation
-            call horiz_interp(interp, hi_tmp_src_data(:,:,:,ib), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
+            call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
                               mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
             ! assign any output
-            field%data = real(hi_tmp_data, r8_kind)
+            field%domain_data = real(hi_tmp_data, r8_kind)
             field%mask(isw:iew,jsw:jew,:,ib) = hi_tmp_msk_out(isw:iew,jsw:jew,:) > 0.0_r4_kind
 
             if(allocated(hi_tmp_data))     deallocate(hi_tmp_data)
             if(allocated(hi_tmp_msk_out))  deallocate(hi_tmp_msk_out)
-            if(allocated(hi_tmp_src_data)) deallocate(hi_tmp_src_data)
         else
             allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
-            call horiz_interp(interp, field%src_data(:,:,:,ib),field%data(isw:iew,jsw:jew,:,ib), &
+            call horiz_interp(interp, field%src_data(:,:,:,ib),field%domain_data(isw:iew,jsw:jew,:,ib), &
                               mask_in=mask_in, &
                               mask_out=mask_out)
             field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0.0_r8_kind
@@ -868,12 +871,12 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         if ( field%region_type .NE. NO_REGION ) then
            call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when interp is not present")
         endif
-        field%data(isw:iew,jsw:jew,:,ib) = field%src_data(isw:iew,jsw:jew,:,ib)
-        field%mask(isw:iew,jsw:jew,:,ib) = is_valid(field%data(isw:iew,jsw:jew,:,ib),field%valid)
+        field%domain_data(isw:iew,jsw:jew,:,ib) = field%src_data(isw:iew,jsw:jew,:,ib)
+        field%mask(isw:iew,jsw:jew,:,ib) = is_valid(field%domain_data(isw:iew,jsw:jew,:,ib),field%valid)
      endif
      ! convert units
-     where(field%mask(isw:iew,jsw:jew,:,ib)) field%data(isw:iew,jsw:jew,:,ib) = &
-          field%data(isw:iew,jsw:jew,:,ib)*field%slope + field%intercept
+     where(field%mask(isw:iew,jsw:jew,:,ib)) field%domain_data(isw:iew,jsw:jew,:,ib) = &
+          field%domain_data(isw:iew,jsw:jew,:,ib)*field%slope + field%intercept
      field%need_compute(ib, window_id) = .false.
 
   endif
@@ -895,7 +898,7 @@ subroutine load_record_0d(field, rec)
   else
      ! calculate current buffer number in round-robin fasion
      field%nbuf = field%nbuf + 1
-     if(field%nbuf > size(field%data,4).or.field%nbuf <= 0) field%nbuf = 1
+     if(field%nbuf > size(field%domain_data,4).or.field%nbuf <= 0) field%nbuf = 1
      ib = field%nbuf
      field%ibuf(ib) = rec
 
@@ -907,11 +910,11 @@ subroutine load_record_0d(field, rec)
      if ( field%region_type .NE. NO_REGION ) then
         call mpp_error(FATAL, "time_interp_external: region_type should be NO_REGION when field is scalar")
      endif
-     field%data(1,1,:,ib) = field%src_data(1,1,:,ib)
-     field%mask(1,1,:,ib) = is_valid(field%data(1,1,:,ib),field%valid)
+     field%domain_data(1,1,:,ib) = field%src_data(1,1,:,ib)
+     field%mask(1,1,:,ib) = is_valid(field%domain_data(1,1,:,ib),field%valid)
      ! convert units
-     where(field%mask(1,1,:,ib)) field%data(1,1,:,ib) = &
-          field%data(1,1,:,ib)*field%slope + field%intercept
+     where(field%mask(1,1,:,ib)) field%domain_data(1,1,:,ib) = &
+          field%domain_data(1,1,:,ib)*field%slope + field%intercept
   endif
 
 end subroutine load_record_0d
@@ -1005,7 +1008,7 @@ subroutine realloc_fields(n)
      if (ASSOCIATED(ptr(i)%end_time))   DEALLOCATE(ptr(i)%end_time, stat=ier)
      if (ASSOCIATED(ptr(i)%period)) DEALLOCATE(ptr(i)%period, stat=ier)
      ptr(i)%modulo_time=.false.
-     if (ASSOCIATED(ptr(i)%data)) DEALLOCATE(ptr(i)%data, stat=ier)
+     if (ASSOCIATED(ptr(i)%domain_data)) DEALLOCATE(ptr(i)%domain_data, stat=ier)
      if (ASSOCIATED(ptr(i)%ibuf)) DEALLOCATE(ptr(i)%ibuf, stat=ier)
      if (ASSOCIATED(ptr(i)%src_data)) DEALLOCATE(ptr(i)%src_data, stat=ier)
      ptr(i)%nbuf=-1
@@ -1103,7 +1106,7 @@ subroutine time_interp_external_exit()
     !
     do i=1,num_fields
         deallocate(loaded_fields(i)%time,loaded_fields(i)%start_time,loaded_fields(i)%end_time,&
-                   loaded_fields(i)%period,loaded_fields(i)%data,loaded_fields(i)%mask,loaded_fields(i)%ibuf)
+                   loaded_fields(i)%period,loaded_fields(i)%domain_data,loaded_fields(i)%mask,loaded_fields(i)%ibuf)
         if (ASSOCIATED(loaded_fields(i)%src_data)) deallocate(loaded_fields(i)%src_data)
         loaded_fields(i)%domain = NULL_DOMAIN2D
         loaded_fields(i)%nbuf = 0
@@ -1128,6 +1131,9 @@ end subroutine time_interp_external_exit
 
 #include "time_interp_external2_r4.fh"
 #include "time_interp_external2_r8.fh"
+
+#include "time_interp_external2_bridge_r4.fh"
+#include "time_interp_external2_bridge_r8.fh"
 
 end module time_interp_external2_mod
 !> @}

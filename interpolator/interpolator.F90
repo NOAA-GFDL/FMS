@@ -63,9 +63,12 @@ use horiz_interp_mod,  only : horiz_interp_type, &
 use time_manager_mod,  only : time_type,   &
                               set_time,    &
                               set_date,    &
-                              get_date,    &
+                              time_type_to_real, &
+                              days_in_year, &
                               get_calendar_type, &
+                              leap_year, &
                               JULIAN, NOLEAP, &
+                              get_date, &
                               get_date_julian, set_date_no_leap, &
                               set_date_julian, get_date_no_leap, &
                               print_date, &
@@ -78,7 +81,7 @@ use time_manager_mod,  only : time_type,   &
                               decrement_time
 use time_interp_mod,   only : time_interp, YEAR
 use constants_mod,     only : grav, PI, SECONDS_PER_DAY
-use platform_mod,      only : r4_kind, r8_kind, r16_kind
+use platform_mod,      only : r4_kind, r8_kind, r16_kind, FMS_PATH_LEN, FMS_FILE_LEN
 
 !--------------------------------------------------------------------
 
@@ -254,7 +257,7 @@ real(r4_kind), allocatable :: latb(:)              !< No description
 real(r4_kind), allocatable :: lonb(:)              !< No description
 real(r4_kind), allocatable :: levs(:)              !< No description
 real(r4_kind), allocatable :: halflevs(:)          !< No description
-real(r4_kind), allocatable :: data(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
+real(r4_kind), allocatable :: data5d(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
 real(r4_kind), allocatable :: pmon_pyear(:,:,:,:)           !< No description
 real(r4_kind), allocatable :: pmon_nyear(:,:,:,:)           !< No description
 real(r4_kind), allocatable :: nmon_nyear(:,:,:,:)           !< No description
@@ -273,7 +276,7 @@ real(r8_kind), allocatable :: latb(:)              !< No description
 real(r8_kind), allocatable :: lonb(:)              !< No description
 real(r8_kind), allocatable :: levs(:)              !< No description
 real(r8_kind), allocatable :: halflevs(:)          !< No description
-real(r8_kind), allocatable :: data(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
+real(r8_kind), allocatable :: data5d(:,:,:,:,:)  !< (nlatmod,nlonmod,nlevclim,size(time_init,2),nfields)
 real(r8_kind), allocatable :: pmon_pyear(:,:,:,:)           !< No description
 real(r8_kind), allocatable :: pmon_nyear(:,:,:,:)           !< No description
 real(r8_kind), allocatable :: nmon_nyear(:,:,:,:)           !< No description
@@ -293,7 +296,7 @@ type(interpolate_r8_type) :: r8_type
 type(horiz_interp_type)  :: interph                         !< No description
 type(time_type), allocatable :: time_slice(:) !< An array of the times within the climatology.
 type(FmsNetcdfFile_t)    :: fileobj       ! object that stores opened file information
-character(len=64)        :: file_name     !< Climatology filename
+character(len=FMS_PATH_LEN) :: file_name     !< Climatology filename
 integer                  :: TIME_FLAG     !< Linear or seaonal interpolation?
 integer                  :: level_type    !< Pressure or Sigma level
 integer                  :: is,ie,js,je       !< No description
@@ -435,8 +438,8 @@ type(interpolate_type), intent(inout) :: Out
 
      Out%interph = In%interph
      if (allocated(In%time_slice)) Out%time_slice =  In%time_slice
-     Out%file_name = In%file_name
-     Out%time_flag = In%time_flag
+     Out%file_name  = In%file_name
+     Out%time_flag  = In%time_flag
      Out%level_type = In%level_type
      Out%is = In%is
      Out%ie = In%ie
@@ -451,13 +454,13 @@ type(interpolate_type), intent(inout) :: Out
      if (allocated(In%out_of_bounds)) Out%out_of_bounds =  In%out_of_bounds
      if (allocated(In%vert_interp  )) Out%vert_interp   =  In%vert_interp
      if(In%r4_type%is_allocated) then
-        if (allocated(In%r4_type%data         )) Out%r4_type%data          =  In%r4_type%data
+        if (allocated(In%r4_type%data5d       )) Out%r4_type%data5d        =  In%r4_type%data5d
         if (allocated(In%r4_type%pmon_pyear   )) Out%r4_type%pmon_pyear    =  In%r4_type%pmon_pyear
         if (allocated(In%r4_type%pmon_nyear   )) Out%r4_type%pmon_nyear    =  In%r4_type%pmon_nyear
         if (allocated(In%r4_type%nmon_nyear   )) Out%r4_type%nmon_nyear    =  In%r4_type%nmon_nyear
         if (allocated(In%r4_type%nmon_pyear   )) Out%r4_type%nmon_pyear    =  In%r4_type%nmon_pyear
      else if(In%r8_type%is_allocated) then
-        if (allocated(In%r8_type%data         )) Out%r8_type%data          =  In%r8_type%data
+        if (allocated(In%r8_type%data5d       )) Out%r8_type%data5d        =  In%r8_type%data5d
         if (allocated(In%r8_type%pmon_pyear   )) Out%r8_type%pmon_pyear    =  In%r8_type%pmon_pyear
         if (allocated(In%r8_type%pmon_nyear   )) Out%r8_type%pmon_nyear    =  In%r8_type%pmon_nyear
         if (allocated(In%r8_type%nmon_nyear   )) Out%r8_type%nmon_nyear    =  In%r8_type%nmon_nyear
@@ -668,7 +671,7 @@ if(clim_type%r4_type%is_allocated) then
    if (allocated (clim_type%r4_type%lonb    )) deallocate(clim_type%r4_type%lonb)
    if (allocated (clim_type%r4_type%levs    )) deallocate(clim_type%r4_type%levs)
    if (allocated (clim_type%r4_type%halflevs)) deallocate(clim_type%r4_type%halflevs)
-   if (allocated (clim_type%r4_type%data))     deallocate(clim_type%r4_type%data)
+   if (allocated (clim_type%r4_type%data5d  )) deallocate(clim_type%r4_type%data5d)
 else if(clim_type%r8_type%is_allocated) then
    if (allocated (clim_type%r8_type%lat     )) deallocate(clim_type%r8_type%lat)
    if (allocated (clim_type%r8_type%lon     )) deallocate(clim_type%r8_type%lon)
@@ -676,7 +679,7 @@ else if(clim_type%r8_type%is_allocated) then
    if (allocated (clim_type%r8_type%lonb    )) deallocate(clim_type%r8_type%lonb)
    if (allocated (clim_type%r8_type%levs    )) deallocate(clim_type%r8_type%levs)
    if (allocated (clim_type%r8_type%halflevs)) deallocate(clim_type%r8_type%halflevs)
-   if (allocated (clim_type%r8_type%data))     deallocate(clim_type%r8_type%data)
+   if (allocated (clim_type%r8_type%data5d))   deallocate(clim_type%r8_type%data5d)
 end if
 
 if (allocated (clim_type%time_slice)) deallocate(clim_type%time_slice)
@@ -708,18 +711,14 @@ else if(clim_type%r8_type%is_allocated) then
       deallocate(clim_type%r8_type%nmon_pyear)
    end if
 endif
-if (allocated(clim_type%indexm)) deallocate(clim_type%indexm)
-if (allocated(clim_type%indexp)) deallocate(clim_type%indexp)
-if (allocated(clim_type%climatology)) deallocate(clim_type%climatology)
-if (allocated(clim_type%clim_times)) deallocate(clim_type%clim_times)
 
 clim_type%r4_type%is_allocated=.false.
 clim_type%r8_type%is_allocated=.false.
 
 !! RSH mod
-if(  .not. (clim_type%TIME_FLAG .eq. LINEAR  .and.    &
+if( .not.(clim_type%TIME_FLAG .eq. LINEAR  .and. read_all_on_init) &
+   .and. (clim_type%TIME_FLAG.ne.NOTIME) ) then
 !     read_all_on_init)) .or. clim_type%TIME_FLAG .eq. BILINEAR  ) then
-      read_all_on_init)  ) then
      call close_file(clim_type%fileobj)
 endif
 

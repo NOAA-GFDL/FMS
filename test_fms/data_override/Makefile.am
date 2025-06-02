@@ -23,26 +23,29 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(MODDIR)
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include -I$(top_srcdir)/test_fms/data_override/include
 
 # Link to the FMS library.
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build this test program.
 check_PROGRAMS = \
+  test_data_override_init \
   test_get_grid_v1_r4 \
   test_get_grid_v1_r8 \
   test_data_override_r4 \
   test_data_override_r8 \
-  test_data_override_ongrid_r4 \
-  test_data_override_ongrid_r8
+  test_data_override_ongrid
 
 # This is the source code for the test.
+test_data_override_init_SOURCES = test_data_override_init.F90
 test_data_override_r4_SOURCES = test_data_override.F90
 test_data_override_r8_SOURCES = test_data_override.F90
 
-test_data_override_ongrid_r4_SOURCES = test_data_override_ongrid.F90
-test_data_override_ongrid_r8_SOURCES = test_data_override_ongrid.F90
+test_data_override_ongrid_SOURCES = test_data_override_ongrid.F90 \
+				    include/test_data_override_ongrid.inc \
+				    include/test_data_override_ongrid_r4.fh \
+				    include/test_data_override_ongrid_r8.fh
 
 test_get_grid_v1_r4_SOURCES = test_get_grid_v1.F90
 test_get_grid_v1_r8_SOURCES = test_get_grid_v1.F90
@@ -50,16 +53,13 @@ test_get_grid_v1_r8_SOURCES = test_get_grid_v1.F90
 test_data_override_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
 test_data_override_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 
-test_data_override_ongrid_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
-test_data_override_ongrid_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
-
 test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
 test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
 
-if SKIP_PARSER_TESTS
-skipflag="skip"
-else
+if USING_YAML
 skipflag=""
+else
+skipflag="skip"
 endif
 
 TEST_EXTENSIONS = .sh
@@ -69,10 +69,13 @@ TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@" \
                    parser_skip=${skipflag}
 
 # Run the test program.
-TESTS = test_data_override2.sh
+
+TESTS = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
+        test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh
 
 # Include these files with the distribution.
-EXTRA_DIST = test_data_override2.sh
+EXTRA_DIST = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
+             test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*

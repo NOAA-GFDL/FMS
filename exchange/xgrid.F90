@@ -129,7 +129,7 @@ use gradient_mod,        only: gradient_cubic
 use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
 use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
 use fms2_io_mod,         only: get_variable_units, dimension_exists
-use platform_mod,        only: r8_kind, i8_kind
+use platform_mod,        only: r8_kind, i8_kind, FMS_FILE_LEN
 
 implicit none
 private
@@ -147,7 +147,7 @@ integer, parameter :: FIRST_ORDER        = 1
 integer, parameter :: SECOND_ORDER       = 2
 integer, parameter :: VERSION1           = 1 !< grid spec file
 integer, parameter :: VERSION2           = 2 !< mosaic grid file
-integer, parameter :: MAX_FIELDS         = 80
+integer, parameter :: MAX_FIELDS         = 100
 
 logical :: make_exchange_reproduce = .false. !< Set to .true. to make <TT>xgrid_mod</TT> reproduce answers on different
                                              !! numbers of PEs.  This option has a considerable performance impact.
@@ -523,7 +523,7 @@ subroutine xgrid_init(remap_method)
   integer, intent(out) :: remap_method !< exchange grid interpolation method. It has four possible values:
                                        !! FIRST_ORDER (=1), SECOND_ORDER(=2).
 
-  integer :: unit, ierr, io, out_unit
+  integer :: iunit, ierr, io, out_unit
 
   if (module_is_initialized) return
   module_is_initialized = .TRUE.
@@ -534,9 +534,9 @@ subroutine xgrid_init(remap_method)
 !--------- write version number and namelist ------------------
   call write_version_number("XGRID_MOD", version)
 
-  unit = stdlog ( )
+  iunit = stdlog ( )
   out_unit = stdout()
-  if ( mpp_pe() == mpp_root_pe() ) write (unit,nml=xgrid_nml)
+  if ( mpp_pe() == mpp_root_pe() ) write (iunit,nml=xgrid_nml)
 
   if (use_mpp_io) then
           ! FATAL error if trying to use mpp_io
@@ -1457,18 +1457,18 @@ end subroutine get_grid_version2
 
 !#######################################################################
 !> @brief Read the area elements from NetCDF file
-subroutine get_area_elements_fms2_io(fileobj, name, data)
+subroutine get_area_elements_fms2_io(fileobj, name, get_area_data)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj
   character(len=*), intent(in)            :: name
-  real(r8_kind), intent(out)              :: data(:,:)
+  real(r8_kind), intent(out)              :: get_area_data(:,:)
 
   if(variable_exists(fileobj, name)) then
-     call read_data(fileobj, name, data)
+     call read_data(fileobj, name, get_area_data)
   else
      call error_mesg('xgrid_mod', 'no field named '//trim(name)//' in grid file '//trim(fileobj%path)// &
                      ' Will set data to negative values...', NOTE)
      ! area elements no present in grid_spec file, set to negative values....
-     data = -1.0_r8_kind
+     get_area_data = -1.0_r8_kind
   endif
 
 end subroutine get_area_elements_fms2_io
@@ -1514,7 +1514,7 @@ end subroutine get_ocean_model_area_elements
 !> @brief Sets up exchange grid connectivity using grid specification file and
 !!      processor domain decomposition.
 subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_domain)
-  type (xmap_type),                        intent(inout) :: xmap
+  type(xmap_type),                         intent(inout) :: xmap
   character(len=3), dimension(:),            intent(in ) :: grid_ids
   type(Domain2d),   dimension(:),            intent(in ) :: grid_domains
   character(len=*),                          intent(in ) :: grid_file
@@ -1524,16 +1524,18 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   integer :: g, p, i
   integer :: nxgrid_file, i1, i2, i3, tile1, tile2, j
   integer :: nxc, nyc, out_unit
-  type (grid_type), pointer, save              :: grid =>NULL(), grid1 =>NULL()
+  type(grid_type), pointer :: grid => NULL()!< pointer to loop through grid_type's in list
+  type(grid_type), pointer, save :: grid1 => NULL() !< saved pointer to the first grid in the list
   real(r8_kind), dimension(3)                  :: xxx
   real(r8_kind), dimension(:,:),   allocatable :: check_data
   real(r8_kind), dimension(:,:,:), allocatable :: check_data_3D
   real(r8_kind),                   allocatable :: tmp_2d(:,:), tmp_3d(:,:,:)
-  character(len=256)                           :: xgrid_file, xgrid_name, xgrid_dimname
-  character(len=256)                           :: tile_file, mosaic_file
-  character(len=256)                           :: mosaic1, mosaic2, contact
+  character(len=FMS_FILE_LEN)                  :: xgrid_file, xgrid_name
+  character(len=FMS_FILE_LEN)                  :: tile_file, mosaic_file
+  character(len=256)                           :: mosaic1, mosaic2, contact, xgrid_dimname
   character(len=256)                           :: tile1_name, tile2_name
-  character(len=256),              allocatable :: tile1_list(:), tile2_list(:), xgrid_filelist(:)
+  character(len=256),              allocatable :: tile1_list(:), tile2_list(:)
+  character(len=FMS_FILE_LEN), allocatable     :: xgrid_filelist(:)
   integer                                      :: npes, npes2
   integer,                         allocatable :: pelist(:)
   type(domain2d), save                         :: domain2
@@ -1541,6 +1543,8 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   integer                                      :: lnd_ug_id, l
   integer,                         allocatable :: grid_index(:)
   type(FmsNetcdfFile_t)                        :: gridfileobj, mosaicfileobj, fileobj
+  type(grid_type), allocatable, target         :: grids_tmp(:) !< added for nvhpc workaround, stores xmap's
+                                                               !! grid_type array so we can safely point to it
 
   call mpp_clock_begin(id_setup_xmap)
 
@@ -1593,9 +1597,17 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   endif
 
   call mpp_clock_begin(id_load_xgrid)
-  do g=1,size(grid_ids(:))
-     grid => xmap%grids(g)
-     if (g==1) grid1 => xmap%grids(g)
+
+  ! nvhpc compiler workaround
+  ! saves grid array as an allocatable and points to that to avoid error from pointing to xmap%grids in loop
+  grids_tmp = xmap%grids
+
+  grid1 => xmap%grids(1)
+
+  do g=1, size(grid_ids(:))
+
+     grid => grids_tmp(g)
+
      grid%id     = grid_ids    (g)
      grid%domain = grid_domains(g)
      grid%on_this_pe = mpp_domain_is_initialized(grid_domains(g))
@@ -1855,6 +1867,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            grid%frac_area = 1.0_r8_kind
         endif
 
+        ! nvhpc workaround, needs to save the grid pointer since its allocatable
+        xmap%grids(g) = grid
+
         ! load exchange cells, sum grid cell areas, set your1my2/your2my1
         select case(xmap%version)
         case(VERSION1)
@@ -1960,6 +1975,9 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
            where (grid%area>0.0_r8_kind) grid%area_inv = 1.0_r8_kind/grid%area
         endif
      end if
+
+     ! nvhpc workaround, needs to save the grid pointer since its allocatable
+     xmap%grids(g) = grid
   end do
 
   if(xmap%version == VERSION2) call close_file(gridfileobj)
@@ -2899,6 +2917,25 @@ end subroutine set_comm_put1
 
 
 !###############################################################################
+!> @brief Regenerate/Update the xmap
+!! @details This subroutine basically regenerates the exchange grid via updating the xmap.
+!! Practically xmap is the object specifying the exchange grid and has all the relevant information of Xgrid.
+!! Particularly note that regenerating the xmap/Xgrid accounts for dynamical changes of the subgrid parametrization
+!! of the side 2 components (land and ice-ocean).
+!! E.g., for when side 2 is the ice , the xgrid is regenrated so that
+!! OCN grid cells that are partially or totally open water contribute to (are side2 parent of) the Xgrid
+!! and conversely
+!! OCN grid cells that are totally ice covered do not contribute to (are kicked out of) the Xgrid.
+!! This makes xmap a dynamical object and a powerful tool for flux exchange calculations.
+!!
+!! Things to keep in mind about xmap/xgrid:
+!! xgrid contains two sides:
+!!   side1: This is the side where 2d arrays are put to and get from the Xgrid
+!!   side2: This is the side where 3d arrays are put to and get from the Xgrid.
+!!          This was designed to enable exchange along sub-grid-scale (3rd dimension) for component models that have
+!!          subgrid scale parametrization (e.g., seaice categories and land tiles).
+!! @param[inout] xmap exchange grid
+!!
 subroutine regen(xmap)
 type (xmap_type), intent(inout) :: xmap
 
@@ -3105,8 +3142,33 @@ type (xmap_type), intent(inout) :: xmap
 end subroutine regen
 
 !#######################################################################
-
 !> @brief Changes sub-grid portion areas and/or number.
+!! @details (re)sets the "fraction area" of the side 2 component grid cell.
+!!  "fraction area" is a dynamic property of the component model (seaice or land)
+!!  that needs to be updated after each timestep of that component in order for the exhange mechanism to work properly.
+!!  The input is a 3d array of numbers between 0 and 1. It signifies the
+!!  fraction of the component grid cell area which has a model-specific property.
+!!  This property is used for some sub-grid scale parametrization in the component model.
+!!  E.g., for the seaice component model, the quantity of seaice in each grid cell (i,j)
+!!  is distibuted into N=grid%km partitions (ice categories) each parametrized with a weight (part_size) that add to 1.
+!!  E.g., for 6+2 thickness (h) categories used in GFDL seaice models we have
+!!  given  hlim(1, ..., 8) = [1.0e-10, 0.1, 0.3, 0.7, 1.1, 1.5, 2.0, 2.5] (meters)
+!!  Caterory n=1     : h <= hlim(1), essentially no ice
+!!  Caterory n=2...7 : hlim(n-1) < h <= hlim(n)
+!!  Caterory n=8     : hlim(n-1) < h   , unlimimitted ice thickness
+!!  E.g., if seaice in grid cell (i,j) is parameterized as
+!!        10 % open water, 0% category 1, 40% category 2 , 50% category 3 then we have
+!!  f(i,j,1:km) = part_size(i,j,1:8) = [0.1, 0.0, 0.4, 0.5, 0.0, 0.0, 0.0, 0.0]
+!!
+!! @param[in] f real(r8_kind) 3D array
+!! @param[in] grid_id 3 character grid ID
+!! @param[inout] xmap exchange grid
+!!
+!! <br>Example usage:
+!! @code{.F90}
+!! call fms_xgrid_set_frac_area (Ice%part_size(isc:iec,jsc:jec,:) , 'OCN', xmap_sfc)
+!! @endcode
+!!
 subroutine set_frac_area_sg(f, grid_id, xmap)
 real(r8_kind), dimension(:,:,:), intent(in)    :: f !< fraction area to be set
 character(len=3),                intent(in)    :: grid_id !< 3 character grid ID
@@ -3284,7 +3346,7 @@ type (xmap_type),                intent(inout) :: xmap !< exchange grid
 
   if (grid_id==xmap%grids(1)%id) &
     call error_mesg ('xgrid_mod',  &
-                     'put_to_xgrid expects a 2D side 1 grid', FATAL)
+                     'put_side2_to_xgrid expects a 3D side 2 grid', FATAL)
 
   do g=2,size(xmap%grids(:))
     if (grid_id==xmap%grids(g)%id) then
@@ -4418,7 +4480,7 @@ end subroutine get_index_range
 !!   first grid, which typically is on the atmos side.
 !!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
 !!   if these are present.
-subroutine stock_move_3d(from, to, grid_index, data, xmap, &
+subroutine stock_move_3d(from, to, grid_index, stock_data3d, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
   ! this version takes rank 3 data, it can be used to compute the flux on anything but the
@@ -4431,7 +4493,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer,          intent(in)              :: grid_index        !< grid index
-  real(r8_kind),    intent(in)              :: data(:,:,:)  !< data array is 3d
+  real(r8_kind),    intent(in)              :: stock_data3d(:,:,:)  !< data array is 3d
   type(xmap_type),  intent(in)              :: xmap
   real(r8_kind),    intent(in)              :: delta_t
   integer,          intent(in)              :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
@@ -4455,7 +4517,7 @@ subroutine stock_move_3d(from, to, grid_index, data, xmap, &
   endif
 
      from_dq = delta_t * 4.0_r8_kind * PI * radius**2 * sum( sum(xmap%grids(grid_index)%area * &
-          & sum(xmap%grids(grid_index)%frac_area * data, DIM=3), DIM=1))
+          & sum(xmap%grids(grid_index)%frac_area * stock_data3d, DIM=3), DIM=1))
      to_dq = from_dq
 
   ! update only if argument is present.
@@ -4478,7 +4540,7 @@ end subroutine stock_move_3d
 !> @brief this version takes rank 2 data, it can be used to compute the flux on the atmos side
 !!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
 !!   if these are present.
-subroutine stock_move_2d(from, to, grid_index, data, xmap, &
+subroutine stock_move_2d(from, to, grid_index, stock_data2d, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
   ! this version takes rank 2 data, it can be used to compute the flux on the atmos side
@@ -4490,7 +4552,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
 
   type(stock_type),  intent(inout), optional :: from, to
   integer, optional, intent(in)              :: grid_index
-  real(r8_kind),     intent(in)              :: data(:,:)    !< data array is 2d
+  real(r8_kind),     intent(in)              :: stock_data2d(:,:)    !< data array is 2d
   type(xmap_type),   intent(in)              :: xmap
   real(r8_kind),     intent(in)              :: delta_t
   integer,           intent(in)              :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
@@ -4511,7 +4573,7 @@ subroutine stock_move_2d(from, to, grid_index, data, xmap, &
   if( .not. present(grid_index) .or. grid_index==1 ) then
 
      ! only makes sense if grid_index == 1
-     from_dq = delta_t * 4.0_r8_kind*PI*radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+     from_dq = delta_t * 4.0_r8_kind*PI*radius**2 * sum(sum(xmap%grids(1)%area * stock_data2d, DIM=1))
      to_dq = from_dq
 
   else
@@ -4542,7 +4604,7 @@ end subroutine stock_move_2d
 !!   first grid, which typically is on the atmos side.
 !!   note that "from" and "to" are optional, the stocks will be subtracted, resp. added, only
 !!   if these are present.
-subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
+subroutine stock_move_ug_3d(from, to, grid_index, stock_ug_data3d, xmap, &
      & delta_t, from_side, to_side, radius, verbose, ier)
 
   ! this version takes rank 3 data, it can be used to compute the flux on anything but the
@@ -4555,7 +4617,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
 
   type(stock_type), intent(inout), optional :: from, to
   integer,          intent(in)              :: grid_index        !< grid index
-  real(r8_kind),    intent(in)              :: data(:,:)  !< data array is 3d
+  real(r8_kind),    intent(in)              :: stock_ug_data3d(:,:)  !< data array is 3d
   type(xmap_type),  intent(in)              :: xmap
   real(r8_kind),    intent(in)              :: delta_t
   integer,          intent(in)              :: from_side !< ISTOCK_TOP, ISTOCK_BOTTOM, or ISTOCK_SIDE
@@ -4563,7 +4625,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
   real(r8_kind),    intent(in)              :: radius       !< earth radius
   character(len=*), intent(in), optional    :: verbose
   integer,          intent(out)             :: ier
-  real(r8_kind), dimension(size(data,1),size(data,2)) :: tmp
+  real(r8_kind), dimension(size(stock_ug_data3d,1),size(stock_ug_data3d,2)) :: tmp
 
   real(r8_kind)                                       :: from_dq, to_dq
 
@@ -4579,7 +4641,7 @@ subroutine stock_move_ug_3d(from, to, grid_index, data, xmap, &
      return
   endif
 
-     tmp = xmap%grids(grid_index)%frac_area(:,1,:) * data
+     tmp = xmap%grids(grid_index)%frac_area(:,1,:) * stock_ug_data3d
      from_dq = delta_t * 4.0_r8_kind * PI * radius**2 * sum( xmap%grids(grid_index)%area(:,1) * &
           & sum(tmp, DIM=2))
      to_dq = from_dq
@@ -4604,13 +4666,13 @@ end subroutine stock_move_ug_3d
 
 !#######################################################################
 !> @brief surface/time integral of a 2d array
-subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
+subroutine stock_integrate_2d(integrate_data2d, xmap, delta_t, radius, res, ier)
 
   ! surface/time integral of a 2d array
 
   use mpp_mod, only : mpp_sum
 
-  real(r8_kind),   intent(in)   :: data(:,:)    !< data array is 2d
+  real(r8_kind),   intent(in)   :: integrate_data2d(:,:)    !< data array is 2d
   type(xmap_type), intent(in)   :: xmap
   real(r8_kind),   intent(in)   :: delta_t
   real(r8_kind),   intent(in)   :: radius       !< earth radius
@@ -4625,7 +4687,7 @@ subroutine stock_integrate_2d(data, xmap, delta_t, radius, res, ier)
      return
   endif
 
-  res = delta_t * 4.0_r8_kind * PI * radius**2 * sum(sum(xmap%grids(1)%area * data, DIM=1))
+  res = delta_t * 4.0_r8_kind * PI * radius**2 * sum(sum(xmap%grids(1)%area * integrate_data2d, DIM=1))
 
 end subroutine stock_integrate_2d
 !#######################################################################
