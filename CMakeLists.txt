@@ -296,7 +296,7 @@ foreach(kind ${kinds})
   add_library(${libTgt}_c OBJECT ${fms_c_src_files})
 
   target_include_directories(${libTgt}_c PRIVATE include
-                                                   grid_utils)
+                                                 grid_utils)
   target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
   target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
                                             MPI::MPI_C)
