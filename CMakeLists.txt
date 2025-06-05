@@ -284,13 +284,8 @@ endif()
 # Obtain compiler-specific flags
 include(fms_compiler_flags)
 
-# Determine if netCDF was built with HDF5 parallel I/O features
-try_compile(NF_HAS_PARALLEL4 ${CMAKE_CURRENT_BINARY_DIR}
-  "${CMAKE_CURRENT_SOURCE_DIR}/m4/check_parallel4.c"
-  )
-
 # If netCDF was not built with HDF5 parallel I/O features, set up the macro -DNO_NC_PARALLEL4
-IF(NOT NF_HAS_PARALLEL4)
+IF(NOT NetCDF_PARALLEL)
   MESSAGE(WARNING "netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed")
   list(APPEND fms_defs NO_NC_PARALLEL4)
 ENDIF()
