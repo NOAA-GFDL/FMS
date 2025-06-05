@@ -37,7 +37,6 @@ implicit none
 
 integer, parameter                         :: lkind = DO_TEST_KIND_ !< r4_kind or r8_kind
 type(domain2d)                             :: Domain !< 2D domain
-integer                                    :: is, ie, js, je !< Starting and ending compute domain indices
 integer                                    :: nlon, nlat !< Number of lat, lon in grid
 real(lkind)                                :: min_lon, max_lon !< Maximum lat and lon
 real(lkind), dimension(:,:), allocatable   :: lon, lat !< Lat and lon
@@ -83,10 +82,8 @@ nlat = 1
 !< Create a domain
 call mpp_define_domains( (/1,nlon,1,nlat/), (/1, 1/), Domain, name='Atm')
 call mpp_define_io_domain(Domain, (/1,1/))
-call mpp_get_compute_domain(Domain,is,ie,js,je)
 
 !< Call "get_grid_version_1" on a "atm" grid
-allocate(lon(is:ie,js:je), lat(is:ie,js:je))
 call get_grid_version_1("grid_spec.nc", "atm", Domain, lon, lat, min_lon, max_lon)
 
 !< Error checking:
@@ -94,10 +91,6 @@ if (lon(1,1) .ne. lon_in(1)*real(DEG_TO_RAD, lkind)) &
   & call mpp_error(FATAL,'test_get_grid_v1: lon is not the expected result')
 if (lat(1,1) .ne. lat_in(1)*real(DEG_TO_RAD, lkind)) &
   & call mpp_error(FATAL,'test_get_grid_v1: lat is not the expected result')
-
-!< Try again with ocean
-lat = 0.
-lon = 0.
 
 call get_grid_version_1("grid_spec.nc", "ocn", Domain, lon, lat, min_lon, max_lon)
 
