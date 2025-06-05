@@ -24,8 +24,8 @@ subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, lon, lat, min_lon, m
   character(len=*), intent(in) :: grid_file !< name of grid file
   character(len=*), intent(in) :: mod_name !< module name
   type(domain2d),   intent(in) :: domain !< 2D domain
-  real(lkind), dimension(:,:), intent(out) :: lon, lat
-  real(lkind),                       intent(out) :: min_lon, max_lon
+  real(lkind), intent(out), dimension(:,:), allocatable :: lon, lat
+  real(lkind), intent(out)                              :: min_lon, max_lon
 
   integer                     :: i, j, siz(4)
   integer                     :: nlon, nlat !< size of global lon and lat
@@ -47,13 +47,8 @@ subroutine GET_GRID_VERSION_1_(grid_file, mod_name, domain, lon, lat, min_lon, m
   call mpp_get_global_domain(domain, isg, ieg, jsg, jeg)
   call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
 
-  if (lbound(lon,1).ne.isc .or. lbound(lon,2).ne.jsc) then
-    call mpp_error(FATAL, "get_grid_version_1: Incorrect lower-bound dimensions of lon(isc:,jsc:)")
-  endif
-
-  if (lbound(lat,1).ne.isc .or. lbound(lat,2).ne.jsc) then
-    call mpp_error(FATAL, "get_grid_version_1: Incorrect lower-bound dimensions of lat(isc:,jsc:)")
-  endif
+  allocate(lon(isc:iec, jsc:jec))
+  allocate(lat(isc:iec, jsc:jec))
 
   select case(mod_name)
   case('ocn', 'ice')
@@ -156,8 +151,8 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, lon, lat, min_lon, max
   type(FmsNetcdfFile_t), intent(in) :: fileobj !< file object for grid file
   character(len=*),      intent(in) :: mod_name !< module name
   type(domain2d),        intent(in) :: domain !< 2D domain
-  real(lkind), dimension(:,:), intent(out) :: lon, lat
-  real(lkind),                       intent(out) :: min_lon, max_lon
+  real(lkind), intent(out), dimension(:,:), allocatable :: lon, lat
+  real(lkind), intent(out)                              :: min_lon, max_lon
 
   integer                   :: i, j, siz(2)
   integer                   :: nlon, nlat             ! size of global grid
@@ -176,13 +171,8 @@ subroutine GET_GRID_VERSION_2_(fileobj, mod_name, domain, lon, lat, min_lon, max
 
   call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
 
-  if (lbound(lon,1).ne.isc .or. lbound(lon,2).ne.jsc) then
-    call mpp_error(FATAL, "get_grid_version_2: Incorrect lower-bound dimensions of lon(isc:,jsc:)")
-  endif
-
-  if (lbound(lat,1).ne.isc .or. lbound(lat,2).ne.jsc) then
-    call mpp_error(FATAL, "get_grid_version_2: Incorrect lower-bound dimensions of lat(isc:,jsc:)")
-  endif
+  allocate(lon(isc:iec, jsc:jec))
+  allocate(lat(isc:iec, jsc:jec))
 
   ! get the grid file to read
 
