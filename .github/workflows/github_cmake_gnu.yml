@@ -29,3 +29,25 @@ jobs:
         cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
     - name: Build the library
       run: make -C build
+
+  build_arm:
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
+        libyaml-flag: [ "", -DWITH_YAML=on ]
+        build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
+    container:
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm
+      env:
+        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }} -D64BIT=on"
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4.2.2
+    - name: Generate makefiles with CMake
+      run: |
+        mkdir build
+        cd build
+        cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
+    - name: Build the library
+      run: make -C build
