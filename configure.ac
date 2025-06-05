@@ -437,6 +437,22 @@ else
   AC_MSG_RESULT([no])
 fi
 
+AC_MSG_CHECKING([if netCDF was built with HDF5 parallel I/O features])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
+#include <netcdf_meta.h>
+#if !defined(NC_HAS_PARALLEL4) || NC_HAS_PARALLEL4 == 0
+      choke me
+#endif]])], [nc_has_parallel4=yes], [nc_has_parallel4=no])
+AC_MSG_RESULT([$nc_has_parallel4])
+
+if test $nc_has_parallel4 = no; then
+  AC_MSG_WARN(netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed)
+  AC_DEFINE([NO_NC_PARALLEL4], [1], [HDF5 parallel I/O features not allowed])
+  AM_CONDITIONAL([SKIP_PARALLEL_TEST], true)
+else
+  AM_CONDITIONAL([SKIP_PARALLEL_TEST], false)
+fi
+
 #####
 # Create output variables from various
 # shell variables, for use in generating
