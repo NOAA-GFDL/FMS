@@ -437,6 +437,16 @@ else
   AC_MSG_RESULT([no])
 fi
 
+# Check if intel is 2025.1 for ICE
+AC_MSG_CHECKING([if using Intel 2025.1])
+if [ test -n "`$FC --version | grep ifx | grep 2025\.1\..*`" ]; then
+  AC_MSG_RESULT([yes])
+  AC_MSG_ERROR([Compilation with Oneapi 2025.1 is unsupported \
+by this version of FMS due to a bug in the compiler. Please use a different version of oneapi.])
+else
+  AC_MSG_RESULT([no])
+fi
+
 #####
 # Create output variables from various
 # shell variables, for use in generating
