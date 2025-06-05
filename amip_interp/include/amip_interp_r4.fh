@@ -1,6 +1,4 @@
 #undef FMS_AMIP_INTERP_KIND_
-#undef SST_NCEP_
-#undef SST_ANOM_
 #undef LON_BND_
 #undef LAT_BND_
 #undef TEMPAMIP_
@@ -18,8 +16,6 @@
 #undef ZONAL_SST_
 
 #define FMS_AMIP_INTERP_KIND_ r4_kind
-#define SST_NCEP_ real(sst_ncep, r4_kind)
-#define SST_ANOM_ real(sst_anom, r4_kind)
 #define LON_BND_ real(lon_bnd, r4_kind)
 #define LAT_BND_ real(lat_bnd, r4_kind)
 #define TEMPAMIP_ real(tempamip, r4_kind)
@@ -39,8 +35,6 @@
 #include "amip_interp.inc"
 
 #undef FMS_AMIP_INTERP_KIND_
-#undef SST_NCEP_
-#undef SST_ANOM_
 #undef LON_BND_
 #undef LAT_BND_
 #undef TEMPAMIP_

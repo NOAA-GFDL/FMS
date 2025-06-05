@@ -535,7 +535,7 @@ end subroutine add_domain_attribute
 
 
 !> @brief Add a domain decomposed variable.
-subroutine register_domain_variable(fileobj, variable_name, variable_type, dimensions)
+subroutine register_domain_variable(fileobj, variable_name, variable_type, dimensions, chunksizes)
 
   type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -543,9 +543,10 @@ subroutine register_domain_variable(fileobj, variable_name, variable_type, dimen
                                                 !! values are: "int", "int64",
                                                 !! "float", or "double".
   character(len=*), dimension(:), intent(in), optional :: dimensions !< Dimension names.
+  integer, intent(in), optional :: chunksizes(:) !< netcdf chunksize to use for this variable (netcdf4 only)
 
   if (.not. fileobj%is_readonly) then
-    call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions)
+    call netcdf_add_variable(fileobj, variable_name, variable_type, dimensions, chunksizes)
     if (present(dimensions)) then
       if (size(dimensions) .eq. 1) then
         call add_domain_attribute(fileobj, variable_name)

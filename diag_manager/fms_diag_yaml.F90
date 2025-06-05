@@ -202,6 +202,7 @@ type diagYamlFilesVar_type
   character (len=:), private, allocatable :: var_outname !< Name of the variable as written to the file
   character (len=:), private, allocatable :: var_longname !< Overwrites the long name of the variable
   character (len=:), private, allocatable :: var_units !< Overwrites the units
+  character (len=:), private, allocatable :: standard_name !< Standard_name (saved from the register_diag_field call)
   real(kind=r4_kind), private             :: var_zbounds(2)  !< The z axis limits [vert_min, vert_max]
   integer          , private              :: n_diurnal !< Number of diurnal samples
                                                        !! 0 if var_reduction is not "diurnalXX"
@@ -243,8 +244,10 @@ type diagYamlFilesVar_type
   procedure :: has_var_attributes
   procedure :: has_n_diurnal
   procedure :: has_pow_value
+  procedure :: has_standname
   procedure :: add_axis_name
   procedure :: is_file_subregional
+  procedure :: add_standname
 
 end type diagYamlFilesVar_type
 
@@ -1453,6 +1456,12 @@ pure logical function has_pow_value(this)
   class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
   has_pow_value = (this%pow_value .ne. 0)
 end function has_pow_value
+!> @brief Checks if diag_file_obj%standname is set
+!! @return true if diag_file_obj%standname is set
+pure logical function has_standname(this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
+  has_standname = (this%standard_name .ne. "")
+end function has_standname
 
 !> @brief Checks if diag_file_obj%diag_title is allocated
 !! @return true if diag_file_obj%diag_title is allocated
@@ -1645,7 +1654,11 @@ end subroutine
 !> Writes an output yaml with all available information on the written files.
 !! Will only write with root pe.
 !! Global attributes are limited to 16 per file.
-subroutine fms_diag_yaml_out()
+subroutine fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
+  integer, intent(in) :: ntimes(:)            !< The number of time levels that were written for each file
+  integer, intent(in) :: ntiles(:)            !< The number of tiles for each file domain
+  integer, intent(in) :: ndistributedfiles(:) !< The number of distributed files
+
   type(diagYamlFiles_type), pointer :: fileptr !< pointer for individual variables
   type(diagYamlFilesVar_type), pointer :: varptr !< pointer for individual variables
   type (fmsyamloutkeys_type), allocatable :: keys(:), keys2(:), keys3(:)
@@ -1658,6 +1671,10 @@ subroutine fms_diag_yaml_out()
   integer, dimension(basedate_size) :: basedate_loc !< local copy of basedate to loop through
   integer :: varnum_i, key3_i, gm
   character(len=32), allocatable :: st_vals(:) !< start times for gcc bug
+  character(len=FMS_FILE_LEN) :: filename !< Name of the diag manifest file
+                                !! When there are more than 1 ensemble the filename is
+                                !! diag_manifest_ens_xx.yaml.yy (where xx is the ensembles number, yy is the root pe)
+                                !! otherwhise the filename is diag_manifest.yaml.yy
 
   if( mpp_pe() .ne. mpp_root_pe()) return
 
@@ -1715,6 +1732,20 @@ subroutine fms_diag_yaml_out()
     call fms_f2c_string(keys2(i)%key9, 'file_duration')
     call fms_f2c_string(keys2(i)%key10, 'file_duration_units')
 
+    !! The number of timelevels that were written for the file
+    call fms_f2c_string(keys2(i)%key11, 'number_of_timelevels')
+
+    !! The number of tiles in the file's domain
+    !! When the number of tiles is greater than 1, the name of the diag file
+    !! is filename_tileXX.nc, where XX is the tile number, (1 to the number of tiles)
+    call fms_f2c_string(keys2(i)%key12, 'number_of_tiles')
+
+    !! This is the number of distributed files
+    !! If the diag files were not combined, the name of the diag file is going to be
+    !! filename_tileXX.nc.YY, where YY is the distributed file number 
+    !! (1 to the number of distributed files)
+    call fms_f2c_string(keys2(i)%key13, 'number_of_distributed_files')
+
     call fms_f2c_string(vals2(i)%val1, fileptr%file_fname)
     call fms_f2c_string(vals2(i)%val5, fileptr%file_unlimdim)
     call fms_f2c_string(vals2(i)%val4, get_diag_unit_string((/fileptr%file_timeunit/)))
@@ -1750,6 +1781,9 @@ subroutine fms_diag_yaml_out()
     enddo
     call fms_f2c_string(vals2(i)%val9, adjustl(tmpstr1))
     call fms_f2c_string(vals2(i)%val10, get_diag_unit_string(fileptr%file_duration_units))
+    call fms_f2c_string(vals2(i)%val11, string(ntimes(i)))
+    call fms_f2c_string(vals2(i)%val12, string(ntiles(i)))
+    call fms_f2c_string(vals2(i)%val13, string(ndistributedfiles(i)))
 
     !! tier 3 - varlists, subregion, global metadata
     call yaml_out_add_level2key('varlist', keys2(i))
@@ -1789,6 +1823,7 @@ subroutine fms_diag_yaml_out()
         call fms_f2c_string(keys3(key3_i)%key9, 'n_diurnal')
         call fms_f2c_string(keys3(key3_i)%key10, 'pow_value')
         call fms_f2c_string(keys3(key3_i)%key11, 'dimensions')
+        call fms_f2c_string(keys3(key3_i)%key12, 'standard_name')
         if (varptr%has_var_module())   call fms_f2c_string(vals3(key3_i)%val1, varptr%var_module)
         if (varptr%has_var_varname())  call fms_f2c_string(vals3(key3_i)%val2, varptr%var_varname)
         if (varptr%has_var_reduction()) then
@@ -1828,6 +1863,9 @@ subroutine fms_diag_yaml_out()
 
         tmpstr1 = ''; tmpstr1 = varptr%var_axes_names
         call fms_f2c_string(vals3(key3_i)%val11, trim(adjustl(tmpstr1)))
+
+        if(diag_yaml%diag_fields(varnum_i)%has_standname())&
+          call fms_f2c_string(vals3(key3_i)%val12, diag_yaml%diag_fields(varnum_i)%standard_name)
       enddo
     endif
 
@@ -1976,7 +2014,8 @@ subroutine fms_diag_yaml_out()
   enddo
   tier2size = i
 
-  call write_yaml_from_struct_3( 'diag_out.yaml'//c_null_char,  1, keys, vals,          &
+  call get_instance_filename('diag_manifest.yaml.'//string(mpp_pe()), filename)
+  call write_yaml_from_struct_3( trim(filename)//c_null_char,  1, keys, vals, &
                                  SIZE(diag_yaml%diag_files), keys2, vals2, &
                                  tier3size, tier3each, keys3, vals3,       &
                                  (/size(diag_yaml%diag_files), 0, 0, 0, 0, 0, 0, 0/))
@@ -2053,6 +2092,18 @@ subroutine add_axis_name( this, axis_name )
     this%var_axes_names = trim(axis_name)//" "//trim(this%var_axes_names)
 
 end subroutine add_axis_name
+
+!> @brief Adds the standname for the DiagYamlFilesVar_type
+subroutine add_standname (this, standard_name)
+  class(diagYamlFilesVar_type), intent(inout) :: this
+  character(len=*), optional, intent(in) :: standard_name
+
+  if (present(standard_name)) then
+    this%standard_name = standard_name(1:len_trim(standard_name))
+  else
+    this%standard_name = ""
+  endif
+end subroutine add_standname
 
 pure function is_file_subregional( this ) &
   result(res)

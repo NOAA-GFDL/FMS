@@ -1,3 +1,21 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
 module fms_diag_field_object_mod
 !> \author Tom Robinson
 !> \email thomas.robinson@noaa.gov
@@ -326,6 +344,12 @@ subroutine fms_register_diag_field_obj &
 !> get the optional arguments if included and the diagnostic is in the diag table
   if (present(longname))      this%longname      = trim(longname)
   if (present(standname))     this%standname     = trim(standname)
+  do i=1, SIZE(diag_field_indices)
+    yaml_var_ptr => diag_yaml%get_diag_field_from_id(diag_field_indices(i))
+
+    !! Add standard name to the diag_yaml object, so that it can be used when writing the diag_manifest
+    call yaml_var_ptr%add_standname(standname)
+  enddo
 
   !> Ignore the units if they are set to "none". This is to reproduce previous diag_manager behavior
   if (present(units)) then

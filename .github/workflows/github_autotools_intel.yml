@@ -8,9 +8,6 @@ concurrency:
 jobs:
   intel-autotools:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
@@ -58,7 +55,7 @@ jobs:
       run: |
         autoreconf -if ./configure.ac
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
-        ./configure --with-yaml ${{ matrix.io-flag }}
+        ./configure --with-yaml
     - name: Compile
       run: make -j || make
     - name: Run test suite

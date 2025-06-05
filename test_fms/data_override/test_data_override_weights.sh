@@ -64,20 +64,17 @@ _EOF
 
 #The test only runs with yaml
 if [ -z $parser_skip ]; then
-  for KIND in r4 r8
-  do
-    rm -rf INPUT/.
+  rm -rf INPUT/.
 
-    sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
-    test_expect_success "Creating input files (${KIND})" '
-      mpirun -n 2 ../test_data_override_ongrid_${KIND}
-    '
+  sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
+  test_expect_success "Creating input files" '
+    mpirun -n 2 ../test_data_override_ongrid
+  '
 
-    cp input_base.nml input.nml
-    test_expect_success "test_data_override with and without weight files  -yaml (${KIND})" '
-      mpirun -n 2 ../test_data_override_ongrid_${KIND}
-      '
-  done
+  cp input_base.nml input.nml
+  test_expect_success "test_data_override with and without weight files  -yaml" '
+    mpirun -n 2 ../test_data_override_ongrid
+  '
 fi
 
 rm -rf INPUT
