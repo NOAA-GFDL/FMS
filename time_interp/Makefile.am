@@ -32,7 +32,6 @@ noinst_LTLIBRARIES = libtime_interp.la
 # Each convenience library depends on its source.
 libtime_interp_la_SOURCES = \
   time_interp.F90 \
-  time_interp_external.F90 \
   time_interp_external2.F90 \
   include/time_interp_r4.fh \
   include/time_interp_r8.fh \
@@ -45,13 +44,11 @@ libtime_interp_la_SOURCES = \
   include/time_interp_external2.inc
 
 # Some mods are dependant on other mods in this dir.
-time_interp_external_mod.$(FC_MODEXT): time_interp_mod.$(FC_MODEXT)
 time_interp_external2_mod.$(FC_MODEXT): time_interp_mod.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 MODFILES = \
   time_interp_mod.$(FC_MODEXT) \
-  time_interp_external_mod.$(FC_MODEXT) \
   time_interp_external2_mod.$(FC_MODEXT)
 nodist_include_HEADERS = $(MODFILES)
 BUILT_SOURCES = $(MODFILES)

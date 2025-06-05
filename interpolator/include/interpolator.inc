@@ -127,7 +127,7 @@ integer         , intent(in), optional  :: vert_interp(:)
 character(len=*), intent(out), optional :: clim_units(:)
 logical,          intent(out), optional :: single_year_file
 
-character(len=128)            :: src_file
+character(len=FMS_FILE_LEN)             :: src_file
 !++lwh
 real(FMS_INTP_KIND_)         :: dlat, dlon
 !--lwh

@@ -180,7 +180,7 @@ module sat_vapor_pres_mod
 
  use         constants_mod, only:  TFREEZE, RDGAS, RVGAS, HLV, ES0
  use        fms_mod, only:  write_version_number, stdout, stdlog, mpp_pe, mpp_root_pe, &
-                            mpp_error, FATAL, fms_error_handler,   &
+                            mpp_error, FATAL, WARNING, fms_error_handler,   &
                             error_mesg, check_nml_error
  use        mpp_mod, only: input_nml_file
  use  sat_vapor_pres_k_mod, only:  sat_vapor_pres_init_k, lookup_es_k, &

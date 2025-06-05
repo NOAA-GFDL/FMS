@@ -1,0 +1,36 @@
+!***********************************************************************
+!*                   GNU Lesser General Public License
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* FMS is free software: you can redistribute it and/or modify it under
+!* the terms of the GNU Lesser General Public License as published by
+!* the Free Software Foundation, either version 3 of the License, or (at
+!* your option) any later version.
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!* for more details.
+!*
+!* You should have received a copy of the GNU Lesser General Public
+!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!***********************************************************************
+
+#undef DO_TEST_KIND_
+#undef COMPARE_DATA_
+#undef ONGRID_TEST_
+#undef BILINEAR_TEST_
+#undef WEIGHT_FILE_TEST_
+#undef SCALAR_TEST_
+#undef ENSEMBLE_TEST_
+
+#define DO_TEST_KIND_              r8_kind
+#define COMPARE_DATA_              compare_data_r8
+#define ONGRID_TEST_               ongrid_test_r8
+#define BILINEAR_TEST_             bilinear_test_r8
+#define WEIGHT_FILE_TEST_          weight_file_test_r8
+#define SCALAR_TEST_               scalar_test_r8
+#define ENSEMBLE_TEST_             ensemble_test_r8
+
+#include "test_data_override_ongrid.inc"

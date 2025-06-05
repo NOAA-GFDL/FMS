@@ -45,7 +45,8 @@ contains
   integer, parameter :: numlevels=10
   integer, parameter :: npoints=5
 
-  integer :: tracer_index, success, i, j, k
+  integer :: tracer_index, i, j, k
+  logical :: success
   real(TEST_TM_KIND_) :: top_value, bottom_value, surf_value, multiplier
   real(TEST_TM_KIND_) :: tracer_out1(1,1,1), tracer_out2(npoints,npoints,numlevels)
   real(TEST_TM_KIND_) :: answer1(1,1,1), answer2(npoints,npoints,numlevels)

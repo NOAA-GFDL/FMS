@@ -60,13 +60,21 @@ subroutine mpp_error_basic( errortype, errormsg )
 !$OMP CRITICAL (MPP_ERROR_CRITICAL)
   select case( errortype )
   case(NOTE)
-     if(pe==root_pe)write( out_unit,'(a)' )trim(text)
+     if(pe==root_pe) then
+       write( out_unit,'(a)' )trim(text)
+       write( warn_unit,'(a)' )trim(text)
+     endif
   case default
      errunit = stderr()
      write( errunit, '(/a/)' )trim(text)
-     if(pe==root_pe)write( out_unit,'(/a/)' )trim(text)
+     if(pe==root_pe) then
+       write( out_unit,'(/a/)' )trim(text)
+       write( warn_unit,'(/a/)' )trim(text)
+     endif
      if( errortype.EQ.FATAL .OR. warnings_are_fatal )then
         FLUSH(out_unit)
+        FLUSH(warn_unit)
+        close(warn_unit)
 #ifdef __INTEL_COMPILER
   ! Get traceback and return quietly for correct abort
         call TRACEBACKQQ(user_exit_code=-1)
@@ -93,6 +101,7 @@ function get_peset(pelist)
   integer, intent(in), optional :: pelist(:)
   integer                       :: errunit
   integer                       :: i, n
+  integer, allocatable          :: pelist_tmp(:)
 
   if( .NOT.PRESENT(pelist) )then !set it to current_peset_num
      get_peset = current_peset_num; return
@@ -126,11 +135,13 @@ function get_peset(pelist)
   peset(i)%list(:) = pelist(:)
   peset(i)%count = size(pelist(:))
 
-  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(pelist(:)), pelist-mpp_root_pe(), peset(i)%group, error )
+  allocate(pelist_tmp(size(pelist(:))))
+  pelist_tmp = pelist - mpp_root_pe()
+  call MPI_GROUP_INCL( peset(current_peset_num)%group, size(pelist(:)), pelist_tmp, peset(i)%group, error )
   call MPI_COMM_CREATE_GROUP(peset(current_peset_num)%id, peset(i)%group, &
                              DEFAULT_TAG, peset(i)%id, error )
   get_peset = i
-
+  deallocate(pelist_tmp)
   return
 
 end function get_peset

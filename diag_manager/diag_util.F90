@@ -1654,10 +1654,11 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     INTEGER, ALLOCATABLE  :: axesc(:) ! indices if compressed axes associated with the field
     LOGICAL :: time_ops, aux_present, match_aux_name, req_present, match_req_fields
     CHARACTER(len=7) :: avg_name = 'average'
-    CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, filename, aux_name, req_fields, fieldname
+    CHARACTER(len=128) :: time_units, timeb_units, avg, error_string, aux_name, req_fields, fieldname
+    CHARACTER(len=FMS_FILE_LEN) :: filename
     CHARACTER(len=128) :: suffix, base_name
     CHARACTER(len=32) :: time_name, timeb_name,time_longname, timeb_longname, cart_name
-    CHARACTER(len=256) :: fname
+    CHARACTER(len=FMS_FILE_LEN) :: fname
     CHARACTER(len=24) :: start_date
     TYPE(domain1d) :: domain
     TYPE(domain2d) :: domain2

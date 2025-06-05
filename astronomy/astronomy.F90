@@ -468,7 +468,6 @@ character(len=17) :: err_str
     endif
 !--------------------------------------------------------------------
 !>    Be sure input values are within valid ranges.
-!    QUESTION : ARE THESE THE RIGHT LIMITS ???
 !---------------------------------------------------------------------
     if (ecc < 0.0_r8_kind .or. ecc > 0.99_r8_kind) &
        call error_mesg ('astronomy_mod', &
@@ -768,7 +767,7 @@ subroutine astronomy_end
     !----------------------------------------------------------------------
     !>    deallocate module variables.
     !----------------------------------------------------------------------
-    deallocate (orb_angle)
+    if (allocated(orb_angle)) deallocate (orb_angle)
     if (allocated(cosz_ann) ) then
         deallocate (cosz_ann)
         deallocate (fracday_ann)

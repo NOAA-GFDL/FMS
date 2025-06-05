@@ -122,7 +122,6 @@ character(len=*), parameter :: &
 
 integer, parameter :: &
      MAX_NAME = 256,  & !< max length of the variable names
-     MAX_FILE = 1024, & !< max length of the file names
      VERSION_GEOLON_T        = 0,   & !< indicates gelon_t variable is present in grid_file
      VERSION_X_T             = 1,   & !< indicates x_t variable is present in grid_file
      VERSION_OCN_MOSAIC_FILE = 2,   & !< indicates ocn_mosaic_file variable is present in grid_file
@@ -200,7 +199,7 @@ subroutine open_mosaic_file(mymosaicfileobj, component)
   type(FmsNetcdfFile_t), intent(out)  :: mymosaicfileobj !< File object returned
   character(len=3), intent(in)        :: component !< Component (atm, lnd, etc.)
 
-  character(len=MAX_FILE) :: mosaicfilename
+  character(len=FMS_PATH_LEN) :: mosaicfilename
   if (.not. grid_spec_exists) then
     call mpp_error(FATAL, 'grid2_mod(open_mosaic_file): grid_spec does not exist')
   end if
@@ -215,8 +214,8 @@ function read_file_name(thisfileobj, filevar, level)
   character(len=*), intent(in) :: filevar!< Variable containing file names
   integer, intent(in) :: level !< Level of tile file
   integer, dimension(2) :: file_list_size
-  character(len=MAX_FILE) :: read_file_name
-  character(len=MAX_FILE), dimension(:), allocatable :: file_names
+  character(len=FMS_PATH_LEN) :: read_file_name
+  character(len=FMS_PATH_LEN), dimension(:), allocatable :: file_names
 
   call get_variable_size(thisfileobj, filevar, file_list_size)
   allocate(file_names(file_list_size(2)))

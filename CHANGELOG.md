@@ -6,6 +6,225 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2025.02] - 2025-04-28
+
+### Known Issues
+- DIAG_MANAGER(legacy): When attempting to use 0 days frequency in the legacy diag manager and the data is send to diag manager from an openmp region, the Time dimension will not be correct.
+- INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- YAML SUPPORT: Messages indicating which table format being used (yaml or legacy) will now be output by the `diag_manager`, `field_manager`, and `data_override` modules. (#1676)
+- DIAG_MANAGER: Adds the number of tiles, number of distributed files, and number of time levels written for a given file to the output diag manifest yaml file. (#1661) + (#1648)
+- GENERIC_EXCHANGE: Adds a new "gex" module to the `coupler` subdirectory to provide a generic interface to pass (non-tracer) diagnostic fields across components. (#1637)
+
+### Changed
+- MPP: Optimized `mpp_gather` and `mpp_scatter` interfaces by leveraging native MPI collectives in `mpp_pelist_scatter` and `mpp_gather_1D(_V)` routines. (#1655)
+- DIAG_MANAGER: `diag_out.yaml` output file has been renamed to `diag_manifest` and will include the root PE number and ensemble number. ie: `diag_manifest.yaml.0` or `diag_manager.ens_01.yaml.0` when using an ensemble. (#1661) (#1654) (#1646)
+- EXCHANGE: Increased max number of fields for exchange grid from 80 to 100 (#1637)
+- DATA_OVERRIDE: Initializes both r4 and r8 versions of the module by default if no `mode` argument is given to specialize a specific real size.(#1638)
+
+### Fixed
+- MPP: Errors from unallocated data on non-root pes in mpp_scatter/gather routines. (#1672)
+- DIAG_MANAGER(legacy): Bug with instantaneous output variables where incorrect time steps would be output when using intervals larger than the physics timestep of 30 minutes. (#1667)
+- DIAG_MANAGER: Issue causing an extra unlimited dimension to be written out in history files when mixing static and non-static variables.(#1668)
+- CMAKE BUILD: Fixes missing "C" component for OpenMP libraries in FMS export configuration file (#1663)
+
+### Removed
+- FIELD_MANAGER: Removed public declarations for routines that are already included in public interfaces. (#1317)
+
+### Tag Commit Hashes
+- 2025.02-beta2  e8b8c19c5d67b35440acc10b3180f535e3c6e7d6
+- 2025.02-beta1  2df70639e371ab8d11edbbfed937951ad4e97c9d
+- 2025.02-alpha1 71957e9d79fbd832c4e25ee452eb211669e0df1d
+
+## [2025.01.02] - 2025-03-06
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Changed
+- DIAG_MANAGER: Change name of yaml output file to include the root PE number at the end in order to prevent overwrites (#1654)
+
+## [2025.01.01] - 2025-02-26
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Changed
+- DIAG_MANAGER: Change name of yaml output file from "diag_out.yaml" to "diag_manifest.yaml" (#1646)
+
+### Added
+- DIAG_MANAGER: Added field to the yaml output file to specify the number of time levels written to a given file (#1648)
+
+
+## [2025.01] - 2025-01-30
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Added
+- ENSEMBLE YAML SUPPORT: Adds functionality to the diag_manager, field_manager, and data_override to support unique yaml tables for each member of an ensemble or nest. More information can be found in in the [diag_manager](diag_manager/README.md) and [data_override](data_override/README.MD) README files (#1585)
+- BUILD: Adds options to set `PORTABLE_KINDS` macro in CMake and autotools builds (#1572)
+- BUILD(autotools): Adds check for cray compiler .mod file capitalization and will now run a previously added, but unused, m4 check for `newunit` support. (#1561)
+- BUILD(cmake): Adds CMake functionality to generate a pkgconfig file (#1565)
+- DIAG_MANAGER: Modifies `diag_field_add_attribute` to accept both r4 and r8 values (#1625)
+
+### Changed
+- MPP_IO/FMS_IO: A deprecation warning will now be output when using these modules or enabling the `-Duse_deprecated_io` flag via the build systems. Usage of these modules will be deprecated in the next release. (#1609)
+- DIAG_MANAGER: Made changes to the reduction routine to improve performance of loop and to reduce unnecessary calls if there isn't any new data to process (#1634)
+- MOSAIC/GRID_UTILS: The `mosaic` directory has been refactored and is now called `grid_utils`. (#1626) As part of these updates:
+	- The `create_xgrid.c/h` files have been moved to the `horiz_interp/include` directory
+	- Any any unused `.c`/`.h` files or functions from `mosaic` have been removed
+	- C functions have been moved between the `grid_utils.c`, `tree_utils.c` and `create_xgrid.c` files depending on the functions usage
+- DIAG_MANAGER: Changes `fms_diag_accept_data` from a function to a subroutine (#1610)
+
+### Fixed
+- DIAG_MANAGER: Fixes functionality of the `new_file_freq`, `start_time`, and `file_duration` keys in the diag_manager. (#1633)
+- MOSAIC2: Fixes argument intent for `calc_mosaic_grid_area` and makes changes to the test to avoid divide-by-zero errors (#1597)
+- YAML_PARSER: Fixes incorrect argument type in c-binding causing type mismatch errors with the cray compiler (#1580)
+- BUILD(CMake): Removes usage of hardcoded `lib` directory path (#1589)
+- HORIZ_INTERP: Adds allocation checks before checking fields for `horiz_interp_type_eq` (#1584)
+- BUILD: Fixed syntax error in `column_diagnostics` Makefile.am (#1598)
+- DIAG_MANAGER: Adds a workaround for a cray compiler bug where the `NULL()` intrinsic causes a type mismatch when passed in as an argument (#1560)
+- LIBFMS: Adds missed `f2c_string` routine to libFMS.F90 (#1601)
+- BUILD(autotools): Fixes false `./configure` failures when using intel compilers and the `-warn` flag (#1583)
+- BLOCK_CONTROL: Updates non-uniform block size warning to only output on the root pe (#1588)
+- FMS2_IO: Fixes z-axis domain reads when edge lengths and corners are specified (#1620)
+- MPP: Fixes temporary array compiler warning during `mpp_init` (#1628)
+- SAT_VAPOR_PRES: Fixes bad temperature output not printing on non-root pe's (#1619)
+- ASTRONOMY: Adds allocation checks for module variables before being deallocated in `astronomy_end` (#1629)
+- TESTS: Fixes multiple unit test failures, including any failing tests when compiled with GNU debug flags (#1575, #1595, #1579, #1607, #1622)
+- TESTS: Fixes multiple compilation and runtime errors from the unit tests when compiled with the cray compiler (#1599, #1602, #1603, #1604, #1605)
+- TESTS: Replaces usage of `fms_platform.h` includes with `platform_mod` in mpp unit tests (#1616)
+- TESTS: Add workaround for ifx failures in `diag_integral` and `topography` tests (#1606)
+
+### Tag Commit Hashes
+- 2025.01-beta1  15ec0c735cba2780d3da37f4e1e3b5d4a969b4ff
+- 2025.01-alpha1 95c02333387e673c33ec66e9e78042ef4772cf3a
+
+## [2024.03] - 2024-08-22
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+- INTEL: The `-check uninit` flag for the Intel Oneapi Fortran compiler (ifx) is unsupported due to a bug causing false positives when using external libraries. If using the `-check all` flag, `-check all,nouninit` should be used instead.
+
+### Added
+- DATA_OVERRIDE: Adds a namelist flag `use_center_grid_points` which, if true, enables reading the centroid values from the grid spec for ocean and ice models. This fixes issues with grid files that have longitudes ranges from 0:180 and then -180:0, but will cause answer changes if enabled. (#1566)
+- DATA_OVERRIDE: Adds support for reading external weight files. Currently only supported for fregrid generated files while using the bilinear interpolation method. Documentation for this feature can be found in `data_override/README.md`. (#1556)
+- PLATFORM: Adds two constants `FMS_PATH_LEN` and `FMS_FILE_LEN` and uses it across the code for any file path or file name character strings. They default to 1024 and 255 but can also be set by the `FMS_MAX_PATH_LEN` and `FMS_MAX_FILE_LEN` CPP macros. (#1567)
+- CMAKE: Adds Cmake option to support building shared libraries (#1559)
+
+### Changed
+- DIAG_MANAGER: Simplifies the diag_table.yaml format by allowing `module`, `reduction`, and `kind` to be set on a file level, with the ability to override for a specific field. (#1545)
+- FIELD_MANAGER: Updated and refactored the `fm_yaml_mod` module for a new table format to remove the `subparams` key. (#1547)
+- DATA_OVERRIDE: Updates the yaml format to be improve readablity and to be more consistent in key names. Additional documentation for the new format can be found in `data_override/README.md`. (#1556)
+
+### Fixed
+- PARSER: Adds error code checks to the yaml parser to prevent code from hanging on invalid yamls (#1563)
+- PARSER: Adds ability to read in generic blocks to support `field_manager` updates. (#1519)
+- CRAY COMPILER SUPPORT: Updated any multi-line string literals to be compatible with the cray compiler. (#1554)
+
+### Removed
+- DIAG_MANAGER: Removed diag_table schemas from FMS and moved them to the `gfdl_msd_schemas` repository, and updates the `diag_manager` documentation markdowns. (#1543)
+
+### Tag Commit Hashes
+- 2024.03-beta1 a5de6a54abeb00be2443db4cf07aa267b7faa724
+
+## [2024.02] - 2024-07-11
+
+### Known Issues
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so this differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- TIME_INTERP: Enables use of `verbose` option in `time_interp_external2` calls from `data_override`. The option is enabled in `data_override_nml` by setting `debug_data_override` to true. (#1516)
+- COUPLER: Adds optional argument to `coupler_types_send_data` routine that contains the return statuses for any calls made to the diag_manager's `send_data` routine. (#1530)
+- MPP: Adds a separate error log file `warnfile.<root pe num>.out` that only holds output from any `mpp_error` calls made during a run (#1544)
+### Changed
+- DIAG_MANAGER: The `diag_field_log.out` output file of all registered fields will now include the PE number of the root PE at the time of writing (ie. diag_field_log.out.0). This is to prevent overwritting the file in cases where the root PE may change. (#1497)
+
+### Fixed
+- CMAKE: Fixes real kind flags being overwritten when using the Debug release type (#1532)
+- HORIZ_INTERP: Fixes allocation issues when using method-specific horiz_interp_new routines (such as `horiz_interp_bilinear_new`) by setting `is_allocated` and the `method_type` during initialization for each method. (#1538)
+
+
+### Tag Commit Hashes
+- 2024.02-alpha1 5757c7813f1170efd28f5a4206395534894095b4
+- 2024.02-alpha2 5757c7813f1170efd28f5a4206395534894095b4
+- 2024.02-beta1  ca592ef8f47c246f4dc56d348d62235bd0ceaa9d
+- 2024.02-beta2  ca592ef8f47c246f4dc56d348d62235bd0ceaa9d
+
+## [2024.01.02] - 2024-06-14
+
+### Known Issues
+- Diag Manager Rewrite:
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Fixed
+- DIAG_MANAGER: Fixes incorrect dates being appended to static file names
+
+## [2024.01.01] - 2024-05-30
+
+### Known Issues
+- Diag Manager Rewrite:
+	- Expected output file changes:
+		- If the model run time is less than the output frequency, old diag_manager would write a specific value (9.96921e+36). The new diag_manager will not, so only fill values will be present.
+		- A `scalar_axis` dimension will not be added to scalar variables
+		- The `average_*` variables will no longer be added as they are non-standard conventions
+		- Attributes added via `diag_field_add_attributes` in the old code were saved as `NF90_FLOAT` regardless of precision, but will now be written as the precision that is passed in
+		- Subregional output will have a global attribute `is_subregional = True` set for non-global history files.
+		- The `grid_type` and `grid_tile` global attributes will no longer be added for all files, and some differences may be seen in the exact order of the `associated_files` attribute
+
+- DIAG_MANAGER: When using the `do_diag_field_log` nml option, the output log file may be ovewritten if using a multiple root pe's
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- DIAG_MANAGER: Implements `flush_nc_files` functionality from legacy diag_manager.
+
+### Changed
+- FMS2_IO: Changed `register_unlimited_compressed_axis` to use a collective gather rather than send and recieves to improve efficiency when reading in iceberg restarts.
+
+### Fixed
+- DIAG_MANAGER: Fixes 0 day output frequencies causing error stating a time_step was skipped. Also adds checks to crash if averaged fields have -1 or 0 day frequencies or if mixing averaged and non-averaged fields in the same file.
+- DIAG_MANAGER: Fixes issue with the weight argument not getting passed through to reduction methods.
+- DIAG_MANAGER: Allocation errors when using two empty files.
+- DIAG_MANAGER: `time` and `time_bnds` being larger than expected when running for 1 day and using daily data.
+- DIAG_MANAGER: Allows for mixing static and non-static fields when frequency is 0 days.
+- TESTS: Fixes compile failure with ifort 2024.01 from test_mpp_gatscat.F90.
+
+### Removed
+- DIAG_MANAGER: The `mix_snapshot_average_fields` option is deprecated for the rewritten diag_manager only.
+
+### Tag Commit Hashes
+- 2024.01.01-beta2 c00367fa810960e87610162f0f012c5da724c5a9
+- 2024.01.01-beta1 42f8506512e1b5b43982320f5b9d4ca1ca9cbebd
+
 ## [2024.01] - 2024-05-03
 
 ### Known Issues
@@ -32,9 +251,10 @@ sequential patch number (starting from `01`).
   - Support defining subregions with indices
   - More flexibility when adding metadata and defining output frequency
 - FMS2_IO: Adds support for collective parallel reads to improve model startup time. The collective reads are disabled by default and enabled via the `use_collective` flag in `netcdf_io_mod`.
-- DATA_OVERRIDE: Adds multifile support for using 3 input netcdf files instead of one. Three keys have been added to the data_table: `is_multi_file` to be set to true to enable the feature, as well as `prev_file_name` and `next_file_name` to set to the names of the additional files.
+- DATA_OVERRIDE: Adds option to use multiple data files for one field within data_override in order to use annual data files in yearly runs without having to append/prepend timesteps from previous and next year. With the legacy data_table, filenames  can be set in order and separated with `:` ie. `prev_year.nc:curr_year.nc:next_year.nc`. With the data_table.yaml format, the key `is_multi_file` enables the functionality and `prev_file_name` and `next_file_name` sets the file paths.
+
 - INTERPOLATOR: Adds support for yearly/annual data
-- DATA_OVERRIDE: Adds support for monotonically increasing/decreasing arrays
+- DATA_OVERRIDE: Adds support for monotonically decreasing arrays for `nearest_index`, `axis_edges`, `horiz_interp`(bilinear), and `data_override` (#1388)
 - DOCS: Add documentation for the exchange grid (xgrid_mod) and update the contribution guide to add a section on code reviews
 - MPP: MPI sub-communicators for domains are now accessible via `mpp_get_domain_tile_commid` and `mpp_get_domain_commid` in `mpp_domains_mod`
 

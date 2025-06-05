@@ -35,45 +35,16 @@ libfms_la_SOURCES = \
   fms_stacksize.c \
   include/fms.inc \
   include/fms_r4.fh \
-  include/fms_r8.fh \
-  fms_io.F90 \
-  fms_io_unstructured_field_exist.inc \
-  fms_io_unstructured_get_file_name.inc \
-  fms_io_unstructured_register_restart_axis.inc \
-  fms_io_unstructured_setup_one_field.inc read_data_4d.inc \
-  fms_io_unstructured_file_unit.inc \
-  fms_io_unstructured_get_file_unit.inc \
-  fms_io_unstructured_register_restart_field.inc \
-  read_data_2d.inc \
-  write_data.inc \
-  fms_io_unstructured_get_field_size.inc \
-  fms_io_unstructured_read.inc \
-  fms_io_unstructured_save_restart.inc \
-  read_data_3d.inc
+  include/fms_r8.fh
 
-fms_mod.$(FC_MODEXT): fms_io_mod.$(FC_MODEXT) \
+fms_mod.$(FC_MODEXT): \
   fms.F90 \
   include/fms.inc \
   include/fms_r4.fh \
   include/fms_r8.fh
 
-fms_io_mod.$(FC_MODEXT): fms_io_unstructured_field_exist.inc \
-  fms_io_unstructured_get_file_name.inc \
-  fms_io_unstructured_register_restart_axis.inc \
-  fms_io_unstructured_setup_one_field.inc read_data_4d.inc \
-  fms_io_unstructured_file_unit.inc \
-  fms_io_unstructured_get_file_unit.inc \
-  fms_io_unstructured_register_restart_field.inc \
-  read_data_2d.inc \
-  write_data.inc \
-  fms_io_unstructured_get_field_size.inc \
-  fms_io_unstructured_read.inc \
-  fms_io_unstructured_save_restart.inc \
-  read_data_3d.inc
-
 # Mod files are built and then installed as headers.
 MODFILES = \
-  fms_io_mod.$(FC_MODEXT) \
   fms_mod.$(FC_MODEXT)
 BUILT_SOURCES = $(MODFILES)
 nodist_include_HEADERS = $(MODFILES) $(FMS_INC_FILES)

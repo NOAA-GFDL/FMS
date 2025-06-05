@@ -47,7 +47,7 @@ SUBDIRS = \
   parser \
   string_utils \
   affinity \
-  mosaic \
+  grid_utils \
   time_manager \
   axis_utils \
   diag_manager \
@@ -59,6 +59,7 @@ SUBDIRS = \
   data_override \
   astronomy \
   field_manager \
+  tracer_manager \
   coupler \
   diag_integral \
   monin_obukhov \
@@ -66,7 +67,6 @@ SUBDIRS = \
   amip_interp \
   exchange \
   topography \
-  tracer_manager \
   sat_vapor_pres \
   random_numbers \
   . \
@@ -147,4 +147,3 @@ install-data-hook:
 	@echo '| please see our page: https://www.github.com/NOAA-GFDL/FMS   |'
 	@echo '+-------------------------------------------------------------+'
 	@echo ''
-

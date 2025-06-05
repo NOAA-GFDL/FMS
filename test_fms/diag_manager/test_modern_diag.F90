@@ -161,11 +161,13 @@ id_var3 = register_diag_field  ('atm_mod', 'var3', (/id_x3, id_y3/), Time, 'Var 
 id_var4 = register_diag_field  ('atm_mod', 'var4', (/id_x3, id_y3, id_z/), Time, &
                                 '3D var in a cube sphere domain', 'mullions')
 id_var5 = register_diag_field  ('lnd_mod', 'var5', (/id_ug/), Time, 'Var in a UG domain', 'mullions')
-id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not domain decomposed', 'mullions')
+id_var6 = register_diag_field  ('atm_mod', 'var6', (/id_z/), Time, 'Var not domain decomposed', 'mullions', &
+                                standard_name="I hope this is the MDTF tables")
 
 !< This has the same name as var1, but it should have a different id because the module is different
 !! so it should have its own diag_obj
-id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions')
+id_var7 = register_diag_field  ('lnd_mod', 'var1', Time, 'Some scalar var', 'mullions', &
+                                 standard_name="Land is important!")
 id_var8 = register_static_field ('atm_mod', 'var7', (/id_z/), "Be static!", "none")
 
 if (.not. debug) then
@@ -199,6 +201,8 @@ call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
 
 call allocate_dummy_data(var_data, domain, Domain_cube_sph, land_domain, nz)
 Time_step = set_time (3600,0) !< 1 hour
+call set_dummy_data(var_data, 666)
+used = send_data(id_var8, var_data%var6, Time)
 do i=1,23
   Time = Time + Time_step
   call set_dummy_data(var_data, i)
@@ -209,9 +213,6 @@ do i=1,23
   used = send_data(id_var5, var_data%var5, Time)
   used = send_data(id_var6, var_data%var6, Time)
   used = send_data(id_var7, var_data%var6, Time)
-
-  !TODO I don't know about this (scalar field) or how this is suppose to work #WUT
-  used = send_data(id_var8, var_data%var6, Time)
 
   call diag_send_complete(Time_step)
 enddo

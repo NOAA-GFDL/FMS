@@ -8,16 +8,13 @@ concurrency:
 jobs:
   intel-autotools:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        io-flag: ["--disable-deprecated-io", "--enable-deprecated-io"]
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
         CC: mpiicc
         FC: mpiifort
         CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback ${{ matrix.io-flag }}"
+        FCFLAGS: "-I/libs/include -g -traceback"
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
@@ -26,7 +23,7 @@ jobs:
     steps:
     - name: Cache dependencies
       id: cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4.2.0
       with:
         path: /libs
         key: ${{ runner.os }}-intel-libs
@@ -53,9 +50,12 @@ jobs:
         ./configure --prefix=/libs
         make -j install && cd
     - name: checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4.2.2
     - name: Configure
-      run: autoreconf -if ./configure.ac && ./configure --with-yaml
+      run: |
+        autoreconf -if ./configure.ac
+        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+        ./configure --with-yaml
     - name: Compile
       run: make -j || make
     - name: Run test suite

@@ -246,6 +246,7 @@ use platform_mod
   USE fms_diag_outfield_mod, ONLY: fmsDiagOutfieldIndex_type, fmsDiagOutfield_type
   USE fms_diag_fieldbuff_update_mod, ONLY: fieldbuff_update, fieldbuff_copy_missvals, &
    & fieldbuff_copy_fieldvals
+  USE fms_string_utils_mod, ONLY: string
 
   USE netcdf, ONLY: NF90_INT, NF90_FLOAT, NF90_CHAR
 
@@ -368,11 +369,8 @@ use platform_mod
   !> @brief Add a attribute to the output field
   !> @ingroup diag_manager_mod
   INTERFACE diag_field_add_attribute
-     MODULE PROCEDURE diag_field_add_attribute_scalar_r
-     MODULE PROCEDURE diag_field_add_attribute_scalar_i
-     MODULE PROCEDURE diag_field_add_attribute_scalar_c
-     MODULE PROCEDURE diag_field_add_attribute_r1d
-     MODULE PROCEDURE diag_field_add_attribute_i1d
+     MODULE PROCEDURE diag_field_add_attribute_1d
+     MODULE PROCEDURE diag_field_add_attribute_0d
   END INTERFACE diag_field_add_attribute
 
 !> @addtogroup diag_manager_mod
@@ -1414,7 +1412,7 @@ END FUNCTION register_static_field
     INTEGER :: year, month, day, hour, minute, second
     INTEGER :: n
     CHARACTER(len=25) :: date_prefix
-    CHARACTER(len=256) :: asso_file_name
+    CHARACTER(len=FMS_FILE_LEN) :: asso_file_name
 
     ! Create the date_string
     IF ( prepend_date ) THEN
@@ -1788,7 +1786,7 @@ END FUNCTION register_static_field
       allocate(mask_remap(1:size(mask,1), 1:size(mask,2), 1:size(mask,3), 1))
       mask_remap(:,:,:,1) = mask
     endif
-    diag_send_data = fms_diag_object%fms_diag_accept_data(diag_field_id, field_remap, mask_remap, rmask_remap, &
+    call fms_diag_object%fms_diag_accept_data(diag_field_id, field_remap, mask_remap, rmask_remap, &
                                                           time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
                                                           err_msg)
     deallocate (field_remap)
@@ -2074,19 +2072,31 @@ END FUNCTION register_static_field
 
        ! Initialize output time for fields output every time step
        IF ( freq == EVERY_TIME .AND. .NOT.output_fields(out_num)%static ) THEN
-          IF (output_fields(out_num)%next_output == output_fields(out_num)%last_output) THEN
-             IF(PRESENT(time)) THEN
-                output_fields(out_num)%next_output = time
-             ELSE
-                WRITE (error_string,'(a,"/",a)')&
-                     & TRIM(input_fields(diag_field_id)%module_name),&
-                     & TRIM(output_fields(out_num)%output_name)
-                IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
-                     & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN
-                   DEALLOCATE(field_out)
-                   DEALLOCATE(oor_mask)
-                   RETURN
+          IF (PRESENT(time)) THEN
+             IF ( numthreads .ne. 1 .or. active_omp_level .gt. 1) THEN
+                ! Openmp parallel region:
+                ! Outputs will be done in diag_send_complete
+                ! Always overwrite next_output so that this will be used in files
+                IF ( time > output_fields(out_num)%last_output ) THEN
+                   output_fields(out_num)%next_output = time
                 END IF
+             ELSE
+                ! Non-openmp parallel region:
+                ! Outputs will be done in this function
+                ! Only overwrite next_output time when it is equal to last_output
+                IF ( output_fields(out_num)%next_output == output_fields(out_num)%last_output ) THEN
+                   output_fields(out_num)%next_output = time
+                END IF
+             END IF
+          ELSE IF ( output_fields(out_num)%next_output == output_fields(out_num)%last_output ) THEN
+             WRITE (error_string,'(a,"/",a)')&
+                & TRIM(input_fields(diag_field_id)%module_name),&
+                & TRIM(output_fields(out_num)%output_name)
+             IF ( fms_error_handler('diag_manager_mod::send_data_3d', 'module/output_field '//TRIM(error_string)//&
+                & ', time must be present when output frequency = EVERY_TIME', err_msg)) THEN
+                DEALLOCATE(field_out)
+                DEALLOCATE(oor_mask)
+                RETURN
              END IF
           END IF
        END IF
@@ -3517,9 +3527,10 @@ END FUNCTION register_static_field
     if (present(mask)) mask_local = mask
     if (present(rmask)) rmask_local = rmask
 
-    send_data_4d = fms_diag_object%fms_diag_accept_data(diag_field_id, field, mask_local, rmask_local, &
+    call fms_diag_object%fms_diag_accept_data(diag_field_id, field, mask_local, rmask_local, &
                                                           time, is_in, js_in, ks_in, ie_in, je_in, ke_in, weight, &
                                                           err_msg)
+    send_data_4d = .true.
 
     if (present(err_msg)) then
       if (err_msg .ne. "") then
@@ -3861,6 +3872,9 @@ END FUNCTION register_static_field
     TYPE (time_type), INTENT(in) :: Time_end_in
 
     Time_end = Time_end_in
+    if (use_modern_diag) then
+      call fms_diag_object%set_time_end(time_end_in)
+    endif
 
   END SUBROUTINE diag_manager_set_time_end
 
@@ -4210,9 +4224,13 @@ END FUNCTION register_static_field
     END IF
 
     if (use_modern_diag) then
-      CALL fms_diag_object%init(diag_subset_output)
+      CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'You are using the yaml version of the diag table', NOTE)
+      CALL fms_diag_object%init(diag_subset_output, time_init)
     endif
    if (.not. use_modern_diag) then
+     CALL error_mesg('diag_manager_mod::diag_manager_init',&
+               & 'You are using the legacy version of the diag table', NOTE)
      CALL parse_diag_table(DIAG_SUBSET=diag_subset_output, ISTAT=mystat, ERR_MSG=err_msg_local)
      IF ( mystat /= 0 ) THEN
        IF ( fms_error_handler('diag_manager_mod::diag_manager_init',&
@@ -4224,7 +4242,7 @@ END FUNCTION register_static_field
 
     ! open diag field log file
     IF ( do_diag_field_log.AND.mpp_pe().EQ.mpp_root_pe() ) THEN
-      open(newunit=diag_log_unit, file='diag_field_log.out', action='WRITE')
+      open(newunit=diag_log_unit, file='diag_field_log.out.'//string(mpp_pe()), action='WRITE')
       WRITE (diag_log_unit,'(777a)') &
            & 'Module',         FIELD_LOG_SEPARATOR, 'Field',     FIELD_LOG_SEPARATOR, &
            & 'Long Name',      FIELD_LOG_SEPARATOR, 'Units',     FIELD_LOG_SEPARATOR, &
@@ -4495,70 +4513,66 @@ END FUNCTION register_static_field
     END IF
   END SUBROUTINE diag_field_attribute_init
 
-  !> @brief Add a scalar real attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_scalar_r(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    REAL, INTENT(in) :: att_value !< new attribute value
+  !> @brief Add a scalr attribute to the diag field corresponding to a given id
+  subroutine diag_field_add_attribute_0d(diag_field_id, att_name, att_value)
+    INTEGER,          INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name      !< new attribute name
+    class(*),         INTENT(in) :: att_value     !< new attribute value
 
     if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      select type(att_value)
+      type is (real(kind=r4_kind))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      type is (real(kind=r8_kind))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      type is (integer(kind=i4_kind))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      type is (character(len=*))
+         call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
+      class default
+         call mpp_error(FATAL, "Diag_field_add_attribute 0d:: unsupported type. The acceptable types "//&
+                            "are float, double, integer, and string")
+      end select
     else
-      CALL diag_field_add_attribute_r1d(diag_field_id, att_name, (/ att_value /))
+      select type(att_value)
+      type is (real(kind=r4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real((/att_value/)))
+      type is (real(kind=r8_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real((/att_value/)))
+      type is (integer(kind=i4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=(/att_value/))
+      type is (character(len=*))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
+      class default
+         call mpp_error(FATAL, "Diag_field_add_attribute 0d:: unsupported type. The acceptable types "//&
+                            "are float, double, integer, and string")
+      end select
     endif
-  END SUBROUTINE diag_field_add_attribute_scalar_r
 
-  !> @brief Add a scalar integer attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_scalar_i(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    INTEGER, INTENT(in) :: att_value !< new attribute value
+  end subroutine diag_field_add_attribute_0d
 
-    if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
-    else
-      CALL diag_field_add_attribute_i1d(diag_field_id, att_name, (/ att_value /))
-    endif
-  END SUBROUTINE diag_field_add_attribute_scalar_i
-
-  !> @brief Add a scalar character attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_scalar_c(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    CHARACTER(len=*), INTENT(in) :: att_value !< new attribute value
-
-    if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, (/att_value /))
-    else
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_CHAR, cval=att_value)
-    endif
-  END SUBROUTINE diag_field_add_attribute_scalar_c
-
-  !> @brief Add a real 1D array attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_r1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    REAL, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
-
-    if (use_modern_diag) then
-      call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, att_value)
-    else
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=att_value)
-    endif
-  END SUBROUTINE diag_field_add_attribute_r1d
-
-  !> @brief Add an integer 1D array attribute to the diag field corresponding to a given id
-  SUBROUTINE diag_field_add_attribute_i1d(diag_field_id, att_name, att_value)
-    INTEGER, INTENT(in) :: diag_field_id !< ID number for field to add attribute to
-    CHARACTER(len=*), INTENT(in) :: att_name !< new attribute name
-    INTEGER, DIMENSION(:), INTENT(in) :: att_value !< new attribute value
+  !> @brief Add an 1D array attribute to the diag field corresponding to a given id
+  subroutine diag_field_add_attribute_1d(diag_field_id, att_name, att_value)
+    INTEGER,          INTENT(in) :: diag_field_id !< ID number for field to add attribute to
+    CHARACTER(len=*), INTENT(in) :: att_name      !< new attribute name
+    class(*),         INTENT(in) :: att_value(:)  !< new attribute value
 
     if (use_modern_diag) then
       call fms_diag_object%fms_diag_field_add_attribute(diag_field_id, att_name, att_value)
     else
-      CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+      select type(att_value)
+      type is (real(kind=r4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real(att_value))
+      type is (real(kind=r8_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_FLOAT, rval=real(att_value))
+      type is (integer(kind=i4_kind))
+         CALL diag_field_attribute_init(diag_field_id, att_name, NF90_INT, ival=att_value)
+      class default
+         call mpp_error(FATAL, "Diag_field_add_attribute 1d:: unsupported type. The acceptable types "//&
+                               "are float, double, and integer")
+      end select
     endif
-  END SUBROUTINE diag_field_add_attribute_i1d
+  end subroutine diag_field_add_attribute_1d
 
   !> @brief Add the cell_measures attribute to a diag out field
   !!

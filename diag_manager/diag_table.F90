@@ -255,6 +255,7 @@ MODULE diag_table_mod
   USE diag_data_mod, ONLY: global_descriptor, get_base_time, set_base_time, &
                          & DIAG_OTHER, DIAG_OCEAN, DIAG_ALL, coord_type, append_pelist_name, pelist_name
   USE diag_util_mod, ONLY: init_file, check_duplicate_output_fields, init_input_field, init_output_field
+  USE platform_mod, ONLY: FMS_FILE_LEN
 
   IMPLICIT NONE
 
@@ -283,7 +284,7 @@ MODULE diag_table_mod
      INTEGER :: iOutput_freq_units
      INTEGER :: iNew_file_freq_units
      INTEGER :: iFile_duration_units
-     CHARACTER(len=128) :: file_name
+     CHARACTER(len=FMS_FILE_LEN) :: file_name
      CHARACTER(len=10) :: output_freq_units
      CHARACTER(len=10) :: time_units
      CHARACTER(len=128) :: long_name

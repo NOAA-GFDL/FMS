@@ -125,17 +125,10 @@ program test_monin_obukhov
     integer(ki), dimension(n_1d) :: del_m, del_t, del_q
   end type
 
-  type(drag_input_t), parameter :: drag_input = drag_input_t() &
-  & !< Input arguments for mo_drag
-
-  type(stable_mix_input_t), parameter :: stable_mix_input = stable_mix_input_t() &
-  & !< Input arguments for stable_mix
-
-  type(diff_input_t), parameter :: diff_input = diff_input_t() &
-  & !< Input arguments for mo_diff
-
-  type(profile_input_t), parameter :: profile_input = profile_input_t() &
-  & !< Input arguments for mo_profile
+  type(drag_input_t), parameter :: drag_input = drag_input_t() !< Input arguments for mo_drag
+  type(stable_mix_input_t), parameter :: stable_mix_input = stable_mix_input_t() !< Input arguments for stable_mix
+  type(diff_input_t), parameter :: diff_input = diff_input_t() !< Input arguments for mo_diff
+  type(profile_input_t), parameter :: profile_input = profile_input_t() !< Input arguments for mo_profile
 
   ! Entries 1:n of the arrays below contain known answer keys. Entry n+1 contains
   ! the answers that we calculate. Represent answer data using integral arrays,

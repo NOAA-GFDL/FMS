@@ -133,8 +133,8 @@ module fms_diag_input_buffer_mod
       allocate(integer(kind=i4_kind) :: this%buffer(length(1), length(2), length(3), length(4)))
       this%buffer = 0_i8_kind
     class default
-      err_msg = "The data input is not one of the supported types."&
-        "Only r4, r8, i4, and i8 types are supported."
+      err_msg = "The data input is not one of the supported types. &
+                &Only r4, r8, i4, and i8 types are supported."
     end select
 
     this%weight = 1.0_r8_kind

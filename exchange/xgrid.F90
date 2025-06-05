@@ -129,7 +129,7 @@ use gradient_mod,        only: gradient_cubic
 use fms2_io_mod,         only: FmsNetcdfFile_t, open_file, variable_exists, close_file
 use fms2_io_mod,         only: FmsNetcdfDomainFile_t, read_data, get_dimension_size
 use fms2_io_mod,         only: get_variable_units, dimension_exists
-use platform_mod,        only: r8_kind, i8_kind
+use platform_mod,        only: r8_kind, i8_kind, FMS_FILE_LEN
 
 implicit none
 private
@@ -147,7 +147,7 @@ integer, parameter :: FIRST_ORDER        = 1
 integer, parameter :: SECOND_ORDER       = 2
 integer, parameter :: VERSION1           = 1 !< grid spec file
 integer, parameter :: VERSION2           = 2 !< mosaic grid file
-integer, parameter :: MAX_FIELDS         = 80
+integer, parameter :: MAX_FIELDS         = 100
 
 logical :: make_exchange_reproduce = .false. !< Set to .true. to make <TT>xgrid_mod</TT> reproduce answers on different
                                              !! numbers of PEs.  This option has a considerable performance impact.
@@ -1530,11 +1530,12 @@ subroutine setup_xmap(xmap, grid_ids, grid_domains, grid_file, atm_grid, lnd_ug_
   real(r8_kind), dimension(:,:),   allocatable :: check_data
   real(r8_kind), dimension(:,:,:), allocatable :: check_data_3D
   real(r8_kind),                   allocatable :: tmp_2d(:,:), tmp_3d(:,:,:)
-  character(len=256)                           :: xgrid_file, xgrid_name, xgrid_dimname
-  character(len=256)                           :: tile_file, mosaic_file
-  character(len=256)                           :: mosaic1, mosaic2, contact
+  character(len=FMS_FILE_LEN)                  :: xgrid_file, xgrid_name
+  character(len=FMS_FILE_LEN)                  :: tile_file, mosaic_file
+  character(len=256)                           :: mosaic1, mosaic2, contact, xgrid_dimname
   character(len=256)                           :: tile1_name, tile2_name
-  character(len=256),              allocatable :: tile1_list(:), tile2_list(:), xgrid_filelist(:)
+  character(len=256),              allocatable :: tile1_list(:), tile2_list(:)
+  character(len=FMS_FILE_LEN), allocatable     :: xgrid_filelist(:)
   integer                                      :: npes, npes2
   integer,                         allocatable :: pelist(:)
   type(domain2d), save                         :: domain2

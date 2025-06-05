@@ -144,20 +144,22 @@ program test_top
   end if
   !-------------------------------------------------------------------------------------------------------------!
 
-  call test_topog_mean     ; call test_topog_stdev
-  call test_get_ocean_frac ; call test_get_ocean_mask
-  call test_get_water_frac ; call test_get_water_mask
+  call test_topog_mean(lat2d, lon2d, lat1d, lon1d)     ; call test_topog_stdev(lat2d, lon2d, lat1d, lon1d)
+  call test_get_ocean_frac(lat2d, lon2d, lat1d, lon1d) ; call test_get_ocean_mask(lat2d, lon2d, lat1d, lon1d)
+  call test_get_water_frac(lat2d, lon2d, lat1d, lon1d) ; call test_get_water_mask(lat2d, lon2d, lat1d, lon1d)
 
   call fms_end
 
   contains
 
-  subroutine test_topog_mean()
+  subroutine test_topog_mean(lat2d, lon2d, lat1d, lon1d)
     !! The naming convention of zmean2d/1d in this routine does not relate to their
     !! dimensions but correlates with what dimensions of lat and lon they are being
     !! tested with. In this case, the sizes of both zmean2d and zmean1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
+    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d
     logical                                                               :: get_mean_answer
@@ -182,13 +184,15 @@ program test_top
 
   end subroutine test_topog_mean
 
-  subroutine test_topog_stdev
+  subroutine test_topog_stdev(lat2d, lon2d, lat1d, lon1d)
 
     !! The naming convention of stdev2d/1d in this routine does not relate to their
     !! dimensions but correlates with what dimensions of lat and lon they are being
     !! tested with. In this case, the sizes of both stdev2d and stdev1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
+    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: stdev2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: stdev1d
     logical                                                               :: get_stdev_answer
@@ -213,13 +217,15 @@ program test_top
 
   end subroutine test_topog_stdev
 
-  subroutine test_get_ocean_frac
+  subroutine test_get_ocean_frac(lat2d, lon2d, lat1d, lon1d)
 
     !! The naming convention of ocean_frac2d/1d in this routine does not relate to their
     !! dimensions but correlates with what dimensions of lat and lon they are being
     !! tested with. In this case, the sizes of both ocean_frac2d and ocean_frac1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
+    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_frac2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_frac1d
     logical                                                               :: get_ocean_frac_answer
@@ -243,16 +249,18 @@ program test_top
     ! with a larger ocean_frac1d array size
   end subroutine test_get_ocean_frac
 
-  subroutine test_get_ocean_mask
+  subroutine test_get_ocean_mask(lat2d, lon2d, lat1d, lon1d)
 
     !! The naming convention of ocean_mask2d/1d in this routine does not relate to their
     !! dimensions but correlates with what dimensions of lat and lon they are being
     !! tested with. In this case, the sizes of both ocean_mask2d and ocean_mask1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_mask2d
-    logical, dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_mask1d
-    logical                                             :: get_ocean_mask_answer
+    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1)                   :: ocean_mask2d
+    logical, dimension(size(lon1d)-1,size(lat1d)-1)                       :: ocean_mask1d
+    logical                                                               :: get_ocean_mask_answer
 
     !---------------------------------------- test get_ocean_mask 2d ---------------------------------------------!
 
@@ -275,12 +283,14 @@ program test_top
 
   end subroutine test_get_ocean_mask
 
-  subroutine test_get_water_frac
+  subroutine test_get_water_frac(lat2d, lon2d, lat1d, lon1d)
     !! The naming convention of water_frac2d/1d in this routine does not relate to their
     !! dimensions but correlates with what dimensions of lat and lon they are being
     !! tested with. In this case, the sizes of both water_frac2d and water_frac1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
+    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
     real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_frac2d
     real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: water_frac1d
     logical                                                               :: get_water_frac_answer
@@ -305,16 +315,18 @@ program test_top
 
   end subroutine test_get_water_frac
 
-  subroutine test_get_water_mask
+  subroutine test_get_water_mask(lat2d, lon2d, lat1d, lon1d)
 
     !! The naming convention of water_mask2d/1d in this routine does not relate to their
     !! dimensions but correlates with what dimensions of lat and lon they are being
     !! tested with. In this case, the sizes of both water_mask2d and water_mask1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_mask2d
-    logical, dimension(size(lon1d)-1,size(lat1d)-1)     :: water_mask1d
-    logical                                             :: get_water_mask_answer
+    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1)                   :: water_mask2d
+    logical, dimension(size(lon1d)-1,size(lat1d)-1)                       :: water_mask1d
+    logical                                                               :: get_water_mask_answer
 
     !---------------------------------------- test get_water_mask 2d ---------------------------------------------!
 

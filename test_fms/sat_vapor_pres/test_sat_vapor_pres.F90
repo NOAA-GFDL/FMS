@@ -37,7 +37,7 @@
 program test_sat_vap_pressure
 
 use            fms_mod, only: fms_init, fms_end
-use            mpp_mod, only: mpp_error, FATAL
+use            mpp_mod, only: mpp_error, FATAL, mpp_pe
 use       platform_mod, only: r4_kind, r8_kind
 use      constants_mod, only: RDGAS, RVGAS, TFREEZE
 use sat_vapor_pres_mod, only: TCMIN, TCMAX, sat_vapor_pres_init, &
@@ -55,7 +55,8 @@ integer :: io, N
 integer :: nml_unit_var
 character(*), parameter :: nml_file = 'test_sat_vapor_pres.nml'
 logical :: test1, test2, test3, test4, test5
-NAMELIST / test_sat_vapor_pres_nml/ test1, test2, test3, test4, test5
+integer :: test_show_all_bad = -1 !< dimension to test show_all_bad interface with
+NAMELIST / test_sat_vapor_pres_nml/ test1, test2, test3, test4, test5, test_show_all_bad
 
 N=(TCMAX-TCMIN)*ESRES+1
 allocate( TABLE(N),DTABLE(N),TABLE2(N),DTABLE2(N),TABLE3(N),DTABLE3(N) )
@@ -199,6 +200,10 @@ contains
     !! at temp=TCMIN, the answers should be TABLE(1)
     temp = real(TCMIN,lkind) + real(TFREEZE,lkind)
     esat_answer = real(TABLE(1), lkind)
+
+    ! check out of range temp value (100k)
+    if(test_show_all_bad .eq. 0 .and. mpp_pe() .eq. 1) temp = real(100.0,lkind)
+
     call lookup_es(temp,esat)
     call check_answer_0d(esat_answer, esat,   'test_lookup_es_0d TCMIN')
     !! at temp=TCMAX, the answers should be TABLE(N)
@@ -242,6 +247,8 @@ contains
     !> test lookup_es
     !! at temp=TCMIN, the answers should be TABLE(1)
     temp_1d(1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
+    ! check out of range temp value (100k)
+    if(test_show_all_bad .eq. 1 .and. mpp_pe() .eq. 1) temp_1d = real(100.0,lkind)
     esat_answer_1d = TABLE(1)
     call lookup_es(temp_1d,esat_1d)
     call check_answer_1d(esat_answer_1d, esat_1d,   'test_lookup_es_1d TCMIN')
@@ -285,6 +292,8 @@ contains
     !> test lookup_es
     !! at temp=TCMIN, the answers should be TABLE(1)
     temp_2d(1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
+    ! check out of range temp value (100k)
+    if(test_show_all_bad .eq. 2 .and. mpp_pe() .eq. 1) temp_2d = real(100.0,lkind)
     esat_answer_2d = real(TABLE(1),lkind)
     call lookup_es(temp_2d,esat_2d)
     call check_answer_2d(esat_answer_2d, esat_2d,   'test_lookup_es_2d TCMIN')
@@ -328,6 +337,8 @@ contains
     !> test lookup_es
     !! at temp=TCMIN, the answers should be TABLE(1)
     temp_3d(1,1,1) = real(TCMIN,lkind) + real(TFREEZE,lkind)
+    ! check out of range temp value (100k)
+    if(test_show_all_bad .eq. 3 .and. mpp_pe() .eq. 1) temp_3d = real(100.0,lkind)
     esat_answer_3d = TABLE(1)
     call lookup_es(temp_3d,esat_3d)
     call check_answer_3d(esat_answer_3d, esat_3d,   'test_lookup_es_3d precision TCMIN')
