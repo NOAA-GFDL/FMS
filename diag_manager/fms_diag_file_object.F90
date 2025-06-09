@@ -220,6 +220,7 @@ logical function fms_diag_files_object_init (files_array)
   class(fmsDiagFile_type), pointer :: obj => null() !< Pointer for each member of the array
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
+
   if (diag_yaml%has_diag_files()) then
    nFiles = diag_yaml%size_diag_files()
    allocate (files_array(nFiles))
@@ -452,14 +453,17 @@ function get_filename_time(this) &
   result(res)
     class(fmsDiagFile_type), intent(in) :: this !< The file object
     type(time_type) :: res
+    type(time_type) :: file_end_time
 
+    file_end_time = this%next_close
+    if (this%next_close > this%no_more_data) file_end_time = this%no_more_data
     select case (this%diag_yaml_file%get_filename_time())
     case (begin_time)
       res = this%last_output
     case (middle_time)
-      res = (this%last_output + this%next_close)/2
+      res = (this%last_output + file_end_time )/2
     case (end_time)
-      res = this%next_close
+      res = file_end_time
     end select
 end function get_filename_time
 
@@ -1410,7 +1414,7 @@ logical function is_time_to_close_file (this, time_step, force_close)
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
   logical,                          intent(in)           :: force_close     !< if .true. return true
 
-  if (force_close) then
+  if (force_close .or. this%FMS_diag_file%done_writing_data) then
     is_time_to_close_file = .true.
   elseif (time_step >= this%FMS_diag_file%next_close) then
     is_time_to_close_file = .true.
