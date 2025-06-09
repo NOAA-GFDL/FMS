@@ -22,7 +22,7 @@
 !! @author Colin Gladue
 !! @email gfdl.climate.model.info@noaa.gov
 
-program test_read_ascii_file
+program test_mpp_read_ascii_file
 
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
@@ -111,4 +111,4 @@ program test_read_ascii_file
     end if
   end if
   call MPI_FINALIZE(ierr)
-end program test_read_ascii_file
+end program test_mpp_read_ascii_file

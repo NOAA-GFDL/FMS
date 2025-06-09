@@ -30,12 +30,12 @@ project(FMS
 
 include(GNUInstallDirs)
 
-if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
+if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel|DebugUFS)$")
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE
       "Release"
       CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "DebugUFS")
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang|IntelLLVM)$")
@@ -53,7 +53,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build options
 option(OPENMP      "Build FMS with OpenMP support"        OFF)
-option(32BIT       "Build 32-bit (r4) FMS library"         ON)
+option(32BIT       "Build 32-bit (r4) FMS library"        OFF)
 option(64BIT       "Build 64-bit (r8) FMS library"        OFF)
 option(FPIC        "Build with position independent code" OFF)
 option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
@@ -76,7 +76,7 @@ endif()
 if(NOT kinds)
   message(STATUS "Single Precision 32BIT: ${32BIT}")
   message(STATUS "Double Precision 64BIT: ${64BIT}")
-  message(FATAL_ERROR "Either 32BIT or 64BIT should be ON")
+  message(STATUS "No kind specified, building default double precision (with mixed precision support). Real size will not be included in built library name.")
 endif()
 
 # Find dependencies
@@ -89,7 +89,7 @@ if (OPENMP)
 endif()
 
 if (WITH_YAML)
-  find_package(libyaml REQUIRED)
+  find_package(libyaml REQUIRED COMPONENTS C)
   include_directories(${LIBYAML_INCLUDE_DIR})
 endif ()
 
@@ -208,6 +208,7 @@ list(APPEND fms_c_src_files
   parser/yaml_parser_binding.c
   parser/yaml_output_functions.c
   string_utils/fms_string_utils_binding.c
+  test_fms/fms/test_fmsC.c # TODO just easier to lump this with the rest of the C src
 )
 
 # Collect FMS header files
@@ -284,6 +285,7 @@ endif()
 # Obtain compiler-specific flags
 include(fms_compiler_flags)
 
+# TODO remove this section eventually, separate builds are no longer required
 foreach(kind ${kinds})
 
   set(libTgt fms_${kind})
@@ -296,7 +298,6 @@ foreach(kind ${kinds})
   target_include_directories(${libTgt}_c PRIVATE include
                                                  grid_utils)
   target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
-
   target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
                                             MPI::MPI_C)
 
@@ -334,21 +335,17 @@ foreach(kind ${kinds})
                                                  coupler/include
                                                  data_override/include
                                                  amip_interp/include)
-
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
-
   set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
-
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
-
   target_link_libraries(${libTgt}_f PRIVATE NetCDF::NetCDF_Fortran
                                             MPI::MPI_Fortran)
-
   if(OpenMP_Fortran_FOUND)
     target_link_libraries(${libTgt}_f PRIVATE OpenMP::OpenMP_Fortran)
   endif()
+
 
   # Check if gnu 10 or higher
   # this should only be needed with mpich, but wasn't able to find a good way to find the MPI flavor consistently
@@ -399,7 +396,7 @@ foreach(kind ${kinds})
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/data_override/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tridiagonal/include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amip_interp/include>)
-
+  set(moduleDir "${CMAKE_CURRENT_BINARY_DIR}/${includeDir}")
   target_include_directories(${libTgt} INTERFACE
     $<BUILD_INTERFACE:${moduleDir}>
     $<INSTALL_INTERFACE:${includeDir}>)
@@ -423,12 +420,284 @@ foreach(kind ${kinds})
 
 endforeach()
 
+# default build, same as an r8 build just different name
+if(NOT kinds)
+    message(STATUS "building default kind")
+    set(libTgt "fms")
+    set(includeDir "include")
+    set(moduleDir "${CMAKE_CURRENT_BINARY_DIR}/${includeDir}")
+    set(kind "r8")
+
+    # C
+    add_library(${libTgt}_c OBJECT ${fms_c_src_files})
+
+    target_include_directories(${libTgt}_c PRIVATE include
+                                                   grid_utils)
+    target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
+    target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
+                                              MPI::MPI_C)
+
+    if(OpenMP_C_FOUND)
+      target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
+    endif()
+
+    if(WITH_YAML)
+      target_link_libraries(${libTgt}_c PRIVATE libyaml_C)
+      set_target_properties(${libTgt}_c PROPERTIES COMPILE_FLAGS "-L${LIBYAML_LIBRARIES} -lyaml")
+    endif()
+
+
+    # Fortran
+    add_library(${libTgt}_f OBJECT ${fms_fortran_src_files})
+
+    target_include_directories(${libTgt}_f PRIVATE include
+                                                   fms
+                                                   fms/include
+                                                   fms2_io/include
+                                                   string_utils/include
+                                                   mpp/include
+                                                   column_diagnostics/include
+                                                   monin_obukhov/include
+                                                   sat_vapor_pres/include
+                                                   horiz_interp/include
+                                                   diag_integral/include
+                                                   random_numbers/include
+                                                   diag_manager/include
+                                                   constants4
+                                                   topography/include
+                                                   axis_utils/include
+                                                   mosaic2/include
+                                                   constants
+                                                   astronomy/include
+                                                   field_manager/include
+                                                   time_interp/include
+                                                   tracer_manager/include
+                                                   tridiagonal/include
+                                                   interpolator/include
+                                                   coupler/include
+                                                   data_override/include
+                                                   amip_interp/include)
+    target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
+    target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
+    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
+    set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
+                                                 ${moduleDir})
+    target_link_libraries(${libTgt}_f PRIVATE NetCDF::NetCDF_Fortran
+                                              MPI::MPI_Fortran)
+    if(OpenMP_Fortran_FOUND)
+      target_link_libraries(${libTgt}_f PRIVATE OpenMP::OpenMP_Fortran)
+    endif()
+
+    # Check if gnu 10 or higher
+    # this should only be needed with mpich, but wasn't able to find a good way to find the MPI flavor consistently
+    if ( CMAKE_Fortran_COMPILER_VERSION MATCHES "1[0-9]\.[0-9]*\.[0-9]*" AND CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
+      include(CheckFortranCompilerFlag)
+      check_fortran_compiler_flag("-fallow-argument-mismatch" _arg_mismatch_flag)
+      if(_arg_mismatch_flag)
+        message(STATUS "Adding -fallow-argument-mismatch flag to compile with GCC >=10 and MPICH")
+        target_compile_options(${libTgt}_f PRIVATE "-fallow-argument-mismatch;-w")
+      endif()
+    endif()
+
+    # FMS (C + Fortran)
+    if (SHARED_LIBS)
+        message(STATUS "Shared library target: ${libTgt}")
+        add_library(${libTgt} SHARED $<TARGET_OBJECTS:${libTgt}_c>
+                                     $<TARGET_OBJECTS:${libTgt}_f>)
+    else ()
+        message(STATUS "Static library target: ${libTgt}")
+        add_library(${libTgt} STATIC $<TARGET_OBJECTS:${libTgt}_c>
+                                     $<TARGET_OBJECTS:${libTgt}_f>)
+    endif ()
+
+    target_include_directories(${libTgt} PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/fms2_io/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/column_diagnostics/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/astronomy/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monin_obukhov/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/sat_vapor_pres/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/field_manager/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/grid_utils>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/horiz_interp/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/string_utils/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mpp/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/topography/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/random_numbers/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_integral/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/diag_manager/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tracer_manager/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interpolator/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/coupler/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/mosaic2/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/data_override/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tridiagonal/include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/amip_interp/include>)
+
+    set(moduleDir "${CMAKE_CURRENT_BINARY_DIR}/${includeDir}")
+    target_include_directories(${libTgt} INTERFACE
+      $<BUILD_INTERFACE:${moduleDir}>
+      $<INSTALL_INTERFACE:${includeDir}>)
+
+    target_compile_definitions(${libTgt} PRIVATE "${fms_defs}")
+    target_compile_definitions(${libTgt} PRIVATE "${${kind}_defs}")
+
+    target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
+                                           NetCDF::NetCDF_Fortran
+                                           MPI::MPI_Fortran)
+
+    if(OpenMP_Fortran_FOUND)
+      target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
+    endif()
+
+    add_library(FMS::${libTgt} ALIAS ${libTgt})
+
+    list(APPEND LIB_TARGETS ${libTgt})
+    install(DIRECTORY ${moduleDir}    DESTINATION ${CMAKE_INSTALL_PREFIX})
+    install(FILES ${fms_header_files} DESTINATION ${CMAKE_INSTALL_PREFIX}/${includeDir})
+
+
+endif()
+
 install(
   TARGETS ${LIB_TARGETS}
   EXPORT FMSExports
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+### Unit Testing
+include(CTest)
+
+# TODO autotools also checks if srun is available
+set(MPI_LAUNCHER "mpirun")
+# used in the test-lib.sh.in to make it behave differently when parsed by cmake
+set(USING_CMAKE "true")
+
+# parse and add build info to test script util file
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib.sh.in ${CMAKE_CURRENT_SOURCE_DIR}/test-lib.sh
+               @ONLY)
+
+# build any helper modules that are used by unit tests
+list(APPEND TEST_MODS_SRC
+  test_fms/diag_manager/testing_utils.F90
+  test_fms/fms/test_fms.F90
+  test_fms/fms2_io/argparse.F90
+  test_fms/fms2_io/setup.F90
+#  test_fms/mosaic2/write_files.F90
+  test_fms/mpp/compare_data_checksums.F90
+  test_fms/mpp/compare_data_checksums_int.F90
+  test_fms/mpp/fill_halo.F90
+  test_fms/mpp/test_domains_utility_mod.F90
+  test_fms/mpp/test_mpp_update_domains_int.F90
+  test_fms/mpp/test_mpp_update_domains_real.F90
+  test_fms/mpp/test_system_clock.F90)
+
+add_library(testLibs "${TEST_MODS_SRC}")
+target_link_libraries(testLibs FMS::fms)
+target_compile_definitions(testLibs PRIVATE TEST_MOS_KIND_=r8_kind)
+target_include_directories(testLibs PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include
+                                    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/include
+                                    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/include
+                                    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
+                                    PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+set_target_properties(testLibs PROPERTIES Fortran_MODULE_DIRECTORY
+                                               ${moduleDir})
+
+# find any test source files and compile them
+file(GLOB_RECURSE TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/*/*.F90)
+foreach (testFile ${TEST_SRC})
+  get_filename_component (TName ${testFile} NAME_WE)
+
+  add_executable(${TName} ${testFile})
+  target_compile_definitions(${TName} PRIVATE "${r8_defs}")
+  set_target_properties(${TName} PROPERTIES COMPILE_FLAGS "${r8_flags}")
+  target_link_libraries(${TName} PUBLIC FMS::fms
+                                 PRIVATE testLibs
+                                   )
+
+  if(WITH_YAML)
+    target_link_libraries(${TName} PRIVATE yaml ${LIBYAML_LIBRARIES})
+  endif()
+
+  if(OPENMP)
+    target_link_libraries(${TName} PRIVATE OpenMP::OpenMP_Fortran)
+  endif()
+
+  set_target_properties(${TName} PROPERTIES Fortran_MODULE_DIRECTORY
+                                            ${moduleDir})
+  target_include_directories(${TName} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include
+                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/include
+                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/include
+                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
+                                       PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+  # TODO compile with both precisions
+  target_compile_definitions(${TName} PRIVATE TEST_MOS_KIND_=r8_kind
+                                     PRIVATE AU_TEST_KIND_=r8_kind
+                                     PRIVATE FMS_TEST_BC_TYPE_=bc
+                                     PRIVATE FMS_CP_TEST_KIND_=r8_kind
+                                     PRIVATE DO_TEST_KIND_=r8_kind
+                                     PRIVATE HI_TEST_KIND_=r8_kind
+                                     PRIVATE MO_TEST_KIND_=r8_kind
+                                     PRIVATE TEST_AST_KIND_=r8_kind
+                                     PRIVATE TEST_CD_KIND_=r8_kind
+                                     PRIVATE TI_TEST_KIND_=r8_kind
+                                     PRIVATE TEST_SVP_KIND_=r8_kind
+                                     PRIVATE TEST_TOP_KIND_=r8_kind
+                                     PRIVATE TEST_INTP_KIND_=r8_kind
+                                     PRIVATE TEST_FM_KIND_=r8_kind
+                                     PRIVATE TEST_RN_KIND_=r8_kind
+                                     PRIVATE TEST_DI_KIND_=r8_kind
+                                     PRIVATE TEST_TM_KIND_=r8_kind)
+endforeach ()
+
+
+# find any test scripts and run them (TODO after the precision tests are worked out this can be used)
+#file(GLOB_RECURSE TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/*/*.sh)
+#list(FILTER TEST_SCRIPTS EXCLUDE REGEX "test-lib*")
+#list(FILTER TEST_SCRIPTS EXCLUDE REGEX "tap-driver.*")
+
+# gather all the tests scripts that don't need mixed precision executables
+file(GLOB_RECURSE DM_TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/diag_manager/*.sh)
+file(GLOB_RECURSE IO_TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms2_io/*.sh)
+file(GLOB_RECURSE MPP_TEST_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mpp/*.sh)
+list(APPEND TEST_SCRIPTS
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/block_control/test_block_control.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/coupler/test_gex.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/test_data_override_init.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/drifters/test_drifters2.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/exchange/test_xgrid2.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/test_fms2.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/parser/test_yaml_parser.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/string_utils/test_string_utils.sh
+  ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/time_manager/test_time_manager2.sh
+  ${DM_TEST_SCRIPTS}
+  ${IO_TEST_SCRIPTS}
+  ${MPP_TEST_SCRIPTS})
+
+list(FILTER TEST_SCRIPTS EXCLUDE REGEX "check_crashes.*")
+
+# add each test
+foreach (testScript ${TEST_SCRIPTS})
+  get_filename_component(testName ${testScript} NAME_WE)
+  get_filename_component(testDirNameFull ${testScript} DIRECTORY)
+  get_filename_component(testDirName ${testDirNameFull} NAME_WE)
+  add_test(NAME ${testName}
+           COMMAND ${testScript}
+           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  ## add label based on directory name
+  set_property(TEST ${testName} PROPERTY LABELS ${testDirName})
+  # set an environment variable so the scripts know to skip tests that use libyaml
+  if(NOT WITH_YAML)
+    set_property(TEST ${testName} PROPERTY ENVIRONMENT skipflag=skip;parser_skip=skip;skip_yaml=yes)
+  endif()
+endforeach()
+
+set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
 ### Package config
 include(CMakePackageConfigHelpers)
