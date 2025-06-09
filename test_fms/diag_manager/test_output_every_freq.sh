@@ -45,6 +45,10 @@ diag_files:
     var_name: var2
     reduction: none
     kind: r4
+  - module: ocn_mod
+    var_name: var0_openmp
+    reduction: none
+    kind: r4
 _EOF
 
 my_test_count=1
