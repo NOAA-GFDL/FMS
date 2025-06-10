@@ -129,7 +129,7 @@ program test_drifters
   call mpp_declare_pelist( (/ (i, i=pe_beg, pe_end) /), '_drifters')
 !#endif
 
-  ! this sumulates a run on a subset of PEs
+  ! this simulates a run on a subset of PEs
   if(pe >= pe_beg .and. pe <= pe_end) then
 
 !#ifndef _SERIAL
