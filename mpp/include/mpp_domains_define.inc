@@ -3550,7 +3550,7 @@ end subroutine check_message_size
             !fold is within domain
              if( domain%y(tMe)%domain_data%begin .LE. jsg .AND. jsg .LE. domain%y(tMe)%domain_data%end+jshift )then
                 dir = 3
-                !--- calculating overlapping for receving on north
+                !--- calculating overlapping for receiving on north
                 if( domain%x(tMe)%pos .GE. size(domain%x(tMe)%list(:))/2 )then
                    jsd = domain%y(tMe)%compute%begin;   jed = jsd
                    if( jsd == jsg )then   ! fold is within domain.
