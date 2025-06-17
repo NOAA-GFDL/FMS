@@ -1,8 +1,8 @@
 module metadata_transfer_mod
   use platform_mod
-  use netcdf
   use mpi
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL
+  use fms_mod, only: string 
 
   implicit none
   public
@@ -17,11 +17,15 @@ module metadata_transfer_mod
 
   integer :: metadata_transfer_type_mpi_id = -1 
 
+  integer, parameter :: ATTR_NAME_MAX_LENGTH = 128 
+  integer, parameter :: ATTR_VALUE_MAX_LENGTH = 128
+
   type :: metadata_type
     private
-    integer            :: attribute_type
-    real(kind=r8_kind) :: attribute_value(2)
-    character(len=50)  :: attribute_name
+    integer                             :: attribute_type
+    integer                             :: attribute_length
+    character(len=ATTR_NAME_MAX_LENGTH) :: attribute_name
+    real(kind=r8_kind)                  :: attribute_value(ATTR_VALUE_MAX_LENGTH)
     contains
       procedure :: fms_metadata_broadcast
       procedure :: get_attribute_type
@@ -36,14 +40,14 @@ contains
 
   !> Initialize the mpi datatype for future transfers
   subroutine fms_metadata_transfer_init()
-    integer, dimension(0:2) :: lengths, types
-    integer(KIND=MPI_ADDRESS_KIND), dimension(0:2) :: displacements
+    integer, dimension(0:3) :: lengths, types
+    integer(KIND=MPI_ADDRESS_KIND), dimension(0:3) :: displacements
     integer :: ierror
 
-    lengths = (/1, 2, 50/)
-    displacements = (/0, sizeof(0), sizeof(0) + sizeof(0.0)/) ! TODO, not sure if real size should be explicit
-    types = (/MPI_INTEGER, MPI_REAL, MPI_CHARACTER/)
-    call MPI_Type_create_struct(3, lengths, displacements, types, metadata_transfer_type_mpi_id, ierror)
+    lengths = (/1, 1, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
+    displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*2 + sizeof(' ')*ATTR_NAME_MAX_LENGTH/) ! TODO, not sure if real size should be explicit
+    types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_REAL/)
+    call MPI_Type_create_struct(4, lengths, displacements, types, metadata_transfer_type_mpi_id, ierror)
     call MPI_Type_commit(metadata_transfer_type_mpi_id, ierror)
     if(ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_create_struct failed")
@@ -66,6 +70,19 @@ contains
 
   end subroutine fms_metadata_broadcast
 
+  subroutine fms_metadata_broadcast_all(metadata_objs)
+    type(metadata_type), intent(inout) :: metadata_objs(:)
+    integer :: ierror, i
+    if (.not. metadata_transfer_initialized) then
+      call mpp_error(FATAL, "fms_metadata_broadcast: metadata_transfer not initialized")
+    end if
+
+    do i=1, size(metadata_objs)
+      call metadata_objs(i)%fms_metadata_broadcast()
+    enddo
+
+  end subroutine fms_metadata_broadcast_all
+
   ! Getter and Setter for attribute_type
   function get_attribute_type(this) result(val)
     class(metadata_type), intent(in) :: this
@@ -82,26 +99,35 @@ contains
   ! Getter and Setter for attribute_value
   function get_attribute_value(this) result(val)
     class(metadata_type), intent(in) :: this
-    real(kind=r8_kind) :: val(2)
-    val = this%attribute_value
+    real(kind=r8_kind) :: val(this%attribute_length)
+    val = this%attribute_value(1:this%attribute_length)
   end function
 
   subroutine set_attribute_value(this, val)
     class(metadata_type), intent(inout) :: this
-    real(kind=r8_kind), intent(in) :: val(2)
-    this%attribute_value = val
+    real(kind=r8_kind), intent(in) :: val(:)
+    if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
+      call mpp_error(FATAL, &
+        "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
+    endif
+    this%attribute_length = size(val)
+    this%attribute_value(1:size(val)) = val
   end subroutine
 
   ! Getter and Setter for attribute_name
   function get_attribute_name(this) result(val)
     class(metadata_type), intent(in) :: this
-    character(len=50) :: val
-    val = this%attribute_name
+    character(len=ATTR_NAME_MAX_LENGTH) :: val
+    val = trim(this%attribute_name)
   end function
 
   subroutine set_attribute_name(this, val)
     class(metadata_type), intent(inout) :: this
     character(len=*), intent(in) :: val
+    if(len(val) .gt. ATTR_NAME_MAX_LENGTH) then
+      call mpp_error(FATAL, & 
+        "metadata_transfer_mod: attribute name exceeds max length of "//string(ATTR_VALUE_MAX_LENGTH))
+    endif
     this%attribute_name = val
   end subroutine
 

@@ -31,7 +31,7 @@ test_expect_success "test_io_offloading" '
 '
 
 test_expect_success "test metadata transfer" '
-  mpirun -n 2 ./test_metadata_transfer
+  mpirun -n 4 ./test_metadata_transfer
 '
 
 test_expect_success "test mpp redistribute" '
