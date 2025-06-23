@@ -13,71 +13,140 @@ module metadata_transfer_mod
   integer, parameter :: int4_type = 4
   integer, parameter :: str_type = 5
 
-  logical :: metadata_transfer_initialized = .false.
-
-  integer :: metadata_transfer_type_mpi_id = -1 
-
   integer, parameter :: ATTR_NAME_MAX_LENGTH = 128 
   integer, parameter :: ATTR_VALUE_MAX_LENGTH = 128
 
-  type :: metadata_type
+  !> Base class for transfering netcdf attribute data, holds the common fields 
+  !! and routines for initializing the mpi datatype so that children classes can
+  !! be sent/broadcasted. 
+  type, abstract :: metadata_class
     private
-    integer                             :: attribute_type
-    integer                             :: attribute_length
-    character(len=ATTR_NAME_MAX_LENGTH) :: attribute_name
-    real(kind=r8_kind)                  :: attribute_value(ATTR_VALUE_MAX_LENGTH)
+    integer                             :: mpi_type_id = -1 !< MPI datatype id corresponding to this data objects data, -1 if not set
+    integer                             :: attribute_type !< type of the attribute, one of the real8_type, real4_type, int8_type, int4_type, str_type
+    integer                             :: attribute_length = -1 !< length of the attribute value array, -1 if not set
+    character(len=ATTR_NAME_MAX_LENGTH) :: attribute_name !< name of the attribute to write
     contains
       procedure :: fms_metadata_broadcast
+      procedure :: fms_metadata_transfer_init
       procedure :: get_attribute_type
       procedure :: set_attribute_type
-      procedure :: get_attribute_value
-      procedure :: set_attribute_value
       procedure :: get_attribute_name
       procedure :: set_attribute_name
   end type
 
-contains
 
-  !> Initialize the mpi datatype for future transfers
-  subroutine fms_metadata_transfer_init()
-    integer, dimension(0:3) :: lengths, types
-    integer(KIND=MPI_ADDRESS_KIND), dimension(0:3) :: displacements
-    integer :: ierror
+  !> Metadata class for real(kind=8) attribute values
+  type, extends(metadata_class) :: metadata_r8_type
+    real(r8_kind) :: attribute_value(ATTR_VALUE_MAX_LENGTH)
+    contains
+      procedure :: get_attribute_value => get_attribute_r8_value
+      procedure :: set_attribute_value => set_attribute_r8_value
+  end type metadata_r8_type
 
-    lengths = (/1, 1, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
-    displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*2 + sizeof(' ')*ATTR_NAME_MAX_LENGTH/) ! TODO, not sure if real size should be explicit
-    types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_REAL/)
-    call MPI_Type_create_struct(4, lengths, displacements, types, metadata_transfer_type_mpi_id, ierror)
-    call MPI_Type_commit(metadata_transfer_type_mpi_id, ierror)
+  !> Metadata class for real(kind=4) attribute values
+  type, extends(metadata_class) :: metadata_r4_type
+    real(r4_kind) :: attribute_value(ATTR_VALUE_MAX_LENGTH)
+    contains
+      procedure :: get_attribute_value => get_attribute_r4_value
+      procedure :: set_attribute_value => set_attribute_r4_value
+  end type metadata_r4_type
+
+  !> Metadata class for integer(kind=8) attribute values
+  type, extends(metadata_class) :: metadata_i8_type
+    integer(i8_kind) :: attribute_value(ATTR_VALUE_MAX_LENGTH)
+    contains
+      procedure :: get_attribute_value => get_attribute_i8_value
+      procedure :: set_attribute_value => set_attribute_i8_value
+  end type metadata_i8_type
+
+  !> Metadata class for integer(kind=4) attribute values
+  type, extends(metadata_class) :: metadata_i4_type
+    integer(i4_kind) :: attribute_value(ATTR_VALUE_MAX_LENGTH)
+    contains
+      procedure :: get_attribute_value => get_attribute_i4_value
+      procedure :: set_attribute_value => set_attribute_i4_value
+  end type metadata_i4_type
+
+  contains
+
+  !> Initialize the mpi datatype for future broadcasts
+  subroutine fms_metadata_transfer_init(this, dtype)
+    class(metadata_class), intent(inout) :: this !< metadata object to initialize for mpi communication using the struct
+    integer, optional, intent(in) :: dtype !< type of the attribute, one of the real8_type, real4_type, int8_type, int4_type, str_type
+    integer, dimension(0:6) :: lengths, types
+    integer(KIND=MPI_ADDRESS_KIND), dimension(0:6) :: displacements
+    integer :: ierror, mpi_id, type_local
+
+    if(present(dtype)) then
+      this%attribute_type = dtype
+      type_local = dtype
+    else
+      type_local = this%get_attribute_type()
+    end if
+
+    !! use attribute type to figure out struct offsets needed for mpi struct declaration
+    !! the metadata object's functions (not subroutines) are stored as fields in memory,
+    !! so they need to be included in the struct declaration
+    select case(type_local)
+    case(real8_type)
+      displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
+                        sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
+                      /)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_DOUBLE/)
+    case(real4_type)
+      displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
+                        sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
+                      /)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_FLOAT/)
+    case default
+        call mpp_error(FATAL, "fms_metadata_transfer_init:: given dummy_type argument contains a unsupported type")
+    end select
+
+    !lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
+    lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, 1, 1, ATTR_VALUE_MAX_LENGTH/)
+
+    call MPI_Type_create_struct(7, lengths, displacements, types, mpi_id, ierror)
+    call MPI_Type_commit(mpi_id, ierror)
     if(ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_create_struct failed")
     end if
-    metadata_transfer_initialized = .true.
+    this%mpi_type_id = mpi_id 
   end subroutine fms_metadata_transfer_init
 
   subroutine fms_metadata_broadcast(this)
-    class(metadata_type), intent(inout) :: this
+    class(metadata_class), intent(inout) :: this
     integer :: ierror
-    if (.not. metadata_transfer_initialized) then
+    if (this%mpi_type_id .eq. -1) then
       call mpp_error(FATAL, "fms_metadata_broadcast: metadata_transfer not initialized")
     end if
 
     ! Broadcast the metadata transfer type to all processes
-    call MPI_Bcast(this, 1, metadata_transfer_type_mpi_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+    select type(this)
+    type is (metadata_r8_type)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+      print *, "pe: ", mpp_pe(), " metadata_r8_type broadcasted"
+    end select
+
     if (ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_broadcast: MPI_Bcast failed")
     end if
 
   end subroutine fms_metadata_broadcast
 
+  !! TODO should be able to MPI_bcast the entire array at once
   subroutine fms_metadata_broadcast_all(metadata_objs)
-    type(metadata_type), intent(inout) :: metadata_objs(:)
+    class(metadata_class), intent(inout) :: metadata_objs(:)
     integer :: ierror, i
-    if (.not. metadata_transfer_initialized) then
-      call mpp_error(FATAL, "fms_metadata_broadcast: metadata_transfer not initialized")
-    end if
 
     do i=1, size(metadata_objs)
+      if (metadata_objs(i)%mpi_type_id .eq. -1) then
+        print *, "i=", i, " mpi_type_id=", metadata_objs(i)%mpi_type_id
+        call mpp_error(FATAL, "fms_metadata_broadcast_all: metadata_transfer not initialized")
+      end if
       call metadata_objs(i)%fms_metadata_broadcast()
     enddo
 
@@ -85,44 +154,99 @@ contains
 
   ! Getter and Setter for attribute_type
   function get_attribute_type(this) result(val)
-    class(metadata_type), intent(in) :: this
+    class(metadata_class), intent(in) :: this
     integer :: val
     val = this%attribute_type
   end function
 
   subroutine set_attribute_type(this, val)
-    class(metadata_type), intent(inout) :: this
+    class(metadata_class), intent(inout) :: this
     integer, intent(in) :: val
     this%attribute_type = val
   end subroutine
 
   ! Getter and Setter for attribute_value
-  function get_attribute_value(this) result(val)
-    class(metadata_type), intent(in) :: this
-    real(kind=r8_kind) :: val(this%attribute_length)
+  function get_attribute_r8_value(this) result(val)
+    class(metadata_r8_type), intent(inout) :: this
+    real(r8_kind), allocatable :: val(:)
     val = this%attribute_value(1:this%attribute_length)
   end function
 
-  subroutine set_attribute_value(this, val)
-    class(metadata_type), intent(inout) :: this
-    real(kind=r8_kind), intent(in) :: val(:)
+  subroutine set_attribute_r8_value(this, val)
+    class(metadata_r8_type), intent(inout) :: this
+    real(r8_kind), intent(in) :: val(:)
     if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
       call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
     endif
     this%attribute_length = size(val)
     this%attribute_value(1:size(val)) = val
+    this%attribute_type = real8_type
+  end subroutine
+
+  function get_attribute_r4_value(this) result(val)
+    class(metadata_r4_type), intent(inout) :: this
+    real(r4_kind), allocatable :: val(:)
+    val = this%attribute_value(1:this%attribute_length)
+  end function
+
+  subroutine set_attribute_r4_value(this, val)
+    class(metadata_r4_type), intent(inout) :: this
+    real(r4_kind), intent(in) :: val(:)
+    if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
+      call mpp_error(FATAL, &
+        "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
+    endif
+    this%attribute_length = size(val)
+    this%attribute_value(1:size(val)) = val
+    this%attribute_type = real4_type
+  end subroutine
+
+  function get_attribute_i8_value(this) result(val)
+    class(metadata_i8_type), intent(inout) :: this
+    integer(i8_kind), allocatable :: val(:)
+    val = this%attribute_value(1:this%attribute_length)
+  end function
+
+  subroutine set_attribute_i8_value(this, val)
+    class(metadata_i8_type), intent(inout) :: this
+    integer(i8_kind), intent(in) :: val(:)
+    if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
+      call mpp_error(FATAL, &
+        "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
+    endif
+    this%attribute_length = size(val)
+    this%attribute_value(1:size(val)) = val
+    this%attribute_type = int8_type
+  end subroutine
+
+  function get_attribute_i4_value(this) result(val)
+    class(metadata_i4_type), intent(inout) :: this
+    integer(i4_kind), allocatable :: val(:)
+    val = this%attribute_value(1:this%attribute_length)
+  end function
+
+  subroutine set_attribute_i4_value(this, val)
+    class(metadata_i4_type), intent(inout) :: this
+    integer(i4_kind), intent(in) :: val(:)
+    if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
+      call mpp_error(FATAL, &
+        "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
+    endif
+    this%attribute_length = size(val)
+    this%attribute_value(1:size(val)) = val
+    this%attribute_type = int4_type
   end subroutine
 
   ! Getter and Setter for attribute_name
   function get_attribute_name(this) result(val)
-    class(metadata_type), intent(in) :: this
+    class(metadata_class), intent(inout) :: this
     character(len=ATTR_NAME_MAX_LENGTH) :: val
     val = trim(this%attribute_name)
   end function
 
   subroutine set_attribute_name(this, val)
-    class(metadata_type), intent(inout) :: this
+    class(metadata_class), intent(inout) :: this
     character(len=*), intent(in) :: val
     if(len(val) .gt. ATTR_NAME_MAX_LENGTH) then
       call mpp_error(FATAL, & 

@@ -8,13 +8,17 @@ program test_metadata_transfer
 
   implicit none
 
-  type(metadata_type) :: file_metadata(3)
+  type(metadata_r8_type) :: file_metadata(3)
 
-  logical :: debug = .false.
+  logical :: debug = .true.
+  integer :: i
 
   call fms_init()
 
-  call fms_metadata_transfer_init()
+  ! all PEs need to initialize the metadata object with a datatype
+  do i=1, 3
+    call file_metadata(i)%fms_metadata_transfer_init(real8_type)
+  enddo
 
   ! set metadata only on root PE
   if (mpp_pe() .eq. mpp_root_pe()) then
@@ -42,26 +46,25 @@ program test_metadata_transfer
   contains
 
   subroutine dump_metadata(this)
-    type(metadata_type), intent(in) :: this(:)
+    type(metadata_r8_type), intent(inout) :: this(:)
     real(r8_kind), allocatable :: arr(:)
 
     integer :: i
     do i = 1, size(this)
       arr = this(i)%get_attribute_value()
-      print *, "pe: ", mpp_pe(), " attribute_name is ", trim(adjustl(this(i)%get_attribute_name()))
-      print *, "pe: ", mpp_pe(), " attribute_type is ", string(this(i)%get_attribute_type())
-      print *, "pe: ", mpp_pe(), " attribute_value is ", arr 
+      print *, "pe: ", mpp_pe(), "i: ", i, " attribute_name is ", trim(adjustl(this(i)%get_attribute_name()))
+      print *, "pe: ", mpp_pe(), "i: ", i, " attribute_type is ", string(this(i)%get_attribute_type())
+      print *, "pe: ", mpp_pe(), "i: ", i, " attribute_value is ", arr 
     enddo
   end subroutine
 
   subroutine check_metadata(this)
-    type(metadata_type), intent(in) :: this(:)
+    type(metadata_r8_type), intent(inout) :: this(:)
     real(r8_kind), allocatable :: arr(:)
     logical :: is_correct
     character(len=32) :: attr_names(3)
     real(r8_kind) :: attr_vals(8)
-    integer :: i, i_expected = 1
-    integer :: val_inds(3) = (/ 0, 1, 4/) 
+    integer :: i, j, last_j =1
 
     attr_names = (/"_FillValue"//c_null_char, "missing_value"//c_null_char, "a_third_name"//c_null_char/)
     attr_vals = (/ 666.0_r8_kind, -100.0_r8_kind, 100.0_r8_kind, -200.0_r8_kind, &
@@ -69,12 +72,21 @@ program test_metadata_transfer
 
     do i = 1, size(this)
       arr = this(i)%get_attribute_value()
-      is_correct = (trim(this(i)%get_attribute_name()) .eq. attr_names(i)) .and. &
-                   (this(i)%get_attribute_type() .eq. real8_type) .and. & 
-                   ALL(abs(this(i)%get_attribute_value() - attr_vals(i_expected:i_expected+val_inds(i))) .lt. 1.0e-8_r8_kind)
+      if (trim(this(i)%get_attribute_name()) .ne. attr_names(i)) then
+        call mpp_error(FATAL, "incorrect metadata name")
+      endif 
+      if( this(i)%get_attribute_type() .ne. real8_type) then
+        call mpp_error(FATAL, "incorrect metadata type")
+      endif
 
-      i_expected = i_expected + val_inds(i) + 1 
-      if(.not. is_correct) call mpp_error(FATAL, "incorrect metadata value")
+      do j=1, size(arr) 
+        if (arr(j) .ne. attr_vals(last_j)) then
+          print *, "got ", arr(j), " expected ", attr_vals(last_j) 
+          call mpp_error(FATAL, "incorrect metadata value")
+        endif
+        last_j = last_j + 1
+      enddo
+
     enddo
   end subroutine
 

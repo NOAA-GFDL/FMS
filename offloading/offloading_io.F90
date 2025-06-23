@@ -144,6 +144,7 @@ module offloading_io_mod
 
     integer :: int_buf
     real :: real_buf
+    class(metadata_class), allocatable :: transfer_obj 
 
     offloading_pes = fileobj%offloading_obj_in%offloading_pes
     model_pes = fileobj%offloading_obj_in%model_pes
@@ -165,6 +166,7 @@ module offloading_io_mod
       broadcasting_pes(1) = model_pes(1)
       broadcasting_pes(2:size(broadcasting_pes)) = offloading_pes
       call mpp_set_current_pelist( broadcasting_pes )
+
       call mpp_broadcast(att_name, 255, model_pes(1))
 
       select type (attribute_value)
