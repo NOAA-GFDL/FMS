@@ -951,7 +951,7 @@ subroutine get_global_io_domain_indices(fileobj, dimname, is, ie, indices)
 
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: dimname !< Name of dimension variable.
-  integer, intent(out) :: is !< Staring index of I/O global domain.
+  integer, intent(out) :: is !< Starting index of I/O global domain.
   integer, intent(out) :: ie !< Ending index of I/O global domain.
   integer, dimension(:), allocatable, intent(out), optional :: indices !< Global domain indices
 
