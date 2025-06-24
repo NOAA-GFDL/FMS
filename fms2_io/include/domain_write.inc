@@ -137,6 +137,12 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
 
+  if (fileobj%use_netcdf_mpi) then
+    call netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
+                           corner, edge_lengths)
+    return
+  endif
+
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call compressed_write(fileobj, variable_name, vdata, &
@@ -144,6 +150,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                           edge_lengths=edge_lengths)
     return
   endif
+
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
@@ -1258,4 +1265,127 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
   endif
 end subroutine domain_write_5d
+
+subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
+                               corner, edge_lengths)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), dimension(:,:), intent(in) :: vdata !< Data that will
+                                                !! be written out
+                                                !! to the netcdf file.
+  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
+                                                   !! dimension.
+  integer, dimension(2), intent(in), optional :: corner !< Array of starting
+                                                        !! indices describing
+                                                        !! where the data
+                                                        !! will be written to.
+  integer, dimension(2), intent(in), optional :: edge_lengths !< The number of
+                                                              !! elements that
+                                                              !! will be written
+                                                              !! in each dimension.
+
+  integer :: xdim_index
+  integer :: ydim_index
+  integer :: xpos
+  integer :: ypos
+
+  integer :: isd !< Starting "x" index of the data domain
+  integer :: isc !< Starting "x" index of the compute domain
+  integer :: jsd !< Starting "y" index of the data domain
+  integer :: jsc !< Starting "y" index of the compute domain
+  integer :: xc_size !< Size of the compute domain
+  integer :: yc_size !< Size of the compute domain
+  logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
+                                   !! (i.e it includes halos (which are not written))
+
+  integer, dimension(3) :: c !< Indices of the corners for each dimension
+  integer, dimension(3) :: e !< Size of the data for each dimension
+  integer :: varid
+  integer :: unlim_dim_index
+
+  integer :: index1_start
+  integer :: index1_end
+  integer :: index2_start
+  integer :: index2_end
+  integer :: err
+
+  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
+                                          xdim_index, ydim_index, xpos, ypos)) then
+    call compressed_write(fileobj, variable_name, vdata, &
+                          unlim_dim_level=unlim_dim_level, corner=corner, &
+                          edge_lengths=edge_lengths)
+    return
+  endif
+
+  !! Get some more info about the variable
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  c = 1
+  e = 1
+
+  c(xdim_index) = isc
+  c(ydim_index) = jsc
+  e(xdim_index) = xc_size
+  e(ydim_index) = yc_size
+
+  if (present(unlim_dim_level)) then
+      unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
+                                                               broadcast=.false.)
+      if (unlim_dim_index .ne. 3) then
+        call error("unlimited dimension must be the slowest varying dimension: "//trim("TODO"))
+      endif
+      c(unlim_dim_index) = unlim_dim_level
+  endif
+
+  index1_start = 1
+  index2_start = 1
+  select case (xdim_index)
+    case (1)
+      ! X is the first dimension
+      if (buffer_includes_halos) then
+        index1_start = isc - isd + 1
+        index2_start = jsc - jsd + 1
+      endif
+      index1_end = index1_start + xc_size - 1
+      index2_end = index2_start + yc_size - 1
+    case (2)
+      ! X is the second dimension
+      if (buffer_includes_halos) then
+        index1_start = jsc - jsd + 1
+        index2_start = isc - isd + 1
+      endif
+      index1_end = index1_start + yc_size - 1
+      index2_end = index2_start + xc_size - 1
+  end select
+
+  varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+    msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+  call check_netcdf_code(err, "WUTTT")
+
+  select type(vdata)
+    type is (integer(kind=i4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(index1_start:index1_end, index2_start:index2_end), &
+        start=c, count=e)
+    type is (integer(kind=i8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(index1_start:index1_end, index2_start:index2_end), &
+        start=c, count=e)
+    type is (real(kind=r4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(index1_start:index1_end, index2_start:index2_end), &
+        start=c, count=e)
+    type is (real(kind=r8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(index1_start:index1_end, index2_start:index2_end), &
+        start=c, count=e)
+  end select
+
+  call check_netcdf_code(err, "WUTTT")
+end subroutine netcdf_mpi_write_2d
 !> @}
