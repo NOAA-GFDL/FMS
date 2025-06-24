@@ -28,7 +28,7 @@ sequential patch number (starting from `01`).
 - DATA_OVERRIDE: simplify argument lists of subroutines in get_grid_version_mod (#1514)
 
 ### Fixed
-- DIAG_MANAGER: fixed the time varaible in instantaneous outputs from diag_manager in both    openmp and non-openmp cases (#1690)
+- DIAG_MANAGER: fixed the time variable in instantaneous outputs from diag_manager in both  openmp and non-openmp cases (#1690)
 - DIAG_MANAGER: fixed number of time levels in diag manifest yaml for subregional files. (#1698)
 - LIBFMS: fixed missed aliases in libFMS file (#1303)
 - DIAG_MANAGER: fixed new file and file duration in MODERN_DIAG_MANAGER (#1705)
