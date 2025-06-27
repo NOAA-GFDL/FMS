@@ -7,9 +7,6 @@
 #undef  INTERPOLATOR_INIT_
 #define INTERPOLATOR_INIT_ interpolator_init_r4
 
-#undef  FMS2IO_INTERPOLATOR_INIT_
-#define FMS2IO_INTERPOLATOR_INIT_ fms2io_interpolator_init_r4
-
 #undef  GET_AXIS_LATLON_DATA_
 #define GET_AXIS_LATLON_DATA_ get_axis_latlon_data_r4
 
