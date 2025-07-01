@@ -372,7 +372,7 @@ end subroutine diag_integral_init
 
 
 !###############################################################################
-!> @brief diag_integral_field_init registers and intializes an integral field
+!> @brief diag_integral_field_init registers and initializes an integral field
 !!
 !! <b> Template: </b>
 !!

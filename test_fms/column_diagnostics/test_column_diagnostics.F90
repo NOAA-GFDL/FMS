@@ -68,7 +68,7 @@ contains
   !------------------------------------------!
   subroutine initialize_variables(dlatlon)
 
-    !> This subroutine initializes all the input arrays for intialize_diagnostic_columns
+    !> This subroutine initializes all the input arrays for initialize_diagnostic_columns
 
     implicit none
 
@@ -93,7 +93,7 @@ contains
     global_i(1)=4 ; global_i(2)=5
     global_j(1)=4 ; global_j(2)=5
 
-    !> intialize_diagnostic_columns expects these values to be in radians
+    !> initialize_diagnostic_columns expects these values to be in radians
     lonb_in=(lonb_in+dlatlon)*DEG_TO_RAD
     latb_in=(latb_in+dlatlon)*DEG_TO_RAD
 
@@ -102,7 +102,7 @@ contains
  !------------------------------------------!
   subroutine test_initialize_diagnostic_columns
 
-    !> this subroutine tests intialize_diagnostics_columns
+    !> this subroutine tests initialize_diagnostics_columns
 
     implicit none
     integer :: i

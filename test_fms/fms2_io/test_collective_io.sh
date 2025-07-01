@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                   GNU Lesser General Public License
 #*
@@ -16,13 +18,36 @@
 #* You should have received a copy of the GNU Lesser General Public
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
-#
-# Each line is a file pattern followed by one or more owners.  The owner
-# can be specified by their @username, or an email address.
-#
-# Order is important.  The last matching pattern takes the most precedence.
 
-# These owners will be the default owners for all the files in the
-# repository.  Unless a later match is found, these owners
-# will be requested for a review when a PR is opened.
-*          @uramirez8707 @bensonr @rem1776 @vithikashah001
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/fms2_io directory.
+
+#
+# Set common test settings.
+. ../test-lib.sh
+
+if [ ! -z $parallel_skip ]; then
+  SKIP_TESTS="test_collective_io.1"
+fi
+
+# Create and enter output directory
+output_dir
+
+touch input.nml
+
+test_expect_success "Test the collective netcdf io functionality" '
+  mpirun -n 6 ../test_collective_io
+'
+
+rm -rf *.nc*
+# The code should still run if not using netcdf4 files, it just won't use collective io
+cat <<_EOF > input.nml
+&test_collective_io_nml
+  nc_format = "64bit"
+/
+_EOF
+
+test_expect_success "Test the collective netcdf io functionality" '
+  mpirun -n 6 ../test_collective_io
+'
+test_done

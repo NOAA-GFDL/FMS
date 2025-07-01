@@ -2500,7 +2500,7 @@ return
 
 contains
 
-!> If the the pointer matches to the right list,
+!> If the pointer matches to the right list,
 !! extract the field information.  Used in fm_loop_over_list
 !> @returns A flag to indicate whether the function operated with (FALSE)
 !! or without (TRUE) errors

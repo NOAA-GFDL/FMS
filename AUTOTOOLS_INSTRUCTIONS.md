@@ -11,7 +11,7 @@ something like:
 
 ./configure && make check install
 
-The configure step queries the system about many things, and contructs
+The configure step queries the system about many things, and constructs
 makefiles.
 
 The make step uses the generated Makefiles to build, test, and install
@@ -33,11 +33,11 @@ been added to .gitignore and should never be added to the repo.
 
 Previously, everyone built FMS by checking out code from git. However,
 with the new build system, only those who want to contribute to the
-code base need check out the code from git.
+code base need to check out the code from git.
 
 ## As an FMS Developer
 
-All FMS developers will need a reasobably reacent version of tools
+All FMS developers will need a reasonably recent version of tools
 autoconf, automake, and libtool. These are available on package
 management systems. (Ex. yum install automake autoconf libtool).
 
@@ -51,7 +51,7 @@ The process of building FMS from the repo is:
 ## As an FMS User
 
 Users start with a tarball, not the git repo. They do not have to have
-any of the autotools installed. Thier build process is:
+any of the autotools installed. Their build process is:
 
 1. Unpack the tarball and cd into the directory.
 2. Run ./configure --prefix=/my/installdir
