@@ -110,6 +110,7 @@ use field_manager_mod,    only: fm_list_iter_type, fm_dump_list, fm_field_name_l
 use fm_util_mod,          only: fm_util_get_real, fm_util_get_logical, fm_util_get_string
 use mpp_mod,              only: mpp_root_pe, mpp_pe
 use fms_string_utils_mod, only: string
+use platform_mod,         only: FMS_PATH_LEN
 
 implicit none ; private
 
@@ -125,7 +126,7 @@ integer, parameter :: gex_units = 2    !< internal index for gex unit
 !> @brief This type represents the entries for a specific exchanged field
 !> @ingroup gex_mod
 type gex_type
-   character(fm_field_name_len):: name  = '' !< gex name
+   character(FMS_PATH_LEN):: name  = '' !< gex name
    character(fm_string_len)    :: units = '' !< units (optional)
    logical                     :: set   = .FALSE.
 end type gex_type
