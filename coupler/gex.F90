@@ -194,7 +194,7 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
   type(fm_list_iter_type)      :: iter ! iterator over the list of tracers
   character(fm_field_name_len) :: name = '' ! name of the tracer
   character(fm_type_name_len)  :: ftype ! type of the field table entry (not used)
-  character(fm_path_name_len)  :: listname  ! name of the field manager list for each tracer
+  character(FMS_PATH_LEN)  :: listname  ! name of the field manager list for each tracer
 
   integer :: n
 
