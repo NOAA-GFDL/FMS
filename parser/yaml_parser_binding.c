@@ -74,7 +74,7 @@ int get_nkeys_binding(const int *file_id, const int *block_id)
   int nkeys = 0;
   int j = *file_id;
 
-  for (int i = 1; i < my_files.files[j].nkeys; i++)
+  for (int i = 1; i <= my_files.files[j].nkeys; i++)
   {
      if (my_files.files[j].keys[i].parent_key == *block_id &&
          my_files.files[j].keys[i].parent_name[0] == '\0')
@@ -96,7 +96,7 @@ void get_key_ids_binding(const int *file_id, const int *block_id, int *key_ids)
     int j = *file_id;
     int key_count = 0;
 
-    for (int i = 1; i < my_files.files[j].nkeys; i++)
+    for (int i = 1; i <= my_files.files[j].nkeys; i++)
     {
         if (my_files.files[j].keys[i].parent_key == *block_id &&
             my_files.files[j].keys[i].parent_name[0] == '\0')
