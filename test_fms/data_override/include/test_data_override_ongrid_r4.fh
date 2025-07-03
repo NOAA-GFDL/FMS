@@ -17,7 +17,7 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-#undef DO_TEST_KIND_
+#undef TEST_FMS_KIND_
 #undef COMPARE_DATA_
 #undef ONGRID_TEST_
 #undef BILINEAR_TEST_
@@ -25,7 +25,7 @@
 #undef SCALAR_TEST_
 #undef ENSEMBLE_TEST_
 
-#define DO_TEST_KIND_              r4_kind
+#define TEST_FMS_KIND_              r4_kind
 #define COMPARE_DATA_              compare_data_r4
 #define ONGRID_TEST_               ongrid_test_r4
 #define BILINEAR_TEST_             bilinear_test_r4
