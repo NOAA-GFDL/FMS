@@ -290,8 +290,8 @@ module fms
                          fms_field_manager_fm_query_method => fm_query_method, &
                          fms_field_manager_fm_find_methods => fm_find_methods, &
                          fms_field_manager_fm_copy_list => fm_copy_list, &
-                         fms_field_manager_fm_field_name_len => fm_field_name_len, &
-                         fms_field_manager_fm_path_name_len => fm_path_name_len, &
+                         !fms_field_manager_fm_field_name_len => fm_field_name_len, &
+                         !fms_field_manager_fm_path_name_len => fm_path_name_len, &
                          fms_field_manager_fm_string_len => fm_string_len, &
                          fms_field_manager_fm_type_name_len => fm_type_name_len, &
                          NUM_MODELS, NO_FIELD, MODEL_ATMOS, MODEL_OCEAN, MODEL_LAND, MODEL_ICE, MODEL_COUPLER, &
@@ -702,7 +702,7 @@ module fms
 
   !> platform
   use platform_mod, only: r8_kind, r4_kind, i8_kind, i4_kind, c8_kind, c4_kind, &
-                          l8_kind, l4_kind, i2_kind, ptr_kind
+                          l8_kind, l4_kind, i2_kind, ptr_kind, FMS_PATH_LEN
 
   !> random_numbers
   use random_numbers_mod, only: fms_random_numbers_randomNumberStream => randomNumberStream, &
