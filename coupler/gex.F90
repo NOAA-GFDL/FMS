@@ -105,7 +105,7 @@ use tracer_manager_mod,   only: NO_TRACER
 use field_manager_mod,    only: MODEL_LAND, MODEL_ATMOS, MODEL_OCEAN, NUM_MODELS
 use field_manager_mod,    only: fm_list_iter_type, fm_dump_list, fm_field_name_len, &
                                 fm_type_name_len, fm_get_length,fm_loop_over_list, fm_init_loop, &
-                                fm_string_len, fm_get_current_list, fm_path_name_len, fm_change_list, &
+                                fm_string_len, fm_get_current_list, fm_change_list, &
                                 field_manager_init
 use fm_util_mod,          only: fm_util_get_real, fm_util_get_logical, fm_util_get_string
 use mpp_mod,              only: mpp_root_pe, mpp_pe
