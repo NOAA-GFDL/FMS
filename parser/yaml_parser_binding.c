@@ -31,6 +31,22 @@
 
 #define FMS_FILE_LEN FMS_MAX_FILE_LEN
 
+// TODO: These constants are also defined in yaml_parser.F90
+// Consider consolidating constant definitions or using a shared header.
+const int MISSING_FILE = -1;
+const int PARSER_INIT_ERROR = -2;
+const int INVALID_YAML = -3;
+const int SUCCESSFUL = 1;
+
+const int MAX_LEVELS = 10;
+
+// DEBUG_FMS_YAML_PARSER is a hidden macro that may be useful when debugging parser issues
+#ifdef DEBUG_FMS_YAML_PARSER
+  #define DEBUG_PRINT(...) printf(__VA_ARGS__)
+#else
+  #define DEBUG_PRINT(...) // nothing
+#endif
+
 /**
  * @brief Represents a key-value pair within a YAML file.
  *
@@ -45,11 +61,25 @@ typedef struct {
 } KeyValuePairs;
 
 /**
+ * @brief Represents the contents of a YAML anchor as an array of key-value pairs.
+ */
+typedef struct {
+    int nkeys;                          ///< Number of keys defined for the anchor
+    KeyValuePairs *keys;                ///< Array of key-value pairs
+    char anchor_name[FMS_FILE_LEN];     ///< Name of the anchor
+    int nlevels;
+    int pid[MAX_LEVELS];
+    char parent_names[MAX_LEVELS][FMS_FILE_LEN];
+} AnchorsType;
+
+/**
  * @brief Represents the contents of a YAML file as an array of key-value pairs.
  */
 typedef struct {
     int nkeys;                ///< Number of keys defined in the YAML file
     KeyValuePairs *keys;      ///< Array of key-value pairs
+    AnchorsType *Anchors;     ///< Array of anchors in the yaml file
+    int nanchors;              ///< Number of anchors that have been defined in the file
 } YamlFile;
 
 /**
@@ -59,6 +89,7 @@ typedef struct {
     YamlFile *files;          ///< Array of parsed YAML files
 } FileType;
 
+// Local Variables:
 FileType my_files;    // Struct holding parsed YAML files
 int nfiles = 0;       // Number of files opened and parsed so far
 
@@ -432,25 +463,118 @@ bool is_valid_file_id(const int *file_id)
     return (fid > -1 && fid < nfiles);
 }
 
-/* @brief Private c function that opens and parses a yaml file and saves it in a struct
-   @return Flag indicating if the read was sucessful */
-int open_and_parse_file_wrap(char *filename, int *file_id)
+/**
+ * @brief Initializes an AnchorsType instance.
+ *
+ * @param anchor Pointer to the AnchorsType to initialize.
+ * @param name Name of the anchor (null-terminated string).
+ */
+void init_anchor(AnchorsType *anchor, const char *name, const char *parent_name)
+{
+    if (anchor == NULL || name == NULL) return;
+
+    anchor->nkeys = 0;
+    anchor->keys = (KeyValuePairs*)calloc(1, sizeof(KeyValuePairs));
+    strcpy(anchor->anchor_name, name);
+    anchor->nlevels = 0;
+    anchor->pid[0] = 0;
+    strcpy(anchor->parent_names[0], parent_name);
+}
+
+/**
+ * @brief Populates a KeyValuePairs structure with provided key data.
+ *
+ * @param my_key        Pointer to a KeyValuePairs structure to populate.
+ * @param key_id        Integer identifier for the key.
+ * @param parent_key    Integer identifier for the parent key.
+ * @param key           String representing the key name (can be NULL).
+ * @param value         String representing the key value (can be NULL).
+ * @param parent_name   String representing the parent key's name (can be NULL).
+ */
+void add_key(KeyValuePairs *my_key, const int key_id, const int parent_key,
+             const char *key, const char *value, const char *parent_name) {
+
+    my_key->key_id = key_id;
+    my_key->parent_key = parent_key;
+
+    if (key) {
+        strncpy(my_key->key, key, sizeof(my_key->key) - 1);
+        my_key->key[sizeof(my_key->key) - 1] = '\0';
+    } else {
+        my_key->key[0] = '\0';
+    }
+
+    if (value) {
+        strncpy(my_key->value, value, sizeof(my_key->value) - 1);
+        my_key->value[sizeof(my_key->value) - 1] = '\0';
+    } else {
+        my_key->value[0] = '\0';
+    }
+
+    if (parent_name) {
+        strncpy(my_key->parent_name, parent_name, sizeof(my_key->parent_name) - 1);
+        my_key->parent_name[sizeof(my_key->parent_name) - 1] = '\0';
+    } else {
+        my_key->parent_name[0] = '\0';
+    }
+}
+
+/**
+ * @brief Populates a KeyValuePairs structure in anchor with a key/value
+ *
+ * @param anchor Pointer to the AnchorsType to populate
+ * @param key Key of the yaml key/value pair
+ * @param value Value of the yaml key/value pair
+ */
+void add_anchor_key(AnchorsType *anchor, const char *key, const char *value)
+{
+    anchor->nkeys++;
+    anchor->keys = realloc(anchor->keys, (anchor->nkeys+1)*sizeof(KeyValuePairs));
+
+    KeyValuePairs *my_key = &anchor->keys[anchor->nkeys];
+    add_key(my_key, anchor->nkeys, anchor->pid[anchor->nlevels],
+      key, value, "");
+
+    DEBUG_PRINT("ANCHOR :: Key_number: %i, parent_key: %i, %s:%s \n ", my_key->key_id, my_key->parent_key, my_key->key, my_key->value);
+}
+
+/**
+ * @brief Populates a KeyValuePairs structure in anchor with a new block
+ *
+ * @param anchor Pointer to the AnchorsType to populate
+ * @param key Name of the block
+ */
+void add_anchor_parent(AnchorsType *anchor, const char *key)
+{
+    anchor->nkeys++;
+    anchor->keys = realloc(anchor->keys, (anchor->nkeys+1)*sizeof(KeyValuePairs));
+    anchor->nlevels++;
+    anchor->pid[anchor->nlevels] = anchor->nkeys; //TODO ANCHOR_LEVELS CHECKING
+
+    if (strcmp(key, "")) {
+        strcpy(anchor->parent_names[anchor->nlevels],key );
+    }
+    KeyValuePairs *my_key = &anchor->keys[anchor->nkeys];
+    add_key(my_key, anchor->nkeys, anchor->pid[anchor->nlevels -1],
+      "", "", anchor->parent_names[anchor->nlevels]);
+    DEBUG_PRINT("ANCHOR :: Key_number: %i, parent_key: %i, parent_name: %s \n ", my_key->key_id, my_key->parent_key, my_key->parent_name);
+}
+
+/**
+ * @brief Opens and parses a YAML file.
+ *
+ * @param filename Pointer to the name of the YAML file (read-only).
+ * @param file_id Pointer to an integer where the assigned file ID will be stored (output).
+ * @return 1 if the file was read successfully, or < 0 if there was an error.
+ */
+int open_and_parse_file_wrap(const char *filename, int *file_id)
 {
   yaml_parser_t parser;
   yaml_token_t  token;
-  FILE *file;
 
-  bool is_key = false;         /* Flag indicating if the current token in a key */
-  char key_value[255];         /* Value of a key */
-  int layer = 0;               /* Current layer (block level) */
-  int key_count=0;             /* Current number of keys */
-  int parent[10];              /* Ids of blocks */
-  int current_parent;          /* Id of the current block */
-  char layer_name[10][255];    /* Array of block names */
-  char current_layername[255]; /* Name of the current block */
-  int i;                       /* To minimize the typing :) */
-  int j;                       /* To minimize the typing :) */
+  int fid;                       /* To minimize the typing :) */
 
+  // Allocate space to store all the yaml file's info
   if (nfiles == 0 )
   {
      my_files.files = (YamlFile*)calloc(1, sizeof(YamlFile));
@@ -459,104 +583,174 @@ int open_and_parse_file_wrap(char *filename, int *file_id)
      my_files.files = realloc(my_files.files, (nfiles+1)*sizeof(YamlFile));
   }
 
-  j = nfiles;
-  *file_id =j;
+  // Assign the file id
+  fid = nfiles;
+  *file_id =fid;
 
-/*  printf("Opening file: %s.\nThere are %i files opened.\n", filename, j); */
+  DEBUG_PRINT("Opening file: %s.\n There are %i files opened.\n", filename, nfiles);
+
+  FILE *file;
   file = fopen(filename, "r");
-  if (file == NULL) return -1;
+  if (file == NULL) return MISSING_FILE;
 
-  if(!yaml_parser_initialize(&parser)) return -2;
+  if(!yaml_parser_initialize(&parser)) return PARSER_INIT_ERROR;
 
-  my_files.files[j].keys = (KeyValuePairs*)calloc(1, sizeof(KeyValuePairs));
+  YamlFile *my_file = &my_files.files[fid];
+  my_file->keys = (KeyValuePairs*)calloc(1, sizeof(KeyValuePairs));
 
-  parent[0]=0;
-  strcpy(layer_name[0], "TOP");
-  /* Set input file */
+  int nlevels = 0;
+  int nkeys = 0;
+  int pid[MAX_LEVELS]; // parent_ids
+  char parent_names[MAX_LEVELS][FMS_FILE_LEN]; // the name of the parent at each level
+  char key_value[FMS_FILE_LEN];
+  bool defining_value;
+  bool defining_anchor;
+
+  // Initialize some variables
+  defining_value = false;
+  defining_anchor = false;
+  pid[0]=0;
+  strcpy(parent_names[0], "TOP");
+
   yaml_parser_set_input_file(&parser, file);
   do {
     if (!yaml_parser_scan(&parser, &token)) {
-      return -3;
+      return INVALID_YAML;
     }
     switch(token.type)
     {
     case YAML_KEY_TOKEN:
-       {
-        is_key = true;
+        DEBUG_PRINT("YAML_KEY_TOKEN \n");
+        defining_value = false;
         break;
-       }
+
     case YAML_VALUE_TOKEN:
-       {
-        is_key = false;
+        DEBUG_PRINT("YAML_VALUE_TOKEN \n");
+        defining_value = true;
         break;
-       }
-    case YAML_BLOCK_ENTRY_TOKEN:
-       {
-        layer = layer + 1;
 
-        if (strcmp(key_value, ""))
-        {
-           strcpy(layer_name[layer], key_value);
-        }
-        key_count = key_count + 1;
-        i = key_count;
-        my_files.files[j].keys = realloc(my_files.files[j].keys, (i+1)*sizeof(KeyValuePairs));
-        my_files.files[j].keys[i].key_id=i;
-        my_files.files[j].keys[i].parent_key = parent[layer-1];
-        strcpy(my_files.files[j].keys[i].parent_name, layer_name[layer]);
-        strcpy(my_files.files[j].keys[i].key, "");
-        strcpy(my_files.files[j].keys[i].value, "");
-        parent[layer]=key_count;
-        /*printf("KEY:%i LAYER:%i NAME:%s for %s=%i\n", key_count, layer, layer_name[layer], layer_name[layer-1], parent[layer-1]); */
-
-        break;
-       }
-    case YAML_BLOCK_END_TOKEN:
-       {
-        layer = layer - 1;
-        break;
-       }
     case YAML_SCALAR_TOKEN:
-       {
-        if ( ! is_key)
-        {
-         current_parent = parent[layer];
-         strcpy(current_layername, "");
-         key_count = key_count + 1;
-         i = key_count;
-         my_files.files[j].keys = realloc(my_files.files[j].keys, (i+1)*sizeof(KeyValuePairs));
-         my_files.files[j].keys[i].key_id=i;
-         my_files.files[j].keys[i].parent_key = current_parent;
-         strcpy(my_files.files[j].keys[i].parent_name, current_layername);
-         strcpy(my_files.files[j].keys[i].key, key_value);
-         strcpy(my_files.files[j].keys[i].value, token.data.scalar.value);
-         my_files.files[j].nkeys = key_count;
-         /* printf("----> LAYER:%i LAYER_NAME=%s PARENT:%i, KEYCOUNT:%i KEY: %s VALUE: %s \n", layer, current_layername, current_parent, key_count, key_value, token.data.scalar.value); */
-         strcpy(key_value,"");
+        DEBUG_PRINT("YAML_SCALAR_TOKEN \n");
+        if (!defining_value) {
+         strcpy(key_value, token.data.scalar.value);
+         break;
         }
-        else
-         {strcpy(key_value,token.data.scalar.value);}
+        if (defining_anchor) {
+           AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
+           add_anchor_key(my_anchor, key_value, token.data.scalar.value);
+        } else {
+           nkeys ++;
+           my_file->keys = realloc(my_file->keys, (nkeys+1)*sizeof(KeyValuePairs));
+           KeyValuePairs *my_key = &my_file->keys[nkeys];
+           add_key(my_key, nkeys, pid[nlevels],
+             key_value, token.data.scalar.value, "");
+           DEBUG_PRINT("Key_number: %i, parent_key: %i, ----- %s:%s \n ",
+             my_file->keys[nkeys].key_id, my_file->keys[nkeys].parent_key,
+             my_file->keys[nkeys].key, my_file->keys[nkeys].value);
         }
-     break;
-     }
+        defining_value = false;
+        strcpy(key_value, "" );
+        break;
+
+    case YAML_BLOCK_ENTRY_TOKEN:
+        DEBUG_PRINT("YAML_BLOCK_ENTRY_TOKEN \n");
+        if (defining_anchor) {
+           AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
+           add_anchor_parent(my_anchor, key_value);
+        } else {
+           nlevels ++;
+           nkeys ++;
+           pid[nlevels] = nkeys;
+           if (strcmp(key_value, "")) {
+             strcpy(parent_names[nlevels], key_value);
+           }
+           DEBUG_PRINT("NLEVELS = %i - (%s) (%s) \n", nlevels, parent_names[nlevels], parent_names[nlevels-1]);
+           my_file->keys = realloc(my_file->keys, (nkeys+1)*sizeof(KeyValuePairs));
+           KeyValuePairs *my_key = &my_file->keys[nkeys];
+           add_key(my_key, nkeys, pid[nlevels-1],
+             "", "", parent_names[nlevels]);
+           DEBUG_PRINT("Key_number: %i, parent_key: %i, parent_name: %s \n ", my_file->keys[nkeys].key_id, my_file->keys[nkeys].parent_key, my_file->keys[nkeys].parent_name);
+        }
+        defining_value = false;
+        strcpy(key_value, "" );
+        break;
+    case YAML_BLOCK_END_TOKEN:
+        DEBUG_PRINT("YAML_BLOCK_END_TOKEN \n");
+        if (defining_anchor) {
+            AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
+            my_anchor->nlevels--;
+            DEBUG_PRINT("NLEVELS = %i \n", nlevels);
+            if (my_anchor->nlevels == -1) {
+                defining_anchor = false;
+                DEBUG_PRINT("FINISHED WITH ANCHOR :: ----------------------------- \n");
+            }
+        } else {
+            nlevels --;
+            DEBUG_PRINT("NLEVELS = %i \n", nlevels);
+        }
+        defining_value = false;
+        strcpy(key_value, "" );
+        break;
+    case YAML_ANCHOR_TOKEN: {
+        DEBUG_PRINT("YAML_ANCHOR_TOKEN \n");
+        my_file->nanchors ++;
+        if (my_file->nanchors == 1) {
+           my_file->Anchors = (AnchorsType*)calloc(my_file->nanchors + 1, sizeof(AnchorsType));
+        } else {
+           my_file->Anchors = realloc(my_file->Anchors, (my_file->nanchors + 1)*sizeof(AnchorsType));
+        }
+        defining_anchor = true;
+        defining_value = false;
+        AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
+        init_anchor(my_anchor, token.data.anchor.value, key_value);
+        break;
+    }
+    case YAML_ALIAS_TOKEN: {
+        DEBUG_PRINT("YAML_ALIAS_TOKEN \n");
+        int top_key = nkeys;
+        AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
+        for (int i = 2; i < my_anchor->nkeys + 1; i++) {
+            nkeys ++;
+            my_file->keys = realloc(my_file->keys, (nkeys+1)*sizeof(KeyValuePairs));
+            KeyValuePairs *my_key = &my_file->keys[nkeys];
+            int parent_key_id;
+            char parent_name[FMS_FILE_LEN];
+            if (my_anchor->keys[i].parent_key == 0){
+                strcpy(parent_name, parent_names[nlevels]);
+                parent_key_id = pid[nlevels-1];
+            } else {
+                strcpy(parent_name, my_anchor->keys[i].parent_name);
+                parent_key_id = top_key + my_anchor->keys[i].parent_key - 1;
+            }
+            add_key(my_key, nkeys, parent_key_id,
+              my_anchor->keys[i].key, my_anchor->keys[i].value, parent_name);
+            if (strcmp(my_file->keys[nkeys].key, "")) {
+                DEBUG_PRINT("**:: Key_number: %i, parent_key: %i, ----- %s:%s \n ",
+                    my_file->keys[nkeys].key_id, my_file->keys[nkeys].parent_key,
+                    my_file->keys[nkeys].key, my_file->keys[nkeys].value);
+            }else {
+                DEBUG_PRINT("**:: Key_number: %i, parent_key: %i, parent_name: %s \n ",
+                    my_file->keys[nkeys].key_id, my_file->keys[nkeys].parent_key,
+                    my_file->keys[nkeys].parent_name);
+            }
+        }
+        nlevels --;
+
+        break;
+    }
+    } //end of switch
     if(token.type != YAML_STREAM_END_TOKEN)
       yaml_token_delete(&token);
   } while(token.type != YAML_STREAM_END_TOKEN);
   yaml_token_delete(&token);
   yaml_parser_delete(&parser);
 
-  /*
-  for ( i = 1; i <= my_files.files[j].nkeys; i++ ) {
-       printf("Key_number:%i Parent_key:%i Parent_name:%s Key:%s Value:%s \n", my_files.files[j].keys[i].key_id, my_files.files[j].keys[i].parent_key, my_files.files[j].keys[i].parent_name, my_files.files[j].keys[i].key, my_files.files[j].keys[i].value);
-  }
-  printf("/\n");
-   */
-
+  my_file->nkeys = nkeys;
   nfiles = nfiles + 1;
-/*  printf("closing file: %s\n", filename); */
+  DEBUG_PRINT("closing file: %s\n", filename);
   fclose(file);
 
-  return 1;
+  return SUCCESSFUL;
 }
 
 #endif
