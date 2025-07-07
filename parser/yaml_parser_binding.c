@@ -38,7 +38,9 @@ const int PARSER_INIT_ERROR = -2;
 const int INVALID_YAML = -3;
 const int SUCCESSFUL = 1;
 
-const int MAX_LEVELS = 10;
+#ifndef MAX_LEVELS
+#define MAX_LEVELS 10
+#endif
 
 // DEBUG_FMS_YAML_PARSER is a hidden macro that may be useful when debugging parser issues
 #ifdef DEBUG_FMS_YAML_PARSER
