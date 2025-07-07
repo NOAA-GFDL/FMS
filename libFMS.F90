@@ -290,7 +290,7 @@ module fms
                          fms_field_manager_fm_query_method => fm_query_method, &
                          fms_field_manager_fm_find_methods => fm_find_methods, &
                          fms_field_manager_fm_copy_list => fm_copy_list, &
-                         !fms_field_manager_fm_field_name_len => fm_field_name_len, &
+                         fms_field_manager_fm_field_name_len => fm_field_name_len, &
                          !fms_field_manager_fm_path_name_len => fm_path_name_len, &
                          fms_field_manager_fm_string_len => fm_string_len, &
                          fms_field_manager_fm_type_name_len => fm_type_name_len, &
