@@ -126,7 +126,7 @@ integer, parameter :: gex_units = 2    !< internal index for gex unit
 !> @brief This type represents the entries for a specific exchanged field
 !> @ingroup gex_mod
 type gex_type
-   character(FMS_PATH_LEN):: name  = '' !< gex name
+   character(fm_field_name_len):: name  = '' !< gex name
    character(fm_string_len)    :: units = '' !< units (optional)
    logical                     :: set   = .FALSE.
 end type gex_type
