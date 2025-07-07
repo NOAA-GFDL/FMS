@@ -144,7 +144,33 @@ module offloading_io_mod
 
     integer :: int_buf
     real :: real_buf
+    real(r4_kind), allocatable :: r4_tmp(:)
+    real(r8_kind), allocatable :: r8_tmp(:)
+    integer(i4_kind) , allocatable :: i4_tmp(:)
+    integer(i8_kind) , allocatable :: i8_tmp(:)
+    character(len=:), allocatable :: str_tmp
     class(metadata_class), allocatable :: transfer_obj 
+
+    select type (attribute_value) 
+    type is (real(kind=r8_kind))
+      !! TODO combine these two calls with a factory function
+      allocate(metadata_r8_type :: transfer_obj)
+      call transfer_obj%fms_metadata_transfer_init(real8_type)
+    type is (real(kind=r4_kind))
+      allocate(metadata_r4_type :: transfer_obj)
+      call transfer_obj%fms_metadata_transfer_init(real4_type)
+    type is (integer(kind=i4_kind))
+      allocate(metadata_i4_type :: transfer_obj)
+      call transfer_obj%fms_metadata_transfer_init(int4_type)
+    type is (integer(kind=i8_kind))
+      allocate(metadata_i8_type :: transfer_obj)
+      call transfer_obj%fms_metadata_transfer_init(int8_type)
+    type is (character(*))
+      allocate(metadata_str_type :: transfer_obj)
+      call transfer_obj%fms_metadata_transfer_init(str_type)
+    class default
+      call mpp_error(FATAL, "Unsupported attribute type for offloading: " // string(attribute_value))
+    end select
 
     offloading_pes = fileobj%offloading_obj_in%offloading_pes
     model_pes = fileobj%offloading_obj_in%model_pes
@@ -155,6 +181,7 @@ module offloading_io_mod
 
     if (is_model_pe) then
       att_name(1) = attribute_name
+      call transfer_obj%set_attribute_name(attribute_name)
     endif
 
     allocate(all_current_pes(mpp_npes()))
@@ -167,23 +194,114 @@ module offloading_io_mod
       broadcasting_pes(2:size(broadcasting_pes)) = offloading_pes
       call mpp_set_current_pelist( broadcasting_pes )
 
-      call mpp_broadcast(att_name, 255, model_pes(1))
+      !call mpp_broadcast(att_name, 255, model_pes(1))
 
       select type (attribute_value)
         type is (real(kind=r4_kind))
-          print *, trim(attribute_name), " is a r4"
+          ! TODO replace this mess with a single call if possible 
+          if (is_model_pe) then
+            select type(transfer_obj)
+              type is (metadata_r4_type)
+                call transfer_obj%set_attribute_value([attribute_value])
+                call transfer_obj%set_attribute_type(real4_type)
+            end select
+          endif
+          call transfer_obj%fms_metadata_broadcast()
+          select type(transfer_obj)
+            type is (metadata_r4_type)
+              r4_tmp = transfer_obj%get_attribute_value()
+          end select
+          att_name(1) = transfer_obj%get_attribute_name()
+          if (.not. is_model_pe) then
+            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
+              " and value is ", r4_tmp
+            call register_global_attribute(this%fileobj, att_name(1), r4_tmp)
+          endif
+
         type is (real(kind=r8_kind))
-          if (is_model_pe) real_buf = attribute_value
-          call mpp_broadcast(real_buf, model_pes(1))
-          if (.not. is_model_pe) call register_global_attribute(this%fileobj, att_name(1), real_buf)
+          ! TODO replace this mess with a single call if possible 
+          if (is_model_pe) then
+            select type(transfer_obj)
+              type is (metadata_r8_type)
+                call transfer_obj%set_attribute_value([attribute_value])
+                call transfer_obj%set_attribute_type(real8_type)
+            end select
+          endif
+          call transfer_obj%fms_metadata_broadcast()
+          select type(transfer_obj)
+            type is (metadata_r8_type)
+              r8_tmp = transfer_obj%get_attribute_value()
+          end select
+          att_name(1) = transfer_obj%get_attribute_name()
+          if (.not. is_model_pe) then
+            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
+              " and value is ", r8_tmp
+            call register_global_attribute(this%fileobj, att_name(1), r8_tmp)
+          endif
+
         type is (integer(kind=i4_kind))
-          if (is_model_pe) int_buf = attribute_value
-          call mpp_broadcast(int_buf, model_pes(1))
-          if (.not. is_model_pe) call register_global_attribute(this%fileobj, att_name(1), int_buf)
+          if (is_model_pe) then
+            select type(transfer_obj)
+              type is (metadata_i4_type)
+                call transfer_obj%set_attribute_value([attribute_value])
+                call transfer_obj%set_attribute_type(int4_type)
+                int_buf = attribute_value
+            end select
+          endif
+          call transfer_obj%fms_metadata_broadcast()
+          select type(transfer_obj)
+            type is (metadata_i4_type)
+              i4_tmp = transfer_obj%get_attribute_value()
+          end select
+          att_name(1) = transfer_obj%get_attribute_name()
+          if (.not. is_model_pe) then
+            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
+              " and value is ", i4_tmp
+            call register_global_attribute(this%fileobj, att_name(1), i4_tmp)
+          endif
+
         type is (integer(kind=i8_kind))
-          print *, trim(attribute_name), " is a i8"
+          ! TODO replace this mess with a single call if possible 
+          if (is_model_pe) then
+            select type(transfer_obj)
+              type is (metadata_i8_type)
+                call transfer_obj%set_attribute_value([attribute_value])
+                call transfer_obj%set_attribute_type(int8_type)
+            end select
+          endif
+          call transfer_obj%fms_metadata_broadcast()
+          select type(transfer_obj)
+            type is (metadata_i8_type)
+              i8_tmp = transfer_obj%get_attribute_value()
+          end select
+          att_name(1) = transfer_obj%get_attribute_name()
+          if (.not. is_model_pe) then
+            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
+              " and value is ", i8_tmp 
+            call register_global_attribute(this%fileobj, att_name(1), i8_tmp)
+          endif
+
         type is (character(len=*))
-          print *, trim(attribute_name), " is a string"
+          ! TODO replace this mess with a single call if possible 
+          if (is_model_pe) then
+            select type(transfer_obj)
+              type is (metadata_str_type)
+                call transfer_obj%set_attribute_value(attribute_value)
+                call transfer_obj%set_attribute_type(str_type)
+            end select
+          endif
+          call transfer_obj%fms_metadata_broadcast()
+          select type(transfer_obj)
+            type is (metadata_str_type)
+              str_tmp = transfer_obj%get_attribute_value()
+          end select
+          att_name(1) = transfer_obj%get_attribute_name()
+          if (.not. is_model_pe) then
+            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
+              " and value is ", str_tmp 
+            call register_global_attribute(this%fileobj, att_name(1), str_tmp)
+          endif
+
       end select
     endif
 

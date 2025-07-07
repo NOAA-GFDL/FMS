@@ -1,7 +1,7 @@
 module metadata_transfer_mod
   use platform_mod
   use mpi
-  use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL
+  use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL, mpp_get_current_pelist, mpp_npes
   use fms_mod, only: string 
 
   implicit none
@@ -16,7 +16,7 @@ module metadata_transfer_mod
   integer, parameter :: ATTR_NAME_MAX_LENGTH = 128 
   integer, parameter :: ATTR_VALUE_MAX_LENGTH = 128
 
-  !> Base class for transfering netcdf attribute data, holds the common fields 
+  !> Base class for broadcasting netcdf attribute data as a struct, holds the common fields 
   !! and routines for initializing the mpi datatype so that children classes can
   !! be sent/broadcasted. 
   !! TODO get/set attr val functions should probably be deferred functions defined here
@@ -121,32 +121,39 @@ module metadata_transfer_mod
     lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, 1, 1, ATTR_VALUE_MAX_LENGTH/)
 
     call MPI_Type_create_struct(7, lengths, displacements, types, mpi_id, ierror)
-    call MPI_Type_commit(mpi_id, ierror)
     if(ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_create_struct failed")
+    end if
+    call MPI_Type_commit(mpi_id, ierror)
+    if(ierror /= MPI_SUCCESS) then
+      call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_commit failed")
     end if
     this%mpi_type_id = mpi_id 
   end subroutine fms_metadata_transfer_init
 
   subroutine fms_metadata_broadcast(this)
     class(metadata_class), intent(inout) :: this
-    integer :: ierror
+    integer :: ierror, curr_comm_id
+    integer, allocatable :: broadcasting_pes(:) 
     if (this%mpi_type_id .eq. -1) then
       call mpp_error(FATAL, "fms_metadata_broadcast: metadata_transfer not initialized")
     end if
 
+    allocate(broadcasting_pes(mpp_npes()))
+    call mpp_get_current_pelist(broadcasting_pes, commID=curr_comm_id)
+
     ! Broadcast the metadata transfer type to all processes
     select type(this)
     type is (metadata_r8_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_r4_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_i4_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_i8_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_str_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
     end select
 
     if (ierror /= MPI_SUCCESS) then
@@ -170,26 +177,28 @@ module metadata_transfer_mod
 
   end subroutine fms_metadata_broadcast_all
 
-  ! Getter and Setter for attribute_type
+  !> Getter for attribute_type value (one of the real8_type, real4_type, int8_type, int4_type, str_type int values)
   function get_attribute_type(this) result(val)
     class(metadata_class), intent(in) :: this
     integer :: val
     val = this%attribute_type
   end function
 
+  !> Setter for attribute_type value (one of the real8_type, real4_type, int8_type, int4_type, str_type int values)
   subroutine set_attribute_type(this, val)
     class(metadata_class), intent(inout) :: this
     integer, intent(in) :: val
     this%attribute_type = val
   end subroutine
 
-  ! Getter and Setter for attribute_value
+  !> Getter for real 8 attribute_value
   function get_attribute_r8_value(this) result(val)
     class(metadata_r8_type), intent(inout) :: this
     real(r8_kind), allocatable :: val(:)
     val = this%attribute_value(1:this%attribute_length)
   end function
 
+  !> Setter for real 8 attribute_value
   subroutine set_attribute_r8_value(this, val)
     class(metadata_r8_type), intent(inout) :: this
     real(r8_kind), intent(in) :: val(:)
@@ -202,12 +211,14 @@ module metadata_transfer_mod
     this%attribute_type = real8_type
   end subroutine
 
+  !> Getter for real 4 attribute_value
   function get_attribute_r4_value(this) result(val)
     class(metadata_r4_type), intent(inout) :: this
     real(r4_kind), allocatable :: val(:)
     val = this%attribute_value(1:this%attribute_length)
   end function
 
+  !> Setter for real 4 attribute_value
   subroutine set_attribute_r4_value(this, val)
     class(metadata_r4_type), intent(inout) :: this
     real(r4_kind), intent(in) :: val(:)
@@ -220,12 +231,14 @@ module metadata_transfer_mod
     this%attribute_type = real4_type
   end subroutine
 
+  !> Getter for integer(kind=8) attribute_value
   function get_attribute_i8_value(this) result(val)
     class(metadata_i8_type), intent(inout) :: this
     integer(i8_kind), allocatable :: val(:)
     val = this%attribute_value(1:this%attribute_length)
   end function
 
+  !> Setter for integer(kind=8) attribute_value
   subroutine set_attribute_i8_value(this, val)
     class(metadata_i8_type), intent(inout) :: this
     integer(i8_kind), intent(in) :: val(:)
@@ -238,12 +251,14 @@ module metadata_transfer_mod
     this%attribute_type = int8_type
   end subroutine
 
+  !> Getter for integer(kind=4) attribute_value
   function get_attribute_i4_value(this) result(val)
     class(metadata_i4_type), intent(inout) :: this
     integer(i4_kind), allocatable :: val(:)
     val = this%attribute_value(1:this%attribute_length)
   end function
 
+  !> Setter for integer(kind=4) attribute_value
   subroutine set_attribute_i4_value(this, val)
     class(metadata_i4_type), intent(inout) :: this
     integer(i4_kind), intent(in) :: val(:)
@@ -256,12 +271,14 @@ module metadata_transfer_mod
     this%attribute_type = int4_type
   end subroutine
 
+  !> Getter for string attribute_value
   function get_attribute_str_value(this) result(val)
     class(metadata_str_type), intent(inout) :: this
     character(len=:), allocatable :: val
     val = this%attribute_value(1:this%attribute_length)
   end function
 
+  !> Setter for string attribute_value
   subroutine set_attribute_str_value(this, val)
     class(metadata_str_type), intent(inout) :: this
     character(len=*), intent(in) :: val
@@ -274,13 +291,14 @@ module metadata_transfer_mod
     this%attribute_type = str_type 
   end subroutine
 
-  ! Getter and Setter for attribute_name
+  !> Getter for attribute_name (for all metadata types)
   function get_attribute_name(this) result(val)
     class(metadata_class), intent(inout) :: this
     character(len=ATTR_NAME_MAX_LENGTH) :: val
     val = trim(this%attribute_name)
   end function
 
+  !> Setter for attribute_name (for all metadata types)
   subroutine set_attribute_name(this, val)
     class(metadata_class), intent(inout) :: this
     character(len=*), intent(in) :: val
