@@ -19,6 +19,7 @@ module metadata_transfer_mod
   !> Base class for transfering netcdf attribute data, holds the common fields 
   !! and routines for initializing the mpi datatype so that children classes can
   !! be sent/broadcasted. 
+  !! TODO get/set attr val functions should probably be deferred functions defined here
   type, abstract :: metadata_class
     private
     integer                             :: mpi_type_id = -1 !< MPI datatype id corresponding to this data objects data, -1 if not set
@@ -67,9 +68,19 @@ module metadata_transfer_mod
       procedure :: set_attribute_value => set_attribute_i4_value
   end type metadata_i4_type
 
+  !> Metadata class for integer(kind=4) attribute values
+  type, extends(metadata_class) :: metadata_str_type
+    character(len=ATTR_VALUE_MAX_LENGTH) :: attribute_value
+    contains
+      procedure :: get_attribute_value => get_attribute_str_value
+      procedure :: set_attribute_value => set_attribute_str_value
+  end type metadata_str_type
+
   contains
 
   !> Initialize the mpi datatype for future broadcasts
+  !! The metadata object's functions (not subroutines) are stored as fields in memory,
+  !! so they need to be included in the MPI struct declaration.
   subroutine fms_metadata_transfer_init(this, dtype)
     class(metadata_class), intent(inout) :: this !< metadata object to initialize for mpi communication using the struct
     integer, optional, intent(in) :: dtype !< type of the attribute, one of the real8_type, real4_type, int8_type, int4_type, str_type
@@ -84,24 +95,24 @@ module metadata_transfer_mod
       type_local = this%get_attribute_type()
     end if
 
-    !! use attribute type to figure out struct offsets needed for mpi struct declaration
-    !! the metadata object's functions (not subroutines) are stored as fields in memory,
-    !! so they need to be included in the struct declaration
+
+    !! since the actual data array is at the end of the struct, displacements are the same for all types
+    displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
+                      sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+                      sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+                      sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
+                    /)
     select case(type_local)
     case(real8_type)
-      displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
-                        sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
-                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
-                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
-                      /)
       types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_DOUBLE/)
     case(real4_type)
-      displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
-                        sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
-                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
-                        sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
-                      /)
       types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_FLOAT/)
+    case(int4_type)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_INT/)
+    case(int8_type)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_LONG_INT/)
+    case(str_type)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER/)
     case default
         call mpp_error(FATAL, "fms_metadata_transfer_init:: given dummy_type argument contains a unsupported type")
     end select
@@ -128,7 +139,14 @@ module metadata_transfer_mod
     select type(this)
     type is (metadata_r8_type)
       call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
-      print *, "pe: ", mpp_pe(), " metadata_r8_type broadcasted"
+    type is (metadata_r4_type)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+    type is (metadata_i4_type)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+    type is (metadata_i8_type)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
+    type is (metadata_str_type)
+      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), MPI_COMM_WORLD, ierror)
     end select
 
     if (ierror /= MPI_SUCCESS) then
@@ -236,6 +254,24 @@ module metadata_transfer_mod
     this%attribute_length = size(val)
     this%attribute_value(1:size(val)) = val
     this%attribute_type = int4_type
+  end subroutine
+
+  function get_attribute_str_value(this) result(val)
+    class(metadata_str_type), intent(inout) :: this
+    character(len=:), allocatable :: val
+    val = this%attribute_value(1:this%attribute_length)
+  end function
+
+  subroutine set_attribute_str_value(this, val)
+    class(metadata_str_type), intent(inout) :: this
+    character(len=*), intent(in) :: val
+    if(len(val) .gt. ATTR_VALUE_MAX_LENGTH) then
+      call mpp_error(FATAL, &
+        "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
+    endif
+    this%attribute_length = len(val)
+    this%attribute_value(1:len(val)) = val
+    this%attribute_type = str_type 
   end subroutine
 
   ! Getter and Setter for attribute_name
