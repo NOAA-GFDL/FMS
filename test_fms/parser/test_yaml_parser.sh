@@ -26,7 +26,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parser_skip ]; then
-  SKIP_TESTS='test_yaml_parser.[1-25]'
+  SKIP_TESTS='test_yaml_parser.[1-27]'
 fi
 
 touch input.nml
