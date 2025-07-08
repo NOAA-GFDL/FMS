@@ -458,8 +458,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
           has_module_block(i) = .true.
           ! Get the total number of variables in each module block, ignoring those with write_var = .false.
           if (nvars_per_file(i) .ne. 0) &
-            call mpp_error(FATAL, "diag_manager_mod:: the file:"//trim(filename)//" has a 'modules' block defined and "//&
-                                  "a 'module' key defined. This is not allowed!")
+            call mpp_error(FATAL, "diag_manager_mod:: the file:"//trim(filename)//" has a 'modules' block defined "//&
+                                  "and a 'module' key defined at the file level. This is not allowed!")
 
           allocate(mod_ids(nmods))
           call get_block_ids(diag_yaml_id, "modules", mod_ids, parent_block_id=diag_file_ids(i))
