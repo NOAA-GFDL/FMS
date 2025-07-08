@@ -36,6 +36,8 @@
 const int MISSING_FILE = -1;
 const int PARSER_INIT_ERROR = -2;
 const int INVALID_YAML = -3;
+const int INVALID_ALIAS = -4;
+const int MAX_LEVELS_REACH = -5;
 const int SUCCESSFUL = 1;
 
 #ifndef MAX_LEVELS
@@ -466,6 +468,25 @@ bool is_valid_file_id(const int *file_id)
 }
 
 /**
+ * @brief Increments the number of levels, enforcing a maximum limit.
+ *
+ * Increments the value pointed to by `nlevels`. If the new value exceeds
+ * the maximum allowed (`MAX_LEVELS`), the function returns an error code.
+ *
+ * @param nlevels   Pointer to the current number of levels to be incremented.
+ *
+ * @return SUCCESSFUL (typically 0) if increment is valid;
+ *         MAX_LEVELS_REACH if the maximum level count is exceeded.
+ */
+int increment_nlevels(int *nlevels) {
+    (*nlevels) ++;
+    if (*nlevels > MAX_LEVELS){
+        return MAX_LEVELS_REACH;
+    }
+    return SUCCESSFUL;
+}
+
+/**
  * @brief Initializes an AnchorsType instance.
  *
  * @param anchor Pointer to the AnchorsType to initialize.
@@ -545,13 +566,17 @@ void add_anchor_key(AnchorsType *anchor, const char *key, const char *value)
  *
  * @param anchor Pointer to the AnchorsType to populate
  * @param key Name of the block
+ * @return 1 if successful otherwise error code
  */
-void add_anchor_parent(AnchorsType *anchor, const char *key)
+int add_anchor_parent(AnchorsType *anchor, const char *key)
 {
     anchor->nkeys++;
+
     anchor->keys = realloc(anchor->keys, (anchor->nkeys+1)*sizeof(KeyValuePairs));
-    anchor->nlevels++;
-    anchor->pid[anchor->nlevels] = anchor->nkeys; //TODO ANCHOR_LEVELS CHECKING
+    int err_code = increment_nlevels(&anchor->nlevels);
+    if (err_code =! SUCCESSFUL) return err_code;
+
+    anchor->pid[anchor->nlevels] = anchor->nkeys;
 
     if (strcmp(key, "")) {
         strcpy(anchor->parent_names[anchor->nlevels],key );
@@ -560,6 +585,29 @@ void add_anchor_parent(AnchorsType *anchor, const char *key)
     add_key(my_key, anchor->nkeys, anchor->pid[anchor->nlevels -1],
       "", "", anchor->parent_names[anchor->nlevels]);
     DEBUG_PRINT("ANCHOR :: Key_number: %i, parent_key: %i, parent_name: %s \n ", my_key->key_id, my_key->parent_key, my_key->parent_name);
+
+    return SUCCESSFUL;
+}
+/**
+ * @brief Retrieves the index of an anchor by its alias name.
+ *
+ * Searches the YamlFile's list of anchors for a matching alias name.
+ * If a match is found, returns the corresponding index (starting from 1).
+ *
+ * @param this         Pointer to the YamlFile structure containing anchors.
+ * @param alias_name   The alias name to search for.
+ *
+ * @return Index of the matching anchor if found; otherwise, returns INVALID_ALIAS.
+ */
+int get_anchor_id(YamlFile *this, const char *alias_name)
+{
+    for (int i = 1; i < this->nanchors + 1; i++) {
+        AnchorsType *my_anchor = &this->Anchors[i];
+        if (strcmp(my_anchor->anchor_name, alias_name) == 0) {
+            return i;
+        }
+    }
+    return INVALID_ALIAS;
 }
 
 /**
@@ -658,15 +706,19 @@ int open_and_parse_file_wrap(const char *filename, int *file_id)
         DEBUG_PRINT("YAML_BLOCK_ENTRY_TOKEN \n");
         if (defining_anchor) {
            AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
-           add_anchor_parent(my_anchor, key_value);
+
+           int err_code = add_anchor_parent(my_anchor, key_value);
+           if (err_code != SUCCESSFUL) return err_code;
+
         } else {
-           nlevels ++;
+           int err_code = increment_nlevels(&nlevels);
+           if (err_code == MAX_LEVELS_REACH) return MAX_LEVELS_REACH;
+
            nkeys ++;
            pid[nlevels] = nkeys;
            if (strcmp(key_value, "")) {
              strcpy(parent_names[nlevels], key_value);
            }
-           DEBUG_PRINT("NLEVELS = %i - (%s) (%s) \n", nlevels, parent_names[nlevels], parent_names[nlevels-1]);
            my_file->keys = realloc(my_file->keys, (nkeys+1)*sizeof(KeyValuePairs));
            KeyValuePairs *my_key = &my_file->keys[nkeys];
            add_key(my_key, nkeys, pid[nlevels-1],
@@ -681,14 +733,12 @@ int open_and_parse_file_wrap(const char *filename, int *file_id)
         if (defining_anchor) {
             AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
             my_anchor->nlevels--;
-            DEBUG_PRINT("NLEVELS = %i \n", nlevels);
             if (my_anchor->nlevels == -1) {
                 defining_anchor = false;
                 DEBUG_PRINT("FINISHED WITH ANCHOR :: ----------------------------- \n");
             }
         } else {
             nlevels --;
-            DEBUG_PRINT("NLEVELS = %i \n", nlevels);
         }
         defining_value = false;
         strcpy(key_value, "" );
@@ -710,7 +760,11 @@ int open_and_parse_file_wrap(const char *filename, int *file_id)
     case YAML_ALIAS_TOKEN: {
         DEBUG_PRINT("YAML_ALIAS_TOKEN \n");
         int top_key = nkeys;
-        AnchorsType *my_anchor = &my_file->Anchors[my_file->nanchors];
+
+        int aid = get_anchor_id(my_file, token.data.alias.value);
+        if (aid == INVALID_ALIAS) return INVALID_ALIAS;
+
+        AnchorsType *my_anchor = &my_file->Anchors[aid];
         for (int i = 2; i < my_anchor->nkeys + 1; i++) {
             nkeys ++;
             my_file->keys = realloc(my_file->keys, (nkeys+1)*sizeof(KeyValuePairs));

@@ -343,6 +343,11 @@ name: &name
     kind: double
     module: "moist"
 
+name2: &name2
+  - varName: tdata
+    reduction: False
+    module: "moist"
+
 title: c384L49_esm5PIcontrol
 baseDate: [1960 1 1 1 1 1 1]
 diag_files:
@@ -359,12 +364,16 @@ diag_files:
      timeunit: days
      unlimdim: time
      varlist:
-     - varName: tdata
-       reduction: False
-       module: "moist"
+     - *name2
 _EOF
 
 test_expect_success "test_yaml_parser using anchors" '
   mpirun -n 1 ./test_yaml_parser
 '
+
+sed 's/\*name/*invalid_name/' diag_table.yaml > diag_table.yaml
+test_expect_failure "test_yaml_parser using anchors" '
+  mpirun -n 1 ./test_yaml_parser
+'
+
 test_done
