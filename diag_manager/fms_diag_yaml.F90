@@ -457,7 +457,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
         if (nmods .ne. 0) then
           has_module_block(i) = .true.
           ! Get the total number of variables in each module block, ignoring those with write_var = .false.
-          if (nvars_per_file(i) .ne. 0) & 
+          if (nvars_per_file(i) .ne. 0) &
             call mpp_error(FATAL, "diag_manager_mod:: the file:"//trim(filename)//" has a 'modules' block defined and "//&
                                   "a 'module' key defined. This is not allowed!")
 
@@ -1809,7 +1809,7 @@ subroutine fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
 
     !! This is the number of distributed files
     !! If the diag files were not combined, the name of the diag file is going to be
-    !! filename_tileXX.nc.YY, where YY is the distributed file number 
+    !! filename_tileXX.nc.YY, where YY is the distributed file number
     !! (1 to the number of distributed files)
     call fms_f2c_string(keys2(i)%key13, 'number_of_distributed_files')
 
