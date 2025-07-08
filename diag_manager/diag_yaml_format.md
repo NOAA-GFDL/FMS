@@ -520,6 +520,8 @@ diag_files:
   module: ocn_mod
   reduction: none
   kind: r4
-  varlist: *name
+  varlist:
+  - *name
+  - variable_name: var773
 ```
 
