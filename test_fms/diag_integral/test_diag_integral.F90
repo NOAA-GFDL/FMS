@@ -80,6 +80,7 @@ program test_diag_integral
 
   !> Made up time.  Set the initial time.
   Time=set_time(0,1,0)
+  Time_init = set_time(0,0,0)
 
   call test_diag_integral_init       !< Test that diag_integral_init call works
   call test_diag_integral_field_init !< Register the fields
