@@ -142,7 +142,7 @@ public xmap_type, setup_xmap, set_frac_area, put_to_xgrid, get_from_xgrid, &
        get_xmap_grid_area, put_to_xgrid_ug, get_from_xgrid_ug, &
        set_frac_area_ug
 
-!--- paramters that determine the remapping method
+!--- parameters that determine the remapping method
 integer, parameter :: FIRST_ORDER        = 1
 integer, parameter :: SECOND_ORDER       = 2
 integer, parameter :: VERSION1           = 1 !< grid spec file
@@ -3362,7 +3362,7 @@ end subroutine put_side2_to_xgrid
 !#######################################################################
 
 subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
-  real(r8_kind), dimension(:,:), intent(out)   :: d !< recieved xgrid data
+  real(r8_kind), dimension(:,:), intent(out)   :: d !< received xgrid data
   character(len=3),              intent(in)    :: grid_id !< 3 character grid ID
   real(r8_kind), dimension(:),   intent(in)    :: x !< xgrid data
   type (xmap_type),              intent(inout) :: xmap !< exchange grid

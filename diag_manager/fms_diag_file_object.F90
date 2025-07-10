@@ -220,6 +220,7 @@ logical function fms_diag_files_object_init (files_array)
   class(fmsDiagFile_type), pointer :: obj => null() !< Pointer for each member of the array
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
+
   if (diag_yaml%has_diag_files()) then
    nFiles = diag_yaml%size_diag_files()
    allocate (files_array(nFiles))
@@ -452,14 +453,17 @@ function get_filename_time(this) &
   result(res)
     class(fmsDiagFile_type), intent(in) :: this !< The file object
     type(time_type) :: res
+    type(time_type) :: file_end_time
 
+    file_end_time = this%next_close
+    if (this%next_close > this%no_more_data) file_end_time = this%no_more_data
     select case (this%diag_yaml_file%get_filename_time())
     case (begin_time)
       res = this%last_output
     case (middle_time)
-      res = (this%last_output + this%next_close)/2
+      res = (this%last_output + file_end_time )/2
     case (end_time)
-      res = this%next_close
+      res = file_end_time
     end select
 end function get_filename_time
 
@@ -834,7 +838,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
   !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
-  !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
+  !! which will be added to the list of axis in the file object (axis_ids is intent(in),
   !! which is why the copy was needed)
   var_axis_ids = axis_ids
 
@@ -1410,7 +1414,7 @@ logical function is_time_to_close_file (this, time_step, force_close)
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
   logical,                          intent(in)           :: force_close     !< if .true. return true
 
-  if (force_close) then
+  if (force_close .or. this%FMS_diag_file%done_writing_data) then
     is_time_to_close_file = .true.
   elseif (time_step >= this%FMS_diag_file%next_close) then
     is_time_to_close_file = .true.
@@ -1441,7 +1445,7 @@ subroutine check_file_times(this, time_step, output_buffers, diag_fields, do_not
                                                                                  !! This is needed for error messages!
   type(fmsDiagField_type),          intent(in)              :: diag_fields(:)    !< Array of diag_fields objects
   logical,                          intent(out)             :: do_not_write      !< .True. only if this is not a new
-                                                                                 !! time step and you are writting
+                                                                                 !! time step and you are writing
                                                                                  !! at every time step
 
   do_not_write = .false.
@@ -1992,7 +1996,7 @@ result(rslt)
         field_id = output_buffers(this%buffer_ids(i))%get_field_id()
         call mpp_error(NOTE, "Send data was never called for field:"//&
           trim(diag_fields(field_id)%get_varname())//" mod: "//trim(diag_fields(field_id)%get_modname())//&
-          " in file: "//trim(this%get_file_fname())//". Writting FILL VALUES!")
+          " in file: "//trim(this%get_file_fname())//". Writing FILL VALUES!")
       endif
     enddo
   else

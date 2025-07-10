@@ -287,7 +287,7 @@ PROGRAM test
   ! Variables needed for test 22
   INTEGER :: id_nv, id_nv_init
 
-!!!!!! Stuff for unstrctured grid
+!!!!!! Stuff for unstructured grid
     integer(kind=i4_kind)              :: nx = 8                               !<Total number of grid points in the
                                                                                !! x-dimension (longitude?)
     integer(kind=i4_kind)              :: ny = 8           !<Total number of grid points in the y-dimension (latitude?)
