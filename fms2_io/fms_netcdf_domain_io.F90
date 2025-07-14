@@ -412,10 +412,11 @@ function open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, do
   fileobj%use_collective = .false. !TODO
   fileobj%is_diskless = .false.
 
-    if (fileobj%is_restart) then
+  if (fileobj%is_restart) then
     allocate(fileobj%restart_vars(max_num_restart_vars))
     fileobj%num_restart_vars = 0
   endif
+
   fileobj%is_readonly = string_compare(mode, "read", .true.)
   fileobj%mode_is_append = string_compare(mode, "append", .true.)
   allocate(fileobj%compressed_dims(max_num_compressed_dims))
