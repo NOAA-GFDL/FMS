@@ -433,8 +433,8 @@ end function open_collective_netcdf_file
 
 !> @brief Open a domain netcdf file.
 !! @return Flag telling if the open completed successfully.
-function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, dont_add_res_to_filename, use_netcdf_mpi) &
-  result(success)
+function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, dont_add_res_to_filename, &
+                          use_netcdf_mpi) result(success)
 
   type(FmsNetcdfDomainFile_t),intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: path !< File path.
