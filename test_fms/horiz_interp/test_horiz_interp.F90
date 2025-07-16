@@ -120,7 +120,13 @@ implicit none
     real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
     real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_), parameter :: tolerance = 1.0e-5_lkind
+    real(HI_TEST_KIND_) :: tolerance
+
+    if(HI_TEST_KIND_ == r8_kind) then
+      tolerance = 1.0e-10_r8_kind
+    else
+      tolerance = 1.0e-5_r4_kind
+    endif
 
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, HI_TEST_KIND_)
