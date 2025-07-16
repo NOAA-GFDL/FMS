@@ -399,7 +399,8 @@
                   call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1, x=" &
                      //string(x)//" y="//string(y))
            else
-               if( x>1.0_kindl + epsln2 .or. x<0.0_kindl - epsln2 .or. y>1.0_kindl + epsln2 .or. y < 0.0_kindl - epsln2) &
+               if( x>1.0_kindl + epsln2 .or. x<0.0_kindl - epsln2 .or. &
+                   y>1.0_kindl + epsln2 .or. y < 0.0_kindl - epsln2) &
                   call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1, x=" &
                      //string(x)//" y="//string(y))
            endif

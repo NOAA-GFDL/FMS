@@ -724,7 +724,8 @@ implicit none
                 if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
-                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. 1.0e-1_lkind) then
+                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) &
+                        .gt. 1.0e-1_lkind) then
                             print *, i, j, interp_t%horizInterpReals4_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
                     endif
@@ -770,7 +771,8 @@ implicit none
                 if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
-                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. 1.0e-1_lkind) then
+                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. 1.0e-1_lkind)&
+                         then
                             print *, i, j, interp_t%horizInterpReals4_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
                     endif
