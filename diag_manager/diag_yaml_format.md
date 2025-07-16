@@ -16,6 +16,7 @@ The purpose of this document is to explain the diag_table yaml format.
 - [3. More examples](diag_yaml_format.md#3-more-examples)
 - [4. Schema](diag_yaml_format.md#4-schema)
 - [5. Ensemble and Nest Support](diag_yaml_format.md#5-ensemble-and-nest-support)
+- [6. Reducing Diag Table Yaml Length](diag_yaml_format.md#6-reducing-diag-table-yaml-length)
 
 ### 1. Converting from legacy ascii diag_table format
 
@@ -352,4 +353,175 @@ found in the [gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas)
 repository on Github.
 
 ### 5. Ensemble and Nest Support
-When using nests, it may be desired for a nest to have a different file frequency or number of variables from the parent grid. This may allow users to save disk space and reduce simulations time. In order to supports, FMS allows each nest to have a different diag_table.yaml from the parent grid. For example, if running with 1 test FMS will use diag_table.yaml for the parent grid and diag_table.nest_01.yaml for the first nest Similary, each ensemble member can have its own diag_table (diag_table_ens_XX.yaml, where XX is the ensemble number). However, for the ensemble case if both the diag_table.yaml and the diag_table_ens_* files are present, the code will crash as only 1 option is allowed.
+When using nests, it may be desired for a nest to have a different file frequency or number of variables from the parent grid. This may allow users to save disk space and reduce simulations time. In order to support this, FMS allows each nest to have a different diag_table.yaml from the parent grid. For example, if running with 1 nest FMS will use diag_table.yaml for the parent grid and diag_table.nest_01.yaml for the first nest. Similary, each ensemble member can have its own diag_table (diag_table_ens_XX.yaml, where XX is the ensemble number). However, for the ensemble case if both the diag_table.yaml and the diag_table_ens_* files are present, the code will crash as only 1 option is allowed.
+
+### 6. Reducing Diag Table Yaml Length
+There may be scenarios where the diag_table.yaml becomes long and contains a lot of repeated content.
+
+For example, the keys `module`, `reduction`, and `kind` often have the same values across many variables.
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - var_name: var0
+    module: ocn_mod
+    reduction: none
+    kind: r4
+  - var_name: var1
+    module: ocn_mod
+    reduction: none
+    kind: r4
+  - var_name: var2
+    module: ocn_mod
+    reduction: none
+    kind: r4
+```
+
+To reduce size and improve readability, you can **define these keys at the file level, and override them at the variable level if needed**:
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+```
+
+However, there may be cases where a file contains a large number of variables from different modules, requiring duplication of the module key across multiple lines. For example:
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: radiation_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+    module: some_other_mod
+  - var_name: var4
+    module: some_other_mod
+  - var_name: var5
+    module: some_other_mod
+```
+
+To address this, you can group variables by module:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  reduction: none
+  kind: r4
+  modules:
+  - module: radiation_mod
+    varlist:
+    - var_name: var0
+    - var_name: var1
+    - var_name: var2
+  - module: some_other_mod
+    varlist:
+    - var_name: var3
+    - var_name: var4
+    - var_name: var5
+```
+
+Another option **to reduce its size and improve readability, is to use yaml anchors**. For example, instead of writing:
+``` yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+- file_name: test_daily
+  freq: 1 days
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+```
+
+You can define an anchor and reuse it:
+```yaml
+name: &name
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist: *name
+- file_name: test_daily
+  freq: 1 days
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - *name
+  - variable_name: var773
+```
+
