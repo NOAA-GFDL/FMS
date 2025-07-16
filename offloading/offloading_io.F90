@@ -26,6 +26,16 @@ module offloading_io_mod
   type :: offloading_obj_in
   end type
 
+  interface register_axis_offload
+    procedure :: register_netcdf_axis_offload
+    procedure :: register_domain_axis_offload
+  end interface
+
+  interface write_data_offload
+    procedure :: write_data_offload_2d
+    procedure :: write_data_offload_3d
+  end interface
+
   type(offloading_obj_out), allocatable, target :: offloading_objs(:)
 
   private
@@ -97,8 +107,8 @@ module offloading_io_mod
     ! A "Root" model PE broadcasts the filename, domain size, and number of tiles to the offload pes
     if (mpp_pe() .eq. pe_in(1) .or. is_pe_out) then
       allocate(broadcasting_pes(1 + size(pe_out)))
-      broadcasting_pes(1) = pe_in(1)
-      broadcasting_pes(2:size(broadcasting_pes)) = pe_out
+      broadcasting_pes(1) = pe_in(1) ! root pe
+      broadcasting_pes(2:size(broadcasting_pes)) = pe_out ! offload pes
       call mpp_set_current_pelist( broadcasting_pes )
       call mpp_broadcast(filename_out, str_len, pe_in(1))
       call mpp_broadcast(global_domain_size, size(global_domain_size), pe_in(1))
@@ -309,7 +319,7 @@ module offloading_io_mod
   end subroutine
 
   !TODO Need an interface and more
-  subroutine register_axis_offload(fileobj, axis_name, cart)
+  subroutine register_domain_axis_offload(fileobj, axis_name, cart)
     class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     character(len=*), intent(in) :: axis_name
     character(len=1), intent(in) :: cart
@@ -352,6 +362,63 @@ module offloading_io_mod
       select type(wut=>this%fileobj)
         type is(FmsNetcdfDomainFile_t)
           call register_axis(wut, trim(var_info(1)), trim(var_info(2)))
+      end select
+    endif
+
+    call mpp_set_current_pelist(all_current_pes)
+  end subroutine
+
+  subroutine register_netcdf_axis_offload(fileobj, axis_name, length)
+    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    character(len=*), intent(in) :: axis_name
+    integer, intent(in) :: length
+
+    integer :: id
+    type(offloading_obj_out), pointer :: this
+
+    !TODO better PEs management!
+    integer, allocatable :: offloading_pes(:)
+    integer, allocatable :: model_pes(:)
+    integer, allocatable :: all_current_pes(:)
+    integer, allocatable :: broadcasting_pes(:)
+    logical :: is_model_pe
+    character(len=255) :: var_axis(1)
+    integer :: var_length
+    integer :: axis_length
+
+    offloading_pes = fileobj%offloading_obj_in%offloading_pes
+    model_pes = fileobj%offloading_obj_in%model_pes
+    is_model_pe = fileobj%offloading_obj_in%is_model_pe
+
+    id = fileobj%offloading_obj_in%id
+    this => offloading_objs(id)
+
+    ! get var data on root for broadcasting to offload pes
+    if (mpp_pe() .eq. model_pes(1)) then
+      var_axis(1) = trim(axis_name)
+      axis_length = len_trim(var_axis(1))
+      var_length = length 
+    endif
+
+    allocate(all_current_pes(mpp_npes()))
+    call mpp_get_current_pelist(all_current_pes)
+
+    ! root pe broadcasts the axis name and length to offload pes
+    if (mpp_pe() .eq. model_pes(1) .or. .not. is_model_pe) then
+      allocate(broadcasting_pes(1 + size(offloading_pes)))
+      broadcasting_pes(1) = model_pes(1)
+      broadcasting_pes(2:size(broadcasting_pes)) = offloading_pes
+      call mpp_set_current_pelist( broadcasting_pes )
+
+      call mpp_broadcast(axis_length, model_pes(1))
+      call mpp_broadcast(var_axis, axis_length, model_pes(1))
+      call mpp_broadcast(var_length, model_pes(1))
+    endif
+
+    if (.not. is_model_pe) then
+      select type(wut=>this%fileobj)
+        type is(FmsNetcdfDomainFile_t)
+          call register_axis(wut, var_axis(1)(1:axis_length), var_length)
       end select
     endif
 
@@ -417,7 +484,81 @@ module offloading_io_mod
     call mpp_set_current_pelist(all_current_pes)
   end subroutine
 
-  subroutine write_data_offload(fileobj, varname, vardata)
+  subroutine write_data_offload_3d(fileobj, varname, vardata, unlim_dim_level)
+    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
+    character(len=*), intent(in) :: varname
+    real(kind=r4_kind), intent(in) :: vardata(:,:,:)
+    integer, intent(in), optional :: unlim_dim_level
+
+    integer :: id
+    type(offloading_obj_out), pointer :: this
+
+    !TODO better PEs management!
+    integer, allocatable :: offloading_pes(:)
+    integer, allocatable :: model_pes(:)
+    integer, allocatable :: all_current_pes(:)
+    integer, allocatable :: broadcasting_pes(:)
+    logical :: is_model_pe
+
+    real(kind=r4_kind), allocatable :: var_r4_data(:,:,:)
+    type(domain2D) :: domain_out
+    type(domain2D) :: domain_in
+    integer :: isc, iec, jsc, jec, nz
+    character(len=255) :: varname_tmp(1)
+
+    offloading_pes = fileobj%offloading_obj_in%offloading_pes
+    model_pes = fileobj%offloading_obj_in%model_pes
+    is_model_pe = fileobj%offloading_obj_in%is_model_pe
+
+    id = fileobj%offloading_obj_in%id
+    this => offloading_objs(id)
+
+    ! from error message
+    call mpp_domains_set_stack_size( 4866048)
+
+    allocate(all_current_pes(mpp_npes()))
+    call mpp_get_current_pelist(all_current_pes)
+
+    nz = size(vardata, 3)
+    call mpp_broadcast(nz, model_pes(1))
+
+    !Allocate space to store the data!
+    if (.not. is_model_pe) then
+      domain_out = this%domain_out
+      call mpp_get_compute_domain(domain_out, isc, iec, jsc, jec)
+      allocate(var_r4_data(isc:iec, jsc:jec, nz))
+      call mpp_define_null_domain(domain_in)
+    else
+      domain_in = fileobj%offloading_obj_in%domain_in
+      call mpp_define_null_domain(domain_out)
+    endif
+
+    ! get domain from the other pes 
+    call mpp_broadcast_domain(domain_out)
+    call mpp_broadcast_domain(domain_in)
+
+    call mpp_redistribute( domain_in, vardata, domain_out, var_r4_data)
+    call mpp_redistribute( domain_in, vardata, domain_out, var_r4_data, free=.true.)
+
+    if(mpp_pe() .eq. model_pes(1)) then
+      varname_tmp(1) = trim(varname)
+    endif
+    call mpp_broadcast(varname_tmp, 255, model_pes(1))
+
+      if (.not. is_model_pe) then
+        select type(wut=>this%fileobj)
+          type is(FmsNetcdfDomainFile_t)
+            if (present(unlim_dim_level)) then
+              call write_data(wut, varname, var_r4_data, unlim_dim_level=unlim_dim_level)
+            else
+              call write_data(wut, varname, var_r4_data)
+            endif
+        end select
+      endif
+    call mpp_set_current_pelist(all_current_pes)
+  end subroutine
+
+  subroutine write_data_offload_2d(fileobj, varname, vardata)
     class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
     character(len=*), intent(in) :: varname
     real(kind=r4_kind), intent(in) :: vardata(:,:)
@@ -436,6 +577,7 @@ module offloading_io_mod
     type(domain2D) :: domain_out
     type(domain2D) :: domain_in
     integer :: isc, iec, jsc, jec
+    character(len=255) :: varname_tmp(1)
 
     offloading_pes = fileobj%offloading_obj_in%offloading_pes
     model_pes = fileobj%offloading_obj_in%model_pes
@@ -461,16 +603,22 @@ module offloading_io_mod
     call mpp_broadcast_domain(domain_out)
     call mpp_broadcast_domain(domain_in)
 
-    call mpp_redistribute( domain_in, vardata,  &
-    domain_out, var_r4_data &
-      )
+    ! redistribute data from model domain to offload domain and then free memory for future calls
+    call mpp_redistribute( domain_in, vardata, domain_out, var_r4_data)
+    call mpp_redistribute( domain_in, vardata, domain_out, var_r4_data, free=.true.)
 
-      if (.not. is_model_pe) then
-        select type(wut=>this%fileobj)
-          type is(FmsNetcdfDomainFile_t)
-            call write_data(wut, "mullions", var_r4_data) !TODO mullions need to be broadcasted
-        end select
-      endif
+    ! broadcast the variable name
+    if(mpp_pe() .eq. model_pes(1)) then
+      varname_tmp(1) = trim(varname)
+    endif
+    call mpp_broadcast(varname_tmp, 255, model_pes(1))
+
+    if (.not. is_model_pe) then
+      select type(wut=>this%fileobj)
+        type is(FmsNetcdfDomainFile_t)
+          call write_data(wut, varname_tmp(1), var_r4_data)
+      end select
+    endif
     call mpp_set_current_pelist(all_current_pes)
   end subroutine
 

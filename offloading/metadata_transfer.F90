@@ -18,8 +18,10 @@ module metadata_transfer_mod
 
   !> Base class for broadcasting netcdf attribute data as a struct, holds the common fields 
   !! and routines for initializing the mpi datatype so that children classes can
-  !! be sent/broadcasted. 
-  !! TODO get/set attr val functions should probably be deferred functions defined here
+  !! be broadcasted.
+  !! TODO:
+  !! - remove redundant attribute_type field
+  !! - combine some routines for easier usage 
   type, abstract :: metadata_class
     private
     integer                             :: mpi_type_id = -1 !< MPI datatype id corresponding to this data objects data, -1 if not set
@@ -68,7 +70,7 @@ module metadata_transfer_mod
       procedure :: set_attribute_value => set_attribute_i4_value
   end type metadata_i4_type
 
-  !> Metadata class for integer(kind=4) attribute values
+  !> Metadata class for string attribute values
   type, extends(metadata_class) :: metadata_str_type
     character(len=ATTR_VALUE_MAX_LENGTH) :: attribute_value
     contains

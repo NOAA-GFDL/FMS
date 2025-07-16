@@ -95,6 +95,10 @@ module mpp_domains_mod
   use mpi
 #endif
 
+#ifndef _MPP_DOMAINS_MAX_MEM_ADDRS
+#define _MPP_DOMAINS_MAX_MEM_ADDRS 1024 
+#endif
+
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
   use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
@@ -675,14 +679,14 @@ module mpp_domains_mod
   logical                         :: complete_group_update_on = .false.
   !-------- The following variables are used in mpp_domains_comm.h
 
-  integer, parameter :: MAX_ADDRS=512
+  integer, parameter :: MAX_ADDRS= _MPP_DOMAINS_MAX_MEM_ADDRS
   integer(i8_kind),dimension(MAX_ADDRS),save :: addrs_sorted=-9999 !< list of sorted local addresses
   integer,           dimension(-1:MAX_ADDRS),save :: addrs_idx=-9999 !< index of address associated with d_comm
   integer,                                save :: a_sort_len=0 !< length sorted memory list
   integer,                                save :: n_addrs=0   !< number of memory addresses used
 
   integer(i8_kind), parameter :: ADDR2_BASE = 65536_i8_kind !< = 0x0000000000010000
-  integer, parameter :: MAX_ADDRS2=128
+  integer, parameter :: MAX_ADDRS2= _MPP_DOMAINS_MAX_MEM_ADDRS / 2
   integer(i8_kind),dimension(MAX_ADDRS2),save :: addrs2_sorted=-9999 !< list of sorted local addresses
   integer,           dimension(-1:MAX_ADDRS2),save :: addrs2_idx=-9999 !< index of addr2 associated with d_comm
   integer,                                 save :: a2_sort_len=0   !< length sorted memory list
