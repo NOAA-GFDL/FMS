@@ -270,7 +270,11 @@
        epsln2 = real(epsln,FMS_HI_KIND_)* 1.0e5_kindl
        call FIND_NEIGHBOR_NEW_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo, no_crash)
     else
-       epsln2 = real(epsln,FMS_HI_KIND_)
+       if(kindl == r8_kind) then
+          epsln2 = epsln
+       else
+          epsln2 = epsln_r4
+       endif
        call FIND_NEIGHBOR_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo)
     endif
 
@@ -389,8 +393,16 @@
              if (x > 1.0_kindl) x = 1.0_kindl
              if (y > 1.0_kindl) y = 1.0_kindl
            endif
-           if( x>1.0_kindl .or. x<0.0_kindl .or. y>1.0_kindl .or. y < 0.0_kindl) &
-                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1")
+           !! if using 4 byte reals, allow a bit more tolerance (1e-4) on weight values
+           if( kindl == r8_kind ) then
+               if( x>1.0_kindl .or. x<0.0_kindl .or. y>1.0_kindl .or. y < 0.0_kindl) &
+                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1, x=" &
+                     //string(x)//" y="//string(y))
+           else
+               if( x>1.0_kindl + epsln2 .or. x<0.0_kindl - epsln2 .or. y>1.0_kindl + epsln2 .or. y < 0.0_kindl - epsln2) &
+                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1, x=" &
+                     //string(x)//" y="//string(y))
+           endif
            Interp % HI_KIND_TYPE_ % wti(m,n,1)=1.0_kindl-x
            Interp % HI_KIND_TYPE_ % wti(m,n,2)=x
            Interp % HI_KIND_TYPE_ % wtj(m,n,1)=1.0_kindl-y

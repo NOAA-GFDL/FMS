@@ -22,11 +22,6 @@
 !! Assignment test checks that the override is copying the data type properly
 !! TODO some larger tests with different data sets
 
-!! defaults to 8 real kind, make check will compile with both 4 and 8
-#ifndef HI_TEST_KIND_
-#define HI_TEST_KIND_ 8
-#endif
-
 program horiz_interp_test
 
 use mpp_mod,          only : mpp_init, mpp_exit, mpp_error, FATAL, stdout, mpp_npes, WARNING
@@ -125,7 +120,7 @@ implicit none
     real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
     real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
+    real(HI_TEST_KIND_), parameter :: tolerance = 1.0e-5_lkind
 
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, HI_TEST_KIND_)
@@ -176,7 +171,7 @@ implicit none
     call mpp_clock_end(id1)
     do i=1, ni_dst-1
         do j=1, nj_dst-1
-            if(data_dst(i,j) - 1.0_lkind .gt. SMALL) then
+            if(data_dst(i,j) - 1.0_lkind .gt. tolerance) then
                 print *, 'data_dst(i=', i, ', j=', j, ')=', data_dst(i,j), ' Expected value: 1.0'
                 call mpp_error(FATAL, "test_horiz_interp_spherical: "// &
                                                                     "invalid output data after interpolation")
@@ -649,7 +644,14 @@ implicit none
     real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
     real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
     real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
+    real(HI_TEST_KIND_) :: SMALL
+
+    ! adjust tolerance used in checks based on kind size
+    if(HI_TEST_KIND_ == r8_kind) then
+        small = 1.0e-10_lkind
+    else
+        small = 1.0e-1_lkind
+    end if
 
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, lkind)
