@@ -525,7 +525,7 @@ module offloading_io_mod
     !Allocate space to store the data!
     if (.not. is_model_pe) then
       domain_out = this%domain_out
-      call mpp_get_compute_domain(domain_out, isc, iec, jsc, jec)
+      call mpp_get_data_domain(domain_out, isc, iec, jsc, jec)
       allocate(var_r4_data(isc:iec, jsc:jec, nz))
       call mpp_define_null_domain(domain_in)
     else
@@ -643,6 +643,7 @@ module offloading_io_mod
     integer, intent(in) :: ntile
 
     type(offloading_obj_out), pointer :: this
+    integer, allocatable :: curr_pelist(:)
 
     current_files_init = current_files_init + 1
     if (current_files_init .gt. nfiles) &
@@ -654,11 +655,15 @@ module offloading_io_mod
     this%filename = trim(filename)
     this%type_of_domain = domain_decomposed
 
+    ! does npes return current pelist or total??
+    allocate(curr_pelist(mpp_npes()))
+    call mpp_get_current_pelist(curr_pelist)
+
     select case (ntile)
     case (1)
       this%domain_out = create_lat_lon_domain(nx, ny)
     case (6)
-      this%domain_out = create_cubic_domain(nx, ny, ntile, (/1,1/))
+      this%domain_out = create_cubic_domain(nx, ny, ntile, (/1,1/), offload_pes=curr_pelist)
     end select
 
     allocate(FmsNetcdfDomainFile_t :: this%fileobj)
@@ -686,13 +691,15 @@ module offloading_io_mod
   end function create_lat_lon_domain
 
   !Assumes all members of the domain are in the current pelist
-  function create_cubic_domain(nx_in, ny_in, ntiles, io_layout, nhalos) &
+  ! TODO need to actually handle creating pe_start/pe_end arrays based off the offloading pes
+  function create_cubic_domain(nx_in, ny_in, ntiles, io_layout, nhalos, offload_pes) &
     result(domain_out)
     integer, intent(in) :: nx_in
     integer, intent(in) :: ny_in
     integer, intent(in) :: ntiles
     integer, intent(in) :: io_layout(2)
     integer, intent(in), optional :: nhalos
+    integer, intent(in), optional :: offload_pes(:)
 
     type(domain2d) :: domain_out
 
@@ -719,9 +726,16 @@ module offloading_io_mod
     do n = 1, ntiles
       global_indices(:,n) = (/1,nx_in,1,ny_in/)
       layout2D(:,n) = layout
-      pe_start(n) = (n-1)*npes_per_tile
-      pe_end(n) = n*npes_per_tile-1
+      if( present(offload_pes)) then
+        pe_start(n) = offload_pes(n) 
+        pe_end(n) = offload_pes(n) 
+      else
+        pe_start(n) = (n-1)*npes_per_tile
+        pe_end(n) = n*npes_per_tile-1
+      endif
     end do
+
+    print *, "pe: ", mpp_pe(), "creating mosaic with pe_start", pe_start, "pe_end", pe_end
 
     call define_cubic_mosaic(domain_out, (/nx_in,nx_in,nx_in,nx_in,nx_in,nx_in/), &
                             (/ny_in,ny_in,ny_in,ny_in,ny_in,ny_in/), &
