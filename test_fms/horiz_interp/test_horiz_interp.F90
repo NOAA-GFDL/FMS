@@ -650,7 +650,7 @@ implicit none
     if(HI_TEST_KIND_ == r8_kind) then
         small = 1.0e-10_lkind
     else
-        small = 1.0e-1_lkind
+        small = 1.0e-3_lkind
     end if
 
     ! set up longitude and latitude of source/destination grid.
@@ -718,13 +718,13 @@ implicit none
                 if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
-                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. 1.0e-1_lkind) then
                             print *, i, j, interp_t%horizInterpReals4_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
                     endif
                 else
                     if( interp_t%horizInterpReals8_type%wti(i,j,1) * interp_t%horizInterpReals8_type%wti(i,j,2) &
-                        - interp_t%horizInterpReals8_type%wti(i,j,3) .gt. SMALL .and. &
+                        - interp_t%horizInterpReals8_type%wti(i,j,3) .gt. SMALL .or. &
                         interp_t%horizInterpReals8_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
                             print *, i, j, interp_t%horizInterpReals8_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
@@ -764,7 +764,7 @@ implicit none
                 if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
-                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. 1.0e-1_lkind) then
                             print *, i, j, interp_t%horizInterpReals4_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
                     endif
