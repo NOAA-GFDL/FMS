@@ -123,9 +123,9 @@ implicit none
     real(HI_TEST_KIND_) :: tolerance
 
     if(HI_TEST_KIND_ == r8_kind) then
-      tolerance = 1.0e-10_r8_kind
+      tolerance = 1.0e-10_lkind
     else
-      tolerance = 1.0e-5_r4_kind
+      tolerance = 1.0e-5_lkind
     endif
 
     ! set up longitude and latitude of source/destination grid.
