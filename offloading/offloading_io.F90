@@ -503,7 +503,7 @@ module offloading_io_mod
     real(kind=r4_kind), allocatable :: var_r4_data(:,:,:)
     type(domain2D) :: domain_out
     type(domain2D) :: domain_in
-    integer :: isc, iec, jsc, jec, nz
+    integer :: isc, iec, jsc, jec, nz, redistribute_clock, write_clock
     character(len=255) :: varname_tmp(1)
 
     offloading_pes = fileobj%offloading_obj_in%offloading_pes
@@ -518,6 +518,9 @@ module offloading_io_mod
 
     allocate(all_current_pes(mpp_npes()))
     call mpp_get_current_pelist(all_current_pes)
+
+    redistribute_clock = mpp_clock_id( 'data_transfer' )
+    call mpp_clock_begin(redistribute_clock)
 
     nz = size(vardata, 3)
     call mpp_broadcast(nz, model_pes(1))
@@ -545,6 +548,10 @@ module offloading_io_mod
     endif
     call mpp_broadcast(varname_tmp, 255, model_pes(1))
 
+    call mpp_clock_end(redistribute_clock)
+
+    write_clock = mpp_clock_id( 'write' )
+    call mpp_clock_begin(write_clock)
       if (.not. is_model_pe) then
         select type(wut=>this%fileobj)
           type is(FmsNetcdfDomainFile_t)
@@ -555,6 +562,7 @@ module offloading_io_mod
             endif
         end select
       endif
+    call mpp_clock_end(write_clock)
     call mpp_set_current_pelist(all_current_pes)
   end subroutine
 
