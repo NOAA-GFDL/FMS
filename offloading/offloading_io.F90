@@ -503,7 +503,7 @@ module offloading_io_mod
     real(kind=r4_kind), allocatable :: var_r4_data(:,:,:)
     type(domain2D) :: domain_out
     type(domain2D) :: domain_in
-    integer :: isc, iec, jsc, jec, nz, redistribute_clock, write_clock
+    integer :: isc, iec, jsc, jec, nz, redistribute_clock
     character(len=255) :: varname_tmp(1)
 
     offloading_pes = fileobj%offloading_obj_in%offloading_pes
@@ -550,8 +550,6 @@ module offloading_io_mod
 
     call mpp_clock_end(redistribute_clock)
 
-    write_clock = mpp_clock_id( 'write' )
-    call mpp_clock_begin(write_clock)
       if (.not. is_model_pe) then
         select type(wut=>this%fileobj)
           type is(FmsNetcdfDomainFile_t)
@@ -562,7 +560,6 @@ module offloading_io_mod
             endif
         end select
       endif
-    call mpp_clock_end(write_clock)
     call mpp_set_current_pelist(all_current_pes)
   end subroutine
 
@@ -700,7 +697,7 @@ module offloading_io_mod
 
   !Assumes all members of the domain are in the current pelist
   ! TODO need to actually handle creating pe_start/pe_end arrays based off the offloading pes
-  function create_cubic_domain(nx_in, ny_in, ntiles, io_layout, nhalos, offload_pes) &
+  function create_cubic_domain(nx_in, ny_in, ntiles, io_layout, nhalos, offload_pes, layout) &
     result(domain_out)
     integer, intent(in) :: nx_in
     integer, intent(in) :: ny_in
@@ -708,12 +705,13 @@ module offloading_io_mod
     integer, intent(in) :: io_layout(2)
     integer, intent(in), optional :: nhalos
     integer, intent(in), optional :: offload_pes(:)
+    integer, optional :: layout(2)
 
     type(domain2d) :: domain_out
 
-    integer :: layout(2)
     integer :: npes
     integer :: npes_per_tile
+    integer :: layout_tmp(2)
     integer, allocatable :: global_indices(:,:)
     integer, allocatable :: layout2D(:,:)
     integer, allocatable :: pe_start(:)
@@ -725,18 +723,23 @@ module offloading_io_mod
           "create_cubic_domain: npes is not divisible by ntiles")
 
     npes_per_tile = npes/ntiles
-    call mpp_define_layout ((/1,nx_in,1,ny_in/), npes_per_tile, layout )
+    if( .not. present(layout)) then
+      call mpp_define_layout ((/1,nx_in,1,ny_in/), npes_per_tile, layout_tmp )
+    else
+      layout_tmp = layout
+    endif 
 
     allocate(global_indices(4, ntiles))
     allocate(layout2D(2, ntiles))
-    allocate(pe_start(ntiles), pe_end(ntiles))
+    allocate(pe_start(ntiles * npes_per_tile), pe_end(ntiles * npes_per_tile))
 
+    print *, "setting offload pes:", offload_pes, " npes per tile:", npes_per_tile
     do n = 1, ntiles
       global_indices(:,n) = (/1,nx_in,1,ny_in/)
-      layout2D(:,n) = layout
+      layout2D(:,n) = layout_tmp
       if( present(offload_pes)) then
-        pe_start(n) = offload_pes(n) 
-        pe_end(n) = offload_pes(n) 
+        pe_start(n:n+npes_per_tile-1) = offload_pes(n:n+npes_per_tile-1) 
+        pe_end(n:n+npes_per_tile-1) = offload_pes(n:n+npes_per_tile-1) 
       else
         pe_start(n) = (n-1)*npes_per_tile
         pe_end(n) = n*npes_per_tile-1
