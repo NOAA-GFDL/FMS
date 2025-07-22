@@ -186,7 +186,7 @@ program test_reduction_methods
     'mullions', missing_value = missing_value)
   id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'Var3d', &
     'mullions', missing_value = missing_value)
-  id_var4 = register_diag_field  ('ocn_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'Var4d', &
+  id_var4 = register_diag_field  ('ocn_z_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'Var4d', &
     'mullions', missing_value = missing_value)
   id_var999 = register_diag_field  ('ocn_mod', 'IOnASphere', Time, missing_value=missing_value)
 

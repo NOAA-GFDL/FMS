@@ -26,7 +26,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parser_skip ]; then
-  SKIP_TESTS='test_yaml_parser.[1-25]'
+  SKIP_TESTS='test_yaml_parser.[1-27]'
 fi
 
 touch input.nml
@@ -329,4 +329,51 @@ _EOF
 test_expect_failure "Use an invalid yaml" '
   mpirun -n 1 ./parser_demo
 '
+
+cat <<_EOF > diag_table.yaml
+name: &name
+  - varName: tdata
+    reduction: False
+    module: mullions
+    mullions: 10
+    fill_value: -999.9
+  - varName: pdata
+    outName: pressure
+    reduction: False
+    kind: double
+    module: "moist"
+
+name2: &name2
+  - varName: tdata
+    reduction: False
+    module: "moist"
+
+title: c384L49_esm5PIcontrol
+baseDate: [1960 1 1 1 1 1 1]
+diag_files:
+-    fileName: "atmos_daily"
+     freq: 24
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - *name
+-    fileName: atmos_8xdaily
+     freq: 3
+     frequnit: hours
+     timeunit: days
+     unlimdim: time
+     varlist:
+     - *name2
+_EOF
+
+test_expect_success "test_yaml_parser using anchors" '
+  mpirun -n 1 ./test_yaml_parser
+'
+
+sed 's/\*name/*invalid_name/' diag_table.yaml > diag_table.yaml
+test_expect_failure "test_yaml_parser using anchors" '
+  mpirun -n 1 ./test_yaml_parser
+'
+
 test_done
