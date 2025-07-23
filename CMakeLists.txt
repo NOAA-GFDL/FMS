@@ -67,6 +67,10 @@ option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"       
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 option(USE_DEPRECATED_IO     "THIS OPTION HAS NO EFFECT AND WILL BE REMOVED IN A FUTURE RELEASE"   OFF)
 
+if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
+  set(ENABLE_QUAD_PRECISION OFF)
+endif()
+
 if(32BIT)
   list(APPEND kinds "r4")
 endif()
