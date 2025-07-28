@@ -97,8 +97,8 @@ module offloading_io_mod
       ntile = mpp_get_ntile_count(domain_in)
 
       !< The number of tiles must be the same as the number of offloading pes
-      if (size(pe_out) .ne. ntile ) &
-        call mpp_error(FATAL, "The number of offloading PEs must be the same as the number of tiles of the domain")
+      !if (size(pe_out) .ne. ntile ) &
+      !  call mpp_error(FATAL, "The number of offloading PEs must be the same as the number of tiles of the domain")
       filename_out(1) = filename
 
       call mpp_get_global_domain(domain_in, xsize=global_domain_size(1), ysize=global_domain_size(2))
@@ -731,15 +731,14 @@ module offloading_io_mod
 
     allocate(global_indices(4, ntiles))
     allocate(layout2D(2, ntiles))
-    allocate(pe_start(ntiles * npes_per_tile), pe_end(ntiles * npes_per_tile))
+    allocate(pe_start(ntiles), pe_end(ntiles))
 
-    print *, "setting offload pes:", offload_pes, " npes per tile:", npes_per_tile
     do n = 1, ntiles
       global_indices(:,n) = (/1,nx_in,1,ny_in/)
       layout2D(:,n) = layout_tmp
       if( present(offload_pes)) then
-        pe_start(n:n+npes_per_tile-1) = offload_pes(n:n+npes_per_tile-1) 
-        pe_end(n:n+npes_per_tile-1) = offload_pes(n:n+npes_per_tile-1) 
+        pe_start(n) = offload_pes((n-1)*npes_per_tile+1) 
+        pe_end(n) = offload_pes((n)*npes_per_tile) 
       else
         pe_start(n) = (n-1)*npes_per_tile
         pe_end(n) = n*npes_per_tile-1
