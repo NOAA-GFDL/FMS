@@ -246,16 +246,11 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
     integer :: nincrease, ndecrease
     logical :: flip_lat
-    integer :: wordsz
     integer(kind=1) :: one_byte(8)
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
          'HORIZ_INTERP_CONSERVE_NEW_1DX2D_: horiz_interp_conserve_init is not called')
-
-    wordsz=size(transfer(lon_in(1), one_byte))
-    if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_1DX2D_: wordsz should be 4 or 8')
 
     if( (size(lon_out,1) .NE. size(lat_out,1)) .OR. (size(lon_out,2) .NE. size(lat_out,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
@@ -413,16 +408,11 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     real(r8_kind), allocatable, dimension(:)   :: lon_out_r8, lat_out_r8
     real(r8_kind), allocatable, dimension(:,:) :: lon_in_r8, lat_in_r8
     real(r8_kind), allocatable, dimension(:,:) :: lon_dst, lat_dst
-    integer :: wordsz
     integer(kind=1) :: one_byte(8)
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
          'HORIZ_INTERP_CONSERVE_NEW_2DX1D_: horiz_interp_conserve_init is not called')
-
-    wordsz=size(transfer(lon_in(1,1), one_byte))
-    if(wordsz .NE. 8) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_2DX1D_: currently only support 64-bit real(FMS_HI_KIND_), contact developer')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -524,16 +514,11 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     real(r8_kind), allocatable, dimension(:,:) :: dst_area
     real(r8_kind), allocatable, dimension(:,:) :: lon_in_r8, lat_in_r8
     real(r8_kind), allocatable, dimension(:,:) :: lon_out_r8, lat_out_r8
-    integer :: wordsz
     integer(kind=1) :: one_byte(8)
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
          'HORIZ_INTERP_CONSERVE_NEW_2DX2D_: horiz_interp_conserve_init is not called')
-
-    wordsz=size(transfer(lon_in(1,1), one_byte))
-    if(wordsz .NE. 4 .AND. wordsz .NE. 8) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_2DX2D_: wordsz should be 4 or 8')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
