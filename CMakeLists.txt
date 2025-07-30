@@ -367,6 +367,10 @@ foreach(kind ${kinds})
     endif()
   endif()
 
+  if ( CMAKE_Fortran_COMPILER_VERSION MATCHES "2025\.1\..*" AND CMAKE_Fortran_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "Intel LLVM Fortran compiler version 2025.1 is not supported due to internal compiler error")
+  endif()
+
   # FMS (C + Fortran)
   if (SHARED_LIBS)
       message(STATUS "Shared library target: ${libTgt}")
