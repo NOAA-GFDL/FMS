@@ -839,7 +839,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
         !!TODO: Can the dummy variable array below be removed. The variable was introduced because of pointer
         !! bounds remapping to call the next routine. Note that mask is an optional argument.
         !! The program hangs if the approach of having a pointer to the dummy array is not used.
-        !! Also note that a seperate logical field (in fmsDiagOutfield_type, but was used in
+        !! Also note that a separate logical field (in fmsDiagOutfield_type, but was used in
         !! the legacy diag manager also) is used to determine "if the mask was preent"!
          LOGICAL, DIMENSION(1), target :: mask_dummy !> A target for mask_ptr, in case mask is not present
 

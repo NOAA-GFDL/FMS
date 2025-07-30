@@ -23,7 +23,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2025.02.0
+  VERSION 2025.03.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -283,6 +283,12 @@ endif()
 
 # Obtain compiler-specific flags
 include(fms_compiler_flags)
+
+# If netCDF was not built with HDF5 parallel I/O features, set up the macro -DNO_NC_PARALLEL4
+IF(NOT NetCDF_PARALLEL)
+  MESSAGE(WARNING "netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed")
+  list(APPEND fms_defs NO_NC_PARALLEL4)
+ENDIF()
 
 foreach(kind ${kinds})
 

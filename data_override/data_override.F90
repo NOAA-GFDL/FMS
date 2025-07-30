@@ -46,7 +46,7 @@ end module data_override_r8
 !! If user wants to override fieldname_code with data from a file, set fieldname_file = name in
 !! the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
 !!
-!! A field can be overriden globally (by default) or users can specify one or two regions in which
+!! A field can be overridden globally (by default) or users can specify one or two regions in which
 !! data_override will take place, field values outside the region will not be affected.
 
 module data_override_mod

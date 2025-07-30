@@ -260,7 +260,7 @@ end subroutine mosaic_init
     do n = 1, ncontacts
       nstr = parse_string(contacts(n), ":", strlist)
       if(nstr .NE. 4) call mpp_error(FATAL, &
-         "mosaic_mod(get_mosaic_contact): number of elements in contact seperated by :/:: should be 4")
+         "mosaic_mod(get_mosaic_contact): number of elements in contact separated by :/:: should be 4")
       found = .false.
       do m = 1, ntiles
         if(trim(gridtiles(m)) == trim(strlist(2)) ) then !found the tile name
@@ -295,7 +295,7 @@ end subroutine mosaic_init
           enddo
         endif
         call mpp_error(FATAL, &
-               "mosaic_mod(get_mosaic_contact): number of elements in contact_index seperated by :/, should be 8")
+               "mosaic_mod(get_mosaic_contact): number of elements in contact_index separated by :/, should be 8")
       endif
       read(strlist(1), *, iostat=ios) istart1(n)
       if(ios .NE. 0) call mpp_error(FATAL, &

@@ -385,7 +385,7 @@ subroutine set_next_output(this, next_output, next_next_output, is_static)
 
   if (present(is_static)) then
     !< If the field is static set the next_output to be equal to time
-    !! this should only be used in the init, so next_output will be equal to the the init time
+    !! this should only be used in the init, so next_output will be equal to the init time
     if (is_static) then
       this%next_output = this%time
       return
