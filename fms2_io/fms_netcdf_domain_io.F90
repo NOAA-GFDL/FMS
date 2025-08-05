@@ -404,12 +404,15 @@ function open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, do
   allocate(fileobj%ydims(max_num_domain_decomposed_dims))
   fileobj%ny = 0
 
-  allocate(fileobj%pelist(mpp_get_domain_npes(domain)))
-  call mpp_get_pelist(domain, fileobj%pelist)
+  ! Every rank is in its own pelist.
+  ! This forces all ranks to hit any NetCDF calls,
+  ! which are usually inside `if (fileobj%is_root)` blocks, leading to hangs when using collective netcdf
+  allocate(fileobj%pelist(1))
+  fileobj%pelist(1) = mpp_pe()
+  fileobj%io_root = mpp_pe()
+  fileobj%is_root = .True.
 
-  fileobj%io_root = fileobj%pelist(1)
-  fileobj%is_root = mpp_pe() .eq. fileobj%io_root
-  fileobj%use_collective = .false. !TODO
+  fileobj%use_collective = .false. !TODO Consalidate this
   fileobj%is_diskless = .false.
 
   if (fileobj%is_restart) then

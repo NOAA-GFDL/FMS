@@ -1011,6 +1011,12 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     endif
     call check_netcdf_code(err, append_error_msg)
   endif
+
+  if (fileobj%use_netcdf_mpi) then
+    err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
 end subroutine netcdf_add_variable
 
 

@@ -31,7 +31,7 @@ module fms_diag_axis_object_mod
 #ifdef use_yaml
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_global_domain, NORTH, EAST, mpp_get_tile_id, &
-                            & mpp_get_ntile_count, mpp_get_io_domain
+                            & mpp_get_ntile_count, mpp_get_io_domain, mpp_get_layout
   use platform_mod,    only:  r8_kind, r4_kind, i4_kind, i8_kind
   use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
                               direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes, &
@@ -191,6 +191,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: get_set_name
      PROCEDURE :: has_set_name
      PROCEDURE :: is_x_or_y_axis
+     PROCEDURE :: get_dim_size_layout
      ! TO DO:
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
@@ -664,6 +665,32 @@ module fms_diag_axis_object_mod
       if (present(x_or_y)) x_or_y = diag_null
     end select
   end function is_x_or_y_axis
+
+  !< @brief Get the global size of the axis, and the layout
+  !! It is assumed that this function is only called on "X" and "Y" axes
+  !! using the `is_x_or_y_axis` function from above
+  subroutine get_dim_size_layout(this, dim_size, layout)
+    class(fmsDiagFullAxis_type), intent(in)    :: this     !< diag_axis obj
+    integer,                     intent(out)   :: dim_size !< Size of the dimension
+    integer,                     intent(out)   :: layout   !< Layout of the dimension
+
+    integer :: nx, ny
+    integer :: layout_xy(2)
+
+    select type (domain => this%axis_domain)
+    type is (diagDomain2d_t)
+      call mpp_get_global_domain(domain%Domain2, xsize=nx, ysize=ny)
+      call mpp_get_layout(domain%Domain2, layout_xy)
+
+      if (this%cart_name .eq. "X") then
+        dim_size = nx
+        layout = layout_xy(1)
+      else if (this%cart_name .eq. "Y") then
+        dim_size = ny
+        layout = layout_xy(2)
+      endif
+    end select
+  end subroutine get_dim_size_layout
 
   !> @brief Get the set name of an axis object
   !! @return the set name of an axis object

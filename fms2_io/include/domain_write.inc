@@ -1413,8 +1413,8 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
   logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
                                    !! (i.e it includes halos (which are not written))
 
-  integer, dimension(3) :: c !< Indices of the corners for each dimension
-  integer, dimension(3) :: e !< Size of the data for each dimension
+  integer, dimension(4) :: c !< Indices of the corners for each dimension
+  integer, dimension(4) :: e !< Size of the data for each dimension
   integer :: varid
   integer :: unlim_dim_index
 
@@ -1552,8 +1552,8 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
   logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
                                    !! (i.e it includes halos (which are not written))
 
-  integer, dimension(4) :: c !< Indices of the corners for each dimension
-  integer, dimension(4) :: e !< Size of the data for each dimension
+  integer, dimension(5) :: c !< Indices of the corners for each dimension
+  integer, dimension(5) :: e !< Size of the data for each dimension
   integer :: varid
   integer :: unlim_dim_index
 
@@ -1706,8 +1706,8 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
   logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
                                    !! (i.e it includes halos (which are not written))
 
-  integer, dimension(5) :: c !< Indices of the corners for each dimension
-  integer, dimension(5) :: e !< Size of the data for each dimension
+  integer, dimension(6) :: c !< Indices of the corners for each dimension
+  integer, dimension(6) :: e !< Size of the data for each dimension
   integer :: varid
   integer :: unlim_dim_index
 

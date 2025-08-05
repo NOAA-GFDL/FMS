@@ -152,6 +152,7 @@ type diagYamlFiles_type
   character (len=:),    allocatable :: default_var_module    !< The module for all of the variables in the file
                                                              !! This may be overridden if the modules was defined at the
                                                              !! variable level
+  logical                           :: use_collective_writes !< True if using collective writes, default is false
  contains
 
  !> All getter functions (functions named get_x(), for member field named x)
@@ -171,6 +172,7 @@ type diagYamlFiles_type
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
  procedure, public :: get_filename_time
+ procedure, public :: is_using_collective_writes
  procedure, public :: is_global_meta
  !> Has functions to determine if allocatable variables are true.  If a variable is not an allocatable
  !! then is will always return .true.
@@ -646,6 +648,10 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
     is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "module", yaml_fileobj%default_var_module, &
     is_optional=.true.)
+
+  yaml_fileobj%use_collective_writes = .false.
+  call get_value_from_key(diag_yaml_id, diag_file_id, "use_collective_writes", &
+    yaml_fileobj%use_collective_writes, is_optional=.true.)
 end subroutine
 
 !> @brief Fills in a diagYamlFilesVar_type with the contents of a variable block in
@@ -1141,6 +1147,16 @@ function is_global_meta(this) &
  res = .false.
  if (allocated(this%file_global_meta)) &
    res = .true.
+end function
+
+!> \brief Determines whether or not the file is using netcdf collective writes
+!! \return logical indicating whether or not the file is using netcdf collective writes
+pure function is_using_collective_writes(this) &
+  result(res)
+  class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
+
+  logical :: res
+  res = this%use_collective_writes
 end function
 
 !> @brief Increate the current_new_file_freq_index by 1
