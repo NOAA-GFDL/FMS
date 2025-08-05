@@ -507,7 +507,7 @@ subroutine define_nest_level_type(nest_domain, x_refine, y_refine, extra_halo)
                     "nest_domain%is_coarse_pe .neqv. ANY(pes_coarse(:) == mpp_pe())")
   endif
 
-  !--- figure out the the corresponding nested region.
+  !--- figure out the corresponding nested region.
   !--- on coarse grid pe, it might overlap multiple fine regon.
   !--- on fine grid pe, it always only overlap at most 1 coarse region.
   my_num_nest= 0

@@ -145,7 +145,7 @@ char* fms_find_my_string_binding(char** arr, int *n, char *find_me, int *np)
   // This is the magical part:
   // Save the array of indices where the string was found into a string
   // The fortran side is going to allocate the array to the correct size and read the string into the array
-  // The alternative (normal) way is to have a seperate function that gets the number of times the string is found
+  // The alternative (normal) way is to have a separate function that gets the number of times the string is found
   // The fortran side will allocate the array to the correct size and send that into another function that
   // fill in that array. That will require you to search through the array twice ...
   char string[255];

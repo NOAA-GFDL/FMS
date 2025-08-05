@@ -60,6 +60,8 @@ call test_get_grid_comp_area_sg
 if(mpp_pe() .eq. mpp_root_pe()) write(*,*) 'TEST GET_GRID_COMP_AREA_UG'
 call test_get_grid_comp_area_ug
 
+call fms_end()
+
 contains
   !------------------------------------------!
   subroutine test_get_cell_vertices
