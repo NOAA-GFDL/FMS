@@ -47,14 +47,14 @@ test_atmos_ocean_fluxes_r8_SOURCES = test_atmos_ocean_fluxes.F90
 test_gex_SOURCES = test_gex.F90
 
 # add macro flags for kind and r4/r8 child type
-test_coupler_2d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_2d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_coupler_3d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_3d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_coupler_types_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_types_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_atmos_ocean_fluxes_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_atmos_ocean_fluxes_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_2d_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_2d_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_3d_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_3d_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_types_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_types_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_atmos_ocean_fluxes_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_atmos_ocean_fluxes_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
 test_gex_CPPFLAGS = -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh

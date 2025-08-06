@@ -45,8 +45,8 @@ program test_atmos_ocean_fluxes
   character(8), dimension(num_bcs) :: flux_name !< flux name
   character(24), dimension(num_bcs) :: flux_type !< flux_type for the given flux name
   character(6), dimension(num_bcs) :: impl !< implementation type for a given flux_type
-  real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: mol_wt      !< value of mol_wt
-  real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: param_array !< parameter array
+  real(TEST_FMS_KIND_), dimension(num_bcs) :: mol_wt      !< value of mol_wt
+  real(TEST_FMS_KIND_), dimension(num_bcs) :: param_array !< parameter array
 
   !> The flux names are made up.
   flux_name=["vampires", &
@@ -94,7 +94,7 @@ contains
 
     write(*,*) "*** TEST_ATMOS_OCEAN_FLUXES_INIT ***"
     call atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, &
-                                 use_r4_kind= FMS_CP_TEST_KIND_ .eq. r4_kind)
+                                 use_r4_kind= TEST_FMS_KIND_ .eq. r4_kind)
 
   end subroutine test_atmos_ocean_fluxes_init
   !--------------------------------------
@@ -105,7 +105,7 @@ contains
     implicit none
 
     character(100) :: cresults, thelist
-    real(FMS_CP_TEST_KIND_) :: rresults, rresults2(num_bcs)
+    real(TEST_FMS_KIND_) :: rresults, rresults2(num_bcs)
     integer :: i, n
     logical :: success
 
