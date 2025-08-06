@@ -1250,13 +1250,13 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   case (NO_DOMAIN, UG_DOMAIN)
       if (diag_file%is_using_collective_writes()) then
         call mpp_error(FATAL, "Collective writes are only supported for domain-decomposed files. "// &
-                              "diag_file is using collective writes with an unsupported domain type: "// &
-                              trim(diag_file%type_of_domain)//".")
+                              trim(file_name)//" is using collective writes with an unsupported domain type.")
       end if
   case (TWO_D_DOMAIN)
     if (is_regional .and. diag_file%is_using_collective_writes()) then
       call mpp_error(FATAL, "Collective writes are not supported for regional runs. "// &
-                            "Disable collective writes in the diag_table.")
+                            "Disable collective writes in the diag_table yaml for file:"// &
+                            trim(file_name))
     end if
   end select
 

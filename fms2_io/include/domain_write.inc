@@ -1326,6 +1326,7 @@ subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   c = 1
   e = 1
+  e(1:2) = shape(vdata)
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1436,6 +1437,7 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   c = 1
   e = 1
+  e(1:3) = shape(vdata)
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1576,6 +1578,7 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   c = 1
   e = 1
+  e(1:4) = shape(vdata)
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1731,6 +1734,7 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   c = 1
   e = 1
+  e(1:5) = shape(vdata)
 
   c(xdim_index) = isc
   c(ydim_index) = jsc

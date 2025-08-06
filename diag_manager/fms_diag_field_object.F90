@@ -31,7 +31,7 @@ use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, avg_name, time_average, time_min, time_max, &
-                         &time_none, time_diurnal, time_power, time_rms, time_sum
+                         &time_none, time_diurnal, time_power, time_rms, time_sum, MAX_DIMENSIONS
 use fms_string_utils_mod, only: int2str=>string
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
@@ -1376,10 +1376,16 @@ function get_chunksizes(this, diag_axis, field_yaml) &
   integer :: ndim     !< Number of spatial dimensions
   integer :: dim_size !< Dimensions size for the variable
   integer :: layout   !< Layout to use for the variable
+  integer :: specified_chunksizes(MAX_DIMENSIONS) !< Chunksizes specified in the yaml
 
   ndim = size(this%axis_ids)
   allocate(chunksizes(ndim + 1)) !! Adding 1 because of the unlimited dimension
   chunksizes = 1
+  if (field_yaml%has_chunksizes()) then
+    specified_chunksizes = field_yaml%get_chunksizes()
+    chunksizes = specified_chunksizes(1:ndim+1)
+    return
+  endif
 
   ! Determine some default chunksizes to use, based on the compute domain
   do i = 1, ndim
