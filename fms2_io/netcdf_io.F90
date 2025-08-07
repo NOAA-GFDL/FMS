@@ -156,6 +156,10 @@ type, public :: FmsNetcdfFile_t
                                       !! To be replaced with a real communicator at user request
   logical        :: use_netcdf_mpi = .false.
 
+  contains
+
+  procedure :: is_file_using_netcdf_mpi
+
 endtype FmsNetcdfFile_t
 
 
@@ -2406,6 +2410,12 @@ subroutine flush_file(fileobj)
     call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
   endif
 end subroutine flush_file
+
+pure logical function is_file_using_netcdf_mpi(this)
+  class(FmsNetcdfFile_t), intent(in) :: this !< Fms2io fileobj to query
+
+  is_file_using_netcdf_mpi = this%use_netcdf_mpi
+end function
 
 end module netcdf_io_mod
 !> @}
