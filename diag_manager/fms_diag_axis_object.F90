@@ -449,7 +449,7 @@ module fms_diag_axis_object_mod
     integer                       :: global_io_index(2)!< Global io domain starting and ending index
     select type(this)
     type is (fmsDiagFullAxis_type)
-      call this%get_global_io_domain(global_io_index)
+      call this%get_global_io_domain(global_io_index, fms2io_fileobj%is_file_using_netcdf_mpi())
       call write_data(fms2io_fileobj, this%axis_name, this%axis_data(global_io_index(1):global_io_index(2)))
     type is (fmsDiagSubAxis_type)
       i = this%starting_index
@@ -581,9 +581,10 @@ module fms_diag_axis_object_mod
   end function
 
   !> @brief Get the starting and ending indices of the global io domain of the axis
-  subroutine get_global_io_domain(this, global_io_index)
-    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+  subroutine get_global_io_domain(this, global_io_index, use_collective_writes)
+    class(fmsDiagFullAxis_type), target, intent(in)  :: this               !< diag_axis obj
     integer,                     intent(out) :: global_io_index(2) !< Global io domain starting and ending index
+    logical,                     intent(in)  :: use_collective_writes !< .True. if using collective writes
 
     type(domain2d), pointer :: io_domain !< pointer to the io domain
 
@@ -593,7 +594,12 @@ module fms_diag_axis_object_mod
     if (allocated(this%axis_domain)) then
       select type(domain => this%axis_domain)
       type is (diagDomain2d_t)
-        io_domain => mpp_get_io_domain(domain%domain2)
+        if (use_collective_writes) then
+          io_domain => domain%domain2
+        else
+          io_domain => mpp_get_io_domain(domain%domain2)
+        endif
+
         if (this%cart_name .eq. "X") then
           call mpp_get_global_domain(io_domain, xbegin=global_io_index(1), xend=global_io_index(2), &
             position=this%domain_position)
