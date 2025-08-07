@@ -567,7 +567,7 @@ end subroutine close_domain_file
 !> @brief Add a dimension to a file associated with a two-dimensional domain.
 subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_position)
 
-  type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
+  type(FmsNetcdfDomainFile_t), target, intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: dim_name !< Dimension name.
   character(len=*), intent(in) :: xory !< Flag telling if the dimension
                                        !! is associated with the "x" or "y"
@@ -584,7 +584,12 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   if (mpp_domain_is_symmetry(fileobj%domain) .and. present(domain_position)) then
     dpos = domain_position
   endif
-  io_domain => mpp_get_io_domain(fileobj%domain)
+  if (fileobj%use_netcdf_mpi) then
+    io_domain => fileobj%domain
+  else
+    io_domain => mpp_get_io_domain(fileobj%domain)
+  endif
+
   if (string_compare(xory, x, .true.)) then
     if (dpos .ne. center .and. dpos .ne. east) then
       call error("Only domain_position=center or domain_position=EAST is supported for x dimensions."// &
