@@ -172,7 +172,7 @@ subroutine init_checks(subroutine_name)
    character(len=*), intent(in) :: subroutine_name !< Name of the subroutine calling this from
 
    if (.not. module_is_initialized) then
-    call mpp_error(FATAL, "grid2_mod::"//trim(subroutine_name)//" is being called but grid2_mod was never initialized. "//&
+    call mpp_error(FATAL, "grid2_mod::"//trim(subroutine_name)//" is being called but grid2 was never initialized. "//&
                           "Please ensure that grid_init is called before calling "//trim(subroutine_name)//".")
   endif
 
