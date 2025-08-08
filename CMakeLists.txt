@@ -27,7 +27,7 @@ project(FMS
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(GNUInstallDirs)
 
 if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel)$")
@@ -336,6 +336,7 @@ foreach(kind ${kinds})
                                                  mosaic2/include
                                                  constants
                                                  astronomy/include
+                                                 field_manager/
                                                  field_manager/include
                                                  time_interp/include
                                                  tracer_manager/include
