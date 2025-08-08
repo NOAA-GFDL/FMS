@@ -68,6 +68,7 @@ option(WITH_YAML             "Enable compiler definition -Duse_yaml"            
 option(USE_DEPRECATED_IO     "THIS OPTION HAS NO EFFECT AND WILL BE REMOVED IN A FUTURE RELEASE"   OFF)
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
+# it seems nvidia does not support quad prec
   set(ENABLE_QUAD_PRECISION OFF)
 endif()
 
