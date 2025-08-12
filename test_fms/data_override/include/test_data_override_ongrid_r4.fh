@@ -24,6 +24,7 @@
 #undef WEIGHT_FILE_TEST_
 #undef SCALAR_TEST_
 #undef ENSEMBLE_TEST_
+#undef MULTI_FILE_TESTS_
 
 #define DO_TEST_KIND_              r4_kind
 #define COMPARE_DATA_              compare_data_r4
@@ -32,5 +33,6 @@
 #define WEIGHT_FILE_TEST_          weight_file_test_r4
 #define SCALAR_TEST_               scalar_test_r4
 #define ENSEMBLE_TEST_             ensemble_test_r4
+#define MULTI_FILE_TESTS_          multi_file_r4
 
 #include "test_data_override_ongrid.inc"
