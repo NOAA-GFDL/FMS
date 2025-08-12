@@ -56,8 +56,6 @@ data_table:
    factor              : 1
 _EOF
 
-fi
-
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 rm -rf INPUT/*
 
@@ -72,5 +70,7 @@ test_expect_success "data_override multi_file" '
 '
 
 rm -rf INPUT *.nc # remove any leftover files to reduce size
+
+fi
 
 test_done
