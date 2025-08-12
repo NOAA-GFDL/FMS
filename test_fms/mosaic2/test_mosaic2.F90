@@ -21,8 +21,8 @@
 !! get_mosaic_grid_sizes, get_mosaic_contact.  The subroutines are tested with
 !! made up C1 grids and exchange grids.  See write_files mod for grid details.
 
-#include "write_files.inc" !> including write_files.mod because I don't know how to compile when write_files.mod is
-                           !! in a separate file.
+#include "write_files.inc"
+
 program test_mosaic
 
 use mosaic2_mod
