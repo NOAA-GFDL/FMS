@@ -156,6 +156,10 @@ type, public :: FmsNetcdfFile_t
                                       !! To be replaced with a real communicator at user request
   logical        :: use_netcdf_mpi = .false.
 
+  contains
+
+  procedure :: is_file_using_netcdf_mpi
+
 endtype FmsNetcdfFile_t
 
 
@@ -742,7 +746,7 @@ subroutine netcdf_file_close(fileobj)
   integer :: err
   integer :: i
 
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     err = nf90_close(fileobj%ncid)
     call check_netcdf_code(err, "netcdf_file_close:"//trim(fileobj%path))
   endif
@@ -910,7 +914,7 @@ subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
       dim_len = sum(npes_count)
     endif
   endif
-  if ((fileobj%is_root .or. fileobj%use_netcdf_mpi) .and. .not. fileobj%is_readonly) then
+  if ((fileobj%is_root) .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
     call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"// &
@@ -969,7 +973,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
 
   append_error_msg = "netcdf_add_variable: file:"//trim(fileobj%path)//" variable:"//trim(variable_name)
 
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     if (string_compare(variable_type, "int", .true.)) then
       vtype = nf90_int
@@ -1009,6 +1013,9 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     else
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
     endif
+    call check_netcdf_code(err, append_error_msg)
+
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
     call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_add_variable
@@ -1383,7 +1390,7 @@ function is_dimension_unlimited(fileobj, dimension_name, broadcast) &
   integer :: err
   integer :: ulim_dimid
 
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     append_error_msg="is_dimension_unlimited: file:"//trim(fileobj%path)//&
                    & " dimension_name:"//trim(dimension_name)
     dimid = get_dimension_id(fileobj%ncid, trim(dimension_name), msg=append_error_msg)
@@ -1603,7 +1610,7 @@ function get_variable_num_dimensions(fileobj, variable_name, broadcast) &
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
 
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     append_error_msg = "get_variable_num_dimension: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     err = nf90_inquire_variable(fileobj%ncid, varid, ndims=ndims)
@@ -1642,7 +1649,7 @@ subroutine get_variable_dimension_names(fileobj, variable_name, dim_names, &
   character(len=200) :: append_error_msg !< Msg to be appended to FATAL error message
 
 
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     append_error_msg = "get_variable_dimension_names: file:"//trim(fileobj%path)//" variable: "//trim(variable_name)
 
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
@@ -1774,7 +1781,7 @@ function get_variable_unlimited_dimension_index(fileobj, variable_name, &
   integer :: i
 
   unlim_dim_index = no_unlimited_dimension
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dim_names(ndims))
     call get_variable_dimension_names(fileobj, variable_name, dim_names, &
@@ -2400,6 +2407,13 @@ subroutine flush_file(fileobj)
     call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
   endif
 end subroutine flush_file
+
+!> @brief Getter for use_netcdf_mpi
+pure logical function is_file_using_netcdf_mpi(this)
+  class(FmsNetcdfFile_t), intent(in) :: this !< fms2io fileobj to query
+
+  is_file_using_netcdf_mpi = this%use_netcdf_mpi
+end function is_file_using_netcdf_mpi
 
 end module netcdf_io_mod
 !> @}

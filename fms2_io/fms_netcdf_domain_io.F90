@@ -203,7 +203,7 @@ function get_domain_decomposed_dimension_index(fileobj, variable_name, &
   integer :: i
 
   index_ = no_domain_decomposed_dimension
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dim_names(ndims))
     dim_names(:) = ""
@@ -404,11 +404,13 @@ function open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, do
   allocate(fileobj%ydims(max_num_domain_decomposed_dims))
   fileobj%ny = 0
 
-  allocate(fileobj%pelist(mpp_get_domain_npes(domain)))
-  call mpp_get_pelist(domain, fileobj%pelist)
+  ! Every rank is the root PE of its own pelist. This forces all ranks to hit any NetCDF calls,
+  ! which are usually inside `if (fileobj%is_root)` blocks.
+  allocate(fileobj%pelist(1))
+  fileobj%pelist(1) = mpp_pe()
+  fileobj%io_root = mpp_pe()
+  fileobj%is_root = .true.
 
-  fileobj%io_root = fileobj%pelist(1)
-  fileobj%is_root = mpp_pe() .eq. fileobj%io_root
   fileobj%use_collective = .false. !TODO
   fileobj%is_diskless = .false.
 
@@ -469,10 +471,21 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   logical :: success2
   type(FmsNetcdfDomainFile_t) :: fileobj2
 
+  io_domain => mpp_get_io_domain(domain)
+
   fileobj%use_netcdf_mpi = .false.
-    if (present(use_netcdf_mpi)) fileobj%use_netcdf_mpi = use_netcdf_mpi
+  if (present(use_netcdf_mpi)) fileobj%use_netcdf_mpi = use_netcdf_mpi
 
   if (fileobj%use_netcdf_mpi) then
+#ifdef NO_NC_PARALLEL4
+    call mpp_error(FATAL, "NetCDF was not built with HDF5 parallel I/O features, so parallel writes are not supported. &
+                          &Please turn parallel writes off for the file: " // trim(path))
+#endif
+
+    if (associated(io_domain)) then
+      call mpp_error(NOTE, "NetCDF MPI is enabled: ignoring I/O domain. Only one output file will be produced.")
+    endif
+
     success = open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, dont_add_res_to_filename)
     return
   endif
@@ -490,7 +503,6 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   endif
 
   !Get the path of a "distributed" file.
-  io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
     call error("The domain associated with the file:"//trim(path)//" does not have an io_domain.")
   endif
@@ -564,7 +576,7 @@ end subroutine close_domain_file
 !> @brief Add a dimension to a file associated with a two-dimensional domain.
 subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_position)
 
-  type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
+  type(FmsNetcdfDomainFile_t), target, intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: dim_name !< Dimension name.
   character(len=*), intent(in) :: xory !< Flag telling if the dimension
                                        !! is associated with the "x" or "y"
@@ -581,7 +593,11 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   if (mpp_domain_is_symmetry(fileobj%domain) .and. present(domain_position)) then
     dpos = domain_position
   endif
-  io_domain => mpp_get_io_domain(fileobj%domain)
+  if (fileobj%use_netcdf_mpi) then
+    io_domain => fileobj%domain
+  else
+    io_domain => mpp_get_io_domain(fileobj%domain)
+  endif
   if (string_compare(xory, x, .true.)) then
     if (dpos .ne. center .and. dpos .ne. east) then
       call error("Only domain_position=center or domain_position=EAST is supported for x dimensions."// &
@@ -632,9 +648,10 @@ subroutine add_domain_attribute(fileobj, variable_name)
   integer, dimension(2) :: io_layout !< Io_layout in the fileobj's domain
 
   !< Don't add the "domain_decomposition" variable attribute if the io_layout is
-  !! 1,1, to avoid frecheck "failures"
+  !! 1,1, or if using mpi netcdf for writes, to avoid frecheck "failures"
   io_layout = mpp_get_io_domain_layout(fileobj%domain)
   if (io_layout(1)  .eq. 1 .and. io_layout(2) .eq. 1) return
+  if (fileobj%use_netcdf_mpi) return
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(variable_name, fileobj%xdims, fileobj%nx)

@@ -1325,7 +1325,7 @@ subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1363,9 +1363,6 @@ subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
-
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
 
   select type(vdata)
     type is (integer(kind=i4_kind))
@@ -1413,8 +1410,8 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
   logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
                                    !! (i.e it includes halos (which are not written))
 
-  integer, dimension(3) :: c !< Indices of the corners for each dimension
-  integer, dimension(3) :: e !< Size of the data for each dimension
+  integer, dimension(4) :: c !< Indices of the corners for each dimension
+  integer, dimension(4) :: e !< Size of the data for each dimension
   integer :: varid
   integer :: unlim_dim_index
 
@@ -1435,7 +1432,7 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1503,9 +1500,6 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
-
   select type(vdata)
     type is (integer(kind=i4_kind))
       err = nf90_put_var(fileobj%ncid, varid, &
@@ -1552,8 +1546,8 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
   logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
                                    !! (i.e it includes halos (which are not written))
 
-  integer, dimension(4) :: c !< Indices of the corners for each dimension
-  integer, dimension(4) :: e !< Size of the data for each dimension
+  integer, dimension(5) :: c !< Indices of the corners for each dimension
+  integer, dimension(5) :: e !< Size of the data for each dimension
   integer :: varid
   integer :: unlim_dim_index
 
@@ -1575,7 +1569,7 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1657,9 +1651,6 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
-
   select type(vdata)
     type is (integer(kind=i4_kind))
       err = nf90_put_var(fileobj%ncid, varid, &
@@ -1706,8 +1697,8 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
   logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
                                    !! (i.e it includes halos (which are not written))
 
-  integer, dimension(5) :: c !< Indices of the corners for each dimension
-  integer, dimension(5) :: e !< Size of the data for each dimension
+  integer, dimension(6) :: c !< Indices of the corners for each dimension
+  integer, dimension(6) :: e !< Size of the data for each dimension
   integer :: varid
   integer :: unlim_dim_index
 
@@ -1730,7 +1721,7 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1825,9 +1816,6 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
-
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
 
   select type(vdata)
     type is (integer(kind=i4_kind))
