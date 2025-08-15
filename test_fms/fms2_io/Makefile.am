@@ -31,7 +31,7 @@ LDADD = $(top_builddir)/libFMS/libFMS.la
 # Build this test program.
 check_PROGRAMS = test_get_is_valid test_file_appendix test_fms2_io test_atmosphere_io test_io_simple test_io_with_mask test_global_att \
                  test_packed_reads test_bc_restart test_get_mosaic_tile_grid test_read_ascii_file test_unlimit_compressed test_chunksizes \
-                 test_domain_io test_compressed_writes test_collective_io test_generalized_indices
+                 test_domain_io test_compressed_writes test_collective_io test_parallel_writes test_generalized_indices
 
 # This is the source code for the test.
 test_get_is_valid_SOURCES = test_get_is_valid.F90
@@ -54,6 +54,7 @@ test_packed_reads_SOURCES = test_packed_reads.F90
 test_compressed_writes_SOURCES = test_compressed_writes.F90
 test_domain_io_SOURCES = test_domain_io.F90
 test_collective_io_SOURCES = test_collective_io.F90
+test_parallel_writes_SOURCES = test_parallel_writes.F90
 test_generalized_indices_SOURCES = test_generalized_indices.F90
 
 EXTRA_DIST = test_bc_restart.sh test_fms2_io.sh test_atmosphere_io.sh test_io_simple.sh test_global_att.sh test_io_with_mask.sh test_read_ascii_file.sh \

@@ -27,7 +27,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parallel_skip ]; then
-  SKIP_TESTS="test_collective_io.1"
+  SKIP_TESTS="test_collective_io.1 test_collective_io.3"
 fi
 
 # Create and enter output directory
@@ -50,4 +50,10 @@ _EOF
 test_expect_success "Test the collective netcdf io functionality" '
   mpirun -n 6 ../test_collective_io
 '
+
+echo "" >input.nml
+test_expect_success "Test parallel writes" '
+  mpirun -n 6 ../test_parallel_writes
+'
+
 test_done
