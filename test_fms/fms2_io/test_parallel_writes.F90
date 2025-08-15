@@ -21,7 +21,7 @@ use fms_string_utils_mod, only: string
   type(domain2d) :: domain
   integer :: is, ie, js, je !< Starting and ending indices of the data domain
 
-  character(*), parameter :: dim_names(*) = ["lon", "lat", "u", "v", "w", "time"]
+  character(*), parameter :: dim_names(*) = ["x", "y", "u", "v", "w", "t"]
   character(*), parameter :: filename = "test_parallel_writes.nc"
 
   interface init_data
@@ -208,17 +208,17 @@ contains
     call register_axis(fileobj, dim_names(5), nw)
     call register_axis(fileobj, dim_names(6), unlimited)
 
-    call register_field(fileobj, "random_0d", "double",
+    call register_field(fileobj, "random_0d", "double", &
                         pack(dim_names, [.false., .false., .false., .false., .false., .true.]))
-    call register_field(fileobj, "random_1d", "double",
+    call register_field(fileobj, "random_1d", "double", &
                         pack(dim_names, [.false., .false., .true., .false., .false., .true.]))
-    call register_field(fileobj, "random_2d", "double",
+    call register_field(fileobj, "random_2d", "double", &
                         pack(dim_names, [.true., .true., .false., .false., .false., .true.]))
-    call register_field(fileobj, "random_3d", "double",
+    call register_field(fileobj, "random_3d", "double", &
                         pack(dim_names, [.true., .true., .true., .false., .false., .true.]))
-    call register_field(fileobj, "random_4d", "double",
+    call register_field(fileobj, "random_4d", "double", &
                         pack(dim_names, [.true., .true., .true., .true., .false., .true.]))
-    call register_field(fileobj, "random_5d", "double",
+    call register_field(fileobj, "random_5d", "double", &
                         pack(dim_names, [.true., .true., .true., .true., .true., .true.]))
   end subroutine netcdf_file_register_fields
 
