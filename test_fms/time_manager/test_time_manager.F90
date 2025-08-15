@@ -51,7 +51,6 @@ program test_time_manager
 
  !: for testing set/get_date_gregorian
  integer, parameter :: days_in_400_year_period = 146097
- integer, dimension(days_in_400_year_period) :: coded_date
  integer, dimension(400,12,31) :: date_to_day
 
  logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true., &
@@ -620,38 +619,5 @@ program test_time_manager
 
  !==============================================================================================
   call fms_end
-
-contains
-
-  ! get_coded_date:  copied from subroutine set_calendar_type in time_manager and slightly modified
-  ! to work in this test program.
-  subroutine get_coded_date(coded_date_old, date_to_day_old)
-
-    implicit none
-
-    integer, intent(out), dimension(146097) :: coded_date_old
-    integer, intent(out), dimension(400,12,31) :: date_to_day_old
-
-    integer :: iday, days_this_month, year, month, day
-    logical :: leap
-
-    iday = 0
-     date_to_day = -1 ! invalid_date = -1 in time_manager
-     do year=1,400
-       leap = mod(year,4) == 0
-       leap = leap .and. .not.mod(year,100) == 0
-       leap = leap .or. mod(year,400) == 0
-       do month=1,12
-         days_this_month = days_per_month(month)
-         if(leap .and. month ==2) days_this_month = 29
-         do day=1,days_this_month
-           date_to_day_old(year,month,day) = iday
-           iday = iday+1
-           coded_date_old(iday) = day + 32*(month + 16*year)
-         enddo ! do day
-       enddo ! do month
-     enddo ! do year
-
-  end subroutine get_coded_date
 
 end program test_time_manager
