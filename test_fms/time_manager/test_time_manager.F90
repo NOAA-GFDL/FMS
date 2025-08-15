@@ -49,10 +49,6 @@ program test_time_manager
  character(len=8) :: test_name
  character(len=256) :: out_msg
 
- !: for testing set/get_date_gregorian
- integer, parameter :: days_in_400_year_period = 146097
- integer, dimension(400,12,31) :: date_to_day
-
  logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true., &
          & test8 =.true.
  logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true., &
