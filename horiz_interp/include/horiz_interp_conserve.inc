@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_conserve_mod
 !> @{
-subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
+subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_in , lat_in
     real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_out, lat_out
@@ -41,10 +41,10 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_1DX1D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_GET_WEIGHTS_1DX1D_: horiz_interp_conserve_init is not called')
 
     if(great_circle_algorithm) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_1DX1D_: great_circle_algorithm is not implemented, contact developer')
+         'HORIZ_INTERP_CONSERVE_GET_WEIGHTS_1DX1D_: great_circle_algorithm is not implemented, contact developer')
     !-----------------------------------------------------------------------
     iverbose = 0;  if (present(verbose)) iverbose = verbose
 
@@ -218,11 +218,11 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp% interp_method = CONSERVE
 
-  end subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_
+  end subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_1DX1D_
 
   !#######################################################################
 
-  subroutine HORIZ_INTERP_CONSERVE_NEW_1DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_1DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),              dimension(:)   :: lon_in , lat_in
@@ -250,7 +250,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_1DX2D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_GET_WEIGHTS_1DX2D_: horiz_interp_conserve_init is not called')
 
     if( (size(lon_out,1) .NE. size(lat_out,1)) .OR. (size(lon_out,2) .NE. size(lat_out,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
@@ -385,11 +385,11 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp% interp_method = CONSERVE
 
-  end subroutine HORIZ_INTERP_CONSERVE_NEW_1DX2D_
+  end subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_1DX2D_
 
   !#######################################################################
 
-  subroutine HORIZ_INTERP_CONSERVE_NEW_2DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_2DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
@@ -412,7 +412,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_2DX1D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_GET_WEIGHTS_2DX1D_: horiz_interp_conserve_init is not called')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -492,11 +492,11 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp% interp_method = CONSERVE
 
-  end subroutine HORIZ_INTERP_CONSERVE_NEW_2DX1D_
+  end subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_2DX1D_
 
   !#######################################################################
 
-  subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
@@ -518,7 +518,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
 
     if(.not. module_is_initialized) call mpp_error(FATAL, &
-         'HORIZ_INTERP_CONSERVE_NEW_2DX2D_: horiz_interp_conserve_init is not called')
+         'HORIZ_INTERP_CONSERVE_GET_WEIGHTS_2DX2D_: horiz_interp_conserve_init is not called')
 
     if( (size(lon_in,1) .NE. size(lat_in,1)) .OR. (size(lon_in,2) .NE. size(lat_in,2)) )  &
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
@@ -597,7 +597,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp% interp_method = CONSERVE
 
-  end subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_
+  end subroutine HORIZ_INTERP_CONSERVE_GET_WEIGHTS_2DX2D_
 
   !########################################################################
 
@@ -632,17 +632,17 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
     select case ( Interp%version)
     case (1)
-       call horiz_interp_conserve_version1(Interp, data_in, data_out, verbose, mask_in, mask_out)
+       call horiz_interp_conserve_1dx1d(Interp, data_in, data_out, verbose, mask_in, mask_out)
     case (2)
        if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'HORIZ_INTERP_CONSERVE_:'// &
-            & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-       call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)
+            & ' for version 2, mask_in and mask_out must be passed in horiz_interp_get_weights, not in horiz_interp')
+       call horiz_interp_conserve_2d(Interp, data_in, data_out, verbose)
     end select
 
   end subroutine HORIZ_INTERP_CONSERVE_
 
   !##############################################################################
-  subroutine HORIZ_INTERP_CONSERVE_VERSION1_ ( Interp, data_in, data_out, verbose, &
+  subroutine HORIZ_INTERP_CONSERVE_1DX1D_ ( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
@@ -788,10 +788,10 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     endif
 
     !-----------------------------------------------------------------------
-  end subroutine HORIZ_INTERP_CONSERVE_VERSION1_
+  end subroutine HORIZ_INTERP_CONSERVE_1DX1D_
 
   !#############################################################################
-  subroutine HORIZ_INTERP_CONSERVE_VERSION2_ ( Interp, data_in, data_out, verbose )
+  subroutine HORIZ_INTERP_CONSERVE_2D_ ( Interp, data_in, data_out, verbose )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
     real(FMS_HI_KIND_),    intent(in),  dimension(:,:) :: data_in
@@ -807,7 +807,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
        data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
     end do
 
-  end subroutine HORIZ_INTERP_CONSERVE_VERSION2_
+  end subroutine HORIZ_INTERP_CONSERVE_2D_
 
 
   !#######################################################################

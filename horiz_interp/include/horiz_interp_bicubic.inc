@@ -23,7 +23,7 @@
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
@@ -31,7 +31,7 @@
                                        !! and weights used for subsequent interpolations. To
                                        !! reinitialize this variable for a different grid-to-grid
                                        !! interpolation you must first use the
-                                       !! @ref HORIZ_INTERP_BICUBIC_NEW__del interface.
+                                       !! @ref HORIZ_INTERP_BICUBIC_GET_WEIGHTS__del interface.
     real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in !< Longitude (radians) for source data grid
     real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lat_in !< Latitude (radians) for source data grid
     real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
@@ -75,7 +75,7 @@
 
     if ( verbose_bicubic > 0 ) then
        iunit = stdout()
-       write (iunit,'(/,"Initialising bicubic interpolation, interface horiz_interp_bicubic_new_1d_s")')
+       write (iunit,'(/,"Initialising bicubic interpolation, interface horiz_interp_bicubic_get_weights_1d_s")')
        write (iunit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
        write (iunit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
        write (iunit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
@@ -180,25 +180,25 @@
              Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz-Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
                                               & - Interp%HI_KIND_TYPE_%lat_in(jcl))
           endif
-!          if(yz.gt.Interp%HI_KIND_TYPE_%lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
+!          if(yz.gt.Interp%HI_KIND_TYPE_%lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_:
 !          yf < ycl, no valid boundary point')
-!          if(yz.lt.Interp%HI_KIND_TYPE_%lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
+!          if(yz.lt.Interp%HI_KIND_TYPE_%lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_:
 !          yf > ycu, no valid boundary point')
-!          if(xz.gt.Interp%HI_KIND_TYPE_%lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
+!          if(xz.gt.Interp%HI_KIND_TYPE_%lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_:
 !          xf < xcl, no valid boundary point')
-!          if(xz.lt.Interp%HI_KIND_TYPE_%lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_S_:
+!          if(xz.lt.Interp%HI_KIND_TYPE_%lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_:
 !          xf > xcu, no valid boundary point')
         enddo
       enddo
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp%interp_method = BICUBIC
-  end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_S_
+  end subroutine HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_
 
   !> @brief Creates a new @ref horiz_interp_type
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine HORIZ_INTERP_BICUBIC_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
@@ -237,7 +237,7 @@
 
     if ( verbose_bicubic > 0 ) then
        iunit = stdout()
-       write (iunit,'(/,"Initialising bicubic interpolation, interface HORIZ_INTERP_BICUBIC_NEW_1D_")')
+       write (iunit,'(/,"Initialising bicubic interpolation, interface HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_")')
        write (iunit,'(/," Longitude of coarse grid points (radian): xc(i) i=1, ",i4)') Interp%nlon_src
        write (iunit,'(1x,10f10.4)') (Interp%HI_KIND_TYPE_%lon_in(jj),jj=1,Interp%nlon_src)
        write (iunit,'(/," Latitude of coarse grid points (radian):  yc(j) j=1, ",i4)') Interp%nlat_src
@@ -335,20 +335,20 @@
              Interp%HI_KIND_TYPE_%rat_y(i,j) = (yz- Interp%HI_KIND_TYPE_%lat_in(jcl))/(Interp%HI_KIND_TYPE_%lat_in(jcu)&
                                              & - Interp%HI_KIND_TYPE_%lat_in(jcl))
           endif
-!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: yf <
+!          if(yz.gt.lat_in(jcu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_: yf <
 !          ycl, no valid boundary point')
-!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: yf >
+!          if(yz.lt.lat_in(jcl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_: yf >
 !          ycu, no valid boundary point')
-!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: xf <
+!          if(xz.gt.lon_in(icu)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_: xf <
 !          xcl, no valid boundary point')
-!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_NEW_1D_: xf >
+!          if(xz.lt.lon_in(icl)) call mpp_error(FATAL, ' HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_: xf >
 !          xcu, no valid boundary point')
         enddo
       enddo
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp%interp_method = BICUBIC
 
-  end subroutine HORIZ_INTERP_BICUBIC_NEW_1D_
+  end subroutine HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_
 
   !> @brief Perform bicubic horizontal interpolation
   subroutine HORIZ_INTERP_BICUBIC_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, &

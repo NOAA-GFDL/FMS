@@ -18,7 +18,7 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_bilinear_mod
 !> @{
-  subroutine HORIZ_INTERP_BILINEAR_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BILINEAR_GET_WEIGHTS_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
@@ -196,7 +196,7 @@
 
     return
 
-  end subroutine HORIZ_INTERP_BILINEAR_NEW_1D_
+  end subroutine HORIZ_INTERP_BILINEAR_GET_WEIGHTS_1D_
 
   !#######################################################################
 
@@ -204,7 +204,7 @@
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine HORIZ_INTERP_BILINEAR_NEW_2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
+  subroutine HORIZ_INTERP_BILINEAR_GET_WEIGHTS_2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo, new_search, no_crash_when_not_found )
 
     !-----------------------------------------------------------------------
@@ -912,13 +912,13 @@
 
   !> Subroutine for performing the horizontal interpolation between two grids
   !!
-  !! @ref horiz_interp_bilinear_new must be called before calling this routine.
+  !! @ref horiz_interp_bilinear_get_weights must be called before calling this routine.
   subroutine HORIZ_INTERP_BILINEAR_ ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
        missing_value, missing_permit, new_handle_missing )
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in)        :: Interp !< Derived type variable containing
                                                !! interpolation indices and weights. Returned by a
-                                               !! previous call to horiz_interp_bilinear_new
+                                               !! previous call to horiz_interp_bilinear_get_weights
     real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in !< input data on source grid
     real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out !< output data on source grid
     integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 =

@@ -400,7 +400,8 @@ module fms
                      fms_write_version_number => write_version_number
 
   !> horiz_interp
-  use horiz_interp_mod, only: fms_horiz_interp => horiz_interp, fms_horiz_interp_new => horiz_interp_new, &
+  use horiz_interp_mod, only: fms_horiz_interp => horiz_interp, &
+                              fms_horiz_interp_get_weights => horiz_interp_get_weights, &
                               fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
                               fms_horiz_interp_end => horiz_interp_end
   use horiz_interp_type_mod, only: FmsHorizInterp_type => horiz_interp_type, &

@@ -33,7 +33,7 @@ use time_interp_external2_mod, only : time_interp_external_exit, time_interp_ext
 use time_manager_mod,          only : get_date, set_date, time_manager_init, set_calendar_type, JULIAN, &
                                    &  time_type, increment_time
 use time_manager_mod,          only : NOLEAP
-use horiz_interp_mod,          only : horiz_interp, horiz_interp_init, horiz_interp_new, horiz_interp_del, &
+use horiz_interp_mod,          only : horiz_interp, horiz_interp_init, horiz_interp_get_weights, horiz_interp_del, &
                                     & horiz_interp_type
 use axis_utils2_mod,           only : axis_edges
 use fms2_io_mod,               only : FmsNetcdfFile_t, fms2_io_init, open_file, close_file, write_data, register_axis
@@ -253,7 +253,7 @@ call mpp_exit
         lon_in = lon_in*atan(1.0_kindl)/45.0_kindl
         lat_in = lat_in*atan(1.0_kindl)/45.0_kindl
 
-        call horiz_interp_new(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
+        call horiz_interp_get_weights(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
             interp_method='bilinear')
 
         deallocate(data_d_3d)
@@ -386,7 +386,7 @@ call mpp_exit
         lon_in = lon_in*atan(1.0_kindl)/45.0_kindl
         lat_in = lat_in*atan(1.0_kindl)/45.0_kindl
 
-        call horiz_interp_new(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
+        call horiz_interp_get_weights(Hinterp,lon_in,lat_in, lon_local_out, lat_local_out, &
             interp_method='bilinear')
 
         deallocate(data_d_2d)

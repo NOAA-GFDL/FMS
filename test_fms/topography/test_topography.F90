@@ -38,7 +38,7 @@ program test_top
                                 register_variable_attribute, write_data, read_data, unlimited
   use mpp_mod,            only: mpp_error, FATAL, stdout, mpp_init, mpp_exit
   use mpp_mod,            only: mpp_pe, mpp_root_pe, mpp_sync, input_nml_file
-  use horiz_interp_mod,   only: horiz_interp_type, horiz_interp_new, &
+  use horiz_interp_mod,   only: horiz_interp_type, horiz_interp_get_weights, &
                                 horiz_interp, horiz_interp_del
   use constants_mod,      only: pi
   use platform_mod,       only: r4_kind, r8_kind

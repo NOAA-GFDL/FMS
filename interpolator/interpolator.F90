@@ -55,7 +55,7 @@ use fms2_io_mod,       only : FmsNetcdfFile_t, fms2_io_file_exist => file_exists
                               get_variable_dimension_names, get_variable_sense
 
 use horiz_interp_mod,  only : horiz_interp_type, &
-                              horiz_interp_new,  &
+                              horiz_interp_get_weights, &
                               horiz_interp_init, &
                               assignment(=), &
                               horiz_interp,      &

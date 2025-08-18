@@ -26,7 +26,7 @@ use yaml_parser_mod
 use constants_mod, only: DEG_TO_RAD
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE, stdout, stdlog, mpp_max
 use mpp_mod, only : input_nml_file
-use horiz_interp_mod, only : horiz_interp_init, horiz_interp_new, horiz_interp_type, &
+use horiz_interp_mod, only : horiz_interp_init, horiz_interp_get_weights, horiz_interp_type, &
                              horiz_interp_read_weights
 use time_interp_external2_mod, only: time_interp_external_init, &
                                      time_interp_external, &
@@ -1462,7 +1462,7 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
      need_compute=override_array(curr_position)%need_compute(window_id)
   endif
 
-  !--- call horiz_interp_new is not initialized
+  !--- call horiz_interp_get_weights is not initialized
 
   if( need_compute ) then
      select case(gridname)
@@ -1506,12 +1506,12 @@ subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,d
      else
       select case (data_table(index1)%interpol_method)
       case ('bilinear')
-        call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
+        call horiz_interp_get_weights (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bilinear")
       case ('bicubic')
-        call horiz_interp_new (override_array(curr_position)%horz_interp(window_id), &
+        call horiz_interp_get_weights (override_array(curr_position)%horz_interp(window_id), &
              override_array(curr_position)%lon_in(is_src:ie_src+1),                  &
              override_array(curr_position)%lat_in(js_src:je_src+1),                  &
              lon_local(isw:iew,jsw:jew), lat_local(isw:iew,jsw:jew), interp_method="bicubic")

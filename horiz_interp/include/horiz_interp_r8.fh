@@ -24,38 +24,35 @@
 #undef HI_KIND_TYPE_
 #define HI_KIND_TYPE_ horizInterpReals8_type
 
-#undef HORIZ_INTERP_NEW_1D_
-#define HORIZ_INTERP_NEW_1D_ horiz_interp_new_1d_r8
+#undef HORIZ_INTERP_GET_WEIGHTS_1D_
+#define HORIZ_INTERP_GET_WEIGHTS_1D_ horiz_interp_get_weights_1d_r8
 
-#undef HORIZ_INTERP_NEW_1D_SRC_
-#define HORIZ_INTERP_NEW_1D_SRC_ horiz_interp_new_1d_src_r8
+#undef HORIZ_INTERP_GET_WEIGHTS_1D_SRC_
+#define HORIZ_INTERP_GET_WEIGHTS_1D_SRC_ horiz_interp_get_weights_1d_src_r8
 
-#undef HORIZ_INTERP_NEW_1D_DST_
-#define HORIZ_INTERP_NEW_1D_DST_ horiz_interp_new_1d_dst_r8
+#undef HORIZ_INTERP_GET_WEIGHTS_1D_DST_
+#define HORIZ_INTERP_GET_WEIGHTS_1D_DST_ horiz_interp_get_weights_1d_dst_r8
 
-#undef HORIZ_INTERP_BASE_2D_
-#define HORIZ_INTERP_BASE_2D_ horiz_interp_base_2d_r8
+#undef HORIZ_INTERP_FROM_WEIGHTS_2D_
+#define HORIZ_INTERP_FROM_WEIGHTS_2D_ horiz_interp_from_weights_2d_r8
 
-#undef HORIZ_INTERP_BASE_3D_
-#define HORIZ_INTERP_BASE_3D_ horiz_interp_base_3d_r8
+#undef HORIZ_INTERP_FROM_WEIGHTS_3D_
+#define HORIZ_INTERP_FROM_WEIGHTS_3D_ horiz_interp_from_weights_3d_r8
 
-#undef HORIZ_INTERP_SOLO_1D_
-#define HORIZ_INTERP_SOLO_1D_ horiz_interp_solo_1d_r8
+#undef HORIZ_INTERP_1D_
+#define HORIZ_INTERP_1D_ horiz_interp_1d_r8
 
-#undef HORIZ_INTERP_SOLO_1D_SRC_
-#define HORIZ_INTERP_SOLO_1D_SRC_ horiz_interp_solo_1d_src_r8
+#undef HORIZ_INTERP_1D_SRC_
+#define HORIZ_INTERP_1D_SRC_ horiz_interp_1d_src_r8
 
-#undef HORIZ_INTERP_SOLO_1D_DST_
-#define HORIZ_INTERP_SOLO_1D_DST_ horiz_interp_solo_1d_dst_r8
+#undef HORIZ_INTERP_1D_DST_
+#define HORIZ_INTERP_1D_DST_ horiz_interp_1d_dst_r8
 
-#undef HORIZ_INTERP_SOLO_2D_
-#define HORIZ_INTERP_SOLO_2D_ horiz_interp_solo_2d_r8
+#undef HORIZ_INTERP_2D_
+#define HORIZ_INTERP_2D_ horiz_interp_2d_r8
 
-#undef HORIZ_INTERP_SOLO_OLD_
-#define HORIZ_INTERP_SOLO_OLD_ horiz_interp_solo_old_r8
-
-#undef HORIZ_INTERP_NEW_2D_
-#define HORIZ_INTERP_NEW_2D_ horiz_interp_new_2d_r8
+#undef HORIZ_INTERP_GET_WEIGHTS_2D_
+#define HORIZ_INTERP_GET_WEIGHTS_2D_ horiz_interp_get_weights_2d_r8
 
 #undef IS_LAT_LON_
 #define IS_LAT_LON_ is_lat_lon_r8

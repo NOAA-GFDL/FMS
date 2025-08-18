@@ -22,7 +22,7 @@
   !!
   !> Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  subroutine HORIZ_INTERP_SPHERICAL_NEW_(Interp, lon_in,lat_in,lon_out,lat_out, &
+  subroutine HORIZ_INTERP_SPHERICAL_GET_PRE_WEIGHTS_(Interp, lon_in,lat_in,lon_out,lat_out, &
        num_nbrs, max_dist, src_modulo)
 
     type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
@@ -161,7 +161,7 @@
        call full_search(theta_src, phi_src, theta_dst, phi_dst, map_src_add, map_src_dist, &
             num_found, num_neighbors,max_src_dist )
     case default
-       call mpp_error(FATAL,"HORIZ_INTERP_SPHERICAL_NEW_: nml search_method = "// &
+       call mpp_error(FATAL,"HORIZ_INTERP_SPHERICAL_GET_PRE_WEIGHTS_: nml search_method = "// &
                   trim(search_method)//" is not a valid namelist option")
     end select
 
@@ -193,16 +193,16 @@
 
     return
 
-  end subroutine HORIZ_INTERP_SPHERICAL_NEW_
+  end subroutine HORIZ_INTERP_SPHERICAL_GET_PRE_WEIGHTS_
 
   !#######################################################################
 
   !> Subroutine for performing the horizontal interpolation between two grids.
-  !! HORIZ_INTERP_SPHERICAL_NEW_ must be called before calling this routine.
+  !! HORIZ_INTERP_SPHERICAL_GET_PRE_WEIGHTS_ must be called before calling this routine.
   subroutine HORIZ_INTERP_SPHERICAL_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
     type(horiz_interp_type), intent(in) :: Interp !< A derived type variable containing indices
                                           !! and weights for subsequent interpolations. Returned
-                                          !! by a previous call to HORIZ_INTERP_SPHERICAL_NEW_
+                                          !! by a previous call to HORIZ_INTERP_SPHERICAL_GET_PRE_WEIGHTS_
     real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in !< Input data on source grid
     real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out !< Output data on destination grid
     integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 = most output

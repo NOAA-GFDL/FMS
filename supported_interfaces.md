@@ -317,7 +317,7 @@ Additional information for this module and others can be found in the Doxygen ge
 ### horiz_interp
 ##### Interfaces
 - horiz_interp
-- horiz_interp_new
+- horiz_interp_get_weights
 - horiz_interp_del
 - horiz_interp_init
 - horiz_interp_end
