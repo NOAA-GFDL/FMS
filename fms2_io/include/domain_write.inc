@@ -371,6 +371,173 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   endif
 end subroutine domain_write_2d
 
+!> @brief Gather "compute" domain data on the I/O root rank and then have
+!!        the I/O root write out the data that spans the "global" domain.
+!!        This routine may only be used with variables that are "domain
+!!        decomposed" using mpp_gather.
+subroutine new_domain_write_2d(fileobj, variable_name, vdata, use_mpp_gather, unlim_dim_level, &
+                           corner, edge_lengths)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), dimension(:,:), intent(in) :: vdata !< Data that will
+                                                !! be written out
+                                                !! to the netcdf file.
+  logical, intent(in) :: use_mpp_gather !< use mpp_gather for gather
+  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
+                                                   !! dimension.
+  integer, dimension(2), intent(in), optional :: corner !< Array of starting
+                                                        !! indices describing
+                                                        !! where the data
+                                                        !! will be written to.
+  integer, dimension(2), intent(in), optional :: edge_lengths !< The number of
+                                                              !! elements that
+                                                              !! will be written
+                                                              !! in each dimension.
+
+  integer(kind=i4_kind), dimension(:,:), allocatable :: global_buf_i4_kind
+  integer(kind=i8_kind), dimension(:,:), allocatable :: global_buf_i8_kind
+  real(kind=r4_kind), dimension(:,:), allocatable :: global_buf_r4_kind
+  real(kind=r8_kind), dimension(:,:), allocatable :: global_buf_r8_kind
+  logical :: buffer_includes_halos
+  type(domain2d), pointer :: io_domain
+  integer :: isc
+  integer :: isd
+  integer :: jsc
+  integer :: jsd
+  integer :: xc_size
+  integer :: xdim_index
+  integer :: xpos
+  integer :: ydim_index
+  integer :: ypos
+  integer :: yc_size
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
+  real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
+  integer :: xgmin !< Starting x index of the global io domain
+  integer :: ygmin !< Ending y index of the global io domain
+  integer :: xgsize, ygsize
+  integer :: istart, jstart, iend, jend
+  integer :: ioff, joff
+
+  if (.not. use_mpp_gather) then
+    call domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+  else
+    ! If the file is not domain decomposed, do not do anything in this routine
+    if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
+                                            xdim_index, ydim_index, xpos, ypos)) then
+      call compressed_write(fileobj, variable_name, vdata, &
+                            unlim_dim_level=unlim_dim_level, corner=corner, &
+                            edge_lengths=edge_lengths)
+      return
+    endif
+
+    ! Get the io domain from the fileobj
+    io_domain => mpp_get_io_domain(fileobj%domain)
+
+    ! Get some info about the domain:
+    call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                        xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
+                        msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+    ! Get the global io domain:
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=xgsize, position=xpos)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=ygsize, position=ypos)
+
+    ! Root pe allocates room to gather the data
+    if (fileobj%is_root) then
+       select type(vdata)
+        type is (integer(kind=i4_kind))
+          allocate(global_buf_i4_kind(xgsize, ygsize))
+          global_buf_i4_kind = 0
+          if (get_fill_value(fileobj, variable_name, fill_i4_kind, broadcast=.false.)) then
+              global_buf_i4_kind = fill_i4_kind
+          endif
+        type is (integer(kind=i8_kind))
+          allocate(global_buf_i8_kind(xgsize, ygsize))
+          global_buf_i8_kind = 0
+          if (get_fill_value(fileobj, variable_name, fill_i8_kind, broadcast=.false.)) then
+              global_buf_i8_kind = fill_i8_kind
+          endif
+        type is (real(kind=r4_kind))
+          allocate(global_buf_r4_kind(xgsize, ygsize))
+          global_buf_r4_kind = 0.
+          if (get_fill_value(fileobj, variable_name, fill_r4_kind, broadcast=.false.)) then
+              global_buf_r4_kind = fill_r4_kind
+          endif
+        type is (real(kind=r8_kind))
+          allocate(global_buf_r8_kind(xgsize, ygsize))
+          global_buf_r8_kind = 0.
+          if (get_fill_value(fileobj, variable_name, fill_r8_kind, broadcast=.false.)) then
+              global_buf_r8_kind = fill_r8_kind
+          endif
+        class default
+        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
+       end select
+    endif
+
+    ! Get the starting and indices of the compute domain relative to vdata (note that vdata start indices at 1 #Fortran)
+    istart = 1
+    jstart = 1
+
+    ! If the buffer contains halos, get the portion of vdata with only the compute domain
+    if (buffer_includes_halos) then
+       istart = isc - isd + 1
+       jstart = jsc - jsd + 1
+    endif
+
+    iend = istart + xc_size - 1
+    jend = jstart + yc_size - 1
+
+    ! Get offsets for buffer
+    ioff = 1-xgmin
+    joff = 1-ygmin
+
+    ! Gather the data
+    select type(vdata)
+      type is (integer(kind=i4_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
+  	                & global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      type is (integer(kind=i8_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
+  	                & global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      type is (real(kind=r4_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
+  	                & global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      type is (real(kind=r8_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
+  	                & global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      class default
+      call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
+    end select
+
+    ! Root pe writes out the data
+    if (fileobj%is_root) then
+      select type(vdata)
+        type is (integer(kind=i4_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_i4_kind, &
+                                 & unlim_dim_level=unlim_dim_level)
+        type is (integer(kind=i8_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_i8_kind, &
+                                 & unlim_dim_level=unlim_dim_level)
+        type is (real(kind=r4_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_r4_kind, &
+                                 & unlim_dim_level=unlim_dim_level)
+        type is (real(kind=r8_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_r8_kind, &
+                                 & unlim_dim_level=unlim_dim_level)
+        class default
+        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+                   & trim(variable_name))
+      end select
+    endif
+  endif
+
+end subroutine new_domain_write_2d
+
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have
 !!        the I/O root write out the data that spans the "global" domain.
@@ -666,6 +833,173 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
   endif
 end subroutine domain_write_3d
+
+!> @brief Gather "compute" domain data on the I/O root rank and then have
+!!        the I/O root write out the data that spans the "global" domain.
+!!        This routine may only be used with variables that are "domain
+!!        decomposed" using mpp_gather.
+subroutine new_domain_write_3d(fileobj, variable_name, vdata, use_mpp_gather, unlim_dim_level, &
+                           corner, edge_lengths)
+
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), dimension(:,:,:), intent(in) :: vdata !< Data that will
+                                                !! be written out
+                                                !! to the netcdf file.
+  logical, intent(in) :: use_mpp_gather !< use mpp_gather for gather
+  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited
+                                                   !! dimension.
+  integer, dimension(3), intent(in), optional :: corner !< Array of starting
+                                                        !! indices describing
+                                                        !! where the data
+                                                        !! will be written to.
+  integer, dimension(3), intent(in), optional :: edge_lengths !< The number of
+                                                              !! elements that
+                                                              !! will be written
+                                                              !! in each dimension.
+
+  integer(kind=i4_kind), dimension(:,:,:), allocatable :: global_buf_i4_kind
+  integer(kind=i8_kind), dimension(:,:,:), allocatable :: global_buf_i8_kind
+  real(kind=r4_kind), dimension(:,:,:), allocatable :: global_buf_r4_kind
+  real(kind=r8_kind), dimension(:,:,:), allocatable :: global_buf_r8_kind
+  logical :: buffer_includes_halos
+  type(domain2d), pointer :: io_domain
+  integer :: isc
+  integer :: isd
+  integer :: jsc
+  integer :: jsd
+  integer :: xc_size
+  integer :: xdim_index
+  integer :: xpos
+  integer :: ydim_index
+  integer :: ypos
+  integer :: yc_size
+  integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
+  integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
+  real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
+  real(kind=r8_kind) :: fill_r8_kind !< Fill value of a r8_kind variable
+  integer :: xgmin !< Starting x index of the global io domain
+  integer :: ygmin !< Ending y index of the global io domain
+  integer :: xgsize, ygsize
+  integer :: istart, jstart, iend, jend
+  integer :: ioff, joff
+
+  if (.not. use_mpp_gather) then
+    call domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+  else
+    ! If the file is not domain decomposed, do not do anything in this routine
+    if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
+                                            xdim_index, ydim_index, xpos, ypos)) then
+      call compressed_write(fileobj, variable_name, vdata, &
+                            unlim_dim_level=unlim_dim_level, corner=corner, &
+                            edge_lengths=edge_lengths)
+      return
+    endif
+
+    ! Get the io domain from the fileobj
+    io_domain => mpp_get_io_domain(fileobj%domain)
+
+    ! Get some info about the domain:
+    call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                        xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
+                        msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+    ! Get the global io domain:
+    call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=xgsize, position=xpos)
+    call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=ygsize, position=ypos)
+
+    ! Root pe allocates room to gather the data
+    if (fileobj%is_root) then
+       select type(vdata)
+        type is (integer(kind=i4_kind))
+          allocate(global_buf_i4_kind(xgsize, ygsize, size(vdata,3)))
+          global_buf_i4_kind = 0
+          if (get_fill_value(fileobj, variable_name, fill_i4_kind, broadcast=.false.)) then
+              global_buf_i4_kind = fill_i4_kind
+          endif
+        type is (integer(kind=i8_kind))
+          allocate(global_buf_i8_kind(xgsize, ygsize, size(vdata,3)))
+          global_buf_i8_kind = 0
+          if (get_fill_value(fileobj, variable_name, fill_i8_kind, broadcast=.false.)) then
+              global_buf_i8_kind = fill_i8_kind
+          endif
+        type is (real(kind=r4_kind))
+          allocate(global_buf_r4_kind(xgsize, ygsize, size(vdata,3)))
+          global_buf_r4_kind = 0.
+          if (get_fill_value(fileobj, variable_name, fill_r4_kind, broadcast=.false.)) then
+              global_buf_r4_kind = fill_r4_kind
+          endif
+        type is (real(kind=r8_kind))
+          allocate(global_buf_r8_kind(xgsize, ygsize, size(vdata,3)))
+          global_buf_r8_kind = 0.
+          if (get_fill_value(fileobj, variable_name, fill_r8_kind, broadcast=.false.)) then
+              global_buf_r8_kind = fill_r8_kind
+          endif
+        class default
+        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
+       end select
+    endif
+
+    ! Get the starting and indices of the compute domain relative to vdata(note that vdata start indices at 1 #Fortran)
+    istart = 1
+    jstart = 1
+
+    ! If the buffer contains halos, get the portion of vdata with only the compute domain
+    if (buffer_includes_halos) then
+       istart = isc - isd + 1
+       jstart = jsc - jsd + 1
+    endif
+
+    iend = istart + xc_size - 1
+    jend = jstart + yc_size - 1
+
+    ! Get offsets for buffer
+    ioff = 1-xgmin
+    joff = 1-ygmin
+
+    ! Gather the data
+    select type(vdata)
+      type is (integer(kind=i4_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, & 
+		    & vdata(istart:iend, jstart:jend,:), global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      type is (integer(kind=i8_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, & 
+		    & vdata(istart:iend, jstart:jend,:), global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      type is (real(kind=r4_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, & 
+		    & vdata(istart:iend, jstart:jend,:), global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      type is (real(kind=r8_kind))
+        call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, & 
+		    & vdata(istart:iend, jstart:jend,:), global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      class default
+      call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
+                 & trim(variable_name))
+    end select
+
+    ! Root pe writes out the data
+    if (fileobj%is_root) then
+      select type(vdata)
+        type is (integer(kind=i4_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_i4_kind, &
+                                 unlim_dim_level=unlim_dim_level)
+        type is (integer(kind=i8_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_i8_kind, &
+                                 unlim_dim_level=unlim_dim_level)
+        type is (real(kind=r4_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_r4_kind, &
+                                 unlim_dim_level=unlim_dim_level)
+        type is (real(kind=r8_kind))
+          call netcdf_write_data(fileobj, variable_name, global_buf_r8_kind, &
+                                 unlim_dim_level=unlim_dim_level)
+        class default
+        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
+                   & trim(variable_name))
+      end select
+    endif
+  endif
+
+end subroutine new_domain_write_3d
 
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have
