@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2025.03],
+  [2025.03-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -433,6 +433,16 @@ if [ test -n "`$FC --version | grep GNU | grep 11\.1\..`" ]; then
   AC_MSG_RESULT([yes])
   AC_MSG_ERROR([Compilation with gcc and gfortran 11.1.0 is unsupported \
 by this version of FMS due to a bug in the compiler. Please use a different version of gcc/gfortran.])
+else
+  AC_MSG_RESULT([no])
+fi
+
+# Check if intel is 2025.1 for ICE
+AC_MSG_CHECKING([if using Intel 2025.1])
+if [ test -n "`$FC --version | grep ifx | grep 2025\.1\..*`" ]; then
+  AC_MSG_RESULT([yes])
+  AC_MSG_ERROR([Compilation with Oneapi 2025.1 is unsupported \
+by this version of FMS due to a bug in the compiler. Please use a different version of oneapi.])
 else
   AC_MSG_RESULT([no])
 fi
