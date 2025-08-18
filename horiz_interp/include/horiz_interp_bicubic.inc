@@ -31,7 +31,7 @@
                                        !! and weights used for subsequent interpolations. To
                                        !! reinitialize this variable for a different grid-to-grid
                                        !! interpolation you must first use the
-                                       !! @ref HORIZ_INTERP_BICUBIC_GET_WEIGHTS__del interface.
+                                       !! @ref HORIZ_INTERP_BICUBIC_GET_WEIGHTS_del interface.
     real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in !< Longitude (radians) for source data grid
     real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lat_in !< Latitude (radians) for source data grid
     real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid

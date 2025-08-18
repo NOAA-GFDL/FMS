@@ -1067,8 +1067,10 @@ implicit none
 
         ! conservative
         ! 1dx1d
-        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="conservative")
-        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, &
+                                      lon_out_1D, lat_out_1D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, &
+                                      lon_out_1D, lat_out_1D, interp_method="conservative")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1077,8 +1079,10 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 1dx2d
-        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="conservative")
-        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, &
+                                      lon_out_2D, lat_out_2D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, &
+                                      lon_out_2D, lat_out_2D, interp_method="conservative")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1087,8 +1091,10 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 2dx1d
-        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="conservative")
-        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, &
+                                      lon_out_1D, lat_out_1D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, &
+                                      lon_out_1D, lat_out_1D, interp_method="conservative")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 2x1d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1097,8 +1103,10 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 2dx2d
-        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="conservative")
-        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, &
+                                      lon_out_2D, lat_out_2D, interp_method="conservative")
+        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, &
+                                      lon_out_2D, lat_out_2D, interp_method="conservative")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 2x2d conservative")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1118,8 +1126,10 @@ implicit none
 
         ! bicubic only works with 1d src
         ! 1dx1d
-        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bicubic")
-        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bicubic")
+        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, &
+                                      lon_out_1D, lat_out_1D, interp_method="bicubic")
+        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, &
+                                      lon_out_1D, lat_out_1D, interp_method="bicubic")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d bicubic")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1128,8 +1138,10 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 1dx2d
-        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bicubic")
-        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bicubic")
+        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, &
+                                      lon_out_2D, lat_out_2D, interp_method="bicubic")
+        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, &
+                                      lon_out_2D, lat_out_2D, interp_method="bicubic")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bicubic")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1187,8 +1199,10 @@ implicit none
 
         ! spherical
         ! only 2dx2d
-        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
-        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="spherical")
+        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, &
+                                      lon_out_2D, lat_out_2D, interp_method="spherical")
+        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, &
+                                      lon_out_2D, lat_out_2D, interp_method="spherical")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new1)
@@ -1202,8 +1216,10 @@ implicit none
 
         ! bilinear
         ! 1dx1d
-        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bilinear")
-        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, lon_out_1D, lat_out_1D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, &
+                                      lon_out_1D, lat_out_1D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, &
+                                      lon_out_1D, lat_out_1D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x1d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1212,8 +1228,10 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 1dx2d
-        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bilinear")
-        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, lon_out_2D, lat_out_2D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new1, lon_in_1D, lat_in_1D, &
+                                      lon_out_2D, lat_out_2D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new2, lon_in_1D, lat_in_1D, &
+                                      lon_out_2D, lat_out_2D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1232,8 +1250,10 @@ implicit none
         enddo
         lat_out_1d = lat_out_1D * D2R
         lon_out_1d = lon_out_1D * D2R
-        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="bilinear")
-        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, lon_out_1D, lat_out_1D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, &
+                                      lon_out_1D, lat_out_1D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, &
+                                      lon_out_1D, lat_out_1D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
@@ -1242,8 +1262,10 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 2dx2d
-        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="bilinear")
-        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, lon_out_2D, lat_out_2D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new1, lon_in_2D, lat_in_2D, &
+                                      lon_out_2D, lat_out_2D, interp_method="bilinear")
+        call horiz_interp_get_weights(Interp_new2, lon_in_2D, lat_in_2D, &
+                                      lon_out_2D, lat_out_2D, interp_method="bilinear")
         Interp_cp = Interp_new1
         call mpp_error(NOTE,"testing horiz_interp_type assignment 1x2d bilinear")
         call check_type_eq(Interp_cp, Interp_new2)
