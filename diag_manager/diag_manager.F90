@@ -2059,12 +2059,14 @@ END FUNCTION register_static_field
        IF ( reduced_k_range ) THEN
 !----------
 !ug support
-           if (output_fields(out_num)%reduced_k_unstruct) then
-               js = output_fields(out_num)%output_grid%l_start_indx(2)
-               je = output_fields(out_num)%output_grid%l_end_indx(2)
-           endif
-           l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
-           l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+          if (output_fields(out_num)%reduced_k_unstruct) then
+             f3 = output_fields(out_num)%output_grid%l_start_indx(2)
+             f4 = output_fields(out_num)%output_grid%l_end_indx(2)
+             js = 1
+             je = f4 - f3 + 1
+          endif
+          l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
+          l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
 !----------
        END IF
        ksr= l_start(3)
