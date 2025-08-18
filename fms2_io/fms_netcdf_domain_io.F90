@@ -319,6 +319,8 @@ function is_dimension_registered(fileobj, dimension_name) &
 
 end function is_dimension_registered
 
+!> @brief Open a NetCDF-4 file in parallel write mode
+!! @return True on success
 function open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, dont_add_res_to_filename) &
   result(success)
 
