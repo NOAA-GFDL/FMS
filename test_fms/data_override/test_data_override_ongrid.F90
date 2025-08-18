@@ -155,6 +155,7 @@ else
     call mpp_set_current_pelist(pelist)
   case (multi_file)
     call multi_file_r4
+    call multi_file_r8
   end select
 endif
 
