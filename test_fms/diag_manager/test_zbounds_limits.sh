@@ -41,8 +41,8 @@ if [ -z "${skipflag}" ]
 then
   # Repeat the test with the modern diag_manager
   cat <<_EOF > input.nml
-& diag_manager_nml
-  use_modern_diag = .True.
+&diag_manager_nml
+  use_modern_diag = .true.
 /
 _EOF
 
