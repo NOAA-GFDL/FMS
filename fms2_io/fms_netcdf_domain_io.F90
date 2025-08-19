@@ -595,11 +595,15 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   if (mpp_domain_is_symmetry(fileobj%domain) .and. present(domain_position)) then
     dpos = domain_position
   endif
+
+  ! If using NetCDF MPI, the IO domain is ignored, so use the domain to determine the correct size of each
+  ! domain-decomposed dimension.
   if (fileobj%use_netcdf_mpi) then
     io_domain => fileobj%domain
   else
     io_domain => mpp_get_io_domain(fileobj%domain)
   endif
+
   if (string_compare(xory, x, .true.)) then
     if (dpos .ne. center .and. dpos .ne. east) then
       call error("Only domain_position=center or domain_position=EAST is supported for x dimensions."// &

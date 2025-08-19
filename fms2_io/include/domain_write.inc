@@ -1280,6 +1280,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   endif
 end subroutine domain_write_5d
 
+!> @brief Write 2D data using NetCDF MPI
 subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -1386,6 +1387,7 @@ subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, c
   call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
 end subroutine netcdf_mpi_write_2d
 
+!> @brief Write 3D data using NetCDF MPI
 subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -1522,6 +1524,7 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
   call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
 end subroutine netcdf_mpi_write_3d
 
+!> @brief Write 4D data using NetCDF MPI
 subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -1673,6 +1676,7 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
   call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
 end subroutine netcdf_mpi_write_4d
 
+!> @brief Write 5D data using NetCDF MPI
 subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
