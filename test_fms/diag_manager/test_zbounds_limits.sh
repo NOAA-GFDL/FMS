@@ -33,19 +33,20 @@ test_diag_manager_01
 _EOF
 
 rm -f *.nc
-my_test_count=1
-test_expect_success "Running diag_manager (test $my_test_count)" '
+test_expect_success "Test zbounds limits (legacy diag manager)" '
   mpirun -n 6 ../test_zbounds_limits
 '
 
-# Repeat the test with the modern diag_manager
-cat <<_EOF > input.nml
+if [ -z "${skipflag}" ]
+then
+  # Repeat the test with the modern diag_manager
+  cat <<_EOF > input.nml
 & diag_manager_nml
   use_modern_diag = .True.
 /
 _EOF
 
-cat <<_EOF > diag_table.yaml
+  cat <<_EOF > diag_table.yaml
 title: test_diag_manager_01
 base_date: 2 1 1 0 0 0
 diag_files:
@@ -61,10 +62,11 @@ diag_files:
     kind: r4
 _EOF
 
-rm -rf diag_table
-rm -f *.nc
-my_test_count=2
-test_expect_success "Running with modern diag manager (test $my_test_count)" '
-  mpirun -n 6 ../test_zbounds_limits
-'
+  rm -rf diag_table
+  rm -f *.nc
+  test_expect_success "Test zbounds limits (modern diag manager)" '
+    mpirun -n 6 ../test_zbounds_limits
+  '
+fi
+
 test_done
