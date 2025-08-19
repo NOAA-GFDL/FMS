@@ -20,7 +20,7 @@
 !> @brief run mpp_domains tests on arrays of integers and real numbers
 !! using different layouts and data precision
 !> @note This test calls extensions of the routine test_halo_upate in test_mpp_domains.
-program test_mpp_update_domains_main
+program test_mpp_update_domains
 
   use test_mpp_update_domains_real, only : test_halo_update_r8, test_halo_update_r4
   use test_mpp_update_domains_real, only : test_subset_update_r8, test_subset_update_r4
@@ -94,4 +94,4 @@ program test_mpp_update_domains_main
   call mpp_domains_exit()
   !> Finalize mpp
   call MPI_FINALIZE(ierr)
-end program test_mpp_update_domains_main
+end program test_mpp_update_domains

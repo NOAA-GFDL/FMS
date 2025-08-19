@@ -16,8 +16,8 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-module write_files
-
+!! Helper routines for generating input files for test_mosaic2/grid2
+!! This portion of code is included in two modules, one for each real precision
   use fms2_io_mod, only: fms2_io_init, open_file, close_file, FmsNetcdfFile_t
   use fms2_io_mod, only: register_axis, register_field, write_data
   use mpp_mod,     only: mpp_init, mpp_sync, mpp_npes, mpp_get_current_pelist
@@ -365,5 +365,3 @@ contains
     call write_exchange()
 
   end subroutine write_all
-  !---------------------------------!
-end module write_files

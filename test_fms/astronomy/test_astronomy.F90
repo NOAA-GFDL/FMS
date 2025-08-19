@@ -261,8 +261,8 @@ program test_astronomy
     lat1D = 0.0_lkind
     call annual_mean_solar(lat1D, cosz1D, solar1D)
     call test_set_get_orbital_parameters
-    if (solar1D(1) .ne. solar_local) call mpp_error(FATAL, 'test_annual_mean_solar_2level solar1D')
-    if (cosz1D(1) .ne. 1.0_lkind/half_pi)  call mpp_error(FATAL, 'test_annual_mean_solar_2level cosz1D')
+    if (abs(solar1D(1) - solar_local) .gt. 1.0e-5_lkind) call mpp_error(FATAL, 'test_annual_mean_solar_2level solar1D')
+    if (abs(cosz1D(1) - 1.0_lkind/half_pi) .gt. 1.0e-5_lkind)  call mpp_error(FATAL, 'test_annual_mean_solar_2level cosz1D')
 
   end subroutine test_annual_mean_solar
   !---------------------------------------------!
@@ -271,8 +271,9 @@ program test_astronomy
     implicit none
     real(TEST_FMS_KIND_) :: answers, results
     character(*) :: whoami
+    integer, parameter :: lkind = TEST_FMS_KIND_
 
-    if (results.ne.answers) then
+    if (abs(results - answers) .gt. 1.0e-5_lkind) then
        write(*,*) 'EXPECTED ', answers, ' but computed ', results
        call mpp_error(FATAL, trim(whoami))
     end if

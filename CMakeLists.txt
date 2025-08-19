@@ -30,12 +30,12 @@ project(FMS
 
 include(GNUInstallDirs)
 
-if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel|DebugUFS)$")
+if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel|DebugUFS|ReleaseUFS|NoFlags|Repro)$")
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE
       "Release"
       CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "DebugUFS")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo" "DebugUFS" "ReleaseUFS" "NoFlags" "Repro")
 endif()
 
 if(NOT CMAKE_C_COMPILER_ID MATCHES "^(Intel|GNU|Clang|IntelLLVM)$")
@@ -52,7 +52,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # Build options
-option(OPENMP      "Build FMS with OpenMP support"        OFF)
+option(OPENMP      "Build FMS with OpenMP support"        ON)
 option(32BIT       "Build 32-bit (r4) FMS library"        OFF)
 option(64BIT       "Build 64-bit (r8) FMS library"        OFF)
 option(FPIC        "Build with position independent code" OFF)
@@ -60,7 +60,7 @@ option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
-option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
+option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION" OFF)
 option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
@@ -343,7 +343,7 @@ foreach(kind ${kinds})
                                                  amip_interp/include)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
-  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
+  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS ${${kind}_flags})
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
   target_link_libraries(${libTgt}_f PRIVATE NetCDF::NetCDF_Fortran
@@ -485,7 +485,7 @@ if(NOT kinds)
                                                    amip_interp/include)
     target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
     target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
-    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
+    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS ${${kind}_flags})
     set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                  ${moduleDir})
     target_link_libraries(${libTgt}_f PRIVATE NetCDF::NetCDF_Fortran
@@ -551,6 +551,7 @@ if(NOT kinds)
 
     target_compile_definitions(${libTgt} PRIVATE "${fms_defs}")
     target_compile_definitions(${libTgt} PRIVATE "${${kind}_defs}")
+    set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS ${${kind}_flags})
 
     target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
                                            NetCDF::NetCDF_Fortran
@@ -594,13 +595,14 @@ list(APPEND TEST_MODS_SRC
   test_fms/fms/test_fms.F90
   test_fms/fms2_io/argparse.F90
   test_fms/fms2_io/setup.F90
-#  test_fms/mosaic2/write_files.F90
+  test_fms/mosaic2/write_files.F90
   test_fms/mpp/compare_data_checksums.F90
   test_fms/mpp/compare_data_checksums_int.F90
   test_fms/mpp/fill_halo.F90
   test_fms/mpp/test_domains_utility_mod.F90
   test_fms/mpp/test_mpp_update_domains_int.F90
   test_fms/mpp/test_mpp_update_domains_real.F90
+  test_fms/mpp/test_mpp_update_domains_ad.F90
   test_fms/mpp/test_system_clock.F90)
 
 add_library(testLibs "${TEST_MODS_SRC}")
@@ -716,10 +718,8 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/mpp/test_mpp_sendrecv.F90
   test_fms/mpp/test_mpp_sum.F90
   test_fms/mpp/test_mpp_transmit.F90
+  test_fms/mpp/test_mpp_update_domains.F90
   test_fms/mpp/test_mpp_update_domains_ad.F90
-  test_fms/mpp/test_mpp_update_domains_int.F90
-  test_fms/mpp/test_mpp_update_domains_main.F90
-  test_fms/mpp/test_mpp_update_domains_real.F90
   test_fms/mpp/test_peset.F90
   test_fms/mpp/test_mpp_read_ascii_file.F90
   test_fms/mpp/test_read_input_nml.F90
@@ -774,7 +774,7 @@ foreach (testFile ${TEST_SRC_SINGLE_TARGET})
 
   add_executable(${TName} ${testFile})
   target_compile_definitions(${TName} PRIVATE "${r8_defs}")
-  set_target_properties(${TName} PROPERTIES COMPILE_FLAGS "${r8_flags}")
+  set_target_properties(${TName} PROPERTIES COMPILE_FLAGS ${r8_flags})
   target_link_libraries(${TName} PUBLIC FMS::fms
                                  PRIVATE testLibs
                                    )
@@ -801,14 +801,16 @@ foreach (testFile ${TEST_SRC_MULTI_TARGET})
 
   add_executable(${TName}_r8 ${testFile})
   target_compile_definitions(${TName}_r8 PRIVATE "${r8_defs}")
-  set_target_properties(${TName}_r8 PROPERTIES COMPILE_FLAGS "${r8_flags}")
+  set_target_properties(${TName}_r8 PROPERTIES COMPILE_FLAGS ${r8_flags})
   target_link_libraries(${TName}_r8 PUBLIC FMS::fms
                                     PRIVATE testLibs
                                     )
 
   add_executable(${TName}_r4 ${testFile})
   target_compile_definitions(${TName}_r4 PRIVATE "${r4_defs}")
-  set_target_properties(${TName}_r4 PROPERTIES COMPILE_FLAGS "${r4_flags}")
+  # seems counterintuitive but r4 tests use r8 default
+  # they specify kind values explicitly with the preprocessor where needed (TEST_FMS_KIND_)
+  set_target_properties(${TName}_r4 PROPERTIES COMPILE_FLAGS ${r8_flags})
   target_link_libraries(${TName}_r4 PUBLIC FMS::fms
                                     PRIVATE testLibs
                                     )
@@ -837,10 +839,15 @@ foreach (testFile ${TEST_SRC_MULTI_TARGET})
                                        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/include
                                        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
                                        PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+  #set macros used to test mixed precision
   target_compile_definitions(${TName}_r8 PRIVATE TEST_FMS_KIND_=r8_kind)
   target_compile_definitions(${TName}_r4 PRIVATE TEST_FMS_KIND_=r4_kind)
   target_compile_definitions(${TName}_r8 PRIVATE FMS_TEST_BC_TYPE_=bc)
   target_compile_definitions(${TName}_r4 PRIVATE FMS_TEST_BC_TYPE_=bc_r4)
+  target_compile_definitions(${TName}_r8 PRIVATE FMS_TEST_BC_TYPE_=bc)
+  target_compile_definitions(${TName}_r4 PRIVATE FMS_TEST_BC_TYPE_=bc_r4)
+  target_compile_definitions(${TName}_r8 PRIVATE WRITE_FILES_MOD_=write_files_r8)
+  target_compile_definitions(${TName}_r4 PRIVATE WRITE_FILES_MOD_=write_files_r4)
 endforeach ()
 
 # gather all test scripts
@@ -862,7 +869,9 @@ foreach (testScript ${TEST_SCRIPTS})
   set_property(TEST ${testName} PROPERTY LABELS ${testDirName})
   # set an environment variable so the scripts know to skip tests that use libyaml
   if(NOT WITH_YAML)
-    set_property(TEST ${testName} PROPERTY ENVIRONMENT skipflag=skip;parser_skip=skip;skip_yaml=yes)
+    set_tests_properties(${testName} PROPERTIES
+        ENVIRONMENT "skipflag=skip;parser_skip=skip;skip_yaml=yes"
+    )
   endif()
 endforeach()
 

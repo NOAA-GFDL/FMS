@@ -27,6 +27,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
+
 rm -rf input.nml field_table field_table.yaml
 # Field manager with the legacy table (not setting namelist)
 touch input.nml
@@ -100,7 +101,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-if [ ! $parser_skip ]; then
+if [ ! -z $parser_skip ]; then
   test_expect_failure "field table read with use_field_table.yaml = .true. but not compiling with yaml" 'mpirun -n 1 ./test_field_table_read'
 else
   test_expect_success "field table read with use_field_table.yaml = .true." 'mpirun -n 1 ./test_field_table_read'

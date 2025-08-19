@@ -16,10 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifndef TEST_FMS_KIND_
-#define TEST_FMS_KIND_ 8
-#endif
-
 !> Tests the tridiagonal module routines (tri_invert and close_tridiagonal)
 !! Tests reals with the kind value set above,
 program test_tridiagonal

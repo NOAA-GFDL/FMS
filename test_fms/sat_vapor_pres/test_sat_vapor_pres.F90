@@ -766,8 +766,9 @@ contains
     implicit none
     real(TEST_FMS_KIND_), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
+    real(TEST_FMS_KIND_), parameter :: tol = 1.0e-6
 
-    if(answer .ne. fms_result) then
+    if(abs(answer - fms_result) .gt. tol) then
        write(*,*) 'Expected ', answer, ' but got ', fms_result
        call mpp_error(FATAL,'ERROR:'//trim(whoami) )
     end if

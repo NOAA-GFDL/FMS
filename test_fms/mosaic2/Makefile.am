@@ -51,7 +51,7 @@ EXTRA_DIST = test_mosaic2.sh
 TESTS = test_mosaic2.sh
 
 if SKIP_MOSAIC_TESTS
-  TESTS_ENVIRONMENT = SKIP_TESTS="test_mosaic2.1 test_mosaic2.2 test_mosaic2.3 test_mosaic2.4"
+  TESTS_ENVIRONMENT = parser_skip=${skipflag}
 endif
 
 TEST_EXTENSIONS = .sh

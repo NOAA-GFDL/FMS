@@ -26,6 +26,8 @@
 # Set common test settings.
 . ../test-lib.sh
 
+output_dir
+
 rm -f input.nml
 touch input.nml
 
@@ -106,11 +108,11 @@ mkdir INPUT
 
 
 test_expect_success "coupler types interfaces (r4_kind)" '
-  mpirun -n 4 ./test_coupler_types_r4
+  mpirun -n 4 ../test_coupler_types_r4
 '
 
 test_expect_success "coupler types interfaces (r8_kind)" '
-  mpirun -n 4 ./test_coupler_types_r8
+  mpirun -n 4 ../test_coupler_types_r8
 '
 
 # delete lines from the table to make sure we see the difference in the send_data return status
@@ -125,36 +127,36 @@ _EOF
 
 
 test_expect_success "coupler types interfaces - check send_data return vals (r4_kind)" '
-  mpirun -n 4 ./test_coupler_types_r4
+  mpirun -n 4 ../test_coupler_types_r4
 '
 
 test_expect_success "coupler types interfaces - check send_data return vals (r8_kind)" '
-  mpirun -n 4 ./test_coupler_types_r8
+  mpirun -n 4 ../test_coupler_types_r8
 '
 
 mkdir RESTART
 
 test_expect_success "coupler register restart 2D(r4_kind)" '
-  mpirun -n 1 ./test_coupler_2d_r4
+  mpirun -n 1 ../test_coupler_2d_r4
 '
 test_expect_success "coupler register restart 2D(r8_kind)" '
-  mpirun -n 1 ./test_coupler_2d_r8
+  mpirun -n 1 ../test_coupler_2d_r8
 '
 
 test_expect_success "coupler register restart 3D (r4_kind)" '
-  mpirun -n 1 ./test_coupler_3d_r4
+  mpirun -n 1 ../test_coupler_3d_r4
 '
 
 test_expect_success "coupler register restart 3D (r8_kind)" '
-  mpirun -n 1 ./test_coupler_3d_r8
+  mpirun -n 1 ../test_coupler_3d_r8
 '
 
 test_expect_success "test atmos_ocean_fluxes (r4_kind)" '
-  mpirun -n 1 ./test_atmos_ocean_fluxes_r4
+  mpirun -n 1 ../test_atmos_ocean_fluxes_r4
 '
 
 test_expect_success "test atmos_ocean_fluxes (r8_kind)" '
-  mpirun -n 1 ./test_atmos_ocean_fluxes_r8
+  mpirun -n 1 ../test_atmos_ocean_fluxes_r8
 '
 
 rm -rf RESTART
