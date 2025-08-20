@@ -1,5 +1,5 @@
 # Intel C
-set( CMAKE_C_FLAGS "")
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
 
 set( base_flags "-sox -traceback")
 
