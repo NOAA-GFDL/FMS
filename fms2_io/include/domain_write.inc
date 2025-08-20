@@ -375,8 +375,8 @@ end subroutine domain_write_2d
 !!        the I/O root write out the data that spans the "global" domain.
 !!        This routine may only be used with variables that are "domain
 !!        decomposed" using mpp_gather.
-subroutine new_domain_write_2d(fileobj, variable_name, vdata, use_mpp_gather, unlim_dim_level, &
-                           corner, edge_lengths)
+subroutine domain_write_2d_mpp_gather(fileobj, variable_name, vdata, use_mpp_gather, unlim_dim_level, &
+                                      corner, edge_lengths)
 
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -445,8 +445,13 @@ subroutine new_domain_write_2d(fileobj, variable_name, vdata, use_mpp_gather, un
     call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=xgsize, position=xpos)
     call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=ygsize, position=ypos)
 
-    ! Root pe allocates room to gather the data
+    ! Root pe allocates room to gather the data and computes offsets for data placement
     if (fileobj%is_root) then
+       ! Offsets used to place data in recv buffer
+       ioff = 1-xgmin
+       joff = 1-ygmin   
+
+       ! Allocate recv buffer for gather
        select type(vdata)
         type is (integer(kind=i4_kind))
           allocate(global_buf_i4_kind(xgsize, ygsize))
@@ -473,8 +478,8 @@ subroutine new_domain_write_2d(fileobj, variable_name, vdata, use_mpp_gather, un
               global_buf_r8_kind = fill_r8_kind
           endif
         class default
-        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
-                 & trim(variable_name))
+        call error("unsupported variable type: domain_write_2d_mpp_gather: file: " &
+		 & //trim(fileobj%path)//" variable:"//trim(variable_name))
        end select
     endif
 
@@ -491,10 +496,6 @@ subroutine new_domain_write_2d(fileobj, variable_name, vdata, use_mpp_gather, un
     iend = istart + xc_size - 1
     jend = jstart + yc_size - 1
 
-    ! Get offsets for buffer
-    ioff = 1-xgmin
-    joff = 1-ygmin
-
     ! Gather the data
     select type(vdata)
       type is (integer(kind=i4_kind))
@@ -510,8 +511,8 @@ subroutine new_domain_write_2d(fileobj, variable_name, vdata, use_mpp_gather, un
         call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
                         & global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
       class default
-      call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
-                 & trim(variable_name))
+      call error("unsupported variable type: domain_write_2d_mpp_gather: file: " &
+	       & //trim(fileobj%path)//" variable:"// trim(variable_name))
     end select
 
     ! Root pe writes out the data
@@ -530,13 +531,13 @@ subroutine new_domain_write_2d(fileobj, variable_name, vdata, use_mpp_gather, un
           call netcdf_write_data(fileobj, variable_name, global_buf_r8_kind, &
                                  & unlim_dim_level=unlim_dim_level)
         class default
-        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
-                   & trim(variable_name))
+        call error("unsupported variable type: domain_write_2d_mpp_gather: file: " &
+		 & //trim(fileobj%path)//" variable:"// trim(variable_name))
       end select
     endif
   endif
 
-end subroutine new_domain_write_2d
+end subroutine domain_write_2d_mpp_gather
 
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have
@@ -838,8 +839,8 @@ end subroutine domain_write_3d
 !!        the I/O root write out the data that spans the "global" domain.
 !!        This routine may only be used with variables that are "domain
 !!        decomposed" using mpp_gather.
-subroutine new_domain_write_3d(fileobj, variable_name, vdata, use_mpp_gather, unlim_dim_level, &
-                           corner, edge_lengths)
+subroutine domain_write_3d_mpp_gather(fileobj, variable_name, vdata, use_mpp_gather, unlim_dim_level, &
+                                      corner, edge_lengths)
 
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -908,8 +909,13 @@ subroutine new_domain_write_3d(fileobj, variable_name, vdata, use_mpp_gather, un
     call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=xgsize, position=xpos)
     call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=ygsize, position=ypos)
 
-    ! Root pe allocates room to gather the data
+    ! Root pe allocates room to gather the data and computes offsets for data placement
     if (fileobj%is_root) then
+       ! Offsets used to place data in recv buffer
+       ioff = 1-xgmin
+       joff = 1-ygmin
+
+       ! Allocate recv buffer for gather
        select type(vdata)
         type is (integer(kind=i4_kind))
           allocate(global_buf_i4_kind(xgsize, ygsize, size(vdata,3)))
@@ -936,8 +942,8 @@ subroutine new_domain_write_3d(fileobj, variable_name, vdata, use_mpp_gather, un
               global_buf_r8_kind = fill_r8_kind
           endif
         class default
-        call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
-                 & trim(variable_name))
+        call error("unsupported variable type: domain_write_3d_mpp_gather: file: " &
+		 & //trim(fileobj%path)//" variable:"//trim(variable_name))
        end select
     endif
 
@@ -973,8 +979,8 @@ subroutine new_domain_write_3d(fileobj, variable_name, vdata, use_mpp_gather, un
         call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
                     & vdata(istart:iend, jstart:jend,:), global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
       class default
-      call error("unsupported variable type: domain_write_3d: file: "//trim(fileobj%path)//" variable:"// &
-                 & trim(variable_name))
+      call error("unsupported variable type: domain_write_3d_mpp_gather: file: " &
+	       & //trim(fileobj%path)//" variable:"//trim(variable_name))
     end select
 
     ! Root pe writes out the data
@@ -993,13 +999,13 @@ subroutine new_domain_write_3d(fileobj, variable_name, vdata, use_mpp_gather, un
           call netcdf_write_data(fileobj, variable_name, global_buf_r8_kind, &
                                  unlim_dim_level=unlim_dim_level)
         class default
-        call error("unsupported variable type: domain_write_2d: file: "//trim(fileobj%path)//" variable:"// &
-                   & trim(variable_name))
+        call error("unsupported variable type: domain_write_3d_mpp_gather: file: " &
+		 & //trim(fileobj%path)//" variable:"//trim(variable_name))
       end select
     endif
   endif
 
-end subroutine new_domain_write_3d
+end subroutine domain_write_3d_mpp_gather
 
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have

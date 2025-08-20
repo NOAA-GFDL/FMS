@@ -90,9 +90,9 @@ public :: domain_read_5d
 public :: domain_write_0d
 public :: domain_write_1d
 public :: domain_write_2d
-public :: new_domain_write_2d
+public :: domain_write_2d_mpp_gather
 public :: domain_write_3d
-public :: new_domain_write_3d
+public :: domain_write_3d_mpp_gather
 public :: domain_write_4d
 public :: domain_write_5d
 public :: save_domain_restart
