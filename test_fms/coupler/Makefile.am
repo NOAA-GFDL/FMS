@@ -74,4 +74,4 @@ endif
 EXTRA_DIST = test_coupler.sh test_gex.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc
+CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc test_coupler-files/* test_gex-files/*
