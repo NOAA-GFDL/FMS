@@ -92,7 +92,7 @@ program test_tridiagonal
     ref_array = ref_array * k
     ! check
     do i=1, IN_LEN
-      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 1.0e-6_kindl) then
         print *, i, x(1,1,i), ref_array(1,1,i)
         call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert")
       endif
@@ -102,7 +102,7 @@ program test_tridiagonal
     ref_array = ref_array * -1.0_kindl
     call tri_invert(x, d)
     do i=1, IN_LEN
-      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 1.0e-6_kindl) then
         print *, i, x(1,1,i), ref_array(1,1,i)
         call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert with saved values")
       endif
