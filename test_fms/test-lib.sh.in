@@ -146,6 +146,7 @@ test_failure_ () {
 
 test_known_broken_ok_ () {
   test_fixed=$(($test_fixed+1))
+  test_failure=$(($test_failure + 1))
   say_color error "ok $test_count - $@ # TODO known breakage vanished"
 }
 
@@ -324,6 +325,7 @@ test_done () {
   then
     if test $test_failure != 0
     then
+      echo "$test_failure tests failed in $TEST_NAME. Exiting.."
       exit 1
     fi
   fi

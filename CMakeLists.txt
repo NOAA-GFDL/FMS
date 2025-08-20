@@ -870,7 +870,7 @@ foreach (testScript ${TEST_SCRIPTS})
   # set an environment variable so the scripts know to skip tests that use libyaml
   if(NOT WITH_YAML)
     set_tests_properties(${testName} PROPERTIES
-        ENVIRONMENT "skipflag=skip;parser_skip=skip;skip_yaml=yes"
+        ENVIRONMENT "parser_skip=skip"
     )
   endif()
 endforeach()

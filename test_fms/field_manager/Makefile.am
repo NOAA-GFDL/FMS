@@ -40,14 +40,13 @@ test_field_manager_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_field_manager_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 
 if USING_YAML
-skipflag="skip"
+  TESTS_ENVIRONMENT = parser_skip=""
 else
-skipflag=""
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh
-TESTS_ENVIRONMENT= parser_skip=${skipflag}
 
 # Run the test program.
 TESTS = test_field_manager2.sh

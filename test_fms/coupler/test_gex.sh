@@ -81,7 +81,7 @@ EOF
 prepare_legacy default_test
 test_expect_success "Test gex with atm_to_lnd tracer (legacy field_table)" "$test_cmd"
 
-if [ -z $skip_yaml ]; then
+if [ -z "$parser_skip" ]; then
   prepare_yaml default_test
   test_expect_success "Test gex with atm_to_lnd tracer (YAML field_table)" "$test_cmd"
 fi

@@ -510,7 +510,7 @@ test_expect_success "Test the diag update_buffer (test $my_test_count)" '
 
 ## run tests that are ifdef'd out only if compiled with yaml
 ## otherwise just run the updated end to end to check for error
-if [ -z "${skipflag}" ]; then
+if [ -z "${parser_skip}" ]; then
 
   cat <<_EOF > diag_table.yaml
 title: test_diag_manager

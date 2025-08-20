@@ -32,7 +32,7 @@ touch input.nml
 rm -rf INPUT
 mkdir INPUT
 
-if [ ! -z $parser_skip ]; then
+if [ ! $parser_skip ]; then
   SKIP_TESTS='test_mosaic2.[1-4]'
 fi
 

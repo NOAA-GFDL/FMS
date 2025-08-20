@@ -92,12 +92,10 @@ EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_
              test_ens_runs.sh test_multi_file.sh test_diag_attribute_add.sh
 
 if USING_YAML
-skipflag=""
+  TESTS_ENVIRONMENT = parser_skip=""
 else
-skipflag="skip"
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
-
-TESTS_ENVIRONMENT = skipflag=${skipflag}
 
 CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 

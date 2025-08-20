@@ -64,8 +64,10 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 # Run the test program.
 TESTS = test_coupler.sh test_gex.sh
 
-if ! USING_YAML
-  TESTS_ENVIRONMENT = skip_yaml=yes
+if USING_YAML
+  TESTS_ENVIRONMENT = parser_skip=""
+else
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
 
 # Include these files with the distribution.
