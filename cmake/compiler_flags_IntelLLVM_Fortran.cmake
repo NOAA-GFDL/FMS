@@ -17,7 +17,7 @@ set(CMAKE_Fortran_FLAGS_NOFLAGS "")
 
 set(CMAKE_Fortran_LINK_FLAGS "-fuse-ld=lld")
 
-# ufs flags 
+# ufs flags
 set(CMAKE_Fortran_SHARED_FLAGS "-fpp -fno-alias -auto -safe-cray-ptr -ftz -assume byterecl -align array64byte -nowarn -traceback")
 set(CMAKE_Fortran_FLAGS_RELEASEUFS "-O2 -debug minimal -nowarn -qoverride-limits -qno-opt-dynamic-align ${CMAKE_Fortran_SHARED_FLAGS}")
 set(CMAKE_Fortran_FLAGS_DEBUGUFS "-g -O0 -check -check noarg_temp_created -check nopointer -warn -warn noerrors -fpe0 -ftrapuv ${CMAKE_Fortran_SHARED_FLAGS}")

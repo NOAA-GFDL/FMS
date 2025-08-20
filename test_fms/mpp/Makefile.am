@@ -106,7 +106,7 @@ test_mpp_update_domains_SOURCES = \
   compare_data_checksums_int.F90 \
   test_mpp_update_domains_real.F90 \
   test_mpp_update_domains_int.F90 \
-  test_mpp_update_domains_main.F90
+  test_mpp_update_domains.F90
 test_mpp_gatscat_SOURCES = test_mpp_gatscat.F90
 test_mpp_sendrecv_SOURCES = test_mpp_sendrecv.F90
 test_mpp_sum_SOURCES = test_mpp_sum.F90
@@ -237,7 +237,7 @@ test_domains_utility_mod.mod: test_domains_utility_mod.$(OBJEXT)
 test_mpp_update_domains_real.$(OBJEXT): compare_data_checksums.mod fill_halo.mod test_mpp_update_domains
 test_mpp_update_domains_int.$(OBJEXT): compare_data_checksums_int.mod fill_halo.mod
 
-test_mpp_update_domains_main.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
+test_mpp_update_domains.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
 test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_global_field.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod

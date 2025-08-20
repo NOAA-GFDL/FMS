@@ -29,7 +29,7 @@ use fms2_io_mod,  only : register_axis, register_field, write_data, read_data
 use fms_mod,      only : fms_init, fms_end
 use platform_mod, only : r4_kind, r8_kind
 use grid2_mod
-use WRITE_FILES_MOD_ 
+use WRITE_FILES_MOD_
 
 implicit none
 
