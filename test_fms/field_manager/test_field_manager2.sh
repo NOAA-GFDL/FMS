@@ -100,7 +100,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-if [ "$parser_skip" -eq "skip" ]; then
+if [ ! -z "$parser_skip" ]; then
 
   test_expect_failure "field table read with use_field_table.yaml = .true. but not compiling with yaml" 'mpirun -n 1 ./test_field_table_read'
 
