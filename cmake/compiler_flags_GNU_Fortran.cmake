@@ -1,13 +1,12 @@
 # Precision-based Fortran compiler flags
 set(r8_flags "-fdefault-real-8 -fdefault-double-8") # Fortran flags for 64BIT precision
+set(r4_flags "-fdefault-real-4") # Fortran flags for 32BIT precision
 
 # GNU Fortran
-set(CMAKE_Fortran_FLAGS "")
+set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fcray-pointer -fallow-argument-mismatch")
 
-set(base_flags "-fcray-pointer -fdefault-double-8 -Waliasing -ffree-line-length-none -fno-range-check -fallow-argument-mismatch")
-
-set(CMAKE_Fortran_FLAGS_RELEASE "${base_flags} -O2 -fno-expensive-optimizations")
-set(CMAKE_Fortran_FLAGS_DEBUG "${base_flags} -O0 -g -W -fbounds-check -ffpe-trap=invalid,zero,overflow")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O2")
+set(CMAKE_Fortran_FLAGS_DEBUG "-O0 -g")
 
 set(CMAKE_Fortran_LINK_FLAGS "" )
 
