@@ -137,6 +137,11 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
 
+  if (fileobj%use_netcdf_mpi) then
+    call netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+    return
+  endif
+
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call compressed_write(fileobj, variable_name, vdata, &
@@ -144,6 +149,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                           edge_lengths=edge_lengths)
     return
   endif
+
   io_domain => mpp_get_io_domain(fileobj%domain)
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
@@ -432,6 +438,11 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
+
+  if (fileobj%use_netcdf_mpi) then
+    call netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+    return
+  endif
 
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
@@ -729,6 +740,11 @@ subroutine domain_write_4d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
 
+  if (fileobj%use_netcdf_mpi) then
+    call netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+    return
+  endif
+
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call compressed_write(fileobj, variable_name, vdata, &
@@ -1025,6 +1041,11 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ygmax !< Ending y index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
 
+  if (fileobj%use_netcdf_mpi) then
+    call netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+    return
+  endif
+
   if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., &
                                           xdim_index, ydim_index, xpos, ypos)) then
     call compressed_write(fileobj, variable_name, vdata, &
@@ -1258,4 +1279,567 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
   endif
 end subroutine domain_write_5d
+
+!> @brief Write 2D data using NetCDF MPI
+subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), dimension(:,:), intent(in) :: vdata !< Data that will be written out to the netcdf file.
+  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited dimension.
+  integer, dimension(2), intent(in), optional :: corner !< Array of starting indices describing where the data
+                                                        !! will be written to.
+  integer, dimension(2), intent(in), optional :: edge_lengths !< The number of elements that will be written
+                                                              !! in each dimension.
+
+  integer :: xdim_index
+  integer :: ydim_index
+  integer :: xpos
+  integer :: ypos
+
+  integer :: isd !< Starting "x" index of the data domain
+  integer :: isc !< Starting "x" index of the compute domain
+  integer :: jsd !< Starting "y" index of the data domain
+  integer :: jsc !< Starting "y" index of the compute domain
+  integer :: xc_size !< Size of the compute domain
+  integer :: yc_size !< Size of the compute domain
+  logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
+                                   !! (i.e it includes halos (which are not written))
+
+  integer, dimension(3) :: c !< Indices of the corners for each dimension
+  integer, dimension(3) :: e !< Size of the data for each dimension
+  integer :: varid
+  integer :: unlim_dim_index
+
+  integer :: i0, i1
+  integer :: j0, j1
+  integer :: err
+
+  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., xdim_index, ydim_index, xpos, ypos)) then
+    call compressed_write(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=corner, &
+                          edge_lengths=edge_lengths)
+    return
+  endif
+
+  !! Get some more info about the variable
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  c = 1
+  e = [shape(vdata), 1]
+
+  c(xdim_index) = isc
+  c(ydim_index) = jsc
+  e(xdim_index) = xc_size
+  e(ydim_index) = yc_size
+
+  if (present(unlim_dim_level)) then
+      unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, broadcast=.false.)
+      if (unlim_dim_index .ne. 3) then
+        call error("unlimited dimension must be the slowest varying dimension in variable: "//trim(variable_name))
+      endif
+      c(unlim_dim_index) = unlim_dim_level
+  endif
+
+  i0 = 1
+  j0 = 1
+  select case (xdim_index)
+    case (1)
+      ! X is the first dimension
+      if (buffer_includes_halos) then
+        i0 = isc - isd + 1
+        j0 = jsc - jsd + 1
+      endif
+      i1 = i0 + xc_size - 1
+      j1 = j0 + yc_size - 1
+    case (2)
+      ! X is the second dimension
+      if (buffer_includes_halos) then
+        i0 = jsc - jsd + 1
+        j0 = isc - isd + 1
+      endif
+      i1 = i0 + yc_size - 1
+      j1 = j0 + xc_size - 1
+  end select
+
+  varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+    msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  select type(vdata)
+    type is (integer(kind=i4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1), &
+        start=c, count=e)
+    type is (integer(kind=i8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1), &
+        start=c, count=e)
+    type is (real(kind=r4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1), &
+        start=c, count=e)
+    type is (real(kind=r8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1), &
+        start=c, count=e)
+  end select
+
+  call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
+end subroutine netcdf_mpi_write_2d
+
+!> @brief Write 3D data using NetCDF MPI
+subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), dimension(:,:,:), intent(in) :: vdata !< Data that will be written out to the netcdf file.
+  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited dimension.
+  integer, dimension(3), intent(in), optional :: corner !< Array of starting indices describing where the data
+                                                        !! will be written to.
+  integer, dimension(3), intent(in), optional :: edge_lengths !< The number of elements that will be written
+                                                              !! in each dimension.
+
+  integer :: xdim_index
+  integer :: ydim_index
+  integer :: xpos
+  integer :: ypos
+
+  integer :: isd !< Starting "x" index of the data domain
+  integer :: isc !< Starting "x" index of the compute domain
+  integer :: jsd !< Starting "y" index of the data domain
+  integer :: jsc !< Starting "y" index of the compute domain
+  integer :: xc_size !< Size of the compute domain
+  integer :: yc_size !< Size of the compute domain
+  logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
+                                   !! (i.e it includes halos (which are not written))
+
+  integer, dimension(4) :: c !< Indices of the corners for each dimension
+  integer, dimension(4) :: e !< Size of the data for each dimension
+  integer :: varid
+  integer :: unlim_dim_index
+
+  integer :: i0, i1
+  integer :: j0, j1
+  integer :: k0, k1
+  integer :: err
+
+  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., xdim_index, ydim_index, xpos, ypos)) then
+    call compressed_write(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=corner, &
+                          edge_lengths=edge_lengths)
+    return
+  endif
+
+  !! Get some more info about the variable
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  c = 1
+  e = [shape(vdata), 1]
+
+  c(xdim_index) = isc
+  c(ydim_index) = jsc
+  e(xdim_index) = xc_size
+  e(ydim_index) = yc_size
+
+  if (present(unlim_dim_level)) then
+      unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, broadcast=.false.)
+      if (unlim_dim_index .ne. 4) then
+        call error("unlimited dimension must be the slowest varying dimension in variable: "//trim(variable_name))
+      endif
+      c(unlim_dim_index) = unlim_dim_level
+  endif
+
+  i0 = 1
+  j0 = 1
+  k0 = 1
+
+  i1 = size(vdata, 1)
+  j1 = size(vdata, 2)
+  k1 = size(vdata, 3)
+
+  select case (xdim_index)
+    case (1)
+      ! X is the first dimension
+      if (buffer_includes_halos) then
+        i0 = isc - isd + 1
+      endif
+      i1 = i0 + xc_size - 1
+    case (2)
+      ! X is the second dimension
+      if (buffer_includes_halos) then
+        j0 = isc - isd + 1
+      endif
+      j1 = j0 + xc_size - 1
+    case (3)
+      ! X is the third dimension
+      if (buffer_includes_halos) then
+        k0 = isc - isd + 1
+      endif
+      k1 = k0 + xc_size - 1
+  end select
+
+  select case (ydim_index)
+    case (1)
+      ! y is the first dimension
+      if (buffer_includes_halos) then
+        i0 = jsc - jsd + 1
+      endif
+      i1 = i0 + yc_size - 1
+    case (2)
+      ! y is the second dimension
+      if (buffer_includes_halos) then
+        j0 = jsc - jsd + 1
+      endif
+      j1 = j0 + yc_size - 1
+    case (3)
+      ! y is the third dimension
+      if (buffer_includes_halos) then
+        k0 = jsc - jsd + 1
+      endif
+      k1 = k0 + yc_size - 1
+  end select
+
+  varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+    msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  select type(vdata)
+    type is (integer(kind=i4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1), &
+        start=c, count=e)
+    type is (integer(kind=i8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1), &
+        start=c, count=e)
+    type is (real(kind=r4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1), &
+        start=c, count=e)
+    type is (real(kind=r8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1), &
+        start=c, count=e)
+  end select
+
+  call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
+end subroutine netcdf_mpi_write_3d
+
+!> @brief Write 4D data using NetCDF MPI
+subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), dimension(:,:,:,:), intent(in) :: vdata !< Data that will be written out to the netcdf file.
+  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited dimension.
+  integer, dimension(4), intent(in), optional :: corner !< Array of starting indices describing where the data
+                                                        !! will be written to.
+  integer, dimension(4), intent(in), optional :: edge_lengths !< The number of elements that will be written
+                                                              !! in each dimension.
+
+  integer :: xdim_index
+  integer :: ydim_index
+  integer :: xpos
+  integer :: ypos
+
+  integer :: isd !< Starting "x" index of the data domain
+  integer :: isc !< Starting "x" index of the compute domain
+  integer :: jsd !< Starting "y" index of the data domain
+  integer :: jsc !< Starting "y" index of the compute domain
+  integer :: xc_size !< Size of the compute domain
+  integer :: yc_size !< Size of the compute domain
+  logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
+                                   !! (i.e it includes halos (which are not written))
+
+  integer, dimension(5) :: c !< Indices of the corners for each dimension
+  integer, dimension(5) :: e !< Size of the data for each dimension
+  integer :: varid
+  integer :: unlim_dim_index
+
+  integer :: i0, i1
+  integer :: j0, j1
+  integer :: k0, k1
+  integer :: l0, l1
+  integer :: err
+
+  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., xdim_index, ydim_index, xpos, ypos)) then
+    call compressed_write(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=corner, &
+                          edge_lengths=edge_lengths)
+    return
+  endif
+
+  !! Get some more info about the variable
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  c = 1
+  e = [shape(vdata), 1]
+
+  c(xdim_index) = isc
+  c(ydim_index) = jsc
+  e(xdim_index) = xc_size
+  e(ydim_index) = yc_size
+
+  if (present(unlim_dim_level)) then
+      unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, broadcast=.false.)
+      if (unlim_dim_index .ne. 5) then
+        call error("unlimited dimension must be the slowest varying dimension in variable: "//trim(variable_name))
+      endif
+      c(unlim_dim_index) = unlim_dim_level
+  endif
+
+  i0 = 1
+  j0 = 1
+  k0 = 1
+  l0 = 1
+
+  i1 = size(vdata, 1)
+  j1 = size(vdata, 2)
+  k1 = size(vdata, 3)
+  l1 = size(vdata, 4)
+
+  select case (xdim_index)
+    case (1)
+      ! X is the first dimension
+      if (buffer_includes_halos) then
+        i0 = isc - isd + 1
+      endif
+      i1 = i0 + xc_size - 1
+    case (2)
+      ! X is the second dimension
+      if (buffer_includes_halos) then
+        j0 = isc - isd + 1
+      endif
+      j1 = j0 + xc_size - 1
+    case (3)
+      ! X is the third dimension
+      if (buffer_includes_halos) then
+        k0 = isc - isd + 1
+      endif
+      k1 = k0 + xc_size - 1
+    case (4)
+      ! X is the fourth dimension
+      if (buffer_includes_halos) then
+        l0 = isc - isd + 1
+      endif
+      l1 = l0 + xc_size - 1
+  end select
+
+  select case (ydim_index)
+    case (1)
+      ! y is the first dimension
+      if (buffer_includes_halos) then
+        i0 = jsc - jsd + 1
+      endif
+      i1 = i0 + yc_size - 1
+    case (2)
+      ! y is the second dimension
+      if (buffer_includes_halos) then
+        j0 = jsc - jsd + 1
+      endif
+      j1 = j0 + yc_size - 1
+    case (3)
+      ! y is the third dimension
+      if (buffer_includes_halos) then
+        k0 = jsc - jsd + 1
+      endif
+      k1 = k0 + yc_size - 1
+    case (4)
+      ! y is the fourth dimension
+      if (buffer_includes_halos) then
+        l0 = jsc - jsd + 1
+      endif
+      l1 = l0 + yc_size - 1
+  end select
+
+  varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+    msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  select type(vdata)
+    type is (integer(kind=i4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1), &
+        start=c, count=e)
+    type is (integer(kind=i8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1), &
+        start=c, count=e)
+    type is (real(kind=r4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1), &
+        start=c, count=e)
+    type is (real(kind=r8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1), &
+        start=c, count=e)
+  end select
+
+  call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
+end subroutine netcdf_mpi_write_4d
+
+!> @brief Write 5D data using NetCDF MPI
+subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
+  type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
+  character(len=*), intent(in) :: variable_name !< Variable name.
+  class(*), dimension(:,:,:,:,:), intent(in) :: vdata !< Data that will be written out to the netcdf file.
+  integer, intent(in), optional :: unlim_dim_level !< Level for the unlimited dimension.
+  integer, dimension(5), intent(in), optional :: corner !< Array of starting indices describing where the data
+                                                        !! will be written to.
+  integer, dimension(5), intent(in), optional :: edge_lengths !< The number of elements that will be written
+                                                              !! in each dimension.
+
+  integer :: xdim_index
+  integer :: ydim_index
+  integer :: xpos
+  integer :: ypos
+
+  integer :: isd !< Starting "x" index of the data domain
+  integer :: isc !< Starting "x" index of the compute domain
+  integer :: jsd !< Starting "y" index of the data domain
+  integer :: jsc !< Starting "y" index of the compute domain
+  integer :: xc_size !< Size of the compute domain
+  integer :: yc_size !< Size of the compute domain
+  logical :: buffer_includes_halos !< True if "vdata" is the size of the data domain
+                                   !! (i.e it includes halos (which are not written))
+
+  integer, dimension(6) :: c !< Indices of the corners for each dimension
+  integer, dimension(6) :: e !< Size of the data for each dimension
+  integer :: varid
+  integer :: unlim_dim_index
+
+  integer :: i0, i1
+  integer :: j0, j1
+  integer :: k0, k1
+  integer :: l0, l1
+  integer :: m0, m1
+  integer :: err
+
+  if (.not. is_variable_domain_decomposed(fileobj, variable_name, .true., xdim_index, ydim_index, xpos, ypos)) then
+    call compressed_write(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=corner, &
+                          edge_lengths=edge_lengths)
+    return
+  endif
+
+  !! Get some more info about the variable
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, &
+                      buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  c = 1
+  e = [shape(vdata), 1]
+
+  c(xdim_index) = isc
+  c(ydim_index) = jsc
+  e(xdim_index) = xc_size
+  e(ydim_index) = yc_size
+
+  if (present(unlim_dim_level)) then
+      unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, broadcast=.false.)
+      if (unlim_dim_index .ne. 6) then
+        call error("unlimited dimension must be the slowest varying dimension in variable: "//trim(variable_name))
+      endif
+      c(unlim_dim_index) = unlim_dim_level
+  endif
+
+  i0 = 1
+  j0 = 1
+  k0 = 1
+  l0 = 1
+  m0 = 1
+
+  i1 = size(vdata, 1)
+  j1 = size(vdata, 2)
+  k1 = size(vdata, 3)
+  l1 = size(vdata, 4)
+  m1 = size(vdata, 5)
+
+  select case (xdim_index)
+    case (1)
+      ! X is the first dimension
+      if (buffer_includes_halos) then
+        i0 = isc - isd + 1
+      endif
+      i1 = i0 + xc_size - 1
+    case (2)
+      ! X is the second dimension
+      if (buffer_includes_halos) then
+        j0 = isc - isd + 1
+      endif
+      j1 = j0 + xc_size - 1
+    case (3)
+      ! X is the third dimension
+      if (buffer_includes_halos) then
+        k0 = isc - isd + 1
+      endif
+      k1 = k0 + xc_size - 1
+    case (4)
+      ! X is the fourth dimension
+      if (buffer_includes_halos) then
+        l0 = isc - isd + 1
+      endif
+      l1 = l0 + xc_size - 1
+    case (5)
+      ! X is the fifth dimension
+      if (buffer_includes_halos) then
+        m0 = isc - isd + 1
+      endif
+      m1 = m0 + xc_size - 1
+  end select
+
+  select case (ydim_index)
+    case (1)
+      ! y is the first dimension
+      if (buffer_includes_halos) then
+        i0 = jsc - jsd + 1
+      endif
+      i1 = i0 + yc_size - 1
+    case (2)
+      ! y is the second dimension
+      if (buffer_includes_halos) then
+        j0 = jsc - jsd + 1
+      endif
+      j1 = j0 + yc_size - 1
+    case (3)
+      ! y is the third dimension
+      if (buffer_includes_halos) then
+        k0 = jsc - jsd + 1
+      endif
+      k1 = k0 + yc_size - 1
+    case (4)
+      ! y is the fourth dimension
+      if (buffer_includes_halos) then
+        l0 = jsc - jsd + 1
+      endif
+      l1 = l0 + yc_size - 1
+    case (5)
+      ! y is the fifth dimension
+      if (buffer_includes_halos) then
+        m0 = jsc - jsd + 1
+      endif
+      m1 = m0 + yc_size - 1
+  end select
+
+  varid = get_variable_id(fileobj%ncid, trim(variable_name), &
+    msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  select type(vdata)
+    type is (integer(kind=i4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1, m0:m1), &
+        start=c, count=e)
+    type is (integer(kind=i8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1, m0:m1), &
+        start=c, count=e)
+    type is (real(kind=r4_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1, m0:m1), &
+        start=c, count=e)
+    type is (real(kind=r8_kind))
+      err = nf90_put_var(fileobj%ncid, varid, &
+        vdata(i0:i1, j0:j1, k0:k1, l0:l1, m0:m1), &
+        start=c, count=e)
+  end select
+
+  call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
+end subroutine netcdf_mpi_write_5d
 !> @}
