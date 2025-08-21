@@ -55,7 +55,7 @@ diag_files:
     output_name: var3_sum
     reduction: sum
     kind: r4
-  - module: ocn_mod
+  - module: ocn_z_mod
     var_name: var4
     output_name: var4_sum
     reduction: sum

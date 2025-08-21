@@ -390,6 +390,14 @@ subroutine diag_yaml_object_init(diag_subset_output)
   logical              :: is_instantaneous !< .True. if the file is instantaneous (i.e no averaging)
   character(len=FMS_FILE_LEN)   :: yamlfilename     !< Name of the expected diag_table.yaml
 
+  integer                                  :: nmods              !< Number of module block in a file
+  integer,                     allocatable :: mod_ids(:)         !< Ids for each module block in a file
+  integer,                     allocatable :: nvars_per_file(:)  !< Number of variables in each file
+  logical,                     allocatable :: has_module_block(:)!< True if each file is using the module block
+  character(len=FMS_FILE_LEN), allocatable :: mod_name(:)        !< Buffer to store module name
+  character(len=FMS_FILE_LEN)              :: buffer             !< Buffer to stote string variables
+  integer                                  :: istart, iend       !< Starting and ending indices of the file block
+
   if (diag_yaml_module_initialized) return
 
   ! If doing and ensemble or nest run add the filename appendix (ens_XX or nest_XX) to the filename
@@ -432,6 +440,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   !< Determine how many files are in the diag_yaml, ignoring those with write_file = False
   actual_num_files = 0
+  allocate(nvars_per_file(nfiles))
+  allocate(has_module_block(nfiles))
   do i = 1, nfiles
     write_file = .true.
     call get_value_from_key(diag_yaml_id, diag_file_ids(i), "write_file", write_file, is_optional=.true.)
@@ -439,7 +449,31 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
     !< If ignoring the file, ignore the fields in that file too!
     if (.not. ignore(i)) then
-        nvars = get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+        ! Determine if the file has defined a module block
+        nmods = 0
+        nmods = get_num_blocks(diag_yaml_id, "modules", parent_block_id=diag_file_ids(i))
+
+        nvars_per_file(i) = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
+        if (nmods .ne. 0) then
+          has_module_block(i) = .true.
+          ! Get the total number of variables in each module block, ignoring those with write_var = .false.
+          if (nvars_per_file(i) .ne. 0) &
+            call mpp_error(FATAL, "diag_manager_mod:: the file:"//trim(filename)//" has a 'modules' block defined "//&
+                                  "and a 'module' key defined at the file level. This is not allowed!")
+
+          allocate(mod_ids(nmods))
+          call get_block_ids(diag_yaml_id, "modules", mod_ids, parent_block_id=diag_file_ids(i))
+
+          nvars = 0
+          do j =  1, nmods
+            nvars_per_file(i) = nvars_per_file(i) + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=mod_ids(j))
+            nvars = nvars + get_total_num_vars(diag_yaml_id, mod_ids(j))
+          enddo
+          deallocate(mod_ids)
+        else
+          nvars = get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+          has_module_block(i) = .false.
+        endif
         total_nvars = total_nvars + nvars
         if (nvars .ne. 0) then
           actual_num_files = actual_num_files + 1
@@ -472,16 +506,41 @@ subroutine diag_yaml_object_init(diag_subset_output)
     file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
     file_list%diag_file_indices(file_count) = file_count
 
-    nvars = 0
-    nvars = get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))
-    allocate(var_ids(nvars))
-    call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
+    allocate(var_ids(nvars_per_file(i)))
+    allocate(mod_name(nvars_per_file(i)))
+    if (has_module_block(i)) then
+      nmods = get_num_blocks(diag_yaml_id, "modules", parent_block_id=diag_file_ids(i))
+      allocate(mod_ids(nmods))
+      call get_block_ids(diag_yaml_id, "modules", mod_ids, parent_block_id=diag_file_ids(i))
+
+      istart = 1
+      nvars_per_file(i) = 0
+      do j = 1, nmods
+        iend = istart + get_num_blocks(diag_yaml_id, "varlist", parent_block_id=mod_ids(j)) - 1
+        call get_block_ids(diag_yaml_id, "varlist", var_ids(istart:iend), parent_block_id=mod_ids(j))
+
+        ! Update nvars_per_file to only include those are actually being written
+        nvars_per_file(i) = nvars_per_file(i) + get_total_num_vars(diag_yaml_id, mod_ids(j))
+
+        call get_value_from_key(diag_yaml_id, mod_ids(j), "module", buffer)
+        mod_name(istart:iend) = trim(buffer)
+
+        istart  = iend + 1
+      enddo
+
+      deallocate(mod_ids)
+    else
+      call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
+      nvars_per_file(i) = get_total_num_vars(diag_yaml_id, diag_file_ids(i))
+    endif
+
     file_var_count = 0
-    allocate(diag_yaml%diag_files(file_count)%file_varlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
-    allocate(diag_yaml%diag_files(file_count)%file_outlist(get_total_num_vars(diag_yaml_id, diag_file_ids(i))))
+    allocate(diag_yaml%diag_files(file_count)%file_varlist(nvars_per_file(i)))
+    allocate(diag_yaml%diag_files(file_count)%file_outlist(nvars_per_file(i)))
+
     allow_averages = .not. diag_yaml%diag_files(file_count)%file_freq(1) < 1
     is_instantaneous = .false.
-    nvars_loop: do j = 1, nvars
+    nvars_loop: do j = 1, nvars_per_file(i)
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
       if (.not. write_var) cycle
@@ -497,7 +556,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
       diag_yaml%diag_fields(var_count)%var_file_is_subregional = diag_yaml%diag_files(file_count)%has_file_sub_region()
 
       call fill_in_diag_fields(diag_yaml_id, diag_yaml%diag_files(file_count), var_ids(j), &
-        diag_yaml%diag_fields(var_count), allow_averages)
+        diag_yaml%diag_fields(var_count), allow_averages, has_module_block(i), mod_name(j))
 
       !> Save the variable name in the diag_file type
       diag_yaml%diag_files(file_count)%file_varlist(file_var_count) = diag_yaml%diag_fields(var_count)%var_varname
@@ -515,6 +574,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
       variable_list%diag_field_indices(var_count) = var_count
     enddo nvars_loop
     deallocate(var_ids)
+    deallocate(mod_name)
   enddo nfiles_loop
 
   !> Sort the file list in alphabetical order
@@ -650,12 +710,15 @@ end subroutine
 
 !> @brief Fills in a diagYamlFilesVar_type with the contents of a variable block in
 !! diag_table.yaml
-subroutine fill_in_diag_fields(diag_file_id, yaml_fileobj, var_id, field, allow_averages)
+subroutine fill_in_diag_fields(diag_file_id, yaml_fileobj, var_id, field, allow_averages, &
+                               has_module_block, mod_name)
   integer,                        intent(in)  :: diag_file_id !< Id of the file block in the yaml file
   type(diagYamlFiles_type),       intent(in)  :: yaml_fileobj !< The yaml file obj for the variables
   integer,                        intent(in)  :: var_id       !< Id of the variable block in the yaml file
   type(diagYamlFilesVar_type), intent(inout)  :: field        !< diagYamlFilesVar_type obj to read the contents into
   logical,                        intent(in)  :: allow_averages !< .True. if averages are allowed for this file
+  logical,                        intent(in)  :: has_module_block
+  character(len=*),               intent(in)  :: mod_name
 
   integer :: natt          !< Number of attributes in variable
   integer :: var_att_id(1) !< Id of the variable attribute block
@@ -685,13 +748,17 @@ subroutine fill_in_diag_fields(diag_file_id, yaml_fileobj, var_id, field, allow_
         "Check your diag_table.yaml for the field:"//trim(field%var_varname))
   endif
 
-  if (yaml_fileobj%default_var_module .eq. "") then
+  if (yaml_fileobj%default_var_module .eq. "" .and. .not. has_module_block) then
     call diag_get_value_from_key(diag_file_id, var_id, "module", field%var_module)
-  else
+ else
     call diag_get_value_from_key(diag_file_id, var_id, "module", buffer, is_optional=.true.)
     !! If the module was set for the variable, override it with the default
     if (trim(buffer) .eq. "") then
-      field%var_module = yaml_fileobj%default_var_module
+      if (has_module_block) then
+        field%var_module = trim(mod_name)
+      else
+        field%var_module = yaml_fileobj%default_var_module
+      endif
     else
       field%var_module = trim(buffer)
     endif
@@ -1742,7 +1809,7 @@ subroutine fms_diag_yaml_out(ntimes, ntiles, ndistributedfiles)
 
     !! This is the number of distributed files
     !! If the diag files were not combined, the name of the diag file is going to be
-    !! filename_tileXX.nc.YY, where YY is the distributed file number 
+    !! filename_tileXX.nc.YY, where YY is the distributed file number
     !! (1 to the number of distributed files)
     call fms_f2c_string(keys2(i)%key13, 'number_of_distributed_files')
 
