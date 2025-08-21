@@ -55,6 +55,7 @@ integer, parameter                         :: scalar = 3
 integer, parameter                         :: weight_file = 4
 integer, parameter                         :: ensemble_case = 5
 integer, parameter                         :: ensemble_same_yaml = 6
+integer, parameter                         :: multi_file = 7
 integer                                    :: test_case = ongrid
 logical                                    :: init_with_mode = .false.
 integer                                    :: npes
@@ -112,6 +113,8 @@ if (write_only) then
     call generate_weight_input_file ()
   case (ensemble_case, ensemble_same_yaml)
     call generate_ensemble_input_file()
+  case (multi_file)
+    call generate_multi_file_input_file()
   end select
 
   call mpp_sync()
@@ -150,6 +153,9 @@ else
     call ensemble_test_r4
     call ensemble_test_r8
     call mpp_set_current_pelist(pelist)
+  case (multi_file)
+    call multi_file_r4
+    call multi_file_r8
   end select
 endif
 
@@ -288,6 +294,63 @@ subroutine create_ongrid_data_file(is_ensemble)
   deallocate(runoff_in)
 end subroutine create_ongrid_data_file
 
+subroutine create_multi_file_data_file
+  type(FmsNetcdfFile_t) :: fileobj
+  character(len=10) :: dimnames(3)
+  real(r4_kind), allocatable, dimension(:,:,:) :: runoff_in
+  real(r4_kind), allocatable, dimension(:)     :: time_data
+  integer :: i
+
+  integer, parameter :: ntimes = 9
+  integer, parameter :: nfiles = 3
+  integer :: starting
+  integer :: ending
+
+  allocate(runoff_in(nlon, nlat, ntimes))
+  allocate(time_data(ntimes))
+
+  time_data = (/1_r4_kind, 2_r4_kind, 3_r4_kind, &
+                4_r4_kind, 5_r4_kind, 6_r4_kind, &
+                7_r4_kind, 7_r4_kind, 9_r4_kind /)
+
+  do i = 1, ntimes
+    runoff_in(:,:,i) = real(i, r4_kind)
+  enddo
+
+  dimnames(1) = 'i'
+  dimnames(2) = 'j'
+  dimnames(3) = 'time'
+
+  do i = 1, nfiles
+    if (open_file(fileobj, "INPUT/hadisst_ice.data_yr"//string(i-1)//".nc", "overwrite")) then
+      call register_axis(fileobj, "i", nlon)
+      call register_axis(fileobj, "j", nlat)
+      call register_axis(fileobj, "time", unlimited)
+
+      call register_field(fileobj, "i", "float", (/"i"/))
+      call register_variable_attribute(fileobj, "i", "cartesian_axis", "x", str_len=1)
+
+      call register_field(fileobj, "j", "float", (/"j"/))
+      call register_variable_attribute(fileobj, "j", "cartesian_axis", "y", str_len=1)
+
+      call register_field(fileobj, "time", "float", (/"time"/))
+      call register_variable_attribute(fileobj, "time", "cartesian_axis", "T", str_len=1)
+      call register_variable_attribute(fileobj, "time", "calendar", "noleap", str_len=6)
+      call register_variable_attribute(fileobj, "time", "units", "days since 0001-01-01 00:00:00", str_len=30)
+
+      call register_field(fileobj, "runoff", "float", dimnames)
+
+      starting = 2 * (i - 1) + 1
+      ending = starting + 1
+
+      call write_data(fileobj, "runoff", runoff_in(:,:, starting:ending))
+      call write_data(fileobj, "time", time_data(starting:ending))
+      call close_file(fileobj)
+    endif
+  enddo
+
+end subroutine create_multi_file_data_file
+
 subroutine generate_ongrid_input_file
   !< Create some files needed by data_override!
   if (mpp_pe() .eq. mpp_root_pe()) then
@@ -298,6 +361,17 @@ subroutine generate_ongrid_input_file
   endif
   call mpp_sync()
 end subroutine generate_ongrid_input_file
+
+subroutine generate_multi_file_input_file
+  if (mpp_pe() .eq. mpp_root_pe()) then
+    call create_grid_spec_file()
+    call create_ocean_mosaic_file()
+    call create_ocean_hgrid_file()
+    call create_multi_file_data_file()
+  endif
+
+  call mpp_sync()
+end subroutine generate_multi_file_input_file
 
 !> @brief Creates an input netcdf data file to use for the ongrid data_override test case
 !! with either an increasing or decreasing lat, lon grid

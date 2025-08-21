@@ -222,3 +222,38 @@ subroutine ENSEMBLE_TEST_
 
   deallocate(runoff)
 end subroutine ENSEMBLE_TEST_
+
+subroutine MULTI_FILE_TESTS_
+  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  real(lkind)                              :: expected_result       !< Expected result from data_override
+  type(time_type)                          :: Time                  !< Time
+  real(lkind), allocatable, dimension(:,:) :: runoff                !< Data to be written
+  logical :: sucessful !< .True. if the data_override was sucessful
+
+  allocate(runoff(is:ie,js:je))
+
+  !< Run it when time=3, this is going to use the previous file and the current file
+  Time = set_date(1,1,4,0,0,0)
+  runoff = 999._lkind
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
+  expected_result = 3._lkind
+  call COMPARE_DATA_ (Domain, runoff, expected_result)
+
+  !< Run it when time=4, this is going to use the current file
+  Time = set_date(1,1,5,0,0,0)
+  runoff = 999._lkind
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
+  expected_result = 4._lkind
+  call COMPARE_DATA_ (Domain, runoff, expected_result)
+
+  !< Run it when time=5, this is going to use the current file and the next file
+  Time = set_date(1,1,6,0,0,0)
+  runoff = 999._lkind
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
+  expected_result = 5._lkind
+  call COMPARE_DATA_ (Domain, runoff, expected_result)
+
+end subroutine MULTI_FILE_TESTS_
