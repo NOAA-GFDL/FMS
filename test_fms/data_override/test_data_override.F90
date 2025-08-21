@@ -92,7 +92,7 @@ program test
 
  implicit none
 
- integer, parameter                       :: lkind = DO_TEST_KIND_
+ integer, parameter                       :: lkind = TEST_FMS_KIND_
  integer                                  :: stdoutunit
  integer                                  :: num_threads = 1
  integer                                  :: isw, iew, jsw, jew

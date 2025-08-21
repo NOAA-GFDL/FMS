@@ -28,16 +28,16 @@ program test_time_interp
 
  implicit none
 
- integer, parameter :: num_Time=6, kindl = TI_TEST_KIND_
+ integer, parameter :: num_Time=6, kindl = TEST_FMS_KIND_
  type(time_type) :: Time_beg, Time_end, Time(num_Time)
  type(time_type), allocatable, dimension(:) :: Timelist
  integer :: index1, index2, mo, yr, outunit, ntest, nline
- real(TI_TEST_KIND_) :: weight
- real(TI_TEST_KIND_) :: ref_weights(num_Time), ref_weights_leap(num_Time)
- real(TI_TEST_KIND_), parameter :: SMALL = 1.0e-7_kindl ! r4 will fail with 8
- real(TI_TEST_KIND_), parameter :: midpoint = 0.483870967741935_kindl
- real(TI_TEST_KIND_), parameter :: day_before_leap_day =  0.964285714285714_kindl
- real(TI_TEST_KIND_), parameter :: day_before_leap_day_with_ly =  0.931034482758621_kindl
+ real(TEST_FMS_KIND_) :: weight
+ real(TEST_FMS_KIND_) :: ref_weights(num_Time), ref_weights_leap(num_Time)
+ real(TEST_FMS_KIND_), parameter :: SMALL = 1.0e-7_kindl ! r4 will fail with 8
+ real(TEST_FMS_KIND_), parameter :: midpoint = 0.483870967741935_kindl
+ real(TEST_FMS_KIND_), parameter :: day_before_leap_day =  0.964285714285714_kindl
+ real(TEST_FMS_KIND_), parameter :: day_before_leap_day_with_ly =  0.931034482758621_kindl
 
  integer :: nmin, nmax
 
@@ -357,7 +357,7 @@ program test_time_interp
    logical function is_valid_indices(ind1, ind2, tList, tintv, res_weight, mtime)
        integer, intent(in) :: ind1, ind2
        type(time_type), intent(in) :: tList(:), tintv
-       real(TI_TEST_KIND_), intent(in) :: res_weight
+       real(TEST_FMS_KIND_), intent(in) :: res_weight
        integer, intent(in) :: mtime
        integer :: i
 

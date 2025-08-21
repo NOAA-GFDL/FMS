@@ -38,6 +38,7 @@ use horiz_interp_mod,          only : horiz_interp, horiz_interp_init, horiz_int
 use axis_utils2_mod,           only : axis_edges
 use fms2_io_mod,               only : FmsNetcdfFile_t, fms2_io_init, open_file, close_file, write_data, register_axis
 use fms2_io_mod,               only : register_field, unlimited, register_variable_attribute
+use platform_mod
 
 implicit none
 
@@ -47,25 +48,25 @@ integer            :: ierr !< io return status
 character(len=128) :: filename='INPUT/aerosol.climatology.nc'
 character(len=128) :: fieldname='so4_anthro'
 type(time_type)    :: time !< "model" time
-integer, parameter :: kindl = TI_TEST_KIND_
-real(TI_TEST_KIND_) :: data_d_0d = 1.0_kindl !< interpolated data in compute domain
-real(TI_TEST_KIND_) :: data_g_0d = 1.0_kindl !< interpolated global data
+integer, parameter :: kindl = TEST_FMS_KIND_
+real(TEST_FMS_KIND_) :: data_d_0d = 1.0_kindl !< interpolated data in compute domain
+real(TEST_FMS_KIND_) :: data_g_0d = 1.0_kindl !< interpolated global data
 type(domain2d)     :: domain !<Domain to interpolate data to
 integer            :: layout(2) !< Domain layout
 integer            :: fld_size(4) !< Size of fieldname
 integer            :: isc, iec, jsc, jec !< starting (s)/ending (e) x/y indexes of the compute domain
 integer            :: isd, ied, jsd, jed !< starting (s)/ending (e) x/y indexes of the data domain
-real(TI_TEST_KIND_)               :: sm !< Sum of a data array
-real(TI_TEST_KIND_)               :: mx !< Max value of a data array
-real(TI_TEST_KIND_)               :: mn !< Min value of a data_array
+real(TEST_FMS_KIND_)               :: sm !< Sum of a data array
+real(TEST_FMS_KIND_)               :: mx !< Max value of a data array
+real(TEST_FMS_KIND_)               :: mn !< Min value of a data_array
 character(len=12)  :: cal_type="julian" !< Calendar type
 type(horiz_interp_type) :: Hinterp !< horix interp type
-real(TI_TEST_KIND_)               :: lon_out(180,89) !< lat grid to interpolate to (global)
-real(TI_TEST_KIND_)               :: lat_out(180,89) !< lon grid to interpolate to (global)
+real(TEST_FMS_KIND_)               :: lon_out(180,89) !< lat grid to interpolate to (global)
+real(TEST_FMS_KIND_)               :: lat_out(180,89) !< lon grid to interpolate to (global)
 integer            :: outunit !< stdout unit number
 type(FmsNetcdfFile_t) :: fileobj !< fileobj
 character(len=12)  :: axis_names(4) = (/ "lon ", "lat ", "time", "none"/) !< axis_names
-real(TI_TEST_KIND_), allocatable  :: data_in(:,:)  !< data added to file
+real(TEST_FMS_KIND_), allocatable  :: data_in(:,:)  !< data added to file
 
 namelist /test_time_interp_external_nml/ cal_type
 
@@ -132,7 +133,7 @@ call mpp_exit
 
                 allocate(data_in(179, 89))
                 do i=0, 2
-                    data_in = real((1+i*2), TI_TEST_KIND_)
+                    data_in = real((1+i*2), TEST_FMS_KIND_)
                     call write_data(fileobj, fieldname, data_in, unlim_dim_level=i+1)
                     call random_number(data_in)
                     call write_data(fileobj, trim(fieldname)//"_random", data_in, unlim_dim_level=i+1)
@@ -145,12 +146,12 @@ call mpp_exit
     end subroutine
 
     subroutine time_interpolate_3d_data
-        real(TI_TEST_KIND_), allocatable  :: data_d_3d(:,:,:) !< interpolated data in compute domain
-        real(TI_TEST_KIND_), allocatable  :: data_g_3d(:,:,:) !< interpolated global data
-        real(TI_TEST_KIND_), allocatable  :: lon_local_out(:,:) !< lat grid to interpolate to (compute)
-        real(TI_TEST_KIND_), allocatable  :: lat_local_out(:,:) !< lon grid to interpolate to (compute)
-        real(TI_TEST_KIND_), allocatable  :: lon_in(:) !< lat grid in file
-        real(TI_TEST_KIND_), allocatable  :: lat_in(:) !< lat grid in file
+        real(TEST_FMS_KIND_), allocatable  :: data_d_3d(:,:,:) !< interpolated data in compute domain
+        real(TEST_FMS_KIND_), allocatable  :: data_g_3d(:,:,:) !< interpolated global data
+        real(TEST_FMS_KIND_), allocatable  :: lon_local_out(:,:) !< lat grid to interpolate to (compute)
+        real(TEST_FMS_KIND_), allocatable  :: lat_local_out(:,:) !< lon grid to interpolate to (compute)
+        real(TEST_FMS_KIND_), allocatable  :: lon_in(:) !< lat grid in file
+        real(TEST_FMS_KIND_), allocatable  :: lat_in(:) !< lat grid in file
 
         outunit = stdout()
         write(outunit,*) 'INTERPOLATING NON DECOMPOSED FIELDS'
@@ -278,12 +279,12 @@ call mpp_exit
     end subroutine time_interpolate_3d_data
 
     subroutine time_interpolate_2d_data
-        real(TI_TEST_KIND_), allocatable  :: data_d_2d(:,:) !< interpolated data in compute domain
-        real(TI_TEST_KIND_), allocatable  :: data_g_2d(:,:) !< interpolated global data
-        real(TI_TEST_KIND_), allocatable  :: lon_local_out(:,:) !< lat grid to interpolate to (compute)
-        real(TI_TEST_KIND_), allocatable  :: lat_local_out(:,:) !< lon grid to interpolate to (compute)
-        real(TI_TEST_KIND_), allocatable  :: lon_in(:) !< lat grid in file
-        real(TI_TEST_KIND_), allocatable  :: lat_in(:) !< lat grid in file
+        real(TEST_FMS_KIND_), allocatable  :: data_d_2d(:,:) !< interpolated data in compute domain
+        real(TEST_FMS_KIND_), allocatable  :: data_g_2d(:,:) !< interpolated global data
+        real(TEST_FMS_KIND_), allocatable  :: lon_local_out(:,:) !< lat grid to interpolate to (compute)
+        real(TEST_FMS_KIND_), allocatable  :: lat_local_out(:,:) !< lon grid to interpolate to (compute)
+        real(TEST_FMS_KIND_), allocatable  :: lon_in(:) !< lat grid in file
+        real(TEST_FMS_KIND_), allocatable  :: lat_in(:) !< lat grid in file
 
         outunit = stdout()
         write(outunit,*) 'INTERPOLATING NON DECOMPOSED FIELDS'
@@ -411,7 +412,7 @@ call mpp_exit
     end subroutine time_interpolate_2d_data
 
     subroutine time_interpolate_scalar_data
-        real(TI_TEST_KIND_) :: data_scalar !< scalar to interpolate
+        real(TEST_FMS_KIND_) :: data_scalar !< scalar to interpolate
 
         id = init_external_field(filename, fieldname,verbose=.false.)
 

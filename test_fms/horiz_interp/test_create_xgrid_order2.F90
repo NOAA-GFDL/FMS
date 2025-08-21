@@ -26,9 +26,10 @@ program test_create_xgrid_order2
 
   use horiz_interp_mod
   use constants_mod, only: DEG_TO_RAD
+  use platform_mod
   implicit none
 
-  integer, parameter :: lkind = HI_TEST_KIND_
+  integer, parameter :: lkind = TEST_FMS_KIND_
 
   integer, parameter :: nlon_in = 10   !< number of input grid cells in lon direction
   integer, parameter :: nlat_in = 10   !< number of input grid cells in the lat direction
@@ -38,19 +39,19 @@ program test_create_xgrid_order2
   integer, parameter :: ngridpts_out = (nlon_out+1)*(nlat_out+1) !< number of output gridpoints
   integer, parameter :: nxgrid = nlon_out *nlat_out !< expected number of exchange grid cells
 
-  real(HI_TEST_KIND_) :: lon_in(ngridpts_in)   !< longitudinal values of input grid cell vertices
-  real(HI_TEST_KIND_) :: lat_in(ngridpts_in)   !< latitudinal values of input grid cell vertices
-  real(HI_TEST_KIND_) :: lon_out(ngridpts_out) !< longitudinal values of output grid cell vertices
-  real(HI_TEST_KIND_) :: lat_out(ngridpts_out) !< latitudinal values of output grid cell vertices
-  real(HI_TEST_KIND_) :: mask(nlon_in*nlat_in) !< mask to skip input grid cell
+  real(TEST_FMS_KIND_) :: lon_in(ngridpts_in)   !< longitudinal values of input grid cell vertices
+  real(TEST_FMS_KIND_) :: lat_in(ngridpts_in)   !< latitudinal values of input grid cell vertices
+  real(TEST_FMS_KIND_) :: lon_out(ngridpts_out) !< longitudinal values of output grid cell vertices
+  real(TEST_FMS_KIND_) :: lat_out(ngridpts_out) !< latitudinal values of output grid cell vertices
+  real(TEST_FMS_KIND_) :: mask(nlon_in*nlat_in) !< mask to skip input grid cell
 
   integer :: i_in(nxgrid)  !< input parent cell indices
   integer :: j_in(nxgrid)  !< input parent cell indices
   integer :: i_out(nxgrid) !< output parent cell indices
   integer :: j_out(nxgrid) !< output parent cell indices
-  real(HI_TEST_KIND_) :: xgrid_area(nxgrid) !< exchange grid cell areas
-  real(HI_TEST_KIND_) :: xgrid_clon(nxgrid) !< longitudinal values of exchange grid cell centroid point
-  real(HI_TEST_KIND_) :: xgrid_clat(nxgrid) !< latitudinal values of exchange grid cell centroid point
+  real(TEST_FMS_KIND_) :: xgrid_area(nxgrid) !< exchange grid cell areas
+  real(TEST_FMS_KIND_) :: xgrid_clon(nxgrid) !< longitudinal values of exchange grid cell centroid point
+  real(TEST_FMS_KIND_) :: xgrid_clat(nxgrid) !< latitudinal values of exchange grid cell centroid point
 
   mask = 1.0_lkind
 
@@ -68,20 +69,20 @@ contains
 
     implicit none
     integer, intent(in) :: nlon, nlat                  !< number of cell in lon and lat direction
-    real(HI_TEST_KIND_), intent(out) :: lon(:), lat(:) !< lon and lat values at cell vertices
+    real(TEST_FMS_KIND_), intent(out) :: lon(:), lat(:) !< lon and lat values at cell vertices
 
     integer :: ilon, ilat, igridpt
     real :: dlat=0.0_lkind, dlon=0.0_lkind
     real :: lon_start=0.0_lkind, lat_start=-90.0_lkind*DEG_TO_RAD
 
-    dlat = 180._lkind/real(nlat, HI_TEST_KIND_) * DEG_TO_RAD
-    dlon = 360._lkind/real(nlon, HI_TEST_KIND_) * DEG_TO_RAD
+    dlat = 180._lkind/real(nlat, TEST_FMS_KIND_) * DEG_TO_RAD
+    dlon = 360._lkind/real(nlon, TEST_FMS_KIND_) * DEG_TO_RAD
 
     igridpt = 1
     do ilat=1, nlat+1
       do ilon=1, nlon+1
-        lon(igridpt) = lon_start + real(ilon-1, HI_TEST_KIND_)*dlon
-        lat(igridpt) = lat_start + real(ilat-1, HI_TEST_KIND_)*dlat
+        lon(igridpt) = lon_start + real(ilon-1, TEST_FMS_KIND_)*dlon
+        lat(igridpt) = lat_start + real(ilat-1, TEST_FMS_KIND_)*dlat
         igridpt = igridpt + 1
       end do
     end do
@@ -97,9 +98,9 @@ contains
     implicit none
     integer, intent(in)    :: nlon_inl, nlat_inl, nlon_outl, nlat_outl, nxgridl !< number of grid cells
     integer, intent(inout) :: i_inl(:), j_inl(:), i_outl(:), j_outl(:)  !< parent cell indices
-    real(HI_TEST_KIND_), intent(in) :: lon_inl(:), lat_inl(:), lon_outl(:), lat_outl(:) !< lon and lat
-    real(HI_TEST_KIND_), intent(in) :: maskl(:) !< input grid cell mask
-    real(HI_TEST_KIND_), intent(out) :: xgrid_areal(:), xgrid_clonl(:), xgrid_clatl(:) !< returned xgrid info
+    real(TEST_FMS_KIND_), intent(in) :: lon_inl(:), lat_inl(:), lon_outl(:), lat_outl(:) !< lon and lat
+    real(TEST_FMS_KIND_), intent(in) :: maskl(:) !< input grid cell mask
+    real(TEST_FMS_KIND_), intent(out) :: xgrid_areal(:), xgrid_clonl(:), xgrid_clatl(:) !< returned xgrid info
 
     integer :: create_xgrid_2dx2d_order2
     integer :: nxgrid_out
