@@ -286,7 +286,7 @@ subroutine check_error_code(error_code, filename)
                             "Make sure that all aliases correspond to an anchor (&anchor_name)!")
    case (MAX_LEVELS_REACH)
       call mpp_error(FATAL, "The file:"//trim(filename)//" has reached the maximum number of level!"//&
-                            "Try setting -DMAX_LEVELS to a number greater than the current limit.")
+                            "Try setting -DMAX_LEVELS to a number greater than the current limit and recompile")
    end select
 end subroutine check_error_code
 
