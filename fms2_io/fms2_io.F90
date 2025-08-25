@@ -269,9 +269,7 @@ interface write_data
   module procedure domain_write_0d
   module procedure domain_write_1d
   module procedure domain_write_2d
-  module procedure domain_write_2d_mpp_gather
   module procedure domain_write_3d
-  module procedure domain_write_3d_mpp_gather
   module procedure domain_write_4d
   module procedure domain_write_5d
   module procedure unstructured_domain_write_0d
