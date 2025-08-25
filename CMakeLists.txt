@@ -657,7 +657,7 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/diag_manager/check_var_masks.F90
   test_fms/diag_manager/test_multiple_send_data.F90
   test_fms/diag_manager/test_prepend_date.F90
-  test_fms/diag_manager/test_multi_file.F90
+  test_fms/diag_manager/test_diag_multi_file.F90
   test_fms/diag_manager/test_ens_runs.F90
   test_fms/diag_manager/test_diag_attribute_add.F90
   test_fms/diag_manager/check_new_file_freq.F90
