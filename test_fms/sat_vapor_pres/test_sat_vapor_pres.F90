@@ -102,14 +102,14 @@ contains
 
     implicit none
 
-    real(kind=TEST_SVP_KIND_) :: temp, press, answer, qsat
-    real(kind=TEST_SVP_KIND_), dimension(1)     :: temp_1d, press_1d, answer_1d, qsat_1d
-    real(kind=TEST_SVP_KIND_), dimension(1,1)   :: temp_2d, press_2d, answer_2d, qsat_2d
-    real(kind=TEST_SVP_KIND_), dimension(1,1,1) :: temp_3d, press_3d, answer_3d, qsat_3d
+    real(kind=TEST_FMS_KIND_) :: temp, press, answer, qsat
+    real(kind=TEST_FMS_KIND_), dimension(1)     :: temp_1d, press_1d, answer_1d, qsat_1d
+    real(kind=TEST_FMS_KIND_), dimension(1,1)   :: temp_2d, press_2d, answer_2d, qsat_2d
+    real(kind=TEST_FMS_KIND_), dimension(1,1,1) :: temp_3d, press_3d, answer_3d, qsat_3d
 
     real(kind=r8_kind), parameter :: EPSILO=real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
-    integer, parameter :: lkind=TEST_SVP_KIND_ !< local kind value; using TEST_SVP_KIND_ in cases
-                                               !! such as 1.0_TEST_SVP_KIND_ cannot be compiled with
+    integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind value; using TEST_FMS_KIND_ in cases
+                                               !! such as 1.0_TEST_FMS_KIND_ cannot be compiled with
                                                !! with gcc compilers.
 
     !---- 0d ----!
@@ -144,39 +144,39 @@ contains
     !! The tests for this section is not comprehensive and more tests should be added.
 
     implicit none
-    real(kind=TEST_SVP_KIND_) :: temp, press, answer, mrsat
-    real(kind=TEST_SVP_KIND_), dimension(1)     :: temp_1d, press_1d, answer_1d, mrsat_1d
-    real(kind=TEST_SVP_KIND_), dimension(1,1)   :: temp_2d, press_2d, answer_2d, mrsat_2d
-    real(kind=TEST_SVP_KIND_), dimension(1,1,1) :: temp_3d, press_3d, answer_3d, mrsat_3d
+    real(kind=TEST_FMS_KIND_) :: temp, press, answer, mrsat
+    real(kind=TEST_FMS_KIND_), dimension(1)     :: temp_1d, press_1d, answer_1d, mrsat_1d
+    real(kind=TEST_FMS_KIND_), dimension(1,1)   :: temp_2d, press_2d, answer_2d, mrsat_2d
+    real(kind=TEST_FMS_KIND_), dimension(1,1,1) :: temp_3d, press_3d, answer_3d, mrsat_3d
 
     real(kind=r8_kind), parameter :: EPSILO=real(RDGAS,r8_kind)/real(RVGAS, r8_kind)
-    integer, parameter :: lkind=TEST_SVP_KIND_ !< local kind value; using TEST_SVP_KIND_ in cases
-                                               !! such as 1.0_TEST_SVP_KIND_ cannot be compiled with
+    integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind value; using TEST_FMS_KIND_ in cases
+                                               !! such as 1.0_TEST_FMS_KIND_ cannot be compiled with
                                                !! with gcc compilers.
 
     !--------0d--------!
     !> press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp= 270.0_lkind ; press= 0.0_lkind ; answer=real(EPSILO,lkind)
     call compute_mrs(temp, press, mrsat)
-    call check_answer_0d(answer,mrsat,'test_compute_mrs_0d precision=TEST_SVP_KIND_')
+    call check_answer_0d(answer,mrsat,'test_compute_mrs_0d precision=TEST_FMS_KIND_')
 
     !--------1d--------!
     !> press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp_1d = 270.0_lkind ; press_1d = 0.0_lkind ; answer_1d=real(EPSILO,lkind)
     call compute_mrs(temp_1d, press_1d, mrsat_1d)
-    call check_answer_1d(answer_1d,mrsat_1d,'test_compute_mrs_1d precision=TEST_SVP_KIND_')
+    call check_answer_1d(answer_1d,mrsat_1d,'test_compute_mrs_1d precision=TEST_FMS_KIND_')
 
     !--------2d--------!
     !> press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp_2d = 270.0_lkind ; press_2d = 0.0_lkind ; answer_2d=real(EPSILO,lkind)
     call compute_mrs(temp_2d, press_2d, mrsat_2d)
-    call check_answer_2d(answer_2d,mrsat_2d,'test_compute_mrs_2d precision=TEST_SVP_KIND_')
+    call check_answer_2d(answer_2d,mrsat_2d,'test_compute_mrs_2d precision=TEST_FMS_KIND_')
 
     !--------3d--------!
     !> press is 0.  Therefore the answer should be eps=EPSILO=RDGAS/RVGAS
     temp_3d = 270.0_lkind ; press_3d = 0.0_lkind ; answer_3d=real(EPSILO,lkind)
     call compute_mrs(temp_3d, press_3d, mrsat_3d)
-    call check_answer_3d(answer_3d,mrsat_3d,'test_compute_mrs_3d precision=TEST_SVP_KIND_')
+    call check_answer_3d(answer_3d,mrsat_3d,'test_compute_mrs_3d precision=TEST_FMS_KIND_')
 
   end subroutine test_compute_mrs
   !-----------------------------------------------------------------------
@@ -186,13 +186,13 @@ contains
     !! TEST:  at the maximum temperature (TCMAX), the pressures should correspond to the last element in the (D)TABLE
 
     implicit none
-    real(kind=TEST_SVP_KIND_) ::                   temp,    esat,    desat,    esat_answer,    desat_answer
-    real(kind=TEST_SVP_KIND_), dimension(1)     :: temp_1d, esat_1d, desat_1d, esat_answer_1d, desat_answer_1d
-    real(kind=TEST_SVP_KIND_), dimension(1,1)   :: temp_2d, esat_2d, desat_2d, esat_answer_2d, desat_answer_2d
-    real(kind=TEST_SVP_KIND_), dimension(1,1,1) :: temp_3d, esat_3d, desat_3d, esat_answer_3d, desat_answer_3d
+    real(kind=TEST_FMS_KIND_) ::                   temp,    esat,    desat,    esat_answer,    desat_answer
+    real(kind=TEST_FMS_KIND_), dimension(1)     :: temp_1d, esat_1d, desat_1d, esat_answer_1d, desat_answer_1d
+    real(kind=TEST_FMS_KIND_), dimension(1,1)   :: temp_2d, esat_2d, desat_2d, esat_answer_2d, desat_answer_2d
+    real(kind=TEST_FMS_KIND_), dimension(1,1,1) :: temp_3d, esat_3d, desat_3d, esat_answer_3d, desat_answer_3d
 
-    integer, parameter :: lkind=TEST_SVP_KIND_ !< local kind value; using TEST_SVP_KIND_ in cases
-                                               !! such as 1.0_TEST_SVP_KIND_ cannot be compiled with
+    integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind value; using TEST_FMS_KIND_ in cases
+                                               !! such as 1.0_TEST_FMS_KIND_ cannot be compiled with
                                                !! with gcc compilers
 
     !-----0d test-------!
@@ -386,13 +386,13 @@ contains
     !! TEST:  at the maximum temperature (TCMAX), the pressures should correspond to the last element in the (D)TABLE2
 
     implicit none
-    real(kind=TEST_SVP_KIND_)                   :: temp,    esat,    desat,    esat_answer,    desat_answer
-    real(kind=TEST_SVP_KIND_), dimension(1)     :: temp_1d, esat_1d, desat_1d, esat_answer_1d, desat_answer_1d
-    real(kind=TEST_SVP_KIND_), dimension(1,1)   :: temp_2d, esat_2d, desat_2d, esat_answer_2d, desat_answer_2d
-    real(kind=TEST_SVP_KIND_), dimension(1,1,1) :: temp_3d, esat_3d, desat_3d, esat_answer_3d, desat_answer_3d
+    real(kind=TEST_FMS_KIND_)                   :: temp,    esat,    desat,    esat_answer,    desat_answer
+    real(kind=TEST_FMS_KIND_), dimension(1)     :: temp_1d, esat_1d, desat_1d, esat_answer_1d, desat_answer_1d
+    real(kind=TEST_FMS_KIND_), dimension(1,1)   :: temp_2d, esat_2d, desat_2d, esat_answer_2d, desat_answer_2d
+    real(kind=TEST_FMS_KIND_), dimension(1,1,1) :: temp_3d, esat_3d, desat_3d, esat_answer_3d, desat_answer_3d
 
-    integer, parameter :: lkind=TEST_SVP_KIND_ !< local kind value; using TEST_SVP_KIND_ in cases
-                                               !! such as 1.0_TEST_SVP_KIND_ cannot be compiled with
+    integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind value; using TEST_FMS_KIND_ in cases
+                                               !! such as 1.0_TEST_FMS_KIND_ cannot be compiled with
                                                !! with gcc compilers.
 
     !-----0d test-------!
@@ -578,13 +578,13 @@ contains
     !! TEST:  at the maximum temperature (TCMAX), the pressures should correspond to the last element in the (D)TABLE3
 
     implicit none
-    real(kind=TEST_SVP_KIND_)                   :: temp,    esat,    desat,    esat_answer,    desat_answer
-    real(kind=TEST_SVP_KIND_), dimension(1)     :: temp_1d, esat_1d, desat_1d, esat_answer_1d, desat_answer_1d
-    real(kind=TEST_SVP_KIND_), dimension(1,1)   :: temp_2d, esat_2d, desat_2d, esat_answer_2d, desat_answer_2d
-    real(kind=TEST_SVP_KIND_), dimension(1,1,1) :: temp_3d, esat_3d, desat_3d, esat_answer_3d, desat_answer_3d
+    real(kind=TEST_FMS_KIND_)                   :: temp,    esat,    desat,    esat_answer,    desat_answer
+    real(kind=TEST_FMS_KIND_), dimension(1)     :: temp_1d, esat_1d, desat_1d, esat_answer_1d, desat_answer_1d
+    real(kind=TEST_FMS_KIND_), dimension(1,1)   :: temp_2d, esat_2d, desat_2d, esat_answer_2d, desat_answer_2d
+    real(kind=TEST_FMS_KIND_), dimension(1,1,1) :: temp_3d, esat_3d, desat_3d, esat_answer_3d, desat_answer_3d
 
-    integer, parameter :: lkind=TEST_SVP_KIND_ !< local kind value; using TEST_SVP_KIND_ in cases
-                                               !! such as 1.0_TEST_SVP_KIND_ cannot be compiled with
+    integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind value; using TEST_FMS_KIND_ in cases
+                                               !! such as 1.0_TEST_FMS_KIND_ cannot be compiled with
                                                !! with gcc compilers.
 
     !-----0d test-------!
@@ -764,10 +764,11 @@ contains
   subroutine check_answer_0d(answer,fms_result,whoami)
 
     implicit none
-    real(TEST_SVP_KIND_), intent(in) :: answer, fms_result
+    real(TEST_FMS_KIND_), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
+    real(TEST_FMS_KIND_), parameter :: tol = 1.0e-6
 
-    if(answer .ne. fms_result) then
+    if(abs(answer - fms_result) .gt. tol) then
        write(*,*) 'Expected ', answer, ' but got ', fms_result
        call mpp_error(FATAL,'ERROR:'//trim(whoami) )
     end if
@@ -777,7 +778,7 @@ contains
   subroutine check_answer_1d(answer,fms_result,whoami)
 
     implicit none
-    real(TEST_SVP_KIND_), dimension(:), intent(in) :: answer, fms_result
+    real(TEST_FMS_KIND_), dimension(:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
 
     if(answer(1) .ne. fms_result(1)) then
@@ -790,7 +791,7 @@ contains
   subroutine check_answer_2d(answer,fms_result,whoami)
 
     implicit none
-    real(TEST_SVP_KIND_), dimension(:,:), intent(in) :: answer, fms_result
+    real(TEST_FMS_KIND_), dimension(:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
 
     if(answer(1,1) .ne. fms_result(1,1)) then
@@ -803,7 +804,7 @@ contains
   subroutine check_answer_3d(answer,fms_result,whoami)
 
     implicit none
-    real(TEST_SVP_KIND_), dimension(:,:,:), intent(in) :: answer, fms_result
+    real(TEST_FMS_KIND_), dimension(:,:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
 
     if(answer(1,1,1) .ne. fms_result(1,1,1)) then

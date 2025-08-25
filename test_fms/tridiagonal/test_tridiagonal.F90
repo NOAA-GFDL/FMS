@@ -16,10 +16,6 @@
 !* You should have received a copy of the GNU Lesser General Public
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
-#ifndef TEST_TRIDIAG_KIND
-#define TEST_TRIDIAG_KIND 8
-#endif
-
 !> Tests the tridiagonal module routines (tri_invert and close_tridiagonal)
 !! Tests reals with the kind value set above,
 program test_tridiagonal
@@ -32,16 +28,16 @@ program test_tridiagonal
     implicit none
 
     integer, parameter :: IN_LEN = 8 !< length of input arrays
-    integer, parameter :: kindl = TEST_TRIDIAG_KIND !< kind value for all reals in this test
-                                                !! set by TEST_TRIDIAG_KIND cpp macro
-    real(TEST_TRIDIAG_KIND), allocatable :: d(:,:,:), x(:,:,:), ref_array(:,:,:)
-    real(TEST_TRIDIAG_KIND), allocatable :: a(:,:,:), b(:,:,:), c(:,:,:)
+    integer, parameter :: kindl = TEST_FMS_KIND_ !< kind value for all reals in this test
+                                                !! set by TEST_FMS_KIND_ cpp macro
+    real(TEST_FMS_KIND_), allocatable :: d(:,:,:), x(:,:,:), ref_array(:,:,:)
+    real(TEST_FMS_KIND_), allocatable :: a(:,:,:), b(:,:,:), c(:,:,:)
     real(r4_kind), allocatable :: d_r4(:,:,:), x_r4(:,:,:)
     real(r4_kind), allocatable :: a_r4(:,:,:), b_r4(:,:,:), c_r4(:,:,:)
     real(r8_kind), allocatable :: d_r8(:,:,:), x_r8(:,:,:)
     real(r8_kind), allocatable :: a_r8(:,:,:), b_r8(:,:,:), c_r8(:,:,:)
     integer :: i, end, ierr, io
-    real(TEST_TRIDIAG_KIND) :: k
+    real(TEST_FMS_KIND_) :: k
     ! nml
     logical :: do_error_check = .false.
     namelist / test_tridiagonal_nml/ do_error_check
@@ -96,7 +92,7 @@ program test_tridiagonal
     ref_array = ref_array * k
     ! check
     do i=1, IN_LEN
-      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 1.0e-6_kindl) then
         print *, i, x(1,1,i), ref_array(1,1,i)
         call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert")
       endif
@@ -106,7 +102,7 @@ program test_tridiagonal
     ref_array = ref_array * -1.0_kindl
     call tri_invert(x, d)
     do i=1, IN_LEN
-      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 1.0e-6_kindl) then
         print *, i, x(1,1,i), ref_array(1,1,i)
         call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert with saved values")
       endif

@@ -22,7 +22,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-if [ -z "${skipflag}" ]; then
+if [ -z "${parser_skip}" ]; then
 # create and enter directory for in/output files
 output_dir
 
@@ -55,7 +55,7 @@ diag_files:
     output_name: var3_rms
     reduction: average
     kind: r4
-  - module: ocn_mod
+  - module: ocn_z_mod
     var_name: var4
     output_name: var4_rms
     reduction: average

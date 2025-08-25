@@ -278,8 +278,8 @@ subroutine set_latlon_b()
   allocate(latb(nlonlat+1), lonb(nlonlat+1))
 
   do i=1, nlonlat
-     lat(i)= real(2*i-1,TEST_INTP_KIND_)
-     lon(i)= real(2*i-1,TEST_INTP_KIND_)
+     lat(i)= real(2*i-1,TEST_FMS_KIND_)
+     lon(i)= real(2*i-1,TEST_FMS_KIND_)
   end do
 
   lonb(1)=1.0_lkind
@@ -321,10 +321,10 @@ subroutine set_latlon_b_mod
   end do
 
   !> convert from degrees to radians
-  lon_mod  = lon_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
-  lat_mod  = lat_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
-  lonb_mod = lonb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
-  latb_mod = latb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
+  lon_mod  = lon_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
+  lat_mod  = lat_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
+  lonb_mod = lonb_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
+  latb_mod = latb_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
 
 
 end subroutine set_latlon_b_mod
@@ -339,7 +339,7 @@ subroutine set_pfullhalf()
   allocate(pfull(npfull), phalf(nphalf))
 
   do i=1, npfull
-     pfull(i) = 0.0001_lkind * real(i-1,TEST_INTP_KIND_)
+     pfull(i) = 0.0001_lkind * real(i-1,TEST_FMS_KIND_)
   end do
 
   phalf(1)=0.0_lkind
@@ -364,7 +364,7 @@ subroutine set_ozone()
      do j=1, npfull
         do k=1, nlonlat
            do l=1, nlonlat
-              ozone(l,k,j,i)= real(i,TEST_INTP_KIND_)
+              ozone(l,k,j,i)= real(i,TEST_FMS_KIND_)
            end do
         end do
      end do

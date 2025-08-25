@@ -66,6 +66,8 @@ end interface get_value_from_key
 integer, parameter :: MISSING_FILE = -1       !< Error code if the yaml file is missing
 integer, parameter :: PARSER_INIT_ERROR = -2  !< Error code if unable to create a parser object
 integer, parameter :: INVALID_YAML = -3       !< Error code if unable to parse a yaml file
+integer, parameter :: INVALID_ALIAS = -4      !< Error code if an invalid alias was passed in
+integer, parameter :: MAX_LEVELS_REACH = -5   !< Error code if the MAX_LEVELS is reach
 integer, parameter :: SUCCESSFUL = 1          !< "Error" code if the parsing was successful
 
 !> @brief c functions binding
@@ -279,6 +281,12 @@ subroutine check_error_code(error_code, filename)
       call mpp_error(FATAL, "Error initializing the parser for the file:"//trim(filename))
    case (INVALID_YAML)
       call mpp_error(FATAL, "Error parsing the file:"//trim(filename)//". Check that your yaml file is valid")
+   case (INVALID_ALIAS)
+      call mpp_error(FATAL, "An alias (*alias_name) in your file:"//trim(filename)//" is invalid."//&
+                            "Make sure that all aliases correspond to an anchor (&anchor_name)!")
+   case (MAX_LEVELS_REACH)
+      call mpp_error(FATAL, "The file:"//trim(filename)//" has reached the maximum number of level!"//&
+                            "Try setting -DMAX_LEVELS to a number greater than the current limit and recompile")
    end select
 end subroutine check_error_code
 

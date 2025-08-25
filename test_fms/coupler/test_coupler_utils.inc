@@ -48,7 +48,7 @@ subroutine set_up_1d_coupler_type(bc_type, data_grid)
          write(field_num,'(i1)') j
          bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
          allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2)))
-         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
+         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=TEST_FMS_KIND_)
       end do
    end do
 
@@ -101,9 +101,9 @@ subroutine set_up_2d_coupler_type(bc_type, data_grid, appendix, to_read)
          bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
          allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4)))
          if (to_read) then
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=TEST_FMS_KIND_)
          else
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=TEST_FMS_KIND_)
          endif
       end do
    end do
@@ -214,9 +214,9 @@ subroutine set_up_3d_coupler_type(bc_type, data_grid, appendix, to_read)
                                                                data_grid(5)))
 
          if (to_read) then
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=TEST_FMS_KIND_)
          else
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=TEST_FMS_KIND_)
          endif
       end do
    end do

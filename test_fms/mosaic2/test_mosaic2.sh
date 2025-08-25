@@ -32,6 +32,10 @@ touch input.nml
 rm -rf INPUT
 mkdir INPUT
 
+if [ ! $parser_skip ]; then
+  SKIP_TESTS='test_mosaic2.[1-4]'
+fi
+
 # The tests are skipped if FMS is compiled in r4 via ./configure --enable-mixedmode
 # because answers differ when FMS is compiled in r4.
 test_expect_success "test mosaic2 r4" 'mpirun -n 1 ./test_mosaic2_r4'

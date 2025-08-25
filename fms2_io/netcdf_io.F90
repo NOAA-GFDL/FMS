@@ -154,6 +154,11 @@ type, public :: FmsNetcdfFile_t
                                       !! collective reads (put before open_file())
   integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
                                       !! To be replaced with a real communicator at user request
+  logical        :: use_netcdf_mpi = .false.
+
+  contains
+
+  procedure :: is_file_using_netcdf_mpi
 
 endtype FmsNetcdfFile_t
 
@@ -245,6 +250,7 @@ public :: set_fileobj_time_name
 public :: write_restart_bc
 public :: read_restart_bc
 public :: flush_file
+public :: get_variable_id
 
 !> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
@@ -908,7 +914,7 @@ subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
       dim_len = sum(npes_count)
     endif
   endif
-  if (fileobj%is_root .and. .not. fileobj%is_readonly) then
+  if ((fileobj%is_root) .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
     call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"// &
@@ -1007,6 +1013,11 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     else
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
     endif
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
+  if (fileobj%use_netcdf_mpi) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
     call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_add_variable
@@ -2398,6 +2409,13 @@ subroutine flush_file(fileobj)
     call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
   endif
 end subroutine flush_file
+
+!> @brief Getter for use_netcdf_mpi
+pure logical function is_file_using_netcdf_mpi(this)
+  class(FmsNetcdfFile_t), intent(in) :: this !< fms2io fileobj to query
+
+  is_file_using_netcdf_mpi = this%use_netcdf_mpi
+end function is_file_using_netcdf_mpi
 
 end module netcdf_io_mod
 !> @}

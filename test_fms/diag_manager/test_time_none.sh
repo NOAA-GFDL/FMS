@@ -24,7 +24,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-if [ -z "${skipflag}" ]; then
+if [ -z "${parser_skip}" ]; then
 # create and enter directory for in/output files
 output_dir
 
@@ -57,7 +57,7 @@ diag_files:
     output_name: var3_none
     reduction: none
     kind: r4
-  - module: ocn_mod
+  - module: ocn_z_mod
     var_name: var4
     output_name: var4_none
     reduction: none
@@ -271,5 +271,124 @@ test_expect_success "Testing diag manager new_file_freq and file_durations keys 
   mpirun -n 1 ../check_new_file_freq
   '
 
+cat <<_EOF > diag_table.yaml
+my_variables: &my_variables
+  - module: ocn_mod
+    var_name: var0
+    output_name: var0_none
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var1
+    output_name: var1_none
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var2
+    output_name: var2_none
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_none
+    reduction: none
+    kind: r4
+  - module: ocn_z_mod
+    var_name: var4
+    output_name: var4_none
+    reduction: none
+    kind: r4
+
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - *my_variables
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_Z
+    reduction: none
+    zbounds: 2. 3.
+    kind: r4
+- file_name: test_none_regional
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  sub_region:
+  - grid_type: latlon
+    corner1: 78. 78.
+    corner2: 78. 78.
+    corner3: 81. 81.
+    corner4: 81. 81.
+  varlist:
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_none
+    reduction: none
+    zbounds: 2. 3.
+    kind: r4
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
+test_expect_success "Running diag_manager with "none" reduction method using a diag table with anchors(test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+
+cat <<_EOF > diag_table.yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  reduction: none
+  kind: r4
+  modules:
+  - module: ocn_mod
+    varlist:
+    - var_name: var0
+      output_name: var0_none
+    - var_name: var1
+      output_name: var1_none
+    - var_name: var2
+      output_name: var2_none
+    - var_name: var3
+      output_name: var3_none
+    - var_name: var3
+      output_name: var3_Z
+      zbounds: 2. 3.
+  - module: ocn_z_mod
+    varlist:
+    - var_name: var4
+      output_name: var4_none
+- file_name: test_none_regional
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  sub_region:
+  - grid_type: latlon
+    corner1: 78. 78.
+    corner2: 78. 78.
+    corner3: 81. 81.
+    corner4: 81. 81.
+  varlist:
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_none
+    reduction: none
+    zbounds: 2. 3.
+    kind: r4
+_EOF
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
+test_expect_success "Running diag_manager with "none" reduction method using a diag table with modular yaml(test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
 fi
 test_done

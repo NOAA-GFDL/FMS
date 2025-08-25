@@ -33,8 +33,8 @@ check_PROGRAMS = test_diag_integral_r4 test_diag_integral_r8
 test_diag_integral_r4_SOURCES = test_diag_integral.F90
 test_diag_integral_r8_SOURCES = test_diag_integral.F90
 
-test_diag_integral_r4_CPPFLAGS=-DTEST_DI_KIND_=4 -I$(MODDIR)
-test_diag_integral_r8_CPPFLAGS=-DTEST_DI_KIND_=8 -I$(MODDIR)
+test_diag_integral_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
+test_diag_integral_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(abs_top_srcdir)/test_fms/tap-driver.sh

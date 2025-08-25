@@ -482,6 +482,10 @@ AC_SUBST([NOUNDEFINED])
 # Used in Makefiles.
 AC_SUBST([MODDIR],[\$\(top_builddir\)/.mods])
 
+# Define CMake variables used in test-lib.sh.in as empty strings
+AC_SUBST([CMAKE_CURRENT_SOURCE_DIR], [])
+AC_SUBST([USING_CMAKE],[])
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([
   Makefile
