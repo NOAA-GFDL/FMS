@@ -51,6 +51,7 @@ diag_files:
     output_name: var3_none
   - var_name: var4
     output_name: var4_none
+    module: ocn_z_mod
   - var_name: var3
     output_name: var3_Z
     zbounds: 2. 3.
@@ -115,6 +116,7 @@ diag_files:
     output_name: var3_none
   - var_name: var4
     output_name: var4_none
+    module: ocn_z_mod
   - var_name: var3
     output_name: var3_Z
     zbounds: 2. 3.
@@ -179,6 +181,7 @@ diag_files:
     output_name: var3_none
   - var_name: var4
     output_name: var4_none
+    module: ocn_z_mod
     chunksizes: 96, 8, 5, 2, 1
   - var_name: var3
     output_name: var3_Z
