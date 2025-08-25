@@ -569,9 +569,9 @@ endif
 !Assume that the horizontal interpolation within a file is the same for each variable.
 
  if (conservative_interp) then
-    call horiz_interp_new (clim_type%interph, &
-                           clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
-                           lonb_mod, latb_mod)
+    call horiz_interp_get_weights (clim_type%interph, &
+                                   clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
+                                   lonb_mod, latb_mod)
  else
 
     call mpp_error(NOTE, "Using Bilinear interpolation")
@@ -593,9 +593,9 @@ endif
 
     !!! END DEBUG CODE
 
-    call horiz_interp_new (clim_type%interph, &
-                           clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
-                           agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
+    call horiz_interp_get_weights (clim_type%interph, &
+                                   clim_type%FMS_INTP_TYPE_%lonb, clim_type%FMS_INTP_TYPE_%latb, &
+                                   agrid_mod(:,:,1), agrid_mod(:,:,2), interp_method="bilinear")
  endif
 
 !--------------------------------------------------------------------

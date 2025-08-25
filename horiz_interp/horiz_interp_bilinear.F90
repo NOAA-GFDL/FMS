@@ -42,16 +42,16 @@ module horiz_interp_bilinear_mod
   private
 
 
-  public :: horiz_interp_bilinear_new, horiz_interp_bilinear, horiz_interp_bilinear_del
+  public :: horiz_interp_bilinear_get_weights, horiz_interp_bilinear, horiz_interp_bilinear_del
   public :: horiz_interp_bilinear_init, horiz_interp_read_weights_bilinear
 
   !> Creates a @ref horiz_interp_type for bilinear interpolation.
   !> @ingroup horiz_interp_bilinear_mod
-  interface horiz_interp_bilinear_new
-    module procedure horiz_interp_bilinear_new_1d_r4
-    module procedure horiz_interp_bilinear_new_1d_r8
-    module procedure horiz_interp_bilinear_new_2d_r4
-    module procedure horiz_interp_bilinear_new_2d_r8
+  interface horiz_interp_bilinear_get_weights
+    module procedure horiz_interp_bilinear_get_weights_1d_r4
+    module procedure horiz_interp_bilinear_get_weights_1d_r8
+    module procedure horiz_interp_bilinear_get_weights_2d_r4
+    module procedure horiz_interp_bilinear_get_weights_2d_r8
   end interface
 
   !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
@@ -98,11 +98,11 @@ contains
 
   !> @brief Deallocates memory used by "horiz_interp_type" variables.
   !!
-  !> Must be called before reinitializing with horiz_interp_bilinear_new.
+  !> Must be called before reinitializing with horiz_interp_bilinear_get_weights.
   subroutine horiz_interp_bilinear_del( Interp )
 
     type (horiz_interp_type), intent(inout) :: Interp!< A derived-type variable returned by previous
-                                   !! call to horiz_interp_bilinear_new. The input variable must
+                                   !! call to horiz_interp_bilinear_get_weights. The input variable must
                                    !! have allocated arrays. The returned variable will contain
                                    !! deallocated arrays
 

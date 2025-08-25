@@ -38,7 +38,7 @@
 module topography_mod
 
 use gaussian_topog_mod, only: gaussian_topog_init, get_gaussian_topog
-use   horiz_interp_mod, only: horiz_interp_type, horiz_interp_new, &
+use   horiz_interp_mod, only: horiz_interp_type, horiz_interp_get_weights, &
                               horiz_interp, horiz_interp_del
 
 use            fms_mod, only: check_nml_error, stdlog,    &

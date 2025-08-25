@@ -170,8 +170,8 @@ else
     mobs_sst = 1440;  nobs_sst = 720
 
     call SET_SST_GRID_EDGES_DAILY_ (mobs_sst, nobs_sst)
-    call horiz_interp_new ( Interp%Hintrp2, LON_BND_, LAT_BND_, &
-                             lon_model, lat_model, interp_method="bilinear" )
+    call horiz_interp_get_weights ( Interp%Hintrp2, LON_BND_, LAT_BND_, &
+                                    lon_model, lat_model, interp_method="bilinear" )
 
     the_file_exists = fms2_io_file_exists(ncfilename)
 
@@ -428,8 +428,8 @@ endif
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
 
-    call horiz_interp_new ( Interp%Hintrp, LON_BND_, LAT_BND_, &
-                             lon, lat, interp_method= interp_method )
+    call horiz_interp_get_weights ( Interp%Hintrp, LON_BND_, LAT_BND_, &
+                                    lon, lat, interp_method= interp_method )
 
     allocate(Interp%DATA1_ (size(lon(:))-1,size(lat(:))-1))
     allocate(Interp%DATA2_ (size(lon(:))-1,size(lat(:))-1))
@@ -466,8 +466,8 @@ endif
 !-----------------------------------------------------------------------
 !   ---- initialization of horizontal interpolation ----
 
-   call horiz_interp_new ( Interp%Hintrp, LON_BND_, LAT_BND_, &
-                           lon, lat, interp_method = interp_method)
+   call horiz_interp_get_weights ( Interp%Hintrp, LON_BND_, LAT_BND_, &
+                                   lon, lat, interp_method = interp_method)
 
    allocate(Interp%DATA1_ (size(lon,1),size(lat,2)))
    allocate(Interp%DATA2_ (size(lon,1),size(lat,2)))

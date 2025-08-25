@@ -433,7 +433,7 @@ type (horiz_interp_type) :: Interp
 
     call find_indices( minval(blat), maxval(blat), ydat, js, je )
 
-    call horiz_interp_new ( Interp, xdat, ydat(js:je+1), blon, blat )
+    call horiz_interp_get_weights ( Interp, xdat, ydat(js:je+1), blon, blat )
     call horiz_interp     ( Interp, zdat(:,js:je), zout )
 
 ! compute standard deviation if necessary

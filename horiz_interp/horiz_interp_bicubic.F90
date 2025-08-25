@@ -56,18 +56,18 @@ module horiz_interp_bicubic_mod
 
    private
 
-   public  :: horiz_interp_bicubic, horiz_interp_bicubic_new, horiz_interp_bicubic_del, fill_xy
+   public  :: horiz_interp_bicubic, horiz_interp_bicubic_get_weights, horiz_interp_bicubic_del, fill_xy
    public  :: horiz_interp_bicubic_init
 
-  !> Creates a new @ref horiz_interp_type for bicubic interpolation.
+  !> Creates a get_weights @ref horiz_interp_type for bicubic interpolation.
   !! Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
   !> @ingroup horiz_interp_bicubic_mod
-  interface horiz_interp_bicubic_new
-    module procedure horiz_interp_bicubic_new_1d_r8
-    module procedure horiz_interp_bicubic_new_1d_s_r8
-    module procedure horiz_interp_bicubic_new_1d_r4
-    module procedure horiz_interp_bicubic_new_1d_s_r4
+  interface horiz_interp_bicubic_get_weights
+    module procedure horiz_interp_bicubic_get_weights_1d_r8
+    module procedure horiz_interp_bicubic_get_weights_1d_s_r8
+    module procedure horiz_interp_bicubic_get_weights_1d_r4
+    module procedure horiz_interp_bicubic_get_weights_1d_s_r4
   end interface
 
   !> @brief Perform bicubic horizontal interpolation
@@ -141,7 +141,7 @@ module horiz_interp_bicubic_mod
   end subroutine horiz_interp_bicubic_init
 
   !> Free memory from a horiz_interp_type used for bicubic interpolation
-  !! (allocated via @ref horiz_bicubic_new)
+  !! (allocated via @ref horiz_bicubic_get_weights)
   subroutine horiz_interp_bicubic_del( Interp )
     type(horiz_interp_type), intent(inout) :: Interp
 

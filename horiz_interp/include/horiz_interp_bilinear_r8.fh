@@ -24,11 +24,11 @@
 #undef HI_KIND_TYPE_
 #define HI_KIND_TYPE_ horizInterpReals8_type
 
-#undef HORIZ_INTERP_BILINEAR_NEW_1D_
-#define HORIZ_INTERP_BILINEAR_NEW_1D_ horiz_interp_bilinear_new_1d_r8
+#undef HORIZ_INTERP_BILINEAR_GET_WEIGHTS_1D_
+#define HORIZ_INTERP_BILINEAR_GET_WEIGHTS_1D_ horiz_interp_bilinear_get_weights_1d_r8
 
-#undef HORIZ_INTERP_BILINEAR_NEW_2D_
-#define HORIZ_INTERP_BILINEAR_NEW_2D_ horiz_interp_bilinear_new_2d_r8
+#undef HORIZ_INTERP_BILINEAR_GET_WEIGHTS_2D_
+#define HORIZ_INTERP_BILINEAR_GET_WEIGHTS_2D_ horiz_interp_bilinear_get_weights_2d_r8
 
 #undef HORIZ_INTERP_BILINEAR_
 #define HORIZ_INTERP_BILINEAR_ horiz_interp_bilinear_r8

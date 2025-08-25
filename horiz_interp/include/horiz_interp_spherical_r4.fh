@@ -27,8 +27,8 @@
 #undef HORIZ_INTERP_SPHERICAL_
 #define HORIZ_INTERP_SPHERICAL_ horiz_interp_spherical_r4
 
-#undef HORIZ_INTERP_SPHERICAL_NEW_
-#define HORIZ_INTERP_SPHERICAL_NEW_ horiz_interp_spherical_new_r4
+#undef HORIZ_INTERP_SPHERICAL_GET_PRE_WEIGHTS_
+#define HORIZ_INTERP_SPHERICAL_GET_PRE_WEIGHTS_ horiz_interp_spherical_get_pre_weights_r4
 
 #undef HORIZ_INTERP_SPHERICAL_WGHT_
 #define HORIZ_INTERP_SPHERICAL_WGHT_ horiz_interp_spherical_wght_r4

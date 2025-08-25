@@ -24,11 +24,11 @@
 #undef HI_KIND_TYPE_
 #define HI_KIND_TYPE_ horizInterpReals4_type
 
-#undef HORIZ_INTERP_BICUBIC_NEW_1D_S_
-#define HORIZ_INTERP_BICUBIC_NEW_1D_S_ horiz_interp_bicubic_new_1d_s_r4
+#undef HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_
+#define HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_S_ horiz_interp_bicubic_get_weights_1d_s_r4
 
-#undef HORIZ_INTERP_BICUBIC_NEW_1D_
-#define HORIZ_INTERP_BICUBIC_NEW_1D_ horiz_interp_bicubic_new_1d_r4
+#undef HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_
+#define HORIZ_INTERP_BICUBIC_GET_WEIGHTS_1D_ horiz_interp_bicubic_get_weights_1d_r4
 
 #undef HORIZ_INTERP_BICUBIC_
 #define HORIZ_INTERP_BICUBIC_ horiz_interp_bicubic_r4

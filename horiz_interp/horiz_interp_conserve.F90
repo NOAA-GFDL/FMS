@@ -89,15 +89,15 @@ module horiz_interp_conserve_mod
   !!      interpolation you must first use the "horiz_interp_del" interface.
   !!
   !> @ingroup horiz_interp_conserve_mod
-  interface horiz_interp_conserve_new
-     module procedure horiz_interp_conserve_new_1dx1d_r4
-     module procedure horiz_interp_conserve_new_1dx2d_r4
-     module procedure horiz_interp_conserve_new_2dx1d_r4
-     module procedure horiz_interp_conserve_new_2dx2d_r4
-     module procedure horiz_interp_conserve_new_1dx1d_r8
-     module procedure horiz_interp_conserve_new_1dx2d_r8
-     module procedure horiz_interp_conserve_new_2dx1d_r8
-     module procedure horiz_interp_conserve_new_2dx2d_r8
+  interface horiz_interp_conserve_get_weights
+     module procedure horiz_interp_conserve_get_weights_1dx1d_r4
+     module procedure horiz_interp_conserve_get_weights_1dx2d_r4
+     module procedure horiz_interp_conserve_get_weights_2dx1d_r4
+     module procedure horiz_interp_conserve_get_weights_2dx2d_r4
+     module procedure horiz_interp_conserve_get_weights_1dx1d_r8
+     module procedure horiz_interp_conserve_get_weights_1dx2d_r8
+     module procedure horiz_interp_conserve_get_weights_2dx1d_r8
+     module procedure horiz_interp_conserve_get_weights_2dx2d_r8
   end interface
 
   interface horiz_interp_conserve
@@ -116,14 +116,14 @@ module horiz_interp_conserve_mod
     module procedure stats_r8
   end interface
 
-  interface horiz_interp_conserve_version1
-    module procedure horiz_interp_conserve_version1_r8
-    module procedure horiz_interp_conserve_version1_r4
+  interface horiz_interp_conserve_1dx1d
+    module procedure horiz_interp_conserve_1dx1d_r8
+    module procedure horiz_interp_conserve_1dx1d_r4
   end interface
 
-  interface horiz_interp_conserve_version2
-    module procedure horiz_interp_conserve_version2_r8
-    module procedure horiz_interp_conserve_version2_r4
+  interface horiz_interp_conserve_2d
+    module procedure horiz_interp_conserve_2d_r8
+    module procedure horiz_interp_conserve_2d_r4
   end interface
 
 
@@ -131,7 +131,7 @@ module horiz_interp_conserve_mod
   !> @addtogroup horiz_interp_conserve_mod
   !> @{
   public :: horiz_interp_conserve_init
-  public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
+  public :: horiz_interp_conserve_get_weights, horiz_interp_conserve, horiz_interp_conserve_del
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------
@@ -156,11 +156,11 @@ contains
   end subroutine horiz_interp_conserve_init
 
   !> Deallocates memory used by "HI_KIND_TYPE" variables.
-  !! Must be called before reinitializing with horiz_interp_new.
+  !! Must be called before reinitializing with horiz_interp_get_weights.
   subroutine horiz_interp_conserve_del ( Interp )
 
     type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by
-                         !! previous call to horiz_interp_new. The input variable must have
+                         !! previous call to horiz_interp_get_weights. The input variable must have
                          !! allocated arrays. The returned variable will contain deallocated arrays.
 
     select case(Interp%version)

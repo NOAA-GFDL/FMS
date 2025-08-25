@@ -126,7 +126,7 @@ use get_cal_time_mod, only: get_cal_time
 ! end add by JHC
 
 use  horiz_interp_mod, only: horiz_interp_init, horiz_interp,  &
-                             horiz_interp_new, horiz_interp_del, &
+                             horiz_interp_get_weights, horiz_interp_del, &
                              horiz_interp_type, assignment(=)
 
 use           fms_mod, only: error_mesg, write_version_number,  &
