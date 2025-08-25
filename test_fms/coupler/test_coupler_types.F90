@@ -18,15 +18,6 @@
 !***********************************************************************
 ! Ryan Mulhall 8/23
 
-!! defaults to ensure compilation
-#ifndef FMS_CP_TEST_KIND_
-#define FMS_CP_TEST_KIND_ r8_kind
-#endif
-
-#ifndef FMS_TEST_BC_TYPE_
-#define FMS_TEST_BC_TYPE_ bc
-#endif
-
 !> Tests for the coupler types interfaces not tested in test_coupler_2d/3d
 program test_coupler_types
 
@@ -61,14 +52,14 @@ integer :: nlat, nlon, nz, i, j
 integer :: data_grid(5) !< i/j starting and ending indices for data domain
 character(len=3) :: appendix !< appoendix added to filename
 type(time_type) :: time_t
-integer, parameter :: lkind = FMS_CP_TEST_KIND_
-real(FMS_CP_TEST_KIND_), allocatable :: array_2d(:,:), array_3d(:,:,:)
+integer, parameter :: lkind = TEST_FMS_KIND_
+real(TEST_FMS_KIND_), allocatable :: array_2d(:,:), array_3d(:,:,:)
 integer, parameter :: num_bc = 2, num_fields = 2 !< these are set in set_up_coupler_type routines
-real(FMS_CP_TEST_KIND_), allocatable :: lats(:), lons(:), nzs(:) !< arrays of coordinate values for diag_axis
+real(TEST_FMS_KIND_), allocatable :: lats(:), lons(:), nzs(:) !< arrays of coordinate values for diag_axis
                                                                  !! initalization
 integer :: id_x, id_y, id_z, chksum_unit
 character(len=128) :: chksum_2d, chksum_3d
-real(FMS_CP_TEST_KIND_), allocatable :: expected_2d(:,:), expected_3d(:,:,:)
+real(TEST_FMS_KIND_), allocatable :: expected_2d(:,:), expected_3d(:,:,:)
 integer :: err, ncid, dim1D, varid, day
 logical, allocatable :: return_stats(:,:)
 
@@ -258,7 +249,7 @@ if( mpp_pe() .eq. mpp_root_pe()) then
   err = nf90_close(ncid)
 endif
 call mpp_sync()
-call data_override_init(Atm_domain_in=Domain, mode=FMS_CP_TEST_KIND_)
+call data_override_init(Atm_domain_in=Domain, mode=TEST_FMS_KIND_)
 
 time_t = set_date(1, 1, 15)
 call coupler_type_data_override("ATM", bc_2d_new, time_t)
@@ -305,8 +296,8 @@ contains
 
 subroutine check_field_data_2d(bc_2d, expected)
   type(coupler_2d_bc_type) :: bc_2d
-  real(FMS_CP_TEST_KIND_), intent(in) :: expected(:,:)
-  real(FMS_CP_TEST_KIND_), pointer :: values_ptr(:,:)
+  real(TEST_FMS_KIND_), intent(in) :: expected(:,:)
+  real(TEST_FMS_KIND_), pointer :: values_ptr(:,:)
 
   do i=1, bc_2d%num_bcs
     do j=1, bc_2d%FMS_TEST_BC_TYPE_(i)%num_fields
@@ -322,8 +313,8 @@ end subroutine
 
 subroutine check_field_data_3d(bc_3d, expected)
   type(coupler_3d_bc_type) :: bc_3d
-  real(FMS_CP_TEST_KIND_), intent(in) :: expected(:,:,:)
-  real(FMS_CP_TEST_KIND_), pointer :: values_ptr(:,:,:)
+  real(TEST_FMS_KIND_), intent(in) :: expected(:,:,:)
+  real(TEST_FMS_KIND_), pointer :: values_ptr(:,:,:)
   integer :: x, y, z, vals_start(3) !< need start point for indices, passed in will always be 1-n
 
   do i=1, bc_3d%num_bcs

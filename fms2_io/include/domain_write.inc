@@ -1280,6 +1280,7 @@ subroutine domain_write_5d(fileobj, variable_name, vdata, unlim_dim_level, &
   endif
 end subroutine domain_write_5d
 
+!> @brief Write 2D data using NetCDF MPI
 subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -1325,8 +1326,7 @@ subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
-  e(1:2) = shape(vdata)
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1365,9 +1365,6 @@ subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, c
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
-
   select type(vdata)
     type is (integer(kind=i4_kind))
       err = nf90_put_var(fileobj%ncid, varid, &
@@ -1390,6 +1387,7 @@ subroutine netcdf_mpi_write_2d(fileobj, variable_name, vdata, unlim_dim_level, c
   call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
 end subroutine netcdf_mpi_write_2d
 
+!> @brief Write 3D data using NetCDF MPI
 subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -1436,8 +1434,7 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
-  e(1:3) = shape(vdata)
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1505,9 +1502,6 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
-
   select type(vdata)
     type is (integer(kind=i4_kind))
       err = nf90_put_var(fileobj%ncid, varid, &
@@ -1530,6 +1524,7 @@ subroutine netcdf_mpi_write_3d(fileobj, variable_name, vdata, unlim_dim_level, c
   call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
 end subroutine netcdf_mpi_write_3d
 
+!> @brief Write 4D data using NetCDF MPI
 subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -1577,8 +1572,7 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
-  e(1:4) = shape(vdata)
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1660,9 +1654,6 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
-
   select type(vdata)
     type is (integer(kind=i4_kind))
       err = nf90_put_var(fileobj%ncid, varid, &
@@ -1685,6 +1676,7 @@ subroutine netcdf_mpi_write_4d(fileobj, variable_name, vdata, unlim_dim_level, c
   call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
 end subroutine netcdf_mpi_write_4d
 
+!> @brief Write 5D data using NetCDF MPI
 subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, corner, edge_lengths)
   type(FmsNetcdfDomainFile_t), intent(in) :: fileobj !< File object.
   character(len=*), intent(in) :: variable_name !< Variable name.
@@ -1733,8 +1725,7 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
                       buffer_includes_halos, msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   c = 1
-  e = 1
-  e(1:5) = shape(vdata)
+  e = [shape(vdata), 1]
 
   c(xdim_index) = isc
   c(ydim_index) = jsc
@@ -1829,9 +1820,6 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   varid = get_variable_id(fileobj%ncid, trim(variable_name), &
     msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
-
-  err= nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-  call check_netcdf_code(err, "Failed to set the variable '"//trim(variable_name)//"' to collective-write mode")
 
   select type(vdata)
     type is (integer(kind=i4_kind))

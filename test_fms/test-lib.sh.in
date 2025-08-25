@@ -26,8 +26,8 @@
 # Thank you Junio.
 
 # Useful locations
-top_srcdir='@abs_top_srcdir@'
-top_buildir='@abs_top_builddir@'
+top_srcdir='@abs_top_srcdir@@CMAKE_CURRENT_SOURCE_DIR@'
+top_buildir='@abs_top_builddir@@CMAKE_CURRENT_SOURCE_DIR@'
 
 TEST_NAME="$(basename "$0" .sh)"
 TEST_NUMBER="${TEST_NAME%%-*}"
@@ -146,6 +146,7 @@ test_failure_ () {
 
 test_known_broken_ok_ () {
   test_fixed=$(($test_fixed+1))
+  test_failure=$(($test_failure + 1))
   say_color error "ok $test_count - $@ # TODO known breakage vanished"
 }
 
@@ -319,6 +320,15 @@ test_expect_success () {
 
 test_done () {
   EXIT_OK=t
+  cmake="@USING_CMAKE@"
+  if test $cmake
+  then
+    if test $test_failure != 0
+    then
+      echo "$test_failure tests failed in $TEST_NAME. Exiting.."
+      exit 1
+    fi
+  fi
   say "1..$test_count"
 }
 # creates and enters output dir and deletes previous if present

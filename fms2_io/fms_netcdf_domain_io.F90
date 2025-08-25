@@ -319,6 +319,8 @@ function is_dimension_registered(fileobj, dimension_name) &
 
 end function is_dimension_registered
 
+!> @brief Open a NetCDF-4 file in parallel write mode
+!! @return True on success
 function open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, dont_add_res_to_filename) &
   result(success)
 
@@ -404,15 +406,14 @@ function open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, do
   allocate(fileobj%ydims(max_num_domain_decomposed_dims))
   fileobj%ny = 0
 
-  ! Every rank is in its own pelist.
-  ! This forces all ranks to hit any NetCDF calls,
-  ! which are usually inside `if (fileobj%is_root)` blocks, leading to hangs when using collective netcdf
+  ! Every rank is the root PE of its own pelist. This forces all ranks to hit any NetCDF calls,
+  ! which are usually inside `if (fileobj%is_root)` blocks.
   allocate(fileobj%pelist(1))
   fileobj%pelist(1) = mpp_pe()
   fileobj%io_root = mpp_pe()
-  fileobj%is_root = .True.
+  fileobj%is_root = .true.
 
-  fileobj%use_collective = .false. !TODO Consalidate this
+  fileobj%use_collective = .false. !TODO
   fileobj%is_diskless = .false.
 
   if (fileobj%is_restart) then
@@ -472,10 +473,21 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   logical :: success2
   type(FmsNetcdfDomainFile_t) :: fileobj2
 
+  io_domain => mpp_get_io_domain(domain)
+
   fileobj%use_netcdf_mpi = .false.
-    if (present(use_netcdf_mpi)) fileobj%use_netcdf_mpi = use_netcdf_mpi
+  if (present(use_netcdf_mpi)) fileobj%use_netcdf_mpi = use_netcdf_mpi
 
   if (fileobj%use_netcdf_mpi) then
+#ifdef NO_NC_PARALLEL4
+    call mpp_error(FATAL, "NetCDF was not built with HDF5 parallel I/O features, so parallel writes are not supported. &
+                          &Please turn parallel writes off for the file: " // trim(path))
+#endif
+
+    if (associated(io_domain)) then
+      call mpp_error(NOTE, "NetCDF MPI is enabled: ignoring I/O domain. Only one output file will be produced.")
+    endif
+
     success = open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, dont_add_res_to_filename)
     return
   endif
@@ -493,7 +505,6 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   endif
 
   !Get the path of a "distributed" file.
-  io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
     call error("The domain associated with the file:"//trim(path)//" does not have an io_domain.")
   endif
@@ -584,6 +595,9 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   if (mpp_domain_is_symmetry(fileobj%domain) .and. present(domain_position)) then
     dpos = domain_position
   endif
+
+  ! If using NetCDF MPI, the IO domain is ignored, so use the domain to determine the correct size of each
+  ! domain-decomposed dimension.
   if (fileobj%use_netcdf_mpi) then
     io_domain => fileobj%domain
   else
@@ -640,10 +654,10 @@ subroutine add_domain_attribute(fileobj, variable_name)
   integer, dimension(2) :: io_layout !< Io_layout in the fileobj's domain
 
   !< Don't add the "domain_decomposition" variable attribute if the io_layout is
-  !! 1,1, or if using mpi netcdf for writes to avoid frecheck "failures"
+  !! 1,1, or if using mpi netcdf for writes, to avoid frecheck "failures"
   io_layout = mpp_get_io_domain_layout(fileobj%domain)
   if (io_layout(1)  .eq. 1 .and. io_layout(2) .eq. 1) return
-  if (fileobj%is_file_using_netcdf_mpi()) return
+  if (fileobj%use_netcdf_mpi) return
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(variable_name, fileobj%xdims, fileobj%nx)

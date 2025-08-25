@@ -17,15 +17,6 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 
-!! defaults to ensure compilation
-#ifndef FMS_CP_TEST_KIND_
-#define FMS_CP_TEST_KIND_ r8_kind
-#endif
-
-#ifndef FMS_TEST_BC_TYPE_
-#define FMS_TEST_BC_TYPE_ bc
-#endif
-
 !> @brief  This programs tests the functionality in
 !! 1. coupler_type_register_restarts (CT_register_restarts_2d)
 !! 2. coupler_type_restore_state (CT_restore_state_2d)
@@ -56,7 +47,7 @@ integer, dimension(4)                 :: data_grid        !< Starting/Ending ind
 integer                               :: num_rest_files   !< Number of restart files
 integer                               :: i                !< No description
 type(FmsNetcdfFile_t)                 :: fileobj          !< fms2_io fileobjs
-real(FMS_CP_TEST_KIND_), allocatable                     :: dummy_var(:,:)   !< Dummy variable
+real(TEST_FMS_KIND_), allocatable                     :: dummy_var(:,:)   !< Dummy variable
 
 call fms_init()
 
@@ -83,10 +74,10 @@ if (mpp_pe() .eq. mpp_root_pe()) then
        call register_variable_attribute(fileobj, "laty", "axis", "y", str_len=1)
 
        allocate(dummy_var(nlon, nlat))
-       dummy_var = real(1, kind=FMS_CP_TEST_KIND_)
+       dummy_var = real(1, kind=TEST_FMS_KIND_)
        call write_data(fileobj, "var_1", dummy_var)
 
-       dummy_var = real(2, kind=FMS_CP_TEST_KIND_)
+       dummy_var = real(2, kind=TEST_FMS_KIND_)
        call write_data(fileobj, "var_2", dummy_var)
 
        call close_file(fileobj)

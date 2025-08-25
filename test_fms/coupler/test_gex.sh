@@ -22,12 +22,10 @@
 # Set common test settings.
 . ../test-lib.sh
 
-if [ ! -z $skip_yaml ]
-then
-  SKIP_TESTS='test_gex.2'
-fi
+output_dir
 
-test_cmd="mpirun -n 1 ./test_gex"
+
+test_cmd="mpirun -n 1 ../test_gex"
 
 # Create input.nml and field table (legacy field table)
 prepare_legacy () {
@@ -83,8 +81,10 @@ EOF
 prepare_legacy default_test
 test_expect_success "Test gex with atm_to_lnd tracer (legacy field_table)" "$test_cmd"
 
-prepare_yaml default_test
-test_expect_success "Test gex with atm_to_lnd tracer (YAML field_table)" "$test_cmd"
+if [ -z "$parser_skip" ]; then
+  prepare_yaml default_test
+  test_expect_success "Test gex with atm_to_lnd tracer (YAML field_table)" "$test_cmd"
+fi
 
 prepare_legacy get_n_ex_invalid_model_src
 test_expect_failure "Test gex_get_n_ex with invalid model_src" "$test_cmd"

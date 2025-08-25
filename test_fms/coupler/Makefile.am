@@ -47,14 +47,14 @@ test_atmos_ocean_fluxes_r8_SOURCES = test_atmos_ocean_fluxes.F90
 test_gex_SOURCES = test_gex.F90
 
 # add macro flags for kind and r4/r8 child type
-test_coupler_2d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_2d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_coupler_3d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_3d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_coupler_types_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_types_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_atmos_ocean_fluxes_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_atmos_ocean_fluxes_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_2d_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_2d_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_3d_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_3d_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_types_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_types_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_atmos_ocean_fluxes_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_atmos_ocean_fluxes_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
 test_gex_CPPFLAGS = -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
@@ -64,12 +64,14 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 # Run the test program.
 TESTS = test_coupler.sh test_gex.sh
 
-if ! USING_YAML
-  TESTS_ENVIRONMENT = skip_yaml=yes
+if USING_YAML
+  TESTS_ENVIRONMENT = parser_skip=""
+else
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
 
 # Include these files with the distribution.
 EXTRA_DIST = test_coupler.sh test_gex.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc
+CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc test_coupler-files/* test_gex-files/* test_coupler-files/*/* test_gex-files/*/*

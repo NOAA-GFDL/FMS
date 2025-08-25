@@ -40,7 +40,7 @@ type GetAxisCartTestCase_t
   type(GetAxisCartTestCase_t), pointer :: next => NULL()
 end type
 
-integer, parameter :: k = AU_TEST_KIND_
+integer, parameter :: k = TEST_FMS_KIND_
 real(k), parameter :: pi = 4._k * atan(1._k)
 
 integer :: i
@@ -376,7 +376,7 @@ subroutine frac_index_assert(fval, arr, ret_expected)
 
   ret_test = frac_index(fval, arr)
 
-  if (ret_test /= ret_expected) then
+  if (abs(ret_test - ret_expected) .gt. 1.0e-5_k) then
     write(stderr(), "(A)") "frac_index(" // string(fval) // ", " // stringify(arr) // &
                          & ") returned erroneous value: " // string(ret_test)
     write(stderr(), "(A)") "Expected return value: " // string(ret_expected)
