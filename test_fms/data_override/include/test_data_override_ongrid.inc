@@ -224,7 +224,7 @@ subroutine ENSEMBLE_TEST_
 end subroutine ENSEMBLE_TEST_
 
 subroutine MULTI_FILE_TESTS_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = TEST_FMS_KIND_ !< Real precision of the test
   real(lkind)                              :: expected_result       !< Expected result from data_override
   type(time_type)                          :: Time                  !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                !< Data to be written
