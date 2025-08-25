@@ -24,8 +24,7 @@
 !> @author M.J. Harrison
 !!
 !> Perform I/O and time interpolation for external fields.
-!! Uses udunits library to calculate calendar dates and
-!! convert units.  Allows for reading data decomposed across
+!! Allows for reading data decomposed across
 !! model horizontal grid using optional domain2d argument
 !!
 !! data are defined over data domain for domain2d data
@@ -54,7 +53,7 @@ module time_interp_external2_mod
        mpp_get_global_domain, NULL_DOMAIN2D
   use time_interp_mod, only : time_interp, time_interp_init
   use axis_utils2_mod, only : get_axis_cart, get_axis_modulo, get_axis_modulo_times
-  use fms_mod, only : lowercase, check_nml_error
+  use fms_mod, only : check_nml_error
   use platform_mod, only: r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
   use horiz_interp_mod, only : horiz_interp, horiz_interp_type
   use fms2_io_mod,      only : Valid_t, FmsNetcdfDomainFile_t, open_file, get_unlimited_dimension_name, &
@@ -62,6 +61,8 @@ module time_interp_external2_mod
                                variable_exists, get_valid, get_variable_num_dimensions, read_data, &
                                is_valid, close_file, get_dimension_size, get_variable_dimension_names, &
                                get_variable_size, get_time_calendar, get_variable_missing, get_variable_units
+
+  use constants_mod, only: SECONDS_PER_DAY
 
   implicit none
   private
@@ -71,9 +72,7 @@ module time_interp_external2_mod
 
   integer, parameter, public  :: NO_REGION=0, INSIDE_REGION=1, OUTSIDE_REGION=2
   integer, parameter, private :: modulo_year= 0001
-  integer, parameter, private :: LINEAR_TIME_INTERP = 1 ! not used currently
   integer, parameter, public  :: SUCCESS = 0, ERR_FIELD_NOT_FOUND = 1
-  real(r8_kind),    parameter, private :: DEFAULT_MISSING_VALUE = -1e20_r8_kind
   integer,            private :: max_fields = 100, max_files= 40
   integer, private :: num_fields = 0, num_files=0
   ! denotes time intervals in file (interpreted from metadata)
@@ -214,7 +213,6 @@ module time_interp_external2_mod
 !<DESCRIPTION>
 ! initialize an external field.  Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations.
 ! distributed reads are supported using the optional "domain" flag.
-! Units conversion via the optional "desired_units" flag using udunits_mod.
 !
 ! Return integer id of field for future calls to time_interp_external.
 !
@@ -236,10 +234,6 @@ module time_interp_external2_mod
 !<IN NAME="domain" TYPE="mpp_domains_mod:domain2d">
 ! domain flag (optional)
 !</IN>
-!<IN NAME="desired_units" TYPE="character(len=*)">
-! Target units for data (optional), e.g. convert from deg_K to deg_C.
-! Failure to convert using udunits will result in failure of this module.
-!</IN>
 !<IN NAME="verbose" TYPE="logical">
 ! verbose flag for debugging (optional).
 !</IN>
@@ -253,7 +247,6 @@ module time_interp_external2_mod
 
     !> Initialize an external field.  Buffer "num_io_buffers" (default=2) in memory to reduce memory allocations.
     !! distributed reads are supported using the optional "domain" flag.
-    !! Units conversion via the optional "desired_units" flag using udunits_mod.
     !!
     !> @return integer id of field for future calls to time_interp_external.
     !> @param file filename
@@ -262,18 +255,15 @@ module time_interp_external2_mod
     !> @param threading mpp_io flag for threading (optional). "MPP_SINGLE" means root pe reads
     !! global field and distributes to other PEs. "MPP_MULTI" means all PEs read data
     !> @param domain domain flag (optional)
-    !> @param desired_units Target units for data (optional), e.g. convert from deg_K to deg_C.
-    !! Failure to convert using udunits will result in failure of this module.
     !> @param verbose verbose flag for debugging (optional).
     !> @param [out] axis_names List of axis names (optional).
     !> @param [inout] axis_sizes array of axis lengths ordered X-Y-Z-T (optional).
-    function init_external_field(file,fieldname,domain,desired_units,&
+    function init_external_field(file,fieldname,domain,&
          verbose,axis_names, axis_sizes,override,correct_leap_year_inconsistency,&
          permit_calendar_conversion,use_comp_domain,ierr, nwindows, ignore_axis_atts, ongrid )
 
       character(len=*), intent(in)            :: file,fieldname
       logical, intent(in), optional           :: verbose
-      character(len=*), intent(in), optional  :: desired_units
       type(domain2d), intent(in), optional    :: domain
       integer, intent(inout), optional        :: axis_sizes(4)
       character(len=*), intent(out), optional :: axis_names(4)
@@ -296,7 +286,7 @@ module time_interp_external2_mod
       real(r8_kind), dimension(:), allocatable :: tstamp, tstart, tend, tavg
       character(len=1) :: cart
       character(len=1), dimension(4) :: cart_dir
-      character(len=128) :: units, fld_units
+      character(len=128) :: fld_units
       character(len=128) :: msg, calendar_type, timebeg, timeend
       character(len=128) :: timename, timeunits
       character(len=128), allocatable :: axisname(:)
@@ -324,17 +314,6 @@ module time_interp_external2_mod
       numwindows = 1
       if(present(nwindows)) numwindows = nwindows
 
-      units = 'same'
-      if (PRESENT(desired_units)) then
-          units = desired_units
-          call mpp_error(FATAL,'==> Unit conversion via time_interp_external &
-               &has been temporarily deprecated.  Previous versions of&
-               &this module used udunits_mod to perform unit conversion.&
-               &  Udunits_mod is in the process of being replaced since &
-               &there were portability issues associated with this code.&
-               & Please remove the desired_units argument from calls to &
-               &this routine.')
-      endif
       nfile = 0
       do i=1,num_files
          if(trim(opened_files(i)%filename) == trim(file)) then
@@ -345,7 +324,7 @@ module time_interp_external2_mod
       if(nfile == 0) then
          num_files = num_files + 1
          if(num_files > max_files) then ! not enough space in the file table, reallocate it
-            !--- z1l: For the case of multiple thread, realoc_files will cause memory leak.
+            !--- z1l: For the case of multiple thread, realloc_files will cause memory leak.
             !---      If multiple threads are working on file A. One of the thread finished first and
             !---      begin to work on file B, the realloc_files will cause problem for
             !---      other threads are working on the file A.
@@ -396,8 +375,7 @@ module time_interp_external2_mod
       siz_in = 1
 
       if (PRESENT(domain)) then
-         call mpp_get_compute_domain(domain,iscomp,iecomp,jscomp,jecomp)
-         nx = iecomp-iscomp+1; ny = jecomp-jscomp+1
+         call mpp_get_compute_domain(domain,xbegin=iscomp,xend=iecomp,ybegin=jscomp,yend=jecomp,xsize=nx,ysize=ny)
          call mpp_get_data_domain(domain,isdata,iedata,jsdata,jedata,dxsize,dxsize_max,dysize,dysize_max)
          call mpp_get_global_domain(domain,isglobal,ieglobal,jsglobal,jeglobal,gxsize,gxsize_max,gysize,gysize_max)
          ongrid_local = .false.
@@ -570,12 +548,7 @@ module time_interp_external2_mod
                loaded_fields(num_fields)%mask(isdata:iedata,jsdata:jedata,siz(3),nbuf) )
       loaded_fields(num_fields)%mask = .false.
       loaded_fields(num_fields)%domain_data = 0.0_r8_kind
-         slope=1.0_r8_kind;intercept=0.0_r8_kind
-!             if (units /= 'same') call convert_units(trim(field(num_fields)%units),trim(units),slope,intercept)
-!             if (verb.and.units /= 'same') then
-!                 write(outunit,*) 'attempting to convert data to units = ',trim(units)
-!                 write(outunit,'(a,f8.3,a,f8.3)') 'factor = ',slope,' offset= ',intercept
-!             endif
+      slope=1.0_r8_kind;intercept=0.0_r8_kind
       loaded_fields(num_fields)%slope = slope
       loaded_fields(num_fields)%intercept = intercept
       allocate(loaded_fields(num_fields)%ibuf(nbuf))
@@ -641,7 +614,7 @@ module time_interp_external2_mod
                                                 - loaded_fields(num_fields)%start_time(j)
             if (loaded_fields(num_fields)%period(j) > set_time(0,0)) then
                call get_time(loaded_fields(num_fields)%period(j), sec, day)
-               sec = sec/2+mod(day,2)*43200
+               sec = sec/2+mod(day,2)*int(SECONDS_PER_DAY)/2
                day = day/2
                loaded_fields(num_fields)%time(j) = loaded_fields(num_fields)%start_time(j)+&
                     set_time(sec,day)
@@ -649,10 +622,10 @@ module time_interp_external2_mod
                if (j > 1 .and. j < ntime) then
                   tdiff = loaded_fields(num_fields)%time(j+1) -  loaded_fields(num_fields)%time(j-1)
                   call get_time(tdiff, sec, day)
-                  sec = sec/2+mod(day,2)*43200
+                  sec = sec/2+mod(day,2)*int(SECONDS_PER_DAY)/2
                   day = day/2
                   loaded_fields(num_fields)%period(j) = set_time(sec,day)
-                  sec = sec/2+mod(day,2)*43200
+                  sec = sec/2+mod(day,2)*int(SECONDS_PER_DAY)/2
                   day = day/2
                   loaded_fields(num_fields)%start_time(j) = loaded_fields(num_fields)%time(j) - set_time(sec,day)
                   loaded_fields(num_fields)%end_time(j) = loaded_fields(num_fields)%time(j) + set_time(sec,day)
@@ -660,7 +633,7 @@ module time_interp_external2_mod
                   tdiff = loaded_fields(num_fields)%time(2) -  loaded_fields(num_fields)%time(1)
                   call get_time(tdiff, sec, day)
                   loaded_fields(num_fields)%period(j) = set_time(sec,day)
-                  sec = sec/2+mod(day,2)*43200
+                  sec = sec/2+mod(day,2)*int(SECONDS_PER_DAY)/2
                   day = day/2
                   loaded_fields(num_fields)%start_time(j) = loaded_fields(num_fields)%time(j) - set_time(sec,day)
                   loaded_fields(num_fields)%end_time(j) = loaded_fields(num_fields)%time(j) + set_time(sec,day)
@@ -668,7 +641,7 @@ module time_interp_external2_mod
                   tdiff = loaded_fields(num_fields)%time(ntime) -  loaded_fields(num_fields)%time(ntime-1)
                   call get_time(tdiff, sec, day)
                   loaded_fields(num_fields)%period(j) = set_time(sec,day)
-                  sec = sec/2+mod(day,2)*43200
+                  sec = sec/2+mod(day,2)*int(SECONDS_PER_DAY)/2
                   day = day/2
                   loaded_fields(num_fields)%start_time(j) = loaded_fields(num_fields)%time(j) - set_time(sec,day)
                   loaded_fields(num_fields)%end_time(j) = loaded_fields(num_fields)%time(j) + set_time(sec,day)
@@ -896,7 +869,7 @@ subroutine load_record_0d(field, rec)
   if(ib>0) then
      return
   else
-     ! calculate current buffer number in round-robin fasion
+     ! calculate current buffer number in round-robin fashion
      field%nbuf = field%nbuf + 1
      if(field%nbuf > size(field%domain_data,4).or.field%nbuf <= 0) field%nbuf = 1
      ib = field%nbuf
