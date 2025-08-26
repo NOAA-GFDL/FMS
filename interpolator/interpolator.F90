@@ -171,11 +171,6 @@ interface interpolator_init
    module procedure interpolator_init_r8
 end interface interpolator_init
 
-interface fms2io_interpolator_init
-   module procedure fms2io_interpolator_init_r4
-   module procedure fms2io_interpolator_init_r8
-end interface fms2io_interpolator_init
-
 interface get_axis_latlon_data
    module procedure get_axis_latlon_data_r4
    module procedure get_axis_latlon_data_r8

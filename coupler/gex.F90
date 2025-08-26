@@ -104,11 +104,12 @@ use tracer_manager_mod,   only: NO_TRACER
 use field_manager_mod,    only: MODEL_LAND, MODEL_ATMOS, MODEL_OCEAN, NUM_MODELS
 use field_manager_mod,    only: fm_list_iter_type, fm_dump_list, fm_field_name_len, &
                                 fm_type_name_len, fm_get_length,fm_loop_over_list, fm_init_loop, &
-                                fm_string_len, fm_get_current_list, fm_path_name_len, fm_change_list, &
+                                fm_string_len, fm_get_current_list, fm_change_list, &
                                 field_manager_init
 use fm_util_mod,          only: fm_util_get_real, fm_util_get_logical, fm_util_get_string
 use mpp_mod,              only: mpp_root_pe, mpp_pe
 use fms_string_utils_mod, only: string
+use platform_mod,         only: FMS_PATH_LEN
 
 implicit none ; private
 
@@ -192,7 +193,7 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
   type(fm_list_iter_type)      :: iter ! iterator over the list of tracers
   character(fm_field_name_len) :: name = '' ! name of the tracer
   character(fm_type_name_len)  :: ftype ! type of the field table entry (not used)
-  character(fm_path_name_len)  :: listname  ! name of the field manager list for each tracer
+  character(FMS_PATH_LEN)  :: listname  ! name of the field manager list for each tracer
 
   integer :: n
 

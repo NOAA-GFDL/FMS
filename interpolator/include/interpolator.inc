@@ -67,6 +67,42 @@ logical,          intent(out), optional :: single_year_file
 !  to the interpolator routine.
 !  clim_units :: A list of the units for the components listed in data_names.
 !
+
+character(len=FMS_FILE_LEN)             :: src_file
+!++lwh
+real(FMS_INTP_KIND_)         :: dlat, dlon
+!--lwh
+type(time_type)              :: base_time
+integer                      :: fileday, filemon, fileyr, filehr, filemin,filesec, m,m1
+character(len= 20)           :: fileunits
+character(len=128)           :: var_dimname(6)
+character(len=128), allocatable :: var_names(:)
+integer,            allocatable :: var_ndims(:)
+integer   :: j, i
+logical :: non_monthly
+character(len=24) :: file_calendar
+character(len=256) :: error_mesg
+integer :: model_calendar
+integer :: yr, mo, dy, hr, mn, sc
+integer :: n
+type(time_type) :: Julian_time, Noleap_time
+real(r8_kind), allocatable :: time_in(:)
+real(FMS_INTP_KIND_), allocatable, save :: agrid_mod(:,:,:)
+integer :: nx, ny
+type(FmsNetcdfFile_t) :: fileobj
+
+integer, parameter :: lkind=FMS_INTP_KIND_
+real(FMS_INTP_KIND_), parameter :: lPI=real(PI,FMS_INTP_KIND_)
+
+!> variables used to set time
+logical :: yearly !< flags to indicate if time data is in units of months or years
+integer :: num_years !< number of years
+integer :: base_year, base_month, base_day, base_hour, base_minute, base_second
+integer :: nn !< counter
+logical :: noleap_file_calendar !< is the file calendar noleap or julian
+real(r8_kind) :: num_days, frac_year !< variables for yearly=.true.
+type(time_type) :: n_time !< temporary time
+
 integer :: io, ierr
 
 if (.not. module_is_initialized) then
@@ -104,62 +140,6 @@ if (use_mpp_io) then
 endif
 
 clim_type%FMS_INTP_TYPE_%is_allocated = .true.
-
-call fms2io_interpolator_init(clim_type, file_name, lonb_mod, latb_mod, &
-                              data_names, data_out_of_bounds,           &
-                              vert_interp, clim_units, single_year_file)
-
-end subroutine INTERPOLATOR_INIT_
-
-subroutine FMS2IO_INTERPOLATOR_INIT_(clim_type, file_name, lonb_mod, latb_mod, &
-                              data_names, data_out_of_bounds,           &
-                              vert_interp, clim_units, single_year_file)
-
-type(interpolate_type), intent(inout)   :: clim_type
-character(len=*), intent(in)            :: file_name
-real(FMS_INTP_KIND_) , intent(in)       :: lonb_mod(:,:), latb_mod(:,:)
-character(len=*), intent(in) , optional :: data_names(:)
-!++lwh
-integer         , intent(in)            :: data_out_of_bounds(:)
-integer         , intent(in), optional  :: vert_interp(:)
-!--lwh
-character(len=*), intent(out), optional :: clim_units(:)
-logical,          intent(out), optional :: single_year_file
-
-character(len=FMS_FILE_LEN)             :: src_file
-!++lwh
-real(FMS_INTP_KIND_)         :: dlat, dlon
-!--lwh
-type(time_type)              :: base_time
-integer                      :: fileday, filemon, fileyr, filehr, filemin,filesec, m,m1
-character(len= 20)           :: fileunits
-character(len=128)           :: var_dimname(6)
-character(len=128), allocatable :: var_names(:)
-integer,            allocatable :: var_ndims(:)
-integer   :: j, i
-logical :: non_monthly
-character(len=24) :: file_calendar
-character(len=256) :: error_mesg
-integer :: model_calendar
-integer :: yr, mo, dy, hr, mn, sc
-integer :: n
-type(time_type) :: Julian_time, Noleap_time
-real(r8_kind), allocatable :: time_in(:)
-real(FMS_INTP_KIND_), allocatable, save :: agrid_mod(:,:,:)
-integer :: nx, ny
-type(FmsNetcdfFile_t) :: fileobj
-
-integer, parameter :: lkind=FMS_INTP_KIND_
-real(FMS_INTP_KIND_), parameter :: lPI=real(PI,FMS_INTP_KIND_)
-
-!> variables used to set time
-logical :: yearly !< flags to indicate if time data is in units of months or years
-integer :: num_years !< number of years
-integer :: base_year, base_month, base_day, base_hour, base_minute, base_second
-integer :: nn !< counter
-logical :: noleap_file_calendar !< is the file calendar noleap or julian
-real(r8_kind) :: num_days, frac_year !< variables for yearly=.true.
-type(time_type) :: n_time !< temporary time
 
 clim_type%separate_time_vary_calc = .false.
 
@@ -843,7 +823,7 @@ if (present (single_year_file)) then
   single_year_file = clim_type%climatological_year
 endif
 
-end subroutine FMS2IO_INTERPOLATOR_INIT_
+end subroutine INTERPOLATOR_INIT_
 
 subroutine GET_AXIS_LATLON_DATA_(fileobj, name, latlon_data)
    type(FmsNetcdfFile_t), intent(in) :: fileobj

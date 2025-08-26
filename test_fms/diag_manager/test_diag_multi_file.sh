@@ -22,7 +22,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-if [ -z "${skipflag}" ]; then
+if [ -z "${parser_skip}" ]; then
 # create and enter directory for in/output files
 output_dir
 
@@ -51,7 +51,7 @@ rm -f *.nc
 my_test_count=1
 printf "&diag_manager_nml \n use_modern_diag=.true. \n/" | cat > input.nml
 test_expect_success "Running diag_manager (test $my_test_count)" '
-  mpirun -n 1 ../test_multi_file
+  mpirun -n 1 ../test_diag_multi_file
 '
 
 ###########################################################################
@@ -86,7 +86,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 test_expect_success "Running diag_manager (test $my_test_count)" '
-  mpirun -n 1 ../test_multi_file
+  mpirun -n 1 ../test_diag_multi_file
 '
 
 ###########################################################################
@@ -119,7 +119,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 test_expect_success "Running diag_manager (test $my_test_count)" '
-  mpirun -n 1 ../test_multi_file
+  mpirun -n 1 ../test_diag_multi_file
 '
 
 ###########################################################################
@@ -154,7 +154,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 test_expect_success "Running diag_manager (test $my_test_count)" '
-  mpirun -n 1 ../test_multi_file
+  mpirun -n 1 ../test_diag_multi_file
 '
 fi
 test_done

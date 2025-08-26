@@ -6,6 +6,41 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2025.03] - 2025-06-24
+
+### Known Issues
+- INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- LICENSE: added notice about the change to Apache license. (#1685)
+- DIAG_MANAGER: added standard name to diag manifest yaml (#1692)
+- FMS2_IO: added netcdf chunksizes argument to register_field routines (#1696) 
+- DIAG_MANAGER: added more robust diag manager tests for when outputting data at every time step (#1688)
+- FM2_IO: added a test for collective netcdf mpi io (#1647)
+
+### Changed
+- DOCS: style guide update (#1642)
+- DOCS: updates to contributing guide to reflect modern FMS practices (#1708)
+- DOCS: fixed typos throughout the code (#1703)
+- DATA_OVERRIDE: simplify argument lists of subroutines in get_grid_version_mod (#1514)
+
+### Fixed
+- DIAG_MANAGER: fixed the time variable in instantaneous outputs from diag_manager in both  openmp and non-openmp cases (#1690)
+- DIAG_MANAGER: fixed number of time levels in diag manifest yaml for subregional files. (#1698)
+- LIBFMS: fixed missed aliases in libFMS file (#1303)
+- DIAG_MANAGER: fixed new file and file duration in MODERN_DIAG_MANAGER (#1705)
+
+### Removed
+- FMS_IO/MPP_IO: removed fms_io/mpp_io modules (#1669)
+- AMIP_INTERP: removed the sst_anom and sst_ncep varaibles (#1695)
+
+### Tag Commit Hashes
+- 2025.03-beta1  96e97c0e271167dd42700b5ed28fb1fe85d7ecce
+- 2025.03-alpha1 44f182dc459c6a60d3b3f4257cf379c8bd71e797
+
 ## [2025.02] - 2025-04-28
 
 ### Known Issues
