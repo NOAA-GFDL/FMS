@@ -24,7 +24,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-if [ -z "${skipflag}" ] && [ -z "${parallel_skip}" ]; then
+if [ -z "${parser_skip}" ] && [ -z "${parallel_skip}" ]; then
 # create and enter directory for in/output files
 output_dir
 

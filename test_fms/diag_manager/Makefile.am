@@ -94,10 +94,23 @@ EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_
              test_zbounds_limits.sh
 
 if USING_YAML
-  TESTS_ENVIRONMENT = parser_skip=""
+  parser_skip=""
 else
-  TESTS_ENVIRONMENT = parser_skip=skip
+  parser_skip="skip"
 endif
 
+if SKIP_NCDUMP_CHECKS
+  ncdump_skip="skip"
+else
+  ncdump_skip=""
+endif
+
+if SKIP_PARALLEL_TEST
+  parallel_skip="skip"
+else
+  parallel_skip=""
+endif
+
+TESTS_ENVIRONMENT = ncdump_skip=${ncdump_skip} parallel_skip=${parallel_skip} parser_skip={parser_skip}
 CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 
