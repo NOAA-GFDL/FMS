@@ -111,6 +111,6 @@ else
   parallel_skip=""
 endif
 
-TESTS_ENVIRONMENT = ncdump_skip=${ncdump_skip} parallel_skip=${parallel_skip} parser_skip={parser_skip}
+TESTS_ENVIRONMENT = ncdump_skip=${ncdump_skip} parallel_skip=${parallel_skip} parser_skip=${parser_skip}
 CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 

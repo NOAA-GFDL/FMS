@@ -203,7 +203,7 @@ function get_domain_decomposed_dimension_index(fileobj, variable_name, &
   integer :: i
 
   index_ = no_domain_decomposed_dimension
-  if (fileobj%is_root .or. fileobj%use_netcdf_mpi) then
+  if (fileobj%is_root) then
     ndims = get_variable_num_dimensions(fileobj, variable_name, broadcast=.false.)
     allocate(dim_names(ndims))
     dim_names(:) = ""
