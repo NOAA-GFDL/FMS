@@ -56,12 +56,21 @@ module horiz_interp_bicubic_mod
 
    private
 
-   public  :: horiz_interp_bicubic, horiz_interp_bicubic_get_weights, horiz_interp_bicubic_del, fill_xy
-   public  :: horiz_interp_bicubic_init
+   public :: horiz_interp_bicubic, horiz_interp_bicubic_get_weights, horiz_interp_bicubic_del, fill_xy
+   public :: horiz_interp_bicubic_init
+
+   ! legacy name
+   public :: horiz_interp_bicubic_new
 
   !> Creates a get_weights @ref horiz_interp_type for bicubic interpolation.
   !! Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
+  !! Horiz_interp_bicubic_get_weights and horiz_interp_bicubic_new are identical.
+  !! Horiz_interp_bicubic_get_weights is the more descriptively named generic interface that
+  !! replaces horiz_interp_bicubic_new.  However, horiz_interp_bicubic_new cannot
+  !! be removed due to resistance from FMS users (the name change will require changes to
+  !! codes that use horiz_interp_bicubic_mod
+
   !> @ingroup horiz_interp_bicubic_mod
   interface horiz_interp_bicubic_get_weights
     module procedure horiz_interp_bicubic_get_weights_1d_r8
@@ -69,6 +78,14 @@ module horiz_interp_bicubic_mod
     module procedure horiz_interp_bicubic_get_weights_1d_r4
     module procedure horiz_interp_bicubic_get_weights_1d_s_r4
   end interface
+
+  interface horiz_interp_bicubic_new
+    module procedure horiz_interp_bicubic_get_weights_1d_r8
+    module procedure horiz_interp_bicubic_get_weights_1d_s_r8
+    module procedure horiz_interp_bicubic_get_weights_1d_r4
+    module procedure horiz_interp_bicubic_get_weights_1d_s_r4
+  end interface horiz_interp_bicubic_new
+
 
   !> @brief Perform bicubic horizontal interpolation
   interface horiz_interp_bicubic

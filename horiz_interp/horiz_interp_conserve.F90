@@ -88,6 +88,12 @@ module horiz_interp_conserve_mod
   !!      interpolations. To reinitialize this variable for a different grid-to-grid
   !!      interpolation you must first use the "horiz_interp_del" interface.
   !!
+
+  !! Horiz_interpconserve_get_weights and horiz_interp_conserve_new are identical.
+  !! Horiz_interp_conserve_get_weights is the more descriptively named generic interface that
+  !! replaces horiz_interp_conserve_new.  However, horiz_interp_conserve_new cannot
+  !! be removed due to resistance from FMS users (the name change will require changes to
+  !! codes that use horiz_interp_conserve_mod
   !> @ingroup horiz_interp_conserve_mod
   interface horiz_interp_conserve_get_weights
      module procedure horiz_interp_conserve_get_weights_1dx1d_r4
@@ -99,6 +105,18 @@ module horiz_interp_conserve_mod
      module procedure horiz_interp_conserve_get_weights_2dx1d_r8
      module procedure horiz_interp_conserve_get_weights_2dx2d_r8
   end interface
+
+  interface horiz_interp_conserve_new
+     module procedure horiz_interp_conserve_get_weights_1dx1d_r4
+     module procedure horiz_interp_conserve_get_weights_1dx2d_r4
+     module procedure horiz_interp_conserve_get_weights_2dx1d_r4
+     module procedure horiz_interp_conserve_get_weights_2dx2d_r4
+     module procedure horiz_interp_conserve_get_weights_1dx1d_r8
+     module procedure horiz_interp_conserve_get_weights_1dx2d_r8
+     module procedure horiz_interp_conserve_get_weights_2dx1d_r8
+     module procedure horiz_interp_conserve_get_weights_2dx2d_r8
+   end interface horiz_interp_conserve_new
+
 
   interface horiz_interp_conserve
     module procedure horiz_interp_conserve_r4
@@ -132,6 +150,9 @@ module horiz_interp_conserve_mod
   !> @{
   public :: horiz_interp_conserve_init
   public :: horiz_interp_conserve_get_weights, horiz_interp_conserve, horiz_interp_conserve_del
+
+  ! legacy name
+  public :: horiz_interp_conserve_new
 
   integer :: pe, root_pe
   !-----------------------------------------------------------------------

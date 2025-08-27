@@ -403,7 +403,12 @@ module fms
   use horiz_interp_mod, only: fms_horiz_interp => horiz_interp, &
                               fms_horiz_interp_get_weights => horiz_interp_get_weights, &
                               fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
-                              fms_horiz_interp_end => horiz_interp_end
+                              fms_horiz_interp_end => horiz_interp_end, &
+                              fms_horiz_interp_new => horiz_interp_new
+  !! The better-named horiz_interp_get_weights was created to replace the ambiguously named horiz_interp_new
+  !! The two public interfaces are identical. However, horiz_interp_new cannot be removed due to resistance
+  !! from FMS users (the name changes will require undesired changes to external codes that use FMS)
+
   use horiz_interp_type_mod, only: FmsHorizInterp_type => horiz_interp_type, &
                               assignment(=), fms_horiz_interp_type_stats => stats
   !! used via horiz_interp

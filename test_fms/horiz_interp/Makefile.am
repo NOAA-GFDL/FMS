@@ -29,15 +29,23 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_horiz_interp_r4 test_horiz_interp_r8 test_create_xgrid_order2_r8
+check_PROGRAMS = test_horiz_interp_r4 \
+                 test_horiz_interp_r8 \
+	                test_horiz_interp_legacy_names_r4 \
+                 test_horiz_interp_legacy_names_r8 \
+                 test_create_xgrid_order2_r8
 
 # These are the sources for the tests.
 test_horiz_interp_r4_SOURCES = test_horiz_interp.F90
 test_horiz_interp_r8_SOURCES = test_horiz_interp.F90
+test_horiz_interp_legacy_names_r4_SOURCES = test_horiz_interp_legacy_names.F90
+test_horiz_interp_legacy_names_r8_SOURCES = test_horiz_interp_legacy_names.F90
 test_create_xgrid_order2_r8_SOURCES = test_create_xgrid_order2.F90
 
 test_horiz_interp_r4_CPPFLAGS=-DHI_TEST_KIND_=4 -I$(MODDIR)
 test_horiz_interp_r8_CPPFLAGS=-DHI_TEST_KIND_=8 -I$(MODDIR)
+test_horiz_interp_legacy_names_r4_CPPFLAGS=-DHI_TEST_KIND_=4 -I$(MODDIR)
+test_horiz_interp_legacy_names_r8_CPPFLAGS=-DHI_TEST_KIND_=8 -I$(MODDIR)
 test_create_xgrid_order2_r8_CPPFLAGS=-DHI_TEST_KIND_=8 -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
@@ -46,10 +54,10 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@"
 
 # Run the test programs.
-TESTS = test_horiz_interp2.sh test_create_xgrid_order2.sh
+TESTS = test_horiz_interp2.sh test_horiz_interp_legacy_names.sh test_create_xgrid_order2.sh
 
 # These files will also be included in the distribution.
-EXTRA_DIST = test_horiz_interp2.sh test_create_xgrid_order2.sh
+EXTRA_DIST = test_horiz_interp2.sh test_horiz_interp_legacy_names.sh test_create_xgrid_order2.sh
 
 # Clean up
 CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl

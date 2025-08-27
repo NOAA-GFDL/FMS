@@ -46,7 +46,17 @@ module horiz_interp_spherical_mod
     module procedure horiz_interp_spherical_r8
   end interface
 
+  !! Horiz_interp_spherical_get_pre_weights and horiz_interp_spherical_new are identical.
+  !! Horiz_interp_spherical_get_pre_weights is the more descriptively named generic interface that
+  !! replaces horiz_interp_spherical_new.  However, horiz_interp_spherical_new cannot
+  !! be removed due to resistance from FMS users (the name change will require changes to
+  !! codes that use horiz_interp_spherical_mod
   interface horiz_interp_spherical_get_pre_weights
+    module procedure horiz_interp_spherical_get_pre_weights_r4
+    module procedure horiz_interp_spherical_get_pre_weights_r8
+  end interface
+
+  interface horiz_interp_spherical_new
     module procedure horiz_interp_spherical_get_pre_weights_r4
     module procedure horiz_interp_spherical_get_pre_weights_r8
   end interface
@@ -58,6 +68,9 @@ module horiz_interp_spherical_mod
 
   public :: horiz_interp_spherical_get_pre_weights, horiz_interp_spherical, horiz_interp_spherical_del
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
+
+  ! legacy name
+  public :: horiz_interp_spherical_new
 
  !> private helper routines
   interface full_search

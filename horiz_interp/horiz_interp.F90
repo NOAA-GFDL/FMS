@@ -66,8 +66,9 @@ use platform_mod,               only: r4_kind, r8_kind
 
 !---- interfaces ----
 
- public   horiz_interp_type, horiz_interp, horiz_interp_get_weights, horiz_interp_del, &
-          horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights
+ public :: horiz_interp_type, horiz_interp, horiz_interp_get_weights, horiz_interp_del, &
+           horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights
+ public :: horiz_interp_new
 
 !> Allocates space and initializes a derived-type variable
 !! that contains pre-computed interpolation indices and weights.
@@ -138,12 +139,34 @@ use platform_mod,               only: r4_kind, r8_kind
     module procedure horiz_interp_get_weights_1d_dst_r8
  end interface
 
+ interface horiz_interp_new
+   ! Source grid is 1d, destination grid is 1d
+   module procedure horiz_interp_get_weights_1d_r4
+   module procedure horiz_interp_get_weights_1d_r8
+   ! Source grid is 1d, destination grid is 2d
+   module procedure horiz_interp_get_weights_1d_src_r4
+   module procedure horiz_interp_get_weights_1d_src_r8
+   ! Source grid is 2d, destination grid is 2d
+   module procedure horiz_interp_get_weights_2d_r4
+   module procedure horiz_interp_get_weights_2d_r8
+   ! Source grid is 2d, destination grid is 1d
+   module procedure horiz_interp_get_weights_1d_dst_r4
+   module procedure horiz_interp_get_weights_1d_dst_r8
+ end interface horiz_interp_new
+
  !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
  !! calculating it
  interface horiz_interp_read_weights
    module procedure horiz_interp_read_weights_r4
    module procedure horiz_interp_read_weights_r8
  end interface horiz_interp_read_weights
+
+ interface horiz_interp_solo_1d
+   module procedure horiz_interp_read_weights_r4
+   module procedure horiz_interp_read_weights_r8
+ end interface horiz_interp_solo_1d
+
+
 
 !> Subroutine for performing the horizontal interpolation between two grids.
 !!

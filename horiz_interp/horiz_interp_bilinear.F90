@@ -45,14 +45,30 @@ module horiz_interp_bilinear_mod
   public :: horiz_interp_bilinear_get_weights, horiz_interp_bilinear, horiz_interp_bilinear_del
   public :: horiz_interp_bilinear_init, horiz_interp_read_weights_bilinear
 
+  ! legacy name
+  public :: horiz_interp_bilinear_new
+
   !> Creates a @ref horiz_interp_type for bilinear interpolation.
+  !! Horiz_interp_bilinear_get_weights and horiz_interp_bilinear_new are identical.
+  !! Horiz_interp_bilinear_get_weights is the more descriptively named generic interface that
+  !! replaces horiz_interp_bilinear_new.  However, horiz_interp_bilinear_new cannot
+  !! be removed due to resistance from FMS users (the name change will require changes to
+  !! codes that use horiz_interp_bilinear_mod
   !> @ingroup horiz_interp_bilinear_mod
   interface horiz_interp_bilinear_get_weights
     module procedure horiz_interp_bilinear_get_weights_1d_r4
     module procedure horiz_interp_bilinear_get_weights_1d_r8
     module procedure horiz_interp_bilinear_get_weights_2d_r4
     module procedure horiz_interp_bilinear_get_weights_2d_r8
-  end interface
+  end interface horiz_interp_bilinear_get_weights
+
+  interface horiz_interp_bilinear_new
+    module procedure horiz_interp_bilinear_get_weights_1d_r4
+    module procedure horiz_interp_bilinear_get_weights_1d_r8
+    module procedure horiz_interp_bilinear_get_weights_2d_r4
+    module procedure horiz_interp_bilinear_get_weights_2d_r8
+  end interface horiz_interp_bilinear_new
+
 
   !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
   !! calculating it
