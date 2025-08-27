@@ -108,7 +108,7 @@ implicit none
   !! test without passing in the type when test_solo is true
   !! The spherical module has a nml option for whether using a full or radially bounded search
   !! for finding the nearest points and distances so this gets run for both
-  subroutine test_horiz_interp_spherica(test_legacy_names)
+  subroutine test_horiz_interp_spherical(test_legacy_names)
 
     logical, intent(in) :: test_legacy_names
 
@@ -997,7 +997,7 @@ implicit none
     ! --- 2dx2d version conservative interpolation
     call mpp_clock_begin(id4)
     if(.not. test_solo) then
-        if(test_legacy_code) then
+        if(test_legacy_names) then
             call horiz_interp_new(interp_conserve, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, &
                                   interp_method = "conservative")
         else
@@ -1212,7 +1212,7 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! test deletion after direct calls
-        if(test_legacy_code) then
+        if(test_legacy_names) then
             call horiz_interp_conserve_new(Interp_new1, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d)
             call horiz_interp_del(Interp_new1)
             call horiz_interp_conserve_new(Interp_new1, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d)
@@ -1418,7 +1418,7 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! 2dx2d
-        if(test_legacy_code) then
+        if(test_legacy_names) then
             call horiz_interp_new(Interp_new1, lon_in_2D, lat_in_2D, &
                                   lon_out_2D, lat_out_2D, interp_method="bilinear")
             call horiz_interp_new(Interp_new2, lon_in_2D, lat_in_2D, &
