@@ -68,6 +68,8 @@ use platform_mod,               only: r4_kind, r8_kind
 
  public :: horiz_interp_type, horiz_interp, horiz_interp_get_weights, horiz_interp_del, &
            horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights
+
+ ! legacy name
  public :: horiz_interp_new
 
 !> Allocates space and initializes a derived-type variable
@@ -124,6 +126,12 @@ use platform_mod,               only: r4_kind, r8_kind
 !!      A derived-type variable containing indices and weights used for subsequent
 !!      interpolations. To reinitialize this variable for a different grid-to-grid
 !!      interpolation you must first use the "horiz_interp_del" interface.
+
+!! Horiz_interp_get_weights and horiz_interp_new are identical.
+!! Horiz_interp_get_weights is the more descriptively named generic interface that
+!! replaces horiz_interp_new.  However, horiz_interp_new cannot
+!! be removed due to resistance from FMS users (the name change will require changes to
+!! codes that use horiz_interp_mod
  interface horiz_interp_get_weights
     ! Source grid is 1d, destination grid is 1d
     module procedure horiz_interp_get_weights_1d_r4
@@ -156,6 +164,11 @@ use platform_mod,               only: r4_kind, r8_kind
 
  !> Subroutines for reading in weight files and using that to fill in the horiz_interp type instead
  !! calculating it
+ !! Horiz_interp_read_weights and horiz_interp_solo_1d are identical.
+ !! Horiz_interp_read_weights is the more descriptively named generic interface that
+ !! replaces horiz_interp_solo_1d.  However, horiz_interp_solo_1d cannot
+ !! be removed due to resistance from FMS users (the name change will require changes to
+ !! codes that use horiz_interp_mod
  interface horiz_interp_read_weights
    module procedure horiz_interp_read_weights_r4
    module procedure horiz_interp_read_weights_r8
