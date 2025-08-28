@@ -72,12 +72,12 @@ TESTS_ENVIRONMENT+= test_input_path="@TEST_INPUT_PATH@"
 
 TESTS = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
         test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh \
-        test_multi_file.sh
+        test_data_override_multi_file.sh
 
 # Include these files with the distribution.
 EXTRA_DIST = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
              test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh \
-             test_multi_file.sh
+             test_data_override_multi_file.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*
