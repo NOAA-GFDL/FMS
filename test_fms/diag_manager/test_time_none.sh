@@ -43,6 +43,12 @@ diag_files:
     reduction: none
     kind: r4
   - module: ocn_mod
+    var_name: var3
+    output_name: this_does_not_matter
+    write_var: False
+    reduction: none
+    kind: r4
+  - module: ocn_mod
     var_name: var1
     output_name: var1_none
     reduction: none
@@ -354,6 +360,9 @@ diag_files:
     varlist:
     - var_name: var0
       output_name: var0_none
+    - var_name: var3
+      output_name: this_does_not_matter
+      write_var: False
     - var_name: var1
       output_name: var1_none
     - var_name: var2
