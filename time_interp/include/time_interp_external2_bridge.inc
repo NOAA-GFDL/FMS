@@ -21,14 +21,13 @@
 !> @{
 
     !> @brief 2D interpolation for @ref time_interp_external_bridge
-    subroutine TIME_INTERP_EXTERNAL_BRIDGE_2D_(index1, index2, time, data_in, interp, verbose,horz_interp, mask_out, &
+    subroutine TIME_INTERP_EXTERNAL_BRIDGE_2D_(index1, index2, time, data_in, verbose,horz_interp, mask_out, &
                is_in, ie_in, js_in, je_in, window_id)
 
       integer, intent(in) :: index1 !< index of first external field
       integer, intent(in) :: index2 !< index of second external field
       type(time_type), intent(in) :: time !< target time for data
       real(FMS_TI_KIND_), dimension(:,:), intent(inout) :: data_in !< global or local data array
-      integer, intent(in), optional :: interp !< hardcoded to linear
       logical, intent(in), optional :: verbose !< flag for debugging
       type(horiz_interp_type),intent(in), optional :: horz_interp !< horizontal interpolation type
       logical, dimension(:,:), intent(out), optional :: mask_out !< set to true where output data is valid
@@ -39,7 +38,7 @@
       logical, dimension(size(data_in,1), size(data_in,2), 1) :: mask3d !< 3d version of mask_out
 
       data_out(:,:,1) = data_in(:,:) ! fill initial values for the portions of array that are not touched by 3d routine
-      call time_interp_external_bridge(index1, index2, time, data_out, interp, verbose, horz_interp, mask3d, &
+      call time_interp_external_bridge(index1, index2, time, data_out, verbose, horz_interp, mask3d, &
                                    is_in=is_in,ie_in=ie_in,js_in=js_in,je_in=je_in,window_id=window_id)
       data_in(:,:) = data_out(:,:,1)
       if (PRESENT(mask_out)) mask_out(:,:) = mask3d(:,:,1)
@@ -51,14 +50,13 @@
     !! Provide data from external file interpolated to current model time.
     !! Data may be local to current processor or global, depending on
     !! "init_external_field" flags.
-    subroutine TIME_INTERP_EXTERNAL_BRIDGE_3D_(index1, index2, time, time_data, interp,verbose,horz_interp, mask_out, &
+    subroutine TIME_INTERP_EXTERNAL_BRIDGE_3D_(index1, index2, time, time_data, verbose,horz_interp, mask_out, &
                                              &  is_in, ie_in, js_in, je_in, window_id)
 
       integer,                    intent(in) :: index1 !< index of first external field
       integer,                    intent(in) :: index2 !< index of second external field
       type(time_type),            intent(in) :: time   !< target time for data
       real(FMS_TI_KIND_), dimension(:,:,:),  intent(inout) :: time_data !< global or local data array
-      integer,                    intent(in), optional :: interp !< hardcoded to linear
       logical,                    intent(in), optional :: verbose !< flag for debugging
       type(horiz_interp_type),    intent(in), optional :: horz_interp !< horizontal interpolation type
       logical, dimension(:,:,:), intent(out), optional :: mask_out !< set to true where output data is valid
@@ -71,7 +69,6 @@
       integer :: dims1(4) !< dimensions XYZT of index1
       integer :: dims2(4) !< dimensions XYZT of index2
       integer :: nx, ny, nz !< size in X,Y,Z of array
-      integer :: interp_method !< hardcoded to linear in time
       integer :: t1, t2 !< temporary to store time index
       integer :: i1, i2 !< temporary to store time index
       integer :: isc, iec, jsc, jec !< start/end arrays in X,Y
@@ -95,8 +92,6 @@
       ny = size(time_data,2)
       nz = size(time_data,3)
 
-      interp_method = LINEAR_TIME_INTERP
-      if (PRESENT(interp)) interp_method = interp
       verb=.false.
       if (PRESENT(verbose)) verb=verbose
       if (debug_this_module) verb = .true.
