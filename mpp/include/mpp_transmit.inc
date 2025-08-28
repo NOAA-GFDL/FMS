@@ -171,7 +171,7 @@
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag=tag, send_request=request )
     end subroutine MPP_SEND_
 
-    subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen, block, tag, request )
+    subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen, block, tag, request, omp_offload )
 !a mpp_transmit with null arguments on the put side
       integer, intent(in) :: from_pe
       MPP_TYPE_, intent(out) :: get_data
@@ -180,6 +180,7 @@
       integer, intent(out), optional :: request
 
       integer, optional, intent(in) :: glen
+      logical, optional, intent(in) :: omp_offload
       integer                       :: get_len
       MPP_TYPE_ :: get_data1D(1)
       MPP_TYPE_ :: dummy(1)
@@ -189,17 +190,18 @@
 
       ptr = LOC(get_data)
       get_len=1; if(PRESENT(glen))get_len=glen
-      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request, omp_offload=omp_offload )
 
     end subroutine MPP_RECV_SCALAR_
 
-    subroutine MPP_SEND_SCALAR_( put_data, to_pe, plen, tag, request)
+    subroutine MPP_SEND_SCALAR_( put_data, to_pe, plen, tag, request, omp_offload)
 !a mpp_transmit with null arguments on the get side
       integer, intent(in) :: to_pe
       MPP_TYPE_, intent(in) :: put_data
       integer, optional, intent(in) :: plen
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: request
+      logical, optional, intent(in) :: omp_offload
       integer                       :: put_len
       MPP_TYPE_ :: put_data1D(1)
       MPP_TYPE_ :: dummy(1)
@@ -207,7 +209,7 @@
       pointer( ptr, put_data1D )
       ptr = LOC(put_data)
       put_len=1; if(PRESENT(plen))put_len=plen
-      call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
+      call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request, omp_offload=omp_offload )
 
     end subroutine MPP_SEND_SCALAR_
 
