@@ -17,7 +17,7 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is an automake file for the test_fms/mosaic directory of the
+# This is an automake file for the test_fms/mosaic2 directory of the
 # FMS package.
 
 # uramirez, Ed Hartnett
