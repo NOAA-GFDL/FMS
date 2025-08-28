@@ -17,6 +17,7 @@ The purpose of this document is to explain the diag_table yaml format.
 - [4. Schema](diag_yaml_format.md#4-schema)
 - [5. Ensemble and Nest Support](diag_yaml_format.md#5-ensemble-and-nest-support)
 - [6. Reducing Diag Table Yaml Length](diag_yaml_format.md#6-reducing-diag-table-yaml-length)
+- [7. Improving Performance at High Resolutions](diag_yaml_format.md#7-improving-performance-at-high-resolutions)
 
 ### 1. Converting from legacy ascii diag_table format
 
@@ -524,4 +525,63 @@ diag_files:
   - *name
   - variable_name: var773
 ```
+### 7. Improving Performance at High Resolutions
+For very high resolutions (e.g., C3072L65), performance can be greatly improved by using NETCDF-4 with collective MPI writes. Tests have shown up to a 70% speedup when writing hourly diagnostic output. This approach also simplifies the workflow, as it does not use the IO domain and does not create distributed files. To enable this feature, set `use_collective_writes: True` for each file. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var4
+```
+Chunking can also have a major impact on performance. You can set chunk sizes for all variables in a file using the `chunksizes` key at the file level. By default, the diag manager will choose chunk sizes equal to the compute domain for domain-decomposed dimensions (e.g., for C3072L65 and a layout of 32,64, the chunksizes would be 96,48). For non-domain-decomposed dimensions, the chunk size is set to the dimension length. For unlimited dimensions, the chunk size is always 1. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var3
+  - var_name: var4
+```
+You can override chunk sizes for individual variables by specifying `chunksizes` at the variable level. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var3
+    chunksizes: 96, 4, 1, 1, 1
+  - var_name: var4
+```
 
+**Things to consider:**
+1.  This option currently only works for files with variables that are domain-decomposed (i.e., each processor has its own section of the data). Support for land's unstructured grid and icebergs will be added in the future; at present, using this option with those grids will result in a FATAL error.
+2.  The domain must be evenly decomposed, meaning each processor has the same amount of data. For example, a C3072L65 grid with a layout of (30, 32) will not work and will result in a FATAL error, since 3072 is not evenly divisible by 30.
+3. The chunksizes must be a comma seperated list of five integers 1 for each dimension. 

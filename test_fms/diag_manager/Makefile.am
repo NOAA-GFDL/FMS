@@ -81,7 +81,7 @@ TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.s
         test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh test_cell_measures.sh \
         test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_output_every_freq.sh \
         test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh test_diag_multi_file.sh \
-        test_diag_attribute_add.sh test_zbounds_limits.sh
+        test_diag_attribute_add.sh test_time_none_netcdf4.sh test_zbounds_limits.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
@@ -90,13 +90,27 @@ EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_
              test_time_sum.sh test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh \
              test_cell_measures.sh test_subregional.sh test_var_masks.sh test_multiple_send_data.sh \
              test_flush_nc_file.sh test_dm_weights.sh test_output_every_freq.sh test_prepend_date.sh \
-             test_ens_runs.sh test_diag_multi_file.sh test_diag_attribute_add.sh test_zbounds_limits.sh
+             test_ens_runs.sh test_diag_multi_file.sh test_diag_attribute_add.sh test_time_none_netcdf4.sh \
+             test_zbounds_limits.sh
 
 if USING_YAML
-  TESTS_ENVIRONMENT = parser_skip=""
+  parser_skip=""
 else
-  TESTS_ENVIRONMENT = parser_skip=skip
+  parser_skip="skip"
 endif
 
+if SKIP_NCDUMP_CHECKS
+  ncdump_skip="skip"
+else
+  ncdump_skip=""
+endif
+
+if SKIP_PARALLEL_TEST
+  parallel_skip="skip"
+else
+  parallel_skip=""
+endif
+
+TESTS_ENVIRONMENT = ncdump_skip=${ncdump_skip} parallel_skip=${parallel_skip} parser_skip=${parser_skip}
 CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 

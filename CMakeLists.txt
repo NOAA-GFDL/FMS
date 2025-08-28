@@ -651,6 +651,7 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/diag_manager/check_time_diurnal.F90
   test_fms/diag_manager/check_time_pow.F90
   test_fms/diag_manager/check_time_rms.F90
+  test_fms/diag_manager/check_time_sum.F90
   test_fms/diag_manager/test_cell_measures.F90
   test_fms/diag_manager/check_subregional.F90
   test_fms/diag_manager/test_var_masks.F90
@@ -661,6 +662,7 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/diag_manager/test_ens_runs.F90
   test_fms/diag_manager/test_diag_attribute_add.F90
   test_fms/diag_manager/check_new_file_freq.F90
+  test_fms/diag_manager/test_zbounds_limits.F90
   test_fms/drifters/test_cloud_interpolator.F90
   test_fms/drifters/test_drifters_io.F90
   test_fms/drifters/test_drifters_input.F90
