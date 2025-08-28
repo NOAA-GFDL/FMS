@@ -32,7 +32,7 @@ integer, parameter :: n0_1d = 2500 !> Initial length of 1D random sample vector
 integer, parameter :: n0_2d = 50 !> Initial dimensions of 2D random sample array
 
 integer, parameter :: seeds(*) = [0, -5, 3] !> Seed constants
-integer, parameter :: k = TEST_RN_KIND_ !> Either r4_kind or r8_kind
+integer, parameter :: k = TEST_FMS_KIND_ !> Either r4_kind or r8_kind
 
 real(k), dimension(n_moments) :: moment_mu !> Expected moment values
 real(k), dimension(n_moments) :: moment_sigma !> Standard deviations of sample moments

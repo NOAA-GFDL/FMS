@@ -51,11 +51,11 @@ program test_diag_integral
   character(9), parameter :: field_nameh='immadeuph' !> made up field name to test
   character(8), parameter :: std_digits   = 'e23.15e3' !> write out precision for r8_kind data
 
-  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy)     !> array to test sum_field_2d
-  real(TEST_DI_KIND_) :: immadeup3(nxy,nxy,nxy) !> array to test sum_field_3d
-  real(TEST_DI_KIND_) :: immadeupw(nxy,nxy,nxy) !> array to test sum_field_wght_3d
-  real(TEST_DI_KIND_) :: weight(nxy,nxy,nxy)    !> weights required to test sum_field_wght_3d
-  real(TEST_DI_KIND_) :: immadeuph(nxy,nxy)     !> array to test sum_field_2d_hemi
+  real(TEST_FMS_KIND_) :: immadeup2(nxy,nxy)     !> array to test sum_field_2d
+  real(TEST_FMS_KIND_) :: immadeup3(nxy,nxy,nxy) !> array to test sum_field_3d
+  real(TEST_FMS_KIND_) :: immadeupw(nxy,nxy,nxy) !> array to test sum_field_wght_3d
+  real(TEST_FMS_KIND_) :: weight(nxy,nxy,nxy)    !> weights required to test sum_field_wght_3d
+  real(TEST_FMS_KIND_) :: immadeuph(nxy,nxy)     !> array to test sum_field_2d_hemi
 
   real(r8_kind)   :: lat(nxyp,nxyp), lon(nxyp,nxyp)
   real(r8_kind)   :: area(nxy,nxy)
@@ -71,7 +71,7 @@ program test_diag_integral
   real(r8_kind) :: field_avgw !> result from sum_field_avgw
   real(r8_kind) :: field_avgh !> result from field_avgh
 
-  integer, parameter :: lkind=TEST_DI_KIND_ !> local version of TEST_DI_KIND_
+  integer, parameter :: lkind=TEST_FMS_KIND_ !> local version of TEST_FMS_KIND_
 
   call fms_init
   call initialize_arrays

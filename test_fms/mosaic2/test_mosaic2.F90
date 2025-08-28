@@ -20,14 +20,11 @@
 !> @brief  This programs tests calls to get_mosaic_ntiles, get_mosaic_ncontacts,
 !! get_mosaic_grid_sizes, get_mosaic_contact.  The subroutines are tested with
 !! made up C1 grids and exchange grids.  See write_files mod for grid details.
-
-#include "write_files.inc" !> including write_files.mod because I don't know how to compile when write_files.mod is
-                           !! in a separate file.
 program test_mosaic
 
 use mosaic2_mod
 use grid2_mod
-use write_files
+use WRITE_FILES_MOD_
 use mpp_mod,       only : mpp_init, mpp_error, FATAL, mpp_pe, mpp_root_pe
 use fms2_io_mod,   only : open_file, close_file, FmsNetcdfFile_t, fms2_io_init, read_data
 use fms_mod,       only : fms_init, fms_end
@@ -168,14 +165,14 @@ subroutine test_calc_mosaic_grid_area
 
   implicit none
 
-  real(TEST_MOS_KIND_) :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny) !< x and y in radians
-  real(TEST_MOS_KIND_) :: area_out(1,1) !< area to be computed
+  real(TEST_FMS_KIND_) :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny) !< x and y in radians
+  real(TEST_FMS_KIND_) :: area_out(1,1) !< area to be computed
 
   !> x_rad and y_rad can be set to be be the entire cell
   !! x_rad = x(1:3:2, 1:3:2) and y_rad = y(1:3:2, 1:3:2)
   !! The answer will then be 4.0*area(1,1)
-  x_rad = real( real(x(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_MOS_KIND_) !< set coordinates
-  y_rad = real( real(y(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_MOS_KIND_) !< set coordinates
+  x_rad = real( real(x(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_FMS_KIND_) !< set coordinates
+  y_rad = real( real(y(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_FMS_KIND_) !< set coordinates
 
   call calc_mosaic_grid_area(x_rad, y_rad, area_out)
   call check_answer(area(1,1), area_out(1,1), 'TEST_CALC_MOSAIC_GRID_AREA')
@@ -188,14 +185,14 @@ subroutine test_get_grid_great_circle_area
 
   implicit none
 
-  real(TEST_MOS_KIND_) :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny) !< x and y in radians
-  real(TEST_MOS_KIND_) :: area_out(1,1) !< area to be computed
+  real(TEST_FMS_KIND_) :: x_rad(c1_nx, c1_ny), y_rad(c1_nx, c1_ny) !< x and y in radians
+  real(TEST_FMS_KIND_) :: area_out(1,1) !< area to be computed
 
   !> x_rad and y_rad can be set to be be the entire cell
   !! x_rad = x(1:3:2, 1:3:2) and y_rad = y(1:3:2, 1:3:2)
   !! The answer will then be 4.0*area(1,1)
-  x_rad = real( real(x(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_MOS_KIND_) !< set coordinates
-  y_rad = real( real(y(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_MOS_KIND_) !< set coordinates
+  x_rad = real( real(x(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_FMS_KIND_) !< set coordinates
+  y_rad = real( real(y(1:2,1:2),r8_kind)*DEG_TO_RAD,TEST_FMS_KIND_) !< set coordinates
   call calc_mosaic_grid_great_circle_area(x_rad, y_rad, area_out)
   call check_answer(area(1,1), area_out(1,1), 'TEST_GET_GRID_GREAT_CIRCLE_AREA')
 
@@ -208,7 +205,7 @@ subroutine test_get_mosaic_xgrid
   implicit none
 
   integer, dimension(ncells) :: i1, j1, i2, j2 !< indices of parent cells
-  real(TEST_MOS_KIND_), dimension(ncells) :: area !< area to be returned
+  real(TEST_FMS_KIND_), dimension(ncells) :: area !< area to be returned
   real(r8_kind) :: garea, get_global_area !< global area
   integer :: i !< counter
 
@@ -243,11 +240,11 @@ subroutine test_is_inside_polygon
 
   integer, parameter :: n=5
   integer :: i
-  real(TEST_MOS_KIND_) :: lat1, lon1, x1, y1, z1, r
-  real(TEST_MOS_KIND_), dimension(n) :: lon2, lat2, x2, y2, z2
+  real(TEST_FMS_KIND_) :: lat1, lon1, x1, y1, z1, r
+  real(TEST_FMS_KIND_), dimension(n) :: lon2, lat2, x2, y2, z2
   logical :: answer, is_inside
 
-  integer, parameter :: lkind=TEST_MOS_KIND_ !< local kind
+  integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind
 
   !> polygon
   x2=0.0_lkind

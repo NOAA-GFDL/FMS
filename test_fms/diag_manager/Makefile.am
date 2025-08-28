@@ -34,8 +34,8 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  check_time_min check_time_max check_time_sum check_time_avg test_diag_diurnal check_time_diurnal \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
  check_var_masks test_multiple_send_data test_diag_out_yaml test_output_every_freq \
- test_dm_weights test_prepend_date test_ens_runs test_multi_file test_diag_attribute_add \
- check_new_file_freq
+ test_dm_weights test_prepend_date test_ens_runs test_diag_multi_file test_diag_attribute_add \
+ check_new_file_freq test_zbounds_limits
 
 # This is the source code for the test.
 test_output_every_freq_SOURCES = test_output_every_freq.F90
@@ -66,10 +66,11 @@ test_var_masks_SOURCES = test_var_masks.F90
 check_var_masks_SOURCES = check_var_masks.F90
 test_multiple_send_data_SOURCES = test_multiple_send_data.F90
 test_prepend_date_SOURCES = test_prepend_date.F90
-test_multi_file_SOURCES = test_multi_file.F90
+test_diag_multi_file_SOURCES = test_diag_multi_file.F90
 test_ens_runs_SOURCES = test_ens_runs.F90
 test_diag_attribute_add_SOURCES = test_diag_attribute_add.F90
 check_new_file_freq_SOURCES = check_new_file_freq.F90
+test_zbounds_limits_SOURCES = test_zbounds_limits.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
@@ -79,8 +80,8 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh test_time_sum.sh \
         test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh test_cell_measures.sh \
         test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_output_every_freq.sh \
-        test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh test_multi_file.sh \
-        test_diag_attribute_add.sh
+        test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh test_diag_multi_file.sh \
+        test_diag_attribute_add.sh test_zbounds_limits.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
@@ -89,15 +90,13 @@ EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_
              test_time_sum.sh test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh \
              test_cell_measures.sh test_subregional.sh test_var_masks.sh test_multiple_send_data.sh \
              test_flush_nc_file.sh test_dm_weights.sh test_output_every_freq.sh test_prepend_date.sh \
-             test_ens_runs.sh test_multi_file.sh test_diag_attribute_add.sh
+             test_ens_runs.sh test_diag_multi_file.sh test_diag_attribute_add.sh test_zbounds_limits.sh
 
 if USING_YAML
-skipflag=""
+  TESTS_ENVIRONMENT = parser_skip=""
 else
-skipflag="skip"
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
-
-TESTS_ENVIRONMENT = skipflag=${skipflag}
 
 CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 

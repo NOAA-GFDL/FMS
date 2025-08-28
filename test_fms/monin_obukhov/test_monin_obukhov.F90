@@ -39,13 +39,8 @@ program test_monin_obukhov
 
   implicit none
 
-#if MO_TEST_KIND_ == 4
-  integer, parameter :: kr = r4_kind
-  integer, parameter :: ki = i4_kind
-#else
-  integer, parameter :: kr = r8_kind
-  integer, parameter :: ki = i8_kind
-#endif
+  integer, parameter :: kr = TEST_FMS_KIND_
+  integer, parameter :: ki = TEST_FMS_KIND_
 
   integer(ki), parameter :: mi = 0_ki !< Mold for transfer() intrinsic
 
@@ -180,7 +175,7 @@ program test_monin_obukhov
       character(:), allocatable :: filename
       integer :: fh
 
-      filename = "OUT.r" // string(MO_TEST_KIND_) // ".nml"
+      filename = "OUT.r" // string(TEST_FMS_KIND_) // ".nml"
       print "(A)", "Writing newly generated answer key to " // filename
 
       n_answers = n_answers + 1

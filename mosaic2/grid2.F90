@@ -159,11 +159,29 @@ end subroutine grid_init
 
 !> @brief Shutdown the grid2 module
 subroutine grid_end
+   if (.not. module_is_initialized) return
    if (grid_spec_exists) then
        if (grid_version == VERSION_OCN_MOSAIC_FILE) call close_component_mosaics
        call close_file(gridfileobj)
    endif
+   module_is_initialized = .FALSE.
 end subroutine grid_end
+
+!> @brief Checks that the grid2 module was initialized propertly
+subroutine init_checks(subroutine_name)
+   character(len=*), intent(in) :: subroutine_name !< Name of the subroutine calling this from
+
+   if (.not. module_is_initialized) then
+    call mpp_error(FATAL, "grid2_mod::"//trim(subroutine_name)//" is being called but grid2 was never initialized. "//&
+                          "Please ensure that grid_init is called before calling "//trim(subroutine_name)//".")
+  endif
+
+  if (.not. grid_spec_exists) then
+    call mpp_error(FATAL, "grid2_mod::"//trim(subroutine_name)//" is being called, but "//trim(grid_file)//&
+                          " does not exist, so grid2 was not initialized properly."//&
+                          " Please ensure that "//trim(grid_file)//" is accessible.")
+  endif
+end subroutine init_checks
 
 !> @brief Determine if we are using the great circle algorithm
 !! @return Logical flag describing if we are using the great circlealgorithm
@@ -200,9 +218,7 @@ subroutine open_mosaic_file(mymosaicfileobj, component)
   character(len=3), intent(in)        :: component !< Component (atm, lnd, etc.)
 
   character(len=FMS_PATH_LEN) :: mosaicfilename
-  if (.not. grid_spec_exists) then
-    call mpp_error(FATAL, 'grid2_mod(open_mosaic_file): grid_spec does not exist')
-  end if
+
   call read_data(gridfileobj,trim(lowercase(component))//'_mosaic_file', mosaicfilename)
   call open_grid_file(mymosaicfileobj, grid_dir//trim(mosaicfilename))
 end subroutine open_mosaic_file
@@ -248,9 +264,6 @@ end function get_grid_version
 
 !> @brief Assign the component mosaic files if grid_spec is Version 3
 subroutine assign_component_mosaics
-    if (.not. grid_spec_exists) then
-      call mpp_error(FATAL, 'grid2_mod(assign_component_mosaics): grid_spec does not exist')
-    end if
     mosaic_fileobj(1) = gridfileobj
     mosaic_fileobj(2) = gridfileobj
     mosaic_fileobj(3) = gridfileobj
@@ -258,9 +271,6 @@ end subroutine assign_component_mosaics
 
 !> @brief Open the component mosaic files for atm, lnd, and ocn
 subroutine open_component_mosaics
-    if (.not. grid_spec_exists) then
-      call mpp_error(FATAL, 'grid2_mod(open_component_mosaics): grid_spec does not exist')
-    end if
     if (variable_exists(gridfileobj, 'atm_mosaic_file')) call open_mosaic_file(mosaic_fileobj(1), 'atm')
     if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call open_mosaic_file(mosaic_fileobj(2), 'ocn')
     if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call open_mosaic_file(mosaic_fileobj(3), 'lnd')
@@ -268,9 +278,6 @@ end subroutine open_component_mosaics
 
 !> @brief Close the component mosaic files for atm, lnd, and ocn
 subroutine close_component_mosaics
-    if (.not. grid_spec_exists) then
-      call mpp_error(FATAL, 'grid2_mod(close_component_mosaics): grid_spec does not exist')
-    end if
     if (variable_exists(gridfileobj, 'atm_mosaic_file')) call close_file(mosaic_fileobj(1))
     if (variable_exists(gridfileobj, 'ocn_mosaic_file')) call close_file(mosaic_fileobj(2))
     if (variable_exists(gridfileobj, 'lnd_mosaic_file')) call close_file(mosaic_fileobj(3))
@@ -296,6 +303,7 @@ subroutine get_grid_ntiles(component,ntiles)
   character(len=*)     :: component !< Component model (atm, lnd, ocn)
   integer, intent(out) :: ntiles !< Number of tiles
 
+  call init_checks("get_grid_ntiles")
   select case (grid_version)
   case(VERSION_GEOLON_T,VERSION_X_T)
      ntiles = 1
@@ -313,13 +321,11 @@ subroutine get_grid_size_for_all_tiles(component,nx,ny)
   integer :: siz(2) ! for the size of external fields
   character(len=MAX_NAME) :: varname1
 
+  call init_checks("get_grid_size")
   varname1 = 'AREA_'//trim(uppercase(component))
 
   select case (grid_version)
   case(VERSION_GEOLON_T,VERSION_X_T)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_size_for_all_tiles): grid_spec does not exist')
-     end if
      call get_variable_size(gridfileobj, varname1, siz)
      nx(1) = siz(1); ny(1)=siz(2)
   case(VERSION_OCN_MOSAIC_FILE, VERSION_GRIDFILES) ! mosaic file
@@ -337,6 +343,7 @@ subroutine get_grid_size_for_one_tile(component,tile,nx,ny)
   integer, allocatable :: nnx(:), nny(:)
   integer :: ntiles
 
+  call init_checks("get_grid_size")
   call get_grid_ntiles(component, ntiles)
   if(tile>0.and.tile<=ntiles) then
      allocate(nnx(ntiles),nny(ntiles))
@@ -369,6 +376,7 @@ subroutine define_cube_mosaic(component, domain, layout, halo, maskmap)
   integer, allocatable :: is1(:),ie1(:),js1(:),je1(:)
   integer, allocatable :: is2(:),ie2(:),js2(:),je2(:)
 
+  call init_checks("define_cube_mosaic")
   call get_grid_ntiles(component,ntiles)
   allocate(nlon(ntiles), nlat(ntiles))
   allocate(global_indices(4,ntiles))

@@ -35,7 +35,7 @@ use constants_mod, only: DEG_TO_RAD
 
 implicit none
 
-integer, parameter                         :: lkind = DO_TEST_KIND_ !< r4_kind or r8_kind
+integer, parameter                         :: lkind = TEST_FMS_KIND_ !< r4_kind or r8_kind
 type(domain2d)                             :: Domain !< 2D domain
 integer                                    :: nlon, nlat !< Number of lat, lon in grid
 real(lkind)                                :: min_lon, max_lon !< Maximum lat and lon

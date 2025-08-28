@@ -47,11 +47,11 @@ contains
 
   integer :: tracer_index, i, j, k
   logical :: success
-  real(TEST_TM_KIND_) :: top_value, bottom_value, surf_value, multiplier
-  real(TEST_TM_KIND_) :: tracer_out1(1,1,1), tracer_out2(npoints,npoints,numlevels)
-  real(TEST_TM_KIND_) :: answer1(1,1,1), answer2(npoints,npoints,numlevels)
+  real(TEST_FMS_KIND_) :: top_value, bottom_value, surf_value, multiplier
+  real(TEST_FMS_KIND_) :: tracer_out1(1,1,1), tracer_out2(npoints,npoints,numlevels)
+  real(TEST_FMS_KIND_) :: answer1(1,1,1), answer2(npoints,npoints,numlevels)
 
-  integer, parameter :: lkind=TEST_TM_KIND_
+  integer, parameter :: lkind=TEST_FMS_KIND_
 
   character(128) :: err_message
 

@@ -45,17 +45,17 @@ implicit none
 integer :: i, j, nfields, num_methods, model
 character(len=fm_string_len) :: field_type, field_name, str, name_field_type, path
 character(len=512) :: method_name, method_control
-real(TEST_FM_KIND_) :: param, param_out
+real(TEST_FMS_KIND_) :: param, param_out
 integer :: flag, index
 logical :: success
 type(method_type), dimension(20) :: methods
 
-real(TEST_FM_KIND_) :: slope_value
-real(TEST_FM_KIND_) :: slope_value_array(2)
-integer, parameter :: lkind=TEST_FM_KIND_
+real(TEST_FMS_KIND_) :: slope_value
+real(TEST_FMS_KIND_) :: slope_value_array(2)
+integer, parameter :: lkind=TEST_FMS_KIND_
 
 integer, parameter :: array_size=4
-real(TEST_FM_KIND_) :: array_values(array_size), array_out(array_size)
+real(TEST_FMS_KIND_) :: array_values(array_size), array_out(array_size)
 
 call mpp_init
 call field_manager_init(nfields)

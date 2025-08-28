@@ -20,7 +20,7 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/mosaic directory.
+# execute tests in the test_fms/mosaic2 directory.
 
 # Ed Hartnett 11/29/19
 
@@ -31,6 +31,10 @@
 touch input.nml
 rm -rf INPUT
 mkdir INPUT
+
+if [ ! $parser_skip ]; then
+  SKIP_TESTS='test_mosaic2.[1-4]'
+fi
 
 # The tests are skipped if FMS is compiled in r4 via ./configure --enable-mixedmode
 # because answers differ when FMS is compiled in r4.
