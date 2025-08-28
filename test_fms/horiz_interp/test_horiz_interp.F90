@@ -36,7 +36,8 @@ use horiz_interp_mod, only : horiz_interp, horiz_interp_type, assignment(=)
 use horiz_interp_type_mod, only: SPHERICAL
 use constants_mod,    only : constants_init, PI
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_get_weights, horiz_interp_bilinear_new
-use horiz_interp_spherical_mod, only: horiz_interp_spherical_wght, horiz_interp_spherical_get_pre_weights, horiz_interp_spherical_new
+use horiz_interp_spherical_mod, only: horiz_interp_spherical_wght
+use horiz_interp_spherical_mod, only: horiz_interp_spherical_get_pre_weights, horiz_interp_spherical_new
 use horiz_interp_bicubic_mod,   only: horiz_interp_bicubic_get_weights, horiz_interp_bicubic_new
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_get_weights, horiz_interp_conserve_new
 use platform_mod
@@ -178,7 +179,8 @@ implicit none
         if(test_legacy_names) then
             call horiz_interp_new(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
         else
-            call horiz_interp_get_weights(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, interp_method="spherical")
+            call horiz_interp_get_weights(interp_t, lon_in_2d, lat_in_2d, lon_out_2d, lon_out_2d, &
+                                          interp_method="spherical")
         end if
         call horiz_interp(interp_t, data_src, data_dst)
         call horiz_interp_spherical_wght(interp_t, wghts, verbose=1)
@@ -274,7 +276,8 @@ implicit none
         if(test_legacy_names) then
             call horiz_interp_new(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
         else
-            call horiz_interp_get_weights(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, interp_method = "bilinear")
+            call horiz_interp_get_weights(interp, lon1D_src, lat1D_src, lon1D_dst, lat1D_dst, &
+                                          interp_method = "bilinear")
         end if
         call horiz_interp(interp, data_src, data_dst)
         interp_copy = interp
@@ -354,7 +357,8 @@ implicit none
         if(test_legacy_names) then
             call horiz_interp_new(interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
         else
-            call horiz_interp_get_weights(interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
+            call horiz_interp_get_weights(interp, lon1D_src, lat1D_src, lon2D_dst, lat2D_dst,&
+                                          interp_method = "bilinear")
         end if
         call horiz_interp(interp, data_src, data_dst)
         interp_copy = interp
@@ -554,7 +558,8 @@ implicit none
         if(test_legacy_names) then
             call horiz_interp_new(interp, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
         else
-            call horiz_interp_get_weights(interp, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst, interp_method = "bilinear")
+            call horiz_interp_get_weights(interp, lon2D_src, lat2D_src, lon2D_dst, lat2D_dst,&
+                                          interp_method = "bilinear")
         end if
         call horiz_interp(interp, data_src, data_dst)
         interp_copy = interp
@@ -746,7 +751,8 @@ implicit none
         if(test_legacy_names) then
             call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d, interp_method="bicubic")
         else
-           call horiz_interp_get_weights(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d, interp_method="bicubic")
+            call horiz_interp_get_weights(interp_t, lon_in_1d, lat_in_1d, lon_out_1d, lat_out_1d,&
+                                          interp_method="bicubic")
         end if
         call horiz_interp(interp_t, data_src, data_dst)
         interp_copy = interp_t
@@ -800,7 +806,8 @@ implicit none
         if(test_legacy_names) then
             call horiz_interp_new(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d, interp_method="bicubic")
         else
-            call horiz_interp_get_weights(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d, interp_method="bicubic")
+            call horiz_interp_get_weights(interp_t, lon_in_1d, lat_in_1d, lon_out_2d, lat_out_2d,&
+                                          interp_method="bicubic")
         end if
         call horiz_interp(interp_t, data_src, data_dst)
         interp_copy = interp_t
@@ -1346,7 +1353,11 @@ implicit none
         call horiz_interp_del(Interp_new2)
         call horiz_interp_del(Interp_cp)
         ! check deletion after direct calls
-        call horiz_interp_spherical_get_pre_weights(Interp_new1, lon_in_2d, lat_in_2d, lon_out_2d, lat_out_2d)
+        if(test_legacy_names) then
+            call horiz_interp_spherical_new(Interp_new1, lon_in_2d, lat_in_2d, lon_out_2d, lat_out_2d)
+        else
+            call horiz_interp_spherical_get_pre_weights(Interp_new1, lon_in_2d, lat_in_2d, lon_out_2d, lat_out_2d)
+        end if
         call horiz_interp_del(Interp_new1)
 
         ! bilinear
