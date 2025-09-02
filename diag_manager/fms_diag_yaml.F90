@@ -392,7 +392,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   integer                                  :: nmods              !< Number of module block in a file
   integer,                     allocatable :: mod_ids(:)         !< Ids for each module block in a file
-  integer,                     allocatable :: nvars_per_file(:)  !< Number of variables in each file
+  integer,                     allocatable :: nvars_per_file(:)  !< Number of variables in each file that are actually
+                                                                 !! being written
   logical,                     allocatable :: has_module_block(:)!< True if each file is using the module block
   character(len=FMS_FILE_LEN), allocatable :: mod_name(:)        !< Buffer to store module name
   character(len=FMS_FILE_LEN)              :: buffer             !< Buffer to stote string variables
@@ -506,9 +507,9 @@ subroutine diag_yaml_object_init(diag_subset_output)
     file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
     file_list%diag_file_indices(file_count) = file_count
 
-    allocate(var_ids(nvars_per_file(i)))
-    allocate(mod_name(nvars_per_file(i)))
     if (has_module_block(i)) then
+      allocate(var_ids(nvars_per_file(i)))
+      allocate(mod_name(nvars_per_file(i)))
       nmods = get_num_blocks(diag_yaml_id, "modules", parent_block_id=diag_file_ids(i))
       allocate(mod_ids(nmods))
       call get_block_ids(diag_yaml_id, "modules", mod_ids, parent_block_id=diag_file_ids(i))
@@ -530,6 +531,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       deallocate(mod_ids)
     else
+      allocate(var_ids(get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))))
+      allocate(mod_name(size(var_ids)))
       call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
       nvars_per_file(i) = get_total_num_vars(diag_yaml_id, diag_file_ids(i))
     endif
@@ -540,7 +543,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
     allow_averages = .not. diag_yaml%diag_files(file_count)%file_freq(1) < 1
     is_instantaneous = .false.
-    nvars_loop: do j = 1, nvars_per_file(i)
+    nvars_loop: do j = 1, size(var_ids)
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
       if (.not. write_var) cycle
