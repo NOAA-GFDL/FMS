@@ -20,6 +20,31 @@
 !> @addtogroup time_interp_external2_mod
 !> @{
 
+    !> @brief 1D interpolation for @ref time_interp_external
+    subroutine TIME_INTERP_EXTERNAL_1D_(index, time, data_in, verbose,horz_interp, mask_out, &
+               is_in, ie_in, window_id)
+
+      integer, intent(in) :: index
+      type(time_type), intent(in) :: time
+      real(FMS_TI_KIND_), dimension(:), intent(inout) :: data_in
+      logical, intent(in), optional :: verbose
+      type(horiz_interp_type),intent(in), optional :: horz_interp
+      logical, dimension(:), intent(out), optional :: mask_out !< set to true where output data is valid
+      integer, intent(in), optional :: is_in, ie_in
+      integer, intent(in), optional :: window_id
+
+      real(FMS_TI_KIND_), dimension(size(data_in,1), 1, 1) :: data_out
+      logical, dimension(size(data_in), 1, 1) :: mask3d
+
+      data_out(:,1,1) = data_in(:) ! fill initial values for the portions of array that are not touched by 3d routine
+      call time_interp_external(index, time, data_out, verbose, horz_interp, mask3d, &
+                                is_in=is_in,ie_in=ie_in,js_in=1,je_in=1,window_id=window_id)
+      data_in(:) = data_out(:,1,1)
+      if (PRESENT(mask_out)) mask_out(:) = mask3d(:,1,1)
+
+    end subroutine TIME_INTERP_EXTERNAL_1D_
+
+
     !> @brief 2D interpolation for @ref time_interp_external
     subroutine TIME_INTERP_EXTERNAL_2D_(index, time, data_in, verbose,horz_interp, mask_out, &
                is_in, ie_in, js_in, je_in, window_id)
@@ -44,7 +69,6 @@
 
       return
     end subroutine TIME_INTERP_EXTERNAL_2D_
-
 
 
     !> 3D interpolation for @ref time_interp_external

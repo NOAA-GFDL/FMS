@@ -22,6 +22,9 @@
 #undef TIME_INTERP_EXTERNAL_0D_
 #define TIME_INTERP_EXTERNAL_0D_ time_interp_external_0d_r4
 
+#undef TIME_INTERP_EXTERNAL_1D_
+#define TIME_INTERP_EXTERNAL_1D_ time_interp_external_1d_r4
+
 #undef TIME_INTERP_EXTERNAL_2D_
 #define TIME_INTERP_EXTERNAL_2D_ time_interp_external_2d_r4
 

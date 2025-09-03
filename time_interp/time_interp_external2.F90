@@ -143,18 +143,22 @@ module time_interp_external2_mod
   !> @ingroup time_interp_external2_mod
   interface time_interp_external
       module procedure time_interp_external_0d_r4
+      module procedure time_interp_external_1d_r4
       module procedure time_interp_external_2d_r4
       module procedure time_interp_external_3d_r4
       module procedure time_interp_external_0d_r8
+      module procedure time_interp_external_1d_r8
       module procedure time_interp_external_2d_r8
       module procedure time_interp_external_3d_r8
   end interface
 
   interface time_interp_external_bridge
      module procedure time_interp_external_bridge_0d_r4
+     module procedure time_interp_external_bridge_1d_r4
      module procedure time_interp_external_bridge_2d_r4
      module procedure time_interp_external_bridge_3d_r4
      module procedure time_interp_external_bridge_0d_r8
+     module procedure time_interp_external_bridge_1d_r8
      module procedure time_interp_external_bridge_2d_r8
      module procedure time_interp_external_bridge_3d_r8
   end interface

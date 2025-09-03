@@ -22,6 +22,9 @@
 #undef TIME_INTERP_EXTERNAL_BRIDGE_0D_
 #define TIME_INTERP_EXTERNAL_BRIDGE_0D_ time_interp_external_bridge_0d_r8
 
+#undef TIME_INTERP_EXTERNAL_BRIDGE_1D_
+#define TIME_INTERP_EXTERNAL_BRIDGE_1D_ time_interp_external_bridge_1d_r8
+
 #undef TIME_INTERP_EXTERNAL_BRIDGE_2D_
 #define TIME_INTERP_EXTERNAL_BRIDGE_2D_ time_interp_external_bridge_2d_r8
 
