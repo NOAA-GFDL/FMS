@@ -33,7 +33,7 @@ use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base
                            index_gridtype, null_gridtype, DIAG_SECONDS, DIAG_MINUTES, DIAG_HOURS, DIAG_DAYS, &
                            DIAG_MONTHS, DIAG_YEARS, time_average, time_rms, time_max, time_min, time_sum, &
                            time_diurnal, time_power, time_none, r8, i8, r4, i4, DIAG_NOT_REGISTERED, &
-                           middle_time, begin_time, end_time, MAX_STR_LEN
+                           middle_time, begin_time, end_time, MAX_STR_LEN, MAX_DIMENSIONS
 use yaml_parser_mod, only: open_and_parse_file, get_value_from_key, get_num_blocks, get_nkeys, &
                            get_block_ids, get_key_value, get_key_ids, get_key_name, missing_file_error_code
 use fms_yaml_output_mod, only: fmsYamlOutKeys_type, fmsYamlOutValues_type, write_yaml_from_struct_3, &
@@ -151,6 +151,8 @@ type diagYamlFiles_type
   character (len=:),    allocatable :: default_var_module    !< The module for all of the variables in the file
                                                              !! This may be overridden if the modules was defined at the
                                                              !! variable level
+  logical                           :: use_collective_writes !< True if using collective writes, default is false
+  integer, dimension(MAX_DIMENSIONS):: default_chunksizes    !< Specified chunksizes to use by default
  contains
 
  !> All getter functions (functions named get_x(), for member field named x)
@@ -170,6 +172,7 @@ type diagYamlFiles_type
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
  procedure, public :: get_filename_time
+ procedure, public :: is_using_collective_writes
  procedure, public :: is_global_meta
  !> Has functions to determine if allocatable variables are true.  If a variable is not an allocatable
  !! then is will always return .true.
@@ -207,6 +210,7 @@ type diagYamlFilesVar_type
                                                        !! 0 if var_reduction is not "diurnalXX"
   integer          , private              :: pow_value !< The power value
                                                        !! 0 if pow_value is not "powXX"
+  integer, dimension(MAX_DIMENSIONS), private :: chunksizes !< Specified chunksize for each axis in the field
   logical          , private              :: var_file_is_subregional !< true if the file this entry
                                                                      !! belongs to is subregional
 
@@ -229,6 +233,7 @@ type diagYamlFilesVar_type
   procedure :: get_var_attributes
   procedure :: get_n_diurnal
   procedure :: get_pow_value
+  procedure :: get_chunksizes
   procedure :: is_var_attributes
 
   procedure :: has_var_fname
@@ -244,6 +249,7 @@ type diagYamlFilesVar_type
   procedure :: has_n_diurnal
   procedure :: has_pow_value
   procedure :: has_standname
+  procedure :: has_chunksizes
   procedure :: add_axis_name
   procedure :: is_file_subregional
   procedure :: add_standname
@@ -708,6 +714,15 @@ subroutine fill_in_diag_files(diag_yaml_id, diag_file_id, yaml_fileobj)
     is_optional=.true.)
   call diag_get_value_from_key(diag_yaml_id, diag_file_id, "module", yaml_fileobj%default_var_module, &
     is_optional=.true.)
+
+  yaml_fileobj%use_collective_writes = .false.
+  call get_value_from_key(diag_yaml_id, diag_file_id, "use_collective_writes", &
+    yaml_fileobj%use_collective_writes, is_optional=.true.)
+
+  yaml_fileobj%default_chunksizes = DIAG_NULL
+  call get_value_from_key(diag_yaml_id, diag_file_id, "chunksizes", &
+    yaml_fileobj%default_chunksizes, is_optional=.true.)
+
 end subroutine
 
 !> @brief Fills in a diagYamlFilesVar_type with the contents of a variable block in
@@ -804,6 +819,12 @@ subroutine fill_in_diag_fields(diag_file_id, yaml_fileobj, var_id, field, allow_
   field%var_zbounds = DIAG_NULL
   call get_value_from_key(diag_file_id, var_id, "zbounds", field%var_zbounds, is_optional=.true.)
   if (field%has_var_zbounds()) MAX_SUBAXES = MAX_SUBAXES + 1
+
+  field%chunksizes = DIAG_NULL
+  call get_value_from_key(diag_file_id, var_id, "chunksizes", field%chunksizes, is_optional=.true.)
+  if (.not. field%has_chunksizes()) then
+    field%chunksizes = yaml_fileobj%default_chunksizes
+  endif
 end subroutine
 
 !> @brief diag_manager wrapper to get_value_from_key to use for allocatable
@@ -1212,6 +1233,16 @@ function is_global_meta(this) &
    res = .true.
 end function
 
+!> \brief Determines whether or not the file is using netcdf collective writes
+!! \return logical indicating whether or not the file is using netcdf collective writes
+pure function is_using_collective_writes(this) &
+  result(res)
+  class (diagYamlFiles_type), intent(in) :: this !< The object being inquiried
+
+  logical :: res
+  res = this%use_collective_writes
+end function
+
 !> @brief Increate the current_new_file_freq_index by 1
 subroutine increase_new_file_freq_index(this)
   class(diagYamlFiles_type), intent(inout) :: this !< The file object
@@ -1325,6 +1356,17 @@ result (res)
   integer :: res !< What is returned
   res = this%pow_value
 end function get_pow_value
+
+!> @brief Inquiry for chunksizes
+!! @return the chunksizes for the fiel
+pure function get_chunksizes(this) &
+result(res)
+  class (diagYamlFilesVar_type), intent(in) :: this !< The object being inquiried
+  integer :: res(MAX_DIMENSIONS) !< What is returned
+
+  res = this%chunksizes
+end function get_chunksizes
+
 !> @brief Inquiry for whether var_attributes is allocated
 !! @return Flag indicating if var_attributes is allocated
 function is_var_attributes(this) &
@@ -1531,6 +1573,13 @@ pure logical function has_standname(this)
   class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
   has_standname = (this%standard_name .ne. "")
 end function has_standname
+
+!> @brief Checks if chunksizes is set for the diag field
+!! @return true if chunksizes is set for the diag field
+pure logical function has_chunksizes(this)
+  class(diagYamlFilesVar_type), intent(in) :: this !< diagYamlvar_type object to inquire
+  has_chunksizes = any(this%chunksizes .ne. DIAG_NULL)
+end function has_chunksizes
 
 !> @brief Checks if diag_file_obj%diag_title is allocated
 !! @return true if diag_file_obj%diag_title is allocated

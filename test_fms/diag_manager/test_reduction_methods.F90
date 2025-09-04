@@ -207,13 +207,13 @@ program test_reduction_methods
     used = send_data(id_var2missing, cdata(:,:,1,1)*0_r8_kind + missing_value, Time)
 
     used = send_data(id_var2c, cdata_corner(:,:,1,1), Time)
-    used = send_data(id_var0, cdata(1,1,1,1), Time)
+    used = send_data(id_var0, get_scalar_data(cdata(1,1,1,1)), Time)
 
     select case(test_case)
     case (test_normal)
       select case (mask_case)
       case (no_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time)
+        used = send_data(id_var1, get_1d_data(cdata(:,1,1,1)), Time)
         used = send_data(id_var2, cdata(:,:,1,1), Time)
         used = send_data(id_var3, cdata(:,:,:,1), Time)
         used = send_data(id_var4, cdata(:,:,:,:), Time)
@@ -382,6 +382,29 @@ program test_reduction_methods
     enddo
 
   end subroutine init_buffer
+
+  !> @brief This is so that all ranks get and pass in the same scalar data
+  function get_scalar_data(data_in) &
+    result(rslt)
+    real(kind=r8_kind), intent(in) :: data_in
+    real(kind=r8_kind) :: rslt
+
+    if (mpp_pe() .eq. mpp_root_pe()) rslt = data_in
+
+    call mpp_broadcast(rslt, mpp_root_pe())
+  end function
+
+  !> @brief This is so that all ranks get and pass in the same 1d data
+  function get_1d_data(data_in) &
+    result (rslt)
+    real(kind=r8_kind), intent(in) :: data_in(:)
+    real(kind=r8_kind), allocatable :: rslt(:)
+
+    allocate(rslt(size(data_in)))
+    if (mpp_pe() .eq. mpp_root_pe()) rslt = data_in
+
+    call mpp_broadcast(rslt, size(rslt), mpp_root_pe())
+  end function get_1d_data
 
   !> @brief Set the buffer based on the time_index
   subroutine set_buffer(buffer, time_index)
