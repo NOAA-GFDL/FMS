@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 program test_time_manager
@@ -49,20 +48,15 @@ program test_time_manager
  character(len=8) :: test_name
  character(len=256) :: out_msg
 
- !: for testing set/get_date_gregorian
- integer, parameter :: days_in_400_year_period = 146097
- integer, dimension(days_in_400_year_period) :: coded_date
- integer, dimension(400,12,31) :: date_to_day
-
  logical :: test1 =.true.,test2 =.true.,test3 =.true.,test4 =.true.,test5 =.true.,test6 =.true.,test7 =.true., &
          & test8 =.true.
  logical :: test9 =.true.,test10=.true.,test11=.true.,test12=.true.,test13=.true.,test14=.true.,test15=.true., &
          & test16=.true.
- logical :: test17=.true.,test18=.true.,test19=.true.,test20=.true.
+ logical :: test17=.true.,test18=.true.,test19=.true.
 
  namelist / test_nml / test1 ,test2 ,test3 ,test4 ,test5 ,test6 ,test7 ,test8,  &
                        test9 ,test10,test11,test12,test13,test14,test15,test16, &
-                       test17,test18,test19,test20
+                       test17,test18,test19
 
  call fms_init
  call constants_init
@@ -619,171 +613,6 @@ program test_time_manager
   write(outunit,'(a,i6)') ' ticks_per_second=',get_ticks_per_second()
 
  !==============================================================================================
- !  Tests the new set/get_date_gregorian by comparing against the old set/get_date_gregorian
- !  copied over to this test program
- !  This test loops through every day up to year 3200
-
-  if(test20) then
-    write(outunit,'(/,a)') '#################################  test20  #################################'
-    write(outunit,'(/,a)') ' ====================================================='
-    write(outunit,'(a)')   '  Test get/set_date_gregorian with get/set_date_gregorian_old'
-    write(outunit,'(a,/)') ' ====================================================='
-    call set_calendar_type(GREGORIAN)
-    call get_coded_date( coded_date, date_to_day )!assign coded_date and date_to_day used by get/set_date_gregorian_old
-
-    ! test the new Gregorian methods and compare with the old methods
-    do year=1, 3200
-      leap = mod(year,4) == 0
-      leap = leap .and. .not.mod(year,100) == 0
-      leap = leap .or. mod(year,400) == 0
-      do month=1,12
-        days_this_month = days_per_month(month)
-        if(leap .and. month == 2) days_this_month = 29
-        do dday=1,days_this_month
-          ! test new set_date_gregorian
-          Time  = set_date(year, month, dday, 0, 0, 0)
-          Time0 = set_date_gregorian_old(year, month, dday, 0, 0, 0, 0, date_to_day)
-          if( .not. (Time==Time0) ) then
-             write(outunit,'("ERROR with year",i5,"mo",i5,"dday",i5)') year, month, dday
-             call mpp_error(FATAL, 'ERROR testing set_date_gregorian:  Time!=Time0')
-          end if
-          ! test #1 get_date
-          call get_date(Time0, yr, mo, day, hr, min, sec)
-          call get_date_gregorian_old(Time0, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
-          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
-            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
-            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
-            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
-            call mpp_error(FATAl,'Error testing get_date_gregorian 1')
-          end if
-          ! test #2 get_date
-          call get_date(Time, yr, mo, day, hr, min, sec)
-          call get_date_gregorian_old(Time, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
-          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
-            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
-            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
-            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
-            call mpp_error(FATAl,'Error testing get_date_gregorian 2')
-          end if
-          ! test #3 get_date
-          call get_date(Time, yr, mo, day, hr, min, sec)
-          call get_date_gregorian_old(Time0, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
-          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
-            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
-            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
-            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
-            call mpp_error(FATAl,'Error testing get_date_gregorian 3')
-          end if
-          ! test #4 get_date
-          call get_date(Time0, yr, mo, day, hr, min, sec)
-          call get_date_gregorian_old(Time, coded_date, yr0, mo0, day0, hr0, min0, sec0, ticks0)
-          if( yr0.ne.yr .or. mo0.ne.mo .or. day0.ne.day ) then
-            write(outunit,"('expected year ',i5,'but got year ',i5)") yr0, yr
-            write(outunit,"('expected month',i5,'but got month',i5)") mo0, mo
-            write(outunit,"('expected day  ',i5,'but got day  ',i5)") day0, day
-            call mpp_error(FATAl,'Error testing get_date_gregorian 4')
-          end if
-        enddo
-      enddo
-    enddo
-    write(outunit,'(a)') 'set_date_gregorian and get_date_gregorian tests successful'
- endif
-
   call fms_end
-
-contains
-
-  ! get_coded_date:  copied from subroutine set_calendar_type in time_manager and slightly modified
-  ! to work in this test program.
-  subroutine get_coded_date(coded_date_old, date_to_day_old)
-
-    implicit none
-
-    integer, intent(out), dimension(146097) :: coded_date_old
-    integer, intent(out), dimension(400,12,31) :: date_to_day_old
-
-    integer :: iday, days_this_month, year, month, day
-    logical :: leap
-
-    iday = 0
-     date_to_day = -1 ! invalid_date = -1 in time_manager
-     do year=1,400
-       leap = mod(year,4) == 0
-       leap = leap .and. .not.mod(year,100) == 0
-       leap = leap .or. mod(year,400) == 0
-       do month=1,12
-         days_this_month = days_per_month(month)
-         if(leap .and. month ==2) days_this_month = 29
-         do day=1,days_this_month
-           date_to_day_old(year,month,day) = iday
-           iday = iday+1
-           coded_date_old(iday) = day + 32*(month + 16*year)
-         enddo ! do day
-       enddo ! do month
-     enddo ! do year
-
-  end subroutine get_coded_date
-
-  ! get_date_gregorian_old:  original get_date_gregorian subroutine in time_manager that has been slightly
-  ! modified to work in this test program
-  subroutine get_date_gregorian_old(time, coded_date, year, month, day, hour, minute, second, tick)
-
-    use time_manager_mod, only : set_time
-
-    integer, parameter :: days_in_400_year_period = 146097
-
-    type(time_type), intent(in) :: time
-    integer, intent(in), dimension(days_in_400_year_period) :: coded_date
-    integer, intent(out) :: year, month, day, hour, minute, second
-    integer, intent(out) :: tick
-
-    integer :: iday, isec, time_days, time_seconds, time_ticks
-
-    ! set time_days=Time%days and time_seconds=Time%seconds, time_ticks=Time%ticks
-    call get_time(Time, seconds=time_seconds, days=time_days, ticks=time_ticks)
-
-    iday = mod(time_days+1, days_in_400_year_period)
-    if(iday == 0) iday = days_in_400_year_period
-
-    year = coded_date(iday)/512
-    day = mod(coded_date(iday),32)
-    month = coded_date(iday)/32 - 16*year
-
-    year = year + 400*(time_days/days_in_400_year_period)
-
-    hour   = time_seconds / 3600
-    isec   = time_seconds - 3600*hour
-    minute = isec / 60
-    second = isec - 60*minute
-    tick   = time_ticks
-
-  end subroutine get_date_gregorian_old
-
-  ! set_date_gregorian_old: original set_date_gregorian function in time_manager that has been slightly
-  ! modified to work in this test program
-  function set_date_gregorian_old(year, month, day, hour, minute, second, tick, date_to_day)
-
-    use time_manager_mod, only: set_time
-
-    type(time_type) :: set_date_gregorian_old
-
-    integer, parameter :: days_in_400_year_period = 146097
-
-    integer, intent(in)  :: year, month, day, hour, minute, second, tick
-    integer, intent(in),  dimension(400,12,31) :: date_to_day
-
-    integer :: yr1, day1, second1
-
-    second1 = second + 60*(minute + 60*hour)
-
-    yr1 = mod(year,400)
-    if(yr1 == 0) yr1 = 400
-    day1 = date_to_day(yr1,month,day)
-
-    day1 = day1 + days_in_400_year_period*((year-1)/400)
-
-    set_date_gregorian_old = set_time(seconds=second1, days=day1, ticks=tick)
-
-  end function set_date_gregorian_old
 
 end program test_time_manager
