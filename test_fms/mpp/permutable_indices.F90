@@ -1,9 +1,5 @@
-! This module allows arrays to be allocated and accessed using indices whose
-! orders are allowed to differ from the index order of the underlying arrays.
-
-! API:
-! * allocate
-! * section
+! This module allows arrays to be permuted, and provides a data type for the
+! purpose of storing permuted array bounds.
 
 module permutable_indices_mod
   implicit none
@@ -47,10 +43,9 @@ module permutable_indices_mod
     endif
   end function factorial
 
-  ! p should range from 1 to size(list)!
   subroutine permute_list(list, p)
-    integer, intent(inout) :: list(:)
-    integer, intent(in) :: p
+    integer, intent(inout) :: list(:) !< List to be permuted
+    integer, intent(in) :: p !< Which permutation to produce: may range from 1 to size(list)!
     integer :: choices(size(list))
     integer :: n, k, i, f, indx
 
