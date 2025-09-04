@@ -61,7 +61,10 @@ check_PROGRAMS = test_mpp \
   test_mpp_update_domains_ad \
   test_mpp_transmit \
   test_mpp_alltoall \
-  test_mpp_global_field \
+  test_mpp_global_field_r4 \
+  test_mpp_global_field_r8 \
+  test_mpp_global_field_i4 \
+  test_mpp_global_field_i8 \
   test_mpp_global_field_ug \
   test_mpp_global_sum_ad \
   test_mpp_init_logfile \
@@ -120,10 +123,10 @@ test_global_arrays_SOURCES = test_global_arrays.F90
 test_redistribute_int_SOURCES = test_redistribute_int.F90
 test_mpp_transmit_SOURCES = test_mpp_transmit.F90
 test_mpp_alltoall_SOURCES = test_mpp_alltoall.F90
-test_mpp_global_field_SOURCES = \
-  compare_data_checksums.F90 \
-  compare_data_checksums_int.F90 \
-  test_mpp_global_field.F90
+test_mpp_global_field_r4_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
+test_mpp_global_field_r8_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
+test_mpp_global_field_i4_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
+test_mpp_global_field_i8_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
 test_mpp_global_field_ug_SOURCES = \
   compare_data_checksums.F90 \
   compare_data_checksums_int.F90 \
@@ -135,6 +138,11 @@ test_mpp_clock_begin_end_id_SOURCES=test_mpp_clock_begin_end_id.F90
 test_super_grid_SOURCES = test_super_grid.F90
 test_mpp_chksum_SOURCES = test_mpp_chksum.F90
 test_stdlog_SOURCES = test_stdlog.F90
+
+test_mpp_global_field_r4_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r4_kind
+test_mpp_global_field_r8_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=real    -DFMS_TEST_KIND_=r8_kind
+test_mpp_global_field_i4_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=integer -DFMS_TEST_KIND_=i4_kind
+test_mpp_global_field_i8_CPPFLAGS = $(AM_CPPFLAGS) -DFMS_TEST_TYPE_=integer -DFMS_TEST_KIND_=i8_kind
 
 # ifort gets a internal error during compilation for this test, issue #1071
 # we'll just remove the openmp flag if present since it doesn't use openmp at all
