@@ -45,9 +45,19 @@ module horiz_interp_spherical_mod
     module procedure horiz_interp_spherical_r8
   end interface
 
+  !! Horiz_interp_spherical_get_pre_weights and horiz_interp_spherical_new are identical.
+  !! Horiz_interp_spherical_get_pre_weights is the more descriptively named generic interface that
+  !! replaces horiz_interp_spherical_new.  However, horiz_interp_spherical_new cannot
+  !! be removed due to resistance from FMS users (the name change will require changes to
+  !! codes that use horiz_interp_spherical_mod
+  interface horiz_interp_spherical_get_pre_weights
+    module procedure horiz_interp_spherical_get_pre_weights_r4
+    module procedure horiz_interp_spherical_get_pre_weights_r8
+  end interface
+
   interface horiz_interp_spherical_new
-    module procedure horiz_interp_spherical_new_r4
-    module procedure horiz_interp_spherical_new_r8
+    module procedure horiz_interp_spherical_get_pre_weights_r4
+    module procedure horiz_interp_spherical_get_pre_weights_r8
   end interface
 
   interface horiz_interp_spherical_wght
@@ -55,8 +65,11 @@ module horiz_interp_spherical_mod
     module procedure horiz_interp_spherical_wght_r8
   end interface
 
-  public :: horiz_interp_spherical_new, horiz_interp_spherical, horiz_interp_spherical_del
+  public :: horiz_interp_spherical_get_pre_weights, horiz_interp_spherical, horiz_interp_spherical_del
   public :: horiz_interp_spherical_init, horiz_interp_spherical_wght
+
+  ! legacy name
+  public :: horiz_interp_spherical_new
 
  !> private helper routines
   interface full_search
@@ -124,11 +137,11 @@ contains
   !#######################################################################
 
   !> Deallocates memory used by "HI_KIND_TYPE" variables.
-  !! Must be called before reinitializing with horiz_interp_spherical_new.
+  !! Must be called before reinitializing with horiz_interp_spherical_get_pre_weights.
   subroutine horiz_interp_spherical_del( Interp )
 
     type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by previous
-                                           !! call to horiz_interp_spherical_new. The input variable
+                                           !! call to horiz_interp_spherical_get_pre_weights. The input variable
                                            !! must have allocated arrays. The returned variable will
                                            !! contain deallocated arrays.
 

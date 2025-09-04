@@ -20,7 +20,7 @@
 #***********************************************************************
 
 # This is part of the GFDL FMS package. This is a shell script to
-# execute tests in the test_fms/mosaic directory.
+# execute tests in the test_fms/mosaic2 directory.
 
 # Ed Hartnett 11/29/19
 
