@@ -1223,7 +1223,7 @@ subroutine register_field_wrap(fms2io_fileobj, varname, vartype, dimensions, chu
   character(len=*),                  INTENT(IN)    :: varname       !< Name of the variable
   character(len=*),                  INTENT(IN)    :: vartype       !< The type of the variable
   character(len=*), optional,        INTENT(IN)    :: dimensions(:) !< The dimension names of the field
-  integer,   optional,               INTENT(IN)    :: chunksizes(:) !< Chunksize to use, only relevant is using
+  integer,   optional,               INTENT(IN)    :: chunksizes(:) !< Chunksize to use, only relevant when using
                                                                     !! NETCDF-4 and the variable is domain decomposed
 
   select type(fms2io_fileobj)
@@ -1270,7 +1270,7 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
     call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
 
     !! Collective writes are only used for 2D+ variables
-    if (use_collective_writes .and. size(this%axis_ids) >= 2) then
+    if ((use_collective_writes .and. size(this%axis_ids) >= 2) .or. field_yaml%has_chunksizes()) then
       chunksizes = this%get_chunksizes(diag_axis, field_yaml)
       call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), dimnames, &
         chunksizes = chunksizes)
@@ -1359,7 +1359,7 @@ end subroutine write_field_metadata
 !> @brief Determine the appropriate chunksizes for a diagnostic field based on its axes.
 !! For "X" and "Y" axes, the function returns a chunksize equal to the axis size divided by the layout.
 !! If the dimension is not evenly divisible by the layout, the function raises an error.
-!! For the other axis it return a chunksize equal to the axis length
+!! For the other axis (i.e z axis) it return a chunksize equal to the axis length
 !! For sub-z axes (e.g., layer bounds), a chunksize of 1 is returned for now, as this case is not yet implemented.
 !! @return An integer array of chunksizes, one per diagnostic axis, plus one for the unlimited dimension.
 function get_chunksizes(this, diag_axis, field_yaml) &
