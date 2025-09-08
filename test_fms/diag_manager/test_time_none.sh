@@ -43,6 +43,12 @@ diag_files:
     reduction: none
     kind: r4
   - module: ocn_mod
+    var_name: var3
+    output_name: this_does_not_matter
+    write_var: False
+    reduction: none
+    kind: r4
+  - module: ocn_mod
     var_name: var1
     output_name: var1_none
     reduction: none
@@ -338,6 +344,9 @@ printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_metho
 test_expect_success "Running diag_manager with "none" reduction method using a diag table with anchors(test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
 '
+test_expect_success "Checking answers for the "none" reduction method using a diag table with anchors (test $my_test_count)" '
+  mpirun -n 1 ../check_time_none
+'
 
 cat <<_EOF > diag_table.yaml
 title: test_none
@@ -354,6 +363,9 @@ diag_files:
     varlist:
     - var_name: var0
       output_name: var0_none
+    - var_name: var3
+      output_name: this_does_not_matter
+      write_var: False
     - var_name: var1
       output_name: var1_none
     - var_name: var2
@@ -389,6 +401,9 @@ my_test_count=`expr $my_test_count + 1`
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
 test_expect_success "Running diag_manager with "none" reduction method using a diag table with modular yaml(test $my_test_count)" '
   mpirun -n 6 ../test_reduction_methods
+'
+test_expect_success "Checking answers for the "none" reduction method using a diag table with modular yaml(test $my_test_count)" '
+  mpirun -n 1 ../check_time_none
 '
 fi
 test_done

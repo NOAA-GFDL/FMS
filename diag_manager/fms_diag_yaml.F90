@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @defgroup fms_diag_yaml_mod fms_diag_yaml_mod
@@ -398,7 +397,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
   integer                                  :: nmods              !< Number of module block in a file
   integer,                     allocatable :: mod_ids(:)         !< Ids for each module block in a file
-  integer,                     allocatable :: nvars_per_file(:)  !< Number of variables in each file
+  integer,                     allocatable :: nvars_per_file(:)  !< Number of variables in each file that are actually
+                                                                 !! being written
   logical,                     allocatable :: has_module_block(:)!< True if each file is using the module block
   character(len=FMS_FILE_LEN), allocatable :: mod_name(:)        !< Buffer to store module name
   character(len=FMS_FILE_LEN)              :: buffer             !< Buffer to stote string variables
@@ -512,9 +512,9 @@ subroutine diag_yaml_object_init(diag_subset_output)
     file_list%file_name(file_count) = trim(diag_yaml%diag_files(file_count)%file_fname)//c_null_char
     file_list%diag_file_indices(file_count) = file_count
 
-    allocate(var_ids(nvars_per_file(i)))
-    allocate(mod_name(nvars_per_file(i)))
     if (has_module_block(i)) then
+      allocate(var_ids(nvars_per_file(i)))
+      allocate(mod_name(nvars_per_file(i)))
       nmods = get_num_blocks(diag_yaml_id, "modules", parent_block_id=diag_file_ids(i))
       allocate(mod_ids(nmods))
       call get_block_ids(diag_yaml_id, "modules", mod_ids, parent_block_id=diag_file_ids(i))
@@ -536,6 +536,8 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
       deallocate(mod_ids)
     else
+      allocate(var_ids(get_num_blocks(diag_yaml_id, "varlist", parent_block_id=diag_file_ids(i))))
+      allocate(mod_name(size(var_ids)))
       call get_block_ids(diag_yaml_id, "varlist", var_ids, parent_block_id=diag_file_ids(i))
       nvars_per_file(i) = get_total_num_vars(diag_yaml_id, diag_file_ids(i))
     endif
@@ -546,7 +548,7 @@ subroutine diag_yaml_object_init(diag_subset_output)
 
     allow_averages = .not. diag_yaml%diag_files(file_count)%file_freq(1) < 1
     is_instantaneous = .false.
-    nvars_loop: do j = 1, nvars_per_file(i)
+    nvars_loop: do j = 1, size(var_ids)
       write_var = .true.
       call get_value_from_key(diag_yaml_id, var_ids(j), "write_var", write_var, is_optional=.true.)
       if (.not. write_var) cycle
