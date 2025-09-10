@@ -958,8 +958,8 @@ contains
 !!  see smithsonian meteorological tables page 350.
       x = -7.90298_r8_kind*(TBASW/tem(i)-one) &
            +5.02808_r8_kind*log10(TBASW/tem(i)) &
-           -1.3816e-07_r8_kind*(ten**((one-tem(i)/TBASW)*11.344_r8_kind)-one)    &
-           +8.1328e-03_r8_kind*(ten**((TBASW/tem(i)-one)*-3.49149_r8_kind)-one)&
+           -1.3816e-07_r8_kind*(ten**(11.344_r8_kind  *(one-tem(i)/TBASW))-one) &
+           +8.1328e-03_r8_kind*(ten**(-3.49149_r8_kind*(TBASW/tem(i)-one))-one) &
            +log10(ESBASW)
       esh2o = ten**(x)
       es(i) = esh2o
