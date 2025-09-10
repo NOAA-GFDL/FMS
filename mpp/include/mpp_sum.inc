@@ -41,13 +41,12 @@
 !#######################################################################
     !> Sums 2d array across pes
     subroutine MPP_SUM_2D_( a, length, pelist )
-      MPP_TYPE_, intent(inout) :: a(:,:) !< 2d array to sum
+      MPP_TYPE_, target, contiguous, intent(inout) :: a(:,:) !< 2d array to sum
       integer, intent(in) :: length !< amount of indices in given 2d array
       integer, intent(in), optional :: pelist(:) !< pelist to calculate sum across
-      MPP_TYPE_ :: a1D(length)
+      MPP_TYPE_, pointer :: a1D(:)
 
-      pointer( ptr, a1D )
-      ptr = LOC(a)
+      a1D(1:length) => a(:,:)
       call mpp_sum( a1D, length, pelist )
 
       return
@@ -56,13 +55,12 @@
 !#######################################################################
     !> Sums 3d array across pes
     subroutine MPP_SUM_3D_( a, length, pelist )
-      MPP_TYPE_, intent(inout) :: a(:,:,:) !< 3d array to sum
+      MPP_TYPE_, target, contiguous, intent(inout) :: a(:,:,:) !< 3d array to sum
       integer, intent(in) :: length !< amount of indices in given 3d array
       integer, intent(in), optional :: pelist(:) !< pelist to calculate sum across
-      MPP_TYPE_ :: a1D(length)
+      MPP_TYPE_, pointer :: a1D(:)
 
-      pointer( ptr, a1D )
-      ptr = LOC(a)
+      a1D(1:length) => a(:,:,:)
       call mpp_sum( a1D, length, pelist )
 
       return
@@ -71,13 +69,12 @@
 !#######################################################################
     !> Sums 4d array across pes
     subroutine MPP_SUM_4D_( a, length, pelist )
-      MPP_TYPE_, intent(inout) :: a(:,:,:,:) !< 4d array to sum
+      MPP_TYPE_, target, contiguous, intent(inout) :: a(:,:,:,:) !< 4d array to sum
       integer, intent(in) :: length !< amount of indices in given 4d array
       integer, intent(in), optional :: pelist(:) !< pelist to calculate sum across
-      MPP_TYPE_ :: a1D(length)
+      MPP_TYPE_, pointer :: a1D(:)
 
-      pointer( ptr, a1D )
-      ptr = LOC(a)
+      a1D(1:length) => a(:,:,:,:)
       call mpp_sum( a1D, length, pelist )
 
       return
@@ -86,13 +83,12 @@
 !#######################################################################
     !> Sums 5d array across pes
     subroutine MPP_SUM_5D_( a, length, pelist )
-      MPP_TYPE_, intent(inout) :: a(:,:,:,:,:) !< 5d array to sum
+      MPP_TYPE_, target, contiguous, intent(inout) :: a(:,:,:,:,:) !< 5d array to sum
       integer, intent(in) :: length !< amount of indices in given 5d array
       integer, intent(in), optional :: pelist(:) !< pelist to calculate sum across
-      MPP_TYPE_ :: a1D(length)
+      MPP_TYPE_, pointer :: a1D(:)
 
-      pointer( ptr, a1D )
-      ptr = LOC(a)
+      a1D(1:length) => a(:,:,:,:,:)
       call mpp_sum( a1D, length, pelist )
 
       return
