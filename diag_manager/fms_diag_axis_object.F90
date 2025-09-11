@@ -30,7 +30,7 @@ module fms_diag_axis_object_mod
 #ifdef use_yaml
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_global_domain, NORTH, EAST, mpp_get_tile_id, &
-                            & mpp_get_ntile_count, mpp_get_io_domain
+                            & mpp_get_ntile_count, mpp_get_io_domain, mpp_get_layout
   use platform_mod,    only:  r8_kind, r4_kind, i4_kind, i8_kind
   use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
                               direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes, &
@@ -190,6 +190,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: get_set_name
      PROCEDURE :: has_set_name
      PROCEDURE :: is_x_or_y_axis
+     PROCEDURE :: get_dim_size_layout
      ! TO DO:
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
@@ -447,7 +448,7 @@ module fms_diag_axis_object_mod
     integer                       :: global_io_index(2)!< Global io domain starting and ending index
     select type(this)
     type is (fmsDiagFullAxis_type)
-      call this%get_global_io_domain(global_io_index)
+      call this%get_global_io_domain(global_io_index, fms2io_fileobj%is_file_using_netcdf_mpi())
       call write_data(fms2io_fileobj, this%axis_name, this%axis_data(global_io_index(1):global_io_index(2)))
     type is (fmsDiagSubAxis_type)
       i = this%starting_index
@@ -579,9 +580,10 @@ module fms_diag_axis_object_mod
   end function
 
   !> @brief Get the starting and ending indices of the global io domain of the axis
-  subroutine get_global_io_domain(this, global_io_index)
-    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+  subroutine get_global_io_domain(this, global_io_index, use_collective_writes)
+    class(fmsDiagFullAxis_type), target, intent(in)  :: this               !< diag_axis obj
     integer,                     intent(out) :: global_io_index(2) !< Global io domain starting and ending index
+    logical,                     intent(in)  :: use_collective_writes !< .True. if using collective writes
 
     type(domain2d), pointer :: io_domain !< pointer to the io domain
 
@@ -591,7 +593,12 @@ module fms_diag_axis_object_mod
     if (allocated(this%axis_domain)) then
       select type(domain => this%axis_domain)
       type is (diagDomain2d_t)
-        io_domain => mpp_get_io_domain(domain%domain2)
+        if (use_collective_writes) then
+          io_domain => domain%domain2
+        else
+          io_domain => mpp_get_io_domain(domain%domain2)
+        endif
+
         if (this%cart_name .eq. "X") then
           call mpp_get_global_domain(io_domain, xbegin=global_io_index(1), xend=global_io_index(2), &
             position=this%domain_position)
@@ -663,6 +670,32 @@ module fms_diag_axis_object_mod
       if (present(x_or_y)) x_or_y = diag_null
     end select
   end function is_x_or_y_axis
+
+  !< @brief Get the global size of the axis, and the layout
+  !! It is assumed that this function is only called on "X" and "Y" axes
+  !! using the `is_x_or_y_axis` function from above
+  subroutine get_dim_size_layout(this, dim_size, layout)
+    class(fmsDiagFullAxis_type), intent(in)    :: this     !< diag_axis obj
+    integer,                     intent(out)   :: dim_size !< Size of the dimension
+    integer,                     intent(out)   :: layout   !< Layout of the dimension
+
+    integer :: nx, ny
+    integer :: layout_xy(2)
+
+    select type (domain => this%axis_domain)
+    type is (diagDomain2d_t)
+      call mpp_get_global_domain(domain%Domain2, xsize=nx, ysize=ny)
+      call mpp_get_layout(domain%Domain2, layout_xy)
+
+      if (this%cart_name .eq. "X") then
+        dim_size = nx
+        layout = layout_xy(1)
+      else if (this%cart_name .eq. "Y") then
+        dim_size = ny
+        layout = layout_xy(2)
+      endif
+    end select
+  end subroutine get_dim_size_layout
 
   !> @brief Get the set name of an axis object
   !! @return the set name of an axis object
