@@ -582,7 +582,7 @@ diag_files:
 ```
 
 **Things to consider:**
-1.  This option currently only works for files with variables that are domain-decomposed (i.e., each processor has its own section of the data). Support for land's unstructured grid and icebergs will be added in the future; at present, using this option with those grids will result in a FATAL error.
-2.  The domain must be evenly decomposed, meaning each processor has the same amount of data. For example, a C3072L65 grid with a layout of (30, 32) will not work and will result in a FATAL error, since 3072 is not evenly divisible by 30.
+1.  This option currently only works for files with variables that are domain-decomposed (i.e., multiple mpi-tasks each with their own section of data). Support for land's unstructured grid and icebergs will be added in the future; at present, using this option with those grids will result in a FATAL error.
+2.  The domain must be evenly decomposed, meaning each processor has the same amount of data. For example, a C3072L65 grid with a layout of (30, 32) will not work and will result in a FATAL error, since 3072 is not evenly divisible by 30. This limitation exists because NetCDF collective I/O requires each process to access the same pattern of chunks. With uneven decomposition, the chunk shapes per process vary, making it impossible to determine a consistent chunking strategy. Currently there are no plans to support this in the future.
 3. The chunksizes must be a comma seperated list of five integers 1 for each dimension.
 4. Chunking is supported even when not using collective writes as long as netcdf-4 file are being used (by setting fms2_io_nml::netcdf_default_format="netcdf4)
