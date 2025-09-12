@@ -20,10 +20,10 @@
 # @uramirez, Ed Hartnett, @underwoo
 
 # Find the needed mod and inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR) -I../common
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la
+LDADD = ${top_builddir}/libFMS/libFMS.la ../common/libtest_fms.a
 
 # Build these test programs.
 check_PROGRAMS = test_mpp \
@@ -123,10 +123,10 @@ test_global_arrays_SOURCES = test_global_arrays.F90
 test_redistribute_int_SOURCES = test_redistribute_int.F90
 test_mpp_transmit_SOURCES = test_mpp_transmit.F90
 test_mpp_alltoall_SOURCES = test_mpp_alltoall.F90
-test_mpp_global_field_r4_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
-test_mpp_global_field_r8_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
-test_mpp_global_field_i4_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
-test_mpp_global_field_i8_SOURCES = permutable_indices.F90 test_mpp_global_field.F90
+test_mpp_global_field_r4_SOURCES = test_mpp_global_field.F90
+test_mpp_global_field_r8_SOURCES = test_mpp_global_field.F90
+test_mpp_global_field_i4_SOURCES = test_mpp_global_field.F90
+test_mpp_global_field_i8_SOURCES = test_mpp_global_field.F90
 test_mpp_global_field_ug_SOURCES = \
   compare_data_checksums.F90 \
   compare_data_checksums_int.F90 \
@@ -247,7 +247,6 @@ test_mpp_update_domains_int.$(OBJEXT): compare_data_checksums_int.mod fill_halo.
 
 test_mpp_update_domains.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
 test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
-test_mpp_global_field.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_domains.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod
 test_mpp_nesting.$(OBJEXT): compare_data_checksums.mod test_domains_utility_mod.mod

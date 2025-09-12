@@ -17,26 +17,17 @@
 !***********************************************************************
 program test_mpp_global_field
   use platform_mod
-  use mpp_mod,         only : mpp_init, mpp_error, FATAL, mpp_init_test_requests_allocated
-  use mpp_mod,         only : mpp_declare_pelist, mpp_pe, mpp_npes, mpp_root_pe
-  use mpp_domains_mod, only : domain2D
-  use mpp_domains_mod, only : CENTER, EAST, NORTH, CORNER, XUPDATE, YUPDATE
-  use mpp_domains_mod, only : mpp_domains_init, mpp_domains_exit
-  use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains
-  use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
-  use mpp_domains_mod, only : mpp_global_field
-  use random_numbers_mod, only: randomNumberStream, initializeRandomNumberStream, getRandomNumbers
-  use permutable_indices_mod, only: permutable_indices, factorial
+  use mpp_mod,         only: mpp_init, mpp_error, FATAL, mpp_init_test_requests_allocated
+  use mpp_mod,         only: mpp_declare_pelist, mpp_pe, mpp_npes, mpp_root_pe
+  use mpp_domains_mod, only: domain2D
+  use mpp_domains_mod, only: CENTER, EAST, NORTH, CORNER, XUPDATE, YUPDATE
+  use mpp_domains_mod, only: mpp_domains_init, mpp_domains_exit
+  use mpp_domains_mod, only: mpp_define_layout, mpp_define_domains
+  use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
+  use mpp_domains_mod, only: mpp_global_field
+  use fms_test_mod,    only: permutable_indices, factorial, arr_init, arr_compare
 
   implicit none
-
-  interface arr_compare
-    procedure :: arr_compare_2d, arr_compare_3d
-  end interface arr_compare
-
-  interface arr_init
-    procedure :: arr_init_2d, arr_init_3d
-  end interface arr_init
 
   type test_params_t
     logical :: symmetry
@@ -89,48 +80,6 @@ program test_mpp_global_field
   call MPI_finalize(ierr)
 
 contains
-
-  subroutine arr_init_2d(arr)
-    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(out) :: arr(:,:)
-    real(r8_kind) :: unif(size(arr,1), size(arr,2))
-    type(randomNumberStream), save :: random_stream
-
-    call getRandomNumbers(random_stream, unif)
-
-    ! Workaround so that when FMS_TEST_TYPE_ is set to `integer`, it resolves to the `int`
-    ! intrinsic when called as a function. The `real` keyword matches the name of its typecast
-    ! function, so this workaround is only needed for the integral case.
-#define integer int
-    arr = FMS_TEST_TYPE_ (1e9_r8_kind * (unif - 0.5_r8_kind), FMS_TEST_KIND_)
-#undef integer
-  end subroutine arr_init_2d
-
-  subroutine arr_init_3d(arr)
-    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(out) :: arr(:,:,:)
-    integer :: k
-
-    do k = 1, size(arr, 3)
-      call arr_init(arr(:, :, k))
-    enddo
-  end subroutine arr_init_3d
-
-  subroutine arr_compare_2d(arr0, arr1, msg)
-    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(in), dimension(:,:) :: arr0, arr1
-    character(*), intent(in) :: msg
-
-    if (any(arr0.ne.arr1)) then
-      call mpp_error(FATAL, "Result from mpp_global_field (2D) does not agree with source data: " // msg)
-    endif
-  end subroutine arr_compare_2d
-
-  subroutine arr_compare_3d(arr0, arr1, msg)
-    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(in), dimension(:,:,:) :: arr0, arr1
-    character(*), intent(in) :: msg
-
-    if (any(arr0.ne.arr1)) then
-      call mpp_error(FATAL, "Result from mpp_global_field (3D) does not agree with source data: " // msg)
-    endif
-  end subroutine arr_compare_3d
 
   subroutine run_tests_2d(test_params, p)
     type(test_params_t), intent(in) :: test_params
