@@ -28,7 +28,12 @@
 . ../test-lib.sh
 
 touch input.nml
-test_expect_success "mpp global field functions with mixed precision" '
-    mpirun -n 4 ./test_mpp_global_field
-'
+
+for datatype in r4 r8 i4 i8
+do
+  test_expect_success "mpp global field functions ($datatype)" "
+      mpirun -n 4 ./test_mpp_global_field_$datatype
+  "
+done
+
 test_done
