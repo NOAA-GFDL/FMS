@@ -72,14 +72,18 @@ make test
 ```
 ### Debugging and Test Options for CMake
 
+To rerun failed tests with debug output from a previous failed ctest command:
+```
+ctest --rerun-failed --verbose
+```
 All tests are labeled with the subdirectory they are in in the `test_fms` directory. 
 To run tests for a specific area of the code, such as the mpp modules:
 ```
 ctest -L mpp
 ```
-To rerun failed tests with debug output from a previous failed ctest command:
+To run specific tests matching the given regex:
 ```
-ctest --rerun-failed --verbose
+ctest -R <regex>
 ```
 
-For more testing options with ctest, you can look to the [ctest documentation]().
+For more testing options with ctest, you can look to the [ctest documentation](https://cmake.org/cmake/help/latest/manual/ctest.1.html).
