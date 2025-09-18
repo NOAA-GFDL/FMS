@@ -76,7 +76,7 @@ To rerun failed tests with debug output from a previous failed ctest command:
 ```
 ctest --rerun-failed --verbose
 ```
-All tests are labeled with the subdirectory they are in in the `test_fms` directory. 
+All tests are labeled with the subdirectory they are in in the `test_fms` directory.
 To run tests for a specific area of the code, such as the mpp modules:
 ```
 ctest -L mpp
