@@ -27,6 +27,13 @@ make check
 ```
 This will compile any code not already compiled and then proceed to run the test scripts.
 
+If a test fails, `make check` will stop running the rest of the unit tests once it is done with the current subdirectory.
+
+To instead run all of the tests regardless of failures, the `-k` option can be given:
+```
+make check -k
+```
+
 ### Debugging Output and Test Options for Autotools
 
 Setting the environment variable TEST_VERBOSE will direct output to stdout as the test runs, while setting VERBOSE will only output on failure.
