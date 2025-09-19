@@ -29,13 +29,17 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 test_time_interp_external_r4 test_time_interp_external_r8
+check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 \
+                 test_time_interp_external_r4 test_time_interp_external_r8 \
+                 test_time_interp_with_interp_r4 test_time_interp_with_interp_r8
 
 # These are the sources for the tests.
 test_time_interp_r4_SOURCES = test_time_interp.F90
 test_time_interp_r8_SOURCES = test_time_interp.F90
 test_time_interp_external_r4_SOURCES = test_time_interp_external.F90
 test_time_interp_external_r8_SOURCES = test_time_interp_external.F90
+test_time_interp_with_interp_r4_SOURCES = test_time_interp_with_interp.F90
+test_time_interp_with_interp_r8_SOURCES = test_time_interp_with_interp.F90
 
 # filter out any added precision flags
 # adds r8 flag, otherwise no-flag default is 4
@@ -43,6 +47,8 @@ test_time_interp_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_time_interp_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 test_time_interp_external_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_time_interp_external_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
+test_time_interp_with_interp_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
+test_time_interp_with_interp_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 
 # Run the test programs.
 TESTS = test_time_interp2.sh

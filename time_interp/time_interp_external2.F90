@@ -56,6 +56,7 @@ module time_interp_external2_mod
   use fms_mod, only : lowercase, check_nml_error
   use platform_mod, only: r8_kind, FMS_PATH_LEN, FMS_FILE_LEN
   use horiz_interp_mod, only : horiz_interp, horiz_interp_type
+  use horiz_interp_type_mod, only : CONSERVE
   use fms2_io_mod,      only : Valid_t, FmsNetcdfDomainFile_t, open_file, get_unlimited_dimension_name, &
                                variable_att_exists, FmsNetcdfFile_t, &
                                variable_exists, get_valid, get_variable_num_dimensions, read_data, &
@@ -853,8 +854,14 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
             ! copy over to r4
             hi_tmp_data = real(field%domain_data, r4_kind)
             ! do interpolation
-            call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
-                              mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
+            if(interp%interp_method == CONSERVE) then
+              if(field%region_type .NE. NO_REGION) &
+                call mpp_error(WARNING, "conservative interpolation when region_type is not NO_REGION")
+              call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib))
+            else
+              call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
+                mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
+            end if
             ! assign any output
             field%domain_data = real(hi_tmp_data, r8_kind)
             field%mask(isw:iew,jsw:jew,:,ib) = hi_tmp_msk_out(isw:iew,jsw:jew,:) > 0.0_r4_kind
@@ -862,12 +869,18 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
             if(allocated(hi_tmp_data))     deallocate(hi_tmp_data)
             if(allocated(hi_tmp_msk_out))  deallocate(hi_tmp_msk_out)
         else
+          if(interp%interp_method == CONSERVE) then
+            if(field%region_type .NE. NO_REGION) &
+              call mpp_error(WARNING, "conservative interpolation when region_type is not NO_REGION")
+
+            call horiz_interp(interp, field%src_data(:,:,:,ib), field%domain_data(isw:iew,jsw:jew,:,ib))
+          else
             allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
             call horiz_interp(interp, field%src_data(:,:,:,ib),field%domain_data(isw:iew,jsw:jew,:,ib), &
-                              mask_in=mask_in, &
-                              mask_out=mask_out)
+              mask_in=mask_in, mask_out=mask_out)
             field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0.0_r8_kind
             deallocate(mask_out)
+          end if
         endif
 
      else
