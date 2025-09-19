@@ -47,7 +47,8 @@ program test_time_interp_with_interp
 
   !time
   type(time_type) :: time
-  integer :: times(ntime) = (/0,1,2/)
+  integer :: times(ntime) = (/0,2,4/)
+  integer :: test_times(ntime-1) = (/1,3/)
 
   !time_interp_external
   integer :: field_id, field2_id
@@ -108,17 +109,19 @@ program test_time_interp_with_interp
 
   !set time
   call set_calendar_type(JULIAN)
-  time = set_date(1800, 1, 1, 0, 0, 0)
 
+  !get interp
   call horiz_interp_new(interp, lon_file, lat_file, lon_model, lat_model, &
     interp_method="conservative", is_latlon_in=.false., is_latlon_out=.false.)
 
-  !time_interp
+  !initialize field
   field_id = init_external_field(filename, fieldname, domain=domain_model, override=.true.)
 
-  call time_interp_external(field_id, time, data_out, horz_interp=interp)
-
-  write(*,*) mpp_pe(), all(data_file(isc:iec, jsc:jec) == data_out)
+  do i=1, ntime-1
+    time = set_date(1800, 1, test_times(i), 0, 0, 0)
+    call time_interp_external(field_id, time, data_out, horz_interp=interp)
+    write(*,*) mpp_pe(), all(i*1000 + data_file(isc:iec, jsc:jec) == data_out)
+  end do
 
 contains
 
@@ -162,12 +165,13 @@ contains
         call write_data(fileobj, "time", times)
 
         do i=0, size(times) - 1
-          call write_data(fileobj, fieldname, data, unlim_dim_level=i+1)
-          data = - data
+          call write_data(fileobj, fieldname, (i+1)*1000 + data, unlim_dim_level=i+1)
         enddo
         call close_file(fileobj)
       endif
     end if
+
+    data = abs(data)
 
   end subroutine generate_file
 
