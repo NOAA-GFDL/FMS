@@ -92,6 +92,8 @@ program test_time_interp_with_interp
     end do
   end do
 
+  data_out = 0.0_rkind
+
   !set file data
   do j=1, nlat_file
     do i=1, nlon_file
@@ -116,9 +118,7 @@ program test_time_interp_with_interp
 
   call time_interp_external(field_id, time, data_out, horz_interp=interp)
 
-  do i=1, 10
-    write(*,*) data_out(i,i) - data_file(i,i)
-  end do
+  write(*,*) mpp_pe(), all(data_file(isc:iec, jsc:jec) == data_out)
 
 contains
 

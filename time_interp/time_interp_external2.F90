@@ -858,6 +858,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
               if(field%region_type .NE. NO_REGION) &
                 call mpp_error(WARNING, "conservative interpolation when region_type is not NO_REGION")
               call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib))
+              hi_tmp_msk_out = 1.0_r4_kind
             else
               call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib), &
                 mask_in=real(mask_in,r4_kind), mask_out=hi_tmp_msk_out)
@@ -869,18 +870,18 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
             if(allocated(hi_tmp_data))     deallocate(hi_tmp_data)
             if(allocated(hi_tmp_msk_out))  deallocate(hi_tmp_msk_out)
         else
-          if(interp%interp_method == CONSERVE) then
-            if(field%region_type .NE. NO_REGION) &
-              call mpp_error(WARNING, "conservative interpolation when region_type is not NO_REGION")
-
-            call horiz_interp(interp, field%src_data(:,:,:,ib), field%domain_data(isw:iew,jsw:jew,:,ib))
-          else
             allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
-            call horiz_interp(interp, field%src_data(:,:,:,ib),field%domain_data(isw:iew,jsw:jew,:,ib), &
-              mask_in=mask_in, mask_out=mask_out)
+            if(interp%interp_method == CONSERVE) then
+              if(field%region_type .NE. NO_REGION) &
+                call mpp_error(WARNING, "conservative interpolation when region_type is not NO_REGION")
+              call horiz_interp(interp, field%src_data(:,:,:,ib), field%domain_data(isw:iew,jsw:jew,:,ib))
+              mask_out = 1.0_r8_kind
+            else
+              call horiz_interp(interp, field%src_data(:,:,:,ib),field%domain_data(isw:iew,jsw:jew,:,ib), &
+                mask_in=mask_in, mask_out=mask_out)
+            end if
             field%mask(isw:iew,jsw:jew,:,ib) = mask_out(isw:iew,jsw:jew,:) > 0.0_r8_kind
             deallocate(mask_out)
-          end if
         endif
 
      else
