@@ -623,6 +623,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
                         !! horiz_interp_conserve_new_2d
 
     !  --- error checking ---
+
     if (size(data_in,1) /= Interp%nlon_src .or. size(data_in,2) /= Interp%nlat_src) &
          call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of input array incorrect')
 
