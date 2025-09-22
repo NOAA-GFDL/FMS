@@ -27,7 +27,6 @@ use   mpp_mod    , only: mpp_init, mpp_exit, mpp_npes, mpp_get_current_pelist, &
 use   netcdf     , only: nf90_create, nf90_def_var, nf90_put_att, nf90_enddef, &
                          nf90_close, nf90_clobber, nf90_64bit_offset, nf90_double
 
-use, intrinsic :: iso_fortran_env
 use platform_mod
 
 implicit none
