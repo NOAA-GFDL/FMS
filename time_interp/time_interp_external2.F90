@@ -825,7 +825,11 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         where (is_valid(field%src_data(:,:,:,ib), field%valid)) mask_in = 1.0_r8_kind
         if ( field%region_type .NE. NO_REGION ) then
            if( ANY(mask_in == 0.0_r8_kind) ) then
-              call mpp_error(FATAL, "time_interp_external: mask_in should be all 1 when region_type is not NO_REGION")
+             call mpp_error(FATAL, "time_interp_external: mask_in should be all 1 when region_type is not NO_REGION")
+           end if
+           if(interp%interp_method == CONSERVE) then
+             call mpp_error(WARNING, &
+               "conservative interpolation when region_type is not NO_REGION.  Make sure interp matches the region")
            endif
            if( field%region_type == OUTSIDE_REGION) then
               do j = js_region, je_region
@@ -841,6 +845,7 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
               enddo
            endif
         endif
+
         !! added for mixed mode. Data is always read in as r8 (via ext_fieldtype). if existing horiz_interp_type was
         !! initialized in r4, needs to cast down in order to match up with saved values in horiz_interp_type.
         !! creates some temporary arrays since intent(out) vars can't get passed in directly
@@ -855,8 +860,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
             hi_tmp_data = real(field%domain_data, r4_kind)
             ! do interpolation
             if(interp%interp_method == CONSERVE) then
-              if(field%region_type .NE. NO_REGION) &
-                call mpp_error(WARNING, "conservative interpolation when region_type is not NO_REGION")
               call horiz_interp(interp, real(field%src_data(:,:,:,ib),r4_kind), hi_tmp_data(isw:iew,jsw:jew,:,ib))
               hi_tmp_msk_out = 1.0_r4_kind
             else
@@ -872,8 +875,6 @@ subroutine load_record(field, rec, interp, is_in, ie_in, js_in, je_in, window_id
         else
             allocate(mask_out(isw:iew,jsw:jew, size(field%src_data,3)))
             if(interp%interp_method == CONSERVE) then
-              if(field%region_type .NE. NO_REGION) &
-                call mpp_error(WARNING, "conservative interpolation when region_type is not NO_REGION")
               call horiz_interp(interp, field%src_data(:,:,:,ib), field%domain_data(isw:iew,jsw:jew,:,ib))
               mask_out = 1.0_r8_kind
             else
