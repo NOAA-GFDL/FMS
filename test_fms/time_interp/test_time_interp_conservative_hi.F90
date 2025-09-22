@@ -134,6 +134,12 @@ program test_time_interp_with_interp
     end if
   end do
 
+  deallocate(lon_model)
+  deallocate(lon_file)
+  deallocate(data_out)
+  deallocate(data_file)
+  deallocate(answers)
+
   call fms_end()
 
 contains
