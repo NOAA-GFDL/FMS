@@ -96,7 +96,7 @@ program test_time_interp_with_interp
   !set file data
   do j=1, nlat_file
     do i=1, nlon_file
-      data_file(i,j) = i*nlon_file + j
+      data_file(i,j) = real(i*nlon_file + j, rkind)
     end do
   end do
 
