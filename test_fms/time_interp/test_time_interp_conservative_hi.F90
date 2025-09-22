@@ -2,7 +2,7 @@ program test_time_interp_with_interp
 
   use constants_mod, only: DEG_TO_RAD
 
-  use fms_mod, only: fms_init
+  use fms_mod, only: fms_init, fms_end
 
   use fms2_io_mod, only: FmsNetcdfFile_t, fms2_io_init, open_file, close_file, register_axis, write_data
   use fms2_io_mod, only: register_field, unlimited, register_variable_attribute
@@ -133,6 +133,8 @@ program test_time_interp_with_interp
       call mpp_error(FATAL, "time_interp error with conservative horizontal interpolation")
     end if
   end do
+
+  call fms_end()
 
 contains
 
