@@ -45,7 +45,7 @@ subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
    op_root = pelist2(1)
 
    cnt = size(sbuf(:))
-   if(size(rbuf(:)) < cnt*nproc) call mpp_error(FATAL, &
+   if((mpp_pe().eq.op_root).AND.(size(rbuf(:)) < cnt*nproc)) call mpp_error(FATAL, &
           "MPP_GATHER_1D_: size(rbuf) must be at least npes*size(sbuf) ")
 
    call mpp_gather( sbuf, rbuf, size(sbuf), op_root, pelist2, ierr )
@@ -132,13 +132,13 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
    logical,                                intent(in)    :: is_root_pe
    integer,   optional,                    intent(in)    :: ishift, jshift
 
-   integer :: i, msgsize, root_pe, root_pe_test
+   integer :: i, j, k
+   integer :: root_pe, root_pe_test
    integer :: i1, i2, j1, j2, ioff, joff
-   integer :: my_ind(4), gind(4,size(pelist))
-   type array3D
-     MPP_TYPE_, dimension(:,:,:), allocatable :: data3D_type
-   endtype array3D
-   type(array3d), dimension(:), allocatable :: temp
+   integer :: base_idx, send_count, msg_start
+   integer :: blocksize_i, blocksize_j, blocksize
+   integer, dimension(:), allocatable :: gind, counts
+   MPP_TYPE_, dimension(:), allocatable :: rbuf
 
    if (.not.ANY(mpp_pe().eq.pelist(:))) return
 
@@ -166,76 +166,51 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
    if (present(ishift)) ioff=ishift
    if (present(jshift)) joff=jshift
 
-   my_ind(1) = is
-   my_ind(2) = ie
-   my_ind(3) = js
-   my_ind(4) = je
+   ! gather indices into global index on root_pe
+   if (is_root_pe) allocate(gind(4*size(pelist)))
+   call mpp_gather((/is, ie, js, je/), gind, pelist)
 
-! gather indices into global index on root_pe
+   ! Compute and allocate counts and 1d recv buffer (rbuf)
    if (is_root_pe) then
-     allocate(temp(1:size(pelist)))
-     do i = 1, size(pelist)
-! root_pe data copy - no send to self
-       if (pelist(i).eq.root_pe) then
-         gind(:,i) = my_ind(:)
-       else
-         call mpp_recv(gind(:,i:i), 4, pelist(i), .FALSE., COMM_TAG_1)
-       endif
-     enddo
-     call mpp_sync_self(check=EVENT_RECV)
-     gind(1,:)=gind(1,:)+ioff
-     gind(2,:)=gind(2,:)+ioff
-     gind(3,:)=gind(3,:)+joff
-     gind(4,:)=gind(4,:)+joff
-! check indices to make sure they are within the range of "data"
-     if ((minval(gind).lt.1) .OR. (maxval(gind(1:2,:)).gt.size(gather_data,1)) .OR. &
-         (maxval(gind(3:4,:)).gt.size(gather_data,2))) &
-         call mpp_error(FATAL,"fms_io(mpp_gather_pelist): specified indices (with shift) are outside of the &
-                        &range of the receiving array")
-   else
-! non root_pe's send indices to root_pe
-     call mpp_send(my_ind(:), 4, root_pe, COMM_TAG_1)
-     call mpp_sync_self(check=EVENT_SEND)
+      allocate(counts(size(pelist)))
+
+      do k = 1, size(pelist)
+         base_idx = 4*(k-1)
+         i1 = gind( base_idx + 1 ) ;; i2 = gind( base_idx + 2 )
+         j1 = gind( base_idx + 3 ) ;; j2 = gind( base_idx + 4 )
+         counts(k) = (i2 - i1 + 1) * (j2 - j1 + 1) * nk
+      enddo
+
+      allocate(rbuf(sum(counts)))
    endif
 
-!  gather segments into data based on indices
+   send_count = (ie-is+1)*(je-js+1)*nk
+
+   ! gather data into 1d recv buffer
+   call mpp_gather(reshape(array_seg(is:ie,js:je,1:nk),[send_count]), send_count, rbuf, counts, pelist)
+
+   ! Unpack recv buffer into return array (gather_data)
    if (is_root_pe) then
-     do i = 1, size(pelist)
-       if (pelist(i).ne.root_pe) then    ! no send to self
-         i1 = gind(1,i)
-         i2 = gind(2,i)
-         j1 = gind(3,i)
-         j2 = gind(4,i)
-         msgsize = (i2-i1+1)*(j2-j1+1)*nk
-         allocate(temp(i)%data3D_type(i1:i2,j1:j2,1:nk))
-         call mpp_recv(temp(i)%data3D_type(i1:i2,j1:j2,1:nk), msgsize, pelist(i), .FALSE., COMM_TAG_2)
-       endif
-     enddo
-     call mpp_sync_self(check=EVENT_RECV)
-!  unbuffer/copy the data into the return array
-     do i = 1, size(pelist)
-       if (pelist(i).eq.root_pe) then
-!        data copy - no send to self
-         gather_data(is+ioff:ie+ioff,js+joff:je+joff,1:nk) = array_seg(is:ie,js:je,1:nk)
-       else
-         i1 = gind(1,i)
-         i2 = gind(2,i)
-         j1 = gind(3,i)
-         j2 = gind(4,i)
-         gather_data(i1:i2,j1:j2,1:nk)=temp(i)%data3D_type(i1:i2,j1:j2,1:nk)
-         deallocate(temp(i)%data3D_type)
-       endif
-     enddo
-     deallocate(temp)
-   else
-!    non root_pe's send data to root_pe
-     msgsize = (my_ind(2)-my_ind(1)+1) * (my_ind(4)-my_ind(3)+1) * nk
-     call mpp_send(array_seg, msgsize, root_pe, COMM_TAG_2)
-     call mpp_sync_self(check=EVENT_SEND)
+      msg_start = 1
+      do k = 1, size(pelist)
+         base_idx = 4*(k-1)
+         i1 = gind( base_idx + 1 ) + ioff ;; i2 = gind( base_idx + 2 ) + ioff
+         j1 = gind( base_idx + 3 ) + joff ;; j2 = gind( base_idx + 4 ) + joff
+
+         blocksize_i = i2 - i1 + 1
+         blocksize_j = j2 - j1 + 1
+         blocksize   = blocksize_i * blocksize_j * nk
+
+         gather_data(i1:i2, j1:j2, 1:nk) = reshape(rbuf(msg_start:msg_start+blocksize-1), &
+                                                         [blocksize_i, blocksize_j, nk])
+
+         msg_start = msg_start + blocksize
+      enddo
+
+      deallocate(gind, rbuf, counts)
    endif
 
    call mpp_sync_self()
-   return
 
 end subroutine MPP_GATHER_PELIST_3D_
 !> @}
