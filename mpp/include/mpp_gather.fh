@@ -201,7 +201,7 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
          blocksize_j = j2 - j1 + 1
          blocksize   = blocksize_i * blocksize_j * nk
 
-         gather_data(i1:i2, j1:j2, 1:nk) = reshape(rbuf(msg_start:msg_start+blocksize-1), & 
+         gather_data(i1:i2, j1:j2, 1:nk) = reshape(rbuf(msg_start:msg_start+blocksize-1), &
                                                          [blocksize_i, blocksize_j, nk])
 
          msg_start = msg_start + blocksize
