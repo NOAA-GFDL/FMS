@@ -43,7 +43,7 @@ sequential patch number (starting from `01`).
   
 ### Removed
 - TIME_MANAGER: tests with set/get_date_gregorian_old (#1748)
-- FIELD_MANAGERr: removed the path length variablele (#1702)
+- FIELD_MANAGER: removed the path length variable (#1702)
 - INTERPOLATOR: remove fms2io_interpolator init (#1723)
 - DIAG_MANAGER: array bounds error in the old diag manager (#1751)
 - MOSAIC2: Grid2 mod Initialization Fix (#1742)
