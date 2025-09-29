@@ -6,6 +6,53 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2025.04] - 2025-09-29
+
+### Known Issues
+- - INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- TIME_INTERP: Add conservative support in time_interp_external  (#1773)
+- CMAKE: add unit testing information for cmake (#1772)
+- TIME_INTERP: 1D time_interp_external and time_interp_external_bridge (#1758)
+- FMS2_IO: Feature/mpp-gather-io-write-2d-3d (#1750)
+- DIAG_INTEGRAL: set the init time to a value in diag_integral test (#1730)
+- TEST_FMS: add fms_end call to test_grid2 (#1728)
+- FMS2_IO: add fms2_io generalized indices test (#1734)
+- ONEAPI: add checks for oneapi bug (#1712)
+- FMS2_IO: Add collective writes (#1733)
+- DATA_OVERRIDE: add a test to test the multi-file capability in data_override (#1745)
+  
+### Changed
+- CMAKE: update cmake build for testing, build types and mixed precision (#1694)
+- LICENSE:  update (#1721)
+- DIAG_MANAGER: Collective IO in modern diag manager (#1756)
+- MODERN_DIAG_MANAGER: Improvements to the diag_table.yaml format (#1731)
+- DOCS: update FMS codeowners to be default owners only (#1722)
+- DOCS: append dev to version number post-release (#1726)
+- DOCS: updates README for license update. (#1744)
+- FIELD_MANAGER: move the parse.inc in field_manager to include directory (#1740)
+
+### Fixed
+- CMAKE: builds for some stuff that broke with the cmake updates on Alpha tag(#1759)
+- HORIZ_INTERP: fixes the r4 tests to build properly(#1736)
+- DIAG_MANAGER: modern diag manager errors when looping through number of variables (#1761)
+  
+### Removed
+- TIME_MANAGER: tests with set/get_date_gregorian_old (#1748)
+- FIELD_MANAGER: removed the path length variable (#1702)
+- INTERPOLATOR: remove fms2io_interpolator init (#1723)
+- DIAG_MANAGER: array bounds error in the old diag manager (#1751)
+- MOSAIC2: Grid2 mod Initialization Fix (#1742)
+
+### Tag Commit Hashes
+-2025.04-beta2 0ba4c6cbaefd1363aab557a9c788d2bb4c6d6aa4
+- 2025.04-beta1 3a7ebccd33561ba076a22fbb4cb4fa6eefb0c1f5
+- 2025.04-alpha1 4f182dc459c6a60d3b3f4257cf379c8bd71e797
+
 ## [2025.03] - 2025-06-24
 
 ### Known Issues
