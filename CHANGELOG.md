@@ -9,7 +9,10 @@ sequential patch number (starting from `01`).
 ## [2025.04] - 2025-09-29
 
 ### Known Issues
-- 
+- - INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
 
 ### Added
 - TIME_INTERP: Add conservative support in time_interp_external  (#1773)
@@ -36,6 +39,7 @@ sequential patch number (starting from `01`).
 ### Fixed
 - CMAKE: builds for some stuff that broke with the cmake updates on Alpha tag(#1759)
 - HORIZ_INTERP: fixes the r4 tests to build properly(#1736)
+- DIAG_MANAGER: modern diag manager errors when looping through number of variables (#1761)
   
 ### Removed
 - TIME_MANAGER: tests with set/get_date_gregorian_old (#1748)
