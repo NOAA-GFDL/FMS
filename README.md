@@ -75,7 +75,7 @@ essential facet of FMS.
 The following external libraries are required when building libFMS
 
 * NetCDF C and Fortran (77/90) headers and libraries
-* Fortran 2003 standard compiler
+* Fortran 2008 standard compiler
 * Fortran compiler that supports Cray Pointer
 * MPI C and Fortran headers and libraries (optional)
 * Libyaml header and libraries (optional)
