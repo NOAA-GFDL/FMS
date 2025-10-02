@@ -80,11 +80,13 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
  !If you do not want to use 64-bit integers.
 #ifdef no_8byte_integers
+#undef  LONG_KIND
 #define LONG_KIND INT_KIND
 #endif
 
 !If you want to use quad-precision.
 #ifndef ENABLE_QUAD_PRECISION
+#undef  QUAD_KIND
 #define QUAD_KIND DOUBLE_KIND
 #endif
 
