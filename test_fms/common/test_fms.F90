@@ -18,7 +18,18 @@ module fms_test_mod
   interface arr_compare
     module procedure :: arr_compare_2d_r4, arr_compare_2d_r8, arr_compare_2d_i4, arr_compare_2d_i8
     module procedure :: arr_compare_3d_r4, arr_compare_3d_r8, arr_compare_3d_i4, arr_compare_3d_i8
+    module procedure :: arr_compare_4d_r4, arr_compare_4d_r8, arr_compare_4d_i4, arr_compare_4d_i8
   end interface arr_compare
+
+  interface arr_compare_tol
+    module procedure :: arr_compare_tol_2d_r4, arr_compare_tol_2d_r8
+    module procedure :: arr_compare_tol_3d_r4, arr_compare_tol_3d_r8
+    module procedure :: arr_compare_tol_4d_r4, arr_compare_tol_4d_r8
+
+    module procedure :: arr_compare_tol_2d_scalar_r4, arr_compare_tol_2d_scalar_r8
+    module procedure :: arr_compare_tol_3d_scalar_r4, arr_compare_tol_3d_scalar_r8
+    module procedure :: arr_compare_tol_4d_scalar_r4, arr_compare_tol_4d_scalar_r8
+  end interface arr_compare_tol
 
   type permutable_indices(ndim)
     integer, len :: ndim
@@ -33,68 +44,106 @@ module fms_test_mod
   contains
 
 #define FMS_TEST_TYPE_ real
-#define FMS_TEST_KIND_ r4_kind
 #define TYPECAST_ real
+
+#define FMS_TEST_KIND_ r4_kind
+
 #define ARR_INIT_2D_ arr_init_2d_r4
 #define ARR_INIT_3D_ arr_init_3d_r4
 #define ARR_COMPARE_2D_ arr_compare_2d_r4
 #define ARR_COMPARE_3D_ arr_compare_3d_r4
+#define ARR_COMPARE_4D_ arr_compare_4d_r4
 #include "include/test_fms.inc"
-#undef FMS_TEST_TYPE_
-#undef FMS_TEST_KIND_
-#undef TYPECAST_
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_
 #undef ARR_COMPARE_2D_
 #undef ARR_COMPARE_3D_
+#undef ARR_COMPARE_4D_
 
-#define FMS_TEST_TYPE_ real
+#define ARR_COMPARE_TOL_2D_ arr_compare_tol_2d_r4
+#define ARR_COMPARE_TOL_3D_ arr_compare_tol_3d_r4
+#define ARR_COMPARE_TOL_4D_ arr_compare_tol_4d_r4
+#define ARR_COMPARE_TOL_2D_SCALAR_ arr_compare_tol_2d_scalar_r4
+#define ARR_COMPARE_TOL_3D_SCALAR_ arr_compare_tol_3d_scalar_r4
+#define ARR_COMPARE_TOL_4D_SCALAR_ arr_compare_tol_4d_scalar_r4
+#include "include/test_fms_real.inc"
+#undef ARR_COMPARE_TOL_2D_
+#undef ARR_COMPARE_TOL_3D_
+#undef ARR_COMPARE_TOL_4D_
+#undef ARR_COMPARE_TOL_2D_SCALAR_
+#undef ARR_COMPARE_TOL_3D_SCALAR_
+#undef ARR_COMPARE_TOL_4D_SCALAR_
+
+#undef FMS_TEST_KIND_
 #define FMS_TEST_KIND_ r8_kind
-#define TYPECAST_ real
+
 #define ARR_INIT_2D_ arr_init_2d_r8
 #define ARR_INIT_3D_ arr_init_3d_r8
 #define ARR_COMPARE_2D_ arr_compare_2d_r8
 #define ARR_COMPARE_3D_ arr_compare_3d_r8
+#define ARR_COMPARE_4D_ arr_compare_4d_r8
 #include "include/test_fms.inc"
-#undef FMS_TEST_TYPE_
-#undef FMS_TEST_KIND_
-#undef TYPECAST_
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_
 #undef ARR_COMPARE_2D_
 #undef ARR_COMPARE_3D_
+#undef ARR_COMPARE_4D_
+#undef ARR_COMPARE_TOL_2D_SCALAR_
+#undef ARR_COMPARE_TOL_3D_SCALAR_
+#undef ARR_COMPARE_TOL_4D_SCALAR_
+
+#define ARR_COMPARE_TOL_2D_ arr_compare_tol_2d_r8
+#define ARR_COMPARE_TOL_3D_ arr_compare_tol_3d_r8
+#define ARR_COMPARE_TOL_4D_ arr_compare_tol_4d_r8
+#define ARR_COMPARE_TOL_2D_SCALAR_ arr_compare_tol_2d_scalar_r8
+#define ARR_COMPARE_TOL_3D_SCALAR_ arr_compare_tol_3d_scalar_r8
+#define ARR_COMPARE_TOL_4D_SCALAR_ arr_compare_tol_4d_scalar_r8
+#include "include/test_fms_real.inc"
+#undef ARR_COMPARE_TOL_2D_
+#undef ARR_COMPARE_TOL_3D_
+#undef ARR_COMPARE_TOL_4D_
+#undef ARR_COMPARE_TOL_2D_SCALAR_
+#undef ARR_COMPARE_TOL_3D_SCALAR_
+#undef ARR_COMPARE_TOL_4D_SCALAR_
+
+#undef FMS_TEST_KIND_
+
+#undef FMS_TEST_TYPE_
+#undef TYPECAST_
 
 #define FMS_TEST_TYPE_ integer
-#define FMS_TEST_KIND_ i4_kind
 #define TYPECAST_ int
+
+#define FMS_TEST_KIND_ i4_kind
 #define ARR_INIT_2D_ arr_init_2d_i4
 #define ARR_INIT_3D_ arr_init_3d_i4
 #define ARR_COMPARE_2D_ arr_compare_2d_i4
 #define ARR_COMPARE_3D_ arr_compare_3d_i4
+#define ARR_COMPARE_4D_ arr_compare_4d_i4
 #include "include/test_fms.inc"
-#undef FMS_TEST_TYPE_
 #undef FMS_TEST_KIND_
-#undef TYPECAST_
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_
 #undef ARR_COMPARE_2D_
 #undef ARR_COMPARE_3D_
+#undef ARR_COMPARE_4D_
 
-#define FMS_TEST_TYPE_ integer
 #define FMS_TEST_KIND_ i8_kind
-#define TYPECAST_ int
 #define ARR_INIT_2D_ arr_init_2d_i8
 #define ARR_INIT_3D_ arr_init_3d_i8
 #define ARR_COMPARE_2D_ arr_compare_2d_i8
 #define ARR_COMPARE_3D_ arr_compare_3d_i8
+#define ARR_COMPARE_4D_ arr_compare_4d_i8
 #include "include/test_fms.inc"
-#undef FMS_TEST_TYPE_
 #undef FMS_TEST_KIND_
-#undef TYPECAST_
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_
 #undef ARR_COMPARE_2D_
 #undef ARR_COMPARE_3D_
+#undef ARR_COMPARE_4D_
+
+#undef FMS_TEST_TYPE_
+#undef TYPECAST_
 
   subroutine permutable_indices_permute(self, p)
     class(permutable_indices(*)), intent(inout) :: self

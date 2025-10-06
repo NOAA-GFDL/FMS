@@ -28,7 +28,7 @@
     character(*), intent(in) :: msg
 
     if (any(arr0.ne.arr1)) then
-      call mpp_error(FATAL, "Result from mpp_global_field (2D) does not agree with source data: " // msg)
+      call mpp_error(FATAL, "[2D] Unexpected result: " // msg)
     endif
   end subroutine ARR_COMPARE_2D_
 
@@ -37,6 +37,15 @@
     character(*), intent(in) :: msg
 
     if (any(arr0.ne.arr1)) then
-      call mpp_error(FATAL, "Result from mpp_global_field (3D) does not agree with source data: " // msg)
+      call mpp_error(FATAL, "[3D] Unexpected result: " // msg)
     endif
   end subroutine ARR_COMPARE_3D_
+
+  subroutine ARR_COMPARE_4D_ (arr0, arr1, msg)
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(in), dimension(:,:,:,:) :: arr0, arr1
+    character(*), intent(in) :: msg
+
+    if (any(arr0.ne.arr1)) then
+      call mpp_error(FATAL, "[4D] Unexpected result: " // msg)
+    endif
+  end subroutine ARR_COMPARE_4D_

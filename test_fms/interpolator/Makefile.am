@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include -I../common
 
 # Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la ../common/libtest_fms.a
 
 # Build this test program.
 check_PROGRAMS = test_interpolator test_interpolator2_r4 test_interpolator2_r8
@@ -36,8 +36,8 @@ test_interpolator_SOURCES = test_interpolator.F90
 test_interpolator2_r4_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
 test_interpolator2_r8_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
 
-test_interpolator2_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
-test_interpolator2_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
+test_interpolator2_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 $(AM_CPPFLAGS)
+test_interpolator2_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 $(AM_CPPFLAGS)
 
 # Run the test program.
 TESTS = test_interpolator2.sh
