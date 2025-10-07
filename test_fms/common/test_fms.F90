@@ -149,8 +149,8 @@ module fms_test_mod
     class(permutable_indices(*)), intent(inout) :: self
     integer, intent(in) :: p
 
-    call permute_list(self%lb, p)
-    call permute_list(self%ub, p)
+    call permute_arr(self%lb, p)
+    call permute_arr(self%ub, p)
   end subroutine permutable_indices_permute
 
   function permutable_indices_n(self, i) result(n)
@@ -172,19 +172,19 @@ module fms_test_mod
     endif
   end function factorial
 
-  subroutine permute_list(list, p)
-    integer, intent(inout) :: list(:) !< List to be permuted
-    integer, intent(in) :: p !< Which permutation to produce: may range from 1 to size(list)!
-    integer :: choices(size(list))
+  subroutine permute_arr(arr, p)
+    integer, intent(inout) :: arr(:) !< List to be permuted
+    integer, intent(in) :: p !< Which permutation to produce: may range from 1 to size(arr)!
+    integer :: choices(size(arr))
     integer :: n, k, i, f, indx
 
-    n = size(list)
+    n = size(arr)
     if (p.lt.1 .or. p.gt.factorial(n)) then
       print *, "Error: p parameter is out of bounds"
       stop 1
     endif
 
-    choices = list
+    choices = arr
     k = p - 1
 
     do i=1,n
@@ -192,8 +192,8 @@ module fms_test_mod
       indx = k / f + 1
       k = mod(k, f)
 
-      list(i) = choices(indx)
+      arr(i) = choices(indx)
       choices(indx) = choices(n + 1 - i)
     enddo
-  end subroutine permute_list
+  end subroutine permute_arr
 end module fms_test_mod
