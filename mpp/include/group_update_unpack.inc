@@ -21,55 +21,61 @@ if( group%k_loop_inside ) then
   do n = nunpack, 1, -1
      buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
      pos = buffer_pos
-     is = group%unpack_is(n); ie = group%unpack_ie(n)
-     js = group%unpack_js(n); je = group%unpack_je(n)
+     is = group%unpack_is(n); ie = group%unpack_ie(n); ni = ie-is+1
+     js = group%unpack_js(n); je = group%unpack_je(n); nj = je-js+1
      if( group%unpack_type(n) == FIELD_S ) then
         do l=1,nscalar  ! loop over number of fields
            ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
            !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) private(idx) &
-           !$omp   map(to: buffer(pos+1:pos+ksize*(je-js+1)*(ie-is+1))) &
+           !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
            !$omp   map(from: field(is:ie,js:je,1:ksize))
+#endif
            do k = 1, ksize
               do j = js, je
                  do i = is, ie
-                    idx = pos + (k-1)*(je-js+1)*(ie-is+1) + (j-js)*(ie-is+1) + (i-is) + 1
+                    idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
                     field(i,j,k) = buffer(idx)
                  end do
               end do
            end do
-           pos = pos + ksize*(je-js+1)*(ie-is+1)
+           pos = pos + ksize*nj*ni
         end do
      else if( group%unpack_type(n) == FIELD_X ) then
         do l=1,nvector  ! loop over number of fields
            ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
            !$omp target teams distribute parallel do collapse(3) private(idx) &
-           !$omp   map(to: buffer(pos+1:pos+ksize*(je-js+1)*(ie-is+1))) &
+           !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
            !$omp   map(from: fieldx(is:ie,js:je,1:ksize)) if(use_device_ptr)
+#endif
            do k = 1, ksize
               do j = js, je
                  do i = is, ie
-                    idx = pos + (k-1)*(je-js+1)*(ie-is+1) + (j-js)*(ie-is+1) + (i-is) + 1
+                    idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
                     fieldx(i,j,k) = buffer(idx)
                  end do
               end do
            end do
-           pos = pos + ksize*(je-js+1)*(ie-is+1)
+           pos = pos + ksize*nj*ni
         end do
      else if( group%unpack_type(n) == FIELD_Y ) then
         do l=1,nvector  ! loop over number of fields
            ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
            !$omp target teams distribute parallel do collapse(3) private(idx) &
-           !$omp   map(to: buffer(pos+1:pos+ksize*(je-js+1)*(ie-is+1))) &
+           !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
            !$omp   map(from: fieldy(is:ie,js:je,1:ksize)) if(use_device_ptr)
+#endif
            do k = 1, ksize
               do j = js, je
                  do i = is, ie
-                    idx = pos + (k-1)*(je-js+1)*(ie-is+1) + (j-js)*(ie-is+1) + (i-is) + 1
+                    idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
                     fieldy(i,j,k) = buffer(idx)
                  end do
               end do
            end do
-           pos = pos + ksize*(je-js+1)*(ie-is+1)
+           pos = pos + ksize*nj*ni
         end do
      endif
   enddo
