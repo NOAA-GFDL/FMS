@@ -100,32 +100,47 @@ else
      if( group%unpack_type(n) == FIELD_S ) then
         do l=1,nscalar  ! loop over number of fields
            ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+           !$omp target teams distribute parallel do collapse(2) private(idx) &
+           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: field(is:ie,js:je,k)) if(use_device_ptr)
+#endif
            do j = js, je
               do i = is, ie
-                 pos = pos + 1
-                 field(i,j,k) = buffer(pos)
+                 idx = pos + (j-js)*ni + (i-is) + 1
+                 field(i,j,k) = buffer(idx)
               end do
            end do
+           pos = pos + ni*nj
         end do
      else if( group%unpack_type(n) == FIELD_X ) then
         do l=1,nvector  ! loop over number of fields
            ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER__
+           !$omp target teams distribute parallel do collapse(2) private(idx) &
+           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldx(is:ie,js:je,k)) if(use_device_ptr)
+#endif
            do j = js, je
               do i = is, ie
-                 pos = pos + 1
-                 fieldx(i,j,k) = buffer(pos)
+                 idx = pos + (j-js)*ni + (i-is) + 1
+                 fieldx(i,j,k) = buffer(idx)
               end do
            end do
+           pos = pos + ni*nj
         end do
      else if( group%unpack_type(n) == FIELD_Y ) then
         do l=1,nvector  ! loop over number of fields
            ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+           !$omp target teams distribute parallel do collapse(2) private(idx) &
+           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldy(is:ie,js:je,k)) if(use_device_ptr)
+#endif
            do j = js, je
               do i = is, ie
-                 pos = pos + 1
-                 fieldy(i,j,k) = buffer(pos)
+               idx = pos + (j-js)*ni + (i-is) + 1
+               fieldy(i,j,k) = buffer(idx)
               end do
            end do
+           pos = pos + ni*nj
         end do
      endif
   enddo

@@ -51,38 +51,53 @@ if( group%k_loop_inside ) then
         case( MINUS_NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
               do k = 1, ksize
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = field(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                       buffer(idx) = field(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
               do k = 1, ksize
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = field(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = field(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
               do k = 1, ksize
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) = field(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = field(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         end select
      else if( group%pack_type(n) == FIELD_X  ) then
@@ -108,64 +123,91 @@ if( group%k_loop_inside ) then
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do i = is, ie
                        do j = je, js, -1
-                          pos = pos + 1
-                          buffer(pos) = fieldy(i,j,k)
+                        idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                        buffer(idx) = fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do i = is, ie
                        do j = je, js, -1
-                          pos = pos + 1
-                          buffer(pos) = -fieldy(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                          buffer(idx) = -fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         case( NINETY )
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
               do k = 1, ksize
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = fieldy(i,j,k)
+                     !   pos = pos + 1
+                     !   buffer(pos) = fieldy(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = fieldy(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  -fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = -fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         end select ! select case( rotation(n) )
@@ -191,65 +233,90 @@ if( group%k_loop_inside ) then
         case( MINUS_NINETY )
            do l=1,nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(3) private(idx) &
+              !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
               do k = 1, ksize
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = fieldx(i,j,k)
+                     idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                     buffer(idx) = fieldx(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( NINETY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1, nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do i = ie, is, -1
                        do j = js, je
-                          pos = pos + 1
-                          buffer(pos) = fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                          buffer(idx) = fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do i = ie, is, -1
                        do j = js, je
-                          pos = pos + 1
-                          buffer(pos) = -fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                          buffer(idx) = -fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  fieldy(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(3) private(idx) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni)) if(use_device_ptr)
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  -fieldy(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = -fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         end select ! select case( rotation(n) )
@@ -274,42 +341,62 @@ else
         case(ZERO)
            do l=1, group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: field(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do j = js, je
                  do i = is, ie
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (j-js)*ni + (i-is) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            enddo
         case( MINUS_NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: field(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do i = is, ie
                  do j = je, js, -1
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (i-is)*nj + (je-j) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: field(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do i = ie, is, -1
                  do j = js, je
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (ie-i)*nj + (j-js) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: field(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do j = je, js, -1
                  do i = ie, is, -1
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (je-j)*ni + (ie-i) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         end select
      else if( group%pack_type(n) == FIELD_X  ) then
@@ -317,65 +404,95 @@ else
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: fieldx(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do j = js, je
                  do i = is, ie
-                    pos = pos + 1
-                    buffer(pos) = fieldx(i,j,k)
+                    idx = pos + (j-js)*ni + (i-is) + 1
+                    buffer(idx) = fieldx(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( MINUS_NINETY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                !$omp   map(to: fieldy(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = fieldy(i,j,k)
+                       idx = pos + (i-is)*nj + (je-j) + 1
+                       buffer(idx) = fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                 !$omp   map(to: fieldy(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = -fieldy(i,j,k)
+                       idx = pos + (i-is)*nj + (je-j) + 1
+                       buffer(idx) = -fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         case( NINETY )
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: fieldy(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do i = ie, is, -1
                  do j = js, je
-                    pos = pos + 1
-                    buffer(pos) = fieldy(i,j,k)
+                    idx = pos + (ie-i)*nj + (j-js) + 1
+                    buffer(idx) = fieldy(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                 !$omp   map(to: fieldx(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  fieldx(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                 !$omp   map(to: fieldx(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  -fieldx(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = -fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         end select ! select case( rotation(n) )
@@ -384,65 +501,95 @@ else
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: fieldy(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do j = js, je
                  do i = is, ie
-                    pos = pos + 1
-                    buffer(pos) = fieldy(i,j,k)
+                    idx = pos + (j-js)*ni + (i-is) + 1
+                    buffer(idx) = fieldy(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( MINUS_NINETY )
            do l=1,nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+              !$omp target teams distribute parallel do collapse(2) private(idx) &
+              !$omp   map(to: fieldx(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
               do i = is, ie
                  do j = je, js, -1
-                    pos = pos + 1
-                    buffer(pos) = fieldx(i,j,k)
+                    idx = pos + (i-is)*nj + (je-j) + 1
+                    buffer(idx) = fieldx(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( NINETY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1, nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                 !$omp   map(to: fieldx(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = fieldx(i,j,k)
+                       idx = pos + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                 !$omp   map(to: fieldx(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = -fieldx(i,j,k)
+                       idx = pos + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = -fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                 !$omp   map(to: fieldy(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  fieldy(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER
+                 !$omp target teams distribute parallel do collapse(2) private(idx) &
+                 !$omp   map(to: fieldy(k, is:ie, js:je)) map(from: buffer(pos+1:pos+nj*ni)) if(use_device_ptr)
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  -fieldy(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = -fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         end select ! select case( rotation(n) )
