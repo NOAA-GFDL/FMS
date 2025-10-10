@@ -18,6 +18,11 @@
 !***********************************************************************
 
 if( group%k_loop_inside ) then
+#ifndef __NVCOMPILER
+!$OMP parallel do default(none) shared(nunpack,group,nscalar,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP                          private(buffer_pos,pos,m,is, ie, js, je,rotation, &
+!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy, n,k,ni,nj,idx)
+#endif
   do n = nunpack, 1, -1
      buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
      pos = buffer_pos
@@ -80,13 +85,18 @@ if( group%k_loop_inside ) then
      endif
   enddo
 else
+#ifndef __NVCOMPILER
+!$OMP parallel do default(none) shared(nunpack,group,nscalar,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP                          private(buffer_pos,pos,m,is, ie, js, je,rotation, &
+!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k,ni,nj,idx)
+#endif
   do nk = nunpack*ksize, 1, -1
      n = (nk-1)/ksize + 1
      k = mod((nk-1), ksize) + 1
      buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
      pos = buffer_pos + (k-1)*group%unpack_size(n)
-     is = group%unpack_is(n); ie = group%unpack_ie(n)
-     js = group%unpack_js(n); je = group%unpack_je(n)
+     is = group%unpack_is(n); ie = group%unpack_ie(n); ni = ie-is+1
+     js = group%unpack_js(n); je = group%unpack_je(n); nj = je-js+1
      if( group%unpack_type(n) == FIELD_S ) then
         do l=1,nscalar  ! loop over number of fields
            ptr_field = group%addrs_s(l)
