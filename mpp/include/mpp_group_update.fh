@@ -481,7 +481,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
 
   !---pre-post receive.
   call mpp_clock_begin(group_recv_clock)
-#ifdef __NVCOMPILER
+#ifdef __NVCOMPILER_OPENMP_GPU
   !$omp target enter data map(alloc: buffer) if(use_device_ptr)
 #endif
   do m = 1, nrecv
@@ -527,7 +527,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
   nunpack = group%nunpack
   call mpp_clock_begin(group_unpk_clock)
 #include <group_update_unpack.inc>
-#ifdef __NVCOMPILER
+#ifdef __NVCOMPILER_OPENMP_GPU
   !$omp target exit data map(release: buffer) if(use_device_ptr)
 #endif
   call mpp_clock_end(group_unpk_clock)
