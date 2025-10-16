@@ -17,7 +17,8 @@
 !* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 !***********************************************************************
 !> @addtogroup horiz_interp_mod
-  !> @brief Creates a 1D @ref horiz_interp_type with the given parameters
+!> @{
+!> @brief Creates a 1D @ref horiz_interp_type with the given parameters
   subroutine HORIZ_INTERP_NEW_1D_ (Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
                                   interp_method, num_nbrs, max_dist, src_modulo,     &
                                   grid_at_center, mask_in, mask_out)

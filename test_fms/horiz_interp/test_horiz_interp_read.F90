@@ -48,9 +48,6 @@ program main
   if(mpp_pe() == mpp_root_pe()) call write_remap(nlon_dst, nlat_dst, ncells)
   call mpp_sync()
 
-  call fms_end()
-  stop
-
   ! allocate src data
   allocate(data_src(nlon_src, nlat_src))
   do j=1, nlat_src

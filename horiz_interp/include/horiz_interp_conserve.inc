@@ -920,5 +920,4 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     !-----------------------------------------------------------------------
 
   end subroutine DATA_SUM_
-
   !> @}
