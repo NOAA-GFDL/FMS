@@ -38,6 +38,7 @@
 module horiz_interp_conserve_mod
 
   use platform_mod,          only: r4_kind, r8_kind
+  use fms2_io_mod,           only: FmsNetcdfFile_t, open_file, read_data, close_file, get_dimension_size
   use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe, mpp_npes
   use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self
   use mpp_mod,               only: COMM_TAG_1, COMM_TAG_2
@@ -131,6 +132,7 @@ module horiz_interp_conserve_mod
   !> @addtogroup horiz_interp_conserve_mod
   !> @{
   public :: horiz_interp_conserve_init
+  public :: horiz_interp_read_weights_conserve
   public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
 
   integer :: pe, root_pe
@@ -201,6 +203,132 @@ contains
     Interp%horizInterpReals8_type%is_allocated = .false.
 
   end subroutine horiz_interp_conserve_del
+
+  subroutine horiz_interp_read_weights_conserve(Interp, weight_filename, weight_file_source, &
+    nlon_src, nlat_src, nlon_dst, nlat_dst, isw, iew, jsw, jew, src_tile)
+
+    type(horiz_interp_type), intent(inout) :: Interp
+    character(len=*), intent(in) :: weight_filename
+    character(len=*), intent(in) :: weight_file_source
+    integer, intent(in) :: nlon_src, nlat_src, nlon_dst, nlat_dst
+    integer, intent(in) :: isw, iew, jsw, jew
+    integer, intent(in), optional :: src_tile
+
+    integer :: i, j, ncells, mpi_ncells
+    integer :: tile_id(1) !< tile id for saving xgrid for the correct tile
+    integer :: istart(1), iend(1), i_dst, j_dst, index
+    real(8), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), read1_element
+    integer, allocatable :: tile1(:), indices(:), read2(:,:)
+    logical, allocatable :: mask(:)
+
+    type(FmsNetcdfFile_t) :: weight_fileobj !< FMS2io fileob for the weight file
+
+    ! check if weight_file was generated from fregrid
+    if(trim(weight_file_source) /= "fregrid") then
+      call mpp_error(FATAL, trim(weight_file_source)//&
+        &" is not a supported weight file source. fregrid is the only supported weight file source.")
+    end if
+
+    if(open_file(weight_fileobj, trim(weight_filename), "read")) then
+
+      ! get ncells
+      call get_dimension_size(weight_fileobj, "ncells", ncells)
+
+      !get section of xgrid on src_tile
+      if(present(src_tile)) then
+        allocate(tile1(ncells))
+        call read_data(weight_fileobj, "tile1", tile1)
+        istart = FINDLOC(tile1, src_tile)
+        iend = FINDLOC(tile1, src_tile, back=.true.)
+        ncells = iend(1) - istart(1) + 1
+        deallocate(tile1)
+      else
+        istart(1) = 1
+        iend(1) = ncells
+      end if
+
+      ! allocate arrays for reading data
+      allocate(read2(2, ncells), indices(ncells))
+
+      ! get section of xgrid for the specified window (compute domain) on the tgt grid
+      call read_data(weight_fileobj, "tile2_cell", read2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
+      allocate(mask(ncells))
+      mpi_ncells = 0
+      mask = (read2(1,:) >= isw) .and. (read2(1,:) <= iew) .and. (read2(2,:) >= jsw) .and. (read2(2,:) <= jew)
+      do i = 1, ncells
+        if (mask(i)) then
+          mpi_ncells = mpi_ncells + 1
+          indices(mpi_ncells) = i
+        end if
+      end do
+      deallocate(mask)
+
+      ! allocate data to store xgrid
+      allocate(Interp%i_src(mpi_ncells))
+      allocate(Interp%j_src(mpi_ncells))
+      allocate(Interp%i_dst(mpi_ncells))
+      allocate(Interp%j_dst(mpi_ncells))
+      allocate(Interp%horizInterpReals8_type%area_frac_dst(mpi_ncells))
+
+      !save dst parent cell indices on pe domain
+      do i=1, mpi_ncells
+        index = indices(i)
+        Interp%i_dst(i) = read2(1,index) - isw + 1
+        Interp%j_dst(i) = read2(2,index) - jsw + 1
+      end do
+
+      !save src parent cell indices
+      call read_data(weight_fileobj, "tile1_cell", read2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
+      do i=1, mpi_ncells
+        index = indices(i)
+        Interp%i_src(i) = read2(1, index)
+        Interp%j_src(i) = read2(2, index)
+      end do
+
+      deallocate(read2)
+
+      ! allocate arrays to compute weights
+      allocate(read1(ncells), dst_area1(mpi_ncells), dst_area2(nlon_dst, nlat_dst))
+
+      ! read xgrid area
+      call read_data(weight_fileobj, "xgrid_area", read1, corner=[istart(1)], edge_lengths=[iend(1)])
+
+      !sum over xgrid area to get destination grid area
+      dst_area2 = 0.0
+      do i = 1, mpi_ncells
+        index = indices(i)
+        i_dst = Interp%i_dst(i)
+        j_dst = Interp%j_dst(i)
+        read1_element = read1(index)
+        dst_area2(i_dst, j_dst) =+ read1_element
+        dst_area1(i) = dst_area2(i_dst, j_dst)
+        Interp%horizInterpReals8_type%area_frac_dst(i) = read1_element
+      end do
+
+      Interp%horizInterpReals8_type%area_frac_dst = dst_area1/Interp%horizInterpReals8_type%area_frac_dst
+
+      deallocate(read1)
+      deallocate(dst_area1)
+      deallocate(dst_area2)
+      deallocate(indices)
+
+      call close_file(weight_fileobj)
+
+    else
+      call mpp_error(FATAL, "cannot open weight file")
+    end if
+
+    Interp%nxgrid = mpi_ncells
+    Interp%nlon_src = nlon_src
+    Interp%nlat_src = nlat_src
+    Interp%nlon_dst = nlon_dst
+    Interp%nlat_dst = nlat_dst
+    Interp%horizInterpReals8_type%is_allocated = .true.
+    Interp%interp_method = CONSERVE
+    Interp%version = 2
+    Interp%I_am_initialized = .true.
+
+  end subroutine horiz_interp_read_weights_conserve
 
 #include "horiz_interp_conserve_r4.fh"
 #include "horiz_interp_conserve_r8.fh"

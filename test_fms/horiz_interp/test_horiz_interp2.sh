@@ -250,4 +250,6 @@ test_expect_success "assignment overloads with real kind=8" '
   mpirun -n 2 ./test_horiz_interp_r8
 '
 
+test_expect_success "horiz_interp_read_weights_conserve" 'mpirun -n 4 ./test_horiz_interp_read'
+
 test_done

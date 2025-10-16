@@ -82,9 +82,10 @@ contains
     integer :: tile_id(1) !< tile id for saving xgrid for the correct tile
     integer :: ncells, mpi_ncells !< number of exchange grid cells
     integer :: isc, iec, jsc, jec !< compute indices for dst domain
-    integer :: istart(1), iend(1), i_dst, j_dst
-    real(8), allocatable :: dst_area(:,:), var1(:)
-    integer, allocatable :: tile1(:), indices(:), var2(:,:)
+    integer :: istart(1), iend(1), i_dst, j_dst, index
+    real(8), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), read1_element
+    integer, allocatable :: tile1(:), indices(:), read2(:,:)
+    logical, allocatable :: mask(:)
     type(FmsNetcdfFile_t) :: weight_fileobj !< FMS2io fileob for the weight file
 
     integer :: i
@@ -116,24 +117,22 @@ contains
       deallocate(tile1)
 
       ! allocate fields to read in xgrid
-      allocate(var2(2, ncells))
-      allocate(var1(ncells))
+      allocate(read2(2, ncells))
       allocate(indices(ncells))
-      allocate(dst_area(nlon_dst, nlat_dst))
 
-      mpi_ncells = 1
-      call read_data(weight_fileobj, "tile2_cell", var2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
+      call read_data(weight_fileobj, "tile2_cell", read2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
 
-      do i=1, ncells
-        i_dst = var2(1,i)
-        j_dst = var2(2,i)
-        if(j_dst < jsc .or. j_dst > jec) cycle
-        if( i_dst < isc .or. i_dst > iec) cycle
-        indices(mpi_ncells) = i
-        mpi_ncells = mpi_ncells + 1
+      ! get exchange grid in the domain region
+      allocate(mask(ncells))
+      mask = (read2(1,:) >= isc) .and. (read2(1,:) <= iec) .and. (read2(2,:) >= jsc) .and. (read2(2,:) <= jec)
+      mpi_ncells = 0
+      do i = 1, ncells
+        if (mask(i)) then
+          mpi_ncells = mpi_ncells + 1
+          indices(mpi_ncells) = i
+        end if
       end do
-
-      mpi_ncells = mpi_ncells - 1
+      deallocate(mask)
 
       allocate(Interp%i_src(mpi_ncells))
       allocate(Interp%j_src(mpi_ncells))
@@ -142,44 +141,46 @@ contains
       allocate(Interp%horizInterpReals8_type%area_frac_dst(mpi_ncells))
 
       do i=1, mpi_ncells
-        Interp%i_dst(i) = var2(1,indices(i)) - isc + 1
-        Interp%j_dst(i) = var2(2,indices(i)) - jsc + 1
+        index = indices(i)
+        Interp%i_dst(i) = read2(1,index) - isc + 1
+        Interp%j_dst(i) = read2(2,index) - jsc + 1
       end do
 
-      call read_data(weight_fileobj, "tile1_cell", var2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
+      call read_data(weight_fileobj, "tile1_cell", read2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
       do i=1, mpi_ncells
-        Interp%i_src(i) = var2(1, indices(i))
-        Interp%j_src(i) = var2(2, indices(i))
+        index = indices(i)
+        Interp%i_src(i) = read2(1, index)
+        Interp%j_src(i) = read2(2, index)
       end do
 
+      deallocate(read2)
 
-      call read_data(weight_fileobj, "xgrid_area", var1, corner=[istart(1)], edge_lengths=[iend(1)])
+      allocate(read1(ncells))
+      allocate(dst_area1(mpi_ncells))
+      allocate(dst_area2(nlon_dst, nlat_dst))
+
+      call read_data(weight_fileobj, "xgrid_area", read1, corner=[istart(1)], edge_lengths=[iend(1)])
 
       !sum over exchange grid area to get destination grid area
-      dst_area = 0.0
+      dst_area2 = 0.0
       do i = 1, mpi_ncells
-        dst_area(Interp%i_dst(i), Interp%j_dst(i)) =+ var1(indices(i))
-        Interp%horizInterpReals8_type%area_frac_dst(i) = var1(indices(i))
+        index = indices(i)
+        i_dst = Interp%i_dst(i)
+        j_dst = Interp%j_dst(i)
+        read1_element = read1(index)
+        dst_area2(i_dst, j_dst) =+ read1_element
+        dst_area1(i) = dst_area2(i_dst, j_dst)
+        Interp%horizInterpReals8_type%area_frac_dst(i) = read1_element
       end do
 
-      do i=1, mpi_ncells
-        Interp%horizInterpReals8_type%area_frac_dst(i) = dst_area(Interp%i_dst(i), Interp%j_dst(i))/Interp%horizInterpReals8_type%area_frac_dst(i)
-      end do
+      Interp%horizInterpReals8_type%area_frac_dst = dst_area1/Interp%horizInterpReals8_type%area_frac_dst
+
+      deallocate(read1)
+      deallocate(dst_area1)
+      deallocate(dst_area2)
+      deallocate(indices)
 
       call close_file(weight_fileobj)
-
-      deallocate(var2)
-      deallocate(var1)
-      deallocate(indices)
-      deallocate(dst_area)
-
-      ! if(mpp_pe()==1) then
-      !   write(*,*) Interp%i_src
-      !   write(*,*) Interp%j_src
-      !   write(*,*) Interp%i_dst
-      !   write(*,*) Interp%j_dst
-      !   write(*,*) Interp%horizInterpReals8_type%area_frac_dst
-      ! end if
 
     else
       call mpp_error(FATAL, "cannot open weight file")
