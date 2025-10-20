@@ -250,7 +250,7 @@ contains
         !find iend
         do i=istart, ncells
           if(tile1(i) /= src_tile) then
-            iend = i
+            iend = i - 1
             exit
           end if
         end do
