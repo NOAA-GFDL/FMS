@@ -402,7 +402,8 @@ module fms
   !> horiz_interp
   use horiz_interp_mod, only: fms_horiz_interp => horiz_interp, fms_horiz_interp_new => horiz_interp_new, &
                               fms_horiz_interp_del => horiz_interp_del, fms_horiz_interp_init => horiz_interp_init, &
-                              fms_horiz_interp_end => horiz_interp_end
+                              fms_horiz_interp_end => horiz_interp_end, &
+                              fms_horiz_interp_read_weights_conserve => horiz_interp_read_weights_conserve
   use horiz_interp_type_mod, only: FmsHorizInterp_type => horiz_interp_type, &
                               assignment(=), fms_horiz_interp_type_stats => stats
   !! used via horiz_interp
