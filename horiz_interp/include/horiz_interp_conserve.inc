@@ -497,13 +497,14 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   !#######################################################################
 
   subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
-                                               mask_in, mask_out, verbose)
+                                               mask_in, mask_out, verbose, save_weights_as_fregrid)
     type(horiz_interp_type),        intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
     real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_out, lat_out
     real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
     real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
+    logical, intent(in), optional                 :: save_weights_as_fregrid
 
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
@@ -562,12 +563,16 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     allocate(Interp%i_src(nxgrid), Interp%j_src(nxgrid) )
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
     allocate(Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid) )
+    if(present(save_weights_as_fregrid)) then
+      if(save_weights_as_fregrid) allocate(Interp%xgrid_area(nxgrid))
+    end if
     Interp%version = 2
     Interp%nxgrid   = nxgrid
     Interp%i_src = i_src(1:nxgrid)+1 ! in C, the starting index is 0
     Interp%j_src = j_src(1:nxgrid)+1
     Interp%i_dst = i_dst(1:nxgrid)+1
     Interp%j_dst = j_dst(1:nxgrid)+1
+    Interp%xgrid_area = xgrid_area(1:nxgrid)
 
     ! sum over exchange grid area to get destination grid area
     dst_area = 0.0_r8_kind

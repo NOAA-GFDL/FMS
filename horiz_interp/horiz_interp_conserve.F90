@@ -199,6 +199,7 @@ contains
             deallocate(Interp%horizInterpReals4_type%area_frac_dst)
        endif
     end select
+    deallocate(Interp%xgrid_area)
     Interp%horizInterpReals4_type%is_allocated = .false.
     Interp%horizInterpReals8_type%is_allocated = .false.
 
