@@ -56,4 +56,4 @@ TESTS = test_horiz_interp2.sh test_create_xgrid_order2.sh
 EXTRA_DIST = test_horiz_interp2.sh test_create_xgrid_order2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl *nc

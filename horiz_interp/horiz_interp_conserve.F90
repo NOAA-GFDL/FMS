@@ -215,11 +215,10 @@ contains
     integer, intent(in) :: isw, iew, jsw, jew
     integer, intent(in), optional :: src_tile
 
-    integer :: i, j, ncells, mpi_ncells
-    integer :: tile_id(1) !< tile id for saving xgrid for the correct tile
-    integer :: istart(1), iend(1), i_dst, j_dst, index
-    real(8), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), read1_element
-    integer, allocatable :: tile1(:), indices(:), read2(:,:)
+    integer :: i, j, ncells, domain_ncells
+    integer :: istart, iend, i_dst, j_dst, index
+    real(8), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), xarea(:)
+    integer, allocatable :: tile1(:), read2(:,:)
     logical, allocatable :: mask(:)
 
     type(FmsNetcdfFile_t) :: weight_fileobj !< FMS2io fileob for the weight file
@@ -235,83 +234,85 @@ contains
       ! get ncells
       call get_dimension_size(weight_fileobj, "ncells", ncells)
 
+      istart = 1
+      iend = ncells
+
       !get section of xgrid on src_tile
       if(present(src_tile)) then
         allocate(tile1(ncells))
         call read_data(weight_fileobj, "tile1", tile1)
-        istart = FINDLOC(tile1, src_tile)
-        iend = FINDLOC(tile1, src_tile, back=.true.)
-        ncells = iend(1) - istart(1) + 1
+        !find istart
+        do i=1, ncells
+          if(tile1(i) == src_tile) then
+            istart = i
+            exit
+          end if
+        end do
+        !find iend
+        do i=istart, ncells
+          if(tile1(i) /= src_tile) then
+            iend = i - 1
+            exit
+          end if
+        end do
+        ncells = iend - istart + 1
         deallocate(tile1)
-      else
-        istart(1) = 1
-        iend(1) = ncells
       end if
 
       ! allocate arrays for reading data
-      allocate(read2(2, ncells), indices(ncells))
+      allocate(read2(2, ncells))
 
       ! get section of xgrid for the specified window (compute domain) on the tgt grid
-      call read_data(weight_fileobj, "tile2_cell", read2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
+      call read_data(weight_fileobj, "tile2_cell", read2, corner=[1,istart], edge_lengths=[2,ncells])
+
+      ! get xgrid indices, used copilot for this section of code
       allocate(mask(ncells))
-      mpi_ncells = 0
-      mask = (read2(1,:) >= isw) .and. (read2(1,:) <= iew) .and. (read2(2,:) >= jsw) .and. (read2(2,:) <= jew)
-      do i = 1, ncells
-        if (mask(i)) then
-          mpi_ncells = mpi_ncells + 1
-          indices(mpi_ncells) = i
-        end if
-      end do
-      deallocate(mask)
+      mask = (read2(1,:) >= isw .and. read2(1,:) <= iew .and. read2(2,:) >= jsw .and. read2(2,:) <= jew)
+
+      domain_ncells = count(mask)
+
+      write(*,*) istart, iend, ncells, "and", isw, iew, jsw, jew, domain_ncells
 
       ! allocate data to store xgrid
-      allocate(Interp%i_src(mpi_ncells))
-      allocate(Interp%j_src(mpi_ncells))
-      allocate(Interp%i_dst(mpi_ncells))
-      allocate(Interp%j_dst(mpi_ncells))
-      allocate(Interp%horizInterpReals8_type%area_frac_dst(mpi_ncells))
+      allocate(Interp%i_src(domain_ncells))
+      allocate(Interp%j_src(domain_ncells))
+      allocate(Interp%i_dst(domain_ncells))
+      allocate(Interp%j_dst(domain_ncells))
+      allocate(Interp%horizInterpReals8_type%area_frac_dst(domain_ncells))
 
-      !save dst parent cell indices on pe domain
-      do i=1, mpi_ncells
-        index = indices(i)
-        Interp%i_dst(i) = read2(1,index) - isw + 1
-        Interp%j_dst(i) = read2(2,index) - jsw + 1
-      end do
+      Interp%i_dst = pack(read2(1,:), mask) - isw + 1
+      Interp%j_dst = pack(read2(2,:), mask) - jsw + 1
 
       !save src parent cell indices
-      call read_data(weight_fileobj, "tile1_cell", read2, corner=[1,istart(1)], edge_lengths=[2,iend(1)])
-      do i=1, mpi_ncells
-        index = indices(i)
-        Interp%i_src(i) = read2(1, index)
-        Interp%j_src(i) = read2(2, index)
-      end do
+      call read_data(weight_fileobj, "tile1_cell", read2, corner=[1,istart], edge_lengths=[2,ncells])
+      Interp%i_src = pack(read2(1,:), mask)
+      Interp%j_src = pack(read2(2,:), mask)
 
       deallocate(read2)
 
       ! allocate arrays to compute weights
-      allocate(read1(ncells), dst_area1(mpi_ncells), dst_area2(nlon_dst, nlat_dst))
+      allocate(read1(ncells), dst_area1(domain_ncells), dst_area2(nlon_dst, nlat_dst), xarea(domain_ncells))
 
       ! read xgrid area
-      call read_data(weight_fileobj, "xgrid_area", read1, corner=[istart(1)], edge_lengths=[iend(1)])
+      call read_data(weight_fileobj, "xgrid_area", read1, corner=[istart], edge_lengths=[ncells])
+
+      xarea = pack(read1, mask)
 
       !sum over xgrid area to get destination grid area
       dst_area2 = 0.0
-      do i = 1, mpi_ncells
-        index = indices(i)
+      do i = 1, domain_ncells
         i_dst = Interp%i_dst(i)
         j_dst = Interp%j_dst(i)
-        read1_element = read1(index)
-        dst_area2(i_dst, j_dst) =+ read1_element
+        dst_area2(i_dst, j_dst) = dst_area2(i_dst, j_dst) + xarea(i)
         dst_area1(i) = dst_area2(i_dst, j_dst)
-        Interp%horizInterpReals8_type%area_frac_dst(i) = read1_element
       end do
 
-      Interp%horizInterpReals8_type%area_frac_dst = dst_area1/Interp%horizInterpReals8_type%area_frac_dst
+      Interp%horizInterpReals8_type%area_frac_dst = xarea/dst_area1
 
       deallocate(read1)
       deallocate(dst_area1)
       deallocate(dst_area2)
-      deallocate(indices)
+      deallocate(xarea)
 
       call close_file(weight_fileobj)
 
@@ -319,7 +320,7 @@ contains
       call mpp_error(FATAL, "cannot open weight file")
     end if
 
-    Interp%nxgrid = mpi_ncells
+    Interp%nxgrid = domain_ncells
     Interp%nlon_src = nlon_src
     Interp%nlat_src = nlat_src
     Interp%nlon_dst = nlon_dst
