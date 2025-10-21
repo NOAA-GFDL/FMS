@@ -777,6 +777,7 @@ list(APPEND TEST_SRC_MULTI_TARGET
   test_fms/sat_vapor_pres/test_sat_vapor_pres.F90
   test_fms/time_interp/test_time_interp.F90
   test_fms/time_interp/test_time_interp_external.F90
+  test_fms/time_interp/test_time_interp_conservative_hi.F90
   test_fms/topography/test_topography.F90
   test_fms/tracer_manager/test_tracer_manager.F90
   test_fms/tridiagonal/test_tridiagonal.F90
@@ -888,7 +889,15 @@ foreach (testScript ${TEST_SCRIPTS})
         ENVIRONMENT "parser_skip=skip"
     )
   endif()
+
 endforeach()
+
+# skip parallel netcdf tests if its not enabled in given install
+IF(NOT NetCDF_PARALLEL)
+  set_tests_properties(test_collective_io PROPERTIES
+      ENVIRONMENT "parallel_skip=skip"
+  )
+endif()
 
 set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 
