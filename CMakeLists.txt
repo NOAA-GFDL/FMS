@@ -343,7 +343,7 @@ foreach(kind ${kinds})
                                                  amip_interp/include)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
-  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS ${${kind}_flags})
+  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
   target_link_libraries(${libTgt}_f PRIVATE NetCDF::NetCDF_Fortran
@@ -588,6 +588,14 @@ include(CTest)
 set(MPI_LAUNCHER "mpirun")
 # used in the test-lib.sh.in to make it behave differently when parsed by cmake
 set(USING_CMAKE "true")
+# set the fms library to link tests with based on whats built
+if(NOT kinds)
+  set(fmsLibraryName FMS::fms)
+elseif(64BIT)
+  set(fmsLibraryName FMS::fms_r8)
+else()
+  set(fmsLibraryName FMS::fms_r4)
+endif()
 
 # parse and add build info to test script util file
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib.sh.in ${CMAKE_CURRENT_SOURCE_DIR}/test-lib.sh
@@ -610,7 +618,7 @@ list(APPEND TEST_MODS_SRC
   test_fms/mpp/test_system_clock.F90)
 
 add_library(testLibs "${TEST_MODS_SRC}")
-target_link_libraries(testLibs FMS::fms)
+target_link_libraries(testLibs ${fmsLibraryName})
 target_compile_definitions(testLibs PRIVATE TEST_MOS_KIND_=r8_kind)
 target_include_directories(testLibs PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include
                                     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/include
@@ -776,14 +784,17 @@ list(APPEND TEST_SRC_MULTI_TARGET
 
 # add all the test executables and set up linking + compile flags
 foreach (testFile ${TEST_SRC_SINGLE_TARGET})
-  get_filename_component (TName ${testFile} NAME_WE)
 
+  get_filename_component (TName ${testFile} NAME_WE)
   add_executable(${TName} ${testFile})
-  target_compile_definitions(${TName} PRIVATE "${r8_defs}")
-  set_target_properties(${TName} PROPERTIES COMPILE_FLAGS ${r8_flags})
-  target_link_libraries(${TName} PUBLIC FMS::fms
-                                 PRIVATE testLibs
-                                   )
+  target_link_libraries(${TName} PUBLIC ${fmsLibraryName}
+                                 PRIVATE testLibs)
+  if(32BIT)
+    target_compile_definitions(${TName} PRIVATE "${r4_defs}")
+  else()
+    target_compile_definitions(${TName} PRIVATE "${r8_defs}")
+    set_target_properties(${TName} PROPERTIES COMPILE_FLAGS ${r8_flags})
+  endif()
 
   if(WITH_YAML)
     target_link_libraries(${TName} PRIVATE yaml ${LIBYAML_LIBRARIES})
@@ -808,16 +819,14 @@ foreach (testFile ${TEST_SRC_MULTI_TARGET})
   add_executable(${TName}_r8 ${testFile})
   target_compile_definitions(${TName}_r8 PRIVATE "${r8_defs}")
   set_target_properties(${TName}_r8 PROPERTIES COMPILE_FLAGS ${r8_flags})
-  target_link_libraries(${TName}_r8 PUBLIC FMS::fms
-                                    PRIVATE testLibs
-                                    )
-
+  target_link_libraries(${TName}_r8 PUBLIC ${fmsLibraryName}
+                                    PRIVATE testLibs)
   add_executable(${TName}_r4 ${testFile})
   target_compile_definitions(${TName}_r4 PRIVATE "${r4_defs}")
   # seems counterintuitive but r4 tests use r8 default
   # they specify kind values explicitly with the preprocessor where needed (TEST_FMS_KIND_)
   set_target_properties(${TName}_r4 PROPERTIES COMPILE_FLAGS ${r8_flags})
-  target_link_libraries(${TName}_r4 PUBLIC FMS::fms
+  target_link_libraries(${TName}_r4 PUBLIC ${fmsLibraryName}
                                     PRIVATE testLibs
                                     )
 

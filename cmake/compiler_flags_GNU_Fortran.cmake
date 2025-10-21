@@ -1,6 +1,6 @@
 # Precision-based Fortran compiler flags
 set(r8_flags "-fdefault-real-8 -fdefault-double-8") # Fortran flags for 64BIT precision
-set(r4_flags "-fdefault-real-4") # Fortran flags for 32BIT precision
+set(r4_flags "") # 4 byte reals is default for gfortran
 
 # GNU Fortran
 set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fcray-pointer -fallow-argument-mismatch -ffree-line-length-none")
