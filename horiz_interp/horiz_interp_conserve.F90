@@ -271,8 +271,6 @@ contains
 
       domain_ncells = count(mask)
 
-      write(*,*) istart, iend, ncells, "and", isw, iew, jsw, jew, domain_ncells
-
       ! allocate data to store xgrid
       allocate(Interp%i_src(domain_ncells))
       allocate(Interp%j_src(domain_ncells))

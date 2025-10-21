@@ -1,6 +1,7 @@
 program main
 
   use constants_mod, only: DEG_TO_RAD
+  use fms_mod, only: fms_init, fms_end
   use horiz_interp_mod, only: horiz_interp_type, horiz_interp_new
   use mpp_mod, only: FATAL, mpp_error
   use platform_mod, only: r8_kind
@@ -25,6 +26,8 @@ program main
     end do
   end do
 
+  call fms_init()
+
   call get_grid_area(nlon, nlat,lon, lat, answer_area)
 
   call horiz_interp_new(interp, lon, lat, lon, lat, interp_method="conservative", &
@@ -33,5 +36,7 @@ program main
   if(any(interp%xgrid_area /= pack(answer_area, .true.))) then
     call mpp_error(FATAL, "saved xgrid_area does not match answers")
   end if
+
+  call fms_end()
 
 end program main
