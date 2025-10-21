@@ -28,7 +28,7 @@ program main
   call get_grid_area(nlon, nlat,lon, lat, answer_area)
 
   call horiz_interp_new(interp, lon, lat, lon, lat, interp_method="conservative", &
-    is_latlon_in=.false., is_latlon_out=.false., save_weights_as_fregrid=.true.)
+    is_latlon_in=.false., is_latlon_out=.false., save_xgrid_area=.true.)
 
   if(any(interp%xgrid_area /= pack(answer_area, .true.))) then
     call mpp_error(FATAL, "saved xgrid_area does not match answers")
