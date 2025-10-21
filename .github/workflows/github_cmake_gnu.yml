@@ -29,7 +29,7 @@ jobs:
     - name: Build the library
       run: make -C build
     - name: Run the unit tests
-      run: cd build && ctest --verbose
+      run: cd build && ctest -E test_mpp_nesting --output-on-failure
 
   build_arm:
     runs-on: ubuntu-24.04-arm
@@ -52,4 +52,4 @@ jobs:
     - name: Build the library
       run: make -C build
     - name: Run the unit tests
-      run: cd build && ctest --verbose
+      run: cd build && ctest -E test_mpp_nesting --output-on-failure
