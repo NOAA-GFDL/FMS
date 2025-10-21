@@ -792,9 +792,9 @@ foreach (testFile ${TEST_SRC_SINGLE_TARGET})
   target_link_libraries(${TName} PUBLIC ${fmsLibraryName}
                                  PRIVATE testLibs)
   if(32BIT)
-    target_compile_definitions(${TName} PRIVATE "${r4_defs}")
+    target_compile_definitions(${TName} PRIVATE "${r4_defs} ${fms_defs}")
   else()
-    target_compile_definitions(${TName} PRIVATE "${r8_defs}")
+    target_compile_definitions(${TName} PRIVATE "${r8_defs} ${fms_defs} ")
     set_target_properties(${TName} PROPERTIES COMPILE_FLAGS ${r8_flags})
   endif()
 
@@ -819,12 +819,12 @@ foreach (testFile ${TEST_SRC_MULTI_TARGET})
   get_filename_component (TName ${testFile} NAME_WE)
 
   add_executable(${TName}_r8 ${testFile})
-  target_compile_definitions(${TName}_r8 PRIVATE "${r8_defs}")
+  target_compile_definitions(${TName}_r8 PRIVATE "${r8_defs} ${fms_defs}")
   set_target_properties(${TName}_r8 PROPERTIES COMPILE_FLAGS ${r8_flags})
   target_link_libraries(${TName}_r8 PUBLIC ${fmsLibraryName}
                                     PRIVATE testLibs)
   add_executable(${TName}_r4 ${testFile})
-  target_compile_definitions(${TName}_r4 PRIVATE "${r4_defs}")
+  target_compile_definitions(${TName}_r4 PRIVATE "${r4_defs} ${fms_defs}")
   # seems counterintuitive but r4 tests use r8 default
   # they specify kind values explicitly with the preprocessor where needed (TEST_FMS_KIND_)
   set_target_properties(${TName}_r4 PROPERTIES COMPILE_FLAGS ${r8_flags})
