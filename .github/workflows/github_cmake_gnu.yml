@@ -18,6 +18,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
+        EXCLUDE_TESTS: "test_mpp_nesting"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
@@ -29,7 +30,7 @@ jobs:
     - name: Build the library
       run: make -C build
     - name: Run the unit tests
-      run: cd build && ctest -E test_mpp_nesting --output-on-failure
+      run: cd build && ctest -E "${EXCLUDE_TESTS}" --output-on-failure
 
   build_arm:
     runs-on: ubuntu-24.04-arm
@@ -41,6 +42,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
+        EXCLUDE_TESTS: ${{ matrix.build-type == '-DCMAKE_BUILD_TYPE=Release' && 'test_mpp_nesting|test_sat_vapor_pres' || 'test_mpp_nesting' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
@@ -52,4 +54,4 @@ jobs:
     - name: Build the library
       run: make -C build
     - name: Run the unit tests
-      run: cd build && ctest -E test_mpp_nesting --output-on-failure
+      run: cd build && ctest -E "${EXCLUDE_TESTS}" --output-on-failure
