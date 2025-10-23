@@ -69,14 +69,14 @@ option(USE_DEPRECATED_IO     "THIS OPTION HAS NO EFFECT AND WILL BE REMOVED IN A
 
 if(32BIT)
   list(APPEND kinds "r4")
+  message(STATUS "Building library with 4-byte real defaults (with mixed precision real support for most modules).")
 endif()
 if(64BIT)
   list(APPEND kinds "r8")
+  message(STATUS "Building library with 8-byte real defaults (with mixed precision real support for most modules).")
 endif()
 if(NOT kinds)
-  message(STATUS "Single Precision 32BIT: ${32BIT}")
-  message(STATUS "Double Precision 64BIT: ${64BIT}")
-  message(STATUS "No kind specified, building default double precision (with mixed precision support). Real size will not be included in built library name.")
+  message(STATUS "Building library with 8-byte real defaults (with mixed precision 4-byte real support for most modules). Real size will not be included in built library name.")
 endif()
 
 # Find dependencies
@@ -272,11 +272,6 @@ if(LARGEFILE)
   list(APPEND fms_defs use_LARGEFILE)
 endif()
 
-# Precision-based compiler definitions
-if(32BIT)
-  list(APPEND r4_defs OVERLOAD_R4 OVERLOAD_R8)
-endif()
-
 # Add platform specific compiler definitions
 if(APPLE)
   list(APPEND fms_defs __APPLE__)
@@ -287,7 +282,7 @@ include(fms_compiler_flags)
 
 # If netCDF was not built with HDF5 parallel I/O features, set up the macro -DNO_NC_PARALLEL4
 IF(NOT NetCDF_PARALLEL)
-  MESSAGE(WARNING "netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed")
+  MESSAGE(WARNING "netCDF was not build with HDF5 parallel I/O features, so parallel netcdf io is not allowed")
   list(APPEND fms_defs NO_NC_PARALLEL4)
 ENDIF()
 
@@ -593,7 +588,7 @@ if(NOT kinds)
   set(fmsLibraryName FMS::fms)
 elseif(64BIT)
   set(fmsLibraryName FMS::fms_r8)
-else()
+elseif(32BIT)
   set(fmsLibraryName FMS::fms_r4)
 endif()
 
