@@ -145,11 +145,18 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_0d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
+  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
   if (present(broadcast)) then
     bcast = broadcast
   else
     bcast = .true.
   endif
+  if (fileobj%use_netcdf_mpi) bcast = .false.
+
   c(1) = 1
   if (present(unlim_dim_level)) then
     unlim_dim_index = get_variable_unlimited_dimension_index(fileobj, variable_name, &
@@ -159,6 +166,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
+
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
@@ -178,6 +186,7 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
     call check_netcdf_code(err, append_error_msg)
     call unpack_data_0d(fileobj, varid, variable_name, buf)
   endif
+
   if (bcast) then
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -234,11 +243,18 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_1d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
+  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
   if (present(broadcast)) then
     bcast = broadcast
   else
     bcast = .true.
   endif
+  if (fileobj%use_netcdf_mpi) bcast = .false.
+
   c(:) = 1
   if (present(corner)) then
     c(1) = corner(1)
@@ -257,6 +273,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
+
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
@@ -276,6 +293,7 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
     call check_netcdf_code(err, append_error_msg)
     call unpack_data_1d(fileobj, varid, variable_name, buf)
   endif
+
   if (bcast) then
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -330,11 +348,18 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_2d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
+  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
   if (present(broadcast)) then
     bcast = broadcast
   else
     bcast = .true.
   endif
+  if (fileobj%use_netcdf_mpi) bcast = .false.
+
   c(:) = 1
   if (present(corner)) then
     c(1:2) = corner(1:2)
@@ -353,12 +378,9 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
-  if(fileobj%use_collective) then
+
+  if(fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-    ! NetCDF does not have the ability to specify collective I/O at
-    ! the file basis so we must activate at the variable level
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -373,38 +395,21 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
     end select
     call check_netcdf_code(err, append_error_msg)
     call unpack_data_2d(fileobj, varid, variable_name, buf)
-  else
-    if (fileobj%is_root) then
-      varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-      select type(buf)
-        type is (integer(kind=i4_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        type is (integer(kind=i8_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        type is (real(kind=r4_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        type is (real(kind=r8_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        class default
-          call error("Unsupported variable type: "//trim(append_error_msg))
-      end select
-      call check_netcdf_code(err, append_error_msg)
-      call unpack_data_2d(fileobj, varid, variable_name, buf)
-    endif
-    if (bcast) then
-      select type(buf)
-        type is (integer(kind=i4_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        type is (integer(kind=i8_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        type is (real(kind=r4_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        type is (real(kind=r8_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        class default
-          call error("Unsupported variable type: "//trim(append_error_msg))
-      end select
-    endif
+  endif
+
+  if (bcast) then
+    select type(buf)
+      type is (integer(kind=i4_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      type is (integer(kind=i8_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      type is (real(kind=r4_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      type is (real(kind=r8_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      class default
+        call error("Unsupported variable type: "//trim(append_error_msg))
+    end select
   endif
 end subroutine netcdf_read_data_2d
 
@@ -444,11 +449,18 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_3d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
+  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
   if (present(broadcast)) then
     bcast = broadcast
   else
     bcast = .true.
   endif
+  if (fileobj%use_netcdf_mpi) bcast = .false.
+
   c(:) = 1
   if (present(corner)) then
     c(1:3) = corner(1:3)
@@ -467,12 +479,9 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
-  if(fileobj%use_collective) then
+
+  if(fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-    ! NetCDF does not have the ability to specify collective I/O at
-    ! the file basis so we must activate at the variable level
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -487,38 +496,21 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
     end select
     call check_netcdf_code(err, append_error_msg)
     call unpack_data_3d(fileobj, varid, variable_name, buf)
-  else
-    if (fileobj%is_root) then
-      varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-      select type(buf)
-        type is (integer(kind=i4_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        type is (integer(kind=i8_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        type is (real(kind=r4_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        type is (real(kind=r8_kind))
-          err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
-        class default
-          call error("Unsupported variable type: "//trim(append_error_msg))
-      end select
-      call check_netcdf_code(err, append_error_msg)
-      call unpack_data_3d(fileobj, varid, variable_name, buf)
-    endif
-    if (bcast) then
-      select type(buf)
-        type is (integer(kind=i4_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        type is (integer(kind=i8_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        type is (real(kind=r4_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        type is (real(kind=r8_kind))
-          call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
-        class default
-          call error("Unsupported variable type: "//trim(append_error_msg))
-      end select
-    endif
+  endif
+
+  if (bcast) then
+    select type(buf)
+      type is (integer(kind=i4_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      type is (integer(kind=i8_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      type is (real(kind=r4_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      type is (real(kind=r8_kind))
+        call mpp_broadcast(buf, size(buf), fileobj%io_root, pelist=fileobj%pelist)
+      class default
+        call error("Unsupported variable type: "//trim(append_error_msg))
+    end select
   endif
 end subroutine netcdf_read_data_3d
 
@@ -558,11 +550,18 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_4d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
+  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
   if (present(broadcast)) then
     bcast = broadcast
   else
     bcast = .true.
   endif
+  if (fileobj%use_netcdf_mpi) bcast = .false.
+
   c(:) = 1
   if (present(corner)) then
     c(1:4) = corner(1:4)
@@ -581,6 +580,7 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
+
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
@@ -598,6 +598,7 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
     call check_netcdf_code(err, append_error_msg)
     call unpack_data_4d(fileobj, varid, variable_name, buf)
   endif
+
   if (bcast) then
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -650,11 +651,18 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_5d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
+  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
   if (present(broadcast)) then
     bcast = broadcast
   else
     bcast = .true.
   endif
+  if (fileobj%use_netcdf_mpi) bcast = .false.
+
   c(:) = 1
   if (present(corner)) then
     c(1:5) = corner(1:5)
@@ -673,6 +681,7 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
     endif
     c(unlim_dim_index) = unlim_dim_level
   endif
+
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
     select type(buf)
@@ -690,6 +699,7 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
     call check_netcdf_code(err, append_error_msg)
     call unpack_data_5d(fileobj, varid, variable_name, buf)
   endif
+
   if (bcast) then
     select type(buf)
       type is (integer(kind=i4_kind))
