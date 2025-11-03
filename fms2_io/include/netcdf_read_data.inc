@@ -145,11 +145,6 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_0d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
-  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
-  endif
-
   if (present(broadcast)) then
     bcast = broadcast
   else
@@ -169,6 +164,12 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
+
+    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c)
@@ -243,11 +244,6 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_1d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
-  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
-  endif
-
   if (present(broadcast)) then
     bcast = broadcast
   else
@@ -276,6 +272,12 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
+
+    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -348,11 +350,6 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_2d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
-  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
-  endif
-
   if (present(broadcast)) then
     bcast = broadcast
   else
@@ -379,8 +376,14 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
     c(unlim_dim_index) = unlim_dim_level
   endif
 
-  if(fileobj%is_root) then
+  if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
+
+    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -449,11 +452,6 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_3d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
-  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
-  endif
-
   if (present(broadcast)) then
     bcast = broadcast
   else
@@ -480,8 +478,14 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
     c(unlim_dim_index) = unlim_dim_level
   endif
 
-  if(fileobj%is_root) then
+  if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
+
+    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -550,11 +554,6 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_4d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
-  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
-  endif
-
   if (present(broadcast)) then
     bcast = broadcast
   else
@@ -583,6 +582,12 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
+
+    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
@@ -651,11 +656,6 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
 
   append_error_msg = "netcdf_read_data_5d: file:"//trim(fileobj%path)//"- variable:"//trim(variable_name)
 
-  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-    call check_netcdf_code(err, append_error_msg)
-  endif
-
   if (present(broadcast)) then
     bcast = broadcast
   else
@@ -684,6 +684,12 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
+
+    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+
     select type(buf)
       type is (integer(kind=i4_kind))
         err = nf90_get_var(fileobj%ncid, varid, buf, start=c, count=e)
