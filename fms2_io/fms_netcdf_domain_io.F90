@@ -382,8 +382,12 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
         call string_copy(combined_filepath, path)
       endif
 
-      success = netcdf_file_open(fileobj, combined_filepath, mode, "netcdf4", is_restart, dont_add_res_to_filename, &
-                                 mpp_get_domain_tile_commid(domain), use_collective)
+      success = netcdf_file_open(fileobj, combined_filepath, mode, &
+                                 nc_format="netcdf4", &
+                                 is_restart=is_restart, &
+                                 dont_add_res_to_filename=dont_add_res_to_filename, &
+                                 tile_comm=mpp_get_domain_tile_commid(domain), &
+                                 use_collective=use_collective)
       return
     endif
   endif

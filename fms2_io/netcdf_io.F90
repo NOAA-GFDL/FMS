@@ -584,7 +584,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   success = .true.
 
-  if (.not.fms2_io_is_initialized) then
+  if (fms2_nc_format_param.eq.-1) then
     call error("netcdf_file_open :: fms2_io has not been initialized")
   endif
 
