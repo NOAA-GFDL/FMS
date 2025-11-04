@@ -206,7 +206,7 @@ contains
   end subroutine horiz_interp_conserve_del
 
   subroutine horiz_interp_read_weights_conserve(Interp, weight_filename, weight_file_source, &
-    nlon_src, nlat_src, nlon_dst, nlat_dst, isw, iew, jsw, jew, src_tile)
+    nlon_src, nlat_src, nlon_dst, nlat_dst, isw, iew, jsw, jew, src_tile, save_weights_as_fregrid)
 
     type(horiz_interp_type), intent(inout) :: Interp
     character(len=*), intent(in) :: weight_filename
@@ -214,6 +214,7 @@ contains
     integer, intent(in) :: nlon_src, nlat_src, nlon_dst, nlat_dst
     integer, intent(in) :: isw, iew, jsw, jew
     integer, intent(in), optional :: src_tile
+    logical, intent(in), optional :: save_weights_as_fregrid
 
     integer :: i, j, ncells, domain_ncells
     integer :: istart, iend, i_dst, j_dst, index
@@ -306,6 +307,13 @@ contains
       end do
 
       Interp%horizInterpReals8_type%area_frac_dst = xarea/dst_area1
+
+      if(present(save_weights_as_fregrid)) then
+        if(save_weights_as_fregrid) then
+          allocate(Interp%xgrid_area(domain_ncells))
+          Interp%xgrid_area = xarea
+        end if
+      end if
 
       deallocate(read1)
       deallocate(dst_area1)
