@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @defgroup fms_diag_axis_object_mod fms_diag_axis_object_mod
@@ -31,7 +30,7 @@ module fms_diag_axis_object_mod
 #ifdef use_yaml
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
                             & mpp_get_global_domain, NORTH, EAST, mpp_get_tile_id, &
-                            & mpp_get_ntile_count, mpp_get_io_domain
+                            & mpp_get_ntile_count, mpp_get_io_domain, mpp_get_layout
   use platform_mod,    only:  r8_kind, r4_kind, i4_kind, i8_kind
   use diag_data_mod,   only:  diag_atttype, max_axes, NO_DOMAIN, TWO_D_DOMAIN, UG_DOMAIN, &
                               direction_down, direction_up, fmsDiagAttribute_type, max_axis_attributes, &
@@ -191,6 +190,7 @@ module fms_diag_axis_object_mod
      PROCEDURE :: get_set_name
      PROCEDURE :: has_set_name
      PROCEDURE :: is_x_or_y_axis
+     PROCEDURE :: get_dim_size_layout
      ! TO DO:
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
@@ -448,7 +448,7 @@ module fms_diag_axis_object_mod
     integer                       :: global_io_index(2)!< Global io domain starting and ending index
     select type(this)
     type is (fmsDiagFullAxis_type)
-      call this%get_global_io_domain(global_io_index)
+      call this%get_global_io_domain(global_io_index, fms2io_fileobj%is_file_using_netcdf_mpi())
       call write_data(fms2io_fileobj, this%axis_name, this%axis_data(global_io_index(1):global_io_index(2)))
     type is (fmsDiagSubAxis_type)
       i = this%starting_index
@@ -580,9 +580,10 @@ module fms_diag_axis_object_mod
   end function
 
   !> @brief Get the starting and ending indices of the global io domain of the axis
-  subroutine get_global_io_domain(this, global_io_index)
-    class(fmsDiagFullAxis_type), intent(in)  :: this               !< diag_axis obj
+  subroutine get_global_io_domain(this, global_io_index, use_collective_writes)
+    class(fmsDiagFullAxis_type), target, intent(in)  :: this               !< diag_axis obj
     integer,                     intent(out) :: global_io_index(2) !< Global io domain starting and ending index
+    logical,                     intent(in)  :: use_collective_writes !< .True. if using collective writes
 
     type(domain2d), pointer :: io_domain !< pointer to the io domain
 
@@ -592,7 +593,12 @@ module fms_diag_axis_object_mod
     if (allocated(this%axis_domain)) then
       select type(domain => this%axis_domain)
       type is (diagDomain2d_t)
-        io_domain => mpp_get_io_domain(domain%domain2)
+        if (use_collective_writes) then
+          io_domain => domain%domain2
+        else
+          io_domain => mpp_get_io_domain(domain%domain2)
+        endif
+
         if (this%cart_name .eq. "X") then
           call mpp_get_global_domain(io_domain, xbegin=global_io_index(1), xend=global_io_index(2), &
             position=this%domain_position)
@@ -664,6 +670,32 @@ module fms_diag_axis_object_mod
       if (present(x_or_y)) x_or_y = diag_null
     end select
   end function is_x_or_y_axis
+
+  !< @brief Get the global size of the axis, and the layout
+  !! It is assumed that this function is only called on "X" and "Y" axes
+  !! using the `is_x_or_y_axis` function from above
+  subroutine get_dim_size_layout(this, dim_size, layout)
+    class(fmsDiagFullAxis_type), intent(in)    :: this     !< diag_axis obj
+    integer,                     intent(out)   :: dim_size !< Size of the dimension
+    integer,                     intent(out)   :: layout   !< Layout of the dimension
+
+    integer :: nx, ny
+    integer :: layout_xy(2)
+
+    select type (domain => this%axis_domain)
+    type is (diagDomain2d_t)
+      call mpp_get_global_domain(domain%Domain2, xsize=nx, ysize=ny)
+      call mpp_get_layout(domain%Domain2, layout_xy)
+
+      if (this%cart_name .eq. "X") then
+        dim_size = nx
+        layout = layout_xy(1)
+      else if (this%cart_name .eq. "Y") then
+        dim_size = ny
+        layout = layout_xy(2)
+      endif
+    end select
+  end subroutine get_dim_size_layout
 
   !> @brief Get the set name of an axis object
   !! @return the set name of an axis object
@@ -800,7 +832,7 @@ module fms_diag_axis_object_mod
     select type(domain => this%axis_domain)
     type is (diagDomain2d_t)
       if (present(tile_number)) then
-        !< If the the tile number is present and the current PE is not on the tile, then there is no need
+        !< If the tile number is present and the current PE is not on the tile, then there is no need
         !! to define the axis
         if (any(mpp_get_tile_id(domain%Domain2) .ne. tile_number)) then
           need_to_define_axis = .false.

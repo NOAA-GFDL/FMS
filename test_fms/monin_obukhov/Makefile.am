@@ -35,8 +35,8 @@ check_PROGRAMS = test_monin_obukhov_r4 test_monin_obukhov_r8
 test_monin_obukhov_r4_SOURCES = test_monin_obukhov.F90
 test_monin_obukhov_r8_SOURCES = test_monin_obukhov.F90
 
-test_monin_obukhov_r4_CPPFLAGS = $(AM_CPPFLAGS) -DMO_TEST_KIND_=4
-test_monin_obukhov_r8_CPPFLAGS = $(AM_CPPFLAGS) -DMO_TEST_KIND_=8
+test_monin_obukhov_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=4
+test_monin_obukhov_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=8
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_manager_mod diag_manager_mod
 !> @ingroup diag_manager
@@ -65,7 +64,7 @@
 !!          @ref send_data for more details.</LI>
 !!     <LI> To check if the diag table is set up correctly, user should set
 !!          <TT>debug_diag_manager=.true.</TT> in diag_manager namelist, then
-!!          the the content of diag_table is printed in stdout.</LI>
+!!          the content of diag_table is printed in stdout.</LI>
 !!     <LI> New optional format of file information in @ref diag_table_mod.
 !!          It is possible to have just
 !!          one file name and reuse it many times. A time string will be appended to
@@ -597,7 +596,7 @@ END FUNCTION register_static_field
     INTEGER :: stdout_unit
     LOGICAL :: mask_variant1, verbose1
     CHARACTER(len=128) :: msg
-    TYPE(time_type) :: diag_file_init_time !< The intial time of the diag_file
+    TYPE(time_type) :: diag_file_init_time !< The initial time of the diag_file
 
     ! get stdout unit number
     stdout_unit = stdout()
@@ -1680,7 +1679,7 @@ END FUNCTION register_static_field
   END FUNCTION send_data_3d
 
   !> @return true if send is successful
-!TODO documentation, seperate the old and new
+!TODO documentation, separate the old and new
   LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
@@ -2059,12 +2058,14 @@ END FUNCTION register_static_field
        IF ( reduced_k_range ) THEN
 !----------
 !ug support
-           if (output_fields(out_num)%reduced_k_unstruct) then
-               js = output_fields(out_num)%output_grid%l_start_indx(2)
-               je = output_fields(out_num)%output_grid%l_end_indx(2)
-           endif
-           l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
-           l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
+          if (output_fields(out_num)%reduced_k_unstruct) then
+             f3 = output_fields(out_num)%output_grid%l_start_indx(2)
+             f4 = output_fields(out_num)%output_grid%l_end_indx(2)
+             js = 1
+             je = f4 - f3 + 1
+          endif
+          l_start(3) = output_fields(out_num)%output_grid%l_start_indx(3)
+          l_end(3) = output_fields(out_num)%output_grid%l_end_indx(3)
 !----------
        END IF
        ksr= l_start(3)
@@ -4191,7 +4192,7 @@ END FUNCTION register_static_field
        ELSE
           CALL error_mesg('diag_manager_mod::diag_manager_init', 'mix_snapshot_average_fields = .TRUE. is not '//&
                & 'supported if use_modern_diag = .TRUE. Please set mix_snapshot_average_fields '//&
-               & 'to .FALSE. and put instantaneous and averaged fields in seperate files!', FATAL)
+               & 'to .FALSE. and put instantaneous and averaged fields in separate files!', FATAL)
        END IF
     END IF
     ALLOCATE(output_fields(max_output_fields))

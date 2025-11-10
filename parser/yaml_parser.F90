@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @defgroup yaml_parser_mod yaml_parser_mod
@@ -66,6 +65,8 @@ end interface get_value_from_key
 integer, parameter :: MISSING_FILE = -1       !< Error code if the yaml file is missing
 integer, parameter :: PARSER_INIT_ERROR = -2  !< Error code if unable to create a parser object
 integer, parameter :: INVALID_YAML = -3       !< Error code if unable to parse a yaml file
+integer, parameter :: INVALID_ALIAS = -4      !< Error code if an invalid alias was passed in
+integer, parameter :: MAX_LEVELS_REACH = -5   !< Error code if the MAX_LEVELS is reach
 integer, parameter :: SUCCESSFUL = 1          !< "Error" code if the parsing was successful
 
 !> @brief c functions binding
@@ -188,7 +189,7 @@ function get_num_blocks_child(file_id, block_name, parent_block_id) bind(c) &
    integer(kind=c_int) :: nblocks
 end function get_num_blocks_child
 
-!> @brief Private c function that gets the the ids of the blocks with block_name in the yaml file
+!> @brief Private c function that gets the ids of the blocks with block_name in the yaml file
 !! (see yaml_parser_binding.c)
 subroutine get_block_ids_all(file_id, block_name, block_ids) bind(c)
    use iso_c_binding, only: c_char, c_int, c_bool
@@ -197,7 +198,7 @@ subroutine get_block_ids_all(file_id, block_name, block_ids) bind(c)
    integer(kind=c_int), intent(inout) :: block_ids(*) !< Id of the parent_block
 end subroutine get_block_ids_all
 
-!> @brief Private c function that gets the the ids of the blocks with block_name and that
+!> @brief Private c function that gets the ids of the blocks with block_name and that
 !! belong to a parent block id in the yaml file (see yaml_parser_binding.c)
 subroutine get_block_ids_child(file_id, block_name, block_ids, parent_block_id) bind(c)
    use iso_c_binding, only: c_char, c_int, c_bool
@@ -229,7 +230,7 @@ function get_num_unique_blocks_bind(file_id, parent_block_id) bind(c) &
   integer(kind=c_int) :: nblocks
 end function get_num_unique_blocks_bind
 
-!> @brief Private c function that gets the the ids of the unique blocks in the yaml file
+!> @brief Private c function that gets the ids of the unique blocks in the yaml file
 !! (see yaml_parser_binding.c)
 subroutine get_unique_block_ids_bind(file_id, block_ids, parent_block_id) bind(c)
   use iso_c_binding, only: c_char, c_int, c_bool, c_ptr
@@ -279,6 +280,12 @@ subroutine check_error_code(error_code, filename)
       call mpp_error(FATAL, "Error initializing the parser for the file:"//trim(filename))
    case (INVALID_YAML)
       call mpp_error(FATAL, "Error parsing the file:"//trim(filename)//". Check that your yaml file is valid")
+   case (INVALID_ALIAS)
+      call mpp_error(FATAL, "An alias (*alias_name) in your file:"//trim(filename)//" is invalid."//&
+                            "Make sure that all aliases correspond to an anchor (&anchor_name)!")
+   case (MAX_LEVELS_REACH)
+      call mpp_error(FATAL, "The file:"//trim(filename)//" has reached the maximum number of level!"//&
+                            "Try setting -DMAX_LEVELS to a number greater than the current limit and recompile")
    end select
 end subroutine check_error_code
 
@@ -458,7 +465,7 @@ function get_num_blocks(file_id, block_name, parent_block_id) &
     endif
 end function get_num_blocks
 
-!> @brief Gets the the ids of the blocks with block_name in the yaml file
+!> @brief Gets the ids of the blocks with block_name in the yaml file
 !! If parent_block_id is present, it only gets those that belong to that block
 subroutine get_block_ids(file_id, block_name, block_ids, parent_block_id)
 

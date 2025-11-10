@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 ! This file contains the body of the data_override_r4 and data_override_r8
@@ -173,8 +172,7 @@ subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_i
   type(domainUG) , intent(in), optional :: Land_domainUG_in !> Land domain, unstructured grid
 
   character(len=18), parameter    :: grid_file = 'INPUT/grid_spec.nc'
-  integer               :: is,ie,js,je,use_get_grid_version
-  integer               :: i, iunit, io_status, ierr
+  integer               :: i, iunit, io_status, ierr, use_get_grid_version
   logical               :: atm_on, ocn_on, lnd_on, ice_on, lndUG_on
   logical               :: file_open
   type(FmsNetcdfFile_t) :: fileobj
@@ -309,58 +307,42 @@ end if
 
  if(use_get_grid_version .EQ. 1) then
     if (atm_on .and. .not. allocated(lon_local_atm) ) then
-       call mpp_get_compute_domain( atm_domain,is,ie,js,je)
-       allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
+       call get_grid_version_1(grid_file, 'atm', atm_domain, lon_local_atm, lat_local_atm, &
           min_glo_lon_atm, max_glo_lon_atm )
     endif
     if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
-       call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
-       allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
+       call get_grid_version_1(grid_file, 'ocn', ocn_domain, lon_local_ocn, lat_local_ocn, &
           min_glo_lon_ocn, max_glo_lon_ocn )
     endif
 
     if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
-       call mpp_get_compute_domain( lnd_domain,is,ie,js,je)
-       allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
+       call get_grid_version_1(grid_file, 'lnd', lnd_domain, lon_local_lnd, lat_local_lnd, &
           min_glo_lon_lnd, max_glo_lon_lnd )
     endif
 
     if (ice_on .and. .not. allocated(lon_local_ice) ) then
-       call mpp_get_compute_domain( ice_domain,is,ie,js,je)
-       allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
-       call get_grid_version_1(grid_file, 'ice', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
+       call get_grid_version_1(grid_file, 'ice', ice_domain, lon_local_ice, lat_local_ice, &
           min_glo_lon_ice, max_glo_lon_ice )
     endif
  else
    if (atm_on .and. .not. allocated(lon_local_atm) ) then
-       call mpp_get_compute_domain(atm_domain,is,ie,js,je)
-       allocate(lon_local_atm(is:ie,js:je), lat_local_atm(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'atm', atm_domain, is, ie, js, je, lon_local_atm, lat_local_atm, &
+       call get_grid_version_2(fileobj, 'atm', atm_domain, lon_local_atm, lat_local_atm, &
                                min_glo_lon_atm, max_glo_lon_atm )
    endif
 
    if (ocn_on .and. .not. allocated(lon_local_ocn) ) then
-       call mpp_get_compute_domain( ocn_domain,is,ie,js,je)
-       allocate(lon_local_ocn(is:ie,js:je), lat_local_ocn(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'ocn', ocn_domain, is, ie, js, je, lon_local_ocn, lat_local_ocn, &
+       call get_grid_version_2(fileobj, 'ocn', ocn_domain, lon_local_ocn, lat_local_ocn, &
                                min_glo_lon_ocn, max_glo_lon_ocn, use_center_grid_points)
    endif
 
    if (lnd_on .and. .not. allocated(lon_local_lnd) ) then
-       call mpp_get_compute_domain( lnd_domain,is,ie,js,je)
-       allocate(lon_local_lnd(is:ie,js:je), lat_local_lnd(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'lnd', lnd_domain, is, ie, js, je, lon_local_lnd, lat_local_lnd, &
+       call get_grid_version_2(fileobj, 'lnd', lnd_domain, lon_local_lnd, lat_local_lnd, &
                                min_glo_lon_lnd, max_glo_lon_lnd )
    endif
 
    if (ice_on .and. .not. allocated(lon_local_ice) ) then
-       call mpp_get_compute_domain( ice_domain,is,ie,js,je)
-       allocate(lon_local_ice(is:ie,js:je), lat_local_ice(is:ie,js:je))
-       call get_grid_version_2(fileobj, 'ocn', ice_domain, is, ie, js, je, lon_local_ice, lat_local_ice, &
-                               min_glo_lon_ice, max_glo_lon_ice, use_center_grid_points )
+       call get_grid_version_2(fileobj, 'ocn', ice_domain, lon_local_ice, lat_local_ice, &
+                               min_glo_lon_ice, max_glo_lon_ice, use_center_grid_points)
    endif
  end if
  if(use_get_grid_version .EQ. 2) then
@@ -853,7 +835,7 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
   character(len=3), intent(in) :: gridname !< model grid ID (ocn,ice,atm,lnd)
   character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
                                                  !! different from the name in NetCDF data file)
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   type(time_type), intent(in) :: time !< (target) model time
   real(FMS_DATA_OVERRIDE_KIND_), intent(out) :: data_out !< output data array returned by this call
   integer, intent(in), optional :: data_index
@@ -1015,7 +997,7 @@ end subroutine DATA_OVERRIDE_0D_
 subroutine DATA_OVERRIDE_2D_(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
   character(len=3), intent(in) :: gridname !< model grid ID
   character(len=*), intent(in) :: fieldname !< field to override
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   type(time_type), intent(in) :: time !<  model time
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data_2D !< data returned by this call
   integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
@@ -1047,7 +1029,7 @@ end subroutine DATA_OVERRIDE_2D_
 subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,data_index, is_in, ie_in, js_in, je_in)
   character(len=3),             intent(in) :: gridname !< model grid ID
   character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
-  logical,           optional, intent(out) :: override !< true if the field has been overriden succesfully
+  logical,           optional, intent(out) :: override !< true if the field has been overridden succesfully
   type(time_type),              intent(in) :: time !< (target) model time
   integer,           optional,  intent(in) :: data_index
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: return_data !< data returned by this call
@@ -1895,7 +1877,7 @@ subroutine DATA_OVERRIDE_UG_1D_(gridname,fieldname,return_data,time,override)
   character(len=*),   intent(in) :: fieldname !< field to override
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:), intent(inout) :: return_data !< data returned by this call
   type(time_type),    intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   !local vars
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), allocatable ::  data_SG
   type(domainUG) :: UG_domain
@@ -1930,7 +1912,7 @@ subroutine DATA_OVERRIDE_UG_2D_(gridname,fieldname,return_data,time,override)
   character(len=*),     intent(in) :: fieldname !< field to override
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: return_data !< data returned by this call
   type(time_type),      intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overriden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   !local vars
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_SG
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:),   allocatable ::  data_UG

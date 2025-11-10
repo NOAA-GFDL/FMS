@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_manager_mod time_manager_mod
 !> @ingroup time_manager
@@ -606,7 +605,7 @@ type(time_type), intent(in)   :: Time !< A time interval
 integer, intent(in)           :: seconds !< Decrement of seconds
 integer, intent(in), optional :: days, ticks !< Decrement of days and ticks
 character(len=*), intent(out), optional :: err_msg !< Present and non-blank when a fatal error has
-                                                   !! occured, holds the error message.
+                                                   !! occurred, holds the error message.
 logical, intent(in), optional :: allow_neg_inc !< Throws fatal warning when set to false if
                                                !! negative values are used to decrement. Default
                                                !! is true.
@@ -1434,7 +1433,7 @@ end function get_ticks_per_second
  logical :: set_date_private
  integer, intent(in) :: year, month, day, hour, minute, second, tick
  type(time_type) :: Time_out
- character(len=*), intent(out) :: err_msg !< error message, if non-empty an error has occured
+ character(len=*), intent(out) :: err_msg !< error message, if non-empty an error has occurred
 
  if(.not.module_is_initialized) call time_manager_init
 

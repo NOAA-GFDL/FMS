@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_util_mod diag_util_mod
 !> @ingroup diag_manager
@@ -1637,9 +1636,9 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     INTEGER, INTENT(in) :: file !< File ID.
     TYPE(time_type), INTENT(in) :: time !< Time for the file time stamp
     TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when
-                                                           !! writting periodic files
+                                                           !! writing periodic files
 
-    TYPE(time_type) :: fname_time !< Time used in setting the filename when writting periodic files
+    TYPE(time_type) :: fname_time !< Time used in setting the filename when writing periodic files
     REAL, DIMENSION(2) :: open_file_data
     INTEGER :: j, field_num, input_field_num, num_axes, k
     INTEGER :: field_num1
@@ -2062,7 +2061,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     LOGICAL, OPTIONAL, INTENT(in):: final_call_in !< <TT>.TRUE.</TT> if this is the last write for file.
     LOGICAL, OPTIONAL, INTENT(in):: static_write_in !< <TT>.TRUE.</TT> if static fields are to be written to file.
     type(time_type), intent(in), optional :: filename_time !< Time used in setting the filename when
-                                                           !! writting periodic files
+                                                           !! writing periodic files
 
     LOGICAL :: final_call, do_write, static_write
     REAL :: dif, time_data(2, 1, 1, 1), dt_time(1, 1, 1, 1), start_dif, end_dif
@@ -2167,7 +2166,7 @@ END SUBROUTINE check_bounds_are_exact_dynamic
     LOGICAL, INTENT(out) :: do_write !< <TT>.TRUE.</TT> if file is expecting more data to write,
                                      !! <TT>.FALSE.</TT> otherwise.
     TYPE(time_type), INTENT(in), optional :: filename_time !< Time used in setting the filename when
-                                                           !! writting periodic files
+                                                           !! writing periodic files
 
     IF ( time >= files(file)%start_time ) THEN
        IF ( files(file)%file_unit < 0 ) THEN ! need to open a new file

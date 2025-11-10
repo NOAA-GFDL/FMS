@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2025.02-dev],
+  [2025.04-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -437,6 +437,32 @@ else
   AC_MSG_RESULT([no])
 fi
 
+# Check if intel is 2025.1 for ICE
+AC_MSG_CHECKING([if using Intel 2025.1])
+if [ test -n "`$FC --version | grep ifx | grep 2025\.1\..*`" ]; then
+  AC_MSG_RESULT([yes])
+  AC_MSG_ERROR([Compilation with Oneapi 2025.1 is unsupported \
+by this version of FMS due to a bug in the compiler. Please use a different version of oneapi.])
+else
+  AC_MSG_RESULT([no])
+fi
+
+AC_MSG_CHECKING([if netCDF was built with HDF5 parallel I/O features])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
+#include <netcdf_meta.h>
+#if !defined(NC_HAS_PARALLEL4) || NC_HAS_PARALLEL4 == 0
+      choke me
+#endif]])], [nc_has_parallel4=yes], [nc_has_parallel4=no])
+AC_MSG_RESULT([$nc_has_parallel4])
+
+if test $nc_has_parallel4 = no; then
+  AC_MSG_WARN(netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed)
+  AC_DEFINE([NO_NC_PARALLEL4], [1], [HDF5 parallel I/O features not allowed])
+  AM_CONDITIONAL([SKIP_PARALLEL_TEST], true)
+else
+  AM_CONDITIONAL([SKIP_PARALLEL_TEST], false)
+fi
+
 #####
 # Create output variables from various
 # shell variables, for use in generating
@@ -455,6 +481,10 @@ AC_SUBST([NOUNDEFINED])
 # Define the directory where *.mod files will reside.
 # Used in Makefiles.
 AC_SUBST([MODDIR],[\$\(top_builddir\)/.mods])
+
+# Define CMake variables used in test-lib.sh.in as empty strings
+AC_SUBST([CMAKE_CURRENT_SOURCE_DIR], [])
+AC_SUBST([USING_CMAKE],[])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([

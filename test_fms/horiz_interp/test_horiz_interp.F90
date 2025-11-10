@@ -1,31 +1,25 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @author Ryan Mulhall 2023
 !> Original test is in test_conserve, modified to test the other 3 interp_method option and mixed precision reals
 !! tests are split up by interp_method (same way the modules are broken up) and enabled via the nml flags.
 !! Assignment test checks that the override is copying the data type properly
 !! TODO some larger tests with different data sets
-
-!! defaults to 8 real kind, make check will compile with both 4 and 8
-#ifndef HI_TEST_KIND_
-#define HI_TEST_KIND_ 8
-#endif
 
 program horiz_interp_test
 
@@ -66,7 +60,7 @@ implicit none
   integer                           :: id1, id2, id3, id4
   integer                           :: isc, iec, jsc, jec, i, j
   integer                           :: io, ierr, layout(2)
-  integer, parameter :: lkind = HI_TEST_KIND_
+  integer, parameter :: lkind = TEST_FMS_KIND_
 
   call fms_init
   call mpp_init
@@ -110,43 +104,49 @@ implicit none
   !! for finding the nearest points and distances so this gets run for both
   subroutine test_horiz_interp_spherical
     !! grid data
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D
     type(horiz_interp_type)                       :: interp_t, interp_copy
     !! input data
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
     !! output data
-    real(HI_TEST_KIND_), allocatable, dimension(:,:)   :: lat_out_2D, lon_out_2D
-    real(HI_TEST_KIND_), allocatable, dimension(:,:,:) :: wghts
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:)   :: lat_out_2D, lon_out_2D
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:,:) :: wghts
     !! array sizes and number of lat/lon per index
-    real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
+    real(TEST_FMS_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
     !! parameters for lon/lat setup
-    real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
-    real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
-    real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
-    real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
-    real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
+    real(TEST_FMS_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
+    real(TEST_FMS_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
+    real(TEST_FMS_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
+    real(TEST_FMS_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
+    real(TEST_FMS_KIND_) :: D2R = real(PI,TEST_FMS_KIND_)/180._lkind
+    real(TEST_FMS_KIND_) :: tolerance
+
+    if(TEST_FMS_KIND_ == r8_kind) then
+      tolerance = 1.0e-10_lkind
+    else
+      tolerance = 1.0e-5_lkind
+    endif
 
     ! set up longitude and latitude of source/destination grid.
-    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, HI_TEST_KIND_)
-    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src, HI_TEST_KIND_)
-    dlon_dst = (lon_dst_end-lon_dst_beg)/real(ni_dst, HI_TEST_KIND_)
-    dlat_dst = (lat_dst_end-lat_dst_beg)/real(nj_dst, HI_TEST_KIND_)
+    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, TEST_FMS_KIND_)
+    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src, TEST_FMS_KIND_)
+    dlon_dst = (lon_dst_end-lon_dst_beg)/real(ni_dst, TEST_FMS_KIND_)
+    dlat_dst = (lat_dst_end-lat_dst_beg)/real(nj_dst, TEST_FMS_KIND_)
 
     ! set up 2d lon/lat
     allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
     do i = 1, ni_src
-        lon_in_2D(i,:) = lon_src_beg + real(i-1, HI_TEST_KIND_)*dlon_src
+        lon_in_2D(i,:) = lon_src_beg + real(i-1, TEST_FMS_KIND_)*dlon_src
     end do
     do j = 1, nj_src
-        lat_in_2D(:,j) = lat_src_beg + real(j-1, HI_TEST_KIND_)*dlat_src
+        lat_in_2D(:,j) = lat_src_beg + real(j-1, TEST_FMS_KIND_)*dlat_src
     end do
     allocate(lon_out_2D(ni_dst, nj_dst), lat_out_2D(ni_dst, nj_dst))
     do i = 1, ni_dst
-        lon_out_2D(i,:) = lon_dst_beg + real(i-1, HI_TEST_KIND_)*dlon_dst
+        lon_out_2D(i,:) = lon_dst_beg + real(i-1, TEST_FMS_KIND_)*dlon_dst
     end do
     do j = 1, nj_dst
-        lat_out_2D(:,j) = lat_src_beg + real(j-1, HI_TEST_KIND_)*dlat_dst
+        lat_out_2D(:,j) = lat_src_beg + real(j-1, TEST_FMS_KIND_)*dlat_dst
     end do
 
     ! scale to radians
@@ -176,7 +176,7 @@ implicit none
     call mpp_clock_end(id1)
     do i=1, ni_dst-1
         do j=1, nj_dst-1
-            if(data_dst(i,j) - 1.0_lkind .gt. SMALL) then
+            if(data_dst(i,j) - 1.0_lkind .gt. tolerance) then
                 print *, 'data_dst(i=', i, ', j=', j, ')=', data_dst(i,j), ' Expected value: 1.0'
                 call mpp_error(FATAL, "test_horiz_interp_spherical: "// &
                                                                     "invalid output data after interpolation")
@@ -198,13 +198,13 @@ implicit none
   !> Tests bilinear module interpolation with each dimension conversion
   !! test without passing in the type when test_solo is true
   subroutine test_horiz_interp_bilinear
-    real(HI_TEST_KIND_)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
-    real(HI_TEST_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lon2D_src, lat2d_src, lon2D_dst, lat2D_dst
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
-    real(HI_TEST_KIND_) :: lon_src_beg =  0._lkind,  lon_src_end = 360.0_lkind
-    real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
-    real(HI_TEST_KIND_), parameter :: D2R = real(PI,lkind)/180._lkind
+    real(TEST_FMS_KIND_)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: lon2D_src, lat2d_src, lon2D_dst, lat2D_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
+    real(TEST_FMS_KIND_) :: lon_src_beg =  0._lkind,  lon_src_end = 360.0_lkind
+    real(TEST_FMS_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
+    real(TEST_FMS_KIND_), parameter :: D2R = real(PI,lkind)/180._lkind
 
     type(horiz_interp_type) :: interp, interp_copy
 
@@ -223,24 +223,24 @@ implicit none
     allocate( data_dst(ni_src,nj_src) )
 
     ! set up longitude and latitude of source/destination grid.
-    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src,HI_TEST_KIND_)  ;  dlon_dst = dlon_src
-    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src,HI_TEST_KIND_)  ;  dlat_dst = dlat_src
+    dlon_src = (lon_src_end-lon_src_beg)/real(ni_src,TEST_FMS_KIND_)  ;  dlon_dst = dlon_src
+    dlat_src = (lat_src_end-lat_src_beg)/real(nj_src,TEST_FMS_KIND_)  ;  dlat_dst = dlat_src
 
     ! set up 1d source grid
     do i = 1, ni_src
-       lon1D_src(i) = ( lon_src_beg + real(i-1,HI_TEST_KIND_)*dlon_src ) * D2R
+       lon1D_src(i) = ( lon_src_beg + real(i-1,TEST_FMS_KIND_)*dlon_src ) * D2R
     end do
-    lon1D_src(ni_src+1) = ( lon_src_beg + real(ni_src,HI_TEST_KIND_)*dlon_src ) * D2R
+    lon1D_src(ni_src+1) = ( lon_src_beg + real(ni_src,TEST_FMS_KIND_)*dlon_src ) * D2R
 
     do j = 1, nj_src
-       lat1D_src(j) = ( lat_src_beg + real(j-1,HI_TEST_KIND_)*dlat_src ) * D2R
+       lat1D_src(j) = ( lat_src_beg + real(j-1,TEST_FMS_KIND_)*dlat_src ) * D2R
     end do
-    lat1D_src(nj_src+1) = ( lat_src_beg + real(nj_src,HI_TEST_KIND_)*dlat_src ) * D2R
+    lat1D_src(nj_src+1) = ( lat_src_beg + real(nj_src,TEST_FMS_KIND_)*dlat_src ) * D2R
 
     !--- set up the source data
     do j = 1, nj_src
        do i = 1, ni_src
-          data_src(i,j) = real(i,HI_TEST_KIND_) + real(j,HI_TEST_KIND_)*0.001_lkind
+          data_src(i,j) = real(i,TEST_FMS_KIND_) + real(j,TEST_FMS_KIND_)*0.001_lkind
        end do
     end do
 
@@ -632,24 +632,31 @@ implicit none
   !! test without passing in the type when test_solo is true
   subroutine test_horiz_interp_bicubic
     !! grid data
-    real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
+    real(TEST_FMS_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D
     type(horiz_interp_type)                       :: interp_t, interp_copy
     !! input data
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: data_src, data_dst
     !! output data
-    real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D
+    real(TEST_FMS_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D
     !! array sizes and number of lat/lon per index
-    real(HI_TEST_KIND_) :: nlon_in, nlat_in
-    real(HI_TEST_KIND_) :: nlon_out, nlat_out
-    real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
+    real(TEST_FMS_KIND_) :: nlon_in, nlat_in
+    real(TEST_FMS_KIND_) :: nlon_out, nlat_out
+    real(TEST_FMS_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst
     !! parameters for lon/lat setup
-    real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
-    real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
-    real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
-    real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
-    real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
+    real(TEST_FMS_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
+    real(TEST_FMS_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
+    real(TEST_FMS_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
+    real(TEST_FMS_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
+    real(TEST_FMS_KIND_) :: D2R = real(PI,TEST_FMS_KIND_)/180._lkind
+    real(TEST_FMS_KIND_) :: SMALL
+
+    ! adjust tolerance used in checks based on kind size
+    if(TEST_FMS_KIND_ == r8_kind) then
+        small = 1.0e-10_lkind
+    else
+        small = 1.0e-3_lkind
+    end if
 
     ! set up longitude and latitude of source/destination grid.
     dlon_src = (lon_src_end-lon_src_beg)/real(ni_src, lkind)
@@ -716,13 +723,14 @@ implicit none
                 if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
-                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) &
+                        .gt. 1.0e-1_lkind) then
                             print *, i, j, interp_t%horizInterpReals4_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
                     endif
                 else
                     if( interp_t%horizInterpReals8_type%wti(i,j,1) * interp_t%horizInterpReals8_type%wti(i,j,2) &
-                        - interp_t%horizInterpReals8_type%wti(i,j,3) .gt. SMALL .and. &
+                        - interp_t%horizInterpReals8_type%wti(i,j,3) .gt. SMALL .or. &
                         interp_t%horizInterpReals8_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
                             print *, i, j, interp_t%horizInterpReals8_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
@@ -762,7 +770,8 @@ implicit none
                 if( interp_t%horizInterpReals4_type%is_allocated) then
                     if( interp_t%horizInterpReals4_type%wti(i,j,1) * interp_t%horizInterpReals4_type%wti(i,j,2) &
                         - interp_t%horizInterpReals4_type%wti(i,j,3) .gt. SMALL .or.    &
-                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. SMALL) then
+                        interp_t%horizInterpReals4_type%wti(i,j,3) - (57.2958_lkind * 57.2958_lkind) .gt. 1.0e-1_lkind)&
+                         then
                             print *, i, j, interp_t%horizInterpReals4_type%wti(i,j,:)
                             call mpp_error(FATAL, "test_horiz_interp: bicubic test failed 1Dx1D weight calculation")
                     endif
@@ -795,16 +804,16 @@ implicit none
 
   !> Tests conservative (default) interpolation module and checks grids reproduce across 1/2d versions
   subroutine test_horiz_interp_conserve
-    real(HI_TEST_KIND_)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
-    real(HI_TEST_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
-    real(HI_TEST_KIND_), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
-    real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
-    real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
-    real(HI_TEST_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
-    real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
-    real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind
-    real(HI_TEST_KIND_), parameter :: SMALL = 1.0e-10_lkind
+    real(TEST_FMS_KIND_)                              :: dlon_src, dlat_src, dlon_dst, dlat_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:)   :: lon1D_src, lat1D_src, lon1D_dst, lat1D_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: lon2D_src, lat2D_src, lon2D_dst, lat2D_dst
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: data_src, data1_dst, data2_dst, data3_dst, data4_dst
+    real(TEST_FMS_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind
+    real(TEST_FMS_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind
+    real(TEST_FMS_KIND_) :: lon_dst_beg = -280._lkind, lon_dst_end = 80._lkind
+    real(TEST_FMS_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind
+    real(TEST_FMS_KIND_) :: D2R = real(PI,TEST_FMS_KIND_)/180._lkind
+    real(TEST_FMS_KIND_), parameter :: SMALL = 1.0e-10_lkind
     type(horiz_interp_type)           :: interp_conserve, interp_copy
 
     allocate(lon2D_src(ni_src+1, nj_src+1), lat2D_src(ni_src+1, nj_src+1) )
@@ -993,24 +1002,24 @@ implicit none
     !! they can be created/deleted without allocation errors.
     subroutine test_assignment()
         type(horiz_interp_type) :: Interp_new1, Interp_new2, Interp_cp
-        real(HI_TEST_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D !< 1D grid data points
-        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D !< 2D grid data points
-        real(HI_TEST_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D !< 1D grid output points
-        real(HI_TEST_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D !< 2D grid output points
+        real(TEST_FMS_KIND_), allocatable, dimension(:) :: lat_in_1D, lon_in_1D !< 1D grid data points
+        real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: lat_in_2D, lon_in_2D !< 2D grid data points
+        real(TEST_FMS_KIND_), allocatable, dimension(:)   :: lat_out_1D, lon_out_1D !< 1D grid output points
+        real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: lat_out_2D, lon_out_2D !< 2D grid output points
         integer :: nlon_in, nlat_in !< array sizes for input grids
         integer :: nlon_out, nlat_out !< array sizes for output grids
-        real(HI_TEST_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst !< lon/lat size per data point
-        real(HI_TEST_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind!< source grid starting/ending
+        real(TEST_FMS_KIND_) :: dlon_src, dlat_src, dlon_dst, dlat_dst !< lon/lat size per data point
+        real(TEST_FMS_KIND_) :: lon_src_beg = 0._lkind,    lon_src_end = 360._lkind!< source grid starting/ending
                                                                                   !! longitudes
-        real(HI_TEST_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind !< source grid starting/ending
+        real(TEST_FMS_KIND_) :: lat_src_beg = -90._lkind,  lat_src_end = 90._lkind !< source grid starting/ending
                                                                                   !! latitudes
-        real(HI_TEST_KIND_) :: lon_dst_beg = 0.0_lkind, lon_dst_end = 360._lkind  !< destination grid
+        real(TEST_FMS_KIND_) :: lon_dst_beg = 0.0_lkind, lon_dst_end = 360._lkind  !< destination grid
                                                                                   !! starting/ending longitudes
-        real(HI_TEST_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind !< destination grid
+        real(TEST_FMS_KIND_) :: lat_dst_beg = -90._lkind,  lat_dst_end = 90._lkind !< destination grid
                                                                                   !! starting/ending latitudes
-        real(HI_TEST_KIND_) :: D2R = real(PI,HI_TEST_KIND_)/180._lkind !< radians per degree
-        real(HI_TEST_KIND_), allocatable :: lon_src_1d(:), lat_src_1d(:) !< src data used for bicubic test
-        real(HI_TEST_KIND_), allocatable :: lon_dst_1d(:), lat_dst_1d(:) !< destination data used for bicubic test
+        real(TEST_FMS_KIND_) :: D2R = real(PI,TEST_FMS_KIND_)/180._lkind !< radians per degree
+        real(TEST_FMS_KIND_), allocatable :: lon_src_1d(:), lat_src_1d(:) !< src data used for bicubic test
+        real(TEST_FMS_KIND_), allocatable :: lon_dst_1d(:), lat_dst_1d(:) !< destination data used for bicubic test
         integer :: icount !< index for setting the output array when taking midpoints for bilinear
 
 
@@ -1023,16 +1032,16 @@ implicit none
         allocate(lon_in_1D(ni_src+1), lat_in_1D(nj_src+1))
         allocate(lon_out_1D(isc:iec+1), lat_out_1D(jsc:jec+1))
         do i = 1, ni_src+1
-            lon_in_1D(i) = lon_src_beg + real(i-1,HI_TEST_KIND_)*dlon_src
+            lon_in_1D(i) = lon_src_beg + real(i-1,TEST_FMS_KIND_)*dlon_src
         end do
         do j = 1, nj_src+1
-            lat_in_1D(j) = lat_src_beg + real(j-1,HI_TEST_KIND_)*dlat_src
+            lat_in_1D(j) = lat_src_beg + real(j-1,TEST_FMS_KIND_)*dlat_src
         end do
         do i = isc, iec+1
-            lon_out_1D(i) = lon_dst_beg + real(i-1,HI_TEST_KIND_)*dlon_dst
+            lon_out_1D(i) = lon_dst_beg + real(i-1,TEST_FMS_KIND_)*dlon_dst
         end do
         do j = jsc, jec+1
-            lat_out_1D(j) = lat_dst_beg + real(j-1, HI_TEST_KIND_)*dlat_dst
+            lat_out_1D(j) = lat_dst_beg + real(j-1, TEST_FMS_KIND_)*dlat_dst
         end do
 
         lon_in_1D = lon_in_1D * D2R
@@ -1158,16 +1167,16 @@ implicit none
         allocate(lon_out_2D(ni_dst, nj_dst), lat_out_2D(ni_dst, nj_dst))
         allocate(lon_in_2D(ni_src, nj_src), lat_in_2D(ni_src, nj_src))
         do i = 1, ni_dst
-            lon_out_2D(i,:) = lon_dst_beg + real(i-1, HI_TEST_KIND_)*dlon_dst
+            lon_out_2D(i,:) = lon_dst_beg + real(i-1, TEST_FMS_KIND_)*dlon_dst
         end do
         do j = 1, nj_dst
-            lat_out_2D(:,j) = lat_dst_beg + real(j-1, HI_TEST_KIND_)*dlat_dst
+            lat_out_2D(:,j) = lat_dst_beg + real(j-1, TEST_FMS_KIND_)*dlat_dst
         end do
         do i = 1, ni_src
-            lon_in_2D(i,:) = lon_src_beg + real(i-1, HI_TEST_KIND_)*dlon_src
+            lon_in_2D(i,:) = lon_src_beg + real(i-1, TEST_FMS_KIND_)*dlon_src
         end do
         do j = 1, nj_src
-            lat_in_2D(:,j) = lat_src_beg + real(j-1, HI_TEST_KIND_)*dlat_src
+            lat_in_2D(:,j) = lat_src_beg + real(j-1, TEST_FMS_KIND_)*dlat_src
         end do
         ! scale to radians
         lat_in_2D = lat_in_2D * D2R
@@ -1215,10 +1224,10 @@ implicit none
         deallocate(lon_out_1D, lat_out_1D)
         allocate(lon_out_1D(ni_dst), lat_out_1D(nj_dst))
         do i=1, ni_dst
-            lon_out_1d(i) = real(i-1, HI_TEST_KIND_) * dlon_dst + lon_dst_beg
+            lon_out_1d(i) = real(i-1, TEST_FMS_KIND_) * dlon_dst + lon_dst_beg
         enddo
         do j=1, nj_dst
-            lat_out_1d(j) = real(j-1, HI_TEST_KIND_) * dlat_dst + lat_dst_beg
+            lat_out_1d(j) = real(j-1, TEST_FMS_KIND_) * dlat_dst + lat_dst_beg
         enddo
         lat_out_1d = lat_out_1D * D2R
         lon_out_1d = lon_out_1D * D2R

@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> Include file to hold common routines for the coupler tests
 !! Uses the FMS_TEST_BC_TYPE_ macro to test both r4/r8
@@ -48,7 +47,7 @@ subroutine set_up_1d_coupler_type(bc_type, data_grid)
          write(field_num,'(i1)') j
          bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
          allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2)))
-         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
+         bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=TEST_FMS_KIND_)
       end do
    end do
 
@@ -101,9 +100,9 @@ subroutine set_up_2d_coupler_type(bc_type, data_grid, appendix, to_read)
          bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%name="var_"//field_num
          allocate(bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values(data_grid(1):data_grid(2), data_grid(3):data_grid(4)))
          if (to_read) then
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=TEST_FMS_KIND_)
          else
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=TEST_FMS_KIND_)
          endif
       end do
    end do
@@ -214,9 +213,9 @@ subroutine set_up_3d_coupler_type(bc_type, data_grid, appendix, to_read)
                                                                data_grid(5)))
 
          if (to_read) then
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(999., kind=TEST_FMS_KIND_)
          else
-             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=FMS_CP_TEST_KIND_)
+             bc_type%FMS_TEST_BC_TYPE_(i)%field(j)%values = real(j, kind=TEST_FMS_KIND_)
          endif
       end do
    end do

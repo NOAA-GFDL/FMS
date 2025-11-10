@@ -36,8 +36,8 @@ test_interpolator_SOURCES = test_interpolator.F90
 test_interpolator2_r4_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
 test_interpolator2_r8_SOURCES = test_interpolator2.F90 test_interpolator_write_climatology.inc
 
-test_interpolator2_r4_CPPFLAGS=-DTEST_INTP_KIND_=4 -I$(MODDIR)
-test_interpolator2_r8_CPPFLAGS=-DTEST_INTP_KIND_=8 -I$(MODDIR)
+test_interpolator2_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
+test_interpolator2_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 
 # Run the test program.
 TESTS = test_interpolator2.sh

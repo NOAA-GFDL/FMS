@@ -16,6 +16,8 @@ The purpose of this document is to explain the diag_table yaml format.
 - [3. More examples](diag_yaml_format.md#3-more-examples)
 - [4. Schema](diag_yaml_format.md#4-schema)
 - [5. Ensemble and Nest Support](diag_yaml_format.md#5-ensemble-and-nest-support)
+- [6. Reducing Diag Table Yaml Length](diag_yaml_format.md#6-reducing-diag-table-yaml-length)
+- [7. Improving Performance at High Resolutions](diag_yaml_format.md#7-improving-performance-at-high-resolutions)
 
 ### 1. Converting from legacy ascii diag_table format
 
@@ -100,10 +102,10 @@ Below are some *optional* keys that may be added.
 - **write_file** is a logical that indicates if you want the file to be created (default is true). This is a new feature that is not supported by the legacy ascii data_table.
 - **new_file_freq** is a string that defines the frequency and the frequency units (with a space between the frequency number and units) for closing the existing file
 - **start_time** is an array of 6 integer indicating when to start the file for the first time. It is in the format [year month day hour minute second]. Requires “new_file_freq”
-- **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will use the begining of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
-- **reduction** is the reduction method that will be used for all the variables in the file. This is overriden if the reduction is specified at the variable level. The acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (whre XX is the power level), min, max, none, rms, and sum.
-- **kind** is a string that defines the type of variable  as it will be written out in the file. This is overriden if the kind is specified at the variable level. Acceptable values are r4, r8, i4, and i8.
-- **module** is a string that defines the module where the variable is registered in the model code. This is overriden if the module is specified at the variable level.
+- **filename_time** is the time used to set the name of new files when using new_file_freq. The acceptable values are begin (which will use the beginning of the file's time bounds), middle (which will use the middle of the file's time bounds), and end (which will use the end of the file's time bounds). The default is middle
+- **reduction** is the reduction method that will be used for all the variables in the file. This is overridden if the reduction is specified at the variable level. The acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (where XX is the power level), min, max, none, rms, and sum.
+- **kind** is a string that defines the type of variable as it will be written out in the file. This is overridden if the kind is specified at the variable level. Acceptable values are r4, r8, i4, and i8.
+- **module** is a string that defines the module where the variable is registered in the model code. This is overridden if the module is specified at the variable level.
 
 **Example:** The following will create a new file every 6 hours starting at Jan 1 2020. Variable data will be written to the file every 6 hours.
 
@@ -138,7 +140,7 @@ ocn_2020_01_01_21.nc for time_bnds [18,24]
 
 ### 2.2.1 Flexible output timings
 
-In order to provide more flexibility in output timings, the diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `new_file_freq`, and  `file_duration` keys to accept a comma seperated list.
+In order to provide more flexibility in output timings, the diag_table yaml format allows for different file frequencies for the same file by allowing the `freq`, `new_file_freq`, and  `file_duration` keys to accept a comma separated list.
 
 For example,
 ``` yaml
@@ -182,7 +184,7 @@ flexible_timing_0002_01_01_23.nc - using data from hour 23 to hour 24
 ```
 
 ### 2.2.2 Coupled Model Diag Files
-In the *legacy ascii diag_table*, when running a coupled model (ATM + OCN) in a seperate PE list:
+In the *legacy ascii diag_table*, when running a coupled model (ATM + OCN) in a separate PE list:
   - The ATM PEs ignored the files in the diag_table that contain "OCEAN" in the filename
   - The OCN PEs ignored the files in the diag_table that did not contain "OCEAN" in the filename
 
@@ -194,9 +196,9 @@ In the *yaml diag_table*:
 The variables in each file are listed under the varlist section as a dashed array.
 
 - **var_name:**  is a string that defines the variable name as it is defined in the register_diag_field call in the model
-- **reduction:** is a string that describes the data reduction method to perform prior to writing data to disk. Acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (whre XX is the power level), min, max, none, rms, and sum.
+- **reduction:** is a string that describes the data reduction method to perform prior to writing data to disk. Acceptable values are average, diurnalXX (where XX is the number of diurnal samples), powXX (where XX is the power level), min, max, none, rms, and sum.
 - **module:**  is a string that defines the module where the variable is registered in the model code
-- **kind:** is a string that defines the type of variable  as it will be written out in the file. Acceptable values are r4, r8, i4, and i8
+- **kind:** is a string that defines the type of variable as it will be written out in the file. Acceptable values are r4, r8, i4, and i8
 
 **Example:**
 
@@ -220,7 +222,7 @@ which corresponds to the following model code
 id_precip = register_diag_field ( 'moist', 'precip', axes, Time)
 ```
 where:
-- `moist` corresonds to the module key in the diag_table.yaml
+- `moist` corresponds to the module key in the diag_table.yaml
 - `precip` corresponds to the var_name key in the diag_table.yaml
 - `axes` are the ids of the axes the variable is a function of
 - `Time` is the model time
@@ -233,7 +235,7 @@ Below are some *optional* keys that may be added.
 - **zbounds:** is a 2 member array of integers that define the bounds of the z axis (zmin, zmin), optional default is no limits.
 
 ### 2.4 Variable Metadata Section
-Any aditional variable attributes can be added for each variable can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
+Any additional variable attributes can be added for each variable can be listed under the attributes section as a dashed array. The key is attribute name and the value is the attribute value.
 
 **Example:**
 
@@ -250,7 +252,7 @@ call diag_field_add_attribute(diag_field_id, attribute_name, attribute_value)
 ```
 
 ### 2.5 Global Meta Data Section
-Any aditional global attributes can be added for each file can be listed under the global_meta section as a dashed array.  The key is the attribute name and the value is the attribute value.
+Any additional global attributes can be added for each file can be listed under the global_meta section as a dashed array.  The key is the attribute name and the value is the attribute value.
 
 ```yaml
   global_meta:
@@ -267,7 +269,7 @@ The sub region can be listed under the sub_region section as a dashed array. The
 - **corner4:** is a **required** 2 member array of reals if using (grid_type="latlon") or integers if using (grid_type="indices") defining the x and y points of the fourth corner of a sub_grid.
 - **tile:** is an integer defining the tile number the sub_grid is on. It is **required** only if using (grid_type="indices").
 
-**Exampe:**
+**Example:**
 
 ```yaml
   sub_region:
@@ -279,7 +281,7 @@ The sub region can be listed under the sub_region section as a dashed array. The
 ```
 
 ### 3. More examples
-Bellow is a complete example of diag_table.yaml:
+Below is a complete example of diag_table.yaml:
 ```yaml
 title: test_diag_manager
 base_date: 2 1 1 0 0 0
@@ -352,4 +354,235 @@ found in the [gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas)
 repository on Github.
 
 ### 5. Ensemble and Nest Support
-When using nests, it may be desired for a nest to have a different file frequency or number of variables from the parent grid. This may allow users to save disk space and reduce simulations time. In order to supports, FMS allows each nest to have a different diag_table.yaml from the parent grid. For example, if running with 1 test FMS will use diag_table.yaml for the parent grid and diag_table.nest_01.yaml for the first nest Similary, each ensemble member can have its own diag_table (diag_table_ens_XX.yaml, where XX is the ensemble number). However, for the ensemble case if both the diag_table.yaml and the diag_table_ens_* files are present, the code will crash as only 1 option is allowed.
+When using nests, it may be desired for a nest to have a different file frequency or number of variables from the parent grid. This may allow users to save disk space and reduce simulations time. In order to support this, FMS allows each nest to have a different diag_table.yaml from the parent grid. For example, if running with 1 nest FMS will use diag_table.yaml for the parent grid and diag_table.nest_01.yaml for the first nest. Similary, each ensemble member can have its own diag_table (diag_table_ens_XX.yaml, where XX is the ensemble number). However, for the ensemble case if both the diag_table.yaml and the diag_table_ens_* files are present, the code will crash as only 1 option is allowed.
+
+### 6. Reducing Diag Table Yaml Length
+There may be scenarios where the diag_table.yaml becomes long and contains a lot of repeated content.
+
+For example, the keys `module`, `reduction`, and `kind` often have the same values across many variables.
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - var_name: var0
+    module: ocn_mod
+    reduction: none
+    kind: r4
+  - var_name: var1
+    module: ocn_mod
+    reduction: none
+    kind: r4
+  - var_name: var2
+    module: ocn_mod
+    reduction: none
+    kind: r4
+```
+
+To reduce size and improve readability, you can **define these keys at the file level, and override them at the variable level if needed**:
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+```
+
+However, there may be cases where a file contains a large number of variables from different modules, requiring duplication of the module key across multiple lines. For example:
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: radiation_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+    module: some_other_mod
+  - var_name: var4
+    module: some_other_mod
+  - var_name: var5
+    module: some_other_mod
+```
+
+To address this, you can group variables by module:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  reduction: none
+  kind: r4
+  modules:
+  - module: radiation_mod
+    varlist:
+    - var_name: var0
+    - var_name: var1
+    - var_name: var2
+  - module: some_other_mod
+    varlist:
+    - var_name: var3
+    - var_name: var4
+    - var_name: var5
+```
+
+Another option **to reduce its size and improve readability, is to use yaml anchors**. For example, instead of writing:
+``` yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+- file_name: test_daily
+  freq: 1 days
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+```
+
+You can define an anchor and reuse it:
+```yaml
+name: &name
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist: *name
+- file_name: test_daily
+  freq: 1 days
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - *name
+  - variable_name: var773
+```
+### 7. Improving Performance at High Resolutions
+For very high resolutions (e.g., C3072L65), performance can be greatly improved by using NETCDF-4 with collective MPI writes. Tests have shown up to a 70% speedup when writing hourly diagnostic output. This approach also simplifies the workflow, as it does not use the IO domain and does not create distributed files. To enable this feature, set `use_collective_writes: True` for each file. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var4
+```
+Chunking can also have a major impact on performance. You can set chunk sizes for all variables in a file using the `chunksizes` key at the file level. By default, the diag manager will choose chunk sizes equal to the compute domain for domain-decomposed dimensions (e.g., for C3072L65 and a layout of 32,64, the chunksizes would be 96,48,nz). For dimensions that are not domain-decomposed (e.g., the vertical z dimension), the chunk size defaults to the full length of the dimension. This effectively means the entire z-dimension is stored as a single chunk. For unlimited dimensions (time), the chunk size is always 1. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var3
+  - var_name: var4
+```
+You can override chunk sizes for individual variables by specifying `chunksizes` at the variable level. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var3
+    chunksizes: 96, 4, 1, 1, 1
+  - var_name: var4
+```
+
+**Things to consider:**
+1.  This option currently only works for files with variables that are domain-decomposed (i.e., multiple mpi-tasks each with their own section of data). Support for land's unstructured grid and icebergs will be added in the future; at present, using this option with those grids will result in a FATAL error.
+2.  The domain must be evenly decomposed, meaning each processor has the same amount of data. For example, a C3072L65 grid with a layout of (30, 32) will not work and will result in a FATAL error, since 3072 is not evenly divisible by 30. This limitation exists because NetCDF collective I/O requires each process to access the same pattern of chunks. With uneven decomposition, the chunk shapes per process vary, making it impossible to determine a consistent chunking strategy. Currently there are no plans to support this in the future.
+3. The chunksizes must be a comma seperated list of five integers 1 for each dimension.
+4. Chunking is supported even when not using collective writes as long as netcdf-4 file are being used (by setting fms2_io_nml::netcdf_default_format="netcdf4)

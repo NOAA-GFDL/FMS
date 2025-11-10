@@ -1,23 +1,22 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
-module write_files
-
+!! Helper routines for generating input files for test_mosaic2/grid2
+!! This portion of code is included in two modules, one for each real precision
   use fms2_io_mod, only: fms2_io_init, open_file, close_file, FmsNetcdfFile_t
   use fms2_io_mod, only: register_axis, register_field, write_data
   use mpp_mod,     only: mpp_init, mpp_sync, mpp_npes, mpp_get_current_pelist
@@ -58,15 +57,15 @@ module write_files
 
   ! variables for tile1
   character(5) :: tile
-  real(TEST_MOS_KIND_), dimension(c1_nxp,c1_nyp) :: x
-  real(TEST_MOS_KIND_), dimension(c1_nxp,c1_nyp) :: y
-  real(TEST_MOS_KIND_), dimension(c1_nx,c1_ny)   :: area
+  real(TEST_FMS_KIND_), dimension(c1_nxp,c1_nyp) :: x
+  real(TEST_FMS_KIND_), dimension(c1_nxp,c1_nyp) :: y
+  real(TEST_FMS_KIND_), dimension(c1_nx,c1_ny)   :: area
 
   !variables for exchange grid cells
-  real(TEST_MOS_KIND_), dimension(2,ncells) :: tile1_cell, tile2_cell
-  real(TEST_MOS_KIND_), dimension(ncells) :: xgrid_area
+  real(TEST_FMS_KIND_), dimension(2,ncells) :: tile1_cell, tile2_cell
+  real(TEST_FMS_KIND_), dimension(ncells) :: xgrid_area
 
-  integer, parameter :: lkind=TEST_MOS_KIND_ !< local kind parameter
+  integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind parameter
 
 contains
   !---------------------------------!
@@ -181,7 +180,7 @@ contains
     implicit none
 
     character(5) :: tile
-    real(TEST_MOS_KIND_), parameter :: area_value = real(PI*RADIUS*RADIUS/2.0_r8_kind, TEST_MOS_KIND_)
+    real(TEST_FMS_KIND_), parameter :: area_value = real(PI*RADIUS*RADIUS/2.0_r8_kind, TEST_FMS_KIND_)
     real(r8_kind) :: xtmp(c1_nxp, c1_nyp), ytmp(c1_nxp, c1_nyp)
 
     xtmp(1,1)=0.0_r8_kind ; xtmp(2,1)=90.0_r8_kind ; xtmp(3,1)=180.0_r8_kind
@@ -214,8 +213,8 @@ contains
 
     character(*) :: filename
     character(*) :: tile
-    real(TEST_MOS_KIND_), dimension(c1_nxp,c1_nyp), intent(in) :: x_in, y_in
-    real(TEST_MOS_KIND_), dimension(c1_nx,c1_ny),   intent(in) :: area_in
+    real(TEST_FMS_KIND_), dimension(c1_nxp,c1_nyp), intent(in) :: x_in, y_in
+    real(TEST_FMS_KIND_), dimension(c1_nx,c1_ny),   intent(in) :: area_in
 
     type(FmsNetcdfFile_t) :: fileobj
     integer, allocatable :: pes(:)
@@ -311,7 +310,7 @@ contains
     end do
 
     do i=1, ncells
-       xgrid_area(i) = real(get_global_area(), TEST_MOS_KIND_)
+       xgrid_area(i) = real(get_global_area(), TEST_FMS_KIND_)
     end do
 
     allocate(pes(mpp_npes()))
@@ -365,5 +364,3 @@ contains
     call write_exchange()
 
   end subroutine write_all
-  !---------------------------------!
-end module write_files

@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup get_grid_version_mod get_grid_version_mod
 !> @ingroup data_override
@@ -27,7 +26,7 @@ use constants_mod, only: DEG_TO_RAD
 use platform_mod, only: r4_kind, r8_kind, FMS_PATH_LEN
 use mpp_mod, only : mpp_error,FATAL,NOTE, mpp_min, mpp_max
 use mpp_domains_mod, only : domain2d, operator(.NE.),operator(.EQ.)
-use mpp_domains_mod, only : mpp_get_global_domain, mpp_get_data_domain
+use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_global_domain
 use fms2_io_mod,     only : FmsNetcdfDomainFile_t, FmsNetcdfFile_t, open_file, close_file, &
                             variable_exists, read_data, get_variable_size, get_variable_num_dimensions
 use mosaic2_mod,     only : get_mosaic_tile_grid

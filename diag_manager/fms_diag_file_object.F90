@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_output_yaml_mod fms_diag_output_yaml_mod
 !> @ingroup diag_manager
@@ -146,6 +145,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
+ procedure, public :: is_using_collective_writes
  procedure, public :: is_done_writing_data
  procedure, public :: has_file_fname
  procedure, public :: has_file_frequnit
@@ -220,6 +220,7 @@ logical function fms_diag_files_object_init (files_array)
   class(fmsDiagFile_type), pointer :: obj => null() !< Pointer for each member of the array
   integer :: nFiles !< Number of files in the diag yaml
   integer :: i !< Looping iterator
+
   if (diag_yaml%has_diag_files()) then
    nFiles = diag_yaml%size_diag_files()
    allocate (files_array(nFiles))
@@ -452,14 +453,17 @@ function get_filename_time(this) &
   result(res)
     class(fmsDiagFile_type), intent(in) :: this !< The file object
     type(time_type) :: res
+    type(time_type) :: file_end_time
 
+    file_end_time = this%next_close
+    if (this%next_close > this%no_more_data) file_end_time = this%no_more_data
     select case (this%diag_yaml_file%get_filename_time())
     case (begin_time)
       res = this%last_output
     case (middle_time)
-      res = (this%last_output + this%next_close)/2
+      res = (this%last_output + file_end_time )/2
     case (end_time)
-      res = this%next_close
+      res = file_end_time
     end select
 end function get_filename_time
 
@@ -649,6 +653,16 @@ pure function get_file_global_meta (this) result(res)
   res = this%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
 
+!> \brief Determines whether or not the file is using netcdf collective writes
+!! \return logical indicating whether or not the file is using netcdf collective writes
+pure function is_using_collective_writes (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+ logical :: res
+
+ res = this%diag_yaml_file%is_using_collective_writes()
+end function is_using_collective_writes
+
+
 !> \brief Determines if done writing data
 !! \return .True. if done writing data
 pure function is_done_writing_data (this) result(res)
@@ -834,7 +848,7 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
 
   !< Created a copy here, because if the variable has a z subaxis var_axis_ids will be modified in
   !! `create_new_z_subaxis` to contain the id of the new z subaxis instead of the parent axis,
-  !! which will be added to the the list of axis in the file object (axis_ids is intent(in),
+  !! which will be added to the list of axis in the file object (axis_ids is intent(in),
   !! which is why the copy was needed)
   var_axis_ids = axis_ids
 
@@ -1229,6 +1243,22 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     file_name = trim(file_name)//"."//trim(mype_string)
   endif
 
+  ! Crash if a diag_file is using collective writes, but it is not one of the supported
+  ! methods (i.e only for domain decomposed files)
+  select case (diag_file%type_of_domain)
+  case (NO_DOMAIN, UG_DOMAIN)
+      if (diag_file%is_using_collective_writes()) then
+        call mpp_error(FATAL, "Collective writes are only supported for domain-decomposed files. "// &
+                              trim(file_name)//" is using collective writes with an unsupported domain type.")
+      end if
+  case (TWO_D_DOMAIN)
+    if (is_regional .and. diag_file%is_using_collective_writes()) then
+      call mpp_error(FATAL, "Collective writes are not supported for regional runs. "// &
+                            "Disable collective writes in the diag_table yaml for file:"// &
+                            trim(file_name))
+    end if
+  end select
+
   !< Open the file!
   select type (fms2io_fileobj => diag_file%fms2io_fileobj)
   type is (FmsNetcdfFile_t)
@@ -1246,7 +1276,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   type is (FmsNetcdfDomainFile_t)
     select type (domain)
     type is (diagDomain2d_t)
-      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", domain%Domain2)) &
+      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", domain%Domain2, &
+          use_netcdf_mpi = diag_file%is_using_collective_writes())) &
         &call mpp_error(FATAL, "Error opening the file:"//file_name)
     end select
   type is (FmsNetcdfUnstructuredDomainFile_t)
@@ -1410,7 +1441,7 @@ logical function is_time_to_close_file (this, time_step, force_close)
   TYPE(time_type),                  intent(in)           :: time_step       !< Current model step time
   logical,                          intent(in)           :: force_close     !< if .true. return true
 
-  if (force_close) then
+  if (force_close .or. this%FMS_diag_file%done_writing_data) then
     is_time_to_close_file = .true.
   elseif (time_step >= this%FMS_diag_file%next_close) then
     is_time_to_close_file = .true.
@@ -1441,7 +1472,7 @@ subroutine check_file_times(this, time_step, output_buffers, diag_fields, do_not
                                                                                  !! This is needed for error messages!
   type(fmsDiagField_type),          intent(in)              :: diag_fields(:)    !< Array of diag_fields objects
   logical,                          intent(out)             :: do_not_write      !< .True. only if this is not a new
-                                                                                 !! time step and you are writting
+                                                                                 !! time step and you are writing
                                                                                  !! at every time step
 
   do_not_write = .false.
@@ -1818,7 +1849,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     endif
 
     call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
-      this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures)
+      this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures, &
+      diag_file%is_using_collective_writes())
   enddo
 
   if (need_associated_files) &
@@ -1992,7 +2024,7 @@ result(rslt)
         field_id = output_buffers(this%buffer_ids(i))%get_field_id()
         call mpp_error(NOTE, "Send data was never called for field:"//&
           trim(diag_fields(field_id)%get_varname())//" mod: "//trim(diag_fields(field_id)%get_modname())//&
-          " in file: "//trim(this%get_file_fname())//". Writting FILL VALUES!")
+          " in file: "//trim(this%get_file_fname())//". Writing FILL VALUES!")
       endif
     enddo
   else

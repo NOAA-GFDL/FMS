@@ -1,24 +1,23 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 subroutine COMPARE_DATA_ (Domain_in, actual_result, expected_result)
-  integer, parameter                      :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                      :: lkind = TEST_FMS_KIND_ !< Real precision of the test
   type(domain2d), intent(in)              :: Domain_in             !< Domain with mask table
   real(lkind), intent(in)                 :: expected_result       !< Expected result from data_override
   real(lkind), dimension(:,:), intent(in) :: actual_result         !< Result from data_override
@@ -28,7 +27,7 @@ subroutine COMPARE_DATA_ (Domain_in, actual_result, expected_result)
   integer                                 :: nhx, nhy              !< Size of the halos
   integer                                 :: i, j                  !< Helper indices
 
-  !< Data is only expected to be overriden for the compute domain -not at the halos.
+  !< Data is only expected to be overridden for the compute domain -not at the halos.
   call mpp_get_compute_domain(Domain_in, xsize=xsizec, ysize=ysizec)
   call mpp_get_data_domain(Domain_in, xsize=xsized, ysize=ysized)
 
@@ -44,7 +43,7 @@ subroutine COMPARE_DATA_ (Domain_in, actual_result, expected_result)
         !< This is the result at the halos it should 999.
         if (actual_result(i,j) .ne. 999._lkind) then
           print *, "for i=", i, " and j=", j, " result=", actual_result(i,j)
-          call mpp_error(FATAL, "test_data_override_ongrid: Data was overriden in the halos!!")
+          call mpp_error(FATAL, "test_data_override_ongrid: Data was overridden in the halos!!")
         endif
       else
         if (actual_result(i,j) .ne. expected_result) then
@@ -60,7 +59,7 @@ end subroutine COMPARE_DATA_
 !! In the first case there is no time interpolation
 !! In the second case there is time interpolation
 subroutine ONGRID_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = TEST_FMS_KIND_ !< Real precision of the test
   real(lkind)                              :: expected_result       !< Expected result from data_override
   type(time_type)                          :: Time                  !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                !< Data to be written
@@ -91,7 +90,7 @@ end subroutine ONGRID_TEST_
 !> @brief Tests bilinear data_override with and increasing and decreasing grid case
 !! and comares the output betweeen the cases to ensure it is correct
 subroutine BILINEAR_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = TEST_FMS_KIND_ !< Real precision of the test
   type(time_type)                          :: Time              !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff_decreasing !< Data to be written
   real(lkind), allocatable, dimension(:,:) :: runoff_increasing !< Data to be written
@@ -123,7 +122,7 @@ subroutine BILINEAR_TEST_
 end subroutine BILINEAR_TEST_
 
 subroutine WEIGHT_FILE_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = TEST_FMS_KIND_ !< Real precision of the test
   type(time_type)                          :: Time                  !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                !< Data from normal override
   real(lkind), allocatable, dimension(:,:) :: runoff_weight         !< Data from weight file override
@@ -161,7 +160,7 @@ subroutine WEIGHT_FILE_TEST_
 end subroutine WEIGHT_FILE_TEST_
 
 subroutine SCALAR_TEST_
-  integer, parameter :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter :: lkind = TEST_FMS_KIND_ !< Real precision of the test
   real(lkind)        :: expected_result       !< Expected result from data_override
   type(time_type)    :: Time                  !< Time
   real(lkind)        :: co2                   !< Data to be written
@@ -173,7 +172,7 @@ subroutine SCALAR_TEST_
   !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
   !! equal to the data at time=3, which is 3.
   expected_result = 3._lkind
-  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
+  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overridden to the correct value!")
 
   !< Run it when time=4
   co2 = 999._lkind
@@ -182,11 +181,11 @@ subroutine SCALAR_TEST_
   !< You are getting the data when time=4, the data at time=3 is 3. and at time=5 is 4., so the expected result
   !! is the average of the 2 (because this is is an "ongrid" case and there is no horizontal interpolation).
   expected_result = (3._lkind + 4._lkind) / 2._lkind
-  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overriden to the correct value!")
+  if (co2 .ne. expected_result) call mpp_error(FATAL, "co2 was not overridden to the correct value!")
 end subroutine SCALAR_TEST_
 
 subroutine ENSEMBLE_TEST_
-  integer, parameter                       :: lkind = DO_TEST_KIND_ !< Real precision of the test
+  integer, parameter                       :: lkind = TEST_FMS_KIND_ !< Real precision of the test
   real(lkind)                              :: expected_result       !< Expected result from data_override
   type(time_type)                          :: Time                  !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                !< Data to be written
@@ -203,7 +202,7 @@ subroutine ENSEMBLE_TEST_
   !< Run it when time=3
   Time = set_date(1,1,4,0,0,0)
   call data_override('OCN','runoff',runoff, Time, override=sucessful)
-  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   !< Because you are getting the data when time=3, and this is an "ongrid" case, the expected result is just
   !! equal to the data at time=3, which is 3+scale_fac.
   expected_result = 3._lkind + real(scale_fac,kind=lkind)
@@ -213,7 +212,7 @@ subroutine ENSEMBLE_TEST_
   runoff = 999._lkind
   Time = set_date(1,1,5,0,0,0)
   call data_override('OCN','runoff',runoff, Time, override=sucessful)
-  if (.not. sucessful) call mpp_error(FATAL, "The data was not overriden correctly")
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
   !< You are getting the data when time=4, the data at time=3 is 3+scale_fac. and at time=5 is 4+scale_fac.,
   !! so the expected result is the average of the 2 (because this is is an "ongrid" case and there
   !! is no horizontal interpolation).
@@ -222,3 +221,38 @@ subroutine ENSEMBLE_TEST_
 
   deallocate(runoff)
 end subroutine ENSEMBLE_TEST_
+
+subroutine MULTI_FILE_TESTS_
+  integer, parameter                       :: lkind = TEST_FMS_KIND_ !< Real precision of the test
+  real(lkind)                              :: expected_result       !< Expected result from data_override
+  type(time_type)                          :: Time                  !< Time
+  real(lkind), allocatable, dimension(:,:) :: runoff                !< Data to be written
+  logical :: sucessful !< .True. if the data_override was sucessful
+
+  allocate(runoff(is:ie,js:je))
+
+  !< Run it when time=3, this is going to use the previous file and the current file
+  Time = set_date(1,1,4,0,0,0)
+  runoff = 999._lkind
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
+  expected_result = 3._lkind
+  call COMPARE_DATA_ (Domain, runoff, expected_result)
+
+  !< Run it when time=4, this is going to use the current file
+  Time = set_date(1,1,5,0,0,0)
+  runoff = 999._lkind
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
+  expected_result = 4._lkind
+  call COMPARE_DATA_ (Domain, runoff, expected_result)
+
+  !< Run it when time=5, this is going to use the current file and the next file
+  Time = set_date(1,1,6,0,0,0)
+  runoff = 999._lkind
+  call data_override('OCN','runoff',runoff, Time, override=sucessful)
+  if (.not. sucessful) call mpp_error(FATAL, "The data was not overridden correctly")
+  expected_result = 5._lkind
+  call COMPARE_DATA_ (Domain, runoff, expected_result)
+
+end subroutine MULTI_FILE_TESTS_

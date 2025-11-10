@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
  !> @brief This code will be used by the preprocessor to generate an implementation
@@ -839,7 +838,7 @@ FUNCTION FMS_DIAG_FBU_3D_PNAME_(ofield_cfg, ofield_index_cfg, field_d, sample, &
         !!TODO: Can the dummy variable array below be removed. The variable was introduced because of pointer
         !! bounds remapping to call the next routine. Note that mask is an optional argument.
         !! The program hangs if the approach of having a pointer to the dummy array is not used.
-        !! Also note that a seperate logical field (in fmsDiagOutfield_type, but was used in
+        !! Also note that a separate logical field (in fmsDiagOutfield_type, but was used in
         !! the legacy diag manager also) is used to determine "if the mask was preent"!
          LOGICAL, DIMENSION(1), target :: mask_dummy !> A target for mask_ptr, in case mask is not present
 

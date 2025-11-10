@@ -52,11 +52,10 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
 
 if USING_YAML
-skipflag=""
+  TESTS_ENVIRONMENT = parser_skip=""
 else
-skipflag="skip"
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
 
-TESTS_ENVIRONMENT = parser_skip=${skipflag}
 # Clean up
 CLEANFILES = input.nml *.nc* *.out *.yaml *.dpi *.spi *.dyn *.spl

@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_interp_mod time_interp_mod
 !> @ingroup time_interp
@@ -108,7 +107,7 @@ public :: time_interp_init, time_interp, fraction_of_year
 !!          hours   per day    = 24
 !!          months  per year   = 12
 !!
-!! @param Time The time at which the the weight is computed.
+!! @param Time The time at which the weight is computed.
 !! @param Time_beg For cyclical interpolation: Time_beg specifies the begining time of a cycle.
 !! @param Time_end For cyclical interpolation: Time_end specifies the ending time of a cycle.
 !! @param Timelist For cyclical interpolation: Timelist is an array of times between Time_beg and Time_end.

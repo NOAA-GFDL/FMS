@@ -2,22 +2,21 @@
 
 
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @file
@@ -717,7 +716,7 @@
       set_domain_id=d_id + KE_BASE*int(ksize,KIND(d_id))
       if(PRESENT(flags))set_domain_id=set_domain_id+int(flags,KIND(d_id))
       if(PRESENT(gtype))set_domain_id=set_domain_id+GT_BASE*int(gtype,KIND(d_id))  ! Must be i8_kind arithmetic
-      !--- gtype is never been used to set id. we need to add position to calculate id to seperate
+      !--- gtype is never been used to set id. we need to add position to calculate id to separate
       !--- BGRID and CGRID or scalar variable.
       if(present(position)) set_domain_id=set_domain_id+GT_BASE*int(2**position, KIND(d_id))
       !z1l ???? the following calculation may need to be revised

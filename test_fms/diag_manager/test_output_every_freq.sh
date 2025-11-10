@@ -24,7 +24,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-if [ -z "${skipflag}" ]; then
+if [ -z "${parser_skip}" ]; then
 # create and enter directory for in/output files
 output_dir
 
@@ -43,6 +43,10 @@ diag_files:
     kind: r4
   - module: ocn_mod
     var_name: var2
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var0_openmp
     reduction: none
     kind: r4
 _EOF

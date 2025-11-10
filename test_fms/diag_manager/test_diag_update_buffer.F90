@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @brief  This programs tests the update of field data buffers with
@@ -52,7 +51,7 @@ program test_diag_update_buffer
 
    !!Diag_manager::send_data uses CLASS(*) in function signature, SO
    !! we mimic the resulting operations. The set of ClASS(*) data needs to be allocated of same
-   !! type in order to be able to call the math/buffer update funtions.
+   !! type in order to be able to call the math/buffer update functions.
    CLASS(*), ALLOCATABLE, TARGET, DIMENSION(:,:,:,:) :: field_data
    CLASS(*), ALLOCATABLE, TARGET, DIMENSION(:,:,:,:) :: rmask
    CLASS(*), ALLOCATABLE, TARGET :: missvalue
@@ -258,7 +257,7 @@ program test_diag_update_buffer
 
 CONTAINS
 
-   !> @brief Initialized an fms_diag_outfield_index_type by calling member funtion of
+   !> @brief Initialized an fms_diag_outfield_index_type by calling member function of
    !! fms_diag_outfield_index_type input object.
    SUBROUTINE init_ofield_index_cfg(idx_cfg, is, js , ks, ie, je, ke, hi, hj, f1, f2, f3, f4)
       type(fmsDiagOutfieldIndex_type), INTENT(inout)  :: idx_cfg !< The object to initialize.
