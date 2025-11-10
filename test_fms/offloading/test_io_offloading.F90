@@ -87,8 +87,7 @@ program test_io_offloading
   call mpp_set_current_pelist(og_pes) !All of the PEs need to call the offloading stuff
   call open_file_offload(fileobj, filename, &
     model_domain, &
-    model_pes, offload_pes, &
-    is_model_pe, is_offload_pe)
+    model_pes, offload_pes)
 
   call global_metadata_offload(fileobj, "Number of times Fortran made you cry", 20)
   call global_metadata_offload(fileobj, "Number of lines of code", 19.54326541)

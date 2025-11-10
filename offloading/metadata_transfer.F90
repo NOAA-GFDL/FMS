@@ -20,19 +20,15 @@ module metadata_transfer_mod
   !! and routines for initializing the mpi datatype so that children classes can
   !! be broadcasted.
   !! TODO:
-  !! - remove redundant attribute_type field
   !! - combine some routines for easier usage 
   type, abstract :: metadata_class
     private
     integer                             :: mpi_type_id = -1 !< MPI datatype id corresponding to this data objects data, -1 if not set
-    integer                             :: attribute_type !< type of the attribute, one of the real8_type, real4_type, int8_type, int4_type, str_type
     integer                             :: attribute_length = -1 !< length of the attribute value array, -1 if not set
     character(len=ATTR_NAME_MAX_LENGTH) :: attribute_name !< name of the attribute to write
     contains
       procedure :: fms_metadata_broadcast
       procedure :: fms_metadata_transfer_init
-      procedure :: get_attribute_type
-      procedure :: set_attribute_type
       procedure :: get_attribute_name
       procedure :: set_attribute_name
   end type
@@ -85,18 +81,10 @@ module metadata_transfer_mod
   !! so they need to be included in the MPI struct declaration.
   subroutine fms_metadata_transfer_init(this, dtype)
     class(metadata_class), intent(inout) :: this !< metadata object to initialize for mpi communication using the struct
-    integer, optional, intent(in) :: dtype !< type of the attribute, one of the real8_type, real4_type, int8_type, int4_type, str_type
+    integer, intent(in) :: dtype !< type of the attribute, one of the real8_type, real4_type, int8_type, int4_type, str_type
     integer, dimension(0:6) :: lengths, types
     integer(KIND=MPI_ADDRESS_KIND), dimension(0:6) :: displacements
-    integer :: ierror, mpi_id, type_local
-
-    if(present(dtype)) then
-      this%attribute_type = dtype
-      type_local = dtype
-    else
-      type_local = this%get_attribute_type()
-    end if
-
+    integer :: ierror, mpi_id
 
     !! since the actual data array is at the end of the struct, displacements are the same for all types
     displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
@@ -104,7 +92,7 @@ module metadata_transfer_mod
                       sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
                       sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
                     /)
-    select case(type_local)
+    select case(dtype)
     case(real8_type)
       types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_DOUBLE/)
     case(real4_type)
@@ -116,7 +104,7 @@ module metadata_transfer_mod
     case(str_type)
       types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER/)
     case default
-        call mpp_error(FATAL, "fms_metadata_transfer_init:: given dummy_type argument contains a unsupported type")
+        call mpp_error(FATAL, "fms_metadata_transfer_init:: given dtype argument contains a unsupported type")
     end select
 
     !lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
@@ -179,20 +167,6 @@ module metadata_transfer_mod
 
   end subroutine fms_metadata_broadcast_all
 
-  !> Getter for attribute_type value (one of the real8_type, real4_type, int8_type, int4_type, str_type int values)
-  function get_attribute_type(this) result(val)
-    class(metadata_class), intent(in) :: this
-    integer :: val
-    val = this%attribute_type
-  end function
-
-  !> Setter for attribute_type value (one of the real8_type, real4_type, int8_type, int4_type, str_type int values)
-  subroutine set_attribute_type(this, val)
-    class(metadata_class), intent(inout) :: this
-    integer, intent(in) :: val
-    this%attribute_type = val
-  end subroutine
-
   !> Getter for real 8 attribute_value
   function get_attribute_r8_value(this) result(val)
     class(metadata_r8_type), intent(inout) :: this
@@ -210,7 +184,6 @@ module metadata_transfer_mod
     endif
     this%attribute_length = size(val)
     this%attribute_value(1:size(val)) = val
-    this%attribute_type = real8_type
   end subroutine
 
   !> Getter for real 4 attribute_value
@@ -230,7 +203,6 @@ module metadata_transfer_mod
     endif
     this%attribute_length = size(val)
     this%attribute_value(1:size(val)) = val
-    this%attribute_type = real4_type
   end subroutine
 
   !> Getter for integer(kind=8) attribute_value
@@ -250,7 +222,6 @@ module metadata_transfer_mod
     endif
     this%attribute_length = size(val)
     this%attribute_value(1:size(val)) = val
-    this%attribute_type = int8_type
   end subroutine
 
   !> Getter for integer(kind=4) attribute_value
@@ -270,7 +241,6 @@ module metadata_transfer_mod
     endif
     this%attribute_length = size(val)
     this%attribute_value(1:size(val)) = val
-    this%attribute_type = int4_type
   end subroutine
 
   !> Getter for string attribute_value
@@ -290,7 +260,6 @@ module metadata_transfer_mod
     endif
     this%attribute_length = len(val)
     this%attribute_value(1:len(val)) = val
-    this%attribute_type = str_type 
   end subroutine
 
   !> Getter for attribute_name (for all metadata types)

@@ -40,7 +40,6 @@ module offloading_io_mod
 
   private
 
-  !TODO create domain should be private
   public :: offloading_io_init, open_file_offload, create_lat_lon_domain, create_cubic_domain
   public :: domain_decomposed, non_domain_decomposed, Unstructured_grid
   public :: global_metadata_offload, close_file_offload, register_axis_offload, register_field_offload
@@ -56,14 +55,12 @@ module offloading_io_mod
     module_is_initialized = .true.
   end subroutine offloading_io_init
 
-  subroutine open_file_offload(fileobj, filename, domain_in, pe_in, pe_out, is_pe_in, is_pe_out)
+  subroutine open_file_offload(fileobj, filename, domain_in, pe_in, pe_out)
     class(FmsNetcdfFile_t), intent(inout) :: fileobj
     character(len=*),       intent(in)    :: filename
     type(domain2D),         intent(inout) :: domain_in
     integer,                intent(in)    :: pe_in(:) !< model pes
     integer,                intent(in)    :: pe_out(:) !< offload pes
-    logical,                intent(in)    :: is_pe_in
-    logical,                intent(in)    :: is_pe_out
 
     integer, parameter :: str_len = 255
     character(len=str_len) :: filename_out(1)
@@ -73,7 +70,9 @@ module offloading_io_mod
     integer :: ntile
     integer, allocatable :: all_current_pes(:)
     integer, allocatable :: broadcasting_pes(:)
-    type(domain2D) :: domain_out
+    logical :: is_pe_out
+    
+    is_pe_out = ANY(pe_out .eq. mpp_pe())
 
     ! This should be called from the model PEs and the offload PEs
     if (.not. module_is_initialized) &
@@ -153,7 +152,6 @@ module offloading_io_mod
     character(len=255) :: att_name(1)
 
     integer :: int_buf
-    real :: real_buf
     real(r4_kind), allocatable :: r4_tmp(:)
     real(r8_kind), allocatable :: r8_tmp(:)
     integer(i4_kind) , allocatable :: i4_tmp(:)
@@ -213,7 +211,6 @@ module offloading_io_mod
             select type(transfer_obj)
               type is (metadata_r4_type)
                 call transfer_obj%set_attribute_value([attribute_value])
-                call transfer_obj%set_attribute_type(real4_type)
             end select
           endif
           call transfer_obj%fms_metadata_broadcast()
@@ -234,7 +231,6 @@ module offloading_io_mod
             select type(transfer_obj)
               type is (metadata_r8_type)
                 call transfer_obj%set_attribute_value([attribute_value])
-                call transfer_obj%set_attribute_type(real8_type)
             end select
           endif
           call transfer_obj%fms_metadata_broadcast()
@@ -254,7 +250,6 @@ module offloading_io_mod
             select type(transfer_obj)
               type is (metadata_i4_type)
                 call transfer_obj%set_attribute_value([attribute_value])
-                call transfer_obj%set_attribute_type(int4_type)
                 int_buf = attribute_value
             end select
           endif
@@ -276,7 +271,6 @@ module offloading_io_mod
             select type(transfer_obj)
               type is (metadata_i8_type)
                 call transfer_obj%set_attribute_value([attribute_value])
-                call transfer_obj%set_attribute_type(int8_type)
             end select
           endif
           call transfer_obj%fms_metadata_broadcast()
@@ -297,7 +291,6 @@ module offloading_io_mod
             select type(transfer_obj)
               type is (metadata_str_type)
                 call transfer_obj%set_attribute_value(attribute_value)
-                call transfer_obj%set_attribute_type(str_type)
             end select
           endif
           call transfer_obj%fms_metadata_broadcast()
@@ -497,7 +490,6 @@ module offloading_io_mod
     integer, allocatable :: offloading_pes(:)
     integer, allocatable :: model_pes(:)
     integer, allocatable :: all_current_pes(:)
-    integer, allocatable :: broadcasting_pes(:)
     logical :: is_model_pe
 
     real(kind=r4_kind), allocatable :: var_r4_data(:,:,:)
@@ -575,7 +567,6 @@ module offloading_io_mod
     integer, allocatable :: offloading_pes(:)
     integer, allocatable :: model_pes(:)
     integer, allocatable :: all_current_pes(:)
-    integer, allocatable :: broadcasting_pes(:)
     logical :: is_model_pe
 
     real(kind=r4_kind), allocatable :: var_r4_data(:,:)

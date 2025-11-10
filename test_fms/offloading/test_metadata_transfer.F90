@@ -11,7 +11,6 @@ program test_metadata_transfer
   class(metadata_class), allocatable :: file_metadata(:)
 
   logical :: debug = .true.
-  integer :: i
 
   call fms_init()
 
@@ -23,19 +22,16 @@ program test_metadata_transfer
   ! set metadata only on root PE
   if (mpp_pe() .eq. mpp_root_pe()) then
     call file_metadata(1)%set_attribute_name("_FillValue"//c_null_char)
-    call file_metadata(1)%set_attribute_type(real8_type)
     select type(obj => file_metadata(1))
     type is(metadata_r8_type)
       call obj%set_attribute_value([666.0_r8_kind])
     end select
     call file_metadata(2)%set_attribute_name("missing_value"//c_null_char)
-    call file_metadata(2)%set_attribute_type(real8_type)
     select type(obj => file_metadata(2))
     type is(metadata_r8_type)
       call obj%set_attribute_value([-100.0_r8_kind, 100.0_r8_kind])
     end select
     call file_metadata(3)%set_attribute_name("a_third_name"//c_null_char)
-    call file_metadata(3)%set_attribute_type(real8_type)
     select type(obj => file_metadata(3))
     type is(metadata_r8_type)
       call obj%set_attribute_value([-200.0_r8_kind, -50.0_r8_kind, 0.0_r8_kind, 50.0_r8_kind, 200.0_r8_kind])
@@ -56,7 +52,6 @@ program test_metadata_transfer
   call file_metadata(1)%fms_metadata_transfer_init(real4_type)
   if(mpp_pe() .eq. mpp_root_pe()) then
     call file_metadata(1)%set_attribute_name("Valuez_r4"//c_null_char)
-    call file_metadata(1)%set_attribute_type(real4_type)
     select type(obj => file_metadata(1))
     type is(metadata_r4_type)
       call obj%set_attribute_value([666.0_r4_kind, -100.0_r4_kind, 100.0_r4_kind, -200.0_r4_kind, &
@@ -67,7 +62,6 @@ program test_metadata_transfer
   select type(file_metadata)
   type is(metadata_r4_type)
       print *, "PE: ", mpp_pe(), " metadata name is ", trim(adjustl(file_metadata(1)%get_attribute_name()))
-      print *, "PE: ", mpp_pe(), " metadata type is ", string(file_metadata(1)%get_attribute_type())
       print *, "PE: ", mpp_pe(), " metadata value is ", file_metadata(1)%get_attribute_value()
       call check_metadata_r4(file_metadata)
   end select
@@ -78,7 +72,6 @@ program test_metadata_transfer
   call file_metadata(1)%fms_metadata_transfer_init(int4_type)
   if(mpp_pe() .eq. mpp_root_pe()) then
     call file_metadata(1)%set_attribute_name("Valuez_int4"//c_null_char)
-    call file_metadata(1)%set_attribute_type(int4_type)
     select type(obj => file_metadata(1))
     type is(metadata_i4_type)
       call obj%set_attribute_value([666, -100, 100, -200, &
@@ -89,7 +82,6 @@ program test_metadata_transfer
   select type(file_metadata)
   type is(metadata_i4_type)
       print *, "PE: ", mpp_pe(), " metadata name is ", trim(adjustl(file_metadata(1)%get_attribute_name()))
-      print *, "PE: ", mpp_pe(), " metadata type is ", string(file_metadata(1)%get_attribute_type())
       print *, "PE: ", mpp_pe(), " metadata value is ", file_metadata(1)%get_attribute_value()
   end select
   deallocate(file_metadata)
@@ -99,7 +91,6 @@ program test_metadata_transfer
   call file_metadata(1)%fms_metadata_transfer_init(int8_type)
   if(mpp_pe() .eq. mpp_root_pe()) then
     call file_metadata(1)%set_attribute_name("Valuez_int8"//c_null_char)
-    call file_metadata(1)%set_attribute_type(int8_type)
     select type(obj => file_metadata(1))
     type is(metadata_i8_type)
       call obj%set_attribute_value([666_i8_kind, -100_i8_kind, 100_i8_kind, -200_i8_kind, &
@@ -110,7 +101,6 @@ program test_metadata_transfer
   select type(file_metadata)
   type is(metadata_i8_type)
       print *, "PE: ", mpp_pe(), " metadata name is ", trim(adjustl(file_metadata(1)%get_attribute_name()))
-      print *, "PE: ", mpp_pe(), " metadata type is ", string(file_metadata(1)%get_attribute_type())
       print *, "PE: ", mpp_pe(), " metadata value is ", file_metadata(1)%get_attribute_value()
   end select
   deallocate(file_metadata)
@@ -120,7 +110,6 @@ program test_metadata_transfer
   call file_metadata(1)%fms_metadata_transfer_init(int4_type)
   if(mpp_pe() .eq. mpp_root_pe()) then
     call file_metadata(1)%set_attribute_name("foo"//c_null_char)
-    call file_metadata(1)%set_attribute_type(str_type)
     select type(obj => file_metadata(1))
     type is(metadata_str_type)
       call obj%set_attribute_value("bar") 
@@ -130,7 +119,6 @@ program test_metadata_transfer
   select type(file_metadata)
   type is(metadata_str_type)
       print *, "PE: ", mpp_pe(), " metadata name is ", trim(adjustl(file_metadata(1)%get_attribute_name()))
-      print *, "PE: ", mpp_pe(), " metadata type is ", string(file_metadata(1)%get_attribute_type())
       print *, "PE: ", mpp_pe(), " metadata value is ", file_metadata(1)%get_attribute_value()
       if(trim(file_metadata(1)%get_attribute_name()) .ne. "foo"//c_null_char .or. &
          trim(file_metadata(1)%get_attribute_value()) .ne. "bar") then
@@ -151,7 +139,6 @@ program test_metadata_transfer
     do i = 1, size(this)
       arr = this(i)%get_attribute_value()
       print *, "pe: ", mpp_pe(), "i: ", i, " attribute_name is ", trim(adjustl(this(i)%get_attribute_name()))
-      print *, "pe: ", mpp_pe(), "i: ", i, " attribute_type is ", string(this(i)%get_attribute_type())
       print *, "pe: ", mpp_pe(), "i: ", i, " attribute_value is ", arr 
     enddo
   end subroutine
@@ -159,7 +146,6 @@ program test_metadata_transfer
   subroutine check_metadata_r8(this)
     type(metadata_r8_type), intent(inout) :: this(:)
     real(r8_kind), allocatable :: arr(:)
-    logical :: is_correct
     character(len=32) :: attr_names(3)
     real(r8_kind) :: attr_vals(8)
     integer :: i, j, last_j =1
@@ -172,9 +158,6 @@ program test_metadata_transfer
       arr = this(i)%get_attribute_value()
       if (trim(this(i)%get_attribute_name()) .ne. attr_names(i)) then
         call mpp_error(FATAL, "incorrect metadata name")
-      endif 
-      if( this(i)%get_attribute_type() .ne. real8_type) then
-        call mpp_error(FATAL, "incorrect metadata type")
       endif
 
       do j=1, size(arr) 
@@ -191,10 +174,9 @@ program test_metadata_transfer
   subroutine check_metadata_r4(this)
     type(metadata_r4_type), intent(inout) :: this(:)
     real(r4_kind), allocatable :: arr(:)
-    logical :: is_correct
     character(len=32) :: attr_name
     real(r4_kind) :: attr_vals(8)
-    integer :: i, j, last_j =1
+    integer :: j, last_j =1
 
     attr_name = "Valuez_r4"//c_null_char
     attr_vals = (/ 666.0_r4_kind, -100.0_r4_kind, 100.0_r4_kind, -200.0_r4_kind, &
@@ -204,9 +186,6 @@ program test_metadata_transfer
     if (trim(this(1)%get_attribute_name()) .ne. attr_name) then
       print *, "got ", trim(this(1)%get_attribute_name()), " expected ", trim(attr_name)
       call mpp_error(FATAL, "incorrect metadata name")
-    endif 
-    if( this(1)%get_attribute_type() .ne. real4_type) then
-      call mpp_error(FATAL, "incorrect metadata type")
     endif
 
     do j=1, size(arr) 
