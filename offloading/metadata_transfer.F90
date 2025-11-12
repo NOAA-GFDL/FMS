@@ -91,7 +91,7 @@ module metadata_transfer_mod
     integer :: ierror, mpi_id
 
     !! since the actual data array is at the end of the struct, displacements are the same for all types
-    displacements = (/0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
+    displacements = (/ int(0,kind=MPI_ADDRESS_KIND), sizeof(0), sizeof(0)*2, sizeof(0)*3, &
                       sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
                       sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
                       sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
