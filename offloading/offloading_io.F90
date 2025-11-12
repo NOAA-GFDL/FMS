@@ -8,57 +8,65 @@ module offloading_io_mod
 
   implicit none
 
-  integer, parameter :: domain_decomposed = 0
-  integer, parameter :: non_domain_decomposed = 1
-  integer, parameter :: Unstructured_grid = 2
-  integer :: nfiles = 10
-  integer :: current_files_init
-  logical :: module_is_initialized
 
+  integer, parameter :: domain_decomposed = 0 !< enumeration for type of domain
+  integer, parameter :: non_domain_decomposed = 1 !< enumeration for type of domain
+  integer, parameter :: Unstructured_grid = 2 !< enumeration for type of domain
+
+  integer, parameter :: max_files = 10 !< amount of offloaded files to allocate space for
+  integer :: current_files_init !< number of currently initialized offloading files
+  logical :: module_is_initialized !< .true. if module has been initialized
+
+  !> Structure to hold offloading file information
   type :: offloading_obj_out
     integer :: id
-    character(len=:), allocatable :: filename
-    class(FmsNetcdfFile_t), allocatable :: fileobj
-    type(domain2D) :: domain_out
-    integer :: type_of_domain
+    character(len=:), allocatable :: filename !< filename of the offloaded netcdf file
+    class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object
+    type(domain2D) :: domain_out !< domain on offloading PEs
+    integer :: type_of_domain !< type of domain (domain_decomposed, non_domain_decomposed, Unstructured_grid)
   end type
 
-  type :: offloading_obj_in
-  end type
-
+  !> Offload equivalent of open_file in fms2_io_mod
+  !! Registers an axis to a netcdf file on offloaded PEs. File must have been opened with open_file_offload.
   interface register_axis_offload
     procedure :: register_netcdf_axis_offload
     procedure :: register_domain_axis_offload
   end interface
 
+  !> Offload equivalent of write_data in fms2_io_mod
+  !! Writes data to a netcdf file on offloaded PEs. File must have been opened with open_file_offload.
   interface write_data_offload
     procedure :: write_data_offload_2d
     procedure :: write_data_offload_3d
   end interface
 
+  !> Array of offloading objects that have been initialized by this module.
   type(offloading_obj_out), allocatable, target :: offloading_objs(:)
 
   private
 
-  public :: offloading_io_init, open_file_offload, create_lat_lon_domain, create_cubic_domain
+  public :: offloading_io_init, open_file_offload
   public :: domain_decomposed, non_domain_decomposed, Unstructured_grid
   public :: global_metadata_offload, close_file_offload, register_axis_offload, register_field_offload
   public :: write_data_offload
 
   contains
 
+  !> Initialize by allocating array used to keep track of offloading file objects.
   subroutine offloading_io_init()
     if (module_is_initialized) return
-
     current_files_init = 0
-    allocate(offloading_objs(nfiles))
+    allocate(offloading_objs(max_files))
     module_is_initialized = .true.
   end subroutine offloading_io_init
 
+  !> Open a netcdf file and set it up for offloaded writes
+  !! This routine should be called from both the model PEs and the offload PEs, with the full list
+  !! of pes for each group being provided. The model PEs will broadcast the filename and domain.
   subroutine open_file_offload(fileobj, filename, domain_in, pe_in, pe_out)
-    class(FmsNetcdfFile_t), intent(inout) :: fileobj
-    character(len=*),       intent(in)    :: filename
-    type(domain2D),         intent(inout) :: domain_in
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !< fms2_io file object
+    character(len=*),       intent(in)    :: filename !< filename to open
+    type(domain2D),         intent(inout) :: domain_in !< model domain (from model pes)
     integer,                intent(in)    :: pe_in(:) !< model pes
     integer,                intent(in)    :: pe_out(:) !< offload pes
 
@@ -71,7 +79,7 @@ module offloading_io_mod
     integer, allocatable :: all_current_pes(:)
     integer, allocatable :: broadcasting_pes(:)
     logical :: is_pe_out
-    
+
     is_pe_out = ANY(pe_out .eq. mpp_pe())
 
     ! This should be called from the model PEs and the offload PEs
@@ -119,12 +127,9 @@ module offloading_io_mod
     if (is_pe_out) call mpp_define_null_domain(domain_in)
     call mpp_broadcast_domain(domain_in)
 
-    ! The offload pes inits the t offloading objecand return an object id
+    ! The offload pes inits the offloading object and return an object id
     if (is_pe_out) then
       call mpp_set_current_pelist(pe_out)
-      print *, "PE", string(mpp_pe()), " knows that the filename is ", trim(filename_out(1)), &
-        " and the domain size ", string(global_domain_size(1)), " by ", string(global_domain_size(2)), &
-        " and the number of tiles is ", string(ntile)
       object_id = init_offloading_object(filename_out(1), global_domain_size(1), global_domain_size(2),&
          ntile)
     endif
@@ -135,10 +140,11 @@ module offloading_io_mod
     call fileobj%offloading_obj_in%init(object_id, pe_out, pe_in, domain_in)
   end subroutine open_file_offload
 
+  !> Broadcast and register a global metadata attribute on offloading PEs
   subroutine global_metadata_offload(fileobj, attribute_name, attribute_value)
-    class(FmsNetcdfFile_t), intent(inout) :: fileobj
-    character(len=*), intent(in) :: attribute_name
-    class(*), intent(in) :: attribute_value
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !< fms2_io file object
+    character(len=*), intent(in) :: attribute_name !< name of the global attribute to register
+    class(*), intent(in) :: attribute_value !< value of the global attribute to register (r4, r8, i4, i8, str)
 
     integer :: id
     type(offloading_obj_out), pointer :: this
@@ -157,11 +163,10 @@ module offloading_io_mod
     integer(i4_kind) , allocatable :: i4_tmp(:)
     integer(i8_kind) , allocatable :: i8_tmp(:)
     character(len=:), allocatable :: str_tmp
-    class(metadata_class), allocatable :: transfer_obj 
+    class(metadata_class), allocatable :: transfer_obj
 
-    select type (attribute_value) 
+    select type (attribute_value)
     type is (real(kind=r8_kind))
-      !! TODO combine these two calls with a factory function
       allocate(metadata_r8_type :: transfer_obj)
       call transfer_obj%fms_metadata_transfer_init(real8_type)
     type is (real(kind=r4_kind))
@@ -202,11 +207,9 @@ module offloading_io_mod
       broadcasting_pes(2:size(broadcasting_pes)) = offloading_pes
       call mpp_set_current_pelist( broadcasting_pes )
 
-      !call mpp_broadcast(att_name, 255, model_pes(1))
-
       select type (attribute_value)
         type is (real(kind=r4_kind))
-          ! TODO replace this mess with a single call if possible 
+          ! TODO replace this mess with a single call if possible
           if (is_model_pe) then
             select type(transfer_obj)
               type is (metadata_r4_type)
@@ -220,13 +223,11 @@ module offloading_io_mod
           end select
           att_name(1) = transfer_obj%get_attribute_name()
           if (.not. is_model_pe) then
-            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
-              " and value is ", r4_tmp
             call register_global_attribute(this%fileobj, att_name(1), r4_tmp)
           endif
 
         type is (real(kind=r8_kind))
-          ! TODO replace this mess with a single call if possible 
+          ! TODO replace this mess with a single call if possible
           if (is_model_pe) then
             select type(transfer_obj)
               type is (metadata_r8_type)
@@ -240,8 +241,6 @@ module offloading_io_mod
           end select
           att_name(1) = transfer_obj%get_attribute_name()
           if (.not. is_model_pe) then
-            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
-              " and value is ", r8_tmp
             call register_global_attribute(this%fileobj, att_name(1), r8_tmp)
           endif
 
@@ -260,13 +259,11 @@ module offloading_io_mod
           end select
           att_name(1) = transfer_obj%get_attribute_name()
           if (.not. is_model_pe) then
-            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
-              " and value is ", i4_tmp
             call register_global_attribute(this%fileobj, att_name(1), i4_tmp)
           endif
 
         type is (integer(kind=i8_kind))
-          ! TODO replace this mess with a single call if possible 
+          ! TODO replace this mess with a single call if possible
           if (is_model_pe) then
             select type(transfer_obj)
               type is (metadata_i8_type)
@@ -280,13 +277,11 @@ module offloading_io_mod
           end select
           att_name(1) = transfer_obj%get_attribute_name()
           if (.not. is_model_pe) then
-            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
-              " and value is ", i8_tmp 
             call register_global_attribute(this%fileobj, att_name(1), i8_tmp)
           endif
 
         type is (character(len=*))
-          ! TODO replace this mess with a single call if possible 
+          ! TODO replace this mess with a single call if possible
           if (is_model_pe) then
             select type(transfer_obj)
               type is (metadata_str_type)
@@ -300,8 +295,6 @@ module offloading_io_mod
           end select
           att_name(1) = transfer_obj%get_attribute_name()
           if (.not. is_model_pe) then
-            print *, "pe:", mpp_pe(), " attribute name is ", trim(att_name(1)), &
-              " and value is ", str_tmp 
             call register_global_attribute(this%fileobj, att_name(1), str_tmp)
           endif
 
@@ -311,16 +304,15 @@ module offloading_io_mod
     call mpp_set_current_pelist(all_current_pes)
   end subroutine
 
-  !TODO Need an interface and more
+  !> Register a domain axis (ie. x or y) on offloading PEs
   subroutine register_domain_axis_offload(fileobj, axis_name, cart)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
-    character(len=*), intent(in) :: axis_name
-    character(len=1), intent(in) :: cart
+    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    character(len=*), intent(in) :: axis_name !< axis name to be written to file
+    character(len=1), intent(in) :: cart !< must be either 'x' or 'y' for cartesian axis
 
     integer :: id
     type(offloading_obj_out), pointer :: this
 
-    !TODO better PEs management!
     integer, allocatable :: offloading_pes(:)
     integer, allocatable :: model_pes(:)
     integer, allocatable :: all_current_pes(:)
@@ -359,12 +351,13 @@ module offloading_io_mod
     endif
 
     call mpp_set_current_pelist(all_current_pes)
-  end subroutine
+  end subroutine register_domain_axis_offload
 
+  !> Register a netcdf axis on offloading PEs
   subroutine register_netcdf_axis_offload(fileobj, axis_name, length)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
-    character(len=*), intent(in) :: axis_name
-    integer, intent(in) :: length
+    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    character(len=*), intent(in) :: axis_name !< axis name to be written to file
+    integer, intent(in) :: length !< length of the axis
 
     integer :: id
     type(offloading_obj_out), pointer :: this
@@ -390,7 +383,7 @@ module offloading_io_mod
     if (mpp_pe() .eq. model_pes(1)) then
       var_axis(1) = trim(axis_name)
       axis_length = len_trim(var_axis(1))
-      var_length = length 
+      var_length = length
     endif
 
     allocate(all_current_pes(mpp_npes()))
@@ -416,13 +409,15 @@ module offloading_io_mod
     endif
 
     call mpp_set_current_pelist(all_current_pes)
-  end subroutine
+  end subroutine register_netcdf_axis_offload
 
+  !> Register a netcdf field on offloading PEs
   subroutine register_field_offload(fileobj, varname, vartype, dimensions)
-    class(FmsNetcdfFile_t), intent(inout) :: fileobj
-    character(len=*), intent(in) :: varname
-    character(len=*), intent(in) :: vartype
-    character(len=*), intent(in) :: dimensions(:)
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !> fms2_io file object
+    character(len=*), intent(in) :: varname !> name of the variable to be registered
+    character(len=*), intent(in) :: vartype !> type of the variable to be registered
+                                            !! must be one of {r4_type, r8_type, i4_type, i8_type, str_type}
+    character(len=*), intent(in) :: dimensions(:) !< previously registered dimension/axis names for the variable
 
     integer :: id
     type(offloading_obj_out), pointer :: this
@@ -477,11 +472,12 @@ module offloading_io_mod
     call mpp_set_current_pelist(all_current_pes)
   end subroutine
 
+  !> Write 3D data to offloaded netcdf file
   subroutine write_data_offload_3d(fileobj, varname, vardata, unlim_dim_level)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
-    character(len=*), intent(in) :: varname
-    real(kind=r4_kind), intent(in) :: vardata(:,:,:)
-    integer, intent(in), optional :: unlim_dim_level
+    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    character(len=*), intent(in) :: varname !< name of the variable to be written
+    real(kind=r4_kind), intent(in) :: vardata(:,:,:) !< 3D data to be written
+    integer, intent(in), optional :: unlim_dim_level !< level along unlimited dimension to write to
 
     integer :: id
     type(offloading_obj_out), pointer :: this
@@ -528,7 +524,7 @@ module offloading_io_mod
       call mpp_define_null_domain(domain_out)
     endif
 
-    ! get domain from the other pes 
+    ! get domain from the other pes
     call mpp_broadcast_domain(domain_out)
     call mpp_broadcast_domain(domain_in)
 
@@ -553,12 +549,13 @@ module offloading_io_mod
         end select
       endif
     call mpp_set_current_pelist(all_current_pes)
-  end subroutine
+  end subroutine write_data_offload_3d
 
+  !> Write 2D data to offloaded netcdf file
   subroutine write_data_offload_2d(fileobj, varname, vardata)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj
-    character(len=*), intent(in) :: varname
-    real(kind=r4_kind), intent(in) :: vardata(:,:)
+    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    character(len=*), intent(in) :: varname !< name of the variable to be written
+    real(kind=r4_kind), intent(in) :: vardata(:,:) !< 2D data to be written
 
     integer :: id
     type(offloading_obj_out), pointer :: this
@@ -616,10 +613,11 @@ module offloading_io_mod
       end select
     endif
     call mpp_set_current_pelist(all_current_pes)
-  end subroutine
+  end subroutine write_data_offload_2d
 
+  !> Close offloaded netcdf file
   subroutine close_file_offload(fileobj)
-    class(FmsNetcdfFile_t), intent(inout) :: fileobj
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !> fms2_io file object to close
 
     integer :: id
     type(offloading_obj_out), pointer :: this
@@ -632,17 +630,18 @@ module offloading_io_mod
     if (.not. is_model_pe) call close_file(this%fileobj)
   end subroutine close_file_offload
 
+  !> Initialize an offloading object on offload PEs
   integer function init_offloading_object(filename, nx, ny, ntile)
-    character(len=*), intent(in) :: filename
-    integer, intent(in) :: nx
-    integer, intent(in) :: ny
-    integer, intent(in) :: ntile
+    character(len=*), intent(in) :: filename !< filename to open
+    integer, intent(in) :: nx !< x size of the global domain
+    integer, intent(in) :: ny !< y size of the global domain
+    integer, intent(in) :: ntile !< number of tiles, only supports 1 for lat-lon or 6 for cubed-sphere
 
     type(offloading_obj_out), pointer :: this
     integer, allocatable :: curr_pelist(:)
 
     current_files_init = current_files_init + 1
-    if (current_files_init .gt. nfiles) &
+    if (current_files_init .gt. max_files) &
       call mpp_error(FATAL, "The number of files is too large")
 
     ! An array of offloading objects is stored in this module, the "id" is the index of the object in the array
@@ -660,6 +659,8 @@ module offloading_io_mod
       this%domain_out = create_lat_lon_domain(nx, ny)
     case (6)
       this%domain_out = create_cubic_domain(nx, ny, ntile, (/1,1/), offload_pes=curr_pelist)
+    case default
+      call mpp_error(FATAL, "Unsupported number of tiles for offloading: " // trim(adjustl(string(ntile))))
     end select
 
     allocate(FmsNetcdfDomainFile_t :: this%fileobj)
@@ -672,12 +673,13 @@ module offloading_io_mod
     init_offloading_object = current_files_init
   end function
 
+  !! TODO move this somewhere else
   function create_lat_lon_domain(nx_in, ny_in, halox, haloy ) &
     result(domain_out)
-    integer, intent(in) :: nx_in
-    integer, intent(in) :: ny_in
-    integer, intent(in), optional :: halox
-    integer, intent(in), optional :: haloy
+    integer, intent(in) :: nx_in !< number of lat-lon grid points in x direction
+    integer, intent(in) :: ny_in !< number of lat-lon grid points in y direction
+    integer, intent(in), optional :: halox !< number of halo points in x direction
+    integer, intent(in), optional :: haloy !< number of halo points in y direction
     type(domain2d) :: domain_out
     integer :: layout(2)
 
@@ -686,17 +688,16 @@ module offloading_io_mod
     call mpp_define_io_domain(domain_out, (/1,1/))
   end function create_lat_lon_domain
 
-  !Assumes all members of the domain are in the current pelist
-  ! TODO need to actually handle creating pe_start/pe_end arrays based off the offloading pes
+  !! TODO move this somewhere else
   function create_cubic_domain(nx_in, ny_in, ntiles, io_layout, nhalos, offload_pes, layout) &
     result(domain_out)
-    integer, intent(in) :: nx_in
-    integer, intent(in) :: ny_in
-    integer, intent(in) :: ntiles
-    integer, intent(in) :: io_layout(2)
-    integer, intent(in), optional :: nhalos
-    integer, intent(in), optional :: offload_pes(:)
-    integer, optional :: layout(2)
+    integer, intent(in) :: nx_in !< number of grid points in x direction per tile
+    integer, intent(in) :: ny_in !< number of grid points in y direction per tile
+    integer, intent(in) :: ntiles !< number of tiles, must be 6 for cubed-sphere
+    integer, intent(in) :: io_layout(2) !< layout for I/O operations
+    integer, intent(in), optional :: nhalos !< number of halo points
+    integer, intent(in), optional :: offload_pes(:) !< list of PEs used for offloading write operations
+    integer, optional :: layout(2) !< layout to be used for each tile)
 
     type(domain2d) :: domain_out
 
@@ -718,7 +719,7 @@ module offloading_io_mod
       call mpp_define_layout ((/1,nx_in,1,ny_in/), npes_per_tile, layout_tmp )
     else
       layout_tmp = layout
-    endif 
+    endif
 
     allocate(global_indices(4, ntiles))
     allocate(layout2D(2, ntiles))
@@ -728,8 +729,8 @@ module offloading_io_mod
       global_indices(:,n) = (/1,nx_in,1,ny_in/)
       layout2D(:,n) = layout_tmp
       if( present(offload_pes)) then
-        pe_start(n) = offload_pes((n-1)*npes_per_tile+1) 
-        pe_end(n) = offload_pes((n)*npes_per_tile) 
+        pe_start(n) = offload_pes((n-1)*npes_per_tile+1)
+        pe_end(n) = offload_pes((n)*npes_per_tile)
       else
         pe_start(n) = (n-1)*npes_per_tile
         pe_end(n) = n*npes_per_tile-1
@@ -744,215 +745,216 @@ module offloading_io_mod
   end function create_cubic_domain
 
   !> @brief Initialize a cubed-sphere atomsphere domain.
-subroutine define_cubic_mosaic(domain, ni, nj, global_indices, layout, pe_start, pe_end, &
-                                    io_layout, nhalos)
+  !! TODO move this somehere else
+  subroutine define_cubic_mosaic(domain, ni, nj, global_indices, layout, pe_start, pe_end, &
+                                      io_layout, nhalos)
 
-  integer, dimension(:), intent(in) :: ni
-  integer, dimension(:), intent(in) :: nj
-  integer, dimension(:,:), intent(in) :: global_indices
-  integer, dimension(:,:), intent(in) :: layout
-  integer, dimension(:), intent(in) :: pe_start
-  integer, dimension(:), intent(in) :: pe_end
-  integer, dimension(2), intent(in) :: io_layout
-  type(domain2d), intent(inout) :: domain !< A cubed-sphere domain.
-  integer, optional, intent(in) :: nhalos
+    integer, dimension(:), intent(in) :: ni !< number of grid points in i direction per tile
+    integer, dimension(:), intent(in) :: nj !< number of grid points in j direction per tile
+    integer, dimension(:,:), intent(in) :: global_indices !< global indices for each tile
+    integer, dimension(:,:), intent(in) :: layout !< array of layouts for each tile
+    integer, dimension(:), intent(in) :: pe_start !< starting PE for each tile
+    integer, dimension(:), intent(in) :: pe_end !< ending PE for each tile
+    integer, dimension(2), intent(in) :: io_layout !< layout for I/O operations
+    type(domain2d), intent(inout) :: domain !< A cubed-sphere domain.
+    integer, optional, intent(in) :: nhalos !< number of halo points
 
-  integer, dimension(12) :: tile1
-  integer, dimension(12) :: tile2
-  integer, dimension(12) :: istart1
-  integer, dimension(12) :: iend1
-  integer, dimension(12) :: jstart1
-  integer, dimension(12) :: jend1
-  integer, dimension(12) :: istart2
-  integer, dimension(12) :: iend2
-  integer, dimension(12) :: jstart2
-  integer, dimension(12) :: jend2
-  integer :: ntiles
-  integer :: num_contact
-  integer, dimension(2) :: msize
-  integer :: whalo
-  integer :: ehalo
-  integer :: shalo
-  integer :: nhalo
+    integer, dimension(12) :: tile1
+    integer, dimension(12) :: tile2
+    integer, dimension(12) :: istart1
+    integer, dimension(12) :: iend1
+    integer, dimension(12) :: jstart1
+    integer, dimension(12) :: jend1
+    integer, dimension(12) :: istart2
+    integer, dimension(12) :: iend2
+    integer, dimension(12) :: jstart2
+    integer, dimension(12) :: jend2
+    integer :: ntiles
+    integer :: num_contact
+    integer, dimension(2) :: msize
+    integer :: whalo
+    integer :: ehalo
+    integer :: shalo
+    integer :: nhalo
 
-  ntiles = 6
-  num_contact = 12
+    ntiles = 6
+    num_contact = 12
 
-  whalo = 2
-  if (present(nhalos)) whalo = nhalos
-  ehalo = whalo
-  shalo = whalo
-  nhalo = whalo
+    whalo = 2
+    if (present(nhalos)) whalo = nhalos
+    ehalo = whalo
+    shalo = whalo
+    nhalo = whalo
 
-  if (size(pe_start) .ne. 6 .or. size(pe_end) .ne. 6 ) then
-    call mpp_error(FATAL, "size of pe_start and pe_end should be 6.")
-  endif
-  if (size(global_indices,1) .ne. 4) then
-    call mpp_error(FATAL, "size of first dimension of global_indices should be 4.")
-  endif
-  if (size(global_indices,2) .ne. 6) then
-    call mpp_error(FATAL, "size of second dimension of global_indices should be 6.")
-  endif
-  if (size(layout,1) .ne. 2) then
-    call mpp_error(FATAL, "size of first dimension of layout should be 2.")
-  endif
-  if (size(layout,2) .ne. 6) then
-    call mpp_error(FATAL, "size of second dimension of layout should be 6.")
-  endif
-  if (size(ni) .ne. 6 .or. size(nj) .ne. 6) then
-    call mpp_error(FATAL, "size of ni and nj should be 6.")
-  endif
+    if (size(pe_start) .ne. 6 .or. size(pe_end) .ne. 6 ) then
+      call mpp_error(FATAL, "size of pe_start and pe_end should be 6.")
+    endif
+    if (size(global_indices,1) .ne. 4) then
+      call mpp_error(FATAL, "size of first dimension of global_indices should be 4.")
+    endif
+    if (size(global_indices,2) .ne. 6) then
+      call mpp_error(FATAL, "size of second dimension of global_indices should be 6.")
+    endif
+    if (size(layout,1) .ne. 2) then
+      call mpp_error(FATAL, "size of first dimension of layout should be 2.")
+    endif
+    if (size(layout,2) .ne. 6) then
+      call mpp_error(FATAL, "size of second dimension of layout should be 6.")
+    endif
+    if (size(ni) .ne. 6 .or. size(nj) .ne. 6) then
+      call mpp_error(FATAL, "size of ni and nj should be 6.")
+    endif
 
-  !Contact line 1, between tile 1 (EAST) and tile 2 (WEST)
-  tile1(1) = 1
-  tile2(1) = 2
-  istart1(1) = ni(1)
-  iend1(1) = ni(1)
-  jstart1(1) = 1
-  jend1(1) = nj(1)
-  istart2(1) = 1
-  iend2(1) = 1
-  jstart2(1) = 1
-  jend2(1) = nj(2)
+    !Contact line 1, between tile 1 (EAST) and tile 2 (WEST)
+    tile1(1) = 1
+    tile2(1) = 2
+    istart1(1) = ni(1)
+    iend1(1) = ni(1)
+    jstart1(1) = 1
+    jend1(1) = nj(1)
+    istart2(1) = 1
+    iend2(1) = 1
+    jstart2(1) = 1
+    jend2(1) = nj(2)
 
-  !Contact line 2, between tile 1 (NORTH) and tile 3 (WEST)
-  tile1(2) = 1
-  tile2(2) = 3
-  istart1(2) = 1
-  iend1(2) = ni(1)
-  jstart1(2) = nj(1)
-  jend1(2) = nj(1)
-  istart2(2) = 1
-  iend2(2) = 1
-  jstart2(2) = nj(3)
-  jend2(2) = 1
+    !Contact line 2, between tile 1 (NORTH) and tile 3 (WEST)
+    tile1(2) = 1
+    tile2(2) = 3
+    istart1(2) = 1
+    iend1(2) = ni(1)
+    jstart1(2) = nj(1)
+    jend1(2) = nj(1)
+    istart2(2) = 1
+    iend2(2) = 1
+    jstart2(2) = nj(3)
+    jend2(2) = 1
 
-  !Contact line 3, between tile 1 (WEST) and tile 5 (NORTH)
-  tile1(3) = 1
-  tile2(3) = 5
-  istart1(3) = 1
-  iend1(3) = 1
-  jstart1(3) = 1
-  jend1(3) = nj(1)
-  istart2(3) = ni(5)
-  iend2(3) = 1
-  jstart2(3) = nj(5)
-  jend2(3) = nj(5)
+    !Contact line 3, between tile 1 (WEST) and tile 5 (NORTH)
+    tile1(3) = 1
+    tile2(3) = 5
+    istart1(3) = 1
+    iend1(3) = 1
+    jstart1(3) = 1
+    jend1(3) = nj(1)
+    istart2(3) = ni(5)
+    iend2(3) = 1
+    jstart2(3) = nj(5)
+    jend2(3) = nj(5)
 
-  !Contact line 4, between tile 1 (SOUTH) and tile 6 (NORTH)
-  tile1(4) = 1
-  tile2(4) = 6
-  istart1(4) = 1
-  iend1(4) = ni(1)
-  jstart1(4) = 1
-  jend1(4) = 1
-  istart2(4) = 1
-  iend2(4) = ni(6)
-  jstart2(4) = nj(6)
-  jend2(4) = nj(6)
+    !Contact line 4, between tile 1 (SOUTH) and tile 6 (NORTH)
+    tile1(4) = 1
+    tile2(4) = 6
+    istart1(4) = 1
+    iend1(4) = ni(1)
+    jstart1(4) = 1
+    jend1(4) = 1
+    istart2(4) = 1
+    iend2(4) = ni(6)
+    jstart2(4) = nj(6)
+    jend2(4) = nj(6)
 
-  !Contact line 5, between tile 2 (NORTH) and tile 3 (SOUTH)
-  tile1(5) = 2
-  tile2(5) = 3
-  istart1(5) = 1
-  iend1(5) = ni(2)
-  jstart1(5) = nj(2)
-  jend1(5) = nj(2)
-  istart2(5) = 1
-  iend2(5) = ni(3)
-  jstart2(5) = 1
-  jend2(5) = 1
+    !Contact line 5, between tile 2 (NORTH) and tile 3 (SOUTH)
+    tile1(5) = 2
+    tile2(5) = 3
+    istart1(5) = 1
+    iend1(5) = ni(2)
+    jstart1(5) = nj(2)
+    jend1(5) = nj(2)
+    istart2(5) = 1
+    iend2(5) = ni(3)
+    jstart2(5) = 1
+    jend2(5) = 1
 
-  !Contact line 6, between tile 2 (EAST) and tile 4 (SOUTH)
-  tile1(6) = 2
-  tile2(6) = 4
-  istart1(6) = ni(2)
-  iend1(6) = ni(2)
-  jstart1(6) = 1
-  jend1(6) = nj(2)
-  istart2(6) = ni(4)
-  iend2(6) = 1
-  jstart2(6) = 1
-  jend2(6) = 1
+    !Contact line 6, between tile 2 (EAST) and tile 4 (SOUTH)
+    tile1(6) = 2
+    tile2(6) = 4
+    istart1(6) = ni(2)
+    iend1(6) = ni(2)
+    jstart1(6) = 1
+    jend1(6) = nj(2)
+    istart2(6) = ni(4)
+    iend2(6) = 1
+    jstart2(6) = 1
+    jend2(6) = 1
 
-  !Contact line 7, between tile 2 (SOUTH) and tile 6 (EAST)
-  tile1(7) = 2
-  tile2(7) = 6
-  istart1(7) = 1
-  iend1(7) = ni(2)
-  jstart1(7) = 1
-  jend1(7) = 1
-  istart2(7) = ni(6)
-  iend2(7) = ni(6)
-  jstart2(7) = nj(6)
-  jend2(7) = 1
+    !Contact line 7, between tile 2 (SOUTH) and tile 6 (EAST)
+    tile1(7) = 2
+    tile2(7) = 6
+    istart1(7) = 1
+    iend1(7) = ni(2)
+    jstart1(7) = 1
+    jend1(7) = 1
+    istart2(7) = ni(6)
+    iend2(7) = ni(6)
+    jstart2(7) = nj(6)
+    jend2(7) = 1
 
-  !Contact line 8, between tile 3 (EAST) and tile 4 (WEST)
-  tile1(8) = 3
-  tile2(8) = 4
-  istart1(8) = ni(3)
-  iend1(8) = ni(3)
-  jstart1(8) = 1
-  jend1(8) = nj(3)
-  istart2(8) = 1
-  iend2(8) = 1
-  jstart2(8) = 1
-  jend2(8) = nj(4)
+    !Contact line 8, between tile 3 (EAST) and tile 4 (WEST)
+    tile1(8) = 3
+    tile2(8) = 4
+    istart1(8) = ni(3)
+    iend1(8) = ni(3)
+    jstart1(8) = 1
+    jend1(8) = nj(3)
+    istart2(8) = 1
+    iend2(8) = 1
+    jstart2(8) = 1
+    jend2(8) = nj(4)
 
-  !Contact line 9, between tile 3 (NORTH) and tile 5 (WEST)
-  tile1(9) = 3
-  tile2(9) = 5
-  istart1(9) = 1
-  iend1(9) = ni(3)
-  jstart1(9) = nj(3)
-  jend1(9) = nj(3)
-  istart2(9) = 1
-  iend2(9) = 1
-  jstart2(9) = nj(5)
-  jend2(9) = 1
+    !Contact line 9, between tile 3 (NORTH) and tile 5 (WEST)
+    tile1(9) = 3
+    tile2(9) = 5
+    istart1(9) = 1
+    iend1(9) = ni(3)
+    jstart1(9) = nj(3)
+    jend1(9) = nj(3)
+    istart2(9) = 1
+    iend2(9) = 1
+    jstart2(9) = nj(5)
+    jend2(9) = 1
 
-  !Contact line 10, between tile 4 (NORTH) and tile 5 (SOUTH)
-  tile1(10) = 4
-  tile2(10) = 5
-  istart1(10) = 1
-  iend1(10) = ni(4)
-  jstart1(10) = nj(4)
-  jend1(10) = nj(4)
-  istart2(10) = 1
-  iend2(10) = ni(5)
-  jstart2(10) = 1
-  jend2(10) = 1
+    !Contact line 10, between tile 4 (NORTH) and tile 5 (SOUTH)
+    tile1(10) = 4
+    tile2(10) = 5
+    istart1(10) = 1
+    iend1(10) = ni(4)
+    jstart1(10) = nj(4)
+    jend1(10) = nj(4)
+    istart2(10) = 1
+    iend2(10) = ni(5)
+    jstart2(10) = 1
+    jend2(10) = 1
 
-  !Contact line 11, between tile 4 (EAST) and tile 6 (SOUTH)
-  tile1(11) = 4
-  tile2(11) = 6
-  istart1(11) = ni(4)
-  iend1(11) = ni(4)
-  jstart1(11) = 1
-  jend1(11) = nj(4)
-  istart2(11) = ni(6)
-  iend2(11) = 1
-  jstart2(11) = 1
-  jend2(11) = 1
+    !Contact line 11, between tile 4 (EAST) and tile 6 (SOUTH)
+    tile1(11) = 4
+    tile2(11) = 6
+    istart1(11) = ni(4)
+    iend1(11) = ni(4)
+    jstart1(11) = 1
+    jend1(11) = nj(4)
+    istart2(11) = ni(6)
+    iend2(11) = 1
+    jstart2(11) = 1
+    jend2(11) = 1
 
-  !Contact line 12, between tile 5 (EAST) and tile 6 (WEST)
-  tile1(12) = 5
-  tile2(12) = 6
-  istart1(12) = ni(5)
-  iend1(12) = ni(5)
-  jstart1(12) = 1
-  jend1(12) = nj(5)
-  istart2(12) = 1
-  iend2(12) = 1
-  jstart2(12) = 1
-  jend2(12) = nj(6)
-  msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo + 1
-  msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1
-  call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, &
-                         tile2, istart1, iend1, jstart1, jend1, istart2, iend2, &
-                         jstart2, jend2, pe_start, pe_end, symmetry = .true., &
-                         whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
-                         name=trim("Cubed-sphere"), memory_size=msize)
-  call mpp_define_io_domain(domain, io_layout)
-end subroutine define_cubic_mosaic
+    !Contact line 12, between tile 5 (EAST) and tile 6 (WEST)
+    tile1(12) = 5
+    tile2(12) = 6
+    istart1(12) = ni(5)
+    iend1(12) = ni(5)
+    jstart1(12) = 1
+    jend1(12) = nj(5)
+    istart2(12) = 1
+    iend2(12) = 1
+    jstart2(12) = 1
+    jend2(12) = nj(6)
+    msize(1) = maxval(ni(:)/layout(1,:)) + whalo + ehalo + 1
+    msize(2) = maxval(nj(:)/layout(2,:)) + shalo + nhalo + 1
+    call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, tile1, &
+                          tile2, istart1, iend1, jstart1, jend1, istart2, iend2, &
+                          jstart2, jend2, pe_start, pe_end, symmetry = .true., &
+                          whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                          name=trim("Cubed-sphere"), memory_size=msize)
+    call mpp_define_io_domain(domain, io_layout)
+  end subroutine define_cubic_mosaic
 end module offloading_io_mod

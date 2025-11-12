@@ -1,29 +1,32 @@
 module metadata_transfer_mod
   use platform_mod
-  use mpi
+  use mpi,     only: MPI_Type_create_struct, MPI_Type_commit, MPI_INTEGER, MPI_CHARACTER, &
+                       MPI_DOUBLE, MPI_FLOAT, MPI_INT, MPI_LONG_INT, MPI_SUCCESS, MPI_ADDRESS_KIND
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL, mpp_get_current_pelist, mpp_npes
-  use fms_mod, only: string 
+  use fms_mod, only: string
 
   implicit none
+
   public
 
-  integer, parameter :: real8_type = 1
-  integer, parameter :: real4_type = 2
-  integer, parameter :: int8_type = 3
-  integer, parameter :: int4_type = 4
-  integer, parameter :: str_type = 5
+  external MPI_Bcast
 
-  integer, parameter :: ATTR_NAME_MAX_LENGTH = 128 
+  integer, parameter :: real8_type = 1 !< enumeration for real(kind=8) data type
+  integer, parameter :: real4_type = 2 !< enumeration for real(kind=4) data type
+  integer, parameter :: int8_type = 3 !< enumeration for integer(kind=8) data type
+  integer, parameter :: int4_type = 4 !< enumeration for integer(kind=4) data type
+  integer, parameter :: str_type = 5 !< enumeration for string data type
+
+  integer, parameter :: ATTR_NAME_MAX_LENGTH = 128
   integer, parameter :: ATTR_VALUE_MAX_LENGTH = 128
 
-  !> Base class for broadcasting netcdf attribute data as a struct, holds the common fields 
+  !> Base class for broadcasting netcdf attribute data as a struct, holds the common fields
   !! and routines for initializing the mpi datatype so that children classes can
   !! be broadcasted.
-  !! TODO:
-  !! - combine some routines for easier usage 
   type, abstract :: metadata_class
     private
-    integer                             :: mpi_type_id = -1 !< MPI datatype id corresponding to this data objects data, -1 if not set
+    integer                             :: mpi_type_id = -1 !< MPI datatype id corresponding to this data objects data
+                                                            !! -1 if not set
     integer                             :: attribute_length = -1 !< length of the attribute value array, -1 if not set
     character(len=ATTR_NAME_MAX_LENGTH) :: attribute_name !< name of the attribute to write
     contains
@@ -80,8 +83,9 @@ module metadata_transfer_mod
   !! The metadata object's functions (not subroutines) are stored as fields in memory,
   !! so they need to be included in the MPI struct declaration.
   subroutine fms_metadata_transfer_init(this, dtype)
-    class(metadata_class), intent(inout) :: this !< metadata object to initialize for mpi communication using the struct
-    integer, intent(in) :: dtype !< type of the attribute, one of the real8_type, real4_type, int8_type, int4_type, str_type
+    class(metadata_class), intent(inout) :: this !<metadata object to initialize for mpi communication using the struct
+    integer, intent(in) :: dtype !< data type and kind for the metadata's value
+                                 !! must be real8_type, real4_type, int8_type, int4_type, or str_type
     integer, dimension(0:6) :: lengths, types
     integer(KIND=MPI_ADDRESS_KIND), dimension(0:6) :: displacements
     integer :: ierror, mpi_id
@@ -118,13 +122,14 @@ module metadata_transfer_mod
     if(ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_commit failed")
     end if
-    this%mpi_type_id = mpi_id 
+    this%mpi_type_id = mpi_id
   end subroutine fms_metadata_transfer_init
 
+  !> Broadcast the entire metadata object to all PEs in the current pelist
   subroutine fms_metadata_broadcast(this)
     class(metadata_class), intent(inout) :: this
     integer :: ierror, curr_comm_id
-    integer, allocatable :: broadcasting_pes(:) 
+    integer, allocatable :: broadcasting_pes(:)
     if (this%mpi_type_id .eq. -1) then
       call mpp_error(FATAL, "fms_metadata_broadcast: metadata_transfer not initialized")
     end if
@@ -152,14 +157,13 @@ module metadata_transfer_mod
 
   end subroutine fms_metadata_broadcast
 
-  !! TODO should be able to MPI_bcast the entire array at once
+  !> Broadcast an array of metadata objects to all PEs in the current pelist
   subroutine fms_metadata_broadcast_all(metadata_objs)
     class(metadata_class), intent(inout) :: metadata_objs(:)
-    integer :: ierror, i
+    integer :: i
 
     do i=1, size(metadata_objs)
       if (metadata_objs(i)%mpi_type_id .eq. -1) then
-        print *, "i=", i, " mpi_type_id=", metadata_objs(i)%mpi_type_id
         call mpp_error(FATAL, "fms_metadata_broadcast_all: metadata_transfer not initialized")
       end if
       call metadata_objs(i)%fms_metadata_broadcast()
@@ -274,7 +278,7 @@ module metadata_transfer_mod
     class(metadata_class), intent(inout) :: this
     character(len=*), intent(in) :: val
     if(len(val) .gt. ATTR_NAME_MAX_LENGTH) then
-      call mpp_error(FATAL, & 
+      call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute name exceeds max length of "//string(ATTR_VALUE_MAX_LENGTH))
     endif
     this%attribute_name = val

@@ -112,7 +112,7 @@ program test_metadata_transfer
     call file_metadata(1)%set_attribute_name("foo"//c_null_char)
     select type(obj => file_metadata(1))
     type is(metadata_str_type)
-      call obj%set_attribute_value("bar") 
+      call obj%set_attribute_value("bar")
     end select
   endif
   call fms_metadata_broadcast_all(file_metadata)
@@ -139,7 +139,7 @@ program test_metadata_transfer
     do i = 1, size(this)
       arr = this(i)%get_attribute_value()
       print *, "pe: ", mpp_pe(), "i: ", i, " attribute_name is ", trim(adjustl(this(i)%get_attribute_name()))
-      print *, "pe: ", mpp_pe(), "i: ", i, " attribute_value is ", arr 
+      print *, "pe: ", mpp_pe(), "i: ", i, " attribute_value is ", arr
     enddo
   end subroutine
 
@@ -152,7 +152,7 @@ program test_metadata_transfer
 
     attr_names = (/"_FillValue"//c_null_char, "missing_value"//c_null_char, "a_third_name"//c_null_char/)
     attr_vals = (/ 666.0_r8_kind, -100.0_r8_kind, 100.0_r8_kind, -200.0_r8_kind, &
-                   -50.0_r8_kind, 0.0_r8_kind, 50.0_r8_kind, 200.0_r8_kind /) 
+                   -50.0_r8_kind, 0.0_r8_kind, 50.0_r8_kind, 200.0_r8_kind /)
 
     do i = 1, size(this)
       arr = this(i)%get_attribute_value()
@@ -160,9 +160,9 @@ program test_metadata_transfer
         call mpp_error(FATAL, "incorrect metadata name")
       endif
 
-      do j=1, size(arr) 
+      do j=1, size(arr)
         if (arr(j) .ne. attr_vals(last_j)) then
-          print *, "got ", arr(j), " expected ", attr_vals(last_j) 
+          print *, "got ", arr(j), " expected ", attr_vals(last_j)
           call mpp_error(FATAL, "incorrect metadata value")
         endif
         last_j = last_j + 1
@@ -180,7 +180,7 @@ program test_metadata_transfer
 
     attr_name = "Valuez_r4"//c_null_char
     attr_vals = (/ 666.0_r4_kind, -100.0_r4_kind, 100.0_r4_kind, -200.0_r4_kind, &
-                   -50.0_r4_kind, 0.0_r4_kind, 50.0_r4_kind, 200.0_r4_kind /) 
+                   -50.0_r4_kind, 0.0_r4_kind, 50.0_r4_kind, 200.0_r4_kind /)
 
     arr = this(1)%get_attribute_value()
     if (trim(this(1)%get_attribute_name()) .ne. attr_name) then
@@ -188,9 +188,9 @@ program test_metadata_transfer
       call mpp_error(FATAL, "incorrect metadata name")
     endif
 
-    do j=1, size(arr) 
+    do j=1, size(arr)
       if (arr(j) .ne. attr_vals(j)) then
-          print *, "got ", arr(j), " expected ", attr_vals(last_j) 
+          print *, "got ", arr(j), " expected ", attr_vals(last_j)
           call mpp_error(FATAL, "incorrect metadata value")
         endif
     enddo

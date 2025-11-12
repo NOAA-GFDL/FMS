@@ -138,7 +138,7 @@ program test
 
     write(mpp_pe()+ 100, *) "Compute domain"
     write(mpp_pe()+ 100, *) "is=", string(isc), " ie=", string(iec), " js=", string(jsc), " je=", string(jec)
-  
+
     ihalo = abs(isd-isc)
     jhalo = abs(jsd-jsc)
 
@@ -146,7 +146,8 @@ program test
 
     do a = isc, iec
       do b = jsc, jec
-        write(mpp_pe()+ 100, *) "i = ", string(a), " j = ", string(b), " data=", string(var_data(a-isc+ihalo+1, b-jsc+jhalo+1))
+        write(mpp_pe()+ 100, *) "i = ", string(a), " j = ", string(b), " data=", &
+          string(var_data(a-isc+ihalo+1, b-jsc+jhalo+1))
       enddo
     enddo
   end subroutine
