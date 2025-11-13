@@ -1,7 +1,9 @@
 module metadata_transfer_mod
   use platform_mod
+#ifdef use_libMPI
   use mpi,     only: MPI_Type_create_struct, MPI_Type_commit, MPI_INTEGER, MPI_CHARACTER, &
                        MPI_DOUBLE, MPI_FLOAT, MPI_INT, MPI_LONG_INT, MPI_SUCCESS, MPI_ADDRESS_KIND
+#endif
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL, mpp_get_current_pelist, mpp_npes
   use fms_mod, only: string
 
@@ -9,7 +11,9 @@ module metadata_transfer_mod
 
   public
 
+#ifdef use_libMPI
   external MPI_Bcast
+#endif
 
   integer, parameter :: real8_type = 1 !< enumeration for real(kind=8) data type
   integer, parameter :: real4_type = 2 !< enumeration for real(kind=4) data type
@@ -87,6 +91,7 @@ module metadata_transfer_mod
     integer, intent(in) :: dtype !< data type and kind for the metadata's value
                                  !! must be real8_type, real4_type, int8_type, int4_type, or str_type
     integer, dimension(0:6) :: lengths, types
+#ifdef use_libMPI
     integer(KIND=MPI_ADDRESS_KIND), dimension(0:6) :: displacements
     integer :: ierror, mpi_id
 
@@ -123,6 +128,9 @@ module metadata_transfer_mod
       call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_commit failed")
     end if
     this%mpi_type_id = mpi_id
+#else
+  call mpp_error(FATAL, "fms_metadata_transfer_init: MPI library not enabled, cannot initialize metadata transfer")
+#endif
   end subroutine fms_metadata_transfer_init
 
   !> Broadcast the entire metadata object to all PEs in the current pelist
@@ -137,6 +145,7 @@ module metadata_transfer_mod
     allocate(broadcasting_pes(mpp_npes()))
     call mpp_get_current_pelist(broadcasting_pes, commID=curr_comm_id)
 
+#ifdef use_libMPI
     ! Broadcast the metadata transfer type to all processes
     select type(this)
     type is (metadata_r8_type)
@@ -150,10 +159,13 @@ module metadata_transfer_mod
     type is (metadata_str_type)
       call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
     end select
-
     if (ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_broadcast: MPI_Bcast failed")
     end if
+#else
+  call mpp_error(FATAL, "fms_metadata_broadcast: MPI library not enabled")
+#endif
+
 
   end subroutine fms_metadata_broadcast
 
