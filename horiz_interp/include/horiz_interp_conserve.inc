@@ -564,7 +564,10 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     allocate(Interp%i_dst(nxgrid), Interp%j_dst(nxgrid) )
     allocate(Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid) )
     if(present(save_weights_as_fregrid)) then
-      if(save_weights_as_fregrid) allocate(Interp%xgrid_area(nxgrid))
+      if(save_weights_as_fregrid) then
+        allocate(Interp%xgrid_area(nxgrid))
+        Interp%xgrid_area = xgrid_area(1:nxgrid)
+      end if
     end if
     Interp%version = 2
     Interp%nxgrid   = nxgrid
@@ -572,7 +575,6 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp%j_src = j_src(1:nxgrid)+1
     Interp%i_dst = i_dst(1:nxgrid)+1
     Interp%j_dst = j_dst(1:nxgrid)+1
-    Interp%xgrid_area = xgrid_area(1:nxgrid)
 
     ! sum over exchange grid area to get destination grid area
     dst_area = 0.0_r8_kind
