@@ -558,9 +558,9 @@ if (use_field_table_yaml) then
 
   call mpp_error(NOTE, "field_manager_init:: You are using the yaml version of the field_table")
   call mpp_error(NOTE, &
-       &"field_manager_init:: You are using the yaml version of the field_table. " &
-       &"The legacy field_table format will be deprecated in a future release, " &
-       &"please switch to the yaml format.")
+       &"field_manager_init:: You are using the yaml version of the field_table. &
+The legacy field_table format will be deprecated in a future release, &
+please switch to the yaml format.")
   call read_field_table_yaml(nfields, table_name)
 #endif
 else
@@ -568,10 +568,9 @@ else
     call mpp_error(FATAL, "You cannot have the yaml field_table if use_field_table_yaml=.false.")
   call mpp_error(NOTE, "field_manager_init:: You are using the legacy version of the field_table")
   call mpp_error(NOTE, &
-       &"field_manager_init:: You are using the yaml version of the field_table. " &
-       &"The legacy field_table format will be deprecated in a future release, " &
-       &"please switch to the yaml format.")
-  call read_field_table_legacy(nfields, table_name)
+       &"field_manager_init:: You are using the yaml version of the field_table. &
+The legacy field_table format will be deprecated in a future release, &
+please switch to the yaml format.")
 endif
 
 end subroutine field_manager_init
