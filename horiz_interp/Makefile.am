@@ -38,7 +38,6 @@ libhoriz_interp_la_SOURCES = \
   horiz_interp_spherical.F90 \
   horiz_interp_type.F90 \
   create_xgrid_utils.c \
-  create_xgrid.F90 \
   include/horiz_interp_bicubic.inc \
   include/horiz_interp_bilinear.inc \
   include/horiz_interp_conserve.inc \
