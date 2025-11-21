@@ -111,11 +111,11 @@ double poly_area_dimensionless(const double x[], const double y[], int n);
 double spherical_excess_area(const double* p_ll, const double* p_ul,
                              const double* p_lr, const double* p_ur, double radius);
 
-void get_grid_area(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_area(const int nlon, const int nlat, const double *lon, const double *lat, double *area);
 
-void get_grid_great_circle_area(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_great_circle_area(const int nlon, const int nlat, const double *lon, const double *lat, double *area);
 
-void get_grid_area_no_adjust(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_area_no_adjust(const int nlon, const int nlat, const double *lon, const double *lat, double *area);
 
 int clip(const double lon_in[], const double lat_in[], int n_in, double ll_lon, double ll_lat,
          double ur_lon, double ur_lat, double lon_out[], double lat_out[]);
@@ -128,16 +128,16 @@ int clip_2dx2d_great_circle(const double x1_in[], const double y1_in[], const do
                             const double x2_in[], const double y2_in[], const double z2_in [], int n2_in,
                             double x_out[], double y_out[], double z_out[]);
 
-void get_grid_area_ug(const int *npts, const double *lon, const double *lat, double *area);
+void get_grid_area_ug(const int npts, const double *lon, const double *lat, double *area);
 
-void get_grid_great_circle_area_ug(const int *npts, const double *lon, const double *lat, double *area);
+void get_grid_great_circle_area_ug(const int npts, const double *lon, const double *lat, double *area);
 
-void get_grid_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_area_(const int nlon, const int nlat, const double *lon, const double *lat, double *area);
 
-void get_grid_great_circle_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_great_circle_area_(const int nlon, const int nlat, const double *lon, const double *lat, double *area);
 
-void get_grid_area_ug_(const int *npts, const double *lon, const double *lat, double *area);
+void get_grid_area_ug_(const int npts, const double *lon, const double *lat, double *area);
 
-void get_grid_great_circle_area_ug_(const int *npts, const double *lon, const double *lat, double *area);
+void get_grid_great_circle_area_ug_(const int npts, const double *lon, const double *lat, double *area);
 
 #endif
