@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @addtogroup horiz_interp_bilinear_mod
 !> @{
@@ -270,7 +269,11 @@
        epsln2 = real(epsln,FMS_HI_KIND_)* 1.0e5_kindl
        call FIND_NEIGHBOR_NEW_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo, no_crash)
     else
-       epsln2 = real(epsln,FMS_HI_KIND_)
+       if(kindl == r8_kind) then
+          epsln2 = epsln
+       else
+          epsln2 = epsln_r4
+       endif
        call FIND_NEIGHBOR_(Interp, lon_in, lat_in, lon_out, lat_out, src_is_modulo)
     endif
 
@@ -389,8 +392,17 @@
              if (x > 1.0_kindl) x = 1.0_kindl
              if (y > 1.0_kindl) y = 1.0_kindl
            endif
-           if( x>1.0_kindl .or. x<0.0_kindl .or. y>1.0_kindl .or. y < 0.0_kindl) &
-                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1")
+           !! if using 4 byte reals, allow a bit more tolerance (1e-4) on weight values
+           if( kindl == r8_kind ) then
+               if( x>1.0_kindl .or. x<0.0_kindl .or. y>1.0_kindl .or. y < 0.0_kindl) &
+                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1, x=" &
+                     //string(x)//" y="//string(y))
+           else
+               if( x>1.0_kindl + epsln2 .or. x<0.0_kindl - epsln2 .or. &
+                   y>1.0_kindl + epsln2 .or. y < 0.0_kindl - epsln2) &
+                  call mpp_error(FATAL, "horiz_interp_bilinear_mod: weight should be between 0 and 1, x=" &
+                     //string(x)//" y="//string(y))
+           endif
            Interp % HI_KIND_TYPE_ % wti(m,n,1)=1.0_kindl-x
            Interp % HI_KIND_TYPE_ % wti(m,n,2)=x
            Interp % HI_KIND_TYPE_ % wtj(m,n,1)=1.0_kindl-y

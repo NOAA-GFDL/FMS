@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !********************* Sample field table required: *********************
@@ -45,17 +44,17 @@ implicit none
 integer :: i, j, nfields, num_methods, model
 character(len=fm_string_len) :: field_type, field_name, str, name_field_type, path
 character(len=512) :: method_name, method_control
-real(TEST_FM_KIND_) :: param, param_out
+real(TEST_FMS_KIND_) :: param, param_out
 integer :: flag, index
 logical :: success
 type(method_type), dimension(20) :: methods
 
-real(TEST_FM_KIND_) :: slope_value
-real(TEST_FM_KIND_) :: slope_value_array(2)
-integer, parameter :: lkind=TEST_FM_KIND_
+real(TEST_FMS_KIND_) :: slope_value
+real(TEST_FMS_KIND_) :: slope_value_array(2)
+integer, parameter :: lkind=TEST_FMS_KIND_
 
 integer, parameter :: array_size=4
-real(TEST_FM_KIND_) :: array_values(array_size), array_out(array_size)
+real(TEST_FMS_KIND_) :: array_values(array_size), array_out(array_size)
 
 call mpp_init
 call field_manager_init(nfields)

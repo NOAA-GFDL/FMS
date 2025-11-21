@@ -107,4 +107,10 @@ test_expect_success "Domain Read Write Tests with a ocean mask" '
   mpirun -n 17 ../test_domain_io
 '
 
+rm input.nml
+touch input.nml
+test_expect_success "Write and read domain-decomposed data with generalized indices" '
+  mpirun -n 16 ../test_generalized_indices
+'
+
 test_done

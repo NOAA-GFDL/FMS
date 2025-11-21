@@ -35,8 +35,8 @@ check_PROGRAMS = test_tridiagonal_r4 test_tridiagonal_r8
 test_tridiagonal_r4_SOURCES=test_tridiagonal.F90
 test_tridiagonal_r8_SOURCES=test_tridiagonal.F90
 
-test_tridiagonal_r4_CPPFLAGS=-DTRID_REAL_TYPE=tridiag_r4 -DTEST_TRIDIAG_REAL=r4_kind -I$(MODDIR)
-test_tridiagonal_r8_CPPFLAGS=-DTRID_REAL_TYPE=tridiag_r8 -DTEST_TRIDIAG_REAL=r8_kind -I$(MODDIR)
+test_tridiagonal_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -I$(MODDIR)
+test_tridiagonal_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -I$(MODDIR)
 
 # Run the test program.
 TESTS = test_tridiagonal.sh

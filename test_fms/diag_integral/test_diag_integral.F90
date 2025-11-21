@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @file
 !! @brief unit tests forr diag_integral_mod
@@ -51,11 +50,11 @@ program test_diag_integral
   character(9), parameter :: field_nameh='immadeuph' !> made up field name to test
   character(8), parameter :: std_digits   = 'e23.15e3' !> write out precision for r8_kind data
 
-  real(TEST_DI_KIND_) :: immadeup2(nxy,nxy)     !> array to test sum_field_2d
-  real(TEST_DI_KIND_) :: immadeup3(nxy,nxy,nxy) !> array to test sum_field_3d
-  real(TEST_DI_KIND_) :: immadeupw(nxy,nxy,nxy) !> array to test sum_field_wght_3d
-  real(TEST_DI_KIND_) :: weight(nxy,nxy,nxy)    !> weights required to test sum_field_wght_3d
-  real(TEST_DI_KIND_) :: immadeuph(nxy,nxy)     !> array to test sum_field_2d_hemi
+  real(TEST_FMS_KIND_) :: immadeup2(nxy,nxy)     !> array to test sum_field_2d
+  real(TEST_FMS_KIND_) :: immadeup3(nxy,nxy,nxy) !> array to test sum_field_3d
+  real(TEST_FMS_KIND_) :: immadeupw(nxy,nxy,nxy) !> array to test sum_field_wght_3d
+  real(TEST_FMS_KIND_) :: weight(nxy,nxy,nxy)    !> weights required to test sum_field_wght_3d
+  real(TEST_FMS_KIND_) :: immadeuph(nxy,nxy)     !> array to test sum_field_2d_hemi
 
   real(r8_kind)   :: lat(nxyp,nxyp), lon(nxyp,nxyp)
   real(r8_kind)   :: area(nxy,nxy)
@@ -71,7 +70,7 @@ program test_diag_integral
   real(r8_kind) :: field_avgw !> result from sum_field_avgw
   real(r8_kind) :: field_avgh !> result from field_avgh
 
-  integer, parameter :: lkind=TEST_DI_KIND_ !> local version of TEST_DI_KIND_
+  integer, parameter :: lkind=TEST_FMS_KIND_ !> local version of TEST_FMS_KIND_
 
   call fms_init
   call initialize_arrays
@@ -80,6 +79,7 @@ program test_diag_integral
 
   !> Made up time.  Set the initial time.
   Time=set_time(0,1,0)
+  Time_init = set_time(0,0,0)
 
   call test_diag_integral_init       !< Test that diag_integral_init call works
   call test_diag_integral_field_init !< Register the fields

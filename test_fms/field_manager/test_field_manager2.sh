@@ -100,9 +100,12 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-if [ ! $parser_skip ]; then
+if [ ! -z "$parser_skip" ]; then
+
   test_expect_failure "field table read with use_field_table.yaml = .true. but not compiling with yaml" 'mpirun -n 1 ./test_field_table_read'
+
 else
+
   test_expect_success "field table read with use_field_table.yaml = .true." 'mpirun -n 1 ./test_field_table_read'
   test_expect_success "field manager functional r4 with yaml table" 'mpirun -n 2 ./test_field_manager_r4'
   test_expect_success "field manager functional r8 with yaml table" 'mpirun -n 2 ./test_field_manager_r8'
@@ -173,8 +176,8 @@ field_table:
       longname: bad radon!
 _EOF
 
-rm -rf field_table.ens_01.yaml field_table.ens_02.yaml
-test_expect_success "field manager test with 2 ensembles same yaml" 'mpirun -n 2 ./test_field_table_read'
+  rm -rf field_table.ens_01.yaml field_table.ens_02.yaml
+  test_expect_success "field manager test with 2 ensembles same yaml" 'mpirun -n 2 ./test_field_table_read'
 fi
 
 test_done

@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @brief  General program to test the different possible reduction methods
@@ -186,7 +185,7 @@ program test_reduction_methods
     'mullions', missing_value = missing_value)
   id_var3 = register_diag_field  ('ocn_mod', 'var3', (/id_x, id_y, id_z/), Time, 'Var3d', &
     'mullions', missing_value = missing_value)
-  id_var4 = register_diag_field  ('ocn_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'Var4d', &
+  id_var4 = register_diag_field  ('ocn_z_mod', 'var4', (/id_x, id_y, id_z, id_w/), Time, 'Var4d', &
     'mullions', missing_value = missing_value)
   id_var999 = register_diag_field  ('ocn_mod', 'IOnASphere', Time, missing_value=missing_value)
 
@@ -208,13 +207,13 @@ program test_reduction_methods
     used = send_data(id_var2missing, cdata(:,:,1,1)*0_r8_kind + missing_value, Time)
 
     used = send_data(id_var2c, cdata_corner(:,:,1,1), Time)
-    used = send_data(id_var0, cdata(1,1,1,1), Time)
+    used = send_data(id_var0, get_scalar_data(cdata(1,1,1,1)), Time)
 
     select case(test_case)
     case (test_normal)
       select case (mask_case)
       case (no_mask)
-        used = send_data(id_var1, cdata(:,1,1,1), Time)
+        used = send_data(id_var1, get_1d_data(cdata(:,1,1,1)), Time)
         used = send_data(id_var2, cdata(:,:,1,1), Time)
         used = send_data(id_var3, cdata(:,:,:,1), Time)
         used = send_data(id_var4, cdata(:,:,:,:), Time)
@@ -383,6 +382,29 @@ program test_reduction_methods
     enddo
 
   end subroutine init_buffer
+
+  !> @brief This is so that all ranks get and pass in the same scalar data
+  function get_scalar_data(data_in) &
+    result(rslt)
+    real(kind=r8_kind), intent(in) :: data_in
+    real(kind=r8_kind) :: rslt
+
+    if (mpp_pe() .eq. mpp_root_pe()) rslt = data_in
+
+    call mpp_broadcast(rslt, mpp_root_pe())
+  end function
+
+  !> @brief This is so that all ranks get and pass in the same 1d data
+  function get_1d_data(data_in) &
+    result (rslt)
+    real(kind=r8_kind), intent(in) :: data_in(:)
+    real(kind=r8_kind), allocatable :: rslt(:)
+
+    allocate(rslt(size(data_in)))
+    if (mpp_pe() .eq. mpp_root_pe()) rslt = data_in
+
+    call mpp_broadcast(rslt, size(rslt), mpp_root_pe())
+  end function get_1d_data
 
   !> @brief Set the buffer based on the time_index
   subroutine set_buffer(buffer, time_index)

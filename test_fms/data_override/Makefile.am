@@ -50,32 +50,34 @@ test_data_override_ongrid_SOURCES = test_data_override_ongrid.F90 \
 test_get_grid_v1_r4_SOURCES = test_get_grid_v1.F90
 test_get_grid_v1_r8_SOURCES = test_get_grid_v1.F90
 
-test_data_override_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
-test_data_override_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
+test_data_override_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r4_kind
+test_data_override_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r8_kind
 
-test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r4_kind
-test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DDO_TEST_KIND_=r8_kind
+test_get_grid_v1_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r4_kind
+test_get_grid_v1_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r8_kind
+
 
 if USING_YAML
-skipflag=""
+  TESTS_ENVIRONMENT = parser_skip=""
 else
-skipflag="skip"
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
-TESTS_ENVIRONMENT= test_input_path="@TEST_INPUT_PATH@" \
-                   parser_skip=${skipflag}
+TESTS_ENVIRONMENT+= test_input_path="@TEST_INPUT_PATH@"
 
 # Run the test program.
 
 TESTS = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
-        test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh
+        test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh \
+        test_data_override_multi_file.sh
 
 # Include these files with the distribution.
 EXTRA_DIST = test_data_override2.sh test_data_override_init.sh test_data_override2_mono.sh test_data_override2_ongrid.sh \
-             test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh
+             test_data_override2_scalar.sh test_data_override_weights.sh test_data_override_ensembles.sh \
+             test_data_override_multi_file.sh
 
 # Clean up
 CLEANFILES = input.nml *.nc* *.out diag_table data_table data_table.yaml INPUT/* *.dpi *.spi *.dyn *.spl *-files/*

@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @defgroup gex_mod gex_mod
@@ -105,11 +104,12 @@ use tracer_manager_mod,   only: NO_TRACER
 use field_manager_mod,    only: MODEL_LAND, MODEL_ATMOS, MODEL_OCEAN, NUM_MODELS
 use field_manager_mod,    only: fm_list_iter_type, fm_dump_list, fm_field_name_len, &
                                 fm_type_name_len, fm_get_length,fm_loop_over_list, fm_init_loop, &
-                                fm_string_len, fm_get_current_list, fm_path_name_len, fm_change_list, &
+                                fm_string_len, fm_get_current_list, fm_change_list, &
                                 field_manager_init
 use fm_util_mod,          only: fm_util_get_real, fm_util_get_logical, fm_util_get_string
 use mpp_mod,              only: mpp_root_pe, mpp_pe
 use fms_string_utils_mod, only: string
+use platform_mod,         only: FMS_PATH_LEN
 
 implicit none ; private
 
@@ -193,7 +193,7 @@ subroutine gex_read_field_table(listroot,MODEL_SRC,MODEL_REC)
   type(fm_list_iter_type)      :: iter ! iterator over the list of tracers
   character(fm_field_name_len) :: name = '' ! name of the tracer
   character(fm_type_name_len)  :: ftype ! type of the field table entry (not used)
-  character(fm_path_name_len)  :: listname  ! name of the field manager list for each tracer
+  character(FMS_PATH_LEN)  :: listname  ! name of the field manager list for each tracer
 
   integer :: n
 

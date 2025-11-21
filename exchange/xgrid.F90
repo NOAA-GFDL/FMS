@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup xgrid_mod xgrid_mod
 !> @ingroup exchange
@@ -3245,13 +3244,14 @@ end function xgrid_count
 
 !> Scatters data to exchange grid
 subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
-  real(r8_kind), dimension(:,:), intent(in)    :: d !< data to send
-  character(len=3),              intent(in)    :: grid_id !< 3 character grid ID
-  real(r8_kind), dimension(:),   intent(inout) :: x !< xgrid data
-  type (xmap_type),              intent(inout) :: xmap !< exchange grid
-  integer, intent(in), optional                :: remap_method !< exchange grid interpolation method can
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+  real(r8_kind), target, contiguous, intent(in)    :: d(:,:) !< data to send
+  character(len=3),                  intent(in)    :: grid_id !< 3 character grid ID
+  real(r8_kind), target, contiguous, intent(inout) :: x(:) !< xgrid data
+  type (xmap_type),                  intent(inout) :: xmap !< exchange grid
+  integer, intent(in), optional                    :: remap_method !< exchange grid interpolation method can
                                                                !! be FIRST_ORDER(=1) or SECOND_ORDER(=2)
-  logical, intent(in), optional                :: complete
+  logical, intent(in), optional                    :: complete
 
   logical                                         :: is_complete, set_mismatch
   integer                                         :: g, method
@@ -3262,8 +3262,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
   integer,                                   save :: xsize=0
   integer,                                   save :: method_saved=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: d_addrs = c_null_ptr
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: x_addrs = c_null_ptr
 
   if (grid_id==xmap%grids(1)%id) then
      method = FIRST_ORDER      ! default
@@ -3275,8 +3275,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group put_side1_to_xgrid', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = c_loc(d)
+     x_addrs(lsize) = c_loc(x)
 
      if(lsize == 1) then
         isize = size(d,1)
@@ -3311,8 +3311,8 @@ subroutine put_side1_to_xgrid(d, grid_id, x, xmap, remap_method, complete)
            call put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
         endif
 
-        d_addrs = -9999_i8_kind
-        x_addrs = -9999_i8_kind
+        d_addrs = c_null_ptr
+        x_addrs = c_null_ptr
         isize   = 0
         jsize   = 0
         xsize   = 0
@@ -3362,11 +3362,12 @@ end subroutine put_side2_to_xgrid
 !#######################################################################
 
 subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
-  real(r8_kind), dimension(:,:), intent(out)   :: d !< received xgrid data
-  character(len=3),              intent(in)    :: grid_id !< 3 character grid ID
-  real(r8_kind), dimension(:),   intent(in)    :: x !< xgrid data
-  type (xmap_type),              intent(inout) :: xmap !< exchange grid
-  logical, intent(in), optional                :: complete
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+  real(r8_kind), target, contiguous, intent(out)   :: d(:,:) !< received xgrid data
+  character(len=3),                  intent(in)    :: grid_id !< 3 character grid ID
+  real(r8_kind), target, contiguous, intent(in)    :: x(:) !< xgrid data
+  type (xmap_type),                  intent(inout) :: xmap !< exchange grid
+  logical, intent(in), optional                    :: complete
 
   logical                                         :: is_complete, set_mismatch
   integer                                         :: g
@@ -3376,8 +3377,8 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: d_addrs = c_null_ptr
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: x_addrs = c_null_ptr
 
   d = 0.0_r8_kind
   if (grid_id==xmap%grids(1)%id) then
@@ -3388,8 +3389,8 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = c_loc(d)
+     x_addrs(lsize) = c_loc(x)
 
      if(lsize == 1) then
         isize = size(d,1)
@@ -3415,8 +3416,8 @@ subroutine get_side1_from_xgrid(d, grid_id, x, xmap, complete)
         else
            call get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
         end if
-        d_addrs(1:lsize) = -9999
-        x_addrs(1:lsize) = -9999
+        d_addrs(1:lsize) = c_null_ptr
+        x_addrs(1:lsize) = c_null_ptr
         isize   = 0
         jsize   = 0
         xsize   = 0
@@ -3547,8 +3548,9 @@ end subroutine get_2_from_xgrid
 !#######################################################################
 
 subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in)    :: d_addrs
-  integer(i8_kind), dimension(:), intent(in)    :: x_addrs
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
+  type(c_ptr),      dimension(:), intent(in)    :: d_addrs
+  type(c_ptr),      dimension(:), intent(in)    :: x_addrs
   type (xmap_type),               intent(inout) :: xmap
   integer,                        intent(in)    :: isize, jsize, xsize, lsize
 
@@ -3560,10 +3562,8 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   real(r8_kind)                   :: send_buffer(xmap%put1%sendsize*lsize)
   real(r8_kind)                   :: unpack_buffer(xmap%put1%recvsize)
 
-  real(r8_kind), dimension(isize, jsize)   :: d
-  real(r8_kind), dimension(xsize)          :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), pointer :: d(:,:) ! isize, jsize
+  real(r8_kind), pointer :: x(:)   ! xsize
 
   call mpp_clock_begin(id_put_1_to_xgrid_order_1)
 
@@ -3583,7 +3583,7 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
      to_pe = comm%send(p)%pe
      pos = buffer_pos
      do l = 1, lsize
-        ptr_d = d_addrs(l)
+        call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
         do n = 1, comm%send(p)%count
            pos = pos + 1
            i = comm%send(p)%i(n)
@@ -3599,16 +3599,16 @@ subroutine put_1_to_xgrid_order_1(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
 
   !--- unpack the buffer
   if( lsize == 1) then
-     ptr_x = x_addrs(1)
+     call c_f_pointer(x_addrs(1), x, shape=[xsize])
      do l=1,xmap%size_put1
         x(l) =  recv_buffer(xmap%x1_put(l)%pos)
      end do
   else
      start_pos = 0
-!$OMP parallel do default(none) shared(lsize,x_addrs,comm,recv_buffer,xmap) &
-!$OMP                          private(ptr_x,count,ibegin,istart,iend,pos,unpack_buffer)
+!$OMP parallel do default(none) shared(lsize,xsize,x_addrs,comm,recv_buffer,xmap) &
+!$OMP                          private(x,count,ibegin,istart,iend,pos,unpack_buffer)
      do l = 1, lsize
-        ptr_x = x_addrs(l)
+        call c_f_pointer(x_addrs(l), x, shape=[xsize])
         do p = 1, comm%nrecv
            count = comm%recv(p)%count
            ibegin = comm%recv(p)%buffer_pos*lsize + 1
@@ -3636,10 +3636,11 @@ end subroutine put_1_to_xgrid_order_1
 
 
 subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in)    :: d_addrs
-  integer(i8_kind), dimension(:), intent(in)    :: x_addrs
-  type (xmap_type),               intent(inout) :: xmap
-  integer,                        intent(in)    :: isize, jsize, xsize, lsize
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
+  type(c_ptr),      intent(in)    :: d_addrs(:)
+  type(c_ptr),      intent(in)    :: x_addrs(:)
+  type (xmap_type), intent(inout) :: xmap
+  integer,          intent(in)    :: isize, jsize, xsize, lsize
 
   !: NOTE: halo size is assumed to be 1 in setup_xmap
   real(r8_kind), dimension(0:isize+1, 0:jsize+1, lsize) :: tmp
@@ -3657,10 +3658,8 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   real(r8_kind)                                         :: send_buffer(xmap%put1%sendsize*lsize*3)
   real(r8_kind)                                         :: unpack_buffer(xmap%put1%recvsize*3)
   logical                                               :: on_west_edge, on_east_edge, on_south_edge, on_north_edge
-  real(r8_kind), dimension(isize, jsize)                :: d
-  real(r8_kind), dimension(xsize)                       :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), pointer                                :: d(:,:)
+  real(r8_kind), pointer                                :: x(:)
 
   call mpp_clock_begin(id_put_1_to_xgrid_order_2)
   grid1 => xmap%grids(1)
@@ -3670,10 +3669,10 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   isd = grid1%isd_me
   jsd = grid1%jsd_me
 
-!$OMP parallel do default(none) shared(lsize,tmp,d_addrs,isize,jsize) private(ptr_d)
+!$OMP parallel do default(none) shared(lsize,isize,jsize,tmp,d_addrs) private(d)
   do l = 1, lsize
      tmp(:,:,l) = LARGE_NUMBER
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
      tmp(1:isize,1:jsize,l) = d(:,:)
   enddo
 
@@ -3746,7 +3745,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
         msgsize = comm%send(p)%count*lsize
         to_pe = comm%send(p)%pe
         do l = 1, lsize
-           ptr_d = d_addrs(l)
+           call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
            do n = 1, comm%send(p)%count
               pos = pos + 1
               i = comm%send(p)%i(n)
@@ -3763,7 +3762,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
         to_pe = comm%send(p)%pe
         pos = buffer_pos
         do l = 1, lsize
-           ptr_d = d_addrs(l)
+           call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
            do n = 1, comm%send(p)%count
               pos = pos + 1
               i = comm%send(p)%i(n)
@@ -3785,7 +3784,7 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
         to_pe = comm%send(p)%pe
         pos = buffer_pos
         do l = 1, lsize
-           ptr_d = d_addrs(l)
+           call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
            do n = 1, comm%send(p)%count
               pos = pos + 3
               i = comm%send(p)%i(n)
@@ -3805,14 +3804,14 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
   !--- unpack the buffer
   if(monotonic_exchange) then
      if( lsize == 1) then
-        ptr_x = x_addrs(1)
+        call c_f_pointer(x_addrs(1), x, shape=[xsize])
         do l=1,xmap%size_put1
            pos = xmap%x1_put(l)%pos
            x(l) =  recv_buffer(pos)
         end do
      else
         do l = 1, lsize
-           ptr_x = x_addrs(l)
+           call c_f_pointer(x_addrs(l), x, shape=[xsize])
            pos = 0
            do p = 1, comm%nsend
               count = comm%send(p)%count
@@ -3833,17 +3832,17 @@ subroutine put_1_to_xgrid_order_2(d_addrs, x_addrs, xmap, isize, jsize, xsize, l
      endif
   else
      if( lsize == 1) then
-        ptr_x = x_addrs(1)
-!$OMP parallel do default(none) shared(xmap,recv_buffer,ptr_x) private(pos)
+        call c_f_pointer(x_addrs(1), x, shape=[xsize])
+!$OMP parallel do default(none) shared(xmap,recv_buffer,x) private(pos)
         do l=1,xmap%size_put1
            pos = xmap%x1_put(l)%pos
            x(l) = recv_buffer(3*pos-2) + recv_buffer(3*pos-1)*xmap%x1_put(l)%dj + recv_buffer(3*pos)*xmap%x1_put(l)%di
         end do
      else
-!$OMP parallel do default(none) shared(lsize,comm,xmap,recv_buffer,x_addrs) &
-!$OMP                          private(ptr_x,pos,ibegin,istart,iend,count,unpack_buffer)
+!$OMP parallel do default(none) shared(lsize,xsize,comm,xmap,recv_buffer,x_addrs) &
+!$OMP                          private(x,pos,ibegin,istart,iend,count,unpack_buffer)
         do l = 1, lsize
-           ptr_x = x_addrs(l)
+           call c_f_pointer(x_addrs(l), x, shape=[xsize])
            pos = 0
            ibegin = 1
            do p = 1, comm%nrecv
@@ -3874,10 +3873,11 @@ end subroutine put_1_to_xgrid_order_2
 !#######################################################################
 
 subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in)    :: d_addrs
-  integer(i8_kind), dimension(:), intent(in)    :: x_addrs
-  type (xmap_type),               intent(inout) :: xmap
-  integer,                        intent(in)    :: isize, jsize, xsize, lsize
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
+  type(c_ptr),      intent(in)    :: d_addrs(:)
+  type(c_ptr),      intent(in)    :: x_addrs(:)
+  type (xmap_type), intent(inout) :: xmap
+  integer,          intent(in)    :: isize, jsize, xsize, lsize
 
   real(r8_kind), dimension(xmap%size), target :: dg(xmap%size, lsize)
   integer                                     :: i, j, l, p, n, m
@@ -3890,10 +3890,8 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   type(overlap_type), pointer, save           :: recv => NULL()
   real(r8_kind)                               :: recv_buffer(xmap%get1%recvsize*lsize*3)
   real(r8_kind)                               :: send_buffer(xmap%get1%sendsize*lsize*3)
-  real(r8_kind)                               :: d(isize,jsize)
-  real(r8_kind), dimension(xsize)             :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), pointer                      :: d(:,:)
+  real(r8_kind), pointer                      :: x(:)
 
   call mpp_clock_begin(id_get_1_from_xgrid)
 
@@ -3908,9 +3906,9 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   enddo
 
   dg = 0.0_r8_kind;
-!$OMP parallel do default(none) shared(lsize,xmap,dg,x_addrs) private(dgp,ptr_x)
+!$OMP parallel do default(none) shared(lsize,xsize,xmap,dg,x_addrs) private(dgp,x)
   do l = 1, lsize
-     ptr_x = x_addrs(l)
+     call c_f_pointer(x_addrs(l), x, shape=[xsize])
      do i=1,xmap%size
         dgp => dg(xmap%x1(i)%pos,l)
         dgp =  dgp + xmap%x1(i)%area*x(i)
@@ -3942,7 +3940,7 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
 
   !--- unpack the buffer
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
      d = 0.0_r8_kind
   enddo
   !--- To bitwise reproduce old results, first copy the data onto its own pe.
@@ -3952,11 +3950,11 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
      count = recv%count
      buffer_pos = recv%buffer_pos*lsize
      if( recv%pe == xmap%me ) then
-!$OMP parallel do default(none) shared(lsize,recv,recv_buffer,buffer_pos,d_addrs,count) &
-!$OMP                          private(ptr_d,i,j,pos)
+!$OMP parallel do default(none) shared(lsize,isize,jsize,recv,recv_buffer,buffer_pos,d_addrs,count) &
+!$OMP                          private(d,i,j,pos)
         do l = 1, lsize
            pos = buffer_pos + (l-1)*count
-           ptr_d = d_addrs(l)
+           call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
            do n = 1,count
               i = recv%i(n)
               j = recv%j(n)
@@ -3976,11 +3974,11 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
         cycle
      endif
      buffer_pos = recv%buffer_pos*lsize
-!$OMP parallel do default(none) shared(lsize,recv,recv_buffer,buffer_pos,d_addrs) &
-!$OMP                          private(ptr_d,i,j,pos)
+!$OMP parallel do default(none) shared(lsize,isize,jsize,recv,recv_buffer,buffer_pos,d_addrs) &
+!$OMP                          private(d,i,j,pos)
      do l = 1, lsize
         pos = buffer_pos + (l-1)*recv%count
-        ptr_d = d_addrs(l)
+        call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
         do n = 1, recv%count
            i = recv%i(n)
            j = recv%j(n)
@@ -3993,9 +3991,9 @@ subroutine get_1_from_xgrid(d_addrs, x_addrs, xmap, isize, jsize, xsize, lsize)
   !
   ! normalize with side 1 grid cell areas
   !
-!$OMP parallel do default(none) shared(lsize,d_addrs,grid1) private(ptr_d)
+!$OMP parallel do default(none) shared(lsize,isize,jsize,d_addrs,grid1) private(d)
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), d, shape=[isize, jsize])
      d = d * grid1%area_inv
   enddo
   call mpp_sync_self()
@@ -4006,10 +4004,11 @@ end subroutine get_1_from_xgrid
 !#######################################################################
 
 subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in)    :: d_addrs
-  integer(i8_kind), dimension(:), intent(in)    :: x_addrs
-  type (xmap_type),               intent(inout) :: xmap
-  integer,                        intent(in)    :: xsize, lsize
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
+  type(c_ptr),      intent(in)    :: d_addrs(:)
+  type(c_ptr),      intent(in)    :: x_addrs(:)
+  type (xmap_type), intent(inout) :: xmap
+  integer,          intent(in)    :: xsize, lsize
 
   integer                            :: g, i, j, k, p, l, n, l2, l3
   integer                            :: msgsize, buffer_pos, pos
@@ -4020,13 +4019,13 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   integer,  dimension(0:xmap%npes-1) :: pl, ml
   real(r8_kind)                               :: recv_buffer(xmap%recv_count_repro_tot*lsize)
   real(r8_kind)                               :: send_buffer(xmap%send_count_repro_tot*lsize)
-  real(r8_kind)                               :: d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, &
-                                                 xmap%grids(1)%js_me:xmap%grids(1)%je_me)
-  real(r8_kind), dimension(xsize)             :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), pointer                      :: d(:,:)
+  real(r8_kind), pointer                      :: x(:)
+  real(r8_kind), pointer, contiguous          :: tmpptr(:,:)
+  integer :: shape_d(2)
 
   call mpp_clock_begin(id_get_1_from_xgrid_repro)
+  shape_d = [xmap%grids(1)%ie_me-xmap%grids(1)%is_me+1, xmap%grids(1)%je_me-xmap%grids(1)%js_me+1]
   comm => xmap%get1_repro
   !--- pre-post receiving
   do p = 1, comm%nrecv
@@ -4041,13 +4040,13 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
 
   !pack the data
   send_buffer(:) = 0.0_r8_kind
-!$OMP parallel do default(none) shared(lsize,x_addrs,comm,xmap,send_buffer) &
-!$OMP                          private(ptr_x,i,j,g,l2,pos,send)
+!$OMP parallel do default(none) shared(lsize,xsize,x_addrs,comm,xmap,send_buffer) &
+!$OMP                          private(x,i,j,g,l2,pos,send)
   do p = 1, comm%nsend
      pos = comm%send(p)%buffer_pos*lsize
      send => comm%send(p)
      do l = 1,lsize
-        ptr_x = x_addrs(l)
+        call c_f_pointer(x_addrs(l), x, shape=[xsize])
         do n = 1, send%count
            i = send%i(n)
            j = send%j(n)
@@ -4071,16 +4070,18 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   enddo
 
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), tmpptr, shape=shape_d)
+     d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, xmap%grids(1)%js_me:xmap%grids(1)%je_me) => tmpptr
      d = 0
   enddo
 
   call mpp_sync_self(check=EVENT_RECV)
 
-!$OMP parallel do default(none) shared(lsize,d_addrs,xmap,recv_buffer,pl,ml) &
-!$OMP                          private(ptr_d,grid,i,j,p,pos)
+!$OMP parallel do default(none) shared(lsize,shape_d,d_addrs,xmap,recv_buffer,pl,ml) &
+!$OMP                          private(d,tmpptr,grid,i,j,p,pos)
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), tmpptr, shape=shape_d)
+     d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, xmap%grids(1)%js_me:xmap%grids(1)%je_me) => tmpptr
      do g=2,size(xmap%grids(:))
         grid => xmap%grids(g)
         do l3=1,grid%size_repro ! index into side1 grid's patterns
@@ -4842,15 +4843,16 @@ end subroutine stock_print
 ! <SUBROUTINE NAME="get_side1_from_xgrid_ug" INTERFACE="get_from_xgrid_ug">
 !   <IN NAME="x"  TYPE="real(r8_kind)" DIM="(:)" > </IN>
 !   <IN NAME="grid_id"  TYPE=" character(len=3)"  > </IN>
-!   <OUT NAME="d"  TYPE="real(r8_kind)" DIM="(:,:)" > </OUT>
+!   <OUT NAME="d"  TYPE="real(r8_kind)" DIM="(:)" > </OUT>
 !   <INOUT NAME="xmap"  TYPE="xmap_type"  > </INOUT>
 
 subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
-  real(r8_kind), dimension(:),   intent(out)   :: d
-  character(len=3),              intent(in)    :: grid_id
-  real(r8_kind), dimension(:),   intent(in)    :: x
-  type (xmap_type),              intent(inout) :: xmap
-  logical, intent(in), optional                :: complete
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+  real(r8_kind), target, contiguous, intent(out)   :: d(:)
+  character(len=3),                  intent(in)    :: grid_id
+  real(r8_kind), target, contiguous, intent(in)    :: x(:)
+  type (xmap_type),                  intent(inout) :: xmap
+  logical, intent(in), optional                    :: complete
 
   logical                                         :: is_complete, set_mismatch
   integer                                         :: g
@@ -4859,8 +4861,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: d_addrs = c_null_ptr
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: x_addrs = c_null_ptr
 
   d = 0.0_r8_kind
   if (grid_id==xmap%grids(1)%id) then
@@ -4871,8 +4873,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group get_side1_from_xgrid_ug', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = c_loc(d)
+     x_addrs(lsize) = c_loc(x)
 
      if(lsize == 1) then
         isize = size(d(:))
@@ -4896,8 +4898,8 @@ subroutine get_side1_from_xgrid_ug(d, grid_id, x, xmap, complete)
         else
            call get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
         end if
-        d_addrs(1:lsize) = -9999_i8_kind
-        x_addrs(1:lsize) = -9999_i8_kind
+        d_addrs(1:lsize) = c_null_ptr
+        x_addrs(1:lsize) = c_null_ptr
         isize   = 0
         xsize   = 0
         lsize   = 0
@@ -4928,11 +4930,12 @@ end subroutine get_side1_from_xgrid_ug
 
 !> @brief Currently only support first order.
 subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
-  real(r8_kind), dimension(:),   intent(in)    :: d !<
-  character(len=3),              intent(in)    :: grid_id
-  real(r8_kind), dimension(:),   intent(inout) :: x
-  type (xmap_type),              intent(inout) :: xmap
-  logical, intent(in), optional                :: complete
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_null_ptr, c_loc
+  real(r8_kind), target, contiguous, intent(in)    :: d(:) !<
+  character(len=3),                  intent(in)    :: grid_id
+  real(r8_kind), target, contiguous, intent(inout) :: x(:)
+  type (xmap_type),                  intent(inout) :: xmap
+  logical, intent(in), optional                    :: complete
 
   logical                                         :: is_complete, set_mismatch
   integer                                         :: g
@@ -4941,8 +4944,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
   integer,                                   save :: lsize=0
   integer,                                   save :: xsize=0
   character(len=3),                          save :: grid_id_saved=""
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: d_addrs = -9999_i8_kind
-  integer(i8_kind), dimension(MAX_FIELDS),   save :: x_addrs = -9999_i8_kind
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: d_addrs = c_null_ptr
+  type(c_ptr),      dimension(MAX_FIELDS),   save :: x_addrs = c_null_ptr
 
   if (grid_id==xmap%grids(1)%id) then
      is_complete = .true.
@@ -4952,8 +4955,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
         write( text,'(i2)' ) MAX_FIELDS
         call error_mesg ('xgrid_mod',  'MAX_FIELDS='//trim(text)//' exceeded for group put_side1_to_xgrid_ug', FATAL)
      endif
-     d_addrs(lsize) = LOC(d)
-     x_addrs(lsize) = LOC(x)
+     d_addrs(lsize) = c_loc(d)
+     x_addrs(lsize) = c_loc(x)
 
      if(lsize == 1) then
         dsize = size(d(:))
@@ -4973,8 +4976,8 @@ subroutine put_side1_to_xgrid_ug(d, grid_id, x, xmap, complete)
 
      if(is_complete) then
         call put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize)
-        d_addrs(1:lsize) = -9999_i8_kind
-        x_addrs(1:lsize) = -9999_i8_kind
+        d_addrs(1:lsize) = c_null_ptr
+        x_addrs(1:lsize) = c_null_ptr
         dsize   = 0
         xsize   = 0
         lsize   = 0
@@ -5062,10 +5065,11 @@ end subroutine get_side2_from_xgrid_ug
 !#######################################################################
 
 subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in)    :: d_addrs
-  integer(i8_kind), dimension(:), intent(in)    :: x_addrs
-  type (xmap_type),               intent(inout) :: xmap
-  integer,                        intent(in)    :: dsize, xsize, lsize
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
+  type(c_ptr),      intent(in)    :: d_addrs(:)
+  type(c_ptr),      intent(in)    :: x_addrs(:)
+  type (xmap_type), intent(inout) :: xmap
+  integer,          intent(in)    :: dsize, xsize, lsize
 
   integer                         :: i, p, buffer_pos, msgsize
   integer                         :: from_pe, to_pe, pos, n, l, count
@@ -5075,10 +5079,8 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
   real(r8_kind)                   :: send_buffer(xmap%put1%sendsize*lsize)
   real(r8_kind)                   :: unpack_buffer(xmap%put1%recvsize)
 
-  real(r8_kind), dimension(dsize)   :: d
-  real(r8_kind), dimension(xsize)   :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), pointer          :: d(:)
+  real(r8_kind), pointer          :: x(:)
   integer :: lll
 
   call mpp_clock_begin(id_put_1_to_xgrid_order_1)
@@ -5099,7 +5101,7 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
      to_pe = comm%send(p)%pe
      pos = buffer_pos
      do l = 1, lsize
-        ptr_d = d_addrs(l)
+        call c_f_pointer(d_addrs(l), d, shape=[dsize])
         do n = 1, comm%send(p)%count
            pos = pos + 1
            lll = comm%send(p)%i(n)
@@ -5114,16 +5116,16 @@ subroutine put_1_to_xgrid_ug_order_1(d_addrs, x_addrs, xmap, dsize, xsize, lsize
 
   !--- unpack the buffer
   if( lsize == 1) then
-     ptr_x = x_addrs(1)
+     call c_f_pointer(x_addrs(1), x, shape=[xsize])
      do l=1,xmap%size_put1
         x(l) =  recv_buffer(xmap%x1_put(l)%pos)
      end do
   else
      start_pos = 0
-!$OMP parallel do default(none) shared(lsize,x_addrs,comm,recv_buffer,xmap) &
-!$OMP                          private(ptr_x,count,ibegin,istart,iend,pos,unpack_buffer)
+!$OMP parallel do default(none) shared(lsize,xsize,x_addrs,comm,recv_buffer,xmap) &
+!$OMP                          private(x,count,ibegin,istart,iend,pos,unpack_buffer)
      do l = 1, lsize
-        ptr_x = x_addrs(l)
+        call c_f_pointer(x_addrs(l), x, shape=[xsize])
         do p = 1, comm%nrecv
            count = comm%recv(p)%count
            ibegin = comm%recv(p)%buffer_pos*lsize + 1
@@ -5167,10 +5169,11 @@ end subroutine put_2_to_xgrid_ug
 
 
 subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in)    :: d_addrs
-  integer(i8_kind), dimension(:), intent(in)    :: x_addrs
-  type (xmap_type),               intent(inout) :: xmap
-  integer,                        intent(in)    :: isize, xsize, lsize
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
+  type(c_ptr),      intent(in)    :: d_addrs(:)
+  type(c_ptr),      intent(in)    :: x_addrs(:)
+  type (xmap_type), intent(inout) :: xmap
+  integer,          intent(in)    :: isize, xsize, lsize
 
   real(r8_kind), dimension(xmap%size), target :: dg(xmap%size, lsize)
   integer                                     :: i, j, l, p, n, m
@@ -5183,10 +5186,8 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
   type(overlap_type),          pointer, save  :: recv => NULL()
   real(r8_kind)                               :: recv_buffer(xmap%get1%recvsize*lsize*3)
   real(r8_kind)                               :: send_buffer(xmap%get1%sendsize*lsize*3)
-  real(r8_kind)                               :: d(isize)
-  real(r8_kind), dimension(xsize)             :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), pointer                      :: d(:)
+  real(r8_kind), pointer                      :: x(:)
 
   call mpp_clock_begin(id_get_1_from_xgrid)
 
@@ -5201,9 +5202,9 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
   enddo
 
   dg = 0.0_r8_kind;
-!$OMP parallel do default(none) shared(lsize,xmap,dg,x_addrs) private(dgp,ptr_x)
+!$OMP parallel do default(none) shared(lsize,xsize,xmap,dg,x_addrs) private(dgp,x)
   do l = 1, lsize
-     ptr_x = x_addrs(l)
+     call c_f_pointer(x_addrs(l), x, shape=[xsize])
      do i=1,xmap%size
         dgp => dg(xmap%x1(i)%pos,l)
         dgp =  dgp + xmap%x1(i)%area*x(i)
@@ -5235,7 +5236,7 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
 
   !--- unpack the buffer
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), d, shape=[isize])
      d = 0.0_r8_kind
   enddo
   !--- To bitwise reproduce old results, first copy the data onto its own pe.
@@ -5245,11 +5246,11 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
      count = recv%count
      buffer_pos = recv%buffer_pos*lsize
      if( recv%pe == xmap%me ) then
-!$OMP parallel do default(none) shared(lsize,recv,recv_buffer,buffer_pos,d_addrs,count) &
-!$OMP                          private(ptr_d,i,pos)
+!$OMP parallel do default(none) shared(lsize,isize,recv,recv_buffer,buffer_pos,d_addrs,count) &
+!$OMP                          private(d,i,pos)
         do l = 1, lsize
            pos = buffer_pos + (l-1)*count
-           ptr_d = d_addrs(l)
+           call c_f_pointer(d_addrs(l), d, shape=[isize])
            do n = 1,count
               i = recv%i(n)
               pos = pos + 1
@@ -5268,11 +5269,11 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
         cycle
      endif
      buffer_pos = recv%buffer_pos*lsize
-!$OMP parallel do default(none) shared(lsize,recv,recv_buffer,buffer_pos,d_addrs) &
-!$OMP                          private(ptr_d,i,j,pos)
+!$OMP parallel do default(none) shared(lsize,isize,recv,recv_buffer,buffer_pos,d_addrs) &
+!$OMP                          private(d,i,j,pos)
      do l = 1, lsize
         pos = buffer_pos + (l-1)*recv%count
-        ptr_d = d_addrs(l)
+        call c_f_pointer(d_addrs(l), d, shape=[isize])
         do n = 1, recv%count
            i = recv%i(n)
            pos = pos + 1
@@ -5284,9 +5285,9 @@ subroutine get_1_from_xgrid_ug(d_addrs, x_addrs, xmap, isize, xsize, lsize)
   !
   ! normalize with side 1 grid cell areas
   !
-!$OMP parallel do default(none) shared(lsize,d_addrs,grid1) private(ptr_d)
+!$OMP parallel do default(none) shared(lsize,isize,d_addrs,grid1) private(d)
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), d, shape=[isize])
      d = d * grid1%area_inv(:,1)
   enddo
   call mpp_sync_self()
@@ -5297,10 +5298,11 @@ end subroutine get_1_from_xgrid_ug
 !#######################################################################
 
 subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
-  integer(i8_kind), dimension(:), intent(in)    :: d_addrs
-  integer(i8_kind), dimension(:), intent(in)    :: x_addrs
-  type (xmap_type),               intent(inout) :: xmap
-  integer,                        intent(in)    :: xsize, lsize
+  use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
+  type(c_ptr),      intent(in)    :: d_addrs(:)
+  type(c_ptr),      intent(in)    :: x_addrs(:)
+  type (xmap_type), intent(inout) :: xmap
+  integer,          intent(in)    :: xsize, lsize
 
   integer                            :: g, i, j, k, p, l, n, l2, l3
   integer                            :: msgsize, buffer_pos, pos
@@ -5311,12 +5313,13 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   integer,  dimension(0:xmap%npes-1) :: pl, ml
   real(r8_kind)                      :: recv_buffer(xmap%recv_count_repro_tot*lsize)
   real(r8_kind)                      :: send_buffer(xmap%send_count_repro_tot*lsize)
-  real(r8_kind)                      :: d(xmap%grids(1)%ls_me:xmap%grids(1)%le_me)
-  real(r8_kind), dimension(xsize)    :: x
-  pointer(ptr_d, d)
-  pointer(ptr_x, x)
+  real(r8_kind), pointer             :: d(:)
+  real(r8_kind), pointer             :: x(:)
+  real(r8_kind), pointer, contiguous :: tmpptr(:)
+  integer :: shape_d(1)
 
   call mpp_clock_begin(id_get_1_from_xgrid_repro)
+  shape_d = [xmap%grids(1)%le_me-xmap%grids(1)%ls_me+1]
   comm => xmap%get1_repro
   !--- pre-post receiving
   do p = 1, comm%nrecv
@@ -5331,13 +5334,13 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
 
   !pack the data
   send_buffer(:) = 0.0_r8_kind
-!$OMP parallel do default(none) shared(lsize,x_addrs,comm,xmap,send_buffer) &
-!$OMP                          private(ptr_x,i,j,g,l2,pos,send)
+!$OMP parallel do default(none) shared(lsize,xsize,x_addrs,comm,xmap,send_buffer) &
+!$OMP                          private(x,i,j,g,l2,pos,send)
   do p = 1, comm%nsend
      pos = comm%send(p)%buffer_pos*lsize
      send => comm%send(p)
      do l = 1,lsize
-        ptr_x = x_addrs(l)
+        call c_f_pointer(x_addrs(l), x, shape=[xsize])
         do n = 1, send%count
            i = send%i(n)
            j = send%j(n)
@@ -5361,16 +5364,18 @@ subroutine get_1_from_xgrid_ug_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   enddo
 
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), tmpptr, shape=shape_d)
+     d(xmap%grids(1)%ls_me:xmap%grids(1)%le_me) => tmpptr
      d = 0
   enddo
 
   call mpp_sync_self(check=EVENT_RECV)
 
-!$OMP parallel do default(none) shared(lsize,d_addrs,xmap,recv_buffer,pl,ml) &
-!$OMP                          private(ptr_d,grid,i,j,p,pos)
+!$OMP parallel do default(none) shared(lsize,shape_d,d_addrs,xmap,recv_buffer,pl,ml) &
+!$OMP                          private(d,tmpptr,grid,i,j,p,pos)
   do l = 1, lsize
-     ptr_d = d_addrs(l)
+     call c_f_pointer(d_addrs(l), tmpptr, shape=shape_d)
+     d(xmap%grids(1)%ls_me:xmap%grids(1)%le_me) => tmpptr
      do g=2,size(xmap%grids(:))
         grid => xmap%grids(g)
         do l3=1,grid%size_repro ! index into side1 grid's patterns

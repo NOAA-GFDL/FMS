@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @file
 !! @brief unit tests for interpolator_mod
@@ -46,7 +45,7 @@ program test_interpolator2
   implicit none
 
   character(100), parameter :: ncfile='immadeup.o3.climatology.nc' !< fake climatology file
-  integer, parameter :: lkind=TEST_INTP_KIND_
+  integer, parameter :: lkind=TEST_FMS_KIND_
   !> the interpolation methods are not perfect.Will not get perfectly agreeing answers
   real(r8_kind), parameter :: tol=0.1_lkind
   integer :: calendar_type
@@ -57,21 +56,21 @@ program test_interpolator2
   integer :: ntime         !< number of time slices
   integer :: npfull        !< number of p levels
   integer :: nphalf        !< number of half p levels
-  real(TEST_INTP_KIND_), allocatable :: lat(:)   !< climatology coordinates
-  real(TEST_INTP_KIND_), allocatable :: lon(:)   !< climatology coordinates
-  real(TEST_INTP_KIND_), allocatable :: latb(:)  !< climatology coordinates
-  real(TEST_INTP_KIND_), allocatable :: lonb(:)  !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: lat(:)   !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: lon(:)   !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: latb(:)  !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: lonb(:)  !< climatology coordinates
   real(r8_kind), allocatable :: clim_time (:) !< climatology time
-  real(TEST_INTP_KIND_), allocatable :: pfull(:) !< climatology p level
-  real(TEST_INTP_KIND_), allocatable :: phalf(:) !< climatology p half level
-  real(TEST_INTP_KIND_), allocatable :: ozone(:,:,:,:) !< climatology ozone data
+  real(TEST_FMS_KIND_), allocatable :: pfull(:) !< climatology p level
+  real(TEST_FMS_KIND_), allocatable :: phalf(:) !< climatology p half level
+  real(TEST_FMS_KIND_), allocatable :: ozone(:,:,:,:) !< climatology ozone data
 
   !> model related variables and arrays
   integer :: nlonlat_mod, nlonlatb_mod !< number of latitude and longitude coordinates in the model
-  real(TEST_INTP_KIND_), allocatable :: lat_mod(:,:)  !< model coordinates
-  real(TEST_INTP_KIND_), allocatable :: lon_mod(:,:)  !< model coordinates
-  real(TEST_INTP_KIND_), allocatable :: latb_mod(:,:) !< model coordinates
-  real(TEST_INTP_KIND_), allocatable :: lonb_mod(:,:) !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: lat_mod(:,:)  !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: lon_mod(:,:)  !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: latb_mod(:,:) !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: lonb_mod(:,:) !< model coordinates
 
   !> array holding model times
   type(time_type), allocatable :: model_time_julian(:), model_time_noleap(:)
@@ -155,11 +154,11 @@ contains
     type(interpolate_type), intent(inout) :: clim_type
     type(time_type), dimension(ntime), intent(in) :: model_time
     type(time_type) :: test_time
-    real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod,npfull,1) :: interp_data !<only 1 field
-    real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod,nphalf) :: phalf_in
+    real(TEST_FMS_KIND_), dimension(nlonlat_mod,nlonlat_mod,npfull,1) :: interp_data !<only 1 field
+    real(TEST_FMS_KIND_), dimension(nlonlat_mod,nlonlat_mod,nphalf) :: phalf_in
     integer :: itime, i, j, k, l
 
-    real(TEST_INTP_KIND_) :: answer
+    real(TEST_FMS_KIND_) :: answer
 
 
     do i=1, nphalf
@@ -233,8 +232,8 @@ contains
 
     type(interpolate_type) :: clim_type
 
-    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,npfull,1) :: interp_data !< last column, there is only one field
-    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf_in
+    real(TEST_FMS_KIND_), dimension(nlonlat,nlonlat,npfull,1) :: interp_data !< last column, there is only one field
+    real(TEST_FMS_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf_in
     integer :: i, j, k
 
     do i=1, nphalf
@@ -343,7 +342,7 @@ contains
   subroutine check_answers(results, answers, tol, whoami)
 
     implicit none
-    real(TEST_INTP_KIND_), intent(in) :: results, answers
+    real(TEST_FMS_KIND_), intent(in) :: results, answers
     real(r8_kind), intent(in) :: tol
     character(*) :: whoami
 
