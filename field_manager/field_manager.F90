@@ -571,6 +571,7 @@ else
        &"field_manager_init:: You are using the yaml version of the field_table. &
 The legacy field_table format will be deprecated in a future release, &
 please switch to the yaml format.")
+   call read_field_table_yaml(nfields, table_name)
 endif
 
 end subroutine field_manager_init
