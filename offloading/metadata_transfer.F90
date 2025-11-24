@@ -90,36 +90,43 @@ module metadata_transfer_mod
     class(metadata_class), intent(inout) :: this !<metadata object to initialize for mpi communication using the struct
     integer, intent(in) :: dtype !< data type and kind for the metadata's value
                                  !! must be real8_type, real4_type, int8_type, int4_type, or str_type
-    integer, dimension(0:6) :: lengths, types
+    integer, dimension(0:4) :: lengths, types
 #ifdef use_libMPI
-    integer(KIND=MPI_ADDRESS_KIND), dimension(0:6) :: displacements
+    integer(KIND=MPI_ADDRESS_KIND), dimension(0:4) :: displacements
     integer :: ierror, mpi_id
 
     !! since the actual data array is at the end of the struct, displacements are the same for all types
-    displacements = (/ int(0,kind=MPI_ADDRESS_KIND), sizeof(0), sizeof(0)*2, sizeof(0)*3, &
-                      sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
-                      sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
-                      sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
-                    /)
+    !displacements = (/ 0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
+    !                  sizeof(0)*3 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+    !                  sizeof(0)*4 + sizeof(' ')*ATTR_NAME_MAX_LENGTH, &
+    !                  sizeof(0)*4 :+ sizeof(' ')*ATTR_NAME_MAX_LENGTH + sizeof(' ') &
+    !                /)
+    displacements(0) = 0_MPI_ADDRESS_KIND ! id start address
+    displacements(1) = displacements(0) + sizeof(0) ! attribute_length start address
+    displacements(2) = displacements(1) + sizeof(0) ! attribute_name start adress
+    displacements(3) = displacements(2) + sizeof(' ')*ATTR_NAME_MAX_LENGTH ! get_attribute_name() start address
+    displacements(4) = displacements(3) + sizeof(' ')*ATTR_NAME_MAX_LENGTH ! attribute_value start address 
+
+    print *, "calculated displacements: ", displacements
     select case(dtype)
     case(real8_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_DOUBLE/)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_DOUBLE/)
     case(real4_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_FLOAT/)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_FLOAT/)
     case(int4_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_INT/)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_INT/)
     case(int8_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_LONG_INT/)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_LONG_INT/)
     case(str_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER/)
+      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_CHARACTER/)
     case default
         call mpp_error(FATAL, "fms_metadata_transfer_init:: given dtype argument contains a unsupported type")
     end select
 
     !lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
-    lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, 1, 1, ATTR_VALUE_MAX_LENGTH/)
+    lengths = (/1, 1, ATTR_NAME_MAX_LENGTH, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
 
-    call MPI_Type_create_struct(7, lengths, displacements, types, mpi_id, ierror)
+    call MPI_Type_create_struct(5, lengths, displacements, types, mpi_id, ierror)
     if(ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_create_struct failed")
     end if

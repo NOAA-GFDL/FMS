@@ -3,7 +3,6 @@ program test_metadata_transfer
   use mpp_mod
   use metadata_transfer_mod
   use platform_mod
-  use mpi
   use, intrinsic :: iso_c_binding
 
   implicit none
@@ -45,7 +44,8 @@ program test_metadata_transfer
       if(debug) call dump_metadata_r8(file_metadata)
       call check_metadata_r8(file_metadata)
   end select
-  deallocate(file_metadata)
+  call mpp_sync()
+  deallocate(file_metadata) !! fails here on every PE besides root
 
   !! test with real4_type metadata
   allocate(metadata_r4_type :: file_metadata(1))
@@ -150,7 +150,9 @@ program test_metadata_transfer
     real(r8_kind) :: attr_vals(8)
     integer :: i, j, last_j =1
 
-    attr_names = (/"_FillValue"//c_null_char, "missing_value"//c_null_char, "a_third_name"//c_null_char/)
+    attr_names(1) = "_FillValue"//c_null_char
+    attr_names(2) = "missing_value"//c_null_char
+    attr_names(3) = "a_third_name"//c_null_char
     attr_vals = (/ 666.0_r8_kind, -100.0_r8_kind, 100.0_r8_kind, -200.0_r8_kind, &
                    -50.0_r8_kind, 0.0_r8_kind, 50.0_r8_kind, 200.0_r8_kind /)
 

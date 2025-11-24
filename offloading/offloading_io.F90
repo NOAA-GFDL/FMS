@@ -49,6 +49,7 @@ module offloading_io_mod
   public :: domain_decomposed, non_domain_decomposed, Unstructured_grid
   public :: global_metadata_offload, close_file_offload, register_axis_offload, register_field_offload
   public :: write_data_offload
+  public :: create_cubic_domain, create_lat_lon_domain
 
   contains
 
