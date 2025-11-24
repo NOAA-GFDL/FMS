@@ -34,7 +34,6 @@ prepare_legacy () {
   rm -f field_table.yaml
 
   cat <<EOF >field_table
-  
 "atm_to_lnd_ex", "coupler_mod", "dryoa"
 "units=kg/m2/s" /
 
