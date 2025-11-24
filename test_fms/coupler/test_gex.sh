@@ -37,7 +37,7 @@ prepare_legacy () {
   
 "atm_to_lnd_ex", "coupler_mod", "dryoa"
 "units=kg/m2/s" /
-/
+
 EOF
 
   cat <<EOF >input.nml
