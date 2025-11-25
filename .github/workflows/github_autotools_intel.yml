@@ -12,6 +12,9 @@ jobs:
       matrix:
         fortran-compiler: [ mpiifx, mpiifort ]
         c-compiler: [ mpiicx, mpiicc ]
+        exclude:
+          - fortran-compiler: mpiifx
+            c-compiler: mpiicc
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
