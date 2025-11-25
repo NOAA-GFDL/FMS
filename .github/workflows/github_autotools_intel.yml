@@ -8,11 +8,15 @@ concurrency:
 jobs:
   intel-autotools:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        fortran-compiler: [ mpiifx, mpiifort ]
+        c-compiler: [ mpiicx, mpiicc ]
     container:
       image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
       env:
-        CC: mpiicc
-        FC: mpiifort
+        CC: ${{ matrix.c-compiler }}
+        FC: ${{ matrix.fortran-compiler }}
         CFLAGS:  "-I/libs/include"
         FCFLAGS: "-I/libs/include -g -traceback"
         LDFLAGS: "-L/libs/lib"
