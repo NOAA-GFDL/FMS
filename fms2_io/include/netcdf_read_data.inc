@@ -150,7 +150,15 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
   else
     bcast = .true.
   endif
-  if (fileobj%use_netcdf_mpi) bcast = .false.
+
+  if (fileobj%use_netcdf_mpi) then
+    bcast = .false.
+
+    if (fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+  endif
 
   c(1) = 1
   if (present(unlim_dim_level)) then
@@ -164,11 +172,6 @@ subroutine netcdf_read_data_0d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-
-    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-      call check_netcdf_code(err, append_error_msg)
-    endif
 
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -249,7 +252,15 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
   else
     bcast = .true.
   endif
-  if (fileobj%use_netcdf_mpi) bcast = .false.
+
+  if (fileobj%use_netcdf_mpi) then
+    bcast = .false.
+
+    if (fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+  endif
 
   c(:) = 1
   if (present(corner)) then
@@ -272,11 +283,6 @@ subroutine netcdf_read_data_1d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-
-    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-      call check_netcdf_code(err, append_error_msg)
-    endif
 
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -355,7 +361,15 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
   else
     bcast = .true.
   endif
-  if (fileobj%use_netcdf_mpi) bcast = .false.
+
+  if (fileobj%use_netcdf_mpi) then
+    bcast = .false.
+
+    if (fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+  endif
 
   c(:) = 1
   if (present(corner)) then
@@ -378,11 +392,6 @@ subroutine netcdf_read_data_2d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-
-    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-      call check_netcdf_code(err, append_error_msg)
-    endif
 
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -457,7 +466,15 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
   else
     bcast = .true.
   endif
-  if (fileobj%use_netcdf_mpi) bcast = .false.
+
+  if (fileobj%use_netcdf_mpi) then
+    bcast = .false.
+
+    if (fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+  endif
 
   c(:) = 1
   if (present(corner)) then
@@ -480,11 +497,6 @@ subroutine netcdf_read_data_3d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-
-    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-      call check_netcdf_code(err, append_error_msg)
-    endif
 
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -559,7 +571,15 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
   else
     bcast = .true.
   endif
-  if (fileobj%use_netcdf_mpi) bcast = .false.
+
+  if (fileobj%use_netcdf_mpi) then
+    bcast = .false.
+
+    if (fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+  endif
 
   c(:) = 1
   if (present(corner)) then
@@ -582,11 +602,6 @@ subroutine netcdf_read_data_4d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-
-    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-      call check_netcdf_code(err, append_error_msg)
-    endif
 
     select type(buf)
       type is (integer(kind=i4_kind))
@@ -661,7 +676,15 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
   else
     bcast = .true.
   endif
-  if (fileobj%use_netcdf_mpi) bcast = .false.
+
+  if (fileobj%use_netcdf_mpi) then
+    bcast = .false.
+
+    if (fileobj%use_collective) then
+      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
+      call check_netcdf_code(err, append_error_msg)
+    endif
+  endif
 
   c(:) = 1
   if (present(corner)) then
@@ -684,11 +707,6 @@ subroutine netcdf_read_data_5d(fileobj, variable_name, buf, unlim_dim_level, &
 
   if (fileobj%is_root) then
     varid = get_variable_id(fileobj%ncid, trim(variable_name), msg=append_error_msg)
-
-    if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
-      err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
-      call check_netcdf_code(err, append_error_msg)
-    endif
 
     select type(buf)
       type is (integer(kind=i4_kind))
