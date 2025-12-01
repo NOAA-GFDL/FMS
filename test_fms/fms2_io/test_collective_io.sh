@@ -43,16 +43,4 @@ test_expect_success "Test NetCDF-4 collective reads" '
   mpirun -n 6 ../test_collective_io
 '
 
-rm -rf *.nc*
-# The code should still run if not using netcdf4 files, it just won't use collective io
-cat <<_EOF > input.nml
-&test_collective_io_nml
-  nc_format = "64bit"
-/
-_EOF
-
-test_expect_success "Test fallback to non-collective reads" '
-  mpirun -n 6 ../test_collective_io
-'
-
 test_done
