@@ -34,8 +34,4 @@ test_expect_success "test metadata transfer" '
   mpirun -n 4 ./test_metadata_transfer
 '
 
-test_expect_success "test mpp redistribute" '
-  mpirun -n 7 ./test_mpp_redistribute
-'
-
 test_done

@@ -126,7 +126,7 @@ module metadata_transfer_mod
     !lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
     lengths = (/1, 1, ATTR_NAME_MAX_LENGTH, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
 
-    call MPI_Type_create_struct(5, lengths, displacements, types, mpi_id, ierror)
+    call MPI_Type_create_struct(4, lengths, displacements, types, mpi_id, ierror)
     if(ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_create_struct failed")
     end if
