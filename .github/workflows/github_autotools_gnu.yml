@@ -24,7 +24,6 @@ jobs:
       env:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
-        SKIP_TESTS: "test_horiz_interp2.[23-24]" # TODO (couldn't reproduce outside CI)
         DEBUG_FLAGS: "-O0 -g -fbounds-check -ffpe-trap=invalid,zero,overflow" # debug compiler flags taken from the mkmf template
     steps:
     - name: Checkout code
