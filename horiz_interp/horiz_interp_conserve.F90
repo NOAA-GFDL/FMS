@@ -1,4 +1,4 @@
-!***********************************************************************
+rea!***********************************************************************
 !*                   GNU Lesser General Public License
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
@@ -222,7 +222,7 @@ contains
 
       integer :: i, j, ncells, domain_ncells
       integer :: istart, iend, i_dst, j_dst, index
-      real(8), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), xarea(:)
+      real(r8_kind), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), xarea(:)
       integer, allocatable :: tile1(:), read2(:,:)
       logical, allocatable :: mask(:)
 
