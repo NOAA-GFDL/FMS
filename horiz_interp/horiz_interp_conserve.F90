@@ -46,7 +46,6 @@ module horiz_interp_conserve_mod
    use constants_mod,         only: PI
    use horiz_interp_type_mod, only: horiz_interp_type, CONSERVE
 
-
    implicit none
    private
 
