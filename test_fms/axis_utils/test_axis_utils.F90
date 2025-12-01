@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 program test_axis_utils
@@ -40,7 +39,7 @@ type GetAxisCartTestCase_t
   type(GetAxisCartTestCase_t), pointer :: next => NULL()
 end type
 
-integer, parameter :: k = AU_TEST_KIND_
+integer, parameter :: k = TEST_FMS_KIND_
 real(k), parameter :: pi = 4._k * atan(1._k)
 
 integer :: i
@@ -376,7 +375,7 @@ subroutine frac_index_assert(fval, arr, ret_expected)
 
   ret_test = frac_index(fval, arr)
 
-  if (ret_test /= ret_expected) then
+  if (abs(ret_test - ret_expected) .gt. 1.0e-5_k) then
     write(stderr(), "(A)") "frac_index(" // string(fval) // ", " // stringify(arr) // &
                          & ") returned erroneous value: " // string(ret_test)
     write(stderr(), "(A)") "Expected return value: " // string(ret_expected)

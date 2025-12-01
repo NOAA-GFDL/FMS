@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_output_yaml_mod fms_diag_output_yaml_mod
 !> @ingroup diag_manager
@@ -146,6 +145,7 @@ type :: fmsDiagFile_type
  procedure, public :: get_file_duration_units
  procedure, public :: get_file_varlist
  procedure, public :: get_file_global_meta
+ procedure, public :: is_using_collective_writes
  procedure, public :: is_done_writing_data
  procedure, public :: has_file_fname
  procedure, public :: has_file_frequnit
@@ -652,6 +652,16 @@ pure function get_file_global_meta (this) result(res)
  character (len=MAX_STR_LEN), allocatable, dimension(:,:) :: res
   res = this%diag_yaml_file%get_file_global_meta()
 end function get_file_global_meta
+
+!> \brief Determines whether or not the file is using netcdf collective writes
+!! \return logical indicating whether or not the file is using netcdf collective writes
+pure function is_using_collective_writes (this) result(res)
+ class(fmsDiagFile_type), intent(in) :: this !< The file object
+ logical :: res
+
+ res = this%diag_yaml_file%is_using_collective_writes()
+end function is_using_collective_writes
+
 
 !> \brief Determines if done writing data
 !! \return .True. if done writing data
@@ -1233,6 +1243,22 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     file_name = trim(file_name)//"."//trim(mype_string)
   endif
 
+  ! Crash if a diag_file is using collective writes, but it is not one of the supported
+  ! methods (i.e only for domain decomposed files)
+  select case (diag_file%type_of_domain)
+  case (NO_DOMAIN, UG_DOMAIN)
+      if (diag_file%is_using_collective_writes()) then
+        call mpp_error(FATAL, "Collective writes are only supported for domain-decomposed files. "// &
+                              trim(file_name)//" is using collective writes with an unsupported domain type.")
+      end if
+  case (TWO_D_DOMAIN)
+    if (is_regional .and. diag_file%is_using_collective_writes()) then
+      call mpp_error(FATAL, "Collective writes are not supported for regional runs. "// &
+                            "Disable collective writes in the diag_table yaml for file:"// &
+                            trim(file_name))
+    end if
+  end select
+
   !< Open the file!
   select type (fms2io_fileobj => diag_file%fms2io_fileobj)
   type is (FmsNetcdfFile_t)
@@ -1250,7 +1276,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
   type is (FmsNetcdfDomainFile_t)
     select type (domain)
     type is (diagDomain2d_t)
-      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", domain%Domain2)) &
+      if (.not. open_file(fms2io_fileobj, file_name, "overwrite", domain%Domain2, &
+          use_netcdf_mpi = diag_file%is_using_collective_writes())) &
         &call mpp_error(FATAL, "Error opening the file:"//file_name)
     end select
   type is (FmsNetcdfUnstructuredDomainFile_t)
@@ -1822,7 +1849,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     endif
 
     call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
-      this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures)
+      this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures, &
+      diag_file%is_using_collective_writes())
   enddo
 
   if (need_associated_files) &

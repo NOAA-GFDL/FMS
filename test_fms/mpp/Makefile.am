@@ -37,7 +37,7 @@ check_PROGRAMS = test_mpp \
   test_mpp_print_memuse_stats_file \
   test_mpp_memutils_begin_2x \
   test_mpp_memutils_end_before_begin \
-  test_read_ascii_file \
+  test_mpp_read_ascii_file \
   test_read_input_nml \
   test_stdout \
   test_stderr \
@@ -87,7 +87,7 @@ test_mpp_print_memuse_stats_stderr_SOURCES = test_mpp_print_memuse_stats_stderr.
 test_mpp_print_memuse_stats_file_SOURCES = test_mpp_print_memuse_stats_file.F90
 test_mpp_memutils_begin_2x_SOURCES = test_mpp_memutils_begin_2x.F90
 test_mpp_memutils_end_before_begin_SOURCES = test_mpp_memutils_end_before_begin.F90
-test_read_ascii_file_SOURCES = test_read_ascii_file.F90
+test_mpp_read_ascii_file_SOURCES = test_mpp_read_ascii_file.F90
 test_read_input_nml_SOURCES = test_read_input_nml.F90
 test_stdout_SOURCES = test_stdout.F90
 test_stderr_SOURCES = test_stderr.F90
@@ -106,7 +106,7 @@ test_mpp_update_domains_SOURCES = \
   compare_data_checksums_int.F90 \
   test_mpp_update_domains_real.F90 \
   test_mpp_update_domains_int.F90 \
-  test_mpp_update_domains_main.F90
+  test_mpp_update_domains.F90
 test_mpp_gatscat_SOURCES = test_mpp_gatscat.F90
 test_mpp_sendrecv_SOURCES = test_mpp_sendrecv.F90
 test_mpp_sum_SOURCES = test_mpp_sum.F90
@@ -150,7 +150,7 @@ TESTS = test_mpp_domains2.sh \
   test_mpp_memuse.sh \
   test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
-  test_read_ascii_file.sh \
+  test_mpp_read_ascii_file.sh \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
@@ -193,7 +193,7 @@ EXTRA_DIST = test_mpp_domains2.sh \
   test_mpp_memuse.sh \
   test_mpp_mem_dump.sh \
   test_mpp_memutils_mod.sh \
-  test_read_ascii_file.sh \
+  test_mpp_read_ascii_file.sh \
   test_read_input_nml2.sh \
   test_stdout.sh \
   test_stderr.sh \
@@ -237,7 +237,7 @@ test_domains_utility_mod.mod: test_domains_utility_mod.$(OBJEXT)
 test_mpp_update_domains_real.$(OBJEXT): compare_data_checksums.mod fill_halo.mod test_mpp_update_domains
 test_mpp_update_domains_int.$(OBJEXT): compare_data_checksums_int.mod fill_halo.mod
 
-test_mpp_update_domains_main.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
+test_mpp_update_domains.$(OBJEXT): test_mpp_update_domains_real.mod test_mpp_update_domains_int.mod
 test_update_domains_performance.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_global_field.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod
 test_mpp_global_field_ug.$(OBJEXT): compare_data_checksums_int.mod compare_data_checksums.mod

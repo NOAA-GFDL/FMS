@@ -65,4 +65,11 @@ test_expect_success "test time interpolation external with r4_kind (no_leap)" '
   mpirun -n 4 ./test_time_interp_external_r4
 '
 
+test_expect_success "test time interpolation external with conservative horizontal interp r8_kind" '
+  mpirun -n 4 ./test_time_interp_conservative_hi_r8
+'
+test_expect_success "test time interpolation external with conservative horizontal interp r4_kind" '
+  mpirun -n 4 ./test_time_interp_conservative_hi_r4
+'
+
 test_done

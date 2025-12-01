@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup netcdf_io_mod netcdf_io_mod
 !> @ingroup fms2_io
@@ -154,6 +153,11 @@ type, public :: FmsNetcdfFile_t
                                       !! collective reads (put before open_file())
   integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
                                       !! To be replaced with a real communicator at user request
+  logical        :: use_netcdf_mpi = .false.
+
+  contains
+
+  procedure :: is_file_using_netcdf_mpi
 
 endtype FmsNetcdfFile_t
 
@@ -245,6 +249,7 @@ public :: set_fileobj_time_name
 public :: write_restart_bc
 public :: read_restart_bc
 public :: flush_file
+public :: get_variable_id
 
 !> @ingroup netcdf_io_mod
 interface netcdf_add_restart_variable
@@ -908,7 +913,7 @@ subroutine netcdf_add_dimension(fileobj, dimension_name, dimension_length, &
       dim_len = sum(npes_count)
     endif
   endif
-  if (fileobj%is_root .and. .not. fileobj%is_readonly) then
+  if ((fileobj%is_root) .and. .not. fileobj%is_readonly) then
     call set_netcdf_mode(fileobj%ncid, define_mode)
     err = nf90_def_dim(fileobj%ncid, trim(dimension_name), dim_len, dimid)
     call check_netcdf_code(err, "Netcdf_add_dimension: file:"//trim(fileobj%path)//" dimension name:"// &
@@ -1007,6 +1012,11 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     else
       err = nf90_def_var(fileobj%ncid, trim(variable_name), vtype, varid)
     endif
+    call check_netcdf_code(err, append_error_msg)
+  endif
+
+  if (fileobj%use_netcdf_mpi) then
+    err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
     call check_netcdf_code(err, append_error_msg)
   endif
 end subroutine netcdf_add_variable
@@ -2398,6 +2408,13 @@ subroutine flush_file(fileobj)
     call check_netcdf_code(err, "Flush_file: File:"//trim(fileobj%path))
   endif
 end subroutine flush_file
+
+!> @brief Getter for use_netcdf_mpi
+pure logical function is_file_using_netcdf_mpi(this)
+  class(FmsNetcdfFile_t), intent(in) :: this !< fms2io fileobj to query
+
+  is_file_using_netcdf_mpi = this%use_netcdf_mpi
+end function is_file_using_netcdf_mpi
 
 end module netcdf_io_mod
 !> @}

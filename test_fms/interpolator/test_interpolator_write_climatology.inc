@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> This file contains subroutines that initialize data and write out the climatology file.
@@ -278,8 +277,8 @@ subroutine set_latlon_b()
   allocate(latb(nlonlat+1), lonb(nlonlat+1))
 
   do i=1, nlonlat
-     lat(i)= real(2*i-1,TEST_INTP_KIND_)
-     lon(i)= real(2*i-1,TEST_INTP_KIND_)
+     lat(i)= real(2*i-1,TEST_FMS_KIND_)
+     lon(i)= real(2*i-1,TEST_FMS_KIND_)
   end do
 
   lonb(1)=1.0_lkind
@@ -321,10 +320,10 @@ subroutine set_latlon_b_mod
   end do
 
   !> convert from degrees to radians
-  lon_mod  = lon_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
-  lat_mod  = lat_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
-  lonb_mod = lonb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
-  latb_mod = latb_mod*real(PI,TEST_INTP_KIND_)/180.0_lkind
+  lon_mod  = lon_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
+  lat_mod  = lat_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
+  lonb_mod = lonb_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
+  latb_mod = latb_mod*real(PI,TEST_FMS_KIND_)/180.0_lkind
 
 
 end subroutine set_latlon_b_mod
@@ -339,7 +338,7 @@ subroutine set_pfullhalf()
   allocate(pfull(npfull), phalf(nphalf))
 
   do i=1, npfull
-     pfull(i) = 0.0001_lkind * real(i-1,TEST_INTP_KIND_)
+     pfull(i) = 0.0001_lkind * real(i-1,TEST_FMS_KIND_)
   end do
 
   phalf(1)=0.0_lkind
@@ -364,7 +363,7 @@ subroutine set_ozone()
      do j=1, npfull
         do k=1, nlonlat
            do l=1, nlonlat
-              ozone(l,k,j,i)= real(i,TEST_INTP_KIND_)
+              ozone(l,k,j,i)= real(i,TEST_FMS_KIND_)
            end do
         end do
      end do

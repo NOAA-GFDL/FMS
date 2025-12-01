@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2025.03-dev],
+  [2025.04-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -481,6 +481,10 @@ AC_SUBST([NOUNDEFINED])
 # Define the directory where *.mod files will reside.
 # Used in Makefiles.
 AC_SUBST([MODDIR],[\$\(top_builddir\)/.mods])
+
+# Define CMake variables used in test-lib.sh.in as empty strings
+AC_SUBST([CMAKE_CURRENT_SOURCE_DIR], [])
+AC_SUBST([USING_CMAKE],[])
 
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([

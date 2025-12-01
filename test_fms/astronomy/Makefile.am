@@ -38,8 +38,8 @@ test_astronomy_r4_SOURCES = test_astronomy.F90
 test_astronomy_r8_SOURCES = test_astronomy.F90
 
 # Set r4_kind and r8_kind
-test_astronomy_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_AST_KIND_=r4_kind
-test_astronomy_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_AST_KIND_=r8_kind
+test_astronomy_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r4_kind
+test_astronomy_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r8_kind
 
 # Run the test program.
 TESTS = test_astronomy.sh

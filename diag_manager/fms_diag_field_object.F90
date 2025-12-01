@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 module fms_diag_field_object_mod
 !> \author Tom Robinson
@@ -31,7 +30,7 @@ use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
 use diag_data_mod,  only: max_field_attributes, fmsDiagAttribute_type
 use diag_data_mod,  only: diag_null, diag_not_found, diag_not_registered, diag_registered_id, &
                          &DIAG_FIELD_NOT_FOUND, avg_name, time_average, time_min, time_max, &
-                         &time_none, time_diurnal, time_power, time_rms, time_sum
+                         &time_none, time_diurnal, time_power, time_rms, time_sum, MAX_DIMENSIONS
 use fms_string_utils_mod, only: int2str=>string
 use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
@@ -189,6 +188,7 @@ type fmsDiagField_type
      procedure :: get_longname_to_write
      procedure :: get_multiple_send_data
      procedure :: write_field_metadata
+     procedure :: get_chunksizes
      procedure :: write_coordinate_attribute
      procedure :: get_math_needs_to_be_done
      procedure :: add_area_volume
@@ -1218,17 +1218,19 @@ end subroutine get_dimnames
 
 !> @brief Wrapper for the register_field call. The select types are needed so that the code can go
 !! in the correct interface
-subroutine register_field_wrap(fms2io_fileobj, varname, vartype, dimensions)
+subroutine register_field_wrap(fms2io_fileobj, varname, vartype, dimensions, chunksizes)
   class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write to
   character(len=*),                  INTENT(IN)    :: varname       !< Name of the variable
   character(len=*),                  INTENT(IN)    :: vartype       !< The type of the variable
   character(len=*), optional,        INTENT(IN)    :: dimensions(:) !< The dimension names of the field
+  integer,   optional,               INTENT(IN)    :: chunksizes(:) !< Chunksize to use, only relevant when using
+                                                                    !! NETCDF-4 and the variable is domain decomposed
 
   select type(fms2io_fileobj)
   type is (FmsNetcdfFile_t)
     call register_field(fms2io_fileobj, varname, vartype, dimensions)
   type is (FmsNetcdfDomainFile_t)
-    call register_field(fms2io_fileobj, varname, vartype, dimensions)
+    call register_field(fms2io_fileobj, varname, vartype, dimensions, chunksizes=chunksizes)
   type is (FmsNetcdfUnstructuredDomainFile_t)
     call register_field(fms2io_fileobj, varname, vartype, dimensions)
   end select
@@ -1236,7 +1238,7 @@ end subroutine register_field_wrap
 
 !> @brief Write the field's metadata to the file
 subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional, &
-                                cell_measures)
+                                cell_measures, use_collective_writes)
   class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
   class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write to
   integer,                           intent(in)    :: file_id       !< File id of the file to write to
@@ -1245,6 +1247,8 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
   character(len=*),                  intent(in)    :: unlim_dimname !< The name of the unlimited dimension
   logical,                           intent(in)    :: is_regional   !< Flag indicating if the field is regional
   character(len=*),                  intent(in)    :: cell_measures !< The cell measures attribute to write
+  logical,                           intent(in)    :: use_collective_writes !< True if using collective writes
+                                                                            !! for this variable
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
   character(len=:),            allocatable :: var_name    !< Variable name
@@ -1257,12 +1261,22 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
   character(len=:), allocatable :: interp_method_tmp !< temp to hold the name of the interpolation method
   integer :: interp_method_len !< length of the above string
 
+  integer, allocatable :: chunksizes(:) !< Chunksizes to use for the variable
+
   field_yaml => diag_yaml%get_diag_field_from_id(yaml_id)
   var_name = field_yaml%get_var_outname()
 
   if (allocated(this%axis_ids)) then
     call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
-    call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
+
+    !! Collective writes are only used for 2D+ variables
+    if ((use_collective_writes .and. size(this%axis_ids) >= 2) .or. field_yaml%has_chunksizes()) then
+      chunksizes = this%get_chunksizes(diag_axis, field_yaml)
+      call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), dimnames, &
+        chunksizes = chunksizes)
+    else
+      call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml), dimnames)
+    endif
   else
     if (this%is_static()) then
       call register_field_wrap(fms2io_fileobj, var_name, this%get_var_skind(field_yaml))
@@ -1341,6 +1355,60 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
     deallocate(yaml_field_attributes)
   endif
 end subroutine write_field_metadata
+
+!> @brief Determine the appropriate chunksizes for a diagnostic field based on its axes.
+!! For "X" and "Y" axes, the function returns a chunksize equal to the axis size divided by the layout.
+!! If the dimension is not evenly divisible by the layout, the function raises an error.
+!! For the other axis (i.e z axis) it return a chunksize equal to the axis length
+!! For sub-z axes (e.g., layer bounds), a chunksize of 1 is returned for now, as this case is not yet implemented.
+!! @return An integer array of chunksizes, one per diagnostic axis, plus one for the unlimited dimension.
+function get_chunksizes(this, diag_axis, field_yaml) &
+  result(chunksizes)
+
+  class (fmsDiagField_type),        target, intent(inout) :: this          !< diag field
+  class(fmsDiagAxisContainer_type), target, intent(in)    :: diag_axis(:)  !< Diag_axis object
+  type(diagYamlFilesVar_type),              intent(in)    :: field_yaml    !< Field info from diag_table yaml
+
+  integer, allocatable :: chunksizes(:)
+
+  integer :: i        !< For do loops
+  integer :: ndim     !< Number of spatial dimensions
+  integer :: dim_size !< Dimensions size for the variable
+  integer :: layout   !< Layout to use for the variable
+  integer :: specified_chunksizes(MAX_DIMENSIONS) !< Chunksizes specified in the yaml
+
+  ndim = size(this%axis_ids)
+  allocate(chunksizes(ndim + 1)) !! Adding 1 because of the unlimited dimension
+  chunksizes = 1
+  if (field_yaml%has_chunksizes()) then
+    specified_chunksizes = field_yaml%get_chunksizes()
+    chunksizes = specified_chunksizes(1:ndim+1)
+    return
+  endif
+
+  ! Determine some default chunksizes to use, based on the compute domain
+  do i = 1, ndim
+    select type (axis => diag_axis(this%axis_ids(i))%axis)
+    type is (fmsDiagFullAxis_type)
+      if (axis%is_x_or_y_axis()) then
+        call axis%get_dim_size_layout(dim_size, layout)
+        if (mod(dim_size, layout) == 0) then
+          chunksizes(i) = dim_size / layout
+        else
+          call mpp_error(FATAL, "The variable "//field_yaml%get_var_varname()//" has a layout that is not"//&
+                                "evenly divisible by dimension size for axis "//axis%get_axis_name()//"."&
+                                "This may lead to poor performance when using collective writes. "//&
+                                "Consider using a different layout, disabling collective writes, "//&
+                                "or specifying chunksizes manually via the diag table yaml")
+        endif
+      else if (axis%is_z_axis() .and. field_yaml%has_var_zbounds()) then
+          !TODO Handle edge case: chunking for z-axis with layer bounds (not yet implemented)
+      else
+        chunksizes(i) = axis%axis_length()
+      endif
+    end select
+  enddo
+end function get_chunksizes
 
 !> @brief Writes the coordinate attribute of a field if any of the field's axis has an
 !! auxiliary axis

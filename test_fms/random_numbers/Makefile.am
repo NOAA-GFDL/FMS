@@ -35,8 +35,8 @@ check_PROGRAMS = \
 test_random_numbers_r4_SOURCES = test_random_numbers.F90
 test_random_numbers_r8_SOURCES = test_random_numbers.F90
 
-test_random_numbers_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_RN_KIND_=r4_kind
-test_random_numbers_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_RN_KIND_=r8_kind
+test_random_numbers_r4_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r4_kind
+test_random_numbers_r8_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_FMS_KIND_=r8_kind
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \

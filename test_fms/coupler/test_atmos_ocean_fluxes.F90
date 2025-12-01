@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @file
 !! @brief unit tests for atmos_ocean_fluxes_mod
@@ -45,8 +44,8 @@ program test_atmos_ocean_fluxes
   character(8), dimension(num_bcs) :: flux_name !< flux name
   character(24), dimension(num_bcs) :: flux_type !< flux_type for the given flux name
   character(6), dimension(num_bcs) :: impl !< implementation type for a given flux_type
-  real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: mol_wt      !< value of mol_wt
-  real(FMS_CP_TEST_KIND_), dimension(num_bcs) :: param_array !< parameter array
+  real(TEST_FMS_KIND_), dimension(num_bcs) :: mol_wt      !< value of mol_wt
+  real(TEST_FMS_KIND_), dimension(num_bcs) :: param_array !< parameter array
 
   !> The flux names are made up.
   flux_name=["vampires", &
@@ -94,7 +93,7 @@ contains
 
     write(*,*) "*** TEST_ATMOS_OCEAN_FLUXES_INIT ***"
     call atmos_ocean_fluxes_init(gas_fluxes, gas_fields_atm, gas_fields_ice, &
-                                 use_r4_kind= FMS_CP_TEST_KIND_ .eq. r4_kind)
+                                 use_r4_kind= TEST_FMS_KIND_ .eq. r4_kind)
 
   end subroutine test_atmos_ocean_fluxes_init
   !--------------------------------------
@@ -105,7 +104,7 @@ contains
     implicit none
 
     character(100) :: cresults, thelist
-    real(FMS_CP_TEST_KIND_) :: rresults, rresults2(num_bcs)
+    real(TEST_FMS_KIND_) :: rresults, rresults2(num_bcs)
     integer :: i, n
     logical :: success
 

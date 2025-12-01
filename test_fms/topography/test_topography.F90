@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @file
 !> @author Caitlyn McAllister
@@ -47,15 +46,15 @@ program test_top
 
   type(FmsNetcdfFile_t)     :: top_fileobj                 ! fileobj for fms2_io
   character(len=128)        :: topog_file, water_file      ! filenames needed for topography_mod
-  real(kind=TEST_TOP_KIND_) :: xdat(3), ydat(3), zdat(2,2) ! specifc data topog_mod looks for
+  real(kind=TEST_FMS_KIND_) :: xdat(3), ydat(3), zdat(2,2) ! specifc data topog_mod looks for
   integer                   :: ipts, jpts                  ! axis for files
   integer                   :: iptsp1, jptsp1              ! serves as a counter for data
   integer                   :: ipts_r, jpts_r              ! sub axis
-  integer, parameter        :: lkind = TEST_TOP_KIND_      ! kind parameter for mixed precision
+  integer, parameter        :: lkind = TEST_FMS_KIND_      ! kind parameter for mixed precision
 
-  real(kind=TEST_TOP_KIND_), parameter        :: deg2rad = real(pi, TEST_TOP_KIND_)/180.0_lkind
-  real(kind=TEST_TOP_KIND_), dimension(2,2)   :: lon2d, lat2d   ! in radians
-  real(kind=TEST_TOP_KIND_), dimension(2)     :: lon1d, lat1d   ! in radians
+  real(kind=TEST_FMS_KIND_), parameter        :: deg2rad = real(pi, TEST_FMS_KIND_)/180.0_lkind
+  real(kind=TEST_FMS_KIND_), dimension(2,2)   :: lon2d, lat2d   ! in radians
+  real(kind=TEST_FMS_KIND_), dimension(2)     :: lon1d, lat1d   ! in radians
 
   call fms_init
   call topography_init
@@ -103,8 +102,8 @@ program test_top
     call register_field(top_fileobj, "ydat",   "double", dimensions=(/"j_ydat"/))
     call register_field(top_fileobj, "zdat",   "double", dimensions=(/"i_zdat", "j_zdat"/))
 
-    call write_data(top_fileobj, "ipts",   real(ipts, TEST_TOP_KIND_))
-    call write_data(top_fileobj, "jpts",   real(jpts, TEST_TOP_KIND_))
+    call write_data(top_fileobj, "ipts",   real(ipts, TEST_FMS_KIND_))
+    call write_data(top_fileobj, "jpts",   real(jpts, TEST_FMS_KIND_))
     call write_data(top_fileobj, "xdat",   xdat)
     call write_data(top_fileobj, "ydat",   ydat)
     call write_data(top_fileobj, "zdat",   zdat)
@@ -131,8 +130,8 @@ program test_top
     call register_field(top_fileobj, "ydat",   "double", dimensions=(/"j_ydat"/))
     call register_field(top_fileobj, "zdat",   "double", dimensions=(/"i_zdat", "j_zdat"/))
 
-    call write_data(top_fileobj, "ipts",   real(ipts, TEST_TOP_KIND_))
-    call write_data(top_fileobj, "jpts",   real(jpts, TEST_TOP_KIND_))
+    call write_data(top_fileobj, "ipts",   real(ipts, TEST_FMS_KIND_))
+    call write_data(top_fileobj, "jpts",   real(jpts, TEST_FMS_KIND_))
     call write_data(top_fileobj, "xdat",   xdat)
     call write_data(top_fileobj, "ydat",   ydat)
     call write_data(top_fileobj, "zdat",   zdat)
@@ -158,10 +157,10 @@ program test_top
     !! tested with. In this case, the sizes of both zmean2d and zmean1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
-    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d
+    real(kind=TEST_FMS_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_FMS_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: zmean2d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: zmean1d
     logical                                                               :: get_mean_answer
 
     !---------------------------------------- test topog mean 2d ---------------------------------------------!
@@ -191,10 +190,10 @@ program test_top
     !! tested with. In this case, the sizes of both stdev2d and stdev1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
-    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: stdev2d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: stdev1d
+    real(kind=TEST_FMS_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_FMS_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: stdev2d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: stdev1d
     logical                                                               :: get_stdev_answer
 
     !---------------------------------------- test topog stdev 2d ---------------------------------------------!
@@ -224,10 +223,10 @@ program test_top
     !! tested with. In this case, the sizes of both ocean_frac2d and ocean_frac1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
-    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_frac2d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_frac1d
+    real(kind=TEST_FMS_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_FMS_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: ocean_frac2d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: ocean_frac1d
     logical                                                               :: get_ocean_frac_answer
 
     !---------------------------------------- test get_ocean_frac 2d ---------------------------------------------!
@@ -256,8 +255,8 @@ program test_top
     !! tested with. In this case, the sizes of both ocean_mask2d and ocean_mask1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
-    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    real(kind=TEST_FMS_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_FMS_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
     logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1)                   :: ocean_mask2d
     logical, dimension(size(lon1d)-1,size(lat1d)-1)                       :: ocean_mask1d
     logical                                                               :: get_ocean_mask_answer
@@ -289,10 +288,10 @@ program test_top
     !! tested with. In this case, the sizes of both water_frac2d and water_frac1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
-    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_frac2d
-    real(kind=TEST_TOP_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: water_frac1d
+    real(kind=TEST_FMS_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_FMS_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon2d,1)-1,size(lat2d,2)-1) :: water_frac2d
+    real(kind=TEST_FMS_KIND_), dimension(size(lon1d)-1,size(lat1d)-1)     :: water_frac1d
     logical                                                               :: get_water_frac_answer
 
     !---------------------------------------- test get_water_frac 2d ---------------------------------------------!
@@ -322,8 +321,8 @@ program test_top
     !! tested with. In this case, the sizes of both water_mask2d and water_mask1d are both the
     !! same size but have to be these specific dimensions per the topography_mod code
     implicit none
-    real(kind=TEST_TOP_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
-    real(kind=TEST_TOP_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
+    real(kind=TEST_FMS_KIND_), dimension(2,2), intent(in)                 :: lat2d, lon2d
+    real(kind=TEST_FMS_KIND_), dimension(2),   intent(in)                 :: lat1d, lon1d
     logical, dimension(size(lon2d,1)-1,size(lat2d,2)-1)                   :: water_mask2d
     logical, dimension(size(lon1d)-1,size(lat1d)-1)                       :: water_mask1d
     logical                                                               :: get_water_mask_answer
@@ -351,8 +350,8 @@ program test_top
   subroutine check_answers(calculated_answer, expected_answer, what_error)
 
     implicit none
-    real(kind=TEST_TOP_KIND_) :: calculated_answer   ! value calculated from script
-    real(kind=TEST_TOP_KIND_) :: expected_answer     ! expected answer
+    real(kind=TEST_FMS_KIND_) :: calculated_answer   ! value calculated from script
+    real(kind=TEST_FMS_KIND_) :: expected_answer     ! expected answer
     character(*)              :: what_error          ! error message to print
 
     if (calculated_answer.ne. expected_answer) then

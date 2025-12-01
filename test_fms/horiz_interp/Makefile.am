@@ -42,9 +42,9 @@ test_create_xgrid_order2_r8_SOURCES = test_create_xgrid_order2.F90
 test_horiz_interp_read_SOURCES = test_horiz_interp_read.F90
 test_horiz_interp_save_weights_as_fregrid_SOURCES = test_horiz_interp_save_weights_as_fregrid.F90
 
-test_horiz_interp_r4_CPPFLAGS=-DHI_TEST_KIND_=4 -I$(MODDIR)
-test_horiz_interp_r8_CPPFLAGS=-DHI_TEST_KIND_=8 -I$(MODDIR)
-test_create_xgrid_order2_r8_CPPFLAGS=-DHI_TEST_KIND_=8 -I$(MODDIR)
+test_horiz_interp_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
+test_horiz_interp_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
+test_create_xgrid_order2_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
