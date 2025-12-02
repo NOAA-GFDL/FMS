@@ -17,6 +17,10 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_conserve
 !> @{
+
+#undef HI_R4_CODE_
+#define HI_R4_CODE_ 1
+
 #undef HI_KIND_TYPE_
 #define HI_KIND_TYPE_ horizInterpReals4_type
 
@@ -51,4 +55,23 @@
 #define DATA_SUM_ data_sum_r4
 
 #include "horiz_interp_conserve.inc"
-!> @}
+
+#undef HI_R4_CODE_
+#undef HI_KIND_TYPE_
+#undef FMS_HI_KIND_
+#undef HORIZ_INTERP_CONSERVE_NEW_1DX1D_
+#undef HORIZ_INTERP_CONSERVE_NEW_1DX2D_
+#undef HORIZ_INTERP_CONSERVE_NEW_2DX1D_
+#undef HORIZ_INTERP_CONSERVE_NEW_2DX2D_
+#undef HORIZ_INTERP_CONSERVE_
+#undef HORIZ_INTERP_CONSERVE_VERSION1_
+#undef HORIZ_INTERP_CONSERVE_VERSION2_
+#undef STATS_
+#undef DATA_SUM_
+
+
+
+
+
+
+  !> @}
