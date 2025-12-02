@@ -658,37 +658,40 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   !> Subroutine for performing the horizontal interpolation between two grids.
   !! horiz_interp_conserve_new must be called before calling this routine.
   subroutine HORIZ_INTERP_CONSERVE_( Interp, data_in, data_out, verbose, &
-       mask_in, mask_out)
+    mask_in, mask_out, fregrid_cell_methods_mean)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
     real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in !< Input data on source grid
     real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out !< Output data on destination grid
-    integer, intent(in),                   optional :: verbose !< 0 = no output; 1 = min,max,means;
-                                                               !! 2 = max output
-    real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in !< Input mask, must be the same size as
-                        !! the input data. The real value of mask_in must be in the range (0.,1.).
-                        !! Set mask_in=0.0 for data points that should not be used or have missing
-                        !! data. mask_in will be applied only when horiz_interp_conserve_new_1d is
-                        !! called. mask_in will be passed into horiz_interp_conserve_new_2d
-    real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out !< Output mask that specifies whether
-                        !! data was computed. mask_out will be computed only when
-                        !! horiz_interp_conserve_new_1d is called. mask_out will be computed in
-                        !! horiz_interp_conserve_new_2d
+    integer, intent(in), optional :: verbose !< 0 = no output; 1 = min,max,means; 2 = max output
+    !> mask_in: Input mask, must be the same size as
+    !! the input data. The real value of mask_in must be in the range (0.,1.).
+    !! Set mask_in=0.0 for data points that should not be used or have missing
+    !! data. mask_in will be applied only when horiz_interp_conserve_new_1d is
+    !! called. mask_in will be passed into horiz_interp_conserve_new_2d
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+    !> mask_out: Output mask that specifies whether
+    !! data was computed. mask_out will be computed only when
+    !! horiz_interp_conserve_new_1d is called. mask_out will be computed in
+    !! horiz_interp_conserve_new_2d
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
+    logical, intent(in), optional :: fregrid_cell_methods_mean !< area average data_out (returns data_out/output_grid_area)
 
     !  --- error checking ---
-    if (size(data_in,1) /= Interp%nlon_src .or. size(data_in,2) /= Interp%nlat_src) &
-         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of input array incorrect')
+    if(.not.all(shape(data_in)==[Interp%nlon_src, Interp%nlat_src])) then
+      call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of input array incorrect')
+    end if
+    if(.not.all(shape(data_out)==[Interp%nlon_dst, Interp%nlat_dst])) then
+      call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of output array incorrect')
+    end if
 
-    if (size(data_out,1) /= Interp%nlon_dst .or. size(data_out,2) /= Interp%nlat_dst) &
-         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of output array incorrect')
-
-    select case ( Interp%version)
-    case (1)
-       call horiz_interp_conserve_version1(Interp, data_in, data_out, verbose, mask_in, mask_out)
-    case (2)
-       if(present(mask_in) .OR. present(mask_out) ) call mpp_error(FATAL, 'HORIZ_INTERP_CONSERVE_:'// &
-            & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-       call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)
+    select case(Interp%version)
+    case(1)
+      call horiz_interp_conserve_version1(Interp, data_in, data_out, verbose, mask_in, mask_out)
+    case(2)
+      if(present(mask_in) .or. present(mask_out)) call mpp_error(FATAL, 'HORIZ_INTERP_CONSERVE_:'// &
+        & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
+      call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose, fregrid_cell_methods_mean)
     end select
 
   end subroutine HORIZ_INTERP_CONSERVE_
@@ -843,21 +846,40 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   end subroutine HORIZ_INTERP_CONSERVE_VERSION1_
 
   !#############################################################################
-  subroutine HORIZ_INTERP_CONSERVE_VERSION2_ ( Interp, data_in, data_out, verbose )
+  subroutine HORIZ_INTERP_CONSERVE_VERSION2_(Interp, data_in, data_out, verbose, fregrid_cell_methods_mean)
     !-----------------------------------------------------------------------
     type (horiz_interp_type), intent(in) :: Interp
-    real(FMS_HI_KIND_),    intent(in),  dimension(:,:) :: data_in
-    real(FMS_HI_KIND_),    intent(out), dimension(:,:) :: data_out
-    integer, intent(in),        optional :: verbose
-    integer :: i, i_src, j_src, i_dst, j_dst
-    integer, parameter :: kindl = FMS_HI_KIND_ !< compiled kind size
+    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+    integer, intent(in), optional :: verbose
+    !> fregrid_cell_methods_mean: Should only be used if Interp%HI_KIND_TYPE_%area_frac_dst is saved from
+    !! as_fregrid = .true.; Else, data_out will automatically be area averaged
+    logical, intent(in), optional :: fregrid_cell_methods_mean
 
-    data_out = 0.0_kindl
-    do i = 1, Interp%nxgrid
-       i_src = Interp%i_src(i); j_src = Interp%j_src(i)
-       i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)
-       data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src,j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
+    integer :: i, i_src, j_src, i_dst, j_dst
+    real(FMS_HI_KIND_), allocatable, dimension(:,:) :: out_grid_area
+    integer, parameter :: kind_ = FMS_HI_KIND_ !< compiled kind size
+
+    data_out = 0.0_kind_
+    do i=1, Interp%nxgrid
+      i_src = Interp%i_src(i); j_src = Interp%j_src(i)
+      i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)
+      data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src, j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
     end do
+
+    if(fregrid_cell_methods_mean) then
+      if(.not.allocated(Interp%xgrid_area)) then
+        call mpp_error(FATAL, "Interp%xgrid_area used for computing out_grid_area is not allocated")
+      end if
+      allocate(out_grid_area, mold=data_out)
+      out_grid_area = 0.0_kind_
+      do i=1, Interp%nxgrid
+        i_dst = Interp%i_dst(i)
+        j_dst = Interp%j_dst(i)
+        out_grid_area(i_dst, j_dst) = out_grid_area(i_dst, j_dst) + Interp%xgrid_area(i)
+      end do
+      data_out = data_out / real(out_grid_area, kind_)
+    end if
 
   end subroutine HORIZ_INTERP_CONSERVE_VERSION2_
 
