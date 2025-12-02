@@ -574,12 +574,12 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
     if(great_circle_algorithm) then
       allocate(clon(maxxgrid), clat(maxxgrid))
-      nxgrid = create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, &
-        lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
+      nxgrid = create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8,&
+        lon_out_r8, lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
       deallocate(clon, clat)
     else
-      nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, lon_out_r8, &
-        lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
+      nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, &
+        lon_out_r8, lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
     endif
 
     if(as_fregrid_) then
@@ -663,19 +663,23 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     type (horiz_interp_type), intent(in) :: Interp
     real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in !< Input data on source grid
     real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out !< Output data on destination grid
+
     integer, intent(in), optional :: verbose !< 0 = no output; 1 = min,max,means; 2 = max output
     !> mask_in: Input mask, must be the same size as
     !! the input data. The real value of mask_in must be in the range (0.,1.).
     !! Set mask_in=0.0 for data points that should not be used or have missing
     !! data. mask_in will be applied only when horiz_interp_conserve_new_1d is
     !! called. mask_in will be passed into horiz_interp_conserve_new_2d
+
     real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
     !> mask_out: Output mask that specifies whether
     !! data was computed. mask_out will be computed only when
     !! horiz_interp_conserve_new_1d is called. mask_out will be computed in
     !! horiz_interp_conserve_new_2d
     real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
-    logical, intent(in), optional :: fregrid_cell_methods_mean !< area average data_out (returns data_out/output_grid_area)
+
+    !> fregrid_cell_methods_mean: area average data_out (returns data_out/output_grid_area)
+    logical, intent(in), optional :: fregrid_cell_methods_mean
 
     !  --- error checking ---
     if(.not.all(shape(data_in)==[Interp%nlon_src, Interp%nlat_src])) then
@@ -867,18 +871,20 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
       data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src, j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
     end do
 
-    if(fregrid_cell_methods_mean) then
-      if(.not.allocated(Interp%xgrid_area)) then
-        call mpp_error(FATAL, "Interp%xgrid_area used for computing out_grid_area is not allocated")
+    if(present(fregrid_cell_methods_mean)) then
+      if(fregrid_cell_methods_mean) then
+        if(.not.allocated(Interp%xgrid_area)) then
+          call mpp_error(FATAL, "Interp%xgrid_area used for computing out_grid_area is not allocated")
+        end if
+        allocate(out_grid_area, mold=data_out)
+        out_grid_area = 0.0_kind_
+        do i=1, Interp%nxgrid
+          i_dst = Interp%i_dst(i)
+          j_dst = Interp%j_dst(i)
+          out_grid_area(i_dst, j_dst) = out_grid_area(i_dst, j_dst) + Interp%xgrid_area(i)
+        end do
+        data_out = data_out / real(out_grid_area, kind_)
       end if
-      allocate(out_grid_area, mold=data_out)
-      out_grid_area = 0.0_kind_
-      do i=1, Interp%nxgrid
-        i_dst = Interp%i_dst(i)
-        j_dst = Interp%j_dst(i)
-        out_grid_area(i_dst, j_dst) = out_grid_area(i_dst, j_dst) + Interp%xgrid_area(i)
-      end do
-      data_out = data_out / real(out_grid_area, kind_)
     end if
 
   end subroutine HORIZ_INTERP_CONSERVE_VERSION2_

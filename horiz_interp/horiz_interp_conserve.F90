@@ -314,8 +314,8 @@ contains
 
         if(present(save_xgrid_area)) then
           if(save_xgrid_area) then
-              allocate(Interp%xgrid_area(domain_ncells))
-              Interp%xgrid_area = xarea
+            allocate(Interp%xgrid_area(domain_ncells))
+            Interp%xgrid_area = xarea
           end if
         end if
 
