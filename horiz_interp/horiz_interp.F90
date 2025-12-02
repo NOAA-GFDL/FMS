@@ -51,6 +51,7 @@ use horiz_interp_type_mod,      only: horiz_interp_type, assignment(=)
 use horiz_interp_type_mod,      only: CONSERVE, BILINEAR, SPHERICAL, BICUBIC
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_init, horiz_interp_conserve
 use horiz_interp_conserve_mod,  only: horiz_interp_conserve_new, horiz_interp_conserve_del
+use horiz_interp_conserve_mod,  only: horiz_interp_read_weights_conserve
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_init, horiz_interp_bilinear
 use horiz_interp_bilinear_mod,  only: horiz_interp_bilinear_new, horiz_interp_bilinear_del
 use horiz_interp_bilinear_mod,  only: horiz_interp_read_weights_bilinear
@@ -66,7 +67,8 @@ use platform_mod,               only: r4_kind, r8_kind
 !---- interfaces ----
 
  public   horiz_interp_type, horiz_interp, horiz_interp_new, horiz_interp_del, &
-          horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights
+          horiz_interp_init, horiz_interp_end, assignment(=), horiz_interp_read_weights, &
+          horiz_interp_read_weights_conserve
 
 !> Allocates space and initializes a derived-type variable
 !! that contains pre-computed interpolation indices and weights.

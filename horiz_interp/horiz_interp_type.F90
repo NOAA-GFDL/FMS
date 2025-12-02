@@ -143,6 +143,7 @@ end type horizInterpReals4_type
    integer, dimension(:), allocatable     :: j_src       !< indices in source grid.
    integer, dimension(:), allocatable     :: i_dst       !< indices in destination grid.
    integer, dimension(:), allocatable     :: j_dst       !< indices in destination grid.
+   real(8), dimension(:), allocatable     :: xgrid_area  !< exchange grid area
    type(horizInterpReals8_type) :: horizInterpReals8_type !< derived type holding kind 8 real data pointers
                                                                     !! if compiled with r8_kind
    type(horizInterpReals4_type) :: horizInterpReals4_type !< derived type holding kind 4 real data pointers

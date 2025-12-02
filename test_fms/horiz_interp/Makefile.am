@@ -29,12 +29,18 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_horiz_interp_r4 test_horiz_interp_r8 test_create_xgrid_order2_r8
+check_PROGRAMS = test_horiz_interp_r4 \
+                 test_horiz_interp_r8 \
+                 test_create_xgrid_order2_r8 \
+                 test_horiz_interp_read \
+                 test_horiz_interp_save_weights_as_fregrid
 
 # These are the sources for the tests.
 test_horiz_interp_r4_SOURCES = test_horiz_interp.F90
 test_horiz_interp_r8_SOURCES = test_horiz_interp.F90
 test_create_xgrid_order2_r8_SOURCES = test_create_xgrid_order2.F90
+test_horiz_interp_read_SOURCES = test_horiz_interp_read.F90
+test_horiz_interp_save_weights_as_fregrid_SOURCES = test_horiz_interp_save_weights_as_fregrid.F90
 
 test_horiz_interp_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_horiz_interp_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
@@ -52,4 +58,4 @@ TESTS = test_horiz_interp2.sh test_create_xgrid_order2.sh
 EXTRA_DIST = test_horiz_interp2.sh test_create_xgrid_order2.sh
 
 # Clean up
-CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl
+CLEANFILES = input.nml *.out* *.dpi *.spi *.dyn *.spl *nc

@@ -37,6 +37,7 @@
 module horiz_interp_conserve_mod
 
   use platform_mod,          only: r4_kind, r8_kind
+  use fms2_io_mod,           only: FmsNetcdfFile_t, open_file, read_data, close_file, get_dimension_size
   use mpp_mod,               only: mpp_send, mpp_recv, mpp_pe, mpp_root_pe, mpp_npes
   use mpp_mod,               only: mpp_error, FATAL,  mpp_sync_self
   use mpp_mod,               only: COMM_TAG_1, COMM_TAG_2
@@ -44,7 +45,6 @@ module horiz_interp_conserve_mod
   use grid2_mod,             only: get_great_circle_algorithm
   use constants_mod,         only: PI
   use horiz_interp_type_mod, only: horiz_interp_type, CONSERVE
-
 
   implicit none
   private
@@ -89,14 +89,14 @@ module horiz_interp_conserve_mod
   !!
   !> @ingroup horiz_interp_conserve_mod
   interface horiz_interp_conserve_new
-     module procedure horiz_interp_conserve_new_1dx1d_r4
-     module procedure horiz_interp_conserve_new_1dx2d_r4
-     module procedure horiz_interp_conserve_new_2dx1d_r4
-     module procedure horiz_interp_conserve_new_2dx2d_r4
-     module procedure horiz_interp_conserve_new_1dx1d_r8
-     module procedure horiz_interp_conserve_new_1dx2d_r8
-     module procedure horiz_interp_conserve_new_2dx1d_r8
-     module procedure horiz_interp_conserve_new_2dx2d_r8
+    module procedure horiz_interp_conserve_new_1dx1d_r4
+    module procedure horiz_interp_conserve_new_1dx2d_r4
+    module procedure horiz_interp_conserve_new_2dx1d_r4
+    module procedure horiz_interp_conserve_new_2dx2d_r4
+    module procedure horiz_interp_conserve_new_1dx1d_r8
+    module procedure horiz_interp_conserve_new_1dx2d_r8
+    module procedure horiz_interp_conserve_new_2dx1d_r8
+    module procedure horiz_interp_conserve_new_2dx2d_r8
   end interface
 
   interface horiz_interp_conserve
@@ -130,6 +130,7 @@ module horiz_interp_conserve_mod
   !> @addtogroup horiz_interp_conserve_mod
   !> @{
   public :: horiz_interp_conserve_init
+  public :: horiz_interp_read_weights_conserve
   public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
 
   integer :: pe, root_pe
@@ -159,47 +160,189 @@ contains
   subroutine horiz_interp_conserve_del ( Interp )
 
     type (horiz_interp_type), intent(inout) :: Interp !< A derived-type variable returned by
-                         !! previous call to horiz_interp_new. The input variable must have
-                         !! allocated arrays. The returned variable will contain deallocated arrays.
+    !! previous call to horiz_interp_new. The input variable must have
+    !! allocated arrays. The returned variable will contain deallocated arrays.
 
     select case(Interp%version)
-    case (1)
-      if( Interp%horizInterpReals8_type%is_allocated) then
-        if(allocated(Interp%horizInterpReals8_type%area_src)) deallocate(Interp%horizInterpReals8_type%area_src)
-        if(allocated(Interp%horizInterpReals8_type%area_dst)) deallocate(Interp%horizInterpReals8_type%area_dst)
-        if(allocated(Interp%horizInterpReals8_type%facj))     deallocate(Interp%horizInterpReals8_type%facj)
-        if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
-        if(allocated(Interp%horizInterpReals8_type%faci))     deallocate(Interp%horizInterpReals8_type%faci)
-        if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
-      else if( Interp%horizInterpReals4_type%is_allocated) then
-        if(allocated(Interp%horizInterpReals4_type%area_src)) deallocate(Interp%horizInterpReals4_type%area_src)
-        if(allocated(Interp%horizInterpReals4_type%area_dst)) deallocate(Interp%horizInterpReals4_type%area_dst)
-        if(allocated(Interp%horizInterpReals4_type%facj))     deallocate(Interp%horizInterpReals4_type%facj)
-        if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
-        if(allocated(Interp%horizInterpReals4_type%faci))     deallocate(Interp%horizInterpReals4_type%faci)
-        if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
-      endif
-    case (2)
-      if( Interp%horizInterpReals8_type%is_allocated) then
-        if(allocated(Interp%i_src)) deallocate(Interp%i_src)
-        if(allocated(Interp%j_src)) deallocate(Interp%j_src)
-        if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
-        if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
-        if(allocated(Interp%horizInterpReals8_type%area_frac_dst)) &
-            deallocate(Interp%horizInterpReals8_type%area_frac_dst)
-      else if( Interp%horizInterpReals4_type%is_allocated ) then
-        if(allocated(Interp%i_src)) deallocate(Interp%i_src)
-        if(allocated(Interp%j_src)) deallocate(Interp%j_src)
-        if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
-        if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
-        if(allocated(Interp%horizInterpReals4_type%area_frac_dst)) &
-            deallocate(Interp%horizInterpReals4_type%area_frac_dst)
-       endif
+      case (1)
+        if( Interp%horizInterpReals8_type%is_allocated) then
+          if(allocated(Interp%horizInterpReals8_type%area_src)) deallocate(Interp%horizInterpReals8_type%area_src)
+          if(allocated(Interp%horizInterpReals8_type%area_dst)) deallocate(Interp%horizInterpReals8_type%area_dst)
+          if(allocated(Interp%horizInterpReals8_type%facj))     deallocate(Interp%horizInterpReals8_type%facj)
+          if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
+          if(allocated(Interp%horizInterpReals8_type%faci))     deallocate(Interp%horizInterpReals8_type%faci)
+          if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
+        else if( Interp%horizInterpReals4_type%is_allocated) then
+          if(allocated(Interp%horizInterpReals4_type%area_src)) deallocate(Interp%horizInterpReals4_type%area_src)
+          if(allocated(Interp%horizInterpReals4_type%area_dst)) deallocate(Interp%horizInterpReals4_type%area_dst)
+          if(allocated(Interp%horizInterpReals4_type%facj))     deallocate(Interp%horizInterpReals4_type%facj)
+          if(allocated(Interp%jlat))                 deallocate(Interp%jlat)
+          if(allocated(Interp%horizInterpReals4_type%faci))     deallocate(Interp%horizInterpReals4_type%faci)
+          if(allocated(Interp%ilon))                 deallocate(Interp%ilon)
+        endif
+      case (2)
+        if( Interp%horizInterpReals8_type%is_allocated) then
+          if(allocated(Interp%i_src)) deallocate(Interp%i_src)
+          if(allocated(Interp%j_src)) deallocate(Interp%j_src)
+          if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
+          if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
+          if(allocated(Interp%horizInterpReals8_type%area_frac_dst)) &
+              deallocate(Interp%horizInterpReals8_type%area_frac_dst)
+        else if( Interp%horizInterpReals4_type%is_allocated ) then
+          if(allocated(Interp%i_src)) deallocate(Interp%i_src)
+          if(allocated(Interp%j_src)) deallocate(Interp%j_src)
+          if(allocated(Interp%i_dst)) deallocate(Interp%i_dst)
+          if(allocated(Interp%j_dst)) deallocate(Interp%j_dst)
+          if(allocated(Interp%horizInterpReals4_type%area_frac_dst)) &
+              deallocate(Interp%horizInterpReals4_type%area_frac_dst)
+        endif
     end select
+    if(allocated(Interp%xgrid_area)) deallocate(Interp%xgrid_area)
     Interp%horizInterpReals4_type%is_allocated = .false.
     Interp%horizInterpReals8_type%is_allocated = .false.
 
   end subroutine horiz_interp_conserve_del
+
+  !> Reads in the remap file generated by fregrid for conservative interpolation.  Currently only reads in
+  !! conservative order 1 method.  Assumes domain decomposition on the dst grid where (isw, jsw) and (iew, jew)
+  !! are the starting and ending indices of the compute domain.  Saves xgrid_area in addition to the
+  !! "remapping weights" if save_weights_as_fregrid is true. Saves all real variables in r8_kind
+  subroutine horiz_interp_read_weights_conserve(Interp, weight_filename, weight_file_source, &
+    nlon_src, nlat_src, nlon_dst, nlat_dst, isw, iew, jsw, jew, src_tile, save_weights_as_fregrid)
+
+    type(horiz_interp_type), intent(inout) :: Interp !< Interp type storing remapping weights and parent grids info
+    character(len=*), intent(in) :: weight_filename !< file to read
+    character(len=*), intent(in) :: weight_file_source !< only accepts "fregrid"
+    integer, intent(in) :: nlon_src, nlat_src, nlon_dst, nlat_dst !< number of grid points on src and dst grids
+    integer, intent(in) :: isw, iew, jsw, jew !< compute domain indices on dst grid
+    integer, intent(in), optional :: src_tile !< save weights for src_tile only; if not present, read all
+    logical, intent(in), optional :: save_weights_as_fregrid !< save xgrid_area
+
+    integer :: i, j, ncells, domain_ncells
+    integer :: istart, iend, i_dst, j_dst, index
+    real(r8_kind), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), xarea(:)
+    integer, allocatable :: tile1(:), read2(:,:)
+    logical, allocatable :: mask(:)
+
+    type(FmsNetcdfFile_t) :: weight_fileobj !< FMS2io fileob for the weight file
+
+    ! check if weight_file was generated from fregrid
+    if(trim(weight_file_source) /= "fregrid") then
+        call mpp_error(FATAL, trim(weight_file_source)//&
+        &" is not a supported weight file source. fregrid is the only supported weight file source.")
+    end if
+
+    if(open_file(weight_fileobj, trim(weight_filename), "read")) then
+
+        ! get ncells
+        call get_dimension_size(weight_fileobj, "ncells", ncells)
+
+        istart = 1
+        iend = ncells
+
+        !get section of xgrid on src_tile
+        if(present(src_tile)) then
+          allocate(tile1(ncells))
+          call read_data(weight_fileobj, "tile1", tile1)
+          !find index of the first xgrid cell with parent cell on src_tile
+          do i=1, ncells
+              if(tile1(i) == src_tile) then
+                istart = i
+                exit
+              end if
+          end do
+          !find indnex of the last xgrid cell with parent cell on src_tile
+          do i=istart, ncells
+              if(tile1(i) /= src_tile) then
+                iend = i - 1
+                exit
+              end if
+          end do
+          ncells = iend - istart + 1
+          deallocate(tile1)
+        end if
+
+        ! allocate arrays for reading data
+        allocate(read2(2, ncells), read1(ncells))
+        allocate(mask(ncells))
+
+        ! get section of xgrid for the specified window (compute domain) on the tgt grid
+        call read_data(weight_fileobj, "tile2_cell", read2, corner=[1,istart], edge_lengths=[2,ncells])
+
+        ! get xgrid indices with parent cell on the domain
+        mask = (read2(1,:) >= isw .and. read2(1,:) <= iew .and. read2(2,:) >= jsw .and. read2(2,:) <= jew)
+
+        domain_ncells = count(mask)
+
+        ! allocate data to store xgrid
+        allocate(Interp%i_src(domain_ncells))
+        allocate(Interp%j_src(domain_ncells))
+        allocate(Interp%i_dst(domain_ncells))
+        allocate(Interp%j_dst(domain_ncells))
+        allocate(Interp%horizInterpReals8_type%area_frac_dst(domain_ncells))
+
+        ! store dst parent cells
+        where(mask)
+          Interp%i_dst = read2(1,:) - isw + 1
+          Interp%j_dst = read2(2,:) - jsw + 1
+        end where
+
+        !save src parent cell indices
+        call read_data(weight_fileobj, "tile1_cell", read2, corner=[1,istart], edge_lengths=[2,ncells])
+        where(mask)
+          Interp%i_src = read2(1,:)
+          Interp%j_src = read2(2,:)
+        end where
+
+        ! allocate arrays to compute weights
+        allocate(dst_area1(domain_ncells), dst_area2(nlon_dst, nlat_dst), xarea(domain_ncells))
+
+        ! read xgrid area
+        call read_data(weight_fileobj, "xgrid_area", read1, corner=[istart], edge_lengths=[ncells])
+        where(mask) xarea = read1
+
+        !sum over xgrid area to get destination grid area
+        dst_area2 = 0.0
+        do i = 1, domain_ncells
+          i_dst = Interp%i_dst(i)
+          j_dst = Interp%j_dst(i)
+          dst_area2(i_dst, j_dst) = dst_area2(i_dst, j_dst) + xarea(i)
+          dst_area1(i) = dst_area2(i_dst, j_dst)
+        end do
+
+        Interp%horizInterpReals8_type%area_frac_dst = xarea/dst_area1
+
+        if(present(save_weights_as_fregrid)) then
+          if(save_weights_as_fregrid) then
+              allocate(Interp%xgrid_area(domain_ncells))
+              Interp%xgrid_area = xarea
+          end if
+        end if
+
+        deallocate(read2)
+        deallocate(read1)
+        deallocate(mask)
+        deallocate(dst_area1)
+        deallocate(dst_area2)
+        deallocate(xarea)
+
+        call close_file(weight_fileobj)
+
+    else
+        call mpp_error(FATAL, "cannot open weight file")
+    end if
+
+    Interp%nxgrid = domain_ncells
+    Interp%nlon_src = nlon_src
+    Interp%nlat_src = nlat_src
+    Interp%nlon_dst = nlon_dst
+    Interp%nlat_dst = nlat_dst
+    Interp%horizInterpReals8_type%is_allocated = .true.
+    Interp%interp_method = CONSERVE
+    Interp%version = 2
+    Interp%I_am_initialized = .true.
+
+  end subroutine horiz_interp_read_weights_conserve
 
 #include "horiz_interp_conserve_r4.fh"
 #include "horiz_interp_conserve_r8.fh"
