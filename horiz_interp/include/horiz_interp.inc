@@ -284,7 +284,8 @@
  real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
  real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
  logical, intent(in),              optional :: is_latlon_in, is_latlon_out
- logical, intent(in),              optional :: save_weights_as_fregrid
+ logical, intent(in), optional :: save_weights_as_fregrid !< option for conservative methods only
+                                                          !! to save xgrid_area
  logical           :: src_is_latlon, dst_is_latlon
  character(len=40) :: method
  integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
