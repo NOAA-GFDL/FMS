@@ -503,7 +503,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
     real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
     integer, intent(in), optional                 :: verbose
-    logical, intent(in), optional                 :: save_weights_as_fregrid
+    logical, intent(in), optional  :: save_weights_as_fregrid !< option for conservative methods only
+                                                              !! to save xgrid_area
 
     integer :: create_xgrid_2DX2D_order1, get_maxxgrid, maxxgrid
     integer :: create_xgrid_great_circle
