@@ -273,22 +273,22 @@
                                  verbose, interp_method, num_nbrs, max_dist, &
                                  src_modulo, mask_in, mask_out, is_latlon_in, is_latlon_out, &
                                  save_xgrid_area)
- type(horiz_interp_type), intent(inout)     :: Interp
- real(FMS_HI_KIND_), intent(in),  dimension(:,:)          :: lon_in , lat_in
- real(FMS_HI_KIND_), intent(in),  dimension(:,:)          :: lon_out, lat_out
- integer, intent(in),              optional :: verbose
- character(len=*), intent(in),     optional :: interp_method
- integer, intent(in),              optional :: num_nbrs
- real(FMS_HI_KIND_),    intent(in),              optional :: max_dist
- logical, intent(in),              optional :: src_modulo
- real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
- real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
- logical, intent(in),              optional :: is_latlon_in, is_latlon_out
- logical, intent(in),              optional :: save_xgrid_area
- logical           :: src_is_latlon, dst_is_latlon
- character(len=40) :: method
- integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
-!-----------------------------------------------------------------------
+   type(horiz_interp_type), intent(inout) :: Interp
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in , lat_in
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out, lat_out
+   integer, intent(in), optional :: verbose
+   character(len=*), intent(in), optional :: interp_method
+   integer, intent(in), optional :: num_nbrs
+   real(FMS_HI_KIND_), intent(in), optional :: max_dist
+   logical, intent(in), optional :: src_modulo
+   real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+   real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
+   logical, intent(in), optional :: is_latlon_in, is_latlon_out
+   logical, intent(in), optional :: save_xgrid_area
+   logical :: src_is_latlon, dst_is_latlon
+   character(len=40) :: method
+   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
+   !-----------------------------------------------------------------------
    call horiz_interp_init
 
    method = 'bilinear'
