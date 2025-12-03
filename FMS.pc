@@ -26,16 +26,16 @@ includedir=/usr/local/include_r8
 # and as a way to better record how the library was built.
 ccompiler=/opt/oneapi/2025.0/mpi/2021.14/bin/mpiicx
 fccompiler=/opt/oneapi/2025.0/mpi/2021.14/bin/mpiifx
-cppflagss.compiled= 
-cflags.compiled=-I/opt/netcdf/4.9.3/ONEAPI/2025.0/include -I/opt/hdf5/1.14.6/ONEAPI/2025.0/include -I/opt/libyaml/0.2.5/ONEAPI/2025.0/include 
-fcflags.compiled= -safe-cray-ptr 
-ldflags.compiled= 
+cppflagss.compiled=
+cflags.compiled=-I/opt/netcdf/4.9.3/ONEAPI/2025.0/include -I/opt/hdf5/1.14.6/ONEAPI/2025.0/include -I/opt/libyaml/0.2.5/ONEAPI/2025.0/include
+fcflags.compiled= -safe-cray-ptr
+ldflags.compiled=
 
 Name: FMS
 Description: The Flexible Modeling System Infrastructure Library
 URL: https://www.gfdl.noaa.gov/fms
 Version: 2025.4.0
 Libs: -L${libdir} -lFMS
-Libs.private: 
+Libs.private:
 Cflags: -I${includedir}
 Fflags: -I${includedir}
