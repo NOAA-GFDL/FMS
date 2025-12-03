@@ -33,6 +33,7 @@
 #define create_xgrid_1dx2d_order1 create_xgrid_1dx2d_order1_
 #define create_xgrid_2dx1d_order1 create_xgrid_2dx1d_order1_ 
 #define create_xgrid_2dx2d_order1 create_xgrid_2dx2d_order1_
+#define create_xgrid_2dx2d_order2 create_xgrid_2dx2d_order2_
 #define create_xgrid_great_circle create_xgrid_great_circle_
 
 int create_xgrid_1dx2d_order1(const int nlon_in, const int nlat_in, const int nlon_out, const int nlat_out, const double *lon_in,
