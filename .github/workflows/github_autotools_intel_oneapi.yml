@@ -6,7 +6,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  intel-autotools:
+  intel-oneapi-2025.3:
     runs-on: ubuntu-latest
     container:
       image: intel/oneapi-hpckit:2025.3.0-0-devel-ubuntu22.04
@@ -26,7 +26,7 @@ jobs:
       uses: actions/cache@v4.2.0
       with:
         path: /libs
-        key: ${{ runner.os }}-intel-libs
+        key: intel-libs
     - name: Install packages for building
       run: apt-get update && apt-get install -y autoconf libtool automake zlib1g zlib1g-dev libcurl4-openssl-dev
     - if: steps.cache.outputs.cache-hit != 'true'
