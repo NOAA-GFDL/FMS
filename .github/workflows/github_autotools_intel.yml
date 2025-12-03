@@ -43,7 +43,7 @@ jobs:
         # netcdf-c
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.3.tar.gz
         tar xf v4.9.3.tar.gz && cd netcdf-c-4.9.3
-        ./configure --prefix=/libs
+        ./configure --prefix=/libs --disable-libxml2 --enable-netcdf-4 --enable-shared
         make -j install && cd ..
         # netcdf-fortran
         wget https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.2.tar.gz
