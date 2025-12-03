@@ -33,12 +33,12 @@ jobs:
       name: Build netcdf
       run: |
         mkdir /libs
-        wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
-        tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
+        wget https://support.hdfgroup.org/releases/hdf5/v1_14/v1_14_6/downloads/hdf5-1.14.6.tar.gz
+        tar xf hdf5-1.14.6.tar.gz && cd hdf5-1.14.6
         ./configure --prefix=/libs
         make -j install && cd ..
-        wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
-        tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
+        wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.3.tar.gz
+        tar xf v4.9.3.tar.gz && cd netcdf-c-4.9.3
         ./configure --prefix=/libs --enable-remote-fortran-bootstrap
         make -j install
         # sets this here to pass embeded configure checks
