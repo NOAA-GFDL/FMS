@@ -26,8 +26,8 @@
 # Thank you Junio.
 
 # Useful locations
-top_srcdir='/home/Vithika.Shah/FMS'
-top_buildir='/home/Vithika.Shah/FMS'
+top_srcdir='/home/Vithika.Shah/deprecation'
+top_buildir='/home/Vithika.Shah/deprecation'
 
 TEST_NAME="$(basename "$0" .sh)"
 TEST_NUMBER="${TEST_NAME%%-*}"
@@ -257,34 +257,11 @@ match_pattern_list_ () {
       len=`expr $len - $beg`
       last="`expr substr $range $beg $len`"
       # check range is valid
-      ##if test $num == *[!0-9]* -o $first == *[!0-9]* -o $last == *[!0-9]* -o $first -ge $last ; then
-          ##say "Warning: SKIP_TESTS contains an invalid range in $pattern_"
-          ##break
-      ##fi
-      ##if test $num -ge $first -a $num -le $last ; then
-          ##test "$tNameArg" = "$tNamePattern" && return 0
-      ##fi
-            # ----- POSIX-safe integer validation -----
-      case "$num" in
-          *[!0-9]* | "" ) continue ;;
-      esac
-
-      case "$first" in
-          *[!0-9]* | "" ) continue ;;
-      esac
-
-      case "$last" in
-          *[!0-9]* | "" ) continue ;;
-      esac
-
-      # ----- Check if range is valid -----
-      if test "$first" -gt "$last" ; then
+      if test $num == *[!0-9]* -o $first == *[!0-9]* -o $last == *[!0-9]* -o $first -ge $last ; then
           say "Warning: SKIP_TESTS contains an invalid range in $pattern_"
           break
       fi
-
-      # ----- Check if number is inside range -----
-      if test "$num" -ge "$first" && test "$num" -le "$last" ; then
+      if test $num -ge $first -a $num -le $last ; then
           test "$tNameArg" = "$tNamePattern" && return 0
       fi
     fi
