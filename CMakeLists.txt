@@ -203,7 +203,7 @@ list(APPEND fms_c_src_files
   grid_utils/gradient_c2l.c
   grid_utils/grid_utils.c
   grid_utils/tree_utils.c
-  horiz_interp/include/horiz_interp_conserve_xgrid.c
+  horiz_interp/create_xgrid_utils.c
   mpp/mpp_memuse.c
   parser/yaml_parser_binding.c
   parser/yaml_output_functions.c
@@ -302,7 +302,8 @@ foreach(kind ${kinds})
   add_library(${libTgt}_c OBJECT ${fms_c_src_files})
 
   target_include_directories(${libTgt}_c PRIVATE include
-                                                 grid_utils)
+                                                 grid_utils
+                                                 horiz_interp/include)
   target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
   target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
                                             MPI::MPI_C)
@@ -442,7 +443,8 @@ if(NOT kinds)
     add_library(${libTgt}_c OBJECT ${fms_c_src_files})
 
     target_include_directories(${libTgt}_c PRIVATE include
-                                                   grid_utils)
+                                                   grid_utils
+                                                   horiz_interp/include)
     target_compile_definitions(${libTgt}_c PRIVATE "${fms_defs}")
     target_link_libraries(${libTgt}_c PRIVATE NetCDF::NetCDF_C
                                               MPI::MPI_C)
