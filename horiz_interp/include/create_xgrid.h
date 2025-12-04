@@ -36,49 +36,49 @@
 #define create_xgrid_2dx2d_order2 create_xgrid_2dx2d_order2_
 #define create_xgrid_great_circle create_xgrid_great_circle_
 
-int create_xgrid_1dx2d_order1(const int nlon_in, const int nlat_in, const int nlon_out, const int nlat_out, const double *lon_in,
+int create_xgrid_1dx2d_order1(const int* nlon_in, const int* nlat_in, const int* nlon_out, const int* nlat_out, const double *lon_in,
                               const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *i_out,
                               int *j_out, double *xgrid_area);
 
-int create_xgrid_1dx2d_order2(const int nlon_in, const int nlat_in, const int nlon_out, const int nlat_out,
+int create_xgrid_1dx2d_order2(const int* nlon_in, const int* nlat_in, const int* nlon_out, const int* nlat_out,
                               const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
                               double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
 
-int create_xgrid_2dx1d_order1(const int nlon_in, const int nlat_in, const int nlon_out, const int nlat_out, const double *lon_in,
+int create_xgrid_2dx1d_order1(const int* nlon_in, const int* nlat_in, const int* nlon_out, const int* nlat_out, const double *lon_in,
                               const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *i_out,
                               int *j_out, double *xgrid_area);
 
-int create_xgrid_2dx1d_order2(const int nlon_in, const int nlat_in, const int nlon_out, const int nlat_out,
+int create_xgrid_2dx1d_order2(const int* nlon_in, const int* nlat_in, const int* nlon_out, const int* nlat_out,
                               const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
                               double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
 
-int create_xgrid_2dx2d_order1(const int nlon_input_cells, const int nlat_input_cells,
-                              const int nlon_output_cells, const int nlat_output_cells,
+int create_xgrid_2dx2d_order1(const int* nlon_input_cells, const int* nlat_input_cells,
+                              const int* nlon_output_cells, const int* nlat_output_cells,
                               const double *input_grid_lon, const double *input_grid_lat,
                               const double *output_grid_lon, const double *output_grid_lat,
                               const double *skip_input_cells, const double *skip_output_cells,
                               int *i_in, int *j_in, int *i_out,
                               int *j_out, double *xgrid_area);
 
-int create_xgrid_2dx2d_order2(const int nlon_in, const int nlat_in, const int nlon_out, const int nlat_out,
+int create_xgrid_2dx2d_order2(const int* nlon_in, const int* nlat_in, const int* nlon_out, const int* nlat_out,
                               const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
                               double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
 
-int create_xgrid_great_circle(const int nlon_in, const int nlat_in, const int nlon_out, const int nlat_out,
+int create_xgrid_great_circle(const int* nlon_in, const int* nlat_in, const int* nlon_out, const int* nlat_out,
                               const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *i_out, int *j_out,
                               double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
 
-int create_xgrid_1dx2d_order1_ug(const int nlon_in, const int nlat_in, const int npts_out, const double *lon_in,
+int create_xgrid_1dx2d_order1_ug(const int* nlon_in, const int* nlat_in, const int* npts_out, const double *lon_in,
                               const double *lat_in, const double *lon_out, const double *lat_out,
                               const double *mask_in, int *i_in, int *j_in, int *l_out, double *xgrid_area);
 
-int create_xgrid_great_circle_ug(const int nlon_in, const int nlat_in, const int npts_out,
+int create_xgrid_great_circle_ug(const int* nlon_in, const int* nlat_in, const int* npts_out,
                                const double *lon_in, const double *lat_in, const double *lon_out, const double *lat_out,
                                const double *mask_in, int *i_in, int *j_in, int *l_out,
                                double *xgrid_area, double *xgrid_clon, double *xgrid_clat);
