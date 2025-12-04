@@ -41,7 +41,8 @@
 #define get_grid_area get_grid_area_
 #define get_grid_great_circle_area get_grid_great_circle_area_
 #define get_grid_area_no_adjust get_grid_area_no_adjust_
-#define get_grid_area_ug get_grid_area_ug_ 
+#define get_grid_area_ug get_grid_area_ug_
+#define inside_a_polygon inside_a_polygon_
 
 void error_handler(const char *msg);
 
@@ -91,8 +92,6 @@ double metric(const double *p);
 int inside_a_polygon( double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
 
 int samePoint(double x1, double y1, double z1, double x2, double y2, double z2);
-
-int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
 
 int inside_edge(double x0, double y0, double x1, double y1, double x, double y);
 

@@ -476,7 +476,6 @@ int invert_matrix_3x3(long double m[], long double m_inv[]) {
   return 1;
 }
 
-
 int inside_a_polygon(double *lon1, double *lat1, int *npts, double *lon2, double *lat2)
 {
 
