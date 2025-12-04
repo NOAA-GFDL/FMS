@@ -529,14 +529,6 @@ double get_global_area(void)
   return garea;
 }
 
-double get_global_area_(void)
-{
-  double garea;
-  garea = 4*M_PI*RADIUS*RADIUS;
-
-  return garea;
-}
-
 double poly_area(const double x[], const double y[], int n)
 {
   double area = 0.0;
