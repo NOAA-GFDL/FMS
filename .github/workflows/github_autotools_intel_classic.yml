@@ -1,6 +1,6 @@
 on:
   schedule:
-    - cron: '0 0 * * *' # everyday @ midnight
+    - cron: '0 0 * * 0' # sundays @ midnight
 
 
 # cancel running jobs if theres a newer push
