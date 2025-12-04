@@ -214,12 +214,13 @@ contains
     character(len=*), intent(in) :: weight_filename !< file to read
     character(len=*), intent(in) :: weight_file_source !< only accepts "fregrid"
     integer, intent(in) :: nlon_src, nlat_src, nlon_dst, nlat_dst !< number of grid points on src and dst grids
-    integer, intent(in) :: isw, iew, jsw, jew !< compute domain indices on dst grid
+    integer, intent(in), optional :: isw, iew, jsw, jew !< compute domain indices on dst grid
     integer, intent(in), optional :: src_tile !< save weights for src_tile only; if not present, read all
     logical, intent(in), optional :: save_xgrid_area !< save xgrid_area
 
     integer :: i, j, ncells, domain_ncells
     integer :: istart, iend, i_dst, j_dst, index
+    integer :: isw_, iew_, jsw_, jew_
     real(r8_kind), allocatable :: dst_area2(:,:), dst_area1(:), read1(:), xarea(:)
     integer, allocatable :: tile1(:), read2(:,:)
     logical, allocatable :: mask(:)
@@ -231,6 +232,15 @@ contains
         call mpp_error(FATAL, trim(weight_file_source)//&
         &" is not a supported weight file source. fregrid is the only supported weight file source.")
     end if
+
+    isw_ = 0
+    iew_ = nlon_dst
+    jsw_ = 0
+    jew_ = nlat_dst
+    if(present(isw)) isw_ = isw
+    if(present(iew)) iew_ = iew
+    if(present(jsw)) jsw_ = jsw
+    if(present(jew)) jew_ = jew
 
     if(open_file(weight_fileobj, trim(weight_filename), "read")) then
 
@@ -270,7 +280,7 @@ contains
         call read_data(weight_fileobj, "tile2_cell", read2, corner=[1,istart], edge_lengths=[2,ncells])
 
         ! get xgrid indices with parent cell on the domain
-        mask = (read2(1,:) >= isw .and. read2(1,:) <= iew .and. read2(2,:) >= jsw .and. read2(2,:) <= jew)
+        mask = (read2(1,:) >= isw_ .and. read2(1,:) <= iew_ .and. read2(2,:) >= jsw_ .and. read2(2,:) <= jew_)
 
         domain_ncells = count(mask)
 
@@ -283,8 +293,8 @@ contains
 
         ! store dst parent cells
         where(mask)
-          Interp%i_dst = read2(1,:) - isw + 1
-          Interp%j_dst = read2(2,:) - jsw + 1
+          Interp%i_dst = read2(1,:) - isw_ + 1
+          Interp%j_dst = read2(2,:) - jsw_ + 1
         end where
 
         !save src parent cell indices
