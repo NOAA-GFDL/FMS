@@ -273,23 +273,25 @@
                                  verbose, interp_method, num_nbrs, max_dist, &
                                  src_modulo, mask_in, mask_out, is_latlon_in, is_latlon_out, &
                                  save_xgrid_area, as_fregrid)
-   type(horiz_interp_type), intent(inout) :: Interp
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in , lat_in
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out, lat_out
-   integer, intent(in), optional :: verbose
-   character(len=*), intent(in), optional :: interp_method
-   integer, intent(in), optional :: num_nbrs
-   real(FMS_HI_KIND_), intent(in), optional :: max_dist
-   logical, intent(in), optional :: src_modulo
-   real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
-   real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
-   logical, intent(in), optional :: is_latlon_in, is_latlon_out
-   logical, intent(in), optional :: save_xgrid_area
-   logical, intent(in), optional :: as_fregrid
-   logical :: src_is_latlon, dst_is_latlon
-   character(len=40) :: method
-   integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
-   !-----------------------------------------------------------------------
+ type(horiz_interp_type), intent(inout)     :: Interp
+ real(FMS_HI_KIND_), intent(in),  dimension(:,:)          :: lon_in , lat_in
+ real(FMS_HI_KIND_), intent(in),  dimension(:,:)          :: lon_out, lat_out
+ integer, intent(in),              optional :: verbose
+ character(len=*), intent(in),     optional :: interp_method
+ integer, intent(in),              optional :: num_nbrs
+ real(FMS_HI_KIND_),    intent(in),              optional :: max_dist
+ logical, intent(in),              optional :: src_modulo
+ real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+ real(FMS_HI_KIND_), intent(out),dimension(:,:), optional :: mask_out
+ logical, intent(in),              optional :: is_latlon_in, is_latlon_out
+ logical           :: src_is_latlon, dst_is_latlon
+ !> options for conservative interpolation
+ logical, intent(in), optional :: save_xgrid_area !< save xgrid_area
+ logical, intent(in), optional :: as_fregrid !< save weights as their canonical def,  xarea/input_grid_area
+
+ character(len=40) :: method
+ integer, parameter                :: kindl = FMS_HI_KIND_ !< real kind size currently compiling
+!-----------------------------------------------------------------------
    call horiz_interp_init
 
    method = 'bilinear'
@@ -326,8 +328,9 @@
          call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out(:,1), lat_out(1,:), &
               verbose=verbose, mask_in=mask_in, mask_out=mask_out )
       else
-         call horiz_interp_conserve_new(Interp, lon_in, lat_in, lon_out, lat_out, verbose=verbose, &
-           mask_in=mask_in, mask_out=mask_out, save_xgrid_area=save_xgrid_area, as_fregrid=as_fregrid)
+         call horiz_interp_conserve_new ( Interp, lon_in, lat_in, lon_out, lat_out, &
+           verbose=verbose, mask_in=mask_in, mask_out=mask_out, &
+           save_xgrid_area=save_xgrid_area, as_fregrid=as_fregrid )
       end if
 
    case ("spherical")
@@ -427,19 +430,20 @@
 
 !#######################################################################
 
- subroutine HORIZ_INTERP_BASE_2D_(Interp, data_in, data_out, verbose, &
-   mask_in, mask_out, missing_value, missing_permit, err_msg, new_missing_handle)
+ subroutine HORIZ_INTERP_BASE_2D_ ( Interp, data_in, data_out, verbose, &
+                                   mask_in, mask_out, missing_value, missing_permit, &
+                                   err_msg, new_missing_handle )
 !-----------------------------------------------------------------------
    type (horiz_interp_type), intent(in) :: Interp
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
-   real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-   integer, intent(in), optional :: verbose
-   real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
-   real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
-   real(FMS_HI_KIND_), intent(in), optional :: missing_value
-   integer, intent(in), optional :: missing_permit
-   character(len=*), intent(out), optional :: err_msg
-   logical, intent(in), optional :: new_missing_handle
+      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+      real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+   integer, intent(in),                   optional :: verbose
+      real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+      real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+      real(FMS_HI_KIND_), intent(in),                   optional :: missing_value
+      integer, intent(in),                optional :: missing_permit
+   character(len=*), intent(out),         optional :: err_msg
+      logical, intent(in),                optional :: new_missing_handle
 !-----------------------------------------------------------------------
    if(present(err_msg)) err_msg = ''
    if(.not.Interp%I_am_initialized) then
@@ -448,7 +452,7 @@
 
    select case(Interp%interp_method)
    case(CONSERVE)
-     call horiz_interp_conserve(Interp,data_in, data_out, verbose, mask_in, mask_out)
+      call horiz_interp_conserve(Interp,data_in, data_out, verbose, mask_in, mask_out)
    case(BILINEAR)
       call horiz_interp_bilinear(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value, missing_permit, new_missing_handle )
@@ -471,22 +475,22 @@
  !> Overload of interface HORIZ_INTERP_BASE_2D_
  !! uses 3d arrays for data and mask
  !! this allows for multiple interpolations with one call
- subroutine HORIZ_INTERP_BASE_3D_(Interp, data_in, data_out, verbose, mask_in, mask_out, &
-      missing_value, missing_permit, err_msg)
+ subroutine HORIZ_INTERP_BASE_3D_ ( Interp, data_in, data_out, verbose, mask_in, mask_out, &
+      missing_value, missing_permit, err_msg  )
    !-----------------------------------------------------------------------
    !   overload of interface HORIZ_INTERP_BASE_2D_
    !   uses 3d arrays for data and mask
    !   this allows for multiple interpolations with one call
    !-----------------------------------------------------------------------
-   type (horiz_interp_type), intent(in) :: Interp
-   real(FMS_HI_KIND_), intent(in), dimension(:,:,:) :: data_in
-   real(FMS_HI_KIND_), intent(out), dimension(:,:,:) :: data_out
-   integer, intent(in), optional :: verbose
-   real(FMS_HI_KIND_), intent(in), dimension(:,:,:), optional :: mask_in
-   real(FMS_HI_KIND_), intent(out), dimension(:,:,:), optional :: mask_out
-   real(FMS_HI_KIND_), intent(in), optional :: missing_value
-   integer, intent(in), optional :: missing_permit
-   character(len=*), intent(out), optional :: err_msg
+   type (horiz_interp_type), intent(in)           :: Interp
+   real(FMS_HI_KIND_), intent(in),  dimension(:,:,:)            :: data_in
+   real(FMS_HI_KIND_), intent(out), dimension(:,:,:)            :: data_out
+   integer, intent(in),                  optional :: verbose
+   real(FMS_HI_KIND_), intent(in),   dimension(:,:,:), optional :: mask_in
+   real(FMS_HI_KIND_), intent(out),  dimension(:,:,:), optional :: mask_out
+   real(FMS_HI_KIND_), intent(in),                     optional :: missing_value
+   integer, intent(in),                  optional :: missing_permit
+   character(len=*), intent(out),        optional :: err_msg
    !-----------------------------------------------------------------------
    integer :: n
 
@@ -498,19 +502,23 @@
    do n = 1, size(data_in,3)
       if (present(mask_in))then
          if(present(mask_out)) then
-            call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, mask_in(:,:,n), mask_out(:,:,n), missing_value, missing_permit)
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
+                 verbose, mask_in(:,:,n), mask_out(:,:,n), &
+                 missing_value, missing_permit )
          else
-            call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, mask_in(:,:,n), missing_value=missing_value, missing_permit=missing_permit)
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
+                 verbose, mask_in(:,:,n), missing_value = missing_value,  &
+                 missing_permit = missing_permit )
          endif
       else
          if(present(mask_out)) then
-            call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, mask_out=mask_out(:,:,n), missing_value=missing_value, missing_permit=missing_permit)
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
+                 verbose, mask_out=mask_out(:,:,n), missing_value = missing_value,  &
+                 missing_permit = missing_permit )
          else
-            call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, missing_value=missing_value, missing_permit=missing_permit)
+            call horiz_interp( Interp, data_in(:,:,n), data_out(:,:,n), &
+                 verbose, missing_value = missing_value,  &
+                 missing_permit = missing_permit )
          endif
      endif
    enddo
@@ -621,29 +629,29 @@
 
 !> Interpolates from any grid to any grid. interp_method should be "spherical"
 !! horiz_interp_new don't need to be called before calling this routine.
- subroutine HORIZ_INTERP_SOLO_2D_ (data_in, lon_in, lat_in, lon_out, lat_out, data_out, verbose, &
-   mask_in, mask_out, interp_method, missing_value, missing_permit, num_nbrs, max_dist, src_modulo, save_xgrid_area)
+ subroutine HORIZ_INTERP_SOLO_2D_ ( data_in, lon_in, lat_in, lon_out, lat_out, data_out, &
+                                   verbose, mask_in, mask_out, interp_method, missing_value,&
+                                   missing_permit, num_nbrs, max_dist, src_modulo  )
 !-----------------------------------------------------------------------
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in , lat_in
-   real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out, lat_out
-   real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
-   integer, intent(in), optional :: verbose
-   real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
-   real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
-   character(len=*), intent(in), optional :: interp_method
-   real(FMS_HI_KIND_), intent(in), optional :: missing_value
-   integer, intent(in), optional :: missing_permit
-   integer, intent(in), optional :: num_nbrs
-   real(FMS_HI_KIND_), intent(in), optional :: max_dist
-   logical, intent(in), optional :: src_modulo
-   logical, intent(in), optional :: save_xgrid_area !< flag for conservative method to save xgrid_area
+      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
+      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_in , lat_in
+      real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: lon_out, lat_out
+      real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+   integer, intent(in),                   optional :: verbose
+      real(FMS_HI_KIND_), intent(in),   dimension(:,:), optional :: mask_in
+      real(FMS_HI_KIND_), intent(out),  dimension(:,:), optional :: mask_out
+   character(len=*), intent(in),          optional :: interp_method
+      real(FMS_HI_KIND_), intent(in),                   optional :: missing_value
+   integer, intent(in),                   optional :: missing_permit
+   integer, intent(in),                   optional :: num_nbrs
+      real(FMS_HI_KIND_), intent(in),                   optional :: max_dist
+   logical, intent(in),                   optional :: src_modulo
 !-----------------------------------------------------------------------
    type (horiz_interp_type) :: Interp
    logical                  :: dst_is_latlon, src_is_latlon
    character(len=128)       :: method
 !-----------------------------------------------------------------------
-    call horiz_interp_init()
+    call horiz_interp_init
 
     method = 'conservative'
     if(present(interp_method)) method = interp_method
@@ -655,16 +663,21 @@
     end if
 
     if(dst_is_latlon .and. src_is_latlon) then
-      call horiz_interp_new(Interp, lon_in, lat_in, lon_out, lat_out, verbose, interp_method, &
-        num_nbrs, max_dist, src_modulo, is_latlon_in=dst_is_latlon, is_latlon_out=dst_is_latlon)
-      call horiz_interp(Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value, missing_permit)
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               is_latlon_in=dst_is_latlon, is_latlon_out = dst_is_latlon )
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           mask_in, mask_out, missing_value, missing_permit )
     else
-      call horiz_interp_new(Interp, lon_in, lat_in, lon_out, lat_out, verbose, interp_method, &
-        num_nbrs, max_dist, src_modulo, mask_in, mask_out, is_latlon_in=dst_is_latlon, is_latlon_out=dst_is_latlon)
-      call horiz_interp(Interp, data_in, data_out, verbose, missing_value=missing_value, missing_permit=missing_permit)
+       call horiz_interp_new ( Interp, lon_in, lat_in, lon_out, lat_out, verbose, &
+                               interp_method, num_nbrs, max_dist, src_modulo,    &
+                               mask_in, mask_out, &
+                               is_latlon_in=dst_is_latlon, is_latlon_out = dst_is_latlon)
+       call horiz_interp ( Interp, data_in, data_out, verbose,   &
+                           missing_value=missing_value, missing_permit=missing_permit )
     end if
 
-    call horiz_interp_del(Interp)
+    call horiz_interp_del ( Interp )
 
 !-----------------------------------------------------------------------
 
