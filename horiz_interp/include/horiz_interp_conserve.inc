@@ -497,12 +497,12 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose, save_xgrid_area, as_fregrid)
-    type(horiz_interp_type),        intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),              dimension(:,:) :: lon_out, lat_out
-    real(FMS_HI_KIND_), intent(in),    optional, dimension(:,:) :: mask_in
+    type(horiz_interp_type), intent(inout) :: Interp
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), target :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), target :: lon_out, lat_out
+    real(FMS_HI_KIND_), intent(in), optional, dimension(:,:), target :: mask_in
     real(FMS_HI_KIND_), intent(inout), optional, dimension(:,:) :: mask_out
-    integer, intent(in), optional                 :: verbose
+    integer, intent(in), optional :: verbose
     logical, intent(in), optional :: save_xgrid_area !< option to save xgrid_area
     logical, intent(in), optional :: as_fregrid !< save weights as xcell_area/input_cell_area
 
@@ -518,15 +518,15 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     logical :: as_fregrid_
     integer, parameter :: kind_ = FMS_HI_KIND_ !< compiled kind size
 
-    if (.not. module_is_initialized) then
+    if(.not. module_is_initialized) then
       call mpp_error(FATAL, 'HORIZ_INTERP_CONSERVE_NEW_2DX2D_: horiz_interp_conserve is not intialized')
     end if
 
-    if (.not. all(shape(lon_in) == shape(lat_in))) then
+    if(.not. all(shape(lon_in) == shape(lat_in))) then
       call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_in and lat_in')
     end if
 
-    if (.not. all(shape(lon_out) == shape(lat_out))) then
+    if(.not. all(shape(lon_out) == shape(lat_out))) then
       call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between lon_out and lat_out')
     end if
 
@@ -535,21 +535,21 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     nlon_out = size(lon_out, 1) - 1
     nlat_out = size(lon_out, 2) - 1
 
-    if (present(mask_in)) then
-      if (.not. all(shape(mask_in) == [nlon_in, nlat_in])) then
+    if(present(mask_in)) then
+      if(.not. all(shape(mask_in) == [nlon_in, nlat_in])) then
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between mask_in and lon_in/lat_in')
       end if
     end if
 
     as_fregrid_ = .false.
-    if (present(as_fregrid)) as_fregrid_ = as_fregrid
+    if(present(as_fregrid)) as_fregrid_ = as_fregrid
 
     maxxgrid = get_maxxgrid()
-    allocate (i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid), xgrid_area(maxxgrid))
-    if (as_fregrid_) then
-      allocate (parent_area(nlon_in, nlat_in))
+    allocate(i_src(maxxgrid), j_src(maxxgrid), i_dst(maxxgrid), j_dst(maxxgrid), xgrid_area(maxxgrid))
+    if(as_fregrid_) then
+      allocate(parent_area(nlon_in, nlat_in))
     else
-      allocate (parent_area(nlon_out, nlat_out))
+      allocate(parent_area(nlon_out, nlat_out))
     end if
 
 #ifdef HI_R8_CODE_
@@ -557,43 +557,43 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     lat_in_r8 => lat_in
     lon_out_r8 => lon_out
     lat_out_r8 => lat_out
-    if (present(mask_in)) then
+    if(present(mask_in)) then
       mask_src => mask_in
     else
-      allocate (mask_src(nlon_in, nlat_in), source=1.0_r8_kind)
+      allocate(mask_src(nlon_in, nlat_in), source=1.0_r8_kind)
     end if
 #else
-    allocate (lon_in_r8, source=real(lon_in, r8_kind))
-    allocate (lat_in_r8, source=real(lat_in, r8_kind))
-    allocate (lon_out_r8, source=real(lon_out, r8_kind))
-    allocate (lat_out_r8, source=real(lat_out, r8_kind))
-    if (present(mask_in)) then
-      allocate (mask_src, source=real(mask_in, r8_kind))
+    allocate(lon_in_r8, source=real(lon_in, r8_kind))
+    allocate(lat_in_r8, source=real(lat_in, r8_kind))
+    allocate(lon_out_r8, source=real(lon_out, r8_kind))
+    allocate(lat_out_r8, source=real(lat_out, r8_kind))
+    if(present(mask_in)) then
+      allocate(mask_src, source=real(mask_in, r8_kind))
     else
-      allocate (mask_src(nlon_in, nlat_in), source=1.0_r8_kind)
+      allocate(mask_src(nlon_in, nlat_in), source=1.0_r8_kind)
     end if
 #endif
 
-    if (great_circle_algorithm) then
-      allocate (clon(maxxgrid), clat(maxxgrid))
+    if(great_circle_algorithm) then
+      allocate(clon(maxxgrid), clat(maxxgrid))
       nxgrid = create_xgrid_great_circle(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, &
         lon_out_r8, lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area, clon, clat)
-      deallocate (clon, clat)
+      deallocate(clon, clat)
     else
       nxgrid = create_xgrid_2DX2D_order1(nlon_in, nlat_in, nlon_out, nlat_out, lon_in_r8, lat_in_r8, &
         lon_out_r8, lat_out_r8, mask_src, i_src, j_src, i_dst, j_dst, xgrid_area)
     end if
 
-    if (as_fregrid_) then
+    if(as_fregrid_) then
       call get_grid_area(nlon_in, nlat_in, lon_in_r8, lat_in_r8, parent_area)
     end if
 
 #ifdef HI_R8_CODE_
-    if (.not. present(mask_in)) deallocate (mask_src)
+    if(.not. present(mask_in)) deallocate (mask_src)
 #else
-    deallocate (lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, mask_src)
+    deallocate(lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, mask_src)
 #endif
-    nullify (lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, mask_src)
+    nullify(lon_in_r8, lat_in_r8, lon_out_r8, lat_out_r8, mask_src)
 
     Interp%version = 2
     Interp%nxgrid = nxgrid
@@ -602,18 +602,18 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     Interp%nlon_dst = nlon_out
     Interp%nlat_dst = nlat_out
     ! +1 for C to Fortran conversion, starting index in C is 0
-    allocate (Interp%i_src, source=i_src(1:nxgrid) + 1)
-    allocate (Interp%j_src, source=j_src(1:nxgrid) + 1)
-    allocate (Interp%i_dst, source=i_dst(1:nxgrid) + 1)
-    allocate (Interp%j_dst, source=j_dst(1:nxgrid) + 1)
-    allocate (Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid))
-    if (present(save_xgrid_area)) then
-      if (save_xgrid_area) then
-        allocate (Interp%xgrid_area, source=xgrid_area(1:nxgrid))
+    allocate(Interp%i_src, source=i_src(1:nxgrid) + 1)
+    allocate(Interp%j_src, source=j_src(1:nxgrid) + 1)
+    allocate(Interp%i_dst, source=i_dst(1:nxgrid) + 1)
+    allocate(Interp%j_dst, source=j_dst(1:nxgrid) + 1)
+    allocate(Interp%HI_KIND_TYPE_%area_frac_dst(nxgrid))
+    if(present(save_xgrid_area)) then
+      if(save_xgrid_area) then
+        allocate(Interp%xgrid_area, source=xgrid_area(1:nxgrid))
       end if
     end if
 
-    if (as_fregrid_) then
+    if(as_fregrid_) then
       do i = 1, nxgrid
         ii = Interp%i_src(i)
         jj = Interp%j_src(i)
@@ -634,8 +634,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
       end do
     end if
 
-    if (present(mask_out)) then
-      if (.not. all(shape(mask_out) == [nlon_out, nlat_out])) then
+    if(present(mask_out)) then
+      if(.not. all(shape(mask_out) == [nlon_out, nlat_out])) then
         call mpp_error(FATAL, 'horiz_interp_conserve_mod: size mismatch between mask_out and lon_out/lat_out')
       end if
       mask_out = 0.0_kind_
@@ -646,7 +646,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
       end do
     end if
 
-    deallocate (i_src, j_src, i_dst, j_dst, xgrid_area, parent_area)
+    deallocate(i_src, j_src, i_dst, j_dst, xgrid_area, parent_area)
 
     Interp%HI_KIND_TYPE_%is_allocated = .true.
     Interp%interp_method = CONSERVE

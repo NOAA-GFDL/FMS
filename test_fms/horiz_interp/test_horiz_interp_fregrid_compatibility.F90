@@ -54,7 +54,7 @@ program main
     call mpp_error(FATAL, "saved xgrid_area does not match answers")
   end if
 
-  if(.not.any(interp%horizInterpReals8_type%dst == 1.0_r8_kind)) then
+  if(.not.any(interp%horizInterpReals8_type%area_frac_dst == 1.0_r8_kind)) then
     call mpp_error(FATAL, "unexpected weights")
   end if
 

@@ -251,6 +251,6 @@ test_expect_success "assignment overloads with real kind=8" '
 '
 test_expect_success "horiz_interp_read_weights_conserve" 'mpirun -n 4 ./test_horiz_interp_read'
 
-test_expect_success "horiz_interp_save_weights_as_fregrid" './test_horiz_interp_fregrid_compatibility'
+test_expect_success "horiz_interp_fregrid_compatibility" './test_horiz_interp_fregrid_compatibility'
 
 test_done

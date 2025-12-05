@@ -25,7 +25,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2025.04-dev],
+  [2025.03-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -237,7 +237,7 @@ AC_CHECK_FUNCS([gettid], [], [])
 AC_CHECK_FUNCS([sched_getaffinity], [], [])
 
 # Check if the compiler needs special OpenMP flags
-#AC_OPENMP()
+AC_OPENMP()
 AC_LANG_POP(C)
 
 # Fortran specific checks
@@ -305,7 +305,7 @@ GX_FC_QUAD_PRECISION()
 GX_FC_INTERNAL_FILE_NML()
 
 # Check if the compiler needs special OpenMP flags
-#AC_OPENMP()
+AC_OPENMP()
 
 AC_LANG_POP(Fortran)
 
@@ -360,13 +360,13 @@ if test $enable_setting_flags = yes; then
   fi
 
   # Add OpenMP flags
-  dnl if test ! -z "$OPENMP_CFLAGS"; then
-  dnl   CFLAGS="$CFLAGS $OPENMP_CFLAGS"
-  dnl   CPPFLAGS="$CPPFLAGS $OPENMP_CFLAGS"
-  dnl fi
-  dnl if test ! -z "$OPENMP_FCFLAGS"; then
-  dnl   FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
-  dnl fi
+  if test ! -z "$OPENMP_CFLAGS"; then
+    CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $OPENMP_CFLAGS"
+  fi
+  if test ! -z "$OPENMP_FCFLAGS"; then
+    FCFLAGS="$FCFLAGS $OPENMP_FCFLAGS"
+  fi
 
   # Add code coverage flags
   if test $enable_code_coverage = yes; then
