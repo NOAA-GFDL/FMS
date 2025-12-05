@@ -428,7 +428,7 @@
 !#######################################################################
 
  subroutine HORIZ_INTERP_BASE_2D_(Interp, data_in, data_out, verbose, &
-   mask_in, mask_out, missing_value, missing_permit, err_msg, new_missing_handle, fregrid_cell_methods_mean)
+   mask_in, mask_out, missing_value, missing_permit, err_msg, new_missing_handle)
 !-----------------------------------------------------------------------
    type (horiz_interp_type), intent(in) :: Interp
    real(FMS_HI_KIND_), intent(in),  dimension(:,:) :: data_in
@@ -440,7 +440,6 @@
    integer, intent(in), optional :: missing_permit
    character(len=*), intent(out), optional :: err_msg
    logical, intent(in), optional :: new_missing_handle
-   logical, intent(in), optional :: fregrid_cell_methods_mean
 !-----------------------------------------------------------------------
    if(present(err_msg)) err_msg = ''
    if(.not.Interp%I_am_initialized) then
@@ -449,8 +448,7 @@
 
    select case(Interp%interp_method)
    case(CONSERVE)
-     call horiz_interp_conserve(Interp,data_in, data_out, verbose, mask_in, mask_out, &
-       fregrid_cell_methods_mean=fregrid_cell_methods_mean)
+     call horiz_interp_conserve(Interp,data_in, data_out, verbose, mask_in, mask_out)
    case(BILINEAR)
       call horiz_interp_bilinear(Interp,data_in, data_out, verbose, mask_in, mask_out, &
                              missing_value, missing_permit, new_missing_handle )
@@ -474,7 +472,7 @@
  !! uses 3d arrays for data and mask
  !! this allows for multiple interpolations with one call
  subroutine HORIZ_INTERP_BASE_3D_(Interp, data_in, data_out, verbose, mask_in, mask_out, &
-      missing_value, missing_permit, err_msg, fregrid_cell_methods_mean)
+      missing_value, missing_permit, err_msg)
    !-----------------------------------------------------------------------
    !   overload of interface HORIZ_INTERP_BASE_2D_
    !   uses 3d arrays for data and mask
@@ -489,7 +487,6 @@
    real(FMS_HI_KIND_), intent(in), optional :: missing_value
    integer, intent(in), optional :: missing_permit
    character(len=*), intent(out), optional :: err_msg
-   logical, intent(in), optional :: fregrid_cell_methods_mean
    !-----------------------------------------------------------------------
    integer :: n
 
@@ -502,22 +499,18 @@
       if (present(mask_in))then
          if(present(mask_out)) then
             call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, mask_in(:,:,n), mask_out(:,:,n), &
-                 missing_value, missing_permit, fregrid_cell_methods_mean=fregrid_cell_methods_mean)
+                 verbose, mask_in(:,:,n), mask_out(:,:,n), missing_value, missing_permit)
          else
             call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, mask_in(:,:,n), missing_value=missing_value,  &
-                 missing_permit=missing_permit, fregrid_cell_methods_mean=fregrid_cell_methods_mean)
+                 verbose, mask_in(:,:,n), missing_value=missing_value, missing_permit=missing_permit)
          endif
       else
          if(present(mask_out)) then
             call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, mask_out=mask_out(:,:,n), missing_value=missing_value,  &
-                 missing_permit=missing_permit, fregrid_cell_methods_mean=fregrid_cell_methods_mean)
+                 verbose, mask_out=mask_out(:,:,n), missing_value=missing_value, missing_permit=missing_permit)
          else
             call horiz_interp(Interp, data_in(:,:,n), data_out(:,:,n), &
-                 verbose, missing_value=missing_value,  &
-                 missing_permit=missing_permit, fregrid_cell_methods_mean=fregrid_cell_methods_mean)
+                 verbose, missing_value=missing_value, missing_permit=missing_permit)
          endif
      endif
    enddo

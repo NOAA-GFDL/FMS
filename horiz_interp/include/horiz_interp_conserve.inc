@@ -656,7 +656,7 @@ end subroutine HORIZ_INTERP_CONSERVE_NEW_2DX2D_
 !> Subroutine for performing the horizontal interpolation between two grids.
   !! horiz_interp_conserve_new must be called before calling this routine.
 subroutine HORIZ_INTERP_CONSERVE_(Interp, data_in, data_out, verbose, &
-                                  mask_in, mask_out, fregrid_cell_methods_mean)
+                                  mask_in, mask_out)
    !-----------------------------------------------------------------------
    type(horiz_interp_type), intent(in) :: Interp
    real(FMS_HI_KIND_), intent(in), dimension(:, :) :: data_in !< Input data on source grid
@@ -676,9 +676,6 @@ subroutine HORIZ_INTERP_CONSERVE_(Interp, data_in, data_out, verbose, &
     !! horiz_interp_conserve_new_2d
    real(FMS_HI_KIND_), intent(out), dimension(:, :), optional :: mask_out
 
-   !> fregrid_cell_methods_mean: area average data_out (returns data_out/output_grid_area)
-   logical, intent(in), optional :: fregrid_cell_methods_mean
-
    !  --- error checking ---
    if (.not. all(shape(data_in) == [Interp%nlon_src, Interp%nlat_src])) then
       call mpp_error(FATAL, 'horiz_interp_conserve_mod: size of input array incorrect')
@@ -693,7 +690,7 @@ subroutine HORIZ_INTERP_CONSERVE_(Interp, data_in, data_out, verbose, &
    case (2)
       if (present(mask_in) .or. present(mask_out)) call mpp_error(FATAL, 'HORIZ_INTERP_CONSERVE_:'// &
         & ' for version 2, mask_in and mask_out must be passed in horiz_interp_new, not in horiz_interp')
-      call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose, fregrid_cell_methods_mean)
+      call horiz_interp_conserve_version2(Interp, data_in, data_out, verbose)
    end select
 
 end subroutine HORIZ_INTERP_CONSERVE_
@@ -848,42 +845,22 @@ subroutine HORIZ_INTERP_CONSERVE_VERSION1_(Interp, data_in, data_out, verbose, &
 end subroutine HORIZ_INTERP_CONSERVE_VERSION1_
 
 !#############################################################################
-subroutine HORIZ_INTERP_CONSERVE_VERSION2_(Interp, data_in, data_out, verbose, fregrid_cell_methods_mean)
+subroutine HORIZ_INTERP_CONSERVE_VERSION2_(Interp, data_in, data_out, verbose)
    !-----------------------------------------------------------------------
-   type(horiz_interp_type), intent(in) :: Interp
-   real(FMS_HI_KIND_), intent(in), dimension(:, :) :: data_in
-   real(FMS_HI_KIND_), intent(out), dimension(:, :) :: data_out
-   integer, intent(in), optional :: verbose
-   !> fregrid_cell_methods_mean: Should only be used if Interp%HI_KIND_TYPE_%area_frac_dst is saved from
-    !! as_fregrid = .true.; Else, data_out will automatically be area averaged
-   logical, intent(in), optional :: fregrid_cell_methods_mean
+  type(horiz_interp_type), intent(in) :: Interp
+  real(FMS_HI_KIND_), intent(in), dimension(:, :) :: data_in
+  real(FMS_HI_KIND_), intent(out), dimension(:, :) :: data_out
+  integer, intent(in), optional :: verbose
 
-   integer :: i, i_src, j_src, i_dst, j_dst
-   real(FMS_HI_KIND_), allocatable, dimension(:, :) :: out_grid_area
-   integer, parameter :: kind_ = FMS_HI_KIND_ !< compiled kind size
+  integer :: i, i_src, j_src, i_dst, j_dst
+  integer, parameter :: kind_ = FMS_HI_KIND_ !< compiled kind size
 
-   data_out = 0.0_kind_
-   do i = 1, Interp%nxgrid
-      i_src = Interp%i_src(i); j_src = Interp%j_src(i)
-      i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)
-      data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src, j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
-   end do
-
-   if (present(fregrid_cell_methods_mean)) then
-      if (fregrid_cell_methods_mean) then
-         if (.not. allocated(Interp%xgrid_area)) then
-            call mpp_error(FATAL, "Interp%xgrid_area used for computing out_grid_area is not allocated")
-         end if
-         allocate (out_grid_area, mold=data_out)
-         out_grid_area = 0.0_kind_
-         do i = 1, Interp%nxgrid
-            i_dst = Interp%i_dst(i)
-            j_dst = Interp%j_dst(i)
-            out_grid_area(i_dst, j_dst) = out_grid_area(i_dst, j_dst) + Interp%xgrid_area(i)
-         end do
-         data_out = data_out/real(out_grid_area, kind_)
-      end if
-   end if
+  data_out = 0.0_kind_
+  do i = 1, Interp%nxgrid
+    i_src = Interp%i_src(i); j_src = Interp%j_src(i)
+    i_dst = Interp%i_dst(i); j_dst = Interp%j_dst(i)
+    data_out(i_dst, j_dst) = data_out(i_dst, j_dst) + data_in(i_src, j_src)*Interp%HI_KIND_TYPE_%area_frac_dst(i)
+  end do
 
 end subroutine HORIZ_INTERP_CONSERVE_VERSION2_
 
