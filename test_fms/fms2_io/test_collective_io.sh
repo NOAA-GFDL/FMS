@@ -27,7 +27,7 @@
 . ../test-lib.sh
 
 if [ ! -z $parallel_skip ]; then
-  SKIP_TESTS="test_collective_io.[1-2]"
+  SKIP_TESTS="test_collective_io.[1-3]"
 fi
 
 # Create and enter output directory
@@ -35,11 +35,22 @@ output_dir
 
 touch input.nml
 
-test_expect_success "Test NetCDF-4 parallel writes" '
+test_expect_success "Test NetCDF-4 MPI-IO parallel writes" '
   mpirun -n 6 ../test_parallel_writes
 '
 
-test_expect_success "Test NetCDF-4 collective reads" '
+test_expect_success "Test NetCDF-4 MPI-IO collective reads" '
+  mpirun -n 6 ../test_collective_io
+'
+
+rm -rf *.nc*
+cat <<_EOF > input.nml
+&test_collective_io_nml
+  nc_format = "64bit"
+/
+_EOF
+
+test_expect_failure "Attempt to open a 64-bit NetCDF file for MPI-IO collective reads" '
   mpirun -n 6 ../test_collective_io
 '
 
