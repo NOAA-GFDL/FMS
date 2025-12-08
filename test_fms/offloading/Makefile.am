@@ -17,17 +17,34 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is an automake file for the test_fms/data_override directory of the FMS
+# package.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# uramirez
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal offloading block_control
+# Find the needed mod and .inc files.
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR)
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# Link to the FMS library.
+LDADD = ${top_builddir}/libFMS/libFMS.la
+
+# Build this test program.
+check_PROGRAMS = test_io_offloading test_metadata_transfer
+
+# This is the source code for the test.
+test_io_offloading_SOURCES = test_io_offloading.F90
+test_metadata_transfer_SOURCES= test_metadata_transfer.F90
+
+# Run the test program.
+TESTS = test_io_offloading.sh
+
+# Define test file extensions and log driver
+TEST_EXTENSIONS = .sh
+SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+                   $(abs_top_srcdir)/test_fms/tap-driver.sh
+
+# Include these files with the distribution.
+EXTRA_DIST = test_io_offloading.sh
+
+# Clean up
+CLEANFILES = input.nml *.out

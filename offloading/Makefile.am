@@ -17,17 +17,30 @@
 #* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is an automake file for the constants directory of the FMS
+# package.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Ryan Mulhall 2025
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal offloading block_control
+# Include .h and .mod files.
+AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_FCFLAGS = $(FC_MODINC). $(FC_MODOUT)$(MODDIR)
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# Build this uninstalled convenience library.
+noinst_LTLIBRARIES = liboffload.la
+
+# The convenience library depends on its source.
+liboffload_la_SOURCES = \
+  metadata_transfer.F90 \
+  offloading_io.F90
+
+MODFILES = \
+  metadata_transfer_mod.$(FC_MODEXT) \
+  offloading_io_mod.$(FC_MODEXT)
+
+offloading_io_mod.$(FC_MODEXT): metadata_transfer_mod.$(FC_MODEXT)
+
+BUILT_SOURCES = $(MODFILES)
+nodist_include_HEADERS = $(MODFILES)
+
+include $(top_srcdir)/mkmods.mk
