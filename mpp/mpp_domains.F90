@@ -1781,42 +1781,18 @@ module mpp_domains_mod
 !! @endcode
 !> @ingroup mpp_domains_mod
   interface mpp_global_field
-     module procedure mpp_global_field2D_r8_2d
-     module procedure mpp_global_field2D_r8_3d
-     module procedure mpp_global_field2D_r8_4d
-     module procedure mpp_global_field2D_r8_5d
+     module procedure mpp_global_field_r8
 #ifdef OVERLOAD_C8
-     module procedure mpp_global_field2D_c8_2d
-     module procedure mpp_global_field2D_c8_3d
-     module procedure mpp_global_field2D_c8_4d
-     module procedure mpp_global_field2D_c8_5d
+     module procedure mpp_global_field_c8
 #endif
-     module procedure mpp_global_field2D_i8_2d
-     module procedure mpp_global_field2D_i8_3d
-     module procedure mpp_global_field2D_i8_4d
-     module procedure mpp_global_field2D_i8_5d
-     module procedure mpp_global_field2D_l8_2d
-     module procedure mpp_global_field2D_l8_3d
-     module procedure mpp_global_field2D_l8_4d
-     module procedure mpp_global_field2D_l8_5d
-     module procedure mpp_global_field2D_r4_2d
-     module procedure mpp_global_field2D_r4_3d
-     module procedure mpp_global_field2D_r4_4d
-     module procedure mpp_global_field2D_r4_5d
+     module procedure mpp_global_field_i8
+     module procedure mpp_global_field_l8
+     module procedure mpp_global_field_r4
 #ifdef OVERLOAD_C4
-     module procedure mpp_global_field2D_c4_2d
-     module procedure mpp_global_field2D_c4_3d
-     module procedure mpp_global_field2D_c4_4d
-     module procedure mpp_global_field2D_c4_5d
+     module procedure mpp_global_field_c4
 #endif
-     module procedure mpp_global_field2D_i4_2d
-     module procedure mpp_global_field2D_i4_3d
-     module procedure mpp_global_field2D_i4_4d
-     module procedure mpp_global_field2D_i4_5d
-     module procedure mpp_global_field2D_l4_2d
-     module procedure mpp_global_field2D_l4_3d
-     module procedure mpp_global_field2D_l4_4d
-     module procedure mpp_global_field2D_l4_5d
+     module procedure mpp_global_field_i4
+     module procedure mpp_global_field_l4
   end interface
 
 !> @ingroup mpp_domains_mod
@@ -1857,38 +1833,6 @@ module mpp_domains_mod
      module procedure mpp_global_field2D_l4_3d_ad
      module procedure mpp_global_field2D_l4_4d_ad
      module procedure mpp_global_field2D_l4_5d_ad
-  end interface
-
-!> Private helper interface used by @ref mpp_global_field
-!> @ingroup mpp_domains_mod
-  interface mpp_do_global_field
-     module procedure mpp_do_global_field2D_r8_3d
-#ifdef OVERLOAD_C8
-     module procedure mpp_do_global_field2D_c8_3d
-#endif
-     module procedure mpp_do_global_field2D_i8_3d
-     module procedure mpp_do_global_field2D_l8_3d
-     module procedure mpp_do_global_field2D_r4_3d
-#ifdef OVERLOAD_C4
-     module procedure mpp_do_global_field2D_c4_3d
-#endif
-     module procedure mpp_do_global_field2D_i4_3d
-     module procedure mpp_do_global_field2D_l4_3d
-  end interface
-
-  interface mpp_do_global_field_a2a
-     module procedure mpp_do_global_field2D_a2a_r8_3d
-#ifdef OVERLOAD_C8
-     module procedure mpp_do_global_field2D_a2a_c8_3d
-#endif
-     module procedure mpp_do_global_field2D_a2a_i8_3d
-     module procedure mpp_do_global_field2D_a2a_l8_3d
-     module procedure mpp_do_global_field2D_a2a_r4_3d
-#ifdef OVERLOAD_C4
-     module procedure mpp_do_global_field2D_a2a_c4_3d
-#endif
-     module procedure mpp_do_global_field2D_a2a_i4_3d
-     module procedure mpp_do_global_field2D_a2a_l4_3d
   end interface
 
 !> Same functionality as @ref mpp_global_field but for unstructured domains

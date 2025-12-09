@@ -19,100 +19,392 @@
 !> @{
     !> get a global field from a local field
     !! local field may be on compute OR data domain
-    subroutine MPP_GLOBAL_FIELD_2D_( domain, local, global, flags, position,tile_count, default_data)
-      type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:)
-      MPP_TYPE_, intent(out) :: global(:,:)
+
+      !> Gets a global field from a local field
+      !! local field may be on compute OR data domain
+    subroutine MPP_GLOBAL_FIELD_( domain, local, global, flags, position, tile_count, default_data, xdim, ydim)
+      type(domain2D), intent(in)    :: domain
+      MPP_TYPE_, intent(in)         ::  local(..)
+      MPP_TYPE_, intent(out)        :: global(..)
       integer, intent(in), optional :: flags
       integer, intent(in), optional :: position
       integer, intent(in), optional :: tile_count
       MPP_TYPE_, intent(in), optional :: default_data
+      integer, intent(in), optional :: xdim, ydim
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2),1)
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2),1)
-      pointer( lptr,  local3D )
-      pointer( gptr, global3D )
-      ! initialize output, check if type macro logical
-      global =  MPP_TYPE_INIT_VALUE
-      lptr = LOC( local)
-      gptr = LOC(global)
-      call mpp_global_field( domain, local3D, global3D, flags, position,tile_count, default_data )
+      integer :: i, j, k, m, n, nd, num_words, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
+      integer :: ke, isc, iec, jsc, jec, is, ie, js, je, num_word_me
+      integer :: ipos, jpos, n_per_gridpoint_local, n_per_gridpoint_global
+      logical :: xonly, yonly, root_only, global_on_this_pe
+      integer :: ix, iy
+      MPP_TYPE_, pointer, dimension(:) :: clocal, cremote
+      integer :: stackuse
+      character(len=8) :: text
 
-    end subroutine MPP_GLOBAL_FIELD_2D_
+      integer :: tile, ishift, jshift, ipos0, jpos0
 
-    subroutine MPP_GLOBAL_FIELD_3D_( domain, local, global, flags, position, tile_count, default_data)
-      type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:,:)
-      MPP_TYPE_, intent(out) :: global(:,:,:)
-      integer, intent(in), optional :: flags
-      integer, intent(in), optional :: position
-      integer, intent(in), optional :: tile_count
-      MPP_TYPE_, intent(in), optional :: default_data
-
-      integer :: ishift, jshift
-      integer :: tile
-      integer :: isize, jsize
-
-      tile = 1; if(PRESENT(tile_count)) tile = tile_count
+      tile = 1
+      if(present(tile_count)) tile = tile_count
 
       call mpp_get_domain_shift(domain, ishift, jshift, position)
 
-      ! The alltoallw method requires that local and global be contiguous.
-      ! We presume that `local` is contiguous if it matches the data domain;
-      ! `global` is presumed to always be contiguous.
-      ! Ideally we would use the F2015 function IS_CONTIGUOUS() to validate
-      !     contiguity, but it is not yet suppored in many compilers.
+      ipos0 = -domain%x(tile)%global%begin + 1
+      jpos0 = -domain%y(tile)%global%begin + 1
 
-      ! Also worth noting that many of the nD->3D conversion also assumes
-      ! contiguity, so there many be other issues here.
-
-      isize = domain%x(tile)%domain_data%size + ishift
-      jsize = domain%y(tile)%domain_data%size + jshift
-      if ((size(local, 1) .eq. isize) .and. (size(local, 2) .eq. jsize) &
-              .and. use_alltoallw) then
-          call mpp_do_global_field_a2a(domain, local, global, tile, &
-                                       ishift, jshift, flags, default_data)
+      if (present(xdim)) then
+        ix = xdim
       else
-          call mpp_do_global_field(domain, local, global, tile, &
-                                   ishift, jshift, flags, default_data)
+        ix = 1
+      endif
+
+      if (present(ydim)) then
+        iy = ydim
+      else
+        iy = 2
+      endif
+
+      n_per_gridpoint_local = size(local) / (size(local,ix) * size(local,iy))
+      n_per_gridpoint_global = size(global) / (size(global,ix) * size(global,iy))
+      size_clocal = (domain%x(1)%compute%size+ishift) * (domain%y(1)%compute%size+jshift) * n_per_gridpoint_local
+      size_cremote = (domain%x(1)%compute%max_size+ishift) * (domain%y(1)%compute%max_size+jshift) * n_per_gridpoint_local
+
+      stackuse = size_clocal + size_cremote
+      if( stackuse.GT.mpp_domains_stack_size )then
+          write( text, '(i8)' )stackuse
+          call mpp_error( FATAL, &
+               'MPP_DO_GLOBAL_FIELD user stack overflow: call mpp_domains_set_stack_size('//trim(text)// &
+               & ') from all PEs.' )
       end if
-    end subroutine MPP_GLOBAL_FIELD_3D_
+      mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
-    subroutine MPP_GLOBAL_FIELD_4D_( domain, local, global, flags, position,tile_count, default_data )
-      type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:,:,:)
-      MPP_TYPE_, intent(out) :: global(:,:,:,:)
-      integer, intent(in), optional :: flags
-      integer, intent(in), optional :: position
-      integer, intent(in), optional :: tile_count
-      MPP_TYPE_, intent(in), optional :: default_data
+      clocal(1:size_clocal) => mpp_domains_stack(1:size_clocal)
+      cremote(1:size_cremote) => mpp_domains_stack((size_clocal+1):(size_clocal+size_cremote))
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2),size( local,3)*size(local,4))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2),size(global,3)*size(local,4))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
-      global = MPP_TYPE_INIT_VALUE
-      lptr = LOC(local)
-      gptr = LOC(global)
-      call mpp_global_field( domain, local3D, global3D, flags, position,tile_count, default_data )
-    end subroutine MPP_GLOBAL_FIELD_4D_
+      if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
 
-    subroutine MPP_GLOBAL_FIELD_5D_( domain, local, global, flags, position,tile_count, default_data )
-      type(domain2D), intent(in) :: domain
-      MPP_TYPE_, intent(in)  ::  local(:,:,:,:,:)
-      MPP_TYPE_, intent(out) :: global(:,:,:,:,:)
-      integer, intent(in), optional :: flags
-      integer, intent(in), optional :: position
-      integer, intent(in), optional :: tile_count
-      MPP_TYPE_, intent(in), optional :: default_data
+      xonly = .FALSE.
+      yonly = .FALSE.
+      root_only = .FALSE.
+      if( PRESENT(flags) ) then
+         xonly = BTEST(flags,EAST)
+         yonly = BTEST(flags,SOUTH)
+         if( .NOT.xonly .AND. .NOT.yonly )call mpp_error( WARNING,  &
+                   'MPP_GLOBAL_FIELD: you must have flags=XUPDATE, YUPDATE or XUPDATE+YUPDATE' )
+         if(xonly .AND. yonly) then
+            xonly = .false.; yonly = .false.
+         endif
+         root_only = BTEST(flags, ROOT_GLOBAL)
+         if( (xonly .or. yonly) .AND. root_only ) then
+            call mpp_error( WARNING, 'MPP_GLOBAL_FIELD: flags = XUPDATE+GLOBAL_ROOT_ONLY or ' // &
+                 'flags = YUPDATE+GLOBAL_ROOT_ONLY is not supported, will ignore GLOBAL_ROOT_ONLY' )
+            root_only = .FALSE.
+         endif
+      endif
 
-      MPP_TYPE_ :: local3D (size( local,1),size( local,2),size( local,3)*size( local,4)*size(local,5))
-      MPP_TYPE_ :: global3D(size(global,1),size(global,2),size(global,3)*size(global,4)*size(local,5))
-      pointer( lptr, local3D  )
-      pointer( gptr, global3D )
-      global = MPP_TYPE_INIT_VALUE
-      lptr = LOC(local)
-      gptr = LOC(global)
-      call mpp_global_field( domain, local3D, global3D, flags, position,tile_count, default_data )
-    end subroutine MPP_GLOBAL_FIELD_5D_
+      global_on_this_pe =  .NOT. root_only .OR. domain%pe == domain%tile_root_pe
+      ipos = 0; jpos = 0
+      if(global_on_this_pe ) then
+         if(n_per_gridpoint_local.ne.n_per_gridpoint_global) call mpp_error(FATAL, &
+              'MPP_GLOBAL_FIELD: mismatch of global and local dimension sizes')
+         if( size(global,ix).NE.(domain%x(tile)%global%size+ishift) .OR. &
+             size(global,iy).NE.(domain%y(tile)%global%size+jshift))then
+            if(xonly) then
+               if(size(global,ix).NE.(domain%x(tile)%global%size+ishift) .OR. &
+                   size(global,iy).NE.(domain%y(tile)%compute%size+jshift)) &
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for xonly global field.' )
+               jpos = -domain%y(tile)%compute%begin + 1
+            else if(yonly) then
+               if(size(global,ix).NE.(domain%x(tile)%compute%size+ishift) .OR. &
+                   size(global,iy).NE.(domain%y(tile)%global%size+jshift)) &
+                  call mpp_error( FATAL, &
+                                 &  'MPP_GLOBAL_FIELD: incoming arrays do not match domain for yonly global field.' )
+               ipos = -domain%x(tile)%compute%begin + 1
+            else
+               call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: incoming arrays do not match domain.' )
+            endif
+         endif
+      endif
+
+      if( size(local,ix).EQ.(domain%x(tile)%compute%size+ishift) .AND. &
+          size(local,iy).EQ.(domain%y(tile)%compute%size+jshift) )then
+         !local is on compute domain
+         ioff = -domain%x(tile)%compute%begin + 1
+         joff = -domain%y(tile)%compute%begin + 1
+      else if( size(local,ix).EQ.(domain%x(tile)%memory%size+ishift) .AND. &
+               size(local,iy).EQ.(domain%y(tile)%memory%size+jshift) )then
+         !local is on data domain
+         ioff = -domain%x(tile)%domain_data%begin + 1
+         joff = -domain%y(tile)%domain_data%begin + 1
+      else
+         call mpp_error( FATAL, &
+                       & 'MPP_GLOBAL_FIELD_: incoming field array must match either compute domain or memory domain.')
+      end if
+
+      !ke  = size(local,3)
+      ke  = n_per_gridpoint_local
+      isc = domain%x(tile)%compute%begin; iec = domain%x(tile)%compute%end+ishift
+      jsc = domain%y(tile)%compute%begin; jec = domain%y(tile)%compute%end+jshift
+
+      num_word_me = (iec-isc+1)*(jec-jsc+1)*n_per_gridpoint_local
+
+! make contiguous array from compute domain
+      m = 0
+      if(global_on_this_pe) then
+         !z1l: initialize global = 0 to support mask domain
+         if(PRESENT(default_data)) then
+            global = default_data
+         else
+#ifdef LOGICAL_VARIABLE
+            global = .false.
+#else
+            global = 0
+#endif
+         endif
+
+        call arr2vec(local, clocal, ix, iy, ioff+isc, ioff+iec, joff+jsc, joff+jec)
+
+        ! Fill local domain directly
+        call vec2arr(clocal, global, ix, iy, ipos0+ipos+isc, ipos0+ipos+iec, jpos0+jpos+jsc, jpos0+jpos+jec)
+      else
+        call arr2vec(local, clocal, ix, iy, ioff+isc, ioff+iec, joff+jsc, joff+jec)
+      endif
+
+! if there is more than one tile on this pe, then no decomposition for all tiles on this pe, so we can just return
+      if(size(domain%x(:))>1) then
+         !--- the following is needed to avoid deadlock.
+         if( tile == size(domain%x(:)) ) call mpp_sync_self( )
+         return
+      end if
+
+      root_pe = mpp_root_pe()
+
+!fill off-domains (note loops begin at an offset of 1)
+      if( xonly )then
+          nd = size(domain%x(1)%list(:))
+          do n = 1,nd-1
+             lpos = mod(domain%x(1)%pos+nd-n,nd)
+             rpos = mod(domain%x(1)%pos   +n,nd)
+             from_pe = domain%x(1)%list(rpos)%pe
+             rpos = from_pe - root_pe ! for concurrent run, root_pe may not be 0.
+             if (from_pe == NULL_PE) then
+                num_words = 0
+             else
+                num_words = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                       * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             endif
+           ! Force use of scalar, integer ptr interface
+             call mpp_transmit( put_data=clocal(1), plen=num_word_me, to_pe=domain%x(1)%list(lpos)%pe, &
+                                get_data=cremote(1), glen=num_words, from_pe=from_pe )
+             m = 0
+             if (from_pe /= NULL_PE) then
+                is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
+                call vec2arr(cremote, global, ix, iy, ipos0+is, ipos0+ie, jpos0+jpos+jsc, jpos0+jpos+jec)
+             endif
+             call mpp_sync_self()  !-ensure MPI_ISEND is done.
+          end do
+      else if( yonly )then
+          nd = size(domain%y(1)%list(:))
+          do n = 1,nd-1
+             lpos = mod(domain%y(1)%pos+nd-n,nd)
+             rpos = mod(domain%y(1)%pos   +n,nd)
+             from_pe = domain%y(1)%list(rpos)%pe
+             rpos = from_pe - root_pe
+             if (from_pe == NULL_PE) then
+                num_words = 0
+             else
+                num_words = (domain%list(rpos)%x(1)%compute%size+ishift) &
+                       * (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+             endif
+           ! Force use of scalar, integer pointer interface
+             call mpp_transmit( put_data=clocal(1), plen=num_word_me, to_pe=domain%y(1)%list(lpos)%pe, &
+                                get_data=cremote(1), glen=num_words, from_pe=from_pe )
+             m = 0
+             if (from_pe /= NULL_PE) then
+               js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
+               call vec2arr(cremote, global, ix, iy, ipos0+ipos+isc, ipos0+ipos+iec, jpos0+js, jpos0+je)
+             endif
+             call mpp_sync_self()  !-ensure MPI_ISEND is done.
+          end do
+      else
+         tile_id = domain%tile_id(1)
+         nd = size(domain%list(:))
+         if(root_only) then
+            if(domain%pe .NE. domain%tile_root_pe) then
+               call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%tile_root_pe, tag=COMM_TAG_1 )
+            else
+               do n = 1,nd-1
+                  rpos = mod(domain%pos+n,nd)
+                  if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle
+                  num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * &
+                            & (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+                  call mpp_recv(cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_1 )
+                  m = 0
+                  is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
+                  js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
+
+                  call vec2arr(cremote, global, ix, iy, ipos0+is, ipos0+ie, jpos0+js, jpos0+je)
+               end do
+            endif
+         else
+            do n = 1,nd-1
+               lpos = mod(domain%pos+nd-n,nd)
+               if( domain%list(lpos)%tile_id(1).NE. tile_id ) cycle ! global field only within tile
+               call mpp_send( clocal(1), plen=num_word_me, to_pe=domain%list(lpos)%pe, tag=COMM_TAG_2 )
+            end do
+            do n = 1,nd-1
+               rpos = mod(domain%pos+n,nd)
+               if( domain%list(rpos)%tile_id(1) .NE. tile_id ) cycle ! global field only within tile
+               num_words = (domain%list(rpos)%x(1)%compute%size+ishift) * &
+                         & (domain%list(rpos)%y(1)%compute%size+jshift) * ke
+               call mpp_recv( cremote(1), glen=num_words, from_pe=domain%list(rpos)%pe, tag=COMM_TAG_2 )
+               m = 0
+               is = domain%list(rpos)%x(1)%compute%begin; ie = domain%list(rpos)%x(1)%compute%end+ishift
+               js = domain%list(rpos)%y(1)%compute%begin; je = domain%list(rpos)%y(1)%compute%end+jshift
+
+               call vec2arr(cremote, global, ix, iy, ipos0+is, ipos0+ie, jpos0+js, jpos0+je)
+            end do
+         endif
+      end if
+
+      call mpp_sync_self()
+
+      return
+
+      contains
+
+      ! Copy data from arr to vec
+      subroutine arr2vec(arr, vec, ix, iy, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: arr(..)
+        MPP_TYPE_, intent(out) :: vec(:)
+        integer, intent(in) :: ix, iy ! Indices of the domain-decomposed dimensions
+        integer, intent(in) :: is, ie, js, je ! Starting and ending indices of the x and y dimensions
+        integer, allocatable, dimension(:) :: lb, ub ! Lower and upper bounds of data to be copied
+        integer :: n, m
+        integer :: i1, i2, i3, i4, i5
+
+        n = rank(arr)
+        allocate (lb(n), ub(n))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(ix) = is
+        lb(iy) = js
+
+        ub(ix) = ie
+        ub(iy) = je
+
+        m = 0
+        select rank(arr)
+          rank (2)
+            do i2=lb(2),ub(2)
+              do i1=lb(1),ub(1)
+                m = m + 1
+                vec(m) = arr(i1, i2)
+              enddo
+            enddo
+          rank (3)
+            do i3=lb(3),ub(3)
+              do i2=lb(2),ub(2)
+                do i1=lb(1),ub(1)
+                  m = m + 1
+                  vec(m) = arr(i1, i2, i3)
+                enddo
+              enddo
+            enddo
+          rank (4)
+            do i4=lb(4),ub(4)
+              do i3=lb(3),ub(3)
+                do i2=lb(2),ub(2)
+                  do i1=lb(1),ub(1)
+                    m = m + 1
+                    vec(m) = arr(i1, i2, i3, i4)
+                  enddo
+                enddo
+              enddo
+            enddo
+          rank (5)
+            do i5=lb(5),ub(5)
+              do i4=lb(4),ub(4)
+                do i3=lb(3),ub(3)
+                  do i2=lb(2),ub(2)
+                    do i1=lb(1),ub(1)
+                      m = m + 1
+                      vec(m) = arr(i1, i2, i3, i4, i5)
+                    enddo
+                  enddo
+                enddo
+              enddo
+            enddo
+        end select
+      end subroutine arr2vec
+
+      ! Copy data from vec to arr
+      subroutine vec2arr(vec, arr, ix, iy, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: vec(:)
+        MPP_TYPE_, intent(out) :: arr(..)
+        integer, intent(in) :: ix, iy ! Indices of the domain-decomposed dimensions
+        integer, intent(in) :: is, ie, js, je ! Starting and ending indices of the x and y dimensions
+        integer, allocatable, dimension(:) :: lb, ub ! Lower and upper bounds of data to be copied
+        integer :: n, m
+        integer :: i1, i2, i3, i4, i5
+
+        n = rank(arr)
+        allocate (lb(n), ub(n))
+
+        lb = 1
+        ub = shape(arr)
+
+        lb(ix) = is
+        lb(iy) = js
+
+        ub(ix) = ie
+        ub(iy) = je
+
+        m = 0
+        select rank(arr)
+          rank (2)
+            do i2=lb(2),ub(2)
+              do i1=lb(1),ub(1)
+                m = m + 1
+                arr(i1, i2) = vec(m)
+              enddo
+            enddo
+          rank (3)
+            do i3=lb(3),ub(3)
+              do i2=lb(2),ub(2)
+                do i1=lb(1),ub(1)
+                  m = m + 1
+                  arr(i1, i2, i3) = vec(m)
+                enddo
+              enddo
+            enddo
+          rank (4)
+            do i4=lb(4),ub(4)
+              do i3=lb(3),ub(3)
+                do i2=lb(2),ub(2)
+                  do i1=lb(1),ub(1)
+                    m = m + 1
+                    arr(i1, i2, i3, i4) = vec(m)
+                  enddo
+                enddo
+              enddo
+            enddo
+          rank (5)
+            do i5=lb(5),ub(5)
+              do i4=lb(4),ub(4)
+                do i3=lb(3),ub(3)
+                  do i2=lb(2),ub(2)
+                    do i1=lb(1),ub(1)
+                      m = m + 1
+                      arr(i1, i2, i3, i4, i5) = vec(m)
+                    enddo
+                  enddo
+                enddo
+              enddo
+            enddo
+        end select
+      end subroutine vec2arr
+    end subroutine MPP_GLOBAL_FIELD_
 !> @}
