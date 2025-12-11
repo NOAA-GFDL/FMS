@@ -25,7 +25,7 @@ program test_mpp_global_field
   use mpp_domains_mod, only: mpp_define_layout, mpp_define_domains
   use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
   use mpp_domains_mod, only: mpp_global_field
-  use fms_test_mod,    only: permutable_indices, factorial, arr_init, arr_compare
+  use fms_test_mod,    only: permutable_indices, factorial, arr_init, arr_compare, permute_arr
 
   implicit none
 
@@ -90,6 +90,7 @@ contains
     type(permutable_indices(2)) :: compute, data, global, global_with_halo, global_x, global_y
     integer, allocatable :: pelist(:)
     FMS_TEST_TYPE_ (FMS_TEST_KIND_), allocatable  :: global0(:,:), local(:,:), global1(:,:)
+    integer :: indx(2), ix, iy
 
     !> set up domain
     call mpp_define_layout([1,nx,1,ny], npes, layout)
@@ -123,6 +124,11 @@ contains
     call global_x%permute(p)
     call global_y%permute(p)
 
+    indx(1:2) = [1, 2]
+    call permute_arr(indx, p)
+    ix = findloc(indx, 1, dim=1)
+    iy = findloc(indx, 2, dim=1)
+
     !> assign global
     allocate(global0(global_with_halo%lb(1):global_with_halo%ub(1), global_with_halo%lb(2):global_with_halo%ub(2)))
     global0 = zero
@@ -136,7 +142,7 @@ contains
 
     !> test the data on data domain
     global1 = zero
-    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call mpp_global_field(domain, local, global1, position=test_params%position, xdim=ix, ydim=iy)
     call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2)), global1, &
                      'mpp_global_field on data domain with ' // trim(test_params%name))
 
@@ -159,19 +165,21 @@ contains
 
     !> xupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
                      global1(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
                      'mpp_global_field xupdate only on data domain with ' // trim(test_params%name))
 
     !> yupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
                      global1(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
                      'mpp_global_field yupdate only on data domain with ' // trim(test_params%name))
 
-    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call mpp_global_field(domain, local, global1, position=test_params%position, xdim=ix, ydim=iy)
     call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2)), global1, &
                      'mpp_global_field on data domain with ' // trim(test_params%name))
 
@@ -182,20 +190,22 @@ contains
     local(:,:) = global0(compute%lb(1):compute%ub(1), compute%lb(2):compute%ub(2))
 
     global1 = zero
-    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call mpp_global_field(domain, local, global1, position=test_params%position, xdim=ix, ydim=iy)
     call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2)), global1, &
                      'mpp_global_field on compute domain with ' // trim(test_params%name))
 
     !> xupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
                      global1(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
                      'mpp_global_field xupdate only on compute domain with ' // trim(test_params%name))
 
     !> yupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
                      global1(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
                      'mpp_global_field yupdate only on compute domain with ' // trim(test_params%name))
@@ -210,6 +220,7 @@ contains
     type(permutable_indices(3)) :: compute, data, global, global_with_halo, global_x, global_y
     integer, allocatable :: pelist(:)
     FMS_TEST_TYPE_ (FMS_TEST_KIND_), allocatable  :: global0(:,:,:), local(:,:,:), global1(:,:,:)
+    integer :: indx(3), ix, iy
 
     !> set up domain
     call mpp_define_layout([1,nx,1,ny], npes, layout)
@@ -248,6 +259,11 @@ contains
     call global_x%permute(p)
     call global_y%permute(p)
 
+    indx(1:3) = [1, 2, 3]
+    call permute_arr(indx, p)
+    ix = findloc(indx, 1, dim=1)
+    iy = findloc(indx, 2, dim=1)
+
     !> assign global0
     allocate(global0(global_with_halo%lb(1):global_with_halo%ub(1), global_with_halo%lb(2):global_with_halo%ub(2), &
                      global_with_halo%lb(3):global_with_halo%ub(3)))
@@ -263,7 +279,7 @@ contains
 
     !> test the data on data domain
     global1 = zero
-    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call mpp_global_field(domain, local, global1, position=test_params%position, xdim=ix, ydim=iy)
     call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)), &
                      global1, 'mpp_global_field on data domain with ' // trim(test_params%name))
 
@@ -286,7 +302,8 @@ contains
 
     !> xupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_x%lb(1):global_x%ub(1), global_x%lb(2):global_x%ub(2), &
                      global_x%lb(3):global_x%ub(3)), global1(global_x%lb(1):global_x%ub(1), &
                      global_x%lb(2):global_x%ub(2), global_x%lb(3):global_x%ub(3)), &
@@ -294,13 +311,14 @@ contains
 
     !> yupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_y%lb(1):global_y%ub(1), global_y%lb(2):global_y%ub(2), &
                      global_y%lb(3):global_y%ub(3)), global1(global_y%lb(1):global_y%ub(1), &
                      global_y%lb(2):global_y%ub(2), global_y%lb(3):global_y%ub(3)), &
                      'mpp_global_field yupdate only on data domain with ' // trim(test_params%name))
 
-    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call mpp_global_field(domain, local, global1, position=test_params%position, xdim=ix, ydim=iy)
     call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)), &
                      global1, 'mpp_global_field on data domain with ' // trim(test_params%name))
 
@@ -311,13 +329,14 @@ contains
     local(:,:,:) = global0(compute%lb(1):compute%ub(1), compute%lb(2):compute%ub(2), compute%lb(3):compute%ub(3))
 
     global1 = zero
-    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call mpp_global_field(domain, local, global1, position=test_params%position, xdim=ix, ydim=iy)
     call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)), &
                      global1, 'mpp_global_field on compute domain with ' // trim(test_params%name))
 
     !> xupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_x%lb(1):global_x%ub(1), global_x%lb(2):global_x%ub(2), &
                      global_x%lb(3):global_x%ub(3)), global1(global_x%lb(1):global_x%ub(1), &
                      global_x%lb(2):global_x%ub(2), global_x%lb(3):global_x%ub(3)), &
@@ -325,7 +344,8 @@ contains
 
     !> yupdate
     global1 = zero
-    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position, &
+                          xdim=ix, ydim=iy)
     call arr_compare(global0(global_y%lb(1):global_y%ub(1), global_y%lb(2):global_y%ub(2), &
                      global_y%lb(3):global_y%ub(3)), global1(global_y%lb(1):global_y%ub(1), &
                      global_y%lb(2):global_y%ub(2), global_y%lb(3):global_y%ub(3)), &

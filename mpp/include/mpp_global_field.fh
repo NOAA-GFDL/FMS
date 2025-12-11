@@ -23,6 +23,7 @@
       !> Gets a global field from a local field
       !! local field may be on compute OR data domain
     subroutine MPP_GLOBAL_FIELD_( domain, local, global, flags, position, tile_count, default_data, xdim, ydim)
+      use iso_c_binding, only: c_f_pointer, c_loc
       type(domain2D), intent(in)    :: domain
       MPP_TYPE_, intent(in)         ::  local(..)
       MPP_TYPE_, intent(out)        :: global(..)
@@ -42,6 +43,7 @@
       character(len=8) :: text
 
       integer :: tile, ishift, jshift, ipos0, jpos0
+      integer :: size_clocal, size_cremote
 
       tile = 1
       if(present(tile_count)) tile = tile_count
@@ -77,8 +79,8 @@
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
-      clocal(1:size_clocal) => mpp_domains_stack(1:size_clocal)
-      cremote(1:size_cremote) => mpp_domains_stack((size_clocal+1):(size_clocal+size_cremote))
+      call c_f_pointer(c_loc(mpp_domains_stack(1)),             clocal,  [size_clocal])
+      call c_f_pointer(c_loc(mpp_domains_stack(1+size_clocal)), cremote, [size_cremote])
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
 
@@ -104,8 +106,9 @@
       global_on_this_pe =  .NOT. root_only .OR. domain%pe == domain%tile_root_pe
       ipos = 0; jpos = 0
       if(global_on_this_pe ) then
-         if(n_per_gridpoint_local.ne.n_per_gridpoint_global) call mpp_error(FATAL, &
-              'MPP_GLOBAL_FIELD: mismatch of global and local dimension sizes')
+         if(n_per_gridpoint_local.ne.n_per_gridpoint_global) then
+           call mpp_error(FATAL, 'MPP_GLOBAL_FIELD: mismatch of global and local dimension sizes')
+         endif
          if( size(global,ix).NE.(domain%x(tile)%global%size+ishift) .OR. &
              size(global,iy).NE.(domain%y(tile)%global%size+jshift))then
             if(xonly) then
@@ -152,14 +155,10 @@
       m = 0
       if(global_on_this_pe) then
          !z1l: initialize global = 0 to support mask domain
-         if(PRESENT(default_data)) then
-            global = default_data
+         if(present(default_data)) then
+           call assumed_rank_assign(global, default_data)
          else
-#ifdef LOGICAL_VARIABLE
-            global = .false.
-#else
-            global = 0
-#endif
+           call assumed_rank_assign(global, DEFAULT_VALUE_)
          endif
 
         call arr2vec(local, clocal, ix, iy, ioff+isc, ioff+iec, joff+jsc, joff+jec)
@@ -406,5 +405,23 @@
             enddo
         end select
       end subroutine vec2arr
+
+      subroutine assumed_rank_assign(arr, val)
+        MPP_TYPE_, dimension(..), intent(out) :: arr
+        MPP_TYPE_, intent(in) :: val
+
+        select rank (arr)
+          rank(1)
+            arr = val
+          rank(2)
+            arr = val
+          rank(3)
+            arr = val
+          rank(4)
+            arr = val
+          rank(5)
+            arr = val
+        end select
+      end subroutine assumed_rank_assign
     end subroutine MPP_GLOBAL_FIELD_
 !> @}

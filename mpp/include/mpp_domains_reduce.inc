@@ -909,6 +909,8 @@
 #define MPP_GLOBAL_FIELD_ mpp_global_field_r8
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0._r8_kind
 #include <mpp_global_field.fh>
 
 #ifdef OVERLOAD_C8
@@ -916,6 +918,8 @@
 #define MPP_GLOBAL_FIELD_ mpp_global_field_c8
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(c8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ (0._r8_kind,0._r8_kind)
 #include <mpp_global_field.fh>
 #endif
 
@@ -923,20 +927,24 @@
 #define MPP_GLOBAL_FIELD_ mpp_global_field_i8
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0_i8_kind
 #include <mpp_global_field.fh>
 
 #undef MPP_GLOBAL_FIELD_
 #define MPP_GLOBAL_FIELD_ mpp_global_field_l8
-#define LOGICAL_VARIABLE
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l8_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ .false._l8_kind
 #include <mpp_global_field.fh>
-#undef LOGICAL_VARIABLE
 
 #undef MPP_GLOBAL_FIELD_
 #define MPP_GLOBAL_FIELD_ mpp_global_field_r4
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0._r4_kind
 #include <mpp_global_field.fh>
 
 #ifdef OVERLOAD_C4
@@ -944,6 +952,8 @@
 #define MPP_GLOBAL_FIELD_ mpp_global_field_c4
 #undef MPP_TYPE_
 #define MPP_TYPE_ complex(c4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ (0._r4_kind,0._r4_kind)
 #include <mpp_global_field.fh>
 #endif
 
@@ -951,15 +961,17 @@
 #define MPP_GLOBAL_FIELD_ mpp_global_field_i4
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ 0_i4_kind
 #include <mpp_global_field.fh>
 
 #undef MPP_GLOBAL_FIELD_
 #define MPP_GLOBAL_FIELD_ mpp_global_field_l4
-#define LOGICAL_VARIABLE
 #undef MPP_TYPE_
 #define MPP_TYPE_ logical(l4_kind)
+#undef DEFAULT_VALUE_
+#define DEFAULT_VALUE_ .false._l4_kind
 #include <mpp_global_field.fh>
-#undef LOGICAL_VARIABLE
 !****************************************************
 #undef MPP_DO_GLOBAL_FIELD_3D_AD_
 #define MPP_DO_GLOBAL_FIELD_3D_AD_ mpp_do_global_field2D_r8_3d_ad
