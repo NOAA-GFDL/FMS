@@ -552,7 +552,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
       allocate(parent_area(nlon_out, nlat_out))
     end if
 
-   !create_xgrid expects real variables to be in double precision.  
+   !create_xgrid expects real variables to be in double precision.
    !Below, if lon and lat are already r8_kind, then point to the grid values
    !Else, convert lon and lat to r8_kind before sending them to create_xgrid
 #ifdef HI_R8_CODE_
