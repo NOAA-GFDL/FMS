@@ -18,6 +18,7 @@
 !> @addtogroup horiz_interp_conserve
 !> @{
 
+! if HI_R8_CODE_ is defined, compile r8-specific code
 #undef HI_R8_CODE_
 #define HI_R8_CODE_ 1
 

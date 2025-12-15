@@ -18,6 +18,7 @@
 !> @addtogroup horiz_interp_conserve
 !> @{
 
+! if HI_R4_CODE_ is defined, compile r4-specific code
 #undef HI_R4_CODE_
 #define HI_R4_CODE_ 1
 

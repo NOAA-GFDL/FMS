@@ -214,7 +214,10 @@ contains
     character(len=*), intent(in) :: weight_filename !< file to read
     character(len=*), intent(in) :: weight_file_source !< only accepts "fregrid"
     integer, intent(in) :: nlon_src, nlat_src, nlon_dst, nlat_dst !< number of grid points on src and dst grids
-    integer, intent(in), optional :: isw, iew, jsw, jew !< compute domain indices on dst grid
+    integer, intent(in), optional :: isw !< dst cell index in x direction, if dst cell index < isw, do not save
+    integer, intent(in), optional :: iew !< dst cell index in x direction, if dst cell index > iew, do not save
+    integer, intent(in), optional :: jsw !< dst cell index in y direction, if dst cell index < jsw, do not save
+    integer, intent(in), optional :: jew !< dst cell index in y direction, if dst cell index > jew, do not save
     integer, intent(in), optional :: src_tile !< save weights for src_tile only; if not present, read all
     logical, intent(in), optional :: save_xgrid_area !< save xgrid_area
 
