@@ -94,6 +94,7 @@ module mpp_domains_mod
   use mpi
 #endif
 
+  use iso_c_binding,          only : c_f_pointer, c_loc
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
   use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
@@ -2290,6 +2291,57 @@ module mpp_domains_mod
      module procedure nullify_domain2d_list
   end interface
 
+  !> Private interface to pack an array into a vector
+  !> @ingroup mpp_domains_mod
+  interface arr2vec
+     module procedure arr2vec_r8
+#ifdef OVERLOAD_C8
+     module procedure arr2vec_c8
+#endif
+     module procedure arr2vec_i8
+     module procedure arr2vec_l8
+     module procedure arr2vec_r4
+#ifdef OVERLOAD_C4
+     module procedure arr2vec_c4
+#endif
+     module procedure arr2vec_i4
+     module procedure arr2vec_l4
+  end interface
+
+  !> Private interface to unpack a vector into an array
+  !> @ingroup mpp_domains_mod
+  interface vec2arr
+     module procedure vec2arr_r8
+#ifdef OVERLOAD_C8
+     module procedure vec2arr_c8
+#endif
+     module procedure vec2arr_i8
+     module procedure vec2arr_l8
+     module procedure vec2arr_r4
+#ifdef OVERLOAD_C4
+     module procedure vec2arr_c4
+#endif
+     module procedure vec2arr_i4
+     module procedure vec2arr_l4
+  end interface
+
+  !> Private interface to initialize an assumed-rank array
+  !> @ingroup mpp_domains_mod
+  interface arr_init
+     module procedure arr_init_r8
+#ifdef OVERLOAD_C8
+     module procedure arr_init_c8
+#endif
+     module procedure arr_init_i8
+     module procedure arr_init_l8
+     module procedure arr_init_r4
+#ifdef OVERLOAD_C4
+     module procedure arr_init_c4
+#endif
+     module procedure arr_init_i4
+     module procedure arr_init_l4
+  end interface
+
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
   public version
@@ -2304,5 +2356,6 @@ contains
 #include <mpp_domains_misc.inc>
 #include <mpp_domains_reduce.inc>
 #include <mpp_unstruct_domain.inc>
+#include <mpp_pack.inc>
 
 end module mpp_domains_mod

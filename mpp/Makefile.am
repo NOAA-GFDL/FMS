@@ -86,6 +86,8 @@ libmpp_la_SOURCES = \
   include/mpp_global_sum_ad.fh \
   include/mpp_global_sum_tl.fh \
   include/mpp_group_update.fh \
+  include/mpp_pack.fh \
+  include/mpp_pack.inc \
   include/mpp_read_2Ddecomp.fh \
   include/mpp_read_compressed.fh \
   include/mpp_read_distributed_ascii.fh \
@@ -152,6 +154,8 @@ mpp_mod.$(FC_MODEXT): \
   include/mpp_type_nocomm.fh \
   include/mpp_gather.fh \
   include/mpp_scatter.fh \
+  include/mpp_pack.fh \
+  include/mpp_pack.inc \
   include/system_clock.fh
 mpp_data_mod.$(FC_MODEXT): \
   mpp_parameter_mod.$(FC_MODEXT) \
@@ -202,7 +206,9 @@ mpp_domains_mod.$(FC_MODEXT): \
   include/mpp_global_sum_tl.fh \
   include/mpp_unstruct_domain.inc \
   include/mpp_global_field_ug.fh \
-  include/mpp_unstruct_pass_data.fh
+  include/mpp_unstruct_pass_data.fh \
+  include/mpp_pack.fh \
+  include/mpp_pack.inc
 mpp_efp_mod.$(FC_MODEXT): mpp_parameter_mod.$(FC_MODEXT) mpp_mod.$(FC_MODEXT)
 mpp_memutils_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
 mpp_pset_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)

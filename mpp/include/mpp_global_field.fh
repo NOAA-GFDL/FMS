@@ -23,7 +23,6 @@
       !> Gets a global field from a local field
       !! local field may be on compute OR data domain
     subroutine MPP_GLOBAL_FIELD_( domain, local, global, flags, position, tile_count, default_data, xdim, ydim)
-      use iso_c_binding, only: c_f_pointer, c_loc
       type(domain2D), intent(in)    :: domain
       MPP_TYPE_, intent(in)         ::  local(..)
       MPP_TYPE_, intent(out)        :: global(..)
@@ -156,9 +155,9 @@
       if(global_on_this_pe) then
          !z1l: initialize global = 0 to support mask domain
          if(present(default_data)) then
-           call assumed_rank_assign(global, default_data)
+           call arr_init(global, default_data)
          else
-           call assumed_rank_assign(global, DEFAULT_VALUE_)
+           call arr_init(global, DEFAULT_VALUE_)
          endif
 
         call arr2vec(local, clocal, ix, iy, ioff+isc, ioff+iec, joff+jsc, joff+jec)
@@ -266,162 +265,6 @@
          endif
       end if
 
-      call mpp_sync_self()
-
-      return
-
-      contains
-
-      ! Copy data from arr to vec
-      subroutine arr2vec(arr, vec, ix, iy, is, ie, js, je)
-        MPP_TYPE_, intent(in) :: arr(..)
-        MPP_TYPE_, intent(out) :: vec(:)
-        integer, intent(in) :: ix, iy ! Indices of the domain-decomposed dimensions
-        integer, intent(in) :: is, ie, js, je ! Starting and ending indices of the x and y dimensions
-        integer, allocatable, dimension(:) :: lb, ub ! Lower and upper bounds of data to be copied
-        integer :: n, m
-        integer :: i1, i2, i3, i4, i5
-
-        n = rank(arr)
-        allocate (lb(n), ub(n))
-
-        lb = 1
-        ub = shape(arr)
-
-        lb(ix) = is
-        lb(iy) = js
-
-        ub(ix) = ie
-        ub(iy) = je
-
-        m = 0
-        select rank(arr)
-          rank (2)
-            do i2=lb(2),ub(2)
-              do i1=lb(1),ub(1)
-                m = m + 1
-                vec(m) = arr(i1, i2)
-              enddo
-            enddo
-          rank (3)
-            do i3=lb(3),ub(3)
-              do i2=lb(2),ub(2)
-                do i1=lb(1),ub(1)
-                  m = m + 1
-                  vec(m) = arr(i1, i2, i3)
-                enddo
-              enddo
-            enddo
-          rank (4)
-            do i4=lb(4),ub(4)
-              do i3=lb(3),ub(3)
-                do i2=lb(2),ub(2)
-                  do i1=lb(1),ub(1)
-                    m = m + 1
-                    vec(m) = arr(i1, i2, i3, i4)
-                  enddo
-                enddo
-              enddo
-            enddo
-          rank (5)
-            do i5=lb(5),ub(5)
-              do i4=lb(4),ub(4)
-                do i3=lb(3),ub(3)
-                  do i2=lb(2),ub(2)
-                    do i1=lb(1),ub(1)
-                      m = m + 1
-                      vec(m) = arr(i1, i2, i3, i4, i5)
-                    enddo
-                  enddo
-                enddo
-              enddo
-            enddo
-        end select
-      end subroutine arr2vec
-
-      ! Copy data from vec to arr
-      subroutine vec2arr(vec, arr, ix, iy, is, ie, js, je)
-        MPP_TYPE_, intent(in) :: vec(:)
-        MPP_TYPE_, intent(out) :: arr(..)
-        integer, intent(in) :: ix, iy ! Indices of the domain-decomposed dimensions
-        integer, intent(in) :: is, ie, js, je ! Starting and ending indices of the x and y dimensions
-        integer, allocatable, dimension(:) :: lb, ub ! Lower and upper bounds of data to be copied
-        integer :: n, m
-        integer :: i1, i2, i3, i4, i5
-
-        n = rank(arr)
-        allocate (lb(n), ub(n))
-
-        lb = 1
-        ub = shape(arr)
-
-        lb(ix) = is
-        lb(iy) = js
-
-        ub(ix) = ie
-        ub(iy) = je
-
-        m = 0
-        select rank(arr)
-          rank (2)
-            do i2=lb(2),ub(2)
-              do i1=lb(1),ub(1)
-                m = m + 1
-                arr(i1, i2) = vec(m)
-              enddo
-            enddo
-          rank (3)
-            do i3=lb(3),ub(3)
-              do i2=lb(2),ub(2)
-                do i1=lb(1),ub(1)
-                  m = m + 1
-                  arr(i1, i2, i3) = vec(m)
-                enddo
-              enddo
-            enddo
-          rank (4)
-            do i4=lb(4),ub(4)
-              do i3=lb(3),ub(3)
-                do i2=lb(2),ub(2)
-                  do i1=lb(1),ub(1)
-                    m = m + 1
-                    arr(i1, i2, i3, i4) = vec(m)
-                  enddo
-                enddo
-              enddo
-            enddo
-          rank (5)
-            do i5=lb(5),ub(5)
-              do i4=lb(4),ub(4)
-                do i3=lb(3),ub(3)
-                  do i2=lb(2),ub(2)
-                    do i1=lb(1),ub(1)
-                      m = m + 1
-                      arr(i1, i2, i3, i4, i5) = vec(m)
-                    enddo
-                  enddo
-                enddo
-              enddo
-            enddo
-        end select
-      end subroutine vec2arr
-
-      subroutine assumed_rank_assign(arr, val)
-        MPP_TYPE_, dimension(..), intent(out) :: arr
-        MPP_TYPE_, intent(in) :: val
-
-        select rank (arr)
-          rank(1)
-            arr = val
-          rank(2)
-            arr = val
-          rank(3)
-            arr = val
-          rank(4)
-            arr = val
-          rank(5)
-            arr = val
-        end select
-      end subroutine assumed_rank_assign
+      call mpp_sync_self
     end subroutine MPP_GLOBAL_FIELD_
 !> @}
