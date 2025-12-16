@@ -18,11 +18,10 @@
 !***********************************************************************
 
 if( group%k_loop_inside ) then
-#ifndef __NVCOMPILER_OPENMP_GPU
-!$OMP parallel do default(none) shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
-!$OMP                          private(buffer_pos,pos,m,is,ie,js,je,rotation, &
-!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k,ni,nj,idx)
-#endif
+!$OMP parallel do shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
+!$OMP            private(buffer_pos,pos,m,is,ie,js,je,rotation, &
+!$OMP                    ptr_field, ptr_fieldx, ptr_fieldy,n,k,ni,nj,idx) &
+!$OMP                if (.not.use_device_ptr)
   do n = 1, npack
      buffer_pos = group%pack_buffer_pos(n) + buffer_start_pos
      pos  = buffer_pos
