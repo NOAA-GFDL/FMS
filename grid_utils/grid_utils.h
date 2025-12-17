@@ -35,6 +35,15 @@
 #define max(a,b) (a>b ? a:b)
 #define SMALL_VALUE ( 1.e-10 )
 
+// append underscore so we can call from fortran
+#define get_maxxgrid get_maxxgrid_
+#define get_global_area get_global_area_
+#define get_grid_area get_grid_area_
+#define get_grid_great_circle_area get_grid_great_circle_area_
+#define get_grid_area_no_adjust get_grid_area_no_adjust_
+#define get_grid_area_ug get_grid_area_ug_
+#define inside_a_polygon inside_a_polygon_
+
 void error_handler(const char *msg);
 
 int lon_fix(double *x, double *y, int n_in, double tlon);
@@ -84,8 +93,6 @@ int inside_a_polygon( double *lon1, double *lat1, int *npts, double *lon2, doubl
 
 int samePoint(double x1, double y1, double z1, double x2, double y2, double z2);
 
-int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2);
-
 int inside_edge(double x0, double y0, double x1, double y1, double x, double y);
 
 int line_intersect_2D_3D(double *a1, double *a2, double *q1, double *q2, double *q3,
@@ -97,11 +104,7 @@ double poly_ctrlat(const double lon[], const double lat[], int n);
 
 int get_maxxgrid(void);
 
-int get_maxxgrid_(void);
-
 double get_global_area(void);
-
-double get_global_area_(void);
 
 double poly_area(const double lon[], const double lat[], int n);
 
@@ -110,11 +113,11 @@ double poly_area_dimensionless(const double x[], const double y[], int n);
 double spherical_excess_area(const double* p_ll, const double* p_ul,
                              const double* p_lr, const double* p_ur, double radius);
 
-void get_grid_area(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_area(const int* nlon, const int* nlat, const double *lon, const double *lat, double *area);
 
-void get_grid_great_circle_area(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_great_circle_area(const int* nlon, const int* nlat, const double *lon, const double *lat, double *area);
 
-void get_grid_area_no_adjust(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
+void get_grid_area_no_adjust(const int* nlon, const int* nlat, const double *lon, const double *lat, double *area);
 
 int clip(const double lon_in[], const double lat_in[], int n_in, double ll_lon, double ll_lat,
          double ur_lon, double ur_lat, double lon_out[], double lat_out[]);
@@ -127,16 +130,8 @@ int clip_2dx2d_great_circle(const double x1_in[], const double y1_in[], const do
                             const double x2_in[], const double y2_in[], const double z2_in [], int n2_in,
                             double x_out[], double y_out[], double z_out[]);
 
-void get_grid_area_ug(const int *npts, const double *lon, const double *lat, double *area);
+void get_grid_area_ug(const int* npts, const double *lon, const double *lat, double *area);
 
-void get_grid_great_circle_area_ug(const int *npts, const double *lon, const double *lat, double *area);
-
-void get_grid_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
-
-void get_grid_great_circle_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area);
-
-void get_grid_area_ug_(const int *npts, const double *lon, const double *lat, double *area);
-
-void get_grid_great_circle_area_ug_(const int *npts, const double *lon, const double *lat, double *area);
+void get_grid_great_circle_area_ug(const int* npts, const double *lon, const double *lat, double *area);
 
 #endif

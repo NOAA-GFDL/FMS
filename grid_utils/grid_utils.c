@@ -476,7 +476,6 @@ int invert_matrix_3x3(long double m[], long double m_inv[]) {
   return 1;
 }
 
-
 int inside_a_polygon(double *lon1, double *lat1, int *npts, double *lon2, double *lat2)
 {
 
@@ -521,26 +520,7 @@ int inside_a_polygon(double *lon1, double *lat1, int *npts, double *lon2, double
 
 }
 
-int inside_a_polygon_(double *lon1, double *lat1, int *npts, double *lon2, double *lat2)
-{
-
-  int isinside;
-
-  isinside = inside_a_polygon(lon1, lat1, npts, lon2, lat2);
-
-  return isinside;
-
-}
-
 double get_global_area(void)
-{
-  double garea;
-  garea = 4*M_PI*RADIUS*RADIUS;
-
-  return garea;
-}
-
-double get_global_area_(void)
 {
   double garea;
   garea = 4*M_PI*RADIUS*RADIUS;
@@ -718,12 +698,7 @@ double spherical_excess_area(const double* p_ll, const double* p_ul,
 void get_grid_area(const int *nlon, const int *nlat, const double *lon, const double *lat, const double *area)
   return the grid area.
 *******************************************************************************/
-void get_grid_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area)
-{
-  get_grid_area(nlon, nlat, lon, lat, area);
-}
-
-void get_grid_area(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area)
+void get_grid_area(const int* nlon, const int* nlat, const double *lon, const double *lat, double *area)
 {
   int nx, ny, nxp, i, j, n_in;
   double x_in[20], y_in[20];
@@ -736,7 +711,7 @@ void get_grid_area(const int *nlon, const int *nlat, const double *lon, const do
       x_in[0] = lon[j*nxp+i];
       x_in[1] = lon[j*nxp+i+1];
       x_in[2] = lon[(j+1)*nxp+i+1];
-      x_in[3] = lon[(j+1)*nxp+i];
+      x_in[3] = lon[(j+1)*nxp+i]; // fails here
       y_in[0] = lat[j*nxp+i];
       y_in[1] = lat[j*nxp+i+1];
       y_in[2] = lat[(j+1)*nxp+i+1];
@@ -752,12 +727,7 @@ void get_grid_area(const int *nlon, const int *nlat, const double *lon, const do
 void get_grid_area_ug(const int *npts, const double *lon, const double *lat, const double *area)
   return the grid area.
 *******************************************************************************/
-void get_grid_area_ug_(const int *npts, const double *lon, const double *lat, double *area)
-{
-  get_grid_area_ug(npts, lon, lat, area);
-}
-
-void get_grid_area_ug(const int *npts, const double *lon, const double *lat, double *area)
+void get_grid_area_ug(const int* npts, const double *lon, const double *lat, double *area)
 {
   int nl, l, n_in, nv;
   double x_in[20], y_in[20];
@@ -780,20 +750,12 @@ void get_grid_area_ug(const int *npts, const double *lon, const double *lat, dou
 
 }  /* get_grid_area_ug */
 
-
-void get_grid_great_circle_area_(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area)
-{
-  get_grid_great_circle_area(nlon, nlat, lon, lat, area);
-
-}
-
-void get_grid_great_circle_area(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area)
+void get_grid_great_circle_area(const int* nlon, const int* nlat, const double *lon, const double *lat, double *area)
 {
   int nx, ny, nxp, nyp, i, j;
   int n0, n1, n2, n3;
   struct Node *grid=NULL;
   double *x=NULL, *y=NULL, *z=NULL;
-
 
   nx = *nlon;
   ny = *nlat;
@@ -827,13 +789,7 @@ void get_grid_great_circle_area(const int *nlon, const int *nlat, const double *
 
 }  /* get_grid_great_circle_area */
 
-void get_grid_great_circle_area_ug_(const int *npts, const double *lon, const double *lat, double *area)
-{
-  get_grid_great_circle_area_ug(npts, lon, lat, area);
-
-}
-
-void get_grid_great_circle_area_ug(const int *npts, const double *lon, const double *lat, double *area)
+void get_grid_great_circle_area_ug(const int* npts, const double *lon, const double *lat, double *area)
 {
   int l, nl, nv;
   int n0, n1, n2, n3;
@@ -870,7 +826,7 @@ void get_grid_great_circle_area_ug(const int *npts, const double *lon, const dou
 
 }  /* get_grid_great_circle_area_ug */
 
-void get_grid_area_dimensionless(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area)
+void get_grid_area_dimensionless(const int* nlon, const int* nlat, const double *lon, const double *lat, double *area)
 {
   int nx, ny, nxp, i, j, n_in;
   double x_in[20], y_in[20];
@@ -896,7 +852,7 @@ void get_grid_area_dimensionless(const int *nlon, const int *nlat, const double 
 
 
 
-void get_grid_area_no_adjust(const int *nlon, const int *nlat, const double *lon, const double *lat, double *area)
+void get_grid_area_no_adjust(const int* nlon, const int* nlat, const double *lon, const double *lat, double *area)
 {
   int nx, ny, nxp, i, j, n_in;
   double x_in[20], y_in[20];
@@ -1734,3 +1690,5 @@ int inside_edge(double x0, double y0, double x1, double y1, double x, double y)
   return (product<=SMALL) ? 1:0;
 
 } /* inside_edge */
+
+
