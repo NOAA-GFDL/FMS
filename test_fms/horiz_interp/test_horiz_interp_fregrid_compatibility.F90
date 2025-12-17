@@ -48,10 +48,14 @@ program main
   call get_grid_area(nlon, nlat,lon, lat, answer_area)
 
   call horiz_interp_new(interp, lon, lat, lon, lat, interp_method="conservative", &
-    is_latlon_in=.false., is_latlon_out=.false., save_weights_as_fregrid=.true.)
+    is_latlon_in=.false., is_latlon_out=.false., save_xgrid_area=.true., as_fregrid=.true.)
 
   if(any(interp%xgrid_area /= pack(answer_area, .true.))) then
     call mpp_error(FATAL, "saved xgrid_area does not match answers")
+  end if
+
+  if(.not.any(interp%horizInterpReals8_type%area_frac_dst == 1.0_r8_kind)) then
+    call mpp_error(FATAL, "unexpected weights")
   end if
 
   call fms_end()

@@ -692,6 +692,7 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/fms2_io/test_collective_io.F90
   test_fms/fms2_io/test_generalized_indices.F90
   test_fms/fms/test_fms.F90
+  test_fms/horiz_interp/test_horiz_interp_fregrid_compatibility.F90
   test_fms/interpolator/test_interpolator.F90
   test_fms/mpp/test_clock_init.F90
   test_fms/mpp/test_domains_simple.F90

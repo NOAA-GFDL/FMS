@@ -33,14 +33,14 @@ check_PROGRAMS = test_horiz_interp_r4 \
                  test_horiz_interp_r8 \
                  test_create_xgrid_order2_r8 \
                  test_horiz_interp_read \
-                 test_horiz_interp_save_weights_as_fregrid
+                 test_horiz_interp_fregrid_compatibility
 
 # These are the sources for the tests.
 test_horiz_interp_r4_SOURCES = test_horiz_interp.F90
 test_horiz_interp_r8_SOURCES = test_horiz_interp.F90
 test_create_xgrid_order2_r8_SOURCES = test_create_xgrid_order2.F90
 test_horiz_interp_read_SOURCES = test_horiz_interp_read.F90
-test_horiz_interp_save_weights_as_fregrid_SOURCES = test_horiz_interp_save_weights_as_fregrid.F90
+test_horiz_interp_fregrid_compatibility_SOURCES = test_horiz_interp_fregrid_compatibility.F90
 
 test_horiz_interp_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_horiz_interp_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
