@@ -140,6 +140,30 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
 
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
+                      msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  if (fileobj%use_netcdf_mpi) then
+    c = 1
+    e = shape(vdata)
+
+    if (buffer_includes_halos) then
+      c(xdim_index) = isd
+      c(ydim_index) = jsd
+      e(xdim_index) = xc_size + 2*(isc - isd)
+      e(ydim_index) = yc_size + 2*(jsc - jsd)
+    else
+      c(xdim_index) = isc
+      c(ydim_index) = jsc
+      e(xdim_index) = xc_size
+      e(ydim_index) = yc_size
+    endif
+
+    call netcdf_read_data(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=c, edge_lengths=e)
+    return
+  endif
+
   if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
     ! This is a KLUDGE
     ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
@@ -149,9 +173,6 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
-                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
-                      msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   e(:) = shape(vdata)
 
@@ -320,6 +341,30 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
 
+  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
+                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
+                      msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  if (fileobj%use_netcdf_mpi) then
+    c = 1
+    e = shape(vdata)
+
+    if (buffer_includes_halos) then
+      c(xdim_index) = isd
+      c(ydim_index) = jsd
+      e(xdim_index) = xc_size + 2*(isc - isd)
+      e(ydim_index) = yc_size + 2*(jsc - jsd)
+    else
+      c(xdim_index) = isc
+      c(ydim_index) = jsc
+      e(xdim_index) = xc_size
+      e(ydim_index) = yc_size
+    endif
+
+    call netcdf_read_data(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=c, edge_lengths=e)
+    return
+  endif
+
   if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
     ! This is a KLUDGE
     ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
@@ -329,9 +374,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
   io_domain => mpp_get_io_domain(fileobj%domain)
-  call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
-                      xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
-                      msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
   c(:) = 1
   if (present(corner)) c = corner
 
@@ -499,10 +541,32 @@ subroutine domain_read_4d(fileobj, variable_name, vdata, unlim_dim_level, &
                           edge_lengths=edge_lengths, broadcast=.true.)
     return
   endif
-  io_domain => mpp_get_io_domain(fileobj%domain)
+
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
                       msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  if (fileobj%use_netcdf_mpi) then
+    c = 1
+    e = shape(vdata)
+
+    if (buffer_includes_halos) then
+      c(xdim_index) = isd
+      c(ydim_index) = jsd
+      e(xdim_index) = xc_size + 2*(isc - isd)
+      e(ydim_index) = yc_size + 2*(jsc - jsd)
+    else
+      c(xdim_index) = isc
+      c(ydim_index) = jsc
+      e(xdim_index) = xc_size
+      e(ydim_index) = yc_size
+    endif
+
+    call netcdf_read_data(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=c, edge_lengths=e)
+    return
+  endif
+
+  io_domain => mpp_get_io_domain(fileobj%domain)
   c(:) = 1
   e(:) = shape(vdata)
   if (present(edge_lengths)) e = edge_lengths
@@ -715,10 +779,32 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
                           edge_lengths=edge_lengths, broadcast=.true.)
     return
   endif
-  io_domain => mpp_get_io_domain(fileobj%domain)
+
   call domain_offsets(size(vdata, xdim_index), size(vdata, ydim_index), fileobj%domain, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
                       msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
+
+  if (fileobj%use_netcdf_mpi) then
+    c = 1
+    e = shape(vdata)
+
+    if (buffer_includes_halos) then
+      c(xdim_index) = isd
+      c(ydim_index) = jsd
+      e(xdim_index) = xc_size + 2*(isc - isd)
+      e(ydim_index) = yc_size + 2*(jsc - jsd)
+    else
+      c(xdim_index) = isc
+      c(ydim_index) = jsc
+      e(xdim_index) = xc_size
+      e(ydim_index) = yc_size
+    endif
+
+    call netcdf_read_data(fileobj, variable_name, vdata, unlim_dim_level=unlim_dim_level, corner=c, edge_lengths=e)
+    return
+  endif
+
+  io_domain => mpp_get_io_domain(fileobj%domain)
   c(:) = 1
   e(:) = shape(vdata)
   if (present(edge_lengths)) e = edge_lengths
