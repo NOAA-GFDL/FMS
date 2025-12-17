@@ -206,7 +206,7 @@ use platform_mod
      INTEGER :: num_attributes !< Number of defined attibutes
 !----------
 !ug support
-     logical(I4_KIND) :: use_domainUG = .false.
+     logical(L4_KIND) :: use_domainUG = .false.
      logical(I4_KIND) :: use_domain2D = .false.
 !----------
 !Check if time axis was already registered
