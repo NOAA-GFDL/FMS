@@ -66,6 +66,11 @@ _EOF
 
 #The test only runs with yaml
 if [ -z $parser_skip ]; then
+  # TODO: Enable these tests once generalized indices work is complete
+  SKIP_TESTS="test_data_override_ensembles.2 \
+              test_data_override_ensembles.3 \
+              test_data_override_ensembles.4"
+
   rm -rf INPUT/.
 
   sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml

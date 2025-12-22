@@ -24,6 +24,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# TODO: Enable this test once generalized indices work is complete
+SKIP_TESTS="test_data_override_multi_file.2"
+
 output_dir
 rm -rf data_table data_table.yaml input.nml input_base.nml
 

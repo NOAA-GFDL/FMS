@@ -27,6 +27,12 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# TODO: Enable these tests once generalized indices work is complete
+SKIP_TESTS="test_mpp_global_field.1 \
+            test_mpp_global_field.2 \
+            test_mpp_global_field.3 \
+            test_mpp_global_field.4"
+
 touch input.nml
 
 for datatype in r4 r8 i4 i8

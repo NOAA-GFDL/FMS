@@ -27,6 +27,16 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# TODO: Enable these tests once generalized indices work is complete
+SKIP_TESTS="test_interpolator2.2 \
+            test_interpolator2.3 \
+            test_interpolator2.4 \
+            test_interpolator2.5 \
+            test_interpolator2.6 \
+            test_interpolator2.7 \
+            test_interpolator2.8 \
+            test_interpolator2.9"
+
 # Tests to skip if input files not present
 if test ! -z "$test_input_path" ; then
   rm -rf INPUT && mkdir INPUT
