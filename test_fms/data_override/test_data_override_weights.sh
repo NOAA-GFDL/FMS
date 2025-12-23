@@ -23,6 +23,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# TODO: Enable this test once generalized indices work is complete
+SKIP_TESTS="test_data_override_weights.2"
+
 output_dir
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 

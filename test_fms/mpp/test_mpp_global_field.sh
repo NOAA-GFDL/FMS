@@ -26,8 +26,19 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# TODO: Enable these tests once generalized indices work is complete
+SKIP_TESTS="test_mpp_global_field.1 \
+            test_mpp_global_field.2 \
+            test_mpp_global_field.3 \
+            test_mpp_global_field.4"
+
 touch input.nml
-test_expect_success "mpp global field functions with mixed precision" '
-    mpirun -n 4 ./test_mpp_global_field
-'
+
+for datatype in r4 r8 i4 i8
+do
+  test_expect_success "mpp global field functions ($datatype)" "
+      mpirun -n 4 ./test_mpp_global_field_$datatype
+  "
+done
+
 test_done

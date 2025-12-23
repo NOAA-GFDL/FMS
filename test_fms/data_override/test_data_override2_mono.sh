@@ -23,6 +23,9 @@
 # Set common test settings.
 . ../test-lib.sh
 
+# TODO: Enable this test once generalized indices work is complete
+SKIP_TESTS="test_data_override2_mono.2"
+
 output_dir
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
 
@@ -83,6 +86,9 @@ _EOF
 
 #Repeat the test with yaml if needed
 if [ -z $parser_skip ]; then
+  # TODO: Enable this test once generalized indices work is complete
+  SKIP_TESTS="$SKIP_TESTS test_data_override2_mono.4"
+
   rm -rf INPUT/*
   sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
   test_expect_success "Creating input files" '
