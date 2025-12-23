@@ -23,7 +23,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
 # Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
+SUBDIRS = common astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
 mosaic2 interpolator fms mpp time_interp time_manager horiz_interp topography \
 field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
 random_numbers diag_integral column_diagnostics tridiagonal block_control
