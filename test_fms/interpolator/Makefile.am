@@ -23,10 +23,10 @@
 # uramirez, Ed Hartnett
 
 # Find the fms_mod.mod file.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include -I../common
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include -I$(top_srcdir)/test_fms/common
 
 # Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la ../common/libtest_fms.a
+LDADD = $(top_builddir)/libFMS/libFMS.la $(top_builddir)/test_fms/common/libtest_fms.a
 
 # Build this test program.
 check_PROGRAMS = test_interpolator test_interpolator2_r4 test_interpolator2_r8

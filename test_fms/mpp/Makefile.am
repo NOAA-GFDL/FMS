@@ -20,10 +20,10 @@
 # @uramirez, Ed Hartnett, @underwoo
 
 # Find the needed mod and inc files.
-AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR) -I../common
+AM_CPPFLAGS = -I${top_srcdir}/include -I$(MODDIR) -I$(top_srcdir)/test_fms/common
 
 # Link to the FMS library.
-LDADD = ${top_builddir}/libFMS/libFMS.la ../common/libtest_fms.a
+LDADD = ${top_builddir}/libFMS/libFMS.la $(top_builddir)/test_fms/common/libtest_fms.a
 
 # Build these test programs.
 check_PROGRAMS = test_mpp \
