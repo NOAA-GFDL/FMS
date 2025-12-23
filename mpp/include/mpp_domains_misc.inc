@@ -336,7 +336,6 @@ end subroutine init_nonblock_type
      ! Force use of "scalar", integer pointer mpp interface
      call mpp_send(ibounds(1), plen=4, to_pe=pelist2(1), tag=COMM_TAG_1)
      call mpp_send(send_buffer(1),plen=im*jm, to_pe=pelist2(1), tag=COMM_TAG_2)
-     deallocate(send_buffer)
 
    else if(pelist2(1) == pe) then        ! receive data and compare
      do p = pelist1(1), pelist1(size(pelist1(:)))
@@ -371,12 +370,13 @@ end subroutine init_nonblock_type
          print*, trim(mesg)//": ", 'comparison between 1 pe and ', npes-1, ' pes is ok'
       endif
   ! release memery
-      deallocate(field1, send_buffer)
+      deallocate(field1)
     endif
 
     deallocate(field2)
 
     call mpp_sync()
+    if (allocated(send_buffer)) deallocate(send_buffer)
 
   end subroutine mpp_check_field_2d_type1
 
