@@ -35,7 +35,7 @@
       integer :: to_pe, from_pe
       MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
       pointer( ptr, buffer )
-      integer :: buffer_pos, wordlen, errunit
+      integer :: buffer_pos, errunit
 
 !fix ke
       errunit = stderr()
@@ -45,7 +45,6 @@
 
       buffer_pos = 0
       ptr = LOC(mpp_domains_stack)
-      wordlen = size(TRANSFER(buffer(1),mpp_domains_stack))
 
 !pre-post recv
       n = d_comm%Rlist_size
