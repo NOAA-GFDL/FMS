@@ -1851,7 +1851,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
 
     call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
       this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures, &
-      diag_file%is_using_collective_writes())
+      diag_file%is_using_collective_writes(), diag_file%axis_ids(1:diag_file%number_of_axis))
   enddo
 
   if (need_associated_files) &
