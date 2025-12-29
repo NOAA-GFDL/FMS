@@ -1277,7 +1277,8 @@ subroutine open_diag_file(this, time_step, file_is_opened)
     select type (domain)
     type is (diagDomain2d_t)
       if (.not. open_file(fms2io_fileobj, file_name, "overwrite", domain%Domain2, &
-          use_netcdf_mpi = diag_file%is_using_collective_writes())) &
+          use_netcdf_mpi = diag_file%is_using_collective_writes(), &
+          use_collective = diag_file%is_using_collective_writes())) &
         &call mpp_error(FATAL, "Error opening the file:"//file_name)
     end select
   type is (FmsNetcdfUnstructuredDomainFile_t)
