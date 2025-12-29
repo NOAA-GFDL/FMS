@@ -16,12 +16,12 @@ jobs:
         libyaml-flag: [ "", -DWITH_YAML=on ]
         build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
     container:
-      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.2.1
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }}"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v6.0.1
     - name: Generate makefiles with CMake
       run: |
         mkdir build
