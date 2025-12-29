@@ -520,6 +520,7 @@ AC_CONFIG_FILES([
   diag_integral/Makefile
   sat_vapor_pres/Makefile
   random_numbers/Makefile
+  offloading/Makefile
   libFMS/Makefile
   docs/Makefile
   parser/Makefile
@@ -554,6 +555,7 @@ AC_CONFIG_FILES([
   test_fms/random_numbers/Makefile
   test_fms/topography/Makefile
   test_fms/column_diagnostics/Makefile
+  test_fms/offloading/Makefile
   test_fms/block_control/Makefile
   FMS.pc
   ])
