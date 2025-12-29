@@ -663,6 +663,7 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/diag_manager/test_diag_attribute_add.F90
   test_fms/diag_manager/check_new_file_freq.F90
   test_fms/diag_manager/test_zbounds_limits.F90
+  test_fms/diag_manager/test_multiple_zbounds.F90
   test_fms/drifters/test_cloud_interpolator.F90
   test_fms/drifters/test_drifters_io.F90
   test_fms/drifters/test_drifters_input.F90
