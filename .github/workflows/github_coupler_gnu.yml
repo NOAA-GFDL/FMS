@@ -1,4 +1,4 @@
-name: Test coupler build
+name: FMScoupler null model build with GCC
 on: [pull_request]
 
 # cancel running jobs if theres a newer push
@@ -10,7 +10,7 @@ jobs:
   coupler-build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.1.1
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}

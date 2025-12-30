@@ -1,4 +1,4 @@
-name: Run MOM6 test suite
+name: MOM6 test suite with GCC
 
 # runs on PR's or when manually triggered
 on: [workflow_dispatch, pull_request]
@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.1.1
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
