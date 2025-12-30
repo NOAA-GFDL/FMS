@@ -10,7 +10,7 @@ jobs:
   coupler-build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.1.1
+      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.2.1
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
