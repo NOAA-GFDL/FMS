@@ -1828,7 +1828,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
 
     cell_measures = ""
     if (field_ptr%has_area()) then
-      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
+      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true., &
+        filename=diag_file%get_file_fname())
 
       !! Determine if the area field is already in the file. If it is not create the "associated_files" attribute
       !! which contains the file name of the file the area field is in. This is needed for PP/fregrid.
@@ -1839,7 +1840,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     endif
 
     if (field_ptr%has_volume()) then
-      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(to_write=.true.)
+      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(to_write=.true., &
+        filename=diag_file%get_file_fname())
 
       !! Determine if the volume field is already in the file. If it is not create the "associated_files" attribute
       !! which contains the file name of the file the volume field is in. This is needed for PP/fregrid.
