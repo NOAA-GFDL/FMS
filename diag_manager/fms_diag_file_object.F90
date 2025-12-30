@@ -1304,10 +1304,12 @@ subroutine write_global_metadata(this)
   character (len=MAX_STR_LEN), allocatable :: yaml_file_attributes(:,:) !< Global attributes defined in the yaml
 
   type(diagYamlFiles_type), pointer :: diag_file_yaml !< The diag_file yaml
+  character(len=MAX_STR_LEN)        :: title          !< The title as read in from the diag table yaml
 
   diag_file_yaml => this%FMS_diag_file%diag_yaml_file
   fms2io_fileobj => this%FMS_diag_file%fms2io_fileobj
 
+  !! Write out the global attributes defined in the diag table yaml
   if (diag_file_yaml%has_file_global_meta()) then
     yaml_file_attributes = diag_file_yaml%get_file_global_meta()
     do i = 1, size(yaml_file_attributes,1)
@@ -1316,6 +1318,12 @@ subroutine write_global_metadata(this)
     enddo
     deallocate(yaml_file_attributes)
   endif
+
+  !! Write out the 'title' global attribute
+  title = diag_yaml%get_title()
+  call register_global_attribute(fms2io_fileobj, 'title', trim(title), &
+    str_len=len_trim(title))
+
 end subroutine write_global_metadata
 
 !< @brief Writes a variable's metadata in the netcdf file

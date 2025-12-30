@@ -19,7 +19,8 @@
 !> @brief  Checks the output file after running test_reduction_methods using the "none" reduction method
 program check_time_none
   use fms_mod,           only: fms_init, fms_end, string
-  use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file, get_dimension_size
+  use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, close_file, open_file, get_dimension_size, &
+                               get_global_attribute
   use mpp_mod,           only: mpp_npes, mpp_error, FATAL, mpp_pe, input_nml_file
   use platform_mod,      only: r4_kind, r8_kind
   use testing_utils,     only: allocate_buffer, test_normal, test_openmp, test_halos, no_mask, logical_mask, real_mask
@@ -61,12 +62,15 @@ program check_time_none
 
   if (.not. open_file(fileobj, "test_none.nc", "read")) &
     call mpp_error(FATAL, "unable to open test_none.nc")
+  call check_global_attribute(fileobj)
 
   if (.not. open_file(fileobj1, "test_none_regional.nc.0004", "read")) &
     call mpp_error(FATAL, "unable to open test_none_regional.nc.0004")
+  call check_global_attribute(fileobj)
 
   if (.not. open_file(fileobj2, "test_none_regional.nc.0005", "read")) &
     call mpp_error(FATAL, "unable to open test_none_regional.nc.0005")
+  call check_global_attribute(fileobj)
 
   print *, "Checking the dimensions of the subaxis"
   ! This is only done for the "none" reduction because the logic that determines the subaxis
@@ -231,4 +235,19 @@ contains
       enddo
     enddo
   end subroutine check_data_3d
+
+  !< @brief Check if the global attribute is the expected value
+  subroutine check_global_attribute(fileobj)
+    type(FmsNetcdfFile_t), intent(in) :: fileobj
+
+    character(len=100) :: attribute_value
+    character(len=100) :: EXPECTED_ATTRIBUTE_VALUE
+
+    EXPECTED_ATTRIBUTE_VALUE = "test_none"
+    call get_global_attribute(fileobj, "title", attribute_value)
+    if (trim(attribute_value) .ne. trim(EXPECTED_ATTRIBUTE_VALUE)) then
+      call mpp_error(FATAL, "The global attribute 'title' is not present in the file.")
+    endif
+  end subroutine
+
 end program
