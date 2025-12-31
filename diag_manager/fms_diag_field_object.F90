@@ -393,7 +393,7 @@ subroutine fms_register_diag_field_obj &
              allocate(integer(kind=i8_kind) :: this%data_RANGE(2))
              this%data_RANGE = varRANGE
      type is (real(kind=r4_kind))
-             allocate(integer(kind=r4_kind) :: this%data_RANGE(2))
+             allocate(integer(kind=i4_kind) :: this%data_RANGE(2))
              this%data_RANGE = varRANGE
      type is (real(kind=r8_kind))
              allocate(integer(kind=r8_kind) :: this%data_RANGE(2))
