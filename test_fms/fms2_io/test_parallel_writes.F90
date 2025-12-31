@@ -226,7 +226,8 @@ contains
     type(FmsNetcdfDomainFile_t) :: fileobj
     integer :: i
 
-    if (.not.open_file(fileobj, filename, "overwrite", domain, use_netcdf_mpi=.true.)) then
+    if (.not.open_file(fileobj, filename, "overwrite", domain, use_netcdf_mpi=.true., &
+                       use_collective=.true.)) then
       call mpp_error(FATAL, "Unable to open the NetCDF file for writing")
     endif
 

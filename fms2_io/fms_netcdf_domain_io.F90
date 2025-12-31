@@ -318,127 +318,10 @@ function is_dimension_registered(fileobj, dimension_name) &
 
 end function is_dimension_registered
 
-!> @brief Open a NetCDF-4 file in parallel write mode
-!! @return True on success
-function open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, dont_add_res_to_filename) &
-  result(success)
-
-  type(FmsNetcdfDomainFile_t),intent(inout) :: fileobj !< File object.
-  character(len=*), intent(in) :: path !< File path.
-  character(len=*), intent(in) :: mode !< File mode.  Allowed values
-                                       !! are "read", "append", "write", or
-                                       !! "overwrite".
-  type(domain2d), intent(in) :: domain !< Two-dimensional domain.
-  logical, intent(in), optional :: is_restart !< Flag telling if this file
-                                              !! is a restart file.  Defaults
-                                              !! to false.
-  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
-                                              !! ".res" to the filename
-
-  integer :: nc_format_param
-  integer :: tile_id(1)
-  integer :: err
-  character(len=FMS_PATH_LEN) :: combined_filepath
-  character(len=FMS_PATH_LEN) :: full_path
-  logical :: is_res
-  logical :: dont_add_res
-  integer :: success
-  integer :: domain_size
-
-  success = .true.
-  call string_copy(fileobj%non_mangled_path, path)
-
-  !TODO Lots of duplicate code between this and netcdf_file_open
-
-  !! Determine the name of your file !!
-
-  !! If the number of tiles is greater than 1 or if the current tile is greater
-  !than 1 add .tileX. to the filename
-  tile_id = mpp_get_tile_id(domain)
-  if (mpp_get_ntile_count(domain) .gt. 1 .or. tile_id(1) > 1) then
-    call domain_tile_filepath_mangle(combined_filepath, path, tile_id(1))
-  else
-    call string_copy(combined_filepath, path)
-  endif
-
-  !< Only add ".res" to the file path if is_restart is set to true
-  !! and dont_add_res_to_filename is set to false.
-  is_res = .false.
-  if (present(is_restart)) then
-    is_res = is_restart
-  endif
-  fileobj%is_restart = is_res
-
-  dont_add_res = .false.
-  if (present(dont_add_res_to_filename)) then
-    dont_add_res = dont_add_res_to_filename
-  endif
-
-  if (is_res .and. .not. dont_add_res) then
-    call restart_filepath_mangle(full_path, trim(combined_filepath))
-  else
-    call string_copy(full_path, trim(combined_filepath))
-  endif
-
-  call string_copy(fileobj%path, trim(full_path))
-
-  nc_format_param = ior(nf90_netcdf4, NF90_MPIIO)
-  fileobj%is_netcdf4 = .true.
-
-  fileobj%domain = domain
-  call mpp_get_global_domain(fileobj%domain, xsize=domain_size)
-
-  if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) &
-    call error("The use_netcdf_mpi = .true. option for reads is currently not supported")
-
-  if (string_compare(mode, "write", .true.)) then
-    err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
-                      comm = mpp_get_domain_tile_commid(fileobj%domain), info = MPP_INFO_NULL)
-  elseif (string_compare(mode,"overwrite",.true.)) then
-    err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
-                      comm = mpp_get_domain_tile_commid(fileobj%domain), info = MPP_INFO_NULL)
-  endif
-  call check_netcdf_code(err, "open_collective_netcdf_file:"//trim(fileobj%path))
-
-  allocate(fileobj%xdims(max_num_domain_decomposed_dims))
-  fileobj%nx = 0
-  allocate(fileobj%ydims(max_num_domain_decomposed_dims))
-  fileobj%ny = 0
-
-  ! Every rank is the root PE of its own pelist. This forces all ranks to hit any NetCDF calls,
-  ! which are usually inside `if (fileobj%is_root)` blocks.
-  allocate(fileobj%pelist(1))
-  fileobj%pelist(1) = mpp_pe()
-  fileobj%io_root = mpp_pe()
-  fileobj%is_root = .true.
-
-  fileobj%use_collective = .false. !TODO
-  fileobj%is_diskless = .false.
-
-  if (fileobj%is_restart) then
-    allocate(fileobj%restart_vars(max_num_restart_vars))
-    fileobj%num_restart_vars = 0
-  endif
-
-  fileobj%is_readonly = string_compare(mode, "read", .true.)
-  fileobj%mode_is_append = string_compare(mode, "append", .true.)
-  allocate(fileobj%compressed_dims(max_num_compressed_dims))
-  fileobj%num_compressed_dims = 0
-  ! Set the is_open flag to true for this file object.
-  if (.not.allocated(fileobj%is_open)) allocate(fileobj%is_open)
-  fileobj%is_open = .true.
-
-  fileobj%bc_dimensions%xlen = 0
-  fileobj%bc_dimensions%ylen = 0
-  fileobj%bc_dimensions%zlen = 0
-  fileobj%bc_dimensions%cur_dim_len = 0
-
-end function open_collective_netcdf_file
-
 !> @brief Open a domain netcdf file.
 !! @return Flag telling if the open completed successfully.
 function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, dont_add_res_to_filename, &
-                          use_netcdf_mpi) result(success)
+                          use_netcdf_mpi, use_collective) result(success)
 
   type(FmsNetcdfDomainFile_t),intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: path !< File path.
@@ -455,11 +338,12 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
-  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
-                                              !! ".res" to the filename
-  logical, intent(in), optional :: use_netcdf_mpi !< Flag telling if this file should be using netcdf4 collective
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add ".res" to the filename
+  logical, intent(in), optional :: use_netcdf_mpi !< Flag telling if this file should be using netcdf4 parallel
                                                   !! reads and writes. Defaults to false.
                                                   !! nc_format is automatically set to netcdf4
+  logical, intent(in), optional :: use_collective !< Flag indicating whether reads and writes should be performed
+                                                  !! collectively rather than independently.
   logical :: success
 
   integer, dimension(2) :: io_layout
@@ -474,21 +358,38 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
 
   io_domain => mpp_get_io_domain(domain)
 
-  fileobj%use_netcdf_mpi = .false.
-  if (present(use_netcdf_mpi)) fileobj%use_netcdf_mpi = use_netcdf_mpi
+  if (present(use_netcdf_mpi)) then
+    if (use_netcdf_mpi) then
+      if (associated(io_domain)) then
+        call mpp_error(NOTE, "NetCDF MPI is enabled: ignoring I/O domain. Only one output file will be produced.")
+      endif
 
-  if (fileobj%use_netcdf_mpi) then
-#ifdef NO_NC_PARALLEL4
-    call mpp_error(FATAL, "NetCDF was not built with HDF5 parallel I/O features, so parallel writes are not supported. &
-                          &Please turn parallel writes off for the file: " // trim(path))
-#endif
+      fileobj%domain = domain
 
-    if (associated(io_domain)) then
-      call mpp_error(NOTE, "NetCDF MPI is enabled: ignoring I/O domain. Only one output file will be produced.")
+      allocate(fileobj%xdims(max_num_domain_decomposed_dims))
+      fileobj%nx = 0
+      allocate(fileobj%ydims(max_num_domain_decomposed_dims))
+      fileobj%ny = 0
+
+      call string_copy(fileobj%non_mangled_path, path)
+
+      !! If the number of tiles is greater than 1 or if the current tile is greater
+      !than 1 add .tileX. to the filename
+      tile_id = mpp_get_tile_id(domain)
+      if (mpp_get_ntile_count(domain) .gt. 1 .or. tile_id(1) > 1) then
+        call domain_tile_filepath_mangle(combined_filepath, path, tile_id(1))
+      else
+        call string_copy(combined_filepath, path)
+      endif
+
+      success = netcdf_file_open(fileobj, combined_filepath, mode, &
+                                 nc_format="netcdf4", &
+                                 is_restart=is_restart, &
+                                 dont_add_res_to_filename=dont_add_res_to_filename, &
+                                 tile_comm=mpp_get_domain_tile_commid(domain), &
+                                 use_collective=use_collective)
+      return
     endif
-
-    success = open_collective_netcdf_file(fileobj, path, mode, domain, is_restart, dont_add_res_to_filename)
-    return
   endif
 
   !Get the path of a "combined" file.

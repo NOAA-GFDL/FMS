@@ -14,6 +14,7 @@ Before introducing the FMS2_io module, subroutines and functions in fms_io and m
 - [G. Ascii_io](readme.md#g-ascii_io)
 - [H. FMS2_io namelist](readme.md#h-fms2_io-namelist)
 - [I. Chunking](readme.md#i-chunking)
+- [J. MPI-IO](readme.md#j-mpi-io)
 
 ### A. FMS2_io Fileobjs
 FMS2_io provides three new derived types, which target the different I/O paradigms used in GFDL models.
@@ -630,3 +631,15 @@ dim_names, chunsizes=chunksizes)
 - **NOTE: This argument is only valid with "NETCDF4" file formats, otherwise it will be ignored. You can set the netcdf file format for all files using the 'netcdf_default_format' namelist or in a per file basis by using the 'nc_format' argument in the 'open_file' call**
 
 - See the NETCDF user guide for more information: (https://cluster.earlham.edu/bccd-ng/testing/mobeen/GALAXSEEHPC/netcdf-4.1.3/man4/netcdf.html#Chunking)
+
+### J. MPI-IO
+When opening a NetCDF-4 file, the HDF5 library's MPI-IO driver can be used by calling `open_file` with the optional
+`use_netcdf_mpi=.true.` argument. When a file is opened in this manner, the I/O domain is ignored and every PE directly
+performs reads or writes in parallel. In the case of parallel reads, the MPI-IO driver handles coordination and metadata
+sharing among the PEs, which can improve performance compared to the standard POSIX I/O driver. Additionally, the
+`use_collective=.true.` argument can be passed to `open_file` to enable collective reads/writes: this can improve I/O
+performance significantly, but it requires each read/write call to run synchronously across all participating PEs (i.e.,
+it introduces an MPI barrier at the start of each read/write call).
+
+MPI-IO support is only available for NetCDF-4 files. `use_netcdf_mpi` and `use_collective` are both disabled by default.
+`use_collective` has no effect unless `use_netcdf_mpi` is enabled.
