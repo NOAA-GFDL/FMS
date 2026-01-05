@@ -105,9 +105,8 @@ program test_collective_io
   endif
   call mpp_sync()
 
-  fileobj%use_collective = .true.
-  fileobj%tile_comm = mpp_get_domain_tile_commid(Domain_read)
-  if (open_file(fileobj, "test_collective_io.nc", "read", Domain_read, nc_format=nc_format)) then
+  if (open_file(fileobj, "test_collective_io.nc", "read", Domain_read, nc_format=nc_format, &
+                use_netcdf_mpi=.true., use_collective=.true.)) then
     names(1) = "lon"
     names(2) = "lat"
     call register_axis(fileobj, "lon", "x")
