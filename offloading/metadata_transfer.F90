@@ -1,3 +1,20 @@
+!***********************************************************************
+!*                             Apache License 2.0
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
+!***********************************************************************
 module metadata_transfer_mod
   use platform_mod
 #ifdef use_libMPI
@@ -107,7 +124,6 @@ module metadata_transfer_mod
     displacements(3) = displacements(2) + sizeof(' ')*ATTR_NAME_MAX_LENGTH ! get_attribute_name() start address
     displacements(4) = displacements(3) + sizeof(' ')*ATTR_NAME_MAX_LENGTH ! attribute_value start address 
 
-    print *, "calculated displacements: ", displacements
     select case(dtype)
     case(real8_type)
       types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_DOUBLE/)
@@ -142,7 +158,7 @@ module metadata_transfer_mod
 
   !> Broadcast the entire metadata object to all PEs in the current pelist
   subroutine fms_metadata_broadcast(this)
-    class(metadata_class), intent(inout) :: this
+    class(metadata_class), intent(inout) :: this !< object that inherits metadata_class
     integer :: ierror, curr_comm_id
     integer, allocatable :: broadcasting_pes(:)
     if (this%mpi_type_id .eq. -1) then
@@ -178,7 +194,7 @@ module metadata_transfer_mod
 
   !> Broadcast an array of metadata objects to all PEs in the current pelist
   subroutine fms_metadata_broadcast_all(metadata_objs)
-    class(metadata_class), intent(inout) :: metadata_objs(:)
+    class(metadata_class), intent(inout) :: metadata_objs(:) !< list of metadata objects
     integer :: i
 
     do i=1, size(metadata_objs)
@@ -200,7 +216,7 @@ module metadata_transfer_mod
   !> Setter for real 8 attribute_value
   subroutine set_attribute_r8_value(this, val)
     class(metadata_r8_type), intent(inout) :: this
-    real(r8_kind), intent(in) :: val(:)
+    real(r8_kind), intent(in) :: val(:) !< 8 byte real value to set attribute value to
     if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
       call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
@@ -219,7 +235,7 @@ module metadata_transfer_mod
   !> Setter for real 4 attribute_value
   subroutine set_attribute_r4_value(this, val)
     class(metadata_r4_type), intent(inout) :: this
-    real(r4_kind), intent(in) :: val(:)
+    real(r4_kind), intent(in) :: val(:) !< 4 byte real attribute to set
     if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
       call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
@@ -238,7 +254,7 @@ module metadata_transfer_mod
   !> Setter for integer(kind=8) attribute_value
   subroutine set_attribute_i8_value(this, val)
     class(metadata_i8_type), intent(inout) :: this
-    integer(i8_kind), intent(in) :: val(:)
+    integer(i8_kind), intent(in) :: val(:) !< 8 byte int attribute to set
     if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
       call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
@@ -257,7 +273,7 @@ module metadata_transfer_mod
   !> Setter for integer(kind=4) attribute_value
   subroutine set_attribute_i4_value(this, val)
     class(metadata_i4_type), intent(inout) :: this
-    integer(i4_kind), intent(in) :: val(:)
+    integer(i4_kind), intent(in) :: val(:) !< 4 byte integer to set attribute value to
     if(size(val) .gt. ATTR_VALUE_MAX_LENGTH) then
       call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
@@ -276,7 +292,7 @@ module metadata_transfer_mod
   !> Setter for string attribute_value
   subroutine set_attribute_str_value(this, val)
     class(metadata_str_type), intent(inout) :: this
-    character(len=*), intent(in) :: val
+    character(len=*), intent(in) :: val !< character string to set attribute value to
     if(len(val) .gt. ATTR_VALUE_MAX_LENGTH) then
       call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute value array exceeds max length of "//string(ATTR_NAME_MAX_LENGTH))
@@ -288,14 +304,13 @@ module metadata_transfer_mod
   !> Getter for attribute_name (for all metadata types)
   function get_attribute_name(this) result(val)
     class(metadata_class), intent(inout) :: this
-    character(len=ATTR_NAME_MAX_LENGTH) :: val
-    val = trim(this%attribute_name)
+    character(len=ATTR_NAME_MAX_LENGTH) :: val     val = trim(this%attribute_name)
   end function
 
   !> Setter for attribute_name (for all metadata types)
   subroutine set_attribute_name(this, val)
     class(metadata_class), intent(inout) :: this
-    character(len=*), intent(in) :: val
+    character(len=*), intent(in) :: val !< character string to set attribute name to
     if(len(val) .gt. ATTR_NAME_MAX_LENGTH) then
       call mpp_error(FATAL, &
         "metadata_transfer_mod: attribute name exceeds max length of "//string(ATTR_VALUE_MAX_LENGTH))

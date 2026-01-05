@@ -125,12 +125,11 @@ endtype dimension_information
 
 type, public :: fmsOffloadingIn_type
   !TODO should be private, need getter functions
-  integer, public :: id
-  integer, public, allocatable :: offloading_pes(:)
-  integer, public, allocatable :: model_pes(:)
-  logical :: is_model_pe
-  type(domain2D) :: domain_in
-
+  integer, public :: id !< unique identifier for each type
+  integer, public, allocatable :: offloading_pes(:) !< list of pe numbers that will be used to just write
+  integer, public, allocatable :: model_pes(:) !< list of pe numbers that will be running the model
+  logical :: is_model_pe !< true if current pe is in model_pes
+  type(domain2D) :: domain_in !< domain for grid that is to be written out
   contains
     procedure :: init
 endtype fmsOffloadingIn_type
@@ -2431,11 +2430,12 @@ subroutine flush_file(fileobj)
   endif
 end subroutine flush_file
 
+!> Initialization routine for fmsOffloadingIn_type
 subroutine init(this, offloading_obj_id, offloading_pes, model_pes, domain)
-  class(fmsOffloadingIn_type), intent(inout) :: this
-  integer, intent(in) :: offloading_obj_id
-  integer, intent(in) :: offloading_pes(:)
-  integer, intent(in) :: model_pes(:)
+  class(fmsOffloadingIn_type), intent(inout) :: this !< offloading object to initialize
+  integer, intent(in) :: offloading_obj_id !< unique id number to set
+  integer, intent(in) :: offloading_pes(:) !< list of pe's from current list to offload writes to
+  integer, intent(in) :: model_pes(:) !< list of model pe's (any pes not in offloading_pes argument)
   type(domain2D) :: domain
 
   this%id = offloading_obj_id
