@@ -88,8 +88,7 @@ if (OPENMP)
 endif()
 
 if (WITH_YAML)
-  find_package(libyaml REQUIRED COMPONENTS C)
-  include_directories(${LIBYAML_INCLUDE_DIR})
+  find_package(libyaml REQUIRED)
 endif ()
 
 # Enables position independent code (i.e., -fPIC)
@@ -417,6 +416,10 @@ foreach(kind ${kinds})
                                          NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
 
+  if(libyaml_FOUND)
+    target_link_libraries(${libTgt} PRIVATE libyaml::yaml)
+  endif()
+
   if(OpenMP_Fortran_FOUND)
     target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
   endif()
@@ -449,12 +452,6 @@ if(NOT kinds)
     if(OpenMP_C_FOUND)
       target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
     endif()
-
-    if(WITH_YAML)
-      target_link_libraries(${libTgt}_c PRIVATE libyaml_C)
-      set_target_properties(${libTgt}_c PROPERTIES COMPILE_FLAGS "-L${LIBYAML_LIBRARIES} -lyaml")
-    endif()
-
 
     # Fortran
     add_library(${libTgt}_f OBJECT ${fms_fortran_src_files})
@@ -559,6 +556,10 @@ if(NOT kinds)
     target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
                                            NetCDF::NetCDF_Fortran
                                            MPI::MPI_Fortran)
+
+    if(libyaml_FOUND)
+      target_link_libraries(${libTgt} PRIVATE libyaml::yaml)
+    endif()
 
     if(OpenMP_Fortran_FOUND)
       target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
@@ -785,7 +786,7 @@ foreach (testFile ${TEST_SRC_SINGLE_TARGET})
                                    )
 
   if(WITH_YAML)
-    target_link_libraries(${TName} PRIVATE yaml ${LIBYAML_LIBRARIES})
+    target_link_libraries(${TName} PRIVATE libyaml::yaml)
   endif()
 
   if(OPENMP)
@@ -821,8 +822,8 @@ foreach (testFile ${TEST_SRC_MULTI_TARGET})
                                     )
 
   if(WITH_YAML)
-    target_link_libraries(${TName}_r4 PRIVATE yaml ${LIBYAML_LIBRARIES})
-    target_link_libraries(${TName}_r8 PRIVATE yaml ${LIBYAML_LIBRARIES})
+    target_link_libraries(${TName}_r4 PRIVATE libyaml::yaml)
+    target_link_libraries(${TName}_r8 PRIVATE libyaml::yaml)
   endif()
 
   if(OPENMP)
@@ -895,6 +896,11 @@ configure_package_config_file(
   INSTALL_DESTINATION ${CONFIG_INSTALL_DESTINATION})
 install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindNetCDF.cmake ${CMAKE_CURRENT_BINARY_DIR}/fms-config.cmake
   DESTINATION ${CONFIG_INSTALL_DESTINATION})
+
+if(WITH_YAML)
+  install(FILES ${CMAKE_SOURCE_DIR}/cmake/Findlibyaml.cmake
+    DESTINATION ${CONFIG_INSTALL_DESTINATION})
+endif()
 
 write_basic_package_version_file(
   ${CMAKE_CURRENT_BINARY_DIR}/fms-config-version.cmake
