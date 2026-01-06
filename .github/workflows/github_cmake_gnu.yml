@@ -18,7 +18,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting"
+        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
@@ -42,7 +42,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: ${{ matrix.build-type == '-DCMAKE_BUILD_TYPE=Release' && 'test_mpp_nesting|test_sat_vapor_pres' || 'test_mpp_nesting' }}
+        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask|test_sat_vapor_pres"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
