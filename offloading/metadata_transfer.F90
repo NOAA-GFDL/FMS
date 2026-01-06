@@ -122,7 +122,7 @@ module metadata_transfer_mod
     displacements(1) = displacements(0) + sizeof(0) ! attribute_length start address
     displacements(2) = displacements(1) + sizeof(0) ! attribute_name start adress
     displacements(3) = displacements(2) + sizeof(' ')*ATTR_NAME_MAX_LENGTH ! get_attribute_name() start address
-    displacements(4) = displacements(3) + sizeof(' ')*ATTR_NAME_MAX_LENGTH ! attribute_value start address 
+    displacements(4) = displacements(3) + sizeof(' ')*ATTR_NAME_MAX_LENGTH ! attribute_value start address
 
     select case(dtype)
     case(real8_type)
@@ -304,7 +304,8 @@ module metadata_transfer_mod
   !> Getter for attribute_name (for all metadata types)
   function get_attribute_name(this) result(val)
     class(metadata_class), intent(inout) :: this
-    character(len=ATTR_NAME_MAX_LENGTH) :: val     val = trim(this%attribute_name)
+    character(len=ATTR_NAME_MAX_LENGTH) :: val
+    val = trim(this%attribute_name)
   end function
 
   !> Setter for attribute_name (for all metadata types)
