@@ -88,7 +88,8 @@ if (OPENMP)
 endif()
 
 if (WITH_YAML)
-  find_package(libyaml REQUIRED)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(YAML REQUIRED IMPORTED_TARGET "yaml-0.1")
 endif ()
 
 # Enables position independent code (i.e., -fPIC)
@@ -416,8 +417,8 @@ foreach(kind ${kinds})
                                          NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
 
-  if(libyaml_FOUND)
-    target_link_libraries(${libTgt} PRIVATE libyaml::yaml)
+  if(YAML_FOUND)
+    target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
   endif()
 
   if(OpenMP_Fortran_FOUND)
@@ -557,8 +558,8 @@ if(NOT kinds)
                                            NetCDF::NetCDF_Fortran
                                            MPI::MPI_Fortran)
 
-    if(libyaml_FOUND)
-      target_link_libraries(${libTgt} PRIVATE libyaml::yaml)
+    if(YAML_FOUND)
+      target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
     endif()
 
     if(OpenMP_Fortran_FOUND)
@@ -786,7 +787,7 @@ foreach (testFile ${TEST_SRC_SINGLE_TARGET})
                                    )
 
   if(WITH_YAML)
-    target_link_libraries(${TName} PRIVATE libyaml::yaml)
+    target_link_libraries(${TName} PRIVATE PkgConfig::YAML)
   endif()
 
   if(OPENMP)
@@ -822,8 +823,8 @@ foreach (testFile ${TEST_SRC_MULTI_TARGET})
                                     )
 
   if(WITH_YAML)
-    target_link_libraries(${TName}_r4 PRIVATE libyaml::yaml)
-    target_link_libraries(${TName}_r8 PRIVATE libyaml::yaml)
+    target_link_libraries(${TName}_r4 PRIVATE PkgConfig::YAML)
+    target_link_libraries(${TName}_r8 PRIVATE PkgConfig::YAML)
   endif()
 
   if(OPENMP)
@@ -896,11 +897,6 @@ configure_package_config_file(
   INSTALL_DESTINATION ${CONFIG_INSTALL_DESTINATION})
 install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindNetCDF.cmake ${CMAKE_CURRENT_BINARY_DIR}/fms-config.cmake
   DESTINATION ${CONFIG_INSTALL_DESTINATION})
-
-if(WITH_YAML)
-  install(FILES ${CMAKE_SOURCE_DIR}/cmake/Findlibyaml.cmake
-    DESTINATION ${CONFIG_INSTALL_DESTINATION})
-endif()
 
 write_basic_package_version_file(
   ${CMAKE_CURRENT_BINARY_DIR}/fms-config-version.cmake
