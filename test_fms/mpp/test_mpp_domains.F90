@@ -2476,13 +2476,13 @@ contains
 
 #define FMS_TEST_KIND_ r4_kind
 #define TEST_GROUP_UPDATE_ test_group_update_r4
-#include "include/group_update.inc"
+#include "group_update.inc"
 #undef FMS_TEST_KIND_
 #undef TEST_GROUP_UPDATE_
 
 #define FMS_TEST_KIND_ r8_kind
 #define TEST_GROUP_UPDATE_ test_group_update_r8
-#include "include/group_update.inc"
+#include "group_update.inc"
 #undef FMS_TEST_KIND_
 #undef TEST_GROUP_UPDATE_
 
