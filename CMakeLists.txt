@@ -614,7 +614,7 @@ add_library(testLibs "${TEST_MODS_SRC}")
 target_link_libraries(testLibs FMS::fms)
 target_compile_definitions(testLibs PRIVATE TEST_MOS_KIND_=r8_kind)
 target_include_directories(testLibs PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include
-                                    PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/test_fms/common
+                                    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/common/include
                                     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/include
                                     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/include
                                     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
