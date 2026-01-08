@@ -17,10 +17,10 @@
 #***********************************************************************
 
 # Find the fms and mpp mod files.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/test_fms/common
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/test_fms/common/include
 
 noinst_LIBRARIES = libtest_fms.a
-libtest_fms_a_SOURCES = test_fms.F90
+libtest_fms_a_SOURCES = test_fms.F90 include/test_fms.inc include/test_fms_real.inc
 
 # Clean up
 CLEANFILES = *.o *.mod *.a
