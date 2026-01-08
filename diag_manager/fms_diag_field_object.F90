@@ -806,18 +806,31 @@ end function get_vartype
 
 !> @brief Gets varname
 !! @return copy of the variable name
-pure function get_varname (this, to_write) &
+function get_varname (this, filename, to_write) &
 result(rslt)
-  class (fmsDiagField_type), intent(in) :: this     !< diag object
-  logical, optional,         intent(in) :: to_write !< .true. if getting the varname that will be writen to the file
+  class (fmsDiagField_type),  intent(in) :: this     !< diag object
+  character(len=*), optional, intent(in) :: filename !< Name of the diag_file we are writing to
+  logical, optional,          intent(in) :: to_write !< .true. if getting the varname that will be writen to the file
   character(len=:), allocatable :: rslt
+
+  integer :: i
+
   rslt = this%varname
 
   !< If writing the varname can be the outname which is defined in the yaml
   if (present(to_write)) then
     if (to_write) then
-    !TODO this is wrong
-    rslt = this%diag_field(1)%get_var_outname()
+      if (.not. present(filename)) then
+        call mpp_error(FATAL, "get_varname was called using the to_write optional argument, "//&
+                              "but a filename was not provided!")
+      endif
+      ! Loop through all of the file the variable is in and find the outputname of the variable
+      do i = 1, size(this%diag_field)
+        if (trim(filename) .eq. trim(this%diag_field(i)%get_var_fname())) then
+          rslt = this%diag_field(i)%get_var_outname()
+          return
+        endif
+      enddo
     endif
   endif
 
@@ -1677,7 +1690,7 @@ end function
 
 !> @brief Determines the diag_obj id corresponding to a module name and field_name
 !> @return diag_obj id
-PURE FUNCTION diag_field_id_from_name(this, module_name, field_name) &
+FUNCTION diag_field_id_from_name(this, module_name, field_name) &
   result(diag_field_id)
   CLASS(fmsDiagField_type), INTENT(in) :: this !< The field object
   CHARACTER(len=*), INTENT(in) :: module_name !< Module name that registered the variable
@@ -1995,13 +2008,13 @@ subroutine generate_associated_files_att(this, att, start_time)
   character(len=128) :: start_date !< Start date to append to the begining of the filename
 
   integer :: year, month, day, hour, minute, second
-  field_name = this%get_varname(to_write = .true.)
+
+  file_name = this%get_field_file_name()
+  field_name = this%get_varname(to_write = .true., filename=file_name)
 
   ! Check if the field is already in the associated files attribute (i.e the area can be associated with multiple
   ! fields in the file, but it only needs to be added once)
   if (index(att, field_name) .ne. 0) return
-
-  file_name = this%get_field_file_name()
 
   if (prepend_date) then
     call get_date(start_time, year, month, day, hour, minute, second)
