@@ -941,15 +941,15 @@ foreach (testFile ${TEST_SRC_FOUR_TARGETS})
                                        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
                                        PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-  target_compile_definitions(${TName}_r8 PRIVATE TEST_FMS_TYPE_=real)
-  target_compile_definitions(${TName}_r4 PRIVATE TEST_FMS_TYPE_=real)
-  target_compile_definitions(${TName}_i8 PRIVATE TEST_FMS_TYPE_=integer)
-  target_compile_definitions(${TName}_i4 PRIVATE TEST_FMS_TYPE_=integer)
+  target_compile_definitions(${TName}_r8 PRIVATE FMS_TEST_TYPE_=real)
+  target_compile_definitions(${TName}_r4 PRIVATE FMS_TEST_TYPE_=real)
+  target_compile_definitions(${TName}_i8 PRIVATE FMS_TEST_TYPE_=integer)
+  target_compile_definitions(${TName}_i4 PRIVATE FMS_TEST_TYPE_=integer)
 
-  target_compile_definitions(${TName}_r8 PRIVATE TEST_FMS_KIND_=r8_kind)
-  target_compile_definitions(${TName}_r4 PRIVATE TEST_FMS_KIND_=r4_kind)
-  target_compile_definitions(${TName}_i8 PRIVATE TEST_FMS_KIND_=i8_kind)
-  target_compile_definitions(${TName}_i4 PRIVATE TEST_FMS_KIND_=i4_kind)
+  target_compile_definitions(${TName}_r8 PRIVATE FMS_TEST_KIND_=r8_kind)
+  target_compile_definitions(${TName}_r4 PRIVATE FMS_TEST_KIND_=r4_kind)
+  target_compile_definitions(${TName}_i8 PRIVATE FMS_TEST_KIND_=i8_kind)
+  target_compile_definitions(${TName}_i4 PRIVATE FMS_TEST_KIND_=i4_kind)
 endforeach ()
 
 # gather all test scripts
