@@ -92,7 +92,7 @@ module fms_test_mod
 #define ARR_COMPARE_2D_ arr_compare_2d_r4
 #define ARR_COMPARE_3D_ arr_compare_3d_r4
 #define ARR_COMPARE_4D_ arr_compare_4d_r4
-#include "include/test_fms.inc"
+#include "test_fms.inc"
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_
 #undef ARR_COMPARE_2D_
@@ -105,7 +105,7 @@ module fms_test_mod
 #define ARR_COMPARE_TOL_2D_SCALAR_ arr_compare_tol_2d_scalar_r4
 #define ARR_COMPARE_TOL_3D_SCALAR_ arr_compare_tol_3d_scalar_r4
 #define ARR_COMPARE_TOL_4D_SCALAR_ arr_compare_tol_4d_scalar_r4
-#include "include/test_fms_real.inc"
+#include "test_fms_real.inc"
 #undef ARR_COMPARE_TOL_2D_
 #undef ARR_COMPARE_TOL_3D_
 #undef ARR_COMPARE_TOL_4D_
@@ -121,7 +121,7 @@ module fms_test_mod
 #define ARR_COMPARE_2D_ arr_compare_2d_r8
 #define ARR_COMPARE_3D_ arr_compare_3d_r8
 #define ARR_COMPARE_4D_ arr_compare_4d_r8
-#include "include/test_fms.inc"
+#include "test_fms.inc"
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_
 #undef ARR_COMPARE_2D_
@@ -137,7 +137,7 @@ module fms_test_mod
 #define ARR_COMPARE_TOL_2D_SCALAR_ arr_compare_tol_2d_scalar_r8
 #define ARR_COMPARE_TOL_3D_SCALAR_ arr_compare_tol_3d_scalar_r8
 #define ARR_COMPARE_TOL_4D_SCALAR_ arr_compare_tol_4d_scalar_r8
-#include "include/test_fms_real.inc"
+#include "test_fms_real.inc"
 #undef ARR_COMPARE_TOL_2D_
 #undef ARR_COMPARE_TOL_3D_
 #undef ARR_COMPARE_TOL_4D_
@@ -159,7 +159,7 @@ module fms_test_mod
 #define ARR_COMPARE_2D_ arr_compare_2d_i4
 #define ARR_COMPARE_3D_ arr_compare_3d_i4
 #define ARR_COMPARE_4D_ arr_compare_4d_i4
-#include "include/test_fms.inc"
+#include "test_fms.inc"
 #undef FMS_TEST_KIND_
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_
@@ -173,7 +173,7 @@ module fms_test_mod
 #define ARR_COMPARE_2D_ arr_compare_2d_i8
 #define ARR_COMPARE_3D_ arr_compare_3d_i8
 #define ARR_COMPARE_4D_ arr_compare_4d_i8
-#include "include/test_fms.inc"
+#include "test_fms.inc"
 #undef FMS_TEST_KIND_
 #undef ARR_INIT_2D_
 #undef ARR_INIT_3D_

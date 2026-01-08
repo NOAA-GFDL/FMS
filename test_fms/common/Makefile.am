@@ -17,7 +17,7 @@
 #***********************************************************************
 
 # Find the fms and mpp mod files.
-AM_CPPFLAGS = -I$(MODDIR)
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/test_fms/common
 
 noinst_LIBRARIES = libtest_fms.a
 libtest_fms_a_SOURCES = test_fms.F90
