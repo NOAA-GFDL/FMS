@@ -595,6 +595,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test_fms/test-lib.sh.in ${CMAKE_CURRE
 
 # build any helper modules that are used by unit tests
 list(APPEND TEST_MODS_SRC
+  test_fms/common/test_fms.F90
   test_fms/diag_manager/testing_utils.F90
   test_fms/fms/test_fms.F90
   test_fms/fms2_io/argparse.F90
