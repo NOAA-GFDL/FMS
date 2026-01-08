@@ -78,7 +78,8 @@ test_mpp_SOURCES = test_mpp.F90
 test_mpp_domains_SOURCES = \
   compare_data_checksums.F90 \
   test_domains_utility_mod.F90 \
-  test_mpp_domains.F90
+  test_mpp_domains.F90 \
+  include/group_update.inc
 test_mpp_nesting_SOURCES = \
   compare_data_checksums.F90 \
   test_domains_utility_mod.F90 \
