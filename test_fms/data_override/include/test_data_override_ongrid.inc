@@ -67,7 +67,7 @@ subroutine ONGRID_TEST_ (p)
   real(lkind)                              :: expected_result        !< Expected result from data_override
   type(time_type)                          :: Time                   !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                 !< Data to be written
-  type(permutable_indices(2))              :: ind                    !< Dimension boundaries
+  type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
 
   ind%lb = [is, js]
   ind%ub = [ie, je]
@@ -102,7 +102,7 @@ subroutine BILINEAR_TEST_ (p)
   type(time_type)                          :: Time                   !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff_decreasing      !< Data to be written
   real(lkind), allocatable, dimension(:,:) :: runoff_increasing      !< Data to be written
-  type(permutable_indices(2))              :: ind                    !< Dimension boundaries
+  type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
 
   integer :: i, j, k
   logical :: success
@@ -140,7 +140,7 @@ subroutine WEIGHT_FILE_TEST_ (p)
   real(lkind), allocatable, dimension(:,:) :: runoff                 !< Data from normal override
   real(lkind), allocatable, dimension(:,:) :: runoff_weight          !< Data from weight file override
   real(lkind)                              :: threshold              !< Threshold for the difference in answers
-  type(permutable_indices(2))              :: ind                    !< Dimension boundaries
+  type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
 
   integer :: i, j, k
   logical :: success
@@ -207,7 +207,7 @@ subroutine ENSEMBLE_TEST_ (p)
   real(lkind)                              :: expected_result        !< Expected result from data_override
   type(time_type)                          :: Time                   !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                 !< Data to be written
-  type(permutable_indices(2))              :: ind                    !< Dimension boundaries
+  type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
   integer                                  :: scale_fac              !< Scale factor to use when determining
                                                                      !! the expected answer
   logical :: sucessful !< .True. if the data_override was sucessful
@@ -249,7 +249,7 @@ subroutine MULTI_FILE_TESTS_ (p)
   real(lkind)                              :: expected_result        !< Expected result from data_override
   type(time_type)                          :: Time                   !< Time
   real(lkind), allocatable, dimension(:,:) :: runoff                 !< Data to be written
-  type(permutable_indices(2))              :: ind                    !< Dimension boundaries
+  type(permutable_indices_2d)              :: ind                    !< Dimension boundaries
   logical :: sucessful !< .True. if the data_override was sucessful
 
   ind%lb = [is, js]

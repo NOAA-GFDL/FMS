@@ -58,7 +58,7 @@ program test_mpp_domains
   use compare_data_checksums
   use test_domains_utility_mod
   use platform_mod
-  use fms_test_mod, only: permutable_indices, factorial, arr_init, arr_compare
+  use fms_test_mod, only: permutable_indices_3d, factorial, arr_init, arr_compare
 
 
   implicit none

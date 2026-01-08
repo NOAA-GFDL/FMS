@@ -25,7 +25,7 @@ program test_mpp_global_field
   use mpp_domains_mod, only: mpp_define_layout, mpp_define_domains
   use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
   use mpp_domains_mod, only: mpp_global_field
-  use fms_test_mod,    only: permutable_indices, factorial, arr_init, arr_compare
+  use fms_test_mod,    only: permutable_indices_2d, permutable_indices_3d, factorial, arr_init, arr_compare
 
   implicit none
 
@@ -87,7 +87,7 @@ contains
 
     type(domain2D)  :: domain
     integer         :: i, j
-    type(permutable_indices(2)) :: compute, data, global, global_with_halo, global_x, global_y
+    type(permutable_indices_2d) :: compute, data, global, global_with_halo, global_x, global_y
     integer, allocatable :: pelist(:)
     FMS_TEST_TYPE_ (FMS_TEST_KIND_), allocatable  :: global0(:,:), local(:,:), global1(:,:)
 
@@ -207,7 +207,7 @@ contains
 
     type(domain2D)  :: domain
     integer         :: i, j
-    type(permutable_indices(3)) :: compute, data, global, global_with_halo, global_x, global_y
+    type(permutable_indices_3d) :: compute, data, global, global_with_halo, global_x, global_y
     integer, allocatable :: pelist(:)
     FMS_TEST_TYPE_ (FMS_TEST_KIND_), allocatable  :: global0(:,:,:), local(:,:,:), global1(:,:,:)
 

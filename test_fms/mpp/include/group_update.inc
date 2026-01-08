@@ -75,7 +75,7 @@
     integer :: nx_save, ny_save
     type(mpp_group_update_type) :: group_update
     type(mpp_group_update_type), allocatable :: update_list(:)
-    type(permutable_indices(3)) :: mem, mem_ishift, mem_jshift, mem_ijshift, &
+    type(permutable_indices_3d) :: mem, mem_ishift, mem_jshift, mem_ijshift, &
                                    compute, compute_ishift, compute_jshift, compute_ijshift, compute_halo, &
                                    data, data_ishift, data_jshift, data_ijshift
 

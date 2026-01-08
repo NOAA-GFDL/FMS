@@ -49,15 +49,36 @@ module fms_test_mod
     module procedure :: arr_compare_tol_4d_scalar_r4, arr_compare_tol_4d_scalar_r8
   end interface arr_compare_tol
 
-  type permutable_indices(ndim)
-    integer, len :: ndim
-    integer :: lb(ndim), ub(ndim)
+  ! TODO: `permutable_indices` should really be implemented as a parameterized derived type, but because gfortran 13
+  ! doesn't support parameterized derived types with type-bound procedures, the following workaround is needed. This
+  ! should be changed to a parameterized derived type once gfortran 13 support is no longer needed.
+
+  type permutable_indices_2d
+    integer :: lb(2), ub(2)
 
     contains
 
-    procedure :: permute => permutable_indices_permute
-    procedure :: n => permutable_indices_n
-  end type permutable_indices
+    procedure :: permute => permutable_indices_permute_2d
+    procedure :: n => permutable_indices_n_2d
+  end type permutable_indices_2d
+
+  type permutable_indices_3d
+    integer :: lb(3), ub(3)
+
+    contains
+
+    procedure :: permute => permutable_indices_permute_3d
+    procedure :: n => permutable_indices_n_3d
+  end type permutable_indices_3d
+
+  type permutable_indices_4d
+    integer :: lb(4), ub(4)
+
+    contains
+
+    procedure :: permute => permutable_indices_permute_4d
+    procedure :: n => permutable_indices_n_4d
+  end type permutable_indices_4d
 
   contains
 
@@ -163,21 +184,53 @@ module fms_test_mod
 #undef FMS_TEST_TYPE_
 #undef TYPECAST_
 
-  subroutine permutable_indices_permute(self, p)
-    class(permutable_indices(*)), intent(inout) :: self
+  subroutine permutable_indices_permute_2d(self, p)
+    class(permutable_indices_2d), intent(inout) :: self
     integer, intent(in) :: p
 
     call permute_arr(self%lb, p)
     call permute_arr(self%ub, p)
-  end subroutine permutable_indices_permute
+  end subroutine permutable_indices_permute_2d
 
-  function permutable_indices_n(self, i) result(n)
-    class(permutable_indices(*)), intent(inout) :: self
+  subroutine permutable_indices_permute_3d(self, p)
+    class(permutable_indices_3d), intent(inout) :: self
+    integer, intent(in) :: p
+
+    call permute_arr(self%lb, p)
+    call permute_arr(self%ub, p)
+  end subroutine permutable_indices_permute_3d
+
+  subroutine permutable_indices_permute_4d(self, p)
+    class(permutable_indices_4d), intent(inout) :: self
+    integer, intent(in) :: p
+
+    call permute_arr(self%lb, p)
+    call permute_arr(self%ub, p)
+  end subroutine permutable_indices_permute_4d
+
+  function permutable_indices_n_2d(self, i) result(n)
+    class(permutable_indices_2d), intent(inout) :: self
     integer, intent(in) :: i
     integer :: n
 
     n = self%ub(i) - self%lb(i) + 1
-  end function permutable_indices_n
+  end function permutable_indices_n_2d
+
+  function permutable_indices_n_3d(self, i) result(n)
+    class(permutable_indices_3d), intent(inout) :: self
+    integer, intent(in) :: i
+    integer :: n
+
+    n = self%ub(i) - self%lb(i) + 1
+  end function permutable_indices_n_3d
+
+  function permutable_indices_n_4d(self, i) result(n)
+    class(permutable_indices_4d), intent(inout) :: self
+    integer, intent(in) :: i
+    integer :: n
+
+    n = self%ub(i) - self%lb(i) + 1
+  end function permutable_indices_n_4d
 
   pure recursive function factorial(n) result(res)
     integer, intent(in) :: n
