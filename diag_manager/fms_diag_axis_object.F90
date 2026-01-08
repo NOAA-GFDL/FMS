@@ -942,10 +942,7 @@ module fms_diag_axis_object_mod
     real(kind=r4_kind),         intent(in) :: zbounds(2) !< zbounds to compare with
     logical :: is_same
 
-    is_same = .false.
-    if (zbounds(1) .eq. this%zbounds(1) .and. zbounds(2) .eq. this%zbounds(2)) then
-      is_same = .true.
-    endif
+    is_same = zbounds(1) .eq. this%zbounds(1) .and. zbounds(2) .eq. this%zbounds(2)
   end function
 
   !> @brief Get the ntiles in a domain
@@ -1448,7 +1445,8 @@ module fms_diag_axis_object_mod
   end subroutine write_diurnal_metadata
 
   !> @brief Creates a new z subaxis to use
-  subroutine create_new_z_subaxis(zbounds, var_axis_ids, diag_axis, naxis, file_axis_id, nfile_axis, nz_subaxis)
+  subroutine create_new_z_subaxis(zbounds, var_axis_ids, diag_axis, naxis, file_axis_id, nfile_axis, nz_subaxis, &
+                                  error_mseg)
     real(kind=r4_kind),                       intent(in)    :: zbounds(2)      !< Bounds of the Z axis
     integer,                                  intent(inout) :: var_axis_ids(:) !< The variable's axis_ids
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)    !< Array of diag_axis objects
@@ -1459,6 +1457,8 @@ module fms_diag_axis_object_mod
                                                                                !! defined in file
     integer,                                  intent(inout) :: nz_subaxis      !< The number of z subaxis currently
                                                                                !! defined in the file
+    character(len=*),                         intent(inout) :: error_mseg      !! Message to include in error message
+                                                                               !! if there is an error
 
     class(*), pointer :: zaxis_data(:)      !< The data of the full zaxis
     integer           :: subaxis_indices(2) !< The starting and ending indices of the subaxis relative to the full
@@ -1482,6 +1482,10 @@ module fms_diag_axis_object_mod
         endif
       end select
     enddo
+
+    if (parent_axis_id .eq. DIAG_NULL) then
+        call mpp_error(FATAL, "create_new_z_subaxis:: unable to find the zaxis for "//trim(error_mseg))
+    endif
 
     !< Determine if the axis was already created
     do i = 1, nfile_axis
@@ -1560,7 +1564,9 @@ module fms_diag_axis_object_mod
         endif
       end select
     enddo
-    dim_name = ""
+    call mpp_error(FATAL, "Unable to determine the z subaxis name for field "//&
+                          trim(field_yaml%get_var_varname())//" in file: "//&
+                          trim(field_yaml%get_var_fname()))
   end subroutine
 #endif
 end module fms_diag_axis_object_mod
