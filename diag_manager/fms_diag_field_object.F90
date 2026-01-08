@@ -36,7 +36,7 @@ use mpp_mod, only: fatal, note, warning, mpp_error, mpp_pe, mpp_root_pe
 use fms_diag_yaml_mod, only:  diagYamlFilesVar_type, get_diag_fields_entries, get_diag_files_id, &
   & find_diag_field, get_num_unique_fields, diag_yaml
 use fms_diag_axis_object_mod, only: diagDomain_t, get_domain_and_domain_type, fmsDiagAxis_type, &
-  & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type
+  & fmsDiagAxisContainer_type, fmsDiagFullAxis_Type, find_z_sub_axis_name
 use time_manager_mod, ONLY: time_type, get_date
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, register_field, &
                        register_variable_attribute
@@ -1175,7 +1175,8 @@ result(rslt)
 end function get_longname_to_write
 
 !> @brief Determine the dimension names to use when registering the field to fms2_io
-subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
+subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is_regional, &
+                        file_axis_ids)
   class (fmsDiagField_type),        target, intent(inout) :: this          !< diag field
   class(fmsDiagAxisContainer_type), target, intent(in)    :: diag_axis(:)  !< Diag_axis object
   type(diagYamlFilesVar_type),              intent(in)    :: field_yaml    !< Field info from diag_table yaml
@@ -1183,6 +1184,7 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
   character(len=120), allocatable,          intent(out)   :: dimnames(:)   !< Array of the dimension names
                                                                            !! for the field
   logical,                                  intent(in)    :: is_regional   !< Flag indicating if the field is regional
+  integer,                                  intent(in)    :: file_axis_ids(:) !< Ids of the file axis
 
   integer                                   :: i     !< For do loops
   integer                                   :: naxis !< Number of axis for the field
@@ -1206,7 +1208,7 @@ subroutine get_dimnames(this, diag_axis, field_yaml, unlim_dimname, dimnames, is
     do i = 1, size(this%axis_ids)
       axis_ptr => diag_axis(this%axis_ids(i))
       if (axis_ptr%axis%is_z_axis()) then
-        dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)//"_sub01"
+        call find_z_sub_axis_name(dimnames(i), this%axis_ids(i), file_axis_ids, field_yaml, diag_axis)
       else
         dimnames(i) = axis_ptr%axis%get_axis_name(is_regional)
       endif
@@ -1251,7 +1253,7 @@ end subroutine register_field_wrap
 
 !> @brief Write the field's metadata to the file
 subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axis, unlim_dimname, is_regional, &
-                                cell_measures, use_collective_writes)
+                                cell_measures, use_collective_writes, file_axis_ids)
   class (fmsDiagField_type), target, intent(inout) :: this          !< diag field
   class(FmsNetcdfFile_t),            INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write to
   integer,                           intent(in)    :: file_id       !< File id of the file to write to
@@ -1262,6 +1264,7 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
   character(len=*),                  intent(in)    :: cell_measures !< The cell measures attribute to write
   logical,                           intent(in)    :: use_collective_writes !< True if using collective writes
                                                                             !! for this variable
+  integer,                           intent(in)    :: file_axis_ids(:) !< Ids of all of the axis in thje file
 
   type(diagYamlFilesVar_type), pointer     :: field_yaml  !< pointer to the yaml entry
   character(len=:),            allocatable :: var_name    !< Variable name
@@ -1280,7 +1283,7 @@ subroutine write_field_metadata(this, fms2io_fileobj, file_id, yaml_id, diag_axi
   var_name = field_yaml%get_var_outname()
 
   if (allocated(this%axis_ids)) then
-    call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional)
+    call this%get_dimnames(diag_axis, field_yaml, unlim_dimname, dimnames, is_regional, file_axis_ids)
 
     !! Collective writes are only used for 2D+ variables
     if ((use_collective_writes .and. size(this%axis_ids) >= 2) .or. field_yaml%has_chunksizes()) then

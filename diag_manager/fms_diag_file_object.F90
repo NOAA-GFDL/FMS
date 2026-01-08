@@ -841,6 +841,8 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   integer              :: subregion_gridtype !< The type of the subregion (latlon or index)
   logical              :: write_on_this_pe !< Flag indicating if the current pe is in the subregion
 
+  character(len=MAX_STR_LEN) :: error_mseg !< Message to append in case there is a FATAL error
+
   is_cube_sphere = .false.
   subregion_gridtype = this%get_file_sub_region_grid_type()
 
@@ -852,9 +854,12 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   !! which is why the copy was needed)
   var_axis_ids = axis_ids
 
+  error_mseg = "Field: "//trim(field_yaml%get_var_varname())//" in file: "//&
+               trim(field_yaml%get_var_fname())
+
   if (field_yaml%has_var_zbounds()) then
     call create_new_z_subaxis(field_yaml%get_var_zbounds(), var_axis_ids, diag_axis, naxis, &
-                              this%axis_ids, this%number_of_axis, this%nz_subaxis)
+                              this%axis_ids, this%number_of_axis, this%nz_subaxis, error_mseg)
   endif
 
   select type(this)
@@ -1861,7 +1866,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
 
     call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
       this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures, &
-      diag_file%is_using_collective_writes())
+      diag_file%is_using_collective_writes(), diag_file%axis_ids(1:diag_file%number_of_axis))
   enddo
 
   if (need_associated_files) &
