@@ -23,7 +23,11 @@
 # Set common test settings.
 . ../test-lib.sh
 
-touch input.nml
+cat > input.nml << _EOF
+offloading_io_nml
+  max_offloaded_files = 10
+/
+_EOF
 
 # TODO fails with older gnus
 #test_expect_success "test_io_offloading" '

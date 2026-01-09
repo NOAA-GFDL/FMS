@@ -22,6 +22,7 @@ module offloading_io_mod
   use fms2_io_mod
   use metadata_transfer_mod
   use platform_mod
+  use fms_mod
 
   implicit none
 
@@ -30,9 +31,12 @@ module offloading_io_mod
   integer, parameter :: non_domain_decomposed = 1 !< enumeration for type of domain
   integer, parameter :: Unstructured_grid = 2 !< enumeration for type of domain
 
-  integer, parameter :: max_files = 10 !< amount of offloaded files to allocate space for
   integer :: current_files_init !< number of currently initialized offloading files
   logical :: module_is_initialized !< .true. if module has been initialized
+
+  integer :: max_files = 10 !< amount of offloaded files to allocate space for
+
+  namelist / offloading_io_nml / max_files 
 
   !> Structure to hold offloading file information
   type :: offloading_obj_out
@@ -72,10 +76,13 @@ module offloading_io_mod
 
   !> Initialize by allocating array used to keep track of offloading file objects.
   subroutine offloading_io_init()
+    integer :: ierr, io
     if (module_is_initialized) return
     current_files_init = 0
     allocate(offloading_objs(max_files))
     module_is_initialized = .true.
+    read (input_nml_file, offloading_io_nml, iostat=io)
+    ierr = check_nml_error(io,'offloading_io_nml')
   end subroutine offloading_io_init
 
   !> Open a netcdf file and set it up for offloaded writes
