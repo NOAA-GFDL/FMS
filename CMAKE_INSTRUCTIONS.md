@@ -22,11 +22,6 @@ MPI compiler wrappers may be named different on your system, so its best to ensu
 export NetCDF_ROOT=`nc-config --prefix`
 ```
 
-#### If building with yaml parser (-DWITH_YAML)
-```
-export LIBYAML_ROOT=<your libyaml install directory>
-```
-
 ### Running CMake
 It's best to create a build directory inside of the FMS folder to avoid building on top of the source code.
 Once that is done, CMake can be ran to generate the necessary build files:
