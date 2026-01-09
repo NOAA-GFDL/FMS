@@ -16,17 +16,11 @@
 #* governing permissions and limitations under the License.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# Find the fms and mpp mod files.
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/test_fms/common/include
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+noinst_LIBRARIES = libtest_fms.a
+libtest_fms_a_SOURCES = test_fms.F90 include/test_fms.inc include/test_fms_real.inc
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = common astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal block_control
-
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# Clean up
+CLEANFILES = *.o *.mod *.a

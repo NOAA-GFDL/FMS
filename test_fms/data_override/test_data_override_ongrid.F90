@@ -35,6 +35,7 @@ use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_endde
                              nf90_double, nf90_unlimited
 use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
 use fms_mod, only: string, fms_init, fms_end
+use fms_test_mod, only: permutable_indices_2d, factorial, permute_arr
 
 implicit none
 
@@ -137,30 +138,46 @@ else
 
   select case (test_case)
   case (ongrid)
-    call ongrid_test_r4
-    call ongrid_test_r8
+    call run_tests(ongrid_test_r4, 2)
+    call run_tests(ongrid_test_r8, 2)
   case (bilinear)
-    call bilinear_test_r4
-    call bilinear_test_r8
+    call run_tests(bilinear_test_r4, 2)
+    call run_tests(bilinear_test_r8, 2)
   case (scalar)
     call scalar_test_r4
     call scalar_test_r8
   case (weight_file)
-    call weight_file_test_r4
-    call weight_file_test_r8
+    call run_tests(weight_file_test_r4, 2)
+    call run_tests(weight_file_test_r8, 2)
   case (ensemble_case, ensemble_same_yaml)
-    call ensemble_test_r4
-    call ensemble_test_r8
+    call run_tests(ensemble_test_r4, 2)
+    call run_tests(ensemble_test_r8, 2)
     call mpp_set_current_pelist(pelist)
   case (multi_file)
-    call multi_file_r4
-    call multi_file_r8
+    call run_tests(multi_file_r4, 2)
+    call run_tests(multi_file_r8, 2)
   end select
 endif
 
 call fms_end
 
 contains
+
+subroutine run_tests(test, ndims)
+  interface
+    subroutine test_permuted_indices(f)
+      integer, intent(in) :: f
+    end subroutine test_permuted_indices
+  end interface
+
+  procedure(test_permuted_indices) :: test
+  integer, intent(in) :: ndims
+  integer :: p
+
+  do p=1,factorial(ndims)
+    call test(p)
+  enddo
+end subroutine run_tests
 
 subroutine create_grid_spec_file
   type(FmsNetcdfFile_t) :: fileobj
