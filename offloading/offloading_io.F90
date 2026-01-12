@@ -49,6 +49,7 @@ module offloading_io_mod
 
   !> Offload equivalent of register_axis in fms2_io_mod
   !! Registers an axis to a netcdf file on offloaded PEs. File must have been opened with open_file_offload.
+  !! TODO: add register_unstructured_axis_offload for the unstructured grid
   interface register_axis_offload
     procedure :: register_netcdf_axis_offload
     procedure :: register_domain_axis_offload
@@ -129,8 +130,8 @@ module offloading_io_mod
       ntile = mpp_get_ntile_count(domain_in)
 
       !< The number of tiles must be the same as the number of offloading pes
-      !if (size(pe_out) .ne. ntile ) &
-      !  call mpp_error(FATAL, "The number of offloading PEs must be the same as the number of tiles of the domain")
+      if ( MOD(size(pe_out), ntile) .ne. 0 ) &
+        call mpp_error(FATAL, "The number of offloading PEs must be the same as the number of tiles of the domain")
       filename_out(1) = filename
 
       call mpp_get_global_domain(domain_in, xsize=global_domain_size(1), ysize=global_domain_size(2))
@@ -142,6 +143,7 @@ module offloading_io_mod
       broadcasting_pes(1) = pe_in(1) ! root pe
       broadcasting_pes(2:size(broadcasting_pes)) = pe_out ! offload pes
       call mpp_set_current_pelist( broadcasting_pes )
+      ! TODO bundle these into a single derived type to reduce the number of broadcasts
       call mpp_broadcast(filename_out, str_len, pe_in(1))
       call mpp_broadcast(global_domain_size, size(global_domain_size), pe_in(1))
       call mpp_broadcast(ntile, pe_in(1))
@@ -343,7 +345,7 @@ module offloading_io_mod
     integer, allocatable :: all_current_pes(:)
     integer, allocatable :: broadcasting_pes(:)
     logical :: is_model_pe
-    character(len=255) :: var_info(2)
+    character(len=ATTR_NAME_MAX_LENGTH) :: var_info(2)
 
     offloading_pes = fileobj%offloading_obj_in%offloading_pes
     model_pes = fileobj%offloading_obj_in%model_pes
@@ -369,9 +371,9 @@ module offloading_io_mod
     endif
 
     if (.not. is_model_pe) then
-      select type(wut=>this%fileobj)
+      select type(file=>this%fileobj)
         type is(FmsNetcdfDomainFile_t)
-          call register_axis(wut, trim(var_info(1)), trim(var_info(2)))
+          call register_axis(file, trim(var_info(1)), trim(var_info(2)))
       end select
     endif
 
@@ -380,7 +382,7 @@ module offloading_io_mod
 
   !> Register a netcdf axis on offloading PEs
   subroutine register_netcdf_axis_offload(fileobj, axis_name, length)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
     character(len=*), intent(in) :: axis_name !< axis name to be written to file
     integer, intent(in) :: length !< length of the axis
 
@@ -420,17 +422,17 @@ module offloading_io_mod
       broadcasting_pes(1) = model_pes(1)
       broadcasting_pes(2:size(broadcasting_pes)) = offloading_pes
       call mpp_set_current_pelist( broadcasting_pes )
-
+      ! TODO bundle these into a single derived type to reduce the number of broadcasts
       call mpp_broadcast(axis_length, model_pes(1))
       call mpp_broadcast(var_axis, axis_length, model_pes(1))
       call mpp_broadcast(var_length, model_pes(1))
     endif
 
     if (.not. is_model_pe) then
-      select type(wut=>this%fileobj)
-        type is(FmsNetcdfDomainFile_t)
-          call register_axis(wut, var_axis(1)(1:axis_length), var_length)
-      end select
+      !select type(wut=>this%fileobj)
+      !  type is(FmsNetcdfDomainFile_t)
+          call register_axis(this%fileobj, var_axis(1)(1:axis_length), var_length)
+      !end select
     endif
 
     call mpp_set_current_pelist(all_current_pes)
@@ -438,7 +440,7 @@ module offloading_io_mod
 
   !> Register a netcdf field on offloading PEs
   subroutine register_field_offload(fileobj, varname, vartype, dimensions)
-    class(FmsNetcdfFile_t), intent(inout) :: fileobj !> fms2_io file object
+    type(FmsNetcdfFile_t), intent(inout) :: fileobj !> fms2_io file object
     character(len=*), intent(in) :: varname !> name of the variable to be registered
     character(len=*), intent(in) :: vartype !> type of the variable to be registered
                                             !! must be one of {r4_type, r8_type, i4_type, i8_type, str_type}
@@ -488,10 +490,10 @@ module offloading_io_mod
     endif
 
     if (.not. is_model_pe) then
-      select type(wut=>this%fileobj)
-        type is(FmsNetcdfDomainFile_t)
-          call register_field(wut, trim(var_info(1)), trim(var_info(2)), var_info(3:))
-      end select
+      !select type(wut=>this%fileobj)
+      !  type is(FmsNetcdfDomainFile_t)
+          call register_field(this%fileobj, trim(var_info(1)), trim(var_info(2)), var_info(3:))
+      !end select
     endif
 
     call mpp_set_current_pelist(all_current_pes)
@@ -517,7 +519,7 @@ module offloading_io_mod
     type(domain2D) :: domain_out
     type(domain2D) :: domain_in
     integer :: isc, iec, jsc, jec, nz, redistribute_clock
-    character(len=255) :: varname_tmp(1)
+    character(len=ATTR_NAME_MAX_LENGTH) :: varname_tmp(1)
 
     offloading_pes = fileobj%offloading_obj_in%offloading_pes
     model_pes = fileobj%offloading_obj_in%model_pes
