@@ -358,7 +358,8 @@ module offloading_io_mod
         type is(FmsNetcdfDomainFile_t)
           call register_axis(file, trim(var_info(1)), trim(var_info(2)))
         class default
-          call mpp_error(FATAL, "offloading_io_mod::register_domain_axis_offload currently only supports FmsNetcdfDomainFile_t")
+          call mpp_error(FATAL, &
+            "offloading_io_mod::register_domain_axis_offload currently only supports FmsNetcdfDomainFile_t")
       end select
     endif
 
@@ -418,7 +419,8 @@ module offloading_io_mod
         type is(FmsNetcdfDomainFile_t)
           call register_axis(this%fileobj, var_axis(1)(1:axis_length), var_length)
         class default
-          call mpp_error(FATAL, "offloading_io_mod::register_netcdf_axis_offload currently only supports FmsNetcdfDomainFile_t")
+          call mpp_error(FATAL, &
+            "offloading_io_mod::register_netcdf_axis_offload currently only supports FmsNetcdfDomainFile_t")
       end select
     endif
 
