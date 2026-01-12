@@ -26,17 +26,12 @@ module offloading_io_mod
 
   implicit none
 
-
-  integer, parameter :: domain_decomposed = 0 !< enumeration for type of domain
-  integer, parameter :: non_domain_decomposed = 1 !< enumeration for type of domain
-  integer, parameter :: Unstructured_grid = 2 !< enumeration for type of domain
-
   integer :: current_files_init !< number of currently initialized offloading files
   logical :: module_is_initialized !< .true. if module has been initialized
 
   integer :: max_files = 10 !< amount of offloaded files to allocate space for
 
-  namelist / offloading_io_nml / max_files 
+  namelist / offloading_io_nml / max_files
 
   !> Structure to hold offloading file information
   type :: offloading_obj_out
@@ -44,7 +39,6 @@ module offloading_io_mod
     character(len=:), allocatable :: filename !< filename of the offloaded netcdf file
     class(FmsNetcdfFile_t), allocatable :: fileobj !< fms2_io file object
     type(domain2D) :: domain_out !< domain on offloading PEs
-    integer :: type_of_domain !< type of domain (domain_decomposed, non_domain_decomposed, Unstructured_grid)
   end type
 
   !> Offload equivalent of register_axis in fms2_io_mod
@@ -68,7 +62,6 @@ module offloading_io_mod
   private
 
   public :: offloading_io_init, open_file_offload
-  public :: domain_decomposed, non_domain_decomposed, Unstructured_grid
   public :: global_metadata_offload, close_file_offload, register_axis_offload, register_field_offload
   public :: write_data_offload
   public :: create_cubic_domain, create_lat_lon_domain
@@ -99,7 +92,6 @@ module offloading_io_mod
     integer, parameter :: str_len = 255
     character(len=str_len) :: filename_out(1)
     integer :: object_id
-    integer :: type_of_domain
     integer :: global_domain_size(2)
     integer :: ntile
     integer, allocatable :: all_current_pes(:)
@@ -114,15 +106,6 @@ module offloading_io_mod
 
     allocate(all_current_pes(mpp_npes()))
     call mpp_get_current_pelist(all_current_pes)
-
-    select type(fileobj)
-    type is (FmsNetcdfDomainFile_t)
-      type_of_domain = non_domain_decomposed
-    type is (FmsNetcdfFile_t)
-      type_of_domain = domain_decomposed
-    type is (FmsNetcdfUnstructuredDomainFile_t)
-      type_of_domain = Unstructured_grid
-    end select
 
     filename_out(1) = ""
     if (mpp_pe() .eq. pe_in(1)) then
@@ -333,7 +316,7 @@ module offloading_io_mod
 
   !> Register a domain axis (ie. x or y) on offloading PEs
   subroutine register_domain_axis_offload(fileobj, axis_name, cart)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !< fms2_io file object
     character(len=*), intent(in) :: axis_name !< axis name to be written to file
     character(len=1), intent(in) :: cart !< must be either 'x' or 'y' for cartesian axis
 
@@ -374,6 +357,8 @@ module offloading_io_mod
       select type(file=>this%fileobj)
         type is(FmsNetcdfDomainFile_t)
           call register_axis(file, trim(var_info(1)), trim(var_info(2)))
+        class default
+          call mpp_error(FATAL, "offloading_io_mod::register_domain_axis_offload currently only supports FmsNetcdfDomainFile_t")
       end select
     endif
 
@@ -382,7 +367,7 @@ module offloading_io_mod
 
   !> Register a netcdf axis on offloading PEs
   subroutine register_netcdf_axis_offload(fileobj, axis_name, length)
-    type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !< fms2_io file object
     character(len=*), intent(in) :: axis_name !< axis name to be written to file
     integer, intent(in) :: length !< length of the axis
 
@@ -429,10 +414,12 @@ module offloading_io_mod
     endif
 
     if (.not. is_model_pe) then
-      !select type(wut=>this%fileobj)
-      !  type is(FmsNetcdfDomainFile_t)
+      select type(wut=>this%fileobj)
+        type is(FmsNetcdfDomainFile_t)
           call register_axis(this%fileobj, var_axis(1)(1:axis_length), var_length)
-      !end select
+        class default
+          call mpp_error(FATAL, "offloading_io_mod::register_netcdf_axis_offload currently only supports FmsNetcdfDomainFile_t")
+      end select
     endif
 
     call mpp_set_current_pelist(all_current_pes)
@@ -440,7 +427,7 @@ module offloading_io_mod
 
   !> Register a netcdf field on offloading PEs
   subroutine register_field_offload(fileobj, varname, vartype, dimensions)
-    type(FmsNetcdfFile_t), intent(inout) :: fileobj !> fms2_io file object
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !> fms2_io file object
     character(len=*), intent(in) :: varname !> name of the variable to be registered
     character(len=*), intent(in) :: vartype !> type of the variable to be registered
                                             !! must be one of {r4_type, r8_type, i4_type, i8_type, str_type}
@@ -501,7 +488,7 @@ module offloading_io_mod
 
   !> Write 3D data to offloaded netcdf file
   subroutine write_data_offload_3d(fileobj, varname, vardata, unlim_dim_level)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !< fms2_io file object
     character(len=*), intent(in) :: varname !< name of the variable to be written
     real(kind=r4_kind), intent(in) :: vardata(:,:,:) !< 3D data to be written
     integer, intent(in), optional :: unlim_dim_level !< level along unlimited dimension to write to
@@ -527,9 +514,6 @@ module offloading_io_mod
 
     id = fileobj%offloading_obj_in%id
     this => offloading_objs(id)
-
-    ! from error message
-    call mpp_domains_set_stack_size( 4866048)
 
     allocate(all_current_pes(mpp_npes()))
     call mpp_get_current_pelist(all_current_pes)
@@ -580,7 +564,7 @@ module offloading_io_mod
 
   !> Write 2D data to offloaded netcdf file
   subroutine write_data_offload_2d(fileobj, varname, vardata)
-    class(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< fms2_io file object
+    class(FmsNetcdfFile_t), intent(inout) :: fileobj !< fms2_io file object
     character(len=*), intent(in) :: varname !< name of the variable to be written
     real(kind=r4_kind), intent(in) :: vardata(:,:) !< 2D data to be written
 
@@ -675,7 +659,6 @@ module offloading_io_mod
     this => offloading_objs(current_files_init)
     this%id = current_files_init
     this%filename = trim(filename)
-    this%type_of_domain = domain_decomposed
 
     ! does npes return current pelist or total??
     allocate(curr_pelist(mpp_npes()))
