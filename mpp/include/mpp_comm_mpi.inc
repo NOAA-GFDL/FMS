@@ -60,7 +60,7 @@
   ! because we use both do-concurrent and openmp 
   ! if you remove either, the code will run multiple 
   ! ranks on a _single_ GPU. Be careful out there!
-  !$call omp_set_default_device(pe)
+  !$ call omp_set_default_device(pe)
   !$acc set device_num(pe)
 
   module_is_initialized = .TRUE.
