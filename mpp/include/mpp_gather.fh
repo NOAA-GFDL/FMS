@@ -186,7 +186,7 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
       ! Non-root: MPI ignores recv args, but they must still be valid actual arguements
       allocate(counts(1))
       counts = 0
-      allocate(rbuf(1)) 
+      allocate(rbuf(1))
    endif
 
    send_count = (ie-is+1)*(je-js+1)*nk
@@ -212,8 +212,10 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
          msg_start = msg_start + blocksize
       enddo
 
-      deallocate(gind, rbuf, counts)
+      deallocate(gind)
    endif
+   
+   deallocate(rbuf, counts)
 
    call mpp_sync_self()
 
