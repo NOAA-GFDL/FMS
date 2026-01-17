@@ -182,6 +182,11 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
       enddo
 
       allocate(rbuf(sum(counts)))
+   else
+      ! Non-root: MPI ignores recv args, but they must still be valid actual arguements
+      allocate(counts(1))
+      counts = 0
+      allocate(rbuf(1)) 
    endif
 
    send_count = (ie-is+1)*(je-js+1)*nk
