@@ -214,7 +214,7 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
 
       deallocate(gind)
    endif
-   
+ 
    deallocate(rbuf, counts)
 
    call mpp_sync_self()
