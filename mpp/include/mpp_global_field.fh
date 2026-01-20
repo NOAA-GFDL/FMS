@@ -67,7 +67,8 @@
       n_per_gridpoint_local = size(local) / (size(local,ix) * size(local,iy))
       n_per_gridpoint_global = size(global) / (size(global,ix) * size(global,iy))
       size_clocal = (domain%x(1)%compute%size+ishift) * (domain%y(1)%compute%size+jshift) * n_per_gridpoint_local
-      size_cremote = (domain%x(1)%compute%max_size+ishift) * (domain%y(1)%compute%max_size+jshift) * n_per_gridpoint_local
+      size_cremote = (domain%x(1)%compute%max_size+ishift) * (domain%y(1)%compute%max_size+jshift) * &
+                     n_per_gridpoint_local
 
       stackuse = size_clocal + size_cremote
       if( stackuse.GT.mpp_domains_stack_size )then
