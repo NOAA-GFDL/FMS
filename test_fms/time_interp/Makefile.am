@@ -1,20 +1,19 @@
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 
 # This is an automake file for the test_fms/time_interp directory of the FMS
@@ -29,13 +28,17 @@ AM_CPPFLAGS = -I$(MODDIR)
 LDADD = $(top_builddir)/libFMS/libFMS.la
 
 # Build these test programs.
-check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 test_time_interp_external_r4 test_time_interp_external_r8
+check_PROGRAMS = test_time_interp_r4 test_time_interp_r8 \
+                 test_time_interp_external_r4 test_time_interp_external_r8 \
+                 test_time_interp_conservative_hi_r4 test_time_interp_conservative_hi_r8
 
 # These are the sources for the tests.
 test_time_interp_r4_SOURCES = test_time_interp.F90
 test_time_interp_r8_SOURCES = test_time_interp.F90
 test_time_interp_external_r4_SOURCES = test_time_interp_external.F90
 test_time_interp_external_r8_SOURCES = test_time_interp_external.F90
+test_time_interp_conservative_hi_r4_SOURCES = test_time_interp_conservative_hi.F90
+test_time_interp_conservative_hi_r8_SOURCES = test_time_interp_conservative_hi.F90
 
 # filter out any added precision flags
 # adds r8 flag, otherwise no-flag default is 4
@@ -43,6 +46,8 @@ test_time_interp_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_time_interp_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 test_time_interp_external_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
 test_time_interp_external_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
+test_time_interp_conservative_hi_r4_CPPFLAGS=-DTEST_FMS_KIND_=4 -I$(MODDIR)
+test_time_interp_conservative_hi_r8_CPPFLAGS=-DTEST_FMS_KIND_=8 -I$(MODDIR)
 
 # Run the test programs.
 TESTS = test_time_interp2.sh

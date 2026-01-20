@@ -19,6 +19,33 @@
 !> @addtogroup time_interp_external2_mod
 !> @{
 
+    !> @brief 1D interpolation for @ref time_interp_external_bridge
+    subroutine TIME_INTERP_EXTERNAL_BRIDGE_1D_(index1, index2, time, data_in, interp, verbose,horz_interp, mask_out, &
+               is_in, ie_in, window_id)
+
+      integer, intent(in) :: index1 !< index of first external field
+      integer, intent(in) :: index2 !< index of second external field
+      type(time_type), intent(in) :: time !< target time for data
+      real(FMS_TI_KIND_), dimension(:), intent(inout) :: data_in !< global or local data array
+      integer, intent(in), optional :: interp !< hardcoded to linear
+      logical, intent(in), optional :: verbose !< flag for debugging
+      type(horiz_interp_type),intent(in), optional :: horz_interp !< horizontal interpolation type
+      logical, dimension(:), intent(out), optional :: mask_out !< set to true where output data is valid
+      integer,                  intent(in), optional :: is_in, ie_in !< horizontal indices for load_record
+      integer,                  intent(in), optional :: window_id !< harcoded to 1 in load_record
+
+      real(FMS_TI_KIND_), dimension(size(data_in,1), 1, 1) :: data_out !< 3d version of data_in
+      logical, dimension(size(data_in,1), 1, 1) :: mask3d !< 3d version of mask_out
+
+      data_out(:,1,1) = data_in(:) ! fill initial values for the portions of array that are not touched by 3d routine
+      call time_interp_external_bridge(index1, index2, time, data_out, interp, verbose, horz_interp, mask3d, &
+                                   is_in=is_in,ie_in=ie_in,js_in=1,je_in=1,window_id=window_id)
+      data_in(:) = data_out(:,1,1)
+      if (PRESENT(mask_out)) mask_out(:) = mask3d(:,1,1)
+
+    end subroutine TIME_INTERP_EXTERNAL_BRIDGE_1D_
+
+
     !> @brief 2D interpolation for @ref time_interp_external_bridge
     subroutine TIME_INTERP_EXTERNAL_BRIDGE_2D_(index1, index2, time, data_in, interp, verbose,horz_interp, mask_out, &
                is_in, ie_in, js_in, je_in, window_id)

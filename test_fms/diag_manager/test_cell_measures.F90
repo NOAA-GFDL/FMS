@@ -100,5 +100,16 @@ program test_cell_measures
       if (trim(buffer) .ne. "area: area") &
         call mpp_error(FATAL, "The cell_measures attribute is not the expected result! "//trim(buffer))
       call close_file(fileobj)
+
+      ! Check that file1.nc exists, that the var1 exists and it contains the cell_measures attributes
+      ! Here area is in the file, but the output name is area_file2 instead of area
+      if (.not. open_file(fileobj, "file2.nc", "read")) &
+        call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
+      call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
+      if (trim(buffer) .ne. "area: area_file2") &
+        call mpp_error(FATAL, "The cell_measures attribute is not the expected result! ("//trim(buffer)//") vs "//&
+          "(area: area_file2)")
+      call close_file(fileobj)
+      call close_file(fileobj)
     end subroutine check_output
 end program

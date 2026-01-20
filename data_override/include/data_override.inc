@@ -240,6 +240,10 @@ end if
     else
        if (file_exists("data_table.yaml"))&
          call mpp_error(FATAL, "You cannot have the yaml data_table if use_data_table_yaml=.false.")
+         call mpp_error(NOTE, &
+       &"data_override_init:: You are using the yaml version of the data_table. &
+The legacy data_table format will be deprecated in a future release, &
+please switch to the yaml format.")
        allocate(data_table(max_table))
        do i = 1, max_table
           data_table(i) = default_table
@@ -252,6 +256,10 @@ end if
 
     if (use_data_table_yaml) then
        call mpp_error(FATAL, "You cannot have use_data_table_yaml=.true. without compiling with -Duse_yaml")
+       call mpp_error(NOTE, &
+       &"data_override_init:: You are using the yaml version of the data_table. &
+The legacy data_table format will be deprecated in a future release, &
+please switch to the yaml format.")
     else
 
        allocate(data_table(max_table))

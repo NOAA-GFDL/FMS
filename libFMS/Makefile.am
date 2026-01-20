@@ -1,20 +1,19 @@
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 
 # This is an automake file for the libFMS directory of the FMS
@@ -28,7 +27,7 @@ lib_LTLIBRARIES = libFMS.la
 # These linker flags specify libtool version info.
 # See http://www.gnu.org/software/libtool/manual/libtool.html#Libtool-versioning
 # for information regarding incrementing `-version-info`.
-libFMS_la_LDFLAGS = -version-info 24:0:0
+libFMS_la_LDFLAGS = -version-info 25:0:0
 
 # Add the convenience libraries to the FMS library.
 libFMS_la_LIBADD = $(top_builddir)/platform/libplatform.la
@@ -64,6 +63,7 @@ libFMS_la_LIBADD += $(top_builddir)/diag_integral/libdiag_integral.la
 libFMS_la_LIBADD += $(top_builddir)/sat_vapor_pres/libsat_vapor_pres.la
 libFMS_la_LIBADD += $(top_builddir)/parser/libparser.la
 libFMS_la_LIBADD += $(top_builddir)/string_utils/libstring_utils.la
+libFMS_la_LIBADD += $(top_builddir)/offloading/liboffload.la
 libFMS_la_LIBADD += $(top_builddir)/libFMS_mod.la
 
 libFMS_la_SOURCES =

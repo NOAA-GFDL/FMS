@@ -101,6 +101,7 @@ use platform_mod
   INTEGER, PARAMETER :: TWO_D_DOMAIN = 2 !< Use the FmsNetcdfDomainFile_t fileobj
   INTEGER, PARAMETER :: UG_DOMAIN    = 3 !< Use the FmsNetcdfUnstructuredDomainFile_t fileobj
   INTEGER, PARAMETER :: SUB_REGIONAL = 4 !< This is a file with a sub_region use the FmsNetcdfFile_t fileobj
+  integer, parameter :: MAX_DIMENSIONS = 5 !< Max number of dimensions allowed (including unlimited dimension)
   INTEGER, PARAMETER :: DIRECTION_UP   = 1  !< The axis points up if positive
   INTEGER, PARAMETER :: DIRECTION_DOWN = -1 !< The axis points down if positive
   INTEGER, PARAMETER :: GLO_REG_VAL = -999 !< Value used in the region specification of the diag_table
@@ -205,7 +206,7 @@ use platform_mod
      INTEGER :: num_attributes !< Number of defined attibutes
 !----------
 !ug support
-     logical(I4_KIND) :: use_domainUG = .false.
+     logical(L4_KIND) :: use_domainUG = .false.
      logical(I4_KIND) :: use_domain2D = .false.
 !----------
 !Check if time axis was already registered

@@ -29,6 +29,7 @@ module netcdf_io_mod
 #endif
 use netcdf
 use mpp_mod
+use mpp_domains_mod
 use fms_io_utils_mod
 use platform_mod
 implicit none
@@ -122,6 +123,17 @@ type, private :: dimension_information
                                        !! cur_dim_len(3) : z dimensions
 endtype dimension_information
 
+type, public :: fmsOffloadingIn_type
+  !TODO should be private, need getter functions
+  integer, public :: id !< unique identifier for each type
+  integer, public, allocatable :: offloading_pes(:) !< list of pe numbers that will be used to just write
+  integer, public, allocatable :: model_pes(:) !< list of pe numbers that will be running the model
+  logical :: is_model_pe !< true if current pe is in model_pes
+  type(domain2D) :: domain_in !< domain for grid that is to be written out
+  contains
+    procedure :: init
+endtype fmsOffloadingIn_type
+
 !> @brief Netcdf file type.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
@@ -148,6 +160,7 @@ type, public :: FmsNetcdfFile_t
   character (len=20) :: time_name
   type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
                                                !! restart variables
+  type(fmsOffloadingIn_type) :: offloading_obj_in
   logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
                                       !! this should be set to .true. in the user application if they want
                                       !! collective reads (put before open_file())
@@ -542,8 +555,8 @@ end function get_variable_type
 
 !> @brief Open a netcdf file.
 !! @return .true. if open succeeds, or else .false.
-function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
-  result(success)
+function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename, &
+                          tile_comm, use_collective) result(success)
 
   class(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: path !< File path.
@@ -567,59 +580,83 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                                               !! is a restart file.  Defaults
                                               !! to false.
   logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
-                                              !! ".res" to the filename
+                                                            !! ".res" to the filename
+  integer, intent(in), optional :: tile_comm      !< MPI communicator used for parallel I/O. Passing this
+                                                  !! argument enables parallel I/O.
+  logical, intent(in), optional :: use_collective !< Flag indicating whether reads and writes should be performed
+                                                  !! collectively rather than independently.
   logical :: success
 
   integer :: nc_format_param
   integer :: err
   integer :: netcdf4 !< Query the file for the _IsNetcdf4 global attribute in the event
                      !! that the open for collective reads fails
-  character(len=FMS_PATH_LEN) :: buf !< File path with .res in the filename if it is a restart
-  character(len=FMS_PATH_LEN) :: buf2 !< File path with the filename appendix if there is one
+  character(len=FMS_PATH_LEN) :: full_path !< File path with .res in the filename if it is a restart
   logical :: is_res
   logical :: dont_add_res !< flag indicated to not add ".res" to the filename
 
-  if (allocated(fileobj%is_open)) then
-    if (fileobj%is_open) then
-      success = .true.
-      return
-    endif
+  success = .true.
+
+  if (fms2_nc_format_param.eq.-1) then
+    call error("netcdf_file_open :: fms2_io has not been initialized")
   endif
+
+  if (allocated(fileobj%is_open)) then
+    if (fileobj%is_open) return
+  endif
+
+  fileobj%use_netcdf_mpi = .false.
+
+  if (fileobj%tile_comm.ne.MPP_COMM_NULL) then
+    call mpp_error(NOTE, "netcdf_file_open :: Setting fileobj%tile_comm is deprecated. &
+                          Please use open_file(..., tile_comm=...) instead.")
+    fileobj%use_netcdf_mpi = .true.
+  elseif (present(tile_comm)) then
+    fileobj%use_netcdf_mpi = .true.
+    fileobj%tile_comm = tile_comm
+  endif
+
+  if (fileobj%use_collective) then
+    fileobj%use_netcdf_mpi = .true.
+    call mpp_error(NOTE, "Setting fileobj%use_collective to enable collective reads is deprecated. &
+                          Please use open_file(..., use_collective=.true.) instead.")
+  else
+    fileobj%use_collective = .false.
+    if (present(use_collective)) fileobj%use_collective = use_collective
+  endif
+
   !< Only add ".res" to the file path if is_restart is set to true
   !! and dont_add_res_to_filename is set to false.
   is_res = .false.
   if (present(is_restart)) then
     is_res = is_restart
   endif
+  fileobj%is_restart = is_res
+
   dont_add_res = .false.
   if (present(dont_add_res_to_filename)) then
     dont_add_res = dont_add_res_to_filename
   endif
 
   if (is_res .and. .not. dont_add_res) then
-    call restart_filepath_mangle(buf, trim(path))
+    call restart_filepath_mangle(full_path, trim(path))
   else
-    call string_copy(buf, trim(path))
+    call string_copy(full_path, trim(path))
   endif
 
   !< If it is a restart add the filename_appendix to the filename
   if (is_res) then
-     call get_instance_filename(trim(buf), buf2)
+     call get_instance_filename(trim(full_path), fileobj%path)
   else
-     call string_copy(buf2, trim(buf))
+     call string_copy(fileobj%path, trim(full_path))
   endif
 
-  !Check if the file exists.
-  success = .true.
+  ! Check if the file exists.
   if (string_compare(mode, "read", .true.) .or. string_compare(mode, "append", .true.)) then
-    success = file_exists(buf2)
-    if (.not. success) then
-      return
-    endif
+    success = file_exists(fileobj%path)
+    if (.not.success) return
   endif
 
-  !Store properties in the derived type.
-  call string_copy(fileobj%path, trim(buf2))
   if (present(pelist)) then
     allocate(fileobj%pelist(size(pelist)))
     fileobj%pelist(:) = pelist(:)
@@ -628,11 +665,9 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     fileobj%pelist(1) = mpp_pe()
   endif
   fileobj%io_root = fileobj%pelist(1)
-  fileobj%is_root = mpp_pe() .eq. fileobj%io_root
+  fileobj%is_root = mpp_pe().eq.fileobj%io_root
 
   fileobj%is_netcdf4 = .false.
-  if (fms2_ncchksz == -1) call error("netcdf_file_open:: fms2_ncchksz not set, call fms2_io_init")
-  if (fms2_nc_format_param == -1) call error("netcdf_file_open:: fms2_nc_format_param not set, call fms2_io_init")
 
   if (present(nc_format)) then
     if (string_compare(nc_format, "64bit", .true.)) then
@@ -653,8 +688,35 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     fileobj%is_netcdf4 = fms2_is_netcdf4
   endif
 
-  !Open the file with netcdf if this rank is the I/O root.
-  if (fileobj%is_root .and. .not.(fileobj%use_collective)) then
+  if (fileobj%use_netcdf_mpi) then
+#ifdef NO_NC_PARALLEL4
+    call error("NetCDF was not built with HDF5 parallel I/O features, so use_netcdf_mpi cannot be used. &
+               &Please turn use_netcdf_mpi off for the file: " // trim(path))
+#endif
+    nc_format_param = ior(nc_format_param, nf90_mpiio)
+  endif
+
+  if (fileobj%use_netcdf_mpi) then
+    ! Using MPI-IO: Every PE opens the file
+    if(string_compare(mode, "read", .true.)) then
+      err = nf90_open(trim(fileobj%path), ior(nf90_nowrite, nf90_mpiio), fileobj%ncid, &
+                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+    elseif(string_compare(mode, "append", .true.)) then
+      err = nf90_open(trim(fileobj%path), ior(nf90_write, nf90_mpiio), fileobj%ncid, &
+                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+    elseif (string_compare(mode, "write", .true.)) then
+      err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
+                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+    elseif (string_compare(mode,"overwrite",.true.)) then
+      err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
+                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+    else
+      call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
+                 &"Check your open_file call, the acceptable values are read, append, write, overwrite")
+    endif
+    call check_netcdf_code(err, "netcdf_file_open (using netcdf mpi): "//trim(fileobj%path))
+  elseif (fileobj%is_root) then
+    ! Not using MPI-IO: Only the root PE opens the file
     if (string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
     elseif (string_compare(mode, "append", .true.)) then
@@ -667,48 +729,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
     endif
-    call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
-  elseif(fileobj%use_collective .and. (fileobj%tile_comm /= MPP_COMM_NULL)) then
-    if(string_compare(mode, "read", .true.)) then
-      ! Open the file for collective reads if the user requested that treatment in their application.
-      ! NetCDF does not have the ability to specify collective I/O at the file basis
-      ! so we must activate each variable in netcdf_read_data_2d() and netcdf_read_data_3d()
-      err = nf90_open(trim(fileobj%path), ior(NF90_NOWRITE, NF90_MPIIO), fileobj%ncid, &
-                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
-      if(err /= nf90_noerr) then
-        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid)
-        err = nf90_get_att(fileobj%ncid, nf90_global, "_IsNetcdf4", netcdf4)
-        err = nf90_close(fileobj%ncid)
-        if(netcdf4 /= 1) then
-          call mpp_error(NOTE,"netcdf_file_open: Open for collective read failed because the file is not &
-                               netCDF-4 format."// &
-                              " Falling back to parallel independent for file "// trim(fileobj%path))
-          fileobj%use_collective = .false.
-          fileobj%tile_comm = MPP_COMM_NULL
-        else
-#ifdef NO_NC_PARALLEL4
-          call mpp_error(FATAL, "netCDF was not build with HDF5 parallel I/O features, "//&
-                                "so collective netcdf io is not allowed. Please turn collective read off for file "//&
-                                trim(fileobj%path))
-#endif
-        endif
-        err = nf90_open(trim(fileobj%path), nf90_nowrite, fileobj%ncid, chunksize=fms2_ncchksz)
-       endif
-    elseif (string_compare(mode, "write", .true.)) then
-      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective write"// &
-                              " This feature is not implemented"// trim(fileobj%path))
-      !err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
-      !                  comm=fileobj%tile_comm, info=MPP_INFO_NULL)
-    elseif (string_compare(mode,"overwrite",.true.)) then
-      call mpp_error(FATAL,"netcdf_file_open: Attempt to create a file for collective overwrite"// &
-                              " This feature is not implemented"// trim(fileobj%path))
-      !err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
-      !                  comm=fileobj%tile_comm, info=MPP_INFO_NULL)
-    else
-      call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
-                 &"Check your open_file call, the acceptable values are read, append, write, overwrite")
-    endif
-    call check_netcdf_code(err, "netcdf_file_open:"//trim(fileobj%path))
+    call check_netcdf_code(err, "netcdf_file_open: "//trim(fileobj%path))
   else
     fileobj%ncid = missing_ncid
   endif
@@ -716,11 +737,11 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   fileobj%is_diskless = .false.
 
   !Allocate memory.
-  fileobj%is_restart = is_res
   if (fileobj%is_restart) then
     allocate(fileobj%restart_vars(max_num_restart_vars))
     fileobj%num_restart_vars = 0
   endif
+
   fileobj%is_readonly = string_compare(mode, "read", .true.)
   fileobj%mode_is_append = string_compare(mode, "append", .true.)
   allocate(fileobj%compressed_dims(max_num_compressed_dims))
@@ -1015,7 +1036,7 @@ subroutine netcdf_add_variable(fileobj, variable_name, variable_type, dimensions
     call check_netcdf_code(err, append_error_msg)
   endif
 
-  if (fileobj%use_netcdf_mpi) then
+  if (fileobj%use_netcdf_mpi.and.fileobj%use_collective) then
     err = nf90_var_par_access(fileobj%ncid, varid, nf90_collective)
     call check_netcdf_code(err, append_error_msg)
   endif
@@ -2055,8 +2076,8 @@ include "gather_data_bc.inc"
 include "unpack_data.inc"
 
 !> @brief Wrapper to distinguish interfaces.
-function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, dont_add_res_to_filename) &
-  result(success)
+function netcdf_file_open_wrap(fileobj, path, mode, nc_format, pelist, is_restart, &
+                               dont_add_res_to_filename) result(success)
 
   type(FmsNetcdfFile_t), intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: path !< File path.
@@ -2409,6 +2430,25 @@ subroutine flush_file(fileobj)
   endif
 end subroutine flush_file
 
+!> Initialization routine for fmsOffloadingIn_type
+subroutine init(this, offloading_obj_id, offloading_pes, model_pes, domain)
+  class(fmsOffloadingIn_type), intent(inout) :: this !< offloading object to initialize
+  integer, intent(in) :: offloading_obj_id !< unique id number to set
+  integer, intent(in) :: offloading_pes(:) !< list of pe's from current list to offload writes to
+  integer, intent(in) :: model_pes(:) !< list of model pe's (any pes not in offloading_pes argument)
+  type(domain2D) :: domain
+
+  this%id = offloading_obj_id
+  allocate(this%offloading_pes(size(offloading_pes)))
+  this%offloading_pes = offloading_pes
+  allocate(this%model_pes(size(model_pes)))
+  this%model_pes = model_pes
+
+ this%is_model_pe = .false.
+  if (any(model_pes .eq. mpp_pe())) &
+    this%is_model_pe = .true.
+  this%domain_in = domain
+end subroutine
 !> @brief Getter for use_netcdf_mpi
 pure logical function is_file_using_netcdf_mpi(this)
   class(FmsNetcdfFile_t), intent(in) :: this !< fms2io fileobj to query

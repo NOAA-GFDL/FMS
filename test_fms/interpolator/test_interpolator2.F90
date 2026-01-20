@@ -39,7 +39,8 @@ program test_interpolator2
   use fms_mod,          only: fms_init
   use constants_mod,    only: PI
   use platform_mod,     only: r4_kind, r8_kind
-  use fms_test_mod, only: permutable_indices, factorial, arr_compare_tol
+  use fms_test_mod,     only: permutable_indices_2d, permutable_indices_3d, permutable_indices_4d, factorial, &
+                              arr_compare_tol
   use interpolator_mod
 
   implicit none
@@ -152,7 +153,7 @@ contains
     real(TEST_FMS_KIND_), intent(in) :: answer
 
     real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: interp_data
-    type(permutable_indices(2)) :: dims
+    type(permutable_indices_2d) :: dims
     integer :: p
 
     do p=1,factorial(2)
@@ -187,7 +188,7 @@ contains
     real(TEST_FMS_KIND_), intent(in) :: answer
 
     real(TEST_FMS_KIND_), allocatable, dimension(:,:,:) :: interp_data
-    type(permutable_indices(3)) :: dims
+    type(permutable_indices_3d) :: dims
     integer :: p
 
     do p=1,factorial(3)
@@ -214,7 +215,7 @@ contains
     real(TEST_FMS_KIND_), intent(in) :: answer
 
     real(TEST_FMS_KIND_), allocatable, dimension(:,:,:,:) :: interp_data
-    type(permutable_indices(4)) :: dims
+    type(permutable_indices_4d) :: dims
     integer :: p
 
     do p=1,factorial(4)

@@ -35,7 +35,7 @@ use netcdf,            only: nf90_create, nf90_def_dim, nf90_def_var, nf90_endde
                              nf90_double, nf90_unlimited
 use ensemble_manager_mod, only: get_ensemble_size, ensemble_manager_init
 use fms_mod, only: string, fms_init, fms_end
-use fms_test_mod, only: permutable_indices, factorial, permute_arr
+use fms_test_mod, only: permutable_indices_2d, factorial, permute_arr
 
 implicit none
 

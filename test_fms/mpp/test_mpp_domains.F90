@@ -58,7 +58,7 @@ program test_mpp_domains
   use compare_data_checksums
   use test_domains_utility_mod
   use platform_mod
-  use fms_test_mod, only: permutable_indices, factorial, arr_init, arr_compare
+  use fms_test_mod, only: permutable_indices_3d, factorial, arr_init, arr_compare
 
 
   implicit none
@@ -2476,13 +2476,13 @@ contains
 
 #define FMS_TEST_KIND_ r4_kind
 #define TEST_GROUP_UPDATE_ test_group_update_r4
-#include "include/group_update.inc"
+#include "group_update.inc"
 #undef FMS_TEST_KIND_
 #undef TEST_GROUP_UPDATE_
 
 #define FMS_TEST_KIND_ r8_kind
 #define TEST_GROUP_UPDATE_ test_group_update_r8
-#include "include/group_update.inc"
+#include "group_update.inc"
 #undef FMS_TEST_KIND_
 #undef TEST_GROUP_UPDATE_
 
