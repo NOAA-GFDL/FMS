@@ -237,6 +237,21 @@ AC_CHECK_FUNCS([sched_getaffinity], [], [])
 
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
+
+# Check if building with OpenACC support.  Default is 'no'
+AC_ARG_ENABLE([openacc],
+  [AS_HELP_STRING([--enable-openacc],
+    [Builds with support for OpenACC directives. (default no)])])
+AS_IF([test ${enable_openacc:-no} = yes],
+  [enable_openacc=yes],
+  [enable_openacc=no])
+
+# If openacc support enabled, test for correct flags
+AS_IF([test ${enable_openacc} = yes],
+      [ACX_LANG_OPENACC_FLAG(
+				[AS_VAR_APPEND([CFLAGS], [" $acx_cv_c_openacc_flag"])], []
+			 )])
+
 AC_LANG_POP(C)
 
 # Fortran specific checks
@@ -305,6 +320,15 @@ GX_FC_INTERNAL_FILE_NML()
 
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
+
+# need to set preprocessor for openacc check below
+AC_FC_PP_SRCEXT([F90])
+
+# Check for openacc fortran flags
+AS_IF([test ${enable_openacc} = yes],
+      [ACX_LANG_OPENACC_FLAG(
+				[AS_VAR_APPEND([FCFLAGS], [" $acx_cv_fc_openacc_flag"])], []
+			 )])
 
 AC_LANG_POP(Fortran)
 
