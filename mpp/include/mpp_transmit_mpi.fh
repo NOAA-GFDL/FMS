@@ -37,10 +37,11 @@
 !!caller is responsible for completion checks (mpp_sync_self) before and after
     subroutine MPP_TRANSMIT_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, recv_request, &
                             &  send_request )
+      use, intrinsic :: iso_c_binding, only: c_loc, c_associated
 
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
-      MPP_TYPE_, intent(in)  :: put_data(*)
-      MPP_TYPE_, intent(out) :: get_data(*)
+      MPP_TYPE_, target, intent(in)  :: put_data(*)
+      MPP_TYPE_, target, intent(out) :: get_data(*)
       logical, intent(in),  optional :: block
       integer, intent(in),  optional :: tag
       integer, intent(out), optional :: recv_request, send_request
@@ -89,7 +90,7 @@
           if(from_pe.LT.0 .OR. from_pe.GE.npes) call mpp_error(FATAL, 'MPP_TRANSMIT: broadcasting from invalid PE.')
           if(put_len.GT.get_len) call mpp_error(FATAL, 'MPP_TRANSMIT: size mismatch between put_data and get_data.')
           if(pe.EQ.from_pe)then
-              if( LOC(get_data).NE.LOC(put_data) )then
+              if( .not.c_associated(c_loc(get_data),c_loc(put_data)) )then
 !dir$ IVDEP
                   do i = 1,get_len
                      get_data(i) = put_data(i)
