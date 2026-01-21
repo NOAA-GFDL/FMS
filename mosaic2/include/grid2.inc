@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @file
@@ -31,13 +30,11 @@ subroutine GET_GRID_CELL_AREA_SG_(component, tile, cellarea, domain)
   real(kind=r8_kind), allocatable :: glonb(:,:), glatb(:,:)
   real(kind=r8_kind), allocatable :: cellarea8(:,:)
 
+  call init_checks("get_grid_cell_area")
   allocate(cellarea8(size(cellarea,1),size(cellarea,2)))
 
   select case(grid_version)
   case(VERSION_GEOLON_T,VERSION_X_T)
-     if (.not. grid_spec_exists) then
-        call mpp_error(FATAL, 'grid2_mod(get_grid_cell_area_SG): grid_spec does not exist')
-     end if
      select case(trim(component))
      case('LND')
         call read_data(gridfileobj, 'AREA_LND_CELL', cellarea8)
@@ -103,13 +100,11 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
 
   real(r8_kind),allocatable :: area8(:,:)
 
+  call init_checks("get_grid_comp_area")
   allocate(area8(size(area,1),size(area,2)))
 
   select case (grid_version   )
   case(VERSION_GEOLON_T,VERSION_X_T)
-     if (.not. grid_spec_exists) then
-        call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
-     end if
      select case(component)
      case('ATM')
         call read_data(gridfileobj,'AREA_ATM',area8)
@@ -134,16 +129,10 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
         return
      case ('LND')
         xgrid_name = 'aXl_file'
-        if (.not. grid_spec_exists) then
-           call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
-        end if
         call read_data(gridfileobj, 'lnd_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case ('OCN')
         xgrid_name = 'aXo_file'
-        if (.not. grid_spec_exists) then
-           call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
-        end if
         call read_data(gridfileobj, 'ocn_mosaic', mosaic_name)
         tile_name  = trim(mosaic_name)//'_tile'//char(tile+ichar('0'))
      case default
@@ -164,9 +153,6 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
           'size of the output argument "area" is not consistent with the domain')
 
      ! find the nest tile
-     if (.not. grid_spec_exists) then
-        call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
-     end if
      call read_data(gridfileobj, 'atm_mosaic', mosaic_name)
      call get_grid_ntiles('atm', ntiles)
      allocate(nest_tile_name(ntiles))
@@ -187,9 +173,6 @@ subroutine GET_GRID_COMP_AREA_SG_(component,tile,area,domain)
         call close_file(tilefileobj)
      end do
      area8(:,:) = 0.0_r8_kind
-     if (.not. grid_spec_exists) then
-        call mpp_error(FATAL, 'grid2_mod(get_grid_comp_area_SG): grid_spec does not exist')
-     end if
      if(variable_exists(gridfileobj,xgrid_name)) then
         ! get the number of the exchange-grid files
         call get_variable_size(gridfileobj,xgrid_name,siz)
@@ -266,6 +249,7 @@ subroutine GET_GRID_CELL_AREA_UG_(component, tile, cellarea, SG_domain, UG_domai
   integer :: is, ie, js, je
   real(kind=FMS_MOS_KIND_), allocatable :: SG_area(:,:)
 
+  call init_checks("get_grid_cell_area")
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_area(is:ie, js:je))
   call get_grid_cell_area(component, tile, SG_area, SG_domain)
@@ -283,6 +267,7 @@ subroutine GET_GRID_COMP_AREA_UG_(component, tile, area, SG_domain, UG_domain)
   integer :: is, ie, js, je
   real(kind=FMS_MOS_KIND_), allocatable :: SG_area(:,:)
 
+  call init_checks("get_grid_comp_area")
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_area(is:ie, js:je))
   call get_grid_comp_area(component, tile, SG_area, SG_domain)
@@ -304,6 +289,7 @@ subroutine GET_GRID_CELL_VERTICES_1D_(component, tile, glonb, glatb)
   character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
+  call init_checks("get_grid_cell_vertices")
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glonb(:))/=nlon+1) &
        call mpp_error (FATAL, module_name//'/get_grid_cell_vertices_1D '//&
@@ -318,9 +304,6 @@ subroutine GET_GRID_CELL_VERTICES_1D_(component, tile, glonb, glatb)
 
   select case(grid_version)
   case(VERSION_GEOLON_T)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_1D): grid_spec does not exist')
-     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
@@ -330,9 +313,6 @@ subroutine GET_GRID_CELL_VERTICES_1D_(component, tile, glonb, glatb)
         call read_data(gridfileobj, "gridlat_vert_t", glatb)
      end select
   case(VERSION_X_T)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_1D): grid_spec does not exist')
-     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xb'//lowercase(component(1:1)), glonb)
@@ -395,6 +375,7 @@ subroutine GET_GRID_CELL_VERTICES_2D_(component, tile, lonb, latb, domain)
   character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
+  call init_checks("get_grid_cell_vertices")
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
 
   if (present(domain)) then
@@ -423,9 +404,6 @@ subroutine GET_GRID_CELL_VERTICES_2D_(component, tile, lonb, latb, domain)
      !! use lonb, latb as r4
      select case(grid_version)
      case(VERSION_GEOLON_T)
-       if (.not. grid_spec_exists) then
-         call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
-       end if
        select case(component)
        case('ATM','LND')
           allocate(buffer(max(nlon,nlat)+1))
@@ -456,9 +434,6 @@ subroutine GET_GRID_CELL_VERTICES_2D_(component, tile, lonb, latb, domain)
            endif
        end select
      case(VERSION_X_T)
-       if (.not. grid_spec_exists) then
-         call mpp_error(FATAL, 'grid2_mod(get_grid_cell_vertices_2D): grid_spec does not exist')
-       end if
        select case(component)
        case('ATM','LND')
           allocate(buffer(max(nlon,nlat)+1))
@@ -544,6 +519,7 @@ subroutine GET_GRID_CELL_VERTICES_UG_(component, tile, lonb, latb, SG_domain, UG
   integer :: is, ie, js, je, i, j
   real(kind=FMS_MOS_KIND_), allocatable :: SG_lonb(:,:), SG_latb(:,:), tmp(:,:,:)
 
+  call init_checks("get_grid_cell_vertices")
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_lonb(is:ie+1, js:je+1))
   allocate(SG_latb(is:ie+1, js:je+1))
@@ -584,6 +560,7 @@ subroutine GET_GRID_CELL_CENTERS_1D_(component, tile, glon, glat)
   character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
+  call init_checks("get_grid_cell_centers")
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (size(glon(:))/=nlon) &
        call mpp_error (FATAL, module_name//'/get_grid_cell_centers_1D '//&
@@ -598,9 +575,6 @@ subroutine GET_GRID_CELL_CENTERS_1D_(component, tile, glon, glat)
 
   select case(grid_version)
   case(VERSION_GEOLON_T)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_1D): grid_spec does not exist')
-     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
@@ -610,9 +584,6 @@ subroutine GET_GRID_CELL_CENTERS_1D_(component, tile, glon, glat)
         call read_data(gridfileobj, "gridlat_t", glat)
      end select
   case(VERSION_X_T)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_1D): grid_spec does not exist')
-     end if
      select case(trim(component))
      case('ATM','LND')
         call read_data(gridfileobj, 'xt'//lowercase(component(1:1)), glon)
@@ -660,6 +631,7 @@ subroutine GET_GRID_CELL_CENTERS_2D_(component, tile, lon, lat, domain)
   character(len=FMS_PATH_LEN)      :: tilefile
   type(FmsNetcdfFile_t)  :: tilefileobj
 
+  call init_checks("get_grid_cell_centers")
   call get_grid_size_for_one_tile(component, tile, nlon, nlat)
   if (present(domain)) then
     call mpp_get_compute_domain(domain,is,ie,js,je)
@@ -686,9 +658,6 @@ subroutine GET_GRID_CELL_CENTERS_2D_(component, tile, lon, lat, domain)
 
   select case(grid_version)
   case(VERSION_GEOLON_T)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_2D): grid_spec does not exist')
-     end if
      select case (trim(component))
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
@@ -711,9 +680,6 @@ subroutine GET_GRID_CELL_CENTERS_2D_(component, tile, lon, lat, domain)
         call read_data(gridfileobj, 'geolat_t', lat)
      end select
   case(VERSION_X_T)
-     if (.not. grid_spec_exists) then
-       call mpp_error(FATAL, 'grid2_mod(get_grid_cell_centers_2D): grid_spec does not exist')
-     end if
      select case(trim(component))
      case('ATM','LND')
         allocate(buffer(max(nlon,nlat)))
@@ -789,6 +755,7 @@ subroutine GET_GRID_CELL_CENTERS_UG_(component, tile, lon, lat, SG_domain, UG_do
   integer :: is, ie, js, je
   real(kind=FMS_MOS_KIND_), allocatable :: SG_lon(:,:), SG_lat(:,:)
 
+  call init_checks("get_grid_cell_centers")
   call mpp_get_compute_domain(SG_domain, is, ie, js, je)
   allocate(SG_lon(is:ie, js:je))
   allocate(SG_lat(is:ie, js:je))

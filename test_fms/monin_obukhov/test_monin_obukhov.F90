@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 ! Check monin_obukhov_mod calculations against an array of known answer keys.
@@ -39,13 +38,8 @@ program test_monin_obukhov
 
   implicit none
 
-#if MO_TEST_KIND_ == 4
-  integer, parameter :: kr = r4_kind
-  integer, parameter :: ki = i4_kind
-#else
-  integer, parameter :: kr = r8_kind
-  integer, parameter :: ki = i8_kind
-#endif
+  integer, parameter :: kr = TEST_FMS_KIND_
+  integer, parameter :: ki = TEST_FMS_KIND_
 
   integer(ki), parameter :: mi = 0_ki !< Mold for transfer() intrinsic
 
@@ -180,7 +174,7 @@ program test_monin_obukhov
       character(:), allocatable :: filename
       integer :: fh
 
-      filename = "OUT.r" // string(MO_TEST_KIND_) // ".nml"
+      filename = "OUT.r" // string(TEST_FMS_KIND_) // ".nml"
       print "(A)", "Writing newly generated answer key to " // filename
 
       n_answers = n_answers + 1

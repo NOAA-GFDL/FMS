@@ -1,21 +1,20 @@
 #!/bin/sh
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 # This is part of the GFDL FMS package. This is a shell script to
 # execute tests in the test_fms/coupler directory.
@@ -25,6 +24,8 @@
 
 # Set common test settings.
 . ../test-lib.sh
+
+output_dir
 
 rm -f input.nml
 touch input.nml
@@ -106,11 +107,11 @@ mkdir INPUT
 
 
 test_expect_success "coupler types interfaces (r4_kind)" '
-  mpirun -n 4 ./test_coupler_types_r4
+  mpirun -n 4 ../test_coupler_types_r4
 '
 
 test_expect_success "coupler types interfaces (r8_kind)" '
-  mpirun -n 4 ./test_coupler_types_r8
+  mpirun -n 4 ../test_coupler_types_r8
 '
 
 # delete lines from the table to make sure we see the difference in the send_data return status
@@ -125,36 +126,36 @@ _EOF
 
 
 test_expect_success "coupler types interfaces - check send_data return vals (r4_kind)" '
-  mpirun -n 4 ./test_coupler_types_r4
+  mpirun -n 4 ../test_coupler_types_r4
 '
 
 test_expect_success "coupler types interfaces - check send_data return vals (r8_kind)" '
-  mpirun -n 4 ./test_coupler_types_r8
+  mpirun -n 4 ../test_coupler_types_r8
 '
 
 mkdir RESTART
 
 test_expect_success "coupler register restart 2D(r4_kind)" '
-  mpirun -n 1 ./test_coupler_2d_r4
+  mpirun -n 1 ../test_coupler_2d_r4
 '
 test_expect_success "coupler register restart 2D(r8_kind)" '
-  mpirun -n 1 ./test_coupler_2d_r8
+  mpirun -n 1 ../test_coupler_2d_r8
 '
 
 test_expect_success "coupler register restart 3D (r4_kind)" '
-  mpirun -n 1 ./test_coupler_3d_r4
+  mpirun -n 1 ../test_coupler_3d_r4
 '
 
 test_expect_success "coupler register restart 3D (r8_kind)" '
-  mpirun -n 1 ./test_coupler_3d_r8
+  mpirun -n 1 ../test_coupler_3d_r8
 '
 
 test_expect_success "test atmos_ocean_fluxes (r4_kind)" '
-  mpirun -n 1 ./test_atmos_ocean_fluxes_r4
+  mpirun -n 1 ../test_atmos_ocean_fluxes_r4
 '
 
 test_expect_success "test atmos_ocean_fluxes (r8_kind)" '
-  mpirun -n 1 ./test_atmos_ocean_fluxes_r8
+  mpirun -n 1 ../test_atmos_ocean_fluxes_r8
 '
 
 rm -rf RESTART

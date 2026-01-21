@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @file
 !! @brief unit tests for interpolator_mod
@@ -40,38 +39,39 @@ program test_interpolator2
   use fms_mod,          only: fms_init
   use constants_mod,    only: PI
   use platform_mod,     only: r4_kind, r8_kind
-
+  use fms_test_mod,     only: permutable_indices_2d, permutable_indices_3d, permutable_indices_4d, factorial, &
+                              arr_compare_tol
   use interpolator_mod
 
   implicit none
 
   character(100), parameter :: ncfile='immadeup.o3.climatology.nc' !< fake climatology file
-  integer, parameter :: lkind=TEST_INTP_KIND_
+  integer, parameter :: lkind=TEST_FMS_KIND_
   !> the interpolation methods are not perfect.Will not get perfectly agreeing answers
-  real(r8_kind), parameter :: tol=0.1_lkind
+  real(TEST_FMS_KIND_), parameter :: tol=1e-1
   integer :: calendar_type
 
   !> climatology related variables and arrays (made up data)
-  integer :: nlonlat       !< number of latitude and longitudinal center coordinates in file
-  integer :: nlonlatb      !< number of latitude and longitudinal boundary coordinates in file
+  integer :: nlonlat    !< number of latitude and longitudinal center coordinates in file
+  integer :: nlonlatb  !< number of latitude and longitudinal boundary coordinates in file
   integer :: ntime         !< number of time slices
   integer :: npfull        !< number of p levels
   integer :: nphalf        !< number of half p levels
-  real(TEST_INTP_KIND_), allocatable :: lat(:)   !< climatology coordinates
-  real(TEST_INTP_KIND_), allocatable :: lon(:)   !< climatology coordinates
-  real(TEST_INTP_KIND_), allocatable :: latb(:)  !< climatology coordinates
-  real(TEST_INTP_KIND_), allocatable :: lonb(:)  !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: lat(:)   !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: lon(:)   !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: latb(:)  !< climatology coordinates
+  real(TEST_FMS_KIND_), allocatable :: lonb(:)  !< climatology coordinates
   real(r8_kind), allocatable :: clim_time (:) !< climatology time
-  real(TEST_INTP_KIND_), allocatable :: pfull(:) !< climatology p level
-  real(TEST_INTP_KIND_), allocatable :: phalf(:) !< climatology p half level
-  real(TEST_INTP_KIND_), allocatable :: ozone(:,:,:,:) !< climatology ozone data
+  real(TEST_FMS_KIND_), allocatable :: pfull(:) !< climatology p level
+  real(TEST_FMS_KIND_), allocatable :: phalf(:) !< climatology p half level
+  real(TEST_FMS_KIND_), allocatable :: ozone(:,:,:,:) !< climatology ozone data
 
   !> model related variables and arrays
   integer :: nlonlat_mod, nlonlatb_mod !< number of latitude and longitude coordinates in the model
-  real(TEST_INTP_KIND_), allocatable :: lat_mod(:,:)  !< model coordinates
-  real(TEST_INTP_KIND_), allocatable :: lon_mod(:,:)  !< model coordinates
-  real(TEST_INTP_KIND_), allocatable :: latb_mod(:,:) !< model coordinates
-  real(TEST_INTP_KIND_), allocatable :: lonb_mod(:,:) !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: lat_mod(:,:)   !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: lon_mod(:,:)   !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: latb_mod(:,:)  !< model coordinates
+  real(TEST_FMS_KIND_), allocatable :: lonb_mod(:,:)  !< model coordinates
 
   !> array holding model times
   type(time_type), allocatable :: model_time_julian(:), model_time_noleap(:)
@@ -143,74 +143,121 @@ contains
     call interpolator_init(clim_type,trim(ncfile), lonb_mod, latb_mod, data_out_of_bounds=data_out_of_bounds)
 
   end subroutine test_interpolator_init
+
   !===============================================!
+
+  subroutine test_interpolator_2d(clim_type, phalf_in, test_time, answer)
+    type(interpolate_type), intent(inout) :: clim_type
+    real(TEST_FMS_KIND_), dimension(:,:,:), intent(in) :: phalf_in
+    type(time_type), intent(in) :: test_time
+    real(TEST_FMS_KIND_), intent(in) :: answer
+
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: interp_data
+    type(permutable_indices_2d) :: dims
+    integer :: p
+
+    do p=1,factorial(2)
+      dims%lb = [1, 1]
+      dims%ub = [nlonlat, nlonlat]
+
+      call dims%permute(p)
+
+      allocate(interp_data(dims%ub(1), dims%ub(2)))
+      interp_data = 0.
+
+      !> test interpolator_2D_r4/8
+      call interpolator(clim_type, test_time, interp_data, 'ozone')
+      call arr_compare_tol(interp_data, answer, tol, 'test interpolator_2D')
+
+      interp_data = 0.
+
+      !> Test obtain_interpolator_time_slices
+      call obtain_interpolator_time_slices(clim_type,test_time)
+      call interpolator(clim_type, test_time, interp_data, 'ozone')
+      call unset_interpolator_time_flag(clim_type)
+      call arr_compare_tol(interp_data, answer, tol, 'test interpolator_2D')
+
+      deallocate(interp_data)
+    enddo
+  end subroutine test_interpolator_2d
+
+  subroutine test_interpolator_3d(clim_type, phalf_in, test_time, answer)
+    type(interpolate_type), intent(inout) :: clim_type
+    real(TEST_FMS_KIND_), dimension(:,:,:), intent(in) :: phalf_in
+    type(time_type), intent(in) :: test_time
+    real(TEST_FMS_KIND_), intent(in) :: answer
+
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:,:) :: interp_data
+    type(permutable_indices_3d) :: dims
+    integer :: p
+
+    do p=1,factorial(3)
+      dims%lb = [1, 1, 1]
+      dims%ub = [nlonlat, nlonlat, npfull]
+
+      call dims%permute(p)
+
+      allocate(interp_data(dims%ub(1), dims%ub(2), dims%ub(3)))
+      interp_data = 0.
+
+      !> test interpolator_3_r4/8
+      call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone')
+      call arr_compare_tol(interp_data, answer, tol, 'test interpolator_3D')
+
+      deallocate(interp_data)
+    enddo
+  end subroutine test_interpolator_3d
+
+  subroutine test_interpolator_4d(clim_type, phalf_in, test_time, answer)
+    type(interpolate_type), intent(inout) :: clim_type
+    real(TEST_FMS_KIND_), dimension(:,:,:), intent(in) :: phalf_in
+    type(time_type), intent(in) :: test_time
+    real(TEST_FMS_KIND_), intent(in) :: answer
+
+    real(TEST_FMS_KIND_), allocatable, dimension(:,:,:,:) :: interp_data
+    type(permutable_indices_4d) :: dims
+    integer :: p
+
+    do p=1,factorial(4)
+      dims%lb = [1, 1, 1, 1]
+      dims%ub = [nlonlat, nlonlat, npfull, 1]
+
+      call dims%permute(p)
+
+      allocate(interp_data(dims%ub(1), dims%ub(2), dims%ub(3), dims%ub(4)))
+      interp_data = 0.
+
+      !> test interpolator_4D_r4/8
+      call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone')
+      call arr_compare_tol(interp_data, answer, tol, 'test interpolator_4D')
+
+      deallocate(interp_data)
+    enddo
+  end subroutine test_interpolator_4d
+
+  !> call the variants of interpolator (4D-2d) that interpolates data at a given time-point
+  !! The tests here do not test the "no_axis" interpolator routines
+  !! This subroutine also tests obtain_interpolator_time_slices for the 2D case.
   subroutine test_interpolator(clim_type, model_time)
-
-    !> call the variants of interpolator (4D-2d) that interpolates data at a given time-point
-    !! The tests here do not test the "no_axis" interpolator routines
-    !! This subroutine also tests obtain_interpolator_time_slices for the 2D case.
-
-    implicit none
-
     type(interpolate_type), intent(inout) :: clim_type
     type(time_type), dimension(ntime), intent(in) :: model_time
     type(time_type) :: test_time
-    real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod,npfull,1) :: interp_data !<only 1 field
-    real(TEST_INTP_KIND_), dimension(nlonlat_mod,nlonlat_mod,nphalf) :: phalf_in
-    integer :: itime, i, j, k, l
-
-    real(TEST_INTP_KIND_) :: answer
-
+    real(TEST_FMS_KIND_), dimension(nlonlat_mod,nlonlat_mod,nphalf) :: phalf_in
+    integer :: itime, i
+    real(TEST_FMS_KIND_) :: answer
 
     do i=1, nphalf
        phalf_in(:,:,i)=phalf(i)
     end do
 
     do itime=2, ntime-1
-
        answer=0.5_lkind*ozone(1,1,1,itime-1)+0.5_lkind*ozone(1,1,1,itime)
        test_time=model_time(itime-1) + (model_time(itime)-model_time(itime-1))/2
 
-       !> test interpolator_4D_r4/8
-       call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone')
-       do i=1, npfull
-          do j=1, nlonlat_mod
-             do k=1, nlonlat_mod
-                call check_answers(interp_data(k,j,i,1), answer, tol, 'test interpolator_4D')
-             end do
-          end do
-       end do
-
-       !> test interpolator_3_r4/8
-       call interpolator(clim_type, test_time, phalf_in, interp_data(:,:,:,1), 'ozone')
-       do i=1, npfull
-          do j=1, nlonlat_mod
-             do k=1, nlonlat_mod
-                call check_answers(interp_data(k,j,i,1), answer, tol, 'test interpolator_3D')
-             end do
-          end do
-       end do
-
-       !> test interpolator_2D_r4/8
-       call interpolator(clim_type, test_time, interp_data(:,:,1,1), 'ozone')
-       do j=1, nlonlat_mod
-          do k=1, nlonlat_mod
-             call check_answers(interp_data(k,j,1,1), answer, tol, 'test interpolator_2D')
-          end do
-       end do
-
-       !> Test obtain_interpolator_time_slices
-       call obtain_interpolator_time_slices(clim_type,test_time)
-       call interpolator(clim_type, test_time, interp_data(:,:,1,1), 'ozone')
-       call unset_interpolator_time_flag(clim_type)
-       do j=1, nlonlat_mod
-          do k=1, nlonlat_mod
-             call check_answers(interp_data(k,j,1,1), answer, tol, 'test interpolator_2D')
-          end do
-       end do
-
+       call test_interpolator_2d(clim_type, phalf_in, test_time, answer)
+       call test_interpolator_3d(clim_type, phalf_in, test_time, answer)
+       call test_interpolator_4d(clim_type, phalf_in, test_time, answer)
     end do
-
   end subroutine test_interpolator
   !===============================================!
   subroutine test_interpolator_end(clim_type)
@@ -233,8 +280,8 @@ contains
 
     type(interpolate_type) :: clim_type
 
-    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,npfull,1) :: interp_data !< last column, there is only one field
-    real(TEST_INTP_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf_in
+    real(TEST_FMS_KIND_), dimension(nlonlat,nlonlat,npfull,1) :: interp_data !< last column, there is only one field
+    real(TEST_FMS_KIND_), dimension(nlonlat,nlonlat,nphalf) :: phalf_in
     integer :: i, j, k
 
     do i=1, nphalf
@@ -243,31 +290,15 @@ contains
 
     !> test interpolator_4D_no_time_axis_r4/8
     call interpolator(clim_type, phalf_in, interp_data, 'ozone')
-    do i=1, npfull
-       do j=1, nlonlat
-          do k=1, nlonlat
-             call check_answers(interp_data(k,j,i,1), ozone(k,j,i,1), tol, 'test interpolator_4D_no_time_axis')
-          end do
-       end do
-    end do
+    call arr_compare_tol(interp_data(:,:,:,:), ozone(:,:,:,:), tol, 'test interpolator_4D_no_time_axis')
 
     !> test interpolator_3D_no_time_axis_r4/8
     call interpolator(clim_type, phalf_in, interp_data(:,:,:,1), 'ozone')
-    do i=1, npfull
-       do j=1, nlonlat
-          do k=1, nlonlat
-             call check_answers(interp_data(k,j,i,1), ozone(k,j,i,1), tol, 'test interpolator_3D_no_time_axis')
-          end do
-       end do
-    end do
+    call arr_compare_tol(interp_data(:,:,:,1), ozone(:,:,:,1), tol, 'test interpolator_3D_no_time_axis')
 
     !> test interpolator_2D_no_time_axis_r4/8
     call interpolator(clim_type, interp_data(:,:,1,1), 'ozone')
-    do j=1, nlonlat
-       do k=1, nlonlat
-          call check_answers(interp_data(k,j,1,1), ozone(k,j,1,1), tol, 'test interpolator_2D_no_time_axis')
-       end do
-    end do
+    call arr_compare_tol(interp_data(:,:,1,1), ozone(:,:,1,1), tol, 'test interpolator_2D_no_time_axis')
 
   end subroutine test_interpolator_no_time_axis
   !===============================================!
@@ -339,21 +370,6 @@ contains
     call test_interpolator_end(o3)
 
   end subroutine run_test_set
-  !===============================================!
-  subroutine check_answers(results, answers, tol, whoami)
-
-    implicit none
-    real(TEST_INTP_KIND_), intent(in) :: results, answers
-    real(r8_kind), intent(in) :: tol
-    character(*) :: whoami
-
-    if (real(abs(results-answers),r8_kind).gt.tol) then
-    !if (results.ne.answers) then
-       write(*,*) '      EXPECTED ', answers, ' but computed ', results
-       call mpp_error(FATAL, trim(whoami))
-    end if
-
-  end subroutine check_answers
   !===============================================!
   subroutine write_header
 

@@ -1,22 +1,21 @@
 #!/bin/sh
 
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 
 # Copyright (c) 2019-2020 Ed Hartnett, Seth Underwood
@@ -24,7 +23,7 @@
 # Set common test settings.
 . ../test-lib.sh
 
-if [ -z "${skipflag}" ]; then
+if [ -z "${parser_skip}" ]; then
 # create and enter directory for in/output files
 output_dir
 
@@ -43,6 +42,12 @@ diag_files:
     reduction: none
     kind: r4
   - module: ocn_mod
+    var_name: var3
+    output_name: this_does_not_matter
+    write_var: False
+    reduction: none
+    kind: r4
+  - module: ocn_mod
     var_name: var1
     output_name: var1_none
     reduction: none
@@ -57,7 +62,7 @@ diag_files:
     output_name: var3_none
     reduction: none
     kind: r4
-  - module: ocn_mod
+  - module: ocn_z_mod
     var_name: var4
     output_name: var4_none
     reduction: none
@@ -271,5 +276,133 @@ test_expect_success "Testing diag manager new_file_freq and file_durations keys 
   mpirun -n 1 ../check_new_file_freq
   '
 
+cat <<_EOF > diag_table.yaml
+my_variables: &my_variables
+  - module: ocn_mod
+    var_name: var0
+    output_name: var0_none
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var1
+    output_name: var1_none
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var2
+    output_name: var2_none
+    reduction: none
+    kind: r4
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_none
+    reduction: none
+    kind: r4
+  - module: ocn_z_mod
+    var_name: var4
+    output_name: var4_none
+    reduction: none
+    kind: r4
+
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - *my_variables
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_Z
+    reduction: none
+    zbounds: 2. 3.
+    kind: r4
+- file_name: test_none_regional
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  sub_region:
+  - grid_type: latlon
+    corner1: 78. 78.
+    corner2: 78. 78.
+    corner3: 81. 81.
+    corner4: 81. 81.
+  varlist:
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_none
+    reduction: none
+    zbounds: 2. 3.
+    kind: r4
+_EOF
+
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
+test_expect_success "Running diag_manager with "none" reduction method using a diag table with anchors(test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+test_expect_success "Checking answers for the "none" reduction method using a diag table with anchors (test $my_test_count)" '
+  mpirun -n 1 ../check_time_none
+'
+
+cat <<_EOF > diag_table.yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  reduction: none
+  kind: r4
+  modules:
+  - module: ocn_mod
+    varlist:
+    - var_name: var0
+      output_name: var0_none
+    - var_name: var3
+      output_name: this_does_not_matter
+      write_var: False
+    - var_name: var1
+      output_name: var1_none
+    - var_name: var2
+      output_name: var2_none
+    - var_name: var3
+      output_name: var3_none
+    - var_name: var3
+      output_name: var3_Z
+      zbounds: 2. 3.
+  - module: ocn_z_mod
+    varlist:
+    - var_name: var4
+      output_name: var4_none
+- file_name: test_none_regional
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  sub_region:
+  - grid_type: latlon
+    corner1: 78. 78.
+    corner2: 78. 78.
+    corner3: 81. 81.
+    corner4: 81. 81.
+  varlist:
+  - module: ocn_mod
+    var_name: var3
+    output_name: var3_none
+    reduction: none
+    zbounds: 2. 3.
+    kind: r4
+_EOF
+my_test_count=`expr $my_test_count + 1`
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
+test_expect_success "Running diag_manager with "none" reduction method using a diag table with modular yaml(test $my_test_count)" '
+  mpirun -n 6 ../test_reduction_methods
+'
+test_expect_success "Checking answers for the "none" reduction method using a diag table with modular yaml(test $my_test_count)" '
+  mpirun -n 1 ../check_time_none
+'
 fi
 test_done

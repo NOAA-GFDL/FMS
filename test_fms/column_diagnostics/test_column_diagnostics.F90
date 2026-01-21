@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @file
 !! @brief unit test for column_diagnostics_mod
@@ -39,22 +38,22 @@ program test_column_diagnostics
   integer, parameter :: num_diag_pts_ij=2     !< number of diagnostics column describes in terms of i/j indices
   integer :: global_i(num_diag_pts_ij) ! global i coordinates of the diagnostic column
   integer :: global_j(num_diag_pts_ij) ! global j coordinates of the diagnostic column
-  real(TEST_CD_KIND_) :: global_lat_latlon(num_diag_pts_latlon)!< latitude value for the diagnostic column
-  real(TEST_CD_KIND_) :: global_lon_latlon(num_diag_pts_latlon)!< longitude value for the diagnostic columns
+  real(TEST_FMS_KIND_) :: global_lat_latlon(num_diag_pts_latlon)!< latitude value for the diagnostic column
+  real(TEST_FMS_KIND_) :: global_lon_latlon(num_diag_pts_latlon)!< longitude value for the diagnostic columns
 
   integer, parameter :: nlatlon=6 !< number of latlon grid points
-  real(TEST_CD_KIND_) :: lonb_in(nlatlon,nlatlon) !< model longitude grid point
-  real(TEST_CD_KIND_) :: latb_in(nlatlon,nlatlon) !< model latitude point
+  real(TEST_FMS_KIND_) :: lonb_in(nlatlon,nlatlon) !< model longitude grid point
+  real(TEST_FMS_KIND_) :: latb_in(nlatlon,nlatlon) !< model latitude point
   logical :: do_column_diagnostics(nlatlon,nlatlon) !< out
 
   integer, parameter :: num_diag_pts=num_diag_pts_latlon + num_diag_pts_ij !< total number of diagnostics column
   integer :: diag_i(num_diag_pts) !< out
   integer :: diag_j(num_diag_pts) !< out
-  real(TEST_CD_KIND_) :: diag_lat(num_diag_pts) !< out
-  real(TEST_CD_KIND_) :: diag_lon(num_diag_pts) !< out
+  real(TEST_FMS_KIND_) :: diag_lat(num_diag_pts) !< out
+  real(TEST_FMS_KIND_) :: diag_lon(num_diag_pts) !< out
   integer :: diag_units(num_diag_pts)
 
-  integer, parameter :: lkind=TEST_CD_KIND_ !< local kind; either r4_kind or r8_kind
+  integer, parameter :: lkind=TEST_FMS_KIND_ !< local kind; either r4_kind or r8_kind
 
   call fms_init()
   call time_manager_init()
@@ -108,7 +107,7 @@ contains
     integer :: i
 
     integer :: i_answers(num_diag_pts), j_answers(num_diag_pts)
-    real(TEST_CD_KIND_) :: lon_answers(num_diag_pts), lat_answers(num_diag_pts)
+    real(TEST_FMS_KIND_) :: lon_answers(num_diag_pts), lat_answers(num_diag_pts)
 
     call initialize_diagnostic_columns(mod_name, num_diag_pts_latlon, num_diag_pts_ij, &
                                        global_i, global_j, global_lat_latlon, global_lon_latlon, &

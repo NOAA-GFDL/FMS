@@ -1,20 +1,19 @@
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 
 # This is an automake file for the test_fms/data_override directory of the FMS
@@ -47,14 +46,14 @@ test_atmos_ocean_fluxes_r8_SOURCES = test_atmos_ocean_fluxes.F90
 test_gex_SOURCES = test_gex.F90
 
 # add macro flags for kind and r4/r8 child type
-test_coupler_2d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_2d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_coupler_3d_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_3d_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_coupler_types_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_coupler_types_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
-test_atmos_ocean_fluxes_r4_CPPFLAGS=-DFMS_CP_TEST_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
-test_atmos_ocean_fluxes_r8_CPPFLAGS=-DFMS_CP_TEST_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_2d_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_2d_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_3d_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_3d_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_coupler_types_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_coupler_types_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
+test_atmos_ocean_fluxes_r4_CPPFLAGS=-DTEST_FMS_KIND_=r4_kind -DFMS_TEST_BC_TYPE_=bc_r4 -I$(MODDIR)
+test_atmos_ocean_fluxes_r8_CPPFLAGS=-DTEST_FMS_KIND_=r8_kind -DFMS_TEST_BC_TYPE_=bc -I$(MODDIR)
 test_gex_CPPFLAGS = -I$(MODDIR)
 
 TEST_EXTENSIONS = .sh
@@ -64,12 +63,14 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 # Run the test program.
 TESTS = test_coupler.sh test_gex.sh
 
-if ! USING_YAML
-  TESTS_ENVIRONMENT = skip_yaml=yes
+if USING_YAML
+  TESTS_ENVIRONMENT = parser_skip=""
+else
+  TESTS_ENVIRONMENT = parser_skip=skip
 endif
 
 # Include these files with the distribution.
 EXTRA_DIST = test_coupler.sh test_gex.sh
 
 # Clean up
-CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc
+CLEANFILES = input.nml *.nc* *.out *.dpi *.spi *.dyn *.spl *_table* INPUT/*.nc test_coupler-files/* test_gex-files/* test_coupler-files/*/* test_gex-files/*/*

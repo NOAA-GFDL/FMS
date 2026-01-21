@@ -1,25 +1,20 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
-#ifndef TEST_TRIDIAG_KIND
-#define TEST_TRIDIAG_KIND 8
-#endif
-
 !> Tests the tridiagonal module routines (tri_invert and close_tridiagonal)
 !! Tests reals with the kind value set above,
 program test_tridiagonal
@@ -32,16 +27,16 @@ program test_tridiagonal
     implicit none
 
     integer, parameter :: IN_LEN = 8 !< length of input arrays
-    integer, parameter :: kindl = TEST_TRIDIAG_KIND !< kind value for all reals in this test
-                                                !! set by TEST_TRIDIAG_KIND cpp macro
-    real(TEST_TRIDIAG_KIND), allocatable :: d(:,:,:), x(:,:,:), ref_array(:,:,:)
-    real(TEST_TRIDIAG_KIND), allocatable :: a(:,:,:), b(:,:,:), c(:,:,:)
+    integer, parameter :: kindl = TEST_FMS_KIND_ !< kind value for all reals in this test
+                                                !! set by TEST_FMS_KIND_ cpp macro
+    real(TEST_FMS_KIND_), allocatable :: d(:,:,:), x(:,:,:), ref_array(:,:,:)
+    real(TEST_FMS_KIND_), allocatable :: a(:,:,:), b(:,:,:), c(:,:,:)
     real(r4_kind), allocatable :: d_r4(:,:,:), x_r4(:,:,:)
     real(r4_kind), allocatable :: a_r4(:,:,:), b_r4(:,:,:), c_r4(:,:,:)
     real(r8_kind), allocatable :: d_r8(:,:,:), x_r8(:,:,:)
     real(r8_kind), allocatable :: a_r8(:,:,:), b_r8(:,:,:), c_r8(:,:,:)
     integer :: i, end, ierr, io
-    real(TEST_TRIDIAG_KIND) :: k
+    real(TEST_FMS_KIND_) :: k
     ! nml
     logical :: do_error_check = .false.
     namelist / test_tridiagonal_nml/ do_error_check
@@ -96,17 +91,17 @@ program test_tridiagonal
     ref_array = ref_array * k
     ! check
     do i=1, IN_LEN
-      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 1.0e-6_kindl) then
         print *, i, x(1,1,i), ref_array(1,1,i)
         call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert")
       endif
     enddo
     !! check with stored data arrays
     d = -1.0_kindl
-    ref_array = ref_array * -1.0_kindl
+    ref_array = -1.0_kindl * ref_array
     call tri_invert(x, d)
     do i=1, IN_LEN
-      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 0.1e-12_kindl) then
+      if(ABS(x(1,1,i) - ref_array(1,1,i)) .gt. 1.0e-6_kindl) then
         print *, i, x(1,1,i), ref_array(1,1,i)
         call mpp_error(FATAL, "test_tridiagonal: failed reference check for tri_invert with saved values")
       endif

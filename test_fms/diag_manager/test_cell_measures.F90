@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 
 !> @brief This program tests the diag_manager with fields with cell measures (area, volume)
@@ -100,6 +99,17 @@ program test_cell_measures
       call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
       if (trim(buffer) .ne. "area: area") &
         call mpp_error(FATAL, "The cell_measures attribute is not the expected result! "//trim(buffer))
+      call close_file(fileobj)
+
+      ! Check that file1.nc exists, that the var1 exists and it contains the cell_measures attributes
+      ! Here area is in the file, but the output name is area_file2 instead of area
+      if (.not. open_file(fileobj, "file2.nc", "read")) &
+        call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
+      call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
+      if (trim(buffer) .ne. "area: area_file2") &
+        call mpp_error(FATAL, "The cell_measures attribute is not the expected result! ("//trim(buffer)//") vs "//&
+          "(area: area_file2)")
+      call close_file(fileobj)
       call close_file(fileobj)
     end subroutine check_output
 end program

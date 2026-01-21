@@ -1,33 +1,30 @@
 #!/bin/sh
 
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 
 # Set common test settings.
 . ../test-lib.sh
 
-if [ ! -z $skip_yaml ]
-then
-  SKIP_TESTS='test_gex.2'
-fi
+output_dir
 
-test_cmd="mpirun -n 1 ./test_gex"
+
+test_cmd="mpirun -n 1 ../test_gex"
 
 # Create input.nml and field table (legacy field table)
 prepare_legacy () {
@@ -83,8 +80,10 @@ EOF
 prepare_legacy default_test
 test_expect_success "Test gex with atm_to_lnd tracer (legacy field_table)" "$test_cmd"
 
-prepare_yaml default_test
-test_expect_success "Test gex with atm_to_lnd tracer (YAML field_table)" "$test_cmd"
+if [ -z "$parser_skip" ]; then
+  prepare_yaml default_test
+  test_expect_success "Test gex with atm_to_lnd tracer (YAML field_table)" "$test_cmd"
+fi
 
 prepare_legacy get_n_ex_invalid_model_src
 test_expect_failure "Test gex_get_n_ex with invalid model_src" "$test_cmd"

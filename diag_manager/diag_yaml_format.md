@@ -16,6 +16,8 @@ The purpose of this document is to explain the diag_table yaml format.
 - [3. More examples](diag_yaml_format.md#3-more-examples)
 - [4. Schema](diag_yaml_format.md#4-schema)
 - [5. Ensemble and Nest Support](diag_yaml_format.md#5-ensemble-and-nest-support)
+- [6. Reducing Diag Table Yaml Length](diag_yaml_format.md#6-reducing-diag-table-yaml-length)
+- [7. Improving Performance at High Resolutions](diag_yaml_format.md#7-improving-performance-at-high-resolutions)
 
 ### 1. Converting from legacy ascii diag_table format
 
@@ -352,4 +354,235 @@ found in the [gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas)
 repository on Github.
 
 ### 5. Ensemble and Nest Support
-When using nests, it may be desired for a nest to have a different file frequency or number of variables from the parent grid. This may allow users to save disk space and reduce simulations time. In order to supports, FMS allows each nest to have a different diag_table.yaml from the parent grid. For example, if running with 1 test FMS will use diag_table.yaml for the parent grid and diag_table.nest_01.yaml for the first nest Similary, each ensemble member can have its own diag_table (diag_table_ens_XX.yaml, where XX is the ensemble number). However, for the ensemble case if both the diag_table.yaml and the diag_table_ens_* files are present, the code will crash as only 1 option is allowed.
+When using nests, it may be desired for a nest to have a different file frequency or number of variables from the parent grid. This may allow users to save disk space and reduce simulations time. In order to support this, FMS allows each nest to have a different diag_table.yaml from the parent grid. For example, if running with 1 nest FMS will use diag_table.yaml for the parent grid and diag_table.nest_01.yaml for the first nest. Similary, each ensemble member can have its own diag_table (diag_table_ens_XX.yaml, where XX is the ensemble number). However, for the ensemble case if both the diag_table.yaml and the diag_table_ens_* files are present, the code will crash as only 1 option is allowed.
+
+### 6. Reducing Diag Table Yaml Length
+There may be scenarios where the diag_table.yaml becomes long and contains a lot of repeated content.
+
+For example, the keys `module`, `reduction`, and `kind` often have the same values across many variables.
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - var_name: var0
+    module: ocn_mod
+    reduction: none
+    kind: r4
+  - var_name: var1
+    module: ocn_mod
+    reduction: none
+    kind: r4
+  - var_name: var2
+    module: ocn_mod
+    reduction: none
+    kind: r4
+```
+
+To reduce size and improve readability, you can **define these keys at the file level, and override them at the variable level if needed**:
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+```
+
+However, there may be cases where a file contains a large number of variables from different modules, requiring duplication of the module key across multiple lines. For example:
+
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: radiation_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+    module: some_other_mod
+  - var_name: var4
+    module: some_other_mod
+  - var_name: var5
+    module: some_other_mod
+```
+
+To address this, you can group variables by module:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  reduction: none
+  kind: r4
+  modules:
+  - module: radiation_mod
+    varlist:
+    - var_name: var0
+    - var_name: var1
+    - var_name: var2
+  - module: some_other_mod
+    varlist:
+    - var_name: var3
+    - var_name: var4
+    - var_name: var5
+```
+
+Another option **to reduce its size and improve readability, is to use yaml anchors**. For example, instead of writing:
+``` yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+- file_name: test_daily
+  freq: 1 days
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+```
+
+You can define an anchor and reuse it:
+```yaml
+name: &name
+  - var_name: var0
+  - var_name: var1
+  - var_name: var2
+  - var_name: var3
+  - var_name: var4
+  - var_name: var3
+    output_name: var3_Z
+    zbounds: 2. 3.
+
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_4xdaily
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist: *name
+- file_name: test_daily
+  freq: 1 days
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - *name
+  - variable_name: var773
+```
+### 7. Improving Performance at High Resolutions
+For very high resolutions (e.g., C3072L65), performance can be greatly improved by using NETCDF-4 with collective MPI writes. Tests have shown up to a 70% speedup when writing hourly diagnostic output. This approach also simplifies the workflow, as it does not use the IO domain and does not create distributed files. To enable this feature, set `use_collective_writes: True` for each file. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var4
+```
+Chunking can also have a major impact on performance. You can set chunk sizes for all variables in a file using the `chunksizes` key at the file level. By default, the diag manager will choose chunk sizes equal to the compute domain for domain-decomposed dimensions (e.g., for C3072L65 and a layout of 32,64, the chunksizes would be 96,48,nz). For dimensions that are not domain-decomposed (e.g., the vertical z dimension), the chunk size defaults to the full length of the dimension. This effectively means the entire z-dimension is stored as a single chunk. For unlimited dimensions (time), the chunk size is always 1. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var3
+  - var_name: var4
+```
+You can override chunk sizes for individual variables by specifying `chunksizes` at the variable level. For example:
+```yaml
+title: test_none
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_none
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  module: ocn_mod
+  reduction: none
+  kind: r4
+  use_collective_writes: True
+  chunksizes: 96, 8, 1, 1, 1
+  varlist:
+  - var_name: var3
+    chunksizes: 96, 4, 1, 1, 1
+  - var_name: var4
+```
+
+**Things to consider:**
+1.  This option currently only works for files with variables that are domain-decomposed (i.e., multiple mpi-tasks each with their own section of data). Support for land's unstructured grid and icebergs will be added in the future; at present, using this option with those grids will result in a FATAL error.
+2.  The domain must be evenly decomposed, meaning each processor has the same amount of data. For example, a C3072L65 grid with a layout of (30, 32) will not work and will result in a FATAL error, since 3072 is not evenly divisible by 30. This limitation exists because NetCDF collective I/O requires each process to access the same pattern of chunks. With uneven decomposition, the chunk shapes per process vary, making it impossible to determine a consistent chunking strategy. Currently there are no plans to support this in the future.
+3. The chunksizes must be a comma seperated list of five integers 1 for each dimension.
+4. Chunking is supported even when not using collective writes as long as netcdf-4 file are being used (by setting fms2_io_nml::netcdf_default_format="netcdf4)

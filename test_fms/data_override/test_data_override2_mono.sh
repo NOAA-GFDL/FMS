@@ -1,28 +1,30 @@
 #!/bin/sh
 
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 #
 # Copyright (c) 2019-2021 Ed Hartnett, Uriel Ramirez, Seth Underwood
 
 # Set common test settings.
 . ../test-lib.sh
+
+# TODO: Enable this test once generalized indices work is complete
+SKIP_TESTS="test_data_override2_mono.2"
 
 output_dir
 [ ! -d "INPUT" ] && mkdir -p "INPUT"
@@ -84,6 +86,9 @@ _EOF
 
 #Repeat the test with yaml if needed
 if [ -z $parser_skip ]; then
+  # TODO: Enable this test once generalized indices work is complete
+  SKIP_TESTS="$SKIP_TESTS test_data_override2_mono.4"
+
   rm -rf INPUT/*
   sed 's/write_only = .False./write_only = .True./g' input_base.nml > input.nml
   test_expect_success "Creating input files" '

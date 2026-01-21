@@ -1,20 +1,19 @@
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 
 # This is the main configure file for the FMS package.
@@ -25,7 +24,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2025.03-dev],
+  [2025.04-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -482,6 +481,10 @@ AC_SUBST([NOUNDEFINED])
 # Used in Makefiles.
 AC_SUBST([MODDIR],[\$\(top_builddir\)/.mods])
 
+# Define CMake variables used in test-lib.sh.in as empty strings
+AC_SUBST([CMAKE_CURRENT_SOURCE_DIR], [])
+AC_SUBST([USING_CMAKE],[])
+
 # These files will be created when the configure script is run.
 AC_CONFIG_FILES([
   Makefile
@@ -517,6 +520,7 @@ AC_CONFIG_FILES([
   diag_integral/Makefile
   sat_vapor_pres/Makefile
   random_numbers/Makefile
+  offloading/Makefile
   libFMS/Makefile
   docs/Makefile
   parser/Makefile
@@ -524,6 +528,7 @@ AC_CONFIG_FILES([
   test_fms/test-lib.sh
   test_fms/intel_coverage.sh
   test_fms/Makefile
+  test_fms/common/Makefile
   test_fms/astronomy/Makefile
   test_fms/diag_manager/Makefile
   test_fms/data_override/Makefile
@@ -551,6 +556,7 @@ AC_CONFIG_FILES([
   test_fms/random_numbers/Makefile
   test_fms/topography/Makefile
   test_fms/column_diagnostics/Makefile
+  test_fms/offloading/Makefile
   test_fms/block_control/Makefile
   FMS.pc
   ])

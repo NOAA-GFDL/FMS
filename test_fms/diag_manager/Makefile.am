@@ -1,20 +1,19 @@
 #***********************************************************************
-#*                   GNU Lesser General Public License
+#*                             Apache License 2.0
 #*
 #* This file is part of the GFDL Flexible Modeling System (FMS).
 #*
-#* FMS is free software: you can redistribute it and/or modify it under
-#* the terms of the GNU Lesser General Public License as published by
-#* the Free Software Foundation, either version 3 of the License, or (at
-#* your option) any later version.
+#* Licensed under the Apache License, Version 2.0 (the "License");
+#* you may not use this file except in compliance with the License.
+#* You may obtain a copy of the License at
+#*
+#*     http://www.apache.org/licenses/LICENSE-2.0
 #*
 #* FMS is distributed in the hope that it will be useful, but WITHOUT
-#* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-#* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-#* for more details.
-#*
-#* You should have received a copy of the GNU Lesser General Public
-#* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+#* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+#* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+#* PARTICULAR PURPOSE. See the License for the specific language
+#* governing permissions and limitations under the License.
 #***********************************************************************
 
 # This is an automake file for the test_fms/diag_manager directory of the FMS
@@ -34,8 +33,8 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  check_time_min check_time_max check_time_sum check_time_avg test_diag_diurnal check_time_diurnal \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
  check_var_masks test_multiple_send_data test_diag_out_yaml test_output_every_freq \
- test_dm_weights test_prepend_date test_ens_runs test_multi_file test_diag_attribute_add \
- check_new_file_freq
+ test_dm_weights test_prepend_date test_ens_runs test_diag_multi_file test_diag_attribute_add \
+ check_new_file_freq test_zbounds_limits test_multiple_zbounds
 
 # This is the source code for the test.
 test_output_every_freq_SOURCES = test_output_every_freq.F90
@@ -66,10 +65,12 @@ test_var_masks_SOURCES = test_var_masks.F90
 check_var_masks_SOURCES = check_var_masks.F90
 test_multiple_send_data_SOURCES = test_multiple_send_data.F90
 test_prepend_date_SOURCES = test_prepend_date.F90
-test_multi_file_SOURCES = test_multi_file.F90
+test_diag_multi_file_SOURCES = test_diag_multi_file.F90
 test_ens_runs_SOURCES = test_ens_runs.F90
 test_diag_attribute_add_SOURCES = test_diag_attribute_add.F90
 check_new_file_freq_SOURCES = check_new_file_freq.F90
+test_zbounds_limits_SOURCES = test_zbounds_limits.F90
+test_multiple_zbounds_SOURCES = test_multiple_zbounds.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
@@ -79,8 +80,8 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 TESTS = test_diag_manager2.sh test_time_none.sh test_time_min.sh test_time_max.sh test_time_sum.sh \
         test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh test_cell_measures.sh \
         test_subregional.sh test_var_masks.sh test_multiple_send_data.sh test_output_every_freq.sh \
-        test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh test_multi_file.sh \
-        test_diag_attribute_add.sh
+        test_dm_weights.sh test_flush_nc_file.sh test_prepend_date.sh test_ens_runs.sh test_diag_multi_file.sh \
+        test_diag_attribute_add.sh test_time_none_netcdf4.sh test_zbounds_limits.sh test_multiple_zbounds.sh
 
 testing_utils.mod: testing_utils.$(OBJEXT)
 
@@ -89,15 +90,27 @@ EXTRA_DIST = test_diag_manager2.sh check_crashes.sh test_time_none.sh test_time_
              test_time_sum.sh test_time_avg.sh test_time_pow.sh test_time_rms.sh test_time_diurnal.sh \
              test_cell_measures.sh test_subregional.sh test_var_masks.sh test_multiple_send_data.sh \
              test_flush_nc_file.sh test_dm_weights.sh test_output_every_freq.sh test_prepend_date.sh \
-             test_ens_runs.sh test_multi_file.sh test_diag_attribute_add.sh
+             test_ens_runs.sh test_diag_multi_file.sh test_diag_attribute_add.sh test_time_none_netcdf4.sh \
+             test_zbounds_limits.sh test_multiple_zbounds.sh
 
 if USING_YAML
-skipflag=""
+  parser_skip=""
 else
-skipflag="skip"
+  parser_skip="skip"
 endif
 
-TESTS_ENVIRONMENT = skipflag=${skipflag}
+if SKIP_NCDUMP_CHECKS
+  ncdump_skip="skip"
+else
+  ncdump_skip=""
+endif
 
+if SKIP_PARALLEL_TEST
+  parallel_skip="skip"
+else
+  parallel_skip=""
+endif
+
+TESTS_ENVIRONMENT = ncdump_skip=${ncdump_skip} parallel_skip=${parallel_skip} parser_skip=${parser_skip}
 CLEANFILES = *.yaml input.nml *.nc *.out diag_table* *-files/* *.dpi *.spi *.dyn *.spl *.mod
 

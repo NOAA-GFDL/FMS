@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_netcdf_domain_io_mod fms_netcdf_domain_io_mod
 !> @ingroup fms2_io
@@ -319,11 +318,10 @@ function is_dimension_registered(fileobj, dimension_name) &
 
 end function is_dimension_registered
 
-
 !> @brief Open a domain netcdf file.
 !! @return Flag telling if the open completed successfully.
-function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, dont_add_res_to_filename) &
-  result(success)
+function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, dont_add_res_to_filename, &
+                          use_netcdf_mpi, use_collective) result(success)
 
   type(FmsNetcdfDomainFile_t),intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: path !< File path.
@@ -340,8 +338,12 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   logical, intent(in), optional :: is_restart !< Flag telling if this file
                                               !! is a restart file.  Defaults
                                               !! to false.
-  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add
-                                              !! ".res" to the filename
+  logical, intent(in), optional :: dont_add_res_to_filename !< Flag indicating not to add ".res" to the filename
+  logical, intent(in), optional :: use_netcdf_mpi !< Flag telling if this file should be using netcdf4 parallel
+                                                  !! reads and writes. Defaults to false.
+                                                  !! nc_format is automatically set to netcdf4
+  logical, intent(in), optional :: use_collective !< Flag indicating whether reads and writes should be performed
+                                                  !! collectively rather than independently.
   logical :: success
 
   integer, dimension(2) :: io_layout
@@ -353,6 +355,42 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   integer, dimension(:), allocatable :: pelist
   logical :: success2
   type(FmsNetcdfDomainFile_t) :: fileobj2
+
+  io_domain => mpp_get_io_domain(domain)
+
+  if (present(use_netcdf_mpi)) then
+    if (use_netcdf_mpi) then
+      if (associated(io_domain)) then
+        call mpp_error(NOTE, "NetCDF MPI is enabled: ignoring I/O domain. Only one output file will be produced.")
+      endif
+
+      fileobj%domain = domain
+
+      allocate(fileobj%xdims(max_num_domain_decomposed_dims))
+      fileobj%nx = 0
+      allocate(fileobj%ydims(max_num_domain_decomposed_dims))
+      fileobj%ny = 0
+
+      call string_copy(fileobj%non_mangled_path, path)
+
+      !! If the number of tiles is greater than 1 or if the current tile is greater
+      !than 1 add .tileX. to the filename
+      tile_id = mpp_get_tile_id(domain)
+      if (mpp_get_ntile_count(domain) .gt. 1 .or. tile_id(1) > 1) then
+        call domain_tile_filepath_mangle(combined_filepath, path, tile_id(1))
+      else
+        call string_copy(combined_filepath, path)
+      endif
+
+      success = netcdf_file_open(fileobj, combined_filepath, mode, &
+                                 nc_format="netcdf4", &
+                                 is_restart=is_restart, &
+                                 dont_add_res_to_filename=dont_add_res_to_filename, &
+                                 tile_comm=mpp_get_domain_tile_commid(domain), &
+                                 use_collective=use_collective)
+      return
+    endif
+  endif
 
   !Get the path of a "combined" file.
   io_layout = mpp_get_io_domain_layout(domain)
@@ -367,7 +405,6 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
   endif
 
   !Get the path of a "distributed" file.
-  io_domain => mpp_get_io_domain(domain)
   if (.not. associated(io_domain)) then
     call error("The domain associated with the file:"//trim(path)//" does not have an io_domain.")
   endif
@@ -441,7 +478,7 @@ end subroutine close_domain_file
 !> @brief Add a dimension to a file associated with a two-dimensional domain.
 subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_position)
 
-  type(FmsNetcdfDomainFile_t), intent(inout) :: fileobj !< File object.
+  type(FmsNetcdfDomainFile_t), target, intent(inout) :: fileobj !< File object.
   character(len=*), intent(in) :: dim_name !< Dimension name.
   character(len=*), intent(in) :: xory !< Flag telling if the dimension
                                        !! is associated with the "x" or "y"
@@ -458,7 +495,15 @@ subroutine register_domain_decomposed_dimension(fileobj, dim_name, xory, domain_
   if (mpp_domain_is_symmetry(fileobj%domain) .and. present(domain_position)) then
     dpos = domain_position
   endif
-  io_domain => mpp_get_io_domain(fileobj%domain)
+
+  ! If using NetCDF MPI, the IO domain is ignored, so use the domain to determine the correct size of each
+  ! domain-decomposed dimension.
+  if (fileobj%use_netcdf_mpi) then
+    io_domain => fileobj%domain
+  else
+    io_domain => mpp_get_io_domain(fileobj%domain)
+  endif
+
   if (string_compare(xory, x, .true.)) then
     if (dpos .ne. center .and. dpos .ne. east) then
       call error("Only domain_position=center or domain_position=EAST is supported for x dimensions."// &
@@ -509,9 +554,10 @@ subroutine add_domain_attribute(fileobj, variable_name)
   integer, dimension(2) :: io_layout !< Io_layout in the fileobj's domain
 
   !< Don't add the "domain_decomposition" variable attribute if the io_layout is
-  !! 1,1, to avoid frecheck "failures"
+  !! 1,1, or if using mpi netcdf for writes, to avoid frecheck "failures"
   io_layout = mpp_get_io_domain_layout(fileobj%domain)
   if (io_layout(1)  .eq. 1 .and. io_layout(2) .eq. 1) return
+  if (fileobj%use_netcdf_mpi) return
 
   io_domain => mpp_get_io_domain(fileobj%domain)
   dpos = get_domain_decomposed_index(variable_name, fileobj%xdims, fileobj%nx)

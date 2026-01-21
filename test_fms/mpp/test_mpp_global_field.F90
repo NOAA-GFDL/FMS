@@ -1,45 +1,56 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 program test_mpp_global_field
-
   use platform_mod
-  use compare_data_checksums
-  use compare_data_checksums_int
-  use mpp_mod,         only : mpp_init, mpp_error, FATAL, mpp_init_test_requests_allocated
-  use mpp_mod,         only : mpp_declare_pelist, mpp_pe, mpp_npes, mpp_root_pe
-  !use mpp_mod,        only : mpp_clock_begin, mpp_clock_end, mpp_clock_id, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
-  use mpp_domains_mod, only : domain2D
-  use mpp_domains_mod, only : CENTER, EAST, NORTH, CORNER, XUPDATE, YUPDATE
-  use mpp_domains_mod, only : mpp_domains_init, mpp_domains_exit
-  use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains
-  use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
-  use mpp_domains_mod, only : mpp_global_field
+  use mpp_mod,         only: mpp_init, mpp_error, FATAL, mpp_init_test_requests_allocated
+  use mpp_mod,         only: mpp_declare_pelist, mpp_pe, mpp_npes, mpp_root_pe
+  use mpp_domains_mod, only: domain2D
+  use mpp_domains_mod, only: CENTER, EAST, NORTH, CORNER, XUPDATE, YUPDATE
+  use mpp_domains_mod, only: mpp_domains_init, mpp_domains_exit
+  use mpp_domains_mod, only: mpp_define_layout, mpp_define_domains
+  use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
+  use mpp_domains_mod, only: mpp_global_field
+  use fms_test_mod,    only: permutable_indices_2d, permutable_indices_3d, factorial, arr_init, arr_compare
 
   implicit none
+
+  type test_params_t
+    logical :: symmetry
+    integer :: position, shift(2)
+    character(15) :: name
+  end type test_params_t
+
+  type(test_params_t), parameter :: test_params(*) = [ &
+      test_params_t(symmetry=.false., position=CENTER, shift=[0,0], name="no symmetry"), &
+      test_params_t(symmetry=.true.,  position=CENTER, shift=[0,0], name="center symmetry"), &
+      test_params_t(symmetry=.true.,  position=CORNER, shift=[1,1], name="corner symmetry"), &
+      test_params_t(symmetry=.true.,  position=EAST,   shift=[1,0], name="east symmetry"), &
+      test_params_t(symmetry=.true.,  position=NORTH,  shift=[0,1], name="north symmetry")]
 
   integer, parameter :: nx=20, ny=20, nz=40
   integer, parameter :: whalo=2, ehalo=2, shalo=2, nhalo=2
   integer, parameter :: stackmax=4000000
 
+  FMS_TEST_TYPE_ (FMS_TEST_KIND_), parameter :: zero = 0
+
   integer :: pe, npes, ierr
   integer :: layout(2)
-
+  integer :: i, p
 
   !> call mpp_init
   call mpp_init(test_level=mpp_init_test_requests_allocated)
@@ -52,146 +63,92 @@ program test_mpp_global_field
   call mpp_domains_init()
   call mpp_domains_set_stack_size(stackmax)
 
-  !> call test_global_field_r4_2d
-  call test_global_field_r4_2d( 'Non-symmetry' )
-  call test_global_field_r4_2d( 'Symmetry center' )
-  call test_global_field_r4_2d( 'Symmetry corner' )
-  call test_global_field_r4_2d( 'Symmetry east' )
-  call test_global_field_r4_2d( 'Symmetry north' )
-  !> call test_global_field_r8_2d
-  call test_global_field_r8_2d( 'Non-symmetry' )
-  call test_global_field_r8_2d( 'Symmetry center' )
-  call test_global_field_r8_2d( 'Symmetry corner' )
-  call test_global_field_r8_2d( 'Symmetry east' )
-  call test_global_field_r8_2d( 'Symmetry north' )
-  !> call test_global_field_i4_2d
-  call test_global_field_i4_2d( 'Non-symmetry' )
-  call test_global_field_i4_2d( 'Symmetry center' )
-  call test_global_field_i4_2d( 'Symmetry corner' )
-  call test_global_field_i4_2d( 'Symmetry east' )
-  call test_global_field_i4_2d( 'Symmetry north' )
-  !> call test_global_field_i8_2d
-  call test_global_field_i8_2d( 'Non-symmetry' )
-  call test_global_field_i8_2d( 'Symmetry center' )
-  call test_global_field_i8_2d( 'Symmetry corner' )
-  call test_global_field_i8_2d( 'Symmetry east' )
-  call test_global_field_i8_2d( 'Symmetry north' )
-  !> call test_global_field_r4_3d tests
-  call test_global_field_r4_3d( 'Non-symmetry' )
-  call test_global_field_r4_3d( 'Symmetry center' )
-  call test_global_field_r4_3d( 'Symmetry corner' )
-  call test_global_field_r4_3d( 'Symmetry east' )
-  call test_global_field_r4_3d( 'Symmetry north' )
-  !> call test_global_field_r8_3d tests
-  call test_global_field_r8_3d( 'Non-symmetry' )
-  call test_global_field_r8_3d( 'Symmetry center' )
-  call test_global_field_r8_3d( 'Symmetry corner' )
-  call test_global_field_r8_3d( 'Symmetry east' )
-  call test_global_field_r8_3d( 'Symmetry north' )
-  !> call test_global_field_i4_3d tests
-  call test_global_field_i4_3d( 'Non-symmetry' )
-  call test_global_field_i4_3d( 'Symmetry center' )
-  call test_global_field_i4_3d( 'Symmetry corner' )
-  call test_global_field_i4_3d( 'Symmetry east' )
-  call test_global_field_i4_3d( 'Symmetry north' )
-  !> call test_global_field_i8_3d tests
-  call test_global_field_i8_3d( 'Non-symmetry' )
-  call test_global_field_i8_3d( 'Symmetry center' )
-  call test_global_field_i8_3d( 'Symmetry corner' )
-  call test_global_field_i8_3d( 'Symmetry east' )
-  call test_global_field_i8_3d( 'Symmetry north' )
+  do i=1, size(test_params)
+    ! 2D tests
+    do p=1,factorial(2)
+      call run_tests_2d(test_params(i), p)
+    enddo
+
+    ! 3D tests
+    do p=1,factorial(3)
+      call run_tests_3d(test_params(i), p)
+    enddo
+  enddo
 
   !> exit
   call mpp_domains_exit()
   call MPI_finalize(ierr)
 
 contains
-  !>
-  !> test_global_field_r4_2d
-  !>
-  subroutine test_global_field_r4_2d( type )
 
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    real(kind=r4_kind), parameter :: zero = 0.0
+  subroutine run_tests_2d(test_params, p)
+    type(test_params_t), intent(in) :: test_params
+    integer, intent(in) :: p !< Permutation of array indices (ranges from 1 to rank!)
 
     type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
+    integer         :: i, j
+    type(permutable_indices_2d) :: compute, data, global, global_with_halo, global_x, global_y
     integer, allocatable :: pelist(:)
-    real(kind=r4_kind), allocatable  :: global1(:,:), x(:,:), gcheck(:,:)
-
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), allocatable  :: global0(:,:), local(:,:), global1(:,:)
 
     !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
+    call mpp_define_layout([1,nx,1,ny], npes, layout)
+    call mpp_define_domains([1,nx,1,ny], layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                            name=trim(test_params%name), symmetry=test_params%symmetry)
 
     !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_compute_domain(domain, compute%lb(1),  compute%ub(1),  compute%lb(2),  compute%ub(2))
+    compute%ub = compute%ub + test_params%shift
+
     !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    call mpp_get_data_domain(domain, data%lb(1), data%ub(1), data%lb(2), data%ub(2))
+    data%ub = data%ub + test_params%shift
 
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position=CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
+    global%lb = [1, 1]
+    global%ub = [nx, ny] + test_params%shift
 
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
+    global_with_halo%lb = global%lb - [whalo, shalo]
+    global_with_halo%ub = global%ub + [ehalo, nhalo]
+
+    global_x%lb = [global%lb(1), compute%lb(2)]
+    global_x%ub = [global%ub(1), compute%ub(2)]
+
+    global_y%lb = [compute%lb(1), global%lb(2)]
+    global_y%ub = [compute%ub(1), global%ub(2)]
+
+    call compute%permute(p)
+    call data%permute(p)
+    call global%permute(p)
+    call global_with_halo%permute(p)
+    call global_x%permute(p)
+    call global_y%permute(p)
 
     !> assign global
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo) )
-    global1 = zero
-    do j=1, nj
-       do i=1, ni
-          global1(i,j) = real( i*1e-3+j*1e-6, kind=r4_kind )
-       end do
-    enddo
+    allocate(global0(global_with_halo%lb(1):global_with_halo%ub(1), global_with_halo%lb(2):global_with_halo%ub(2)))
+    global0 = zero
+    call arr_init(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2)))
 
-    allocate( gcheck(ni,nj) )
+    allocate(global1(global%lb(1):global%ub(1), global%lb(2):global%ub(2)))
 
     !> allocate for global domain
-    allocate( x(isd:ied,jsd:jed) )
-    x(:,:) = global1(isd:ied,jsd:jed)
+    allocate(local(data%lb(1):data%ub(1), data%lb(2):data%ub(2)))
+    local(:,:) = global0(data%lb(1):data%ub(1), data%lb(2):data%ub(2))
 
     !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on r4 data domain' )
-
+    global1 = zero
+    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2)), global1, &
+                     'mpp_global_field on data domain with ' // trim(test_params%name))
 
     !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
     !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
+    !! be called. For some pe count, pelist1 will be set (only on pe of pelist1)
     !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
     !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
     !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
     !! on all pe is needed for those partial pelist. But for y-update, it is ok.
     !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
+    allocate(pelist(0:layout(1)-1))
     do j = 0, layout(2)-1
        do i = 0, layout(1)-1
           pelist(i) = j*layout(1) + i
@@ -201,755 +158,124 @@ contains
     deallocate(pelist)
 
     !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                         & ' mpp_global_field xupdate only on r4 data domain' )
+    global1 = zero
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call arr_compare(global0(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
+                     global1(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
+                     'mpp_global_field xupdate only on data domain with ' // trim(test_params%name))
 
     !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                         & ' mpp_global_field yupdate only on r4 data domain' )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on r4 data domain' )
+    global1 = zero
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call arr_compare(global0(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
+                     global1(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
+                     'mpp_global_field yupdate only on data domain with ' // trim(test_params%name))
+
+    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2)), global1, &
+                     'mpp_global_field on data domain with ' // trim(test_params%name))
 
     !> test the data on compute domain
 
-    deallocate(x)
-    allocate( x(is:ie,js:je) )
-    x(is:ie,js:je) = global1(is:ie,js:je)
+    deallocate(local)
+    allocate(local(compute%lb(1):compute%ub(1), compute%lb(2):compute%ub(2)))
+    local(:,:) = global0(compute%lb(1):compute%ub(1), compute%lb(2):compute%ub(2))
 
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on r4 compute domain' )
+    global1 = zero
+    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2)), global1, &
+                     'mpp_global_field on compute domain with ' // trim(test_params%name))
 
     !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                         & ' mpp_global_field xupdate only on r4 compute domain' )
+    global1 = zero
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call arr_compare(global0(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
+                     global1(global_x%lb(1):global_x%ub(1),global_x%lb(2):global_x%ub(2)), &
+                     'mpp_global_field xupdate only on compute domain with ' // trim(test_params%name))
 
     !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                         & ' mpp_global_field yupdate only on r4 compute domain' )
+    global1 = zero
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call arr_compare(global0(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
+                     global1(global_y%lb(1):global_y%ub(1),global_y%lb(2):global_y%ub(2)), &
+                     'mpp_global_field yupdate only on compute domain with ' // trim(test_params%name))
+  end subroutine run_tests_2d
 
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_r4_2d
-  !>
-  !> test_global_field_r8_2d
-  !>
-  subroutine test_global_field_r8_2d( type )
-
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    real(kind=r8_kind), parameter :: zero = 0.0
+  subroutine run_tests_3d(test_params, p)
+    type(test_params_t), intent(in) :: test_params
+    integer, intent(in) :: p !< Permutation of array indices (ranges from 1 to rank!)
 
     type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
+    integer         :: i, j
+    type(permutable_indices_3d) :: compute, data, global, global_with_halo, global_x, global_y
     integer, allocatable :: pelist(:)
-    real(kind=r8_kind), allocatable  :: global1(:,:), x(:,:), gcheck(:,:)
-
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), allocatable  :: global0(:,:,:), local(:,:,:), global1(:,:,:)
 
     !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
+    call mpp_define_layout([1,nx,1,ny], npes, layout)
+    call mpp_define_domains([1,nx,1,ny], layout, domain, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+                            name=trim(test_params%name), symmetry=test_params%symmetry)
 
     !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
+    call mpp_get_compute_domain(domain, compute%lb(1),  compute%ub(1),  compute%lb(2),  compute%ub(2))
+    compute%ub(1:2) = compute%ub(1:2) + test_params%shift
+    compute%lb(3) = 1
+    compute%ub(3) = nz
+
     !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position=CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
-
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
-
-    !> assign global
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo) )
-    global1 = zero
-    do j=1, nj
-       do i=1, ni
-          global1(i,j) = real( i*1e-3+j*1e-6, kind=r8_kind )
-       end do
-    enddo
-
-    allocate( gcheck(ni,nj) )
-
-    !> allocate for global domain
-    allocate( x(isd:ied,jsd:jed) )
-    x(:,:) = global1(isd:ied,jsd:jed)
-
-    !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on r8 data domain' )
-
-
-    !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
-    !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
-    !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
-    !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
-    !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
-    !! on all pe is needed for those partial pelist. But for y-update, it is ok.
-    !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
-    do j = 0, layout(2)-1
-       do i = 0, layout(1)-1
-          pelist(i) = j*layout(1) + i
-       end do
-       call mpp_declare_pelist(pelist)
-    end do
-    deallocate(pelist)
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                         & ' mpp_global_field xupdate only on r8 data domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                         & ' mpp_global_field yupdate only on r8 data domain' )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on r8 data domain' )
-
-    !> test the data on compute domain
-
-    deallocate(x)
-    allocate( x(is:ie,js:je) )
-    x(is:ie,js:je) = global1(is:ie,js:je)
-
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on r8 compute domain' )
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                         & ' mpp_global_field xupdate only on r8 compute domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                         & ' mpp_global_field yupdate only on r8 compute domain' )
-
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_r8_2d
-  !>
-  !> test_global_field_i4_2d
-  !>
-  subroutine test_global_field_i4_2d( type )
-
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    integer(kind=i4_kind), parameter :: zero = 0
-
-    type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
-    integer, allocatable :: pelist(:)
-    integer(kind=i4_kind), allocatable  :: global1(:,:), x(:,:), gcheck(:,:)
-
-
-    !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
-
-    !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position=CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
-
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
-
-    !> assign global
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo) )
-    global1 = zero
-    do j=1, nj
-       do i=1, ni
-          global1(i,j) = int( i*1e3+j*1e6, kind=i4_kind )
-       end do
-    enddo
-
-    allocate( gcheck(ni,nj) )
-
-    !> allocate for global domain
-    allocate( x(isd:ied,jsd:jed) )
-    x(:,:) = global1(isd:ied,jsd:jed)
-
-    !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on i4 data domain' )
-
-
-    !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
-    !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
-    !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
-    !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
-    !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
-    !! on all pe is needed for those partial pelist. But for y-update, it is ok.
-    !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
-    do j = 0, layout(2)-1
-       do i = 0, layout(1)-1
-          pelist(i) = j*layout(1) + i
-       end do
-       call mpp_declare_pelist(pelist)
-    end do
-    deallocate(pelist)
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                             & ' mpp_global_field xupdate only on i4 data domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                             & ' mpp_global_field yupdate only on i4 data domain' )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on i4 data domain' )
-
-    !> test the data on compute domain
-
-    deallocate(x)
-    allocate( x(is:ie,js:je) )
-    x(is:ie,js:je) = global1(is:ie,js:je)
-
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on i4 compute domain' )
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                             & ' mpp_global_field xupdate only on i4 compute domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                             & ' mpp_global_field yupdate only on i4 compute domain' )
-
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_i4_2d
-  !>
-  !> test_global_field_i8_2d
-  !>
-  subroutine test_global_field_i8_2d( type )
-
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    integer(kind=i8_kind), parameter :: zero = 0
-
-    type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
-    integer, allocatable :: pelist(:)
-    integer(kind=i8_kind), allocatable  :: global1(:,:), x(:,:), gcheck(:,:)
-
-
-    !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
-
-    !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position=CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
-
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
-
-    !> assign global
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo) )
-    global1 = zero
-    do j=1, nj
-       do i=1, ni
-          global1(i,j) = int( i*1e3+j*1e6, kind=i8_kind )
-       end do
-    enddo
-
-    allocate( gcheck(ni,nj) )
-
-    !> allocate for global domain
-    allocate( x(isd:ied,jsd:jed) )
-    x(:,:) = global1(isd:ied,jsd:jed)
-
-    !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on i8 data domain' )
-
-
-    !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
-    !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
-    !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
-    !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
-    !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
-    !! on all pe is needed for those partial pelist. But for y-update, it is ok.
-    !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
-    do j = 0, layout(2)-1
-       do i = 0, layout(1)-1
-          pelist(i) = j*layout(1) + i
-       end do
-       call mpp_declare_pelist(pelist)
-    end do
-    deallocate(pelist)
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                             & ' mpp_global_field xupdate only on i8 data domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                             & ' mpp_global_field yupdate only on i8 data domain' )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on i8 data domain' )
-
-    !> test the data on compute domain
-
-    deallocate(x)
-    allocate( x(is:ie,js:je) )
-    x(is:ie,js:je) = global1(is:ie,js:je)
-
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj), gcheck, type//' mpp_global_field on i8 compute domain' )
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je), gcheck(1:ni,js:je), type// &
-                             & ' mpp_global_field xupdate only on i8 compute domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj), gcheck(is:ie,1:nj), type// &
-                             & ' mpp_global_field yupdate only on i8 compute domain' )
-
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_i8_2d
-  !>
-  !> test_global_field_r4_3d
-  !>
-  subroutine test_global_field_r4_3d( type )
-
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    real(kind=r4_kind)   :: zero = 0.0
-
-    type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
-    integer, allocatable :: pelist(:)
-    real(kind=r4_kind), allocatable  :: global1(:,:,:), x(:,:,:), gcheck(:,:,:)
-
-
-    !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
-
-    !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position = CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
-
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
-
-    !> assign global1
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo,nz) )
-    global1 = zero
-    do k=1, nz
-       do j=1, nj
-          do i=1, ni
-             global1(i,j,k) = real( k+i*1e-3+j*1e-6, kind=r4_kind )
-          end do
-       end do
-    enddo
-
-    allocate( gcheck(ni,nj,nz) )
+    call mpp_get_data_domain(domain, data%lb(1), data%ub(1), data%lb(2), data%ub(2))
+    data%ub(1:2) = data%ub(1:2) + test_params%shift
+    data%lb(3) = 1
+    data%ub(3) = nz
+
+    global%lb = [1, 1, 1]
+    global%ub = [nx, ny, nz]
+    global%ub(1:2) = global%ub(1:2) + test_params%shift
+
+    global_with_halo%lb = global%lb - [whalo, shalo, 0]
+    global_with_halo%ub = global%ub + [ehalo, nhalo, 0]
+
+    global_x%lb = [global%lb(1), compute%lb(2), global%lb(3)]
+    global_x%ub = [global%ub(1), compute%ub(2), global%ub(3)]
+
+    global_y%lb = [compute%lb(1), global%lb(2), global%lb(3)]
+    global_y%ub = [compute%ub(1), global%ub(2), global%ub(3)]
+
+    call compute%permute(p)
+    call data%permute(p)
+    call global%permute(p)
+    call global_with_halo%permute(p)
+    call global_x%permute(p)
+    call global_y%permute(p)
+
+    !> assign global0
+    allocate(global0(global_with_halo%lb(1):global_with_halo%ub(1), global_with_halo%lb(2):global_with_halo%ub(2), &
+                     global_with_halo%lb(3):global_with_halo%ub(3)))
+
+    global0 = zero
+    call arr_init(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)))
+
+    allocate(global1(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)))
 
     !> for data domain
-    allocate( x(isd:ied,jsd:jed, nz) )
-    x(:,:,:) = global1(isd:ied,jsd:jed,:)
+    allocate(local(data%lb(1):data%ub(1), data%lb(2):data%ub(2), data%lb(3):data%ub(3)))
+    local(:,:,:) = global0(data%lb(1):data%ub(1), data%lb(2):data%ub(2), data%lb(3):data%ub(3))
 
     !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on r4 data domain' )
-
-    !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
-    !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
-    !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
-    !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
-    !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
-    !! on all pe is needed for those partial pelist. But for y-update, it is ok.
-    !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
-    do j = 0, layout(2)-1
-       do i = 0, layout(1)-1
-          pelist(i) = j*layout(1) + i
-       end do
-       call mpp_declare_pelist(pelist)
-    end do
-    deallocate(pelist)
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
-                         & ' mpp_global_field xupdate only on r4 data domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
-                         & ' mpp_global_field yupdate only on r4 data domain' )
-
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj,:), gcheck,type//' mpp_global_field on r4 data domain' )
-
-    !> test the data on compute domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on r4 compute domain' )
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:), &
-         type//' mpp_global_field xupdate only on r4 compute domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:), &
-         type//' mpp_global_field yupdate only on r4 compute domain' )
-
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_r4_3d
-  !>
-  !> test_global_field_r8_3d
-  !>
-  subroutine test_global_field_r8_3d( type )
-
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    real(kind=r8_kind) :: zero = 0.0
-
-    type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
-    integer, allocatable :: pelist(:)
-    real(kind=r8_kind), allocatable  :: global1(:,:,:), x(:,:,:), gcheck(:,:,:)
-
-
-    !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
-
-    !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position = CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
-
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
-
-    !> assign global1
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo,nz) )
     global1 = zero
-    do k=1, nz
-       do j=1, nj
-          do i=1, ni
-             global1(i,j,k) = real( k+i*1e-3+j*1e-6, kind=r8_kind )
-          end do
-       end do
-    enddo
-
-    allocate( gcheck(ni,nj,nz) )
-
-    !> for data domain
-    allocate( x(isd:ied,jsd:jed, nz) )
-    x(:,:,:) = global1(isd:ied,jsd:jed,:)
-
-    !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on r8 data domain' )
+    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)), &
+                     global1, 'mpp_global_field on data domain with ' // trim(test_params%name))
 
     !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
     !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
+    !! be called. For some pe count, pelist1 will be set (only on pe of pelist1)
     !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
     !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
     !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
     !! on all pe is needed for those partial pelist. But for y-update, it is ok.
     !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
+    allocate(pelist(0:layout(1)-1))
     do j = 0, layout(2)-1
        do i = 0, layout(1)-1
           pelist(i) = j*layout(1) + i
@@ -959,356 +285,50 @@ contains
     deallocate(pelist)
 
     !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
-                         & ' mpp_global_field xupdate only on r8 data domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
-                         & ' mpp_global_field yupdate only on r8 data domain' )
-
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj,:), gcheck,type//' mpp_global_field on r8 data domain' )
-
-    !> test the data on compute domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on r8 compute domain' )
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:), &
-         type//' mpp_global_field xupdate only on r8 compute domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:), &
-         type//' mpp_global_field yupdate only on r8 compute domain' )
-
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_r8_3d
-  !>
-  !> test_global_field_i4_3d
-  !>
-  subroutine test_global_field_i4_3d( type )
-
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    integer(kind=i4_kind)   :: zero = 0
-
-    type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
-    integer, allocatable :: pelist(:)
-    integer(kind=i4_kind), allocatable  :: global1(:,:,:), x(:,:,:), gcheck(:,:,:)
-
-
-    !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
-
-    !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position = CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
-
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
-
-    !> assign global1
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo,nz) )
     global1 = zero
-    do k=1, nz
-       do j=1, nj
-          do i=1, ni
-             global1(i,j,k) = int( k+i*1e3+j*1e6, kind=i4_kind )
-          end do
-       end do
-    enddo
-
-    allocate( gcheck(ni,nj,nz) )
-
-    !> for data domain
-    allocate( x(isd:ied,jsd:jed, nz) )
-    x(:,:,:) = global1(isd:ied,jsd:jed,:)
-
-    !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on i4 data domain' )
-
-    !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
-    !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
-    !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
-    !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
-    !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
-    !! on all pe is needed for those partial pelist. But for y-update, it is ok.
-    !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
-    do j = 0, layout(2)-1
-       do i = 0, layout(1)-1
-          pelist(i) = j*layout(1) + i
-       end do
-       call mpp_declare_pelist(pelist)
-    end do
-    deallocate(pelist)
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
-                             & ' mpp_global_field xupdate only on i4 data domain' )
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call arr_compare(global0(global_x%lb(1):global_x%ub(1), global_x%lb(2):global_x%ub(2), &
+                     global_x%lb(3):global_x%ub(3)), global1(global_x%lb(1):global_x%ub(1), &
+                     global_x%lb(2):global_x%ub(2), global_x%lb(3):global_x%ub(3)), &
+                     'mpp_global_field xupdate only on data domain with ' // trim(test_params%name))
 
     !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
-                             & ' mpp_global_field yupdate only on i4 data domain' )
-
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj,:), gcheck,type//' mpp_global_field on i4 data domain' )
-
-    !> test the data on compute domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on i4 compute domain' )
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:), &
-         type//' mpp_global_field xupdate only on i4 compute domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:), &
-         type//' mpp_global_field yupdate only on i4 compute domain' )
-
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_i4_3d
-  !>
-  !> test_global_field_i8_3d
-  !>
-  subroutine test_global_field_i8_3d( type )
-
-    implicit none
-
-    character(len=*), intent(in) :: type
-
-    integer(kind=i8_kind)   :: zero = 0
-
-    type(domain2D)  :: domain
-    integer         :: position, ishift, jshift, ni, nj, i, j, k
-    integer         :: is, ie, js, je, isd, ied, jsd, jed
-    !integer        :: id
-    integer, allocatable :: pelist(:)
-    integer(kind=i8_kind), allocatable  :: global1(:,:,:), x(:,:,:), gcheck(:,:,:)
-
-
-    !> set up domain
-    call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
-    select case(type)
-    case( 'Non-symmetry' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type )
-    case( 'Symmetry center', 'Symmetry corner', 'Symmetry east', 'Symmetry north' )
-       call mpp_define_domains( (/1,nx,1,ny/), layout, domain, whalo=whalo, ehalo=ehalo, &
-            shalo=shalo, nhalo=nhalo, name=type, symmetry = .true. )
-    case default
-       call mpp_error( FATAL, 'TEST_MPP_DOMAINS: no such test: '//type//' in test_global_field' )
-    end select
-
-    !> get compute domain
-    call mpp_get_compute_domain( domain, is,  ie,  js,  je  )
-    !> get data domain
-    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
-
-    !> determine if an extra point is needed
-    ishift = 0 ; jshift = 0 ; position = CENTER
-    select case(type)
-    case ('Symmetry corner')
-       ishift = 1 ; jshift = 1 ; position=CORNER
-    case ('Symmetry east')
-       ishift = 1 ; jshift = 0 ; position=EAST
-    case ('Symmetry north')
-       ishift = 0 ; jshift = 1 ; position=NORTH
-    end select
-
-    ie  = ie+ishift  ; je  = je+jshift
-    ied = ied+ishift ; jed = jed+jshift
-    ni  = nx+ishift  ; nj  = ny+jshift
-
-    !> assign global1
-    allocate( global1(1-whalo:ni+ehalo,1-shalo:nj+nhalo,nz) )
     global1 = zero
-    do k=1, nz
-       do j=1, nj
-          do i=1, ni
-             global1(i,j,k) = int( k+i*1e3+j*1e6, kind=i8_kind )
-          end do
-       end do
-    enddo
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call arr_compare(global0(global_y%lb(1):global_y%ub(1), global_y%lb(2):global_y%ub(2), &
+                     global_y%lb(3):global_y%ub(3)), global1(global_y%lb(1):global_y%ub(1), &
+                     global_y%lb(2):global_y%ub(2), global_y%lb(3):global_y%ub(3)), &
+                     'mpp_global_field yupdate only on data domain with ' // trim(test_params%name))
 
-    allocate( gcheck(ni,nj,nz) )
-
-    !> for data domain
-    allocate( x(isd:ied,jsd:jed, nz) )
-    x(:,:,:) = global1(isd:ied,jsd:jed,:)
-
-    !> test the data on data domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on data domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on i8 data domain' )
-
-    !> Since in the disjoint redistribute mpp test, pelist1 = (npes/2+1 .. npes-1)
-    !! will be declared. But for the x-direction global field, mpp_sync_self will
-    !! be called. For some pe count, pelist1 will be set ( only on pe of pelist1 )
-    !! in the mpp_sync_self call, later when calling mpp_declare_pelist(pelist1),
-    !! deadlock will happen. For example npes = 6 and layout = (2,3), pelist = (4,5)
-    !! will be set in mpp_sync_self. To solve the problem, some explicit mpp_declare_pelist
-    !! on all pe is needed for those partial pelist. But for y-update, it is ok.
-    !! because the pelist in y-update is not continous.
-    allocate( pelist(0:layout(1)-1) )
-    do j = 0, layout(2)-1
-       do i = 0, layout(1)-1
-          pelist(i) = j*layout(1) + i
-       end do
-       call mpp_declare_pelist(pelist)
-    end do
-    deallocate(pelist)
-
-    !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:),type// &
-                             & ' mpp_global_field xupdate only on i8 data domain' )
-
-    !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:),type// &
-                             & ' mpp_global_field yupdate only on i8 data domain' )
-
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x, gcheck, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj,:), gcheck,type//' mpp_global_field on i8 data domain' )
+    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)), &
+                     global1, 'mpp_global_field on data domain with ' // trim(test_params%name))
 
     !> test the data on compute domain
-    gcheck = zero
-    !id = mpp_clock_id( type//' global field on compute domain', flags=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED )
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, position=position )
-    !call mpp_clock_end(id)
-    !>compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,1:nj,:), gcheck, type//' mpp_global_field on i8 compute domain' )
+
+    deallocate(local)
+    allocate(local(compute%lb(1):compute%ub(1), compute%lb(2):compute%ub(2), compute%lb(3):compute%ub(3)))
+    local(:,:,:) = global0(compute%lb(1):compute%ub(1), compute%lb(2):compute%ub(2), compute%lb(3):compute%ub(3))
+
+    global1 = zero
+    call mpp_global_field(domain, local, global1, position=test_params%position)
+    call arr_compare(global0(global%lb(1):global%ub(1), global%lb(2):global%ub(2), global%lb(3):global%ub(3)), &
+                     global1, 'mpp_global_field on compute domain with ' // trim(test_params%name))
 
     !> xupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=XUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(1:ni,js:je,:), gcheck(1:ni,js:je,:), &
-         type//' mpp_global_field xupdate only on i8 compute domain' )
+    global1 = zero
+    call mpp_global_field(domain, local, global1, flags=XUPDATE, position=test_params%position)
+    call arr_compare(global0(global_x%lb(1):global_x%ub(1), global_x%lb(2):global_x%ub(2), &
+                     global_x%lb(3):global_x%ub(3)), global1(global_x%lb(1):global_x%ub(1), &
+                     global_x%lb(2):global_x%ub(2), global_x%lb(3):global_x%ub(3)), &
+                     'mpp_global_field xupdate only on compute domain with ' // trim(test_params%name))
 
     !> yupdate
-    gcheck = zero
-    !call mpp_clock_begin(id)
-    call mpp_global_field( domain, x(is:ie,js:je,:), gcheck, flags=YUPDATE, position=position )
-    !call mpp_clock_end(id)
-    !> compare checksums between global and x arrays
-    call compare_checksums_int( global1(is:ie,1:nj,:), gcheck(is:ie,1:nj,:), &
-         type//' mpp_global_field yupdate only on i8 compute domain' )
-
-    deallocate(global1, gcheck, x)
-
-  end subroutine test_global_field_i8_3d
-
+    global1 = zero
+    call mpp_global_field(domain, local, global1, flags=YUPDATE, position=test_params%position)
+    call arr_compare(global0(global_y%lb(1):global_y%ub(1), global_y%lb(2):global_y%ub(2), &
+                     global_y%lb(3):global_y%ub(3)), global1(global_y%lb(1):global_y%ub(1), &
+                     global_y%lb(2):global_y%ub(2), global_y%lb(3):global_y%ub(3)), &
+                     'mpp_global_field yupdate only on compute domain with ' // trim(test_params%name))
+  end subroutine run_tests_3d
 end program test_mpp_global_field

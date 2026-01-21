@@ -1,20 +1,19 @@
 !***********************************************************************
-!*                   GNU Lesser General Public License
+!*                             Apache License 2.0
 !*
 !* This file is part of the GFDL Flexible Modeling System (FMS).
 !*
-!* FMS is free software: you can redistribute it and/or modify it under
-!* the terms of the GNU Lesser General Public License as published by
-!* the Free Software Foundation, either version 3 of the License, or (at
-!* your option) any later version.
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
 !*
 !* FMS is distributed in the hope that it will be useful, but WITHOUT
-!* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-!* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-!* for more details.
-!*
-!* You should have received a copy of the GNU Lesser General Public
-!* License along with FMS.  If not, see <http://www.gnu.org/licenses/>.
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup field_manager_mod field_manager_mod
 !> @ingroup field_manager
@@ -558,12 +557,20 @@ if (use_field_table_yaml) then
     call mpp_error(FATAL, "You cannot have the legacy field_table if use_field_table_yaml=.true.")
 
   call mpp_error(NOTE, "field_manager_init:: You are using the yaml version of the field_table")
+  call mpp_error(NOTE, &
+       &"field_manager_init:: You are using the yaml version of the field_table. &
+The legacy field_table format will be deprecated in a future release, &
+please switch to the yaml format.")
   call read_field_table_yaml(nfields, table_name)
 #endif
 else
   if (file_exists("field_table.yaml")) &
     call mpp_error(FATAL, "You cannot have the yaml field_table if use_field_table_yaml=.false.")
   call mpp_error(NOTE, "field_manager_init:: You are using the legacy version of the field_table")
+  call mpp_error(NOTE, &
+       &"field_manager_init:: You are using the yaml version of the field_table. &
+The legacy field_table format will be deprecated in a future release, &
+please switch to the yaml format.")
   call read_field_table_legacy(nfields, table_name)
 endif
 
