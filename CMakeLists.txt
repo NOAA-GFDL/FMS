@@ -56,6 +56,7 @@ option(32BIT       "Build 32-bit (r4) FMS library"        OFF)
 option(64BIT       "Build 64-bit (r8) FMS library"        OFF)
 option(FPIC        "Build with position independent code" OFF)
 option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
+option(OPENACC     "Build FMS with OpenACC support"       OFF)
 
 # Options for compiler definitions
 option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
@@ -82,9 +83,13 @@ endif()
 find_package(MPI REQUIRED COMPONENTS C Fortran)
 find_package(NetCDF REQUIRED COMPONENTS C Fortran)
 
-# Check for the OpenMP library and set the required compile flags
+# Check compilers support for OpenMP and OpenACC directives, if requested
 if (OPENMP)
   find_package(OpenMP REQUIRED COMPONENTS C Fortran)
+endif()
+
+if (OPENACC)
+  find_package(OpenACC REQUIRED COMPONENTS C Fortran)
 endif()
 
 if (WITH_YAML)
