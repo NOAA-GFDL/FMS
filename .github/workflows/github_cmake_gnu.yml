@@ -19,6 +19,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }}"
+        PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
@@ -26,7 +27,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
+        cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view ..
     - name: Build the library
       run: make -C build
 
@@ -41,6 +42,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }}"
+        PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
@@ -48,6 +50,6 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
+        cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view ..
     - name: Build the library
       run: make -C build
