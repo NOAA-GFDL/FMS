@@ -18,7 +18,7 @@
 
 # Copyright (c) GFDL, @underwoo
 
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
@@ -753,9 +753,13 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/parser/parser_demo2.F90
   test_fms/parser/test_output_yaml.F90
   test_fms/parser/generic_blocks.F90
-  test_fms/string_utils/test_string_utils.F90
   test_fms/time_manager/test_time_manager.F90
   )
+if(NOT ${CMAKE_Fortran_COMPILER_ID} STREQUAL "NVHPC")
+list(APPEND TEST_SRC_SINGLE_TARGET
+test_fms/string_utils/test_string_utils.F90
+)
+endif()
 # list any test sources that are used for two executables (r4 and r8)
 list(APPEND TEST_SRC_TWO_TARGETS
   test_fms/astronomy/test_astronomy.F90

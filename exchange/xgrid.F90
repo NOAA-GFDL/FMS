@@ -4023,9 +4023,12 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
   real(r8_kind), pointer                      :: x(:)
   real(r8_kind), pointer, contiguous          :: tmpptr(:,:)
   integer :: shape_d(2)
+  integer :: i_off, j_off
 
   call mpp_clock_begin(id_get_1_from_xgrid_repro)
   shape_d = [xmap%grids(1)%ie_me-xmap%grids(1)%is_me+1, xmap%grids(1)%je_me-xmap%grids(1)%js_me+1]
+  i_off = xmap%grids(1)%is_me - 1
+  j_off = xmap%grids(1)%js_me - 1
   comm => xmap%get1_repro
   !--- pre-post receiving
   do p = 1, comm%nrecv
@@ -4071,17 +4074,17 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
 
   do l = 1, lsize
      call c_f_pointer(d_addrs(l), tmpptr, shape=shape_d)
-     d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, xmap%grids(1)%js_me:xmap%grids(1)%je_me) => tmpptr
+     d => tmpptr
      d = 0
   enddo
 
   call mpp_sync_self(check=EVENT_RECV)
 
-!$OMP parallel do default(none) shared(lsize,shape_d,d_addrs,xmap,recv_buffer,pl,ml) &
+!$OMP parallel do default(none) shared(lsize,shape_d,d_addrs,xmap,recv_buffer,pl,ml,i_off,j_off) &
 !$OMP                          private(d,tmpptr,grid,i,j,p,pos)
   do l = 1, lsize
      call c_f_pointer(d_addrs(l), tmpptr, shape=shape_d)
-     d(xmap%grids(1)%is_me:xmap%grids(1)%ie_me, xmap%grids(1)%js_me:xmap%grids(1)%je_me) => tmpptr
+     d => tmpptr
      do g=2,size(xmap%grids(:))
         grid => xmap%grids(g)
         do l3=1,grid%size_repro ! index into side1 grid's patterns
@@ -4089,7 +4092,7 @@ subroutine get_1_from_xgrid_repro(d_addrs, x_addrs, xmap, xsize, lsize)
            j = grid%x_repro(l3)%j1
            p = grid%x_repro(l3)%pe-xmap%root_pe
            pos = pl(p) + (l-1)*ml(p) + grid%x_repro(l3)%recv_pos
-           d(i,j) = d(i,j) + recv_buffer(pos)
+           d(i - i_off, j - j_off) = d(i - i_off, j - j_off) + recv_buffer(pos)
         end do
      end do
      ! normalize with side 1 grid cell areas
