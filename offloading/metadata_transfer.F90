@@ -18,8 +18,9 @@
 module metadata_transfer_mod
   use platform_mod
 #ifdef use_libMPI
-  use mpi,     only: MPI_Type_create_struct, MPI_Type_commit, MPI_INTEGER, MPI_CHARACTER, &
-                       MPI_DOUBLE, MPI_FLOAT, MPI_INT, MPI_LONG_INT, MPI_SUCCESS, MPI_ADDRESS_KIND
+  use mpi_f08, only: mpi_type_create_struct, mpi_type_commit, mpi_integer, mpi_character, &
+                     mpi_double, mpi_float, mpi_int, mpi_long_int, MPI_SUCCESS, MPI_ADDRESS_KIND, &
+                     mpi_datatype, mpi_datatype_null, operator(.eq.)
 #endif
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL, mpp_get_current_pelist, mpp_npes
   use fms_mod, only: string
@@ -27,10 +28,6 @@ module metadata_transfer_mod
   implicit none
 
   public
-
-#ifdef use_libMPI
-  external MPI_Bcast
-#endif
 
   integer, parameter :: real8_type = 1 !< enumeration for real(kind=8) data type
   integer, parameter :: real4_type = 2 !< enumeration for real(kind=4) data type
@@ -46,8 +43,8 @@ module metadata_transfer_mod
   !! be broadcasted.
   type, abstract :: metadata_class
     private
-    integer                             :: mpi_type_id = -1 !< MPI datatype id corresponding to this data objects data
-                                                            !! -1 if not set
+    type(mpi_datatype)                  :: mpi_type = mpi_datatype_null !< MPI datatype corresponding to this data
+                                                                        !! object's data
     integer                             :: attribute_length = -1 !< length of the attribute value array, -1 if not set
     character(len=ATTR_NAME_MAX_LENGTH) :: attribute_name !< name of the attribute to write
     contains
@@ -107,10 +104,11 @@ module metadata_transfer_mod
     class(metadata_class), intent(inout) :: this !<metadata object to initialize for mpi communication using the struct
     integer, intent(in) :: dtype !< data type and kind for the metadata's value
                                  !! must be real8_type, real4_type, int8_type, int4_type, or str_type
-    integer, dimension(0:4) :: lengths, types
+    integer, dimension(0:4) :: lengths
+    type(mpi_datatype), dimension(0:4) :: types
 #ifdef use_libMPI
     integer(KIND=MPI_ADDRESS_KIND), dimension(0:4) :: displacements
-    integer :: ierror, mpi_id
+    integer :: ierror
 
     !! since the actual data array is at the end of the struct, displacements are the same for all types
     !displacements = (/ 0, sizeof(0), sizeof(0)*2, sizeof(0)*3, &
@@ -126,15 +124,15 @@ module metadata_transfer_mod
 
     select case(dtype)
     case(real8_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_DOUBLE/)
+      types = (/mpi_integer, mpi_integer, mpi_character, mpi_character, mpi_double/)
     case(real4_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_FLOAT/)
+      types = (/mpi_integer, mpi_integer, mpi_character, mpi_character, mpi_float/)
     case(int4_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_INT/)
+      types = (/mpi_integer, mpi_integer, mpi_character, mpi_character, mpi_int/)
     case(int8_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_LONG_INT/)
+      types = (/mpi_integer, mpi_integer, mpi_character, mpi_character, mpi_long_int/)
     case(str_type)
-      types = (/MPI_INTEGER, MPI_INTEGER, MPI_CHARACTER, MPI_CHARACTER, MPI_CHARACTER/)
+      types = (/mpi_integer, mpi_integer, mpi_character, mpi_character, mpi_character/)
     case default
         call mpp_error(FATAL, "fms_metadata_transfer_init:: given dtype argument contains a unsupported type")
     end select
@@ -142,15 +140,14 @@ module metadata_transfer_mod
     !lengths = (/1, 1, 1, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
     lengths = (/1, 1, ATTR_NAME_MAX_LENGTH, ATTR_NAME_MAX_LENGTH, ATTR_VALUE_MAX_LENGTH/)
 
-    call MPI_Type_create_struct(4, lengths, displacements, types, mpi_id, ierror)
+    call mpi_type_create_struct(4, lengths, displacements, types, this%mpi_type, ierror)
     if(ierror /= MPI_SUCCESS) then
-      call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_create_struct failed")
+      call mpp_error(FATAL, "fms_metadata_transfer_init: mpi_type_create_struct failed")
     end if
-    call MPI_Type_commit(mpi_id, ierror)
+    call mpi_type_commit(this%mpi_type, ierror)
     if(ierror /= MPI_SUCCESS) then
-      call mpp_error(FATAL, "fms_metadata_transfer_init: MPI_Type_commit failed")
+      call mpp_error(FATAL, "fms_metadata_transfer_init: mpi_type_commit failed")
     end if
-    this%mpi_type_id = mpi_id
 #else
   call mpp_error(FATAL, "fms_metadata_transfer_init: MPI library not enabled, cannot initialize metadata transfer")
 #endif
@@ -161,7 +158,7 @@ module metadata_transfer_mod
     class(metadata_class), intent(inout) :: this !< object that inherits metadata_class
     integer :: ierror, curr_comm_id
     integer, allocatable :: broadcasting_pes(:)
-    if (this%mpi_type_id .eq. -1) then
+    if (this%mpi_type.eq.mpi_datatype_null) then
       call mpp_error(FATAL, "fms_metadata_broadcast: metadata_transfer not initialized")
     end if
 
@@ -172,18 +169,18 @@ module metadata_transfer_mod
     ! Broadcast the metadata transfer type to all processes
     select type(this)
     type is (metadata_r8_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_r4_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_i4_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_i8_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
     type is (metadata_str_type)
-      call MPI_Bcast(this, 1, this%mpi_type_id, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
     end select
     if (ierror /= MPI_SUCCESS) then
-      call mpp_error(FATAL, "fms_metadata_broadcast: MPI_Bcast failed")
+      call mpp_error(FATAL, "fms_metadata_broadcast: mpi_bcast failed")
     end if
 #else
   call mpp_error(FATAL, "fms_metadata_broadcast: MPI library not enabled")
@@ -198,7 +195,7 @@ module metadata_transfer_mod
     integer :: i
 
     do i=1, size(metadata_objs)
-      if (metadata_objs(i)%mpi_type_id .eq. -1) then
+      if (metadata_objs(i)%mpi_type.eq.mpi_datatype_null) then
         call mpp_error(FATAL, "fms_metadata_broadcast_all: metadata_transfer not initialized")
       end if
       call metadata_objs(i)%fms_metadata_broadcast()
