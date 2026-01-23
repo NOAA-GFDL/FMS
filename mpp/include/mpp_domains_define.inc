@@ -643,7 +643,8 @@
 
     integer              :: i, j, m, n, xhalosz, yhalosz, memory_xsize, memory_ysize
     integer              :: whalosz, ehalosz, shalosz, nhalosz
-    integer              :: ipos, jpos, pos, tile, nlist, cur_tile_id, cur_comm_id
+    integer              :: ipos, jpos, pos, tile, nlist, cur_tile_id
+    type(mpi_comm)       :: cur_comm_id
     integer              :: ndivx, ndivy, isg, ieg, jsg, jeg, ishift, jshift, errunit, logunit
     integer              :: x_offset, y_offset, start_pos, nfold
     logical              :: from_mosaic, is_complete
@@ -683,7 +684,7 @@
     cur_tile_id = 1
     if(present(tile_id)) cur_tile_id = tile_id
 
-    cur_comm_id=0
+    cur_comm_id = MPI_COMM_NULL
     if( PRESENT(pelist) )then
        allocate( pes(0:size(pelist(:))-1) )
        pes = pelist
@@ -1382,7 +1383,7 @@ end subroutine check_message_size
     allocate(tile_count(pes(0):pes(0)+nlist-1))
     tile_count = 0  ! tile number on current pe
 
-    domain%tile_comm_id=0
+    domain%tile_comm_id = MPI_COMM_NULL
     do n = 1, num_tile
        allocate(mask(layout(1,n), layout(2,n)))
        allocate(pelist_tile(pe_start(n):pe_end(n)) )

@@ -31,6 +31,7 @@
 !> @{
 module mpp_pset_mod
 #include <fms_platform.h>
+  use mpi_f08, only: mpi_comm
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &
        mpp_sync, mpp_error, FATAL, WARNING, stdout, stderr, mpp_chksum, &
        mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist, &
@@ -40,7 +41,7 @@ module mpp_pset_mod
 
 !private variables
   integer :: pe
-  integer :: commID !MPI communicator, copy here from pset
+  type(mpi_comm) :: commID !MPI communicator, copy here from pset
   logical :: verbose=.FALSE.
   logical :: module_is_initialized=.FALSE.
   character(len=256) :: text
@@ -79,7 +80,7 @@ module mpp_pset_mod
      integer, allocatable :: pset(:) !PSET IDs
      integer(POINTER_KIND) :: p_stack
      integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
-     integer :: commID
+     type(mpi_comm) :: commID
      character(len=32) :: name
      logical :: initialized=.FALSE.
   end type mpp_pset_type
@@ -107,9 +108,10 @@ contains
     type(mpp_pset_type), intent(inout) :: pset
     integer, intent(in), optional :: stacksize
     integer, intent(in), optional :: pelist(:)
-    integer, intent(in), optional :: commID
+    type(mpi_comm), intent(in), optional :: commID
 
-    integer :: npes, my_commID
+    integer :: npes
+    type(mpi_comm) :: my_commID
     integer :: i, j, k, out_unit, errunit
     integer, allocatable :: my_pelist(:), root_pelist(:)
 
@@ -560,7 +562,7 @@ contains
   subroutine mpp_pset_get_root_pelist(pset,pelist,commID)
     type(mpp_pset_type), intent(in) :: pset
     integer, intent(out) :: pelist(:)
-    integer, intent(out), optional :: commID
+    type(mpi_comm), intent(out), optional :: commID
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_GET_ROOT_PELIST: called with uninitialized PSET.' )

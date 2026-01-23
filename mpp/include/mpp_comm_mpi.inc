@@ -48,7 +48,7 @@
     call MPI_INIT(error)
     mpp_comm_private = MPI_COMM_WORLD
   else
-    mpp_comm_private  = localcomm
+    mpp_comm_private%mpi_val = localcomm
   endif
   call MPI_COMM_RANK( mpp_comm_private, pe,   error )
   call MPI_COMM_SIZE( mpp_comm_private, npes, error )
@@ -64,8 +64,8 @@
   !PEsets: make defaults illegal
   allocate(peset(0:current_peset_max))
   peset(:)%count = -1
-  peset(:)%id = -1
-  peset(:)%group = -1
+  peset(:)%id = MPI_COMM_NULL
+  peset(:)%group = MPI_GROUP_NULL
   peset(:)%start = -1
   peset(:)%log2stride = -1
   peset(:)%name  = " "
@@ -156,7 +156,7 @@
   request_send(:) = MPI_REQUEST_NULL
   request_recv(:) = MPI_REQUEST_NULL
   size_recv(:)    = 0
-  type_recv(:)    = 0
+  type_recv(:)    = MPI_DATATYPE_NULL
 
   if (t_level == 7) return
 

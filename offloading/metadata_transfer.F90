@@ -20,7 +20,7 @@ module metadata_transfer_mod
 #ifdef use_libMPI
   use mpi_f08, only: mpi_type_create_struct, mpi_type_commit, mpi_integer, mpi_character, &
                      mpi_double, mpi_float, mpi_int, mpi_long_int, MPI_SUCCESS, MPI_ADDRESS_KIND, &
-                     mpi_datatype, mpi_datatype_null, operator(.eq.)
+                     mpi_datatype, mpi_datatype_null, mpi_comm, operator(.eq.)
 #endif
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL, mpp_get_current_pelist, mpp_npes
   use fms_mod, only: string
@@ -156,28 +156,29 @@ module metadata_transfer_mod
   !> Broadcast the entire metadata object to all PEs in the current pelist
   subroutine fms_metadata_broadcast(this)
     class(metadata_class), intent(inout) :: this !< object that inherits metadata_class
-    integer :: ierror, curr_comm_id
+    integer :: ierror
+    type(mpi_comm) :: curr_comm
     integer, allocatable :: broadcasting_pes(:)
     if (this%mpi_type.eq.mpi_datatype_null) then
       call mpp_error(FATAL, "fms_metadata_broadcast: metadata_transfer not initialized")
     end if
 
     allocate(broadcasting_pes(mpp_npes()))
-    call mpp_get_current_pelist(broadcasting_pes, commID=curr_comm_id)
+    call mpp_get_current_pelist(broadcasting_pes, commID=curr_comm)
 
 #ifdef use_libMPI
     ! Broadcast the metadata transfer type to all processes
     select type(this)
     type is (metadata_r8_type)
-      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm, ierror)
     type is (metadata_r4_type)
-      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm, ierror)
     type is (metadata_i4_type)
-      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm, ierror)
     type is (metadata_i8_type)
-      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm, ierror)
     type is (metadata_str_type)
-      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm_id, ierror)
+      call mpi_bcast(this, 1, this%mpi_type, mpp_root_pe(), curr_comm, ierror)
     end select
     if (ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_broadcast: mpi_bcast failed")

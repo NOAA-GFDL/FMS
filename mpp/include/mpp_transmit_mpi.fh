@@ -43,7 +43,7 @@
       MPP_TYPE_, intent(out) :: get_data(*)
       logical, intent(in),  optional :: block
       integer, intent(in),  optional :: tag
-      integer, intent(out), optional :: recv_request, send_request
+      type(mpi_request), intent(out), optional :: recv_request, send_request
       logical                       :: block_comm
       integer                       :: i
       integer                       :: comm_tag
@@ -209,7 +209,8 @@
       integer, intent(in) :: send_counts(:), displs(:), pelist(:)
       integer, intent(inout) :: ierr
 
-      integer :: commID, root_pe2
+      integer :: root_pe2
+      type(mpi_comm) :: commID
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
 
@@ -235,7 +236,8 @@
       integer, intent(in) :: pelist(:)
       integer, intent(inout) :: ierr
 
-      integer :: commID, root_pe2
+      integer :: root_pe2
+      type(mpi_comm) :: commID
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GATHER: You must first call mpp_init.' )
 
@@ -255,7 +257,8 @@
       integer, intent(in) :: recv_counts(:), displs(:), pelist(:)
       integer, intent(inout) :: ierr
 
-      integer :: commID, root_pe2
+      integer :: root_pe2
+      type(mpi_comm) :: commID
 
       if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_GATHERV: You must first call mpp_init.' )
 

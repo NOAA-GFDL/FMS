@@ -34,7 +34,7 @@
 subroutine mpp_error_basic( errortype, errormsg )
 #ifdef __INTEL_COMPILER
   ! Intel module containing tracebackQQ
-   use ifcore
+   use ifcore, only: tracebackqq
 #endif
   integer,                    intent(in) :: errortype
   character(len=*), intent(in), optional :: errormsg
@@ -173,9 +173,9 @@ end subroutine mpp_sync
 subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
-  integer, intent(inout), optional :: request(:)
+  type(mpi_request), intent(inout), optional :: request(:)
   integer, intent(in   ), optional :: msg_size(:)
-  integer, intent(in   ), optional :: msg_type(:)
+  type(mpi_datatype), intent(in   ), optional :: msg_type(:)
 
   integer                       :: m, my_check, rsize
 
@@ -239,4 +239,50 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
   if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
   return
 end subroutine mpp_sync_self
+
+function mpp_commID()
+  type(mpi_comm) :: mpp_commID
+
+  if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_COMMID: You must first call mpp_init.' )
+  mpp_commID = peset(current_peset_num)%id
+end function mpp_commID
+
+!> @brief Declare a pelist.
+!!
+!> This call is written specifically to accommodate a MPI restriction
+!! that requires a parent communicator to create a child communicator, In
+!! other words: a pelist cannot go off and declare a communicator, but
+!! every PE in the parent, including those not in pelist(:), must get
+!! together for the <TT>MPI_COMM_CREATE</TT> call. The parent is
+!! typically <TT>MPI_COMM_WORLD</TT>, though it could also be a subset
+!! that includes all PEs in <TT>pelist</TT>.
+!!
+!! This call implies synchronization across the PEs in the current
+!! pelist, of which <TT>pelist</TT> is a subset.
+subroutine mpp_declare_pelist( pelist, name, commID )
+  integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
+  character(len=*), intent(in), optional :: name      !> unique name for an input pelist
+  type(mpi_comm), intent(out), optional  :: commID    !> return of current MPI comm group communicator ID
+  integer :: i
+
+  if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
+  i = get_peset(pelist)
+  write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
+  if( PRESENT(name) )peset(i)%name = name
+  if( PRESENT(commID) )commID = peset(i)%id
+end subroutine mpp_declare_pelist
+
+!this is created for use by mpp_define_domains within a pelist
+!will be published but not publicized
+subroutine mpp_get_current_pelist( pelist, name, commID )
+  integer, intent(out) :: pelist(:)
+  character(len=*), intent(out), optional :: name
+  type(mpi_comm), intent(out), optional   :: commID
+
+  if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
+       call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
+  pelist(:) = peset(current_peset_num)%list(:)
+  if( PRESENT(name) )name = peset(current_peset_num)%name
+  if( PRESENT(commID) )commID = peset(current_peset_num)%id
+end subroutine mpp_get_current_pelist
 !> @}

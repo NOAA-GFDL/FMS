@@ -112,3 +112,38 @@ subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type )
 
   return
 end subroutine mpp_sync_self
+
+!> @brief Declare a pelist.
+!!
+!> This call is written specifically to accommodate a MPI restriction
+!! that requires a parent communicator to create a child communicator, In
+!! other words: a pelist cannot go off and declare a communicator, but
+!! every PE in the parent, including those not in pelist(:), must get
+!! together for the <TT>MPI_COMM_CREATE</TT> call. The parent is
+!! typically <TT>MPI_COMM_WORLD</TT>, though it could also be a subset
+!! that includes all PEs in <TT>pelist</TT>.
+!!
+!! This call implies synchronization across the PEs in the current
+!! pelist, of which <TT>pelist</TT> is a subset.
+subroutine mpp_declare_pelist(pelist, name)
+  integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
+  character(len=*), intent(in), optional :: name      !> unique name for an input pelist
+  integer :: i
+
+  if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
+  i = get_peset(pelist)
+  write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
+  if( PRESENT(name) )peset(i)%name = name
+end subroutine mpp_declare_pelist
+
+!this is created for use by mpp_define_domains within a pelist
+!will be published but not publicized
+subroutine mpp_get_current_pelist(pelist, name)
+  integer, intent(out) :: pelist(:)
+  character(len=*), intent(out), optional :: name
+
+  if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
+       call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
+  pelist(:) = peset(current_peset_num)%list(:)
+  if( PRESENT(name) )name = peset(current_peset_num)%name
+end subroutine mpp_get_current_pelist

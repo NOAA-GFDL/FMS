@@ -156,7 +156,7 @@ module mpp_mod
 
 
 #if defined(use_libMPI)
-  use mpi
+  use mpi_f08
 #endif
 
   use iso_fortran_env,   only : INPUT_UNIT, OUTPUT_UNIT, ERROR_UNIT
@@ -195,7 +195,7 @@ private
   public :: COMM_TAG_9,  COMM_TAG_10, COMM_TAG_11, COMM_TAG_12
   public :: COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   public :: COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
-  public :: MPP_FILL_INT,MPP_FILL_DOUBLE,MPP_INFO_NULL,MPP_COMM_NULL
+  public :: MPP_FILL_INT,MPP_FILL_DOUBLE
   public :: mpp_init_test_full_init, mpp_init_test_init_true_only, mpp_init_test_peset_allocated
   public :: mpp_init_test_clocks_init, mpp_init_test_datatype_list_init, mpp_init_test_logfile_init
   public :: mpp_init_test_read_namelist, mpp_init_test_etc_unit, mpp_init_test_requests_allocated
@@ -203,12 +203,15 @@ private
   !--- public interface from mpp_util.h ------------------------------
   public :: stdin, stdout, stderr, stdlog, warnlog, lowercase, uppercase, mpp_error, mpp_error_state
   public :: mpp_set_warn_level, mpp_sync, mpp_sync_self, mpp_pe
-  public :: mpp_npes, mpp_root_pe, mpp_commID, mpp_set_root_pe, mpp_declare_pelist
+  public :: mpp_npes, mpp_root_pe, mpp_set_root_pe, mpp_declare_pelist
   public :: mpp_get_current_pelist, mpp_set_current_pelist, mpp_get_current_pelist_name
   public :: mpp_clock_id, mpp_clock_set_grain, mpp_record_timing_data, get_unit
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
   public :: get_ascii_file_num_lines, get_ascii_file_num_lines_and_length
   public :: mpp_record_time_start, mpp_record_time_end
+#if defined(use_libMPI)
+  public :: mpp_commID
+#endif
 
   !--- public interface from mpp_comm.h ------------------------------
   public :: mpp_chksum, mpp_max, mpp_min, mpp_sum, mpp_transmit, mpp_send, mpp_recv
@@ -232,7 +235,10 @@ private
      integer, pointer  :: list(:) =>NULL()
      integer           :: count
      integer           :: start, log2stride !< dummy variables when libMPI is defined.
-     integer           :: id, group         !< MPI communicator and group id for this PE set.
+#if defined(use_libMPI)
+     type(mpi_comm)    :: id                !< MPI communicator for this PE set
+     type(mpi_group)   :: group             !< MPI group for this PE set
+#endif
   end type communicator
 
   !> Communication event profile
@@ -290,8 +296,8 @@ private
      integer, allocatable :: sizes(:)
      integer, allocatable :: subsizes(:)
      integer, allocatable :: starts(:)
-     integer :: etype   !> Elementary data type (e.g. MPI_BYTE)
-     integer :: id      !> Identifier within message passing library (e.g. MPI)
+     type(mpi_datatype) :: etype   !> Elementary data type (e.g. MPI_BYTE)
+     type(mpi_datatype) :: id      !> Identifier within message passing library (e.g. MPI)
 
      type(mpp_type), pointer :: prev => null()
      type(mpp_type), pointer :: next => null()
@@ -1279,7 +1285,7 @@ private
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0
   integer(i8_kind)     :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
-  integer              :: mpp_comm_private
+  type(mpi_comm)       :: mpp_comm_private
   logical              :: first_call_system_clock_mpi=.TRUE.
   real(r8_kind)        :: mpi_count0=0  !< use to prevent integer overflow
   real(r8_kind)        :: mpi_tick_rate=0.d0  !< clock rate for mpi_wtick()
@@ -1300,10 +1306,10 @@ private
 
   integer              :: cur_send_request = 0
   integer              :: cur_recv_request = 0
-  integer, allocatable :: request_send(:)
-  integer, allocatable :: request_recv(:)
+  type(mpi_request), allocatable :: request_send(:)
+  type(mpi_request), allocatable :: request_recv(:)
   integer, allocatable :: size_recv(:)
-  integer, allocatable :: type_recv(:)
+  type(mpi_datatype), allocatable :: type_recv(:)
 ! if you want to save the non-root PE information uncomment out the following line
 ! and comment out the assigment of etcfile to '/dev/null'
 #ifdef NO_DEV_NULL
@@ -1339,24 +1345,6 @@ private
   integer, parameter :: mpp_init_test_read_namelist = 5
   integer, parameter :: mpp_init_test_etc_unit = 6
   integer, parameter :: mpp_init_test_requests_allocated = 7
-
-!> MPP_INFO_NULL acts as an analagous mpp-macro for MPI_INFO_NULL to share with fms2_io NetCDF4
-!! mpi-io.  The default value for the no-mpi case comes from Intel MPI and MPICH.  OpenMPI sets
-!! a default value of '0'
-#if defined(use_libMPI)
-  integer, parameter ::  MPP_INFO_NULL = MPI_INFO_NULL
-#else
-  integer, parameter ::  MPP_INFO_NULL = 469762048
-#endif
-
-!> MPP_COMM_NULL acts as an analagous mpp-macro for MPI_COMM_NULL to share with fms2_io NetCDF4
-!! mpi-io.  The default value for the no-mpi case comes from Intel MPI and MPICH.  OpenMPI sets
-!! a default value of '2'
-#if defined(use_libMPI)
-  integer, parameter ::  MPP_COMM_NULL = MPI_COMM_NULL
-#else
-  integer, parameter ::  MPP_COMM_NULL = 67108864
-#endif
 
 !***********************************************************************
 !  variables needed for subroutine read_input_nml (include/mpp_util.inc)

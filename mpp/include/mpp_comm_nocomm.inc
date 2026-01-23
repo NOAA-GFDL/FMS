@@ -50,8 +50,7 @@ subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   allocate(peset(0:0))
   !PEsets: make defaults illegal
   peset(:)%count = -1
-  peset(:)%id = -1
-  peset(:)%group = -1
+  peset(:)%id = MPI_COMM_NULL
   !0=single-PE, initialized so that count returns 1
   peset(0)%count = 1
   allocate( peset(0)%list(1) )

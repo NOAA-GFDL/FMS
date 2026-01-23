@@ -99,8 +99,7 @@ subroutine MPP_ALLTOALLW_(sbuf, ssize, sdispl, stype, &
     type(mpp_type), intent(in) :: rtype(:) !< mpp data types to receive from each respective process
     integer, intent(in), optional :: pelist(0:)
     integer :: i, n
-
-    integer, allocatable :: sendtypes(:), recvtypes(:)
+    type(mpi_datatype), allocatable :: sendtypes(:), recvtypes(:)
 
     if (.NOT. module_is_initialized) &
         call mpp_error(FATAL, 'MPP_ALLTOALLW_: You must first call mpp_init.')

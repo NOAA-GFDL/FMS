@@ -37,7 +37,7 @@ subroutine MPP_START_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type, k
   integer                     :: is, ie, js, je, sendsize, recvsize
   logical                     :: send(8), recv(8), update_edge_only
   integer                     :: l_size, ke_sum
-  integer                     :: request
+  type(mpi_request)           :: request
   integer                     :: send_msgsize(MAXLIST)
   character(len=128)          :: text
   MPP_TYPE_                   :: buffer(size(mpp_domains_stack_nonblock(:)))
@@ -309,12 +309,8 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_(id_update, f_addrs, domain, update, d_type
                         msg_size=nonblock_data(id_update)%size_recv(1:count),                     &
                         msg_type=nonblock_data(id_update)%type_recv(1:count) )
      call mpp_clock_end(wait_clock_nonblock)
-#ifdef use_libMPI
-     nonblock_data(id_update)%request_recv(:)    = MPI_REQUEST_NULL
-#else
-     nonblock_data(id_update)%request_recv(:)    = 0
-#endif
-     nonblock_data(id_update)%type_recv(:) = 0
+     nonblock_data(id_update)%request_recv(:) = MPI_REQUEST_NULL
+     nonblock_data(id_update)%type_recv(:) = MPI_DATATYPE_NULL
   endif
 
   !--unpack the data

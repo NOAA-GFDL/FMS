@@ -91,7 +91,7 @@
 module mpp_domains_mod
 
 #if defined(use_libMPI)
-  use mpi
+  use mpi_f08
 #endif
 
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
@@ -374,8 +374,10 @@ module mpp_domains_mod
      integer                     :: whalo, ehalo   !< halo size in x-direction
      integer                     :: shalo, nhalo   !< halo size in y-direction
      integer                     :: ntiles         !< number of tiles within mosaic
-     integer                     :: comm_id        !< MPI communicator for the mosaic
-     integer                     :: tile_comm_id   !< MPI communicator for this tile of domain
+#if defined(use_libMPI)
+     type(mpi_comm)              :: comm_id        !< MPI communicator for the mosaic
+     type(mpi_comm)              :: tile_comm_id   !< MPI communicator for this tile of domain
+#endif
      integer                     :: max_ntile_pe   !< maximum value in the pelist of number of tiles on each pe.
      integer                     :: ncontacts      !< number of contact region within mosaic.
      logical                     :: rotated_ninety !< indicate if any contact rotate NINETY or MINUS_NINETY
@@ -558,14 +560,14 @@ module mpp_domains_mod
      integer                         :: update_nhalo
      integer                         :: request_send_count
      integer                         :: request_recv_count
-     integer, dimension(MAX_REQUEST) :: request_send
-     integer, dimension(MAX_REQUEST) :: request_recv
+     type(mpi_request)               :: request_send(MAX_REQUEST)
+     type(mpi_request)               :: request_recv(MAX_REQUEST)
      integer, dimension(MAX_REQUEST) :: size_recv
-     integer, dimension(MAX_REQUEST) :: type_recv
+     type(mpi_datatype)              :: type_recv(MAX_REQUEST)
      integer, dimension(MAX_REQUEST) :: buffer_pos_send
      integer, dimension(MAX_REQUEST) :: buffer_pos_recv
-     integer(i8_kind)              :: field_addrs(MAX_DOMAIN_FIELDS)
-     integer(i8_kind)              :: field_addrs2(MAX_DOMAIN_FIELDS)
+     integer(i8_kind)                :: field_addrs(MAX_DOMAIN_FIELDS)
+     integer(i8_kind)                :: field_addrs2(MAX_DOMAIN_FIELDS)
      integer                         :: nfields
   end type nonblock_type
 
@@ -616,13 +618,13 @@ module mpp_domains_mod
      integer            :: unpack_ie(MAXOVERLAP)
      integer            :: unpack_js(MAXOVERLAP)
      integer            :: unpack_je(MAXOVERLAP)
-     integer(i8_kind) :: addrs_s(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_x(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_y(MAX_DOMAIN_FIELDS)
+     integer(i8_kind)   :: addrs_s(MAX_DOMAIN_FIELDS)
+     integer(i8_kind)   :: addrs_x(MAX_DOMAIN_FIELDS)
+     integer(i8_kind)   :: addrs_y(MAX_DOMAIN_FIELDS)
      integer            :: buffer_start_pos = -1
-     integer            :: request_send(MAX_REQUEST)
-     integer            :: request_recv(MAX_REQUEST)
-     integer            :: type_recv(MAX_REQUEST)
+     type(mpi_request)  :: request_send(MAX_REQUEST)
+     type(mpi_request)  :: request_recv(MAX_REQUEST)
+     type(mpi_datatype) :: type_recv(MAX_REQUEST)
   end type mpp_group_update_type
 
   !> One dimensional domain used to manage shared data access between pes
