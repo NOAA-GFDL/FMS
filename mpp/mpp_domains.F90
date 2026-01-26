@@ -157,6 +157,9 @@ module mpp_domains_mod
   public :: mpp_get_tile_npes, mpp_get_domain_root_pe, mpp_get_tile_pelist, mpp_get_tile_compute_domains
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
+#ifdef use_libMPI
+  public :: mpp_get_domain_tile_comm, mpp_get_domain_comm
+#endif
   public :: mpp_get_domain_tile_commid, mpp_get_domain_commid
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
   public :: mpp_copy_domain, mpp_set_domain_symmetry
@@ -375,8 +378,8 @@ module mpp_domains_mod
      integer                     :: shalo, nhalo   !< halo size in y-direction
      integer                     :: ntiles         !< number of tiles within mosaic
 #if defined(use_libMPI)
-     type(mpi_comm)              :: comm_id        !< MPI communicator for the mosaic
-     type(mpi_comm)              :: tile_comm_id   !< MPI communicator for this tile of domain
+     type(mpi_comm)              :: comm           !< MPI communicator for the mosaic
+     type(mpi_comm)              :: tile_comm      !< MPI communicator for this tile of domain
 #endif
      integer                     :: max_ntile_pe   !< maximum value in the pelist of number of tiles on each pe.
      integer                     :: ncontacts      !< number of contact region within mosaic.

@@ -209,8 +209,9 @@ private
   public :: read_ascii_file, read_input_nml, mpp_clock_begin, mpp_clock_end
   public :: get_ascii_file_num_lines, get_ascii_file_num_lines_and_length
   public :: mpp_record_time_start, mpp_record_time_end
-#if defined(use_libMPI)
   public :: mpp_commID
+#ifdef use_libMPI
+  public :: mpp_comm
 #endif
 
   !--- public interface from mpp_comm.h ------------------------------
@@ -236,7 +237,7 @@ private
      integer           :: count
      integer           :: start, log2stride !< dummy variables when libMPI is defined.
 #if defined(use_libMPI)
-     type(mpi_comm)    :: id                !< MPI communicator for this PE set
+     type(mpi_comm)    :: comm              !< MPI communicator for this PE set
      type(mpi_group)   :: group             !< MPI group for this PE set
 #endif
   end type communicator

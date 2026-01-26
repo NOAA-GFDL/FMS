@@ -192,7 +192,7 @@
              exit
          endif
       enddo
-      if( mpp_npes().GT.1 )call MPI_BCAST( broadcast_data, length, MPI_TYPE_, from_rank, peset(n)%id, error )
+      if( mpp_npes().GT.1 )call MPI_BCAST( broadcast_data, length, MPI_TYPE_, from_rank, peset(n)%comm, error )
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_BROADCAST, length*MPP_TYPE_BYTELEN_ )
       return
     end subroutine MPP_BROADCAST_
@@ -210,17 +210,17 @@
       integer, intent(inout) :: ierr
 
       integer :: root_pe2
-      type(mpi_comm) :: commID
+      type(mpi_comm) :: comm
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_SCATTER: You must first call mpp_init.' )
 
-      call mpp_declare_pelist( pelist, commID=commID )
+      call mpp_declare_pelist( pelist, comm=comm )
       ! Rank number should be in reference to new comm
       root_pe2 = findloc(pelist, root_pe, dim=1) - 1
 
 
       call MPI_SCATTERV(send_data, send_counts, displs, MPI_TYPE_, &
-                        recv_data, recv_count, MPI_TYPE_, root_pe2, commID, ierr)
+                        recv_data, recv_count, MPI_TYPE_, root_pe2, comm, ierr)
 
     end subroutine MPP_SCATTERV_
 
@@ -237,16 +237,16 @@
       integer, intent(inout) :: ierr
 
       integer :: root_pe2
-      type(mpi_comm) :: commID
+      type(mpi_comm) :: comm
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GATHER: You must first call mpp_init.' )
 
-      call mpp_declare_pelist( pelist, commID=commID )
+      call mpp_declare_pelist( pelist, comm=comm )
       ! Rank number should be in reference to new comm
       root_pe2 = findloc(pelist, root_pe, dim=1) - 1
 
       call MPI_GATHER(send_data, count, MPI_TYPE_, &
-                      recv_data, count, MPI_TYPE_, root_pe2, commID, ierr)
+                      recv_data, count, MPI_TYPE_, root_pe2, comm, ierr)
 
     end subroutine MPP_GATHER_
 
@@ -258,17 +258,17 @@
       integer, intent(inout) :: ierr
 
       integer :: root_pe2
-      type(mpi_comm) :: commID
+      type(mpi_comm) :: comm
 
       if( .NOT.module_is_initialized ) call mpp_error( FATAL, 'MPP_GATHERV: You must first call mpp_init.' )
 
 
-      call mpp_declare_pelist( pelist, commID=commID )
+      call mpp_declare_pelist( pelist, comm=comm )
       ! Rank number should be in reference to new comm
       root_pe2 = findloc(pelist, root_pe, dim=1) - 1
 
       call MPI_GATHERV(send_data, send_count, MPI_TYPE_, &
-                       recv_data, recv_counts, displs, MPI_TYPE_, root_pe2, commID, ierr)
+                       recv_data, recv_counts, displs, MPI_TYPE_, root_pe2, comm, ierr)
 
     end subroutine MPP_GATHERV_
 !> @}

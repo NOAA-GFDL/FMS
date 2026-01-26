@@ -1062,7 +1062,7 @@ end function rarray_to_char
      do n = 0, old_peset_max
         peset_old(n)%count      = peset(n)%count
 #if defined(use_libMPI)
-        peset_old(n)%id         = peset(n)%id
+        peset_old(n)%comm       = peset(n)%comm
         peset_old(n)%group      = peset(n)%group
 #endif
         peset_old(n)%name       = peset(n)%name
@@ -1082,16 +1082,16 @@ end function rarray_to_char
      allocate(peset(0:current_peset_max))
      peset(:)%count = -1
 #if defined(use_libMPI)
-     peset(:)%id = MPI_COMM_NULL
-     peset(:)%group = MPI_GROUP_NULL
+     peset(:)%comm = mpi_comm_null
+     peset(:)%group = mpi_group_null
 #endif
      peset(:)%start = -1
      peset(:)%log2stride = -1
      peset(:)%name  = " "
      do n = 0, old_peset_max
         peset(n)%count      = peset_old(n)%count
-        peset(n)%id         = peset_old(n)%id
 #if defined(use_libMPI)
+        peset(n)%comm       = peset_old(n)%comm
         peset(n)%group      = peset_old(n)%group
 #endif
         peset(n)%name       = peset_old(n)%name

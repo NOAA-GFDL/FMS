@@ -45,7 +45,7 @@ subroutine MPP_ALLTOALL_(sbuf, scount, rbuf, rcount, pelist)
 
     ! TODO: Message lengths greater than 1
     call MPI_Alltoall(sbuf, scount, MPI_TYPE_, rbuf, rcount, MPI_TYPE_, &
-                      peset(n)%id, error)
+                      peset(n)%comm, error)
 
     if (current_clock .NE. 0) &
         call increment_current_clock(EVENT_ALLTOALL, MPP_TYPE_BYTELEN_)
@@ -77,7 +77,7 @@ subroutine MPP_ALLTOALLV_(sbuf, ssize, sdispl, rbuf, rsize, rdispl, pelist)
 
     call MPI_Alltoallv(sbuf, ssize, sdispl, MPI_TYPE_, &
                        rbuf, rsize, rdispl, MPI_TYPE_, &
-                       peset(n)%id, error)
+                       peset(n)%comm, error)
 
     if (current_clock .NE. 0) &
         call increment_current_clock(EVENT_ALLTOALL, MPP_TYPE_BYTELEN_)
@@ -121,7 +121,7 @@ subroutine MPP_ALLTOALLW_(sbuf, ssize, sdispl, stype, &
 
     call MPI_Alltoallw(sbuf, ssize, sdispl, sendtypes, &
                        rbuf, rsize, rdispl, recvtypes, &
-                       peset(n)%id, error)
+                       peset(n)%comm, error)
 
     deallocate(sendtypes, recvtypes)
 

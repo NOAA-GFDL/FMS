@@ -28,7 +28,7 @@
 !> @brief Initialize the @ref mpp_mod module
 subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
-  integer, optional, intent(in) :: localcomm !< Id of MPI communicator used to initialize
+  integer, optional, intent(in) :: localcomm !< ID of MPI communicator used to initialize (deprecated)
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
                                               !! before completion for testing purposes
   character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
@@ -50,13 +50,11 @@ subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   allocate(peset(0:0))
   !PEsets: make defaults illegal
   peset(:)%count = -1
-  peset(:)%id = MPI_COMM_NULL
   !0=single-PE, initialized so that count returns 1
   peset(0)%count = 1
   allocate( peset(0)%list(1) )
   peset(0)%list = pe
   current_peset_num = 0
-  peset(0)%id = 0
   world_peset_num = 0
   current_peset_num = world_peset_num !initialize current PEset to world
   if(t_level == 1) return
