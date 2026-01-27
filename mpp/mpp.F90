@@ -177,7 +177,10 @@ module mpp_mod
   use mpp_parameter_mod, only : COMM_TAG_13, COMM_TAG_14, COMM_TAG_15, COMM_TAG_16
   use mpp_parameter_mod, only : COMM_TAG_17, COMM_TAG_18, COMM_TAG_19, COMM_TAG_20
   use mpp_parameter_mod, only : MPP_FILL_INT,MPP_FILL_DOUBLE
-  use mpp_data_mod,      only : stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
+  use mpp_data_mod,      only : mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
+#ifdef use_libMPI
+  use mpp_data_mod,      only : stat
+#endif
   use mpp_data_mod,      only : mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
   use mpp_data_mod,      only : mpp_data_version=>version
   use platform_mod
