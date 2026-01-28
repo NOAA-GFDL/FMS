@@ -27,6 +27,9 @@ module netcdf_io_mod
 #ifndef MAX_NUM_RESTART_VARS_
 #define MAX_NUM_RESTART_VARS_ 250
 #endif
+#ifdef use_libMPI
+use mpi_f08, only: mpi_comm_null, mpi_info_null
+#endif
 use netcdf
 use mpp_mod
 use mpp_domains_mod
@@ -162,10 +165,7 @@ type, public :: FmsNetcdfFile_t
                                                !! restart variables
   type(fmsOffloadingIn_type) :: offloading_obj_in
   logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
-                                      !! this should be set to .true. in the user application if they want
-                                      !! collective reads (put before open_file())
-  integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
-                                      !! To be replaced with a real communicator at user request
+  integer :: tile_comm=mpi_comm_null%mpi_val !< MPI communicator used for MPI-IO reads.
   logical        :: use_netcdf_mpi = .false.
 
   contains
@@ -607,7 +607,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   fileobj%use_netcdf_mpi = .false.
 
-  if (fileobj%tile_comm.ne.MPP_COMM_NULL) then
+  if (fileobj%tile_comm.ne.mpi_comm_null%mpi_val) then
     call mpp_error(NOTE, "netcdf_file_open :: Setting fileobj%tile_comm is deprecated. &
                           Please use open_file(..., tile_comm=...) instead.")
     fileobj%use_netcdf_mpi = .true.
@@ -700,16 +700,16 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     ! Using MPI-IO: Every PE opens the file
     if(string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), ior(nf90_nowrite, nf90_mpiio), fileobj%ncid, &
-                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+                      comm=fileobj%tile_comm, info=mpi_info_null%mpi_val)
     elseif(string_compare(mode, "append", .true.)) then
       err = nf90_open(trim(fileobj%path), ior(nf90_write, nf90_mpiio), fileobj%ncid, &
-                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
+                      comm=fileobj%tile_comm, info=mpi_info_null%mpi_val)
     elseif (string_compare(mode, "write", .true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
-                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+                        comm=fileobj%tile_comm, info=mpi_info_null%mpi_val)
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
-                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+                        comm=fileobj%tile_comm, info=mpi_info_null%mpi_val)
     else
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")

@@ -434,15 +434,6 @@ end function rarray_to_char
   end function mpp_root_pe
 
   !#####################################################################
-  function mpp_commID()
-    integer :: mpp_commID
-
-    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_COMMID: You must first call mpp_init.' )
-    mpp_commID = peset(current_peset_num)%id
-    return
-  end function mpp_commID
-
-  !#####################################################################
   subroutine mpp_set_root_pe(num)
     integer, intent(in) :: num
 
@@ -452,33 +443,6 @@ end function rarray_to_char
     root_pe = num
     return
   end subroutine mpp_set_root_pe
-
-  !> @brief Declare a pelist.
-  !!
-  !> This call is written specifically to accommodate a MPI restriction
-  !! that requires a parent communicator to create a child communicator, In
-  !! other words: a pelist cannot go off and declare a communicator, but
-  !! every PE in the parent, including those not in pelist(:), must get
-  !! together for the <TT>MPI_COMM_CREATE</TT> call. The parent is
-  !! typically <TT>MPI_COMM_WORLD</TT>, though it could also be a subset
-  !! that includes all PEs in <TT>pelist</TT>.
-  !!
-  !! This call implies synchronization across the PEs in the current
-  !! pelist, of which <TT>pelist</TT> is a subset.
-  subroutine mpp_declare_pelist( pelist, name, commID )
-    integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
-    character(len=*), intent(in), optional :: name      !> unique name for an input pelist
-    integer,         intent(out), optional :: commID    !> return of current MPI comm group communicator ID
-    integer :: i
-
-    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
-    i = get_peset(pelist)
-    write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
-    if( PRESENT(name) )peset(i)%name = name
-    if( PRESENT(commID) )commID = peset(i)%id
-
-    return
-  end subroutine mpp_declare_pelist
 
   !#####################################################################
 
@@ -525,25 +489,6 @@ end function rarray_to_char
 
    mpp_get_current_pelist_name = peset(current_peset_num)%name
   end function mpp_get_current_pelist_name
-
-  !#####################################################################
-    !this is created for use by mpp_define_domains within a pelist
-    !will be published but not publicized
-  subroutine mpp_get_current_pelist( pelist, name, commID )
-    integer, intent(out) :: pelist(:)
-    character(len=*), intent(out), optional :: name
-    integer, intent(out), optional :: commID
-
-    if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
-         call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
-    pelist(:) = peset(current_peset_num)%list(:)
-    if( PRESENT(name) )name = peset(current_peset_num)%name
-#ifdef use_libMPI
-    if( PRESENT(commID) )commID = peset(current_peset_num)%id
-#endif
-
-    return
-  end subroutine mpp_get_current_pelist
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !                                                                             !
@@ -1116,8 +1061,10 @@ end function rarray_to_char
      allocate(peset_old(0:old_peset_max))
      do n = 0, old_peset_max
         peset_old(n)%count      = peset(n)%count
-        peset_old(n)%id         = peset(n)%id
+#if defined(use_libMPI)
+        peset_old(n)%comm       = peset(n)%comm
         peset_old(n)%group      = peset(n)%group
+#endif
         peset_old(n)%name       = peset(n)%name
         peset_old(n)%start      = peset(n)%start
         peset_old(n)%log2stride = peset(n)%log2stride
@@ -1134,15 +1081,19 @@ end function rarray_to_char
      current_peset_max = min(PESET_MAX, 2*old_peset_max)
      allocate(peset(0:current_peset_max))
      peset(:)%count = -1
-     peset(:)%id = -1
-     peset(:)%group = -1
+#if defined(use_libMPI)
+     peset(:)%comm = mpi_comm_null
+     peset(:)%group = mpi_group_null
+#endif
      peset(:)%start = -1
      peset(:)%log2stride = -1
      peset(:)%name  = " "
      do n = 0, old_peset_max
         peset(n)%count      = peset_old(n)%count
-        peset(n)%id         = peset_old(n)%id
+#if defined(use_libMPI)
+        peset(n)%comm       = peset_old(n)%comm
         peset(n)%group      = peset_old(n)%group
+#endif
         peset(n)%name       = peset_old(n)%name
         peset(n)%start      = peset_old(n)%start
         peset(n)%log2stride = peset_old(n)%log2stride

@@ -41,7 +41,7 @@ subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, upda
   character(len=128) :: text
   integer            :: ind_x, ind_y
   integer            :: nsend, nrecv, sendsize, recvsize
-  integer            :: request
+  type(mpi_request)  :: request
   integer            :: send_msgsize(update_x%nsend+update_y%nsend)
   integer            :: ind_send_x(update_x%nsend+update_y%nsend), ind_send_y(update_x%nsend+update_y%nsend)
   integer            :: ind_recv_x(update_x%nrecv+update_y%nrecv), ind_recv_y(update_x%nrecv+update_y%nrecv)
@@ -603,11 +603,9 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
                         msg_type=nonblock_data(id_update)%type_recv(1:nrecv) )
      call mpp_clock_end(wait_clock_nonblock)
 #ifdef use_libMPI
-     nonblock_data(id_update)%request_recv(:)    = MPI_REQUEST_NULL
-#else
-     nonblock_data(id_update)%request_recv(:)    = 0
+     nonblock_data(id_update)%request_recv(:) = MPI_REQUEST_NULL
+     nonblock_data(id_update)%type_recv(:) = MPI_DATATYPE_NULL
 #endif
-     nonblock_data(id_update)%type_recv(:)    = 0
   endif
 
   call mpp_clock_begin(unpk_clock_nonblock)
@@ -1106,9 +1104,7 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
      call mpp_clock_end(wait_clock_nonblock)
      nonblock_data(id_update)%request_send_count = 0
 #ifdef use_libMPI
-     nonblock_data(id_update)%request_send(:)    = MPI_REQUEST_NULL
-#else
-     nonblock_data(id_update)%request_send(:)    = 0
+     nonblock_data(id_update)%request_send(:) = MPI_REQUEST_NULL
 #endif
   endif
 

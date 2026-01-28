@@ -31,6 +31,7 @@
 !> @{
 module mpp_pset_mod
 #include <fms_platform.h>
+  use mpi_f08, only: mpi_comm
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &
        mpp_sync, mpp_error, FATAL, WARNING, stdout, stderr, mpp_chksum, &
        mpp_declare_pelist, mpp_get_current_pelist, mpp_set_current_pelist, &
@@ -40,7 +41,7 @@ module mpp_pset_mod
 
 !private variables
   integer :: pe
-  integer :: commID !MPI communicator, copy here from pset
+  type(mpi_comm) :: comm ! MPI communicator, copy here from pset
   logical :: verbose=.FALSE.
   logical :: module_is_initialized=.FALSE.
   character(len=256) :: text
@@ -79,7 +80,7 @@ module mpp_pset_mod
      integer, allocatable :: pset(:) !PSET IDs
      integer(POINTER_KIND) :: p_stack
      integer :: lstack, maxstack, hiWM !current stack length, max, hiWM
-     integer :: commID
+     type(mpi_comm) :: comm
      character(len=32) :: name
      logical :: initialized=.FALSE.
   end type mpp_pset_type
@@ -99,7 +100,7 @@ contains
     module_is_initialized = .TRUE.
   end subroutine mpp_pset_init
 
-  subroutine mpp_pset_create(npset,pset,stacksize,pelist, commID)
+  subroutine mpp_pset_create(npset,pset,stacksize,pelist,comm)
 !create PSETs
 !  called by all PEs in parent pelist
 !  mpset must be exact divisor of npes
@@ -107,9 +108,10 @@ contains
     type(mpp_pset_type), intent(inout) :: pset
     integer, intent(in), optional :: stacksize
     integer, intent(in), optional :: pelist(:)
-    integer, intent(in), optional :: commID
+    type(mpi_comm), intent(in), optional :: comm
 
-    integer :: npes, my_commID
+    integer :: npes
+    type(mpi_comm) :: my_comm
     integer :: i, j, k, out_unit, errunit
     integer, allocatable :: my_pelist(:), root_pelist(:)
 
@@ -138,12 +140,12 @@ contains
     allocate(my_pelist(0:npes-1) )
     allocate(root_pelist(0:npes/npset-1) )
     if(present(pelist)) then
-       if(.not. present(commID)) call mpp_error(FATAL, &
-         'MPP_PSET_CREATE: when pelist is present, commID should also be present')
+       if(.not. present(comm)) call mpp_error(FATAL, &
+         'MPP_PSET_CREATE: when pelist is present, comm should also be present')
        my_pelist = pelist
-       my_commID = commID
+       my_comm = comm
     else
-       call mpp_get_current_pelist(my_pelist, commID = my_commID)
+       call mpp_get_current_pelist(my_pelist, comm = my_comm)
     endif
     do i = 0,npes/npset-1
        root_pelist(i) = my_pelist(npset*i)
@@ -155,7 +157,7 @@ contains
     pset%npset = npset
     allocate( pset%pelist(0:npes-1) )
     allocate( pset%root_pelist(0:npes/npset-1) )
-    pset%commID = my_commID
+    pset%comm = my_comm
     pset%pelist = my_pelist
 !create the root PElist
     pset%root_pelist = root_pelist
@@ -314,7 +316,7 @@ contains
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_BROADCAST_PTR: called with uninitialized PSET.' )
-    commID = pset%commID !pass to mpp_translate_remote_ptr
+    comm = pset%comm !pass to mpp_translate_remote_ptr
     if( pset%root )then
         do i = 1,pset%npset-1
            call mpp_send_ptr( ptr, pset%pset(i) )
@@ -335,7 +337,7 @@ contains
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_BROADCAST_PTR: called with uninitialized PSET.' )
-    commID = pset%commID !pass to mpp_translate_remote_ptr
+    comm = pset%comm !pass to mpp_translate_remote_ptr
     if( pset%root )then
         do i = 1,pset%npset-1
            call mpp_send_ptr( ptr, pset%pset(i) )
@@ -361,7 +363,7 @@ contains
     integer :: i
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_CHECK_PTR: called with uninitialized PSET.' )
-    commID = pset%commID !pass to mpp_translate_remote_ptr
+    comm = pset%comm !pass to mpp_translate_remote_ptr
 !check if this is a shared pointer
     p = ptr
     if( pset%root )then
@@ -557,10 +559,10 @@ contains
     mpp_pset_numroots = size(pset%root_pelist)
   end function mpp_pset_numroots
 
-  subroutine mpp_pset_get_root_pelist(pset,pelist,commID)
+  subroutine mpp_pset_get_root_pelist(pset,pelist,comm)
     type(mpp_pset_type), intent(in) :: pset
     integer, intent(out) :: pelist(:)
-    integer, intent(out), optional :: commID
+    type(mpi_comm), intent(out), optional :: comm
 
     if( .NOT.pset%initialized )call mpp_error( FATAL, &
          'MPP_PSET_GET_ROOT_PELIST: called with uninitialized PSET.' )
@@ -571,12 +573,11 @@ contains
         call mpp_error( FATAL, 'MPP_PSET_GET_ROOT_PELIST: '//text )
     end if
     pelist(:) = pset%root_pelist(:)
-    if( PRESENT(commID) )then
+    if( PRESENT(comm) )then
 #ifdef use_libMPI
-        commID = pset%commID
+        comm = pset%comm
 #else
-        call mpp_error( WARNING, &
-             'MPP_PSET_GET_ROOT_PELIST: commID is only defined under -Duse_libMPI.' )
+        call mpp_error(WARNING, 'mpp_pset_get_root_pelist: comm is only defined when use_libMPI is enabled')
 #endif
     end if
   end subroutine mpp_pset_get_root_pelist

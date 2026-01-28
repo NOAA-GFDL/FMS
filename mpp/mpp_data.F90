@@ -28,7 +28,7 @@
 module mpp_data_mod
 
 #if defined(use_libMPI)
-  use mpi
+  use mpi_f08
 #endif
 
   use mpp_parameter_mod, only : MAXPES
