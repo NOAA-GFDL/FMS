@@ -94,6 +94,7 @@ module mpp_domains_mod
   use mpi
 #endif
 
+  use iso_c_binding,          only : c_f_pointer, c_loc
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
   use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
@@ -1781,42 +1782,18 @@ module mpp_domains_mod
 !! @endcode
 !> @ingroup mpp_domains_mod
   interface mpp_global_field
-     module procedure mpp_global_field2D_r8_2d
-     module procedure mpp_global_field2D_r8_3d
-     module procedure mpp_global_field2D_r8_4d
-     module procedure mpp_global_field2D_r8_5d
+     module procedure mpp_global_field_r8
 #ifdef OVERLOAD_C8
-     module procedure mpp_global_field2D_c8_2d
-     module procedure mpp_global_field2D_c8_3d
-     module procedure mpp_global_field2D_c8_4d
-     module procedure mpp_global_field2D_c8_5d
+     module procedure mpp_global_field_c8
 #endif
-     module procedure mpp_global_field2D_i8_2d
-     module procedure mpp_global_field2D_i8_3d
-     module procedure mpp_global_field2D_i8_4d
-     module procedure mpp_global_field2D_i8_5d
-     module procedure mpp_global_field2D_l8_2d
-     module procedure mpp_global_field2D_l8_3d
-     module procedure mpp_global_field2D_l8_4d
-     module procedure mpp_global_field2D_l8_5d
-     module procedure mpp_global_field2D_r4_2d
-     module procedure mpp_global_field2D_r4_3d
-     module procedure mpp_global_field2D_r4_4d
-     module procedure mpp_global_field2D_r4_5d
+     module procedure mpp_global_field_i8
+     module procedure mpp_global_field_l8
+     module procedure mpp_global_field_r4
 #ifdef OVERLOAD_C4
-     module procedure mpp_global_field2D_c4_2d
-     module procedure mpp_global_field2D_c4_3d
-     module procedure mpp_global_field2D_c4_4d
-     module procedure mpp_global_field2D_c4_5d
+     module procedure mpp_global_field_c4
 #endif
-     module procedure mpp_global_field2D_i4_2d
-     module procedure mpp_global_field2D_i4_3d
-     module procedure mpp_global_field2D_i4_4d
-     module procedure mpp_global_field2D_i4_5d
-     module procedure mpp_global_field2D_l4_2d
-     module procedure mpp_global_field2D_l4_3d
-     module procedure mpp_global_field2D_l4_4d
-     module procedure mpp_global_field2D_l4_5d
+     module procedure mpp_global_field_i4
+     module procedure mpp_global_field_l4
   end interface
 
 !> @ingroup mpp_domains_mod
@@ -1857,38 +1834,6 @@ module mpp_domains_mod
      module procedure mpp_global_field2D_l4_3d_ad
      module procedure mpp_global_field2D_l4_4d_ad
      module procedure mpp_global_field2D_l4_5d_ad
-  end interface
-
-!> Private helper interface used by @ref mpp_global_field
-!> @ingroup mpp_domains_mod
-  interface mpp_do_global_field
-     module procedure mpp_do_global_field2D_r8_3d
-#ifdef OVERLOAD_C8
-     module procedure mpp_do_global_field2D_c8_3d
-#endif
-     module procedure mpp_do_global_field2D_i8_3d
-     module procedure mpp_do_global_field2D_l8_3d
-     module procedure mpp_do_global_field2D_r4_3d
-#ifdef OVERLOAD_C4
-     module procedure mpp_do_global_field2D_c4_3d
-#endif
-     module procedure mpp_do_global_field2D_i4_3d
-     module procedure mpp_do_global_field2D_l4_3d
-  end interface
-
-  interface mpp_do_global_field_a2a
-     module procedure mpp_do_global_field2D_a2a_r8_3d
-#ifdef OVERLOAD_C8
-     module procedure mpp_do_global_field2D_a2a_c8_3d
-#endif
-     module procedure mpp_do_global_field2D_a2a_i8_3d
-     module procedure mpp_do_global_field2D_a2a_l8_3d
-     module procedure mpp_do_global_field2D_a2a_r4_3d
-#ifdef OVERLOAD_C4
-     module procedure mpp_do_global_field2D_a2a_c4_3d
-#endif
-     module procedure mpp_do_global_field2D_a2a_i4_3d
-     module procedure mpp_do_global_field2D_a2a_l4_3d
   end interface
 
 !> Same functionality as @ref mpp_global_field but for unstructured domains
@@ -2346,6 +2291,57 @@ module mpp_domains_mod
      module procedure nullify_domain2d_list
   end interface
 
+  !> Private interface to pack an array into a vector
+  !> @ingroup mpp_domains_mod
+  interface arr2vec
+     module procedure arr2vec_r8
+#ifdef OVERLOAD_C8
+     module procedure arr2vec_c8
+#endif
+     module procedure arr2vec_i8
+     module procedure arr2vec_l8
+     module procedure arr2vec_r4
+#ifdef OVERLOAD_C4
+     module procedure arr2vec_c4
+#endif
+     module procedure arr2vec_i4
+     module procedure arr2vec_l4
+  end interface
+
+  !> Private interface to unpack a vector into an array
+  !> @ingroup mpp_domains_mod
+  interface vec2arr
+     module procedure vec2arr_r8
+#ifdef OVERLOAD_C8
+     module procedure vec2arr_c8
+#endif
+     module procedure vec2arr_i8
+     module procedure vec2arr_l8
+     module procedure vec2arr_r4
+#ifdef OVERLOAD_C4
+     module procedure vec2arr_c4
+#endif
+     module procedure vec2arr_i4
+     module procedure vec2arr_l4
+  end interface
+
+  !> Private interface to initialize an assumed-rank array
+  !> @ingroup mpp_domains_mod
+  interface arr_init
+     module procedure arr_init_r8
+#ifdef OVERLOAD_C8
+     module procedure arr_init_c8
+#endif
+     module procedure arr_init_i8
+     module procedure arr_init_l8
+     module procedure arr_init_r4
+#ifdef OVERLOAD_C4
+     module procedure arr_init_c4
+#endif
+     module procedure arr_init_i4
+     module procedure arr_init_l4
+  end interface
+
   ! Include variable "version" to be written to log file.
 #include<file_version.h>
   public version
@@ -2360,5 +2356,6 @@ contains
 #include <mpp_domains_misc.inc>
 #include <mpp_domains_reduce.inc>
 #include <mpp_unstruct_domain.inc>
+#include <mpp_pack.inc>
 
 end module mpp_domains_mod
