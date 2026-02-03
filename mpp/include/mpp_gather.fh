@@ -96,13 +96,32 @@ subroutine MPP_GATHER_1DV_(sbuf, ssize, rbuf, rsize, pelist)
    deallocate(displs)
 end subroutine MPP_GATHER_1DV_
 
-
 subroutine MPP_GATHER_PELIST_2D_(is, ie, js, je, pelist, array_seg, gather_data, is_root_pe, &
                                  ishift, jshift)
    integer,                                       intent(in)    :: is, ie, js, je
    integer,   dimension(:),                       intent(in)    :: pelist
    MPP_TYPE_, dimension(is:ie,js:je),     target, intent(in)    :: array_seg
    MPP_TYPE_, dimension(:,:), contiguous, target, intent(inout) :: gather_data
+   logical,                                       intent(in)    :: is_root_pe
+   integer,   optional,                           intent(in)    :: ishift, jshift
+
+   integer, dimension(3)  :: dim_order
+
+   dim_order = (/1,2,3/)
+
+   call mpp_gather(is, ie, js, je, pelist, array_seg, gather_data, dim_order, is_root_pe, &
+                   ishift, jshift)
+   return
+
+end subroutine MPP_GATHER_PELIST_2D_
+
+subroutine MPP_GATHER_PELIST_GEN_2D_(is, ie, js, je, pelist, array_seg, gather_data, dim_order, is_root_pe, &
+                                     ishift, jshift)
+   integer,                                       intent(in)    :: is, ie, js, je
+   integer,   dimension(:),                       intent(in)    :: pelist
+   MPP_TYPE_, dimension(:,:),             target, intent(in)    :: array_seg
+   MPP_TYPE_, dimension(:,:), contiguous, target, intent(inout) :: gather_data
+   integer,   dimension(3),                       intent(in)    :: dim_order
    logical,                                       intent(in)    :: is_root_pe
    integer,   optional,                           intent(in)    :: ishift, jshift
 
@@ -116,11 +135,11 @@ subroutine MPP_GATHER_PELIST_2D_(is, ie, js, je, pelist, array_seg, gather_data,
      data3D => null()
    endif
 
-   call mpp_gather(is, ie, js, je, 1, pelist, arr3D, data3D, is_root_pe, &
+   call mpp_gather(is, ie, js, je, 1, pelist, arr3D, data3D, dim_order, is_root_pe, &
                    ishift, jshift)
    return
 
-end subroutine MPP_GATHER_PELIST_2D_
+end subroutine MPP_GATHER_PELIST_GEN_2D_
 
 
 subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_data, is_root_pe, &
@@ -132,15 +151,42 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
    logical,                                intent(in)    :: is_root_pe
    integer,   optional,                    intent(in)    :: ishift, jshift
 
-   integer :: i, j, k
+   integer, dimension(3) :: dim_order
+
+   dim_order = (/1, 2, 3/)
+
+   call mpp_gather(is, ie, js, je, nk, pelist, array_seg, gather_data, dim_order, is_root_pe, &
+                   ishift, jshift)
+   return
+
+end subroutine MPP_GATHER_PELIST_3D_
+
+subroutine MPP_GATHER_PELIST_GEN_3D_(is, ie, js, je, nk, pelist, array_seg, gather_data, dim_order, is_root_pe, &
+                                     ishift, jshift)
+   integer,                                intent(in)    :: is, ie, js, je, nk
+   integer,   dimension(:),                intent(in)    :: pelist
+   MPP_TYPE_, dimension(:,:,:),            intent(in)    :: array_seg
+   MPP_TYPE_, dimension(:,:,:),            intent(inout) :: gather_data
+   integer,   dimension(3),                intent(in)    :: dim_order
+   logical,                                intent(in)    :: is_root_pe
+   integer,   optional,                    intent(in)    :: ishift, jshift
+
    integer :: root_pe, root_pe_test
+   integer :: k, us, ue, vs, ve, ws, we
    integer :: i1, i2, j1, j2, ioff, joff
    integer :: base_idx, send_count, msg_start
-   integer :: blocksize_i, blocksize_j, blocksize
+   integer :: blocksize_u, blocksize_v, blocksize_w, blocksize
+   integer, dimension(3) :: start_idx, stop_idx
    integer, dimension(:), allocatable :: gind, counts
    MPP_TYPE_, dimension(:), allocatable :: rbuf
 
    if (.not.ANY(mpp_pe().eq.pelist(:))) return
+
+   ! Check dim_order is a permutation of 1..3
+   if ( any(dim_order < 1) .or. any(dim_order > 3) ) call mpp_error(FATAL, &
+                "fms_io(mpp_gather_pelist): dim_order entries must be in {1,2,3}")
+   if ( dim_order(1) == dim_order(2) .or. dim_order(1) == dim_order(3) .or. dim_order(2) == dim_order(3) ) &
+     call mpp_error(FATAL, "fms_io(mpp_gather_pelist): dim_order must be a permutation of 1,2,3")
 
    if (is_root_pe) then
      root_pe = mpp_pe()
@@ -160,7 +206,6 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
    if ((is_root_pe) .and. (mpp_pe().ne.root_pe)) call mpp_error(FATAL, &
                 "fms_io(mpp_gather_pelist): too many root_pes specified")
 
-
    ioff=0
    joff=0
    if (present(ishift)) ioff=ishift
@@ -170,7 +215,7 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
    if (is_root_pe) allocate(gind(4*size(pelist)))
    call mpp_gather((/is, ie, js, je/), gind, pelist)
 
-   ! Compute and allocate counts and 1d recv buffer (rbuf)
+   ! Compute recv counts and allocate 1d recv buffer (rbuf)
    if (is_root_pe) then
       allocate(counts(size(pelist)))
 
@@ -186,8 +231,14 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
 
    send_count = (ie-is+1)*(je-js+1)*nk
 
+   ! Get generalized stop indicies for array_seg
+   stop_idx = (/ie-is+1, je-js+1, nk/)
+   ue = stop_idx(dim_order(1))
+   ve = stop_idx(dim_order(2))
+   we = stop_idx(dim_order(3))
+
    ! gather data into 1d recv buffer
-   call mpp_gather(reshape(array_seg(is:ie,js:je,1:nk),[send_count]), send_count, rbuf, counts, pelist)
+   call mpp_gather(reshape(array_seg(1:ue,1:ve,1:we),[send_count]), send_count, rbuf, counts, pelist)
 
    ! Unpack recv buffer into return array (gather_data)
    if (is_root_pe) then
@@ -197,12 +248,22 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
          i1 = gind( base_idx + 1 ) + ioff ;; i2 = gind( base_idx + 2 ) + ioff
          j1 = gind( base_idx + 3 ) + joff ;; j2 = gind( base_idx + 4 ) + joff
 
-         blocksize_i = i2 - i1 + 1
-         blocksize_j = j2 - j1 + 1
-         blocksize   = blocksize_i * blocksize_j * nk
+         ! Get generalized start/stop indicies
+         start_idx = (/i1,j1,1/)
+         stop_idx  = (/i2,j2,nk/)
 
-         gather_data(i1:i2, j1:j2, 1:nk) = reshape(rbuf(msg_start:msg_start+blocksize-1), &
-                                                         [blocksize_i, blocksize_j, nk])
+         us = start_idx(dim_order(1)) ;; ue = stop_idx(dim_order(1))
+         vs = start_idx(dim_order(2)) ;; ve = stop_idx(dim_order(2))
+         ws = start_idx(dim_order(3)) ;; we = stop_idx(dim_order(3))
+
+         ! Compute block sizes
+         blocksize_u = ue - us + 1
+         blocksize_v = ve - vs + 1
+         blocksize_w = we - ws + 1
+         blocksize   = blocksize_u * blocksize_v * blocksize_w
+
+         gather_data(us:ue, vs:ve, ws:we) = reshape(rbuf(msg_start:msg_start+blocksize-1), &
+                                                         [blocksize_u, blocksize_v, blocksize_w])
 
          msg_start = msg_start + blocksize
       enddo
@@ -212,5 +273,5 @@ subroutine MPP_GATHER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, gather_d
 
    call mpp_sync_self()
 
-end subroutine MPP_GATHER_PELIST_3D_
+end subroutine MPP_GATHER_PELIST_GEN_3D_
 !> @}
