@@ -31,6 +31,25 @@ subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, input_data,
    MPP_TYPE_, dimension(:,:), contiguous, target, intent(in) :: input_data !< 2D array of input data
    logical,                           intent(in)    :: is_root_pe !< operational root pe
 
+   integer, dimension(3)   :: dim_order
+
+   dim_order = (/1,2,3/)
+
+   call mpp_scatter(is, ie, js, je, pelist, array_seg, input_data, dim_order, is_root_pe)
+
+   return
+
+end subroutine MPP_SCATTER_PELIST_2D_
+
+subroutine MPP_SCATTER_PELIST_GEN_2D_(is, ie, js, je, pelist, array_seg, input_data, dim_order, is_root_pe)
+   integer,                           intent(in)    :: is, ie, js, je !< indices of segment array
+   integer,   dimension(:),           intent(in)    :: pelist !<PE list of target pes,
+                                                              !! must be in monotonic increasing order
+   MPP_TYPE_, dimension(:,:), target, intent(inout)  :: array_seg !< 2D array of output data
+   MPP_TYPE_, dimension(:,:), contiguous, target, intent(in) :: input_data !< 2D array of input data
+   integer, dimension(3),             intent(in)    :: dim_order
+   logical,                           intent(in)    :: is_root_pe !< operational root pe
+
    MPP_TYPE_, pointer ::  arr3D(:,:,:)
    MPP_TYPE_, pointer :: data3D(:,:,:)
 
@@ -41,24 +60,44 @@ subroutine MPP_SCATTER_PELIST_2D_(is, ie, js, je, pelist, array_seg, input_data,
      data3D => null()
    endif
 
-   call mpp_scatter(is, ie, js, je, 1, pelist, arr3D, data3D, is_root_pe)
+   call mpp_scatter(is, ie, js, je, 1, pelist, arr3D, data3D, dim_order, is_root_pe)
 
    return
 
-end subroutine MPP_SCATTER_PELIST_2D_
+end subroutine MPP_SCATTER_PELIST_GEN_2D_
 
 subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_data, is_root_pe)
    integer,                                intent(in)    :: is, ie, js, je, nk
    integer,   dimension(:),                intent(in)    :: pelist
-   MPP_TYPE_, dimension(is:ie,js:je,1:nk), intent(inout) :: array_seg
+   MPP_TYPE_, dimension(:,:,:),            intent(inout) :: array_seg
    MPP_TYPE_, dimension(:,:,:),            intent(in)    :: input_data
+   logical,                                intent(in)    :: is_root_pe
+
+   integer, dimension(3) :: dim_order
+
+   dim_order = (/1,2,3/)
+
+   call mpp_scatter(is, ie, js, je, nk, pelist, array_seg, input_data, dim_order, is_root_pe)
+
+   return
+
+end subroutine MPP_SCATTER_PELIST_3D_
+
+subroutine MPP_SCATTER_PELIST_GEN_3D_(is, ie, js, je, nk, pelist, array_seg, input_data, dim_order, is_root_pe)
+   integer,                                intent(in)    :: is, ie, js, je, nk
+   integer,   dimension(:),                intent(in)    :: pelist
+   MPP_TYPE_, dimension(:,:,:),            intent(inout) :: array_seg
+   MPP_TYPE_, dimension(:,:,:),            intent(in)    :: input_data
+   integer, dimension(3),                  intent(in)    :: dim_order
    logical,                                intent(in)    :: is_root_pe
 
    integer :: i, j, k, n, m, ierr, base_idx
    integer :: i1, i2, j1, j2
+   integer :: us, ue, vs, ve, ws, we
    integer :: root_pe, root_pe_test, recv_count
    integer, dimension(size(pelist)) :: counts, displs
    integer, dimension(4*size(pelist)) :: gind
+   integer, dimension(3) :: start_idx, end_idx
    MPP_TYPE_, dimension(:), allocatable :: temp
 
    if (.not.ANY(mpp_pe().eq.pelist(:))) return
@@ -104,14 +143,16 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
          base_idx = 4*(n-1)
          i1 = gind( base_idx + 1 ) ;; i2 = gind( base_idx + 2 )
          j1 = gind( base_idx + 3 ) ;; j2 = gind( base_idx + 4 )
-         do k = 1, nk
-            do j = j1, j2
-               do i = i1, i2
-                  temp(m) = input_data(i,j,k)
-                  m = m + 1
-               enddo
-            enddo
-         enddo
+
+         start_idx = (/i1, j1, 1/)
+         end_idx   = (/i2, j2, nk/)
+
+         us = start_idx(dim_order(1))  ;;  ue = end_idx(dim_order(1))
+         vs = start_idx(dim_order(2))  ;;  ve = end_idx(dim_order(2))
+         ws = start_idx(dim_order(3))  ;;  we = end_idx(dim_order(3))
+
+         temp(m:m+counts(n)-1) = reshape( input_data(us:ue, vs:ve, ws:we), [counts(n)] )
+         m = m + counts(n)
        enddo
    else
       allocate(temp(1))
@@ -128,6 +169,5 @@ subroutine MPP_SCATTER_PELIST_3D_(is, ie, js, je, nk, pelist, array_seg, input_d
 
    return
 
-end subroutine MPP_SCATTER_PELIST_3D_
-
+end subroutine MPP_SCATTER_PELIST_GEN_3D_
 !> @}
