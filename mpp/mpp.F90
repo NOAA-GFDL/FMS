@@ -300,8 +300,10 @@ private
      integer, allocatable :: sizes(:)
      integer, allocatable :: subsizes(:)
      integer, allocatable :: starts(:)
+#ifdef use_libMPI
      type(mpi_datatype) :: etype   !> Elementary data type (e.g. MPI_BYTE)
      type(mpi_datatype) :: id      !> Identifier within message passing library (e.g. MPI)
+#endif
 
      type(mpp_type), pointer :: prev => null()
      type(mpp_type), pointer :: next => null()
@@ -1289,7 +1291,9 @@ private
   logical              :: debug = .false.
   integer              :: npes=1, root_pe=0, pe=0
   integer(i8_kind)     :: tick, ticks_per_sec, max_ticks, start_tick, end_tick, tick0=0
+#ifdef use_libMPI
   type(mpi_comm)       :: mpp_comm_private
+#endif
   logical              :: first_call_system_clock_mpi=.TRUE.
   real(r8_kind)        :: mpi_count0=0  !< use to prevent integer overflow
   real(r8_kind)        :: mpi_tick_rate=0.d0  !< clock rate for mpi_wtick()
@@ -1310,10 +1314,12 @@ private
 
   integer              :: cur_send_request = 0
   integer              :: cur_recv_request = 0
+#ifdef use_libMPI
   type(mpi_request), allocatable :: request_send(:)
   type(mpi_request), allocatable :: request_recv(:)
-  integer, allocatable :: size_recv(:)
   type(mpi_datatype), allocatable :: type_recv(:)
+#endif
+  integer, allocatable :: size_recv(:)
 ! if you want to save the non-root PE information uncomment out the following line
 ! and comment out the assigment of etcfile to '/dev/null'
 #ifdef NO_DEV_NULL
