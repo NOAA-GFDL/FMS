@@ -24,6 +24,8 @@
 # This test package is based on Junio's work for the Git test library.
 # Thank you Junio.
 
+set -x
+
 # Useful locations
 top_srcdir='@abs_top_srcdir@@CMAKE_CURRENT_SOURCE_DIR@'
 top_buildir='@abs_top_builddir@@CMAKE_CURRENT_SOURCE_DIR@'
