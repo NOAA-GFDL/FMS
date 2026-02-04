@@ -78,8 +78,6 @@ subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   allocate(mpp_byte%sizes(0))
   allocate(mpp_byte%subsizes(0))
   allocate(mpp_byte%starts(0))
-  mpp_byte%etype = -1
-  mpp_byte%id = -1
 
   mpp_byte%prev => null()
   mpp_byte%next => null()

@@ -15,13 +15,13 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
+
 module metadata_transfer_mod
-  use platform_mod
 #ifdef use_libMPI
+  use platform_mod
   use mpi_f08, only: mpi_type_create_struct, mpi_type_commit, mpi_integer, mpi_character, &
                      mpi_double, mpi_float, mpi_int, mpi_long_int, MPI_SUCCESS, MPI_ADDRESS_KIND, &
                      mpi_datatype, mpi_datatype_null, mpi_comm, operator(.eq.)
-#endif
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_error, FATAL, mpp_get_current_pelist, mpp_npes
   use fms_mod, only: string
 
@@ -106,7 +106,6 @@ module metadata_transfer_mod
                                  !! must be real8_type, real4_type, int8_type, int4_type, or str_type
     integer, dimension(0:4) :: lengths
     type(mpi_datatype), dimension(0:4) :: types
-#ifdef use_libMPI
     integer(KIND=MPI_ADDRESS_KIND), dimension(0:4) :: displacements
     integer :: ierror
 
@@ -148,9 +147,6 @@ module metadata_transfer_mod
     if(ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_transfer_init: mpi_type_commit failed")
     end if
-#else
-  call mpp_error(FATAL, "fms_metadata_transfer_init: MPI library not enabled, cannot initialize metadata transfer")
-#endif
   end subroutine fms_metadata_transfer_init
 
   !> Broadcast the entire metadata object to all PEs in the current pelist
@@ -166,7 +162,6 @@ module metadata_transfer_mod
     allocate(broadcasting_pes(mpp_npes()))
     call mpp_get_current_pelist(broadcasting_pes, comm=curr_comm)
 
-#ifdef use_libMPI
     ! Broadcast the metadata transfer type to all processes
     select type(this)
     type is (metadata_r8_type)
@@ -183,10 +178,6 @@ module metadata_transfer_mod
     if (ierror /= MPI_SUCCESS) then
       call mpp_error(FATAL, "fms_metadata_broadcast: mpi_bcast failed")
     end if
-#else
-  call mpp_error(FATAL, "fms_metadata_broadcast: MPI library not enabled")
-#endif
-
 
   end subroutine fms_metadata_broadcast
 
@@ -317,4 +308,5 @@ module metadata_transfer_mod
     this%attribute_name = val
   end subroutine
 
+#endif
 end module metadata_transfer_mod

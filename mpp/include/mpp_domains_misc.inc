@@ -139,9 +139,11 @@ subroutine init_nonblock_type( nonblock_obj )
    nonblock_obj%request_send_count = 0
    nonblock_obj%request_recv_count = 0
    nonblock_obj%size_recv(:)       = 0
+#ifdef use_libMPI
    nonblock_obj%type_recv(:)       = MPI_DATATYPE_NULL
    nonblock_obj%request_send(:)    = MPI_REQUEST_NULL
    nonblock_obj%request_recv(:)    = MPI_REQUEST_NULL
+#endif
    nonblock_obj%buffer_pos_send(:) = 0
    nonblock_obj%buffer_pos_recv(:) = 0
    nonblock_obj%nfields            = 0

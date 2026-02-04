@@ -25,7 +25,7 @@
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
 !----------------------------------------------------------------!
-type(mpi_status) :: stat = mpi_status_null
+type(mpi_status) :: stat
 real(r8_kind), allocatable :: mpp_stack(:) !< stack used for general mpp operations
 
 !--- some dummy variables with dummy values that will never be used

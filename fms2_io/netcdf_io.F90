@@ -165,7 +165,9 @@ type, public :: FmsNetcdfFile_t
                                                !! restart variables
   type(fmsOffloadingIn_type) :: offloading_obj_in
   logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
+#ifdef use_libMPI
   integer :: tile_comm=mpi_comm_null%mpi_val !< MPI communicator used for MPI-IO reads.
+#endif
   logical        :: use_netcdf_mpi = .false.
 
   contains
@@ -607,6 +609,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   fileobj%use_netcdf_mpi = .false.
 
+#ifdef use_libMPI
   if (fileobj%tile_comm.ne.mpi_comm_null%mpi_val) then
     call mpp_error(NOTE, "netcdf_file_open :: Setting fileobj%tile_comm is deprecated. &
                           Please use open_file(..., tile_comm=...) instead.")
@@ -615,6 +618,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     fileobj%use_netcdf_mpi = .true.
     fileobj%tile_comm = tile_comm
   endif
+#endif
 
   if (fileobj%use_collective) then
     fileobj%use_netcdf_mpi = .true.
@@ -697,6 +701,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
   endif
 
   if (fileobj%use_netcdf_mpi) then
+#ifdef use_libMPI
     ! Using MPI-IO: Every PE opens the file
     if(string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), ior(nf90_nowrite, nf90_mpiio), fileobj%ncid, &
@@ -715,6 +720,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
     endif
     call check_netcdf_code(err, "netcdf_file_open (using netcdf mpi): "//trim(fileobj%path))
+#endif
   elseif (fileobj%is_root) then
     ! Not using MPI-IO: Only the root PE opens the file
     if (string_compare(mode, "read", .true.)) then
