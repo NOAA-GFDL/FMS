@@ -716,15 +716,25 @@ private
      module procedure mpp_gather_real4_1dv
      module procedure mpp_gather_real8_1dv
      module procedure mpp_gather_pelist_logical_2d
+     module procedure mpp_gather_pelist_logical_gen_2d
      module procedure mpp_gather_pelist_logical_3d
+     module procedure mpp_gather_pelist_logical_gen_3d
      module procedure mpp_gather_pelist_int4_2d
+     module procedure mpp_gather_pelist_int4_gen_2d
      module procedure mpp_gather_pelist_int4_3d
+     module procedure mpp_gather_pelist_int4_gen_3d
      module procedure mpp_gather_pelist_int8_2d
+     module procedure mpp_gather_pelist_int8_gen_2d
      module procedure mpp_gather_pelist_int8_3d
+     module procedure mpp_gather_pelist_int8_gen_3d
      module procedure mpp_gather_pelist_real4_2d
+     module procedure mpp_gather_pelist_real4_gen_2d
      module procedure mpp_gather_pelist_real4_3d
+     module procedure mpp_gather_pelist_real4_gen_3d
      module procedure mpp_gather_pelist_real8_2d
+     module procedure mpp_gather_pelist_real8_gen_2d
      module procedure mpp_gather_pelist_real8_3d
+     module procedure mpp_gather_pelist_real8_gen_3d
   end interface
 
   !> @brief Scatter (ie - is) * (je - js) contiguous elements of array data from the designated root pe
@@ -747,16 +757,24 @@ private
   interface mpp_scatter
      module procedure mpp_scatterv_int4
      module procedure mpp_scatter_pelist_int4_2d
+     module procedure mpp_scatter_pelist_int4_gen_2d
      module procedure mpp_scatter_pelist_int4_3d
+     module procedure mpp_scatter_pelist_int4_gen_3d
      module procedure mpp_scatterv_int8
      module procedure mpp_scatter_pelist_int8_2d
+     module procedure mpp_scatter_pelist_int8_gen_2d
      module procedure mpp_scatter_pelist_int8_3d
+     module procedure mpp_scatter_pelist_int8_gen_3d
      module procedure mpp_scatterv_real4
      module procedure mpp_scatter_pelist_real4_2d
+     module procedure mpp_scatter_pelist_real4_gen_2d
      module procedure mpp_scatter_pelist_real4_3d
+     module procedure mpp_scatter_pelist_real4_gen_3d
      module procedure mpp_scatterv_real8
      module procedure mpp_scatter_pelist_real8_2d
+     module procedure mpp_scatter_pelist_real8_gen_2d
      module procedure mpp_scatter_pelist_real8_3d
+     module procedure mpp_scatter_pelist_real8_gen_3d
   end interface
 
   !#####################################################################
