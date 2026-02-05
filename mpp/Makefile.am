@@ -86,6 +86,8 @@ libmpp_la_SOURCES = \
   include/mpp_global_sum_ad.fh \
   include/mpp_global_sum_tl.fh \
   include/mpp_group_update.fh \
+  include/mpp_pset_mpi.inc \
+  include/mpp_pset_nocomm.inc \
   include/mpp_read_2Ddecomp.fh \
   include/mpp_read_compressed.fh \
   include/mpp_read_distributed_ascii.fh \
