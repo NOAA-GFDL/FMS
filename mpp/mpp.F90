@@ -1276,13 +1276,6 @@ private
 #endif
   end interface
 
-  interface mpp_get_current_pelist
-#ifdef use_libMPI
-    module procedure mpp_get_current_pelist_comm
-#endif
-    module procedure mpp_get_current_pelist_commid
-  end interface mpp_get_current_pelist
-
 !> @addtogroup mpp_mod
 !> @{
 !***********************************************************************
