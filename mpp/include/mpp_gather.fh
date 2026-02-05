@@ -119,7 +119,7 @@ subroutine MPP_GATHER_PELIST_GEN_2D_(is, ie, js, je, pelist, array_seg, gather_d
                                      ishift, jshift)
    integer,                                       intent(in)    :: is, ie, js, je
    integer,   dimension(:),                       intent(in)    :: pelist
-   MPP_TYPE_, dimension(:,:),             target, intent(in)    :: array_seg
+   MPP_TYPE_, dimension(:,:), contiguous, target, intent(in)    :: array_seg
    MPP_TYPE_, dimension(:,:), contiguous, target, intent(inout) :: gather_data
    integer,   dimension(3),                       intent(in)    :: dim_order
    logical,                                       intent(in)    :: is_root_pe
