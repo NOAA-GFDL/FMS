@@ -287,20 +287,20 @@ end subroutine mpp_declare_pelist
 
 !this is created for use by mpp_define_domains within a pelist
 !will be published but not publicized
-subroutine mpp_get_current_pelist( pelist, name, comm, commID )
+subroutine mpp_get_current_pelist( pelist, name, commID, comm )
   integer, intent(out) :: pelist(:)               !> Array to copy the pelist into
   character(len=*), intent(out), optional :: name !> Name of the pelist
-  type(mpi_comm), intent(out), optional  :: comm  !> mpi_comm group communicator handle
   integer, intent(out), optional :: commID        !> mpi_comm group communicator ID (deprecated)
+  type(mpi_comm), intent(out), optional  :: comm  !> mpi_comm group communicator handle
 
   if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
        call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
   pelist(:) = peset(current_peset_num)%list(:)
   if( PRESENT(name) ) name = peset(current_peset_num)%name
-  if( PRESENT(comm) ) comm = peset(current_peset_num)%comm
   if( PRESENT(commID) ) then
     call mpp_error(NOTE, "mpp_declare_pelist: The commID= argument is deprecated. Please use comm= instead")
     commID = peset(current_peset_num)%comm%mpi_val
   endif
+  if( PRESENT(comm) ) comm = peset(current_peset_num)%comm
 end subroutine mpp_get_current_pelist
 !> @}
