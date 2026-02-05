@@ -95,12 +95,12 @@ program test_cell_measures
       call get_global_attribute(fileobj, "associated_files", buffer)
       if (trim(buffer) .ne. "land_area: static_file.nc") &
         call mpp_error(FATAL, "The associated_files global attribute is not the expected result! "//trim(buffer)//&
-          "does not equal land_area: static_file.nc")
+          " does not equal land_area: static_file.nc")
 
       call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
       if (trim(buffer) .ne. "area: land_area") &
         call mpp_error(FATAL, "The cell_measures attribute is not the expected result! "//trim(buffer)//&
-          "does not equal area: land_area")
+          " does not equal area: land_area")
       call close_file(fileobj)
 
       ! Check that file2.nc exists, that the var1 exists and it contains the cell_measures attributes
