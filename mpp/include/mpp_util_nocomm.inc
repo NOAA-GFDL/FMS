@@ -145,9 +145,10 @@ subroutine mpp_declare_pelist(pelist, name, commID)
   if( PRESENT(commID) ) commID = -1
 end subroutine mpp_declare_pelist
 
-!this is created for use by mpp_define_domains within a pelist
-!will be published but not publicized
-subroutine mpp_get_current_pelist(pelist, name, commID)
+!> @brief Get current pelist
+!!
+!! This version of the subroutine takes an integral commID as its optional third argument.
+subroutine mpp_get_current_pelist_commid(pelist, name, commID)
   integer, intent(out) :: pelist(:)
   character(len=*), intent(out), optional :: name
   integer, intent(out), optional :: commID
@@ -157,4 +158,4 @@ subroutine mpp_get_current_pelist(pelist, name, commID)
   pelist(:) = peset(current_peset_num)%list(:)
   if( PRESENT(name) )name = peset(current_peset_num)%name
   if( PRESENT(commID) ) commID = -1
-end subroutine mpp_get_current_pelist
+end subroutine mpp_get_current_pelist_commid
