@@ -1827,6 +1827,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
   character(len=255) :: cell_measures !< cell_measures attributes for the field
   logical            :: need_associated_files !< .True. if the 'associated_files' global attribute is needed
   character(len=FMS_FILE_LEN) :: associated_files !< Associated files attribute to add
+  character(len=FMS_FILE_LEN) :: field_outputname !< Output name of the area/volume field
 
   is_regional = this%is_regional()
 
@@ -1841,26 +1842,30 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
 
     cell_measures = ""
     if (field_ptr%has_area()) then
-      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true., &
-        filename=diag_file%get_file_fname())
-
       !! Determine if the area field is already in the file. If it is not create the "associated_files" attribute
       !! which contains the file name of the file the area field is in. This is needed for PP/fregrid.
       if (.not. diag_field(field_ptr%get_area())%is_variable_in_file(diag_file%id)) then
         need_associated_files = .true.
-        call diag_field(field_ptr%get_area())%generate_associated_files_att(associated_files, diag_file%start_time)
+        call diag_field(field_ptr%get_area())%generate_associated_files_att(associated_files, diag_file%start_time, &
+          field_outputname)
+        cell_measures = "area: "//trim(field_outputname)
+      else
+        cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true., &
+          filename=diag_file%get_file_fname())
       endif
     endif
 
     if (field_ptr%has_volume()) then
-      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(&
-        to_write=.true., filename=diag_file%get_file_fname())
-
       !! Determine if the volume field is already in the file. If it is not create the "associated_files" attribute
       !! which contains the file name of the file the volume field is in. This is needed for PP/fregrid.
       if (.not. diag_field(field_ptr%get_volume())%is_variable_in_file(diag_file%id)) then
         need_associated_files = .true.
-        call diag_field(field_ptr%get_volume())%generate_associated_files_att(associated_files, diag_file%start_time)
+        call diag_field(field_ptr%get_volume())%generate_associated_files_att(associated_files, diag_file%start_time, &
+          field_outputname)
+        cell_measures = trim(cell_measures)//" volume: "//trim(field_outputname)
+      else
+        cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(&
+          to_write=.true., filename=diag_file%get_file_fname())
       endif
     endif
 
