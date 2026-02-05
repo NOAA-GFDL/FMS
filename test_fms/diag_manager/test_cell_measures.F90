@@ -83,8 +83,8 @@ program test_cell_measures
       ! Check that the static_file.nc was created and it contains the area attribute
       if (.not. open_file(fileobj, "static_file.nc", "read")) &
         call mpp_error(FATAL, "static_file.nc was not created by the diag manager!")
-      if (.not. variable_exists(fileobj, "area")) &
-        call mpp_error(FATAL, "area is not in static_file.nc")
+      if (.not. variable_exists(fileobj, "land_area")) &
+        call mpp_error(FATAL, "land_area is not in static_file.nc")
       call close_file(fileobj)
 
       ! Check that file1.nc exists, that it contains the associated files attribute and it is correct,
@@ -93,15 +93,17 @@ program test_cell_measures
         call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
 
       call get_global_attribute(fileobj, "associated_files", buffer)
-      if (trim(buffer) .ne. "area: static_file.nc") &
-        call mpp_error(FATAL, "The associated_files global attribute is not the expected result! "//trim(buffer))
+      if (trim(buffer) .ne. "land_area: static_file.nc") &
+        call mpp_error(FATAL, "The associated_files global attribute is not the expected result! "//trim(buffer)//&
+          "does not equal land_area: static_file.nc")
 
       call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
-      if (trim(buffer) .ne. "area: area") &
-        call mpp_error(FATAL, "The cell_measures attribute is not the expected result! "//trim(buffer))
+      if (trim(buffer) .ne. "area: land_area") &
+        call mpp_error(FATAL, "The cell_measures attribute is not the expected result! "//trim(buffer)//&
+          "does not equal area: land_area")
       call close_file(fileobj)
 
-      ! Check that file1.nc exists, that the var1 exists and it contains the cell_measures attributes
+      ! Check that file2.nc exists, that the var1 exists and it contains the cell_measures attributes
       ! Here area is in the file, but the output name is area_file2 instead of area
       if (.not. open_file(fileobj, "file2.nc", "read")) &
         call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
