@@ -1,4 +1,5 @@
 # License Announcement
+[![DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/NOAA-GFDL/FMS)
 
 FMS will switch to the
 [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)
