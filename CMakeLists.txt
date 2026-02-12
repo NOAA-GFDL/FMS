@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2025.04.0
+  VERSION 2026.01.0
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -88,8 +88,8 @@ if (OPENMP)
 endif()
 
 if (WITH_YAML)
-  find_package(libyaml REQUIRED COMPONENTS C)
-  include_directories(${LIBYAML_INCLUDE_DIR})
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(YAML REQUIRED IMPORTED_TARGET "yaml-0.1")
 endif ()
 
 # Enables position independent code (i.e., -fPIC)
@@ -417,6 +417,10 @@ foreach(kind ${kinds})
                                          NetCDF::NetCDF_Fortran
                                          MPI::MPI_Fortran)
 
+  if(YAML_FOUND)
+    target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
+  endif()
+
   if(OpenMP_Fortran_FOUND)
     target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
   endif()
@@ -449,12 +453,6 @@ if(NOT kinds)
     if(OpenMP_C_FOUND)
       target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
     endif()
-
-    if(WITH_YAML)
-      target_link_libraries(${libTgt}_c PRIVATE libyaml_C)
-      set_target_properties(${libTgt}_c PROPERTIES COMPILE_FLAGS "-L${LIBYAML_LIBRARIES} -lyaml")
-    endif()
-
 
     # Fortran
     add_library(${libTgt}_f OBJECT ${fms_fortran_src_files})
@@ -559,6 +557,10 @@ if(NOT kinds)
     target_link_libraries(${libTgt} PUBLIC NetCDF::NetCDF_C
                                            NetCDF::NetCDF_Fortran
                                            MPI::MPI_Fortran)
+
+    if(YAML_FOUND)
+      target_link_libraries(${libTgt} PRIVATE PkgConfig::YAML)
+    endif()
 
     if(OpenMP_Fortran_FOUND)
       target_link_libraries(${libTgt} PRIVATE OpenMP::OpenMP_C OpenMP::OpenMP_Fortran)
@@ -792,7 +794,7 @@ foreach (testFile ${TEST_SRC_SINGLE_TARGET})
                                    )
 
   if(WITH_YAML)
-    target_link_libraries(${TName} PRIVATE yaml ${LIBYAML_LIBRARIES})
+    target_link_libraries(${TName} PRIVATE PkgConfig::YAML)
   endif()
 
   if(OPENMP)
@@ -829,8 +831,8 @@ foreach (testFile ${TEST_SRC_TWO_TARGETS})
                                     )
 
   if(WITH_YAML)
-    target_link_libraries(${TName}_r4 PRIVATE yaml ${LIBYAML_LIBRARIES})
-    target_link_libraries(${TName}_r8 PRIVATE yaml ${LIBYAML_LIBRARIES})
+    target_link_libraries(${TName}_r4 PRIVATE PkgConfig::YAML)
+    target_link_libraries(${TName}_r8 PRIVATE PkgConfig::YAML)
   endif()
 
   if(OPENMP)
