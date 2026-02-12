@@ -49,6 +49,7 @@ module ensemble_manager_mod
 
   integer :: ensemble_size = 1
   integer :: ensemble_id = 1
+  integer :: starting_ensemble_id = 1
   integer :: pe, total_npes_pm=0,ocean_npes_pm=0,atmos_npes_pm=0
   integer :: land_npes_pm=0,ice_npes_pm=0
 
@@ -75,7 +76,7 @@ contains
 
     integer :: i, io_status, npes, ierr
 
-    namelist /ensemble_nml/ ensemble_size
+    namelist /ensemble_nml/ ensemble_size, starting_ensemble_id
 
     read (input_nml_file, ensemble_nml, iostat=io_status)
     ierr = check_nml_error(io_status, 'ensemble_nml')
@@ -85,6 +86,8 @@ contains
     if(ensemble_size > max_ensemble_size)  call mpp_error(FATAL, &
        'ensemble_manager_mod: ensemble_nml variable ensemble_size should be no larger than MAX_ENSEMBLE_SIZE, '// &
        'change ensemble_size or increase MAX_ENSEMBLE_SIZE')
+    if(starting_ensemble_id < 1)  call mpp_error(FATAL, &
+       'ensemble_manager_mod: ensemble_nml variable starting_ensemble_id must be a positive integer')
 
     pe = mpp_pe()
     npes = mpp_npes()
@@ -238,7 +241,7 @@ contains
     integer           :: atmos_pe_start, atmos_pe_end, ocean_pe_start, ocean_pe_end
     integer           :: land_pe_start, land_pe_end, ice_pe_start, ice_pe_end
     character(len=10) :: pelist_name, text
-    integer           :: npes, n, m ,i
+    integer           :: npes, n, m ,i, global_ens
 
     npes = total_npes_pm
 
@@ -401,7 +404,8 @@ contains
     !can be used for non-ensemble experiments
     !
     if (ensemble_size > 1) then
-       write( text,'(a,i2.2)' ) 'ens_', ensemble_id
+       global_ens = starting_ensemble_id + ensemble_id - 1
+       write( text,'(a,i2.2)' ) 'ens_', global_ens
        !Append ensemble_id to the restart filenames
        call fms2_io_set_filename_appendix(trim(text))
     endif
