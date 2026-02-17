@@ -710,10 +710,12 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
      from_pe = group%from_pe(m)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_recv(m) + group%buffer_start_pos
+#ifdef use_libMPI
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
              tag=COMM_TAG_1, request=group%request_recv(m))
-#ifdef use_libMPI
         group%type_recv(m) = MPI_TYPE_
+#else
+        call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., tag=COMM_TAG_1)
 #endif
      end if
   end do
@@ -734,8 +736,12 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_send(n) + group%buffer_start_pos
         to_pe = group%to_pe(n)
+#ifdef use_libMPI
         call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1, &
                        request=group%request_send(n))
+#else
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1)
+#endif
      endif
   enddo
   call mpp_clock_end(nonblock_group_send_clock)
@@ -782,10 +788,15 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   complete_group_update_on = .true.
 
   if(nrecv>0) then
+#ifdef use_libMPI
      call mpp_clock_begin(nonblock_group_wait_clock)
      call mpp_sync_self(check=EVENT_RECV, request=group%request_recv(1:nrecv), &
                         msg_size=group%recv_size(1:nrecv), msg_type=group%type_recv(1:nrecv))
      call mpp_clock_end(nonblock_group_wait_clock)
+#else
+     call mpp_clock_begin(nonblock_group_wait_clock)
+     call mpp_clock_end(nonblock_group_wait_clock)
+#endif
   endif
 
   !---unpack the buffer
@@ -902,9 +913,14 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   endif
 
   if(nsend>0) then
+#ifdef use_libMPI
      call mpp_clock_begin(nonblock_group_wait_clock)
      call mpp_sync_self(check=EVENT_SEND, request=group%request_send(1:nsend) )
      call mpp_clock_end(nonblock_group_wait_clock)
+#else
+     call mpp_clock_begin(nonblock_group_wait_clock)
+     call mpp_clock_end(nonblock_group_wait_clock)
+#endif
   endif
 
   if( num_nonblock_group_update == 0) then

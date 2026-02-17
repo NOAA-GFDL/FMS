@@ -688,24 +688,46 @@ function mpp_get_domain_tile_root_pe(domain)
 
 end function mpp_get_domain_tile_root_pe
 
+#ifdef use_libMPI
+
+function mpp_get_domain_tile_comm(domain)
+   type(domain2d), intent(in) :: domain                   !> domain you are querying for information
+   type(mpi_comm)             :: mpp_get_domain_tile_comm !> Handle to the tile communicator
+
+   mpp_get_domain_tile_comm = domain%tile_comm
+
+end function mpp_get_domain_tile_comm
+
 
 function mpp_get_domain_tile_commid(domain)
    type(domain2d), intent(in) :: domain                     !> domain you are querying for information
-   integer                    :: mpp_get_domain_tile_commid !> declaration of the return tile communicator
+   integer                    :: mpp_get_domain_tile_commid !> ID of the tile communicator
 
-   mpp_get_domain_tile_commid = domain%tile_comm_id
+   call mpp_error(NOTE, "mpp_get_domain_tile_commid is deprecated: Please use mpp_get_domain_tile_comm instead")
+   mpp_get_domain_tile_commid = domain%tile_comm%mpi_val
 
 end function mpp_get_domain_tile_commid
 
 
+function mpp_get_domain_comm(domain)
+   type(domain2d), intent(in) :: domain              !> domain you are querying for information
+   type(mpi_comm)             :: mpp_get_domain_comm !> Handle to the domain communicator
+
+   mpp_get_domain_comm = domain%comm
+
+end function mpp_get_domain_comm
+
+
 function mpp_get_domain_commid(domain)
    type(domain2d), intent(in) :: domain                !> domain you are querying for information
-   integer                    :: mpp_get_domain_commid !> declaration of the return domain communicator
+   integer                    :: mpp_get_domain_commid !> ID of the domain communicator
 
-   mpp_get_domain_commid = domain%comm_id
+   call mpp_error(NOTE, "mpp_get_domain_commid is deprecated: Please use mpp_get_domain_comm instead")
+   mpp_get_domain_commid = domain%comm%mpi_val
 
 end function mpp_get_domain_commid
 
+#endif
 
 function mpp_get_io_domain(domain)
    type(domain2d), intent(in) :: domain
