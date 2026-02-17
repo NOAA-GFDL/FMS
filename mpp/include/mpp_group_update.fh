@@ -418,20 +418,22 @@ subroutine MPP_CREATE_GROUP_UPDATE_4D_V_( group, fieldx, fieldy, domain, flags, 
 end subroutine MPP_CREATE_GROUP_UPDATE_4D_V_
 
 
-subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
+subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
   type(mpp_group_update_type), intent(inout) :: group
   type(domain2D),              intent(inout) :: domain
   MPP_TYPE_,                   intent(in)    :: d_type
+  logical, optional, intent(in) :: omp_offload
 
   integer   :: nscalar, nvector, nlist
   logical   :: recv_y(8)
   integer   :: nsend, nrecv, flags_v
   integer   :: msgsize
-  integer   :: from_pe, to_pe, buffer_pos, pos
+  integer   :: from_pe, to_pe, buffer_pos, pos, idx
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, buffer_start_pos, ni, nj, nk
   integer   :: shift, gridtype, midpoint
   integer   :: npack, nunpack, rotation, isd
+  logical   :: use_device_ptr
 
   MPP_TYPE_ :: buffer(mpp_domains_stack_size)
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
@@ -446,6 +448,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   nvector = group%nvector
   nlist   = size(domain%list(:))
   gridtype = group%gridtype
+
+  use_device_ptr = .false.
+  if (present(omp_offload)) use_device_ptr = omp_offload
 
   !--- ksize_s must equal ksize_v
   if(nvector > 0 .AND. nscalar > 0) then
@@ -475,13 +480,16 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
   !---pre-post receive.
   call mpp_clock_begin(group_recv_clock)
+#ifdef __NVCOMPILER_OPENMP_GPU
+  !$omp target enter data map(alloc: buffer) if(use_device_ptr)
+#endif
   do m = 1, nrecv
      msgsize = group%recv_size(m)
      from_pe = group%from_pe(m)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_recv(m)
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
-             tag=COMM_TAG_1)
+             tag=COMM_TAG_1, omp_offload=omp_offload)
      end if
   end do
 
@@ -503,7 +511,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_send(n)
         to_pe = group%to_pe(n)
-        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1)
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1, omp_offload=omp_offload)
      endif
   enddo
   call mpp_clock_end(group_send_clock)
@@ -518,6 +526,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   nunpack = group%nunpack
   call mpp_clock_begin(group_unpk_clock)
 #include <group_update_unpack.inc>
+#ifdef __NVCOMPILER_OPENMP_GPU
+  !$omp target exit data map(release: buffer) if(use_device_ptr)
+#endif
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
@@ -643,10 +654,11 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   integer   :: nscalar, nvector
   integer   :: nsend, nrecv, flags_v
   integer   :: msgsize, npack, rotation
-  integer   :: from_pe, to_pe, buffer_pos, pos
+  integer   :: from_pe, to_pe, buffer_pos, pos, idx
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, buffer_start_pos, ni, nj, nk
   logical   :: reuse_buf_pos
+  logical, parameter :: use_device_ptr = .false. ! placeholder
   character(len=8)            :: text
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
@@ -748,11 +760,12 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nsend, nrecv, nscalar, nvector
-  integer   :: k, buffer_pos, pos, m, n, l
+  integer   :: k, buffer_pos, pos, m, n, l, idx
   integer   :: is, ie, js, je, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
-  integer   :: nunpack, rotation, buffer_start_pos, nk, isd
+  integer   :: nunpack, rotation, buffer_start_pos, ni, nj, nk, isd
   logical   :: recv_y(8)
+  logical, parameter :: use_device_ptr = .false. ! placeholder
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
   MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
