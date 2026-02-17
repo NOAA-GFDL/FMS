@@ -14,9 +14,9 @@ enough information so someone can reproduce your tests.
 - [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my own code
 - [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] Any dependent changes have been merged and published in downstream modules
-- [ ] New check tests, if applicable, are included
-- [ ] `make distcheck` passes
+- [ ] I have made corresponding changes to the inline documentation (see STYLE_GUIDE.md for more info)
+- [ ] My changes generate no new compiler warnings
+- [ ] All added code is tested by a unit test, either by modifying an existing test or creating a new one
+- [ ] Code compiles with both build systems (cmake and autotools)
+- [ ] `make distcheck` is able to compile, test, and package the library
 
