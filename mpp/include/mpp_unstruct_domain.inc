@@ -68,7 +68,7 @@
      ntotal_costs = sum(costs)
      !--- get the upper limit of ndivs for each mosaic tile.
      do n = 1, ntiles
-        ndivs_tile(n) = CEILING(real(costs(n))*real(ndivs)/ntotal_costs)
+        ndivs_tile(n) = CEILING(real(costs(n),kind=r8_kind)*real(ndivs,kind=r8_kind)/ntotal_costs)
      enddo
 
      ndivs_used = sum(ndivs_tile)
