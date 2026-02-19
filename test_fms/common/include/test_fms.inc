@@ -1,0 +1,69 @@
+!***********************************************************************
+!*                             Apache License 2.0
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
+!***********************************************************************
+
+  subroutine ARR_INIT_2D_ (arr)
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(out) :: arr(:,:)
+    real(r8_kind) :: unif(size(arr,1), size(arr,2))
+    type(randomNumberStream), save :: random_stream
+    logical, save :: initialized = .false.
+
+    if (.not.initialized) then
+      random_stream = initializeRandomNumberStream(0)
+      initialized = .true.
+    endif
+
+    call getRandomNumbers(random_stream, unif)
+
+    arr = TYPECAST_ (1e9_r8_kind * (unif - 0.5_r8_kind), FMS_TEST_KIND_)
+  end subroutine ARR_INIT_2D_
+
+  subroutine ARR_INIT_3D_ (arr)
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(out) :: arr(:,:,:)
+    integer :: k
+
+    do k = 1, size(arr, 3)
+      call arr_init(arr(:, :, k))
+    enddo
+  end subroutine ARR_INIT_3D_
+
+  subroutine ARR_COMPARE_2D_ (arr0, arr1, msg)
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(in), dimension(:,:) :: arr0, arr1
+    character(*), intent(in) :: msg
+
+    if (any(arr0.ne.arr1)) then
+      call mpp_error(FATAL, "[2D] Unexpected result: " // msg)
+    endif
+  end subroutine ARR_COMPARE_2D_
+
+  subroutine ARR_COMPARE_3D_ (arr0, arr1, msg)
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(in), dimension(:,:,:) :: arr0, arr1
+    character(*), intent(in) :: msg
+
+    if (any(arr0.ne.arr1)) then
+      call mpp_error(FATAL, "[3D] Unexpected result: " // msg)
+    endif
+  end subroutine ARR_COMPARE_3D_
+
+  subroutine ARR_COMPARE_4D_ (arr0, arr1, msg)
+    FMS_TEST_TYPE_ (FMS_TEST_KIND_), intent(in), dimension(:,:,:,:) :: arr0, arr1
+    character(*), intent(in) :: msg
+
+    if (any(arr0.ne.arr1)) then
+      call mpp_error(FATAL, "[4D] Unexpected result: " // msg)
+    endif
+  end subroutine ARR_COMPARE_4D_

@@ -43,6 +43,7 @@ SUBDIRS = \
   fms2_io \
   mosaic2 \
   fms \
+  offloading \
   parser \
   string_utils \
   affinity \

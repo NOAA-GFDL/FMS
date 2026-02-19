@@ -8,7 +8,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  intel-oneapi-2025p3:
+  intel-oneapi-2025-3:
     runs-on: ubuntu-latest
     container:
       image: intel/oneapi-hpckit:2025.3.0-0-devel-ubuntu22.04

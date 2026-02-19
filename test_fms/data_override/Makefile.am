@@ -22,10 +22,10 @@
 # uramirez, Ed Hartnett
 
 # Find the needed mod and .inc files.
-AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include -I$(top_srcdir)/test_fms/data_override/include
+AM_CPPFLAGS = -I$(MODDIR) -I$(top_srcdir)/include -I$(top_srcdir)/test_fms/data_override/include -I$(top_builddir)/test_fms/common
 
 # Link to the FMS library.
-LDADD = $(top_builddir)/libFMS/libFMS.la
+LDADD = $(top_builddir)/libFMS/libFMS.la $(top_builddir)/test_fms/common/libtest_fms.a
 
 # Build this test program.
 check_PROGRAMS = \

@@ -29,6 +29,7 @@ module netcdf_io_mod
 #endif
 use netcdf
 use mpp_mod
+use mpp_domains_mod
 use fms_io_utils_mod
 use platform_mod
 implicit none
@@ -122,6 +123,17 @@ type, private :: dimension_information
                                        !! cur_dim_len(3) : z dimensions
 endtype dimension_information
 
+type, public :: fmsOffloadingIn_type
+  !TODO should be private, need getter functions
+  integer, public :: id !< unique identifier for each type
+  integer, public, allocatable :: offloading_pes(:) !< list of pe numbers that will be used to just write
+  integer, public, allocatable :: model_pes(:) !< list of pe numbers that will be running the model
+  logical :: is_model_pe !< true if current pe is in model_pes
+  type(domain2D) :: domain_in !< domain for grid that is to be written out
+  contains
+    procedure :: init
+endtype fmsOffloadingIn_type
+
 !> @brief Netcdf file type.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
@@ -148,12 +160,13 @@ type, public :: FmsNetcdfFile_t
   character (len=20) :: time_name
   type(dimension_information) :: bc_dimensions !<information about the current dimensions for regional
                                                !! restart variables
-  integer :: tile_comm=MPP_COMM_NULL  !< MPI communicator used for parallel reads.
-                                      !! This is deprecated. Please use open_file(..., tile_comm=...)
-  logical :: use_netcdf_mpi = .false. !< Enable parallel reads/writes via NetCDF MPI. This
-                                      !! causes the I/O domain to be ignored.
-  logical :: use_collective = .false. !< Flag indicating whether reads and writes should be performed
-                                      !! collectively rather than independently.
+  type(fmsOffloadingIn_type) :: offloading_obj_in
+  logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
+                                      !! this should be set to .true. in the user application if they want
+                                      !! collective reads (put before open_file())
+  integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
+                                      !! To be replaced with a real communicator at user request
+  logical        :: use_netcdf_mpi = .false.
 
   contains
 
@@ -2417,6 +2430,25 @@ subroutine flush_file(fileobj)
   endif
 end subroutine flush_file
 
+!> Initialization routine for fmsOffloadingIn_type
+subroutine init(this, offloading_obj_id, offloading_pes, model_pes, domain)
+  class(fmsOffloadingIn_type), intent(inout) :: this !< offloading object to initialize
+  integer, intent(in) :: offloading_obj_id !< unique id number to set
+  integer, intent(in) :: offloading_pes(:) !< list of pe's from current list to offload writes to
+  integer, intent(in) :: model_pes(:) !< list of model pe's (any pes not in offloading_pes argument)
+  type(domain2D) :: domain
+
+  this%id = offloading_obj_id
+  allocate(this%offloading_pes(size(offloading_pes)))
+  this%offloading_pes = offloading_pes
+  allocate(this%model_pes(size(model_pes)))
+  this%model_pes = model_pes
+
+ this%is_model_pe = .false.
+  if (any(model_pes .eq. mpp_pe())) &
+    this%is_model_pe = .true.
+  this%domain_in = domain
+end subroutine
 !> @brief Getter for use_netcdf_mpi
 pure logical function is_file_using_netcdf_mpi(this)
   class(FmsNetcdfFile_t), intent(in) :: this !< fms2io fileobj to query

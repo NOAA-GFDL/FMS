@@ -40,7 +40,7 @@ module fms_diag_axis_object_mod
   use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
-  use fms_diag_yaml_mod, only: subRegion_type, diag_yaml, MAX_SUBAXES
+  use fms_diag_yaml_mod, only: subRegion_type, diag_yaml, MAX_SUBAXES, diagYamlFilesVar_type
   use diag_grid_mod,       only:  get_local_indices_cubesphere => get_local_indexes
   use axis_utils2_mod,   only: nearest_index
   implicit none
@@ -52,7 +52,7 @@ module fms_diag_axis_object_mod
           & DIAGDOMAIN2D_T, fmsDiagSubAxis_type, fmsDiagAxisContainer_type, fmsDiagFullAxis_type, DIAGDOMAINUG_T
   public :: define_new_axis, parse_compress_att, get_axis_id_from_name, define_diurnal_axis, &
           & fmsDiagDiurnalAxis_type, create_new_z_subaxis, is_parent_axis, define_new_subaxis_latlon, &
-          & define_new_subaxis_index
+          & define_new_subaxis_index, find_z_sub_axis_name
 
   !> @}
 
@@ -124,6 +124,7 @@ module fms_diag_axis_object_mod
       procedure :: get_starting_index
       procedure :: get_ending_index
       procedure :: get_compute_indices
+      procedure :: is_same_zbounds
   END TYPE fmsDiagSubAxis_type
 
   !> @brief Type to hold the diurnal axis
@@ -934,6 +935,16 @@ module fms_diag_axis_object_mod
     indx = this%compute_idx
   end function get_compute_indices
 
+  !> @brief Determines if the zbounds passed in are the same as those in the file
+  !! @return .True. if the zbounds are the same
+  function is_same_zbounds(this, zbounds) result(is_same)
+    class(fmsDiagSubAxis_type), intent(in) :: this       !< diag_sub_axis object
+    real(kind=r4_kind),         intent(in) :: zbounds(2) !< zbounds to compare with
+    logical :: is_same
+
+    is_same = zbounds(1) .eq. this%zbounds(1) .and. zbounds(2) .eq. this%zbounds(2)
+  end function
+
   !> @brief Get the ntiles in a domain
   !> @return the number of tiles in a domain
   function get_ntiles(this) &
@@ -1434,7 +1445,8 @@ module fms_diag_axis_object_mod
   end subroutine write_diurnal_metadata
 
   !> @brief Creates a new z subaxis to use
-  subroutine create_new_z_subaxis(zbounds, var_axis_ids, diag_axis, naxis, file_axis_id, nfile_axis, nz_subaxis)
+  subroutine create_new_z_subaxis(zbounds, var_axis_ids, diag_axis, naxis, file_axis_id, nfile_axis, nz_subaxis, &
+                                  error_mseg)
     real(kind=r4_kind),                       intent(in)    :: zbounds(2)      !< Bounds of the Z axis
     integer,                                  intent(inout) :: var_axis_ids(:) !< The variable's axis_ids
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)    !< Array of diag_axis objects
@@ -1445,58 +1457,69 @@ module fms_diag_axis_object_mod
                                                                                !! defined in file
     integer,                                  intent(inout) :: nz_subaxis      !< The number of z subaxis currently
                                                                                !! defined in the file
+    character(len=*),                         intent(inout) :: error_mseg      !! Message to include in error message
+                                                                               !! if there is an error
 
     class(*), pointer :: zaxis_data(:)      !< The data of the full zaxis
     integer           :: subaxis_indices(2) !< The starting and ending indices of the subaxis relative to the full
                                             !! axis
     integer           :: i                  !< For do loops
     integer           :: subaxis_id         !< The id of the new z subaxis
-    logical           :: axis_found         !< Flag that indicated if the zsubaxis already exists
+    integer           :: parent_axis_id     !< Id of parent axis id
+    integer           :: zaxis_index        !< Index of the z axis (i.e 3 if the variable is x,y,z)
+    type(fmsDiagFullAxis_type), pointer :: parent_axis !< Pointer to the parent axis
 
-    !< Determine if the axis was already created
-    axis_found = .false.
-    do i = 1, nfile_axis
-      select type (axis => diag_axis(file_axis_id(i))%axis)
-      type is (fmsDiagSubAxis_type)
-        if (axis%zbounds(1) .eq. zbounds(1) .and. axis%zbounds(2) .eq. zbounds(2)) then
-          axis_found = .true.
-          subaxis_id = file_axis_id(i)
-          exit
-        endif
-      end select
-    enddo
+    parent_axis_id = diag_null
+    zaxis_index = diag_null
 
-    !< Determine which of the variable's axis is the zaxis!
+    !< Determine which axis is the z axis:
     do i = 1, size(var_axis_ids)
       select type (parent_axis => diag_axis(var_axis_ids(i))%axis)
       type is (fmsDiagFullAxis_type)
         if (parent_axis%cart_name .eq. "Z") then
-          !< If the axis was previously defined set the var_axis_ids and leave
-          if (axis_found) then
-            var_axis_ids(i) = subaxis_id
-            return
-          endif
-          zaxis_data => parent_axis%axis_data
+          parent_axis_id = var_axis_ids(i)
+          zaxis_index = i
+        endif
+      end select
+    enddo
 
-          select type(zaxis_data)
-          type is (real(kind=r4_kind))
-            !TODO need to include the conversion to "real" because nearest_index doesn't take r4s and r8s
-            subaxis_indices(1) = nearest_index(real(zbounds(1)), real(zaxis_data))
-            subaxis_indices(2) = nearest_index(real(zbounds(2)), real(zaxis_data))
-          type is (real(kind=r8_kind))
-            subaxis_indices(1) = nearest_index(real(zbounds(1)), real(zaxis_data))
-            subaxis_indices(2) = nearest_index(real(zbounds(2)), real(zaxis_data))
-          end select
+    if (parent_axis_id .eq. DIAG_NULL) then
+        call mpp_error(FATAL, "create_new_z_subaxis:: unable to find the zaxis for "//trim(error_mseg))
+    endif
 
-          nz_subaxis = nz_subaxis + 1
-          call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
-                        &subaxis_indices(1), subaxis_indices(2), (/lbound(zaxis_data,1), ubound(zaxis_data,1)/), &
-                        &new_axis_id=subaxis_id, zbounds=zbounds, nz_subaxis=nz_subaxis)
-          var_axis_ids(i) = subaxis_id
+    !< Determine if the axis was already created
+    do i = 1, nfile_axis
+      select type (axis => diag_axis(file_axis_id(i))%axis)
+      type is (fmsDiagSubAxis_type)
+        if (axis%parent_axis_id .ne. parent_axis_id) cycle
+        if (axis%zbounds(1) .eq. zbounds(1) .and. axis%zbounds(2) .eq. zbounds(2)) then
+          var_axis_ids(zaxis_index) = file_axis_id(i)
           return
         endif
       end select
     enddo
+
+    select type (axis => diag_axis(parent_axis_id)%axis)
+    type is (fmsDiagFullAxis_type)
+      zaxis_data => axis%axis_data
+      parent_axis => axis
+    end select
+
+    select type(zaxis_data)
+      type is (real(kind=r4_kind))
+        !TODO need to include the conversion to "real" because nearest_index doesn't take r4s and r8s
+        subaxis_indices(1) = nearest_index(real(zbounds(1)), real(zaxis_data))
+        subaxis_indices(2) = nearest_index(real(zbounds(2)), real(zaxis_data))
+      type is (real(kind=r8_kind))
+        subaxis_indices(1) = nearest_index(real(zbounds(1)), real(zaxis_data))
+        subaxis_indices(2) = nearest_index(real(zbounds(2)), real(zaxis_data))
+    end select
+
+    nz_subaxis = nz_subaxis + 1
+    call define_new_axis(diag_axis, parent_axis, naxis, parent_axis%axis_id, &
+                        &subaxis_indices(1), subaxis_indices(2), (/lbound(zaxis_data,1), ubound(zaxis_data,1)/), &
+                        &new_axis_id=subaxis_id, zbounds=zbounds, nz_subaxis=nz_subaxis)
+    var_axis_ids(zaxis_index) = subaxis_id
 
   end subroutine
 
@@ -1517,6 +1540,34 @@ module fms_diag_axis_object_mod
     end select
   end function is_parent_axis
 
+  !> @brief Determine the name of the z subaxis by matching the parent axis id and the zbounds
+  !! in the diag table yaml
+  subroutine find_z_sub_axis_name(dim_name, parent_axis_id, file_axis_id, field_yaml, diag_axis)
+    character(len=*),                intent(inout) :: dim_name         !< Name of z subaxis
+    integer,                         intent(in)    :: parent_axis_id   !< Axis id of the parent
+    integer,                         intent(in)    :: file_axis_id(:)  !< Axis ids of the file
+    type(diagYamlFilesVar_type),     intent(in)    :: field_yaml       !< Field info from diag_table yaml
+    class(fmsDiagAxisContainer_type),intent(in)    :: diag_axis(:)     !< Array of axis objections
+
+    integer :: id
+    integer :: i
+
+    do i = 1, size(file_axis_id)
+      id = file_axis_id(i)
+      select type (axis_ptr => diag_axis(id)%axis)
+      type is (fmsDiagSubAxis_type)
+        if (axis_ptr%parent_axis_id .eq. parent_axis_id) then
+          if (axis_ptr%is_same_zbounds(field_yaml%get_var_zbounds())) then
+            dim_name = axis_ptr%subaxis_name
+            return
+          endif
+        endif
+      end select
+    enddo
+    call mpp_error(FATAL, "Unable to determine the z subaxis name for field "//&
+                          trim(field_yaml%get_var_varname())//" in file: "//&
+                          trim(field_yaml%get_var_fname()))
+  end subroutine
 #endif
 end module fms_diag_axis_object_mod
 !> @}

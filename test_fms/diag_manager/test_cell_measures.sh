@@ -30,15 +30,6 @@ title: test_diag_manager
 base_date: 2 1 1 0 0 0
 
 diag_files:
-- file_name: static_file
-  freq: -1
-  time_units: hours
-  unlimdim: time
-  varlist:
-  - module: fun_mod
-    var_name: area
-    reduction: none
-    kind: r4
 # Here file 1 does not have the "area" variable so the associated files attribute is expected
 - file_name: file1
   freq: 6 hours
@@ -48,6 +39,26 @@ diag_files:
   - module: fun_mod
     var_name: var1
     reduction: average
+    kind: r4
+- file_name: file2
+  freq: 1 hours
+  time_units: hours
+  unlimdim: time
+  module: fun_mod
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: var1
+  - var_name: area
+    output_name: area_file2
+- file_name: static_file
+  freq: -1
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: fun_mod
+    var_name: area
+    reduction: none
     kind: r4
 _EOF
 
