@@ -24,8 +24,6 @@
 # This test package is based on Junio's work for the Git test library.
 # Thank you Junio.
 
-set -x
-
 # Useful locations
 top_srcdir='@abs_top_srcdir@@CMAKE_CURRENT_SOURCE_DIR@'
 top_buildir='@abs_top_builddir@@CMAKE_CURRENT_SOURCE_DIR@'
@@ -96,7 +94,7 @@ die () {
 mpirun () {
 # Set the name of the mpi launcher for use in test scripts.
   local mpi_launcher='@MPI_LAUNCHER@'
-  local oversubscribe='@OVERSUBSCRIBE@ --oversubscribe'
+  local oversubscribe='@OVERSUBSCRIBE@'
   # need to strip off any args that may be included with MPI_LAUNCHER arg for check below to work
   local mpi_cmd="`echo $mpi_launcher | awk '{print $1;}'`"
   # Check if running with MPI: if so, the mpi_launcher will point to a command
