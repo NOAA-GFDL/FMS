@@ -25,8 +25,10 @@
                                        &  grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
      type(domain2d), target,     intent(in) :: SG_domain
-     integer,                    intent(in) :: npts_tile(:) !< number of unstructured points in each mosaic tile
-     integer,                    intent(in) :: grid_nlev(:) !< number of levels (subgrid tiles) in each unstructured grid cell.
+     integer,                    intent(in) :: npts_tile(:) !< number of unstructured points in
+                                                            !! each mosaic tile
+     integer,                    intent(in) :: grid_nlev(:) !< number of levels (subgrid tiles) in
+                                                            !! each unstructured grid cell.
      integer,                    intent(in) :: ndivs
      integer,                    intent(in) :: npes_io_group!< number of processors in a io group.
                                                             !! Only pe with same tile_id
