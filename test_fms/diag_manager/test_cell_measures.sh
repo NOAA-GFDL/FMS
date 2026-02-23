@@ -58,6 +58,7 @@ diag_files:
   varlist:
   - module: fun_mod
     var_name: area
+    output_name: land_area
     reduction: none
     kind: r4
 _EOF
