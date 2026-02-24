@@ -113,9 +113,6 @@ libmpp_la_SOURCES = \
   include/mpp_util.inc \
   include/mpp_util_mpi.inc \
   include/mpp_util_nocomm.inc \
-  include/mpp_write.fh \
-  include/mpp_write_2Ddecomp.fh \
-  include/mpp_write_compressed.fh \
   include/mpp_write_unlimited_axis.fh \
   include/system_clock.fh
 

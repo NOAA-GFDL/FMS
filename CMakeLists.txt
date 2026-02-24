@@ -58,11 +58,9 @@ option(FPIC        "Build with position independent code" OFF)
 option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
 
 # Options for compiler definitions
-option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
 option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
 option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
-option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 option(USE_DEPRECATED_IO     "THIS OPTION HAS NO EFFECT AND WILL BE REMOVED IN A FUTURE RELEASE"   OFF)
 
@@ -253,10 +251,6 @@ endif()
 if(USE_DEPRECATED_IO)
   message( FATAL_ERROR "FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE  "
                    "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS OR REVERT TO VERSION 2025.02")
-endif()
-
-if(INTERNAL_FILE_NML)
-  list(APPEND fms_defs INTERNAL_FILE_NML)
 endif()
 
 if(ENABLE_QUAD_PRECISION)
