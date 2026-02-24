@@ -315,9 +315,6 @@ GX_FC_CRAY_POINTER_FLAG()
 # Check if Fortran compiler and system have quad precision support
 GX_FC_QUAD_PRECISION()
 
-# Check if Fortran compiler supports reading namelists from internal files
-GX_FC_INTERNAL_FILE_NML()
-
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
 
