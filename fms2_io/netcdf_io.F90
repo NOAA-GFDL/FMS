@@ -17,10 +17,13 @@
 !***********************************************************************
 !> @defgroup netcdf_io_mod netcdf_io_mod
 !> @ingroup fms2_io
-!> @brief Creates a basic netcdf type and routines to extend for other uses
+!> @brief This module defines a derived type, FmsNetcdfFile_t, and routines
+!! to handle calls to the netcdf library in order to read and write netcdf files within a MPI fortran program.
 !!
-!> Handles type definitions and interfaces for netcdf I/O.
-
+!! This module is specifically for netcdf input/output when not using a domain decomposition to split up data between
+!! processors (see mpp_domains module). The FmsNetcdfFile_t type acts a base class that is extended by both
+!! FmsNetcdfDomainFile_t and FmsNetcdfUnstructuredDomainFile_t.
+!!
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod

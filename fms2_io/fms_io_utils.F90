@@ -72,18 +72,44 @@ type :: char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
+!> Reads in a ASCII file from a given path and populates a mask that corresponds to a domain decomposition.
+!! This mask differs from others across FMS in that it is for a specific rank and its associated data region,
+!! instead of masking out specific indices from a corresponding array.
+!!
+!! Mask format is as follows:
+!!
+!! <number-of-ranks-to-mask>
+!! <domain-layout>
+!! <rank-to-mask>
+!! <any-additional-ranks-to-mask>
+!!
+!! Example:
+!!
+!! 2
+!! 4,4
+!! 1,1
+!! 4,4
+!!
+!! For this mask file, 2 rank's would be masked: the top right corner (1,1) and the bottom left corner (4,4)
+!!
+!! This interface includes support for both 2D and 3D mask tables.
+!!
 !> @ingroup fms_io_utils_mod
 interface parse_mask_table
   module procedure parse_mask_table_2d
   module procedure parse_mask_table_3d
 end interface parse_mask_table
 
+!> Gets the output filename for a mosaic domain that contains multiple tiles.
+!! Each file will include its tile number when output.
 !> @ingroup fms_io_utils_mod
 interface get_mosaic_tile_file
   module procedure get_mosaic_tile_file_sg
   module procedure get_mosaic_tile_file_ug
 end interface get_mosaic_tile_file
 
+!> Interface to allocate data real, integer, or character buffers for use in read/write routines.
+!! Not meant to be used externally.
 !> @ingroup fms_io_utils_mod
 interface allocate_array
   module procedure allocate_array_i4_kind_1d
@@ -115,6 +141,16 @@ interface allocate_array
 end interface allocate_array
 
 
+!> Utility routine that copies a smaller array into a larger one using the starting indices and sizes provided.
+!! Example usage:
+!!
+!!    call put_array_section( section, array, start, sizes )
+!!
+!!  Is equivalent to
+!!
+!!    array (start(1):start(1)+sizes(1), start(2):start(2)+sizes(2), ... ) = section(:,:,...)
+!!
+!!  This interface supports integers and reals for both 4 and 8 kind, and up to 5 dimensions.
 !> @ingroup fms_io_utils_mod
 interface put_array_section
   module procedure put_array_section_i4_kind_1d
@@ -140,6 +176,17 @@ interface put_array_section
 end interface put_array_section
 
 
+!> Utility routine that copies a subset of data from a larger array into a smaller one using the
+!! starting indices and sizes provided.
+!! Example usage:
+!!
+!!    call get_array_section( section, array, start, sizes )
+!!
+!!  Is equivalent to
+!!
+!!    section(:,:,...) = array (start(1):start(1)+sizes(1), start(2):start(2)+sizes(2), ... )
+!!
+!!  This interface supports integers and reals for both 4 and 8 kind, and up to 5 dimensions.
 !> @ingroup fms_io_utils_mod
 interface get_array_section
   module procedure get_array_section_i4_kind_1d
@@ -165,6 +212,17 @@ interface get_array_section
 end interface get_array_section
 
 
+!> Sets a string describing the datatype corresponding to the sdata argument
+!! Example:
+!!
+!!    call get_data_type_string(sdata, string)
+!!
+!!  String values and associated data types are:
+!!    - "int"     integers(kind=4)
+!!    - "i8_kind" integers(kind=8)
+!!    - "float"   real(kind=4)
+!!    - "double"  real(kind=8)
+!!    - "char"    character(len=*)
 !> @ingroup fms_io_utils_mod
 interface get_data_type_string
   module procedure get_data_type_string_0d

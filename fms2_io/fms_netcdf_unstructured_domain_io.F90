@@ -17,7 +17,7 @@
 !***********************************************************************
 !> @defgroup fms_netcdf_unstructured_domain_io_mod fms_netcdf_unstructured_domain_io_mod
 !> @ingroup fms2_io
-!> @brief Handles netcdf I/O for unstructured domains
+!> @brief Handles netcdf I/O for domains using a unstructured
 !!
 !> Mainly routines for use via interfaces in @ref fms2_io_mod
 

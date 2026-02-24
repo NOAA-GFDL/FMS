@@ -17,7 +17,7 @@
 !***********************************************************************
 !> @defgroup fms2_io_mod fms2_io_mod
 !> @ingroup fms2_io
-!> @brief This module aims support I/O operations for 3 types of netcdf files within the FMS framework: 
+!> @brief This module aims support I/O operations for 3 types of netcdf files within the FMS framework:
 !!
 !! 1) Generic netcdf files via the netcdf_io_mod module.
 !! 2) Netcdf files with structured grid domains via the fms_netcdf_domain_io_mod module.
@@ -28,10 +28,19 @@
 !! via a consistent set of interface calls (ie. open_file, close_file, write_data, read_data, etc).
 !!
 !! Each file type mentioned above has its own specific derived type to represent the file's metadata and data structure:
-!! - FmsNetcdfFile_t for generic netcdf files.
-!! - FmsNetcdfDomainFile_t for structured domain netcdf files. Inherits FmsNetcdfFile_t.
-!! - FmsNetcdfUnstructuredDomainFile_t for unstructured domain netcdf files. Also inherits FmsNetcdfFile_t.
-!! These derived types are typically refered to as the "fileobj" across this module's interfaces. 
+!!
+!! - FmsNetcdfFile_t: This type provides a thin wrapper over the netCDF4 library, but allows the user to assign a
+!!   “pelist” to the file. If a pelist is assigned, only the first rank on the list directly interacts with the
+!!   netCDF library, and performs broadcasts to relay the information read to the rest of the ranks on the list.
+!!   When writing netcdf files, only the first rank in the pelist will perform the writes.
+!! - FmsNetcdfDomainFile_t: This type does everything that the FmsNetcdfFile_t type does and it adds support for
+!!   “domain-decomposed” reads/writes. Here, "domain decomposed" refers to data that is on a user-defined
+!!   mpp_domain and is decomposed in two dimensions, in which each MPI rank has its own section of the global data.
+!!   This requires a domain to be associated with the fileobj.
+!! - FmsNetcdfUnstructuredDomainFile_t: This type does everything that the FmsNetcdfFile_t type does and it adds
+!!   support for “domain-decomposed” reads/writes on a user defined mpp_domains unstructured grid. This requires
+!!   a unstructured domain to be associated with the fileobj. These derived types are typically refered to as the
+!!   "fileobj" across this module's interfaces.
 !!
 !! The domain file objects require a derived type (domain2d or domainug) to represent a decomposed domain for its data
 !! across available MPI ranks, as defined in mpp_domains_mod.
@@ -48,7 +57,7 @@
 !! https://docs.unidata.ucar.edu/netcdf-c/current/file_format_specifications.html
 !!
 !! Besides NetCDF io, this module also provides an interface for common utility routines used in FMS I/O operations,
-!! such as checking for file existence, reading ascii files, parsing mask tables, and generating instance filenames. 
+!! such as checking for file existence, reading ascii files, parsing mask tables, and generating instance filenames.
 !!
 !! If converting legacy code from fms_io/mpp_io to fms2_io, please refer to the migration guide at fms2_io/readme.md.
 
@@ -72,7 +81,7 @@ public :: unlimited
 !! but are made public here for user access.
 public :: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 
-!> interfaces that are defined below but utilize helper module routines. 
+!> interfaces that are defined below but utilize helper module routines.
 public :: open_file, open_virtual_file, close_file
 public :: register_axis
 public :: register_field
@@ -114,12 +123,12 @@ public :: get_time_calendar
 public :: is_registered_to_restart
 public :: check_if_open
 public :: set_fileobj_time_name
-!! TODO: i think we can make this one internal to netcdf_io_mod 
+!! TODO: i think we can make this one internal to netcdf_io_mod
 public :: Valid_t
 public :: get_valid
 public :: is_valid
 
-!> Routines/Interfaces from fms_netcdf_domain_io_mod to make public 
+!> Routines/Interfaces from fms_netcdf_domain_io_mod to make public
 public :: get_compute_domain_dimension_indices
 public :: get_global_io_domain_indices
 public :: get_unlimited_dimension_name
@@ -210,7 +219,7 @@ interface close_file
   module procedure close_unstructured_domain_file
 end interface close_file
 
-!> @brief Add a dimension to a given file
+!> @brief Adds a dimension to a given netcdf file object.
 !!
 !> <br>Example usage:
 !!
