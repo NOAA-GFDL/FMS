@@ -31,22 +31,21 @@
 
     subroutine MPP_TRANSMIT_SCALAR_( put_data, to_pe, get_data, from_pe, plen, glen, block, tag, &
                                     recv_request, send_request)
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       integer, intent(in) :: to_pe, from_pe
-      MPP_TYPE_, intent(in)  :: put_data
-      MPP_TYPE_, intent(out) :: get_data
+      MPP_TYPE_, target, intent(in)  :: put_data
+      MPP_TYPE_, target, intent(out) :: get_data
       integer, optional,  intent(in) :: plen, glen
       logical, intent(in),  optional :: block
       integer, intent(in),  optional :: tag
       integer, intent(out), optional :: recv_request, send_request
       integer                       :: put_len, get_len
-      MPP_TYPE_ :: put_data1D(1), get_data1D(1)
-      pointer( ptrp, put_data1D )
-      pointer( ptrg, get_data1D )
+      MPP_TYPE_, pointer :: put_data1D(:), get_data1D(:)
 
       get_data = MPP_TYPE_INIT_VALUE
 
-      ptrp = LOC(put_data)
-      ptrg = LOC(get_data)
+      call c_f_pointer(c_loc(put_data), put_data1D, [1])
+      call c_f_pointer(c_loc(get_data), get_data1D, [1])
       put_len=1; if(PRESENT(plen))put_len=plen
       get_len=1; if(PRESENT(glen))get_len=glen
       call MPP_TRANSMIT_ ( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
@@ -58,19 +57,17 @@
     subroutine MPP_TRANSMIT_2D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
                                 recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
-      MPP_TYPE_, intent(in)  :: put_data(:,:)
-      MPP_TYPE_, intent(out) :: get_data(:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: put_data(:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: get_data(:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: recv_request, send_request
-      MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
+      MPP_TYPE_, pointer :: put_data1D(:), get_data1D(:)
 
-      pointer( ptrp, put_data1D )
-      pointer( ptrg, get_data1D )
       get_data = MPP_TYPE_INIT_VALUE
 
-      ptrp = LOC(put_data)
-      ptrg = LOC(get_data)
+      put_data1D(1:put_len) => put_data(:,:)
+      get_data1D(1:get_len) => get_data(:,:)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
                          recv_request=recv_request, send_request=send_request )
 
@@ -80,19 +77,17 @@
     subroutine MPP_TRANSMIT_3D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
                                 recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
-      MPP_TYPE_, intent(in)  :: put_data(:,:,:)
-      MPP_TYPE_, intent(out) :: get_data(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: put_data(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: get_data(:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: recv_request, send_request
-      MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
+      MPP_TYPE_, pointer :: put_data1D(:), get_data1D(:)
 
-      pointer( ptrp, put_data1D )
-      pointer( ptrg, get_data1D )
       get_data = MPP_TYPE_INIT_VALUE
 
-      ptrp = LOC(put_data)
-      ptrg = LOC(get_data)
+      put_data1D(1:put_len) => put_data(:,:,:)
+      get_data1D(1:get_len) => get_data(:,:,:)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
                          recv_request=recv_request, send_request=send_request )
 
@@ -102,19 +97,17 @@
     subroutine MPP_TRANSMIT_4D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
                                 recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
-      MPP_TYPE_, intent(in)  :: put_data(:,:,:,:)
-      MPP_TYPE_, intent(out) :: get_data(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: put_data(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: get_data(:,:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: recv_request, send_request
-      MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
+      MPP_TYPE_, pointer :: put_data1D(:), get_data1D(:)
 
-      pointer( ptrp, put_data1D )
-      pointer( ptrg, get_data1D )
       get_data = MPP_TYPE_INIT_VALUE
 
-      ptrp = LOC(put_data)
-      ptrg = LOC(get_data)
+      put_data1D(1:put_len) => put_data(:,:,:,:)
+      get_data1D(1:get_len) => get_data(:,:,:,:)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
                          recv_request=recv_request, send_request=send_request )
 
@@ -124,19 +117,17 @@
     subroutine MPP_TRANSMIT_5D_( put_data, put_len, to_pe, get_data, get_len, from_pe, block, tag, &
                                 recv_request, send_request )
       integer, intent(in) :: put_len, to_pe, get_len, from_pe
-      MPP_TYPE_, intent(in)  :: put_data(:,:,:,:,:)
-      MPP_TYPE_, intent(out) :: get_data(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(in)  :: put_data(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(out) :: get_data(:,:,:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: recv_request, send_request
-      MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
+      MPP_TYPE_, pointer :: put_data1D(:), get_data1D(:)
 
-      pointer( ptrp, put_data1D )
-      pointer( ptrg, get_data1D )
       get_data = MPP_TYPE_INIT_VALUE
 
-      ptrp = LOC(put_data)
-      ptrg = LOC(get_data)
+      put_data1D(1:put_len) => put_data(:,:,:,:,:)
+      get_data1D(1:get_len) => get_data(:,:,:,:,:)
       call mpp_transmit( put_data1D, put_len, to_pe, get_data1D, get_len, from_pe, block, tag, &
                          recv_request=recv_request, send_request=send_request )
 
@@ -172,21 +163,21 @@
 
     subroutine MPP_RECV_SCALAR_( get_data, from_pe, glen, block, tag, request )
 !a mpp_transmit with null arguments on the put side
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       integer, intent(in) :: from_pe
-      MPP_TYPE_, intent(out) :: get_data
+      MPP_TYPE_, target, intent(out) :: get_data
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: request
 
       integer, optional, intent(in) :: glen
       integer                       :: get_len
-      MPP_TYPE_ :: get_data1D(1)
+      MPP_TYPE_, pointer :: get_data1D(:)
       MPP_TYPE_ :: dummy(1)
 
-      pointer( ptr, get_data1D )
       get_data = MPP_TYPE_INIT_VALUE
 
-      ptr = LOC(get_data)
+      call c_f_pointer(c_loc(get_data), get_data1D, [1])
       get_len=1; if(PRESENT(glen))get_len=glen
       call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request )
 
@@ -194,17 +185,17 @@
 
     subroutine MPP_SEND_SCALAR_( put_data, to_pe, plen, tag, request)
 !a mpp_transmit with null arguments on the get side
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
       integer, intent(in) :: to_pe
-      MPP_TYPE_, intent(in) :: put_data
+      MPP_TYPE_, target, intent(in) :: put_data
       integer, optional, intent(in) :: plen
       integer, intent(in), optional :: tag
       integer, intent(out), optional :: request
       integer                       :: put_len
-      MPP_TYPE_ :: put_data1D(1)
+      MPP_TYPE_, pointer :: put_data1D(:)
       MPP_TYPE_ :: dummy(1)
 
-      pointer( ptr, put_data1D )
-      ptr = LOC(put_data)
+      call c_f_pointer(c_loc(put_data), put_data1D, [1])
       put_len=1; if(PRESENT(plen))put_len=plen
       call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
 
@@ -305,14 +296,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     subroutine MPP_BROADCAST_SCALAR_( broadcast_data, from_pe, pelist )
-      MPP_TYPE_, intent(inout) :: broadcast_data
+      use, intrinsic :: iso_c_binding, only: c_f_pointer, c_loc
+      MPP_TYPE_, target, intent(inout) :: broadcast_data
       integer, intent(in) :: from_pe
       integer, intent(in), optional :: pelist(:)
-      MPP_TYPE_ :: data1D(1)
+      MPP_TYPE_, pointer :: data1D(:)
 
-      pointer( ptr, data1D )
-
-      ptr = LOC(broadcast_data)
+      call c_f_pointer(c_loc(broadcast_data), data1D, [1])
       call MPP_BROADCAST_( data1D, 1, from_pe, pelist )
 
       return
@@ -322,13 +312,12 @@
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: broadcast_data(:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: broadcast_data(:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      MPP_TYPE_ :: data1D(length)
+      MPP_TYPE_, pointer :: data1D(:)
 
-      pointer( ptr, data1D )
-      ptr = LOC(broadcast_data)
+      data1D(1:length) => broadcast_data(:,:)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return
@@ -338,13 +327,12 @@
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: broadcast_data(:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: broadcast_data(:,:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      MPP_TYPE_ :: data1D(length)
+      MPP_TYPE_, pointer :: data1D(:)
 
-      pointer( ptr, data1D )
-      ptr = LOC(broadcast_data)
+      data1D(1:length) => broadcast_data(:,:,:)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return
@@ -354,13 +342,12 @@
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: broadcast_data(:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: broadcast_data(:,:,:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      MPP_TYPE_ :: data1D(length)
+      MPP_TYPE_, pointer :: data1D(:)
 
-      pointer( ptr, data1D )
-      ptr = LOC(broadcast_data)
+      data1D(1:length) => broadcast_data(:,:,:,:)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return
@@ -370,13 +357,12 @@
 !this call was originally bundled in with mpp_transmit, but that doesn't allow
 !broadcast to a subset of PEs. This version will, and mpp_transmit will remain
 !backward compatible.
-      MPP_TYPE_, intent(inout) :: broadcast_data(:,:,:,:,:)
+      MPP_TYPE_, target, contiguous, intent(inout) :: broadcast_data(:,:,:,:,:)
       integer, intent(in) :: length, from_pe
       integer, intent(in), optional :: pelist(:)
-      MPP_TYPE_ :: data1D(length)
+      MPP_TYPE_, pointer :: data1D(:)
 
-      pointer( ptr, data1D )
-      ptr = LOC(broadcast_data)
+      data1D(1:length) => broadcast_data(:,:,:,:,:)
       call mpp_broadcast( data1D, length, from_pe, pelist )
 
       return
