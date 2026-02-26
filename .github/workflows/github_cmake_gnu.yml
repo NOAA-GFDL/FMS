@@ -18,7 +18,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask" 
+        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
