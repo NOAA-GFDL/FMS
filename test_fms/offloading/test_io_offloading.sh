@@ -1,3 +1,4 @@
+#!/bin/sh
 #***********************************************************************
 #*                             Apache License 2.0
 #*
@@ -16,17 +17,25 @@
 #* governing permissions and limitations under the License.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# This is part of the GFDL FMS package. This is a shell script to
+# execute tests in the test_fms/offloading directory.
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+# Set common test settings.
+. ../test-lib.sh
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = common astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal offloading block_control
+cat > input.nml << _EOF
+offloading_io_nml
+  max_offloaded_files = 10
+/
+_EOF
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+# TODO fails with older gnus
+#test_expect_success "test_io_offloading" '
+#  mpirun -n 7 ./test_io_offloading
+#'
+
+test_expect_success "test metadata transfer" '
+  mpirun -n 4 ./test_metadata_transfer
+'
+
+test_done

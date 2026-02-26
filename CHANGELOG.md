@@ -6,6 +6,34 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2026.01] - 2026-01-26
+
+### Known Issues
+- - INTEL: Oneapi 2025.1 is currently unsupported due to an internal compiler error. The `-check uninit` flag for intel's LLVM compilers(ifx/icx) is also unsupported, see prior release for more information.
+- Diag Manager Rewrite: See [below](#20240102---2024-06-14) for known output file differences regarding the new diag manager. The new diag_manager is disabled by default, so these differences will only be present if `use_modern_diag` is set to true in the `diag_manager_nml`.
+- BUILD(HDF5): HDF5 version 1.14.3 generates floating point exceptions, and will cause errors if FMS is built with FPE traps enabled. FPE traps are turned on when using the debug target in mkmf.
+- GCC: version 14.1.0 is unsupported due to a bug with strings that has come up previously in earlier versions. This will be caught by the configure script, but will cause compilation errors if using other build systems.
+
+### Added
+- Modifed and added tests for future generalized indices updates (#1763)
+- OFFLOAD: Added a prototype for offloading io to a smaller set of PE's `offloading_io_mod` (#1774)
+
+### Changed
+- Legacy field_table and data_table ASCII formats are now deprecated and will output a warning if used (#1802)
+- MPP: Replaced point-to-point communication with collective mode in `mpp_gather` routines (#1775)
+- FMS2_IO: Refactored API for enabling MPI-IO support (#1789)
+- DIAG_MANAGER: The updated diag manager will now add the experiment title as a global attribute (#1817)
+
+### Fixed
+- Fixed multiple compiler warnings raised from GCC 15 (#1765)
+- Fixed GNU warnings with the -DPORTABLE_KINDS flag (#1792)
+- DIAG_MANAGER: Fixed issue with not getting correct output name when adding the cell_measure attribute (#1815)
+- DIAG_MANAGER: Fixed error when setting zbounds for more than one variable (#1813)
+- CMAKE: Fixed handling of libyaml dependency when using a r4/r8 option (#1822)
+
+### Removed
+- EXCHANGE: Removed cray pointer usage from `xgrid.F90` (#1778)
+
 ## [2025.04] - 2025-09-29
 
 ### Known Issues

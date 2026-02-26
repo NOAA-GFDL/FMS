@@ -1,3 +1,5 @@
+#!/bin/sh
+
 #***********************************************************************
 #*                             Apache License 2.0
 #*
@@ -16,17 +18,40 @@
 #* governing permissions and limitations under the License.
 #***********************************************************************
 
-# This is the automake file for the test_fms directory.
-# Ed Hartnett 9/20/2019
+# Set common test settings.
+. ../test-lib.sh
 
-# This directory stores libtool macros, put there by aclocal.
-ACLOCAL_AMFLAGS = -I m4
+output_dir
 
-# Make targets will be run in each subdirectory. Order is significant.
-SUBDIRS = common astronomy coupler diag_manager data_override exchange monin_obukhov drifters \
-mosaic2 interpolator fms mpp time_interp time_manager horiz_interp topography \
-field_manager axis_utils affinity fms2_io parser string_utils sat_vapor_pres tracer_manager \
-random_numbers diag_integral column_diagnostics tridiagonal offloading block_control
+if [ -z "${parser_skip}" ]
+then
+  cat <<_EOF > input.nml
+&diag_manager_nml
+  use_modern_diag = .true.
+/
+_EOF
 
-# testing utility scripts to distribute
-EXTRA_DIST = test-lib.sh.in intel_coverage.sh.in tap-driver.sh
+  cat <<_EOF > diag_table.yaml
+title: test_multiple_zbounds
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_multiple_zbounds
+  freq: 1 hours
+  time_units: hours
+  unlimdim: time
+  module: atmos
+  reduction: average
+  kind: r4
+  varlist:
+  - var_name: ua_1
+    zbounds: 3 5
+  - var_name: ua_2
+    zbounds: 1 1
+_EOF
+
+  test_expect_success "Test with multiple zbounds limits (modern diag manager)" '
+    mpirun -n 1 ../test_multiple_zbounds
+  '
+fi
+
+test_done

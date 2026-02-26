@@ -841,6 +841,8 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   integer              :: subregion_gridtype !< The type of the subregion (latlon or index)
   logical              :: write_on_this_pe !< Flag indicating if the current pe is in the subregion
 
+  character(len=MAX_STR_LEN) :: error_mseg !< Message to append in case there is a FATAL error
+
   is_cube_sphere = .false.
   subregion_gridtype = this%get_file_sub_region_grid_type()
 
@@ -852,9 +854,12 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
   !! which is why the copy was needed)
   var_axis_ids = axis_ids
 
+  error_mseg = "Field: "//trim(field_yaml%get_var_varname())//" in file: "//&
+               trim(field_yaml%get_var_fname())
+
   if (field_yaml%has_var_zbounds()) then
     call create_new_z_subaxis(field_yaml%get_var_zbounds(), var_axis_ids, diag_axis, naxis, &
-                              this%axis_ids, this%number_of_axis, this%nz_subaxis)
+                              this%axis_ids, this%number_of_axis, this%nz_subaxis, error_mseg)
   endif
 
   select type(this)
@@ -1304,10 +1309,12 @@ subroutine write_global_metadata(this)
   character (len=MAX_STR_LEN), allocatable :: yaml_file_attributes(:,:) !< Global attributes defined in the yaml
 
   type(diagYamlFiles_type), pointer :: diag_file_yaml !< The diag_file yaml
+  character(len=MAX_STR_LEN)        :: title          !< The title as read in from the diag table yaml
 
   diag_file_yaml => this%FMS_diag_file%diag_yaml_file
   fms2io_fileobj => this%FMS_diag_file%fms2io_fileobj
 
+  !! Write out the global attributes defined in the diag table yaml
   if (diag_file_yaml%has_file_global_meta()) then
     yaml_file_attributes = diag_file_yaml%get_file_global_meta()
     do i = 1, size(yaml_file_attributes,1)
@@ -1316,6 +1323,12 @@ subroutine write_global_metadata(this)
     enddo
     deallocate(yaml_file_attributes)
   endif
+
+  !! Write out the 'title' global attribute
+  title = diag_yaml%get_title()
+  call register_global_attribute(fms2io_fileobj, 'title', trim(title), &
+    str_len=len_trim(title))
+
 end subroutine write_global_metadata
 
 !< @brief Writes a variable's metadata in the netcdf file
@@ -1828,7 +1841,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
 
     cell_measures = ""
     if (field_ptr%has_area()) then
-      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true.)
+      cell_measures = "area: "//diag_field(field_ptr%get_area())%get_varname(to_write=.true., &
+        filename=diag_file%get_file_fname())
 
       !! Determine if the area field is already in the file. If it is not create the "associated_files" attribute
       !! which contains the file name of the file the area field is in. This is needed for PP/fregrid.
@@ -1839,7 +1853,8 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
     endif
 
     if (field_ptr%has_volume()) then
-      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(to_write=.true.)
+      cell_measures = trim(cell_measures)//" volume: "//diag_field(field_ptr%get_volume())%get_varname(&
+        to_write=.true., filename=diag_file%get_file_fname())
 
       !! Determine if the volume field is already in the file. If it is not create the "associated_files" attribute
       !! which contains the file name of the file the volume field is in. This is needed for PP/fregrid.
@@ -1851,7 +1866,7 @@ subroutine write_field_metadata(this, diag_field, diag_axis)
 
     call field_ptr%write_field_metadata(fms2io_fileobj, diag_file%id, diag_file%yaml_ids(i), diag_axis, &
       this%FMS_diag_file%get_file_unlimdim(), is_regional, cell_measures, &
-      diag_file%is_using_collective_writes())
+      diag_file%is_using_collective_writes(), diag_file%axis_ids(1:diag_file%number_of_axis))
   enddo
 
   if (need_associated_files) &
