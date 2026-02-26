@@ -18,7 +18,7 @@
 
 # Copyright (c) GFDL, @underwoo
 
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
@@ -26,7 +26,7 @@ project(FMS
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(GNUInstallDirs)
 
 if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel|DebugUFS|ReleaseUFS)$")
@@ -66,6 +66,11 @@ option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"            
 option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 option(USE_DEPRECATED_IO     "THIS OPTION HAS NO EFFECT AND WILL BE REMOVED IN A FUTURE RELEASE"   OFF)
+
+if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
+  set(ENABLE_QUAD_PRECISION OFF)
+  message(WARNING "NVHPC does not support building FMS with QUAD_PRECISION!")
+endif()
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -337,6 +342,7 @@ foreach(kind ${kinds})
                                                  mosaic2/include
                                                  constants
                                                  astronomy/include
+                                                 field_manager/
                                                  field_manager/include
                                                  time_interp/include
                                                  tracer_manager/include
@@ -752,9 +758,13 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/parser/parser_demo2.F90
   test_fms/parser/test_output_yaml.F90
   test_fms/parser/generic_blocks.F90
-  test_fms/string_utils/test_string_utils.F90
   test_fms/time_manager/test_time_manager.F90
   )
+if(NOT ${CMAKE_Fortran_COMPILER_ID} STREQUAL "NVHPC")
+list(APPEND TEST_SRC_SINGLE_TARGET
+test_fms/string_utils/test_string_utils.F90
+)
+endif()
 # list any test sources that are used for two executables (r4 and r8)
 list(APPEND TEST_SRC_TWO_TARGETS
   test_fms/astronomy/test_astronomy.F90
