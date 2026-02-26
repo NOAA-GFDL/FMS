@@ -180,6 +180,8 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_memutils.F90
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
+  offloading/offloading_io.F90
+  offloading/metadata_transfer.F90
   parser/yaml_parser.F90
   parser/fms_yaml_output.F90
   platform/platform.F90
@@ -757,6 +759,8 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/parser/generic_blocks.F90
   test_fms/string_utils/test_string_utils.F90
   test_fms/time_manager/test_time_manager.F90
+  test_fms/offloading/test_metadata_transfer.F90
+  test_fms/offloading/test_io_offloading.F90
   )
 # list any test sources that are used for two executables (r4 and r8)
 list(APPEND TEST_SRC_TWO_TARGETS
