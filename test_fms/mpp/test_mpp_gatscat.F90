@@ -112,7 +112,6 @@ contains
 
   !> @brief Test the mpp_scatter functions with FLOAT_KIND data arguments.
   subroutine test_scatter_2D_R4(npes,pe,root,out_unit)
-    use mpi
     integer, intent(in) :: npes,pe,root,out_unit
 
     integer :: pelist(npes)

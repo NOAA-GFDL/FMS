@@ -643,7 +643,10 @@
 
     integer              :: i, j, m, n, xhalosz, yhalosz, memory_xsize, memory_ysize
     integer              :: whalosz, ehalosz, shalosz, nhalosz
-    integer              :: ipos, jpos, pos, tile, nlist, cur_tile_id, cur_comm_id
+    integer              :: ipos, jpos, pos, tile, nlist, cur_tile_id
+#ifdef use_libMPI
+    type(mpi_comm)       :: cur_comm
+#endif
     integer              :: ndivx, ndivy, isg, ieg, jsg, jeg, ishift, jshift, errunit, logunit
     integer              :: x_offset, y_offset, start_pos, nfold
     logical              :: from_mosaic, is_complete
@@ -683,22 +686,36 @@
     cur_tile_id = 1
     if(present(tile_id)) cur_tile_id = tile_id
 
-    cur_comm_id=0
+#ifdef use_libMPI
+    cur_comm = mpi_comm_null
+#endif
     if( PRESENT(pelist) )then
        allocate( pes(0:size(pelist(:))-1) )
        pes = pelist
        if(from_mosaic) then
           allocate( pesall(0:mpp_npes()-1) )
-          call mpp_get_current_pelist(pesall, commID=cur_comm_id)
+#ifdef use_libMPI
+          call mpp_get_current_pelist(pesall, comm=cur_comm)
+#else
+          call mpp_get_current_pelist(pesall)
+#endif
        else
           allocate( pesall(0:size(pes(:))-1) )
           pesall = pes
-          call mpp_get_current_pelist(pesall, commID=cur_comm_id)
+#ifdef use_libMPI
+          call mpp_get_current_pelist(pesall, comm=cur_comm)
+#else
+          call mpp_get_current_pelist(pesall)
+#endif
        end if
     else
        allocate( pes(0:mpp_npes()-1) )
        allocate( pesall(0:mpp_npes()-1) )
-       call mpp_get_current_pelist(pes, commID=cur_comm_id)
+#ifdef use_libMPI
+       call mpp_get_current_pelist(pes, comm=cur_comm)
+#else
+       call mpp_get_current_pelist(pes)
+#endif
        pesall = pes
     end if
 
@@ -796,7 +813,9 @@
        allocate(domain%tile_id_all(1))
        domain%tile_id        = cur_tile_id
        domain%tile_id_all    = cur_tile_id
-       domain%tile_comm_id   = cur_comm_id
+#ifdef use_libMPI
+       domain%tile_comm      = cur_comm
+#endif
        domain%ntiles         = 1
        domain%max_ntile_pe   = 1
        domain%ncontacts      = 0
@@ -855,7 +874,9 @@
     if( ANY(pes == mpp_pe()) ) then
        domain%io_layout = layout
        domain%tile_root_pe  = pes(0)
-       domain%comm_id   = cur_comm_id
+#ifdef use_libMPI
+       domain%comm = cur_comm
+#endif
        if( ipos.EQ.NULL_PE .OR. jpos.EQ.NULL_PE ) &
             call mpp_error( FATAL, 'MPP_DEFINE_DOMAINS2D: pelist must include this PE for '//trim(domain%name) )
        if( debug ) then
@@ -1261,7 +1282,11 @@ end subroutine check_message_size
             'mpp_domains_define.inc: size of pelist is not equal mpp_npes')
        pes = pelist
     end if
-    call mpp_get_current_pelist(pes, commID=domain%comm_id)
+#ifdef use_libMPI
+    call mpp_get_current_pelist(pes, comm=domain%comm)
+#else
+    call mpp_get_current_pelist(pes)
+#endif
     !--- pelist should be monotonic increasing by 1.
     do n = 1, nlist-1
        if(pes(n) - pes(n-1) .NE. 1) call mpp_error(FATAL, &
@@ -1382,7 +1407,9 @@ end subroutine check_message_size
     allocate(tile_count(pes(0):pes(0)+nlist-1))
     tile_count = 0  ! tile number on current pe
 
-    domain%tile_comm_id=0
+#ifdef use_libMPI
+    domain%tile_comm = mpi_comm_null
+#endif
     do n = 1, num_tile
        allocate(mask(layout(1,n), layout(2,n)))
        allocate(pelist_tile(pe_start(n):pe_end(n)) )
@@ -1392,7 +1419,11 @@ end subroutine check_message_size
        end do
        !--- set the tile communicator
        if (ANY(pelist_tile == pe)) then
-         call mpp_declare_pelist(pelist_tile, commID=domain%tile_comm_id)
+#ifdef use_libMPI
+         call mpp_declare_pelist(pelist_tile, comm=domain%tile_comm)
+#else
+         call mpp_declare_pelist(pelist_tile)
+#endif
        endif
        mask = .TRUE.
        if(present(maskmap))  mask = maskmap(1:layout(1,n), 1:layout(2,n), n)

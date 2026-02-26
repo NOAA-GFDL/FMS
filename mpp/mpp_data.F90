@@ -27,8 +27,8 @@
 !> @{
 module mpp_data_mod
 
-#if defined(use_libMPI)
-  use mpi
+#ifdef use_libMPI
+  use mpi_f08
 #endif
 
   use mpp_parameter_mod, only : MAXPES
@@ -42,8 +42,12 @@ module mpp_data_mod
   public version
 
   !> public data used by mpp_mod
-  public :: stat, mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
+  public :: mpp_stack, ptr_stack, status, ptr_status, sync, ptr_sync
   public :: mpp_from_pe, ptr_from, remote_data_loc, ptr_remote
+
+#ifdef use_libMPI
+  public :: stat
+#endif
 
   !--- All othere modules should import these parameters from mpp_domains_mod.
   !> public data which is used by mpp_domains_mod.
