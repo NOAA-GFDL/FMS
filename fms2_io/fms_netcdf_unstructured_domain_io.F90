@@ -17,10 +17,16 @@
 !***********************************************************************
 !> @defgroup fms_netcdf_unstructured_domain_io_mod fms_netcdf_unstructured_domain_io_mod
 !> @ingroup fms2_io
-!> @brief Handles netcdf I/O for unstructured domains
+!> @brief This module defines a derived type, FmsNetcdfUnstructuredDomainFile_t, and routines to handle
+!! io operations when using a domain decomposition on a unstructured grid.
 !!
-!> Mainly routines for use via interfaces in @ref fms2_io_mod
-
+!! An unstructured grid has custom axes defined to behave differently than standard cartesian grids. These
+!! grids are domain decomposed just like other grids, so global data is split amongst PEs.
+!! For more information, see the domainUG type defined in mpp_domains_mod.
+!!
+!! This module is not intended to be used externally, fms2_io_mod is intended to publicize the routines
+!! and types defined here to provide a single set of interfaces to be used across file types.
+!!
 module fms_netcdf_unstructured_domain_io_mod
 use netcdf
 use mpp_domains_mod
@@ -30,7 +36,9 @@ use platform_mod
 implicit none
 private
 
-!> @brief netcdf unstructured domain file type.
+!> @brief Type to represent a netCDF file when using a domain decompostion
+!! on a unstructured grid.
+!!
 !> @ingroup fms_netcdf_unstructured_domain_io_mod
 type, public, extends(FmsNetcdfFile_t) :: FmsNetcdfUnstructuredDomainFile_t
   type(domainug) :: domain !< Unstructured domain.
