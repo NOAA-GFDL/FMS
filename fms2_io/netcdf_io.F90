@@ -24,6 +24,9 @@
 !! processors (see mpp_domains module). The FmsNetcdfFile_t type acts a base class that is extended by both
 !! FmsNetcdfDomainFile_t and FmsNetcdfUnstructuredDomainFile_t.
 !!
+!! This module is not intended to be used externally, fms2_io_mod is intended to publicize the routines
+!! and types defined here to provide a single set of interfaces between the three different file types.
+!!
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod
@@ -137,7 +140,9 @@ type, public :: fmsOffloadingIn_type
     procedure :: init
 endtype fmsOffloadingIn_type
 
-!> @brief Netcdf file type.
+!> @brief Type to represent a netCDF file. Can be used with multiple cores
+!! but only the root pe will perform any I/O operations, before sending the
+!! data to the other pes. 
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=FMS_PATH_LEN) :: path !< File path.

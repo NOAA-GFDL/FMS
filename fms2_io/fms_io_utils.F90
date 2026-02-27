@@ -72,11 +72,13 @@ type :: char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
-!> Reads in a ASCII file from a given path and populates a mask that corresponds to a domain decomposition.
-!! This mask differs from others across FMS in that it is for a specific rank and its associated data region,
-!! instead of masking out specific indices from a corresponding array.
+!> Reads in a ASCII file from a given path and populates a maskmap that corresponds to a domain decomposition.
 !!
-!! Mask format is as follows:
+!! The logical array created will be the same shape as the domain layout, with each index representing a specific pe within the
+!  decomposition. This array is intended to be used as input for the mpp_define_domain routines maskmap argument,
+!! to essentially exclude certain pe's from a domain decomposition.
+!!
+!! Mask table format is as follows:
 !!
 !! <number-of-ranks-to-mask>
 !! <domain-layout>
@@ -90,7 +92,7 @@ endtype char_linked_list
 !! 1,1
 !! 4,4
 !!
-!! For this mask file, 2 rank's would be masked: the top right corner (1,1) and the bottom left corner (4,4)
+!! For this mask table, 2 rank's would be masked: the top right corner (1,1) and the bottom left corner (4,4)
 !!
 !! This interface includes support for both 2D and 3D mask tables.
 !!
@@ -100,8 +102,10 @@ interface parse_mask_table
   module procedure parse_mask_table_3d
 end interface parse_mask_table
 
-!> Gets the output filename for a mosaic domain that contains multiple tiles.
-!! Each file will include its tile number when output.
+!> Gets the file name to be used when utilizing a mosaic that contains multiple tiles.
+!! This is currenly used in the diag_manager and data_override in so that any output files
+!! will include the tile number of the writer. Uses the format "filename.tileN.nc" and requires
+!! the filename to already include the .nc suffix.
 !> @ingroup fms_io_utils_mod
 interface get_mosaic_tile_file
   module procedure get_mosaic_tile_file_sg

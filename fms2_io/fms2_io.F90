@@ -23,9 +23,9 @@
 !! 2) Netcdf files with structured grid domains via the fms_netcdf_domain_io_mod module.
 !! 3) Netcdf files with unstructured grid domains via the fms_netcdf_unstructured_domain_io_mod module.
 !!
-!! To accomplish this with a unified interface, this module re-exports key types and procedures from the
-!! aforementioned helper modules. This allows users to interact with different types of netcdf files
-!! via a consistent set of interface calls (ie. open_file, close_file, write_data, read_data, etc).
+!! This module defines public facing interfaces so that each netcdf file type above can be interacted with
+!! via a consistent set of interface calls. This allows the same interfaces to be used for operations (open_file, write_file, etc.)
+!! regardless of the specific type of netcdf file/fileobj.
 !!
 !! Each file type mentioned above has its own specific derived type to represent the file's metadata and data structure:
 !!
@@ -77,8 +77,8 @@ private
 !> NetCDF constant (enum) for unlimited dimension identification
 public :: unlimited
 
-!> File object types are defined in the helper modules (netcdf_io_mod,fms_netcdf_domain_io_mod,fms_netcdf_unstructured_domain_io_mod)
-!! but are made public here for user access.
+!> File object types are defined in the helper modules (netcdf_io_mod,fms_netcdf_domain_io_mod,
+!! fms_netcdf_unstructured_domain_io_mod) but are made public here for user access.
 public :: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
 
 !> interfaces that are defined below but utilize helper module routines.
