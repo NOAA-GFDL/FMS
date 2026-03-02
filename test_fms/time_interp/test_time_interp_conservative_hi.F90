@@ -33,6 +33,7 @@ program test_time_interp_with_interp
   use time_interp_external2_mod, only: init_external_field, time_interp_external_init, time_interp_external
 
   use time_manager_mod, only: JULIAN, time_type, set_date, set_calendar_type, time_manager_init
+  use platform_mod, only: r4_kind, r8_kind
 
   implicit none
 
