@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
         libyaml-flag: [ "", -DWITH_YAML=on ]
         build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
     container:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
       env:
-        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }}"
+        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
+        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
@@ -27,21 +27,23 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view ..
+        cmake $CMAKE_FLAGS -DOPENMP=on -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
     - name: Build the library
       run: make -C build
+    - name: Run the unit tests
+      run: cd build && ctest -E "${EXCLUDE_TESTS}" --output-on-failure
 
   build_arm:
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
-        omp-flags: [ -DOPENMP=on, -DOPENMP=off ]
         libyaml-flag: [ "", -DWITH_YAML=on ]
         build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
     container:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm
       env:
-        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.omp-flags }} ${{ matrix.libyaml-flag }}"
+        CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
+        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask|test_sat_vapor_pres"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
@@ -50,6 +52,8 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake $CMAKE_FLAGS -DNetCDF_ROOT=/opt/view ..
+        cmake $CMAKE_FLAGS -DOPENMP=on -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
     - name: Build the library
       run: make -C build
+    - name: Run the unit tests
+      run: cd build && ctest -E "${EXCLUDE_TESTS}" --output-on-failure

@@ -97,17 +97,6 @@ AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
 
-AC_ARG_ENABLE([deprecated-io],
-  [AS_HELP_STRING([--enable-deprecated-io],
-    [THIS OPTION HAS BEEN DEPRECATED!!!])])
-AS_IF([test ${enable_deprecated_io:-no} = yes],
-  [enable_deprecated_io=yes],
-  [enable_deprecated_io=no])
-
-if test $enable_deprecated_io = yes; then
-  AC_MSG_ERROR(FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS OR REVERT TO VERSION 2025.02)
-fi
-
 AC_ARG_ENABLE([r8-default],
   [AS_HELP_STRING([--disable-r8-default],
     [Disables the build from adding the 8 byte default real kind flag during compilation (default no)])])
