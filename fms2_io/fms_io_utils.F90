@@ -74,9 +74,9 @@ endtype char_linked_list
 
 !> Reads in a ASCII file from a given path and populates a maskmap that corresponds to a domain decomposition.
 !!
-!! The logical array created will be the same shape as the domain layout, with each index representing a specific pe within the
-!  decomposition. This array is intended to be used as input for the mpp_define_domain routines maskmap argument,
-!! to essentially exclude certain pe's from a domain decomposition.
+!! The logical array created will be the same shape as the domain layout, with each index representing a specific pe
+!! within the decomposition. This array is intended to be used as input for the mpp_define_domain routines maskmap
+!! argument, to essentially exclude certain pe's from a domain decomposition.
 !!
 !! Mask table format is as follows:
 !!
