@@ -2388,6 +2388,42 @@ end subroutine mpp_get_tile_compute_domains
 
 end subroutine set_group_update
 
+subroutine group_assign_bounds(group, field_type, field)
+  type(mpp_group_update_type), intent(inout) :: group
+  integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
+  class(*), intent(in) :: field(..)
+  integer :: n !< Rank of field
+
+  n = rank(field)
+
+  select case (field_type)
+    case (FIELD_S)
+      allocate (group%shape_s(n))
+      group%shape_s = shape(field)
+
+      !group%lb_s(group%ix_s) = group%is_s
+      !group%lb_s(group%iy_s) = group%js_s
+      !group%ub_s(group%ix_s) = group%ie_s
+      !group%ub_s(group%iy_s) = group%je_s
+    case (FIELD_X)
+      allocate (group%shape_x(n))
+      group%shape_x = shape(field)
+
+      !group%lb_x(group%ix_v) = group%is_x
+      !group%lb_x(group%iy_v) = group%js_x
+      !group%ub_x(group%ix_v) = group%ie_x
+      !group%ub_x(group%iy_v) = group%je_x
+    case (FIELD_Y)
+      allocate (group%shape_y(n))
+      group%shape_y = shape(field)
+
+      !group%lb_y(group%ix_v) = group%is_y
+      !group%lb_y(group%iy_v) = group%js_y
+      !group%ub_y(group%ix_v) = group%ie_y
+      !group%ub_y(group%iy_v) = group%je_y
+  end select
+end subroutine group_assign_bounds
+
 
 !######################################################################
   subroutine mpp_clear_group_update(group)
