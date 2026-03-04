@@ -406,8 +406,12 @@ fi
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 
 # Check if the launcher can oversubscribe the MPI processes
-AS_IF([$MPI_LAUNCHER --oversubscribe hostname], \
+AS_IF([$MPI_LAUNCHER --oversubscribe nproc >/dev/null 2>&1], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
+
+# newer openmpi versions take a different flag
+AS_IF([$MPI_LAUNCHER --map-by :OVERSUBSCRIBE nproc >/dev/null 2>&1], \
+      [ AC_SUBST([OVERSUBSCRIBE], [--map-by :OVERSUBSCRIBE])])
 
 # Compiler with version information. This consists of the full path
 # name of the compiler and the reported version number.
