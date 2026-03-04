@@ -24,7 +24,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2026.01-dev],
+  [2026.01.01],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -96,17 +96,6 @@ AC_ARG_ENABLE([8byte-int],
 AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
-
-AC_ARG_ENABLE([deprecated-io],
-  [AS_HELP_STRING([--enable-deprecated-io],
-    [THIS OPTION HAS BEEN DEPRECATED!!!])])
-AS_IF([test ${enable_deprecated_io:-no} = yes],
-  [enable_deprecated_io=yes],
-  [enable_deprecated_io=no])
-
-if test $enable_deprecated_io = yes; then
-  AC_MSG_ERROR(FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS OR REVERT TO VERSION 2025.02)
-fi
 
 AC_ARG_ENABLE([r8-default],
   [AS_HELP_STRING([--disable-r8-default],

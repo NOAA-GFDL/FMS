@@ -6,6 +6,13 @@ and this project uses `yyyy.rr[.pp]`, where `yyyy` is the year a patch is releas
 `rr` is a sequential release number (starting from `01`), and an optional two-digit
 sequential patch number (starting from `01`).
 
+## [2026.01.01] - 2026-03-03
+
+### Fixed
+- Fix: modern diag manager cell measures and associated files (#1837)
+- Avoid integer overflow in mpp_define_unstruct_domain (#1841)
+- Fixes for cmake 32/64bit builds and enable CI testing via ctest (#1787)
+
 ## [2026.01] - 2026-01-26
 
 ### Known Issues
