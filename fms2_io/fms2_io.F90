@@ -17,12 +17,7 @@
 !***********************************************************************
 !> @defgroup fms2_io_mod fms2_io_mod
 !> @ingroup fms2_io
-!> @brief This module aims support netCDF I/O operations for 3 use-cases within the FMS framework:
-!!
-!! 1) Netcdf operations done on a single core via the netcdf_io_mod module.
-!! 2) Netcdf operations done with multiple cores on a structured grid via the fms_netcdf_domain_io_mod module.
-!! 3) Netcdf operations done with multiple cores on a unstructured grid via the fms_netcdf_unstructured_domain_io_mod
-!!    module.
+!> @brief This module aims support netCDF I/O operations.
 !!
 !! fms2_io_mod is the top level module that provides open, close, read, and write interfaces to the NetCDF package.
 !! This module defines public "aliases"(interfaces) to select procedures in fms_netcdf_domain_io_mod for reading/writing
@@ -45,11 +40,17 @@
 !!   and each MPI rank holds its portion of the global data.  The users must provide a domain of type Domain2D from
 !!   mpp_domains_mod when initializing this file object.
 !!
-!! - FmsNetcdfUnstructuredDomainFile_t: extends upon FmsNetcdfUnstructuredDomainFile_t and adds support for
+!! - FmsNetcdfUnstructuredDomainFile_t: also extends upon FmsNetcdfFile_t and adds support for
 !!   “domain-decomposed” reads/writes for data decomposed on subdomains of unstructured grids
 !!   The users must provide a domain of type DomainUG from mpp_domains_mod when initializing this file object.
 !!
 !! See mpp_domains_mod documentation for more information on creating a domain decomposition using FMS.
+!!
+!! These types correspond to 3 use-cases within the FMS framework.
+!!
+!! 1) Netcdf operations for standard data (FmsNetcdfFile_t).
+!! 2) Netcdf operations for domain decomposed data on a structured grid(FmsNetcdfDomainFile_t).
+!! 3) Netcdf operations for domain decomposed data on a unstructured grid(FmsNetcdfUnstructuredDomainFile_t).
 !!
 !! When doing IO on multiple cores, either via the FmsNetcdfDomainFile_t or the FmsNetcdfUnstructuredDomainFile_t,
 !! the number of cores performing IO operations is set by the io_layout. The io_layout is 2 integers set via
@@ -169,6 +170,17 @@ public :: nullify_filename_appendix
 !!
 !! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or
 !! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
+!!
+!! Netcdf's collective IO functionality can be enabled when opening a file in order to perform collective read and
+!! writes. This will use netcdf libraries capabilities for parallel file access, allowing all processors
+!! to perform data reads and writes, but requires hdf5 and netcdf to be built with MPI support.
+!! Example usage:
+!!
+!!              io_success = open_file(fileobj, "test_collective_io.nc", "read", domain, nc_format=nc_format, &
+!!                                     use_netcdf_mpi=.true., use_collective=.true.)
+!!
+!! See fms2_io/readme.md for more information.
+!!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module.
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
