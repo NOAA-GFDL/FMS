@@ -142,7 +142,7 @@ endtype fmsOffloadingIn_type
 
 !> @brief Type to represent a netCDF file. Can be used with multiple cores
 !! but only the root pe will perform any I/O operations, before sending the
-!! data to the other pes. 
+!! data to the other pes.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=FMS_PATH_LEN) :: path !< File path.
