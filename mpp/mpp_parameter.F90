@@ -62,10 +62,6 @@ module mpp_parameter_mod
 
   !--- public parameters which is used by mpp_domains_mod and its components.
   !--- All othere modules should import these parameters from mpp_io_mod.
-  !--- public :: MPP_WRONLY, MPP_RDONLY, MPP_APPEND, MPP_OVERWR, MPP_ASCII, MPP_IEEE32
-  !--- public :: MPP_NATIVE, MPP_NETCDF, MPP_SEQUENTIAL, MPP_DIRECT, MPP_SINGLE, MPP_MULTI
-  !--- public :: MPP_DELETE, MPP_COLLECT, NULLUNIT, NULLTIME
-  !--- public :: MAX_FILE_SIZE,
   public :: ROOT_GLOBAL, GLOBAL_ROOT_ONLY
   public :: r4_kind, r8_kind
 
