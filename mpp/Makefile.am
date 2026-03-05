@@ -56,7 +56,6 @@ libmpp_la_SOURCES = \
   include/mpp_do_checkV.fh \
   include/mpp_do_get_boundary.fh \
   include/mpp_do_get_boundary_ad.fh \
-  include/mpp_do_global_field.fh \
   include/mpp_do_global_field_ad.fh \
   include/mpp_do_redistribute.fh \
   include/mpp_do_update.fh \
@@ -86,6 +85,8 @@ libmpp_la_SOURCES = \
   include/mpp_global_sum_ad.fh \
   include/mpp_global_sum_tl.fh \
   include/mpp_group_update.fh \
+  include/mpp_pack.fh \
+  include/mpp_pack.inc \
   include/mpp_read_2Ddecomp.fh \
   include/mpp_read_compressed.fh \
   include/mpp_read_distributed_ascii.fh \
@@ -152,6 +153,8 @@ mpp_mod.$(FC_MODEXT): \
   include/mpp_type_nocomm.fh \
   include/mpp_gather.fh \
   include/mpp_scatter.fh \
+  include/mpp_pack.fh \
+  include/mpp_pack.inc \
   include/system_clock.fh
 mpp_data_mod.$(FC_MODEXT): \
   mpp_parameter_mod.$(FC_MODEXT) \
@@ -193,7 +196,6 @@ mpp_domains_mod.$(FC_MODEXT): \
   include/mpp_update_domains2D_nonblock.fh \
   include/mpp_update_nest_domains.fh \
   include/mpp_domains_reduce.inc \
-  include/mpp_do_global_field.fh \
   include/mpp_do_global_field_ad.fh \
   include/mpp_global_field.fh \
   include/mpp_global_field_ad.fh \
@@ -203,7 +205,9 @@ mpp_domains_mod.$(FC_MODEXT): \
   include/mpp_global_sum_tl.fh \
   include/mpp_unstruct_domain.inc \
   include/mpp_global_field_ug.fh \
-  include/mpp_unstruct_pass_data.fh
+  include/mpp_unstruct_pass_data.fh \
+  include/mpp_pack.fh \
+  include/mpp_pack.inc
 mpp_efp_mod.$(FC_MODEXT): mpp_parameter_mod.$(FC_MODEXT) mpp_mod.$(FC_MODEXT)
 mpp_memutils_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
 mpp_pset_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
