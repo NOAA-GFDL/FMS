@@ -31,8 +31,10 @@
   !> @brief Initialize the @ref mpp_mod module. Must be called before any usage.
   subroutine mpp_init( flags, comm, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
-  type(mpi_comm), optional, intent(in) :: comm !< Handle to the MPI communicator used to initialize
-  integer, optional, intent(in) :: localcomm !< ID of MPI communicator used to initialize (deprecated)
+  type(mpi_comm), optional, intent(in) :: comm !< MPI communicator to use. Only relevant if MPI has already
+                                               !! been initialized by an external call to mpi_init.
+  integer, optional, intent(in) :: localcomm !< Bare integer MPI communicator to use. Only relevant if MPI has already
+                                             !! been initialized by an external call to mpi_init. (deprecated)
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
                                               !! before completion for testing purposes
   character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
@@ -43,7 +45,8 @@
 
   if( module_is_initialized )return
 
-  call MPI_INITIALIZED( opened, error ) !in case called from another MPI package
+  ! Check if MPI has already been initialized by an external call to mpi_init.
+  call MPI_INITIALIZED( opened, error )
 
   if (opened) then
     if (present(comm)) then
