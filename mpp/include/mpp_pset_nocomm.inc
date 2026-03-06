@@ -1,7 +1,29 @@
+!***********************************************************************
+!*                             Apache License 2.0
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
+!***********************************************************************
+
+!> @addtogroup mpp_pset_mod
+!> @{
+
+  !> @brief Create a pset
+  !!
+  !! This must be called by all PEs in the parent pelist.
+  !! mpset must be an exact divisor of npes.
   subroutine mpp_pset_create(npset,pset,stacksize,pelist)
-!create PSETs
-!  called by all PEs in parent pelist
-!  mpset must be exact divisor of npes
     integer, intent(in) :: npset !number of PSETs per set
     type(mpp_pset_type), intent(inout) :: pset
     integer, intent(in), optional :: stacksize
@@ -104,6 +126,7 @@
     end if
   end subroutine mpp_pset_create
 
+  !> @brief Get the root pelist of a pset
   subroutine mpp_pset_get_root_pelist(pset,pelist)
     type(mpp_pset_type), intent(in) :: pset
     integer, intent(out) :: pelist(:)
@@ -118,3 +141,4 @@
     end if
     pelist(:) = pset%root_pelist(:)
   end subroutine mpp_pset_get_root_pelist
+!> @}
