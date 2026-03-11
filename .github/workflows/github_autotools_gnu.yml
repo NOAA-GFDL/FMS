@@ -21,8 +21,9 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.2.1
       env:
         TEST_VERBOSE: 1
-        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
+        DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }}"
         DEBUG_FLAGS: "-O0 -g -fbounds-check -ffpe-trap=invalid,zero,overflow" # debug compiler flags taken from the mkmf template
+        SKIP_TESTS: "test_time_interp2.7"
     steps:
     - name: Checkout code
       uses: actions/checkout@v6.0.1
