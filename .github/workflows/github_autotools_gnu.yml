@@ -30,10 +30,9 @@ jobs:
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build
-      if: ${{ matrix.conf-flag != '--disable-setting-flags' }}
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="$FCFLAGS $DEBUG_FLAGS"
     - name: Run distcheck (compiles, tests, and packages)
-      run: make -k distcheck
+      run: make distcheck
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
     - name: Build the library (without test suite for serial build)
       run: make

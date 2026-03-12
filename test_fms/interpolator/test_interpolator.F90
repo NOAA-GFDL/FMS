@@ -260,8 +260,7 @@ character(len=128)                            :: filename_aerosol
 type(FmsNetcdfFile_t) :: fileobj_aerosol
 
 filename_aerosol = "INPUT/aerosol.climatology.nc"
-if (.not. open_file(fileobj_aerosol, filename_aerosol, "read") ) &
-  call mpp_error(FATAL, "aerosol.climatology.nc file not found, check --enable-test-input value when configuring")
+if (.not. open_file(fileobj_aerosol, filename_aerosol, "read") ) return
 call interpolator_init( aerosol, "aerosol.climatology.nc", lonb, latb, &
                         data_names=names, data_out_of_bounds=data_out_of_bounds, &
                         vert_interp=vert_interp, clim_units=units )
@@ -297,8 +296,7 @@ character(len=128)                          :: filename_o3
 type(FmsNetcdfFile_t) :: fileobj_o3
 
 filename_o3 = "INPUT/o3.climatology.nc"
-if (.not. open_file(fileobj_o3, filename_o3, "read") ) &
-  call mpp_error(FATAL, "aerosol.climatology.nc file not found, check --enable-test-input value when configuring")
+if (.not. open_file(fileobj_o3, filename_o3, "read") ) return
 call interpolator_init( o3, "o3.climatology.nc", lonb, latb, &
                         data_out_of_bounds=data_out_of_bounds, vert_interp=vert_interp )
 

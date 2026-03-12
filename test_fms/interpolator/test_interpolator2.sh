@@ -61,13 +61,7 @@ cat <<_EOF > input.nml
 /
 _EOF
 
-set -x
-
 # Run test
-echo "asdf input dir: $test_input_path"
-ls $test_input_path
-ls $test_input_path/*
-ls INPUT
 test_expect_success "test interpolator" 'mpirun -n 1 ./test_interpolator'
 
 
