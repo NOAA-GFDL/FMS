@@ -29,12 +29,10 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !> @brief Initialize the @ref mpp_mod module. Must be called before any usage.
-  subroutine mpp_init( flags, comm, localcomm, test_level, alt_input_nml_path )
+  subroutine mpp_init_f08( flags, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
-  type(mpi_comm), optional, intent(in) :: comm !< MPI communicator to use. Only relevant if MPI has already
+  type(mpi_comm), optional, intent(in) :: localcomm !< MPI communicator to use. Only relevant if MPI has already
                                                !! been initialized by an external call to mpi_init.
-  integer, optional, intent(in) :: localcomm !< Bare integer MPI communicator to use. Only relevant if MPI has already
-                                             !! been initialized by an external call to mpi_init. (deprecated)
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
                                               !! before completion for testing purposes
   character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
@@ -49,11 +47,8 @@
   call MPI_INITIALIZED( opened, error )
 
   if (opened) then
-    if (present(comm)) then
-      mpp_comm_private = comm
-    elseif (present(localcomm)) then
-      call mpp_error(NOTE, "mpp_init: The localcomm argument is deprecated. Please use comm instead")
-      mpp_comm_private%mpi_val = localcomm
+    if (present(localcomm)) then
+      mpp_comm_private = localcomm
     else
       call mpp_error(FATAL, 'mpp_init: A communicator handle is required')
     endif
@@ -192,7 +187,7 @@
   call mpp_clock_begin(clock0)
 
   return
-end subroutine mpp_init
+end subroutine mpp_init_f08
 
 !#######################################################################
 !> Finalizes process termination. To be called at the end of a run.

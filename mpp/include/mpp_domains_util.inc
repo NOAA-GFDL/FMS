@@ -688,7 +688,6 @@ function mpp_get_domain_tile_root_pe(domain)
 
 end function mpp_get_domain_tile_root_pe
 
-#ifdef use_libMPI
 
 function mpp_get_domain_tile_comm(domain)
    type(domain2d), intent(in) :: domain                   !> domain you are querying for information
@@ -727,7 +726,6 @@ function mpp_get_domain_commid(domain)
 
 end function mpp_get_domain_commid
 
-#endif
 
 function mpp_get_io_domain(domain)
    type(domain2d), intent(in) :: domain

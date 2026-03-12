@@ -25,6 +25,7 @@
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
 !----------------------------------------------------------------!
+integer :: stat !< Unused dummy variable
 real(r8_kind), allocatable :: mpp_stack(:)
 
 !--- some dummy variables with dummy values that will never be used

@@ -26,9 +26,9 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> @brief Initialize the @ref mpp_mod module
-subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
+subroutine mpp_init_f08( flags, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
-  integer, optional, intent(in) :: localcomm !< ID of MPI communicator used to initialize (deprecated)
+  type(mpi_comm), optional, intent(in) :: localcomm !< Id of MPI communicator used to initialize
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
                                               !! before completion for testing purposes
   character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
@@ -130,7 +130,7 @@ subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   call mpp_clock_begin(clock0)
 
   return
-end subroutine mpp_init
+end subroutine mpp_init_f08
 
 !#######################################################################
 !> @brief To be called at the end of a run

@@ -433,6 +433,21 @@ end function rarray_to_char
     return
   end function mpp_root_pe
 
+  function mpp_comm()
+    type(mpi_comm) :: mpp_comm
+
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_comm: You must first call mpp_init.' )
+    mpp_comm = peset(current_peset_num)%comm
+  end function mpp_comm
+
+  function mpp_commID()
+    integer :: mpp_commID
+
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'mpp_commID: You must first call mpp_init.' )
+    call mpp_error(NOTE, "mpp_commID() is deprecated. Please use mpp_comm() instead.")
+    mpp_commID = peset(current_peset_num)%comm%mpi_val
+  end function mpp_commID
+
   !#####################################################################
   subroutine mpp_set_root_pe(num)
     integer, intent(in) :: num
@@ -443,6 +458,41 @@ end function rarray_to_char
     root_pe = num
     return
   end subroutine mpp_set_root_pe
+
+  !> @brief Declare a pelist.
+  !!
+  !> This call is written specifically to accommodate a MPI restriction
+  !! that requires a parent communicator to create a child communicator, In
+  !! other words: a pelist cannot go off and declare a communicator, but
+  !! every PE in the parent, including those not in pelist(:), must get
+  !! together for the <TT>MPI_COMM_CREATE</TT> call. The parent is
+  !! typically <TT>MPI_COMM_WORLD</TT>, though it could also be a subset
+  !! that includes all PEs in <TT>pelist</TT>.
+  !!
+  !! This call implies synchronization across the PEs in the current
+  !! pelist, of which <TT>pelist</TT> is a subset.
+  subroutine mpp_declare_pelist_legacy( pelist, name, commID )
+    integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
+    character(len=*), intent(in), optional :: name      !> unique name for an input pelist
+    integer, intent(out), optional  :: commID           !> integral MPI communicator handle
+    integer :: i
+
+    if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
+    i = get_peset(pelist)
+    write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
+    if( PRESENT(name) ) peset(i)%name = name
+    if( PRESENT(commID) ) then
+      commID = peset(i)%comm%mpi_val
+    endif
+  end subroutine mpp_declare_pelist_legacy
+
+  subroutine mpp_declare_pelist_f08( pelist, name, comm )
+    integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
+    character(len=*), intent(in), optional :: name      !> unique name for an input pelist
+    type(mpi_comm), intent(out)            :: comm      !> mpi_comm communicator handle
+
+    call mpp_declare_pelist_legacy(pelist, name, comm%mpi_val)
+  end subroutine mpp_declare_pelist_f08
 
   !#####################################################################
 
@@ -489,6 +539,30 @@ end function rarray_to_char
 
    mpp_get_current_pelist_name = peset(current_peset_num)%name
   end function mpp_get_current_pelist_name
+
+  !this is created for use by mpp_define_domains within a pelist
+  !will be published but not publicized
+  subroutine mpp_get_current_pelist_legacy( pelist, name, commID )
+    integer, intent(out) :: pelist(:)               !> Array to copy the pelist into
+    character(len=*), intent(out), optional :: name !> Name of the pelist
+    integer, intent(out), optional :: commID        !> Integral MPI communicator handle
+
+    if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
+         call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
+    pelist(:) = peset(current_peset_num)%list(:)
+    if( PRESENT(name) ) name = peset(current_peset_num)%name
+    if( PRESENT(commID) ) then
+      commID = peset(current_peset_num)%comm%mpi_val
+    endif
+  end subroutine mpp_get_current_pelist_legacy
+
+  subroutine mpp_get_current_pelist_f08( pelist, name, comm )
+    integer, intent(out)                    :: pelist(:) !> Array to copy the pelist into
+    character(len=*), intent(out), optional :: name      !> Name of the pelist
+    type(mpi_comm), intent(out)             :: comm      !> mpi_comm communicator handle
+
+    call mpp_get_current_pelist_legacy(pelist, name, comm%mpi_val)
+  end subroutine mpp_get_current_pelist_f08
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !                                                                             !
@@ -1061,10 +1135,8 @@ end function rarray_to_char
      allocate(peset_old(0:old_peset_max))
      do n = 0, old_peset_max
         peset_old(n)%count      = peset(n)%count
-#if defined(use_libMPI)
         peset_old(n)%comm       = peset(n)%comm
         peset_old(n)%group      = peset(n)%group
-#endif
         peset_old(n)%name       = peset(n)%name
         peset_old(n)%start      = peset(n)%start
         peset_old(n)%log2stride = peset(n)%log2stride
@@ -1081,19 +1153,15 @@ end function rarray_to_char
      current_peset_max = min(PESET_MAX, 2*old_peset_max)
      allocate(peset(0:current_peset_max))
      peset(:)%count = -1
-#if defined(use_libMPI)
      peset(:)%comm = mpi_comm_null
      peset(:)%group = mpi_group_null
-#endif
      peset(:)%start = -1
      peset(:)%log2stride = -1
      peset(:)%name  = " "
      do n = 0, old_peset_max
         peset(n)%count      = peset_old(n)%count
-#if defined(use_libMPI)
         peset(n)%comm       = peset_old(n)%comm
         peset(n)%group      = peset_old(n)%group
-#endif
         peset(n)%name       = peset_old(n)%name
         peset(n)%start      = peset_old(n)%start
         peset(n)%log2stride = peset_old(n)%log2stride

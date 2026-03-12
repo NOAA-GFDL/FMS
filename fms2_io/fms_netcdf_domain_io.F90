@@ -358,7 +358,6 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
 
   io_domain => mpp_get_io_domain(domain)
 
-#ifdef use_libMPI
   if (present(use_netcdf_mpi)) then
     if (use_netcdf_mpi) then
       if (associated(io_domain)) then
@@ -392,7 +391,6 @@ function open_domain_file(fileobj, path, mode, domain, nc_format, is_restart, do
       return
     endif
   endif
-#endif
 
   !Get the path of a "combined" file.
   io_layout = mpp_get_io_domain_layout(domain)
