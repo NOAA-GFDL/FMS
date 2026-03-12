@@ -23,7 +23,8 @@ jobs:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }}"
         DEBUG_FLAGS: "-O0 -g -fbounds-check -ffpe-trap=invalid,zero,overflow" # debug compiler flags taken from the mkmf template
-        SKIP_TESTS: "test_time_interp2.7 test_time_interp2.8" # TODO, these tests pass occasionally, but usually fail opening input
+        # tests to skip in CI testing, skips all the openmp + logical mask tests for the diag_manager due to issues with gcc
+        SKIP_TESTS: "test_time_none.10 test_time_sum.10 test_time_avg.10 test_time_min.10 test_time_max.10 test_time_pow.10 test_time_rms.10"
     steps:
     - name: Checkout code
       uses: actions/checkout@v6.0.1
