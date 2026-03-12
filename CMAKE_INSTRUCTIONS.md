@@ -82,6 +82,7 @@ The following build options are available:
 -DGFS_PHYS              "Enable compiler definition -DGFS_PHYS"              DEFAULT:OFF
 -DLARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         DEFAULT:OFF
 -DWITH_YAML             "Enable compiler definition -Duse_yaml"              DEFAULT:OFF
+-DUNIT_TESTS            "Toggle on build of unit tests"                      DEFAULT:OFF
 ```
 
 ## 3. Installation structure
