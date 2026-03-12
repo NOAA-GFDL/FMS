@@ -165,7 +165,7 @@ type, public :: FmsNetcdfFile_t
                                                !! restart variables
   type(fmsOffloadingIn_type) :: offloading_obj_in
   logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
-  integer :: tile_comm=mpp_comm_null !< MPI communicator used for MPI-IO reads.
+  integer :: tile_comm=MPP_COMM_NULL !< MPI communicator used for MPI-IO reads.
   logical :: use_netcdf_mpi = .false.
 
   contains
@@ -607,7 +607,7 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
 
   fileobj%use_netcdf_mpi = .false.
 
-  if (fileobj%tile_comm.ne.mpp_comm_null) then
+  if (fileobj%tile_comm.ne.MPP_COMM_NULL) then
     call mpp_error(NOTE, "netcdf_file_open :: Setting fileobj%tile_comm is deprecated. &
                           Please use open_file(..., tile_comm=...) instead.")
     fileobj%use_netcdf_mpi = .true.
@@ -700,16 +700,16 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
     ! Using MPI-IO: Every PE opens the file
     if(string_compare(mode, "read", .true.)) then
       err = nf90_open(trim(fileobj%path), ior(nf90_nowrite, nf90_mpiio), fileobj%ncid, &
-                      comm=fileobj%tile_comm, info=mpp_info_null)
+                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     elseif(string_compare(mode, "append", .true.)) then
       err = nf90_open(trim(fileobj%path), ior(nf90_write, nf90_mpiio), fileobj%ncid, &
-                      comm=fileobj%tile_comm, info=mpp_info_null)
+                      comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     elseif (string_compare(mode, "write", .true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
-                        comm=fileobj%tile_comm, info=mpp_info_null)
+                        comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
-                        comm=fileobj%tile_comm, info=mpp_info_null)
+                        comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     else
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")
