@@ -57,7 +57,7 @@ option(64BIT       "Build 64-bit (r8) FMS library"        OFF)
 option(FPIC        "Build with position independent code" OFF)
 option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
 option(OPENACC     "Build FMS with OpenACC support"       OFF)
-option(UNIT_TESTS    "Build FMS tests"                      OFF)
+option(UNIT_TESTS  "Build FMS tests"                      OFF)
 
 # Options for compiler definitions
 option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
