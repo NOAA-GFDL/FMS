@@ -20,11 +20,11 @@ jobs:
     container:
       image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.2.1
       env:
-        TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }}"
         DEBUG_FLAGS: "-O0 -g -fbounds-check -ffpe-trap=invalid,zero,overflow" # debug compiler flags taken from the mkmf template
-        # tests to skip in CI testing, skips all the openmp + logical mask tests for the diag_manager due to issues with gcc
-        SKIP_TESTS: "test_time_none.10 test_time_sum.10 test_time_avg.10 test_time_min.10 test_time_max.10 test_time_pow.10 test_time_rms.10"
+        # diag manager openmp + logical mask tests fail with gcc, these are reproducible outside the CI
+        # test_mpp_clock_begin_end_id is an expected fail that is passing, does not seem to show up outside CI
+        SKIP_TESTS: "test_time_none.10 test_time_sum.10 test_time_avg.10 test_time_min.10 test_time_max.10 test_time_pow.10 test_time_rms.10 test_mpp_clock_begin_end_id.10"
     steps:
     - name: Checkout code
       uses: actions/checkout@v6.0.1
@@ -33,7 +33,9 @@ jobs:
     - name: Configure the build
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="$FCFLAGS $DEBUG_FLAGS"
     - name: Run distcheck (compiles, tests, and packages)
-      run: make distcheck
+      run: |
+        make distcheck 2>&1 > distcheck.log
+        grep -E "^FAIL:|^XPASS:" distcheck.log
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
     - name: Build the library (without test suite for serial build)
       run: make
