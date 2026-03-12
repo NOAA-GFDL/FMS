@@ -25,10 +25,10 @@
 !----------------------------------------------------------------!
 ! The following data is used in mpp_mod and its components       !
 !----------------------------------------------------------------!
-integer :: stat !< Unused dummy variable
 real(r8_kind), allocatable :: mpp_stack(:)
 
 !--- some dummy variables with dummy values that will never be used
+integer, parameter :: stat=-999
 integer, parameter :: ptr_stack = -999
 integer, parameter :: status=-999, ptr_status = -999
 integer, parameter :: remote_data_loc=-999, ptr_remote = -999
