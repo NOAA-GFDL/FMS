@@ -471,28 +471,30 @@ end function rarray_to_char
   !!
   !! This call implies synchronization across the PEs in the current
   !! pelist, of which <TT>pelist</TT> is a subset.
-  subroutine mpp_declare_pelist_legacy( pelist, name, commID )
+  subroutine mpp_declare_pelist_f08( pelist, name, comm )
     integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
     character(len=*), intent(in), optional :: name      !> unique name for an input pelist
-    integer, intent(out), optional  :: commID           !> integral MPI communicator handle
+    type(mpi_comm), intent(out), optional  :: comm      !> mpi_comm communicator handle
     integer :: i
 
     if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_DECLARE_PELIST: You must first call mpp_init.' )
     i = get_peset(pelist)
     write( peset(i)%name,'(a,i2.2)' ) 'PElist', i !default name
     if( PRESENT(name) ) peset(i)%name = name
-    if( PRESENT(commID) ) then
-      commID = peset(i)%comm%mpi_val
+    if( PRESENT(comm) ) then
+      comm = peset(i)%comm
     endif
-  end subroutine mpp_declare_pelist_legacy
+  end subroutine mpp_declare_pelist_f08
 
-  subroutine mpp_declare_pelist_f08( pelist, name, comm )
+  subroutine mpp_declare_pelist_legacy( pelist, name, commID )
     integer,                    intent(in) :: pelist(:) !> pelist you are declaring and storing within FMS
     character(len=*), intent(in), optional :: name      !> unique name for an input pelist
-    type(mpi_comm), intent(out)            :: comm      !> mpi_comm communicator handle
+    integer, intent(out)                   :: commID    !> integral MPI communicator handle
+    type(mpi_comm) :: comm
 
-    call mpp_declare_pelist_legacy(pelist, name, comm%mpi_val)
-  end subroutine mpp_declare_pelist_f08
+    call mpp_declare_pelist_f08(pelist, name, comm)
+    commID = comm%mpi_val
+  end subroutine mpp_declare_pelist_legacy
 
   !#####################################################################
 
@@ -542,27 +544,29 @@ end function rarray_to_char
 
   !this is created for use by mpp_define_domains within a pelist
   !will be published but not publicized
-  subroutine mpp_get_current_pelist_legacy( pelist, name, commID )
-    integer, intent(out) :: pelist(:)               !> Array to copy the pelist into
-    character(len=*), intent(out), optional :: name !> Name of the pelist
-    integer, intent(out), optional :: commID        !> Integral MPI communicator handle
+  subroutine mpp_get_current_pelist_f08( pelist, name, comm )
+    integer, intent(out)                    :: pelist(:) !> Array to copy the pelist into
+    character(len=*), intent(out), optional :: name      !> Name of the pelist
+    type(mpi_comm), intent(out), optional   :: comm      !> mpi_comm communicator handle
 
     if( size(pelist(:)).NE.size(peset(current_peset_num)%list(:)) ) &
          call mpp_error( FATAL, 'MPP_GET_CURRENT_PELIST: size(pelist) is wrong.' )
     pelist(:) = peset(current_peset_num)%list(:)
     if( PRESENT(name) ) name = peset(current_peset_num)%name
-    if( PRESENT(commID) ) then
-      commID = peset(current_peset_num)%comm%mpi_val
+    if( PRESENT(comm) ) then
+      comm = peset(current_peset_num)%comm
     endif
-  end subroutine mpp_get_current_pelist_legacy
+  end subroutine mpp_get_current_pelist_f08
 
-  subroutine mpp_get_current_pelist_f08( pelist, name, comm )
+  subroutine mpp_get_current_pelist_legacy( pelist, name, commID )
     integer, intent(out)                    :: pelist(:) !> Array to copy the pelist into
     character(len=*), intent(out), optional :: name      !> Name of the pelist
-    type(mpi_comm), intent(out)             :: comm      !> mpi_comm communicator handle
+    integer, intent(out)                    :: commID    !> Integral MPI communicator handle
+    type(mpi_comm) :: comm
 
-    call mpp_get_current_pelist_legacy(pelist, name, comm%mpi_val)
-  end subroutine mpp_get_current_pelist_f08
+    call mpp_get_current_pelist_f08(pelist, name, comm)
+    commID = comm%mpi_val
+  end subroutine mpp_get_current_pelist_legacy
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !                                                                             !

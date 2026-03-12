@@ -27,9 +27,6 @@ module netcdf_io_mod
 #ifndef MAX_NUM_RESTART_VARS_
 #define MAX_NUM_RESTART_VARS_ 250
 #endif
-#ifdef use_libMPI
-use mpi_f08, only: mpi_comm_null, mpi_info_null
-#endif
 use netcdf
 use mpp_mod
 use mpp_domains_mod
