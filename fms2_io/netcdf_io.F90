@@ -162,11 +162,8 @@ type, public :: FmsNetcdfFile_t
                                                !! restart variables
   type(fmsOffloadingIn_type) :: offloading_obj_in
   logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
-                                      !! this should be set to .true. in the user application if they want
-                                      !! collective reads (put before open_file())
-  integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
-                                      !! To be replaced with a real communicator at user request
-  logical        :: use_netcdf_mpi = .false.
+  integer :: tile_comm=MPP_COMM_NULL !< MPI communicator used for MPI-IO reads.
+  logical :: use_netcdf_mpi = .false.
 
   contains
 
@@ -706,10 +703,10 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                       comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     elseif (string_compare(mode, "write", .true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
-                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+                        comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
-                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+                        comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     else
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")

@@ -34,7 +34,7 @@
 subroutine mpp_error_basic( errortype, errormsg )
 #ifdef __INTEL_COMPILER
   ! Intel module containing tracebackQQ
-   use ifcore
+   use ifcore, only: tracebackqq
 #endif
   integer,                    intent(in) :: errortype
   character(len=*), intent(in), optional :: errormsg
@@ -137,8 +137,8 @@ function get_peset(pelist)
   allocate(pelist_tmp(size(pelist(:))))
   pelist_tmp = pelist - mpp_root_pe()
   call MPI_GROUP_INCL( peset(current_peset_num)%group, size(pelist(:)), pelist_tmp, peset(i)%group, error )
-  call MPI_COMM_CREATE_GROUP(peset(current_peset_num)%id, peset(i)%group, &
-                             DEFAULT_TAG, peset(i)%id, error )
+  call MPI_COMM_CREATE_GROUP(peset(current_peset_num)%comm, peset(i)%group, &
+                             DEFAULT_TAG, peset(i)%comm, error )
   get_peset = i
   deallocate(pelist_tmp)
   return
@@ -159,7 +159,7 @@ subroutine mpp_sync( pelist, do_self )
   n = get_peset(pelist); if( peset(n)%count.EQ.1 )return
 
   if( debug .and. (current_clock.NE.0) )call SYSTEM_CLOCK(start_tick)
-  call MPI_BARRIER( peset(n)%id, error )
+  call MPI_BARRIER( peset(n)%comm, error )
 
   if( debug .and. (current_clock.NE.0) )call increment_current_clock(EVENT_WAIT)
 
@@ -173,9 +173,9 @@ end subroutine mpp_sync
 subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type)
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
-  integer, intent(inout), optional :: request(:)
+  type(mpi_request), intent(inout), optional :: request(:)
   integer, intent(in   ), optional :: msg_size(:)
-  integer, intent(in   ), optional :: msg_type(:)
+  type(mpi_datatype), intent(in   ), optional :: msg_type(:)
 
   integer                       :: m, my_check, rsize
 
