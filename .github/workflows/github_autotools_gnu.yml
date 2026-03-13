@@ -33,10 +33,13 @@ jobs:
     - name: Configure the build
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="$FCFLAGS $DEBUG_FLAGS"
     - name: Run distcheck (compiles, tests, and packages)
-      run: |
-        make distcheck 2>&1 > distcheck.log
-        grep -E "^FAIL:|^XPASS:" distcheck.log
+      run: make distcheck 2>&1 > distcheck.log
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
+    - name: Upload log on failure
+      uses: actions/upload-artifact@v7.0.0
+      if: failure()
+      with:
+        path: distcheck.log
     - name: Build the library (without test suite for serial build)
       run: make
       if: ${{ matrix.conf-flag == '--with-mpi=no' }}
