@@ -25,7 +25,7 @@
 program test_column_diagnostics
 
   use column_diagnostics_mod
-  use fms_mod, only: fms_init
+  use fms_mod, only: fms_init, fms_end
   use mpp_mod, only: FATAL, mpp_error
   use time_manager_mod, only: time_manager_init, time_type, set_time, set_calendar_type
   use constants_mod, only : PI, DEG_TO_RAD
@@ -62,6 +62,7 @@ program test_column_diagnostics
   call initialize_variables(0.01_lkind) !< set up input arrays;
   call test_initialize_diagnostic_columns !< initialize diagnostics column
   call test_column_diagnostics_header
+  call fms_end()
 
 contains
   !------------------------------------------!

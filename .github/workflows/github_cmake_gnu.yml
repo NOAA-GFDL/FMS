@@ -1,4 +1,4 @@
-name: Build libFMS with cmake
+name: CMake build and unit testing with GCC
 
 on: [push, pull_request]
 
@@ -15,14 +15,14 @@ jobs:
         libyaml-flag: [ "", -DWITH_YAML=on ]
         build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
     container:
-      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.2.1
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
         EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v6.0.1
     - name: Generate makefiles with CMake
       run: |
         mkdir build
