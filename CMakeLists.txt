@@ -22,7 +22,7 @@ cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
-  VERSION 2026.01.0
+  VERSION 2026.01.01
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
@@ -59,24 +59,21 @@ option(SHARED_LIBS "Build shared/dynamic libraries"       OFF)
 option(OPENACC     "Build FMS with OpenACC support"       OFF)
 
 # Options for compiler definitions
-option(INTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"      ON)
 option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION"  ON)
 option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
-option(LARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
-option(USE_DEPRECATED_IO     "THIS OPTION HAS NO EFFECT AND WILL BE REMOVED IN A FUTURE RELEASE"   OFF)
 
 if(32BIT)
   list(APPEND kinds "r4")
+  message(STATUS "Building library with 4-byte real defaults (with mixed precision real support for most modules).")
 endif()
 if(64BIT)
   list(APPEND kinds "r8")
+  message(STATUS "Building library with 8-byte real defaults (with mixed precision real support for most modules).")
 endif()
 if(NOT kinds)
-  message(STATUS "Single Precision 32BIT: ${32BIT}")
-  message(STATUS "Double Precision 64BIT: ${64BIT}")
-  message(STATUS "No kind specified, building default double precision (with mixed precision support). Real size will not be included in built library name.")
+  message(STATUS "Building library with 8-byte real defaults (with mixed precision 4-byte real support for most modules). Real size will not be included in built library name.")
 endif()
 
 # Find dependencies
@@ -196,6 +193,8 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_memutils.F90
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
+  offloading/offloading_io.F90
+  offloading/metadata_transfer.F90
   parser/yaml_parser.F90
   parser/fms_yaml_output.F90
   platform/platform.F90
@@ -275,10 +274,6 @@ if(USE_DEPRECATED_IO)
                    "-DUSE_DEPRECATED_IO=on FROM YOUR OPTIONS OR REVERT TO VERSION 2025.02")
 endif()
 
-if(INTERNAL_FILE_NML)
-  list(APPEND fms_defs INTERNAL_FILE_NML)
-endif()
-
 if(ENABLE_QUAD_PRECISION)
   list(APPEND fms_defs ENABLE_QUAD_PRECISION)
 endif()
@@ -291,11 +286,6 @@ if(LARGEFILE)
   list(APPEND fms_defs use_LARGEFILE)
 endif()
 
-# Precision-based compiler definitions
-if(32BIT)
-  list(APPEND r4_defs OVERLOAD_R4 OVERLOAD_R8)
-endif()
-
 # Add platform specific compiler definitions
 if(APPLE)
   list(APPEND fms_defs __APPLE__)
@@ -306,7 +296,7 @@ include(fms_compiler_flags)
 
 # If netCDF was not built with HDF5 parallel I/O features, set up the macro -DNO_NC_PARALLEL4
 IF(NOT NetCDF_PARALLEL)
-  MESSAGE(WARNING "netCDF was not build with HDF5 parallel I/O features, so collective netcdf io is not allowed")
+  MESSAGE(WARNING "netCDF was not build with HDF5 parallel I/O features, so parallel netcdf io is not allowed")
   list(APPEND fms_defs NO_NC_PARALLEL4)
 ENDIF()
 
@@ -362,7 +352,7 @@ foreach(kind ${kinds})
                                                  amip_interp/include)
   target_compile_definitions(${libTgt}_f PRIVATE "${fms_defs}")
   target_compile_definitions(${libTgt}_f PRIVATE "${${kind}_defs}")
-  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS ${${kind}_flags})
+  set_target_properties(${libTgt}_f PROPERTIES COMPILE_FLAGS "${${kind}_flags}")
   set_target_properties(${libTgt}_f PROPERTIES Fortran_MODULE_DIRECTORY
                                                ${moduleDir})
   target_link_libraries(${libTgt}_f PRIVATE NetCDF::NetCDF_Fortran
@@ -614,6 +604,14 @@ if(MPI_VENDOR MATCHES "OpenMPI")
 	set(OVERSUBSCRIBE "--map-by :OVERSUBSCRIBE")
 else()
 	set(OVERSUBSCRIBE "--oversubscribe")
+ endif()
+# set the fms library to link tests with based on whats built
+if(NOT kinds)
+  set(fmsLibraryName FMS::fms)
+elseif(64BIT)
+  set(fmsLibraryName FMS::fms_r8)
+elseif(32BIT)
+  set(fmsLibraryName FMS::fms_r4)
 endif()
 
 # parse and add build info to test script util file
@@ -638,7 +636,7 @@ list(APPEND TEST_MODS_SRC
   test_fms/mpp/test_system_clock.F90)
 
 add_library(testLibs "${TEST_MODS_SRC}")
-target_link_libraries(testLibs FMS::fms)
+target_link_libraries(testLibs ${fmsLibraryName})
 target_compile_definitions(testLibs PRIVATE TEST_MOS_KIND_=r8_kind)
 target_include_directories(testLibs PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include
                                     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/common/include
@@ -722,6 +720,7 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/fms2_io/test_domain_io.F90
   test_fms/fms2_io/test_collective_io.F90
   test_fms/fms2_io/test_generalized_indices.F90
+  test_fms/fms2_io/test_parallel_writes.F90
   test_fms/fms/test_fms.F90
   test_fms/interpolator/test_interpolator.F90
   test_fms/mpp/test_clock_init.F90
@@ -775,6 +774,8 @@ list(APPEND TEST_SRC_SINGLE_TARGET
   test_fms/parser/generic_blocks.F90
   test_fms/string_utils/test_string_utils.F90
   test_fms/time_manager/test_time_manager.F90
+  test_fms/offloading/test_metadata_transfer.F90
+  test_fms/offloading/test_io_offloading.F90
   )
 # list any test sources that are used for two executables (r4 and r8)
 list(APPEND TEST_SRC_TWO_TARGETS
@@ -799,6 +800,7 @@ list(APPEND TEST_SRC_TWO_TARGETS
   test_fms/sat_vapor_pres/test_sat_vapor_pres.F90
   test_fms/time_interp/test_time_interp.F90
   test_fms/time_interp/test_time_interp_external.F90
+  test_fms/time_interp/test_time_interp_conservative_hi.F90
   test_fms/topography/test_topography.F90
   test_fms/tracer_manager/test_tracer_manager.F90
   test_fms/tridiagonal/test_tridiagonal.F90
@@ -810,14 +812,17 @@ list(APPEND TEST_SRC_FOUR_TARGETS
 
 # add all the test executables and set up linking + compile flags
 foreach (testFile ${TEST_SRC_SINGLE_TARGET})
-  get_filename_component (TName ${testFile} NAME_WE)
 
+  get_filename_component (TName ${testFile} NAME_WE)
   add_executable(${TName} ${testFile})
-  target_compile_definitions(${TName} PRIVATE "${r8_defs}")
-  set_target_properties(${TName} PROPERTIES COMPILE_FLAGS ${r8_flags})
-  target_link_libraries(${TName} PUBLIC FMS::fms
-                                 PRIVATE testLibs
-                                   )
+  target_link_libraries(${TName} PUBLIC ${fmsLibraryName}
+                                 PRIVATE testLibs)
+  if(32BIT)
+    target_compile_definitions(${TName} PRIVATE "${r4_defs} ${fms_defs}")
+  else()
+    target_compile_definitions(${TName} PRIVATE "${r8_defs} ${fms_defs} ")
+    set_target_properties(${TName} PROPERTIES COMPILE_FLAGS ${r8_flags})
+  endif()
 
   if(WITH_YAML)
     target_link_libraries(${TName} PRIVATE PkgConfig::YAML)
@@ -841,18 +846,16 @@ foreach (testFile ${TEST_SRC_TWO_TARGETS})
   get_filename_component (TName ${testFile} NAME_WE)
 
   add_executable(${TName}_r8 ${testFile})
-  target_compile_definitions(${TName}_r8 PRIVATE "${r8_defs}")
+  target_compile_definitions(${TName}_r8 PRIVATE "${r8_defs} ${fms_defs}")
   set_target_properties(${TName}_r8 PROPERTIES COMPILE_FLAGS ${r8_flags})
-  target_link_libraries(${TName}_r8 PUBLIC FMS::fms
-                                    PRIVATE testLibs
-                                    )
-
+  target_link_libraries(${TName}_r8 PUBLIC ${fmsLibraryName}
+                                    PRIVATE testLibs)
   add_executable(${TName}_r4 ${testFile})
-  target_compile_definitions(${TName}_r4 PRIVATE "${r4_defs}")
+  target_compile_definitions(${TName}_r4 PRIVATE "${r4_defs} ${fms_defs}")
   # seems counterintuitive but r4 tests use r8 default
   # they specify kind values explicitly with the preprocessor where needed (TEST_FMS_KIND_)
   set_target_properties(${TName}_r4 PROPERTIES COMPILE_FLAGS ${r8_flags})
-  target_link_libraries(${TName}_r4 PUBLIC FMS::fms
+  target_link_libraries(${TName}_r4 PUBLIC ${fmsLibraryName}
                                     PRIVATE testLibs
                                     )
 
@@ -1005,7 +1008,15 @@ foreach (testScript ${TEST_SCRIPTS})
         ENVIRONMENT "parser_skip=skip"
     )
   endif()
+
 endforeach()
+
+# skip parallel netcdf tests if its not enabled in given install
+IF(NOT NetCDF_PARALLEL)
+  set_tests_properties(test_collective_io PROPERTIES
+      ENVIRONMENT "parallel_skip=skip"
+  )
+endif()
 
 set(CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 

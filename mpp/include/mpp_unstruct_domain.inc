@@ -25,8 +25,10 @@
                                        &  grid_index, name)
      type(domainUG),   intent(inout) :: UG_domain
      type(domain2d), target,     intent(in) :: SG_domain
-     integer,                    intent(in) :: npts_tile(:) !< number of unstructured points on each tile
-     integer,                    intent(in) :: grid_nlev(:) !< number of levels in each unstructured grid.
+     integer,                    intent(in) :: npts_tile(:) !< number of unstructured points in
+                                                            !! each mosaic tile
+     integer,                    intent(in) :: grid_nlev(:) !< number of levels (subgrid tiles) in
+                                                            !! each unstructured grid cell.
      integer,                    intent(in) :: ndivs
      integer,                    intent(in) :: npes_io_group!< number of processors in a io group.
                                                             !! Only pe with same tile_id
@@ -55,7 +57,7 @@
            &  "mpp_define_unstruct_domain: grid_nlev at some point is less than 1")
      enddo
 
-     !-- costs for each tile.
+     !-- costs for each mosaic tile.
      pos = 0
      do n = 1, ntiles
         costs(n) = 0
@@ -64,11 +66,11 @@
            costs(n) = costs(n) + grid_nlev(pos)
         enddo
      enddo
-     ! compute number of divisions for each tile.
+     ! compute number of divisions for each mosaic tile.
      ntotal_costs = sum(costs)
-     !--- get the upper limit of ndivs for each tile.
+     !--- get the upper limit of ndivs for each mosaic tile.
      do n = 1, ntiles
-        ndivs_tile(n) = CEILING(real(costs(n)*ndivs)/ntotal_costs)
+        ndivs_tile(n) = CEILING(real(costs(n),kind=r8_kind)*real(ndivs,kind=r8_kind)/ntotal_costs)
      enddo
 
      ndivs_used = sum(ndivs_tile)
