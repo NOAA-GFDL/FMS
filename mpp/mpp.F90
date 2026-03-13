@@ -417,13 +417,19 @@ private
      module procedure rarray_to_char
   end interface
 
-  !> Declare a pelist.
+  !> Declare a pelist. The two flavors of this subroutine differ in the type
+  !! of their comm/commID argument: mpp_declare_pelist_f08 expects a type(mpi_comm)
+  !! as its comm argument, whereas mpp_declare_pelist_legacy expects an integer
+  !! as its commID argument.
   interface mpp_declare_pelist
     module procedure mpp_declare_pelist_f08
     module procedure mpp_declare_pelist_legacy
   end interface
 
-  !> Get the current pelist.
+  !> Get the current pelist. The two flavors of this subroutine differ in the type
+  !! of their comm/commID argument: mpp_get_current_pelist_f08 expects a type(mpi_comm)
+  !! as its comm argument, whereas mpp_get_current_pelist_legacy expects an integer
+  !! as its commID argument.
   interface mpp_get_current_pelist
     module procedure mpp_get_current_pelist_f08
     module procedure mpp_get_current_pelist_legacy
@@ -434,12 +440,6 @@ private
 !    public interface from mpp_comm.h
 !
 !***********************************************************************
-
-  !> Initialize mpp_mod
-  interface mpp_init
-    module procedure mpp_init_f08
-    module procedure mpp_init_legacy
-  end interface
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !                                                                             !
@@ -464,8 +464,16 @@ private
 !! @param flags
 !!   <TT>flags</TT> can be set to <TT>MPP_VERBOSE</TT> to
 !!   have <TT>mpp_mod</TT> keep you informed of what it's up to.
+!! @param localcomm
+!!   This is a type(mpi_comm) in mpp_init_f08, and an integer in mpp_init_legacy.
+!!   This argument should only be used if MPI has previously been initialized by
+!!   an external call to MPI_Init.
 !! @param test_level
 !!   Debugging flag to set amount of initialization tasks performed
+  interface mpp_init
+    module procedure mpp_init_f08
+    module procedure mpp_init_legacy
+  end interface
 
 !> @fn mpp_mod::mpp_exit()
 !> @brief Exit <TT>@ref mpp_mod</TT>.
