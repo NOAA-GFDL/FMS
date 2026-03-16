@@ -190,7 +190,8 @@
 
       ptr = LOC(get_data)
       get_len=1; if(PRESENT(glen))get_len=glen
-      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, block, tag, recv_request=request, omp_offload=omp_offload )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data1D, get_len, from_pe, &
+          block, tag, recv_request=request, omp_offload=omp_offload )
 
     end subroutine MPP_RECV_SCALAR_
 
@@ -209,7 +210,8 @@
       pointer( ptr, put_data1D )
       ptr = LOC(put_data)
       put_len=1; if(PRESENT(plen))put_len=plen
-      call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request, omp_offload=omp_offload )
+      call mpp_transmit( put_data1D, put_len, to_pe, dummy, 1, NULL_PE, &
+          tag=tag, send_request=request, omp_offload=omp_offload )
 
     end subroutine MPP_SEND_SCALAR_
 
@@ -222,7 +224,8 @@
       integer, intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1)
-      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
+      call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, &
+          block, tag, recv_request=request )
     end subroutine MPP_RECV_2D_
 
     subroutine MPP_SEND_2D_( put_data, put_len, to_pe, tag, request )
