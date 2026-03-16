@@ -31,7 +31,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !> @brief Initialize the @ref mpp_mod module. Must be called before any usage.
   subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
-  !$use omp_lib
+  !$ use omp_lib
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
   integer, optional, intent(in) :: localcomm !< Id of MPI communicator used to initialize
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
@@ -55,10 +55,10 @@
   call MPI_COMM_RANK( mpp_comm_private, pe,   error )
   call MPI_COMM_SIZE( mpp_comm_private, npes, error )
 
-  ! set default device to enable multi GPU parallelism 
-  ! calls to both OpenACC and OpenMP runtimes are needed 
-  ! because we use both do-concurrent and openmp 
-  ! if you remove either, the code will run multiple 
+  ! set default device to enable multi GPU parallelism
+  ! calls to both OpenACC and OpenMP runtimes are needed
+  ! because we use both do-concurrent and openmp
+  ! if you remove either, the code will run multiple
   ! ranks on a _single_ GPU. Be careful out there!
   !$ call omp_set_default_device(pe)
   !$acc set device_num(pe)
