@@ -52,11 +52,11 @@
       integer                       :: rsize
       logical                       :: use_device_ptr
 
-      use_device_ptr = .false.
-      if (present(omp_offload)) use_device_ptr = omp_offload
-
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_TRANSMIT: You must first call mpp_init.' )
       if( to_pe.EQ.NULL_PE .AND. from_pe.EQ.NULL_PE )return
+
+      use_device_ptr = .false.
+      if (present(omp_offload)) use_device_ptr = omp_offload
 
       block_comm = .true.
       if(PRESENT(block)) block_comm = block
