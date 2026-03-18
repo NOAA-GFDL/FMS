@@ -11,17 +11,14 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.2.1
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
     steps:
     - name: Checkout MOM6 repository
       uses: actions/checkout@v4.2.2
       with:
         repository: 'NOAA-GFDL/MOM6'
         submodules: recursive
+    - name: Install dependency packages
+      uses: ./.github/actions/ubuntu-setup/
     - name: Checkout FMS into MOM build
       uses: actions/checkout@v4.2.2
       with:
