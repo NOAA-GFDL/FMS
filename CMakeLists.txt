@@ -64,6 +64,9 @@ option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"      
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 
+# Testing-specific options
+set(OVERSUBSCRIBE_FLAG "--oversubscribe" CACHE STRING "Flag for mpirun to use more cores than available")
+
 if(32BIT)
   list(APPEND kinds "r4")
   message(STATUS "Building library with 4-byte real defaults (with mixed precision real support for most modules).")
@@ -93,21 +96,6 @@ if (WITH_YAML)
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(YAML REQUIRED IMPORTED_TARGET "yaml-0.1")
 endif ()
-
-# TODO should be better ways to find mpi vendor, this is just checking the path
-if(MPI_Fortran_FOUND)
-    message(STATUS "MPI Version String: ${MPI_Fortran_COMPILER}")
-    if(MPI_Fortran_COMPILER MATCHES "openmpi")
-        set(MPI_VENDOR "OpenMPI")
-    elseif(MPI_Fortran_COMPILER MATCHES "mpich")
-        set(MPI_VENDOR "MPICH")
-    elseif(MPI_Fortran_COMPILER MATCHES "oneapi")
-        set(MPI_VENDOR "Intel")
-    else()
-        set(MPI_VENDOR "Unknown")
-    endif()
-    message(STATUS "Detected MPI Vendor: ${MPI_VENDOR}")
-endif()
 
 # Enables position independent code (i.e., -fPIC)
 if (FPIC)
@@ -599,12 +587,9 @@ include(CTest)
 set(MPI_LAUNCHER "mpirun")
 # used in the test-lib.sh.in to make it behave differently when parsed by cmake
 set(USING_CMAKE "true")
-# set the right oversubscribe flag
-if(MPI_VENDOR MATCHES "OpenMPI")
-	set(OVERSUBSCRIBE "--map-by :OVERSUBSCRIBE")
-else()
-	set(OVERSUBSCRIBE "--oversubscribe")
- endif()
+set(OVERSUBSCRIBE "${OVERSUBSCRIBE_FLAG}")
+message(STATUS "Using '${OVERSUBSCRIBE}' flag to oversubscribe ranks in test scripts")
+
 # set the fms library to link tests with based on whats built
 if(NOT kinds)
   set(fmsLibraryName FMS::fms)
