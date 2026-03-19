@@ -92,6 +92,7 @@ die () {
 
 # Possibly wrapping the mpirun command.
 mpirun () {
+  set -x
 # Set the name of the mpi launcher for use in test scripts.
   local mpi_launcher='@MPI_LAUNCHER@'
   local oversubscribe='@OVERSUBSCRIBE@'
