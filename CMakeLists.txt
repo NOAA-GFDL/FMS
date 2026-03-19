@@ -64,6 +64,9 @@ option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"      
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 
+# Testing-specific options
+set(OVERSUBSCRIBE_FLAG " --oversubscribe " CACHE STRING "Flag for mpirun to use more cores than available")
+
 if(32BIT)
   list(APPEND kinds "r4")
   message(STATUS "Building library with 4-byte real defaults (with mixed precision real support for most modules).")
@@ -585,6 +588,9 @@ include(CTest)
 set(MPI_LAUNCHER "mpirun")
 # used in the test-lib.sh.in to make it behave differently when parsed by cmake
 set(USING_CMAKE "true")
+set(OVERSUBSCRIBE "${OVERSUBSCRIBE_FLAG}")
+message(STATUS "Using '${OVERSUBSCRIBE}' flag to oversubscribe ranks in test scripts")
+
 # set the fms library to link tests with based on whats built
 if(NOT kinds)
   set(fmsLibraryName FMS::fms)

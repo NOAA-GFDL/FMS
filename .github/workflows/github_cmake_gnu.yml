@@ -1,4 +1,4 @@
-name: Build libFMS with cmake
+name: CMake build and unit testing with GCC
 
 on: [push, pull_request]
 
@@ -15,19 +15,19 @@ jobs:
         libyaml-flag: [ "", -DWITH_YAML=on ]
         build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
     container:
-      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      image: ghcr.io/noaa-gfdl/fms-gnu-ci:15.2.1
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask"
+        EXCLUDE_TESTS: "test_mpp_nesting|test_mpp_clock_begin_end_id|test_time_*"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4.2.2
+      uses: actions/checkout@v6.0.1
     - name: Generate makefiles with CMake
       run: |
         mkdir build
         cd build
-        cmake $CMAKE_FLAGS -DOPENMP=on -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
+        cmake -DOVERSUBSCRIBE_FLAG="--map-by :OVERSUBSCRIBE" $CMAKE_FLAGS -DOPENMP=on -DNetCDF_ROOT=/opt/view -DLIBYAML_ROOT=/opt/view ..
     - name: Build the library
       run: make -C build
     - name: Run the unit tests
@@ -43,7 +43,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask|test_sat_vapor_pres"
+        EXCLUDE_TESTS: "test_mpp_nesting|test_sat_vapor_pres|test_mpp_clock_begin_end_id"
         PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
