@@ -1,8 +1,8 @@
 ! Corner mosaic test with resource reallocation
-! This test constructs a single-tile domain, then a three-tile mosaic, and goes back down to a single-tile domain.
+! This test constructs a single-tile domain, then a three-tile mosaic, then a single-tile domain once more.
 ! The number of PEs must be such that the single-tile domain uses all of the PEs (e.g., 64 PEs if the single-tile
-! domain is 8x8). The layout of the corner mosaic is defined by ni and nj. The corner mosaic does not need to use all
-! of the available PEs.
+! domain is 8x8). The layout of the corner mosaic is defined by ni(:) and nj(:). The corner mosaic does not need to
+! use all of the available PEs.
 
 program test_corner_mosaic
   use mpp_mod, only: mpp_error, FATAL
@@ -16,34 +16,17 @@ program test_corner_mosaic
   use random_numbers_mod
   implicit none
 
-  type contact
-    integer :: tile(2)
-    integer :: is(2)
-    integer :: ie(2)
-    integer :: js(2)
-    integer :: je(2)
-  end type contact
-
   integer, parameter :: ntiles = 3
-  integer, parameter :: num_contacts = 3
   integer, parameter :: halo = 2
 
   character(*), parameter :: name = "corner mosaic"
-  integer :: global_indices(4,ntiles), layout(2,ntiles)
   integer, dimension(ntiles) :: pe_start, pe_end
 
-  integer, parameter :: n=16
-  integer, parameter :: layout_st(2) = [8, 8] ! Single-tile layout
-
-  ! Corner mosaic layout:
-  ! - Tile 1: 4x4
-  ! - Tile 2: 6x4
-  ! - Tile 3: 4x6
-  integer, parameter :: ni(3) = [4, 6, 4] ! Corner mosaic layout (i axis)
-  integer, parameter :: nj(3) = [4, 4, 6] ! Corner mosaic layout (j axis)
+  integer, parameter :: n=16 !< Number of grid points along each axis on corner mosaic tiles
+  integer :: ni(3), nj(3) !< Layouts for the tiles comprising the corner mosaic
+  integer :: ni_st=8, nj_st=8 !< Layout for the single-tile domain
 
   real(r4_kind), parameter :: eps = 1e-3
-  real(r4_kind), parameter :: halo_init_value = -123456._r4_kind
   integer, parameter :: stackmax=10000000
 
   integer :: isg, ieg, jsg, jeg
@@ -54,11 +37,29 @@ program test_corner_mosaic
   call fms_init
   call mpp_domains_set_stack_size(stackmax)
 
-  call define_single_tile
-  call define_corner_mosaic
+  call define_single_tile(ni_st, nj_st)
 
+  ! Corner mosaic layout:
+  ! - Tile 1: 4x4
+  ! - Tile 2: 6x4
+  ! - Tile 3: 4x6
+
+  ni(:) = [4, 6, 4] ! Corner mosaic layout (i axis)
+  nj(:) = [4, 4, 6] ! Corner mosaic layout (j axis)
+  call define_corner_mosaic(ni, nj)
   call mpp_set_current_pelist ! Restore original pelist
-  call define_single_tile
+
+  ni(:) = [3, 3, 3] ! Corner mosaic layout (i axis)
+  nj(:) = [3, 3, 3] ! Corner mosaic layout (j axis)
+  call define_corner_mosaic(ni, nj)
+  call mpp_set_current_pelist ! Restore original pelist
+
+  ni(:) = [3, 4, 5] ! Corner mosaic layout (i axis)
+  nj(:) = [5, 4, 3] ! Corner mosaic layout (j axis)
+  call define_corner_mosaic(ni, nj)
+  call mpp_set_current_pelist ! Restore original pelist
+
+  call define_single_tile(ni_st, nj_st)
 
   call fms_end
 
@@ -72,12 +73,13 @@ contains
   ! ----- !
   !!!!!!!!!
 
-  subroutine define_single_tile
+  subroutine define_single_tile(ni, nj)
+    integer, intent(in) :: ni, nj
     type(domain2d) :: domain
     integer, dimension(:), allocatable :: tile_id
     integer :: npes
 
-    npes = layout_st(1) * layout_st(2)
+    npes = ni*nj
     if (mpp_npes().ne.npes) then
       call mpp_error(FATAL, "Cannot construct single-tile domain: Incorrect number of PEs")
     endif
@@ -87,7 +89,7 @@ contains
     jsg=1
     jeg=2*n
 
-    call mpp_define_domains([isg,ieg,jsg,jeg], layout_st, domain, &
+    call mpp_define_domains([isg,ieg,jsg,jeg], [ni, nj], domain, &
         symmetry=.true., whalo=halo, ehalo=halo, shalo=halo, nhalo=halo)
 
     call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
@@ -106,8 +108,8 @@ contains
     do concurrent (i=lbound(global,1):ubound(global,1), &
                    j=lbound(global,2):ubound(global,2))
       h = 0._r4_kind
-      if (i.lt.1 .or. i.gt.n) h = 999000._r4_kind
-      if (j.lt.1 .or. j.gt.n) h = 999000._r4_kind
+      if (i.lt.isg .or. i.gt.ieg) h = 999000._r4_kind
+      if (j.lt.jsg .or. j.gt.jeg) h = 999000._r4_kind
       global(i,j) = i*1._r4_kind + j*.01_r4_kind + h
     enddo
 
@@ -121,12 +123,24 @@ contains
     endif
   end subroutine single_tile_scalar_test
 
-  subroutine define_corner_mosaic
+  subroutine define_corner_mosaic(ni, nj)
+    type contact
+      integer :: tile(2)
+      integer :: is(2)
+      integer :: ie(2)
+      integer :: js(2)
+      integer :: je(2)
+    end type contact
+
+    integer, intent(in), dimension(3) :: ni, nj
     type(domain2d) :: domain
-    integer, dimension(:), allocatable :: tile_id
     integer, allocatable :: pelist(:)
-    type(contact) :: contacts(num_contacts)
+    integer, allocatable :: tile_id(:)
     integer :: npes, i
+
+    integer, parameter :: num_contacts = 3
+    type(contact) :: contacts(num_contacts)
+    integer :: global_indices(4,ntiles), layout(2,ntiles)
 
     npes = dot_product(ni, nj)
 
@@ -135,6 +149,7 @@ contains
     endif
 
     if (mpp_pe().gt.npes - 1) then
+      ! This is an idle PE.
       return
     endif
 
@@ -211,8 +226,8 @@ contains
                    j=lbound(global,2):ubound(global,2), &
                    t=lbound(global,3):ubound(global,3))
       h = 0._r4_kind
-      if (i.lt.1 .or. i.gt.n) h = 999000._r4_kind
-      if (j.lt.1 .or. j.gt.n) h = 999000._r4_kind
+      if (i.lt.isg .or. i.gt.ieg) h = 999000._r4_kind
+      if (j.lt.jsg .or. j.gt.jeg) h = 999000._r4_kind
       global(i,j,t) = t*100._r4_kind + i*1._r4_kind + j*.01_r4_kind + h
     enddo
 
@@ -252,8 +267,8 @@ contains
                    j=lbound(gx,2):ubound(gx,2), &
                    t=lbound(gx,3):ubound(gx,3))
       h = 0._r4_kind
-      if (i.lt.1 .or. i.gt.n+1) h = 999000._r4_kind
-      if (j.lt.1 .or. j.gt.n)   h = 999000._r4_kind
+      if (i.lt.isg .or. i.gt.ieg+1) h = 999000._r4_kind
+      if (j.lt.jsg .or. j.gt.jeg)   h = 999000._r4_kind
       gx(i,j,t) = t*100._r4_kind + i*1._r4_kind + j*.01_r4_kind + h
     enddo
 
@@ -261,8 +276,8 @@ contains
                    j=lbound(gy,2):ubound(gy,2), &
                    t=lbound(gy,3):ubound(gy,3))
       h = 0._r4_kind
-      if (i.lt.1 .or. i.gt.n)   h = 999000._r4_kind
-      if (j.lt.1 .or. j.gt.n+1) h = 999000._r4_kind
+      if (i.lt.isg .or. i.gt.ieg)   h = 999000._r4_kind
+      if (j.lt.jsg .or. j.gt.jeg+1) h = 999000._r4_kind
       gy(i,j,t) = -1._r4_kind * (t*100._r4_kind + i*1._r4_kind + j*.01_r4_kind + h)
     enddo
 
@@ -310,8 +325,8 @@ contains
                    j=lbound(gx,2):ubound(gx,2), &
                    t=lbound(gx,3):ubound(gx,3))
       h = 0._r4_kind
-      if (i.lt.1 .or. i.gt.n) h = 999000._r4_kind
-      if (j.lt.1 .or. j.gt.n+1)   h = 999000._r4_kind
+      if (i.lt.isg .or. i.gt.ieg) h = 999000._r4_kind
+      if (j.lt.jsg .or. j.gt.jeg+1)   h = 999000._r4_kind
       gx(i,j,t) = t*100._r4_kind + i*1._r4_kind + j*.01_r4_kind + h
     enddo
 
@@ -319,8 +334,8 @@ contains
                    j=lbound(gy,2):ubound(gy,2), &
                    t=lbound(gy,3):ubound(gy,3))
       h = 0._r4_kind
-      if (i.lt.1 .or. i.gt.n+1)   h = 999000._r4_kind
-      if (j.lt.1 .or. j.gt.n) h = 999000._r4_kind
+      if (i.lt.isg .or. i.gt.ieg+1)   h = 999000._r4_kind
+      if (j.lt.jsg .or. j.gt.jeg) h = 999000._r4_kind
       gy(i,j,t) = -1._r4_kind * (t*100._r4_kind + i*1._r4_kind + j*.01_r4_kind + h)
     enddo
 
