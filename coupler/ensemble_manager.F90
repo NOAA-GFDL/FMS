@@ -49,6 +49,25 @@ module ensemble_manager_mod
 
   integer :: ensemble_size = 1
   integer :: ensemble_id = 1
+!> @brief Starting index for ensemble numbering in I/O filenames.
+!!
+!! Defines an offset applied to the local ensemble_id when constructing
+!! filename appendices via fms2_io_set_filename_appendix.
+!!
+!! The effective ensemble index used in filenames is:
+!!   global_ens = starting_ensemble_id + ensemble_id - 1
+!!
+!! For example:
+!!   ensemble_size = 2
+!!   starting_ensemble_id = 10
+!! results in filenames using ens_10 and ens_11.
+!!
+!! @note This parameter affects only I/O filename construction (e.g.,
+!! restart and diagnostic files). It does not affect ensemble-specific
+!! input selection such as data_override, which uses explicit filenames
+!! or data_table.ens_XX.yaml.
+!!
+!! @default 1
   integer :: starting_ensemble_id = 1
   integer :: pe, total_npes_pm=0,ocean_npes_pm=0,atmos_npes_pm=0
   integer :: land_npes_pm=0,ice_npes_pm=0
@@ -76,6 +95,10 @@ contains
 
     integer :: i, io_status, npes, ierr
 
+    !> @namelist ensemble_nml
+    !! @param ensemble_size Number of ensemble members.
+    !! @param starting_ensemble_id Offset applied to ensemble_id when
+    !!        constructing I/O filename appendices.
     namelist /ensemble_nml/ ensemble_size, starting_ensemble_id
 
     read (input_nml_file, ensemble_nml, iostat=io_status)
