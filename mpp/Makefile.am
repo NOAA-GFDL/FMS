@@ -39,6 +39,7 @@ libmpp_la_SOURCES = \
   mpp_memutils.F90 \
   mpp_memuse.c \
   mpp_pset.F90 \
+  gfdl_nompi_f08.F90 \
   include/group_update_pack.inc \
   include/group_update_unpack.inc \
   include/mpp_alltoall_mpi.fh \
@@ -119,6 +120,7 @@ libmpp_la_SOURCES = \
 mpp_mod.$(FC_MODEXT): \
   mpp_parameter_mod.$(FC_MODEXT) \
   mpp_data_mod.$(FC_MODEXT) \
+  gfdl_nompi_f08.$(FC_MODEXT) \
   include/mpp_util.inc \
   include/mpp_error_a_a.fh \
   include/mpp_error_a_s.fh \
@@ -163,6 +165,7 @@ mpp_domains_mod.$(FC_MODEXT): \
   mpp_mod.$(FC_MODEXT) \
   mpp_memutils_mod.$(FC_MODEXT) \
   mpp_efp_mod.$(FC_MODEXT) \
+  gfdl_nompi_f08.$(FC_MODEXT) \
   include/mpp_define_nest_domains.inc \
   include/mpp_domains_util.inc \
   include/mpp_domains_comm.inc \
@@ -203,7 +206,7 @@ mpp_domains_mod.$(FC_MODEXT): \
   include/mpp_unstruct_pass_data.fh
 mpp_efp_mod.$(FC_MODEXT): mpp_parameter_mod.$(FC_MODEXT) mpp_mod.$(FC_MODEXT)
 mpp_memutils_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
-mpp_pset_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT)
+mpp_pset_mod.$(FC_MODEXT): mpp_mod.$(FC_MODEXT) gfdl_nompi_f08.$(FC_MODEXT)
 
 # Mod files are built and then installed as headers.
 BUILT_SOURCES = \
@@ -214,7 +217,8 @@ BUILT_SOURCES = \
   mpp_memutils_mod.$(FC_MODEXT) \
   mpp_efp_mod.$(FC_MODEXT) \
   mpp_domains_mod.$(FC_MODEXT) \
-  mpp_pset_mod.$(FC_MODEXT)
+  mpp_pset_mod.$(FC_MODEXT) \
+  gfdl_nompi_f08.$(FC_MODEXT)
 nodist_include_HEADERS = $(BUILT_SOURCES)
 
 include $(top_srcdir)/mkmods.mk
