@@ -35,7 +35,7 @@ module mpp_pset_mod
 #ifdef use_libMPI
   use mpi_f08, only: mpi_comm
 #else
-  use mpi_f08_phony, only: mpi_comm
+  use gfdl_nompi_f08, only: mpi_comm
 #endif
 
   use mpp_mod, only: mpp_pe, mpp_npes, mpp_root_pe, mpp_send, mpp_recv, &

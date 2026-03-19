@@ -93,7 +93,7 @@ module mpp_domains_mod
 #ifdef use_libMPI
   use mpi_f08
 #else
-  use mpi_f08_phony
+  use gfdl_nompi_f08
 #endif
 
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME

@@ -178,7 +178,7 @@ list(APPEND fms_fortran_src_files
   mpp/mpp_memutils.F90
   mpp/mpp_parameter.F90
   mpp/mpp_utilities.F90
-  mpp/mpi_f08_phony.F90
+  mpp/gfdl_nompi_f08.F90
   offloading/offloading_io.F90
   offloading/metadata_transfer.F90
   parser/yaml_parser.F90

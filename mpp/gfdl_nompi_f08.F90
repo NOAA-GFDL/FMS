@@ -16,9 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-! Phony mpi_f08 module which provides type names and null values that are needed in the non-MPI build.
+! Ersatz mpi_f08 module which provides several type names and null values that are needed in the non-MPI build.
 
-module mpi_f08_phony
+module gfdl_nompi_f08
 #ifndef use_libMPI
   implicit none
 
@@ -48,4 +48,4 @@ module mpi_f08_phony
   type(mpi_datatype), parameter :: MPI_REAL4 = mpi_datatype()
   type(mpi_datatype), parameter :: MPI_REAL8 = mpi_datatype()
 #endif
-end module mpi_f08_phony
+end module gfdl_nompi_f08

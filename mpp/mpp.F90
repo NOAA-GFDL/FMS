@@ -158,7 +158,7 @@ module mpp_mod
 #ifdef use_libMPI
   use mpi_f08
 #else
-  use mpi_f08_phony
+  use gfdl_nompi_f08
 #endif
 
   use iso_fortran_env,   only : INPUT_UNIT, OUTPUT_UNIT, ERROR_UNIT
