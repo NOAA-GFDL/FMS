@@ -65,7 +65,7 @@ option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"            
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
 
 # Testing-specific options
-set(OVERSUBSCRIBE_FLAG "--oversubscribe" CACHE STRING "Flag for mpirun to use more cores than available")
+set(OVERSUBSCRIBE_FLAG " --oversubscribe " CACHE STRING "Flag for mpirun to use more cores than available")
 
 if(32BIT)
   list(APPEND kinds "r4")
