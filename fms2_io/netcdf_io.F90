@@ -17,15 +17,15 @@
 !***********************************************************************
 !> @defgroup netcdf_io_mod netcdf_io_mod
 !> @ingroup fms2_io
-!> @brief This module defines a derived type, FmsNetcdfFile_t, and routines
-!! to handle calls to the netcdf library in order to read and write netcdf files within a MPI fortran program.
+!> @brief This module defines the derived type, FmsNetcdfFile_t, and routines
+!! to handle calls to the netcdf library in order to read and write netcdf files.
 !!
-!! This module is specifically for netcdf input/output when not using a domain decomposition to split up data between
-!! processors (see mpp_domains module). The FmsNetcdfFile_t type acts a base class that is extended by both
+!! This module is specifically for netcdf input/output when domain decomposition is not involved
+!! The FmsNetcdfFile_t type is the base class that is extended by both
 !! FmsNetcdfDomainFile_t and FmsNetcdfUnstructuredDomainFile_t.
 !!
-!! This module is not intended to be used externally, fms2_io_mod is intended to publicize the routines
-!! and types defined here to provide a single set of interfaces between the three different file types.
+!! This module is not intended to be used externally. Please use the public interfaces in fms2_io_mod
+!! for IO operations.
 !!
 !> @addtogroup netcdf_io_mod
 !> @{
@@ -141,7 +141,7 @@ type, public :: fmsOffloadingIn_type
 endtype fmsOffloadingIn_type
 
 !> @brief Type to represent a netCDF file. Can be used with multiple cores
-!! but only the root pe will perform any I/O operations, before sending the
+!! but only the root pe will perform any I/O operations before sending the
 !! data to the other pes.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
