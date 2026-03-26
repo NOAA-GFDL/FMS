@@ -72,9 +72,10 @@ type :: char_linked_list
   type(char_linked_list), pointer :: head => null()
 endtype char_linked_list
 
-!> Reads in a ASCII file from a given path and populates a maskmap that corresponds to a domain decomposition.
+!> Reads in the mask_table file in the ASCII format from a given path and populates a maskmap array that used for
+!! domain decomposition.
 !!
-!! The logical array created will be the same shape as the domain layout, with each index representing a specific pe
+!! The maskmap array is a logical array with the same shape as the domain layout, with each index representing a specific pe
 !! within the decomposition. This array is intended to be used as input for the mpp_define_domain routines maskmap
 !! argument, to essentially exclude certain pe's from a domain decomposition.
 !!
@@ -85,14 +86,20 @@ endtype char_linked_list
 !! <rank-to-mask>
 !! <any-additional-ranks-to-mask>
 !!
-!! Example:
+!! For example, for a domain layout of (2,2),
+!! -----------------
+!! | (1,2) | (2,2) |
+!! | ------------- |
+!! | (1,1) | (2,1) |
+!! -----------------
+!!
+!! The below mask table masks out 2 pes: the top left corner (1,1) and the bottom right corner (4,4).
+!! To clarify, this means 2 pes would be required, rather than 4 if the domain decomposition was not masked.
 !!
 !! 2
-!! 4,4
+!! 2,2
 !! 1,1
-!! 4,4
-!!
-!! For this mask table, 2 rank's would be masked: the top right corner (1,1) and the bottom left corner (4,4)
+!! 2,2
 !!
 !! This interface includes support for both 2D and 3D mask tables.
 !!
@@ -102,7 +109,7 @@ interface parse_mask_table
   module procedure parse_mask_table_3d
 end interface parse_mask_table
 
-!> Gets the file name to be used when utilizing a mosaic that contains multiple tiles.
+!> Constructs the file name to be used when utilizing a multi-tile mosaic.
 !! This is currenly used in the diag_manager and data_override in so that any output files
 !! will include the tile number of the writer. Uses the format "filename.tileN.nc" and requires
 !! the filename to already include the .nc suffix.
