@@ -17,12 +17,12 @@
 !***********************************************************************
 !> @defgroup fms_netcdf_domain_io_mod fms_netcdf_domain_io_mod
 !> @ingroup fms2_io
-!> @brief This module defines a derived type, FmsNetcdfDomainFile_t, and routines
-!! to handle calls to the netcdf library when using domain decomposition for a standard
-!! rectangular grid. See mpp_domains_mod for more information on domain decomposition.
+!> @brief This module defines the derived type, FmsNetcdfDomainFile_t, and routines
+!! to handle calls to the netcdf library for data on a domain decomposed standard rectangular grid.
+!! See mpp_domains_mod for more information on domain decomposition.
 !!
-!! This module is not intended to be used externally, fms2_io_mod is intended to publicize the routines
-!! and types defined here to provide a single set of interfaces to be used acases.
+!! This module is not intended to be used externally. Please use the public interfaces in fms2_io_mod
+!! for IO operations.
 !!
 !> @addtogroup fms_netcdf_domain_io_mod
 !> @{
@@ -57,16 +57,15 @@ type, private :: DomainDimension_t
 endtype DomainDimension_t
 
 
-!> @brief Type to represent a netCDF file when using a domain decomposition on a
-!! standard rectangular grid. Used to do distributed I/O across ranks,
-!! as determined by the io_layout. The io_layout is 2 integers set via mpp_set_io_domain
+!> @brief Type to represent a netCDF file when on a domain decomposed standard rectangular
+!! grid. Used to do distributed I/O across ranks,
+!! as determined by the io_layout. The io_layout is a 1D array (nx_pe,ny_pe) of size 2 set via mpp_set_io_domain
 !! and determines how many PEs will be performing IO operations within a given
-!! domain decompositon. The total number of writing PEs is equivalent to the
-!! product of the io_layout.
+!! domain decompositon. The total number of writing PEs is nx_pe * ny_pe.
 !!
 !! For example, if domain's layout was (4,4) so 16 PEs total,
-!! then a io_layout of (2,2) would have 4 of the PEs performing I/O operations.
-!! When doing a read, each IO PE will receive a data portion from 3 of the non-IO PEs and then write the aggregate.
+!! then a io_layout of (2,2) would have 4 PEs performing I/O operations.
+!! When doing a read, each IO PE will receive a portion of data from 3 of the non-IO PEs and then write the aggregate.
 !! When doing a write, each IO PE will read the data and then send a data portion to 3 of the non-IO PEs.
 !!
 !> @ingroup fms_netcdf_domain_io_mod
