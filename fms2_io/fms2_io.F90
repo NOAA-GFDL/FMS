@@ -21,9 +21,10 @@
 !!
 !! fms2_io_mod is the top level module that provides open, close, read, and write interfaces to the NetCDF package.
 !! This module defines public "aliases"(interfaces) to select procedures in fms_netcdf_domain_io_mod for reading/writing
-!! data on structured grid domains; fms_netcdf_unstructured_domain_io_mod for reading/writing data on unstructured grid domains;
-!! netcdf_io_mod for reading/writing data that is not parallelized with domain decomposition. Subroutines and
-!! functions in fms_netcdf_domain_io_mod, fms_netcdf_unstructured_domain_io_mod, and
+!! data on structured grid domains; fms_netcdf_unstructured_domain_io_mod for reading/writing data on unstructured
+!! grid domains; netcdf_io_mod for reading/writing data that is not parallelized with domain decomposition.
+!!
+!! Subroutines and functions in fms_netcdf_domain_io_mod, fms_netcdf_unstructured_domain_io_mod, and
 !! netcdf_io_mod are intended for internally use only. We highly recommended to only call public interfaces defined
 !! in this module.
 !!
@@ -54,8 +55,8 @@
 !! See mpp_domains_mod for more information (TODO!).
 !!
 !! Besides standard open/close/read/write operations, this module also provides interfaces for writing and reading
-!! "diskless" netcdf files via the blackboxio module. This module is used mainly for testing purposes, and should not be used
-!! in production.
+!! "diskless" netcdf files via the blackboxio module. This module is used mainly for testing purposes, and should not
+!! be used in production.
 !!
 !! Users can specify additional I/O parameters with the fms2_io_nml namelist which allows users to specify the following
 !! NetCDF library parameters:  Netcdf file format, chunk_size, deflate_level, shuffle.  Note, fms2_io accepts the
@@ -160,7 +161,7 @@ public :: nullify_filename_appendix
 !! <br>Example usage for opening a file with standard non-domain decomposed data:
 !!
 !!              io_success = open_file(fileobj, "filename", "write")
-!! 
+!!
 !! File mode can be "read"/"write"/"overwrite"/"append"
 !!
 !! <br>Example usage for opening a file with domain decomposed data:
