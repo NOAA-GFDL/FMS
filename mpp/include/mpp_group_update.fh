@@ -20,7 +20,7 @@
 !> @{
 subroutine MPP_CREATE_GROUP_UPDATE_(group, field, domain, flags, position, whalo, ehalo, shalo, nhalo, xdim, ydim)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,        intent(inout)        :: field(..)
+  MPP_TYPE_,        intent(inout), target :: field(..)
   type(domain2D),   intent(inout)        :: domain
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
@@ -98,7 +98,7 @@ subroutine MPP_CREATE_GROUP_UPDATE_(group, field, domain, flags, position, whalo
 
   isize = size(field,ix); jsize=size(field,iy); ksize = size(field) / (isize*jsize)
 
-  call mpi_get_address(field, group%addrs_s(nscalar))
+  group%addrs_s(nscalar) = c_loc(field)
 
   if( group%nscalar == 1 ) then
      group%flags_s  = update_flags
@@ -113,7 +113,9 @@ subroutine MPP_CREATE_GROUP_UPDATE_(group, field, domain, flags, position, whalo
      group%ix_s     = ix
      group%iy_s     = iy
      call mpp_get_memory_domain(domain, group%is_s, group%ie_s, group%js_s, group%je_s, position=position)
-     call group_assign_bounds(group, FIELD_S, field)
+
+     allocate (group%shape_s(rank(field)))
+     group%shape_s = shape(field)
 
      update_edge_only = BTEST(update_flags, EDGEONLY)
      recv(1) = BTEST(update_flags,EAST)
@@ -162,7 +164,7 @@ end subroutine MPP_CREATE_GROUP_UPDATE_
 subroutine MPP_CREATE_GROUP_UPDATE_V_( group, fieldx, fieldy, domain, flags, gridtype, &
                                           whalo, ehalo, shalo, nhalo, xdim, ydim)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,        intent(inout)        :: fieldx(..), fieldy(..)
+  MPP_TYPE_,        intent(inout), target :: fieldx(..), fieldy(..)
   type(domain2D),   intent(inout)        :: domain
   integer,          intent(in), optional :: flags, gridtype
   integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
@@ -246,8 +248,8 @@ subroutine MPP_CREATE_GROUP_UPDATE_V_( group, fieldx, fieldy, domain, flags, gri
   if(ksize_x .NE. ksize_y) call mpp_error(FATAL,  &
            'MPP_CREATE_GROUP_UPDATE_V: mismatch of ksize between fieldx and fieldy')
 
-  call mpi_get_address(fieldx, group%addrs_x(nvector))
-  call mpi_get_address(fieldy, group%addrs_y(nvector))
+  group%addrs_x(nvector) = c_loc(fieldx)
+  group%addrs_y(nvector) = c_loc(fieldy)
 
   if( group%nvector == 1 ) then
      group%flags_v  = update_flags
@@ -330,8 +332,11 @@ subroutine MPP_CREATE_GROUP_UPDATE_V_( group, fieldx, fieldy, domain, flags, gri
      call mpp_get_memory_domain(domain, group%is_x, group%ie_x, group%js_x, group%je_x, position=position_x)
      call mpp_get_memory_domain(domain, group%is_y, group%ie_y, group%js_y, group%je_y, position=position_y)
 
-     call group_assign_bounds(group, FIELD_X, fieldx)
-     call group_assign_bounds(group, FIELD_Y, fieldy)
+     allocate (group%shape_x(rank(fieldx)))
+     group%shape_x = shape(fieldx)
+
+     allocate (group%shape_y(rank(fieldy)))
+     group%shape_y = shape(fieldy)
   else
      set_mismatch = .false.
      set_mismatch = set_mismatch .OR. (group%flags_v  .NE. update_flags)
@@ -828,7 +833,7 @@ end subroutine MPP_COMPLETE_GROUP_UPDATE_
 
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_(group, field)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: field(..)
+  MPP_TYPE_, target,           intent(in)    :: field(..)
   integer :: isize, jsize, ksize
 
   group%reset_index_s = group%reset_index_s + 1
@@ -844,12 +849,12 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_(group, field)
     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_: size of field does not match the size stored in group")
   endif
 
-  call mpi_get_address(field, group%addrs_s(group%reset_index_s))
+  group%addrs_s(group%reset_index_s) = c_loc(field)
 end subroutine MPP_RESET_GROUP_UPDATE_FIELD_
 
 subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: fieldx(..), fieldy(..)
+  MPP_TYPE_, target,           intent(in)    :: fieldx(..), fieldy(..)
   integer :: isize_x, jsize_x, ksize_x
   integer :: isize_y, jsize_y, ksize_y
 
@@ -874,14 +879,14 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_(group, fieldx, fieldy)
     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_V_: size of fieldy does not match the size stored in group")
   endif
 
-  call mpi_get_address(fieldx, group%addrs_x(group%reset_index_v))
-  call mpi_get_address(fieldy, group%addrs_y(group%reset_index_v))
+  group%addrs_x(group%reset_index_v) = c_loc(fieldx)
+  group%addrs_y(group%reset_index_v) = c_loc(fieldy)
 end subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_
 
-function GET_VALUE_ (group, field_type, n, i, j, k) result(res)
+function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
   type(mpp_group_update_type), intent(in), target :: group
   integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
-  integer, intent(in) :: n !< Index of the field within group
+  integer, intent(in) :: l !< Index of the field within group
   integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
   MPP_TYPE_ :: res
 
@@ -892,7 +897,7 @@ function GET_VALUE_ (group, field_type, n, i, j, k) result(res)
 
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-  integer :: field_rank, kp
+  integer :: n, kp
   integer :: i1, i2, i3, i4
 
   select case (field_type)
@@ -904,19 +909,19 @@ function GET_VALUE_ (group, field_type, n, i, j, k) result(res)
       js = group%js_s
       je = group%je_s
 
-      field_rank = size(group%shape_s)
-      allocate (lb(field_rank), ub(field_rank))
+      n = size(group%shape_s)
+      allocate (lb(n), ub(n))
 
       lb = 1
       ub = group%shape_s
 
-      select case(field_rank)
+      select case(n)
         case (2)
-          call c_f_pointer(c_loc(group%addrs_s(n)), field2d, group%shape_s)
+          call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
         case (3)
-          call c_f_pointer(c_loc(group%addrs_s(n)), field3d, group%shape_s)
+          call c_f_pointer(group%addrs_s(l), field3d, group%shape_s)
         case (4)
-          call c_f_pointer(c_loc(group%addrs_s(n)), field4d, group%shape_s)
+          call c_f_pointer(group%addrs_s(l), field4d, group%shape_s)
       end select
     case (FIELD_X)
       ix = group%ix_v
@@ -926,19 +931,19 @@ function GET_VALUE_ (group, field_type, n, i, j, k) result(res)
       js = group%js_x
       je = group%je_x
 
-      field_rank = size(group%shape_x)
-      allocate (lb(field_rank), ub(field_rank))
+      n = size(group%shape_x)
+      allocate (lb(n), ub(n))
 
       lb = 1
       ub = group%shape_x
 
-      select case(field_rank)
+      select case(n)
         case (2)
-          call c_f_pointer(c_loc(group%addrs_x(n)), field2d, group%shape_x)
+          call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
         case (3)
-          call c_f_pointer(c_loc(group%addrs_x(n)), field3d, group%shape_x)
+          call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
         case (4)
-          call c_f_pointer(c_loc(group%addrs_x(n)), field4d, group%shape_x)
+          call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
       end select
     case (FIELD_Y)
       ix = group%ix_v
@@ -948,19 +953,19 @@ function GET_VALUE_ (group, field_type, n, i, j, k) result(res)
       js = group%js_y
       je = group%je_y
 
-      field_rank = size(group%shape_y)
-      allocate (lb(field_rank), ub(field_rank))
+      n = size(group%shape_y)
+      allocate (lb(n), ub(n))
 
       lb = 1
       ub = group%shape_y
 
-      select case(field_rank)
+      select case(n)
         case (2)
-          call c_f_pointer(c_loc(group%addrs_y(n)), field2d, group%shape_y)
+          call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
         case (3)
-          call c_f_pointer(c_loc(group%addrs_y(n)), field3d, group%shape_y)
+          call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
         case (4)
-          call c_f_pointer(c_loc(group%addrs_y(n)), field4d, group%shape_y)
+          call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
       end select
   end select
 
@@ -971,7 +976,7 @@ function GET_VALUE_ (group, field_type, n, i, j, k) result(res)
   ub(iy) = lb(iy)
 
   kp = 0
-  select case (field_rank)
+  select case (n)
     case (2)
       do i2=lb(2),ub(2)
         do i1=lb(1),ub(1)
@@ -1005,10 +1010,10 @@ function GET_VALUE_ (group, field_type, n, i, j, k) result(res)
   end select
 end function GET_VALUE_
 
-subroutine SET_VALUE_ (group, field_type, n, i, j, k, x)
+subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
   type(mpp_group_update_type), intent(in), target :: group
   integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
-  integer, intent(in) :: n !< Index of the field within group
+  integer, intent(in) :: l !< Index of the field within group
   integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
   MPP_TYPE_, intent(in) :: x
 
@@ -1019,7 +1024,7 @@ subroutine SET_VALUE_ (group, field_type, n, i, j, k, x)
 
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-  integer :: field_rank, kp
+  integer :: n, kp
   integer :: i1, i2, i3, i4
 
   select case (field_type)
@@ -1031,19 +1036,19 @@ subroutine SET_VALUE_ (group, field_type, n, i, j, k, x)
       js = group%js_s
       je = group%je_s
 
-      field_rank = size(group%shape_s)
-      allocate (lb(field_rank), ub(field_rank))
+      n = size(group%shape_s)
+      allocate (lb(n), ub(n))
 
       lb = 1
       ub = group%shape_s
 
-      select case(field_rank)
+      select case(n)
         case (2)
-          call c_f_pointer(c_loc(group%addrs_s(n)), field2d, group%shape_s)
+          call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
         case (3)
-          call c_f_pointer(c_loc(group%addrs_s(n)), field3d, group%shape_s)
+          call c_f_pointer(group%addrs_s(l), field3d, group%shape_s)
         case (4)
-          call c_f_pointer(c_loc(group%addrs_s(n)), field4d, group%shape_s)
+          call c_f_pointer(group%addrs_s(l), field4d, group%shape_s)
       end select
     case (FIELD_X)
       ix = group%ix_v
@@ -1053,19 +1058,19 @@ subroutine SET_VALUE_ (group, field_type, n, i, j, k, x)
       js = group%js_x
       je = group%je_x
 
-      field_rank = size(group%shape_x)
-      allocate (lb(field_rank), ub(field_rank))
+      n = size(group%shape_x)
+      allocate (lb(n), ub(n))
 
       lb = 1
       ub = group%shape_x
 
-      select case(field_rank)
+      select case(n)
         case (2)
-          call c_f_pointer(c_loc(group%addrs_x(n)), field2d, group%shape_x)
+          call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
         case (3)
-          call c_f_pointer(c_loc(group%addrs_x(n)), field3d, group%shape_x)
+          call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
         case (4)
-          call c_f_pointer(c_loc(group%addrs_x(n)), field4d, group%shape_x)
+          call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
       end select
     case (FIELD_Y)
       ix = group%ix_v
@@ -1075,19 +1080,19 @@ subroutine SET_VALUE_ (group, field_type, n, i, j, k, x)
       js = group%js_y
       je = group%je_y
 
-      field_rank = size(group%shape_y)
-      allocate (lb(field_rank), ub(field_rank))
+      n = size(group%shape_y)
+      allocate (lb(n), ub(n))
 
       lb = 1
       ub = group%shape_y
 
-      select case(field_rank)
+      select case(n)
         case (2)
-          call c_f_pointer(c_loc(group%addrs_y(n)), field2d, group%shape_y)
+          call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
         case (3)
-          call c_f_pointer(c_loc(group%addrs_y(n)), field3d, group%shape_y)
+          call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
         case (4)
-          call c_f_pointer(c_loc(group%addrs_y(n)), field4d, group%shape_y)
+          call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
       end select
   end select
 
@@ -1098,7 +1103,7 @@ subroutine SET_VALUE_ (group, field_type, n, i, j, k, x)
   ub(iy) = lb(iy)
 
   kp = 0
-  select case (field_rank)
+  select case (n)
     case (2)
       do i2=lb(2),ub(2)
         do i1=lb(1),ub(1)
