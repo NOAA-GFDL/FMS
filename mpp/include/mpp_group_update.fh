@@ -890,15 +890,14 @@ function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
   integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
   MPP_TYPE_ :: res
 
-  integer, allocatable, dimension(:) :: lb, ub
+  integer, allocatable, dimension(:) :: lb, n, indx
   MPP_TYPE_, pointer :: field2d(:,:)
   MPP_TYPE_, pointer :: field3d(:,:,:)
   MPP_TYPE_, pointer :: field4d(:,:,:,:)
 
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-  integer :: n, kp
-  integer :: i1, i2, i3, i4
+  integer :: nd, m, kp, d
 
   select case (field_type)
     case (FIELD_S)
@@ -909,13 +908,13 @@ function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
       js = group%js_s
       je = group%je_s
 
-      n = size(group%shape_s)
-      allocate (lb(n), ub(n))
+      nd = size(group%shape_s)
+      allocate (lb(nd), n(nd), indx(nd))
 
       lb = 1
-      ub = group%shape_s
+      n = group%shape_s
 
-      select case(n)
+      select case(nd)
         case (2)
           call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
         case (3)
@@ -931,13 +930,13 @@ function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
       js = group%js_x
       je = group%je_x
 
-      n = size(group%shape_x)
-      allocate (lb(n), ub(n))
+      nd = size(group%shape_x)
+      allocate (lb(nd), n(nd), indx(nd))
 
       lb = 1
-      ub = group%shape_x
+      n = group%shape_x
 
-      select case(n)
+      select case(nd)
         case (2)
           call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
         case (3)
@@ -953,13 +952,13 @@ function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
       js = group%js_y
       je = group%je_y
 
-      n = size(group%shape_y)
-      allocate (lb(n), ub(n))
+      nd = size(group%shape_y)
+      allocate (lb(nd), n(nd), indx(nd))
 
       lb = 1
-      ub = group%shape_y
+      n = group%shape_y
 
-      select case(n)
+      select case(nd)
         case (2)
           call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
         case (3)
@@ -972,41 +971,25 @@ function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
   lb(ix) = i - is + 1
   lb(iy) = j - js + 1
 
-  ub(ix) = lb(ix)
-  ub(iy) = lb(iy)
+  n(ix) = 1
+  n(iy) = 1
 
-  kp = 0
-  select case (n)
+  kp = k - 1
+  do d=nd,1,-1
+    m = product(n(1:d-1)) ! Product of all lower dimension sizes
+    indx(d) = kp / m
+    kp = kp - indx(d)*m
+  enddo
+
+  indx = lb + indx
+
+  select case (nd)
     case (2)
-      do i2=lb(2),ub(2)
-        do i1=lb(1),ub(1)
-          kp = kp + 1
-          res = field2d(i1, i2)
-          if (kp.eq.k) return
-        enddo
-      enddo
+      res = field2d(indx(1), indx(2))
     case (3)
-      do i3=lb(3),ub(3)
-        do i2=lb(2),ub(2)
-          do i1=lb(1),ub(1)
-            kp = kp + 1
-            res = field3d(i1, i2, i3)
-            if (kp.eq.k) return
-          enddo
-        enddo
-      enddo
+      res = field3d(indx(1), indx(2), indx(3))
     case (4)
-      do i4=lb(4),ub(4)
-        do i3=lb(3),ub(3)
-          do i2=lb(2),ub(2)
-            do i1=lb(1),ub(1)
-              kp = kp + 1
-              res = field4d(i1, i2, i3, i4)
-              if (kp.eq.k) return
-            enddo
-          enddo
-        enddo
-      enddo
+      res = field4d(indx(1), indx(2), indx(3), indx(4))
   end select
 end function GET_VALUE_
 
@@ -1017,15 +1000,14 @@ subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
   integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
   MPP_TYPE_, intent(in) :: x
 
-  integer, allocatable, dimension(:) :: lb, ub
+  integer, allocatable, dimension(:) :: lb, n, indx
   MPP_TYPE_, pointer :: field2d(:,:)
   MPP_TYPE_, pointer :: field3d(:,:,:)
   MPP_TYPE_, pointer :: field4d(:,:,:,:)
 
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-  integer :: n, kp
-  integer :: i1, i2, i3, i4
+  integer :: nd, m, kp, d
 
   select case (field_type)
     case (FIELD_S)
@@ -1036,13 +1018,13 @@ subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
       js = group%js_s
       je = group%je_s
 
-      n = size(group%shape_s)
-      allocate (lb(n), ub(n))
+      nd = size(group%shape_s)
+      allocate (lb(nd), n(nd), indx(nd))
 
       lb = 1
-      ub = group%shape_s
+      n = group%shape_s
 
-      select case(n)
+      select case(nd)
         case (2)
           call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
         case (3)
@@ -1058,13 +1040,13 @@ subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
       js = group%js_x
       je = group%je_x
 
-      n = size(group%shape_x)
-      allocate (lb(n), ub(n))
+      nd = size(group%shape_x)
+      allocate (lb(nd), n(nd), indx(nd))
 
       lb = 1
-      ub = group%shape_x
+      n = group%shape_x
 
-      select case(n)
+      select case(nd)
         case (2)
           call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
         case (3)
@@ -1080,13 +1062,13 @@ subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
       js = group%js_y
       je = group%je_y
 
-      n = size(group%shape_y)
-      allocate (lb(n), ub(n))
+      nd = size(group%shape_y)
+      allocate (lb(nd), n(nd), indx(nd))
 
       lb = 1
-      ub = group%shape_y
+      n = group%shape_y
 
-      select case(n)
+      select case(nd)
         case (2)
           call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
         case (3)
@@ -1099,47 +1081,25 @@ subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
   lb(ix) = i - is + 1
   lb(iy) = j - js + 1
 
-  ub(ix) = lb(ix)
-  ub(iy) = lb(iy)
+  n(ix) = 1
+  n(iy) = 1
 
-  kp = 0
-  select case (n)
+  kp = k - 1
+  do d=nd,1,-1
+    m = product(n(1:d-1)) ! Product of all lower dimension sizes
+    indx(d) = kp / m
+    kp = kp - indx(d)*m
+  enddo
+
+  indx = lb + indx
+
+  select case (nd)
     case (2)
-      do i2=lb(2),ub(2)
-        do i1=lb(1),ub(1)
-          kp = kp + 1
-          if (kp.eq.k) then
-            field2d(i1, i2) = x
-            return
-          endif
-        enddo
-      enddo
+      field2d(indx(1), indx(2)) = x
     case (3)
-      do i3=lb(3),ub(3)
-        do i2=lb(2),ub(2)
-          do i1=lb(1),ub(1)
-            kp = kp + 1
-            if (kp.eq.k) then
-              field3d(i1, i2, i3) = x
-              return
-            endif
-          enddo
-        enddo
-      enddo
+      field3d(indx(1), indx(2), indx(3)) = x
     case (4)
-      do i4=lb(4),ub(4)
-        do i3=lb(3),ub(3)
-          do i2=lb(2),ub(2)
-            do i1=lb(1),ub(1)
-              kp = kp + 1
-              if (kp.eq.k) then
-                field4d(i1, i2, i3, i4) = x
-                return
-              endif
-            enddo
-          enddo
-        enddo
-      enddo
+      field4d(indx(1), indx(2), indx(3), indx(4)) = x
   end select
 end subroutine SET_VALUE_
 
