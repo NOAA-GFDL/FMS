@@ -32,7 +32,7 @@ jobs:
     - name: Prepare GNU autoconf for build
       run: autoreconf -if
     - name: Configure the build
-      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="$FCFLAGS $DEBUG_FLAGS"
+      run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="$FCFLAGS $DEBUG_FLAGS" || cat config.log
     - name: Run distcheck (compiles, tests, and packages)
       run: make distcheck 2>&1 > distcheck.log
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
