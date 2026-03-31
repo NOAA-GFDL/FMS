@@ -17,10 +17,16 @@
 !***********************************************************************
 !> @defgroup netcdf_io_mod netcdf_io_mod
 !> @ingroup fms2_io
-!> @brief Creates a basic netcdf type and routines to extend for other uses
+!> @brief This module defines the derived type, FmsNetcdfFile_t, and routines
+!! to handle calls to the netcdf library in order to read and write netcdf files.
 !!
-!> Handles type definitions and interfaces for netcdf I/O.
-
+!! This module is specifically for netcdf input/output when domain decomposition is not involved
+!! The FmsNetcdfFile_t type is the base class that is extended by both
+!! FmsNetcdfDomainFile_t and FmsNetcdfUnstructuredDomainFile_t.
+!!
+!! This module is not intended to be used externally. Please use the public interfaces in fms2_io_mod
+!! for IO operations.
+!!
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod
@@ -134,7 +140,9 @@ type, public :: fmsOffloadingIn_type
     procedure :: init
 endtype fmsOffloadingIn_type
 
-!> @brief Netcdf file type.
+!> @brief Type to represent a netCDF file. Can be used with multiple cores
+!! but only the root pe will perform any I/O operations before sending the
+!! data to the other pes.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=FMS_PATH_LEN) :: path !< File path.

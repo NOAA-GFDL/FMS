@@ -17,9 +17,54 @@
 !***********************************************************************
 !> @defgroup fms2_io_mod fms2_io_mod
 !> @ingroup fms2_io
-!> @brief An updated library for parallel IO to replace @ref mpp_io_mod. This module contains
-!! the public API for fms2 I/O interfaces and routines defined throughout this directory.
-!! A conversion guide for replacing mpp/fms_io code with this module is available below.
+!> @brief This module supports netCDF I/O operations.
+!!
+!! fms2_io_mod is the top level module that provides open, close, read, and write interfaces to the NetCDF package.
+!! This module defines public "aliases"(interfaces) to select procedures in fms_netcdf_domain_io_mod for reading/writing
+!! data on structured grid domains; fms_netcdf_unstructured_domain_io_mod for reading/writing data on unstructured
+!! grid domains; netcdf_io_mod for reading/writing data that is not parallelized with domain decomposition.
+!!
+!! Subroutines and functions in fms_netcdf_domain_io_mod, fms_netcdf_unstructured_domain_io_mod, and
+!! netcdf_io_mod are intended for internally use only. We highly recommended to only call public interfaces defined
+!! in this module.
+!!
+!! Before any fms2_io_mod I/O operations, a file derived type must be declared.
+!! Three file derived types are currently available and are described below.  Any instances
+!! of these three file types are referred to as "fileobj" in this module.
+!!
+!! - FmsNetcdfFile_t: provides limited number of wrapper procedures to the netCDF4 library.  If the
+!! user provides a pelist to procedures compatible with this type, only the root rank of the pelist
+!! performs I/O operations by calling the NetCDF library: the root rank either boradcasts the read-in
+!! data to the remaining ranks in the pelist, or gathers data from the remaining ranks in the pelist before writing.
+!! If a pelist is not provided, all ranks calling the procedure will perform the IO operation.
+!!
+!! - FmsNetcdfDomainFile_t:  extends upon FmsNetcdfFile_t and adds supports for "domain-decomposed" reads and writes.
+!!   Here, "domain decomposed" refers to data that is partitioned into subdomains of the decomposed global domain,
+!!   and each MPI rank holds its portion of the global data.  The users must provide a domain of type Domain2D from
+!!   mpp_domains_mod when initializing this file object. To specify pe's for performing the IO operations, see
+!!   mpp_set_io_layout
+!!
+!! - FmsNetcdfUnstructuredDomainFile_t: also extends upon FmsNetcdfFile_t and adds support for
+!!   “domain-decomposed” reads/writes for data decomposed on subdomains of unstructured grids
+!!   The users must provide a domain of type DomainUG from mpp_domains_mod when initializing this file object.
+!!
+!! See mpp_domains_mod documentation for more information on creating a domain decomposition using FMS.
+!!
+!! When using the FmsNetcdfDomainFile_t or the FmsNetcdfUnstructuredDomainFile_t types,
+!! the io_layout controls how the IO operations are parallelized.
+!! See mpp_domains_mod for more information (TODO!).
+!!
+!! Besides standard open/close/read/write operations, this module also provides interfaces for writing and reading
+!! "diskless" netcdf files via the blackboxio module. This module is used mainly for testing purposes, and should not
+!! be used in production.
+!!
+!! Users can specify additional I/O parameters with the fms2_io_nml namelist which allows users to specify the following
+!! NetCDF library parameters:  Netcdf file format, chunk_size, deflate_level, shuffle.  Note, fms2_io accepts the
+!! Netcdf file format namelist values:"64bit", "class", and "netcdf4". For more information on optimizing NetCDF writing
+!! operation, see https://docs.unidata.ucar.edu/netcdf-c/current/file_format_specifications.html
+!!
+!! @note The legacy IO modules, fms_io_mod and mpp_io_mod, are no longer available.
+!! If converting legacy code from fms_io/mpp_io to fms2_io, please refer to the migration guide at fms2_io/readme.md.
 
 !> @addtogroup fms2_io_mod
 !> @{
@@ -34,15 +79,16 @@ use mpp_domains_mod, only: mpp_domains_init
 implicit none
 private
 
+!> NetCDF constant (enum) for unlimited dimension identification
 public :: unlimited
-public :: FmsNetcdfFile_t
-public :: FmsNetcdfDomainFile_t
-public :: FmsNetcdfUnstructuredDomainFile_t
-public :: open_file
-public :: open_virtual_file
-public :: close_file
+
+!> File object types are defined in the helper modules (netcdf_io_mod,fms_netcdf_domain_io_mod,
+!! fms_netcdf_unstructured_domain_io_mod) but are made public here for user access.
+public :: FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t
+
+!> Interfaces defined below to make public
+public :: open_file, open_virtual_file, close_file
 public :: register_axis
-public :: register_unlimited_compressed_axis
 public :: register_field
 public :: register_restart_field
 public :: write_data
@@ -51,6 +97,9 @@ public :: write_restart
 public :: write_new_restart
 public :: read_restart
 public :: read_new_restart
+
+!> Routines/functions from netcdf_io_mod to make public
+public :: register_unlimited_compressed_axis
 public :: global_att_exists
 public :: variable_att_exists
 public :: register_global_attribute
@@ -68,27 +117,32 @@ public :: variable_exists
 public :: get_variable_num_dimensions
 public :: get_variable_dimension_names
 public :: get_variable_size
-public :: get_compute_domain_dimension_indices
-public :: get_global_io_domain_indices
-public :: Valid_t
-public :: get_valid
-public :: is_valid
-public :: get_unlimited_dimension_name
-public :: get_variable_unlimited_dimension_index
-public :: file_exists
+public :: flush_file
+public :: write_restart_bc
+public :: read_restart_bc
 public :: compressed_start_and_count
 public :: get_variable_sense
 public :: get_variable_missing
 public :: get_variable_units
 public :: get_time_calendar
-public :: open_check
 public :: is_registered_to_restart
 public :: check_if_open
 public :: set_fileobj_time_name
+public :: Valid_t
+public :: get_valid
+public :: is_valid
+
+!> Routines/functions from fms_netcdf_domain_io_mod to make public
+public :: get_compute_domain_dimension_indices
+public :: get_global_io_domain_indices
+public :: get_unlimited_dimension_name
+public :: get_variable_unlimited_dimension_index
+
+!> Routines/functions from fms_io_utils_mod to make public
+public :: file_exists
+public :: open_check
 public :: is_dimension_registered
 public :: fms2_io_init
-public :: write_restart_bc
-public :: read_restart_bc
 public :: get_mosaic_tile_grid
 public :: ascii_read
 public :: get_mosaic_tile_file
@@ -97,22 +151,35 @@ public :: get_filename_appendix
 public :: set_filename_appendix
 public :: get_instance_filename
 public :: nullify_filename_appendix
-public :: flush_file
 !> @}
 
-!> @brief Opens a given netcdf or domain file.
+!> @brief Opens a NetCDF dataset on disk and initializes the file object.
 !!
-!> <br>Example usage:
+!> Opens a netcdf file for standard data, domain decomposed data, or unstructured domain decomposed data
+!! and also intializes the fileobj for subsequent IO operations.
+!!
+!! <br>Example usage for opening a file with standard non-domain decomposed data:
 !!
 !!              io_success = open_file(fileobj, "filename", "write")
 !!
-!! Opens a netcdf file of type @ref fmsnetcdffile_t at the given file path string.
-!! File mode is set to one of "read"/"write"/"overwrite"/"append"
+!! File mode can be "read"/"write"/"overwrite"/"append"
 !!
-!!              io_success = open_file(fileobj, "filename", "overwrite", domain)
+!! <br>Example usage for opening a file with domain decomposed data:
 !!
-!! Opens a domain netcdf file of type @ref fmsnetcdfdomainfile_t or
-!! @ref fmsnetcdfunstructureddomainfile_t at the given file path name and 2D or unstructured domain.
+!!              io_success = open_file(fileobj, "filename", "write", domain)
+!!
+!! Where fileobj is of type @ref fmsnetcdfdomainfile_t or @ref fmsnetcdfunstructureddomainfile_t
+!!
+!! Netcdf's collective IO functionality can be enabled when opening a file in order to perform collective read and
+!! writes. This will use netcdf libraries capabilities for parallel file access, allowing all processors
+!! to perform data reads and writes. To use this option, hdf5 and netcdf must be built with MPI support.
+!! Example usage:
+!!
+!!              io_success = open_file(fileobj, "test_collective_io.nc", "read", domain, nc_format=nc_format, &
+!!                                     use_collective=.true.)
+!!
+!! See fms2_io/readme.md for more information.
+!!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module.
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
@@ -125,7 +192,8 @@ interface open_file
 end interface open_file
 
 
-!> @brief Creates a diskless netcdf or domain file
+!> @brief Creates a diskless netcdf or domain file. File is created in memory only via the netcdf library's
+!! NC_DISKLESS creation mode option. Data will be lost upon file closing.
 !!
 !> @return true if successful, false otherwise
 !!
@@ -168,7 +236,7 @@ interface close_file
   module procedure close_unstructured_domain_file
 end interface close_file
 
-!> @brief Add a dimension to a given file
+!> @brief Adds a dimension/axis to a given netcdf file object.
 !!
 !> <br>Example usage:
 !!
@@ -193,15 +261,18 @@ interface register_axis
   module procedure register_unstructured_dimension
 end interface register_axis
 
-!> @brief Defines a new field within the given file
+!> @brief Defines a new field/variable within the given file. After a variable is registered,
+!! users can write data to the file via write_data.
 !> <br>Example usage:
 !!
 !!              call register_field(fileobj, "lon", "double", (/"lon"/) )
 !!
-!! Adds a double variable named "lon" to the given file, corresponding to the
-!! list of dimension names (which must be previously defined in the fileobj).
-!! The size of dimension name list provided is the amount of ranks for the created
-!! field, scalar if list not provided.
+!! Adds a floating point double precision (kind=8) variable named "lon" to the given file, corresponding to the
+!! list of dimension names (which must be previously registered in the fileobj with register_axis).
+!! The dimension name list corresponds to the dimensions of the field.
+!! <br>Example:
+!!
+!!              call register_field(fileobj, "variable_2d", "double", (/"lon", "lat"/))
 !!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module.
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
@@ -214,13 +285,15 @@ interface register_field
   module procedure register_unstructured_domain_variable
 end interface register_field
 
-!> @brief Similar to @ref register_field, but occupies the field with data for restarts
+!> @brief Registers a new restart field.
 !> <br>Example usage:
 !!
-!!              call register_restart_field(fileobj, "temperature", data_ptr, (/"lon", "time"/) )
+!!              call register_restart_field(fileobj, "temperature", data, (/"lon", "time"/) )
 !!
-!! Creates a restart variable and sets it to the values from data_ptr, corresponding to
-!! the list of dimension names. Rank of data_ptr must equal the amount of corresponding dimensions.
+!! Creates a restart variable and stores a pointer to the data.
+!!
+!! This differs from the register_field interface in that registered restart fields are stored
+!! in the fileobj and can be easily read/written via a call to the read_restart/write_restart interfaces.
 !!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module.
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
@@ -250,7 +323,7 @@ interface register_restart_field
   module procedure register_restart_region_3d
 end interface register_restart_field
 
-!> @brief Write data to a defined field within a file
+!> @brief Write data to a registered field within a file
 !> <br>Example usage:
 !!
 !!              call write_data(fileobj, "lon", data)
@@ -309,12 +382,10 @@ interface read_data
   module procedure unstructured_domain_read_5d
 end interface read_data
 
-!> @brief Writes all restart fields registered within a given restart file
+!> @brief Writes previously registered restart fields to the given restart file
 !> <br>Example usage:
 !!
 !!              call write_restart(fileobj)
-!!
-!! Writes previously registered restart fields to the given restart file
 !!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module.
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
@@ -333,7 +404,9 @@ end interface write_restart
 !!              call write_new_restart(fileobj, timestamp="tstring", filename="new_restartfilename")
 !!
 !! Creates a new restart file, with the provided timestamp and filename, out of the registered
-!! restart fields in the given restart file.
+!! restart fields in the given restart fileobj.
+!!
+!! @note This interface is only intended for use with diskless netcdf files.
 !!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
 !> @ingroup fms2_io_mod
@@ -363,6 +436,9 @@ end interface read_restart
 !!              call read_new_restart(fileobj, unlimted_dimension_level)
 !!
 !!              call read_new_restart(fileobj, unlimited_dimension_level, directory, timestamp, filename)
+!!
+!! @note This interface is only intended for use with diskless netcdf files.
+!!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
 !> @ingroup fms2_io_mod
 interface read_new_restart
@@ -373,14 +449,14 @@ end interface read_new_restart
 !> @addtogroup fms2_io_mod
 !> @{
 
-logical, private :: fms2_io_is_initialized = .false. !< True after fms2_io_init is run
+logical, private :: fms2_io_is_initialized = .false. !< True after calling fms2_io_init
 ! Namelist variables
 integer :: ncchksz = 64*1024  !< User defined chunksize (in bytes) argument in netcdf file
                               !! creation calls. Replaces setting the NC_CHKSZ environment variable.
 character (len = 10) :: netcdf_default_format = "64bit" !< User defined netcdf file format, acceptable values
-                              !! are: "64bit", "classic", "netcdf4". This can be overwritten if you specify
-                              !! "nc_format" in the open_file call
-integer :: header_buffer_val = 16384 !< Use defined netCDF header buffer size(in bytes) used in
+                              !! are: "64bit", "classic", "netcdf4". This can be overwritten for a given file
+                              !! by specifying "nc_format" in the open_file call.
+integer :: header_buffer_val = 16384 !< User defined netCDF header buffer size(in bytes) used in
                                      !! NF__ENDDEF
 integer :: deflate_level = default_deflate_level !< Netcdf deflate level to use in nf90_def_var
                                                  !! (integer between 1 to 9)
@@ -390,7 +466,7 @@ namelist / fms2_io_nml / &
 
 contains
 
-!> @brief Reads the fms2_io_nml
+!> @brief Reads the fms2_io_nml. Needs to be called prior to any usage of fms2_io_mod.
 subroutine fms2_io_init ()
  integer :: mystat
 
