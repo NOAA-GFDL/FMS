@@ -325,7 +325,7 @@ contains
   subroutine drifters_comm_update(self, drfts, new_positions, &
        & comm, remove, max_add_remove)
 #ifndef _SERIAL
-   use mpi
+   use mpi_f08
 #endif
 
     type(drifters_comm_type)   :: self
@@ -599,7 +599,7 @@ contains
        & root, mycomm)
 
 #ifndef _SERIAL
-    use mpi
+    use mpi_f08
 #endif
     use drifters_input_mod, only : drifters_input_type, drifters_input_save
 

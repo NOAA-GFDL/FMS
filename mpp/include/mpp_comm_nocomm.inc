@@ -26,9 +26,9 @@
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> @brief Initialize the @ref mpp_mod module
-subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
+subroutine mpp_init_f08( flags, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
-  integer, optional, intent(in) :: localcomm !< Id of MPI communicator used to initialize
+  type(mpi_comm), optional, intent(in) :: localcomm !< Id of MPI communicator used to initialize
   integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
                                               !! before completion for testing purposes
   character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
@@ -50,14 +50,14 @@ subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   allocate(peset(0:0))
   !PEsets: make defaults illegal
   peset(:)%count = -1
-  peset(:)%id = -1
-  peset(:)%group = -1
+  peset(:)%comm = MPI_COMM_NULL
+  peset(:)%group = MPI_GROUP_NULL
   !0=single-PE, initialized so that count returns 1
   peset(0)%count = 1
   allocate( peset(0)%list(1) )
   peset(0)%list = pe
   current_peset_num = 0
-  peset(0)%id = 0
+  peset(0)%comm = MPI_COMM_NULL
   world_peset_num = 0
   current_peset_num = world_peset_num !initialize current PEset to world
   if(t_level == 1) return
@@ -81,8 +81,8 @@ subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   allocate(mpp_byte%sizes(0))
   allocate(mpp_byte%subsizes(0))
   allocate(mpp_byte%starts(0))
-  mpp_byte%etype = -1
-  mpp_byte%id = -1
+  mpp_byte%etype = MPI_DATATYPE_NULL
+  mpp_byte%id = MPI_DATATYPE_NULL
 
   mpp_byte%prev => null()
   mpp_byte%next => null()
@@ -135,7 +135,7 @@ subroutine mpp_init( flags, localcomm, test_level, alt_input_nml_path )
   call mpp_clock_begin(clock0)
 
   return
-end subroutine mpp_init
+end subroutine mpp_init_f08
 
 !#######################################################################
 !> @brief To be called at the end of a run
