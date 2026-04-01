@@ -36,6 +36,9 @@ jobs:
     - name: Run distcheck (compiles, tests, and packages)
       run: make distcheck 2>&1 > distcheck.log
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
+    - name: Output errors on failure
+      run: grep -E "^FAIL:|^XPASS:" distcheck.log
+      if: failure()
     - name: Upload log on failure
       uses: actions/upload-artifact@v7.0.0
       if: failure()
