@@ -23,6 +23,7 @@ jobs:
         TEST_VERBOSE: 1
         DISTCHECK_CONFIGURE_FLAGS: "${{ matrix.conf-flag }} ${{ matrix.input-flag }} ${{ matrix.io-flag }}"
         DEBUG_FLAGS: "-O0 -g -fbounds-check -ffpe-trap=invalid,zero,overflow" # debug compiler flags taken from the mkmf template
+        SKIP_TESTS: "test_diag_manager2.45 test_xgrid2.1" # these hang in the CI from CFI_is_contiguous errors
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
