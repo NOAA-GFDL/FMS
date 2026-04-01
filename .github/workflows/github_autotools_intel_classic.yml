@@ -1,3 +1,5 @@
+name: Autotools build and unit testing with Intel Classic
+
 on:
   schedule:
     - cron: '0 0 * * 0' # sundays @ midnight

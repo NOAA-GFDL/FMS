@@ -1,6 +1,4 @@
-# 'main' required ci, does a distcheck (builds, tests, check install)
-# image created off dockerfile in repo, compile/link flags are set there
-name: Build libFMS test with autotools
+name: Autotools build and unit testing with GCC
 
 on: [push, pull_request]
 

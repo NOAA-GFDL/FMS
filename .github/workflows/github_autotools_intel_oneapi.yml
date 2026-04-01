@@ -1,3 +1,5 @@
+name: Autotools build and unit testing with Intel Oneapi
+
 on: pull_request
 
 # cancel running jobs if theres a newer push

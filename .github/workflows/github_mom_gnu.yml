@@ -1,4 +1,4 @@
-name: Run MOM6 test suite
+name: MOM6 test suite with GCC
 
 # runs on PR's or when manually triggered
 on: [workflow_dispatch, pull_request]
@@ -11,17 +11,14 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
     steps:
     - name: Checkout MOM6 repository
       uses: actions/checkout@v4.2.2
       with:
         repository: 'NOAA-GFDL/MOM6'
         submodules: recursive
+    - name: Install dependency packages
+      uses: ./.github/actions/ubuntu-setup
     - name: Checkout FMS into MOM build
       uses: actions/checkout@v4.2.2
       with:

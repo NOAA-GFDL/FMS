@@ -1,4 +1,4 @@
-name: AM5 test
+name: AM5 build and run on Parallelworks with Intel
 on:
   push:
     tags:

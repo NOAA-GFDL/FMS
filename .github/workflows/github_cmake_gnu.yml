@@ -1,4 +1,4 @@
-name: Build libFMS with cmake
+name: CMake build and unit testing with GCC
 
 on: [push, pull_request]
 
