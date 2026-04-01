@@ -94,8 +94,8 @@ program test_cell_measures
     subroutine check_output()
       type(FmsNetcdfFile_t) :: fileobj !< FMS2io fileobj
       character(len=256) :: buffer !< Buffer to read stuff into
-      character(len=256) :: associated_files !< Buffer to read stuff into
-      character(len=256) :: cell_measures !< Buffer to read stuff into
+      character(len=256) :: associated_files !< Expected associated files attribute
+      character(len=256) :: cell_measures !< Expected cell measures attribute
 
       ! Check that the static_file.nc was created and it contains the area variables
       ! defined in the diag_table.yaml
