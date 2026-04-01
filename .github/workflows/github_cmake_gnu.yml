@@ -15,7 +15,7 @@ jobs:
         libyaml-flag: [ "", -DWITH_YAML=on ]
         build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
     container:
-      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0
+      image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:15.1.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
         EXCLUDE_TESTS: "test_mpp_nesting|test_bc_restart|test_collective_io|test_fms2_io|test_io_with_mask"
