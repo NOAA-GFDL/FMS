@@ -40,6 +40,7 @@
       MPP_TYPE_, pointer, dimension(:) :: clocal, cremote
       integer :: stackuse
       character(len=8) :: text
+      type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
       integer :: tile, ishift, jshift, ipos0, jpos0
       integer :: size_clocal, size_cremote
@@ -79,8 +80,11 @@
       end if
       mpp_domains_stack_hwm = max( mpp_domains_stack_hwm, stackuse )
 
-      call c_f_pointer(c_loc(mpp_domains_stack(1)),             clocal,  [size_clocal])
-      call c_f_pointer(c_loc(mpp_domains_stack(1+size_clocal)), cremote, [size_cremote])
+      stack_cptr = c_loc(mpp_domains_stack(1))
+      call c_f_pointer(stack_cptr, clocal, [size_clocal])
+
+      stack_cptr = c_loc(mpp_domains_stack(1+size_clocal))
+      call c_f_pointer(stack_cptr, cremote, [size_cremote])
 
       if( .NOT.module_is_initialized )call mpp_error( FATAL, 'MPP_GLOBAL_FIELD: must first call mpp_domains_init.' )
 
