@@ -17,10 +17,16 @@
 !***********************************************************************
 !> @defgroup netcdf_io_mod netcdf_io_mod
 !> @ingroup fms2_io
-!> @brief Creates a basic netcdf type and routines to extend for other uses
+!> @brief This module defines the derived type, FmsNetcdfFile_t, and routines
+!! to handle calls to the netcdf library in order to read and write netcdf files.
 !!
-!> Handles type definitions and interfaces for netcdf I/O.
-
+!! This module is specifically for netcdf input/output when domain decomposition is not involved
+!! The FmsNetcdfFile_t type is the base class that is extended by both
+!! FmsNetcdfDomainFile_t and FmsNetcdfUnstructuredDomainFile_t.
+!!
+!! This module is not intended to be used externally. Please use the public interfaces in fms2_io_mod
+!! for IO operations.
+!!
 !> @addtogroup netcdf_io_mod
 !> @{
 module netcdf_io_mod
@@ -134,7 +140,9 @@ type, public :: fmsOffloadingIn_type
     procedure :: init
 endtype fmsOffloadingIn_type
 
-!> @brief Netcdf file type.
+!> @brief Type to represent a netCDF file. Can be used with multiple cores
+!! but only the root pe will perform any I/O operations before sending the
+!! data to the other pes.
 !> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=FMS_PATH_LEN) :: path !< File path.
@@ -162,11 +170,8 @@ type, public :: FmsNetcdfFile_t
                                                !! restart variables
   type(fmsOffloadingIn_type) :: offloading_obj_in
   logical :: use_collective = .false. !< Flag indicating if we should open the file for collective input
-                                      !! this should be set to .true. in the user application if they want
-                                      !! collective reads (put before open_file())
-  integer :: tile_comm=MPP_COMM_NULL   !< MPI communicator used for collective reads.
-                                      !! To be replaced with a real communicator at user request
-  logical        :: use_netcdf_mpi = .false.
+  integer :: tile_comm=MPP_COMM_NULL !< MPI communicator used for MPI-IO reads.
+  logical :: use_netcdf_mpi = .false.
 
   contains
 
@@ -706,10 +711,10 @@ function netcdf_file_open(fileobj, path, mode, nc_format, pelist, is_restart, do
                       comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     elseif (string_compare(mode, "write", .true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_noclobber, nc_format_param), fileobj%ncid, &
-                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+                        comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     elseif (string_compare(mode,"overwrite",.true.)) then
       err = nf90_create(trim(fileobj%path), ior(nf90_clobber, nc_format_param), fileobj%ncid, &
-                        comm = fileobj%tile_comm, info = MPP_INFO_NULL)
+                        comm=fileobj%tile_comm, info=MPP_INFO_NULL)
     else
       call error("unrecognized file mode: '"//trim(mode)//"' for file:"//trim(fileobj%path)//&
                  &"Check your open_file call, the acceptable values are read, append, write, overwrite")

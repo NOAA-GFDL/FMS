@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 module offloading_io_mod
+#ifdef use_libMPI
   use mpp_mod
   use mpp_domains_mod
   use fms_string_utils_mod, only: string
@@ -969,4 +970,6 @@ module offloading_io_mod
                           name=trim("Cubed-sphere"), memory_size=msize)
     call mpp_define_io_domain(domain, io_layout)
   end subroutine define_cubic_mosaic
+
+#endif
 end module offloading_io_mod

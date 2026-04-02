@@ -24,7 +24,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2025.04-dev],
+  [2026.01.01],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -96,17 +96,6 @@ AC_ARG_ENABLE([8byte-int],
 AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
-
-AC_ARG_ENABLE([deprecated-io],
-  [AS_HELP_STRING([--enable-deprecated-io],
-    [THIS OPTION HAS BEEN DEPRECATED!!!])])
-AS_IF([test ${enable_deprecated_io:-no} = yes],
-  [enable_deprecated_io=yes],
-  [enable_deprecated_io=no])
-
-if test $enable_deprecated_io = yes; then
-  AC_MSG_ERROR(FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS OR REVERT TO VERSION 2025.02)
-fi
 
 AC_ARG_ENABLE([r8-default],
   [AS_HELP_STRING([--disable-r8-default],
@@ -237,6 +226,21 @@ AC_CHECK_FUNCS([sched_getaffinity], [], [])
 
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
+
+# Check if building with OpenACC support.  Default is 'no'
+AC_ARG_ENABLE([openacc],
+  [AS_HELP_STRING([--enable-openacc],
+    [Builds with support for OpenACC directives. (default no)])])
+AS_IF([test ${enable_openacc:-no} = yes],
+  [enable_openacc=yes],
+  [enable_openacc=no])
+
+# If openacc support enabled, test for correct flags
+AS_IF([test ${enable_openacc} = yes],
+      [ACX_LANG_OPENACC_FLAG(
+				[AS_VAR_APPEND([CFLAGS], [" $acx_cv_c_openacc_flag"])], []
+			 )])
+
 AC_LANG_POP(C)
 
 # Fortran specific checks
@@ -300,11 +304,17 @@ GX_FC_CRAY_POINTER_FLAG()
 # Check if Fortran compiler and system have quad precision support
 GX_FC_QUAD_PRECISION()
 
-# Check if Fortran compiler supports reading namelists from internal files
-GX_FC_INTERNAL_FILE_NML()
-
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
+
+# need to set preprocessor for openacc check below
+AC_FC_PP_SRCEXT([F90])
+
+# Check for openacc fortran flags
+AS_IF([test ${enable_openacc} = yes],
+      [ACX_LANG_OPENACC_FLAG(
+				[AS_VAR_APPEND([FCFLAGS], [" $acx_cv_fc_openacc_flag"])], []
+			 )])
 
 AC_LANG_POP(Fortran)
 

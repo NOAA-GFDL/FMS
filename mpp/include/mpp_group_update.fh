@@ -712,9 +712,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
         buffer_pos = group%buffer_pos_recv(m) + group%buffer_start_pos
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
              tag=COMM_TAG_1, request=group%request_recv(m))
-#ifdef use_libMPI
         group%type_recv(m) = MPI_TYPE_
-#endif
      end if
   end do
   call mpp_clock_end(nonblock_group_recv_clock)

@@ -42,7 +42,7 @@
       MPP_TYPE_, intent(out) :: get_data(*)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: recv_request, send_request
+      type(mpi_request), intent(out), optional :: recv_request, send_request
 
       integer :: i, outunit
       MPP_TYPE_, allocatable, save :: local_data(:) !local copy used by non-parallel code (no SHMEM or MPI)

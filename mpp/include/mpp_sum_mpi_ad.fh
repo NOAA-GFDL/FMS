@@ -36,7 +36,7 @@
       if( verbose )call mpp_error( NOTE, 'MPP_SUM: using MPI_ALLREDUCE...' )
       if( debug ) then
           errunit = stderr()
-          write( errunit,* )'pe, n, peset(n)%id=', pe, n, peset(n)%id
+          write( errunit,* )'pe, n, peset(n)%comm=', pe, n, peset(n)%comm
       endif
       call mpp_broadcast(a, length, peset(n)%list(1), PELIST=pelist)
       if( debug .and. (current_clock.NE.0) )call increment_current_clock( EVENT_ALLREDUCE, length*MPP_TYPE_BYTELEN_ )

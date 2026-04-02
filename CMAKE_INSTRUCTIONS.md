@@ -22,11 +22,6 @@ MPI compiler wrappers may be named different on your system, so its best to ensu
 export NetCDF_ROOT=`nc-config --prefix`
 ```
 
-#### If building with yaml parser (-DWITH_YAML)
-```
-export LIBYAML_ROOT=<your libyaml install directory>
-```
-
 ### Running CMake
 It's best to create a build directory inside of the FMS folder to avoid building on top of the source code.
 Once that is done, CMake can be ran to generate the necessary build files:
@@ -82,12 +77,12 @@ The following build options are available:
 -DSHARED_LIBS "Build shared/dynamic libraries"       DEFAULT: OFF
 
 -DCONSTANTS             "Build with <X> constants parameter definitions"     DEFAULT:GFDL  OPTIONS:GFS|GEOS|GFDL
--DINTERNAL_FILE_NML     "Enable compiler definition -DINTERNAL_FILE_NML"     DEFAULT: ON
 -DENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION" DEFAULT: ON
 -DPORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        DEFAULT:OFF
 -DGFS_PHYS              "Enable compiler definition -DGFS_PHYS"              DEFAULT:OFF
 -DLARGEFILE             "Enable compiler definition -Duse_LARGEFILE"         DEFAULT:OFF
 -DWITH_YAML             "Enable compiler definition -Duse_yaml"              DEFAULT:OFF
+-DUNIT_TESTS            "Toggle on build of unit tests"                      DEFAULT:OFF
 ```
 
 ## 3. Installation structure
