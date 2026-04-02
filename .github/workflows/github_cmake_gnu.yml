@@ -19,6 +19,7 @@ jobs:
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
         EXCLUDE_TESTS: "test_mpp_nesting"
+        NETCDF_ROOT: "/usr/include/mpich-x86_64"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
