@@ -18,7 +18,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:15.1.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting|test_diag_manager2|test_xgrid2"
+        EXCLUDE_TESTS: "test_mpp_nesting"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
@@ -31,7 +31,6 @@ jobs:
       run: make -C build
     - name: Run the unit tests
       run: cd build && ctest -E "${EXCLUDE_TESTS}" --output-on-failure
-
   build_arm:
     runs-on: ubuntu-24.04-arm
     strategy:
@@ -42,7 +41,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:13.2.0-arm
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting|test_sat_vapor_pres|test_diag_manager2|test_xgrid2"
+        EXCLUDE_TESTS: "test_mpp_nesting|test_sat_vapor_pres"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
