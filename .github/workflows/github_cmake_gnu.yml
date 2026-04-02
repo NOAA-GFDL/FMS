@@ -18,7 +18,7 @@ jobs:
       image: ghcr.io/noaa-gfdl/fms/fms-ci-rocky-gnu:15.1.0
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
-        EXCLUDE_TESTS: "test_mpp_nesting"
+        EXCLUDE_TESTS: "test_mpp_nesting|test_time_*"
         NETCDF_ROOT: "/usr/include/mpich-x86_64"
     steps:
     - name: Checkout code
@@ -43,6 +43,7 @@ jobs:
       env:
         CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
         EXCLUDE_TESTS: "test_mpp_nesting|test_sat_vapor_pres"
+        PKG_CONFIG_PATH: "/opt/views/view/lib64/pkgconfig:/opt/views/view/lib/pkgconfig:/opt/views/view/share/pkgconfig"
     steps:
     - name: Checkout code
       uses: actions/checkout@v4.2.2
