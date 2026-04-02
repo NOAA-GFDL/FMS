@@ -374,6 +374,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   integer   :: shift, gridtype, midpoint
   integer   :: npack, nunpack, rotation, isd
+  type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
   MPP_TYPE_, pointer :: buffer(:)
   MPP_TYPE_, parameter :: zero_ = 0.
@@ -397,7 +398,8 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   endif
   if(nvector > 0) recv_y = group%recv_y
 
-  call c_f_pointer(c_loc(mpp_domains_stack(1)), buffer, [mpp_domains_stack_size])
+  stack_cptr = c_loc(mpp_domains_stack(1))
+  call c_f_pointer(stack_cptr, buffer, [mpp_domains_stack_size])
 
   !--- set reset_index_s and reset_index_v to 0
   group%reset_index_s = 0
@@ -581,6 +583,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   logical   :: reuse_buf_pos
   character(len=8)            :: text
+  type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
   MPP_TYPE_, pointer :: buffer(:)
 
@@ -621,7 +624,8 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   nrecv = group%nrecv
   nsend = group%nsend
 
-  call c_f_pointer(c_loc(mpp_domains_stack_nonblock(1)), buffer, [size(mpp_domains_stack_nonblock)])
+  stack_cptr = c_loc(mpp_domains_stack_nonblock(1))
+  call c_f_pointer(stack_cptr, buffer, [size(mpp_domains_stack_nonblock)])
 
   ! Make sure it is not in the middle of the old version of non-blocking halo update.
   if(num_update>0) call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: can not be called in the middle of "// &
@@ -677,6 +681,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   integer   :: shift, gridtype, midpoint, flags_v
   integer   :: nunpack, rotation, buffer_start_pos, nk, isd
   logical   :: recv_y(8)
+  type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
   MPP_TYPE_, pointer :: buffer(:)
   MPP_TYPE_, parameter :: zero_ = 0.
@@ -694,7 +699,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   endif
   if(nvector > 0) recv_y = group%recv_y
 
-  call c_f_pointer(c_loc(mpp_domains_stack_nonblock(1)), buffer, [size(mpp_domains_stack_nonblock)])
+  stack_cptr = c_loc(mpp_domains_stack_nonblock(1))
+  call c_f_pointer(stack_cptr, buffer, [size(mpp_domains_stack_nonblock)])
 
   if(num_nonblock_group_update < 1) call mpp_error(FATAL, &
     'mpp_start_group_update must be called before calling mpp_end_group_update')
