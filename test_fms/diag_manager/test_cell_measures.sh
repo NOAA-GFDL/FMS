@@ -40,25 +40,41 @@ diag_files:
     var_name: var1
     reduction: average
     kind: r4
-- file_name: file2
-  freq: 1 hours
-  time_units: hours
-  unlimdim: time
-  module: fun_mod
-  reduction: none
-  kind: r4
-  varlist:
-  - var_name: var1
-  - var_name: area
-    output_name: area_file2
+  - module: fun_mod
+    var_name: var2
+    reduction: average
+    kind: r4
+  - module: fun_mod
+    var_name: var2b
+    reduction: average
+    kind: r4
 - file_name: static_file
   freq: -1
   time_units: hours
   unlimdim: time
   varlist:
   - module: fun_mod
-    var_name: area
-    output_name: land_area
+    var_name: var1_area
+    output_name: area1
+    reduction: none
+    kind: r4
+  - module: fun_mod
+    var_name: var2_area
+    output_name: area2
+    reduction: none
+    kind: r4
+- file_name: file2
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: fun_mod
+    var_name: var3
+    reduction: average
+    kind: r4
+  - module: fun_mod
+    var_name: var3_area
+    output_name: area3
     reduction: none
     kind: r4
 _EOF
