@@ -18,32 +18,14 @@
 ! -*-f90-*-
 !> @addtogroup mpp_domains_mod
 !> @{
-subroutine MPP_CREATE_GROUP_UPDATE_2D_(group, field, domain, flags, position, &
-     whalo, ehalo, shalo, nhalo)
+subroutine MPP_CREATE_GROUP_UPDATE_(group, field, domain, flags, position, whalo, ehalo, shalo, nhalo, xdim, ydim)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,            intent(inout)        :: field(:,:)
-  type(domain2D),       intent(inout)        :: domain
-  integer,              intent(in), optional :: flags
-  integer,              intent(in), optional :: position
-  integer,              intent(in), optional :: whalo, ehalo, shalo, nhalo
-
-  MPP_TYPE_ :: field3D(size(field,1),size(field,2),1)
-  pointer( ptr, field3D )
-  ptr = LOC(field)
-
-  call mpp_create_group_update(group, field3D, domain, flags, position, whalo, ehalo, shalo, nhalo)
-
-  return
-
-end subroutine MPP_CREATE_GROUP_UPDATE_2D_
-
-subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, whalo, ehalo, shalo, nhalo)
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,        intent(inout)        :: field(:,:,:)
+  MPP_TYPE_,        intent(inout), target :: field(..)
   type(domain2D),   intent(inout)        :: domain
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
   integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! specify halo region to be updated.
+  integer,          intent(in), optional :: xdim, ydim
 
   integer          :: update_position, update_whalo, update_ehalo, update_shalo, update_nhalo
   integer          :: update_flags, isize, jsize, ksize
@@ -51,10 +33,17 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, wh
   character(len=3) :: text
   logical          :: set_mismatch, update_edge_only
   logical          :: recv(8)
+  integer          :: ix, iy
 
   if(group%initialized) then
       call mpp_error(FATAL, "MPP_CREATE_GROUP_UPDATE_3D: group is already initialized")
   endif
+
+  ix = 1
+  iy = 2
+
+  if (present(xdim)) ix=xdim
+  if (present(ydim)) iy=ydim
 
   if(present(whalo)) then
      update_whalo = whalo
@@ -107,9 +96,10 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, wh
      call mpp_error(FATAL,'MPP_CREATE_GROUP_UPDATE: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
 
-  isize = size(field,1); jsize=size(field,2); ksize = size(field,3)
+  isize = size(field,ix); jsize=size(field,iy); ksize = size(field) / (isize*jsize)
 
-  group%addrs_s(nscalar) = LOC(field)
+  group%addrs_s(nscalar) = c_loc(field)
+
   if( group%nscalar == 1 ) then
      group%flags_s  = update_flags
      group%whalo_s  = update_whalo
@@ -120,7 +110,12 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, wh
      group%isize_s  = isize
      group%jsize_s  = jsize
      group%ksize_s  = ksize
+     group%ix_s     = ix
+     group%iy_s     = iy
      call mpp_get_memory_domain(domain, group%is_s, group%ie_s, group%js_s, group%je_s, position=position)
+
+     allocate (group%shape_s(rank(field)))
+     group%shape_s = shape(field)
 
      update_edge_only = BTEST(update_flags, EDGEONLY)
      recv(1) = BTEST(update_flags,EAST)
@@ -163,61 +158,17 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_(group, field, domain, flags, position, wh
      endif
   endif
 
-  return
-
-end subroutine MPP_CREATE_GROUP_UPDATE_3D_
+end subroutine MPP_CREATE_GROUP_UPDATE_
 
 
-subroutine MPP_CREATE_GROUP_UPDATE_4D_(group, field, domain, flags, position, &
-     whalo, ehalo, shalo, nhalo)
+subroutine MPP_CREATE_GROUP_UPDATE_V_( group, fieldx, fieldy, domain, flags, gridtype, &
+                                          whalo, ehalo, shalo, nhalo, xdim, ydim)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,            intent(inout)        :: field(:,:,:,:)
-  type(domain2D),       intent(inout)        :: domain
-  integer,              intent(in), optional :: flags
-  integer,              intent(in), optional :: position
-  integer,              intent(in), optional :: whalo, ehalo, shalo, nhalo
-
-  MPP_TYPE_ :: field3D(size(field,1),size(field,2),size(field,3)*size(field,4))
-  pointer( ptr, field3D )
-  ptr = LOC(field)
-
-  call mpp_create_group_update(group, field3D, domain, flags, position, whalo, ehalo, shalo, nhalo)
-
-  return
-
-end subroutine MPP_CREATE_GROUP_UPDATE_4D_
-
-subroutine MPP_CREATE_GROUP_UPDATE_2D_V_( group, fieldx, fieldy, domain, flags, gridtype, &
-                                          whalo, ehalo, shalo, nhalo)
-
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,        intent(inout)            :: fieldx(:,:), fieldy(:,:)
-  type(domain2D),   intent(inout)            :: domain
-  integer,          intent(in),     optional :: flags, gridtype
-  integer,          intent(in),     optional :: whalo, ehalo, shalo, nhalo
-  MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),1)
-  MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),1)
-  pointer( ptrx, field3Dx )
-  pointer( ptry, field3Dy )
-  ptrx = LOC(fieldx)
-  ptry = LOC(fieldy)
-
-  call  mpp_create_group_update(group, field3Dx, field3Dy, domain, flags, gridtype, &
-                                          whalo, ehalo, shalo, nhalo)
-
-  return
-
-end subroutine MPP_CREATE_GROUP_UPDATE_2D_V_
-
-
-
-subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, gridtype, &
-                                          whalo, ehalo, shalo, nhalo)
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,        intent(inout)        :: fieldx(:,:,:), fieldy(:,:,:)
+  MPP_TYPE_,        intent(inout), target :: fieldx(..), fieldy(..)
   type(domain2D),   intent(inout)        :: domain
   integer,          intent(in), optional :: flags, gridtype
   integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo
+  integer,          intent(in), optional :: xdim, ydim
 
   integer          :: update_whalo, update_ehalo, update_shalo, update_nhalo
   integer          :: update_flags, isize_x, jsize_x, ksize_x, isize_y, jsize_y, ksize_y
@@ -225,11 +176,18 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
   character(len=3) :: text
   logical          :: set_mismatch, update_edge_only
   logical          :: recv(8)
+  integer          :: ix, iy
 
 
   if(group%initialized) then
      call mpp_error(FATAL, "MPP_CREATE_GROUP_UPDATE_V: group is already initialized")
   endif
+
+  ix = 1
+  iy = 2
+
+  if (present(xdim)) ix=xdim
+  if (present(ydim)) iy=ydim
 
   if(present(whalo)) then
      update_whalo = whalo
@@ -284,14 +242,14 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
      call mpp_error(FATAL,'MPP_CREATE_GROUP_UPDATE_V: MAX_DOMAIN_FIELDS='//text//' exceeded for group update.' )
   endif
 
-  isize_x = size(fieldx,1); jsize_x = size(fieldx,2); ksize_x = size(fieldx,3)
-  isize_y = size(fieldy,1); jsize_y = size(fieldy,2); ksize_y = size(fieldy,3)
+  isize_x = size(fieldx,ix); jsize_x = size(fieldx,iy); ksize_x = size(fieldx) / (isize_x*jsize_x)
+  isize_y = size(fieldy,ix); jsize_y = size(fieldy,iy); ksize_y = size(fieldy) / (isize_y*jsize_y)
 
   if(ksize_x .NE. ksize_y) call mpp_error(FATAL,  &
            'MPP_CREATE_GROUP_UPDATE_V: mismatch of ksize between fieldx and fieldy')
 
-  group%addrs_x(nvector) = LOC(fieldx)
-  group%addrs_y(nvector) = LOC(fieldy)
+  group%addrs_x(nvector) = c_loc(fieldx)
+  group%addrs_y(nvector) = c_loc(fieldy)
 
   if( group%nvector == 1 ) then
      group%flags_v  = update_flags
@@ -305,6 +263,8 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
      group%isize_y  = isize_y
      group%jsize_y  = jsize_y
      group%ksize_v  = ksize_x
+     group%ix_v     = ix
+     group%iy_v     = iy
      update_edge_only = BTEST(update_flags, EDGEONLY)
      group%nonsym_edge = .false.
 
@@ -371,6 +331,12 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
 
      call mpp_get_memory_domain(domain, group%is_x, group%ie_x, group%js_x, group%je_x, position=position_x)
      call mpp_get_memory_domain(domain, group%is_y, group%ie_y, group%js_y, group%je_y, position=position_y)
+
+     allocate (group%shape_x(rank(fieldx)))
+     group%shape_x = shape(fieldx)
+
+     allocate (group%shape_y(rank(fieldy)))
+     group%shape_y = shape(fieldy)
   else
      set_mismatch = .false.
      set_mismatch = set_mismatch .OR. (group%flags_v  .NE. update_flags)
@@ -391,31 +357,7 @@ subroutine MPP_CREATE_GROUP_UPDATE_3D_V_( group, fieldx, fieldy, domain, flags, 
      endif
   endif
 
-  return
-
-end subroutine MPP_CREATE_GROUP_UPDATE_3D_V_
-
-subroutine MPP_CREATE_GROUP_UPDATE_4D_V_( group, fieldx, fieldy, domain, flags, gridtype, &
-                                          whalo, ehalo, shalo, nhalo)
-
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,        intent(inout)            :: fieldx(:,:,:,:), fieldy(:,:,:,:)
-  type(domain2D),   intent(inout)            :: domain
-  integer,          intent(in),     optional :: flags, gridtype
-  integer,          intent(in),     optional :: whalo, ehalo, shalo, nhalo
-  MPP_TYPE_ :: field3Dx(size(fieldx,1),size(fieldx,2),size(fieldx,3)*size(fieldx,4))
-  MPP_TYPE_ :: field3Dy(size(fieldy,1),size(fieldy,2),size(fieldy,3)*size(fieldy,4))
-  pointer( ptrx, field3Dx )
-  pointer( ptry, field3Dy )
-  ptrx = LOC(fieldx)
-  ptry = LOC(fieldy)
-
-  call  mpp_create_group_update(group, field3Dx, field3Dy, domain, flags, gridtype, &
-                                          whalo, ehalo, shalo, nhalo)
-
-  return
-
-end subroutine MPP_CREATE_GROUP_UPDATE_4D_V_
+end subroutine MPP_CREATE_GROUP_UPDATE_V_
 
 
 subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
@@ -423,7 +365,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   type(domain2D),              intent(inout) :: domain
   MPP_TYPE_,                   intent(in)    :: d_type
 
-  integer   :: nscalar, nvector, nlist
+  integer   :: nscalar, nvector
   logical   :: recv_y(8)
   integer   :: nsend, nrecv, flags_v
   integer   :: msgsize
@@ -432,19 +374,13 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   integer   :: shift, gridtype, midpoint
   integer   :: npack, nunpack, rotation, isd
+  type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
-  MPP_TYPE_ :: buffer(mpp_domains_stack_size)
-  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
-  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
-  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
-  pointer(ptr, buffer )
-  pointer(ptr_field, field)
-  pointer(ptr_fieldx, fieldx)
-  pointer(ptr_fieldy, fieldy)
+  MPP_TYPE_, pointer :: buffer(:)
+  MPP_TYPE_, parameter :: zero_ = 0.
 
   nscalar = group%nscalar
   nvector = group%nvector
-  nlist   = size(domain%list(:))
   gridtype = group%gridtype
 
   !--- ksize_s must equal ksize_v
@@ -462,7 +398,8 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   endif
   if(nvector > 0) recv_y = group%recv_y
 
-  ptr = LOC(mpp_domains_stack)
+  stack_cptr = c_loc(mpp_domains_stack(1))
+  call c_f_pointer(stack_cptr, buffer, [mpp_domains_stack_size])
 
   !--- set reset_index_s and reset_index_v to 0
   group%reset_index_s = 0
@@ -535,11 +472,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
            do i = is ,ie, midpoint
               if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                  do l=1,nvector
-                    ptr_fieldx = group%addrs_x(l)
-                    ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       fieldx(i,j,k) = 0.
-                       fieldy(i,j,k) = 0.
+                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, zero_)
+                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, zero_)
                     end do
                  end do
               end if
@@ -562,12 +497,12 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                  if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                  do l=1,nvector
-                    ptr_fieldx = group%addrs_x(l)
-                    ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
                        do i = domain%x(1)%domain_data%begin,is-1
-                          fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                          fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          !fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                          !fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          call SET_VALUE_ (group, FIELD_X, l, i, j, k, GET_VALUE_ (group, FIELD_X, l, 2*is-i, j, k))
+                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i, j, k))
                        end do
                     end do
                  end do
@@ -579,10 +514,10 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                  if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
-                    ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
                        do i = isd,is-1
-                          fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          !fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i-1, j, k))
                        end do
                     end do
                  end do
@@ -599,21 +534,21 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               is = is + shift
               ie = ie + shift
               do l=1,nvector
-                 ptr_fieldx = group%addrs_x(l)
-                 ptr_fieldy = group%addrs_y(l)
                  do k = 1,ksize
                     do i = is,ie
-                       fieldx(i,j,k) = -fieldx(i,j,k)
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                       !fieldx(i,j,k) = -fieldx(i,j,k)
+                       !fieldy(i,j,k) = -fieldy(i,j,k)
+                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, - GET_VALUE_ (group, FIELD_X, l, i, j, k))
+                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
                     end do
                  end do
               end do
            case(CGRID_NE)
               do l=1,nvector
-                 ptr_fieldy = group%addrs_y(l)
                  do k = 1,ksize
                     do i = is, ie
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                       !fieldy(i,j,k) = -fieldy(i,j,k)
+                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
                     end do
                  end do
               end do
@@ -648,15 +583,9 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   integer   :: n, l, m, i, j, k, buffer_start_pos, nk
   logical   :: reuse_buf_pos
   character(len=8)            :: text
+  type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
-  MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
-  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
-  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
-  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
-  pointer( ptr, buffer )
-  pointer(ptr_field, field)
-  pointer(ptr_fieldx, fieldx)
-  pointer(ptr_fieldy, fieldy)
+  MPP_TYPE_, pointer :: buffer(:)
 
   nscalar = group%nscalar
   nvector = group%nvector
@@ -695,7 +624,8 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   nrecv = group%nrecv
   nsend = group%nsend
 
-  ptr = LOC(mpp_domains_stack_nonblock)
+  stack_cptr = c_loc(mpp_domains_stack_nonblock(1))
+  call c_f_pointer(stack_cptr, buffer, [size(mpp_domains_stack_nonblock)])
 
   ! Make sure it is not in the middle of the old version of non-blocking halo update.
   if(num_update>0) call mpp_error(FATAL, "MPP_START_GROUP_UPDATE: can not be called in the middle of "// &
@@ -751,14 +681,10 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   integer   :: shift, gridtype, midpoint, flags_v
   integer   :: nunpack, rotation, buffer_start_pos, nk, isd
   logical   :: recv_y(8)
-  MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
-  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
-  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
-  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
-  pointer(ptr, buffer )
-  pointer(ptr_field, field)
-  pointer(ptr_fieldx, fieldx)
-  pointer(ptr_fieldy, fieldy)
+  type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
+
+  MPP_TYPE_, pointer :: buffer(:)
+  MPP_TYPE_, parameter :: zero_ = 0.
 
   gridtype = group%gridtype
   flags_v = group%flags_v
@@ -772,7 +698,9 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
      ksize = group%ksize_v
   endif
   if(nvector > 0) recv_y = group%recv_y
-  ptr = LOC(mpp_domains_stack_nonblock)
+
+  stack_cptr = c_loc(mpp_domains_stack_nonblock(1))
+  call c_f_pointer(stack_cptr, buffer, [size(mpp_domains_stack_nonblock)])
 
   if(num_nonblock_group_update < 1) call mpp_error(FATAL, &
     'mpp_start_group_update must be called before calling mpp_end_group_update')
@@ -809,11 +737,9 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
            do i = is ,ie, midpoint
               if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                  do l=1,nvector
-                    ptr_fieldx = group%addrs_x(l)
-                    ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
-                       fieldx(i,j,k) = 0.
-                       fieldy(i,j,k) = 0.
+                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, zero_)
+                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, zero_)
                     end do
                  end do
               end if
@@ -836,12 +762,12 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
                  if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                  do l=1,nvector
-                    ptr_fieldx = group%addrs_x(l)
-                    ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
                        do i = domain%x(1)%domain_data%begin,is-1
-                          fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                          fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          !fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                          !fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          call SET_VALUE_ (group, FIELD_X, l, i, j, k, GET_VALUE_ (group, FIELD_X, l, 2*is-i, j, k))
+                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i, j, k))
                        end do
                     end do
                  end do
@@ -853,10 +779,10 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
                  if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
-                    ptr_fieldy = group%addrs_y(l)
                     do k = 1,ksize
                        do i = isd,is-1
-                          fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          !fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i-1, j, k))
                        end do
                     end do
                  end do
@@ -873,21 +799,21 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
               is = is + shift
               ie = ie + shift
               do l=1,nvector
-                 ptr_fieldx = group%addrs_x(l)
-                 ptr_fieldy = group%addrs_y(l)
                  do k = 1,ksize
                     do i = is,ie
-                       fieldx(i,j,k) = -fieldx(i,j,k)
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                       !fieldx(i,j,k) = -fieldx(i,j,k)
+                       !fieldy(i,j,k) = -fieldy(i,j,k)
+                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, - GET_VALUE_ (group, FIELD_X, l, i, j, k))
+                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
                     end do
                  end do
               end do
            case(CGRID_NE)
               do l=1,nvector
-                 ptr_fieldy = group%addrs_y(l)
                  do k = 1,ksize
                     do i = is, ie
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                       !fieldy(i,j,k) = -fieldy(i,j,k)
+                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
                     end do
                  end do
               end do
@@ -911,114 +837,276 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
 end subroutine MPP_COMPLETE_GROUP_UPDATE_
 
-subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_(group, field)
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_(group, field)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: field(:,:)
+  MPP_TYPE_, target,           intent(in)    :: field(..)
+  integer :: isize, jsize, ksize
 
   group%reset_index_s = group%reset_index_s + 1
 
   if(group%reset_index_s > group%nscalar) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_: group%reset_index_s > group%nscalar")
-  if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. group%ksize_s .NE. 1) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_: size of field does not match the size stored in group")
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_: group%reset_index_s > group%nscalar")
 
-  group%addrs_s(group%reset_index_s) = LOC(field)
+  isize = size(field, group%ix_s)
+  jsize = size(field, group%iy_s)
+  ksize = size(field) / (isize*jsize)
 
-end subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_
+  if(isize.ne.group%isize_s .or. jsize.ne.group%jsize_s .or. ksize.ne.group%ksize_s) then
+    call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_: size of field does not match the size stored in group")
+  endif
 
-subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_(group, field)
+  group%addrs_s(group%reset_index_s) = c_loc(field)
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_
+
+subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_(group, fieldx, fieldy)
   type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: field(:,:,:)
-
-  group%reset_index_s = group%reset_index_s + 1
-
-  if(group%reset_index_s > group%nscalar) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_: group%reset_index_s > group%nscalar")
-  if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. size(field,3) .NE. group%ksize_s) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_: size of field does not match the size stored in group")
-
-  group%addrs_s(group%reset_index_s) = LOC(field)
-
-end subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_
-
-subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_(group, field)
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: field(:,:,:,:)
-
-  group%reset_index_s = group%reset_index_s + 1
-
-  if(group%reset_index_s > group%nscalar) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_: group%reset_index_s > group%nscalar")
-  if(size(field,1) .NE. group%isize_s .OR. size(field,2) .NE. group%jsize_s .OR. &
-              size(field,3)*size(field,4) .NE. group%ksize_s) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_: size of field does not match the size stored in group")
-
-  group%addrs_s(group%reset_index_s) = LOC(field)
-
-end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_
-
-
-subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_(group, fieldx, fieldy)
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: fieldx(:,:), fieldy(:,:)
+  MPP_TYPE_, target,           intent(in)    :: fieldx(..), fieldy(..)
+  integer :: isize_x, jsize_x, ksize_x
+  integer :: isize_y, jsize_y, ksize_y
 
   group%reset_index_v = group%reset_index_v + 1
 
   if(group%reset_index_v > group%nvector) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: group%reset_index_v > group%nvector")
-  if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. group%ksize_v .NE. 1) &
-     call mpp_error(FATAL, &
-                    &  "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldx does not match the size stored in group")
-  if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y ) &
-     call mpp_error(FATAL, &
-                    &  "MPP_RESET_GROUP_UPDATE_FIELD_2D_V_: size of fieldy does not match the size stored in group")
+     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_V_: group%reset_index_v > group%nvector")
 
-  group%addrs_x(group%reset_index_v) = LOC(fieldx)
-  group%addrs_y(group%reset_index_v) = LOC(fieldy)
+  isize_x = size(fieldx, group%ix_v)
+  jsize_x = size(fieldx, group%iy_v)
+  ksize_x = size(fieldx) / (isize_x*jsize_x)
 
-end subroutine MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
+  isize_y = size(fieldy, group%ix_v)
+  jsize_y = size(fieldy, group%iy_v)
+  ksize_y = size(fieldy) / (isize_y*jsize_y)
 
+  if(isize_x.ne.group%isize_x .or. jsize_x .ne. group%jsize_x .or. ksize_x .ne. group%ksize_v) then
+    call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_V_: size of fieldx does not match the size stored in group")
+  endif
 
-subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_(group, fieldx, fieldy)
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:), fieldy(:,:,:)
+  if(isize_y.ne.group%isize_y .or. jsize_y .ne. group%jsize_y .or. ksize_y .ne. group%ksize_v) then
+    call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_V_: size of fieldy does not match the size stored in group")
+  endif
 
-  group%reset_index_v = group%reset_index_v + 1
+  group%addrs_x(group%reset_index_v) = c_loc(fieldx)
+  group%addrs_y(group%reset_index_v) = c_loc(fieldy)
+end subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_
 
-  if(group%reset_index_v > group%nvector) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: group%reset_index_v > group%nvector")
-  if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. size(fieldx,3) .NE. group%ksize_v) &
-     call mpp_error(FATAL, &
-                    &  "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldx does not match the size stored in group")
-  if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. size(fieldy,3) .NE. group%ksize_v) &
-     call mpp_error(FATAL, &
-                    &  "MPP_RESET_GROUP_UPDATE_FIELD_3D_V_: size of fieldy does not match the size stored in group")
+function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
+  type(mpp_group_update_type), intent(in), target :: group
+  integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
+  integer, intent(in) :: l !< Index of the field within group
+  integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
+  MPP_TYPE_ :: res
 
-  group%addrs_x(group%reset_index_v) = LOC(fieldx)
-  group%addrs_y(group%reset_index_v) = LOC(fieldy)
+  integer, allocatable, dimension(:) :: lb, n, indx
+  MPP_TYPE_, pointer :: field2d(:,:)
+  MPP_TYPE_, pointer :: field3d(:,:,:)
+  MPP_TYPE_, pointer :: field4d(:,:,:,:)
 
-end subroutine MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
+  integer :: ix, iy !< Indices of the domain-decomposed dimensions
+  integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
+  integer :: nd, m, kp, d
 
+  select case (field_type)
+    case (FIELD_S)
+      ix = group%ix_s
+      iy = group%iy_s
+      is = group%is_s
+      ie = group%ie_s
+      js = group%js_s
+      je = group%je_s
 
-subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_(group, fieldx, fieldy)
-  type(mpp_group_update_type), intent(inout) :: group
-  MPP_TYPE_,                   intent(in)    :: fieldx(:,:,:,:), fieldy(:,:,:,:)
+      nd = size(group%shape_s)
+      allocate (lb(nd), n(nd), indx(nd))
 
-  group%reset_index_v = group%reset_index_v + 1
+      lb = 1
+      n = group%shape_s
 
-  if(group%reset_index_v > group%nvector) &
-     call mpp_error(FATAL, "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: group%reset_index_v > group%nvector")
-  if(size(fieldx,1) .NE. group%isize_x .OR. size(fieldx,2) .NE. group%jsize_x .OR. &
-              size(fieldx,3)*size(fieldx,4) .NE. group%ksize_v) &
-     call mpp_error(FATAL, &
-                    &  "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldx does not match the size stored in group")
-  if(size(fieldy,1) .NE. group%isize_y .OR. size(fieldy,2) .NE. group%jsize_y .OR. &
-              size(fieldy,3)*size(fieldy,4) .NE. group%ksize_v) &
-     call mpp_error(FATAL, &
-                    &  "MPP_RESET_GROUP_UPDATE_FIELD_4D_V_: size of fieldy does not match the size stored in group")
+      select case(nd)
+        case (2)
+          call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
+        case (3)
+          call c_f_pointer(group%addrs_s(l), field3d, group%shape_s)
+        case (4)
+          call c_f_pointer(group%addrs_s(l), field4d, group%shape_s)
+      end select
+    case (FIELD_X)
+      ix = group%ix_v
+      iy = group%iy_v
+      is = group%is_x
+      ie = group%ie_x
+      js = group%js_x
+      je = group%je_x
 
-  group%addrs_x(group%reset_index_v) = LOC(fieldx)
-  group%addrs_y(group%reset_index_v) = LOC(fieldy)
+      nd = size(group%shape_x)
+      allocate (lb(nd), n(nd), indx(nd))
 
-end subroutine MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
+      lb = 1
+      n = group%shape_x
+
+      select case(nd)
+        case (2)
+          call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
+        case (3)
+          call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
+        case (4)
+          call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
+      end select
+    case (FIELD_Y)
+      ix = group%ix_v
+      iy = group%iy_v
+      is = group%is_y
+      ie = group%ie_y
+      js = group%js_y
+      je = group%je_y
+
+      nd = size(group%shape_y)
+      allocate (lb(nd), n(nd), indx(nd))
+
+      lb = 1
+      n = group%shape_y
+
+      select case(nd)
+        case (2)
+          call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
+        case (3)
+          call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
+        case (4)
+          call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
+      end select
+  end select
+
+  lb(ix) = i - is + 1
+  lb(iy) = j - js + 1
+
+  n(ix) = 1
+  n(iy) = 1
+
+  kp = k - 1
+  do d=nd,1,-1
+    m = product(n(1:d-1)) ! Product of all lower dimension sizes
+    indx(d) = kp / m
+    kp = kp - indx(d)*m
+  enddo
+
+  indx = lb + indx
+
+  select case (nd)
+    case (2)
+      res = field2d(indx(1), indx(2))
+    case (3)
+      res = field3d(indx(1), indx(2), indx(3))
+    case (4)
+      res = field4d(indx(1), indx(2), indx(3), indx(4))
+  end select
+end function GET_VALUE_
+
+subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
+  type(mpp_group_update_type), intent(in), target :: group
+  integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
+  integer, intent(in) :: l !< Index of the field within group
+  integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
+  MPP_TYPE_, intent(in) :: x
+
+  integer, allocatable, dimension(:) :: lb, n, indx
+  MPP_TYPE_, pointer :: field2d(:,:)
+  MPP_TYPE_, pointer :: field3d(:,:,:)
+  MPP_TYPE_, pointer :: field4d(:,:,:,:)
+
+  integer :: ix, iy !< Indices of the domain-decomposed dimensions
+  integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
+  integer :: nd, m, kp, d
+
+  select case (field_type)
+    case (FIELD_S)
+      ix = group%ix_s
+      iy = group%iy_s
+      is = group%is_s
+      ie = group%ie_s
+      js = group%js_s
+      je = group%je_s
+
+      nd = size(group%shape_s)
+      allocate (lb(nd), n(nd), indx(nd))
+
+      lb = 1
+      n = group%shape_s
+
+      select case(nd)
+        case (2)
+          call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
+        case (3)
+          call c_f_pointer(group%addrs_s(l), field3d, group%shape_s)
+        case (4)
+          call c_f_pointer(group%addrs_s(l), field4d, group%shape_s)
+      end select
+    case (FIELD_X)
+      ix = group%ix_v
+      iy = group%iy_v
+      is = group%is_x
+      ie = group%ie_x
+      js = group%js_x
+      je = group%je_x
+
+      nd = size(group%shape_x)
+      allocate (lb(nd), n(nd), indx(nd))
+
+      lb = 1
+      n = group%shape_x
+
+      select case(nd)
+        case (2)
+          call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
+        case (3)
+          call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
+        case (4)
+          call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
+      end select
+    case (FIELD_Y)
+      ix = group%ix_v
+      iy = group%iy_v
+      is = group%is_y
+      ie = group%ie_y
+      js = group%js_y
+      je = group%je_y
+
+      nd = size(group%shape_y)
+      allocate (lb(nd), n(nd), indx(nd))
+
+      lb = 1
+      n = group%shape_y
+
+      select case(nd)
+        case (2)
+          call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
+        case (3)
+          call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
+        case (4)
+          call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
+      end select
+  end select
+
+  lb(ix) = i - is + 1
+  lb(iy) = j - js + 1
+
+  n(ix) = 1
+  n(iy) = 1
+
+  kp = k - 1
+  do d=nd,1,-1
+    m = product(n(1:d-1)) ! Product of all lower dimension sizes
+    indx(d) = kp / m
+    kp = kp - indx(d)*m
+  enddo
+
+  indx = lb + indx
+
+  select case (nd)
+    case (2)
+      field2d(indx(1), indx(2)) = x
+    case (3)
+      field3d(indx(1), indx(2), indx(3)) = x
+    case (4)
+      field4d(indx(1), indx(2), indx(3), indx(4)) = x
+  end select
+end subroutine SET_VALUE_
+
 !> @}

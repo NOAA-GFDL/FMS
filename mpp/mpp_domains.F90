@@ -96,6 +96,7 @@ module mpp_domains_mod
   use gfdl_nompi_f08
 #endif
 
+  use iso_c_binding,          only : c_f_pointer, c_loc, c_ptr
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
   use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
@@ -592,6 +593,11 @@ module mpp_domains_mod
      integer            :: is_s=0, ie_s=0, js_s=0, je_s=0
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
+     integer            :: ix_s=1, iy_s=2
+     integer            :: ix_v=1, iy_v=2
+     integer, allocatable, dimension(:) :: shape_s
+     integer, allocatable, dimension(:) :: shape_x
+     integer, allocatable, dimension(:) :: shape_y
      integer            :: nrecv=0, nsend=0
      integer            :: npack=0, nunpack=0
      integer            :: reset_index_s = 0
@@ -619,9 +625,9 @@ module mpp_domains_mod
      integer            :: unpack_ie(MAXOVERLAP)
      integer            :: unpack_js(MAXOVERLAP)
      integer            :: unpack_je(MAXOVERLAP)
-     integer(i8_kind)   :: addrs_s(MAX_DOMAIN_FIELDS)
-     integer(i8_kind)   :: addrs_x(MAX_DOMAIN_FIELDS)
-     integer(i8_kind)   :: addrs_y(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_s(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_x(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_y(MAX_DOMAIN_FIELDS)
      integer            :: buffer_start_pos = -1
      type(mpi_request)  :: request_send(MAX_REQUEST)
      type(mpi_request)  :: request_recv(MAX_REQUEST)
@@ -1314,18 +1320,10 @@ module mpp_domains_mod
   !> @param
   !> @ingroup mpp_domains_mod
   interface mpp_create_group_update
-     module procedure mpp_create_group_update_r4_2d
-     module procedure mpp_create_group_update_r4_3d
-     module procedure mpp_create_group_update_r4_4d
-     module procedure mpp_create_group_update_r4_2dv
-     module procedure mpp_create_group_update_r4_3dv
-     module procedure mpp_create_group_update_r4_4dv
-     module procedure mpp_create_group_update_r8_2d
-     module procedure mpp_create_group_update_r8_3d
-     module procedure mpp_create_group_update_r8_4d
-     module procedure mpp_create_group_update_r8_2dv
-     module procedure mpp_create_group_update_r8_3dv
-     module procedure mpp_create_group_update_r8_4dv
+     module procedure mpp_create_group_update_r4
+     module procedure mpp_create_group_update_r4_v
+     module procedure mpp_create_group_update_r8
+     module procedure mpp_create_group_update_r8_v
   end interface mpp_create_group_update
 
   !> @ingroup mpp_domains_mod
@@ -1360,18 +1358,10 @@ module mpp_domains_mod
 
   !> @ingroup mpp_domains_mod
   interface mpp_reset_group_update_field
-     module procedure mpp_reset_group_update_field_r4_2d
-     module procedure mpp_reset_group_update_field_r4_3d
-     module procedure mpp_reset_group_update_field_r4_4d
-     module procedure mpp_reset_group_update_field_r4_2dv
-     module procedure mpp_reset_group_update_field_r4_3dv
-     module procedure mpp_reset_group_update_field_r4_4dv
-     module procedure mpp_reset_group_update_field_r8_2d
-     module procedure mpp_reset_group_update_field_r8_3d
-     module procedure mpp_reset_group_update_field_r8_4d
-     module procedure mpp_reset_group_update_field_r8_2dv
-     module procedure mpp_reset_group_update_field_r8_3dv
-     module procedure mpp_reset_group_update_field_r8_4dv
+     module procedure mpp_reset_group_update_field_r4
+     module procedure mpp_reset_group_update_field_r4_v
+     module procedure mpp_reset_group_update_field_r8
+     module procedure mpp_reset_group_update_field_r8_v
   end interface mpp_reset_group_update_field
 
   !> Pass the data from coarse grid to fill the buffer to be ready to be interpolated
