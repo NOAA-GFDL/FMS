@@ -34,7 +34,7 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
  check_var_masks test_multiple_send_data test_diag_out_yaml test_output_every_freq \
  test_dm_weights test_prepend_date test_ens_runs test_diag_multi_file test_diag_attribute_add \
- check_new_file_freq test_zbounds_limits test_multiple_zbounds
+ check_new_file_freq test_zbounds_limits test_multiple_zbounds test_generalized_indicies check_generalized_indices
 
 # This is the source code for the test.
 test_output_every_freq_SOURCES = test_output_every_freq.F90
@@ -71,6 +71,8 @@ test_diag_attribute_add_SOURCES = test_diag_attribute_add.F90
 check_new_file_freq_SOURCES = check_new_file_freq.F90
 test_zbounds_limits_SOURCES = test_zbounds_limits.F90
 test_multiple_zbounds_SOURCES = test_multiple_zbounds.F90
+test_generalized_indicies_SOURCES = testing_utils.F90 test_generalized_indicies.F90
+check_generalized_indices_SOURCES = testing_utils.F90 check_generalized_indices.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
