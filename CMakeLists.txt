@@ -18,7 +18,7 @@
 
 # Copyright (c) GFDL, @underwoo
 
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 # Define the CMake project
 project(FMS
@@ -26,7 +26,7 @@ project(FMS
   DESCRIPTION  "GFDL FMS Library"
   HOMEPAGE_URL "https://www.gfdl.noaa.gov/fms"
   LANGUAGES C Fortran)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(GNUInstallDirs)
 
 if(NOT CMAKE_BUILD_TYPE MATCHES "^(Debug|Release|RelWithDebInfo|MinSizeRel|DebugUFS|ReleaseUFS)$")
@@ -64,6 +64,11 @@ option(ENABLE_QUAD_PRECISION "Enable compiler definition -DENABLE_QUAD_PRECISION
 option(PORTABLE_KINDS        "Enable compiler definition -DPORTABLE_KINDS"        OFF)
 option(GFS_PHYS              "Enable compiler definition -DGFS_PHYS"              OFF)
 option(WITH_YAML             "Enable compiler definition -Duse_yaml"              OFF)
+
+if(CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC")
+  set(ENABLE_QUAD_PRECISION OFF)
+  message(WARNING "NVHPC does not support building FMS with QUAD_PRECISION!")
+endif()
 
 if(32BIT)
   list(APPEND kinds "r4")
@@ -329,6 +334,7 @@ foreach(kind ${kinds})
                                                  mosaic2/include
                                                  constants
                                                  astronomy/include
+                                                 field_manager/
                                                  field_manager/include
                                                  time_interp/include
                                                  tracer_manager/include
