@@ -36,9 +36,14 @@ program test_cell_measures
   integer                         :: naxis1           !< Size of axis1
   real(kind=r4_kind), allocatable :: axis1_data(:)    !< Data for axis1
   integer                         :: id_var1          !< Id of var1
+  integer                         :: id_var2b         !< Id of var2b
+  integer                         :: id_var2          !< Id of var2
+  integer                         :: id_var3          !< Id of var3
   real(kind=r4_kind), allocatable :: var1_data(:)     !< Data for "var1"
   real(kind=r4_kind), allocatable :: area_data(:)     !< Data for the "area"
-  integer                         :: id_area          !< Id of the "area" field
+  integer                         :: id_area1         !< Id of the "area" field for var 1
+  integer                         :: id_area2         !< Id of the "area" field for var 2
+  integer                         :: id_area3         !< Id of the "area" field for var 3
   logical                         :: used             !< Used for send_data call
 
   naxis1 = 10
@@ -60,15 +65,25 @@ program test_cell_measures
   enddo
 
   id_axis1  = diag_axis_init('axis1',  axis1_data,  'axis1', 'x')
-  id_area = register_static_field ('fun_mod', 'area', (/id_axis1/))
-  id_var1 = register_diag_field  ('fun_mod', 'var1', (/id_axis1/), init_time=Time, area=id_area)
+  id_area1 = register_static_field ('fun_mod', 'var1_area', (/id_axis1/))
+  id_area2 = register_static_field ('fun_mod', 'var2_area', (/id_axis1/))
+  id_area3 = register_static_field ('fun_mod', 'var3_area', (/id_axis1/))
+  id_var1 = register_diag_field  ('fun_mod', 'var1', (/id_axis1/), init_time=Time, area=id_area1)
+  id_var2 = register_diag_field  ('fun_mod', 'var2', (/id_axis1/), init_time=Time, area=id_area2)
+  id_var2b = register_diag_field  ('fun_mod', 'var2b', (/id_axis1/), init_time=Time, area=id_area1)
+  id_var3 = register_diag_field  ('fun_mod', 'var3', (/id_axis1/), init_time=Time, area=id_area3)
 
-  used = send_data(id_area, area_data)
+  used = send_data(id_area1, area_data)
+  used = send_data(id_area2, area_data)
+  used = send_data(id_area3, area_data)
 
   do i = 1, 6
     Time = Time + Time_step
     call diag_send_complete(Time_step)
     used = send_data(id_var1, var1_data, Time)
+    used = send_data(id_var2, var1_data, Time)
+    used = send_data(id_var2b, var1_data, Time)
+    used = send_data(id_var3, var1_data, Time)
   enddo
   call diag_manager_end(Time)
 
@@ -79,39 +94,58 @@ program test_cell_measures
     subroutine check_output()
       type(FmsNetcdfFile_t) :: fileobj !< FMS2io fileobj
       character(len=256) :: buffer !< Buffer to read stuff into
+      character(len=256) :: associated_files !< Expected associated files attribute
+      character(len=256) :: cell_measures !< Expected cell measures attribute
 
-      ! Check that the static_file.nc was created and it contains the area attribute
+      ! Check that the static_file.nc was created and it contains the area variables
+      ! defined in the diag_table.yaml
       if (.not. open_file(fileobj, "static_file.nc", "read")) &
         call mpp_error(FATAL, "static_file.nc was not created by the diag manager!")
-      if (.not. variable_exists(fileobj, "land_area")) &
-        call mpp_error(FATAL, "land_area is not in static_file.nc")
+      if (.not. variable_exists(fileobj, "area1")) &
+        call mpp_error(FATAL, "area2 is not in static_file.nc")
+      if (.not. variable_exists(fileobj, "area2")) &
+        call mpp_error(FATAL, "area2 is not in static_file.nc")
       call close_file(fileobj)
 
       ! Check that file1.nc exists, that it contains the associated files attribute and it is correct,
-      ! that the var1 exists and it contains the cell_measures attributes
+      ! that the variables exists and it contains the cell_measures attributes
       if (.not. open_file(fileobj, "file1.nc", "read")) &
         call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
 
+      associated_files = "area1: static_file.nc area2: static_file.nc"
       call get_global_attribute(fileobj, "associated_files", buffer)
-      if (trim(buffer) .ne. "land_area: static_file.nc") &
-        call mpp_error(FATAL, "The associated_files global attribute is not the expected result! "//trim(buffer)//&
-          " does not equal land_area: static_file.nc")
+      call compare_answers("associated_files", associated_files, buffer)
 
+      cell_measures = "area: area1"
       call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
-      if (trim(buffer) .ne. "area: land_area") &
-        call mpp_error(FATAL, "The cell_measures attribute is not the expected result! "//trim(buffer)//&
-          " does not equal area: land_area")
+      call compare_answers("cell_measures", cell_measures, buffer)
+
+      cell_measures = "area: area2"
+      call get_variable_attribute(fileobj, "var2", "cell_measures", buffer)
+      call compare_answers("cell_measures", cell_measures, buffer)
+
+      cell_measures = "area: area1"
+      call get_variable_attribute(fileobj, "var2b", "cell_measures", buffer)
+      call compare_answers("cell_measures", cell_measures, buffer)
+
       call close_file(fileobj)
 
-      ! Check that file2.nc exists, that the var1 exists and it contains the cell_measures attributes
-      ! Here area is in the file, but the output name is area_file2 instead of area
       if (.not. open_file(fileobj, "file2.nc", "read")) &
-        call mpp_error(FATAL, "file1.nc was not created by the diag manager!")
-      call get_variable_attribute(fileobj, "var1", "cell_measures", buffer)
-      if (trim(buffer) .ne. "area: area_file2") &
-        call mpp_error(FATAL, "The cell_measures attribute is not the expected result! ("//trim(buffer)//") vs "//&
-          "(area: area_file2)")
-      call close_file(fileobj)
+        call mpp_error(FATAL, "file2.nc was not created by the diag manager!")
+      cell_measures = "area: area3"
+      call get_variable_attribute(fileobj, "var3", "cell_measures", buffer)
+      call compare_answers("cell_measures", cell_measures, buffer)
       call close_file(fileobj)
     end subroutine check_output
+
+    subroutine compare_answers(label, expected_answer, answer)
+      character(len=*), intent(in) :: label
+      character(len=*), intent(in) :: expected_answer
+      character(len=*), intent(in) :: answer
+
+      if (trim(answer) .ne. trim(expected_answer)) then
+        call mpp_error(FATAL, "The "//trim(label)//" attribute is not the expected result! "//&
+                              trim(answer)//" does not equal "//trim(expected_answer))
+      endif
+    end subroutine
 end program

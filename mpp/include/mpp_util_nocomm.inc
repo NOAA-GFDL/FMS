@@ -105,9 +105,9 @@ end subroutine mpp_sync
 subroutine mpp_sync_self( pelist, check, request, msg_size, msg_type )
   integer, intent(in), optional :: pelist(:)
   integer, intent(in), optional :: check
-  integer, intent(inout), optional :: request(:)
-  integer, intent(in   ), optional :: msg_size(:)
-  integer, intent(in   ), optional :: msg_type(:)
+  type(mpi_request), intent(inout), optional :: request(:)
+  integer, intent(in), optional :: msg_size(:)
+  type(mpi_datatype), intent(in), optional :: msg_type(:)
 
 
   return
