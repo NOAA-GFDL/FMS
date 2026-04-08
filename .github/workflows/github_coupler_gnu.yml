@@ -1,4 +1,4 @@
-name: Test coupler build
+name: FMScoupler null_model build (mkmf) with GCC
 on: [pull_request]
 
 # cancel running jobs if theres a newer push

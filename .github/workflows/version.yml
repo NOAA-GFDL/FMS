@@ -1,4 +1,4 @@
-# appends -dev to the version upon release and opens pr
+name: Append version number and create PR
 # CI won't run on generated PR, easiest workaround is to close + reopen
 on:
   release:

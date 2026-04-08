@@ -1,4 +1,4 @@
-name: libFMS lint tests
+name: Line length and whitespace linter
 
 on: [push, pull_request]
 
