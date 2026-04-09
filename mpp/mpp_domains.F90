@@ -593,11 +593,11 @@ module mpp_domains_mod
      integer            :: is_s=0, ie_s=0, js_s=0, je_s=0
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
-     integer            :: ix_s=1, iy_s=2
-     integer            :: ix_v=1, iy_v=2
-     integer, allocatable, dimension(:) :: shape_s
-     integer, allocatable, dimension(:) :: shape_x
-     integer, allocatable, dimension(:) :: shape_y
+     integer            :: ix_s=1, iy_s=2 !< Domain-decomposed dimensions of scalar arrays
+     integer            :: ix_v=1, iy_v=2 !< Domain-decomposed dimensions of vector arrays
+     integer, allocatable, dimension(:) :: shape_s !< Shapes of scalar arrays
+     integer, allocatable, dimension(:) :: shape_x !< Shapes of vector arrays (x-component)
+     integer, allocatable, dimension(:) :: shape_y !< Shapes of vector arrays (y-component)
      integer            :: nrecv=0, nsend=0
      integer            :: npack=0, nunpack=0
      integer            :: reset_index_s = 0

@@ -25,7 +25,8 @@ subroutine MPP_CREATE_GROUP_UPDATE_(group, field, domain, flags, position, whalo
   integer,          intent(in), optional :: flags
   integer,          intent(in), optional :: position
   integer,          intent(in), optional :: whalo, ehalo, shalo, nhalo ! specify halo region to be updated.
-  integer,          intent(in), optional :: xdim, ydim
+  integer,          intent(in), optional :: xdim, ydim !< Domain-decomposed dimensions. If not specified, it is assumed
+                                                       !! that the first two dimensions are x and y respectively.
 
   integer          :: update_position, update_whalo, update_ehalo, update_shalo, update_nhalo
   integer          :: update_flags, isize, jsize, ksize
