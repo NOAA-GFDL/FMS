@@ -1478,8 +1478,8 @@ end subroutine check_message_size
     !--- transfer the contact index to domain index.
     nc = 0
     do n = 1, num_contact
-       t1 = tile1(n)
-       t2 = tile2(n)
+       t1 = tile1(n) - domain%tile_id_all(1) + 1
+       t2 = tile2(n) - domain%tile_id_all(1) + 1
        is1(n) = istart1(n) + isgList(t1) - 1; ie1(n) = iend1(n) + isgList(t1) - 1
        js1(n) = jstart1(n) + jsgList(t1) - 1; je1(n) = jend1(n) + jsgList(t1) - 1
        is2(n) = istart2(n) + isgList(t2) - 1; ie2(n) = iend2(n) + isgList(t2) - 1
@@ -5368,8 +5368,8 @@ end subroutine check_message_size
 
     !--- set up the east, south, west and north contact for each tile.
     do n = 1, num_contact
-       t1 = tile1(n)
-       t2 = tile2(n)
+       t1 = tile1(n) - domain%tile_id_all(1) + 1
+       t2 = tile2(n) - domain%tile_id_all(1) + 1
        select case(align1(n))
        case (EAST)
           call fill_contact( eCont(t1), t2, istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
@@ -5434,7 +5434,7 @@ end subroutine check_message_size
     domain%update_T%shalo  = shalo; domain%update_T%nhalo = nhalo
 
     do tMe = 1, ntileMe
-       tileMe = domain%tile_id(tMe)
+       tileMe = domain%tile_id(tMe) - domain%tile_id_all(1) + 1
        rotateSend = ZERO; rotateRecv = ZERO
 
        !--- loop over all the contact region to figure out the index for overlapping region.
