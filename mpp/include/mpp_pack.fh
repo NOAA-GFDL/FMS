@@ -16,14 +16,26 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-      !> Pack an array into a vector
-      !> @ingroup mpp_domains_mod
-      subroutine ARR2VEC_ (arr, vec, ix, iy, is, ie, js, je)
+      !> @brief Pack a multi-dimensional, domain-decomposed array into a contiguous 1D array. This is
+      !!        typically used to prepare a contiguous array which will be transmitted via MPI.
+      subroutine ARR2VEC_ (arr, vec, xdim, ydim, is, ie, js, je)
         MPP_TYPE_, intent(in) :: arr(..) !< The array to be packed
         MPP_TYPE_, intent(out) :: vec(:) !< The vector to copy the data into
-        integer, intent(in) :: ix, iy !< Indices of the domain-decomposed dimensions
-        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-        integer, allocatable, dimension(:) :: lb, ub
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within ARR2VEC_. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to pack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
         integer :: n, m
         integer :: i1, i2, i3, i4, i5
 
@@ -33,11 +45,11 @@
         lb = 1
         ub = shape(arr)
 
-        lb(ix) = is
-        lb(iy) = js
+        lb(xdim) = is
+        lb(ydim) = js
 
-        ub(ix) = ie
-        ub(iy) = je
+        ub(xdim) = ie
+        ub(ydim) = je
 
         m = 0
         select rank(arr)
@@ -84,14 +96,26 @@
         end select
       end subroutine ARR2VEC_
 
-      !> Unpack a vector into an array
-      !> @ingroup mpp_domains_mod
-      subroutine VEC2ARR_ (vec, arr, ix, iy, is, ie, js, je)
-        MPP_TYPE_, intent(in) :: vec(:) !< The vector to be unpacked
-        MPP_TYPE_, intent(out) :: arr(..) !< The array to copy the data into
-        integer, intent(in) :: ix, iy !< Indices of the domain-decomposed dimensions
-        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-        integer, allocatable, dimension(:) :: lb, ub
+      !> @brief Unpack a contiguous 1D array into a multi-dimensional array. This is typically used to transform
+      !!        data obtained from an MPI call into the format that is expected by the calling code.
+      subroutine VEC2ARR_ (vec, arr, xdim, ydim, is, ie, js, je)
+        MPP_TYPE_, intent(in) :: vec(:) !< The 1D array to be unpacked
+        MPP_TYPE_, intent(out) :: arr(..) !< The multi-dimensional array to copy the data into
+        integer, intent(in) :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical Fortran-based
+                                          !! code, xdim=1 and ydim=2.
+        integer, intent(in) :: is, ie, js, je !< Starting and ending indices of the x and y dimensions, expressed
+                                              !! in terms of the 1-based indices seen within VEC2ARR_. These indices
+                                              !! may be different from the indices used in the calling code! If `arr`
+                                              !! is defined over the data domain, e.g. dimension(isd:ied,jsd:jed,...),
+                                              !! and you wish to unpack only the compute domain, the following values
+                                              !! should be passed:
+                                              !! is = isc - isd + 1
+                                              !! ie = iec - isd + 1
+                                              !! js = jsc - jsd + 1
+                                              !! je = jec - jsd + 1
+        integer, allocatable, dimension(:) :: lb, ub !< These are 1 and shape(arr) respectively for all dimensions
+                                                     !! except the domain-decomposed dimensions, for which they are
+                                                     !! set according to the is,ie,js,je options.
         integer :: n, m
         integer :: i1, i2, i3, i4, i5
 
@@ -101,11 +125,11 @@
         lb = 1
         ub = shape(arr)
 
-        lb(ix) = is
-        lb(iy) = js
+        lb(xdim) = is
+        lb(ydim) = js
 
-        ub(ix) = ie
-        ub(iy) = je
+        ub(xdim) = ie
+        ub(ydim) = je
 
         m = 0
         select rank(arr)
@@ -152,11 +176,11 @@
         end select
       end subroutine VEC2ARR_
 
-      !> Initialize an assumed-rank array
-      !> @ingroup mpp_domains_mod
+      !> @brief Initialize an assumed-rank array to `val`. This is used when initializing an assumed-rank array
+      !!        outside of a `select rank` block.
       subroutine ARR_INIT_ (arr, val)
         MPP_TYPE_, dimension(..), intent(out) :: arr !< The array to be initialized
-        MPP_TYPE_, intent(in) :: val !< The initialization value
+        MPP_TYPE_, intent(in) :: val !< The value to initialize to
 
         select rank (arr)
           rank(1)

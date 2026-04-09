@@ -30,7 +30,8 @@
       integer, intent(in), optional :: position
       integer, intent(in), optional :: tile_count
       MPP_TYPE_, intent(in), optional :: default_data
-      integer, intent(in), optional :: xdim, ydim
+      integer, intent(in), optional :: xdim, ydim !< Indices of the domain-decomposed dimensions. In typical
+                                                  !! Fortran-based code, xdim=1 and ydim=2.
 
       integer :: i, j, k, m, n, nd, num_words, lpos, rpos, ioff, joff, from_pe, root_pe, tile_id
       integer :: ke, isc, iec, jsc, jec, is, ie, js, je, num_word_me
