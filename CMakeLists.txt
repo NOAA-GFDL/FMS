@@ -623,7 +623,6 @@ if(UNIT_TESTS)
   target_include_directories(testLibs PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include
                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/common/include
                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/fms/include
-                                      PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mpp
                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mpp/include
                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/data_override/include
                                       PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test_fms/mosaic2
@@ -883,7 +882,7 @@ if(UNIT_TESTS)
     add_executable(${TName}_r8 ${testFile})
     target_compile_definitions(${TName}_r8 PRIVATE "${r8_defs}")
     set_target_properties(${TName}_r8 PROPERTIES COMPILE_FLAGS ${r8_flags})
-    target_link_libraries(${TName}_r8 PUBLIC FMS::fms
+    target_link_libraries(${TName}_r8 PUBLIC ${fmsLibraryName}
                                       PRIVATE testLibs
                                       )
 
@@ -892,21 +891,21 @@ if(UNIT_TESTS)
     # seems counterintuitive but r4 tests use r8 default
     # they specify kind values explicitly with the preprocessor where needed (TEST_FMS_KIND_)
     set_target_properties(${TName}_r4 PROPERTIES COMPILE_FLAGS ${r8_flags})
-    target_link_libraries(${TName}_r4 PUBLIC FMS::fms
+    target_link_libraries(${TName}_r4 PUBLIC ${fmsLibraryName}
                                       PRIVATE testLibs
                                       )
 
     add_executable(${TName}_i8 ${testFile})
     target_compile_definitions(${TName}_i8 PRIVATE "${r8_defs}")
     set_target_properties(${TName}_i8 PROPERTIES COMPILE_FLAGS ${r8_flags})
-    target_link_libraries(${TName}_i8 PUBLIC FMS::fms
+    target_link_libraries(${TName}_i8 PUBLIC ${fmsLibraryName}
                                       PRIVATE testLibs
                                       )
 
     add_executable(${TName}_i4 ${testFile})
     target_compile_definitions(${TName}_i4 PRIVATE "${r8_defs}")
     set_target_properties(${TName}_i4 PROPERTIES COMPILE_FLAGS ${r8_flags})
-    target_link_libraries(${TName}_i4 PUBLIC FMS::fms
+    target_link_libraries(${TName}_i4 PUBLIC ${fmsLibraryName}
                                       PRIVATE testLibs
                                       )
 
