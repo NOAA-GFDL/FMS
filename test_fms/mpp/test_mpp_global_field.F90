@@ -25,7 +25,8 @@ program test_mpp_global_field
   use mpp_domains_mod, only: mpp_define_layout, mpp_define_domains
   use mpp_domains_mod, only: mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
   use mpp_domains_mod, only: mpp_global_field
-  use fms_test_mod,    only: permutable_indices_2d, permutable_indices_3d, factorial, arr_init, arr_compare
+  use fms_test_mod,    only: permutable_indices_2d, permutable_indices_3d, factorial, arr_init, arr_compare, &
+                             permute_arr
 
   implicit none
 
