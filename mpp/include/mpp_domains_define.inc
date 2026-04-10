@@ -1233,6 +1233,7 @@ end subroutine check_message_size
     logical, allocatable :: mask(:,:)
     integer, allocatable :: pes(:), xext(:), yext(:), pelist_tile(:), ntile_per_pe(:), tile_count(:)
     integer, allocatable :: tile_id_local(:)
+    integer              :: tile_base !< Minimum tile ID minus 1. Used to transform tile IDs to array indices.
     logical              :: is_symmetry
     integer, allocatable :: align1(:), align2(:), is1(:), ie1(:), js1(:), je1(:), is2(:), ie2(:), js2(:), je2(:)
     integer, allocatable :: isgList(:), iegList(:), jsgList(:), jegList(:)
@@ -1361,6 +1362,8 @@ end subroutine check_message_size
     enddo
 !DIR$ VECTOR
 
+    tile_base = minval(tile_id_local) - 1
+
     do n = 1, num_tile
        if( pe .GE. pe_start(n) .AND. pe .LE. pe_end(n)) then
           pos = pos + 1
@@ -1478,8 +1481,8 @@ end subroutine check_message_size
     !--- transfer the contact index to domain index.
     nc = 0
     do n = 1, num_contact
-       t1 = tile1(n) - domain%tile_id_all(1) + 1
-       t2 = tile2(n) - domain%tile_id_all(1) + 1
+       t1 = tile1(n) - tile_base
+       t2 = tile2(n) - tile_base
        is1(n) = istart1(n) + isgList(t1) - 1; ie1(n) = iend1(n) + isgList(t1) - 1
        js1(n) = jstart1(n) + jsgList(t1) - 1; je1(n) = jend1(n) + jsgList(t1) - 1
        is2(n) = istart2(n) + isgList(t2) - 1; ie2(n) = iend2(n) + isgList(t2) - 1
@@ -1510,7 +1513,7 @@ end subroutine check_message_size
 
     !--- computing the overlap for the contact region with halo size xhalosz and yhalosz
     call define_contact_point( domain, CENTER, num_contact, tile1, tile2, align1, align2, refine1, refine2, &
-                               is1, ie1, js1, je1, is2, ie2, js2, je2, isgList, iegList, jsgList, jegList )
+                               is1, ie1, js1, je1, is2, ie2, js2, je2, isgList, iegList, jsgList, jegList, tile_base )
 
     call set_contact_point( domain, CORNER )
     call set_contact_point( domain, EAST   )
@@ -5290,7 +5293,7 @@ end subroutine check_message_size
   !> compute the overlapping between tiles for the T-cell.
   subroutine define_contact_point( domain, position, num_contact, tile1, tile2, align1, align2, &
        refine1, refine2, istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,        &
-       isgList, iegList, jsgList, jegList )
+       isgList, iegList, jsgList, jegList, tile_base )
     type(domain2D),     intent(inout) :: domain
     integer,               intent(in) :: position
     integer,               intent(in) :: num_contact      !< number of contact regions
@@ -5303,6 +5306,7 @@ end subroutine check_message_size
     integer, dimension(:), intent(in) :: jstart2, jend2   !< j-index in tile_2 of contact region
     integer, dimension(:), intent(in) :: isgList, iegList !< i-global domain of each tile
     integer, dimension(:), intent(in) :: jsgList, jegList !< j-global domain of each tile
+    integer,               intent(in) :: tile_base        !< Minimum tile ID minus 1
 
     integer              :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer              :: isc1, iec1, jsc1, jec1, isc2, iec2, jsc2, jec2
@@ -5368,34 +5372,34 @@ end subroutine check_message_size
 
     !--- set up the east, south, west and north contact for each tile.
     do n = 1, num_contact
-       t1 = tile1(n) - domain%tile_id_all(1) + 1
-       t2 = tile2(n) - domain%tile_id_all(1) + 1
+       t1 = tile1(n) - tile_base
+       t2 = tile2(n) - tile_base
        select case(align1(n))
        case (EAST)
-          call fill_contact( eCont(t1), t2, istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
+          call fill_contact( eCont(t1), tile2(n), istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
                jstart2(n), jend2(n), align1(n), align2(n), refine1(n), refine2(n))
        case (WEST)
-          call fill_contact( wCont(t1), t2, istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
+          call fill_contact( wCont(t1), tile2(n), istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
                jstart2(n), jend2(n), align1(n), align2(n), refine1(n), refine2(n))
        case (SOUTH)
-          call fill_contact( sCont(t1), t2, istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
+          call fill_contact( sCont(t1), tile2(n), istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
                jstart2(n), jend2(n), align1(n), align2(n), refine1(n), refine2(n))
        case (NORTH)
-          call fill_contact( nCont(t1), t2, istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
+          call fill_contact( nCont(t1), tile2(n), istart1(n), iend1(n), jstart1(n), jend1(n), istart2(n), iend2(n), &
                jstart2(n), jend2(n), align1(n), align2(n), refine1(n), refine2(n))
        end select
        select case(align2(n))
        case (EAST)
-          call fill_contact( eCont(t2), t1, istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
+          call fill_contact( eCont(t2), tile1(n), istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
                jstart1(n), jend1(n), align2(n), align1(n), refine2(n), refine1(n))
        case (WEST)
-          call fill_contact( wCont(t2), t1, istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
+          call fill_contact( wCont(t2), tile1(n), istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
                jstart1(n), jend1(n), align2(n), align1(n), refine2(n), refine1(n))
        case (SOUTH)
-          call fill_contact( sCont(t2), t1, istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
+          call fill_contact( sCont(t2), tile1(n), istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
                jstart1(n), jend1(n), align2(n), align1(n), refine2(n), refine1(n))
        case (NORTH)
-          call fill_contact( nCont(t2), t1, istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
+          call fill_contact( nCont(t2), tile1(n), istart2(n), iend2(n), jstart2(n), jend2(n), istart1(n), iend1(n), &
                jstart1(n), jend1(n), align2(n), align1(n), refine2(n), refine1(n))
        end select
     end do
@@ -5434,7 +5438,7 @@ end subroutine check_message_size
     domain%update_T%shalo  = shalo; domain%update_T%nhalo = nhalo
 
     do tMe = 1, ntileMe
-       tileMe = domain%tile_id(tMe) - domain%tile_id_all(1) + 1
+       tileMe = domain%tile_id(tMe) - tile_base
        rotateSend = ZERO; rotateRecv = ZERO
 
        !--- loop over all the contact region to figure out the index for overlapping region.
