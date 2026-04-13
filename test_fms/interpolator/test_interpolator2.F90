@@ -36,7 +36,7 @@ program test_interpolator2
                               set_date_no_leap, set_date_julian, operator(/), &
                               operator(+), operator(-), time_type_to_real, increment_time, &
                               leap_year, days_in_month, print_date, print_time
-  use fms_mod,          only: fms_init
+  use fms_mod,          only: fms_init, fms_end
   use constants_mod,    only: PI
   use platform_mod,     only: r4_kind, r8_kind
   use fms_test_mod,     only: permutable_indices_2d, permutable_indices_3d, permutable_indices_4d, factorial, &
@@ -123,6 +123,8 @@ program test_interpolator2
      call test_interpolator_no_time_axis(o3)
      call test_interpolator_end(o3)
   end if
+
+  call fms_end()
 
 contains
 
