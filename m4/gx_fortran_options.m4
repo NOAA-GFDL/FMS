@@ -24,7 +24,6 @@
 #   GX_FC_DEFAULT_REAL_KIND4_FLAG([ACTION-IF-SUCCESS], [ACTION-IF-FAILURE = FAILURE])
 #   GX_FC_QUAD_PRECISION()
 #   GX_FC_CRAY_POINTER_FLAG([ACTION-IF-SUCCESS], [ACTION-IF-FAILURE = FAILURE])
-#   GX_FC_INTERNAL_FILE_NML()
 #   GX_FC_CHECK_MOD(module-name, [only], [action-if-found], [action-if-not-found])
 #   GX_FC_MOD_OUTPUT_CASE([ACTION-IF-SUCCESS], [ACTION-IF-FAILURE])
 #
@@ -232,32 +231,6 @@ else
 fi
 AC_LANG_POP([Fortran])
 AC_SUBST([FC_CRAY_POINTER_FLAG])
-])
-
-# GX_FC_INTERNAL_FILE_NML
-# -----------------------------------------------------------------------------
-# Determine if the Fortran compiler supports reading Fortran namelists from
-# an internal file.  If supported, sets the define HAVE_INTERNAL_NML.
-AC_DEFUN([GX_FC_INTERNAL_FILE_NML],[
-AC_LANG_PUSH([Fortran])
-AC_CACHE_CHECK([if $[]_AC_FC[] supports reading namelists from internal files], [gx_cv_fc_internal_file_nml],[
-gx_cv_fc_internal_file_nml=unknown
-AC_COMPILE_IFELSE([[      program test
-      implicit none
-      integer :: a = 1
-      real :: b = 0.1
-      character(LEN=20) :: internal_nml ="&test_nml a=2 b=1.0/"
-      namelist /test_nml/ a, b
-      read(internal_nml,test_nml)
-      end program test]],
-   [gx_cv_fc_internal_file_nml=yes],
-   [gx_cv_fc_internal_file_nml=no])])
-if test "x$gx_cv_fc_internal_file_nml" = "xyes"; then
-   AC_DEFINE([HAVE_INTERNAL_NML], 1,
-             [Define to 1 if your Fortran compiler supports reading namelists
-              from internal files])
-fi
-AC_LANG_POP([Fortran])
 ])
 
 # GX_FC_CHECK_MOD(module-name, [only], [action-if-found], [action-if-not-found])

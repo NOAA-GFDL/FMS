@@ -41,7 +41,7 @@ if test ! -z "$test_input_path" ; then
   rm -rf INPUT && mkdir INPUT
   cp $test_input_path/interpolator/INPUT/* INPUT
 else
-  SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).1"
+  SKIP_TESTS="$SKIP_TESTS test_interpolator2.1"
 fi
 
 # Create files for test.
