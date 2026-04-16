@@ -98,10 +98,10 @@ program test_generalized_indices
   id_var2_swap = register_diag_field('ocn_mod', 'var2_swap', (/axis(p_swap(1)), axis(p_swap(2))/), Time, 'Var2d swap', &
                                      'mullions', missing_value=missing_value)
 
-  id_var3_id   = register_diag_field('ocn_mod', 'var3_id',   (/axis(p_id(1)),   axis(p_id(2)),   axis(p_id(3))/),   Time, &
-                                     'Var3d id', 'mullions', missing_value=missing_value)
-  id_var3_swap = register_diag_field('ocn_mod', 'var3_swap', (/axis(p_swap(1)), axis(p_swap(2)), axis(p_swap(3))/), Time, &
-                                     'Var3d swap', 'mullions', missing_value=missing_value)
+  id_var3_id   = register_diag_field('ocn_mod', 'var3_id',   (/axis(p_id(1)),   axis(p_id(2)),   axis(p_id(3))/), &  
+                                      Time, 'Var3d id', 'mullions', missing_value=missing_value)
+  id_var3_swap = register_diag_field('ocn_mod', 'var3_swap', (/axis(p_swap(1)), axis(p_swap(2)), axis(p_swap(3))/), &
+                                      Time, 'Var3d swap', 'mullions', missing_value=missing_value)
 
   if (mpp_pe() == mpp_root_pe()) then
     print *, "Testing generalized indices in default mode (test_normal + no_mask)"
