@@ -139,14 +139,9 @@ subroutine init_nonblock_type( nonblock_obj )
    nonblock_obj%request_send_count = 0
    nonblock_obj%request_recv_count = 0
    nonblock_obj%size_recv(:)       = 0
-   nonblock_obj%type_recv(:)       = 0
-#ifdef use_libMPI
+   nonblock_obj%type_recv(:)       = MPI_DATATYPE_NULL
    nonblock_obj%request_send(:)    = MPI_REQUEST_NULL
    nonblock_obj%request_recv(:)    = MPI_REQUEST_NULL
-#else
-   nonblock_obj%request_send(:)    = 0
-   nonblock_obj%request_recv(:)    = 0
-#endif
    nonblock_obj%buffer_pos_send(:) = 0
    nonblock_obj%buffer_pos_recv(:) = 0
    nonblock_obj%nfields            = 0
@@ -336,7 +331,6 @@ end subroutine init_nonblock_type
      ! Force use of "scalar", integer pointer mpp interface
      call mpp_send(ibounds(1), plen=4, to_pe=pelist2(1), tag=COMM_TAG_1)
      call mpp_send(send_buffer(1),plen=im*jm, to_pe=pelist2(1), tag=COMM_TAG_2)
-     deallocate(send_buffer)
 
    else if(pelist2(1) == pe) then        ! receive data and compare
      do p = pelist1(1), pelist1(size(pelist1(:)))
@@ -371,12 +365,13 @@ end subroutine init_nonblock_type
          print*, trim(mesg)//": ", 'comparison between 1 pe and ', npes-1, ' pes is ok'
       endif
   ! release memery
-      deallocate(field1, send_buffer)
+      deallocate(field1)
     endif
 
     deallocate(field2)
 
     call mpp_sync()
+    if (allocated(send_buffer)) deallocate(send_buffer)
 
   end subroutine mpp_check_field_2d_type1
 

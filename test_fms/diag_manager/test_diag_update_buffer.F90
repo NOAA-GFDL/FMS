@@ -183,7 +183,7 @@ program test_diag_update_buffer
    diag_field_id = 1
    sample = 1
    weight = 1.0
-   missvalue = 1.0e-5
+   missvalue = 1.0e-5_r4_kind
    pow_value = 1
    phys_window = .false.
    need_compute = .false.
