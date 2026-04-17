@@ -508,7 +508,19 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
   call mpp_clock_begin(group_pack_clock)
   !pack the data
   buffer_start_pos = 0
+  ! below switch runs OpenMP offloaded packing if ompoffload is .true. and compiled with 
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_pack.inc>
+  else
+#ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_pack.inc>
+#define __NVCOMPILER_OPENMP_GPU
+#else
+#include <group_update_pack.inc>
+#endif
+  endif
   call mpp_clock_end(group_pack_clock)
 
   call mpp_clock_begin(group_send_clock)
@@ -531,10 +543,20 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
   !---unpack the buffer
   nunpack = group%nunpack
   call mpp_clock_begin(group_unpk_clock)
+  ! below switch runs OpenMP offloaded unpacking if ompoffload is .true. and compiled with 
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_unpack.inc>
+  else
 #ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_unpack.inc>
+#define __NVCOMPILER_OPENMP_GPU
   !$omp target exit data map(release: buffer) if(use_device_ptr)
+#else
+#include <group_update_unpack.inc>
 #endif
+  endif
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
@@ -741,7 +763,19 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   call mpp_clock_begin(nonblock_group_pack_clock)
   npack = group%npack
   buffer_start_pos = group%buffer_start_pos
+  ! below switch runs OpenMP offloaded packing if ompoffload is .true. and compiled with 
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_pack.inc>
+  else
+#ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_pack.inc>
+#define __NVCOMPILER_OPENMP_GPU
+#else
+#include <group_update_pack.inc>
+#endif
+  endif
   call mpp_clock_end(nonblock_group_pack_clock)
 
   call mpp_clock_begin(nonblock_group_send_clock)
@@ -810,7 +844,20 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
   call mpp_clock_begin(nonblock_group_unpk_clock)
   buffer_start_pos = group%buffer_start_pos
+  ! below switch runs OpenMP offloaded unpacking if ompoffload is .true. and compiled with 
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_unpack.inc>
+  else
+#ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_unpack.inc>
+#define __NVCOMPILER_OPENMP_GPU
+  !$omp target exit data map(release: buffer) if(use_device_ptr)
+#else
+#include <group_update_unpack.inc>
+#endif
+  endif
   call mpp_clock_end(nonblock_group_unpk_clock)
 
   ! ---northern boundary fold
