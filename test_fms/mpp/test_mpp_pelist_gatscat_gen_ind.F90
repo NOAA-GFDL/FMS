@@ -52,7 +52,7 @@ program test_mpp_pelist_gatscat_gen_ind
   if (pe == root) print *, '--- PELIST SCATTER/GATHER TESTS ---'
 
   do p = 1, 6
-    
+
     dim_order = perms(:,p)
 
     if (pe == root) then
