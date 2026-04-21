@@ -90,10 +90,13 @@
 
 module mpp_domains_mod
 
-#if defined(use_libMPI)
-  use mpi
+#ifdef use_libMPI
+  use mpi_f08
+#else
+  use gfdl_nompi_f08
 #endif
 
+  use iso_c_binding,          only : c_f_pointer, c_loc, c_ptr
   use mpp_parameter_mod,      only : MPP_DEBUG, MPP_VERBOSE, MPP_DOMAIN_TIME
   use mpp_parameter_mod,      only : GLOBAL_DATA_DOMAIN, CYCLIC_GLOBAL_DOMAIN, GLOBAL,CYCLIC
   use mpp_parameter_mod,      only : AGRID, BGRID_SW, BGRID_NE, CGRID_NE, CGRID_SW, DGRID_NE, DGRID_SW
@@ -157,6 +160,7 @@ module mpp_domains_mod
   public :: mpp_get_tile_npes, mpp_get_domain_root_pe, mpp_get_tile_pelist, mpp_get_tile_compute_domains
   public :: mpp_get_num_overlap, mpp_get_overlap
   public :: mpp_get_io_domain, mpp_get_domain_pe, mpp_get_domain_tile_root_pe
+  public :: mpp_get_domain_tile_comm, mpp_get_domain_comm
   public :: mpp_get_domain_tile_commid, mpp_get_domain_commid
   public :: mpp_get_domain_name, mpp_get_io_domain_layout
   public :: mpp_copy_domain, mpp_set_domain_symmetry
@@ -374,8 +378,8 @@ module mpp_domains_mod
      integer                     :: whalo, ehalo   !< halo size in x-direction
      integer                     :: shalo, nhalo   !< halo size in y-direction
      integer                     :: ntiles         !< number of tiles within mosaic
-     integer                     :: comm_id        !< MPI communicator for the mosaic
-     integer                     :: tile_comm_id   !< MPI communicator for this tile of domain
+     type(mpi_comm)              :: comm           !< MPI communicator for the mosaic
+     type(mpi_comm)              :: tile_comm      !< MPI communicator for this tile of domain
      integer                     :: max_ntile_pe   !< maximum value in the pelist of number of tiles on each pe.
      integer                     :: ncontacts      !< number of contact region within mosaic.
      logical                     :: rotated_ninety !< indicate if any contact rotate NINETY or MINUS_NINETY
@@ -558,14 +562,14 @@ module mpp_domains_mod
      integer                         :: update_nhalo
      integer                         :: request_send_count
      integer                         :: request_recv_count
-     integer, dimension(MAX_REQUEST) :: request_send
-     integer, dimension(MAX_REQUEST) :: request_recv
+     type(mpi_request)               :: request_send(MAX_REQUEST)
+     type(mpi_request)               :: request_recv(MAX_REQUEST)
+     type(mpi_datatype)              :: type_recv(MAX_REQUEST)
      integer, dimension(MAX_REQUEST) :: size_recv
-     integer, dimension(MAX_REQUEST) :: type_recv
      integer, dimension(MAX_REQUEST) :: buffer_pos_send
      integer, dimension(MAX_REQUEST) :: buffer_pos_recv
-     integer(i8_kind)              :: field_addrs(MAX_DOMAIN_FIELDS)
-     integer(i8_kind)              :: field_addrs2(MAX_DOMAIN_FIELDS)
+     integer(i8_kind)                :: field_addrs(MAX_DOMAIN_FIELDS)
+     integer(i8_kind)                :: field_addrs2(MAX_DOMAIN_FIELDS)
      integer                         :: nfields
   end type nonblock_type
 
@@ -589,6 +593,11 @@ module mpp_domains_mod
      integer            :: is_s=0, ie_s=0, js_s=0, je_s=0
      integer            :: is_x=0, ie_x=0, js_x=0, je_x=0
      integer            :: is_y=0, ie_y=0, js_y=0, je_y=0
+     integer            :: ix_s=1, iy_s=2 !< Domain-decomposed dimensions of scalar arrays
+     integer            :: ix_v=1, iy_v=2 !< Domain-decomposed dimensions of vector arrays
+     integer, allocatable, dimension(:) :: shape_s !< Shapes of scalar arrays
+     integer, allocatable, dimension(:) :: shape_x !< Shapes of vector arrays (x-component)
+     integer, allocatable, dimension(:) :: shape_y !< Shapes of vector arrays (y-component)
      integer            :: nrecv=0, nsend=0
      integer            :: npack=0, nunpack=0
      integer            :: reset_index_s = 0
@@ -616,13 +625,13 @@ module mpp_domains_mod
      integer            :: unpack_ie(MAXOVERLAP)
      integer            :: unpack_js(MAXOVERLAP)
      integer            :: unpack_je(MAXOVERLAP)
-     integer(i8_kind) :: addrs_s(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_x(MAX_DOMAIN_FIELDS)
-     integer(i8_kind) :: addrs_y(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_s(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_x(MAX_DOMAIN_FIELDS)
+     type(c_ptr)        :: addrs_y(MAX_DOMAIN_FIELDS)
      integer            :: buffer_start_pos = -1
-     integer            :: request_send(MAX_REQUEST)
-     integer            :: request_recv(MAX_REQUEST)
-     integer            :: type_recv(MAX_REQUEST)
+     type(mpi_request)  :: request_send(MAX_REQUEST)
+     type(mpi_request)  :: request_recv(MAX_REQUEST)
+     type(mpi_datatype) :: type_recv(MAX_REQUEST)
   end type mpp_group_update_type
 
   !> One dimensional domain used to manage shared data access between pes
@@ -1311,18 +1320,10 @@ module mpp_domains_mod
   !> @param
   !> @ingroup mpp_domains_mod
   interface mpp_create_group_update
-     module procedure mpp_create_group_update_r4_2d
-     module procedure mpp_create_group_update_r4_3d
-     module procedure mpp_create_group_update_r4_4d
-     module procedure mpp_create_group_update_r4_2dv
-     module procedure mpp_create_group_update_r4_3dv
-     module procedure mpp_create_group_update_r4_4dv
-     module procedure mpp_create_group_update_r8_2d
-     module procedure mpp_create_group_update_r8_3d
-     module procedure mpp_create_group_update_r8_4d
-     module procedure mpp_create_group_update_r8_2dv
-     module procedure mpp_create_group_update_r8_3dv
-     module procedure mpp_create_group_update_r8_4dv
+     module procedure mpp_create_group_update_r4
+     module procedure mpp_create_group_update_r4_v
+     module procedure mpp_create_group_update_r8
+     module procedure mpp_create_group_update_r8_v
   end interface mpp_create_group_update
 
   !> @ingroup mpp_domains_mod
@@ -1357,18 +1358,10 @@ module mpp_domains_mod
 
   !> @ingroup mpp_domains_mod
   interface mpp_reset_group_update_field
-     module procedure mpp_reset_group_update_field_r4_2d
-     module procedure mpp_reset_group_update_field_r4_3d
-     module procedure mpp_reset_group_update_field_r4_4d
-     module procedure mpp_reset_group_update_field_r4_2dv
-     module procedure mpp_reset_group_update_field_r4_3dv
-     module procedure mpp_reset_group_update_field_r4_4dv
-     module procedure mpp_reset_group_update_field_r8_2d
-     module procedure mpp_reset_group_update_field_r8_3d
-     module procedure mpp_reset_group_update_field_r8_4d
-     module procedure mpp_reset_group_update_field_r8_2dv
-     module procedure mpp_reset_group_update_field_r8_3dv
-     module procedure mpp_reset_group_update_field_r8_4dv
+     module procedure mpp_reset_group_update_field_r4
+     module procedure mpp_reset_group_update_field_r4_v
+     module procedure mpp_reset_group_update_field_r8
+     module procedure mpp_reset_group_update_field_r8_v
   end interface mpp_reset_group_update_field
 
   !> Pass the data from coarse grid to fill the buffer to be ready to be interpolated

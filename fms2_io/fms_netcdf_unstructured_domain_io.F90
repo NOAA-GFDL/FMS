@@ -17,10 +17,13 @@
 !***********************************************************************
 !> @defgroup fms_netcdf_unstructured_domain_io_mod fms_netcdf_unstructured_domain_io_mod
 !> @ingroup fms2_io
-!> @brief Handles netcdf I/O for unstructured domains
+!> @brief This module defines the derived type, FmsNetcdfUnstructuredDomainFile_t, and routines
+!! to handle calls to the netcdf library for data on a domain decomposed unstructured grid.
+!! See mpp_domains_mod for more information on domain decomposition.
 !!
-!> Mainly routines for use via interfaces in @ref fms2_io_mod
-
+!! This module is not intended to be used externally. Please use the public interfaces in fms2_io_mod
+!! for IO operations.
+!!
 module fms_netcdf_unstructured_domain_io_mod
 use netcdf
 use mpp_domains_mod
@@ -30,7 +33,16 @@ use platform_mod
 implicit none
 private
 
-!> @brief netcdf unstructured domain file type.
+!> @brief Type to represent a netCDF file when on a domain decomposed unstructured grid.
+!! Used to do distributed I/O across ranks, as determined by the io_layout. The io_layout
+!! is a 1D array (nx_pe,ny_pe) of size 2 set via mpp_set_io_domain
+!! and determines how many PEs will be performing IO operations within a given
+!! domain decompositon. The total number of writing PEs is nx_pe * ny_pe.
+!!
+!! For example, if domain's layout was (4,4) so 16 PEs total,
+!! then a io_layout of (2,2) would have 4 PEs performing I/O operations.
+!! When doing a read, each IO PE will receive a portion of data from 3 of the non-IO PEs and then write the aggregate.
+!! When doing a write, each IO PE will read the data and then send a data portion to 3 of the non-IO PEs.
 !> @ingroup fms_netcdf_unstructured_domain_io_mod
 type, public, extends(FmsNetcdfFile_t) :: FmsNetcdfUnstructuredDomainFile_t
   type(domainug) :: domain !< Unstructured domain.

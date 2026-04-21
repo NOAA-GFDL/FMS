@@ -24,6 +24,19 @@
 !> @addtogroup mpp_mod
 !> @{
 
+subroutine mpp_init_legacy( flags, localcomm, test_level, alt_input_nml_path )
+  integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
+  integer, intent(in) :: localcomm !< MPI communicator to use. Only relevant if MPI has already
+                                   !! been initialized by an external call to mpi_init.
+  integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
+                                              !! before completion for testing purposes
+  character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
+  type(mpi_comm) :: comm
+
+  comm%mpi_val = localcomm
+  call mpp_init_f08(flags, comm, test_level, alt_input_nml_path)
+end subroutine mpp_init_legacy
+
 #if defined(use_libMPI)
 #include <mpp_comm_mpi.inc>
 #else

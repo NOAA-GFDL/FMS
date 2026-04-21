@@ -37,7 +37,7 @@
       integer, optional,  intent(in) :: plen, glen
       logical, intent(in),  optional :: block
       integer, intent(in),  optional :: tag
-      integer, intent(out), optional :: recv_request, send_request
+      type(mpi_request), intent(out), optional :: recv_request, send_request
       integer                       :: put_len, get_len
       MPP_TYPE_ :: put_data1D(1), get_data1D(1)
       pointer( ptrp, put_data1D )
@@ -62,7 +62,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: recv_request, send_request
+      type(mpi_request), intent(out), optional :: recv_request, send_request
       MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
 
       pointer( ptrp, put_data1D )
@@ -84,7 +84,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: recv_request, send_request
+      type(mpi_request), intent(out), optional :: recv_request, send_request
       MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
 
       pointer( ptrp, put_data1D )
@@ -106,7 +106,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: recv_request, send_request
+      type(mpi_request), intent(out), optional :: recv_request, send_request
       MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
 
       pointer( ptrp, put_data1D )
@@ -128,7 +128,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:,:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: recv_request, send_request
+      type(mpi_request), intent(out), optional :: recv_request, send_request
       MPP_TYPE_ :: put_data1D(put_len), get_data1D(get_len)
 
       pointer( ptrp, put_data1D )
@@ -142,6 +142,7 @@
 
       return
     end subroutine MPP_TRANSMIT_5D_
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                              MPP_SEND and RECV                              !
@@ -154,7 +155,7 @@
       MPP_TYPE_, intent(out) :: get_data(*)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1)
       call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
@@ -165,7 +166,7 @@
       integer, intent(in) :: put_len, to_pe
       MPP_TYPE_, intent(in) :: put_data(*)
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
       MPP_TYPE_ :: dummy(1)
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag=tag, send_request=request )
     end subroutine MPP_SEND_
@@ -176,7 +177,7 @@
       MPP_TYPE_, intent(out) :: get_data
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
 
       integer, optional, intent(in) :: glen
       integer                       :: get_len
@@ -198,7 +199,7 @@
       MPP_TYPE_, intent(in) :: put_data
       integer, optional, intent(in) :: plen
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
       integer                       :: put_len
       MPP_TYPE_ :: put_data1D(1)
       MPP_TYPE_ :: dummy(1)
@@ -216,7 +217,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1)
       call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
@@ -227,7 +228,7 @@
       integer, intent(in) :: put_len, to_pe
       MPP_TYPE_, intent(in) :: put_data(:,:)
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
       MPP_TYPE_ :: dummy(1,1)
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
     end subroutine MPP_SEND_2D_
@@ -238,7 +239,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1,1)
       call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
@@ -249,7 +250,7 @@
       integer, intent(in) :: put_len, to_pe
       MPP_TYPE_, intent(in) :: put_data(:,:,:)
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
       MPP_TYPE_ :: dummy(1,1,1)
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
     end subroutine MPP_SEND_3D_
@@ -260,7 +261,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1,1,1)
       call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
@@ -271,7 +272,7 @@
       integer, intent(in) :: put_len, to_pe
       MPP_TYPE_, intent(in) :: put_data(:,:,:,:)
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
       MPP_TYPE_ :: dummy(1,1,1,1)
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
     end subroutine MPP_SEND_4D_
@@ -282,7 +283,7 @@
       MPP_TYPE_, intent(out) :: get_data(:,:,:,:,:)
       logical, intent(in), optional :: block
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
 
       MPP_TYPE_ :: dummy(1,1,1,1,1)
       call mpp_transmit( dummy, 1, NULL_PE, get_data, get_len, from_pe, block, tag, recv_request=request )
@@ -293,7 +294,7 @@
       integer, intent(in) :: put_len, to_pe
       MPP_TYPE_, intent(in) :: put_data(:,:,:,:,:)
       integer, intent(in), optional :: tag
-      integer, intent(out), optional :: request
+      type(mpi_request), intent(out), optional :: request
       MPP_TYPE_ :: dummy(1,1,1,1,1)
       call mpp_transmit( put_data, put_len, to_pe, dummy, 1, NULL_PE, tag = tag, send_request=request )
     end subroutine MPP_SEND_5D_
