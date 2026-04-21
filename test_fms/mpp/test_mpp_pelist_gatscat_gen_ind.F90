@@ -47,8 +47,6 @@ program test_mpp_pelist_gatscat_gen_ind
         3, 1, 2, &
         3, 2, 1  ], [3, 6])
 
-  dim_order = (/2, 3, 1/)
-
   if (pe == root) print *, '--- PELIST SCATTER/GATHER TESTS ---'
 
   do p = 1, 6
@@ -61,10 +59,7 @@ program test_mpp_pelist_gatscat_gen_ind
     endif
 
     call test_scatter(npes, pe, root, dim_order)
-    call mpp_sync()
-
     call test_gather(npes, pe, root, dim_order)
-    call mpp_sync()
 
   enddo
 
@@ -229,6 +224,7 @@ contains
 
      call get_decomp(pe, npes, NI, NJ, is, ie, js, je)
      call build_pelist(npes, pelist)
+     !call mpp_get_pelist(pelist)
 
      call alloc_field(global_perm, dim_order, (/NI, NJ, NK/), pe, root, .true.)
      call alloc_field(segment, dim_order, (/ie-is+1, NJ, NK/), pe, root, .false.)
@@ -240,14 +236,15 @@ contains
      endif
 
      ! --- scatter ---
+     call mpp_sync()
      if (pe == root) then
        call mpp_scatter(is, ie, js, je, NK, pelist, segment, global_perm, dim_order, .true.)
      else
        call mpp_scatter(is, ie, js, je, NK, pelist, segment, global_perm, dim_order, .false.)
      endif
+     call mpp_sync()
 
      call check_answer(segment, is, ie, NI, NJ, NK, dim_order, .false.)
-     call mpp_sync()
 
      if (pe == root) print *, 'SCATTER PASS'
 
@@ -279,12 +276,12 @@ contains
      call fill_from_val(segment, is, ie, NJ, NK, dim_order)
 
      ! --- GATHER ---
+     call mpp_sync()
      if (pe == root) then
        call mpp_gather(is, ie, js, je, NK, pelist, segment, gather_data, dim_order, .true.)
      else
        call mpp_gather(is, ie, js, je, NK, pelist, segment, gather_data, dim_order, .false.)
      endif
-
      call mpp_sync()
 
      if (pe == root) then
