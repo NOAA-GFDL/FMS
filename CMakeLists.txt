@@ -723,6 +723,7 @@ if(UNIT_TESTS)
     test_fms/mpp/test_mpp_domains.F90
     test_fms/mpp/test_mpp.F90
     test_fms/mpp/test_mpp_gatscat.F90
+    test_fms/mpp/test_mpp_pelist_gatscat_gen_ind.F90
     test_fms/mpp/test_mpp_get_ascii_lines.F90
     test_fms/mpp/test_mpp_global_field_ug.F90
     test_fms/mpp/test_mpp_global_sum_ad.F90
