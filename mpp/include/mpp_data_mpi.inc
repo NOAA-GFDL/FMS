@@ -38,8 +38,8 @@ integer, parameter :: mpp_from_pe = -999, ptr_from = -999
 !-------------------------------------------------------------------!
 ! The following data is used in mpp_domains_mod and its components  !
 !-------------------------------------------------------------------!
-real(r8_kind), allocatable :: mpp_domains_stack(:) !< stack used to hold data for domain operations
-real(r8_kind), allocatable :: mpp_domains_stack_nonblock(:) !< stack used for non-blocking domain operations
+real(r8_kind), allocatable, target :: mpp_domains_stack(:) !< stack used to hold data for domain operations
+real(r8_kind), allocatable, target :: mpp_domains_stack_nonblock(:) !< stack used for non-blocking domain operations
 !--- some dummy variables with dummy values that will never be used
 integer, parameter :: ptr_domains_stack = -999
 integer, parameter :: ptr_domains_stack_nonblock = -999

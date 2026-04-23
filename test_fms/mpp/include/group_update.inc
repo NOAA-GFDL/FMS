@@ -60,6 +60,7 @@
     integer        :: i, j, k, l, n, shift
     integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
     integer        :: ism, iem, jsm, jem
+    integer        :: indx(3), ix, iy
 
     integer, allocatable, dimension(:) :: pe_start, pe_end, tile1, tile2
     integer, allocatable, dimension(:) :: istart1, iend1, jstart1, jend1
@@ -170,6 +171,11 @@
     call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
     call mpp_get_memory_domain   ( domain, ism, iem, jsm, jem )
 
+    indx(1:3) = [1, 2, 3]
+    call permute_arr(indx, p)
+    ix = findloc(indx, 1, dim=1)
+    iy = findloc(indx, 2, dim=1)
+
     mem%lb = [ism, jsm, 1]
     mem%ub = [iem, jem, nz]
     call mem%permute(p)
@@ -248,7 +254,7 @@
 
     !--- Test for partial direction update
     do l =1, num_fields
-       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, flags=WUPDATE+SUPDATE)
+       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, flags=WUPDATE+SUPDATE, xdim=ix, ydim=iy)
     end do
 
     do l = 1, num_fields
@@ -276,7 +282,8 @@
        y1 = zero
 
        do l =1, num_fields
-          call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=DGRID_NE)
+          call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=DGRID_NE, &
+                                       xdim=ix, ydim=iy)
        end do
 
        do l = 1, num_fields
@@ -308,8 +315,9 @@
     y1 = zero
 
     do l =1, num_fields
-       call mpp_create_group_update(group_update, a1(:,:,:,l), domain)
-       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, xdim=ix, ydim=iy)
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE, &
+                                    xdim=ix, ydim=iy)
     end do
 
     do n = 1, num_iter
@@ -375,8 +383,9 @@
     !--- The following is to test overlapping start and complete
     if( num_fields > 1 ) then
        do l =1, num_fields
-          call mpp_create_group_update(update_list(l), a1(:,:,:,l), domain)
-          call mpp_create_group_update(update_list(l), x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+          call mpp_create_group_update(update_list(l), a1(:,:,:,l), domain, xdim=ix, ydim=iy)
+          call mpp_create_group_update(update_list(l), x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE, &
+                                       xdim=ix, ydim=iy)
        end do
 
        do n = 1, num_iter
@@ -478,8 +487,9 @@
     allocate(y2(INDICES_MEM_IJSHIFT_, num_fields))
 
     do l =1, num_fields
-       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, position=CORNER)
-       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=BGRID_NE)
+       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, position=CORNER, xdim=ix, ydim=iy)
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=BGRID_NE, &
+                                    xdim=ix, ydim=iy)
     end do
 
     do n = 1, num_iter
@@ -569,7 +579,7 @@
     y2 = y1
 
     do l =1, num_fields
-       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID)
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID, xdim=ix, ydim=iy)
     end do
 
     do l = 1, num_fields
@@ -600,7 +610,8 @@
     y2 = y1
 
     do l =1, num_fields
-       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR)
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID, &
+                                    flags=SCALAR_PAIR, xdim=ix, ydim=iy)
     end do
 
     do l = 1, num_fields
