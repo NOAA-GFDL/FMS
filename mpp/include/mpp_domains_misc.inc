@@ -331,7 +331,6 @@ end subroutine init_nonblock_type
      ! Force use of "scalar", integer pointer mpp interface
      call mpp_send(ibounds(1), plen=4, to_pe=pelist2(1), tag=COMM_TAG_1)
      call mpp_send(send_buffer(1),plen=im*jm, to_pe=pelist2(1), tag=COMM_TAG_2)
-     deallocate(send_buffer)
 
    else if(pelist2(1) == pe) then        ! receive data and compare
      do p = pelist1(1), pelist1(size(pelist1(:)))
@@ -366,12 +365,13 @@ end subroutine init_nonblock_type
          print*, trim(mesg)//": ", 'comparison between 1 pe and ', npes-1, ' pes is ok'
       endif
   ! release memery
-      deallocate(field1, send_buffer)
+      deallocate(field1)
     endif
 
     deallocate(field2)
 
     call mpp_sync()
+    if (allocated(send_buffer)) deallocate(send_buffer)
 
   end subroutine mpp_check_field_2d_type1
 
@@ -1956,70 +1956,46 @@ end subroutine init_nonblock_type
 #define MPP_TYPE_ real(r8_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
-#undef MPP_CREATE_GROUP_UPDATE_2D_
-#define MPP_CREATE_GROUP_UPDATE_2D_ mpp_create_group_update_r8_2d
-#undef MPP_CREATE_GROUP_UPDATE_3D_
-#define MPP_CREATE_GROUP_UPDATE_3D_ mpp_create_group_update_r8_3d
-#undef MPP_CREATE_GROUP_UPDATE_4D_
-#define MPP_CREATE_GROUP_UPDATE_4D_ mpp_create_group_update_r8_4d
-#undef MPP_CREATE_GROUP_UPDATE_2D_V_
-#define MPP_CREATE_GROUP_UPDATE_2D_V_ mpp_create_group_update_r8_2dv
-#undef MPP_CREATE_GROUP_UPDATE_3D_V_
-#define MPP_CREATE_GROUP_UPDATE_3D_V_ mpp_create_group_update_r8_3dv
-#undef MPP_CREATE_GROUP_UPDATE_4D_V_
-#define MPP_CREATE_GROUP_UPDATE_4D_V_ mpp_create_group_update_r8_4dv
+#undef MPP_CREATE_GROUP_UPDATE_
+#define MPP_CREATE_GROUP_UPDATE_ mpp_create_group_update_r8
+#undef MPP_CREATE_GROUP_UPDATE_V_
+#define MPP_CREATE_GROUP_UPDATE_V_ mpp_create_group_update_r8_v
 #undef MPP_DO_GROUP_UPDATE_
 #define MPP_DO_GROUP_UPDATE_ mpp_do_group_update_r8
 #undef MPP_START_GROUP_UPDATE_
 #define MPP_START_GROUP_UPDATE_ mpp_start_group_update_r8
 #undef MPP_COMPLETE_GROUP_UPDATE_
 #define MPP_COMPLETE_GROUP_UPDATE_ mpp_complete_group_update_r8
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_ mpp_reset_group_update_field_r8_2d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_ mpp_reset_group_update_field_r8_3d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_ mpp_reset_group_update_field_r8_4d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_V_ mpp_reset_group_update_field_r8_2dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_V_ mpp_reset_group_update_field_r8_3dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_V_ mpp_reset_group_update_field_r8_4dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_
+#define MPP_RESET_GROUP_UPDATE_FIELD_ mpp_reset_group_update_field_r8
+#undef MPP_RESET_GROUP_UPDATE_FIELD_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_V_ mpp_reset_group_update_field_r8_v
+#undef GET_VALUE_
+#define GET_VALUE_ get_value_r8
+#undef SET_VALUE_
+#define SET_VALUE_ set_value_r8
 #include <mpp_group_update.fh>
 
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
-#undef MPP_CREATE_GROUP_UPDATE_2D_
-#define MPP_CREATE_GROUP_UPDATE_2D_ mpp_create_group_update_r4_2d
-#undef MPP_CREATE_GROUP_UPDATE_3D_
-#define MPP_CREATE_GROUP_UPDATE_3D_ mpp_create_group_update_r4_3d
-#undef MPP_CREATE_GROUP_UPDATE_4D_
-#define MPP_CREATE_GROUP_UPDATE_4D_ mpp_create_group_update_r4_4d
-#undef MPP_CREATE_GROUP_UPDATE_2D_V_
-#define MPP_CREATE_GROUP_UPDATE_2D_V_ mpp_create_group_update_r4_2dv
-#undef MPP_CREATE_GROUP_UPDATE_3D_V_
-#define MPP_CREATE_GROUP_UPDATE_3D_V_ mpp_create_group_update_r4_3dv
-#undef MPP_CREATE_GROUP_UPDATE_4D_V_
-#define MPP_CREATE_GROUP_UPDATE_4D_V_ mpp_create_group_update_r4_4dv
+#undef MPP_CREATE_GROUP_UPDATE_
+#define MPP_CREATE_GROUP_UPDATE_ mpp_create_group_update_r4
+#undef MPP_CREATE_GROUP_UPDATE_V_
+#define MPP_CREATE_GROUP_UPDATE_V_ mpp_create_group_update_r4_v
 #undef MPP_DO_GROUP_UPDATE_
 #define MPP_DO_GROUP_UPDATE_ mpp_do_group_update_r4
 #undef MPP_START_GROUP_UPDATE_
 #define MPP_START_GROUP_UPDATE_ mpp_start_group_update_r4
 #undef MPP_COMPLETE_GROUP_UPDATE_
 #define MPP_COMPLETE_GROUP_UPDATE_ mpp_complete_group_update_r4
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_ mpp_reset_group_update_field_r4_2d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_ mpp_reset_group_update_field_r4_3d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_ mpp_reset_group_update_field_r4_4d
-#undef MPP_RESET_GROUP_UPDATE_FIELD_2D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_2D_V_ mpp_reset_group_update_field_r4_2dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_3D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_3D_V_ mpp_reset_group_update_field_r4_3dv
-#undef MPP_RESET_GROUP_UPDATE_FIELD_4D_V_
-#define MPP_RESET_GROUP_UPDATE_FIELD_4D_V_ mpp_reset_group_update_field_r4_4dv
+#undef MPP_RESET_GROUP_UPDATE_FIELD_
+#define MPP_RESET_GROUP_UPDATE_FIELD_ mpp_reset_group_update_field_r4
+#undef MPP_RESET_GROUP_UPDATE_FIELD_V_
+#define MPP_RESET_GROUP_UPDATE_FIELD_V_ mpp_reset_group_update_field_r4_v
+#undef GET_VALUE_
+#define GET_VALUE_ get_value_r4
+#undef SET_VALUE_
+#define SET_VALUE_ set_value_r4
 #include <mpp_group_update.fh>
