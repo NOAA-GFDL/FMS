@@ -34,7 +34,7 @@ jobs:
     - name: Configure the build
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="$FCFLAGS $DEBUG_FLAGS" || cat config.log
     - name: Run distcheck (compiles, tests, and packages)
-      run: make distcheck 2>&1 > distcheck.log
+      run: make distcheck TEST_VERBOSE=1
       if: ${{ matrix.conf-flag != '--with-mpi=no' }}
     - name: Build the library (without test suite for serial build)
       run: make
