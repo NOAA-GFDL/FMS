@@ -40,45 +40,38 @@ diag_files:
     var_name: var2_id
     output_name: var2_id
     reduction: none
-    kind: r4
+    kind: r8
   - module: ocn_mod
-    var_name: var2_swap
-    output_name: var2_swap
+    var_name: var2_yx
+    output_name: var2_yx
     reduction: none
-    kind: r4
+    kind: r8
   - module: ocn_mod
     var_name: var3_id
     output_name: var3_id
     reduction: none
-    kind: r4
+    kind: r8
   - module: ocn_mod
-    var_name: var3_swap
-    output_name: var3_swap
+    var_name: var3_zx
+    output_name: var3_zx
     reduction: none
-    kind: r4
-
-- file_name: test_gen_regional
-  freq: 6 hours
-  time_units: hours
-  unlimdim: time
-  sub_region:
-  - grid_type: latlon
-    corner1: 78. 78.
-    corner2: 78. 78.
-    corner3: 81. 81.
-    corner4: 81. 81.
-  varlist:
+    kind: r8
   - module: ocn_mod
-    var_name: var3_id     # or var3_swap, your choice
-    output_name: var3_id_regional
+    var_name: var3_yzx
+    output_name: var3_yzx
     reduction: none
-    kind: r4
+    kind: r8
+  - module: ocn_mod
+    var_name: var3_zxy
+    output_name: var3_zxy
+    reduction: none
+    kind: r8
 _EOF
 
 touch input.nml
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
 test_expect_success "Write and read domain-decomposed data with generalized indices" '
-  mpirun -n 6 ../test_generalized_indicies
+  mpirun -n 6 ../test_generalized_indices
 '
 test_expect_success "Checking answers for the  generalized indices" '
   mpirun -n 1 ../check_generalized_indices

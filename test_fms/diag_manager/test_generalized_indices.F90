@@ -16,11 +16,13 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @brief  Test generalized axis permutations (x/y for now) for send_data
+!> @brief  Test generalized axis permutations for send_data.
+!!         Applies predefined permutations to canonical (x,y,z,w) storage
+!!         and verifies consistency between data layout and axis metadata.
 !!         Assumes default configuration parameters: test_normal + no_mask.
 program test_generalized_indices
   use fms_mod,           only: fms_init, fms_end
-  use testing_utils,     only: allocate_buffer
+  use testing_utils,     only: allocate_buffer, permute
   use platform_mod,      only: r8_kind
   use mpp_mod,           only: FATAL, mpp_error, mpp_npes, mpp_pe, mpp_root_pe
   use time_manager_mod,  only: time_type, set_calendar_type, set_date, JULIAN, set_time, OPERATOR(+)
@@ -47,9 +49,21 @@ program test_generalized_indices
   real(r8_kind), allocatable :: cdata(:,:,:,:)   ! canonical storage: (x,y,z,w)
 
   ! Permutation test
-  integer :: p_id(3), p_swap(3)
-  integer :: id_var2_id, id_var2_swap
-  integer :: id_var3_id, id_var3_swap
+  integer, parameter :: LAYOUT_XY  = 1
+  integer, parameter :: LAYOUT_YX  = 2
+  integer, parameter :: LAYOUT_ZX  = 3
+  integer, parameter :: LAYOUT_YZX = 4
+  integer, parameter :: LAYOUT_ZXY = 5
+  integer, parameter :: PERM_TABLE(3,5) = reshape([ &
+                           1,2,3, & ! XY (identity)
+                           2,1,3, & ! YX
+                           3,2,1, & ! ZX
+                           2,3,1, & ! YZX
+                           3,1,2  & ! ZXY
+                        ], [3,5])
+
+  integer :: id_var2_id, id_var2_yx
+  integer :: id_var3_id, id_var3_zx, id_var3_yzx, id_var3_zxy
 
   call fms_init
   call set_calendar_type(JULIAN)
@@ -88,29 +102,26 @@ program test_generalized_indices
 
   missing_value = -666._r8_kind
 
-  ! Define permutations: identity (x,y,z) and swap (y,x,z)
-  p_id   = [1,2,3]
-  p_swap = [2,1,3]
-
   ! Register permuted diagnostic fields ONCE
-  id_var2_id   = register_diag_field('ocn_mod', 'var2_id',   (/axis(p_id(1)),   axis(p_id(2))/),   Time, 'Var2d id', &
-                                     'mullions', missing_value=missing_value)
-  id_var2_swap = register_diag_field('ocn_mod', 'var2_swap', (/axis(p_swap(1)), axis(p_swap(2))/), Time, 'Var2d swap', &
-                                     'mullions', missing_value=missing_value)
+  id_var2_id  = register_perm_diag_field('var2_id',  'Var2d id',  axis(1:2), LAYOUT_XY)
+  id_var3_id  = register_perm_diag_field('var3_id',  'Var3d id',  axis(1:3), LAYOUT_XY)
 
-  id_var3_id   = register_diag_field('ocn_mod', 'var3_id',   (/axis(p_id(1)),   axis(p_id(2)),   axis(p_id(3))/), &
-                                      Time, 'Var3d id', 'mullions', missing_value=missing_value)
-  id_var3_swap = register_diag_field('ocn_mod', 'var3_swap', (/axis(p_swap(1)), axis(p_swap(2)), axis(p_swap(3))/), &
-                                      Time, 'Var3d swap', 'mullions', missing_value=missing_value)
+  id_var2_yx  = register_perm_diag_field('var2_yx',  'Var2d yx',  axis(1:2), LAYOUT_YX)
+  id_var3_zx  = register_perm_diag_field('var3_zx',  'Var3d zx',  axis(1:3), LAYOUT_ZX)
+
+  id_var3_yzx = register_perm_diag_field('var3_yzx', 'Var3d yzx', axis(1:3), LAYOUT_YZX)
+  id_var3_zxy = register_perm_diag_field('var3_zxy', 'Var3d zxy', axis(1:3), LAYOUT_ZXY)
 
   if (mpp_pe() == mpp_root_pe()) then
     print *, "Testing generalized indices in default mode (test_normal + no_mask)"
     print *, "  canonical storage is (x,y,z,w)"
     print *, "  sending:"
-    print *, "    var2_id   with axes (x,y)"
-    print *, "    var2_swap with axes (y,x)"
-    print *, "    var3_id   with axes (x,y,z)"
-    print *, "    var3_swap with axes (y,x,z)"
+    print *, "    var2_id with axes (x,y)"
+    print *, "    var2_yx with axes (y,x)"
+    print *, "    var3_id with axes (x,y,z)"
+    print *, "    var3_zx with axes (z,y,x)"
+    print *, "    var3_yzx with axes (y,z,x)"
+    print *, "    var3_zxy with axes (z,x,y)"
   end if
 
   call diag_manager_set_time_end(set_date(2,1,3,0,0,0))
@@ -120,12 +131,16 @@ program test_generalized_indices
     call set_buffer(cdata, i)
 
     ! Identity: axes (x,y) / (x,y,z) with canonical storage
-    call send_var2_perm(id_var2_id,   cdata, p_id,   Time)
-    call send_var3_perm(id_var3_id,   cdata, p_id,   Time)
+    call send_perm_data(id_var2_id, cdata, PERM_TABLE(1:2, LAYOUT_XY), Time)
+    call send_perm_data(id_var3_id, cdata, PERM_TABLE(1:3, LAYOUT_XY), Time)
 
-    ! Swap: axes (y,x) / (y,x,z) while canonical storage remains (x,y,...) -> pack to temp and send
-    call send_var2_perm(id_var2_swap, cdata, p_swap, Time)
-    call send_var3_perm(id_var3_swap, cdata, p_swap, Time)
+    ! Swap: axes (y,x) / (z,y,x) while canonical storage remains (x,y,...) -> pack to temp and send
+    call send_perm_data(id_var2_yx, cdata, PERM_TABLE(1:2, LAYOUT_YX), Time)
+    call send_perm_data(id_var3_zx, cdata, PERM_TABLE(1:3, LAYOUT_ZX), Time)
+
+    ! Cyclic: axes (y,z,x) / (z,x,y) while canonical storage remains (x, y, ...) -> pack to temp and send
+    call send_perm_data(id_var3_yzx, cdata, PERM_TABLE(1:3, LAYOUT_YZX), Time)
+    call send_perm_data(id_var3_zxy, cdata, PERM_TABLE(1:3, LAYOUT_ZXY), Time)
 
     call diag_send_complete(Time_step)
     call diag_send_complete(Time_step)
@@ -136,63 +151,75 @@ program test_generalized_indices
 
 contains
 
-  subroutine send_var2_perm(id_field, buf, p, Time_in)
+  !> @brief Apply a predefined permutation to an axis array.
+  !> Maps canonical axis ordering to a permuted layout using PERM_TABLE.
+  !> Supports rank-2 and rank-3 axis subsets.
+  subroutine permute_axis(axis_in, perm_id, axis_out)
+    integer, intent(in)  :: axis_in(:)
+    integer, intent(in)  :: perm_id
+    integer, intent(out) :: axis_out(:)
+
+    integer :: order(3)
+
+    order = PERM_TABLE(:, perm_id)
+
+    if (any(order(1:size(axis_out)) > size(axis_in))) then
+       call mpp_error(FATAL, "permute_axis: invalid permutation for given rank")
+    endif
+
+    axis_out = axis_in(order(1:size(axis_out)))
+  end subroutine permute_axis
+
+  !> @brief Register a diagnostic field with permuted axes.
+  !> Applies axis permutation before calling register_diag_field.
+  function register_perm_diag_field(var_name, long_name, axis, perm_id) result(id_var)
+    character(len=*), intent(in)  :: var_name, long_name
+    integer,          intent(in)  :: axis(:)
+    integer,          intent(in)  :: perm_id
+
+    integer              :: id_var
+    integer, allocatable :: axis_perm(:)
+
+    allocate(axis_perm(size(axis)))
+    call permute_axis(axis, perm_id, axis_perm)
+    id_var = register_diag_field('ocn_mod', var_name, axis_perm, Time, long_name, &
+                                 'mullions', missing_value=missing_value)
+    deallocate(axis_perm)
+  end function register_perm_diag_field
+
+  !> @brief Send data with optional axis permutation.
+  !> Applies 2D or 3D permutation to canonical (x,y,z,w) buffers before send_data.
+  !> Skips permutation for identity mappings.
+  subroutine send_perm_data(id_field, buf, order, Time_in)
     integer, intent(in)         :: id_field
     real(r8_kind), intent(in)   :: buf(:,:,:,:)   ! canonical (x,y,z,w)
-    integer, intent(in)         :: p(3)
+    integer, intent(in)         :: order(:)
     type(time_type), intent(in) :: Time_in
 
     logical :: used_local
-    real(r8_kind), allocatable :: tmp2(:,:)
+    real(r8_kind), allocatable :: tmp2(:,:), tmp3(:,:,:)
 
-    ! Support only identity (1,2,*) and xy-swap (2,1,*) for 2D
-    if (p(1)==1 .and. p(2)==2) then
-      used_local = send_data(id_field, buf(:,:,1,1), Time_in)
-    else if (p(1)==2 .and. p(2)==1) then
-      allocate(tmp2(size(buf,2), size(buf,1)))
-      tmp2 = transpose(buf(:,:,1,1))
-      used_local = send_data(id_field, tmp2, Time_in)
-      deallocate(tmp2)
-    else
-      call mpp_error(FATAL, 'send_var2_perm: only p=(1,2,*) or (2,1,*) implemented')
-    end if
-  end subroutine send_var2_perm
+    if (size(order) == 2) then
+       if (all(order == [1,2])) then
+          used_local = send_data(id_field, buf(:,:,1,1), Time_in)
+       else
+          tmp2 = permute(buf(:,:,1,1), order)
+          used_local = send_data(id_field, tmp2, Time_in)
+       endif
 
-
-  subroutine send_var3_perm(id_field, buf, p, Time_in)
-    integer, intent(in)         :: id_field
-    real(r8_kind), intent(in)   :: buf(:,:,:,:)   ! canonical (x,y,z,w)
-    integer, intent(in)         :: p(3)
-    type(time_type), intent(in) :: Time_in
-
-    logical :: used_local
-    integer :: nxloc, nyloc, nzloc, k
-    real(r8_kind), allocatable :: tmp3(:,:,:)
-
-    ! For now, support only keeping z as z
-    if (p(3) /= 3) call mpp_error(FATAL, 'send_var3_perm: only permutations with p(3)=3 implemented')
-
-    if (p(1)==1 .and. p(2)==2) then
-      used_local = send_data(id_field, buf(:,:,:,1), Time_in)
-
-    else if (p(1)==2 .and. p(2)==1) then
-      nxloc = size(buf,1)
-      nyloc = size(buf,2)
-      nzloc = size(buf,3)
-
-      allocate(tmp3(nyloc, nxloc, nzloc))
-      do k = 1, nzloc
-        tmp3(:,:,k) = transpose(buf(:,:,k,1))
-      end do
-
-      used_local = send_data(id_field, tmp3, Time_in)
-      deallocate(tmp3)
+    else if (size(order) == 3) then
+       if (all(order == [1,2,3])) then
+          used_local = send_data(id_field, buf(:,:,:,1), Time_in)
+       else
+          tmp3 = permute(buf(:,:,:,1), order)
+          used_local = send_data(id_field, tmp3, Time_in)
+       endif
 
     else
-      call mpp_error(FATAL, 'send_var3_perm: only p=(1,2,3) or (2,1,3) implemented')
-    end if
-  end subroutine send_var3_perm
+       call mpp_error(FATAL, "send_var_perm: unsupported permutation rank")
 
+    endif
+  end subroutine send_perm_data
 
   !> @brief initialized the buffer based on the starting/ending indices
   subroutine init_buffer(buffer, is, ie, js, je, nhalo)
@@ -214,7 +241,6 @@ contains
       end do
     end do
   end subroutine init_buffer
-
 
   !> @brief Set the buffer based on the time_index
   subroutine set_buffer(buffer, time_index)

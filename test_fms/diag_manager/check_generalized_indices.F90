@@ -16,15 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @brief Checker for test_generalized_indicies output.
-!!        Verifies swapped-axis variables match identity variables under transpose:
-!!          var2_id(x,y)   == var2_swap(y,x)
-!!          var3_id(x,y,z) == var3_swap(y,x,z)
+!> @brief Checker for test_generalized_indices output.
+!!        Verifies permuted-axis variables match identity variables under axis permutations
 program check_generalized_indices
   use fms_mod,           only: fms_init, fms_end, string
+  use testing_utils,     only: check_perm
   use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, open_file, close_file, get_global_attribute
   use mpp_mod,           only: mpp_error, FATAL, mpp_pe
-  use platform_mod,      only: r4_kind
+  use platform_mod,      only: r8_kind
 
   implicit none
 
@@ -32,10 +31,12 @@ program check_generalized_indices
   integer                         :: nx, ny, nz
   integer                         :: i
 
-  real(kind=r4_kind), allocatable :: var2_id(:,:)     ! (x,y)
-  real(kind=r4_kind), allocatable :: var2_swap(:,:)   ! (y,x)
-  real(kind=r4_kind), allocatable :: var3_id(:,:,:)   ! (x,y,z)
-  real(kind=r4_kind), allocatable :: var3_swap(:,:,:) ! (y,x,z)
+  real(kind=r8_kind), allocatable :: var2_id(:,:)     ! (x,y)
+  real(kind=r8_kind), allocatable :: var2_yx(:,:)     ! (y,x)
+  real(kind=r8_kind), allocatable :: var3_id(:,:,:)   ! (x,y,z)
+  real(kind=r8_kind), allocatable :: var3_zx(:,:,:)   ! (z,y,x)
+  real(kind=r8_kind), allocatable :: var3_yzx(:,:,:)  ! (y,z,x)
+  real(kind=r8_kind), allocatable :: var3_zxy(:,:,:)  ! (z,x,y)
 
   call fms_init()
 
@@ -48,25 +49,35 @@ program check_generalized_indices
 
   call check_global_attribute(fileobj, "test_generalized_indices")
 
-  allocate(var2_id(nx,ny), var2_swap(ny,nx))
-  allocate(var3_id(nx,ny,nz), var3_swap(ny,nx,nz))
+  allocate(var2_id(nx,ny),    var2_yx(ny,nx))
+  allocate(var3_id(nx,ny,nz), var3_zx(nz,ny,nx), var3_yzx(ny,nz,nx), var3_zxy(nz,nx,ny))
 
   ! Output every 6 hours over 48 hours => 8 records
   do i = 1, 8
-    var2_id   = -999._r4_kind
-    var2_swap = -999._r4_kind
-    var3_id   = -999._r4_kind
-    var3_swap = -999._r4_kind
+    var2_id  = -999._r8_kind
+    var2_yx  = -999._r8_kind
+    var3_id  = -999._r8_kind
+    var3_zx  = -999._r8_kind
+    var3_yzx = -999._r8_kind
+    var3_zxy = -999._r8_kind
 
-    print *, "Checking var2_swap vs var2_id - time_level:", string(i)
-    call read_data(fileobj, "var2_id",   var2_id,   unlim_dim_level=i)
-    call read_data(fileobj, "var2_swap", var2_swap, unlim_dim_level=i)
-    call check_var2_relation(var2_id, var2_swap)
+    print *, "Checking var2_yx vs var2_id - time_level:", i
+    call read_data(fileobj, "var2_id", var2_id, unlim_dim_level=i)
+    call read_data(fileobj, "var2_yx", var2_yx, unlim_dim_level=i)
+    call check_perm(var2_id, var2_yx, [2,1])
 
-    print *, "Checking var3_swap vs var3_id - time_level:", string(i)
-    call read_data(fileobj, "var3_id",   var3_id,   unlim_dim_level=i)
-    call read_data(fileobj, "var3_swap", var3_swap, unlim_dim_level=i)
-    call check_var3_relation(var3_id, var3_swap)
+    print *, "Checking var3_zx vs var3_id - time_level:", i
+    call read_data(fileobj, "var3_id", var3_id, unlim_dim_level=i)
+    call read_data(fileobj, "var3_zx", var3_zx, unlim_dim_level=i)
+    call check_perm(var3_id, var3_zx, [3,2,1])
+
+    print *, "Checking var3_yzx vs var3_id - time_level:", i
+    call read_data(fileobj, "var3_yzx", var3_yzx, unlim_dim_level=i)
+    call check_perm(var3_id, var3_yzx, [2,3,1])
+
+    print *, "Checking var3_zxy vs var3_id - time_level:", i
+    call read_data(fileobj, "var3_zxy", var3_zxy, unlim_dim_level=i)
+    call check_perm(var3_id, var3_zxy, [3,1,2])
   enddo
 
   call close_file(fileobj)
@@ -85,49 +96,4 @@ contains
       call mpp_error(FATAL, "Global attribute 'title' not expected value.")
     endif
   end subroutine check_global_attribute
-
-  subroutine check_var2_relation(v_id, v_sw)
-    real(kind=r4_kind), intent(in) :: v_id(:,:)  ! (x,y)
-    real(kind=r4_kind), intent(in) :: v_sw(:,:)  ! (y,x)
-
-    integer :: x, y
-
-    if (size(v_id,1) /= size(v_sw,2) .or. size(v_id,2) /= size(v_sw,1)) then
-      call mpp_error(FATAL, "check_var2_relation: dimension mismatch between var2_id and var2_swap")
-    endif
-
-    do x = 1, size(v_id,1)
-      do y = 1, size(v_id,2)
-        if (abs(v_id(x,y) - v_sw(y,x)) > 0) then
-          print *, mpp_pe(), "var2 mismatch at (x,y)=", x, y, " id=", v_id(x,y), " swap(y,x)=", v_sw(y,x)
-          call mpp_error(FATAL, "check_var2_relation: var2_swap != transpose(var2_id)")
-        endif
-      enddo
-    enddo
-  end subroutine check_var2_relation
-
-  subroutine check_var3_relation(v_id, v_sw)
-    real(kind=r4_kind), intent(in) :: v_id(:,:,:)  ! (x,y,z)
-    real(kind=r4_kind), intent(in) :: v_sw(:,:,:)  ! (y,x,z)
-
-    integer :: x, y, z
-
-    if (size(v_id,1) /= size(v_sw,2) .or. size(v_id,2) /= size(v_sw,1) .or. size(v_id,3) /= size(v_sw,3)) then
-      call mpp_error(FATAL, "check_var3_relation: dimension mismatch between var3_id and var3_swap")
-    endif
-
-    do x = 1, size(v_id,1)
-      do y = 1, size(v_id,2)
-        do z = 1, size(v_id,3)
-          if (abs(v_id(x,y,z) - v_sw(y,x,z)) > 0) then
-            print *, mpp_pe(), "var3 mismatch at (x,y,z)=", x, y, z, &
-                               " id=", v_id(x,y,z), " swap(y,x,z)=", v_sw(y,x,z)
-            call mpp_error(FATAL, "check_var3_relation: var3_swap != var3_id with x/y swapped")
-          endif
-        enddo
-      enddo
-    enddo
-  end subroutine check_var3_relation
-
 end program check_generalized_indices
-
