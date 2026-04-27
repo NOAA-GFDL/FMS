@@ -26,7 +26,7 @@ subroutine MPP_TYPE_CREATE_(field, array_of_subsizes, array_of_starts, &
     type(mpp_type), target, intent(out) :: dtype_out
 
     type(mpp_type), pointer :: dtype
-    integer :: newtype      ! MPI datatype ID
+    type(mpi_datatype) :: newtype      ! MPI datatype ID
 
     if (.NOT. module_is_initialized) &
         call mpp_error(FATAL, 'MPP_TYPE_CREATE_: You must first call mpp_init.')

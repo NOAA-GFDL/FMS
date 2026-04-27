@@ -781,7 +781,8 @@ contains
 
   subroutine test_unstruct_exchange()
 
-    real(r8_kind), allocatable :: atm_data_in(:,:), atm_data_sg(:,:)
+    real(r8_kind), allocatable :: atm_data_in_0(:,:), atm_data_in_1(:,:), atm_data_in_2(:,:), atm_data_in_3(:,:)
+    real(r8_kind), allocatable :: atm_data_sg(:,:)
     real(r8_kind), allocatable :: atm_data_sg_1(:,:), atm_data_sg_2(:,:), atm_data_sg_3(:,:)
     real(r8_kind), allocatable :: lnd_data_sg(:,:,:), ice_data_sg(:,:,:)
     real(r8_kind), allocatable :: atm_data_ug(:,:), tmp_sg(:,:,:)
@@ -877,12 +878,18 @@ contains
     allocate(atm_data_ug_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_ug_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
 
-    allocate(atm_data_in(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_in_0(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_in_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_in_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
+    allocate(atm_data_in_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_sg(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_sg_1(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_sg_2(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
     allocate(atm_data_sg_3(isc_atm:iec_atm, jsc_atm:jec_atm   ) )
-    atm_data_in  = 0
+    atm_data_in_0  = 0
+    atm_data_in_1  = 0
+    atm_data_in_2  = 0
+    atm_data_in_3  = 0
     atm_data_sg = 0
     atm_data_sg_1 = 0
     atm_data_sg_2 = 0
@@ -914,11 +921,14 @@ contains
     x_3 = 0
     x_4 = 0
 
-    call random_number(atm_data_in)
-    call put_to_xgrid(atm_data_in, 'ATM', x_1, Xmap, remap_method=remap_method)
-    call put_to_xgrid(atm_data_in+1, 'ATM', x_2, Xmap, remap_method=remap_method, complete=.false.)
-    call put_to_xgrid(atm_data_in+2, 'ATM', x_3, Xmap, remap_method=remap_method, complete=.false.)
-    call put_to_xgrid(atm_data_in+3, 'ATM', x_4, Xmap, remap_method=remap_method, complete=.true.)
+    call random_number(atm_data_in_0)
+    atm_data_in_1 = atm_data_in_0 + 1
+    atm_data_in_2 = atm_data_in_0 + 2
+    atm_data_in_3 = atm_data_in_0 + 3
+    call put_to_xgrid(atm_data_in_0, 'ATM', x_1, Xmap, remap_method=remap_method)
+    call put_to_xgrid(atm_data_in_1, 'ATM', x_2, Xmap, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in_2, 'ATM', x_3, Xmap, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in_3, 'ATM', x_4, Xmap, remap_method=remap_method, complete=.true.)
     call get_from_xgrid(lnd_data_sg, 'LND', x_1, xmap)
     call get_from_xgrid(ice_data_sg, 'OCN', x_1, xmap)
     call put_to_xgrid(lnd_data_sg, 'LND', x_2, xmap)
@@ -936,10 +946,10 @@ contains
     y_3 = 0
     y_4 = 0
 
-    call put_to_xgrid(atm_data_in, 'ATM', y_1, Xmap_ug, remap_method=remap_method)
-    call put_to_xgrid(atm_data_in+1, 'ATM', y_2, Xmap_ug, remap_method=remap_method, complete=.false.)
-    call put_to_xgrid(atm_data_in+2, 'ATM', y_3, Xmap_ug, remap_method=remap_method, complete=.false.)
-    call put_to_xgrid(atm_data_in+3, 'ATM', y_4, Xmap_ug, remap_method=remap_method, complete=.true.)
+    call put_to_xgrid(atm_data_in_0, 'ATM', y_1, Xmap_ug, remap_method=remap_method)
+    call put_to_xgrid(atm_data_in_1, 'ATM', y_2, Xmap_ug, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in_2, 'ATM', y_3, Xmap_ug, remap_method=remap_method, complete=.false.)
+    call put_to_xgrid(atm_data_in_3, 'ATM', y_4, Xmap_ug, remap_method=remap_method, complete=.true.)
     call get_from_xgrid_ug(lnd_data_ug, 'LND', y_1, xmap_ug)
     call get_from_xgrid(ice_data_ug, 'OCN', y_1, xmap_ug)
     call put_to_xgrid_ug(lnd_data_ug, 'LND', y_2, xmap_ug)
@@ -967,7 +977,8 @@ contains
 
     if(ice_pe) deallocate(ice_data_sg, ice_data_ug)
     deallocate(tmp_sg, x_1, x_2, x_3, x_4, y_1, y_2, y_3, y_4)
-    deallocate(atm_data_in, atm_data_sg)
+    deallocate(atm_data_in_0, atm_data_in_1, atm_data_in_2, atm_data_in_3)
+    deallocate(atm_data_sg)
     deallocate(atm_data_sg_1, atm_data_sg_2, atm_data_sg_3)
     deallocate(atm_data_ug)
     deallocate(atm_data_ug_1, atm_data_ug_2, atm_data_ug_3)

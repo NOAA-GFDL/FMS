@@ -24,7 +24,7 @@ AC_PREREQ([2.69])
 
 # Initialize with name, version, and support email address.
 AC_INIT([GFDL FMS Library],
-  [2026.01-dev],
+  [2026.01.01-dev],
   [gfdl.climate.model.info@noaa.gov],
   [FMS],
   [https://www.github.com/NOAA-GFDL/FMS])
@@ -96,17 +96,6 @@ AC_ARG_ENABLE([8byte-int],
 AS_IF([test ${enable_8byte_int:-no} = yes],
   [enable_8byte_int=yes],
   [enable_8byte_int=no])
-
-AC_ARG_ENABLE([deprecated-io],
-  [AS_HELP_STRING([--enable-deprecated-io],
-    [THIS OPTION HAS BEEN DEPRECATED!!!])])
-AS_IF([test ${enable_deprecated_io:-no} = yes],
-  [enable_deprecated_io=yes],
-  [enable_deprecated_io=no])
-
-if test $enable_deprecated_io = yes; then
-  AC_MSG_ERROR(FMS_IO HAS BEEN REMOVED! PLEASE UPDATE TO USE FMS2_IO AND REMOVE --enable-deprecated-io FROM YOUR CONFIGURE OPTIONS OR REVERT TO VERSION 2025.02)
-fi
 
 AC_ARG_ENABLE([r8-default],
   [AS_HELP_STRING([--disable-r8-default],
@@ -315,9 +304,6 @@ GX_FC_CRAY_POINTER_FLAG()
 # Check if Fortran compiler and system have quad precision support
 GX_FC_QUAD_PRECISION()
 
-# Check if Fortran compiler supports reading namelists from internal files
-GX_FC_INTERNAL_FILE_NML()
-
 # Check if the compiler needs special OpenMP flags
 AC_OPENMP()
 
@@ -411,9 +397,12 @@ fi
 AC_CHECK_PROGS([MPI_LAUNCHER],[srun aprun mpirun])
 
 # Check if the launcher can oversubscribe the MPI processes
-AS_IF([$MPI_LAUNCHER --oversubscribe hostname >/dev/null 2>&1], \
+AS_IF([$MPI_LAUNCHER --oversubscribe nproc >/dev/null 2>&1], \
       [ AC_SUBST([OVERSUBSCRIBE], [--oversubscribe])])
 
+# newer openmpi versions take a different flag
+AS_IF([$MPI_LAUNCHER --map-by :OVERSUBSCRIBE nproc >/dev/null 2>&1], \
+      [ AC_SUBST([OVERSUBSCRIBE], [--map-by :OVERSUBSCRIBE])])
 
 # Compiler with version information. This consists of the full path
 # name of the compiler and the reported version number.

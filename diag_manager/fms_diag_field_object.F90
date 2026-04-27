@@ -2001,10 +2001,13 @@ function get_field_file_name(this) &
 end function get_field_file_name
 
 !> @brief Generate the associated files attribute
-subroutine generate_associated_files_att(this, att, start_time)
-  class(fmsDiagField_type)        ,  intent(in)            :: this       !< diag_field_object for the area/volume field
-  character(len=*),                  intent(inout)         :: att        !< associated_files_att
-  type(time_type),                   intent(in)            :: start_time !< The start_time for the field's file
+subroutine generate_associated_files_att(this, att, start_time, var_output_name)
+  class(fmsDiagField_type)        ,  intent(in)            :: this             !< diag_field_object for the
+                                                                               !! area/volume field
+  character(len=*),                  intent(inout)         :: att              !< associated_files_att
+  type(time_type),                   intent(in)            :: start_time       !< The start_time for the field's file
+  character(len=*),                  intent(out)           :: var_output_name  !< output name of the area/volume field
+
 
   character(len=:), allocatable :: field_name !< Name of the area/volume field
   character(len=FMS_FILE_LEN) :: file_name !< Name of the file the area/volume field is in!
@@ -2014,6 +2017,9 @@ subroutine generate_associated_files_att(this, att, start_time)
 
   file_name = this%get_field_file_name()
   field_name = this%get_varname(to_write = .true., filename=file_name)
+
+  ! Save the outputname of the area/volume so it can be added correctly to the cell_measures attribute
+  var_output_name = field_name
 
   ! Check if the field is already in the associated files attribute (i.e the area can be associated with multiple
   ! fields in the file, but it only needs to be added once)
