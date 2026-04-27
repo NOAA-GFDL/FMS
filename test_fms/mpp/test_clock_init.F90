@@ -26,6 +26,7 @@ program test_clock_init
   use mpp_mod, only : mpp_init, mpp_init_test_init_true_only
   use mpp_mod, only : mpp_error, FATAL
   use mpp_mod, only : mpp_clock_id, MPP_CLOCK_SYNC, MPP_CLOCK_DETAILED
+  use fms_mod, only : fms_end
 
   integer :: ierr
 
@@ -43,7 +44,7 @@ program test_clock_init
   call create_and_check_clock("name4", 4, flagsIn=MPP_CLOCK_DETAILED)
   write(*,*) "Testing clock with both flags"
   call create_and_check_clock("name5", 5, flagsIn=MPP_CLOCK_SYNC+MPP_CLOCK_DETAILED)
-  call MPI_FINALIZE(ierr)
+  call fms_end() 
 
   contains
     !> @brief Helper subroutine to test different scenarios when testing mpp's clock_init subroutine

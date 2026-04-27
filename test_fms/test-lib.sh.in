@@ -116,10 +116,10 @@ mpirun () {
       fi
     done
     
-    # If requesting more than 1 process, skip this test
+    # If requesting more than 1 process, skip this test with exit code 77
     if [ "$num_procs" -gt 1 ] 2>/dev/null; then
       say_color info "SKIPPING parallel test (SERIAL_BUILD=true): requested $num_procs processes"
-      return 0
+      return 77
     fi
   fi
   
@@ -317,7 +317,14 @@ test_expect_failure () {
     BUG "not 2 or 3 parameters to test-expect-failure"
   if ! test_skip_ "$@"
   then
-    if test_run_ "$2" expecting_failure
+    test_run_ "$2" expecting_failure
+    test_ret=$?
+    
+    # Handle skipped parallel tests (exit code 77)
+    if test $test_ret = 77
+    then
+      say_color skip "ok $test_count - $1 # skip (parallel test with mpi disabled)"
+    elif test $test_ret = 0
     then
       test_known_broken_ok_ "$1"
     else
@@ -333,7 +340,14 @@ test_expect_success () {
   if ! test_skip_ "$@"
   then
     say "expecting success of $TEST_NAME.$test_count '$1': $2"
-    if test_run_ "$2"
+    test_run_ "$2"
+    test_ret=$?
+    
+    # Handle skipped parallel tests (exit code 77)
+    if test $test_ret = 77
+    then
+      say_color skip "ok $test_count - $1 # skip (parallel test in SERIAL_BUILD)"
+    elif test $test_ret = 0
     then
       test_ok_ "$1"
     else

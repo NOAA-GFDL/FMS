@@ -22,6 +22,7 @@ program test_peset
   use mpp_mod, only : mpp_init, mpp_sync_self, mpp_exit, mpp_npes, &
                       mpp_error, FATAL, mpp_pe, mpp_init_test_peset_allocated, &
                       mpp_broadcast, mpp_root_pe, mpp_declare_pelist, input_nml_file
+  use fms_mod, only : fms_end
   implicit none
 
   integer :: npes !< The total number of PEs returned from mpp_npes
@@ -54,5 +55,5 @@ program test_peset
   if (allocated(numlist)) deallocate(numlist)
   if (allocated(pelist)) deallocate(pelist)
   !> Finalize mpp
-  call MPI_FINALIZE(ierr)
+  call fms_end() 
 end program test_peset

@@ -45,22 +45,23 @@ if test -f ${file3}; then
 fi
 
 #Have mpp re-initialize the two log files created above:
+# also does the check inside the test function so that it can be skipped
+# without breaking
 test_expect_success "initialize mpp logfile" '
-    mpirun -n 4 ../test_mpp_init_logfile
+    mpirun -n 4 ../test_mpp_init_logfile &&
+    
+    # Return sucess (0) only if the two "old" files have been replaced and the
+    # the two possible new ones are not present. Otherwise retun failure (1).
+    # Replacement is checked by the absence of the fcontent line.
+    if test $(grep  ${fcontent}  ${file0} | wc -l ) -ge 1 ||
+       test $(grep  ${fcontent}  ${file1} | wc -l ) -ge 1 ||
+       test -f ${file1} ||
+       test -f ${file3} ;
+    then
+      echo "ERROR: Test was unsuccessful."
+    else
+        echo "Test has passed"
+    fi
 '
-
-# Return sucess (0) only if the two "old" files have been replaced and the
-# the two possible new ones are not present. Otherwise retun failure (1).
-# Replacement is checked by the absence of the fcontent line.
-if test $(grep  ${fcontent}  ${file0} | wc -l ) -ge 1 ||
-   test $(grep  ${fcontent}  ${file1} | wc -l ) -ge 1 ||
-   test -f ${file1} ||
-   test -f ${file3} ;
-then
-  echo "ERROR: Test was unsuccessful."
-  exit 1
-else
-    echo "Test has passed"
-fi
 
 test_done

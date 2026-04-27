@@ -37,6 +37,7 @@ program test_update_domains_performance
   use mpp_domains_mod, only : NORTH, SOUTH, WEST, EAST, CENTER
   use mpp_domains_mod, only : mpp_get_global_domain, ZERO
   use mpp_domains_mod, only : mpp_start_update_domains, mpp_complete_update_domains
+  use fms_mod, only: fms_end
   use platform_mod
 
   implicit none
@@ -100,7 +101,7 @@ program test_update_domains_performance
     print *, '--------------------> Finished 32-bit integer update_domains_performance tests <-------------------'
   call mpp_domains_exit()
   !> Finalize mpp
-  call MPI_FINALIZE(ierr)
+  call fms_end() 
   contains
 
   !> run performance tests on 64-bit real arrays

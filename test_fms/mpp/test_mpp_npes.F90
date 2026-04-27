@@ -24,6 +24,8 @@ program test_mpp_npes
 !! the test is successful.
  use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, mpp_pe, mpp_npes, &
                      stderr, stdout, mpp_error, FATAL
+ use fms_mod, only : fms_end
+
   implicit none
  integer :: npes !< The total number of PEs returned from mpp_npes
  character (len=20) :: string_npes !< npes converted to a string
@@ -47,5 +49,5 @@ program test_mpp_npes
      //env_pes//" but mpp_npes returned "//trim(string_npes) )
  endif
 !> Finalize MPI
- call MPI_FINALIZE (ierr)
+ call fms_end()
 end program test_mpp_npes

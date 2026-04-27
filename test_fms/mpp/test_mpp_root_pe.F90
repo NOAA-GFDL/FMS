@@ -28,6 +28,7 @@ program test_mpp_root_pe
 
 
   use mpp_mod, only:  mpp_init, FATAL, mpp_error, mpp_root_pe, mpp_init_test_init_true_only
+  use fms_mod, only: fms_end 
 
   implicit none
   integer :: my_root_pe, test_root_pe, ierr
@@ -44,7 +45,7 @@ program test_mpp_root_pe
   if( test_root_pe .ne. my_root_pe ) call mpp_error(FATAL, "mpp_root_pe does not equal root_pe")
 
   !> end
-  call MPI_FINALIZE(ierr)
+  call fms_end() 
 
 
 end program test_mpp_root_pe

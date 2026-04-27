@@ -30,6 +30,7 @@ program test_mpp_update_domains
   use mpp_mod, only : mpp_init_test_requests_allocated
   use mpp_domains_mod, only : MPP_DOMAIN_TIME, mpp_domains_set_stack_size
   use mpp_domains_mod, only : mpp_domains_init, mpp_domains_exit
+  use fms_mod, only : fms_end
   use platform_mod
 
   implicit none
@@ -92,5 +93,5 @@ program test_mpp_update_domains
   endif
   call mpp_domains_exit()
   !> Finalize mpp
-  call MPI_FINALIZE(ierr)
+  call fms_end()
 end program test_mpp_update_domains

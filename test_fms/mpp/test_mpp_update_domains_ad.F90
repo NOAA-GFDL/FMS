@@ -33,6 +33,7 @@ program test_mpp_update_domains_ad
   use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains, mpp_modify_domain
   use mpp_domains_mod, only : mpp_get_global_domain
   use platform_mod, only : r4_kind, r8_kind
+  use fms_mod, only : fms_end
 
   implicit none
 
@@ -59,8 +60,8 @@ program test_mpp_update_domains_ad
   call test_halo_update_ad_r4('Simple')
 
   call mpp_domains_exit()
-  !> Finalize mpp
-  call MPI_FINALIZE(ierr)
+  !> Finalize mpp and fms
+  call fms_end()
 contains
   !> test calling mpp_halo_update_ad on a 3D 64-bit real data array
   subroutine test_halo_update_ad_r8( test_type )

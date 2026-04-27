@@ -28,6 +28,7 @@ program test_mpp_clock_begin_end_id
   use mpp_mod, only : mpp_record_time_start, mpp_record_time_end
   use mpp_mod, only : CLOCK_LOOP
   use mpp_parameter_mod, only : MAX_CLOCKS
+  use fms_mod, only : fms_end
 
   integer :: test_number
   integer :: ierr
@@ -94,7 +95,7 @@ program test_mpp_clock_begin_end_id
 
       call mpp_init(test_level=bp)
       clock_id = mpp_clock_id("Ultraclock")
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test1
 
@@ -105,7 +106,7 @@ program test_mpp_clock_begin_end_id
 
       call mpp_init(test_level=bp)
       clock_id = mpp_clock_id("Ultraclock", flags=1)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test2
 
@@ -116,7 +117,7 @@ program test_mpp_clock_begin_end_id
 
       call mpp_init(test_level=bp)
       clock_id = mpp_clock_id("Ultraclock", flags=2)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test3
 
@@ -127,7 +128,7 @@ program test_mpp_clock_begin_end_id
 
       call mpp_init(test_level=bp)
       clock_id = mpp_clock_id("Ultraclock", flags=3)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test4
 
@@ -138,7 +139,7 @@ program test_mpp_clock_begin_end_id
 
       clock_id = mpp_clock_id("Ultraclock")
       call mpp_init(test_level=bp)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test5
 
@@ -148,7 +149,7 @@ program test_mpp_clock_begin_end_id
       bp = 1
 
       call mpp_init(test_level=bp)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
       clock_id = mpp_clock_id("Ultraclock")
 
     end subroutine test6
@@ -163,7 +164,7 @@ program test_mpp_clock_begin_end_id
 
       call mpp_init(test_level=bp)
       clock_id = mpp_clock_id("Ultraclock", grain = new_grain)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
       if(clock_id .ne. 0) then
           call segfault()
@@ -193,7 +194,7 @@ program test_mpp_clock_begin_end_id
       clock_id = 1
       call mpp_clock_begin(clock_id)
       call mpp_init(test_level=bp)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test9
 
@@ -217,7 +218,7 @@ program test_mpp_clock_begin_end_id
       call mpp_init(test_level=bp)
       clock_id = mpp_clock_id("Ultraclock")
       call mpp_clock_begin(clock_id)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test11
 
@@ -229,7 +230,7 @@ program test_mpp_clock_begin_end_id
       call mpp_init(test_level=bp)
       clock_id = 0
       call mpp_clock_begin(clock_id)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test12
 
@@ -241,7 +242,7 @@ program test_mpp_clock_begin_end_id
       call mpp_init(test_level=bp)
       clock_id = MAX_CLOCKS + 10
       call mpp_clock_begin(clock_id)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test13
 
@@ -254,7 +255,7 @@ program test_mpp_clock_begin_end_id
       clock_id = mpp_clock_id("Ultraclock")
       call mpp_clock_begin(clock_id)
       call mpp_clock_end(clock_id)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test14
 
@@ -266,7 +267,7 @@ program test_mpp_clock_begin_end_id
       call mpp_init(test_level=bp)
       clock_id = mpp_clock_id("Ultraclock")
       call mpp_clock_end(clock_id)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test15
 
@@ -279,7 +280,7 @@ program test_mpp_clock_begin_end_id
       clock_id = mpp_clock_id("Ultraclock")
       call mpp_clock_begin(clock_id)
       call mpp_clock_begin(clock_id)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test16
 
@@ -291,7 +292,7 @@ program test_mpp_clock_begin_end_id
       call mpp_init(test_level=bp)
       clock_id = MAX_CLOCKS + 10
       call mpp_clock_end(clock_id)
-      call MPI_FINALIZE(ierr)
+      call fms_end()
 
     end subroutine test17
 
