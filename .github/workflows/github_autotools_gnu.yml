@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        conf-flag: [ --disable-openmp, --with-mpi=no, --disable-r8-default]
+        conf-flag: [ --disable-openmp, --with-mpi=no, --disable-r8-default, ""]
         input-flag: [--with-yaml, --enable-test-input=/home/unit_tests_input]
         exclude:
           - conf-flag: --with-mpi=no
@@ -35,7 +35,6 @@ jobs:
       run: ./configure ${DISTCHECK_CONFIGURE_FLAGS} FCFLAGS="$FCFLAGS $DEBUG_FLAGS" || cat config.log
     - name: Run distcheck (compiles, tests, and packages)
       run: make distcheck 2>&1 > distcheck.log
-      if: ${{ matrix.conf-flag != '--with-mpi=no' }}
     - name: Output errors on failure
       run: grep -E "^FAIL:|^XPASS:" distcheck.log
       if: failure()
@@ -44,6 +43,3 @@ jobs:
       if: failure()
       with:
         path: distcheck.log
-    - name: Build the library (without test suite for serial build)
-      run: make
-      if: ${{ matrix.conf-flag == '--with-mpi=no' }}
