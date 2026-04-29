@@ -79,6 +79,7 @@ test_nonsym_edge = .false.
 test_halosize_performance = .false.
 test_adjoint = .false.
 wide_halo = .false.
+test_group_offload = .false.
 /
 _EOF
 
@@ -143,6 +144,11 @@ test_expect_success "check_parallel" '
 sed "s/test_get_nbr = .false./test_get_nbr = .true./" input_base.nml > input.nml
 test_expect_success "get nbr" '
     mpirun -n 8 ../test_mpp_domains
+'
+# do the group update again, but with openmp offload flag
+sed "s/test_group_offload = .false./test_group_offload = .true./" input_base.nml > input.nml
+test_expect_success "group update with OpenMP offload" '
+    mpirun -n 2 ../test_mpp_domains
 '
 
 test_done

@@ -82,6 +82,7 @@ program test_mpp_domains
   logical :: test_edge_update = .false.
   logical :: test_nonsym_edge = .false.
   logical :: test_group = .false.
+  logical :: test_group_offload = .false.
   logical :: test_cubic_grid_redistribute = .false.
   logical :: check_parallel = .FALSE.
   logical :: test_get_nbr = .FALSE.
@@ -113,7 +114,7 @@ program test_mpp_domains
                                layout_ensemble, nthreads, test_boundary, layout_tripolar, &
                                test_group, test_global_sum, test_subset, test_nonsym_edge, &
                                test_halosize_performance, test_adjoint, wide_halo, &
-                               test_unstruct
+                               test_unstruct, test_group_offload
   integer :: i, j, k, n, p
   integer :: layout(2)
   integer :: id
@@ -234,6 +235,13 @@ program test_mpp_domains
        call test_group_update_r8('Cubic-Grid', p)
      enddo
      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished testing group_update <-------------------'
+  endif
+
+  if( test_group_offload) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_group (legacy OMP offload) <-------------------'
+     call test_group_update( 'Folded-north', use_omp_offload=test_group_offload )
+     call test_group_update( 'Cubic-Grid', use_omp_offload=test_group_offload )
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_group (legacy OMP offload) <-------------------'
   endif
 
   if( test_interface ) then
