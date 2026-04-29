@@ -200,7 +200,7 @@ SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
 # if doing a mpi-less build, single core tests will run automagically
 # this test checks output for a parallel test, so it needs to be skipped explicitly
 if SERIAL_BUILD 
-  TESTS_ENVIRONMENT = SKIP_TESTS="test_stdlog.3 ${SKIP_TESTS}" 
+  TESTS_ENVIRONMENT = SKIP_TESTS="test_stdlog.3 test_mpp.1 ${SKIP_TESTS}" 
 endif
 
 # These files will also be included in the distribution.

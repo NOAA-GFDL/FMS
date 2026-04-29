@@ -341,7 +341,7 @@ test_expect_success () {
     # Handle skipped parallel tests (exit code 77)
     if test $test_ret = 77
     then
-      say_color skip "ok $test_count - $1 # skip (parallel test in SERIAL_BUILD)"
+      say_color skip "ok $test_count - $1 # skip (parallel test with mpi disabled)"
     elif test $test_ret = 0
     then
       test_ok_ "$1"

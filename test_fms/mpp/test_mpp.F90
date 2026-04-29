@@ -21,6 +21,7 @@
 
 
 program test   !test various aspects of mpp_mod
+#ifdef use_libMPI
   use mpi_f08, only : mpi_comm, mpi_comm_null, operator(.eq.), operator(.ne.)
   use mpp_mod, only : mpp_init, mpp_exit, mpp_pe, mpp_npes, mpp_root_pe, mpp_comm, stdout
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
@@ -145,4 +146,5 @@ contains
     print *, 'TEST_SHARED_POINTERS: pe, sum(d)=', pe, sum(dd)
     return
   end subroutine test_shared_pointers
+#endif 
 end program test
