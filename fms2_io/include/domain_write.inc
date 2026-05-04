@@ -214,15 +214,19 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
+      if (.not.allocated(global_buf_i4_kind)) allocate(global_buf_i4_kind(1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
                       & global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
+      if (.not.allocated(global_buf_i8_kind)) allocate(global_buf_i8_kind(1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
                       & global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
+      if (.not.allocated(global_buf_r4_kind)) allocate(global_buf_r4_kind(1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
                       & global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
+      if (.not.allocated(global_buf_r8_kind)) allocate(global_buf_r8_kind(1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
                       & global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     class default
@@ -396,15 +400,19 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
+      if (.not.allocated(global_buf_i4_kind)) allocate(global_buf_i4_kind(1,1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
+      if (.not.allocated(global_buf_i8_kind)) allocate(global_buf_i8_kind(1,1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
+      if (.not.allocated(global_buf_r4_kind)) allocate(global_buf_r4_kind(1,1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
+      if (.not.allocated(global_buf_r8_kind)) allocate(global_buf_r8_kind(1,1,1))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
     class default

@@ -154,21 +154,25 @@ subroutine compressed_write_1d(fileobj, variable_name, cdata, unlim_dim_level, &
   !Gather the data onto the I/O root and write it out.
   select type(cdata)
     type is (integer(kind=i4_kind))
+      if (.not.allocated(buf_i4_kind)) allocate(buf_i4_kind(1))
       call mpp_gather(cdata, size(cdata), buf_i4_kind, fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems, &
         fileobj%pelist)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (integer(kind=i8_kind))
+      if (.not.allocated(buf_i8_kind)) allocate(buf_i8_kind(1))
       call mpp_gather(cdata, size(cdata), buf_i8_kind, fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems, &
         fileobj%pelist)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (real(kind=r4_kind))
+      if (.not.allocated(buf_r4_kind)) allocate(buf_r4_kind(1))
       call mpp_gather(cdata, size(cdata), buf_r4_kind, fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems, &
         fileobj%pelist)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (real(kind=r8_kind))
+      if (.not.allocated(buf_r8_kind)) allocate(buf_r8_kind(1))
       call mpp_gather(cdata, size(cdata), buf_r8_kind, fileobj%compressed_dims(compressed_dim_index(2))%npes_nelems, &
         fileobj%pelist)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &
@@ -275,18 +279,22 @@ subroutine compressed_write_2d(fileobj, variable_name, cdata, unlim_dim_level, &
 
   select type(cdata)
     type is (integer(kind=i4_kind))
+      if (.not.allocated(buf_i4_kind)) allocate(buf_i4_kind(1))
       call mpp_gather(is, ie, js, je, fileobj%pelist, cdata, buf_i4_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (integer(kind=i8_kind))
+      if (.not.allocated(buf_i8_kind)) allocate(buf_i8_kind(1))
       call mpp_gather(is, ie, js, je, fileobj%pelist, cdata, buf_i8_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (real(kind=r4_kind))
+      if (.not.allocated(buf_r4_kind)) allocate(buf_r4_kind(1))
       call mpp_gather(is, ie, js, je, fileobj%pelist, cdata, buf_r4_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (real(kind=r8_kind))
+      if (.not.allocated(buf_r8_kind)) allocate(buf_r8_kind(1))
       call mpp_gather(is, ie, js, je, fileobj%pelist, cdata, buf_r8_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &
         unlim_dim_level=unlim_dim_level)
@@ -399,21 +407,25 @@ subroutine compressed_write_3d(fileobj, variable_name, cdata, unlim_dim_level, &
 
   select type(cdata)
     type is (integer(kind=i4_kind))
+      if (.not.allocated(buf_i4_kind)) allocate(buf_i4_kind(1))
       call mpp_gather(is, ie, js, je, size(cdata,3), &
         fileobj%pelist, cdata, buf_i4_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_i4_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (integer(kind=i8_kind))
+      if (.not.allocated(buf_i8_kind)) allocate(buf_i8_kind(1))
       call mpp_gather(is, ie, js, je, size(cdata,3), &
         fileobj%pelist, cdata, buf_i8_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_i8_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (real(kind=r4_kind))
+      if (.not.allocated(buf_r4_kind)) allocate(buf_r4_kind(1))
       call mpp_gather(is, ie, js, je, size(cdata,3), &
         fileobj%pelist, cdata, buf_r4_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_r4_kind, &
         unlim_dim_level=unlim_dim_level)
     type is (real(kind=r8_kind))
+      if (.not.allocated(buf_r8_kind)) allocate(buf_r8_kind(1))
       call mpp_gather(is, ie, js, je, size(cdata,3), &
         fileobj%pelist, cdata, buf_r8_kind, fileobj%is_root)
       if (fileobj%is_root) call netcdf_write_data(fileobj, variable_name, buf_r8_kind, &

@@ -81,7 +81,11 @@ subroutine gather_data_bc_2d(fileobj, vdata, bc_info)
           i1=1; i2=1; j1=1; j2=1
        else
           !! In this case there is data in fileobj's root, so there is no need for the dummy data
-          if(fileobj%is_root) allocate(global_buf_r4_kind(i_glob, j_glob))
+          if(fileobj%is_root) then
+            allocate(global_buf_r4_kind(i_glob, j_glob))
+          else
+            allocate(global_buf_r4_kind(1, 1))
+          endif
           allocate(local_buf_r4_kind(size(vdata,1), size(vdata,2)))
           local_buf_r4_kind = vdata
        endif
@@ -112,7 +116,11 @@ subroutine gather_data_bc_2d(fileobj, vdata, bc_info)
           i1=1; i2=1; j1=1; j2=1
        else
           !! In this case there is data in fileobj's root, so there is no need for the dummy data
-          if(fileobj%is_root) allocate(global_buf_r8_kind(i_glob, j_glob))
+          if(fileobj%is_root) then
+            allocate(global_buf_r8_kind(i_glob, j_glob))
+          else
+            allocate(global_buf_r8_kind(1, 1))
+          endif
           allocate(local_buf_r8_kind(size(vdata,1), size(vdata,2)))
           local_buf_r8_kind = vdata
        endif
@@ -203,7 +211,11 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
           i1=1; i2=1; j1=1; j2=1
        else
           !! In this case there is data in fileobj's root, so there is no need for the dummy data
-          if(fileobj%is_root) allocate(global_buf_r4_kind(i_glob, j_glob, k_glob))
+          if(fileobj%is_root) then
+            allocate(global_buf_r4_kind(i_glob, j_glob, k_glob))
+          else
+            allocate(global_buf_r4_kind(1, 1, 1))
+          endif
           allocate(local_buf_r4_kind(size(vdata,1), size(vdata,2), size(vdata,3)))
           local_buf_r4_kind = vdata
        endif
@@ -233,7 +245,11 @@ subroutine gather_data_bc_3d(fileobj, vdata, bc_info)
           i1=1; i2=1; j1=1; j2=1
        else
           !! In this case there is data in fileobj's root, so there is no need for the dummy data
-          if(fileobj%is_root) allocate(global_buf_r8_kind(i_glob, j_glob, k_glob))
+          if(fileobj%is_root) then
+            allocate(global_buf_r8_kind(i_glob, j_glob, k_glob))
+          else
+            allocate(global_buf_r8_kind(1, 1, 1))
+          endif
           allocate(local_buf_r8_kind(size(vdata,1), size(vdata,2), size(vdata,3)))
           local_buf_r8_kind = vdata
        endif
