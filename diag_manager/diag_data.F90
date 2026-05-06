@@ -388,6 +388,7 @@ use platform_mod
                                    !! routine is called with the optional time_init parameter.
   LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
+  LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
                                          !! For example, if doing daily averages and your start the simulation in
                                          !! day1_hour3, it will do the average between day1_hour3 to day2_hour 0
