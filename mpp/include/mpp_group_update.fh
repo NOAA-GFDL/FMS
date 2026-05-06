@@ -555,6 +555,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
+  ! below omp offload loops have maps excluded as gcc doesn't support cray pointers in maps
   shift = 0
   if(domain%symmetry) shift = 1
   if( nvector >0 .AND. BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags_v,SCALAR_BIT)) )then
@@ -566,15 +567,25 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
            j  = domain%y(1)%global%end+shift
            is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
            if( .NOT. domain%symmetry ) is = is - 1
+           isd = domain%x(1)%domain_data%begin
            do i = is ,ie, midpoint
-              if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
+              if( isd.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
-                    do k = 1,ksize
-                       fieldx(i,j,k) = 0.
-                       fieldy(i,j,k) = 0.
-                    end do
+                    if (use_device_ptr) then
+                       !$omp target teams distribute parallel do default(shared) &
+                       !$omp   shared(ksize, ptr_fieldx, ptr_fieldy)
+                       do k = 1,ksize
+                          fieldx(i,j,k) = 0.
+                          fieldy(i,j,k) = 0.
+                       end do
+                    else
+                       do k = 1,ksize
+                          fieldx(i,j,k) = 0.
+                          fieldy(i,j,k) = 0.
+                       end do
+                    end if
                  end do
               end if
            end do
@@ -591,19 +602,31 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
               else
                  is = domain%x(1)%global%begin - 1
               end if
-              if( is.GT.domain%x(1)%domain_data%begin )then
+              isd = domain%x(1)%domain_data%begin
+              if( is.GT.isd )then
 
-                 if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
+                 if( 2*is-isd.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
-                    do k = 1,ksize
-                       do i = domain%x(1)%domain_data%begin,is-1
-                          fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                          fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                    if (use_device_ptr) then
+                       !$omp target teams distribute parallel do collapse(2) default(shared) &
+                       !$omp   shared(ksize, isd, is, ptr_fieldx, ptr_fieldy)
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                             fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          end do
                        end do
-                    end do
+                    else
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                             fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          end do
+                       end do
+                    endif
                  end do
               end if
            case(CGRID_NE)
@@ -614,11 +637,21 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
-                    do k = 1,ksize
-                       do i = isd,is-1
-                          fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                    if (use_device_ptr) then
+                       !$omp target teams distribute parallel do collapse(2) default(shared) &
+                       !$omp   shared(ksize, isd, is, ptr_fieldy)
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          end do
                        end do
-                    end do
+                    else
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          end do
+                       end do
+                    end if
                  end do
               end if
            end select
@@ -635,21 +668,42 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
               do l=1,nvector
                  ptr_fieldx = group%addrs_x(l)
                  ptr_fieldy = group%addrs_y(l)
-                 do k = 1,ksize
-                    do i = is,ie
-                       fieldx(i,j,k) = -fieldx(i,j,k)
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                 if (use_device_ptr) then
+                    !$omp target teams distribute parallel do collapse(2) default(shared) &
+                    !$omp   shared(ksize, is, ie, ptr_fieldx, ptr_fieldy)
+                    do k = 1,ksize
+                       do i = is,ie
+                          fieldx(i,j,k) = -fieldx(i,j,k)
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
                     end do
-                 end do
+                 else
+                    do k = 1,ksize
+                       do i = is,ie
+                          fieldx(i,j,k) = -fieldx(i,j,k)
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
+                    end do
+                 end if
               end do
            case(CGRID_NE)
               do l=1,nvector
                  ptr_fieldy = group%addrs_y(l)
-                 do k = 1,ksize
-                    do i = is, ie
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                 if (use_device_ptr) then
+                    !$omp target teams distribute parallel do collapse(2) default(shared) &
+                    !$omp   shared(ksize, is, ie, ptr_fieldy)
+                    do k = 1,ksize
+                       do i = is, ie
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
                     end do
-                 end do
+                 else
+                    do k = 1,ksize
+                       do i = is, ie
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
+                    end do
+                 end if
               end do
            end select
         end if
