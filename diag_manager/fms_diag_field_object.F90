@@ -18,7 +18,8 @@
 module fms_diag_field_object_mod
 !> \author Tom Robinson
 !> \email thomas.robinson@noaa.gov
-!! \brief Contains routines for the diag_objects
+!! \brief Defines the fmsDiagField_type, which is the object that holds all of the information for a
+!! single diagnostic field in the diag_manager. This corresponds to a variable in the output netCDF file.
 !!
 !! \description The diag_manager passes an object back and forth between the diag routines and the users.
 !! The procedures of this object and the types are all in this module.  The fms_dag_object is a type

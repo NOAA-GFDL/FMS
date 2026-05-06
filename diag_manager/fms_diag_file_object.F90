@@ -17,7 +17,9 @@
 !***********************************************************************
 !> @defgroup fms_diag_output_yaml_mod fms_diag_output_yaml_mod
 !> @ingroup diag_manager
-!! @brief fms_diag_file_object_mod handles the file objects data, functions, and subroutines.
+!! @brief Defines the fmsDiagFile_type, which is the object that holds information for a
+!! single diagnostic output file in the diag_manager.
+!!
 !! @author Tom Robinson
 !! @description The fmsDiagFile_type contains the information for each history file to be written.  It has
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a

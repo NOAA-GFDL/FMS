@@ -17,8 +17,8 @@
 !***********************************************************************
 
 ! for any debug prints
-#ifndef DEBUG_REDUCT
-#define DEBUG_REDUCT .false.
+#ifndef FMS_DIAG_DEBUG_REDUCT
+#define FMS_DIAG_DEBUG_REDUCT .false.
 #endif
 
 !> @brief Do the time_none reduction method (i.e copy the correct portion of the input data)

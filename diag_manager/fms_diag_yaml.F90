@@ -15,12 +15,10 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-
 !> @defgroup fms_diag_yaml_mod fms_diag_yaml_mod
 !> @ingroup diag_manager
-!! @brief fms_diag_yaml_mod is an integral part of
-!!   diag_manager_mod. Its function is to read the diag_table.yaml to fill in
-!!   the diag_yaml_object
+!! @brief This module defines the diagYamlObject_type, which is the object that holds the information from the diag_table.yaml file.
+!! It also contains routines for reading in the diag_table.yaml file and filling in the diagYamlObject_type object.
 
 !> @file
 !> @brief File for @ref diag_yaml_mod

@@ -22,6 +22,10 @@
 !!
 !> @author Seth Underwood seth.underwood@noaa.gov
 !!
+!! @note This module is part of the legacy diag_manager.  If use_modern_diag is enabled, this module will be unused
+!! except for the get_local_indexes procedure, which is still used by the modern diag_manager to determine the local
+!! indexes for regional output.
+!!
 !! <TT>diag_grid_mod</TT> contains useful utilities for dealing
 !!   with, mostly, regional output for grids other than the standard
 !!   lat/lon grid.  This module contains three public procedures <TT>
@@ -37,22 +41,6 @@
 
 MODULE diag_grid_mod
 use platform_mod
-
-  ! <INFO>
-  !   <FUTURE>
-  !     Multi-tile regional output in the cubed sphere.
-  !   </FUTURE>
-  !   <FUTURE>
-  !     Single grid in the tri-polar grid.
-  !   </FUTURE>
-  !   <FUTURE>
-  !     Multi-tile regional output in the tri-polar grid.
-  !   </FUTURE>
-  !   <FUTURE>
-  !     Regional output using array masking.  This should allow
-  !     regional output to work on any current or future grid.
-  !   </FUTURE>
-  ! </INFO>
 
   USE constants_mod, ONLY: DEG_TO_RAD, RAD_TO_DEG, RADIUS
   USE fms_mod, ONLY: write_version_number, error_mesg, WARNING, FATAL,&

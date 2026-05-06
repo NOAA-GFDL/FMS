@@ -17,7 +17,10 @@
 !***********************************************************************
 !> @defgroup fms_diag_input_buffer_mod fms_diag_input_buffer_mod
 !> @ingroup diag_manager
-!! @brief
+!! @brief This module defines the fmsDiagInputBuffer_t type, which is used to hold the input buffer for a field when
+!! send_data is called from an openmp region with multiple threads.
+!! This is necessary to ensure that the data passed into send_data is not overwritten by another thread before the reduction method is applied to it.
+
 !> @addtogroup fms_diag_input_buffer_mod
 !> @{
 module fms_diag_input_buffer_mod
