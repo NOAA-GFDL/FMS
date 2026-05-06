@@ -15,15 +15,24 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup fms_diag_output_yaml_mod fms_diag_output_yaml_mod
+
+!> @defgroup fms_diag_file_object_mod fms_diag_file_object_mod
 !> @ingroup diag_manager
-!! @brief Defines the fmsDiagFile_type, which is the object that holds information for a
-!! single diagnostic output file in the diag_manager.
+!! @brief Modern object-oriented implementation of diagnostic file management for FMS.
+!!
+!! This module defines @ref fmsDiagFile_type, the object that encapsulates metadata,
+!! axis lists, field registrations, and output buffering for a single diagnostic output file.
+!! It manages file-level properties, domain information, and time tracking for NetCDF I/O.
 !!
 !! @author Tom Robinson
 !! @description The fmsDiagFile_type contains the information for each history file to be written.  It has
 !! a pointer to the information from the diag yaml, additional metadata that comes from the model, and a
 !! list of the variables and their variable IDs that are in the file.
+
+!! @file
+!! @brief File for @ref fms_diag_file_object_mod
+!> @addtogroup fms_diag_file_object_mod
+!> @{
 module fms_diag_file_object_mod
 #ifdef use_yaml
 use fms2_io_mod, only: FmsNetcdfFile_t, FmsNetcdfUnstructuredDomainFile_t, FmsNetcdfDomainFile_t, &
@@ -59,15 +68,23 @@ private
 
 public :: fmsDiagFileContainer_type
 public :: fmsDiagFile_type, fms_diag_files_object_init, fms_diag_files_object_initialized
+!> @}
+
 
 logical :: fms_diag_files_object_initialized = .false.
 
 integer, parameter :: var_string_len = 25
 
+!> @brief Object that holds all metadata and state for a diagnostic output file.
+!!
+!! The fmsDiagFile_type represents a single output file in the FMS diagnostic manager.
+!! It stores YAML file metadata, domain information, associated fields and axes,
+!! buffer references, and output timing state needed to coordinate data writes across
+!! multiple send_data calls and model time steps.
 type :: fmsDiagFile_type
  private
-  integer :: id !< The number associated with this file in the larger array of files
-  TYPE(time_type) :: model_time       !< The last time data was sent for any of the buffers in this file object
+  integer :: id !< Unique identifier for this file in the larger array of files
+  TYPE(time_type) :: model_time       !< Most recent model time at which data was sent to any buffer in this file
   TYPE(time_type) :: start_time       !< The start time for the file
   TYPE(time_type) :: last_output      !< Time of the last time output was writen
   TYPE(time_type) :: next_output      !< Time of the next write
