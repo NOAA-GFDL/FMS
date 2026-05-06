@@ -20,30 +20,29 @@ The diag manager was completely rewritten to support YAML-formatted diagnostic t
 The diag_manager is organized into functional modules, with new modules introduced in the rewrite using the `fms_diag_` prefix convention:
 
 **Legacy Modules (original diag manager):**
+- `diag_manager.F90` (top-level interface)
 - `diag_axis.F90`
 - `diag_data.F90`
 - `diag_grid.F90`
-- `diag_manager.F90` (top-level interface)
 - `diag_output.F90`
 - `diag_table.F90`
 - `diag_util.F90`
+- `fms_diag_time_reduction.F90`
+- `fms_diag_elem_weight_procs.F90`
+- `fms_diag_fieldbuff_update.F90`
 
-**New Modules (modern diag manager - all prefaced with `fms_diag_`):**
+**New Modules (modern diag manager):**
+- `diag_manager.F90` (top-level interface) Same routines as the legacy, but when use_modern_diag is true routines will make calls to fms_diag_object.F90 and friends to perform all operations.
 - `fms_diag_object.F90` - Core diagnostic object implementation
 - `fms_diag_field_object.F90` - Field-specific diagnostic data structures
 - `fms_diag_file_object.F90` - File I/O management
 - `fms_diag_axis_object.F90` - Axis and domain handling
 - `fms_diag_bbox.F90` - Bounding box operations for subregional output
 - `fms_diag_output_buffer.F90` - Output buffering and data management
-- `fms_diag_time_reduction.F90` - Time reduction operations (averaging, min/max, etc.)
 - `fms_diag_reduction_methods.F90` - Reduction method implementations
-- `fms_diag_elem_weight_procs.F90` - Weight processing for diagnostics
-- `fms_diag_fieldbuff_update.F90` - Field buffer update routines
 - `fms_diag_input_buffer.F90` - Input buffer management
 - `fms_diag_yaml.F90` - YAML diagnostic table parsing and handling
 - `fms_diag_time_utils.F90` - Time utility functions
-
-The `fms_` prefix indicates these are part of the modernized implementation and should not be directly used by external code. The top-level `diag_manager.F90` module provides the public API that works with both implementations.
 
 #### Enabling the Modern Diag Manager
 
