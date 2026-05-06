@@ -115,7 +115,7 @@ program test_mpp_domains
                                test_group, test_global_sum, test_subset, test_nonsym_edge, &
                                test_halosize_performance, test_adjoint, wide_halo, &
                                test_unstruct, test_group_offload
-  integer :: i, j, k, n, p
+  integer :: i, j, k, n
   integer :: layout(2)
   integer :: id
   integer :: outunit, errunit, io_status
@@ -227,13 +227,8 @@ program test_mpp_domains
   endif
   if( test_group .or. test_group_offload) then
      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Testing group_update <-------------------'
-     do p=1,factorial(3)
-       call test_group_update_r4('Folded-north', p, omp_offload=test_group_offload)
-       call test_group_update_r4('Cubic-Grid', p, omp_offload=test_group_offload)
-
-       call test_group_update_r8('Folded-north', p, omp_offload=test_group_offload)
-       call test_group_update_r8('Cubic-Grid', p, omp_offload=test_group_offload)
-     enddo
+     call test_group_update( 'Folded-north', use_omp_offload=test_group_offload )
+     call test_group_update( 'Cubic-Grid', use_omp_offload=test_group_offload )
      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished testing group_update <-------------------'
   endif
 
@@ -2476,8 +2471,9 @@ contains
   end subroutine test_mpp_global_sum
 
   !###############################################################
-  subroutine test_group_update( type )
+  subroutine test_group_update( type, use_omp_offload )
     character(len=*), intent(in) :: type
+    logical, intent(in), optional :: use_omp_offload
 
     type(domain2D) :: domain
     integer        :: num_contact, ntiles, npes_per_tile
@@ -2499,9 +2495,12 @@ contains
     integer            :: nx_save, ny_save
     type(mpp_group_update_type) :: group_update
     type(mpp_group_update_type), allocatable :: update_list(:)
+    logical :: do_omp_offload
 
     folded_north       = .false.
     cubic_grid         = .false.
+    do_omp_offload     = .false.
+    if (present(use_omp_offload)) do_omp_offload = use_omp_offload
 
     nx_save = nx
     ny_save = ny
@@ -2609,6 +2608,8 @@ contains
     allocate( y2(ism:iem,      jsm:jem+shift, nz, num_fields) )
     allocate( base(isc:iec+shift,jsc:jec+shift,nz) )
     a1 = 0; x1 = 0; y1 = 0
+    ! allocate a1, x1, y1 on GPU (GPU x1, y1 only used for CGRID test)
+    !$omp target enter data if(do_omp_offload) map(to: a1, x1, y1)
 
     base = 0
     do k = 1,nz
@@ -2624,9 +2625,16 @@ contains
        call mpp_create_group_update(group_update, a1(:,:,:,l), domain, flags=WUPDATE+SUPDATE)
     end do
 
+    ! initialize a1 values on GPU only to check GPU data is being transferred
+    !$omp target teams loop if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsc, jec, isc, iec, a1, base) map(tofrom: a1) map(to: base)
     do l = 1, num_fields
-       a1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3
        do k=1,nz
+          do j=jsc,jec
+             do i=isc,iec
+                a1(i,j,k,l) = base(i,j,k) + l*1e3
+             enddo
+          enddo
           do i=isc-1,iec+1
              a1(i,jsc-1,k,l) = 999;
              a1(i,jec+1,k,l) = 999;
@@ -2637,14 +2645,19 @@ contains
           enddo
        enddo
     enddo
-
-    a2 = a1
-    call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1))
+    !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsm, jem, ism, iem, a1, a2) map(to: a1) map(from: a2)
+    do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem
+      a2(i,j,k,l) = a1(i,j,k,l)
+    enddo ; enddo ; enddo ; enddo
+    call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
 
     do l = 1, num_fields
        call mpp_update_domains( a2(:,:,:,l), domain, flags=WUPDATE+SUPDATE, complete=l==num_fields )
     enddo
 
+    ! copy a1 back to host
+    !$omp target update if(do_omp_offload) from(a1)
     do l = 1, num_fields
        write(text, '(i3.3)') l
        call compare_checksums(a1(isd:ied,jsd:jed,:,l),a2(isd:ied,jsd:jed,:,l),type//' CENTER South West '//text)
@@ -2689,14 +2702,54 @@ contains
 
     do n = 1, num_iter
        a1 = 0; x1 = 0; y1 = 0
+       !$omp target update if(do_omp_offload) to(a1, x1, y1)
        do l = 1, num_fields
-          a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
-          x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
-          y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, jsc, jec, isc, iec, a1, base, l) map(to: base) map(tofrom: a1)
+          do k=1,nz
+             do j=jsc,jec
+                do i=isc,iec
+                   a1(i,j,k,l) = base(i,j,k) + l*1e3
+                enddo
+             enddo
+          enddo
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, jsc, jec, shift, isc, iec, x1, base, l) map(to: base) map(tofrom: x1)
+          do k=1,nz
+             do j=jsc,jec
+                do i=isc,iec+shift
+                   x1(i,j,k,l) = base(i,j,k) + l*1e3 + 1e6
+                enddo
+             enddo
+          enddo
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, jsc, jec, shift, isc, iec, y1, base, l) map(to: base) map(tofrom: y1)
+          do k=1,nz
+             do j=jsc,jec+shift
+                do i=isc,iec
+                   y1(i,j,k,l) = base(i,j,k) + l*1e3 + 2*1e6
+                enddo
+             enddo
+          enddo
        enddo
-       a2 = a1; x2 = x1; y2 = y1
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, ism, iem, a1, a2) map(from: a2) map(to: a1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem
+          a2(i,j,k,l) = a1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, ism, iem, shift, x1, x2) map(from: x2) map(to: x1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem+shift
+          x2(i,j,k,l) = x1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, shift, ism, iem, y1, y2) map(from: y2) map(to: y1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem+shift ; do i=ism,iem
+          y2(i,j,k,l) = y1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
+
        call mpp_clock_begin(id1)
-       call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
        call mpp_clock_end  (id1)
 
        call mpp_clock_begin(id2)
@@ -2710,6 +2763,7 @@ contains
 
        !--- compare checksum
        if( n == num_iter ) then
+       !$omp target update if(do_omp_offload) from(a1, x1, y1)
        do l = 1, num_fields
           write(text, '(i3.3)') l
           call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l),type//' CENTER '//text)
@@ -2791,12 +2845,26 @@ contains
     call mpp_create_group_update(group_update, a1(:,:,:,:), domain)
 
     a1 = 0; x1 = 0; y1 = 0
+    !$omp target update if(do_omp_offload) to(a1)
+    !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsc, jec, isc, iec, a1, base) map(to: base) map(from: a1)
     do l = 1, num_fields
-       a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+       do k=1,nz
+          do j=jsc,jec
+             do i=isc,iec
+                a1(i,j,k,l) = base(i,j,k) + l*1e3
+             enddo
+          enddo
+       enddo
     enddo
-    a2 = a1; x2 = x1; y2 = y1
+    !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsm, jem, ism, iem, a1, a2) map(from: a2) map(to: a1)
+    do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem
+       a2(i,j,k,l) = a1(i,j,k,l)
+    enddo ; enddo ; enddo ; enddo
+    x2 = x1; y2 = y1
     call mpp_clock_begin(id1)
-    call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
     call mpp_clock_end  (id1)
 
     call mpp_clock_begin(id2)
@@ -2804,6 +2872,7 @@ contains
     call mpp_clock_end(id2)
 
     !--- compare checksum
+    !$omp target update if(do_omp_offload) from(a1)
     do l = 1, num_fields
        write(text, '(i3.3)') l
        call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l),type//' 4D CENTER '//text)
@@ -2825,7 +2894,7 @@ contains
                               type//' nonblock 4D CENTER '//text)
     enddo
 
-
+    !$omp target exit data if(do_omp_offload) map(release: a1, x1, y1)
 
     !--- test for BGRID.
     deallocate(a1, x1, y1)
@@ -2839,6 +2908,8 @@ contains
     allocate( x2(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
     allocate( y2(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
 
+    !$omp target enter data map(alloc: a1, x1, y1) if(do_omp_offload)
+
     do l =1, num_fields
        call mpp_create_group_update(group_update, a1(:,:,:,l), domain, position=CORNER)
        call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=BGRID_NE)
@@ -2846,14 +2917,31 @@ contains
 
     do n = 1, num_iter
        a1 = 0; x1 = 0; y1 = 0
+       !$omp target update if(do_omp_offload) to(a1, x1, y1)
        do l = 1, num_fields
-          a1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3
-          x1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3 + 1e6
-          y1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3 + 2*1e6
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, base, a1, x1, y1, l, jsc, jec, shift, isc, iec) &
+          !$omp   map(to: base) map(tofrom: a1, x1, y1)
+          do k=1,nz
+             do j=jsc,jec+shift
+                do i=isc,iec+shift
+                   a1(i,j,k,l) = base(i,j,k) + l*1e3
+                   x1(i,j,k,l) = base(i,j,k) + l*1e3 + 1e6
+                   y1(i,j,k,l) = base(i,j,k) + l*1e3 + 2*1e6
+                enddo
+             enddo
+          enddo
        enddo
-       a2 = a1; x2 = x1; y2 = y1
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, shift, ism, iem, a1, x1, y1, a2, x2, y2) &
+       !$omp   map(from: a2, x2, y2) map(to: a1, x1, y1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem+shift ; do i=ism,iem+shift
+          a2(i,j,k,l) = a1(i,j,k,l)
+          x2(i,j,k,l) = x1(i,j,k,l)
+          y2(i,j,k,l) = y1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
        call mpp_clock_begin(id1)
-       call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
        call mpp_clock_end  (id1)
 
        call mpp_clock_begin(id2)
@@ -2867,6 +2955,7 @@ contains
 
        !--- compare checksum
        if( n == num_iter ) then
+       !$omp target update if(do_omp_offload) from(a1,x1,y1)
        do l = 1, num_fields
           write(text, '(i3.3)') l
           call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l),type//&
@@ -2901,7 +2990,7 @@ contains
        enddo
        endif
     enddo
-
+    !$omp target exit data if(do_omp_offload) map(release: a1,x1,y1)
     call mpp_clear_group_update(group_update)
 
     !-----------------------------------------------------------------------------
