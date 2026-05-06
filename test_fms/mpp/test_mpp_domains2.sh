@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # TODO: Enable this test once generalized indices work is complete
-SKIP_TESTS="test_mpp_domains2.12"
+SKIP_TESTS="test_mpp_domains2.15"
 
 # TODO edge update, fails on non-blocking with gnu
 #SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).6"
@@ -129,10 +129,6 @@ sed "s/test_unstruct = .false./test_unstruct = .true./" input_base.nml > input.n
 test_expect_success "unstruct" '
     mpirun -n 2 ../test_mpp_domains
 '
-sed "s/test_group = .false./test_group = .true./" input_base.nml > input.nml
-test_expect_success "group" '
-    mpirun -n 2 ../test_mpp_domains
-'
 sed "s/test_interface = .false./test_interface = .true./" input_base.nml > input.nml
 test_expect_success "interface" '
     mpirun -n 6 ../test_mpp_domains
@@ -144,6 +140,10 @@ test_expect_success "check_parallel" '
 sed "s/test_get_nbr = .false./test_get_nbr = .true./" input_base.nml > input.nml
 test_expect_success "get nbr" '
     mpirun -n 8 ../test_mpp_domains
+'
+sed "s/test_group = .false./test_group = .true./" input_base.nml > input.nml
+test_expect_success "group" '
+    mpirun -n 2 ../test_mpp_domains
 '
 # do the group update again, but with openmp offload flag
 sed "s/test_group_offload = .false./test_group_offload = .true./" input_base.nml > input.nml
