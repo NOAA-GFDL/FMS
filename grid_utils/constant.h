@@ -15,7 +15,13 @@
  * PARTICULAR PURPOSE. See the License for the specific language
  * governing permissions and limitations under the License.
  ***********************************************************************/
+
+#ifdef GFS_CONSTANTS
+#define RADIUS   (6371200.)
+#else
+// GFDL or GEOS
 #define RADIUS   (6371000.)
+#endif
 #define STRING   255
 
 #define EPSLN8   (1.e-8)
