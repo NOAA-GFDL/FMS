@@ -25,28 +25,16 @@
 !!   and output the average,max/min, etc. based on the 'reduction' method specified in the table.
 !!
 !!   <H3>Diag Manager Implementation</H3>
-!!   The diag_manager module provides a unified public interface that supports both legacy (ASCII-based) and modern
+!!   The diag_manager module provides a unified public interface that supports legacy (ASCII-based) and modern
 !!   (YAML-based) diagnostic table formats. The modern implementation was rewritten to improve performance,
-!!   maintainability, and support for YAML-formatted diag_tables.
-!!
-!!   <H4>Module Organization</H4>
-!!   All new modules introduced in the modern diag_manager implementation are prefaced with <TT>fms_diag_</TT>
-!!   to distinguish them from the legacy implementation:
-!!   <UL>
-!!     <LI><B>Legacy modules:</B> diag_axis, diag_data, diag_grid, diag_manager, diag_output, diag_table, diag_util</LI>
-!!     <LI><B>Modern modules (fms_diag_ prefaced):</B> fms_diag_object, fms_diag_field_object, fms_diag_file_object,
-!!         fms_diag_axis_object, fms_diag_bbox, fms_diag_output_buffer, fms_diag_time_reduction,
-!!         fms_diag_reduction_methods, fms_diag_elem_weight_procs, fms_diag_fieldbuff_update,
-!!         fms_diag_input_buffer, fms_diag_yaml, fms_diag_time_utils</LI>
-!!   </UL>
-!!   The <TT>fms_</TT> prefix indicates these modules are part of the modernized implementation and should not be
-!!   directly used by external code. This module (diag_manager_mod) provides the stable public API.
+!!   maintainability, and support for YAML-formatted diag_tables. For more information, see the diag_manager/README.md
+!!   file and the documentation for the individual modern diag_manager modules.
 !!
 !!   <H4>Enabling the Modern Diag Manager</H4>
 !!   The modern diag manager is enabled via the <TT>use_modern_diag</TT> flag in the <TT>diag_manager_nml</TT>
 !!   namelist. By default, the legacy diag manager is used to maintain backward compatibility. When
-!!   <TT>use_modern_diag = .true.</TT>, the modern implementation is used while maintaining the same public interface.
-!!
+!!   <TT>use_modern_diag = .true.</TT>, the modern implementation is used while maintaining the same public interfaces.
+!!   FMS must be built with libyaml support via the <TT>-Duse_yaml</TT> flag to use the modern diag manager.
 !!
 !! @author Matt Harrison, Giang Nong, Seth Underwood
 !!
