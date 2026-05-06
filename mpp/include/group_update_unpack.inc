@@ -37,7 +37,8 @@ if( group%k_loop_inside ) then
         do l=1,nscalar  ! loop over number of fields
            ptr_field = group%addrs_s(l)
 #ifdef __NVCOMPILER_OPENMP_GPU
-           !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) default(shared) &
+           !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+           !$omp   default(shared) &
            !$omp   private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_field,ptr) &
            !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
            !$omp   map(from: field(is:ie,js:je,1:ksize))
@@ -56,10 +57,11 @@ if( group%k_loop_inside ) then
         do l=1,nvector  ! loop over number of fields
            ptr_fieldx = group%addrs_x(l)
 #ifdef __NVCOMPILER_OPENMP_GPU
-           !$omp target teams distribute parallel do collapse(3) default(shared) &
+           !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+           !$omp   default(shared) &
            !$omp   private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx,ptr) &
            !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
-           !$omp   map(from: fieldx(is:ie,js:je,1:ksize)) if(use_device_ptr)
+           !$omp   map(from: fieldx(is:ie,js:je,1:ksize))
 #endif
            do k = 1, ksize
               do j = js, je
@@ -75,10 +77,11 @@ if( group%k_loop_inside ) then
         do l=1,nvector  ! loop over number of fields
            ptr_fieldy = group%addrs_y(l)
 #ifdef __NVCOMPILER_OPENMP_GPU
-           !$omp target teams distribute parallel do collapse(3) default(shared) &
+           !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+           !$omp   default(shared) &
            !$omp   private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldy,ptr) &
            !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
-           !$omp   map(from: fieldy(is:ie,js:je,1:ksize)) if(use_device_ptr)
+           !$omp   map(from: fieldy(is:ie,js:je,1:ksize))
 #endif
            do k = 1, ksize
               do j = js, je
@@ -109,9 +112,10 @@ else
         do l=1,nscalar  ! loop over number of fields
            ptr_field = group%addrs_s(l)
 #ifdef __NVCOMPILER_OPENMP_GPU
-           !$omp target teams distribute parallel do collapse(2) default(shared) &
+           !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+           !$omp   default(shared) &
            !$omp   private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_field,ptr) &
-           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: field(is:ie,js:je,k)) if(use_device_ptr)
+           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: field(is:ie,js:je,k))
 #endif
            do j = js, je
               do i = is, ie
@@ -125,9 +129,10 @@ else
         do l=1,nvector  ! loop over number of fields
            ptr_fieldx = group%addrs_x(l)
 #ifdef __NVCOMPILER_OPENMP_GPU
-           !$omp target teams distribute parallel do collapse(2) default(shared) &
+           !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+           !$omp   default(shared) &
            !$omp   private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx,ptr) &
-           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldx(is:ie,js:je,k)) if(use_device_ptr)
+           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldx(is:ie,js:je,k))
 #endif
            do j = js, je
               do i = is, ie
@@ -141,9 +146,10 @@ else
         do l=1,nvector  ! loop over number of fields
            ptr_fieldy = group%addrs_y(l)
 #ifdef __NVCOMPILER_OPENMP_GPU
-           !$omp target teams distribute parallel do collapse(2) default(shared) &
+           !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+           !$omp   default(shared) &
            !$omp   private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy,ptr) &
-           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldy(is:ie,js:je,k)) if(use_device_ptr)
+           !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldy(is:ie,js:je,k))
 #endif
            do j = js, je
               do i = is, ie
