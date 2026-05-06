@@ -19,7 +19,6 @@
 #ifdef GFS_CONSTANTS
 #define RADIUS   (6371200.)
 #else
-// GFDL or GEOS
 #define RADIUS   (6371000.)
 #endif
 #define STRING   255
