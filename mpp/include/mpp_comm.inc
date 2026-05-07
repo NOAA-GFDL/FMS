@@ -24,6 +24,19 @@
 !> @addtogroup mpp_mod
 !> @{
 
+subroutine mpp_init_legacy( flags, localcomm, test_level, alt_input_nml_path )
+  integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
+  integer, intent(in) :: localcomm !< MPI communicator to use. Only relevant if MPI has already
+                                   !! been initialized by an external call to mpi_init.
+  integer, optional, intent(in) :: test_level !< Used to exit initialization at certain stages
+                                              !! before completion for testing purposes
+  character(len=*), optional, intent(in) :: alt_input_nml_path !< Input path for namelist
+  type(mpi_comm) :: comm
+
+  comm%mpi_val = localcomm
+  call mpp_init_f08(flags, comm, test_level, alt_input_nml_path)
+end subroutine mpp_init_legacy
+
 #if defined(use_libMPI)
 #include <mpp_comm_mpi.inc>
 #else
@@ -380,9 +393,13 @@
 #define MPP_GATHER_1D_ mpp_gather_logical_1d
 #define MPP_GATHER_1DV_ mpp_gather_logical_1dv
 #undef  MPP_GATHER_PELIST_2D_
+#undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
+#undef  MPP_GATHER_PELIST_GEN_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_logical_2d
+#define MPP_GATHER_PELIST_GEN_2D_ mpp_gather_pelist_logical_gen_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_logical_3d
+#define MPP_GATHER_PELIST_GEN_3D_ mpp_gather_pelist_logical_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_LOGICAL
 #include <mpp_gather.fh>
@@ -394,9 +411,13 @@
 #define MPP_GATHER_1D_ mpp_gather_int4_1d
 #define MPP_GATHER_1DV_ mpp_gather_int4_1dv
 #undef  MPP_GATHER_PELIST_2D_
+#undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
+#undef  MPP_GATHER_PELIST_GEN_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_int4_2d
+#define MPP_GATHER_PELIST_GEN_2D_ mpp_gather_pelist_int4_gen_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_int4_3d
+#define MPP_GATHER_PELIST_GEN_3D_ mpp_gather_pelist_int4_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_gather.fh>
@@ -409,9 +430,13 @@
 #define MPP_GATHER_1D_ mpp_gather_int8_1d
 #define MPP_GATHER_1DV_ mpp_gather_int8_1dv
 #undef  MPP_GATHER_PELIST_2D_
+#undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
+#undef  MPP_GATHER_PELIST_GEN_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_int8_2d
+#define MPP_GATHER_PELIST_GEN_2D_ mpp_gather_pelist_int8_gen_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_int8_3d
+#define MPP_GATHER_PELIST_GEN_3D_ mpp_gather_pelist_int8_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_gather.fh>
@@ -424,9 +449,13 @@
 #define MPP_GATHER_1D_ mpp_gather_real4_1d
 #define MPP_GATHER_1DV_ mpp_gather_real4_1dv
 #undef  MPP_GATHER_PELIST_2D_
+#undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
+#undef  MPP_GATHER_PELIST_GEN_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_real4_2d
+#define MPP_GATHER_PELIST_GEN_2D_ mpp_gather_pelist_real4_gen_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_real4_3d
+#define MPP_GATHER_PELIST_GEN_3D_ mpp_gather_pelist_real4_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_gather.fh>
@@ -438,50 +467,70 @@
 #define MPP_GATHER_1D_ mpp_gather_real8_1d
 #define MPP_GATHER_1DV_ mpp_gather_real8_1dv
 #undef  MPP_GATHER_PELIST_2D_
+#undef  MPP_GATHER_PELIST_GEN_2D_
 #undef  MPP_GATHER_PELIST_3D_
+#undef  MPP_GATHER_PELIST_GEN_3D_
 #define MPP_GATHER_PELIST_2D_ mpp_gather_pelist_real8_2d
+#define MPP_GATHER_PELIST_GEN_2D_ mpp_gather_pelist_real8_gen_2d
 #define MPP_GATHER_PELIST_3D_ mpp_gather_pelist_real8_3d
+#define MPP_GATHER_PELIST_GEN_3D_ mpp_gather_pelist_real8_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_gather.fh>
 
 !#################################################
 #undef  MPP_SCATTER_PELIST_2D_
+#undef  MPP_SCATTER_PELIST_GEN_2D_
 #undef  MPP_SCATTER_PELIST_3D_
+#undef  MPP_SCATTER_PELIST_GEN_3D_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int4_2d
+#define MPP_SCATTER_PELIST_GEN_2D_ mpp_scatter_pelist_int4_gen_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int4_3d
+#define MPP_SCATTER_PELIST_GEN_3D_ mpp_scatter_pelist_int4_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER4
 #include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
+#undef  MPP_SCATTER_PELIST_GEN_2D_
 #undef  MPP_SCATTER_PELIST_3D_
+#undef  MPP_SCATTER_PELIST_GEN_3D_
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i8_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_int8_2d
+#define MPP_SCATTER_PELIST_GEN_2D_ mpp_scatter_pelist_int8_gen_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_int8_3d
+#define MPP_SCATTER_PELIST_GEN_3D_ mpp_scatter_pelist_int8_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_INTEGER8
 #include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
+#undef  MPP_SCATTER_PELIST_GEN_2D_
 #undef  MPP_SCATTER_PELIST_3D_
+#undef  MPP_SCATTER_PELIST_GEN_3D_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r4_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real4_2d
+#define MPP_SCATTER_PELIST_GEN_2D_ mpp_scatter_pelist_real4_gen_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real4_3d
+#define MPP_SCATTER_PELIST_GEN_3D_ mpp_scatter_pelist_real4_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL4
 #include <mpp_scatter.fh>
 
 #undef  MPP_SCATTER_PELIST_2D_
+#undef  MPP_SCATTER_PELIST_GEN_2D_
 #undef  MPP_SCATTER_PELIST_3D_
+#undef  MPP_SCATTER_PELIST_GEN_3D_
 #undef MPP_TYPE_
 #define MPP_TYPE_ real(r8_kind)
 #define MPP_SCATTER_PELIST_2D_ mpp_scatter_pelist_real8_2d
+#define MPP_SCATTER_PELIST_GEN_2D_ mpp_scatter_pelist_real8_gen_2d
 #define MPP_SCATTER_PELIST_3D_ mpp_scatter_pelist_real8_3d
+#define MPP_SCATTER_PELIST_GEN_3D_ mpp_scatter_pelist_real8_gen_3d
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_scatter.fh>

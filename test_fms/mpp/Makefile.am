@@ -52,6 +52,7 @@ check_PROGRAMS = test_mpp \
   test_peset \
   test_mpp_update_domains \
   test_mpp_gatscat \
+  test_mpp_pelist_gatscat_gen_ind \
   test_mpp_sum \
   test_update_domains_performance \
   test_minmax \
@@ -112,6 +113,7 @@ test_mpp_update_domains_SOURCES = \
   test_mpp_update_domains_int.F90 \
   test_mpp_update_domains.F90
 test_mpp_gatscat_SOURCES = test_mpp_gatscat.F90
+test_mpp_pelist_gatscat_gen_ind_SOURCES = test_mpp_pelist_gatscat_gen_ind.F90
 test_mpp_sendrecv_SOURCES = test_mpp_sendrecv.F90
 test_mpp_sum_SOURCES = test_mpp_sum.F90
 test_update_domains_performance_SOURCES = \
