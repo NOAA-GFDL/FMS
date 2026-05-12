@@ -43,7 +43,11 @@
 
       nelems = sum(nelems_io(:))
 
-      if(mpp_file(unit)%write_on_this_pe) allocate(rbuff(nelems))
+      if(mpp_file(unit)%write_on_this_pe) then
+        allocate(rbuff(nelems))
+      else
+        allocate(rbuff(1))
+      endif
 
    !  Note that the gatherV implied here is asymmetric; only root needs to know the vector of recv size
       call mpp_gather(data,size(data),rbuff,nelems_io(:),pelist)
