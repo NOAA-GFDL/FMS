@@ -79,7 +79,7 @@ module fms_diag_axis_object_mod
   !> @brief Type to hold 1D domain decomposition information for an axis.
   !!
   !! This type extends the abstract diagDomain_t base type and is used when an axis is
-  !! associated with a 1D domain (typically a vertical or time-like axis).
+  !! associated with a 1D domain (typically a vertical or time axis).
   !! The 1D domain provides information about how the axis is partitioned across
   !! MPI processes along a single dimension.
   type, extends(diagDomain_t) :: diagDomain1d_t
