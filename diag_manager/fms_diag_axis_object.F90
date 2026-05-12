@@ -89,7 +89,7 @@ module fms_diag_axis_object_mod
   !> @brief Type to hold 2D domain decomposition information for an axis.
   !!
   !! This type extends the abstract diagDomain_t base type and is used when an axis is
-  !! associated with a 2D domain (typically for horizontal "X" or "Y" axes in atmospheric models).
+  !! part of a 2D domain (typically for horizontal "X" or "Y" axes in atmospheric models).
   !! The 2D domain provides information about how the axis is partitioned across
   !! MPI processes in both the X and Y dimensions.
   type, extends(diagDomain_t) :: diagDomain2d_t
