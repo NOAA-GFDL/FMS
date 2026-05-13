@@ -99,7 +99,7 @@ module fms_diag_axis_object_mod
   !> @brief Type to hold unstructured grid domain information for an axis.
   !!
   !! This type extends the abstract diagDomain_t base type and is used when an axis is
-  !! associated with an unstructured (irregular) grid domain. Unstructured grids are commonly
+  !! part of an unstructured (irregular) grid domain. Unstructured grids are commonly
   !! used in models with non-uniform spatial decomposition, such as icosahedral grids.
   !! The unstructured domain provides information about cell connectivity and partitioning.
   type, extends(diagDomain_t) :: diagDomainUg_t
@@ -112,7 +112,7 @@ module fms_diag_axis_object_mod
   !! a unified interface for axis operations and is polymorphically extended by more specific
   !! axis types:
   !! - @ref fmsDiagFullAxis_type - A complete axis with coordinates
-  !! - @ref fmsDiagSubAxis_type - A subset of a parent axis for regional output
+  !! - @ref fmsDiagSubAxis_type - A subset of a full axis for regional output
   !! - @ref fmsDiagDiurnalAxis_type - A specialized time-sampling axis for diurnal averaging
   !!
   !! The base type defines a common interface for querying axis properties and writing
@@ -154,7 +154,7 @@ module fms_diag_axis_object_mod
   !! dimension compression (e.g., selected depth levels in a vertical axis).
   !!
   !! Each subaxis maintains references to its parent axis and stores the index ranges
-  !! that define the subregion on the current MPI process, as well as globally.
+  !! that define the subregion on the current PE, as well as globally.
   !! Subaxes may also store Z-axis bounds for identifying equivalent subaxes across files.
   !!
   !! @ingroup diag_axis_object_mod
