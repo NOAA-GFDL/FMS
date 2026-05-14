@@ -24,7 +24,7 @@ program test_corner_mosaic
 
   integer, parameter :: n=16 !< Number of grid points along each axis on corner mosaic tiles
   integer :: ni(3), nj(3) !< Layouts for the tiles comprising the corner mosaic
-  integer :: ni_st=8, nj_st=8 !< Layout for the single-tile domain
+  integer :: ni_st=8, nj_st=4 !< Layout for the single-tile domain
 
   real(r4_kind), parameter :: eps = 1e-3
   integer, parameter :: stackmax=10000000
@@ -44,18 +44,18 @@ program test_corner_mosaic
   ! - Tile 2: 6x4
   ! - Tile 3: 4x6
 
-  ni(:) = [4, 6, 4] ! Corner mosaic layout (i axis)
-  nj(:) = [4, 4, 6] ! Corner mosaic layout (j axis)
+  ni(:) = [4, 4, 4] ! Corner mosaic layout (i axis)
+  nj(:) = [4, 2, 2] ! Corner mosaic layout (j axis)
   call define_corner_mosaic(ni, nj)
   call mpp_set_current_pelist ! Restore original pelist
 
-  ni(:) = [3, 3, 3] ! Corner mosaic layout (i axis)
-  nj(:) = [3, 3, 3] ! Corner mosaic layout (j axis)
+  ni(:) = [2, 4, 2] ! Corner mosaic layout (i axis)
+  nj(:) = [2, 2, 2] ! Corner mosaic layout (j axis)
   call define_corner_mosaic(ni, nj)
   call mpp_set_current_pelist ! Restore original pelist
 
-  ni(:) = [3, 4, 5] ! Corner mosaic layout (i axis)
-  nj(:) = [5, 4, 3] ! Corner mosaic layout (j axis)
+  ni(:) = [2, 6, 2] ! Corner mosaic layout (i axis)
+  nj(:) = [4, 2, 6] ! Corner mosaic layout (j axis)
   call define_corner_mosaic(ni, nj)
   call mpp_set_current_pelist ! Restore original pelist
 
