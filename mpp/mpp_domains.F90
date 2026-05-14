@@ -1785,6 +1785,8 @@ module mpp_domains_mod
 !! @endcode
 !> @ingroup mpp_domains_mod
   interface mpp_global_field
+
+#ifndef __NVCOMPILER
      module procedure mpp_global_field_r8
 #ifdef OVERLOAD_C8
      module procedure mpp_global_field_c8
@@ -1797,6 +1799,45 @@ module mpp_domains_mod
 #endif
      module procedure mpp_global_field_i4
      module procedure mpp_global_field_l4
+!! rank specific interfaces are needed for NVHPC because it does not support deferred-rank arrays
+#else
+     module procedure mpp_global_field_r8_2d
+     module procedure mpp_global_field_r8_3d
+     module procedure mpp_global_field_r8_4d
+     module procedure mpp_global_field_r8_5d
+#ifdef OVERLOAD_C8
+     module procedure mpp_global_field_c8_2d
+     module procedure mpp_global_field_c8_3d
+     module procedure mpp_global_field_c8_4d
+     module procedure mpp_global_field_c8_5d
+#endif
+     module procedure mpp_global_field_i8_2d
+     module procedure mpp_global_field_i8_3d
+     module procedure mpp_global_field_i8_4d
+     module procedure mpp_global_field_i8_5d
+     module procedure mpp_global_field_l8_2d
+     module procedure mpp_global_field_l8_3d
+     module procedure mpp_global_field_l8_4d
+     module procedure mpp_global_field_l8_5d
+     module procedure mpp_global_field_r4_2d
+     module procedure mpp_global_field_r4_3d
+     module procedure mpp_global_field_r4_4d
+     module procedure mpp_global_field_r4_5d
+#ifdef OVERLOAD_C4
+     module procedure mpp_global_field_c4_2d
+     module procedure mpp_global_field_c4_3d
+     module procedure mpp_global_field_c4_4d
+     module procedure mpp_global_field_c4_5d
+#endif
+     module procedure mpp_global_field_i4_2d
+     module procedure mpp_global_field_i4_3d
+     module procedure mpp_global_field_i4_4d
+     module procedure mpp_global_field_i4_5d
+     module procedure mpp_global_field_l4_2d
+     module procedure mpp_global_field_l4_3d
+     module procedure mpp_global_field_l4_4d
+     module procedure mpp_global_field_l4_5d
+#endif
   end interface
 
 !> @ingroup mpp_domains_mod
@@ -2297,6 +2338,7 @@ module mpp_domains_mod
   !> Private interface to pack an array into a vector
   !> @ingroup mpp_domains_mod
   interface arr2vec
+#ifndef __NVCOMPILER
      module procedure arr2vec_r8
 #ifdef OVERLOAD_C8
      module procedure arr2vec_c8
@@ -2309,11 +2351,38 @@ module mpp_domains_mod
 #endif
      module procedure arr2vec_i4
      module procedure arr2vec_l4
+#else
+     module procedure arr2vec_r8_2d
+     module procedure arr2vec_r8_3d
+     module procedure arr2vec_r8_4d
+     module procedure arr2vec_r8_5d
+     module procedure arr2vec_i8_2d
+     module procedure arr2vec_i8_3d
+     module procedure arr2vec_i8_4d
+     module procedure arr2vec_i8_5d
+     module procedure arr2vec_l8_2d
+     module procedure arr2vec_l8_3d
+     module procedure arr2vec_l8_4d
+     module procedure arr2vec_l8_5d
+     module procedure arr2vec_r4_2d
+     module procedure arr2vec_r4_3d
+     module procedure arr2vec_r4_4d
+     module procedure arr2vec_r4_5d
+     module procedure arr2vec_i4_2d
+     module procedure arr2vec_i4_3d
+     module procedure arr2vec_i4_4d
+     module procedure arr2vec_i4_5d
+     module procedure arr2vec_l4_2d
+     module procedure arr2vec_l4_3d
+     module procedure arr2vec_l4_4d
+     module procedure arr2vec_l4_5d
+#endif
   end interface
 
   !> Private interface to unpack a vector into an array
   !> @ingroup mpp_domains_mod
   interface vec2arr
+#ifndef __NVCOMPILER
      module procedure vec2arr_r8
 #ifdef OVERLOAD_C8
      module procedure vec2arr_c8
@@ -2326,11 +2395,38 @@ module mpp_domains_mod
 #endif
      module procedure vec2arr_i4
      module procedure vec2arr_l4
+#else
+     module procedure vec2arr_r8_2d
+     module procedure vec2arr_r8_3d
+     module procedure vec2arr_r8_4d
+     module procedure vec2arr_r8_5d
+     module procedure vec2arr_i8_2d
+     module procedure vec2arr_i8_3d
+     module procedure vec2arr_i8_4d
+     module procedure vec2arr_i8_5d
+     module procedure vec2arr_l8_2d
+     module procedure vec2arr_l8_3d
+     module procedure vec2arr_l8_4d
+     module procedure vec2arr_l8_5d
+     module procedure vec2arr_r4_2d
+     module procedure vec2arr_r4_3d
+     module procedure vec2arr_r4_4d
+     module procedure vec2arr_r4_5d
+     module procedure vec2arr_i4_2d
+     module procedure vec2arr_i4_3d
+     module procedure vec2arr_i4_4d
+     module procedure vec2arr_i4_5d
+     module procedure vec2arr_l4_2d
+     module procedure vec2arr_l4_3d
+     module procedure vec2arr_l4_4d
+     module procedure vec2arr_l4_5d
+#endif
   end interface
 
   !> Private interface to initialize an assumed-rank array
   !> @ingroup mpp_domains_mod
   interface arr_init
+#ifndef __NVCOMPILER
      module procedure arr_init_r8
 #ifdef OVERLOAD_C8
      module procedure arr_init_c8
@@ -2343,6 +2439,32 @@ module mpp_domains_mod
 #endif
      module procedure arr_init_i4
      module procedure arr_init_l4
+#else
+     module procedure arr_init_r8_2d
+     module procedure arr_init_r8_3d
+     module procedure arr_init_r8_4d
+     module procedure arr_init_r8_5d
+     module procedure arr_init_i8_2d
+     module procedure arr_init_i8_3d
+     module procedure arr_init_i8_4d
+     module procedure arr_init_i8_5d
+     module procedure arr_init_l8_2d
+     module procedure arr_init_l8_3d
+     module procedure arr_init_l8_4d
+     module procedure arr_init_l8_5d
+     module procedure arr_init_r4_2d
+     module procedure arr_init_r4_3d
+     module procedure arr_init_r4_4d
+     module procedure arr_init_r4_5d
+     module procedure arr_init_i4_2d
+     module procedure arr_init_i4_3d
+     module procedure arr_init_i4_4d
+     module procedure arr_init_i4_5d
+     module procedure arr_init_l4_2d
+     module procedure arr_init_l4_3d
+     module procedure arr_init_l4_4d
+     module procedure arr_init_l4_5d
+#endif
   end interface
 
   ! Include variable "version" to be written to log file.
@@ -2357,8 +2479,8 @@ contains
 #include <mpp_domains_comm.inc>
 #include <mpp_domains_define.inc>
 #include <mpp_domains_misc.inc>
+#include <mpp_pack.inc>
 #include <mpp_domains_reduce.inc>
 #include <mpp_unstruct_domain.inc>
-#include <mpp_pack.inc>
 
 end module mpp_domains_mod
