@@ -976,7 +976,7 @@
 #include <mpp_global_field.fh>
 
 
-!! if __NVCOMPILER is defined, use compatibility version 
+!! if __NVCOMPILER is defined, use compatibility version
 #else
 
 #undef MPP_TYPE_
