@@ -122,6 +122,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
   integer :: xgsize, ygsize
+  integer :: dim_order(2) !< Order of the dimensions
   integer :: istart, jstart, iend, jend
   integer :: ioff, joff
 
@@ -225,20 +226,23 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   iend = istart + xc_size - 1
   jend = jstart + yc_size - 1
 
+  dim_order(xdim_index) = 1
+  dim_order(ydim_index) = 2
+
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                      & global_buf_i4_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                      & global_buf_i8_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                      & global_buf_r4_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                      & global_buf_r8_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     class default
       call error("unsupported variable type: domain_write_2d_mpp_gather: file: " &
                & //trim(fileobj%path)//" variable:"// trim(variable_name))
@@ -315,6 +319,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
   integer :: xgsize, ygsize
+  integer :: dim_order(3) !< Order of the dimensions
   integer :: istart, jstart, iend, jend
   integer :: ioff, joff
 
@@ -328,15 +333,6 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     call compressed_write(fileobj, variable_name, vdata, &
                           unlim_dim_level=unlim_dim_level, corner=corner, &
                           edge_lengths=edge_lengths)
-    return
-  endif
-
-  if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
-  ! This is a KLUDGE
-  ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
-  ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
-    vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
-    call domain_write_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
     return
   endif
 
@@ -421,20 +417,24 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   ioff = 1-xgmin
   joff = 1-ygmin
 
+  dim_order = 3
+  dim_order(xdim_index) = 1
+  dim_order(ydim_index) = 2
+
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                  & vdata(istart:iend, jstart:jend,:), global_buf_i4_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                  & vdata(istart:iend, jstart:jend,:), global_buf_i8_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                  & vdata(istart:iend, jstart:jend,:), global_buf_r4_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
       call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+                  & vdata(istart:iend, jstart:jend,:), global_buf_r8_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     class default
       call error("unsupported variable type: domain_write_3d_mpp_gather: file: " &
                   & //trim(fileobj%path)//" variable:"//trim(variable_name))

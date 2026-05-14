@@ -119,6 +119,7 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer                 :: xgsize                !< Size of global x io domain
   integer                 :: ygbegin               !< Starting y index of global io domain
   integer                 :: ygsize                !< Size of global y io domain
+  integer                 :: dim_order(2)          !< Order of the dimensions
   type(domain2d), pointer :: io_domain             !< pointer to the io_domain
 
   !< The global data is only allocated by the io root PEs
@@ -164,14 +165,6 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
 
-  if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
-    ! This is a KLUDGE
-    ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
-    ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
-    vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:1, 1:1) => vdata(:,:)
-    call domain_read_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
-    return
-  endif
   io_domain => mpp_get_io_domain(fileobj%domain)
   c(:) = 1
   e(:) = shape(vdata)
@@ -240,29 +233,32 @@ subroutine domain_read_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(xdim_index) = xc_size
   e(ydim_index) = yc_size
 
+  dim_order(xdim_index) = 1
+  dim_order(ydim_index) = 2
+
   select type(vdata)
   type is (integer(kind=i4_kind))
     call allocate_array(buf_i4_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, fileobj%pelist, &
-                     buf_i4_kind_pe, buf_i4_kind, fileobj%is_root)
+                     buf_i4_kind_pe, buf_i4_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_i4_kind_pe, vdata, c, e)
     deallocate(buf_i4_kind_pe)
   type is (integer(kind=i8_kind))
     call allocate_array(buf_i8_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, fileobj%pelist, &
-                     buf_i8_kind_pe, buf_i8_kind, fileobj%is_root)
+                     buf_i8_kind_pe, buf_i8_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_i8_kind_pe, vdata, c, e)
     deallocate(buf_i8_kind_pe)
   type is (real(kind=r4_kind))
     call allocate_array(buf_r4_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, fileobj%pelist, &
-                     buf_r4_kind_pe, buf_r4_kind, fileobj%is_root)
+                     buf_r4_kind_pe, buf_r4_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_r4_kind_pe, vdata, c, e)
     deallocate(buf_r4_kind_pe)
   type is (real(kind=r8_kind))
     call allocate_array(buf_r8_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, fileobj%pelist, &
-                     buf_r8_kind_pe, buf_r8_kind, fileobj%is_root)
+                     buf_r8_kind_pe, buf_r8_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_r8_kind_pe, vdata, c, e)
     deallocate(buf_r8_kind_pe)
   class default
@@ -320,6 +316,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer                 :: xgsize                !< Size of global x io domain
   integer                 :: ygbegin               !< Starting y index of global io domain
   integer                 :: ygsize                !< Size of global y io domain
+  integer                 :: dim_order(3)          !< Order of the dimensions
   type(domain2d), pointer :: io_domain             !< pointer to the io_domain
 
   !< The global data is only allocated by the io root PEs
@@ -365,14 +362,6 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
 
-  if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
-    ! This is a KLUDGE
-    ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
-    ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
-    vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
-    call domain_read_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
-    return
-  endif
   io_domain => mpp_get_io_domain(fileobj%domain)
   c(:) = 1
   if (present(corner)) c = corner
@@ -444,29 +433,33 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(xdim_index) = xc_size
   e(ydim_index) = yc_size
 
+  dim_order = 3
+  dim_order(xdim_index) = 1
+  dim_order(ydim_index) = 2
+
   select type(vdata)
   type is (integer(kind=i4_kind))
     call allocate_array(buf_i4_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_i4_kind_pe, buf_i4_kind, fileobj%is_root)
+                     buf_i4_kind_pe, buf_i4_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_i4_kind_pe, vdata, c, e)
     deallocate(buf_i4_kind_pe)
   type is (integer(kind=i8_kind))
     call allocate_array(buf_i8_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_i8_kind_pe, buf_i8_kind, fileobj%is_root)
+                     buf_i8_kind_pe, buf_i8_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_i8_kind_pe, vdata, c, e)
     deallocate(buf_i8_kind_pe)
   type is (real(kind=r4_kind))
     call allocate_array(buf_r4_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_r4_kind_pe, buf_r4_kind, fileobj%is_root)
+                     buf_r4_kind_pe, buf_r4_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_r4_kind_pe, vdata, c, e)
     deallocate(buf_r4_kind_pe)
   type is (real(kind=r8_kind))
     call allocate_array(buf_r8_kind_pe, e)
     call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_r8_kind_pe, buf_r8_kind, fileobj%is_root)
+                     buf_r8_kind_pe, buf_r8_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_r8_kind_pe, vdata, c, e)
     deallocate(buf_r8_kind_pe)
   class default
