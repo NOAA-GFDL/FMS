@@ -59,7 +59,7 @@ module fms_diag_axis_object_mod
 
   !> @}
 
-  !> @brief Abstract base type for domain information associated with an axis.
+  !> @brief Base type for domain information associated with an axis.
   !!
   !! This type was created to avoid requiring separate "Domain", "Domain2", and "DomainUG" arguments
   !! in subroutines. Instead, a single polymorphic class(diagDomain_t) argument can be used, which is
@@ -78,7 +78,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Type to hold 1D domain decomposition information for an axis.
   !!
-  !! This type extends the abstract diagDomain_t base type and is used when an axis is
+  !! This type extends the diagDomain_t base type and is used when an axis is
   !! associated with a 1D domain (typically a vertical or time-like axis).
   !! The 1D domain provides information about how the axis is partitioned across
   !! MPI processes along a single dimension.
@@ -88,7 +88,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Type to hold 2D domain decomposition information for an axis.
   !!
-  !! This type extends the abstract diagDomain_t base type and is used when an axis is
+  !! This type extends the diagDomain_t base type and is used when an axis is
   !! associated with a 2D domain (typically for horizontal "X" or "Y" axes in atmospheric models).
   !! The 2D domain provides information about how the axis is partitioned across
   !! MPI processes in both the X and Y dimensions.
@@ -98,7 +98,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Type to hold unstructured grid domain information for an axis.
   !!
-  !! This type extends the abstract diagDomain_t base type and is used when an axis is
+  !! This type extends the diagDomain_t base type and is used when an axis is
   !! associated with an unstructured (irregular) grid domain. Unstructured grids are commonly
   !! used in models with non-uniform spatial decomposition, such as icosahedral grids.
   !! The unstructured domain provides information about cell connectivity and partitioning.
@@ -108,7 +108,7 @@ module fms_diag_axis_object_mod
 
   !> @brief Base type for diagnostic axis objects.
   !!
-  !! This is the abstract base type for all diagnostic axis implementations. It provides
+  !! This is the base type for all diagnostic axis implementations. It provides
   !! a unified interface for axis operations and is polymorphically extended by more specific
   !! axis types:
   !! - @ref fmsDiagFullAxis_type - A complete axis with coordinates
@@ -202,9 +202,7 @@ module fms_diag_axis_object_mod
     CLASS(*),         ALLOCATABLE, private :: diurnal_data(:)  !< Coordinate values: times within 24-hour day
 
     contains
-      !> @brief Get the number of diurnal sampling intervals
       procedure :: get_diurnal_axis_samples
-      !> @brief Write diurnal axis metadata to NetCDF file
       procedure :: write_diurnal_metadata
   END TYPE fmsDiagDiurnalAxis_type
 
@@ -368,7 +366,7 @@ module fms_diag_axis_object_mod
   !> @brief Add a user-defined attribute to this axis.
   !!
   !! User-defined attributes are additional metadata that can be attached to axes.
-  !! These attributes will be written to the NetCDF output file.
+  !! These attributes will be written to the NetCDF output file as metadata.
   subroutine add_axis_attribute(this, att_name, att_value)
     class(fmsDiagFullAxis_type),INTENT(INOUT) :: this   !< diag_axis obj
     character(len=*), intent(in)    :: att_name     !< Name of the attribute
@@ -388,7 +386,8 @@ module fms_diag_axis_object_mod
   !> @brief Write axis metadata (dimensions, coordinates, and attributes) to a NetCDF file.
   !!
   !! This subroutine registers the axis dimension and variable in an open FMS2_IO
-  !! file object, along with all metadata attributes (units, long_name, etc.).
+  !! file object (FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t), along with all metadata
+  !! attributes (units, long_name, etc.).
   !! It handles different axis types (full, sub, diurnal) and domain decomposition types.
   !!
   !! For subaxes, the parent axis information is used to determine coordinate and
@@ -558,14 +557,22 @@ module fms_diag_axis_object_mod
     end select
   end subroutine write_axis_data
 
-  !> @brief Create and register a new diurnal (time-of-day) axis.
+  !> @brief Create and registers extra axes used when performing diurnal averaging, to capture the midpoints
+  !! and bounds of each diurnal sample. This subroutine will be called twice for each diurnal reduction: once to
+  !! create the edges axis (time_of_day_edges_<N>) and once to create the center axis (time_of_day_<N>), N being the
+  !! number of diurnal samples. The number of diurnal samples is specified by the reduction method name in your
+  !! diag_table.yaml, ie. "diurnal3" for 3 diurnal samples, "diurnal24" for 24 diurnal samples, etc.
   !!
-  !! This subroutine creates either a diurnal time-of-day axis or its associated edges
-  !! (bin boundaries) axis. These are used for capturing the diurnal cycle by binning
-  !! samples into hourly or sub-hourly intervals through a 24-hour day.
-  !!
-  !! When is_edges is .true., bin boundaries are created; when .false., bin centers
-  !! are created with a reference to the corresponding edges axis.
+  !! The time_of_day_<N> axis will have the midpoint of the sampled segment and the time_of_day_edges_<N> will have
+  !! the bounds. This will be written out in hours of a day, so edges will always start at 0 and end at 24, and
+  !! minutes will be represented as decimals.
+  !! 
+  !! For example, if n_diurnal_samples = 3, the time_of_day_03 axis will have the values [4, 12, 20], representing the
+  !! time at the midpoint (4:00 am, 12:00 pm, 8:00 pm) for each of the 3 samples and the time_of_day_edges_03 axis
+  !! will have the values [0, 8, 16, 24], representing the start/end times of each sample (12:00 am, 8:00 am, 4:00 pm,
+  !! 12:00 pm).
+  !! For hourly sampling (n_diurnal_samples = 24), the time_of_day_24 axis will have the values [0.5, 1.5, 2.5, ..., 23.5] and the
+  !! time_of_day_edges_24 axis will have the values [0, 1, 2, ..., 23, 24].
   subroutine define_diurnal_axis(diag_axis, naxis, n_diurnal_samples, is_edges)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)      !< Array of axis containers
     integer,                                  intent(inout) :: naxis             !< Number of axis that have

@@ -23,6 +23,8 @@
 !!   a diag_table describing which fields are expected in the output file, and also
 !!   buffers the sent in data prior to writing. This allows users to send in data for a field multiple times for a timestep
 !!   and output the average,max/min, etc. based on the 'reduction' method specified in the table.
+!!   It also allows for setting custom frequencies for output and file creation, for example outputting every 2 hours
+!!   while creating a new file every 6 hours.
 !!
 !!   <H3>Diag Manager Implementation</H3>
 !!   The diag_manager module provides a unified public interface that supports legacy (ASCII-based) and modern
@@ -4052,87 +4054,6 @@ END FUNCTION register_static_field
     integer :: j
     CHARACTER(len=256) :: err_msg_local
 
-  !> @page diag_manager_nml diag_manager_nml
-  !! @brief Namelist for diag_manager_mod
-  !!
-  !! The diag_manager_nml namelist contains runtime configuration options for the diagnostic manager.
-  !! Although the namelist is defined in this module (diag_manager_mod), all the variables set belong
-  !! to the diag_data_mod module.
-  !!
-  !! @section diag_manager_nml_vars Variables
-  !!
-  !! - @b append_pelist_name: LOGICAL, DEFAULT=.FALSE.
-  !!     If true, appends the processor element list name to output filenames.
-  !!     Useful for distinguishing output files from different processor configurations.
-  !!
-  !! - @b mix_snapshot_average_fields: LOGICAL, DEFAULT=.FALSE.
-  !!     Controls whether snapshot (instantaneous) and time-averaged fields can coexist in the same output file.
-  !!     When false, snapshot and averaged fields must be separated into different files to avoid timestamp conflicts.
-  !!
-  !! - @b max_files: INTEGER, DEFAULT=31
-  !!     Maximum number of output files that can be managed simultaneously by the diagnostic manager.
-  !!
-  !! - @b max_output_fields: INTEGER, DEFAULT=300
-  !!     Maximum number of output fields that can be registered with the diagnostic manager.
-  !!
-  !! - @b max_input_fields: INTEGER, DEFAULT=300
-  !!     Maximum number of input fields that can be processed by the diagnostic manager.
-  !!
-  !! - @b max_axes: INTEGER, DEFAULT=60
-  !!     Maximum number of coordinate axes that can be defined for diagnostic fields.
-  !!
-  !! - @b do_diag_field_log: LOGICAL, DEFAULT=.FALSE.
-  !!     Enables logging of diagnostic field registration and data sending operations.
-  !!     Useful for debugging diagnostic setup and data flow. Logfiles are written to the file "diag_field_log.out.<root pe number>".
-  !!     Further controlled by the field_log_separator variable, which sets the separator character for log entries (default is '|').
-  !!
-  !! - @b write_bytes_in_files: LOGICAL, DEFAULT=.FALSE.
-  !!     If true, writes the number of bytes written to each output file.
-  !!     Provides information about file sizes and I/O volume.
-  !!
-  !! - @b debug_diag_manager: LOGICAL, DEFAULT=.FALSE.
-  !!     Enables debug mode for the diagnostic manager, providing additional diagnostic output
-  !!     and validation checks during execution.
-  !!
-  !! - @b max_num_axis_sets: INTEGER, DEFAULT=25
-  !!     Maximum number of axis sets that can be defined for organizing coordinate systems.
-  !!
-  !! - @b use_cmor: LOGICAL, DEFAULT=.FALSE.
-  !!     Forces the use of CMOR (Climate Model Output Rewriter) standard missing values (-1.0e20)
-  !!     instead of user-specified missing values. Required for CMIP-compliant output.
-  !!
-  !! - @b issue_oor_warnings: LOGICAL, DEFAULT=.TRUE.
-  !!     Controls whether warnings are issued when diagnostic field values fall outside
-  !!     the valid range specified during field registration.
-  !!
-  !! - @b oor_warnings_fatal: LOGICAL, DEFAULT=.FALSE.
-  !!     Determines whether out-of-range warnings should be treated as fatal errors,
-  !!     causing the model to abort when invalid values are detected.
-  !!
-  !! - @b max_field_attributes: INTEGER, DEFAULT=4
-  !!     Maximum number of user-defined attributes that can be attached to each diagnostic field.
-  !!
-  !! - @b max_file_attributes: INTEGER, DEFAULT=2
-  !!     Maximum number of user-defined global attributes that can be attached to each output file.
-  !!
-  !! - @b prepend_date: LOGICAL, DEFAULT=.TRUE.
-  !!     Controls whether the file start date is prepended to output filenames.
-  !!     Requires that diag_manager_init be called with the time_init parameter.
-  !!
-  !! - @b region_out_use_alt_value: LOGICAL, DEFAULT=.TRUE.
-  !!     Determines which sentinel value to use when checking regional output boundaries.
-  !!     Uses GLO_REG_VAL_ALT (-1) when true, GLO_REG_VAL (-999) when false.
-  !!
-  !! - @b use_mpp_io: LOGICAL, DEFAULT=.FALSE.
-  !!     Selects the I/O backend: true uses mpp_io, false uses fms2_io (recommended).
-  !!
-  !! - @b use_modern_diag: LOGICAL, DEFAULT=.FALSE.
-  !!     Enables the modern diagnostic manager implementation with YAML-based diag tables.
-  !!     When false, uses the legacy ASCII-based diagnostic manager for backward compatibility.
-  !!
-  !! - @b use_clock_average: LOGICAL, DEFAULT=.FALSE.
-  !!     Controls time averaging method: true uses wall-clock time, false uses sample counting.
-  !!     Clock-based averaging is more accurate for variable timestep models.
     NAMELIST /diag_manager_nml/ append_pelist_name, mix_snapshot_average_fields, max_output_fields, &
          & max_input_fields, max_axes, do_diag_field_log, write_bytes_in_file, debug_diag_manager,&
          & max_num_axis_sets, max_files, use_cmor, issue_oor_warnings,&

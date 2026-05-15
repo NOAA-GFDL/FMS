@@ -43,6 +43,7 @@ The diag_manager is organized into functional modules, with new modules introduc
 - `fms_diag_input_buffer.F90` - Input buffer management
 - `fms_diag_yaml.F90` - YAML diagnostic table parsing and handling
 - `fms_diag_time_utils.F90` - Time utility functions
+- `diag_data.F90` - stores all namelist parameters from diag_manager_nml
 
 #### Enabling the Modern Diag Manager
 

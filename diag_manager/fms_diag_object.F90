@@ -1314,7 +1314,7 @@ fms_get_domain2d = null_domain2d
 
   call get_domain_and_domain_type(fms_diag_object%diag_axis, ids, type_of_domain, domain, "get_domain2d")
   if (type_of_domain .ne. TWO_D_DOMAIN) &
-    call mpp_error(FATAL, 'diag_axis_mod::get_domain2d- The axis do not correspond to a 2d Domain')
+    call mpp_error(FATAL, 'fms_diag_object_mod::fms_get_domain2d- The axis do not correspond to a 2d Domain')
   select type(domain)
   type is (diagDomain2d_t)
     fms_get_domain2d = domain%domain2
