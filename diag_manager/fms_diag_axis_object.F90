@@ -79,7 +79,7 @@ module fms_diag_axis_object_mod
   !> @brief Type to hold 1D domain decomposition information for an axis.
   !!
   !! This type extends the diagDomain_t base type and is used when an axis is
-  !! associated with a 1D domain (typically a vertical or time-like axis).
+  !! associated with a 1D domain (typically a vertical or time axis).
   !! The 1D domain provides information about how the axis is partitioned across
   !! MPI processes along a single dimension.
   type, extends(diagDomain_t) :: diagDomain1d_t
@@ -89,7 +89,7 @@ module fms_diag_axis_object_mod
   !> @brief Type to hold 2D domain decomposition information for an axis.
   !!
   !! This type extends the diagDomain_t base type and is used when an axis is
-  !! associated with a 2D domain (typically for horizontal "X" or "Y" axes in atmospheric models).
+  !! part of a 2D domain (typically for horizontal "X" or "Y" axes in atmospheric models).
   !! The 2D domain provides information about how the axis is partitioned across
   !! MPI processes in both the X and Y dimensions.
   type, extends(diagDomain_t) :: diagDomain2d_t
@@ -112,7 +112,7 @@ module fms_diag_axis_object_mod
   !! a unified interface for axis operations and is polymorphically extended by more specific
   !! axis types:
   !! - @ref fmsDiagFullAxis_type - A complete axis with coordinates
-  !! - @ref fmsDiagSubAxis_type - A subset of a parent axis for regional output
+  !! - @ref fmsDiagSubAxis_type - A subset of a full axis for regional output
   !! - @ref fmsDiagDiurnalAxis_type - A specialized time-sampling axis for diurnal averaging
   !!
   !! The base type defines a common interface for querying axis properties and writing
@@ -154,7 +154,7 @@ module fms_diag_axis_object_mod
   !! dimension compression (e.g., selected depth levels in a vertical axis).
   !!
   !! Each subaxis maintains references to its parent axis and stores the index ranges
-  !! that define the subregion on the current MPI process, as well as globally.
+  !! that define the subregion on the current PE, as well as globally.
   !! Subaxes may also store Z-axis bounds for identifying equivalent subaxes across files.
   !!
   !! @ingroup diag_axis_object_mod
