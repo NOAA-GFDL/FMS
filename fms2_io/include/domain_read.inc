@@ -434,7 +434,9 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(xdim_index) = xc_size
   e(ydim_index) = yc_size
 
+  ! Calculate the index of the z dimension
   zdim_index = 6 - xdim_index - ydim_index
+
   dim_order(xdim_index) = 1
   dim_order(ydim_index) = 2
   dim_order(zdim_index) = 3
