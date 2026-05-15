@@ -311,6 +311,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
+  integer :: zdim_index
   integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
   integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
@@ -417,23 +418,24 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   ioff = 1-xgmin
   joff = 1-ygmin
 
-  dim_order = 3
+  zdim_index = 6 - xdim_index - ydim_index
   dim_order(xdim_index) = 1
   dim_order(ydim_index) = 2
+  dim_order(zdim_index) = 3
 
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_i4_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_i8_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_r4_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
                   & vdata(istart:iend, jstart:jend,:), global_buf_r8_kind, dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     class default
       call error("unsupported variable type: domain_write_3d_mpp_gather: file: " &

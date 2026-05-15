@@ -300,6 +300,7 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
 
   integer                 :: xdim_index            !< The index of the variable that is the x dimension
   integer                 :: ydim_index            !< The index of the variable that is the y dimension
+  integer                 :: zdim_index            !< The index of the variable that is the z dimension
   integer                 :: xpos                  !< The position of the x axis
   integer                 :: ypos                  !< The position of the y axis
   integer                 :: i                     !< For do loops
@@ -433,33 +434,34 @@ subroutine domain_read_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   e(xdim_index) = xc_size
   e(ydim_index) = yc_size
 
-  dim_order = 3
+  zdim_index = 6 - xdim_index - ydim_index
   dim_order(xdim_index) = 1
   dim_order(ydim_index) = 2
+  dim_order(zdim_index) = 3
 
   select type(vdata)
   type is (integer(kind=i4_kind))
     call allocate_array(buf_i4_kind_pe, e)
-    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_i4_kind_pe, buf_i4_kind, dim_order, fileobj%is_root)
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(zdim_index), &
+                     fileobj%pelist, buf_i4_kind_pe, buf_i4_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_i4_kind_pe, vdata, c, e)
     deallocate(buf_i4_kind_pe)
   type is (integer(kind=i8_kind))
     call allocate_array(buf_i8_kind_pe, e)
-    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_i8_kind_pe, buf_i8_kind, dim_order, fileobj%is_root)
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(zdim_index), &
+                     fileobj%pelist, buf_i8_kind_pe, buf_i8_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_i8_kind_pe, vdata, c, e)
     deallocate(buf_i8_kind_pe)
   type is (real(kind=r4_kind))
     call allocate_array(buf_r4_kind_pe, e)
-    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_r4_kind_pe, buf_r4_kind, dim_order, fileobj%is_root)
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(zdim_index), &
+                     fileobj%pelist, buf_r4_kind_pe, buf_r4_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_r4_kind_pe, vdata, c, e)
     deallocate(buf_r4_kind_pe)
   type is (real(kind=r8_kind))
     call allocate_array(buf_r8_kind_pe, e)
-    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(3), fileobj%pelist, &
-                     buf_r8_kind_pe, buf_r8_kind, dim_order, fileobj%is_root)
+    call mpp_scatter(isc-xgbegin+1, isc+xc_size-xgbegin, jsc-ygbegin+1, jsc+yc_size-ygbegin, e(zdim_index), &
+                     fileobj%pelist, buf_r8_kind_pe, buf_r8_kind, dim_order, fileobj%is_root)
     call put_array_section(buf_r8_kind_pe, vdata, c, e)
     deallocate(buf_r8_kind_pe)
   class default
