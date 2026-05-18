@@ -335,9 +335,9 @@ use platform_mod
     class(*), allocatable         :: att_value(:) !< Value of the attribute
     character(len=:), allocatable :: att_name     !< Name of the attribute
     contains
-  #ifndef __NVCOMPILER
+#ifndef __NVCOMPILER
       procedure :: add => fms_add_attribute
-  #endif
+#endif
       procedure :: write_metadata
   end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
