@@ -1,8 +1,32 @@
+!***********************************************************************
+!*                             Apache License 2.0
+!*
+!* This file is part of the GFDL Flexible Modeling System (FMS).
+!*
+!* Licensed under the Apache License, Version 2.0 (the "License");
+!* you may not use this file except in compliance with the License.
+!* You may obtain a copy of the License at
+!*
+!*     http://www.apache.org/licenses/LICENSE-2.0
+!*
+!* FMS is distributed in the hope that it will be useful, but WITHOUT
+!* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied;
+!* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+!* PARTICULAR PURPOSE. See the License for the specific language
+!* governing permissions and limitations under the License.
+!***********************************************************************
 ! Corner mosaic test with resource reallocation
 ! This test constructs a single-tile domain, then a three-tile mosaic, then a single-tile domain once more.
-! The number of PEs must be such that the single-tile domain uses all of the PEs (e.g., 64 PEs if the single-tile
-! domain is 8x8). The layout of the corner mosaic is defined by ni(:) and nj(:). The corner mosaic does not need to
+! The number of PEs must be such that the single-tile domain uses all of the PEs (e.g., 32 PEs if the single-tile
+! domain is 8x4). The layout of the corner mosaic is defined by ni(:) and nj(:). The corner mosaic does not need to
 ! use all of the available PEs.
+  !!!!!!!!!
+  !   --- !
+  !  /|3| !
+  ! ----- !
+  ! |1|2| !
+  ! ----- !
+  !!!!!!!!!
 
 program test_corner_mosaic
   use mpp_mod, only: mpp_error, FATAL
@@ -41,8 +65,8 @@ program test_corner_mosaic
 
   ! Corner mosaic layout:
   ! - Tile 1: 4x4
-  ! - Tile 2: 6x4
-  ! - Tile 3: 4x6
+  ! - Tile 2: 4x2
+  ! - Tile 3: 4x2
 
   ni(:) = [4, 4, 4] ! Corner mosaic layout (i axis)
   nj(:) = [4, 2, 2] ! Corner mosaic layout (j axis)
@@ -64,14 +88,6 @@ program test_corner_mosaic
   call fms_end
 
 contains
-
-  !!!!!!!!!
-  !   --- !
-  !  /|3| !
-  ! ----- !
-  ! |1|2| !
-  ! ----- !
-  !!!!!!!!!
 
   subroutine define_single_tile(ni, nj)
     integer, intent(in) :: ni, nj
@@ -247,14 +263,6 @@ contains
       global(j-halo, i,   3) = global(n-i+1, n-halo+j, 1)
     enddo
   end subroutine agrid_scalar_init
-
-  !!!!!!!!!
-  !   --- !
-  !  /|3| !
-  ! ----- !
-  ! |1|2| !
-  ! ----- !
-  !!!!!!!!!
 
   subroutine cgrid_vector_init(gx, gy, x, y)
     real(r4_kind) :: gx((isg-halo):(ieg+halo+1), (jsg-halo):(jeg+halo), ntiles), &
