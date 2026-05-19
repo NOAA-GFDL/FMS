@@ -24,7 +24,8 @@
 !> @author Miguel Zuniga
 !!
 !! @note This module is part of the legacy diag_manager.  If use_modern_diag is enabled, this module will be unused.
-!! See fms_diag_output_buffer.F90 and fms_diag_input_buffer.F90 for the modern diag_manager implementation of field buffer updates.
+!! See fms_diag_output_buffer.F90 and fms_diag_input_buffer.F90 for the modern
+!! diag_manager implementation of field buffer updates.
 !!
 !! <TT>fms_diag_outfield_mod</TT> The output buffer updating routines are passed configuration
 !!  and control data with types defined in this module; and some utility functions called by the

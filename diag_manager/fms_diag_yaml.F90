@@ -17,7 +17,8 @@
 !***********************************************************************
 !> @defgroup fms_diag_yaml_mod fms_diag_yaml_mod
 !> @ingroup diag_manager
-!! @brief This module defines the diagYamlObject_type, which is the object that holds the information from the diag_table.yaml file.
+!! @brief This module defines the diagYamlObject_type, which is the object that holds
+!! the information from the diag_table.yaml file.
 !! It also contains routines for reading in the diag_table.yaml file and filling in the diagYamlObject_type object.
 
 !> @file

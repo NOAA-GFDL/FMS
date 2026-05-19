@@ -167,17 +167,11 @@ module fms_diag_axis_object_mod
     INTEGER,            allocatable, private  :: global_idx(:)  !< [start, end] indices in global domain
     real(kind=r4_kind), allocatable, private  :: zbounds(:)     !< Bounds [min, max] if this is a Z-axis subregion
     contains
-      !> @brief Initialize subaxis with region and domain information
       procedure :: fill_subaxis
-      !> @brief Get the number of points in this subaxis
       procedure :: axis_length
-      !> @brief Get the starting index of this subregion
       procedure :: get_starting_index
-      !> @brief Get the ending index of this subregion
       procedure :: get_ending_index
-      !> @brief Get the compute domain indices on this process
       procedure :: get_compute_indices
-      !> @brief Check if Z-bounds match another subaxis
       procedure :: is_same_zbounds
   END TYPE fmsDiagSubAxis_type
 
@@ -218,9 +212,12 @@ module fms_diag_axis_object_mod
   !!
   !! @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagFullAxis_type
-     CHARACTER(len=:),   ALLOCATABLE, private :: axis_name       !< Name identifier for the axis (e.g., "height", "time")
-     CHARACTER(len=:),   ALLOCATABLE, private :: units           !< Units string for axis values (e.g., "m", "K")
-     CHARACTER(len=1)               , private :: cart_name       !< Cartesian classification: "X", "Y", "Z", "T", "U", "N"
+     CHARACTER(len=:),   ALLOCATABLE, private :: axis_name !< Name identifier for the axis (e.g., "height", "time")
+     CHARACTER(len=:),   ALLOCATABLE, private :: units !< Units string for axis values (e.g., "m", "K")
+     CHARACTER(len=:),   ALLOCATABLE, private :: long_name !< Descriptive long name for the axis
+                                                           !! (e.g., "Height above sea level")
+                                                           !! written as "long_name" attribute in output file
+     CHARACTER(len=1)               , private :: cart_name !< Cartesian classification: "X", "Y", "Z", "T", "U", "N"
      CLASS(*),           ALLOCATABLE, private :: axis_data(:)    !< Coordinate values as single or double precision
      CHARACTER(len=:),   ALLOCATABLE, private :: type_of_data    !< Data type: "float" (r4) or "double" (r8)
      !< TODO: Consider linked-list implementation to remove MAX_AXES limit
@@ -571,8 +568,9 @@ module fms_diag_axis_object_mod
   !! time at the midpoint (4:00 am, 12:00 pm, 8:00 pm) for each of the 3 samples and the time_of_day_edges_03 axis
   !! will have the values [0, 8, 16, 24], representing the start/end times of each sample (12:00 am, 8:00 am, 4:00 pm,
   !! 12:00 pm).
-  !! For hourly sampling (n_diurnal_samples = 24), the time_of_day_24 axis will have the values [0.5, 1.5, 2.5, ..., 23.5] and the
-  !! time_of_day_edges_24 axis will have the values [0, 1, 2, ..., 23, 24].
+  !! For hourly sampling (n_diurnal_samples = 24), the time_of_day_24 axis will have the values
+  !! [0.5, 1.5, 2.5, ..., 23.5] and the time_of_day_edges_24 axis will have the values
+  !! [0, 1, 2, ..., 23, 24].
   subroutine define_diurnal_axis(diag_axis, naxis, n_diurnal_samples, is_edges)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)      !< Array of axis containers
     integer,                                  intent(inout) :: naxis             !< Number of axis that have

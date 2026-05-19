@@ -28,7 +28,8 @@
 !! routines are called by the send_data routines in the diag_manager.
 !!
 !! @note This module is part of the legacy diag_manager.  If use_modern_diag is enabled, this module will be unused.
-!! See fms_diag_output_buffer.F90 and fms_diag_input_buffer.F90 for the modern diag_manager implementation of field buffer updates.
+!! See fms_diag_output_buffer.F90 and fms_diag_input_buffer.F90 for the modern
+!! diag_manager implementation of field buffer updates.
 !!
 !> @file
 !> @brief File for @ref fms_diag_fieldbuff_update_mod
