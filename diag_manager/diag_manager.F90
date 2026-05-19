@@ -21,8 +21,8 @@
 !!   on distributed systems. It is geared toward the writing of data in netCDF
 !!   format. The diag_manager differs from the fms2_io module in that it reads in
 !!   a diag_table describing which fields are expected in the output file, and also
-!!   buffers the sent in data prior to writing. This allows users to send in data for a field multiple times for a timestep
-!!   and output the average,max/min, etc. based on the 'reduction' method specified in the table.
+!!   buffers the sent in data prior to writing. This allows users to send in data for a field multiple times for a
+!!   timestep and output the average,max/min, etc. based on the 'reduction' method specified in the table.
 !!   It also allows for setting custom frequencies for output and file creation, for example outputting every 2 hours
 !!   while creating a new file every 6 hours.
 !!

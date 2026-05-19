@@ -563,7 +563,7 @@ module fms_diag_axis_object_mod
   !! The time_of_day_<N> axis will have the midpoint of the sampled segment and the time_of_day_edges_<N> will have
   !! the bounds. This will be written out in hours of a day, so edges will always start at 0 and end at 24, and
   !! minutes will be represented as decimals.
-  !! 
+  !!
   !! For example, if n_diurnal_samples = 3, the time_of_day_03 axis will have the values [4, 12, 20], representing the
   !! time at the midpoint (4:00 am, 12:00 pm, 8:00 pm) for each of the 3 samples and the time_of_day_edges_03 axis
   !! will have the values [0, 8, 16, 24], representing the start/end times of each sample (12:00 am, 8:00 am, 4:00 pm,
