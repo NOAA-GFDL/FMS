@@ -47,12 +47,113 @@ The diag_manager is organized into functional modules, with new modules introduc
 
 #### Enabling the Modern Diag Manager
 
-The modern diag manager is optionally enabled via the `use_modern_diag` flag in the `diag_manager_nml` namelist. By default, the legacy diag manager is used to maintain backward compatibility. When `use_modern_diag = .true.`, the modern implementation is invoked while maintaining the same public interface.
+The modern diag manager is optionally enabled via the `use_modern_diag` flag in the `diag_manager_nml` namelist, as seen below.
+By default, the legacy diag manager is used to maintain backward compatibility. When `use_modern_diag = .true.`, the modern implementation is invoked while maintaining the same public interface.
+
+```
+&diag_manager_nml
+	use_modern_diag=.true.
+/
+```
 
 ### 2. Diag Table Format
 The modern diag manager uses a YAML format instead of the legacy ascii table. A description of the YAML diag table can
 be found [here](diag_yaml_format.md). A formal specification, in the form of a JSON schema, can be found in the
 [gfdl_msd_schemas](https://github.com/NOAA-GFDL/gfdl_msd_schemas) repository on Github.
+
+Options set in the file section will become the default for each variable in that file (ie. `kind: r8 below` will set all variables to use r8 kind),
+unless otherwise specified. Ordering of the key-value pairs in the yaml file does not matter, as long as the appropriate sections have
+matching indentation.
+
+This barebones example creates a single netcdf file (per tile, if using a tiled domain):
+```{yaml}
+title: simple_diag_table
+base_date: 1 1 1 0 0 0
+diag_files:
+- file_name: simple_diagnostics
+  freq: 225 seconds
+  time_units: seconds
+  module: atm_mod
+  kind: r8
+  unlimdim: time
+  varlist:
+  - var_name: var1
+    output_name: variable_one
+	reduction: average
+```
+
+This is a more complex example utilizing subregional output and wildcard filenames:
+```{yaml}
+title: test_diag_manager
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: normal
+  freq: 24 days
+  time_units: hours
+  unlimdim: records
+  module: potato_mod
+  kind: r8
+  reduction: min
+  varlist:
+  - module: atm_mod 
+    var_name: sst
+    output_name: sst
+    reduction: average
+    kind: r4
+    write_var: true
+    attributes:
+    - do_sst: .true.
+  sub_region:
+  - grid_type: latlon
+    corner1: -80, 0
+    corner2: -80, 75
+    corner3: -60, 0
+    corner4: -60, 75
+- file_name: normal2
+  freq: -1
+  time_units: hours
+  unlimdim: records
+  write_file: true
+  module: atm_mod 
+  reduction: none
+  kind: r4
+  varlist:
+  - var_name: sstt
+    output_name: sstt
+    long_name: S S T
+  - var_name: sstt2
+    output_name: sstt2
+    long_name: S S T
+    write_var: false
+  sub_region:
+  - grid_type: index
+    tile: 1
+    corner1: 10, 15
+    corner2: 20, 15
+    corner3: 10, 25
+    corner4: 20, 25
+- file_name: normal3
+  freq: -1
+  time_units: hours
+  unlimdim: records
+  write_file: false
+- file_name: wild_card_name%4yr%2mo%2dy%2hr
+  filename_time: end
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  new_file_freq: 6 hours
+  start_time: 2 1 1 0 0 0
+  file_duration: 12 hours
+  module: ocn_mod 
+  reduction: average
+  kind: r4
+  varlist:
+  - var_name: sst
+    output_name: sst
+  global_meta:
+  - is_a_file: true
+```
 
 ### 3. Scalar Axis
 The old diag manager was adding a `scalar_axis` dimension of size 1 for scalar variables
