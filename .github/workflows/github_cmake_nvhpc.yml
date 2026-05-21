@@ -1,0 +1,64 @@
+name: Autotools build and unit testing with NVHPC
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nvhpc-build:
+    runs-on: ubuntu-latest
+    stategy:
+      matrix:
+        yaml-support: ["OFF" , "ON"]
+    env:
+      REGISTRY_USER: "${{ github.actor }}"
+      REGISTRY_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4.2.2
+    - name: Free disk space
+      uses: jlumbroso/free-disk-space@v1.3.1        
+    - name: Setup Spack
+      uses: spack/setup-spack@v3.0.0
+      with:
+        buildcache: true
+        spack_ref: v1.1.1 # spack branch to use 
+        packages_ref: v2026.03.0 # determines package versions available 
+    - name: Set up OCI build cache
+      run: |
+        spack mirror add \
+            --autopush \
+            --unsigned \
+            --oci-username-variable REGISTRY_USER \
+            --oci-password-variable REGISTRY_TOKEN \
+            gfdl-gh-cache oci://ghcr.io/noaa-gfdl/spack-buildcache-ubuntu
+    - name: Install NVHPC compilers
+      run: |
+        spack compiler find
+        spack install nvhpc target=x86_64
+    - name: Install dependencies
+      run: |
+        spack compiler find
+        spack install netcdf-fortran%nvhpc mpich%nvhpc libyaml%nvhpc target=x86_64
+    - name: Configure
+      run: |
+        . /home/runner/work/FMS/FMS/spack/share/spack/setup-env.sh
+        spack load nvhpc netcdf-c netcdf-fortran libyaml mpich
+        export FC=mpifort FCFLAGS="-O0 -g `nf-config --fflags` `nf-config --flibs`"
+        export CC=mpicc CFLAGS="-O0 -g `nc-config --cflags` `pkg-config --cflags yaml-0.1` `nc-config --libs`"
+        export LDFLAGS="`nc-config --libs` `nf-config --flibs`"
+        export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:`nc-config --libdir`:`nf-config --prefix`/lib64"
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE="Debug" -DWITH_YAML="${{ matrix.yaml-support }}" ..
+    - name: Compile
+      run: |
+        . /home/runner/work/FMS/FMS/spack/share/spack/setup-env.sh
+        spack load nvhpc netcdf-c netcdf-fortran libyaml mpich
+        cd build
+        make -j
