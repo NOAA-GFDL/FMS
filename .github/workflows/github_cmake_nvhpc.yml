@@ -9,7 +9,7 @@ concurrency:
 jobs:
   nvhpc-build:
     runs-on: ubuntu-latest
-    stategy:
+    strategy:
       matrix:
         yaml-support: ["OFF" , "ON"]
     env:
