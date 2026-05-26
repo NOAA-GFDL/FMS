@@ -26,7 +26,7 @@
 #define TPI (2.0*M_PI)
 #define HPI (0.5*M_PI)
 
-/*  This matches FMSconstants behavior, and sets Earth radius with gfs_constants.fh value, 
+/*  This matches FMSconstants behavior, and sets Earth radius with gfs_constants.fh value,
     or with gfdl_constants.fh == geos_constants.fh value */
 #ifdef GFS_CONSTANTS
 #define RADIUS   (6371200.)
