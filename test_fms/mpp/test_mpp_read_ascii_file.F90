@@ -26,8 +26,7 @@ program test_mpp_read_ascii_file
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
   use mpp_mod, only : read_ascii_file, get_ascii_file_num_lines
-  use mpp_mod, only : mpp_get_current_pelist, mpp_npes
-  use fms_mod, only : fms_end
+  use mpp_mod, only : mpp_get_current_pelist, mpp_npes, mpp_exit
 
   integer, parameter :: str_length = 256
   character(len=256), dimension(:), allocatable :: test_array !< Content array
@@ -110,5 +109,8 @@ program test_mpp_read_ascii_file
       call read_ascii_file(filename, str_length, test_array)
     end if
   end if
-  call fms_end() 
+! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
+ call MPI_FINALIZE(ierr)
+#endif
 end program test_mpp_read_ascii_file

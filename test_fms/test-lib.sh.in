@@ -95,7 +95,7 @@ mpirun () {
   local oversubscribe='@OVERSUBSCRIBE@'
   # need to strip off any args that may be included with MPI_LAUNCHER arg for check below to work
   local mpi_cmd="`echo $mpi_launcher | awk '{print $1;}'`"
-  
+
   # Check if we should skip parallel tests (SERIAL_BUILD and -n >1)
   if [ "$SERIAL_BUILD" = "true" ]; then
     local num_procs=1
@@ -110,14 +110,14 @@ mpirun () {
         i=1
       fi
     done
-    
+
     # If requesting more than 1 process, skip this test with exit code 77
     if [ "$num_procs" -gt 1 ] 2>/dev/null; then
       say_color info "SKIPPING parallel test (SERIAL_BUILD=true): requested $num_procs processes"
       return 77
     fi
   fi
-  
+
   # Check if running with MPI: if so, the mpi_launcher will point to a command
   command -v "$mpi_cmd" 2>&1 > /dev/null
   if test $? -eq 0
@@ -314,7 +314,7 @@ test_expect_failure () {
   then
     test_run_ "$2" expecting_failure
     test_ret=$?
-    
+
     # Handle skipped parallel tests (exit code 77)
     if test $test_ret = 77
     then
@@ -337,7 +337,7 @@ test_expect_success () {
     say "expecting success of $TEST_NAME.$test_count '$1': $2"
     test_run_ "$2"
     test_ret=$?
-    
+
     # Handle skipped parallel tests (exit code 77)
     if test $test_ret = 77
     then

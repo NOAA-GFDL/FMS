@@ -26,7 +26,7 @@ program test_update_domains_performance
   use mpp_mod, only : FATAL, WARNING, NOTE, MPP_CLOCK_SYNC,MPP_CLOCK_DETAILED
   use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error
   use mpp_mod, only : mpp_clock_id, mpp_clock_begin, mpp_clock_end, mpp_sync
-  use mpp_mod, only : mpp_init_test_requests_allocated
+  use mpp_mod, only : mpp_init_test_requests_allocated, mpp_exit
   use mpp_domains_mod, only : BGRID_NE, CGRID_NE, AGRID, SCALAR_PAIR, MPP_DOMAIN_TIME
   use mpp_domains_mod, only : domain2D
   use mpp_domains_mod, only : mpp_get_compute_domain, mpp_get_data_domain, mpp_domains_set_stack_size
@@ -37,7 +37,6 @@ program test_update_domains_performance
   use mpp_domains_mod, only : NORTH, SOUTH, WEST, EAST, CENTER
   use mpp_domains_mod, only : mpp_get_global_domain, ZERO
   use mpp_domains_mod, only : mpp_start_update_domains, mpp_complete_update_domains
-  use fms_mod, only: fms_end
   use platform_mod
 
   implicit none
@@ -100,8 +99,10 @@ program test_update_domains_performance
   if (mpp_pe() == mpp_root_pe()) &
     print *, '--------------------> Finished 32-bit integer update_domains_performance tests <-------------------'
   call mpp_domains_exit()
-  !> Finalize mpp
-  call fms_end() 
+  ! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
+  call MPI_FINALIZE(ierr)
+#endif
   contains
 
   !> run performance tests on 64-bit real arrays

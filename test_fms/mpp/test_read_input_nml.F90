@@ -26,8 +26,7 @@ program test_read_input_nml
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
   use mpp_mod, only : read_input_nml, mpp_get_current_pelist_name
-  use mpp_mod, only : input_nml_file
-  use fms_mod, only : fms_end
+  use mpp_mod, only : input_nml_file, mpp_exit
 #include<file_version.h>
 
 character(len=200) :: line !< Storage location of lines read from the input nml
@@ -90,7 +89,9 @@ else if (test_numb.eq.3) then
                                                           ! extra character "e"
   deallocate(toobig)
 end if
-
-call fms_end() 
+  ! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
+  call MPI_FINALIZE(ierr)
+#endif
 
 end program test_read_input_nml

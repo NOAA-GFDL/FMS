@@ -37,7 +37,7 @@ end module include_files_mod
 
 program test_system_clock
   use include_files_mod
-  use mpp_mod, only : mpp_init, mpp_init_test_init_true_only, stderr, stdout, mpp_error, FATAL
+  use mpp_mod, only : mpp_init, mpp_init_test_init_true_only, stderr, stdout, mpp_error, FATAL, mpp_exit
   use fms_mod, only : fms_end
   implicit none
 
@@ -67,5 +67,8 @@ program test_system_clock
   if (count_max1 .ne. count_max2) then
     call mpp_error(FATAL, "count maxes are not equal")
   endif
-  call fms_end() 
+  ! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
+  call MPI_FINALIZE(ierr)
+#endif
 end program test_system_clock

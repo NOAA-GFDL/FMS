@@ -20,7 +20,7 @@
 program test_mpp_update_domains_ad
   use mpp_mod, only : FATAL, WARNING, NOTE
   use mpp_mod, only : mpp_init, mpp_pe, mpp_npes, mpp_root_pe, mpp_error
-  use mpp_mod, only : mpp_set_stack_size
+  use mpp_mod, only : mpp_set_stack_size, mpp_exit
   use mpp_mod, only : mpp_transmit, mpp_sum, mpp_sync
   use mpp_mod, only : mpp_init_test_requests_allocated
   use mpp_domains_mod, only : GLOBAL_DATA_DOMAIN
@@ -33,7 +33,6 @@ program test_mpp_update_domains_ad
   use mpp_domains_mod, only : mpp_define_layout, mpp_define_domains, mpp_modify_domain
   use mpp_domains_mod, only : mpp_get_global_domain
   use platform_mod, only : r4_kind, r8_kind
-  use fms_mod, only : fms_end
 
   implicit none
 
@@ -60,8 +59,10 @@ program test_mpp_update_domains_ad
   call test_halo_update_ad_r4('Simple')
 
   call mpp_domains_exit()
-  !> Finalize mpp and fms
-  call fms_end()
+  ! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
+  call MPI_FINALIZE(ierr)
+#endif
 contains
   !> test calling mpp_halo_update_ad on a 3D 64-bit real data array
   subroutine test_halo_update_ad_r8( test_type )

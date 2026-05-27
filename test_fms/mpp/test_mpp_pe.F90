@@ -23,8 +23,7 @@
 program test_mpp_pe
 
  use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, mpp_pe, mpp_npes, &
-                     stderr, stdout, mpp_error, FATAL
- use fms_mod, only : fms_end
+                     stderr, stdout, mpp_error, FATAL, mpp_exit
 
  implicit none
  integer :: ierr
@@ -33,8 +32,7 @@ program test_mpp_pe
 
 
 !> Initialize MPI to do what mpp_init would do
-
-  call mpp_init(test_level=mpp_init_test_peset_allocated)
+  call mpp_init()
 
 !> Get the total number of PEs
  total_pes = mpp_npes()
@@ -46,6 +44,8 @@ program test_mpp_pe
  elseif (my_mpp_pe > total_pes-1) then
      call mpp_error(FATAL, "The PE number is greater than npes-1")
  endif
-!> MPI Finalize via fms_end 
- call fms_end() 
+! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
+ call MPI_FINALIZE(ierr)
+#endif
 end program test_mpp_pe
