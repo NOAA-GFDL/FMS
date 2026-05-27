@@ -3,7 +3,6 @@ name: Autotools build and unit testing with Intel Classic (weekly)
 on:
   schedule:
     - cron: '0 0 * * 0' # sundays @ midnight
-  push:
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -13,14 +12,16 @@ concurrency:
 jobs:
   intel-autotools:
     runs-on: ubuntu-latest
-    env:
-      CC: mpiicc
-      FC: mpiifort
-      CFLAGS:  "-I/libs/include"
-      FCFLAGS: "-I/libs/include -g -traceback"
-      LDFLAGS: "-L/libs/lib"
-      TEST_VERBOSE: 1
-      I_MPI_FABRICS: "shm" # needed for mpi in image
+    container:
+      image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
+      env:
+        CC: mpiicc
+        FC: mpiifort
+        CFLAGS:  "-I/libs/include"
+        FCFLAGS: "-I/libs/include -g -traceback"
+        LDFLAGS: "-L/libs/lib"
+        TEST_VERBOSE: 1
+        I_MPI_FABRICS: "shm" # needed for mpi in image
     steps:
     - name: Cache dependencies
       id: cache
@@ -28,13 +29,6 @@ jobs:
       with:
         path: /libs
         key: intel-libs
-    - name: Install Intel compilers & MPI
-      uses: NOAA-EMC/ci-install-intel-toolkit@develop
-      with:
-        install-classic: true
-        install-oneapi: true
-        install-mpi: true
-        mpi-wrapper-setup: classic
     - name: Install packages for building
       run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
