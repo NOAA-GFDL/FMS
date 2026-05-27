@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: '0 0 * * 0' # sundays @ midnight
   push:
-  
 # cancel running jobs if theres a newer push
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
