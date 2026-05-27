@@ -48,7 +48,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   use mpp_domains_mod, only: mpp_get_UG_io_domain
   use mpp_domains_mod, only: mpp_get_UG_domain_npes
   use mpp_domains_mod, only: mpp_get_UG_domain_pelist
-  use mpp_mod,         only: mpp_gather
   use mpp_mod,         only: uppercase,lowercase
   use fms2_io_mod
 

@@ -212,7 +212,11 @@ subroutine MPP_GATHER_PELIST_GEN_3D_(is, ie, js, je, nk, pelist, array_seg, gath
    if (present(jshift)) joff=jshift
 
    ! gather indices into global index on root_pe
-   if (is_root_pe) allocate(gind(4*size(pelist)))
+   if (is_root_pe) then
+     allocate(gind(4*size(pelist)))
+   else
+     allocate(gind(1))
+   endif
    call mpp_gather((/is, ie, js, je/), gind, pelist)
 
    ! Compute recv counts and allocate 1d recv buffer (rbuf)
