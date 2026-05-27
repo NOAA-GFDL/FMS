@@ -51,5 +51,5 @@ program test_mpp_npes
 #ifdef use_libMPI
  call MPI_FINALIZE(ierr)
 #endif
- 
+
 end program test_mpp_npes

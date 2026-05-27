@@ -49,7 +49,7 @@ fi
 # without breaking
 test_expect_success "initialize mpp logfile" '
     mpirun -n 4 ../test_mpp_init_logfile &&
-    
+
     # Return sucess (0) only if the two "old" files have been replaced and the
     # the two possible new ones are not present. Otherwise retun failure (1).
     # Replacement is checked by the absence of the fcontent line.

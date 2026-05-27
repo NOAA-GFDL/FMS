@@ -146,5 +146,5 @@ contains
     print *, 'TEST_SHARED_POINTERS: pe, sum(d)=', pe, sum(dd)
     return
   end subroutine test_shared_pointers
-#endif 
+#endif
 end program test
