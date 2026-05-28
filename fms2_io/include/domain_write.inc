@@ -121,8 +121,9 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   class(*), dimension(:,:,:,:), pointer :: vdata_dummy    !< Vdata remapped as 4D
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
-  integer :: xgsize, ygsize
-  integer :: istart, jstart, iend, jend
+  integer :: gsize(2) !< Shape of global_buf
+  integer :: dim_order(2) !< Order of the dimensions
+  integer :: start(2), end(2)
   integer :: ioff, joff
 
   if (fileobj%use_netcdf_mpi) then
@@ -157,8 +158,8 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
                         msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
   ! Get the global io domain:
-  call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=xgsize, position=xpos)
-  call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=ygsize, position=ypos)
+  call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=gsize(xdim_index), position=xpos)
+  call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=gsize(ydim_index), position=ypos)
 
   ! Root pe allocates room to gather the data and computes offsets for data placement
   if (fileobj%is_root) then
@@ -169,25 +170,25 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
      ! Allocate recv buffer for gather
      select type(vdata)
       type is (integer(kind=i4_kind))
-        allocate(global_buf_i4_kind(xgsize, ygsize))
+        allocate(global_buf_i4_kind(gsize(1), gsize(2)))
         global_buf_i4_kind = 0
         if (get_fill_value(fileobj, variable_name, fill_i4_kind, broadcast=.false.)) then
             global_buf_i4_kind = fill_i4_kind
         endif
       type is (integer(kind=i8_kind))
-        allocate(global_buf_i8_kind(xgsize, ygsize))
+        allocate(global_buf_i8_kind(gsize(1), gsize(2)))
         global_buf_i8_kind = 0
         if (get_fill_value(fileobj, variable_name, fill_i8_kind, broadcast=.false.)) then
             global_buf_i8_kind = fill_i8_kind
         endif
       type is (real(kind=r4_kind))
-        allocate(global_buf_r4_kind(xgsize, ygsize))
+        allocate(global_buf_r4_kind(gsize(1), gsize(2)))
         global_buf_r4_kind = 0.
         if (get_fill_value(fileobj, variable_name, fill_r4_kind, broadcast=.false.)) then
             global_buf_r4_kind = fill_r4_kind
         endif
       type is (real(kind=r8_kind))
-        allocate(global_buf_r8_kind(xgsize, ygsize))
+        allocate(global_buf_r8_kind(gsize(1), gsize(2)))
         global_buf_r8_kind = 0.
         if (get_fill_value(fileobj, variable_name, fill_r8_kind, broadcast=.false.)) then
             global_buf_r8_kind = fill_r8_kind
@@ -213,32 +214,38 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   endif
 
   ! Get the starting and indices of the compute domain relative to vdata (note that vdata start indices at 1 #Fortran)
-  istart = 1
-  jstart = 1
+  start = 1
 
   ! If the buffer contains halos, get the portion of vdata with only the compute domain
   if (buffer_includes_halos) then
-     istart = isc - isd + 1
-     jstart = jsc - jsd + 1
+     start(xdim_index) = isc - isd + 1
+     start(ydim_index) = jsc - jsd + 1
   endif
 
-  iend = istart + xc_size - 1
-  jend = jstart + yc_size - 1
+  end(xdim_index) = start(xdim_index) + xc_size - 1
+  end(ydim_index) = start(ydim_index) + yc_size - 1
+
+  dim_order(xdim_index) = 1
+  dim_order(ydim_index) = 2
 
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2)), global_buf_i4_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2)), global_buf_i8_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2)), global_buf_r4_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, vdata(istart:iend, jstart:jend), &
-                      & global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2)), global_buf_r8_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     class default
       call error("unsupported variable type: domain_write_2d_mpp_gather: file: " &
                & //trim(fileobj%path)//" variable:"// trim(variable_name))
@@ -307,6 +314,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   integer :: ydim_index
   integer :: ypos
   integer :: yc_size
+  integer :: zdim_index
   integer(kind=i4_kind) :: fill_i4_kind !< Fill value of a i4_kind variable
   integer(kind=i8_kind) :: fill_i8_kind !< Fill value of a i8_kind variable
   real(kind=r4_kind) :: fill_r4_kind !< Fill value of a r4_kind variable
@@ -314,8 +322,9 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   class(*), dimension(:,:,:,:), pointer :: vdata_dummy    !< Vdata remapped as 4D
   integer :: xgmin !< Starting x index of the global io domain
   integer :: ygmin !< Ending y index of the global io domain
-  integer :: xgsize, ygsize
-  integer :: istart, jstart, iend, jend
+  integer :: gsize(3) !< Shape of global_buf
+  integer :: dim_order(3) !< Order of the dimensions
+  integer :: start(3), end(3)
   integer :: ioff, joff
 
   if (fileobj%use_netcdf_mpi) then
@@ -331,15 +340,6 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
     return
   endif
 
-  if (xdim_index .ne. 1 .or. ydim_index .ne. 2) then
-  ! This is a KLUDGE
-  ! mpp_scatter assumes that the variable is (x,y), if that is not the case it remaps the data
-  ! to a 4D array and calls domain_read_4d which does not use mpp_scatter yet
-    vdata_dummy(1:size(vdata,1),1:size(vdata,2), 1:size(vdata,3), 1:1) => vdata(:,:,:)
-    call domain_write_4d(fileobj, variable_name, vdata_dummy, unlim_dim_level)
-    return
-  endif
-
   ! Get the io domain from the fileobj
   io_domain => mpp_get_io_domain(fileobj%domain)
 
@@ -348,9 +348,13 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
                       xpos, ypos, isd, isc, xc_size, jsd, jsc, yc_size, buffer_includes_halos, &
                       msg="file:"//trim(fileobj%path)//" and variable:"//trim(variable_name))
 
+  ! Calculate the index of the z dimension
+  zdim_index = 6 - xdim_index - ydim_index
+
   ! Get the global io domain:
-  call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=xgsize, position=xpos)
-  call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=ygsize, position=ypos)
+  call mpp_get_global_domain(io_domain, xbegin=xgmin, xsize=gsize(xdim_index), position=xpos)
+  call mpp_get_global_domain(io_domain, ybegin=ygmin, ysize=gsize(ydim_index), position=ypos)
+  gsize(zdim_index) = size(vdata, zdim_index)
 
   ! Root pe allocates room to gather the data and computes offsets for data placement
   if (fileobj%is_root) then
@@ -361,25 +365,25 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
      ! Allocate recv buffer for gather
      select type(vdata)
       type is (integer(kind=i4_kind))
-        allocate(global_buf_i4_kind(xgsize, ygsize, size(vdata,3)))
+        allocate(global_buf_i4_kind(gsize(1), gsize(2), gsize(3)))
         global_buf_i4_kind = 0
         if (get_fill_value(fileobj, variable_name, fill_i4_kind, broadcast=.false.)) then
             global_buf_i4_kind = fill_i4_kind
         endif
       type is (integer(kind=i8_kind))
-        allocate(global_buf_i8_kind(xgsize, ygsize, size(vdata,3)))
+        allocate(global_buf_i8_kind(gsize(1), gsize(2), gsize(3)))
         global_buf_i8_kind = 0
         if (get_fill_value(fileobj, variable_name, fill_i8_kind, broadcast=.false.)) then
             global_buf_i8_kind = fill_i8_kind
         endif
       type is (real(kind=r4_kind))
-        allocate(global_buf_r4_kind(xgsize, ygsize, size(vdata,3)))
+        allocate(global_buf_r4_kind(gsize(1), gsize(2), gsize(3)))
         global_buf_r4_kind = 0.
         if (get_fill_value(fileobj, variable_name, fill_r4_kind, broadcast=.false.)) then
             global_buf_r4_kind = fill_r4_kind
         endif
       type is (real(kind=r8_kind))
-        allocate(global_buf_r8_kind(xgsize, ygsize, size(vdata,3)))
+        allocate(global_buf_r8_kind(gsize(1), gsize(2), gsize(3)))
         global_buf_r8_kind = 0.
         if (get_fill_value(fileobj, variable_name, fill_r8_kind, broadcast=.false.)) then
             global_buf_r8_kind = fill_r8_kind
@@ -405,36 +409,44 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   endif
 
   ! Get the starting and indices of the compute domain relative to vdata(note that vdata start indices at 1 #Fortran)
-  istart = 1
-  jstart = 1
+  start = 1
 
   ! If the buffer contains halos, get the portion of vdata with only the compute domain
   if (buffer_includes_halos) then
-     istart = isc - isd + 1
-     jstart = jsc - jsd + 1
+     start(xdim_index) = isc - isd + 1
+     start(ydim_index) = jsc - jsd + 1
   endif
 
-  iend = istart + xc_size - 1
-  jend = jstart + yc_size - 1
+  end(xdim_index) = start(xdim_index) + xc_size - 1
+  end(ydim_index) = start(ydim_index) + yc_size - 1
+  end(zdim_index) = size(vdata, zdim_index)
 
   ! Get offsets for buffer
   ioff = 1-xgmin
   joff = 1-ygmin
 
+  dim_order(xdim_index) = 1
+  dim_order(ydim_index) = 2
+  dim_order(zdim_index) = 3
+
   ! Gather the data
   select type(vdata)
     type is (integer(kind=i4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_i4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_i4_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (integer(kind=i8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_i8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_i8_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r4_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_r4_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_r4_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     type is (real(kind=r8_kind))
-      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata,3), fileobj%pelist, &
-                  & vdata(istart:iend, jstart:jend,:), global_buf_r8_kind, fileobj%is_root, ishift=ioff, jshift=joff)
+      call mpp_gather(isc, isc+xc_size-1, jsc, jsc+yc_size-1, size(vdata, zdim_index), fileobj%pelist, &
+                      vdata(start(1):end(1), start(2):end(2), start(3):end(3)), global_buf_r8_kind, &
+                      dim_order, fileobj%is_root, ishift=ioff, jshift=joff)
     class default
       call error("unsupported variable type: domain_write_3d_mpp_gather: file: " &
                   & //trim(fileobj%path)//" variable:"//trim(variable_name))
