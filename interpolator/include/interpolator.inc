@@ -1379,6 +1379,7 @@ integer, parameter :: lkind=FMS_INTP_KIND_
 !! @param [in] <js> OPTIONAL: Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [in] <dim_order> OPTIONAL: Order of the x (1), y (2), z (3), and field (4) dimensions
 !!
 !! @throw FATAL "interpolator_4D : You must call interpolator_init
 !!                    before calling interpolator"
@@ -1397,7 +1398,7 @@ integer, parameter :: lkind=FMS_INTP_KIND_
 !! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
 subroutine INTERPOLATOR_4D_(clim_type, Time, phalf, interp_data,  &
-                           field_name, is,js, clim_units)
+                           field_name, is, js, clim_units, dim_order)
 !
 ! Return 4-D field interpolated to model grid and time
 !
@@ -1412,6 +1413,7 @@ subroutine INTERPOLATOR_4D_(clim_type, Time, phalf, interp_data,  &
 !   Time        : The model time that you wish to interpolate to.
 !   phalf       : The half level model pressure field.
 !   is, js      : The indices of the physics window.
+!   dim_order   : Order of the x (1), y (2), z (3), and field (4) dimensions
 !
 ! INTENT OUT
 !   interp_data : The model fields with the interpolated climatology data.
@@ -1424,12 +1426,10 @@ real(FMS_INTP_KIND_), dimension(:,:,:), intent(in)  :: phalf
 real(FMS_INTP_KIND_), dimension(:,:,:,:), intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
+integer               , intent(in), optional :: dim_order(4)
 integer :: taum, taup, ilon
-real(FMS_INTP_KIND_) :: hinterp_data(size(interp_data,1),size(interp_data,2),&
-                        size(clim_type%FMS_INTP_TYPE_%levs(:)),size(clim_type%field_name(:)))
-real(FMS_INTP_KIND_) :: p_fact(size(interp_data,1),size(interp_data,2))
-real(FMS_INTP_KIND_) :: col_data(size(interp_data,1),size(interp_data,2),   &
-                           size(clim_type%field_name(:)))
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:,:), p_fact(:,:), col_data(:,:,:), &
+                                     interp_buf(:,:,:,:), phalf_diff(:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:)))
 integer :: istart,iend,jstart,jend
 logical :: result, found
@@ -1442,6 +1442,9 @@ type(time_type) :: t_prev, t_next
 type(time_type), dimension(2) :: month
 integer :: indexm, indexp, yearm, yearp
 integer :: i, j, k, n
+integer :: ni, nj, nk
+integer :: nlevs, nfields
+integer :: dim_map(4) !< x, y, z, field
 character(len=256) :: err_msg
 
 integer, parameter :: lkind=FMS_INTP_KIND_
@@ -1449,7 +1452,25 @@ integer, parameter :: lkind=FMS_INTP_KIND_
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
    call mpp_error(FATAL, "interpolator_4D : You must call interpolator_init before calling interpolator")
 
-   do n=2,size(clim_type%field_name(:))
+if (present(dim_order)) then
+  call inverse_permutation(dim_order, dim_map)
+else
+  dim_map = [1, 2, 3, 4]
+endif
+
+ni = size(interp_data, dim_map(1))
+nj = size(interp_data, dim_map(2))
+nk = size(interp_data, dim_map(3))
+nlevs = size(clim_type%FMS_INTP_TYPE_%levs)
+nfields = size(clim_type%field_name)
+
+allocate(hinterp_data(ni,nj,nlevs,nfields))
+allocate(p_fact(ni,nj))
+allocate(col_data(ni,nj,nfields))
+allocate(interp_buf(ni,nj,nk,nfields))
+allocate(phalf_diff(ni,nj,nk))
+
+   do n=2,nfields
      if (clim_type%vert_interp(n) /= clim_type%vert_interp(n-1) .or. &
       clim_type%out_of_bounds(n) /= clim_type%out_of_bounds(n-1)) then
        if (mpp_pe() == mpp_root_pe() ) then
@@ -1460,18 +1481,15 @@ if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lo
      endif
    end do
 
-
-
-
 istart = 1
 if (present(is)) istart = is
-iend = istart - 1 + size(interp_data,1)
+iend = istart - 1 + ni
 
 jstart = 1
 if (present(js)) jstart = js
-jend = jstart - 1 + size(interp_data,2)
+jend = jstart - 1 + nj
 
-  do i= 1,size(clim_type%field_name(:))
+  do i= 1,nfields
 !!++lwh
    if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
@@ -1610,7 +1628,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           clim_type%indexm(:) = indexm
           clim_type%indexp(:) = indexp
           clim_type%climatology(:) = climatology
-          do i=1, size(clim_type%field_name(:))
+          do i=1, nfields
             call read_data(clim_type,clim_type%field_name(i),  &
                  clim_type%FMS_INTP_TYPE_%pmon_pyear(:,:,:,i),   &
              clim_type%indexm(i)+(clim_type%climatology(i)-1)*12,i,Time)
@@ -1631,7 +1649,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
       else ! We are within a climatology data set
 
-        do i=1, size(clim_type%field_name(:))
+        do i=1, nfields
           if (taum /= clim_type%time_init(i,1) .or. &
               taup /= clim_type%time_init(i,2) ) then
 
@@ -1678,7 +1696,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !Set up
 ! field(:,:,:,1) as the previous time slice.
 ! field(:,:,:,2) as the next time slice.
-    do i=1, size(clim_type%field_name(:))
+    do i=1, nfields
     call read_data(clim_type,clim_type%field_name(i), clim_type%FMS_INTP_TYPE_%data5d(:,:,:,1,i), taum,i,Time)
           clim_type%time_init(i,1) = taum
           clim_type%itaum = 1
@@ -1696,7 +1714,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !We have the previous time step but not the next time step data
         clim_type%itaup = 1
         if (clim_type%itaum .eq. 1 ) clim_type%itaup = 2
-    do i=1, size(clim_type%field_name(:))
+    do i=1, nfields
         call read_data(clim_type,clim_type%field_name(i), &
                        clim_type%FMS_INTP_TYPE_%data5d(:,:,:,clim_type%itaup,i), taup,i, Time)
         clim_type%time_init(i,clim_type%itaup)=taup
@@ -1712,7 +1730,7 @@ endif ! (.not. separate_time_vary_calc)
 
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
-    do n=1, size(clim_type%field_name(:))
+    do n=1, nfields
       hinterp_data(:,:,:,n) = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight)*  &
                 clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,clim_type%itaum,n)  +  &
                                  clim_type%FMS_INTP_TYPE_%tweight*   &
@@ -1721,7 +1739,7 @@ select case(clim_type%TIME_FLAG)
 ! case (SEASONAL)
 ! Do sine fit to data at this point
   case (BILINEAR)
-    do n=1, size(clim_type%field_name(:))
+    do n=1, nfields
       hinterp_data(:,:,:,n) = (1._lkind-clim_type%FMS_INTP_TYPE_%tweight1)*&
                               (1._lkind-clim_type%FMS_INTP_TYPE_%tweight3)*   &
                               clim_type%FMS_INTP_TYPE_%pmon_pyear(istart:iend,jstart:jend,:,n) + &
@@ -1744,7 +1762,7 @@ select case(clim_type%level_type)
 end select
 
 col_data(:,:,:)=0.0_lkind
-     do i= 1, size(clim_type%field_name(:))
+     do i= 1, nfields
 
 select case(clim_type%mr(i))
   case(NO_CONV)
@@ -1762,7 +1780,7 @@ select case(clim_type%mr(i))
 end select
     enddo
 
-     do i= 1, size(clim_type%field_name(:))
+     do i= 1, nfields
 found = .false.
 do j = 1,size(climo_diag_name(:))
   if ( trim(adjustl(lowercase(climo_diag_name(j)))) .eq. trim(adjustl(lowercase(clim_type%field_name(i))))) then
@@ -1813,27 +1831,27 @@ do j = 1, size(phalf,2)
       endif
       select case(clim_type%vert_interp(i))
          case(INTERP_WEIGHTED_P)
-            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_data(ilon,j,:,:))
+            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_buf(ilon,j,:,:))
          case(INTERP_LINEAR_P)
-          do n=1, size(clim_type%field_name(:))
-            call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,n),interp_data(ilon,j,:,n))
+          do n=1, nfields
+            call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,n),interp_buf(ilon,j,:,n))
           end do
 !        case(INTERP_LOG)
       end select
    enddo
 enddo
 
+     phalf_diff = phalf(:,:,2:nk+1) - phalf(:,:,1:nk)
+
 !--lwh
-     do i= 1, size(clim_type%field_name(:))
-
-select case(clim_type%mr(i))
-  case(KG_M2)
-    do k = 1,size(interp_data,3)
-       interp_data(:,:,k,i) = interp_data(:,:,k,i)*(phalf(:,:,k+1)-phalf(:,:,k))
-    enddo
-end select
-
+     do i= 1, nfields
+       select case(clim_type%mr(i))
+         case(KG_M2)
+           interp_buf(:,:,:,i) = interp_buf(:,:,:,i)*phalf_diff
+       end select
      end do
+
+     interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
 
 if( .not. found_field) then !field name is not in interpolator file.ERROR.
   call mpp_error(FATAL,"Interpolator: the field name is not contained in this &
@@ -1856,6 +1874,7 @@ end subroutine INTERPOLATOR_4D_
 !! @param [in] <js> OPTIONAL: Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [in] <dim_order> OPTIONAL: Order of the x (1), y (2), and z (3) dimensions
 !!
 !! @throw FATAL "interpolator_3D : You must call interpolator_init
 !!                    before calling interpolator"
@@ -1872,7 +1891,7 @@ end subroutine INTERPOLATOR_4D_
 !!                    climatology top pressure for "
 !! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
-subroutine INTERPOLATOR_3D_(clim_type, Time, phalf, interp_data,field_name, is,js, clim_units)
+subroutine INTERPOLATOR_3D_(clim_type, Time, phalf, interp_data, field_name, is, js, clim_units, dim_order)
 !
 ! Return 3-D field interpolated to model grid and time
 !
@@ -1884,6 +1903,7 @@ subroutine INTERPOLATOR_3D_(clim_type, Time, phalf, interp_data,field_name, is,j
 !   Time        : The model time that you wish to interpolate to.
 !   phalf       : The half level model pressure field.
 !   is, js      : The indices of the physics window.
+!   dim_order   : Order of the x (1), y (2), and z (3) dimensions
 !
 ! INTENT OUT
 !   interp_data : The model field with the interpolated climatology data.
@@ -1896,11 +1916,10 @@ real(FMS_INTP_KIND_), dimension(:,:,:), intent(in)  :: phalf
 real(FMS_INTP_KIND_), dimension(:,:,:), intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
+integer               , intent(in), optional :: dim_order(3)
 integer :: taum, taup, ilon
-real(FMS_INTP_KIND_) :: hinterp_data(size(interp_data,1),&
-                        size(interp_data,2),size(clim_type%FMS_INTP_TYPE_%levs(:)))
-real(FMS_INTP_KIND_) :: p_fact(size(interp_data,1),size(interp_data,2))
-real(FMS_INTP_KIND_) :: col_data(size(interp_data,1),size(interp_data,2))
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:), p_fact(:,:), col_data(:,:), &
+                                     interp_buf(:,:,:), phalf_diff(:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:)))
 integer :: istart,iend,jstart,jend
 logical :: result, found
@@ -1913,6 +1932,9 @@ type(time_type) :: t_prev, t_next
 type(time_type), dimension(2) :: month
 integer :: indexm, indexp, yearm, yearp
 integer :: i, j, k, n
+integer :: ni, nj, nk
+integer :: nlevs, nfields
+integer :: dim_map(3) !< x, y, z
 character(len=256) :: err_msg
 
 integer, parameter :: lkind=FMS_INTP_KIND_
@@ -1920,15 +1942,33 @@ integer, parameter :: lkind=FMS_INTP_KIND_
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
    call mpp_error(FATAL, "interpolator_3D : You must call interpolator_init before calling interpolator")
 
+if (present(dim_order)) then
+  call inverse_permutation(dim_order, dim_map)
+else
+  dim_map = [1, 2, 3]
+endif
+
+ni = size(interp_data, dim_map(1))
+nj = size(interp_data, dim_map(2))
+nk = size(interp_data, dim_map(3))
+nlevs = size(clim_type%FMS_INTP_TYPE_%levs)
+nfields = size(clim_type%field_name)
+
+allocate(hinterp_data(ni,nj,nlevs))
+allocate(p_fact(ni,nj))
+allocate(col_data(ni,nj))
+allocate(interp_buf(ni,nj,nk))
+allocate(phalf_diff(ni,nj,nk))
+
 istart = 1
 if (present(is)) istart = is
-iend = istart - 1 + size(interp_data,1)
+iend = istart - 1 + ni
 
 jstart = 1
 if (present(js)) jstart = js
-jend = jstart - 1 + size(interp_data,2)
+jend = jstart - 1 + nj
 
-do i= 1,size(clim_type%field_name(:))
+do i= 1,nfields
 !++lwh
   if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
@@ -2255,23 +2295,27 @@ do j = 1, size(phalf,2)
       endif
       select case(clim_type%vert_interp(i))
          case(INTERP_WEIGHTED_P)
-            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
+            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_buf(ilon,j,:))
          case(INTERP_LINEAR_P)
-            call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
+            call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_buf(ilon,j,:))
 !        case(INTERP_LOG)
       end select
    enddo
 enddo
 !--lwh
 
+phalf_diff = phalf(:,:,2:nk+1) - phalf(:,:,1:nk)
+
 select case(clim_type%mr(i))
   case(KG_M2)
-    do k = 1,size(interp_data,3)
-       interp_data(:,:,k) = interp_data(:,:,k)*(phalf(:,:,k+1)-phalf(:,:,k))
-    enddo
+    interp_buf(:,:,:) = interp_buf(:,:,:)*phalf_diff
 end select
   endif !field_name
 enddo !End of i loop
+
+interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+
+
 if( .not. found_field) then !field name is not in interpolator file.ERROR.
   call mpp_error(FATAL,"Interpolator: the field name is not contained in this &
                    &intepolate_type: "//trim(field_name))
@@ -2292,6 +2336,7 @@ end subroutine INTERPOLATOR_3D_
 !! @param [in] <js> OPTIONAL: Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [in] <dim_order> OPTIONAL: Order of the x (1) and y (2) dimensions
 !!
 !! @throw FATAL "interpolator_2D : You must call interpolator_init
 !!                    before calling interpolator"
@@ -2304,7 +2349,7 @@ end subroutine INTERPOLATOR_3D_
 !!                    time but we have the next time. How did this happen?"
 !! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
-subroutine INTERPOLATOR_2D_(clim_type, Time, interp_data, field_name, is, js, clim_units)
+subroutine INTERPOLATOR_2D_(clim_type, Time, interp_data, field_name, is, js, clim_units, dim_order)
 !
 ! Return 2-D field interpolated to model grid and time
 !
@@ -2316,6 +2361,7 @@ subroutine INTERPOLATOR_2D_(clim_type, Time, interp_data, field_name, is, js, cl
 !   field_name  : The name of the field that you wish to interpolate.
 !   Time        : The model time that you wish to interpolate to.
 !   is, js      : The indices of the physics window.
+!   dim_order   : Order of the x (1) and y (2) dimensions
 !
 ! INTENT OUT
 !   interp_data : The model field with the interpolated climatology data.
@@ -2327,8 +2373,9 @@ type(time_type)       , intent(in)     :: Time
 real(FMS_INTP_KIND_), dimension(:,:),   intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
+integer               , intent(in), optional :: dim_order(2)
 integer :: taum, taup
-real(FMS_INTP_KIND_) :: hinterp_data(size(interp_data,1),size(interp_data,2),size(clim_type%FMS_INTP_TYPE_%levs(:)))
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:)
 integer :: istart,iend,jstart,jend
 logical :: result, found
 logical :: found_field=.false.
@@ -2340,6 +2387,9 @@ type(time_type) :: t_prev, t_next
 type(time_type), dimension(2) :: month
 integer :: indexm, indexp, yearm, yearp
 integer :: j, i, n
+integer :: ni, nj
+integer :: nlevs, nfields
+integer :: dim_map(2) !< x, y
 character(len=256) :: err_msg
 
 integer, parameter :: lkind=FMS_INTP_KIND_
@@ -2347,15 +2397,28 @@ integer, parameter :: lkind=FMS_INTP_KIND_
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
    call mpp_error(FATAL, "interpolator_2D : You must call interpolator_init before calling interpolator")
 
+if (present(dim_order)) then
+  call inverse_permutation(dim_order, dim_map)
+else
+  dim_map = [1, 2]
+endif
+
+ni = size(interp_data, dim_map(1))
+nj = size(interp_data, dim_map(2))
+nlevs = size(clim_type%FMS_INTP_TYPE_%levs)
+nfields = size(clim_type%field_name)
+
+allocate(hinterp_data(ni,nj,nlevs))
+
 istart = 1
 if (present(is)) istart = is
-iend = istart - 1 + size(interp_data,1)
+iend = istart - 1 + ni
 
 jstart = 1
 if (present(js)) jstart = js
-jend = jstart - 1 + size(interp_data,2)
+jend = jstart - 1 + nj
 
-do i= 1,size(clim_type%field_name(:))
+do i= 1,nfields
 !++lwh
   if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 !--lwh
@@ -2652,7 +2715,7 @@ if (found) then
   endif
 endif
 
-  interp_data(:,:) = hinterp_data(:,:,1)
+  interp_data = reshape(hinterp_data(:,:,1), shape(interp_data), order=dim_map)
 
   endif !field_name
 enddo !End of i loop
@@ -2677,6 +2740,7 @@ end subroutine INTERPOLATOR_2D_
 !! @param [in] <js> OPTIONAL: Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [in] <dim_order> OPTIONAL: Order of the x (1), y (2), z (3), and field (4) dimensions
 !!
 !! @throw FATAL "interpolator_4D_no_time_axis : You must call
 !!                    interpolator_init before calling interpolator"
@@ -2688,7 +2752,7 @@ end subroutine INTERPOLATOR_2D_
 !!                    pressure of input data for "
 !! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
-subroutine INTERPOLATOR_4D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_name, is,js, clim_units)
+subroutine INTERPOLATOR_4D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_name, is, js, clim_units, dim_order)
 
 ! Return 4-D field interpolated to model grid
 
@@ -2702,6 +2766,7 @@ subroutine INTERPOLATOR_4D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_na
 !                 be any one of the variables.
 !   phalf       : The half level model pressure field.
 !   is, js      : The indices of the physics window.
+!   dim_order   : Order of the x (1), y (2), z (3), and field (4) dimensions
 
 ! INTENT OUT
 !   interp_data : The model fields
@@ -2713,21 +2778,40 @@ real(FMS_INTP_KIND_), dimension(:,:,:),   intent(in)  :: phalf
 real(FMS_INTP_KIND_), dimension(:,:,:,:), intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
+integer               , intent(in), optional :: dim_order(4)
 integer :: ilon
-real(FMS_INTP_KIND_) :: hinterp_data(size(interp_data,1),&
-                        size(interp_data,2),size(clim_type%FMS_INTP_TYPE_%levs(:)),size(clim_type%field_name(:)))
-real(FMS_INTP_KIND_) :: p_fact(size(interp_data,1),size(interp_data,2))
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:,:), p_fact(:,:), interp_buf(:,:,:,:), phalf_diff(:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:)))
 integer :: istart,iend,jstart,jend
 logical :: found_field=.false.
 integer :: i, j, k, n
+integer :: ni, nj, nk
+integer :: nlevs, nfields
+integer :: dim_map(4) !< x, y, z, field
 
 integer, parameter :: lkind=FMS_INTP_KIND_
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
    call mpp_error(FATAL, "interpolator_4D_no_time_axis : You must call interpolator_init before calling interpolator")
 
-do n=2,size(clim_type%field_name(:))
+if (present(dim_order)) then
+  call inverse_permutation(dim_order, dim_map)
+else
+  dim_map = [1, 2, 3, 4]
+endif
+
+ni = size(interp_data, dim_map(1))
+nj = size(interp_data, dim_map(2))
+nk = size(interp_data, dim_map(3))
+nlevs = size(clim_type%FMS_INTP_TYPE_%levs)
+nfields = size(clim_type%field_name)
+
+allocate(hinterp_data(ni,nj,nlevs,nfields))
+allocate(p_fact(ni,nj))
+allocate(interp_buf(ni,nj,nk,nfields))
+allocate(phalf_diff(ni,nj,nk))
+
+do n=2,nfields
   if (clim_type%vert_interp(n) /= clim_type%vert_interp(n-1) .or. &
    clim_type%out_of_bounds(n) /= clim_type%out_of_bounds(n-1)) then
     if (mpp_pe() == mpp_root_pe() ) then
@@ -2740,13 +2824,13 @@ end do
 
 istart = 1
 if (present(is)) istart = is
-iend = istart - 1 + size(interp_data,1)
+iend = istart - 1 + ni
 
 jstart = 1
 if (present(js)) jstart = js
-jend = jstart - 1 + size(interp_data,2)
+jend = jstart - 1 + nj
 
-do i= 1,size(clim_type%field_name(:))
+do i= 1,nfields
   if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
     found_field=.true.
     exit
@@ -2759,7 +2843,7 @@ if(present(clim_units)) then
   clim_units = chomp(clim_units)
 endif
 
-do n=1, size(clim_type%field_name(:))
+do n=1, nfields
   hinterp_data(:,:,:,n) = clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,1,n)
 end do
 
@@ -2770,7 +2854,7 @@ select case(clim_type%level_type)
     p_fact = maxval(phalf,3)! max pressure in the column !(:,:,size(phalf,3))
 end select
 
-    do i= 1, size(clim_type%field_name(:))
+    do i= 1, nfields
       select case(clim_type%mr(i))
       case(KG_M2)
         do k = 1,size(hinterp_data,3)
@@ -2809,25 +2893,25 @@ do j = 1, size(phalf,2)
       endif
       select case(clim_type%vert_interp(i))
          case(INTERP_WEIGHTED_P)
-            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_data(ilon,j,:,:))
+           call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,:),interp_buf(ilon,j,:,:))
          case(INTERP_LINEAR_P)
-          do n=1, size(clim_type%field_name(:))
-            call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,n),interp_data(ilon,j,:,n))
-          end do
+           do n=1, nfields
+             call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:,n),interp_buf(ilon,j,:,n))
+           end do
       end select
    enddo
 enddo
 
-     do i= 1, size(clim_type%field_name(:))
+     phalf_diff = phalf(:,:,2:nk+1) - phalf(:,:,1:nk)
 
-select case(clim_type%mr(i))
-  case(KG_M2)
-    do k = 1,size(interp_data,3)
-       interp_data(:,:,k,i) = interp_data(:,:,k,i)*(phalf(:,:,k+1)-phalf(:,:,k))
-    enddo
-end select
-
+     do i= 1, nfields
+       select case(clim_type%mr(i))
+         case(KG_M2)
+           interp_buf(:,:,:,i) = interp_buf(:,:,:,i)*phalf_diff
+       end select
      end do
+
+     interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
 
 if( .not. found_field) then !field name is not in interpolator file.ERROR.
   call mpp_error(FATAL,"Interpolator: the field name is not contained in this &
@@ -2848,6 +2932,7 @@ end subroutine INTERPOLATOR_4D_NO_TIME_AXIS_
 !! @param [in] <js> OPTIONAL: Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [in] <dim_order> OPTIONAL: Order of the x (1), y (2), and z (3) dimensions
 !!
 !! @throw FATAL "interpolator_3D_no_time_axis : You must call
 !!                    interpolator_init before calling interpolator"
@@ -2859,7 +2944,7 @@ end subroutine INTERPOLATOR_4D_NO_TIME_AXIS_
 !!                    climatology top pressure for "
 !! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
-subroutine INTERPOLATOR_3D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_name, is,js, clim_units)
+subroutine INTERPOLATOR_3D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_name, is, js, clim_units, dim_order)
 
 ! Return 3-D field interpolated to model grid
 
@@ -2870,6 +2955,7 @@ subroutine INTERPOLATOR_3D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_na
 !   field_name  : The name of the field that you wish to interpolate.
 !   phalf       : The half level model pressure field.
 !   is, js      : The indices of the physics window.
+!   dim_order   : Order of the x (1), y (2), and z (3) dimensions
 
 ! INTENT OUT
 !   interp_data : The model field with the interpolated climatology data.
@@ -2881,29 +2967,48 @@ real(FMS_INTP_KIND_), dimension(:,:,:), intent(in)  :: phalf
 real(FMS_INTP_KIND_), dimension(:,:,:), intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
+integer               , intent(in), optional :: dim_order(3)
 integer :: ilon          !< No description
-real(FMS_INTP_KIND_) :: hinterp_data(size(interp_data,1),&
-                        size(interp_data,2),size(clim_type%FMS_INTP_TYPE_%levs(:))) !< No description
-real(FMS_INTP_KIND_) :: p_fact(size(interp_data,1),size(interp_data,2))   !< No description
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:), p_fact(:,:), interp_buf(:,:,:), phalf_diff(:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:))) !< No description
 integer :: istart,iend,jstart,jend                                        !< No description
 logical :: found_field=.false.          !< No description
 integer :: i, j, k                   !< No description
+integer :: ni, nj, nk
+integer :: nlevs, nfields
+integer :: dim_map(3) !< x, y, z
 
 integer, parameter :: lkind=FMS_INTP_KIND_
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
    call mpp_error(FATAL, "interpolator_3D_no_time_axis : You must call interpolator_init before calling interpolator")
 
+if (present(dim_order)) then
+  call inverse_permutation(dim_order, dim_map)
+else
+  dim_map = [1, 2, 3]
+endif
+
+ni = size(interp_data, dim_map(1))
+nj = size(interp_data, dim_map(2))
+nk = size(interp_data, dim_map(3))
+nlevs = size(clim_type%FMS_INTP_TYPE_%levs)
+nfields = size(clim_type%field_name)
+
+allocate(hinterp_data(ni,nj,nlevs))
+allocate(p_fact(ni,nj))
+allocate(interp_buf(ni,nj,nk))
+allocate(phalf_diff(ni,nj,nk))
+
 istart = 1
 if (present(is)) istart = is
-iend = istart - 1 + size(interp_data,1)
+iend = istart - 1 + ni
 
 jstart = 1
 if (present(js)) jstart = js
-jend = jstart - 1 + size(interp_data,2)
+jend = jstart - 1 + nj
 
-do i= 1,size(clim_type%field_name(:))
+do i= 1,nfields
   if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
     found_field=.true.
     if(present(clim_units)) then
@@ -2955,19 +3060,21 @@ do j = 1, size(phalf,2)
       endif
       select case(clim_type%vert_interp(i))
          case(INTERP_WEIGHTED_P)
-            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
+            call interp_weighted_scalar(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_buf(ilon,j,:))
          case(INTERP_LINEAR_P)
-            call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_data(ilon,j,:))
+            call interp_linear(pclim, phalf(ilon,j,:),hinterp_data(ilon,j,:),interp_buf(ilon,j,:))
       end select
    enddo
 enddo
 
+phalf_diff = phalf(:,:,2:nk+1) - phalf(:,:,1:nk)
+
 select case(clim_type%mr(i))
   case(KG_M2)
-    do k = 1,size(interp_data,3)
-       interp_data(:,:,k) = interp_data(:,:,k)*(phalf(:,:,k+1)-phalf(:,:,k))
-    enddo
+    interp_buf(:,:,:) = interp_buf(:,:,:)*phalf_diff
 end select
+
+interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
 
   endif !field_name
 enddo !End of i loop
@@ -2989,12 +3096,13 @@ end subroutine INTERPOLATOR_3D_NO_TIME_AXIS_
 !! @param [in] <js> OPTIONAL: Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> OPTIONAL: The units of field_name
+!! @param [in] <dim_order> OPTIONAL: Order of the x (1) and y (2) dimensions
 !!
 !! @throw FATAL "interpolator_2D_no_time_axis : You must call
 !!                    interpolator_init before calling interpolator"
 !! @throw FATAL "Interpolator: the field name is not contained in this
 !!                    intepolate_type: "
-subroutine INTERPOLATOR_2D_NO_TIME_AXIS_(clim_type, interp_data, field_name, is, js, clim_units)
+subroutine INTERPOLATOR_2D_NO_TIME_AXIS_(clim_type, interp_data, field_name, is, js, clim_units, dim_order)
 
 ! Return 2-D field interpolated to model grid
 
@@ -3004,6 +3112,7 @@ subroutine INTERPOLATOR_2D_NO_TIME_AXIS_(clim_type, interp_data, field_name, is,
 ! INTENT IN
 !   field_name  : The name of the field that you wish to interpolate.
 !   is, js      : The indices of the physics window.
+!   dim_order   : Order of the x (1) and y (2) dimensions
 
 ! INTENT OUT
 !   interp_data : The model field with the interpolated climatology data.
@@ -3014,24 +3123,40 @@ character(len=*)      , intent(in)     :: field_name
 real(FMS_INTP_KIND_), dimension(:,:),   intent(out) :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
-real(FMS_INTP_KIND_) :: hinterp_data(size(interp_data,1),&
-                                     size(interp_data,2),size(clim_type%FMS_INTP_TYPE_%levs(:)))
+integer               , intent(in), optional :: dim_order(2)
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:)
 integer :: istart,iend,jstart,jend
 logical :: found_field=.false.
 integer :: i
+integer :: ni, nj
+integer :: nlevs, nfields
+integer :: dim_map(2) !< x, y
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
    call mpp_error(FATAL, "interpolator_2D_no_time_axis : You must call interpolator_init before calling interpolator")
 
+if (present(dim_order)) then
+  call inverse_permutation(dim_order, dim_map)
+else
+  dim_map = [1, 2]
+endif
+
+ni = size(interp_data, dim_map(1))
+nj = size(interp_data, dim_map(2))
+nlevs = size(clim_type%FMS_INTP_TYPE_%levs)
+nfields = size(clim_type%field_name)
+
+allocate(hinterp_data(ni,nj))
+
 istart = 1
 if (present(is)) istart = is
-iend = istart - 1 + size(interp_data,1)
+iend = istart - 1 + ni
 
 jstart = 1
 if (present(js)) jstart = js
-jend = jstart - 1 + size(interp_data,2)
+jend = jstart - 1 + nj
 
-do i= 1,size(clim_type%field_name(:))
+do i= 1,nfields
   if ( trim(adjustl(lowercase(field_name))) == trim(adjustl(lowercase(clim_type%field_name(i)))) ) then
 
     found_field=.true.
@@ -3041,9 +3166,8 @@ do i= 1,size(clim_type%field_name(:))
       clim_units = chomp(clim_units)
     endif
 
-    hinterp_data = clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,:,1,i)
-
-    interp_data(:,:) = hinterp_data(:,:,1)
+    hinterp_data = clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,1,1,i)
+    interp_data = reshape(hinterp_data, shape(interp_data), order=dim_map)
 
   endif !field_name
 enddo !End of i loop
