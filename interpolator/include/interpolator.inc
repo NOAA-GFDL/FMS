@@ -1423,13 +1423,13 @@ type(interpolate_type), intent(inout)  :: clim_type
 character(len=*)      , intent(in)  :: field_name
 type(time_type)       , intent(in)  :: Time
 real(FMS_INTP_KIND_), dimension(:,:,:), intent(in)  :: phalf
-real(FMS_INTP_KIND_), dimension(:,:,:,:), intent(out) :: interp_data
+real(FMS_INTP_KIND_), dimension(:,:,:,:), intent(out), target :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
 integer               , intent(in), optional :: dim_order(4)
 integer :: taum, taup, ilon
-real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:,:), p_fact(:,:), col_data(:,:,:), &
-                                     interp_buf(:,:,:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:,:), p_fact(:,:), col_data(:,:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), pointer :: interp_buf(:,:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:)))
 integer :: istart,iend,jstart,jend
 logical :: result, found
@@ -1445,8 +1445,10 @@ integer :: i, j, k, n
 integer :: ni, nj, nk
 integer :: nlevs, nfields
 integer :: dim_map(4) !< x, y, z, field
+logical :: use_buf
 character(len=256) :: err_msg
 
+integer, parameter :: dim_map_default(4) = [1, 2, 3, 4]
 integer, parameter :: lkind=FMS_INTP_KIND_
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
@@ -1455,8 +1457,10 @@ if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lo
 if (present(dim_order)) then
   call inverse_permutation(dim_order, dim_map)
 else
-  dim_map = [1, 2, 3, 4]
+  dim_map = dim_map_default
 endif
+
+use_buf = any(dim_map.ne.dim_map_default)
 
 ni = size(interp_data, dim_map(1))
 nj = size(interp_data, dim_map(2))
@@ -1467,8 +1471,14 @@ nfields = size(clim_type%field_name)
 allocate(hinterp_data(ni,nj,nlevs,nfields))
 allocate(p_fact(ni,nj))
 allocate(col_data(ni,nj,nfields))
-allocate(interp_buf(ni,nj,nk,nfields))
 allocate(phalf_diff(ni,nj,nk))
+
+if (use_buf) then
+  allocate(interp_buf(ni,nj,nk,nfields))
+  call mpp_error(NOTE, "interpolator_4D: Using temporary buffer")
+else
+  interp_buf => interp_data
+endif
 
    do n=2,nfields
      if (clim_type%vert_interp(n) /= clim_type%vert_interp(n-1) .or. &
@@ -1851,7 +1861,10 @@ enddo
        end select
      end do
 
-     interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+     if (use_buf) then
+       interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+       deallocate(interp_buf)
+     endif
 
 if( .not. found_field) then !field name is not in interpolator file.ERROR.
   call mpp_error(FATAL,"Interpolator: the field name is not contained in this &
@@ -1913,13 +1926,13 @@ type(interpolate_type), intent(inout)  :: clim_type
 character(len=*)      , intent(in)  :: field_name
 type(time_type)       , intent(in)  :: Time
 real(FMS_INTP_KIND_), dimension(:,:,:), intent(in)  :: phalf
-real(FMS_INTP_KIND_), dimension(:,:,:), intent(out) :: interp_data
+real(FMS_INTP_KIND_), dimension(:,:,:), intent(out), target :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
 integer               , intent(in), optional :: dim_order(3)
 integer :: taum, taup, ilon
-real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:), p_fact(:,:), col_data(:,:), &
-                                     interp_buf(:,:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:), p_fact(:,:), col_data(:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), pointer :: interp_buf(:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:)))
 integer :: istart,iend,jstart,jend
 logical :: result, found
@@ -1935,8 +1948,10 @@ integer :: i, j, k, n
 integer :: ni, nj, nk
 integer :: nlevs, nfields
 integer :: dim_map(3) !< x, y, z
+logical :: use_buf
 character(len=256) :: err_msg
 
+integer, parameter :: dim_map_default(3) = [1, 2, 3]
 integer, parameter :: lkind=FMS_INTP_KIND_
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
@@ -1945,8 +1960,10 @@ if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lo
 if (present(dim_order)) then
   call inverse_permutation(dim_order, dim_map)
 else
-  dim_map = [1, 2, 3]
+  dim_map = dim_map_default
 endif
+
+use_buf = any(dim_map.ne.dim_map_default)
 
 ni = size(interp_data, dim_map(1))
 nj = size(interp_data, dim_map(2))
@@ -1957,8 +1974,14 @@ nfields = size(clim_type%field_name)
 allocate(hinterp_data(ni,nj,nlevs))
 allocate(p_fact(ni,nj))
 allocate(col_data(ni,nj))
-allocate(interp_buf(ni,nj,nk))
 allocate(phalf_diff(ni,nj,nk))
+
+if (use_buf) then
+  allocate(interp_buf(ni,nj,nk))
+  call mpp_error(NOTE, "interpolator_3D: Using temporary buffer")
+else
+  interp_buf => interp_data
+endif
 
 istart = 1
 if (present(is)) istart = is
@@ -2313,8 +2336,10 @@ end select
   endif !field_name
 enddo !End of i loop
 
-interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
-
+if (use_buf) then
+  interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+  deallocate(interp_buf)
+endif
 
 if( .not. found_field) then !field name is not in interpolator file.ERROR.
   call mpp_error(FATAL,"Interpolator: the field name is not contained in this &
@@ -2370,7 +2395,7 @@ subroutine INTERPOLATOR_2D_(clim_type, Time, interp_data, field_name, is, js, cl
 type(interpolate_type), intent(inout)  :: clim_type
 character(len=*)      , intent(in)     :: field_name
 type(time_type)       , intent(in)     :: Time
-real(FMS_INTP_KIND_), dimension(:,:),   intent(out) :: interp_data
+real(FMS_INTP_KIND_), dimension(:,:),   intent(out), target :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
 integer               , intent(in), optional :: dim_order(2)
@@ -2392,6 +2417,7 @@ integer :: nlevs, nfields
 integer :: dim_map(2) !< x, y
 character(len=256) :: err_msg
 
+integer, parameter :: dim_map_default(2) = [1, 2]
 integer, parameter :: lkind=FMS_INTP_KIND_
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
@@ -2400,7 +2426,7 @@ if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lo
 if (present(dim_order)) then
   call inverse_permutation(dim_order, dim_map)
 else
-  dim_map = [1, 2]
+  dim_map = dim_map_default
 endif
 
 ni = size(interp_data, dim_map(1))
@@ -2602,9 +2628,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
             clim_type%indexp(i)+clim_type%climatology(i)*12,i,Time)
         endif
 
-
-
-
       else ! We are within a climatology data set
 
         if (taum /= clim_type%time_init(i,1) .or. &
@@ -2676,8 +2699,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
     endif! TIME_FLAG .eq. LINEAR .and. (.not. read_all_on_init)
 
   endif ! (.not. separate_time_vary_calc)
-
-
 
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
@@ -2775,12 +2796,13 @@ subroutine INTERPOLATOR_4D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_na
 type(interpolate_type), intent(inout)  :: clim_type
 character(len=*)      , intent(in)  :: field_name
 real(FMS_INTP_KIND_), dimension(:,:,:),   intent(in)  :: phalf
-real(FMS_INTP_KIND_), dimension(:,:,:,:), intent(out) :: interp_data
+real(FMS_INTP_KIND_), dimension(:,:,:,:), intent(out), target :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
 integer               , intent(in), optional :: dim_order(4)
 integer :: ilon
-real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:,:), p_fact(:,:), interp_buf(:,:,:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:,:), p_fact(:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), pointer :: interp_buf(:,:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:)))
 integer :: istart,iend,jstart,jend
 logical :: found_field=.false.
@@ -2788,7 +2810,9 @@ integer :: i, j, k, n
 integer :: ni, nj, nk
 integer :: nlevs, nfields
 integer :: dim_map(4) !< x, y, z, field
+logical :: use_buf
 
+integer, parameter :: dim_map_default(4) = [1, 2, 3, 4]
 integer, parameter :: lkind=FMS_INTP_KIND_
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
@@ -2797,8 +2821,10 @@ if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lo
 if (present(dim_order)) then
   call inverse_permutation(dim_order, dim_map)
 else
-  dim_map = [1, 2, 3, 4]
+  dim_map = dim_map_default
 endif
+
+use_buf = any(dim_map.ne.dim_map_default)
 
 ni = size(interp_data, dim_map(1))
 nj = size(interp_data, dim_map(2))
@@ -2808,8 +2834,14 @@ nfields = size(clim_type%field_name)
 
 allocate(hinterp_data(ni,nj,nlevs,nfields))
 allocate(p_fact(ni,nj))
-allocate(interp_buf(ni,nj,nk,nfields))
 allocate(phalf_diff(ni,nj,nk))
+
+if (use_buf) then
+  allocate(interp_buf(ni,nj,nk,nfields))
+  call mpp_error(NOTE, "interpolator_4D_no_time_axis: Using temporary buffer")
+else
+  interp_buf => interp_data
+endif
 
 do n=2,nfields
   if (clim_type%vert_interp(n) /= clim_type%vert_interp(n-1) .or. &
@@ -2911,7 +2943,10 @@ enddo
        end select
      end do
 
-     interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+     if (use_buf) then
+       interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+       deallocate(interp_buf)
+     endif
 
 if( .not. found_field) then !field name is not in interpolator file.ERROR.
   call mpp_error(FATAL,"Interpolator: the field name is not contained in this &
@@ -2964,12 +2999,13 @@ subroutine INTERPOLATOR_3D_NO_TIME_AXIS_(clim_type, phalf, interp_data, field_na
 type(interpolate_type), intent(inout)  :: clim_type
 character(len=*)      , intent(in)  :: field_name
 real(FMS_INTP_KIND_), dimension(:,:,:), intent(in)  :: phalf
-real(FMS_INTP_KIND_), dimension(:,:,:), intent(out) :: interp_data
+real(FMS_INTP_KIND_), dimension(:,:,:), intent(out), target :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
 integer               , intent(in), optional :: dim_order(3)
 integer :: ilon          !< No description
-real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:), p_fact(:,:), interp_buf(:,:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:,:), p_fact(:,:), phalf_diff(:,:,:)
+real(FMS_INTP_KIND_), pointer :: interp_buf(:,:,:)
 real(FMS_INTP_KIND_) :: pclim(size(clim_type%FMS_INTP_TYPE_%halflevs(:))) !< No description
 integer :: istart,iend,jstart,jend                                        !< No description
 logical :: found_field=.false.          !< No description
@@ -2977,7 +3013,9 @@ integer :: i, j, k                   !< No description
 integer :: ni, nj, nk
 integer :: nlevs, nfields
 integer :: dim_map(3) !< x, y, z
+logical :: use_buf
 
+integer, parameter :: dim_map_default(3) = [1, 2, 3]
 integer, parameter :: lkind=FMS_INTP_KIND_
 
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
@@ -2986,8 +3024,10 @@ if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lo
 if (present(dim_order)) then
   call inverse_permutation(dim_order, dim_map)
 else
-  dim_map = [1, 2, 3]
+  dim_map = dim_map_default
 endif
+
+use_buf = any(dim_map.ne.dim_map_default)
 
 ni = size(interp_data, dim_map(1))
 nj = size(interp_data, dim_map(2))
@@ -2997,8 +3037,14 @@ nfields = size(clim_type%field_name)
 
 allocate(hinterp_data(ni,nj,nlevs))
 allocate(p_fact(ni,nj))
-allocate(interp_buf(ni,nj,nk))
 allocate(phalf_diff(ni,nj,nk))
+
+if (use_buf) then
+  allocate(interp_buf(ni,nj,nk))
+  call mpp_error(NOTE, "interpolator_3D_no_time_axis: Using temporary buffer")
+else
+  interp_buf => interp_data
+endif
 
 istart = 1
 if (present(is)) istart = is
@@ -3074,7 +3120,10 @@ select case(clim_type%mr(i))
     interp_buf(:,:,:) = interp_buf(:,:,:)*phalf_diff
 end select
 
-interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+if (use_buf) then
+  interp_data = reshape(interp_buf, shape(interp_data), order=dim_map)
+  deallocate(interp_buf)
+endif
 
   endif !field_name
 enddo !End of i loop
@@ -3120,11 +3169,10 @@ subroutine INTERPOLATOR_2D_NO_TIME_AXIS_(clim_type, interp_data, field_name, is,
 
 type(interpolate_type), intent(inout)  :: clim_type
 character(len=*)      , intent(in)     :: field_name
-real(FMS_INTP_KIND_), dimension(:,:),   intent(out) :: interp_data
+real(FMS_INTP_KIND_), dimension(:,:),   intent(out), target :: interp_data
 integer               , intent(in) , optional :: is,js
 character(len=*)      , intent(out), optional :: clim_units
 integer               , intent(in), optional :: dim_order(2)
-real(FMS_INTP_KIND_), allocatable :: hinterp_data(:,:)
 integer :: istart,iend,jstart,jend
 logical :: found_field=.false.
 integer :: i
@@ -3132,21 +3180,21 @@ integer :: ni, nj
 integer :: nlevs, nfields
 integer :: dim_map(2) !< x, y
 
+integer, parameter :: dim_map_default(2) = [1, 2]
+
 if (.not. module_is_initialized .or. .not. allocated(clim_type%FMS_INTP_TYPE_%lon)) &
    call mpp_error(FATAL, "interpolator_2D_no_time_axis : You must call interpolator_init before calling interpolator")
 
 if (present(dim_order)) then
   call inverse_permutation(dim_order, dim_map)
 else
-  dim_map = [1, 2]
+  dim_map = dim_map_default
 endif
 
 ni = size(interp_data, dim_map(1))
 nj = size(interp_data, dim_map(2))
 nlevs = size(clim_type%FMS_INTP_TYPE_%levs)
 nfields = size(clim_type%field_name)
-
-allocate(hinterp_data(ni,nj))
 
 istart = 1
 if (present(is)) istart = is
@@ -3166,8 +3214,8 @@ do i= 1,nfields
       clim_units = chomp(clim_units)
     endif
 
-    hinterp_data = clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,1,1,i)
-    interp_data = reshape(hinterp_data, shape(interp_data), order=dim_map)
+    interp_data = reshape(clim_type%FMS_INTP_TYPE_%data5d(istart:iend,jstart:jend,1,1,i), &
+                         shape(interp_data), order=dim_map)
 
   endif !field_name
 enddo !End of i loop
