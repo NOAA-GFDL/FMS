@@ -40,7 +40,7 @@ program test_interpolator2
   use constants_mod,    only: PI
   use platform_mod,     only: r4_kind, r8_kind
   use fms_test_mod,     only: permutable_indices_2d, permutable_indices_3d, permutable_indices_4d, factorial, &
-                              arr_compare_tol
+                              permute_arr, arr_compare_tol
   use interpolator_mod
 
   implicit none
@@ -156,26 +156,28 @@ contains
 
     real(TEST_FMS_KIND_), allocatable, dimension(:,:) :: interp_data
     type(permutable_indices_2d) :: dims
-    integer :: p
+    integer :: p, dim_order(2)
 
     do p=1,factorial(2)
+      dim_order = [1, 2]
       dims%lb = [1, 1]
       dims%ub = [nlonlat, nlonlat]
 
+      call permute_arr(dim_order, p)
       call dims%permute(p)
 
       allocate(interp_data(dims%ub(1), dims%ub(2)))
       interp_data = 0.
 
       !> test interpolator_2D_r4/8
-      call interpolator(clim_type, test_time, interp_data, 'ozone')
+      call interpolator(clim_type, test_time, interp_data, 'ozone', dim_order=dim_order)
       call arr_compare_tol(interp_data, answer, tol, 'test interpolator_2D')
 
       interp_data = 0.
 
       !> Test obtain_interpolator_time_slices
       call obtain_interpolator_time_slices(clim_type,test_time)
-      call interpolator(clim_type, test_time, interp_data, 'ozone')
+      call interpolator(clim_type, test_time, interp_data, 'ozone', dim_order=dim_order)
       call unset_interpolator_time_flag(clim_type)
       call arr_compare_tol(interp_data, answer, tol, 'test interpolator_2D')
 
@@ -191,19 +193,21 @@ contains
 
     real(TEST_FMS_KIND_), allocatable, dimension(:,:,:) :: interp_data
     type(permutable_indices_3d) :: dims
-    integer :: p
+    integer :: p, dim_order(3)
 
     do p=1,factorial(3)
+      dim_order = [1, 2, 3]
       dims%lb = [1, 1, 1]
       dims%ub = [nlonlat, nlonlat, npfull]
 
+      call permute_arr(dim_order, p)
       call dims%permute(p)
 
       allocate(interp_data(dims%ub(1), dims%ub(2), dims%ub(3)))
       interp_data = 0.
 
       !> test interpolator_3_r4/8
-      call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone')
+      call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone', dim_order=dim_order)
       call arr_compare_tol(interp_data, answer, tol, 'test interpolator_3D')
 
       deallocate(interp_data)
@@ -218,19 +222,21 @@ contains
 
     real(TEST_FMS_KIND_), allocatable, dimension(:,:,:,:) :: interp_data
     type(permutable_indices_4d) :: dims
-    integer :: p
+    integer :: p, dim_order(4)
 
     do p=1,factorial(4)
+      dim_order = [1, 2, 3, 4]
       dims%lb = [1, 1, 1, 1]
       dims%ub = [nlonlat, nlonlat, npfull, 1]
 
+      call permute_arr(dim_order, p)
       call dims%permute(p)
 
       allocate(interp_data(dims%ub(1), dims%ub(2), dims%ub(3), dims%ub(4)))
       interp_data = 0.
 
       !> test interpolator_4D_r4/8
-      call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone')
+      call interpolator(clim_type, test_time, phalf_in, interp_data, 'ozone', dim_order=dim_order)
       call arr_compare_tol(interp_data, answer, tol, 'test interpolator_4D')
 
       deallocate(interp_data)
