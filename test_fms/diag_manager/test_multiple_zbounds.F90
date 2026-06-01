@@ -29,9 +29,12 @@ program test_multiple_zbounds
     type(time_type)                    :: Time_step        !< Time_step of the simulation
     integer                            :: id_z1            !< Axis id for the z dimension
     integer                            :: id_z2            !< Axis id for the z dimension
+    integer                            :: id_z_reverse     !< Axis id for the z dimension (decreasing)
     integer                            :: id_var1          !< var id for the first variable
     integer                            :: id_var2          !< var_id for the second variable
+    integer                            :: id_var3          !< var_id for the third variable
     real,                  allocatable :: z(:)             !< z axis data
+    real,                  allocatable :: z_reverse(:)     !< z axis data (decreasing)
     integer                            :: nz               !< Size of the z dimension
     integer                            :: i
     logical                            :: used             !< Dummy argument to send_data
@@ -42,8 +45,10 @@ program test_multiple_zbounds
 
     nz = 10
     allocate(z(nz))
+    allocate(z_reverse(nz))
     do i=1, nz
         z(i) = i
+        z(i) = nz - i + 1
     enddo
 
     Time = set_date(2,1,1,0,0,0)
@@ -51,8 +56,10 @@ program test_multiple_zbounds
 
     id_z1 =  diag_axis_init('zaxis1',  z,  'z', 'z', long_name='Z1')
     id_z2 =  diag_axis_init('zaxis2',  z,  'z', 'z', long_name='Z2')
+    id_z_reverse =  diag_axis_init('zaxis3',  z,  'z_reverse', 'z', long_name='Z3')
     id_var1 = register_diag_field  ('atmos', 'ua_1', (/id_z1/), Time)
     id_var2 = register_diag_field  ('atmos', 'ua_2', (/id_z2/), Time)
+    id_var3 = register_diag_field  ('atmos', 'ua_3', (/id_z_reverse/), Time)
 
     call diag_manager_set_time_end(set_date(2,1,2,0,0,0))
     do i = 1, 24
@@ -60,7 +67,7 @@ program test_multiple_zbounds
         z = real(i)
         used = send_data(id_var1, z, Time)
         used = send_data(id_var2, z, Time)
-
+        used = send_data(id_var3, z, Time)
         call diag_send_complete(Time_step)
     end do
 
