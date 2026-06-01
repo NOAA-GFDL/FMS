@@ -39,7 +39,7 @@ jobs:
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
-        mkdir /libs
+        sudo mkdir /libs
         wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
         tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
         ./configure --prefix=/libs
