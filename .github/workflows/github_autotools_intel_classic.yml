@@ -35,7 +35,7 @@ jobs:
         install-mpi: true
         mpi-wrapper-setup: classic
     - name: Install packages for building
-      run: sudo apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
+      run: sudo apt-get update && sudo apt-get install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
