@@ -3,7 +3,7 @@ name: Autotools build and unit testing with Intel Classic (weekly)
 on:
   schedule:
     - cron: '0 0 * * 0' # sundays @ midnight
-  push:
+  pull_request:
 # cancel running jobs if theres a newer push
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -35,7 +35,7 @@ jobs:
         install-mpi: true
         mpi-wrapper-setup: classic
     - name: Install packages for building
-      run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
+      run: sudo apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
@@ -43,19 +43,19 @@ jobs:
         wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
         tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
         ./configure --prefix=/libs
-        make -j install && cd ..
+        sudo make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
         ./configure --prefix=/libs --enable-remote-fortran-bootstrap
-        make -j install
+        sudo make -j install
         # sets this here to pass embeded configure checks
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
-        make -j -k build-netcdf-fortran
-        make -j install-netcdf-fortran
+        sudo make -j -k build-netcdf-fortran
+        sudo make -j install-netcdf-fortran
         wget https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
         tar xf yaml-0.2.5.tar.gz && cd yaml-0.2.5
         ./configure --prefix=/libs
-        make -j install && cd
+        sudo make -j install && cd
     - name: checkout
       uses: actions/checkout@v4.2.2
     - name: Configure
