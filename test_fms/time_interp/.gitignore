@@ -1,0 +1,6 @@
+test_time_interp_external_r4
+test_time_interp_external_r8
+test_time_interp_r4
+test_time_interp_r8
+INPUT/*
+input.nml
