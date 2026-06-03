@@ -19,9 +19,6 @@
 !> @ingroup diag_manager
 !! @brief fms_diag_reduction_methods_mod contains routines that are used to perform diagnostic reduction methods,
 !! such as max/min, average, rms, etc. These routines are called by the send_data routines in the diag_manager.
-!!
-!! To debug the reduction methods, compile with `-DFMS_DIAG_DEBUG_REDUCT=.true.` and the reduction routines will print
-!! out the values of the buffer and field data at each time step.
 
 !> @addtogroup fms_diag_reduction_methods_mod
 !> @{
@@ -186,3 +183,4 @@ module fms_diag_reduction_methods_mod
 end module fms_diag_reduction_methods_mod
 !> @}
 ! close documentation grouping
+
