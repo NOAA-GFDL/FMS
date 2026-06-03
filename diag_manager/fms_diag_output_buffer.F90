@@ -15,13 +15,15 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
+!> @defgroup fms_diag_output_buffer_mod fms_diag_output_buffer_mod
+!> @ingroup diag_manager
 !> @author Ryan Mulhall
 !> @email ryan.mulhall@noaa.gov
-!! @brief Contains buffer types and routines for the diag manager
-!!
-!! @description Holds buffered data for fmsDiagVars_type objects
-!! buffer0-5d types extend fmsDiagBuffer_class, and upon allocation
-!! are added to the module's buffer_lists depending on it's dimension
+!! @brief Defines a type for the output buffer objects used in the modern diag_manager,
+!! which hold the buffered data for fmsDiagVars_type objects prior to writing to file.
+
+!> @addtogroup fms_diag_output_buffer_mod
+!> @{
 module fms_diag_output_buffer_mod
 #ifdef use_yaml
 use platform_mod
@@ -928,3 +930,4 @@ subroutine set_send_data_called(this)
 end subroutine set_send_data_called
 #endif
 end module fms_diag_output_buffer_mod
+!> @}

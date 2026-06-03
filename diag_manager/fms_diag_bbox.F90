@@ -33,7 +33,7 @@ MODULE fms_diag_bbox_mod
 
    implicit none
 
-!> @brief Data structure holding a 3D bounding box. It is commonlyused to
+!> @brief Data structure holding a 3D bounding box. It is commonly used to
 !! represent the interval bounds or limits of a 3D sub-array such as the
 !! array index bounds of the spatial component a diag_manager field output
 !! buffer array.
@@ -92,45 +92,45 @@ MODULE fms_diag_bbox_mod
    integer, parameter :: ydimension = 2 !< Parameter defining the y dimension
    integer, parameter :: zdimension = 3 !< Parameter defininf the z dimension
 
-CONTAINS
+  CONTAINS
 
-!> @brief The PEs grid points are divided further into "blocks". This function determines if a block
-! has data for a given subregion and dimension
-!! @return .true. if the a subergion is inside a block
-logical pure function determine_if_block_is_in_region(subregion_start, subregion_end, bounds, dim)
-  integer,                   intent(in) :: subregion_start !< Begining of the subregion
-  integer,                   intent(in) :: subregion_end   !< Ending of the subregion
-  type(fmsDiagIbounds_type), intent(in) :: bounds          !< Starting and ending of the subregion
-  integer,                   intent(in) :: dim             !< Dimension to check
+   !> @brief The PEs grid points are divided further into "blocks". This function determines if a block
+   ! has data for a given subregion and dimension
+   !! @return .true. if the a subergion is inside a block
+   logical pure function determine_if_block_is_in_region(subregion_start, subregion_end, bounds, dim)
+   integer,                   intent(in) :: subregion_start !< Begining of the subregion
+   integer,                   intent(in) :: subregion_end   !< Ending of the subregion
+   type(fmsDiagIbounds_type), intent(in) :: bounds          !< Starting and ending of the subregion
+   integer,                   intent(in) :: dim             !< Dimension to check
 
-  integer :: block_start !< Begining index of the block
-  integer :: block_end   !< Ending index of the block
+   integer :: block_start !< Begining index of the block
+   integer :: block_end   !< Ending index of the block
 
-  determine_if_block_is_in_region = .true.
-  select case (dim)
-  case (xdimension)
-    block_start = bounds%imin
-    block_end = bounds%imax
-  case (ydimension)
-    block_start = bounds%jmin
-    block_end = bounds%jmax
-  case (zdimension)
-    block_start = bounds%kmin
-    block_end = bounds%kmax
-  end select
+   determine_if_block_is_in_region = .true.
+   select case (dim)
+   case (xdimension)
+      block_start = bounds%imin
+      block_end = bounds%imax
+   case (ydimension)
+      block_start = bounds%jmin
+      block_end = bounds%jmax
+   case (zdimension)
+      block_start = bounds%kmin
+      block_end = bounds%kmax
+   end select
 
-  if (block_start < subregion_start .and. block_end < subregion_start) then
-    determine_if_block_is_in_region = .false.
-    return
-  endif
+   if (block_start < subregion_start .and. block_end < subregion_start) then
+      determine_if_block_is_in_region = .false.
+      return
+   endif
 
-  if (block_start > subregion_end   .and. block_end > subregion_end) then
-    determine_if_block_is_in_region = .false.
-    return
-  endif
+   if (block_start > subregion_end   .and. block_end > subregion_end) then
+      determine_if_block_is_in_region = .false.
+      return
+   endif
 
-  determine_if_block_is_in_region = .true.
-end function determine_if_block_is_in_region
+   determine_if_block_is_in_region = .true.
+   end function determine_if_block_is_in_region
 
    !> @brief Gets imin of fmsDiagIbounds_type
    !! @return copy of integer member imin

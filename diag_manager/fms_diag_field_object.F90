@@ -16,14 +16,25 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 module fms_diag_field_object_mod
-!> \author Tom Robinson
-!> \email thomas.robinson@noaa.gov
-!! \brief Contains routines for the diag_objects
+!> @defgroup fms_diag_field_object_mod fms_diag_field_object_mod
+!> @ingroup diag_manager
+!> @addtogroup fms_diag_field_object_mod
+!> @{
+!! @brief Modern object-oriented implementation of diagnostic field management for FMS.
+!! @author Tom Robinson
 !!
-!! \description The diag_manager passes an object back and forth between the diag routines and the users.
-!! The procedures of this object and the types are all in this module.  The fms_dag_object is a type
-!! that contains all of the information of the variable.  It is extended by a type that holds the
-!! appropriate buffer for the data for manipulation.
+!! This module defines @ref fmsDiagField_type, the object that encapsulates metadata,
+!! buffering state, masking, and output registration for a single diagnostic field.
+!! It provides helper methods for field registration, data buffering, metadata queries,
+!! and NetCDF I/O support used by the diag_manager.
+!!
+!! The diagnostic field object is the central representation of a variable in
+!! FMS diagnostics. Each instance stores YAML metadata, file IDs, axis associations,
+!! buffer allocation state, attributes, missing-value handling, and the input buffer
+!! used to assemble data before reduction or output.
+!!
+!! @file
+!! @brief File for @ref fms_diag_field_object_mod
 #ifdef use_yaml
 use diag_data_mod,  only: prepend_date, diag_null, CMOR_MISSING_VALUE, diag_null_string, MAX_STR_LEN
 use diag_data_mod,  only: r8, r4, i8, i4, string, null_type_int, NO_DOMAIN
@@ -52,7 +63,15 @@ implicit none
 
 private
 
-!> \brief Object that holds all variable information
+!> @brief Object that holds all metadata and buffering state for a diagnostic field.
+!!
+!! The fmsDiagField_type represents a single diagnostic variable in the FMS
+!! diagnostic manager. It stores the YAML field metadata, registration state,
+!! axis associations, mask and missing-value handling, data buffering state,
+!! and helper procedures used to prepare and write the field to output files.
+!!
+!! This object is passed through diagnostic routines and serves as the primary
+!! per-variable container for the diag_manager.
 type fmsDiagField_type
      type (diagYamlFilesVar_type), allocatable, dimension(:) :: diag_field !< info from diag_table for this variable
      integer,                      allocatable, dimension(:) :: file_ids   !< Ids of the FMS_diag_files the variable

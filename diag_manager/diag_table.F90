@@ -24,6 +24,9 @@
 !!   files.
 !! @author Seth Underwood
 !!
+!! @note This module is part of the legacy diag_manager.  If use_modern_diag is enabled, this module will be unused,
+!! as all parsing and data storage will be handled by the fms_diag_object.F90 module and it's helpers.
+!!
 !! <TT>diag_table_mod</TT> parses the <TT>diag_table</TT> file, and sets up the required arrays to hold the information
 !!   needed for the <TT>diag_manager_mod</TT> to correctly write out the model history files.
 !!

@@ -18,8 +18,11 @@
 
 !> @defgroup fms_diag_axis_object_mod fms_diag_axis_object_mod
 !> @ingroup diag_manager
-!! @brief fms_diag_axis_object_mod stores the diag axis object, a diag domain
-!! object, and a subaxis object.
+!! @brief Modern object-oriented implementation of diagnostic axis management for the FMS diagnostic manager.
+!!
+!! This module provides type-based classes for managing diagnostic axes in FMS.
+!! It serves as the modern, object-oriented replacement for @ref diag_axis_mod, utilizing Fortran 2003+ class structures
+!! and polymorphism.
 
 !> @file
 !> @brief File for @ref diag_axis_object_mod
@@ -56,10 +59,16 @@ module fms_diag_axis_object_mod
 
   !> @}
 
-  !> @brief Type to hold the domain info for an axis
-  !! This type was created to avoid having to send in "Domain", "Domain2", "DomainUG" as arguments into subroutines
-  !! and instead only 1 class(diagDomain_t) argument can be send
-  !> @ingroup diag_axis_object_mod
+  !> @brief Base type for domain information associated with an axis.
+  !!
+  !! This type was created to avoid requiring separate "Domain", "Domain2", and "DomainUG" arguments
+  !! in subroutines. Instead, a single polymorphic class(diagDomain_t) argument can be used, which is
+  !! polymorphically extended to handle different domain types.
+  !!
+  !! This base provides a unified interface for domain operations regardless of whether
+  !! the axis uses 1D domain decomposition, 2D domain decomposition, or an unstructured grid domain.
+  !!
+  !! @ingroup diag_axis_object_mod
   type diagDomain_t
     contains
       procedure :: set => set_axis_domain
@@ -67,25 +76,51 @@ module fms_diag_axis_object_mod
       procedure :: get_ntiles
   end type diagDomain_t
 
-  !> @brief Type to hold the 1d domain
+  !> @brief Type to hold 1D domain decomposition information for an axis.
+  !!
+  !! This type extends the diagDomain_t base type and is used when an axis is
+  !! associated with a 1D domain (typically a vertical or time axis).
+  !! The 1D domain provides information about how the axis is partitioned across
+  !! MPI processes along a single dimension.
   type, extends(diagDomain_t) :: diagDomain1d_t
-     type(domain1d) :: Domain !< 1d Domain of the axis
+     type(domain1d) :: Domain !< 1D domain object describing axis decomposition
   end type
 
-  !> @brief Type to hold the 2d domain
+  !> @brief Type to hold 2D domain decomposition information for an axis.
+  !!
+  !! This type extends the diagDomain_t base type and is used when an axis is
+  !! part of a 2D domain (typically for horizontal "X" or "Y" axes in atmospheric models).
+  !! The 2D domain provides information about how the axis is partitioned across
+  !! MPI processes in both the X and Y dimensions.
   type, extends(diagDomain_t) :: diagDomain2d_t
-    type(domain2d) :: Domain2 !< 2d Domain of an "X" or "Y" axis
+    type(domain2d) :: Domain2 !< 2D domain object describing X-Y decomposition of an axis
   end type
 
-  !> @brief Type to hold the unstructured domain
+  !> @brief Type to hold unstructured grid domain information for an axis.
+  !!
+  !! This type extends the diagDomain_t base type and is used when an axis is
+  !! associated with an unstructured (irregular) grid domain. Unstructured grids are commonly
+  !! used in models with non-uniform spatial decomposition, such as icosahedral grids.
+  !! The unstructured domain provides information about cell connectivity and partitioning.
   type, extends(diagDomain_t) :: diagDomainUg_t
-    type(domainUG) :: DomainUG !< Domain of "U" axis
+    type(domainUG) :: DomainUG !< Unstructured domain object for irregular mesh decomposition
   end type
 
-  !> @brief Type to hold the diagnostic axis description.
-  !> @ingroup diag_axis_object_mod
+  !> @brief Base type for diagnostic axis objects.
+  !!
+  !! This is the base type for all diagnostic axis implementations. It provides
+  !! a unified interface for axis operations and is polymorphically extended by more specific
+  !! axis types:
+  !! - @ref fmsDiagFullAxis_type - A complete axis with coordinates
+  !! - @ref fmsDiagSubAxis_type - A subset of a full axis for regional output
+  !! - @ref fmsDiagDiurnalAxis_type - A subset of a full axis for diurnal averaging
+  !!
+  !! The base type defines a common interface for querying axis properties and writing
+  !! axis data to output files via the FMS2_IO library.
+  !!
+  !! @ingroup diag_axis_object_mod
   TYPE :: fmsDiagAxis_type
-     INTEGER                        , private :: axis_id         !< ID of the axis
+     INTEGER                        , private :: axis_id         !< Unique identifier for this axis
 
      contains
        procedure :: get_parent_axis_id
@@ -100,24 +135,37 @@ module fms_diag_axis_object_mod
        procedure :: get_edges_id
   END TYPE fmsDiagAxis_type
 
-  !> @brief Type to hold the diag_axis (either subaxis or a full axis)
-  !> @ingroup diag_axis_object_mod
+  !> @brief Container type to hold a polymorphic diagnostic axis object.
+  !!
+  !! This container type allows storage of any type derived from fmsDiagAxis_type
+  !! (e.g., fmsDiagFullAxis_type, fmsDiagSubAxis_type, or fmsDiagDiurnalAxis_type)
+  !! in an array. This polymorphic storage approach enables dynamic type checking
+  !! and method dispatch at runtime.
+  !!
+  !! @ingroup diag_axis_object_mod
   type :: fmsDiagAxisContainer_type
-    class(fmsDiagAxis_type), allocatable :: axis
+    class(fmsDiagAxis_type), allocatable :: axis !< Polymorphic axis object (Full, Sub, or Diurnal)
   end type
 
-  !> @brief Type to hold the subaxis
-  !> @ingroup diag_axis_object_mod
+  !> @brief Type representing a subregion or subset of a parent diagnostic axis.
+  !!
+  !! A subaxis is created when a user requests output for a limited region of a full axis.
+  !! This can occur for regional output (e.g., a subregion of the full domain) or for
+  !! dimension compression (e.g., selected depth levels in a vertical axis).
+  !!
+  !! Each subaxis maintains references to its parent axis and stores the index ranges
+  !! that define the subregion on the current PE, as well as globally.
+  !! Subaxes may also store Z-axis bounds for identifying equivalent subaxes across files.
+  !!
+  !! @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagSubAxis_type
-    CHARACTER(len=:),  ALLOCATABLE , private  :: subaxis_name   !< Name of the subaxis
-    INTEGER                        , private  :: starting_index !< Starting index of the subaxis relative to the
-                                                                !! parent axis
-    INTEGER                        , private  :: ending_index   !< Ending index of the subaxis relative to the
-                                                                !! parent axis
-    INTEGER                        , private  :: parent_axis_id !< Id of the parent_axis
-    INTEGER                        , private  :: compute_idx(2) !< Starting and ending index of the compute domain
-    INTEGER,            allocatable, private  :: global_idx(:)  !< Starting and ending index of the global domain
-    real(kind=r4_kind), allocatable, private  :: zbounds(:)     !< Bounds of the Z axis
+    CHARACTER(len=:),  ALLOCATABLE , private  :: subaxis_name   !< Name of the subaxis (typically parent_name_subNN)
+    INTEGER                        , private  :: starting_index !< First index of subregion relative to parent axis
+    INTEGER                        , private  :: ending_index   !< Last index of subregion relative to parent axis
+    INTEGER                        , private  :: parent_axis_id !< Axis ID of the parent full axis
+    INTEGER                        , private  :: compute_idx(2) !< [start, end] indices of compute domain on this PE
+    INTEGER,            allocatable, private  :: global_idx(:)  !< [start, end] indices in global domain
+    real(kind=r4_kind), allocatable, private  :: zbounds(:)     !< Bounds [min, max] if this is a Z-axis subregion
     contains
       procedure :: fill_subaxis
       procedure :: axis_length
@@ -127,54 +175,71 @@ module fms_diag_axis_object_mod
       procedure :: is_same_zbounds
   END TYPE fmsDiagSubAxis_type
 
-  !> @brief Type to hold the diurnal axis
-  !> @ingroup diag_axis_object_mod
+  !> @brief Type for diurnal (daily cycle) sampling axes.
+  !!
+  !! This specialized axis type represents time-of-day sampling for diurnal averaging.
+  !! Diurnal axes divide a 24-hour period into regular intervals for accumulating
+  !! time-averaged or instantaneous samples at each time-of-day bin. This is commonly
+  !! used in climate modeling to analyze the diurnal cycle of variables.
+  !!
+  !! Each diurnal axis has an associated edges axis that defines the bin boundaries,
+  !! and stores the actual diurnal coordinate data for output to NetCDF files.
+  !!
+  !! @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagDiurnalAxis_type
-    INTEGER                      , private :: ndiurnal_samples !< The number of diurnal samples
-    CHARACTER(len=:), ALLOCATABLE, private :: axis_name        !< The diurnal axis name
-    CHARACTER(len=:), ALLOCATABLE, private :: long_name        !< The longname of the diurnal axis
-    CHARACTER(len=:), ALLOCATABLE, private :: units            !< The units
-    INTEGER                      , private :: edges_id         !< The id of the diurnal edges
-    CHARACTER(len=:), ALLOCATABLE, private :: edges_name       !< The name of the edges axis
-    CLASS(*),         ALLOCATABLE, private :: diurnal_data(:)  !< The diurnal data
+    INTEGER                      , private :: ndiurnal_samples !< Number of time-of-day samples in 24-hour period
+    CHARACTER(len=:), ALLOCATABLE, private :: axis_name        !< Name of the diurnal axis (e.g., time_of_day_06)
+    CHARACTER(len=:), ALLOCATABLE, private :: long_name        !< Long name for the diurnal axis
+    CHARACTER(len=:), ALLOCATABLE, private :: units            !< Units string (hours since reference time)
+    INTEGER                      , private :: edges_id         !< Axis ID of the diurnal edges axis
+    CHARACTER(len=:), ALLOCATABLE, private :: edges_name       !< Name of the edges axis (e.g., time_of_day_edges_06)
+    CLASS(*),         ALLOCATABLE, private :: diurnal_data(:)  !< Coordinate values: times within 24-hour day
 
     contains
       procedure :: get_diurnal_axis_samples
       procedure :: write_diurnal_metadata
   END TYPE fmsDiagDiurnalAxis_type
 
-  !> @brief Type to hold the diagnostic axis description.
-  !> @ingroup diag_axis_object_mod
+  !> @brief Type representing a complete diagnostic axis with coordinates and metadata.
+  !!
+  !! This is the primary type for storing axis information. It contains the coordinate
+  !! values, metadata (name, units, long name), domain information, and optional attributes.
+  !! A full axis can have subaxes defined from it for regional output or selective output.
+  !!
+  !! The axis stores data in either single or double precision floating point format,
+  !! as determined by the input coordinate array. Domain information is stored polymorphically
+  !! to support 1D, 2D, and unstructured grid domains.
+  !!
+  !! @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagFullAxis_type
-     CHARACTER(len=:),   ALLOCATABLE, private :: axis_name       !< Name of the axis
-     CHARACTER(len=:),   ALLOCATABLE, private :: units           !< Units of the axis
-     CHARACTER(len=:),   ALLOCATABLE, private :: long_name       !< Long_name attribute of the axis
-     CHARACTER(len=1)               , private :: cart_name       !< Cartesian name "X", "Y", "Z", "T", "U", "N"
-     CLASS(*),           ALLOCATABLE, private :: axis_data(:)    !< Data of the axis
-     CHARACTER(len=:),   ALLOCATABLE, private :: type_of_data    !< The type of the axis_data ("float" or "double")
-     !< TO DO this can be a dlinked to avoid having limits
-     integer,            ALLOCATABLE, private :: subaxis(:)      !< Array of subaxis
-     integer                        , private :: nsubaxis        !< Number of subaxis
-     class(diagDomain_t),ALLOCATABLE, private :: axis_domain     !< Domain
-     INTEGER                        , private :: type_of_domain  !< The type of domain ("NO_DOMAIN", "TWO_D_DOMAIN",
-                                                                 !! or "UG_DOMAIN")
-     INTEGER                        , private :: length          !< Global axis length
-     INTEGER                        , private :: direction       !< Direction of the axis 0, 1, -1
-     INTEGER,            ALLOCATABLE, private :: edges_id        !< Axis ID for the edges axis
-                                                                 !! This axis will be written to the file
-     CHARACTER(len=:),   ALLOCATABLE, private :: edges_name      !< Name for the previously defined "edges axis"
-                                                                 !! This will be written as an attribute
-     CHARACTER(len=:), ALLOCATABLE,   private :: aux             !< Auxiliary name, can only be <TT>geolon_t</TT>
-                                                                 !! or <TT>geolat_t</TT>
-     CHARACTER(len=128)             , private :: req             !< Required field names.
-     INTEGER                        , private :: tile_count      !< The number of tiles
-     TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< Array to hold user definable attributes
-     INTEGER                        , private :: num_attributes  !< Number of defined attibutes
-     INTEGER                        , private :: domain_position !< The position in the doman (NORTH, EAST or CENTER)
-     integer, allocatable           , private :: structured_ids(:) !< If the axis is in the unstructured grid,
-                                                                   !! this is the axis ids of the structured axis
-     CHARACTER(len=:), ALLOCATABLE,   private :: set_name        !< Name of the axis set. This is to distinguish
-                                                                 !! two axis with the same name
+     CHARACTER(len=:),   ALLOCATABLE, private :: axis_name !< Name identifier for the axis (e.g., "height", "time")
+     CHARACTER(len=:),   ALLOCATABLE, private :: units !< Units string for axis values (e.g., "m", "K")
+     CHARACTER(len=:),   ALLOCATABLE, private :: long_name !< Descriptive long name for the axis
+                                                           !! (e.g., "Height above sea level")
+                                                           !! written as "long_name" attribute in output file
+     CHARACTER(len=1)               , private :: cart_name !< Cartesian classification: "X", "Y", "Z", "T", "U", "N"
+     CLASS(*),           ALLOCATABLE, private :: axis_data(:)    !< Coordinate values as single or double precision
+     CHARACTER(len=:),   ALLOCATABLE, private :: type_of_data    !< Data type: "float" (r4) or "double" (r8)
+     integer,            ALLOCATABLE, private :: subaxis(:)      !< Array of axis IDs for subaxes derived from this axis
+     integer                        , private :: nsubaxis        !< Count of subaxes currently defined
+     class(diagDomain_t),ALLOCATABLE, private :: axis_domain     !< Domain decomposition info (1D, 2D, or UG)
+     INTEGER                        , private :: type_of_domain  !< Domain type: NO_DOMAIN, TWO_D_DOMAIN, or UG_DOMAIN
+     INTEGER                        , private :: length          !< Total number of coordinate points globally
+     INTEGER                        , private :: direction       !< Axis direction: -1 (down), 0 (none), +1 (up)
+     INTEGER,            ALLOCATABLE, private :: edges_id        !< Axis ID of edges (cell boundaries) if defined
+                                                                 !! Written as coordinate in output file
+     CHARACTER(len=:),   ALLOCATABLE, private :: edges_name      !< Name of the edges axis
+                                                                 !! Written as "edges" attribute in file
+     CHARACTER(len=:), ALLOCATABLE,   private :: aux             !< Auxiliary classification: "geolon_t" or "geolat_t"
+     CHARACTER(len=128)             , private :: req             !< Required field names (comma-separated list)
+     INTEGER                        , private :: tile_count      !< Number of tiles on this axis
+     TYPE(fmsDiagAttribute_type),allocatable , private :: attributes(:) !< User-defined custom attributes
+     INTEGER                        , private :: num_attributes  !< Number of custom attributes defined
+     INTEGER                        , private :: domain_position !< Stagger position: CENTER, NORTH, or EAST
+     integer, allocatable           , private :: structured_ids(:) !< Structured axis IDs for unstructured grids
+                                                                   !! (maps unstructured to lat/lon axes)
+     CHARACTER(len=:), ALLOCATABLE,   private :: set_name        !< Axis set name to distinguish axes with same name
+                                                                 !! Used for multiple configurations of same grid
 
      contains
 
@@ -192,16 +257,20 @@ module fms_diag_axis_object_mod
      PROCEDURE :: has_set_name
      PROCEDURE :: is_x_or_y_axis
      PROCEDURE :: get_dim_size_layout
-     ! TO DO:
-     ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
 
   !> @addtogroup fms_diag_yaml_mod
   !> @{
   contains
 
-  !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!
-  !> @brief Initialize the axis
+  !> @brief Initialize and register a diagnostic axis with its coordinates and metadata.
+  !!
+  !! This subroutine configures a full diagnostic axis object with coordinate data,
+  !! units, and optional domain decomposition. The axis must be initialized before
+  !! being used to register diagnostic fields or create subaxes.
+  !!
+  !! The coordinate data is stored as-is (single or double precision), and the type
+  !! is inferred from the input array to optimize storage and I/O.
   subroutine register_diag_axis_obj(this, axis_name, axis_data, units, cart_name, long_name, direction,&
   & set_name, Domain, Domain2, DomainU, aux, req, tile_count, domain_position, axis_length )
     class(fmsDiagFullAxis_type),INTENT(inout):: this            !< Diag_axis obj
@@ -290,7 +359,10 @@ module fms_diag_axis_object_mod
     this%num_attributes = 0
   end subroutine register_diag_axis_obj
 
-  !> @brief Add an attribute to an axis
+  !> @brief Add a user-defined attribute to this axis.
+  !!
+  !! User-defined attributes are additional metadata that can be attached to axes.
+  !! These attributes will be written to the NetCDF output file as metadata.
   subroutine add_axis_attribute(this, att_name, att_value)
     class(fmsDiagFullAxis_type),INTENT(INOUT) :: this   !< diag_axis obj
     character(len=*), intent(in)    :: att_name     !< Name of the attribute
@@ -307,7 +379,15 @@ module fms_diag_axis_object_mod
     call this%attributes(j)%add(att_name, att_value)
   end subroutine add_axis_attribute
 
-  !> @brief Write the axis meta data to an open fileobj
+  !> @brief Write axis metadata (dimensions, coordinates, and attributes) to a NetCDF file.
+  !!
+  !! This subroutine registers the axis dimension and variable in an open FMS2_IO
+  !! file object (FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t), along with all metadata
+  !! attributes (units, long_name, etc.).
+  !! It handles different axis types (full, sub, diurnal) and domain decomposition types.
+  !!
+  !! For subaxes, the parent axis information is used to determine coordinate and
+  !! attribute values. The domain decomposition attribute is added when applicable.
   subroutine write_axis_metadata(this, fms2io_fileobj, edges_in_file, parent_axis)
     class(fmsDiagAxis_type),          target,  INTENT(IN)    :: this          !< diag_axis obj
     class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write the data to
@@ -438,7 +518,14 @@ module fms_diag_axis_object_mod
 
   end subroutine write_axis_metadata
 
-  !> @brief Write the axis data to an open fms2io_fileobj
+  !> @brief Write axis coordinate data to a NetCDF file.
+  !!
+  !! This subroutine writes the actual coordinate values for an axis to the output file.
+  !! It handles domain decomposition automatically, writing only the portion of coordinates
+  !! relevant to the current MPI process's I/O domain.
+  !!
+  !! For subaxes, the parent axis data is sliced to the appropriate indices and written.
+  !! For diurnal axes, the time-of-day coordinate values are written.
   subroutine write_axis_data(this, fms2io_fileobj, parent_axis)
     class(fmsDiagAxis_type),           target, INTENT(IN)    :: this        !< diag_axis obj
     class(FmsNetcdfFile_t),                    INTENT(INOUT) :: fms2io_fileobj!< Fms2_io fileobj to write the data to
@@ -472,8 +559,23 @@ module fms_diag_axis_object_mod
     end select
   end subroutine write_axis_data
 
-
-  !> @brief Defined a new diurnal axis
+  !> @brief Create and registers extra axes used when performing diurnal averaging, to capture the midpoints
+  !! and bounds of each diurnal sample. This subroutine will be called twice for each diurnal reduction: once to
+  !! create the edges axis (time_of_day_edges_<N>) and once to create the center axis (time_of_day_<N>), N being the
+  !! number of diurnal samples. The number of diurnal samples is specified by the reduction method name in your
+  !! diag_table.yaml, ie. "diurnal3" for 3 diurnal samples, "diurnal24" for 24 diurnal samples, etc.
+  !!
+  !! The time_of_day_<N> axis will have the midpoint of the sampled segment and the time_of_day_edges_<N> will have
+  !! the bounds. This will be written out in hours of a day, so edges will always start at 0 and end at 24, and
+  !! minutes will be represented as decimals.
+  !!
+  !! For example, if n_diurnal_samples = 3, the time_of_day_03 axis will have the values [4, 12, 20], representing the
+  !! time at the midpoint (4:00 am, 12:00 pm, 8:00 pm) for each of the 3 samples and the time_of_day_edges_03 axis
+  !! will have the values [0, 8, 16, 24], representing the start/end times of each sample (12:00 am, 8:00 am, 4:00 pm,
+  !! 12:00 pm).
+  !! For hourly sampling (n_diurnal_samples = 24), the time_of_day_24 axis will have the values
+  !! [0.5, 1.5, 2.5, ..., 23.5] and the time_of_day_edges_24 axis will have the values
+  !! [0, 1, 2, ..., 23, 24].
   subroutine define_diurnal_axis(diag_axis, naxis, n_diurnal_samples, is_edges)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)      !< Array of axis containers
     integer,                                  intent(inout) :: naxis             !< Number of axis that have
@@ -862,8 +964,17 @@ module fms_diag_axis_object_mod
 
   end subroutine get_compute_domain
 
-  !!!!!!!!!!!!!!!!!! SUB AXIS PROCEDURES !!!!!!!!!!!!!!!!!
-  !> @brief Fills in the information needed to define a subaxis
+  !!!!!!!!!!!!!!!!! SUBAXIS PROCEDURES !!!!!!!!!!!!!!!!!
+
+  !> @brief Initialize a subaxis object with region boundaries and metadata.
+  !!
+  !! This subroutine populates a subaxis object with all necessary information about
+  !! the subregion it represents. The subaxis name is automatically generated from the
+  !! parent axis name and a sequential number (e.g., "temperature_sub01").
+  !!
+  !! Optional parameters allow storage of global domain indices (needed for the
+  !! domain_decomposition NetCDF attribute) and Z-axis bounds (for identifying
+  !! equivalent subaxes across output files).
   subroutine fill_subaxis(this, starting_index, ending_index, axis_id, parent_id, parent_axis_name, compute_idx, &
                           global_idx, zbounds, nz_subaxis)
     class(fmsDiagSubAxis_type)  , INTENT(INOUT) :: this             !< diag_sub_axis obj
@@ -909,8 +1020,10 @@ module fms_diag_axis_object_mod
     endif
   end subroutine fill_subaxis
 
-  !> @brief Get the axis length of a subaxis
-  !> @return the axis length
+  !> @brief Get the number of points in a subaxis.
+  !!
+  !! Calculates the number of coordinate points in this subaxis based on its starting
+  !! and ending indices.
   function axis_length(this) &
     result(res)
       class(fmsDiagSubAxis_type)  , INTENT(IN) :: this             !< diag_sub_axis obj
@@ -919,8 +1032,9 @@ module fms_diag_axis_object_mod
       res = this%ending_index - this%starting_index + 1
     end function
 
-   !> @brief Accesses its member starting_index
-  !! @return a copy of the starting_index
+   !> @brief Get the starting index of this subaxis.
+  !!
+  !! Returns the first index of the subregion on the current process.
   function get_starting_index(this) result(indx)
     class(fmsDiagSubAxis_type), intent(in) :: this !< diag_sub_axis object
     integer :: indx !< Result to return
@@ -972,7 +1086,7 @@ module fms_diag_axis_object_mod
   function get_length(this, cart_axis, domain_position, global_length) &
   result (length)
     class(diagDomain_t), INTENT(IN)    :: this       !< diag_axis obj
-    character(len=*),    INTENT(IN)    :: cart_axis !< cart_axis of the axis
+    character(len=*),    INTENT(IN)    :: cart_axis !< cart_axis of the axis, must be "X" or "Y"
     integer,             INTENT(IN)    :: domain_position !< Domain position (CENTER, NORTH, EAST)
     integer,             INTENT(IN)    :: global_length !< global_length of the axis
 
@@ -990,7 +1104,10 @@ module fms_diag_axis_object_mod
 
   !!!!!!!!!!!!!!!!! FMS_DOMAIN PROCEDURES !!!!!!!!!!!!!!!!!
 
-  !> @brief Set the axis domain
+  !> @brief Assign a specific domain object to this domain wrapper.
+  !!
+  !! This subroutine assigns the appropriate domain object (1D, 2D, or unstructured)
+  !! to the polymorphic domain wrapper based on the type-specific argument provided.
   subroutine set_axis_domain(this, Domain, Domain2, DomainU)
     class(diagDomain_t) :: this !< fms_domain obj
     TYPE(domain1d),     INTENT(in),  OPTIONAL :: Domain  !< 1d domain
@@ -1007,8 +1124,13 @@ module fms_diag_axis_object_mod
     end select
   end subroutine set_axis_domain
 
-  !< @brief Allocates the array of axis/subaxis objects
-  !! @return true if there the aray of axis/subaxis objects is allocated
+  !> @brief Allocate the module-level array of diagnostic axis containers.
+  !!
+  !! This initialization routine must be called before any axes are created.
+  !! It allocates a global array to hold all axis objects up to the limit
+  !! defined by max_axes. Returns .true. on successful allocation.
+  !!
+  !! @return .true. if allocation succeeded
   logical function fms_diag_axis_object_init(axis_array)
     class(fmsDiagAxisContainer_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
 
@@ -1019,8 +1141,12 @@ module fms_diag_axis_object_mod
     fms_diag_axis_object_init = .true.
   end function fms_diag_axis_object_init
 
-  !< @brief Deallocates the array of axis/subaxis objects
-  !! @return false if the aray of axis/subaxis objects was allocated
+  !> @brief Deallocate the module-level array of diagnostic axis containers.
+  !!
+  !! This cleanup routine should be called when axis management is no longer needed.
+  !! It deallocates the global axis array, freeing all associated memory.
+  !!
+  !! @return .false. after successful deallocation
   logical function fms_diag_axis_object_end(axis_array)
     class(fmsDiagAxisContainer_type)   , allocatable, intent(inout) :: axis_array(:) !< Array of diag_axis
 
@@ -1029,11 +1155,17 @@ module fms_diag_axis_object_mod
 
   end function fms_diag_axis_object_end
 
-  !< @brief Determine the axis name of an axis_object
-  !! @return The name of the axis
-  !! @note This function may be called from the field object (i.e. to determine the dimension names for io),
-  !! The field object only contains the parent axis ids, because the subregion is defined in a per file basis,
-  !! so the is_regional flag is needed so that the correct axis name can be used
+  !> @brief Determine the name of the axis (or subaxis) represented by the given axis object.
+  !!
+  !! Returns the axis name, optionally modified for regional subsets.
+  !! When is_regional is .true. and this is an X or Y axis, "_sub01" is appended
+  !! to indicate a regional subset.
+  !!
+  !! @note This function may be called from field objects to get dimension names.
+  !! Field objects know only parent axis IDs; the is_regional flag distinguishes
+  !! whether regional subaxis naming should be applied.
+  !!
+  !! @return The axis name (possibly modified for regional output)
   pure function get_axis_name(this, is_regional) &
   result(axis_name)
     class(fmsDiagAxis_type), intent(in)           :: this        !< Axis object
@@ -1065,9 +1197,13 @@ module fms_diag_axis_object_mod
     end select
   end function
 
-  !> @brief Check if a cart_name is valid and crashes if it isn't
+  !> @brief Validate a Cartesian axis classification name.
+  !!
+  !! Checks that the provided Cartesian axis name is one of the recognized values.
+  !! Valid values are: X (longitude), Y (latitude), Z (vertical), T (time),
+  !! U (unstructured), or N (no axis). Calls mpp_error(FATAL) if invalid.
   subroutine check_if_valid_cart_name(cart_name)
-    character(len=*), intent(in) :: cart_name
+    character(len=*), intent(in) :: cart_name !< axis cartesian classification name to validate
 
     select case (cart_name)
     case ("X", "Y", "Z", "T", "U", "N")
@@ -1077,9 +1213,13 @@ module fms_diag_axis_object_mod
     end select
   end subroutine check_if_valid_cart_name
 
-  !> @brief Check if a domain_position is valid and crashes if it isn't
+  !> @brief Validate a domain position classification.
+  !!
+  !! Checks that the provided domain position is one of the recognized values.
+  !! Valid values are: CENTER, NORTH, or EAST (from mpp_domains_mod).
+  !! Calls mpp_error(FATAL) if invalid.
   subroutine check_if_valid_domain_position(domain_position)
-    integer, INTENT(IN) :: domain_position
+    integer, INTENT(IN) :: domain_position !< domain position to validate (CENTER, NORTH, EAST)
 
     select case (domain_position)
     case (CENTER, NORTH, EAST)
@@ -1089,9 +1229,13 @@ module fms_diag_axis_object_mod
     end select
   end subroutine check_if_valid_domain_position
 
-  !> @brief Check if a direction is valid and crashes if it isn't
+  !> @brief Validate an axis direction indicator.
+  !!
+  !! Checks that the provided direction value is one of the recognized values.
+  !! Valid values are: -1 (down/decreasing), 0 (no direction), or 1 (up/increasing).
+  !! Calls mpp_error(FATAL) if invalid.
   subroutine check_if_valid_direction(direction)
-    integer, INTENT(IN) :: direction
+    integer, INTENT(IN) :: direction !< Direction indicator to validate (-1, 0, 1)
 
     select case(direction)
     case(-1, 0, 1)
@@ -1101,7 +1245,12 @@ module fms_diag_axis_object_mod
     end select
   end subroutine check_if_valid_direction
 
-  !> @brief Loop through a variable's axis_id to determine and return the domain type and domain to use
+  !> @brief Determine the domain type and domain object from a list of axis IDs.
+  !!
+  !! This utility subroutine examines all axes used by a variable and determines
+  !! which domain type (and domain object) should be used for output. It handles
+  !! the case where a variable has both domain-decomposed and non-decomposed axes
+  !! (e.g., X,Y and Z axes on different domain types).
   subroutine get_domain_and_domain_type(diag_axis, axis_id, domain_type, domain, var_name)
     class(fmsDiagAxisContainer_type), target, intent(in)  :: diag_axis(:)  !< Array of diag_axis
     integer,                      INTENT(IN)  :: axis_id(:)    !< Array of axis ids
@@ -1118,7 +1267,7 @@ module fms_diag_axis_object_mod
     do i = 1, size(axis_id)
       j = axis_id(i)
       select type (axis => diag_axis(j)%axis)
-      type is (fmsDiagFullAxis_type)
+      type is (fmsdiagfullaxis_type)
         !< Check that all the axis are in the same domain
         if (domain_type .ne. axis%type_of_domain) then
           !< If they are different domains, one of them can be NO_DOMAIN
@@ -1138,7 +1287,13 @@ module fms_diag_axis_object_mod
     enddo
   end subroutine get_domain_and_domain_type
 
-  !> @brief Fill in the subaxis object for a subRegion defined by index
+  !> @brief Create a subaxis for a subregion defined by explicit index bounds.
+  !!
+  !! This subroutine creates a new subaxis for output of a limited region specified
+  !! by starting and ending indices (corners). It determines which processes
+  !! contribute data to the subregion and allocates the subaxis accordingly.
+  !!
+  !! @note Only processes with compute domains overlapping the subregion will have write_on_this_pe = .true.
   subroutine define_new_subaxis_index(parent_axis, subRegion, diag_axis, naxis, is_x_or_y, write_on_this_pe)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
     type(fmsDiagFullAxis_type),               intent(inout) :: parent_axis      !< axis object of the parent
@@ -1175,7 +1330,13 @@ module fms_diag_axis_object_mod
 
   end subroutine define_new_subaxis_index
 
-  !> @brief Fill in the subaxis object for a subRegion defined by lat lon
+  !> @brief Create subaxes for a subregion defined by latitude/longitude bounds.
+  !!
+  !! This subroutine creates new X and Y subaxes for output of a geographic region
+  !! specified by lat/lon bounds. It handles both cubesphere and regular lat/lon grids,
+  !! determining the corresponding index ranges for each grid type.
+  !!
+  !! @note Uses cubesphere index functions if is_cube_sphere is .true., otherwise nearest_index
   subroutine define_new_subaxis_latlon(diag_axis, axis_ids, naxis, subRegion, is_cube_sphere, write_on_this_pe)
     class(fmsDiagAxisContainer_type), target, intent(inout) :: diag_axis(:)     !< Diag_axis object
     integer,                                  INTENT(in)    :: axis_ids(:)      !< Array of axes_ids
@@ -1306,7 +1467,11 @@ module fms_diag_axis_object_mod
 
   end subroutine define_new_subaxis_latlon
 
-  !> @brief Creates a new subaxis and fills it will all the information it needs
+  !> @brief Create a new subaxis and initialize it with index ranges.
+  !!
+  !! This is the core subroutine for creating subaxes. It allocates a new fmsDiagSubAxis_type
+  !! object, fills it with the provided index information, and registers it with the parent axis.
+  !! The parent axis's subaxis list is updated to include the new subaxis ID.
   subroutine define_new_axis(diag_axis, parent_axis, naxis, parent_id, &
                              starting_index, ending_index, compute_idx, global_idx, new_axis_id, zbounds, &
                              nz_subaxis)
@@ -1345,8 +1510,12 @@ module fms_diag_axis_object_mod
     end select
   end subroutine define_new_axis
 
-  !< @brief Determine the parent_axis_id of a subaxis
-  !! @return parent_axis_id if it is a subaxis and diag_null if is not a subaxis
+  !> @brief Get the ID of the parent axis if this is a subaxis.
+  !!
+  !! For subaxis objects, returns the axis ID of the parent full axis.
+  !! For non-subaxis objects (full axes), returns diag_null.
+  !!
+  !! @return Parent axis ID if this is a subaxis; diag_null otherwise
   pure function get_parent_axis_id(this) &
   result(parent_axis_id)
 
@@ -1364,8 +1533,12 @@ module fms_diag_axis_object_mod
 
   end function
 
-  !< @brief Determine the most recent subaxis id in a diag_axis object
-  !! @return the most recent subaxis id in a diag_axis object
+  !> @brief Get the ID of the most recently defined subaxis of this axis.
+  !!
+  !! For non-Z axes with subaxes defined, returns the ID of the latest subaxis.
+  !! For Z axes or axes without subaxes, returns the axis's own ID.
+  !!
+  !! @return ID of the most recent subaxis, or this%axis_id if no subaxes
   pure function get_subaxes_id(this) &
   result(sub_axis_id)
 
@@ -1380,8 +1553,13 @@ module fms_diag_axis_object_mod
 
   end function
 
-  !< @brief Parses the "compress" attribute to get the names of the two axis
-  !! @return the names of the structured axis
+  !> @brief Parse the "compress" dimension specification into structured axis names.
+  !!
+  !! The "compress" attribute defines a compressed (packed) dimension by listing
+  !! the names of two or more axes that are combined into a single dimension.
+  !! This function extracts those axis names from the attribute value.
+  !!
+  !! @return Array of axis names
   pure function parse_compress_att(compress_att) &
   result(axis_names)
     class(*), intent(in) :: compress_att(:) !< The compress attribute to parse
@@ -1398,8 +1576,13 @@ module fms_diag_axis_object_mod
     end select
   end function parse_compress_att
 
-  !< @brief Determine the axis id of a axis
-  !! @return Axis id
+  !> @brief Look up an axis ID by name and optional axis set name.
+  !!
+  !! Searches the registered axes for one matching the given name and set name.
+  !! The set_name parameter allows disambiguation when multiple axis configurations
+  !! with the same name are defined (e.g., different resolutions on the same grid).
+  !!
+  !! @return Axis ID if found; diag_null if not found
   pure function get_axis_id_from_name(axis_name, diag_axis, naxis, set_name) &
   result(axis_id)
     class(fmsDiagAxisContainer_type), intent(in) :: diag_axis(:) !< Array of axis object
@@ -1425,8 +1608,7 @@ module fms_diag_axis_object_mod
 
   end function get_axis_id_from_name
 
-  !< @brief Get the number of diurnal samples for a diurnal axis
-  !! @return The number of diurnal samples
+  !> @brief Get the number of time-of-day samples for a diurnal axis.
   pure function get_diurnal_axis_samples(this) &
   result(n_diurnal_samples)
 
@@ -1436,7 +1618,10 @@ module fms_diag_axis_object_mod
     n_diurnal_samples = this%ndiurnal_samples
   end function get_diurnal_axis_samples
 
-  !< @brief Writes out the metadata for a diurnal axis
+  !> @brief Write diurnal axis metadata to a NetCDF file.
+  !!
+  !! Registers the diurnal axis dimension and variable in the file object,
+  !! along with associated attributes (units, long_name, edges reference).
   subroutine write_diurnal_metadata(this, fms2io_fileobj)
     class(fmsDiagDiurnalAxis_type), intent(in)    :: this     !< Diurnal axis Object
     class(FmsNetcdfFile_t),         intent(inout) :: fms2io_fileobj  !< Fms2_io fileobj to write the data to
@@ -1452,7 +1637,13 @@ module fms_diag_axis_object_mod
                                       &trim(this%edges_name), str_len=len_trim(this%edges_name))
   end subroutine write_diurnal_metadata
 
-  !> @brief Creates a new z subaxis to use
+  !> @brief Create or reuse a Z-axis subaxis for the specified Z bounds.
+  !!
+  !! This subroutine manages Z-axis compression by creating subaxes for specific
+  !! depth ranges. If an identical Z subaxis already exists in the file, that
+  !! existing subaxis is reused. Otherwise, a new subaxis is created.
+  !!
+  !! This deduplication avoids creating multiple subaxes with identical ranges.
   subroutine create_new_z_subaxis(zbounds, var_axis_ids, diag_axis, naxis, file_axis_id, nfile_axis, nz_subaxis, &
                                   error_mseg)
     real(kind=r4_kind),                       intent(in)    :: zbounds(2)      !< Bounds of the Z axis
@@ -1531,8 +1722,10 @@ module fms_diag_axis_object_mod
 
   end subroutine
 
-  !> @brief Determine if the diag_axis(parent_axis_id) is the parent of diag_axis(axis_id)
-  !! @return .True. if diag_axis(parent_axis_id) is the parent of diag_axis(axis_id)
+  !> @brief Check if one axis is the parent of another.
+  !!
+  !! Determines parent-child relationships between axes by checking if axis_id
+  !! is a subaxis of parent_axis_id.
   function is_parent_axis(axis_id, parent_axis_id, diag_axis) &
     result(rslt)
     integer, intent(in) :: axis_id        !< Axis id to check
@@ -1548,8 +1741,10 @@ module fms_diag_axis_object_mod
     end select
   end function is_parent_axis
 
-  !> @brief Determine the name of the z subaxis by matching the parent axis id and the zbounds
-  !! in the diag table yaml
+  !> @brief Find the name of a Z-axis subaxis by matching parent and bounds.
+  !!
+  !! Searches the file's registered axes to find a Z subaxis with the specified
+  !! parent axis and Z bounds. The axis name is returned in dim_name.
   subroutine find_z_sub_axis_name(dim_name, parent_axis_id, file_axis_id, field_yaml, diag_axis)
     character(len=*),                intent(inout) :: dim_name         !< Name of z subaxis
     integer,                         intent(in)    :: parent_axis_id   !< Axis id of the parent
