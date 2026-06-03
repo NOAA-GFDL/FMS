@@ -113,7 +113,7 @@ module fms_diag_axis_object_mod
   !! axis types:
   !! - @ref fmsDiagFullAxis_type - A complete axis with coordinates
   !! - @ref fmsDiagSubAxis_type - A subset of a full axis for regional output
-  !! - @ref fmsDiagDiurnalAxis_type - A specialized time-sampling axis for diurnal averaging
+  !! - @ref fmsDiagDiurnalAxis_type - A subset of a full axis for diurnal averaging
   !!
   !! The base type defines a common interface for querying axis properties and writing
   !! axis data to output files via the FMS2_IO library.
@@ -220,7 +220,6 @@ module fms_diag_axis_object_mod
      CHARACTER(len=1)               , private :: cart_name !< Cartesian classification: "X", "Y", "Z", "T", "U", "N"
      CLASS(*),           ALLOCATABLE, private :: axis_data(:)    !< Coordinate values as single or double precision
      CHARACTER(len=:),   ALLOCATABLE, private :: type_of_data    !< Data type: "float" (r4) or "double" (r8)
-     !< TODO: Consider linked-list implementation to remove MAX_AXES limit
      integer,            ALLOCATABLE, private :: subaxis(:)      !< Array of axis IDs for subaxes derived from this axis
      integer                        , private :: nsubaxis        !< Count of subaxes currently defined
      class(diagDomain_t),ALLOCATABLE, private :: axis_domain     !< Domain decomposition info (1D, 2D, or UG)

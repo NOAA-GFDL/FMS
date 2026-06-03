@@ -24,7 +24,7 @@
 !!
 !! @note This module is part of the legacy diag_manager.  If use_modern_diag is enabled, this module will be unused
 !! except for the get_local_indexes procedure, which is still used by the modern diag_manager to determine the local
-!! indexes for regional output.
+!! indexes for regional output in the cube sphere grid.
 !!
 !! <TT>diag_grid_mod</TT> contains useful utilities for dealing
 !!   with, mostly, regional output for grids other than the standard

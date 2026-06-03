@@ -47,7 +47,7 @@ The diag_manager is organized into functional modules, with new modules introduc
 
 #### Enabling the Modern Diag Manager
 
-The modern diag manager is optionally enabled via the `use_modern_diag` flag in the `diag_manager_nml` namelist, as seen below.
+The modern diag manager is optionally enabled via the `use_modern_diag` flag in the `diag_manager_nml` namelist, as seen below. FMS must be compiled with the `-Duse_yaml flag`.
 By default, the legacy diag manager is used to maintain backward compatibility. When `use_modern_diag = .true.`, the modern implementation is invoked while maintaining the same public interface.
 
 ```

@@ -16,22 +16,22 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `mix_snapshot_average_fields`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-- Description: Controls whether snapshot (instantaneous) and time-averaged fields can coexist in the same output file. When false, snapshot and averaged fields must be separated into different files to avoid timestamp conflicts.
+- Description: Controls whether snapshot (instantaneous) and time-averaged fields can coexist in the same output file. When false, snapshot and averaged fields must be separated into different files to avoid timestamp conflicts. This option is only applicable for the legacy diag manager. The modern diag manager does not allow mixing snapshot (instantaneous) and time-averaged fields.
 
 ### `max_files`
 - Type: `INTEGER`
 - Default: `31`
-- Description: Maximum number of output files that can be managed simultaneously by the diagnostic manager.
+- Description: Maximum number of output files that can be managed simultaneously by the diagnostic manager. This option is only applicable for the legacy diag manager.
 
 ### `max_output_fields`
 - Type: `INTEGER`
 - Default: `300`
-- Description: Maximum number of output fields that can be registered with the diagnostic manager.
+- Description: Maximum number of output fields that can be registered with the diagnostic manager. This option is only applicable for the legacy diag manager.
 
 ### `max_input_fields`
 - Type: `INTEGER`
 - Default: `300`
-- Description: Maximum number of input fields that can be processed by the diagnostic manager.
+- Description: Maximum number of input fields that can be processed by the diagnostic manager. This option is only applicable for the legacy diag manager.
 
 ### `max_axes`
 - Type: `INTEGER`
@@ -44,10 +44,10 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 - Description: Enables logging of diagnostic field registration and data sending operations. Helpful for debugging diagnostic setup and data flow.
 - Notes: Logfiles are written to `diag_field_log.out.<root pe number>`. The `field_log_separator` variable controls the separator character for log entries (default is `|`).
 
-### `write_bytes_in_files`
+### `write_bytes_in_file`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-- Description: If true, writes the number of bytes written to each output file. Provides information about file sizes and I/O volume.
+- Description: If true, writes the number of bytes written to each output file. Provides information about file sizes and I/O volume. This option is only applicable for the legacy diag manager.
 
 ### `debug_diag_manager`
 - Type: `LOGICAL`
@@ -57,7 +57,7 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `max_num_axis_sets`
 - Type: `INTEGER`
 - Default: `25`
-- Description: Maximum number of axis sets that can be defined for organizing coordinate systems.
+- Description: Maximum number of axis sets that can be defined for organizing coordinate systems. This option is only applicable for the legacy diag manager.
 
 ### `use_cmor`
 - Type: `LOGICAL`
@@ -93,7 +93,7 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `region_out_use_alt_value`
 - Type: `LOGICAL`
 - Default: `.TRUE.`
-- Description: Determines which sentinel value to use when checking regional output boundaries. Uses `GLO_REG_VAL_ALT` (`-1`) when true, and `GLO_REG_VAL` (`-999`) when false.
+- Description: Determines which sentinel value to use when checking regional output boundaries. Uses `GLO_REG_VAL_ALT` (`-1`) when true, and `GLO_REG_VAL` (`-999`) when false. This option is only applicable for the legacy diag manager. The modern diag manager can only accept -999 as an option"
 
 ### `use_mpp_io`
 - Type: `LOGICAL`
@@ -108,4 +108,4 @@ Although the namelist is defined in `diag_manager_mod`, all variables belong to 
 ### `use_clock_average`
 - Type: `LOGICAL`
 - Default: `.FALSE.`
-- Description: Controls time averaging method: true uses wall-clock time, false uses sample counting. Clock-based averaging is more accurate for variable timestep models.
+Description: Controls how averaging windows are defined. When true, averaging of variables is done based on the clock. For example, if doing daily averages and you start the simulation in day 1 hour 3, it will do the average between day 1 hour 3 to day 2 hour 0. The default behavior will do the average between day 1 hour 3 to day 2 hour 3. 
