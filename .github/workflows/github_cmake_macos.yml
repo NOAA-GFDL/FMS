@@ -2,10 +2,6 @@ name: CMake build and unit tests on MacOS
 
 on: push
 
-env:
-  CC: gcc
-  FC: gfortran
-
 jobs:
   # Executables
   build-symmetric:
@@ -17,6 +13,8 @@ jobs:
     env:
       CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
       EXCLUDE_TESTS: "test_mpp_nesting|test_mpp_clock_begin_end_id|test_time_*"
+      CC: gcc-15
+      FC: gfortran
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/macos-setup/
@@ -24,8 +22,14 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake $CMAKE_FLAGS -DOPENMP=on -DUNIT_TESTS=on ..
+          brew shellenv
+          cmake $CMAKE_FLAGS -DOPENMP=off -DUNIT_TESTS=on ..
       - name: Build the library
-        run: make -j -C build
+        run: |
+          brew shellenv
+          make -j -C build
       - name: Run the unit tests
-        run: cd build && ctest -E "${EXCLUDE_TESTS}" --output-on-failure
+        run: |
+          cd build
+          brew shellenv
+          ctest -E "${EXCLUDE_TESTS}" --output-on-failure

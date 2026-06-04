@@ -18,5 +18,6 @@ runs:
         brew install automake
         brew install netcdf
         brew install netcdf-fortran
-        brew install mpich
+        brew install openmpi
+        brew install libyaml
         echo "::endgroup::"
