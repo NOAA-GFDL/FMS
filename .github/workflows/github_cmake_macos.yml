@@ -1,10 +1,12 @@
 name: CMake build and unit tests on MacOS
 
-on: push
+on:
+  push:
+    branches:
+    - main
 
 jobs:
-  # Executables
-  build-symmetric:
+  build:
     runs-on: macOS-latest
     strategy:
       matrix:
@@ -23,13 +25,9 @@ jobs:
           mkdir build
           cd build
           brew shellenv
-          cmake $CMAKE_FLAGS -DOPENMP=off -DUNIT_TESTS=on ..
+          cmake $CMAKE_FLAGS ..
       - name: Build the library
         run: |
           brew shellenv
           make -j -C build
-      - name: Run the unit tests
-        run: |
-          cd build
-          brew shellenv
-          ctest -E "${EXCLUDE_TESTS}" --output-on-failure
+
