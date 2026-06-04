@@ -22,8 +22,14 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake $CMAKE_FLAGS -DOPENMP=off -DUNIT_TESTS=on .. CC=gcc FC=gfortran
+          brew shellenv
+          cmake $CMAKE_FLAGS -DOPENMP=off -DUNIT_TESTS=on ..
       - name: Build the library
-        run: make -j -C build
+        run: |
+          brew shellenv
+          make -j -C build
       - name: Run the unit tests
-        run: cd build && ctest -E "${EXCLUDE_TESTS}" --output-on-failure
+        run: |
+          cd build
+          brew shellenv
+          ctest -E "${EXCLUDE_TESTS}" --output-on-failure
