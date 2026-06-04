@@ -19,4 +19,5 @@ runs:
         brew install netcdf
         brew install netcdf-fortran
         brew install openmpi
+        brew install libyaml
         echo "::endgroup::"
