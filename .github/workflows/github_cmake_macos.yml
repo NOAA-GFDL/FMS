@@ -13,8 +13,8 @@ jobs:
     env:
       CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
       EXCLUDE_TESTS: "test_mpp_nesting|test_mpp_clock_begin_end_id|test_time_*"
-      CC: gcc
-      FC: gfortran
+      CC: /opt/homebrew/bin/gcc
+      FC: /opt/homebrew/bin/gfortran
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/macos-setup/
