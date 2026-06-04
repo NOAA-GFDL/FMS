@@ -1970,10 +1970,16 @@ end subroutine init_nonblock_type
 #define MPP_RESET_GROUP_UPDATE_FIELD_ mpp_reset_group_update_field_r8
 #undef MPP_RESET_GROUP_UPDATE_FIELD_V_
 #define MPP_RESET_GROUP_UPDATE_FIELD_V_ mpp_reset_group_update_field_r8_v
-#undef GET_VALUE_
-#define GET_VALUE_ get_value_r8
-#undef SET_VALUE_
-#define SET_VALUE_ set_value_r8
+#undef GROUP_UPDATE_PACK_
+#define GROUP_UPDATE_PACK_ group_update_pack_r8
+#undef GROUP_UPDATE_UNPACK_
+#define GROUP_UPDATE_UNPACK_ group_update_unpack_r8
+#undef SET_ZERO_
+#define SET_ZERO_ set_zero_r8
+#undef NEGATE_HALO_
+#define NEGATE_HALO_ negate_halo_r8
+#undef FLIP_I_
+#define FLIP_I_ flip_i_r8
 #include <mpp_group_update.fh>
 
 #undef MPP_TYPE_
@@ -1994,8 +2000,14 @@ end subroutine init_nonblock_type
 #define MPP_RESET_GROUP_UPDATE_FIELD_ mpp_reset_group_update_field_r4
 #undef MPP_RESET_GROUP_UPDATE_FIELD_V_
 #define MPP_RESET_GROUP_UPDATE_FIELD_V_ mpp_reset_group_update_field_r4_v
-#undef GET_VALUE_
-#define GET_VALUE_ get_value_r4
-#undef SET_VALUE_
-#define SET_VALUE_ set_value_r4
+#undef GROUP_UPDATE_PACK_
+#define GROUP_UPDATE_PACK_ group_update_pack_r4
+#undef GROUP_UPDATE_UNPACK_
+#define GROUP_UPDATE_UNPACK_ group_update_unpack_r4
+#undef SET_ZERO_
+#define SET_ZERO_ set_zero_r4
+#undef NEGATE_HALO_
+#define NEGATE_HALO_ negate_halo_r4
+#undef FLIP_I_
+#define FLIP_I_ flip_i_r4
 #include <mpp_group_update.fh>

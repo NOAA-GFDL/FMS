@@ -578,7 +578,6 @@ module mpp_domains_mod
   type :: mpp_group_update_type
      private
      logical            :: initialized = .FALSE.
-     logical            :: k_loop_inside = .TRUE.
      logical            :: nonsym_edge = .FALSE.
      integer            :: nscalar = 0
      integer            :: nvector = 0
@@ -745,17 +744,11 @@ module mpp_domains_mod
   logical           :: debug_message_passing = .false. !<  Will check the consistency on the boundary between
                                                        !! processor/tile when updating domain for symmetric domain and
                                                        !! check the consistency on the north folded edge.
-  integer           :: nthread_control_loop = 8 !< Determine the loop order for packing and unpacking.
-                                                !! When number of threads is greater than nthread_control_loop,
-                                                !! the k-loop will be moved outside and combined with number
-                                                !! of pack and unpack. When the number of threads is
-                                                !! less than or equal to nthread_control_loop, the k-loop
-                                                !! is moved inside, but still outside, of j,i loop.
   logical           :: efp_sum_overflow_check = .false. !< If .true., always do overflow_check
                                                         !! when doing EFP bitwise mpp_global_sum.
   logical           :: use_alltoallw = .false.
-  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, nthread_control_loop, &
-                             efp_sum_overflow_check, use_alltoallw
+  namelist /mpp_domains_nml/ debug_update_domain, domain_clocks_on, debug_message_passing, efp_sum_overflow_check, &
+                             use_alltoallw
 
   !***********************************************************************
 
