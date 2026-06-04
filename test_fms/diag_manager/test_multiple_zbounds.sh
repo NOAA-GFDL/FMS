@@ -47,6 +47,8 @@ diag_files:
     zbounds: 3 5
   - var_name: ua_2
     zbounds: 1 1
+  - var_name: ua_3
+    zbounds: 3 5
 _EOF
 
   test_expect_success "Test with multiple zbounds limits (modern diag manager)" '

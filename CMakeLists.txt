@@ -717,6 +717,7 @@ if(UNIT_TESTS)
     test_fms/fms/test_fms.F90
     test_fms/interpolator/test_interpolator.F90
     test_fms/mpp/test_clock_init.F90
+    test_fms/mpp/test_corner_mosaic.F90
     test_fms/mpp/test_domains_simple.F90
     test_fms/mpp/test_domains_utility_mod.F90
     test_fms/mpp/test_global_arrays.F90
