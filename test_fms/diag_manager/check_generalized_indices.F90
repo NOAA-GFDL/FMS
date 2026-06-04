@@ -29,7 +29,7 @@ program check_generalized_indices
 
   type(FmsNetcdfFile_t)           :: fileobj
   integer                         :: nx, ny, nz
-  integer                         :: i
+  integer                         :: i, ierr
 
   real(kind=r8_kind), allocatable :: var2_id(:,:)     ! (x,y)
   real(kind=r8_kind), allocatable :: var2_yx(:,:)     ! (y,x)
@@ -64,20 +64,20 @@ program check_generalized_indices
     print *, "Checking var2_yx vs var2_id - time_level:", i
     call read_data(fileobj, "var2_id", var2_id, unlim_dim_level=i)
     call read_data(fileobj, "var2_yx", var2_yx, unlim_dim_level=i)
-    call check_perm(var2_id, var2_yx, [2,1])
+    call check_perm(var2_id, var2_yx, [2,1], ierr)
 
     print *, "Checking var3_zx vs var3_id - time_level:", i
     call read_data(fileobj, "var3_id", var3_id, unlim_dim_level=i)
     call read_data(fileobj, "var3_zx", var3_zx, unlim_dim_level=i)
-    call check_perm(var3_id, var3_zx, [3,2,1])
+    call check_perm(var3_id, var3_zx, [3,2,1], ierr)
 
     print *, "Checking var3_yzx vs var3_id - time_level:", i
     call read_data(fileobj, "var3_yzx", var3_yzx, unlim_dim_level=i)
-    call check_perm(var3_id, var3_yzx, [2,3,1])
+    call check_perm(var3_id, var3_yzx, [2,3,1], ierr)
 
     print *, "Checking var3_zxy vs var3_id - time_level:", i
     call read_data(fileobj, "var3_zxy", var3_zxy, unlim_dim_level=i)
-    call check_perm(var3_id, var3_zxy, [3,1,2])
+    call check_perm(var3_id, var3_zxy, [3,1,2], ierr)
   enddo
 
   call close_file(fileobj)

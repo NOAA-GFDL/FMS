@@ -40,6 +40,7 @@ program test_generalized_indices
   integer                :: ntimes, i
   type(time_type)        :: Time, Time_step
   real(r8_kind)          :: missing_value
+  integer                :: ierr
 
   ! Axes
   integer                :: id_x, id_y, id_z, id_w
