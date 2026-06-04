@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake $CMAKE_FLAGS -DOPENMP=on -DUNIT_TESTS=on ..
+          cmake $CMAKE_FLAGS -DUNIT_TESTS=on ..
       - name: Build the library
         run: make -j -C build
       - name: Run the unit tests
