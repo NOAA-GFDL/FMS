@@ -2,10 +2,6 @@ name: CMake build and unit tests on MacOS
 
 on: push
 
-env:
-  CC: gcc
-  FC: gfortran
-
 jobs:
   # Executables
   build-symmetric:
@@ -17,6 +13,8 @@ jobs:
     env:
       CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
       EXCLUDE_TESTS: "test_mpp_nesting|test_mpp_clock_begin_end_id|test_time_*"
+      CC: gcc
+      FC: gfortran
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/macos-setup/
