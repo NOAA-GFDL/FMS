@@ -109,7 +109,7 @@ module testing_utils
     real(kind=r8_kind), intent(in) :: var(:,:)      ! canonical (x,y)
     real(kind=r8_kind), intent(in) :: var_perm(:,:) ! permuted
     integer,            intent(in) :: order(2)
-    integer,            intent(out) :: ierr 
+    integer,            intent(out) :: ierr
 
     integer :: i, j
     integer :: idx(2)
