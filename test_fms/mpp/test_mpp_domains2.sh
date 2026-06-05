@@ -66,6 +66,7 @@ mix_2D_3D = .false.
 test_get_nbr = .false.
 test_edge_update = .false.
 test_cubic_grid_redistribute = .false.
+test_cubic_grid_redistribute_generalized_indices = .false.
 ensemble_size = 1
 layout_cubic = 0,0
 layout_ensemble = 0,0
@@ -115,6 +116,10 @@ test_expect_success "global sum" '
 '
 sed "s/test_cubic_grid_redistribute = .false./test_cubic_grid_redistribute = .true./" input_base.nml > input.nml
 test_expect_success "cubic grid redistribute" '
+    mpirun -n 6 ../test_mpp_domains
+'
+sed "s/test_cubic_grid_redistribute_generalized_indices = .false./test_cubic_grid_redistribute_generalized_indices = .true./" input_base.nml > input.nml
+test_expect_success "cubic grid redistribute_generalized_indices" '
     mpirun -n 6 ../test_mpp_domains
 '
 sed "s/test_boundary = .false./test_boundary = .true./" input_base.nml > input.nml

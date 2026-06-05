@@ -84,6 +84,7 @@ program test_mpp_domains
   logical :: test_group = .false.
   logical :: test_group_offload = .false.
   logical :: test_cubic_grid_redistribute = .false.
+  logical :: test_cubic_grid_redistribute_generalized_indices = .false.
   logical :: check_parallel = .FALSE.
   logical :: test_get_nbr = .FALSE.
   logical :: test_boundary = .false.
@@ -110,7 +111,8 @@ program test_mpp_domains
                                warn_level, wide_halo_x, wide_halo_y, nx_cubic, ny_cubic, &
                                test_performance, test_interface, num_fields, do_sleep, num_iter, &
                                mix_2D_3D, test_get_nbr, test_edge_update, &
-                               test_cubic_grid_redistribute, ensemble_size, layout_cubic, &
+                               test_cubic_grid_redistribute, test_cubic_grid_redistribute_generalized_indices, &
+                               ensemble_size, layout_cubic, &
                                layout_ensemble, nthreads, test_boundary, layout_tripolar, &
                                test_group, test_global_sum, test_subset, test_nonsym_edge, &
                                test_halosize_performance, test_adjoint, wide_halo, &
@@ -201,6 +203,16 @@ program test_mpp_domains
      call cubic_grid_redistribute()
       if (mpp_pe() == mpp_root_pe())  print *, &
          &  '--------------------> Finished cubic_grid_redistribute <-------------------'
+  endif
+
+  if( test_cubic_grid_redistribute_generalized_indices ) then
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  '--------------------> Calling cubic_grid_redistribute_generalized_indices <-------------------'
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  'Storage Layout = (3,1,2)'
+     call cubic_grid_redistribute((/3,1,2/))
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  '--------------------> Finished cubic_grid_redistribute_generalized_indices <-------------------'
   endif
 
   if(test_boundary) then
@@ -606,7 +618,8 @@ contains
 
   !#######################################################################
 
-  subroutine cubic_grid_redistribute
+  subroutine cubic_grid_redistribute(axis_to_dim_in)
+     integer, intent(in), optional :: axis_to_dim_in(3)
 
      integer              :: npes, npes_per_ensemble, npes_per_tile
      integer              :: ensemble_id, tile_id, ensemble_tile_id
@@ -615,6 +628,8 @@ contains
      integer              :: isd_ens, ied_ens, jsd_ens, jed_ens
      integer              :: isc, iec, jsc, jec
      integer              :: isd, ied, jsd, jed
+     integer              :: sc(3), ec(3), sc_ens(3), ec_ens(3)
+     integer              :: sd(3), ed(3), sd_ens(3), ed_ens(3)
      integer, allocatable :: my_ensemble_pelist(:), pe_start(:), pe_end(:)
      integer, allocatable :: global_indices(:,:), layout2D(:,:)
      real,    allocatable :: x(:,:,:,:), x_ens(:,:,:), y(:,:,:)
@@ -622,6 +637,34 @@ contains
      type(domain2D)       :: domain
      type(domain2D), allocatable :: domain_ensemble(:)
      character(len=128)   :: mesg
+     integer              :: axis_to_dim(3), dim_to_axis(3)
+     integer              :: i_dim, j_dim, k_dim
+
+     !-------------------------------------------------------------------
+     ! axis_to_dim maps logical axis order to storage layout
+     ! axis_to_dim = (3,1,2) maps
+     !          x -> 3rd dim
+     !          y -> 1st dim
+     !          z -> 2nd dim
+     ! This map is passed on to MPP_REDISTRIBUTE to select storage
+     !    dim by logical axis desired
+     ! The inverse map is defined by dim_to_axis(axis_to_dim)=(1,2,3)
+     !    maps storage layout to logical axis order and is used in this
+     !    routine to select the correct logical start/stop indices when
+     !    allocating storage arrays.
+     !-------------------------------------------------------------------
+     axis_to_dim = (/1,2,3/)
+     if (present(axis_to_dim_in)) axis_to_dim = axis_to_dim_in
+
+     ! Inverse Map
+     dim_to_axis(axis_to_dim(1))=1
+     dim_to_axis(axis_to_dim(2))=2
+     dim_to_axis(axis_to_dim(3))=3
+
+     ! Selectors for logical indices by storage dim
+     i_dim = dim_to_axis(1)
+     j_dim = dim_to_axis(2)
+     k_dim = dim_to_axis(3)
 
      ! --- set up pelist
      npes = mpp_npes()
@@ -706,44 +749,55 @@ contains
      call mpp_get_data_domain( domain, isd, ied, jsd, jed)
      call mpp_get_compute_domain( domain, isc, iec, jsc, jec)
 
-     allocate(x_ens(isd_ens:ied_ens, jsd_ens:jed_ens, nz))
-     allocate(x(isd:ied, jsd:jed, nz, ensemble_size))
-     allocate(y(isd:ied, jsd:jed, nz))
+     sd_ens = (/isd_ens, jsd_ens, 1/)
+     ed_ens = (/ied_ens, jed_ens, nz/)
+     allocate(x_ens(sd_ens(i_dim):ed_ens(i_dim), sd_ens(j_dim):ed_ens(j_dim), sd_ens(k_dim):ed_ens(k_dim) ))
 
+     sd = (/isd, jsd, 1/)
+     ed = (/ied, jed, nz/)
+     allocate(x(sd(i_dim):ed(i_dim), sd(j_dim):ed(j_dim), sd(k_dim):ed(k_dim), ensemble_size))
+     allocate(y(sd(i_dim):ed(i_dim), sd(j_dim):ed(j_dim), sd(k_dim):ed(k_dim) ))
+     print *, 'shape x:', shape(x)
+
+     sc_ens = (/isc_ens, jsc_ens, 1/)
+     ec_ens = (/iec_ens, jec_ens, nz/)
      x = 0
-     do k = 1, nz
-        do j = jsc_ens, jec_ens
-           do i = isc_ens, iec_ens
+     do k = sc_ens(k_dim), ec_ens(k_dim)
+        do j = sc_ens(j_dim), ec_ens(j_dim)
+           do i = sc_ens(i_dim), ec_ens(i_dim)
               x_ens(i,j,k) = ensemble_id *1e6 + ensemble_tile_id*1e3 + i + j * 1.e-3 + k * 1.e-6
            enddo
         enddo
      enddo
 
+     sc = (/isc, jsc, 1/)
+     ec = (/iec, jec, nz/)
      do n = 1, ensemble_size
         x = 0
-        call mpp_redistribute( domain_ensemble(n), x_ens, domain, x(:,:,:,n) )
+        call mpp_redistribute( domain_ensemble(n), x_ens, domain, x(:,:,:,n), axis_to_dim_in=axis_to_dim )
         y = 0
-        do k = 1, nz
-           do j = jsc, jec
-              do i = isc, iec
+        do k = sc(k_dim), ec(k_dim)
+           do j = sc(j_dim), ec(j_dim)
+              do i = sc(i_dim), ec(i_dim)
                  y(i,j,k) = n *1e6 + tile_id*1e3 + i + j * 1.e-3 + k * 1.e-6
               enddo
            enddo
         enddo
        write(mesg,'(a,i4)') "cubic_grid redistribute from ensemble", n
-        call compare_checksums( x(isc:iec,jsc:jec,:,n), y(isc:iec,jsc:jec,:), trim(mesg) )
+        call compare_checksums( x(sc(i_dim):ec(i_dim),sc(j_dim):ec(j_dim),sc(k_dim):ec(k_dim),n),            &
+                              & y(sc(i_dim):ec(i_dim),sc(j_dim):ec(j_dim),sc(k_dim):ec(k_dim)), trim(mesg) )
      enddo
 
      ! redistribute data to each ensemble.
      deallocate(x,y,x_ens)
-     allocate(x(isd:ied, jsd:jed, nz, ensemble_size))
-     allocate(x_ens(isd_ens:ied_ens, jsd_ens:jed_ens, nz))
-     allocate(y(isd_ens:ied_ens, jsd_ens:jed_ens, nz))
+     allocate(x(sd(i_dim):ed(i_dim), sd(j_dim):ed(j_dim), sd(k_dim):ed(k_dim), ensemble_size))
+     allocate(x_ens(sd_ens(i_dim):ed_ens(i_dim), sd_ens(j_dim):ed_ens(j_dim), sd_ens(k_dim):ed_ens(k_dim) ))
+     allocate(y(sd_ens(i_dim):ed_ens(i_dim), sd_ens(j_dim):ed_ens(j_dim), sd_ens(k_dim):ed_ens(k_dim) ))
 
      y = 0
-     do k = 1, nz
-        do j = jsc, jec
-           do i = isc, iec
+     do k = sc(k_dim), ec(k_dim)
+        do j = sc(j_dim), ec(j_dim)
+           do i = sc(i_dim), ec(i_dim)
               x(i,j,k,:) = i + j * 1.e-3 + k * 1.e-6
            enddo
         enddo
@@ -751,20 +805,21 @@ contains
 
      do n = 1, ensemble_size
         x_ens = 0
-        call mpp_redistribute(domain, x(:,:,:,n), domain_ensemble(n), x_ens)
+        call mpp_redistribute(domain, x(:,:,:,n), domain_ensemble(n), x_ens, axis_to_dim_in=axis_to_dim)
         y = 0
         if( ensemble_id == n ) then
-           do k = 1, nz
-              do j = jsc_ens, jec_ens
-                 do i = isc_ens, iec_ens
+           do k = sc_ens(k_dim), ec_ens(k_dim)
+              do j = sc_ens(j_dim), ec_ens(j_dim)
+                 do i = sc_ens(i_dim), ec_ens(i_dim)
                     y(i,j,k) = i + j * 1.e-3 + k * 1.e-6
                  enddo
               enddo
            enddo
         endif
         write(mesg,'(a,i4)') "cubic_grid redistribute to ensemble", n
-        call compare_checksums( x_ens(isc_ens:iec_ens,jsc_ens:jec_ens,:), y(isc_ens:iec_ens,jsc_ens:jec_ens,:), &
-                              &  trim(mesg) )
+        call compare_checksums( x_ens(sc_ens(i_dim):ec_ens(i_dim),sc_ens(j_dim):ec_ens(j_dim),sc_ens(k_dim):ec_ens(k_dim)), &
+                              & y(sc_ens(i_dim):ec_ens(i_dim),sc_ens(j_dim):ec_ens(j_dim),sc_ens(k_dim):ec_ens(k_dim)),     &
+                              & trim(mesg) )
      enddo
 
      deallocate(x, y, x_ens)
