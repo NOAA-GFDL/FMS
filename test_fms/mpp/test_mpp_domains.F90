@@ -809,7 +809,7 @@ contains
            enddo
         endif
         write(mesg,'(a,i4)') "cubic_grid redistribute to ensemble", n
-  call compare_checksums( x_ens(sc_ens(i_dim):ec_ens(i_dim),sc_ens(j_dim):ec_ens(j_dim),sc_ens(k_dim):ec_ens(k_dim)), & 
+  call compare_checksums( x_ens(sc_ens(i_dim):ec_ens(i_dim),sc_ens(j_dim):ec_ens(j_dim),sc_ens(k_dim):ec_ens(k_dim)), &
                         & y(sc_ens(i_dim):ec_ens(i_dim),sc_ens(j_dim):ec_ens(j_dim),sc_ens(k_dim):ec_ens(k_dim)),     &
                         & trim(mesg) )
      enddo
