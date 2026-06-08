@@ -663,6 +663,7 @@ if(UNIT_TESTS)
     test_fms/diag_manager/test_flush_nc_file.F90
     test_fms/diag_manager/test_diag_out_yaml.F90
     test_fms/diag_manager/test_reduction_methods.F90
+    test_fms/diag_manager/test_diag_generalized_indices.F90
     test_fms/diag_manager/testing_utils.F90
     test_fms/diag_manager/test_diag_diurnal.F90
     test_fms/diag_manager/check_time_none.F90
