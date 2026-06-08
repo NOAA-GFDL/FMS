@@ -1,0 +1,33 @@
+name: CMake build and unit tests on MacOS
+
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: macOS-latest
+    strategy:
+      matrix:
+        libyaml-flag: [ "", -DWITH_YAML=on ]
+        build-type: [ "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_BUILD_TYPE=Debug" ]
+    env:
+      CMAKE_FLAGS: "${{ matrix.build-type }} ${{ matrix.libyaml-flag }}"
+      EXCLUDE_TESTS: "test_mpp_nesting|test_mpp_clock_begin_end_id|test_time_*"
+      CC: gcc-15
+      FC: gfortran
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/macos-setup/
+      - name: Generate makefiles with CMake
+        run: |
+          mkdir build
+          cd build
+          brew shellenv
+          cmake $CMAKE_FLAGS ..
+      - name: Build the library
+        run: |
+          brew shellenv
+          make -j -C build
+
