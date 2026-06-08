@@ -321,6 +321,11 @@ AC_LANG_POP(Fortran)
 # We passed all the tests.  Set the required defines.
 if test $with_mpi = yes; then
   AC_DEFINE([use_libMPI], [1], [This is required for the library to build])
+  AM_CONDITIONAL([SERIAL_BUILD], false)
+  AC_SUBST([SERIAL_BUILD], [false])
+else
+  AM_CONDITIONAL([SERIAL_BUILD], true)
+  AC_SUBST([SERIAL_BUILD], [true])
 fi
 
 # Builds with r8 default unless disable flag is given

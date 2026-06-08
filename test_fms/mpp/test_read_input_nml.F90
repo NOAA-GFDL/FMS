@@ -26,7 +26,7 @@ program test_read_input_nml
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated
   use mpp_mod, only : mpp_error, FATAL, NOTE
   use mpp_mod, only : read_input_nml, mpp_get_current_pelist_name
-  use mpp_mod, only : input_nml_file
+  use mpp_mod, only : input_nml_file, mpp_exit
 #include<file_version.h>
 
 character(len=200) :: line !< Storage location of lines read from the input nml
@@ -34,7 +34,6 @@ character(len=128) :: filename !< Name of input nml file to be read
 integer :: stat !< IOSTAT output integer
 integer :: n, m !< Loop counting variable
 integer :: current_pelist_name_len_plus1 !< Current pelist name length plus 1
-integer :: ierr !< used by MPI_FINALIZE
 character(len=:), allocatable :: toobig !< String passed as argument into read_input_nml that is
                                         !!larger than pelis_name and should raise an error
 
@@ -90,7 +89,9 @@ else if (test_numb.eq.3) then
                                                           ! extra character "e"
   deallocate(toobig)
 end if
-
-call MPI_FINALIZE(ierr)
+  ! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
+  call MPI_FINALIZE(ierr)
+#endif
 
 end program test_read_input_nml
