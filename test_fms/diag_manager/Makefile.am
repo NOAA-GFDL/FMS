@@ -71,8 +71,8 @@ test_diag_attribute_add_SOURCES = test_diag_attribute_add.F90
 check_new_file_freq_SOURCES = check_new_file_freq.F90
 test_zbounds_limits_SOURCES = test_zbounds_limits.F90
 test_multiple_zbounds_SOURCES = test_multiple_zbounds.F90
-test_generalized_indices_SOURCES = testing_utils.F90 test_diag_generalized_indices.F90
-check_generalized_indices_SOURCES = testing_utils.F90 check_generalized_indices.F90
+test_diag_generalized_indices_SOURCES = testing_utils.F90 test_diag_generalized_indices.F90
+check_diag_generalized_indices_SOURCES = testing_utils.F90 check_diag_generalized_indices.F90
 
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
