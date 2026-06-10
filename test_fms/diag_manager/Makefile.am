@@ -34,7 +34,7 @@ check_PROGRAMS = test_diag_manager test_diag_manager_time \
  check_time_pow check_time_rms check_subregional test_cell_measures test_var_masks \
  check_var_masks test_multiple_send_data test_diag_out_yaml test_output_every_freq \
  test_dm_weights test_prepend_date test_ens_runs test_diag_multi_file test_diag_attribute_add \
- check_new_file_freq test_zbounds_limits test_multiple_zbounds test_generalized_indices check_generalized_indices
+ check_new_file_freq test_zbounds_limits test_multiple_zbounds test_diag_generalized_indices check_diag_generalized_indices
 
 # This is the source code for the test.
 test_output_every_freq_SOURCES = test_output_every_freq.F90
