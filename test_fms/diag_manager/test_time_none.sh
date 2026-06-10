@@ -71,10 +71,10 @@ _EOF
 touch input.nml
 printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
 test_expect_success "Write and read domain-decomposed data with generalized indices" '
-  mpirun -n 6 ../test_generalized_indices
+  mpirun -n 6 ../test_diag_generalized_indices
 '
 test_expect_success "Checking answers for the  generalized indices" '
-  mpirun -n 1 ../check_generalized_indices
+  mpirun -n 1 ../check_diag_generalized_indices
 '
 
 cat <<_EOF > diag_table.yaml
