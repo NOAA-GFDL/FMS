@@ -74,8 +74,6 @@ test_multiple_zbounds_SOURCES = test_multiple_zbounds.F90
 test_diag_generalized_indices_SOURCES = testing_utils.F90 test_diag_generalized_indices.F90
 check_diag_generalized_indices_SOURCES = testing_utils.F90 check_diag_generalized_indices.F90
 
-test_time_none.log: test_diag_generalized_indices check_diag_generalized_indices
-
 TEST_EXTENSIONS = .sh
 SH_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
                   $(abs_top_srcdir)/test_fms/tap-driver.sh
