@@ -18,7 +18,7 @@
 
 !> @brief Checker for test_generalized_indices output.
 !!        Verifies permuted-axis variables match identity variables under axis permutations
-program check_generalized_indices
+program check_diag_generalized_indices
   use fms_mod,           only: fms_init, fms_end, string
   use testing_utils,     only: check_perm
   use fms2_io_mod,       only: FmsNetcdfFile_t, read_data, open_file, close_file, get_global_attribute
@@ -96,4 +96,4 @@ contains
       call mpp_error(FATAL, "Global attribute 'title' not expected value.")
     endif
   end subroutine check_global_attribute
-end program check_generalized_indices
+end program check_diag_generalized_indices

@@ -20,7 +20,7 @@
 !!         Applies predefined permutations to canonical (x,y,z,w) storage
 !!         and verifies consistency between data layout and axis metadata.
 !!         Assumes default configuration parameters: test_normal + no_mask.
-program test_generalized_indices
+program test_diag_generalized_indices
   use fms_mod,           only: fms_init, fms_end
   use testing_utils,     only: allocate_buffer, permute
   use platform_mod,      only: r8_kind
@@ -251,5 +251,5 @@ contains
     buffer = nint(buffer) + real(time_index, kind=r8_kind)/100._r8_kind
   end subroutine set_buffer
 
-end program test_generalized_indices
+end program test_diag_generalized_indices
 
