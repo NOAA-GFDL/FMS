@@ -666,6 +666,7 @@ if(UNIT_TESTS)
     test_fms/diag_manager/test_diag_generalized_indices.F90
     test_fms/diag_manager/testing_utils.F90
     test_fms/diag_manager/test_diag_diurnal.F90
+    test_fms/diag_manager/check_diag_generalized_indices.F90
     test_fms/diag_manager/check_time_none.F90
     test_fms/diag_manager/check_time_min.F90
     test_fms/diag_manager/check_time_max.F90
