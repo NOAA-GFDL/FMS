@@ -57,8 +57,7 @@ contains
 
     integer :: ix, iy, iz1, iz2 !< Indices of the domain-decomposed dimensions
     integer :: nd !< Number of dimensions
-    integer :: idx !< Index into the 1D buffer
-    integer :: i1, i2, i3, i4, i(4)
+    integer :: i1, i2, i3, i4
 
     select case (field_type)
       case (FIELD_S)
@@ -127,25 +126,37 @@ contains
 
     select case (nd)
       case (2)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2)) local(i, idx)
-            i(1:2) = [i1, i2]
-            idx = n(ix)*(i(iy)-lb(iy)) + (i(ix)-lb(ix)) + 1
-            field2d(i1,i2) = buffer(idx)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+            block
+              integer :: i(2), idx
+
+              i = [i1, i2]
+              idx = n(ix)*(i(iy)-lb(iy)) + (i(ix)-lb(ix)) + 1
+              field2d(i1,i2) = buffer(idx)
+            end block
         end do
       case (3)
         iz1 = 1 + 2 + 3 - ix - iy
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3)) local(i, idx)
-            i(1:3) = [i1, i2, i3]
-            idx = n(ix)*( n(iy)*(i(iz1)-1) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
-            field3d(i1,i2,i3) = buffer(idx)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+            block
+              integer :: i(3), idx
+
+              i = [i1, i2, i3]
+              idx = n(ix)*( n(iy)*(i(iz1)-1) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
+              field3d(i1,i2,i3) = buffer(idx)
+            end block
         end do
       case (4)
         iz1 = trailz(sum(2**[1,2,3,4]) - 2**ix - 2**iy)
         iz2 = 1 + 2 + 3 + 4 - ix - iy - iz1
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4)) local(i, idx)
-            i(1:4) = [i1, i2, i3, i4]
-            idx = n(ix)*( n(iy)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
-            field4d(i1,i2,i3,i4) = buffer(idx)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+            block
+              integer :: i(4), idx
+
+              i = [i1, i2, i3, i4]
+              idx = n(ix)*( n(iy)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
+              field4d(i1,i2,i3,i4) = buffer(idx)
+            end block
         end do
     end select
   end subroutine unpack_inner_loop

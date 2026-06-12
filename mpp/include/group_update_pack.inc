@@ -152,9 +152,8 @@ contains
 
     integer :: ix, iy, iz1, iz2 !< Indices of the domain-decomposed dimensions
     integer :: nd !< Number of dimensions
-    integer :: idx !< Index into the 1D buffer
     integer :: sgn !< Factor to multiply the filled values by
-    integer :: i1, i2, i3, i4, i(4)
+    integer :: i1, i2, i3, i4
     integer :: ix2, iy2
 
     select case (field_type)
@@ -249,30 +248,41 @@ contains
 
     select case (nd)
       case (2)
-        do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2)) local(i, idx)
-          i(1:2) = [i1, i2]
-          idx = n(ix2)*stride(iy2)*(i(iy2)-lb(iy2)) + &
-                stride(ix2)*(i(ix2)-lb(ix2)) + 1
-          buffer(idx) = sgn * field2d(i1,i2)
+        do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2))
+          block
+            integer :: i(2), idx
+
+            i = [i1, i2]
+            idx = n(ix2)*stride(iy2)*(i(iy2)-lb(iy2)) + &
+                  stride(ix2)*(i(ix2)-lb(ix2)) + 1
+            buffer(idx) = sgn * field2d(i1,i2)
+          end block
         end do
       case (3)
         iz1 = 1 + 2 + 3 - ix - iy
-        do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2), &
-                       i3=lb(3):ub(3):stride(3)) local(i, idx)
-          i(1:3) = [i1, i2, i3]
-          idx = n(ix2)*( n(iy2)*(i(iz1)-1) + stride(iy2)*(i(iy2)-lb(iy2))) + &
-                stride(ix2)*(i(ix2)-lb(ix2)) + 1
-          buffer(idx) = sgn * field3d(i1,i2,i3)
+        do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2), i3=lb(3):ub(3):stride(3))
+          block
+            integer :: i(3), idx
+
+            i = [i1, i2, i3]
+            idx = n(ix2)*( n(iy2)*(i(iz1)-1) + stride(iy2)*(i(iy2)-lb(iy2))) + &
+                  stride(ix2)*(i(ix2)-lb(ix2)) + 1
+            buffer(idx) = sgn * field3d(i1,i2,i3)
+          end block
         end do
       case (4)
         iz1 = trailz(sum(2**[1,2,3,4]) - 2**ix - 2**iy)
         iz2 = 1 + 2 + 3 + 4 - ix - iy - iz1
         do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2), &
-                       i3=lb(3):ub(3):stride(3), i4=lb(4):ub(4):stride(4)) local(i, idx)
-          i(1:4) = [i1, i2, i3, i4]
-          idx = n(ix2)*( n(iy2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(iy2)*(i(iy2)-lb(iy2))) + &
-                stride(ix2)*(i(ix2)-lb(ix2)) + 1
-          buffer(idx) = sgn * field4d(i1,i2,i3,i4)
+                       i3=lb(3):ub(3):stride(3), i4=lb(4):ub(4):stride(4))
+          block
+            integer :: i(4), idx
+
+            i = [i1, i2, i3, i4]
+            idx = n(ix2)*( n(iy2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(iy2)*(i(iy2)-lb(iy2))) + &
+                  stride(ix2)*(i(ix2)-lb(ix2)) + 1
+            buffer(idx) = sgn * field4d(i1,i2,i3,i4)
+          end block
         end do
     end select
   end subroutine pack_inner_loop

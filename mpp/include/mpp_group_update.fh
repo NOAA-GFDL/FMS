@@ -966,7 +966,7 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
   integer, intent(in) :: is, ie !< range of i indices to negate
   integer, intent(in) :: offset !< Offset when flipping the i axis
 
-  integer, allocatable, dimension(:) :: lb, ub, src
+  integer, allocatable, dimension(:) :: lb, ub
   MPP_TYPE_, pointer :: field2d(:,:)
   MPP_TYPE_, pointer :: field3d(:,:,:)
   MPP_TYPE_, pointer :: field4d(:,:,:,:)
@@ -979,7 +979,7 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
   iy = group%iy_v
 
   nd = size(group%shape_x) ! Assume that dimensions of x and y fields must agree
-  allocate (lb(nd), ub(nd), src(nd))
+  allocate (lb(nd), ub(nd))
 
   do l=1,group%nvector
     select case (field_type)
@@ -1018,21 +1018,33 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
     select case(nd)
       case (2)
         do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
-          src = [i1, i2]
-          src(ix) = offset - src(ix)
-          field2d(i1,i2) = field2d(src(1),src(2))
+          block
+            integer :: src(2)
+
+            src = [i1, i2]
+            src(ix) = offset - src(ix)
+            field2d(i1,i2) = field2d(src(1),src(2))
+          end block
         end do
       case (3)
         do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
-          src = [i1, i2, i3]
-          src(ix) = offset - src(ix)
-          field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
+          block
+            integer :: src(3)
+
+            src = [i1, i2, i3]
+            src(ix) = offset - src(ix)
+            field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
+          end block
         end do
       case (4)
         do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
-          src = [i1, i2, i3, i4]
-          src(ix) = offset - src(ix)
-          field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
+          block
+            integer :: src(4)
+
+            src = [i1, i2, i3, i4]
+            src(ix) = offset - src(ix)
+            field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
+          end block
         end do
     end select
   enddo
