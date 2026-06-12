@@ -386,7 +386,6 @@ use platform_mod
   LOGICAL :: prepend_date = .TRUE. !< Should the history file have the start date prepended to the file name.
                                    !! <TT>.TRUE.</TT> is only supported if the diag_manager_init
                                    !! routine is called with the optional time_init parameter.
-  LOGICAL :: use_mpp_io = .false. !< false is fms2_io (default); true is mpp_io
   LOGICAL :: use_refactored_send = .false. !< Namelist flag to use refactored send_data math funcitons.
   LOGICAL :: use_modern_diag = .false. !< Namelist flag to use the modernized diag_manager code
   LOGICAL :: use_clock_average = .false. !< .TRUE. if the averaging of variable is done based on the clock
@@ -426,7 +425,6 @@ use platform_mod
   TYPE(file_type), SAVE, ALLOCATABLE :: files(:)
   TYPE(input_field_type), ALLOCATABLE :: input_fields(:)
   TYPE(output_field_type), ALLOCATABLE :: output_fields(:)
-  ! used if use_mpp_io = .false.
   type(FmsNetcdfUnstructuredDomainFile_t),allocatable, target :: fileobjU(:)
   type(FmsNetcdfDomainFile_t),allocatable, target :: fileobj(:)
   type(FmsNetcdfFile_t),allocatable, target :: fileobjND(:)

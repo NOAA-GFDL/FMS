@@ -134,10 +134,6 @@ if (mpp_pe() == mpp_root_pe() ) write (stdlog(), nml=interpolator_nml)
 module_is_initialized = .true.
 
 endif !> if (module_is_initilized)
-if (use_mpp_io) then
-   call mpp_error(FATAL, "Interpolator::nml=interpolator_nml " //&
-           'MPP_IO is no longer supported.  Please remove from use_mpp_io from interpolator_nml')
-endif
 
 clim_type%FMS_INTP_TYPE_%is_allocated = .true.
 
