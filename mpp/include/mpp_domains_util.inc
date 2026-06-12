@@ -1955,7 +1955,6 @@ end subroutine mpp_get_tile_compute_domains
      integer   :: send_size(3*MAXOVERLAP)
      integer   :: position_x, position_y, npack, nunpack, dir
      integer   :: pack_buffer_pos, unpack_buffer_pos
-     integer   :: omp_get_num_threads, nthreads
      character(len=8)            :: text
      type(overlap_type), pointer :: overPtr => NULL()
      type(overlapSpec), pointer  :: update_s => NULL()
@@ -2028,16 +2027,6 @@ end subroutine mpp_get_tile_compute_domains
         ksize = group%ksize_v
      else
         call mpp_error(FATAL, "set_group_update: nscalar and nvector are all 0")
-     endif
-
-    nthreads = 1
-!$OMP PARALLEL
-!$   nthreads = omp_get_num_threads()
-!$OMP END PARALLEL
-     if( nthreads > nthread_control_loop ) then
-        group%k_loop_inside = .FALSE.
-     else
-        group%k_loop_inside = .TRUE.
      endif
 
      if(nvector > 0) then

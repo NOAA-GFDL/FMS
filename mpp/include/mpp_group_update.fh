@@ -372,13 +372,12 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   integer   :: msgsize
   integer   :: from_pe, to_pe, buffer_pos, pos
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, nk
   integer   :: shift, gridtype, midpoint
-  integer   :: npack, nunpack, rotation, isd
+  integer   :: rotation, isd
   type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
   MPP_TYPE_, pointer :: buffer(:)
-  MPP_TYPE_, parameter :: zero_ = 0.
 
   nscalar = group%nscalar
   nvector = group%nvector
@@ -427,12 +426,10 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   call mpp_clock_end(group_recv_clock)
 
   flags_v = group%flags_v
-  npack = group%npack
 
   call mpp_clock_begin(group_pack_clock)
   !pack the data
-  buffer_start_pos = 0
-#include <group_update_pack.inc>
+  call GROUP_UPDATE_PACK_ (group, buffer, 0)
   call mpp_clock_end(group_pack_clock)
 
   call mpp_clock_begin(group_send_clock)
@@ -453,9 +450,8 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   endif
 
   !---unpack the buffer
-  nunpack = group%nunpack
   call mpp_clock_begin(group_unpk_clock)
-#include <group_update_unpack.inc>
+  call GROUP_UPDATE_UNPACK_ (group, buffer, 0)
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
@@ -472,12 +468,8 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
            if( .NOT. domain%symmetry ) is = is - 1
            do i = is ,ie, midpoint
               if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
-                 do l=1,nvector
-                    do k = 1,ksize
-                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, zero_)
-                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, zero_)
-                    end do
-                 end do
+                 call SET_ZERO_ (group, FIELD_X, i, j)
+                 call SET_ZERO_ (group, FIELD_Y, i, j)
               end if
            end do
         endif
@@ -497,16 +489,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
                  if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
-                 do l=1,nvector
-                    do k = 1,ksize
-                       do i = domain%x(1)%domain_data%begin,is-1
-                          !fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                          !fieldy(i,j,k) = fieldy(2*is-i,j,k)
-                          call SET_VALUE_ (group, FIELD_X, l, i, j, k, GET_VALUE_ (group, FIELD_X, l, 2*is-i, j, k))
-                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i, j, k))
-                       end do
-                    end do
-                 end do
+
+                 call FLIP_I_ (group, FIELD_X, j, domain%x(1)%domain_data%begin, is-1, 2*is)
+                 call FLIP_I_ (group, FIELD_Y, j, domain%x(1)%domain_data%begin, is-1, 2*is)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
@@ -514,14 +499,8 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               if( is.GT.isd )then
                  if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
-                 do l=1,nvector
-                    do k = 1,ksize
-                       do i = isd,is-1
-                          !fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
-                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i-1, j, k))
-                       end do
-                    end do
-                 end do
+
+                 call FLIP_I_ (group, FIELD_Y, j, isd, is-1, 2*is-1)
               end if
            end select
         end if
@@ -534,25 +513,10 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
            case(BGRID_NE)
               is = is + shift
               ie = ie + shift
-              do l=1,nvector
-                 do k = 1,ksize
-                    do i = is,ie
-                       !fieldx(i,j,k) = -fieldx(i,j,k)
-                       !fieldy(i,j,k) = -fieldy(i,j,k)
-                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, - GET_VALUE_ (group, FIELD_X, l, i, j, k))
-                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
-                    end do
-                 end do
-              end do
+              call NEGATE_HALO_ (group, FIELD_X, j, is, ie)
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
            case(CGRID_NE)
-              do l=1,nvector
-                 do k = 1,ksize
-                    do i = is, ie
-                       !fieldy(i,j,k) = -fieldy(i,j,k)
-                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
-                    end do
-                 end do
-              end do
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
            end select
         end if
      end if
@@ -578,10 +542,10 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
 
   integer   :: nscalar, nvector
   integer   :: nsend, nrecv, flags_v
-  integer   :: msgsize, npack, rotation
+  integer   :: msgsize, rotation
   integer   :: from_pe, to_pe, buffer_pos, pos
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, nk
   logical   :: reuse_buf_pos
   character(len=8)            :: text
   type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
@@ -652,9 +616,7 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
 
   !pack the data
   call mpp_clock_begin(nonblock_group_pack_clock)
-  npack = group%npack
-  buffer_start_pos = group%buffer_start_pos
-#include <group_update_pack.inc>
+  call GROUP_UPDATE_PACK_ (group, buffer, group%buffer_start_pos)
   call mpp_clock_end(nonblock_group_pack_clock)
 
   call mpp_clock_begin(nonblock_group_send_clock)
@@ -677,15 +639,14 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nsend, nrecv, nscalar, nvector
-  integer   :: k, buffer_pos, pos, m, n, l
+  integer   :: k, pos, m, n, l
   integer   :: is, ie, js, je, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
-  integer   :: nunpack, rotation, buffer_start_pos, nk, isd
+  integer   :: rotation, nk, isd
   logical   :: recv_y(8)
   type(c_ptr) :: stack_cptr !< Workaround for GFortran bug
 
   MPP_TYPE_, pointer :: buffer(:)
-  MPP_TYPE_, parameter :: zero_ = 0.
 
   gridtype = group%gridtype
   flags_v = group%flags_v
@@ -716,11 +677,9 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   endif
 
   !---unpack the buffer
-  nunpack = group%nunpack
 
   call mpp_clock_begin(nonblock_group_unpk_clock)
-  buffer_start_pos = group%buffer_start_pos
-#include <group_update_unpack.inc>
+  call GROUP_UPDATE_UNPACK_ (group, buffer, group%buffer_start_pos)
   call mpp_clock_end(nonblock_group_unpk_clock)
 
   ! ---northern boundary fold
@@ -737,12 +696,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
            if( .NOT. domain%symmetry ) is = is - 1
            do i = is ,ie, midpoint
               if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
-                 do l=1,nvector
-                    do k = 1,ksize
-                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, zero_)
-                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, zero_)
-                    end do
-                 end do
+                 call SET_ZERO_ (group, FIELD_X, i, j)
+                 call SET_ZERO_ (group, FIELD_Y, i, j)
               end if
            end do
         endif
@@ -762,16 +717,8 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
                  if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
-                 do l=1,nvector
-                    do k = 1,ksize
-                       do i = domain%x(1)%domain_data%begin,is-1
-                          !fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                          !fieldy(i,j,k) = fieldy(2*is-i,j,k)
-                          call SET_VALUE_ (group, FIELD_X, l, i, j, k, GET_VALUE_ (group, FIELD_X, l, 2*is-i, j, k))
-                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i, j, k))
-                       end do
-                    end do
-                 end do
+                 call FLIP_I_ (group, FIELD_X, j, domain%x(1)%domain_data%begin, is-1, 2*is)
+                 call FLIP_I_ (group, FIELD_Y, j, domain%x(1)%domain_data%begin, is-1, 2*is)
               end if
            case(CGRID_NE)
               is = domain%x(1)%global%begin
@@ -779,14 +726,7 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
               if( is.GT.isd)then
                  if( 2*is-domain%x(1)%domain_data%begin-1.GT.domain%x(1)%domain_data%end ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
-                 do l=1,nvector
-                    do k = 1,ksize
-                       do i = isd,is-1
-                          !fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
-                          call SET_VALUE_ (group, FIELD_Y, l, i, j, k, GET_VALUE_ (group, FIELD_Y, l, 2*is-i-1, j, k))
-                       end do
-                    end do
-                 end do
+                 call FLIP_I_ (group, FIELD_Y, j, isd, is-1, 2*is-1)
               end if
            end select
         end if
@@ -799,25 +739,10 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
            case(BGRID_NE)
               is = is + shift
               ie = ie + shift
-              do l=1,nvector
-                 do k = 1,ksize
-                    do i = is,ie
-                       !fieldx(i,j,k) = -fieldx(i,j,k)
-                       !fieldy(i,j,k) = -fieldy(i,j,k)
-                       call SET_VALUE_ (group, FIELD_X, l, i, j, k, - GET_VALUE_ (group, FIELD_X, l, i, j, k))
-                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
-                    end do
-                 end do
-              end do
+              call NEGATE_HALO_ (group, FIELD_X, j, is, ie)
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
            case(CGRID_NE)
-              do l=1,nvector
-                 do k = 1,ksize
-                    do i = is, ie
-                       !fieldy(i,j,k) = -fieldy(i,j,k)
-                       call SET_VALUE_ (group, FIELD_Y, l, i, j, k, - GET_VALUE_ (group, FIELD_Y, l, i, j, k))
-                    end do
-                 end do
-              end do
+              call NEGATE_HALO_ (group, FIELD_Y, j, is, ie)
            end select
         end if
      end if
@@ -890,224 +815,242 @@ subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_(group, fieldx, fieldy)
   group%addrs_y(group%reset_index_v) = c_loc(fieldy)
 end subroutine MPP_RESET_GROUP_UPDATE_FIELD_V_
 
-function GET_VALUE_ (group, field_type, l, i, j, k) result(res)
+subroutine SET_ZERO_  (group, field_type, i0, j0)
   type(mpp_group_update_type), intent(in), target :: group
   integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
-  integer, intent(in) :: l !< Index of the field within group
-  integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
-  MPP_TYPE_ :: res
+  integer, intent(in) :: i0, j0 !< i,j point to initialize to zero
 
-  integer, allocatable, dimension(:) :: lb, n, indx
+  integer, allocatable, dimension(:) :: lb, ub
+  MPP_TYPE_, pointer :: field2d(:,:)
+  MPP_TYPE_, pointer :: field3d(:,:,:)
+  MPP_TYPE_, pointer :: field4d(:,:,:,:)
+  MPP_TYPE_, parameter :: zero_ = 0.
+
+  integer :: nd !< Number of dimensions
+  integer :: ix, iy !< Indices of the domain-decomposed dimensions
+  integer :: l, i1, i2, i3, i4
+
+  ix = group%ix_v
+  iy = group%iy_v
+
+  nd = size(group%shape_x) ! Assume that dimensions of x and y fields must agree
+  allocate (lb(nd), ub(nd))
+
+  do l=1,group%nvector
+    select case (field_type)
+      case (FIELD_X)
+        lb = 1
+        ub = group%shape_x
+
+        select case(nd)
+          case (2)
+            call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
+          case (3)
+            call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
+          case (4)
+            call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
+        end select
+      case (FIELD_Y)
+        lb = 1
+        ub = group%shape_y
+
+        select case(nd)
+          case (2)
+            call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
+          case (3)
+            call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
+          case (4)
+            call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
+        end select
+    end select
+
+    lb(ix) = i0
+    ub(ix) = i0
+
+    lb(iy) = j0
+    ub(iy) = j0
+
+    select case(nd)
+      case (2)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+          field2d(i1, i2) = zero_
+        end do
+      case (3)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+          field3d(i1, i2, i3) = zero_
+        end do
+      case (4)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+          field4d(i1, i2, i3, i4) = zero_
+        end do
+    end select
+  enddo
+end subroutine SET_ZERO_
+
+subroutine NEGATE_HALO_  (group, field_type, j0, is, ie)
+  type(mpp_group_update_type), intent(in), target :: group
+  integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
+  integer, intent(in) :: j0 !< j point to negate
+  integer, intent(in) :: is, ie !< range of i indices to negate
+
+  integer, allocatable, dimension(:) :: lb, ub
   MPP_TYPE_, pointer :: field2d(:,:)
   MPP_TYPE_, pointer :: field3d(:,:,:)
   MPP_TYPE_, pointer :: field4d(:,:,:,:)
 
+  integer :: nd !< Number of dimensions
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
-  integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-  integer :: nd, m, kp, d
+  integer :: l, i1, i2, i3, i4
 
-  select case (field_type)
-    case (FIELD_S)
-      ix = group%ix_s
-      iy = group%iy_s
-      is = group%is_s
-      ie = group%ie_s
-      js = group%js_s
-      je = group%je_s
+  ix = group%ix_v
+  iy = group%iy_v
 
-      nd = size(group%shape_s)
-      allocate (lb(nd), n(nd), indx(nd))
+  nd = size(group%shape_x) ! Assume that dimensions of x and y fields must agree
+  allocate (lb(nd), ub(nd))
 
-      lb = 1
-      n = group%shape_s
+  do l=1,group%nvector
+    select case (field_type)
+      case (FIELD_X)
+        lb = 1
+        ub = group%shape_x
 
-      select case(nd)
-        case (2)
-          call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
-        case (3)
-          call c_f_pointer(group%addrs_s(l), field3d, group%shape_s)
-        case (4)
-          call c_f_pointer(group%addrs_s(l), field4d, group%shape_s)
-      end select
-    case (FIELD_X)
-      ix = group%ix_v
-      iy = group%iy_v
-      is = group%is_x
-      ie = group%ie_x
-      js = group%js_x
-      je = group%je_x
+        select case(nd)
+          case (2)
+            call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
+          case (3)
+            call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
+          case (4)
+            call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
+        end select
+      case (FIELD_Y)
+        lb = 1
+        ub = group%shape_y
 
-      nd = size(group%shape_x)
-      allocate (lb(nd), n(nd), indx(nd))
+        select case(nd)
+          case (2)
+            call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
+          case (3)
+            call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
+          case (4)
+            call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
+        end select
+    end select
 
-      lb = 1
-      n = group%shape_x
+    lb(ix) = is
+    ub(ix) = ie
 
-      select case(nd)
-        case (2)
-          call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
-        case (3)
-          call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
-        case (4)
-          call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
-      end select
-    case (FIELD_Y)
-      ix = group%ix_v
-      iy = group%iy_v
-      is = group%is_y
-      ie = group%ie_y
-      js = group%js_y
-      je = group%je_y
+    lb(iy) = j0
+    ub(iy) = j0
 
-      nd = size(group%shape_y)
-      allocate (lb(nd), n(nd), indx(nd))
-
-      lb = 1
-      n = group%shape_y
-
-      select case(nd)
-        case (2)
-          call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
-        case (3)
-          call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
-        case (4)
-          call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
-      end select
-  end select
-
-  lb(ix) = i - is + 1
-  lb(iy) = j - js + 1
-
-  n(ix) = 1
-  n(iy) = 1
-
-  kp = k - 1
-  do d=nd,1,-1
-    m = product(n(1:d-1)) ! Product of all lower dimension sizes
-    indx(d) = kp / m
-    kp = kp - indx(d)*m
+    select case(nd)
+      case (2)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+          field2d(i1,i2) = -field2d(i1,i2)
+        end do
+      case (3)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+          field3d(i1,i2,i3) = -field3d(i1,i2,i3)
+        end do
+      case (4)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+          field4d(i1,i2,i3,i4) = -field4d(i1,i2,i3,i4)
+        end do
+    end select
   enddo
+end subroutine NEGATE_HALO_
 
-  indx = lb + indx
-
-  select case (nd)
-    case (2)
-      res = field2d(indx(1), indx(2))
-    case (3)
-      res = field3d(indx(1), indx(2), indx(3))
-    case (4)
-      res = field4d(indx(1), indx(2), indx(3), indx(4))
-  end select
-end function GET_VALUE_
-
-subroutine SET_VALUE_ (group, field_type, l, i, j, k, x)
+subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
   type(mpp_group_update_type), intent(in), target :: group
   integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
-  integer, intent(in) :: l !< Index of the field within group
-  integer, intent(in) :: i, j, k !< i,j,k indices of the value to retrieve
-  MPP_TYPE_, intent(in) :: x
+  integer, intent(in) :: j0 !< j point to negate
+  integer, intent(in) :: is, ie !< range of i indices to negate
+  integer, intent(in) :: offset !< Offset when flipping the i axis
 
-  integer, allocatable, dimension(:) :: lb, n, indx
+  integer, allocatable, dimension(:) :: lb, ub
   MPP_TYPE_, pointer :: field2d(:,:)
   MPP_TYPE_, pointer :: field3d(:,:,:)
   MPP_TYPE_, pointer :: field4d(:,:,:,:)
 
+  integer :: nd !< Number of dimensions
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
-  integer :: is, ie, js, je !< Starting and ending indices of the x and y dimensions
-  integer :: nd, m, kp, d
+  integer :: l, i1, i2, i3, i4
 
-  select case (field_type)
-    case (FIELD_S)
-      ix = group%ix_s
-      iy = group%iy_s
-      is = group%is_s
-      ie = group%ie_s
-      js = group%js_s
-      je = group%je_s
+  ix = group%ix_v
+  iy = group%iy_v
 
-      nd = size(group%shape_s)
-      allocate (lb(nd), n(nd), indx(nd))
+  nd = size(group%shape_x) ! Assume that dimensions of x and y fields must agree
+  allocate (lb(nd), ub(nd))
 
-      lb = 1
-      n = group%shape_s
+  do l=1,group%nvector
+    select case (field_type)
+      case (FIELD_X)
+        lb = 1
+        ub = group%shape_x
 
-      select case(nd)
-        case (2)
-          call c_f_pointer(group%addrs_s(l), field2d, group%shape_s)
-        case (3)
-          call c_f_pointer(group%addrs_s(l), field3d, group%shape_s)
-        case (4)
-          call c_f_pointer(group%addrs_s(l), field4d, group%shape_s)
-      end select
-    case (FIELD_X)
-      ix = group%ix_v
-      iy = group%iy_v
-      is = group%is_x
-      ie = group%ie_x
-      js = group%js_x
-      je = group%je_x
+        select case(nd)
+          case (2)
+            call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
+          case (3)
+            call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
+          case (4)
+            call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
+        end select
+      case (FIELD_Y)
+        lb = 1
+        ub = group%shape_y
 
-      nd = size(group%shape_x)
-      allocate (lb(nd), n(nd), indx(nd))
+        select case(nd)
+          case (2)
+            call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
+          case (3)
+            call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
+          case (4)
+            call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
+        end select
+    end select
 
-      lb = 1
-      n = group%shape_x
+    lb(ix) = is
+    ub(ix) = ie
 
-      select case(nd)
-        case (2)
-          call c_f_pointer(group%addrs_x(l), field2d, group%shape_x)
-        case (3)
-          call c_f_pointer(group%addrs_x(l), field3d, group%shape_x)
-        case (4)
-          call c_f_pointer(group%addrs_x(l), field4d, group%shape_x)
-      end select
-    case (FIELD_Y)
-      ix = group%ix_v
-      iy = group%iy_v
-      is = group%is_y
-      ie = group%ie_y
-      js = group%js_y
-      je = group%je_y
+    lb(iy) = j0
+    ub(iy) = j0
 
-      nd = size(group%shape_y)
-      allocate (lb(nd), n(nd), indx(nd))
+    select case(nd)
+      case (2)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
+          block
+            integer :: src(2)
 
-      lb = 1
-      n = group%shape_y
+            src = [i1, i2]
+            src(ix) = offset - src(ix)
+            field2d(i1,i2) = field2d(src(1),src(2))
+          end block
+        end do
+      case (3)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
+          block
+            integer :: src(3)
 
-      select case(nd)
-        case (2)
-          call c_f_pointer(group%addrs_y(l), field2d, group%shape_y)
-        case (3)
-          call c_f_pointer(group%addrs_y(l), field3d, group%shape_y)
-        case (4)
-          call c_f_pointer(group%addrs_y(l), field4d, group%shape_y)
-      end select
-  end select
+            src = [i1, i2, i3]
+            src(ix) = offset - src(ix)
+            field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
+          end block
+        end do
+      case (4)
+        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
+          block
+            integer :: src(4)
 
-  lb(ix) = i - is + 1
-  lb(iy) = j - js + 1
-
-  n(ix) = 1
-  n(iy) = 1
-
-  kp = k - 1
-  do d=nd,1,-1
-    m = product(n(1:d-1)) ! Product of all lower dimension sizes
-    indx(d) = kp / m
-    kp = kp - indx(d)*m
+            src = [i1, i2, i3, i4]
+            src(ix) = offset - src(ix)
+            field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
+          end block
+        end do
+    end select
   enddo
+end subroutine FLIP_I_
 
-  indx = lb + indx
-
-  select case (nd)
-    case (2)
-      field2d(indx(1), indx(2)) = x
-    case (3)
-      field3d(indx(1), indx(2), indx(3)) = x
-    case (4)
-      field4d(indx(1), indx(2), indx(3), indx(4)) = x
-  end select
-end subroutine SET_VALUE_
+#include "group_update_pack.inc"
+#include "group_update_unpack.inc"
 
 !> @}
