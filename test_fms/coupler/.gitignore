@@ -1,0 +1,15 @@
+test_atmos_ocean_fluxes_r4
+test_atmos_ocean_fluxes_r8
+test_coupler_2d_r4
+test_coupler_2d_r8
+test_coupler_3d_r4
+test_coupler_3d_r8
+test_coupler_types_r4
+test_coupler_types_r8
+coupler_types_bc1.nc
+coupler_types_bc2.nc
+data_table
+diag_table
+diag_table.yaml
+input.nml
+INPUT/*
