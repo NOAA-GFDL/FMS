@@ -7,20 +7,20 @@ Required CI for pull requests are listed first.
 
 ## Pull Request CI and checks
 
-### Build libFMS with autotools
+### Build libFMS with autotools using GCC
 
 Required GNU build test for all pull requests/pushes.
 Runs `make distcheck` after configuring via GNU autotools.
 
 Runs on a container image with spack installed dependencies, on top a rocky linux base.
 
-Dockerfile for image is stored at .github/workflows/Dockerfile.gnu for more specific information on the CI environment.
+Dockerfile for image is stored in the [HPC-ME repository](github.com/noaa-gfdl/hpc-me).
 
 Container environment:
-gcc            v12.3.0
+gcc            v13.2.0
 mpich          v4.0.2
-netcdf         v4.9.0
-netcdf-fortran v4.6.0
+netcdf-c       v4.9.2
+netcdf-fortran v4.6.1
 autoconf       v2.69
 libyaml        v0.2.5
 
@@ -33,24 +33,38 @@ libyaml        v0.2.5
 - `--enable-test-input=/home/unit_tests_input`
 
 
-### Build libfms with cmake
+### Build libfms with cmake using GCC
 Required GNU build test for all pull requests/pushes.
 Runs `make` after configuring via cmake.
-
-Container environment:
-gcc            v7.3.0
-mpich          v3.3a2
-netcdf         v4.6.0
-netcdf-fortran v4.4.4
-cmake          v3.22.0
-
-container hosted at [noaagfdl/ubuntu_libfms_gnu:latest](https://hub.docker.com/r/noaagfdl/ubuntu_libfms_gnu)
 
 cmake flags:
 - `-DOPENMP=on`
 - `-DOPENMP=on`
 - `-DWITH_YAML=on`
 - `-D64BIT=on`
+
+
+### Build libfms with autotools using Intel Oneapi Compilers
+
+Required build test for all pull requests. Workflow will build hdf5, netcdf, and libyaml and cache them for reuse. Cache can be used for a week before clearing.
+
+Test Environment:
+intel-oneapi		v2025.3.0
+hdf5						v1.14.6
+netcdf-c				v4.9.3
+netcdf-fortran	v4.6.2
+libyaml					v0.2.5
+
+### Build libfms with autotools using Intel Classic Compilers
+
+This test is triggered weekly on Sundays @ midnight and uses the intel 2023.1 classic compilers (ie. ifort/icc).
+
+Test Environment:
+intel-oneapi		v2025.3.0
+hdf5						v1.12.2
+netcdf-c				v4.8.1
+netcdf-fortran	v4.6.0
+libyaml					v0.2.5
 
 ### libFMS lint tests
 Required test for all pull requests.
@@ -60,9 +74,9 @@ The action is hosted on github [here](https://github.com/NOAA-GFDL/simple_lint).
 
 ## Parallelworks CI
 The following CI workflows run on self-hosted runners through the parallelworks platform.
-### Pull Request CI libFMS with intel
-Optional(does not need to pass to merge) intel build test hosted on the parallelworks platform.
-Runs `make check` with intel 18 and 21 compilers for all pull requests.
 
-### Tag CI libFMS with AM4 regression
-On alpha or beta tag creation, compiles and runs full AM4 model regression testing using the new FMS tag on parallelworks.
+### AM5 testing
+
+On all pull requests, a full scale model test is compiled using the `c96L65_am5f11d12r0_amip` experiment from AM5 and run on a parallelworks cluster.
+
+This test will compile with debug flags and openmp enabled for a basic regression test.
