@@ -47,7 +47,7 @@ program test_global_arrays
   integer(i8_kind), allocatable :: dataI8(:,:), dataI8_shuf(:,:), recv_data_i8(:,:)
   real(r4_kind), allocatable    :: dataR4(:,:), dataR4_shuf(:,:), recv_data_r4(:,:)
   real(r8_kind), allocatable    :: dataR8(:,:), dataR8_shuf(:,:), recv_data_r8(:,:)
-  real, allocatable             :: rands(:)
+  real(r8_kind), allocatable    :: rands(:)
   type(domain2D)                :: domain
   real(r8_kind)                 :: rcoef, maxR8, minR8, sumR8, sumR8_shuf
   real(r4_kind)                 :: maxR4, minR4, sumR4, sumR4_shuf
@@ -531,14 +531,14 @@ end function checkSumInt8
    !--- test mpp_global_sum, mpp_global_min and mpp_global_max
   subroutine test_global_reduce (type)
     character(len=*), intent(in) :: type
-    real    :: lsum, gsum, lmax, gmax, lmin, gmin
+    real(r8_kind)    :: lsum, gsum, lmax, gmax, lmin, gmin
     integer :: ni, nj, ishift, jshift, position, k
     integer :: is, ie, js, je !, isd, ied, jsd, jed
     integer :: nx=128, ny=128, nz=40, stackmax=4000000
     integer :: layout(2)
     integer :: whalo = 2, ehalo = 2, shalo = 2, nhalo = 2
-    real, allocatable, dimension(:,:,:) :: global1, x
-    real, allocatable, dimension(:,:)   :: global2D
+    real(r8_kind), allocatable, dimension(:,:,:) :: global1, x
+    real(r8_kind), allocatable, dimension(:,:)   :: global2D
     !--- set up domain
     call mpp_define_layout( (/1,nx,1,ny/), npes, layout )
     select case(type)
@@ -636,10 +636,10 @@ end function checkSumInt8
   end subroutine test_global_reduce
 
   subroutine compare_data_scalar( a, b, action, string )
-    real,             intent(in) :: a, b
+    real(r8_kind),             intent(in) :: a, b
     integer,          intent(in) :: action
     character(len=*), intent(in) :: string
-    if( a .EQ. b)then
+    if( abs(a - b) .lt. 1.0e-8 )then
         if( pe.EQ.mpp_root_pe() )call mpp_error( NOTE, trim(string)//': data comparison are OK.' )
     else
         call mpp_error( action, trim(string)//': data comparison are not OK.' )

@@ -23,7 +23,7 @@
 program test_stdlog
   use mpp_mod, only : mpp_init, mpp_init_test_peset_allocated, stdlog
   use mpp_mod, only : mpp_pe, mpp_root_pe, mpp_error, FATAL, WARNING, NOTE
-  use fms_mod, only : input_nml_file, check_nml_error
+  use fms_mod, only : input_nml_file, check_nml_error, fms_end
 
   integer :: log_unit !< Stores the returned standard log unit number
   integer :: warn_unit
@@ -54,7 +54,7 @@ program test_stdlog
     call check_write()
   end select
 
-  call MPI_FINALIZE(ierr)
+  call fms_end()
 
   contains
 
