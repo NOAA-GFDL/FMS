@@ -139,7 +139,7 @@ contains
 
               i = [i1, i2]
               idx = n(ix)*(i(iy)-lb(iy)) + (i(ix)-lb(ix)) + 1
-              field2d(i1,i2) = buffer(idx)
+              field2d(i1,i2) = buf(idx)
             end block
         end do
       case (3)
@@ -150,7 +150,7 @@ contains
 
               i = [i1, i2, i3]
               idx = n(ix)*( n(iy)*(i(iz1)-1) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
-              field3d(i1,i2,i3) = buffer(idx)
+              field3d(i1,i2,i3) = buf(idx)
             end block
         end do
       case (4)
@@ -162,7 +162,7 @@ contains
 
               i = [i1, i2, i3, i4]
               idx = n(ix)*( n(iy)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + (i(iy)-lb(iy))) + (i(ix)-lb(ix)) + 1
-              field4d(i1,i2,i3,i4) = buffer(idx)
+              field4d(i1,i2,i3,i4) = buf(idx)
             end block
         end do
     end select

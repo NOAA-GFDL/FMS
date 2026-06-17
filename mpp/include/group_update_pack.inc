@@ -137,8 +137,8 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
 
 contains
 
-  subroutine pack_inner_loop (buffer, group, field_type, ni, l, packing_flags)
-    MPP_TYPE_, intent(out) :: buffer(:)
+  subroutine pack_inner_loop (buf, group, field_type, ni, l, packing_flags)
+    MPP_TYPE_, intent(out) :: buf(:)
     type(mpp_group_update_type), intent(in), target :: group
     integer, intent(in) :: field_type !< FIELD_S, FIELD_X, or FIELD_Y
     integer, intent(in) :: ni
@@ -262,7 +262,7 @@ contains
             i = [i1, i2]
             idx = n(ij1)*stride(ij2)*(i(ij2)-lb(ij2)) + &
                   stride(ij1)*(i(ij1)-lb(ij1)) + 1
-            buffer(idx) = sgn * field2d(i1,i2)
+            buf(idx) = sgn * field2d(i1,i2)
           end block
         end do
       case (3)
@@ -274,7 +274,7 @@ contains
             i = [i1, i2, i3]
             idx = n(ij1)*( n(ij2)*(i(iz1)-1) + stride(ij2)*(i(ij2)-lb(ij2))) + &
                   stride(ij1)*(i(ij1)-lb(ij1)) + 1
-            buffer(idx) = sgn * field3d(i1,i2,i3)
+            buf(idx) = sgn * field3d(i1,i2,i3)
           end block
         end do
       case (4)
@@ -288,7 +288,7 @@ contains
             i = [i1, i2, i3, i4]
             idx = n(ij1)*( n(ij2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(ij2)*(i(ij2)-lb(ij2))) + &
                   stride(ij1)*(i(ij1)-lb(ij1)) + 1
-            buffer(idx) = sgn * field4d(i1,i2,i3,i4)
+            buf(idx) = sgn * field4d(i1,i2,i3,i4)
           end block
         end do
     end select
