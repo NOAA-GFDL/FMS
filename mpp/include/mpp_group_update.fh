@@ -829,6 +829,7 @@ subroutine SET_ZERO_  (group, field_type, i0, j0)
   integer :: nd !< Number of dimensions
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: l, i1, i2, i3, i4
+  integer :: is0, js0
 
   ix = group%ix_v
   iy = group%iy_v
@@ -841,6 +842,8 @@ subroutine SET_ZERO_  (group, field_type, i0, j0)
       case (FIELD_X)
         lb = 1
         ub = group%shape_x
+        is0 = group%is_x
+        js0 = group%js_x
 
         select case(nd)
           case (2)
@@ -853,6 +856,8 @@ subroutine SET_ZERO_  (group, field_type, i0, j0)
       case (FIELD_Y)
         lb = 1
         ub = group%shape_y
+        is0 = group%is_y
+        js0 = group%js_y
 
         select case(nd)
           case (2)
@@ -864,11 +869,11 @@ subroutine SET_ZERO_  (group, field_type, i0, j0)
         end select
     end select
 
-    lb(ix) = i0
-    ub(ix) = i0
+    lb(ix) = i0 - is0 + 1
+    ub(ix) = i0 - is0 + 1
 
-    lb(iy) = j0
-    ub(iy) = j0
+    lb(iy) = j0 - js0 + 1
+    ub(iy) = j0 - js0 + 1
 
     select case(nd)
       case (2)
@@ -901,6 +906,7 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie)
   integer :: nd !< Number of dimensions
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: l, i1, i2, i3, i4
+  integer :: is0, js0
 
   ix = group%ix_v
   iy = group%iy_v
@@ -913,6 +919,8 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie)
       case (FIELD_X)
         lb = 1
         ub = group%shape_x
+        is0 = group%is_x
+        js0 = group%js_x
 
         select case(nd)
           case (2)
@@ -925,6 +933,8 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie)
       case (FIELD_Y)
         lb = 1
         ub = group%shape_y
+        is0 = group%is_y
+        js0 = group%js_y
 
         select case(nd)
           case (2)
@@ -936,11 +946,11 @@ subroutine NEGATE_HALO_  (group, field_type, j0, is, ie)
         end select
     end select
 
-    lb(ix) = is
-    ub(ix) = ie
+    lb(ix) = is - is0 + 1
+    ub(ix) = ie - is0 + 1
 
-    lb(iy) = j0
-    ub(iy) = j0
+    lb(iy) = j0 - js0 + 1
+    ub(iy) = j0 - js0 + 1
 
     select case(nd)
       case (2)
@@ -974,6 +984,7 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
   integer :: nd !< Number of dimensions
   integer :: ix, iy !< Indices of the domain-decomposed dimensions
   integer :: l, i1, i2, i3, i4
+  integer :: is0, js0, offset1
 
   ix = group%ix_v
   iy = group%iy_v
@@ -986,6 +997,8 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
       case (FIELD_X)
         lb = 1
         ub = group%shape_x
+        is0 = group%is_x
+        js0 = group%js_x
 
         select case(nd)
           case (2)
@@ -998,6 +1011,8 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
       case (FIELD_Y)
         lb = 1
         ub = group%shape_y
+        is0 = group%is_y
+        js0 = group%js_y
 
         select case(nd)
           case (2)
@@ -1009,11 +1024,13 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
         end select
     end select
 
-    lb(ix) = is
-    ub(ix) = ie
+    lb(ix) = is - is0 + 1
+    ub(ix) = ie - is0 + 1
 
-    lb(iy) = j0
-    ub(iy) = j0
+    lb(iy) = j0 - js0 + 1
+    ub(iy) = j0 - js0 + 1
+
+    offset1 = offset - 2*is0 + 2
 
     select case(nd)
       case (2)
@@ -1022,7 +1039,7 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
             integer :: src(2)
 
             src = [i1, i2]
-            src(ix) = offset - src(ix)
+            src(ix) = offset1 - src(ix)
             field2d(i1,i2) = field2d(src(1),src(2))
           end block
         end do
@@ -1032,7 +1049,7 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
             integer :: src(3)
 
             src = [i1, i2, i3]
-            src(ix) = offset - src(ix)
+            src(ix) = offset1 - src(ix)
             field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
           end block
         end do
@@ -1042,7 +1059,7 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
             integer :: src(4)
 
             src = [i1, i2, i3, i4]
-            src(ix) = offset - src(ix)
+            src(ix) = offset1 - src(ix)
             field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
           end block
         end do

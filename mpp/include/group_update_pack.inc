@@ -154,12 +154,15 @@ contains
     integer :: nd !< Number of dimensions
     integer :: sgn !< Factor to multiply the filled values by
     integer :: i1, i2, i3, i4
-    integer :: ix2, iy2
+    integer :: ij1, ij2
+    integer :: is0, js0
 
     select case (field_type)
       case (FIELD_S)
         ix = group%ix_s
         iy = group%iy_s
+        is0 = group%is_s
+        js0 = group%js_s
 
         nd = size(group%shape_s)
         allocate (lb(nd), ub(nd), n(nd), stride(nd))
@@ -178,6 +181,8 @@ contains
       case (FIELD_X)
         ix = group%ix_v
         iy = group%iy_v
+        is0 = group%is_x
+        js0 = group%js_x
 
         nd = size(group%shape_x)
         allocate (lb(nd), ub(nd), n(nd), stride(nd))
@@ -196,6 +201,8 @@ contains
       case (FIELD_Y)
         ix = group%ix_v
         iy = group%iy_v
+        is0 = group%is_y
+        js0 = group%js_y
 
         nd = size(group%shape_y)
         allocate (lb(nd), ub(nd), n(nd), stride(nd))
@@ -213,34 +220,34 @@ contains
         end select
     end select
 
-    lb(ix) = group%pack_is(ni)
-    lb(iy) = group%pack_js(ni)
+    lb(ix) = group%pack_is(ni) - is0 + 1
+    lb(iy) = group%pack_js(ni) - js0 + 1
 
-    ub(ix) = group%pack_ie(ni)
-    ub(iy) = group%pack_je(ni)
+    ub(ix) = group%pack_ie(ni) - is0 + 1
+    ub(iy) = group%pack_je(ni) - js0 + 1
 
     n = ub - lb + 1
 
     stride = 1
 
     if (iand(packing_flags, REVERSE_I).ne.0) then
-      lb(ix) = group%pack_ie(ni)
-      ub(ix) = group%pack_is(ni)
+      lb(ix) = group%pack_ie(ni) - is0 + 1
+      ub(ix) = group%pack_is(ni) - is0 + 1
       stride(ix) = -1
     endif
 
     if (iand(packing_flags, REVERSE_J).ne.0) then
-      lb(iy) = group%pack_je(ni)
-      ub(iy) = group%pack_js(ni)
+      lb(iy) = group%pack_je(ni) - js0 + 1
+      ub(iy) = group%pack_js(ni) - js0 + 1
       stride(iy) = -1
     endif
 
     if (iand(packing_flags, SWAP_IJ).eq.0) then
-      ix2 = ix
-      iy2 = iy
+      ij1 = ix
+      ij2 = iy
     else
-      ix2 = iy
-      iy2 = ix
+      ij1 = iy
+      ij2 = ix
     endif
 
     sgn = 1
@@ -253,8 +260,8 @@ contains
             integer :: i(2), idx
 
             i = [i1, i2]
-            idx = n(ix2)*stride(iy2)*(i(iy2)-lb(iy2)) + &
-                  stride(ix2)*(i(ix2)-lb(ix2)) + 1
+            idx = n(ij1)*stride(ij2)*(i(ij2)-lb(ij2)) + &
+                  stride(ij1)*(i(ij1)-lb(ij1)) + 1
             buffer(idx) = sgn * field2d(i1,i2)
           end block
         end do
@@ -265,8 +272,8 @@ contains
             integer :: i(3), idx
 
             i = [i1, i2, i3]
-            idx = n(ix2)*( n(iy2)*(i(iz1)-1) + stride(iy2)*(i(iy2)-lb(iy2))) + &
-                  stride(ix2)*(i(ix2)-lb(ix2)) + 1
+            idx = n(ij1)*( n(ij2)*(i(iz1)-1) + stride(ij2)*(i(ij2)-lb(ij2))) + &
+                  stride(ij1)*(i(ij1)-lb(ij1)) + 1
             buffer(idx) = sgn * field3d(i1,i2,i3)
           end block
         end do
@@ -279,8 +286,8 @@ contains
             integer :: i(4), idx
 
             i = [i1, i2, i3, i4]
-            idx = n(ix2)*( n(iy2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(iy2)*(i(iy2)-lb(iy2))) + &
-                  stride(ix2)*(i(ix2)-lb(ix2)) + 1
+            idx = n(ij1)*( n(ij2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(ij2)*(i(ij2)-lb(ij2))) + &
+                  stride(ij1)*(i(ij1)-lb(ij1)) + 1
             buffer(idx) = sgn * field4d(i1,i2,i3,i4)
           end block
         end do

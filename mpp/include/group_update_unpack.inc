@@ -58,11 +58,14 @@ contains
     integer :: ix, iy, iz1, iz2 !< Indices of the domain-decomposed dimensions
     integer :: nd !< Number of dimensions
     integer :: i1, i2, i3, i4
+    integer :: is0, js0
 
     select case (field_type)
       case (FIELD_S)
         ix = group%ix_s
         iy = group%iy_s
+        is0 = group%is_s
+        js0 = group%js_s
 
         nd = size(group%shape_s)
         allocate (lb(nd), ub(nd), n(nd))
@@ -81,6 +84,8 @@ contains
       case (FIELD_X)
         ix = group%ix_v
         iy = group%iy_v
+        is0 = group%is_x
+        js0 = group%js_x
 
         nd = size(group%shape_x)
         allocate (lb(nd), ub(nd), n(nd))
@@ -99,6 +104,8 @@ contains
       case (FIELD_Y)
         ix = group%ix_v
         iy = group%iy_v
+        is0 = group%is_y
+        js0 = group%js_y
 
         nd = size(group%shape_y)
         allocate (lb(nd), ub(nd), n(nd))
@@ -116,11 +123,11 @@ contains
         end select
     end select
 
-    lb(ix) = group%unpack_is(ni)
-    lb(iy) = group%unpack_js(ni)
+    lb(ix) = group%unpack_is(ni) - is0 + 1
+    lb(iy) = group%unpack_js(ni) - js0 + 1
 
-    ub(ix) = group%unpack_ie(ni)
-    ub(iy) = group%unpack_je(ni)
+    ub(ix) = group%unpack_ie(ni) - is0 + 1
+    ub(iy) = group%unpack_je(ni) - js0 + 1
 
     n = ub - lb + 1
 
