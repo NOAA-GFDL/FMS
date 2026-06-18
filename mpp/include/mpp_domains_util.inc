@@ -2390,6 +2390,10 @@ end subroutine set_group_update
      group%nunpack = 0
      group%initialized = .false.
 
+     if (allocated(group%shape_s)) deallocate(group%shape_s)
+     if (allocated(group%shape_x)) deallocate(group%shape_x)
+     if (allocated(group%shape_y)) deallocate(group%shape_y)
+
   end subroutine mpp_clear_group_update
 
 !#####################################################################
