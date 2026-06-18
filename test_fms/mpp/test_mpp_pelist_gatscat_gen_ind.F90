@@ -131,8 +131,6 @@ contains
          allocate(field(dims(dim_order(1)), &
                         dims(dim_order(2)), &
                         dims(dim_order(3))))
-       else
-         allocate(field(1,1,1))
        endif
      else
        dims = dims_logical
