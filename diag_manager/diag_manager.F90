@@ -1680,12 +1680,12 @@ END FUNCTION register_static_field
   LOGICAL FUNCTION diag_send_data(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
     INTEGER, INTENT(in) :: diag_field_id
-    CLASS(*), DIMENSION(:,:,:), INTENT(in),TARGET,CONTIGUOUS :: field
+    CLASS(*), DIMENSION(:,:,:), INTENT(in),TARGET :: field
     CLASS(*), INTENT(in), OPTIONAL :: weight
     TYPE (time_type), INTENT(in), OPTIONAL :: time
     INTEGER, INTENT(in), OPTIONAL :: is_in, js_in, ks_in,ie_in,je_in, ke_in
-    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: mask
-    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, contiguous, target :: rmask
+    LOGICAL, DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: mask
+    CLASS(*), DIMENSION(:,:,:), INTENT(in), OPTIONAL, target :: rmask
     CHARACTER(len=*), INTENT(out), OPTIONAL :: err_msg
 
     REAL :: weight1
