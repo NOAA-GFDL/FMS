@@ -1571,7 +1571,6 @@ end function rarray_to_char
   !! @param [in] <x> The original permutation vector
   !! @param [out] <y> The inverted permutation vector
   subroutine inverse_permutation(x, y)
-    use fms_string_utils_mod, only: string
     integer, intent(in) :: x(:)
     integer, intent(out) :: y(size(x))
     integer :: i, n
@@ -1583,8 +1582,13 @@ end function rarray_to_char
       if (x(i).ge.1 .and. x(i).le.n) then
         y(x(i)) = i
       else
-        call mpp_error(FATAL, "inverse_permutation: Invalid dim_order. Values must be in the range from 1 through " &
-                              // string(n) // ".")
+        block
+          character(2) :: nstr
+
+          write (nstr, "(I0)") n
+          call mpp_error(FATAL, "inverse_permutation: Invalid dimension map. &
+                                 Values must be in the range from 1 to " // trim(nstr) // ".")
+        end block
       endif
     enddo
 
