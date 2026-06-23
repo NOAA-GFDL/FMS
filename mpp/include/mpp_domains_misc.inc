@@ -988,6 +988,8 @@ end subroutine init_nonblock_type
 #undef MPP_UPDATE_DOMAINS_5D_V_
 #define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r8_5Dv
 #endif
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_r8
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r8_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1010,6 +1012,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c8_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c8_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_c8
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c8_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1031,6 +1035,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i8_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i8_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_i8
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i8_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1062,6 +1068,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_V_ mpp_update_domain2D_r4_4Dv
 #undef MPP_UPDATE_DOMAINS_5D_V_
 #define MPP_UPDATE_DOMAINS_5D_V_ mpp_update_domain2D_r4_5Dv
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_r4
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_r4_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1085,6 +1093,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_c4_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_c4_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_c4
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_c4_2D
 #undef MPP_REDISTRIBUTE_3D_
@@ -1106,6 +1116,8 @@ end subroutine init_nonblock_type
 #define MPP_UPDATE_DOMAINS_4D_ mpp_update_domain2D_i4_4D
 #undef MPP_UPDATE_DOMAINS_5D_
 #define MPP_UPDATE_DOMAINS_5D_ mpp_update_domain2D_i4_5D
+#undef MPP_REDISTRIBUTE_REGISTER_
+#define MPP_REDISTRIBUTE_REGISTER_ mpp_redistribute_register_i4
 #undef MPP_REDISTRIBUTE_2D_
 #define MPP_REDISTRIBUTE_2D_ mpp_redistribute_i4_2D
 #undef MPP_REDISTRIBUTE_3D_
