@@ -22,14 +22,15 @@
 
 module interpolator_mod
 
-use mpp_mod,           only : mpp_error, &
-                              FATAL,     &
-                              mpp_pe,    &
-                              mpp_init,  &
-                              mpp_exit,  &
-                              mpp_npes,  &
-                              WARNING,   &
-                              NOTE,      &
+use mpp_mod,           only : inverse_permutation, &
+                              mpp_error,           &
+                              FATAL,               &
+                              mpp_pe,              &
+                              mpp_init,            &
+                              mpp_exit,            &
+                              mpp_npes,            &
+                              WARNING,             &
+                              NOTE,                &
                               input_nml_file
 use mpp_domains_mod,   only : mpp_domains_init,      &
                               mpp_update_domains,    &
@@ -767,33 +768,6 @@ if (string(len:len) == CHAR(0)) len = len -1
 chomp = string(:len)
 
 end function chomp
-
-!> @brief Produce an inverse permutation. For example, transform [2, 3, 1, 4] into [3, 1, 2, 4].
-!!
-!! @param [in] <x> The original permutation vector
-!! @param [out] <x> The inverted permutation vector
-subroutine inverse_permutation(x, y)
-  use fms_string_utils_mod, only: string
-  integer, intent(in) :: x(:)
-  integer, intent(out) :: y(size(x))
-  integer :: i, n
-
-  y = 0
-
-  n = size(x)
-  do i=1,n
-    if (x(i).ge.1 .and. x(i).le.n) then
-      y(x(i)) = i
-    else
-      call mpp_error(FATAL, "interpolator_mod: Invalid dim_order. Values must be in the range from 1 through " &
-                            // string(n) // ".")
-    endif
-  enddo
-
-  if (any(y.eq.0)) then
-    call mpp_error(FATAL, "interpolator_mod: Invalid dim_order. Values must be non-repeating.")
-  endif
-end subroutine inverse_permutation
 !
 !########################################################################
 
