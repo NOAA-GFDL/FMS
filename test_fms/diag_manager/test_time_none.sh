@@ -28,6 +28,56 @@ if [ -z "${parser_skip}" ]; then
 output_dir
 
 cat <<_EOF > diag_table.yaml
+title: test_generalized_indices
+base_date: 2 1 1 0 0 0
+diag_files:
+- file_name: test_gen
+  freq: 6 hours
+  time_units: hours
+  unlimdim: time
+  varlist:
+  - module: ocn_mod
+    var_name: var2_id
+    output_name: var2_id
+    reduction: none
+    kind: r8
+  - module: ocn_mod
+    var_name: var2_yx
+    output_name: var2_yx
+    reduction: none
+    kind: r8
+  - module: ocn_mod
+    var_name: var3_id
+    output_name: var3_id
+    reduction: none
+    kind: r8
+  - module: ocn_mod
+    var_name: var3_zx
+    output_name: var3_zx
+    reduction: none
+    kind: r8
+  - module: ocn_mod
+    var_name: var3_yzx
+    output_name: var3_yzx
+    reduction: none
+    kind: r8
+  - module: ocn_mod
+    var_name: var3_zxy
+    output_name: var3_zxy
+    reduction: none
+    kind: r8
+_EOF
+
+touch input.nml
+printf "&diag_manager_nml \n use_modern_diag=.true. \n / \n&test_reduction_methods_nml \n test_case = 0 \n/" | cat > input.nml
+test_expect_success "Write and read domain-decomposed data with generalized indices" '
+  mpirun -n 6 ../test_diag_generalized_indices
+'
+test_expect_success "Checking answers for the  generalized indices" '
+  mpirun -n 1 ../check_diag_generalized_indices
+'
+
+cat <<_EOF > diag_table.yaml
 title: test_none
 base_date: 2 1 1 0 0 0
 diag_files:
@@ -174,6 +224,8 @@ test_expect_success "Running diag_manager with "none" reduction method with halo
 test_expect_success "Checking answers for the "none" reduction method with halo output with real mask (test $my_test_count)" '
   mpirun -n 1 ../check_time_none
 '
+
+
 
 cat <<_EOF > diag_table.yaml
 title: test_none
