@@ -217,7 +217,7 @@
     end subroutine MPP_UPDATE_DOMAINS_5D_
 
     subroutine MPP_REDISTRIBUTE_REGISTER_( domain_in, addr_in, shape_in, domain_out, addr_out, shape_out, &
-                                         & nchunks, complete, free, list_size, dc_handle, position, axis_to_dim_in)
+                                         & nchunks, complete, free, list_size, dc_handle, position, axis_to_storage_in)
       type(domain2D), intent(in) :: domain_in, domain_out
       integer(i8_kind), intent(in) :: addr_in, addr_out
       integer, intent(in) :: shape_in(3), shape_out(3)
@@ -226,7 +226,7 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      integer, intent(in) :: axis_to_dim_in(3)
+      integer, intent(in) :: axis_to_storage_in(3)
 
       type(DomainCommunicator2D), pointer, optional :: dc_handle
       type(DomainCommunicator2D), pointer, save :: d_comm => NULL()
@@ -247,14 +247,11 @@
       integer, save :: jsize_out = 0
       integer, save :: ke_out    = 0
 
-      integer, save :: saved_axis_to_dim(3) = (/1,2,3/)
+      integer, save :: saved_axis_to_storage(3) = (/1,2,3/)
 
-      integer :: axis_to_dim(3)
+      integer :: axis_to_storage(3)
       integer :: xdim, ydim, zdim
       integer :: ke, lsize
-      integer :: buffer_field_count
-      integer :: i
-      integer :: text_count
 
       logical :: do_redist
       logical :: free_comm
@@ -263,11 +260,11 @@
       character(len=16) :: text
       MPP_TYPE_ :: d_type
 
-      axis_to_dim = axis_to_dim_in
+      axis_to_storage = axis_to_storage_in
 
-      xdim = axis_to_dim(1)
-      ydim = axis_to_dim(2)
-      zdim = axis_to_dim(3)
+      xdim = axis_to_storage(1)
+      ydim = axis_to_storage(2)
+      zdim = axis_to_storage(3)
 
       if (nchunks < 1) then
         call mpp_error(FATAL, 'MPP_REDISTRIBUTE_REGISTER_3D_: nchunks must be positive')
@@ -317,7 +314,7 @@
 
       if (l_size == 1) then
 
-        saved_axis_to_dim = axis_to_dim
+        saved_axis_to_storage = axis_to_storage
 
         if (addr_in > 0) then
           isize_in = shape_in(xdim)
@@ -333,7 +330,7 @@
 
       else
 
-        set_mismatch = any(axis_to_dim /= saved_axis_to_dim)
+        set_mismatch = any(axis_to_storage /= saved_axis_to_storage)
 
         set_mismatch = set_mismatch .OR. (addr_in == 0 .AND. l_addrs_in(l_size-1) /= 0)
         set_mismatch = set_mismatch .OR. (addr_in > 0 .AND. l_addrs_in(l_size-1) == 0)
@@ -361,14 +358,6 @@
 
       if (.not. do_redist) return
 
-      !--------------------------------------------------------------------
-      ! Number of logical 3D fields packed into each destination buffer.
-      !
-      ! One ordinary 3D field contributes one chunk.
-      ! One 4D field contributes size(field,4) chunks.
-      !--------------------------------------------------------------------
-      buffer_field_count = sum(l_nchunks(1:l_size))
-
       if (present(dc_handle)) d_comm => dc_handle
 
       if (.not. associated(d_comm)) then
@@ -381,8 +370,8 @@
       endif
 
       call mpp_do_redistribute(l_addrs_in(1:l_size), l_addrs_out(1:l_size), d_comm, d_type, &
-                axis_to_dim_in = axis_to_dim, nchunks = l_nchunks(1:l_size), chunk_shape_in = l_shape_in(:,1:l_size), &
-                chunk_shape_out = l_shape_out(:,1:l_size) )
+             &  axis_to_storage_in = axis_to_storage, nchunks = l_nchunks(1:l_size), 
+             &  chunk_shape_in = l_shape_in(:,1:l_size), chunk_shape_out = l_shape_out(:,1:l_size) )
 
       !--------------------------------------------------------------------
       ! Reset grouped state.
@@ -403,13 +392,13 @@
       jsize_out = 0
       ke_out    = 0
 
-      saved_axis_to_dim = (/1,2,3/)
+      saved_axis_to_storage = (/1,2,3/)
       d_comm => NULL()
 
     end subroutine MPP_REDISTRIBUTE_REGISTER_
 
     subroutine MPP_REDISTRIBUTE_2D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
-                                   & dc_handle, position, axis_to_dim_in )
+                                   & dc_handle, position, axis_to_storage_in )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)     :: field_in(:,:)
       MPP_TYPE_, intent(out)    :: field_out(:,:)
@@ -417,26 +406,26 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      integer, intent(in), optional :: axis_to_dim_in(2)
+      integer, intent(in), optional :: axis_to_storage_in(2)
 
       type(DomainCommunicator2D), pointer, optional :: dc_handle
 
       integer(i8_kind) :: addr_in, addr_out
       integer :: shape_in(3), shape_out(3)
-      integer :: axis_to_dim(3)
+      integer :: axis_to_storage(3)
       integer :: nchunks
 
       ! Logical x/y may occupy storage dims 1 and 2 in either order.
       ! The third dimension is an internal singleton carried dimension.
-      axis_to_dim = (/1,2,3/)
-      if (present(axis_to_dim_in)) then
-        if (any(axis_to_dim_in < 1) .OR. any(axis_to_dim_in > 2) .OR. &
-            axis_to_dim_in(1) == axis_to_dim_in(2)) then
+      axis_to_storage = (/1,2,3/)
+      if (present(axis_to_storage_in)) then
+        if (any(axis_to_storage_in < 1) .OR. any(axis_to_storage_in > 2) .OR. &
+            axis_to_storage_in(1) == axis_to_storage_in(2)) then
           call mpp_error(FATAL, &
-               'MPP_REDISTRIBUTE_2D_: invalid axis_to_dim permutation')
+               'MPP_REDISTRIBUTE_2D_: invalid axis_to_storage permutation')
         endif
 
-        axis_to_dim(1:2) = axis_to_dim_in
+        axis_to_storage(1:2) = axis_to_storage_in
       endif
 
       nchunks = 1
@@ -457,25 +446,16 @@
 
       if (domain_out%initialized) field_out = 0
 
-      call MPP_REDISTRIBUTE_REGISTER_( &
-           domain_in      = domain_in,      &
-           addr_in        = addr_in,        &
-           shape_in       = shape_in,       &
-           domain_out     = domain_out,     &
-           addr_out       = addr_out,       &
-           shape_out      = shape_out,      &
-           nchunks        = nchunks,        &
-           complete       = complete,       &
-           free           = free,           &
-           list_size      = list_size,      &
-           dc_handle      = dc_handle,      &
-           position       = position,       &
-           axis_to_dim_in = axis_to_dim )
+      call MPP_REDISTRIBUTE_REGISTER_( domain_in = domain_in, addr_in = addr_in, shape_in = shape_in,       &
+                                     & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out, &
+                                     & nchunks = nchunks, complete = complete, free = free,                 &
+                                     & list_size = list_size, dc_handle = dc_handle, position = position,   &
+                                     & axis_to_storage_in = axis_to_storage )
 
     end subroutine MPP_REDISTRIBUTE_2D_
 
     subroutine MPP_REDISTRIBUTE_3D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
-                                   & dc_handle, position, axis_to_dim_in )
+                                   & dc_handle, position, axis_to_storage_in )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)     :: field_in(:,:,:)
       MPP_TYPE_, intent(out)    :: field_out(:,:,:)
@@ -483,23 +463,23 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      integer, intent(in), optional :: axis_to_dim_in(3)
+      integer, intent(in), optional :: axis_to_storage_in(3)
 
       type(DomainCommunicator2D), pointer, optional :: dc_handle
 
       integer(i8_kind) :: addr_in, addr_out
       integer :: shape_in(3), shape_out(3)
-      integer :: axis_to_dim(3)
+      integer :: axis_to_storage(3)
       integer :: nchunks
 
-      axis_to_dim = (/1,2,3/)
-      if (present(axis_to_dim_in)) axis_to_dim = axis_to_dim_in
+      axis_to_storage = (/1,2,3/)
+      if (present(axis_to_storage_in)) axis_to_storage = axis_to_storage_in
 
-      if (any(axis_to_dim < 1) .OR. any(axis_to_dim > 3) .OR. &
-          axis_to_dim(1) == axis_to_dim(2) .OR.               &
-          axis_to_dim(1) == axis_to_dim(3) .OR.               &
-          axis_to_dim(2) == axis_to_dim(3)) then
-        call mpp_error(FATAL, 'MPP_REDISTRIBUTE_3D_: invalid axis_to_dim permutation')
+      if (any(axis_to_storage < 1) .OR. any(axis_to_storage > 3) .OR. &
+          axis_to_storage(1) == axis_to_storage(2) .OR.               &
+          axis_to_storage(1) == axis_to_storage(3) .OR.               &
+          axis_to_storage(2) == axis_to_storage(3)) then
+        call mpp_error(FATAL, 'MPP_REDISTRIBUTE_3D_: invalid axis_to_storage permutation')
       endif
 
       nchunks = 1
@@ -524,12 +504,12 @@
                                      & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,     &
                                      & nchunks = nchunks, complete = complete, free = free,                     &
                                      & list_size = list_size, dc_handle = dc_handle, position = position,       &
-                                     & axis_to_dim_in = axis_to_dim )
+                                     & axis_to_storage_in = axis_to_storage )
 
     end subroutine MPP_REDISTRIBUTE_3D_
 
     subroutine MPP_REDISTRIBUTE_4D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
-                                   & dc_handle, position, axis_to_dim_in )
+                                   & dc_handle, position, axis_to_storage_in )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)     :: field_in(:,:,:,:)
       MPP_TYPE_, intent(out)    :: field_out(:,:,:,:)
@@ -537,17 +517,17 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      integer, intent(in), optional :: axis_to_dim_in(3)
+      integer, intent(in), optional :: axis_to_storage_in(3)
 
       type(DomainCommunicator2D), pointer, optional :: dc_handle
 
       integer(i8_kind) :: addr_in, addr_out
       integer :: shape_in(3), shape_out(3)
-      integer :: axis_to_dim(3)
+      integer :: axis_to_storage(3)
       integer :: nchunks
 
-      axis_to_dim = (/1,2,3/)
-      if (present(axis_to_dim_in)) axis_to_dim = axis_to_dim_in
+      axis_to_storage = (/1,2,3/)
+      if (present(axis_to_storage_in)) axis_to_storage = axis_to_storage_in
 
       nchunks = size(field_in,4)
 
@@ -567,7 +547,7 @@
 
       ! Each fixed-fourth-index section field(:,:,:,l) is one contiguous
       !  3D chunk. Logical x/y/z may be mapped to any of these three
-      !  storage dimensions through axis_to_dim.
+      !  storage dimensions through axis_to_storage.
       shape_in = (/ size(field_in,1),  &
                   & size(field_in,2),  &
                   & size(field_in,3) /)
@@ -582,12 +562,12 @@
                                      & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,  &
                                      & nchunks = nchunks, complete = complete, free = free,                  &
                                      & list_size = list_size, dc_handle = dc_handle, position = position,    &
-                                     & axis_to_dim_in  = axis_to_dim )
+                                     & axis_to_storage_in  = axis_to_storage )
 
     end subroutine MPP_REDISTRIBUTE_4D_
 
     subroutine MPP_REDISTRIBUTE_5D_( domain_in, field_in, domain_out, field_out, complete, free, list_size, &
-                                   & dc_handle, position, axis_to_dim_in )
+                                   & dc_handle, position, axis_to_storage_in )
       type(domain2D), intent(in) :: domain_in, domain_out
       MPP_TYPE_, intent(in)     :: field_in(:,:,:,:,:)
       MPP_TYPE_, intent(out)    :: field_out(:,:,:,:,:)
@@ -595,23 +575,23 @@
       logical, intent(in), optional :: complete, free
       integer, intent(in), optional :: list_size
       integer, intent(in), optional :: position
-      integer, intent(in), optional :: axis_to_dim_in(3)
+      integer, intent(in), optional :: axis_to_storage_in(3)
 
       type(DomainCommunicator2D), pointer, optional :: dc_handle
 
       integer(i8_kind) :: addr_in, addr_out
       integer :: shape_in(3), shape_out(3)
-      integer :: axis_to_dim(3)
+      integer :: axis_to_storage(3)
       integer :: nchunks
 
-      axis_to_dim = (/1,2,3/)
-      if (present(axis_to_dim_in)) axis_to_dim = axis_to_dim_in
+      axis_to_storage = (/1,2,3/)
+      if (present(axis_to_storage_in)) axis_to_storage = axis_to_storage_in
 
-      if (any(axis_to_dim < 1) .OR. any(axis_to_dim > 3) .OR. &
-          axis_to_dim(1) == axis_to_dim(2) .OR.               &
-          axis_to_dim(1) == axis_to_dim(3) .OR.               &
-          axis_to_dim(2) == axis_to_dim(3)) then
-        call mpp_error(FATAL, 'MPP_REDISTRIBUTE_5D_: invalid axis_to_dim permutation')
+      if (any(axis_to_storage < 1) .OR. any(axis_to_storage > 3) .OR. &
+          axis_to_storage(1) == axis_to_storage(2) .OR.               &
+          axis_to_storage(1) == axis_to_storage(3) .OR.               &
+          axis_to_storage(2) == axis_to_storage(3)) then
+        call mpp_error(FATAL, 'MPP_REDISTRIBUTE_5D_: invalid axis_to_storage permutation')
       endif
 
       if (size(field_in,4) /= size(field_out,4)) then
@@ -650,7 +630,7 @@
                                      & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,     &
                                      & nchunks = nchunks, complete = complete, free = free,                     &
                                      & list_size = list_size, dc_handle = dc_handle, position = position,       &
-                                     & axis_to_dim_in = axis_to_dim )
+                                     & axis_to_storage_in = axis_to_storage )
 
     end subroutine MPP_REDISTRIBUTE_5D_
 
