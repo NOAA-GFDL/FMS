@@ -891,7 +891,8 @@ subroutine add_axes(this, axis_ids, diag_axis, naxis, yaml_id, buffer_id, output
               if (subregion_gridtype .eq. latlon_gridtype .and. is_cube_sphere) &
                 call mpp_error(FATAL, "The axis for the variable:"//trim(field_yaml%get_var_varname())//&
                   "in the file: "//trim(this%get_file_fname())//" differ from the axes for the other "//&
-                  "variables in the file. All variables in a file need to be registed with the same axes.")
+                  "variables in the file. If using the cube sphere and defining a subregion. "//&
+                  "All variables in a file need to be registed with the same axes.")
               select case (subregion_gridtype)
               case (index_gridtype)
                 call define_new_subaxis_index(parent_axis, this%get_file_sub_region(), diag_axis, naxis, &
