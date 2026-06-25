@@ -17,7 +17,7 @@
 !***********************************************************************
 !> @addtogroup mpp_domains_mod
 !> @{
-subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in, &
+subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_storage_in, &
                                   & nchunks, chunk_shape_in, chunk_shape_out )
 
   use iso_c_binding, only : c_ptr, c_null_ptr, c_f_pointer, c_intptr_t
@@ -26,7 +26,7 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
   type(DomainCommunicator2D), intent(in) :: d_comm
   MPP_TYPE_, intent(in) :: d_type
 
-  integer, intent(in), optional :: axis_to_dim_in(3)
+  integer, intent(in), optional :: axis_to_storage_in(3)
 
   ! One entry per public redistribute field.
   !
@@ -47,7 +47,7 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
   integer, intent(in) :: chunk_shape_in(:,:)
   integer, intent(in) :: chunk_shape_out(:,:)
 
-  integer :: axis_to_dim(3)
+  integer :: axis_to_storage(3)
 
   type(c_ptr) :: p_in, p_out
 
@@ -92,7 +92,6 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
   integer :: to_pe
   integer :: from_pe
 
-  integer :: wordlen
   integer :: errunit
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
@@ -101,15 +100,15 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
   !--------------------------------------------------------------------
   ! Validate axis permutation and field metadata.
   !--------------------------------------------------------------------
-  axis_to_dim = (/1,2,3/)
-  if (present(axis_to_dim_in)) axis_to_dim = axis_to_dim_in
+  axis_to_storage = (/1,2,3/)
+  if (present(axis_to_storage_in)) axis_to_storage = axis_to_storage_in
 
-  if (any(axis_to_dim < 1) .OR. any(axis_to_dim > 3) .OR. &
-      axis_to_dim(1) == axis_to_dim(2) .OR.               &
-      axis_to_dim(1) == axis_to_dim(3) .OR.               &
-      axis_to_dim(2) == axis_to_dim(3)) then
+  if (any(axis_to_storage < 1) .OR. any(axis_to_storage > 3) .OR. &
+      axis_to_storage(1) == axis_to_storage(2) .OR.               &
+      axis_to_storage(1) == axis_to_storage(3) .OR.               &
+      axis_to_storage(2) == axis_to_storage(3)) then
     call mpp_error(FATAL, &
-         'MPP_DO_REDISTRIBUTE_3D_: invalid axis_to_dim permutation')
+         'MPP_DO_REDISTRIBUTE_3D_: invalid axis_to_storage permutation')
   endif
 
   nfields = size(f_in)
@@ -155,9 +154,6 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
   domain_out => d_comm%domain_out
 
   ptr = LOC(mpp_domains_stack)
-
-  ! Preserve the existing stack-word calculation.
-  wordlen = size(TRANSFER(buffer(1), mpp_domains_stack))
 
   ! LOC addresses are byte addresses on the supported targets.
   ! STORAGE_SIZE returns the number of bits per scalar element.
@@ -220,14 +216,14 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
     storage_lo = 0
     storage_hi = 0
 
-    storage_lo(axis_to_dim(1)) = logical_lo(1)
-    storage_hi(axis_to_dim(1)) = logical_hi(1)
+    storage_lo(axis_to_storage(1)) = logical_lo(1)
+    storage_hi(axis_to_storage(1)) = logical_hi(1)
 
-    storage_lo(axis_to_dim(2)) = logical_lo(2)
-    storage_hi(axis_to_dim(2)) = logical_hi(2)
+    storage_lo(axis_to_storage(2)) = logical_lo(2)
+    storage_hi(axis_to_storage(2)) = logical_hi(2)
 
-    storage_lo(axis_to_dim(3)) = logical_lo(3)
-    storage_hi(axis_to_dim(3)) = logical_hi(3)
+    storage_lo(axis_to_storage(3)) = logical_lo(3)
+    storage_hi(axis_to_storage(3)) = logical_hi(3)
 
     pos = buffer_pos
 
@@ -237,9 +233,9 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
 
       ! Each input chunk must represent the same logical x/y/z shape
       ! used to initialize this communicator.
-      if (shape3(axis_to_dim(1)) /= d_comm%isize_in .OR. &
-          shape3(axis_to_dim(2)) /= d_comm%jsize_in .OR. &
-          shape3(axis_to_dim(3)) /= ke) then
+      if (shape3(axis_to_storage(1)) /= d_comm%isize_in .OR. &
+          shape3(axis_to_storage(2)) /= d_comm%jsize_in .OR. &
+          shape3(axis_to_storage(3)) /= ke) then
         call mpp_error(FATAL, &
              'MPP_DO_REDISTRIBUTE_3D_: incompatible input chunk shape')
       endif
@@ -334,14 +330,14 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
     storage_lo = 0
     storage_hi = 0
 
-    storage_lo(axis_to_dim(1)) = logical_lo(1)
-    storage_hi(axis_to_dim(1)) = logical_hi(1)
+    storage_lo(axis_to_storage(1)) = logical_lo(1)
+    storage_hi(axis_to_storage(1)) = logical_hi(1)
 
-    storage_lo(axis_to_dim(2)) = logical_lo(2)
-    storage_hi(axis_to_dim(2)) = logical_hi(2)
+    storage_lo(axis_to_storage(2)) = logical_lo(2)
+    storage_hi(axis_to_storage(2)) = logical_hi(2)
 
-    storage_lo(axis_to_dim(3)) = logical_lo(3)
-    storage_hi(axis_to_dim(3)) = logical_hi(3)
+    storage_lo(axis_to_storage(3)) = logical_lo(3)
+    storage_hi(axis_to_storage(3)) = logical_hi(3)
 
     pos = buffer_pos
 
@@ -351,9 +347,9 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_dim_in,
 
       ! Input and output horizontal extents may differ, but the output
       ! chunk must match the output communicator decomposition.
-      if (shape3(axis_to_dim(1)) /= d_comm%isize_out .OR. &
-          shape3(axis_to_dim(2)) /= d_comm%jsize_out .OR. &
-          shape3(axis_to_dim(3)) /= ke) then
+      if (shape3(axis_to_storage(1)) /= d_comm%isize_out .OR. &
+          shape3(axis_to_storage(2)) /= d_comm%jsize_out .OR. &
+          shape3(axis_to_storage(3)) /= ke) then
         call mpp_error(FATAL, &
              'MPP_DO_REDISTRIBUTE_3D_: incompatible output chunk shape')
       endif
