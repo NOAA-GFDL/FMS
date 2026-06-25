@@ -610,8 +610,8 @@ contains
 
   !#######################################################################
 
-  subroutine cubic_grid_redistribute(axis_to_dim_in)
-     integer, intent(in), optional :: axis_to_dim_in(3)
+  subroutine cubic_grid_redistribute(axis_to_storage_in)
+     integer, intent(in), optional :: axis_to_storage_in(3)
 
      integer              :: npes, npes_per_ensemble, npes_per_tile
      integer              :: ensemble_id, tile_id, ensemble_tile_id
@@ -629,34 +629,34 @@ contains
      type(domain2D)       :: domain
      type(domain2D), allocatable :: domain_ensemble(:)
      character(len=128)   :: mesg
-     integer              :: axis_to_dim(3), dim_to_axis(3)
+     integer              :: axis_to_storage(3), storage_to_axis(3)
      integer              :: i_dim, j_dim, k_dim
 
      !-------------------------------------------------------------------
-     ! axis_to_dim maps logical axis order to storage layout
-     ! axis_to_dim = (3,1,2) maps
+     ! axis_to_storage maps logical axis order to storage layout
+     ! axis_to_storage = (3,1,2) maps
      !          x -> 3rd dim
      !          y -> 1st dim
      !          z -> 2nd dim
      ! This map is passed on to MPP_REDISTRIBUTE to select storage
      !    dim by logical axis desired
-     ! The inverse map is defined by dim_to_axis(axis_to_dim)=(1,2,3)
+     ! The inverse map is defined by storage_to_axis(axis_to_storage)=(1,2,3)
      !    maps storage layout to logical axis order and is used in this
      !    routine to select the correct logical start/stop indices when
      !    allocating storage arrays.
      !-------------------------------------------------------------------
-     axis_to_dim = (/1,2,3/)
-     if (present(axis_to_dim_in)) axis_to_dim = axis_to_dim_in
+     axis_to_storage = (/1,2,3/)
+     if (present(axis_to_storage_in)) axis_to_storage = axis_to_storage_in
 
      ! Inverse Map
-     dim_to_axis(axis_to_dim(1))=1
-     dim_to_axis(axis_to_dim(2))=2
-     dim_to_axis(axis_to_dim(3))=3
+     storage_to_axis(axis_to_storage(1))=1
+     storage_to_axis(axis_to_storage(2))=2
+     storage_to_axis(axis_to_storage(3))=3
 
      ! Selectors for logical indices by storage dim
-     i_dim = dim_to_axis(1)
-     j_dim = dim_to_axis(2)
-     k_dim = dim_to_axis(3)
+     i_dim = storage_to_axis(1)
+     j_dim = storage_to_axis(2)
+     k_dim = storage_to_axis(3)
 
      ! --- set up pelist
      npes = mpp_npes()
@@ -766,7 +766,7 @@ contains
      ec = (/iec, jec, nz/)
      do n = 1, ensemble_size
         x = 0
-        call mpp_redistribute( domain_ensemble(n), x_ens, domain, x(:,:,:,n), axis_to_dim_in=axis_to_dim )
+        call mpp_redistribute( domain_ensemble(n), x_ens, domain, x(:,:,:,n), axis_to_storage_in=axis_to_storage )
         y = 0
         do k = sc(k_dim), ec(k_dim)
            do j = sc(j_dim), ec(j_dim)
@@ -797,7 +797,7 @@ contains
 
      do n = 1, ensemble_size
         x_ens = 0
-        call mpp_redistribute(domain, x(:,:,:,n), domain_ensemble(n), x_ens, axis_to_dim_in=axis_to_dim)
+        call mpp_redistribute(domain, x(:,:,:,n), domain_ensemble(n), x_ens, axis_to_storage_in=axis_to_storage)
         y = 0
         if( ensemble_id == n ) then
            do k = sc_ens(k_dim), ec_ens(k_dim)
