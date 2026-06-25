@@ -369,8 +369,8 @@
 
       endif
 
-      call mpp_do_redistribute(l_addrs_in(1:l_size), l_addrs_out(1:l_size), d_comm, d_type, &
-             &  axis_to_storage_in = axis_to_storage, nchunks = l_nchunks(1:l_size), 
+      call mpp_do_redistribute(l_addrs_in(1:l_size), l_addrs_out(1:l_size), d_comm, d_type,            &
+             &  axis_to_storage_in = axis_to_storage, nchunks = l_nchunks(1:l_size),                   & 
              &  chunk_shape_in = l_shape_in(:,1:l_size), chunk_shape_out = l_shape_out(:,1:l_size) )
 
       !--------------------------------------------------------------------
