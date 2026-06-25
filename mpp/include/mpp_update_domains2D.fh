@@ -285,12 +285,6 @@
       free_comm = .false.
       if (present(free)) free_comm = free
 
-      !--------------------------------------------------------------------
-      ! Free a previously cached communicator.
-      !
-      ! list_size retains its original meaning: number of public grouped
-      ! fields, not number of internal chunks.
-      !--------------------------------------------------------------------
       if (free_comm) then
 
         if (addr_out > 0) then
@@ -307,9 +301,6 @@
         return
       endif
 
-      !--------------------------------------------------------------------
-      ! Append one public field to the grouped operation.
-      !--------------------------------------------------------------------
       l_size = l_size + 1
 
       if (l_size > MAX_DOMAIN_FIELDS) then
@@ -344,16 +335,11 @@
 
         set_mismatch = any(axis_to_dim /= saved_axis_to_dim)
 
-        ! Preserve the existing restriction that all entries in a grouped
-        !  operation agree about whether input/output storage exists locally.
         set_mismatch = set_mismatch .OR. (addr_in == 0 .AND. l_addrs_in(l_size-1) /= 0)
         set_mismatch = set_mismatch .OR. (addr_in > 0 .AND. l_addrs_in(l_size-1) == 0)
         set_mismatch = set_mismatch .OR. (addr_out == 0 .AND. l_addrs_out(l_size-1) /= 0)
         set_mismatch = set_mismatch .OR. (addr_out > 0 .AND. l_addrs_out(l_size-1) == 0)
 
-        ! Input and output horizontal sizes may differ from one another,
-        ! but all input fields in one group must match the first input field,
-        ! and all output fields must match the first output field.
         if (addr_in > 0) then
           set_mismatch = set_mismatch .OR. (isize_in /= shape_in(xdim))
           set_mismatch = set_mismatch .OR. (jsize_in /= shape_in(ydim))
@@ -388,7 +374,7 @@
       if (.not. associated(d_comm)) then
 
          d_comm => mpp_redistribute_init_comm(domain_in,  l_addrs_in(1:l_size), domain_out, l_addrs_out(1:l_size), &
-                                  isize_in,  jsize_in,  ke_in, isize_out, jsize_out, ke_out, buffer_field_count )
+                                  isize_in,  jsize_in,  ke_in, isize_out, jsize_out, ke_out )
 
         if (present(dc_handle)) dc_handle => d_comm
 
@@ -469,7 +455,7 @@
                    & size(field_out,2),  &
                    & 1 /)
 
-      field_out = 0
+      if (domain_out%initialized) field_out = 0
 
       call MPP_REDISTRIBUTE_REGISTER_( &
            domain_in      = domain_in,      &
@@ -532,13 +518,13 @@
                    & size(field_out,2),  &
                    & size(field_out,3) /)
 
-      field_out = 0
+      if (domain_out%initialized) field_out = 0
 
       call MPP_REDISTRIBUTE_REGISTER_( domain_in = domain_in, addr_in = addr_in, shape_in = shape_in,           &
-                                    & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,       &
-                                    & nchunks = nchunks, complete = complete, free = free,                       &
-                                    & list_size = list_size, dc_handle = dc_handle, position = position,         &
-                                    & axis_to_dim_in = axis_to_dim )
+                                     & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,     &
+                                     & nchunks = nchunks, complete = complete, free = free,                     &
+                                     & list_size = list_size, dc_handle = dc_handle, position = position,       &
+                                     & axis_to_dim_in = axis_to_dim )
 
     end subroutine MPP_REDISTRIBUTE_3D_
 
@@ -590,13 +576,13 @@
                    & size(field_out,2),  &
                    & size(field_out,3) /)
 
-      field_out = 0
+      if (domain_out%initialized) field_out = 0
 
-      call MPP_REDISTRIBUTE_REGISTER_( domain_in = domain_in, addr_in = addr_in, shape_in = shape_in,           &
-       					  domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,  &
-       					  nchunks = nchunks, complete = complete, free = free,                  &
-					  list_size = list_size, dc_handle = dc_handle, position = position,    &
-       				 	  axis_to_dim_in  = axis_to_dim ) 
+      call MPP_REDISTRIBUTE_REGISTER_( domain_in = domain_in, addr_in = addr_in, shape_in = shape_in,        &
+                                     & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,  &
+                                     & nchunks = nchunks, complete = complete, free = free,                  &
+                                     & list_size = list_size, dc_handle = dc_handle, position = position,    &
+                                     & axis_to_dim_in  = axis_to_dim )
 
     end subroutine MPP_REDISTRIBUTE_4D_
 
@@ -658,13 +644,13 @@
                    & size(field_out,2),  &
                    & size(field_out,3) /)
 
-      field_out = 0
+      if (domain_out%initialized) field_out = 0
 
       call MPP_REDISTRIBUTE_REGISTER_( domain_in = domain_in, addr_in = addr_in, shape_in = shape_in,           &
-                                    & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,       &
-                                    & nchunks = nchunks, complete = complete, free = free,                       &
-                                    & list_size = list_size, dc_handle = dc_handle, position = position,         &
-                                    & axis_to_dim_in = axis_to_dim )
+                                     & domain_out = domain_out, addr_out = addr_out, shape_out = shape_out,     &
+                                     & nchunks = nchunks, complete = complete, free = free,                     &
+                                     & list_size = list_size, dc_handle = dc_handle, position = position,       &
+                                     & axis_to_dim_in = axis_to_dim )
 
     end subroutine MPP_REDISTRIBUTE_5D_
 
