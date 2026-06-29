@@ -335,9 +335,7 @@ use platform_mod
     class(*), allocatable         :: att_value(:) !< Value of the attribute
     character(len=:), allocatable :: att_name     !< Name of the attribute
     contains
-#ifndef __NVCOMPILER
       procedure :: add => fms_add_attribute
-#endif
       procedure :: write_metadata
   end type fmsDiagAttribute_type
 ! Include variable "version" to be written to log file.
@@ -560,7 +558,6 @@ CONTAINS
     res = base_second
   end function get_base_second
 
-#ifndef __NVCOMPILER
   !> @brief Adds an attribute to the attribute type
   subroutine fms_add_attribute(this, att_name, att_value)
     class(fmsDiagAttribute_type), intent(inout) :: this         !< Diag attribute type
@@ -569,6 +566,7 @@ CONTAINS
 
     integer :: natt !< the size of att_value
 
+#ifndef __NVCOMPILER
     natt = size(att_value)
     this%att_name = att_name
     select type (att_value)
@@ -591,8 +589,8 @@ CONTAINS
           aval = att_value
       end select
     end select
-  end subroutine fms_add_attribute
 #endif
+  end subroutine fms_add_attribute
 
   !> @brief gets the type of a variable
   !> @return the type of the variable (r4,r8,i4,i8,string)
