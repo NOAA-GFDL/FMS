@@ -58,7 +58,7 @@ jobs:
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
-        ./configure --prefix=/libs --enable-remote-fortran-bootstrap
+        CC=gcc FC=gfortran ./configure --prefix=/libs --enable-remote-fortran-bootstrap
         sudo make -j install
         # sets this here to pass embeded configure checks
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
