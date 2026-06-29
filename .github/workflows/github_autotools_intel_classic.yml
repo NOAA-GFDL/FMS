@@ -3,7 +3,7 @@ name: Autotools build and unit testing with Intel Classic (weekly)
 on:
   schedule:
     - cron: '0 0 * * 0' # sundays @ midnight
-
+  pull_request:
 # cancel running jobs if theres a newer push
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -12,16 +12,14 @@ concurrency:
 jobs:
   intel-autotools:
     runs-on: ubuntu-latest
-    container:
-      image: intel/oneapi-hpckit:2023.1.0-devel-ubuntu20.04
-      env:
-        CC: mpiicc
-        FC: mpiifort
-        CFLAGS:  "-I/libs/include"
-        FCFLAGS: "-I/libs/include -g -traceback"
-        LDFLAGS: "-L/libs/lib"
-        TEST_VERBOSE: 1
-        I_MPI_FABRICS: "shm" # needed for mpi in image
+    env:
+      CC: mpiicc
+      FC: mpiifort
+      CFLAGS:  "-I/libs/include"
+      FCFLAGS: "-I/libs/include -g -traceback"
+      LDFLAGS: "-L/libs/lib"
+      TEST_VERBOSE: 1
+      I_MPI_FABRICS: "shm" # needed for mpi in image
     steps:
     - name: Cache dependencies
       id: cache
@@ -29,34 +27,52 @@ jobs:
       with:
         path: /libs
         key: intel-libs
+    - name: Install Intel compilers & MPI
+      uses: NOAA-EMC/ci-install-intel-toolkit@develop
+      with:
+        install-classic: true
+        install-oneapi: false
+        install-mpi: true
+        mpi-wrapper-setup: classic
+    - name: Debug Intel compiler environment
+      run: |
+        echo "PATH=$PATH"
+        echo "CC=$CC"
+        echo "FC=$FC"
+        which mpiicc || true
+        which mpiifort || true
+        which icc || true
+        which ifort || true
+        mpiicc --version || true
+        mpiifort --version || true
     - name: Install packages for building
-      run: apt-get update && apt-get install -y autoconf libtool automake zlibc zlib1g-dev
+      run: sudo apt-get update && sudo apt-get install -y autoconf libtool automake zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
       name: Build netcdf
       run: |
-        mkdir /libs
+        sudo mkdir /libs
         wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
         tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
-        ./configure --prefix=/libs
-        make -j install && cd ..
+        CC=gcc FC=gfortran ./configure --prefix=/libs
+        sudo make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
-        ./configure --prefix=/libs --enable-remote-fortran-bootstrap
-        make -j install
+        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
+        CC=gcc FC=gfortran ./configure --prefix=/libs --enable-remote-fortran-bootstrap
+        sudo make -j install
         # sets this here to pass embeded configure checks
         export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
-        make -j -k build-netcdf-fortran
-        make -j install-netcdf-fortran
+        sudo make -j -k build-netcdf-fortran
+        sudo make -j install-netcdf-fortran
         wget https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
         tar xf yaml-0.2.5.tar.gz && cd yaml-0.2.5
-        ./configure --prefix=/libs
-        make -j install && cd
+        CC=gcc ./configure --prefix=/libs
+        sudo make -j install && cd
     - name: checkout
       uses: actions/checkout@v4.2.2
     - name: Configure
       run: |
         autoreconf -if ./configure.ac
-        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
         ./configure --with-yaml
     - name: Compile
       run: make -j || make
