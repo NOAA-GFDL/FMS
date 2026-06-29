@@ -1183,8 +1183,12 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
   if ( diag_field_id .LE. 0 ) THEN
     RETURN
   else
-    if (this%FMS_diag_fields(diag_field_id)%is_registered() ) &
+    if (this%FMS_diag_fields(diag_field_id)%is_registered() ) then
+#ifdef __NVCOMPILER
+      call mpp_error(NOTE, "use_modern_diag:: metadata output is currently unsupported for NVHPC compilers")
+#endif
       call this%FMS_diag_fields(diag_field_id)%add_attribute(att_name, att_value)
+    endif
   endif
 #endif
 end subroutine fms_diag_field_add_attribute
@@ -1230,6 +1234,9 @@ CALL MPP_ERROR(FATAL,"You can not use the modern diag manager without compiling 
       enddo
       call axis%add_structured_axis_ids(uncmx_ids)
     endif
+#ifdef __NVCOMPILER
+    call mpp_error(NOTE, "use_modern_diag:: metadata output is currently unsupported for NVHPC compilers")
+#endif
   end select
 #endif
 end subroutine fms_diag_axis_add_attribute

@@ -37,7 +37,7 @@ module fms_diag_axis_object_mod
                               DIAG_NULL, index_gridtype, latlon_gridtype, pack_size_str, &
                               get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,&
                               get_base_second, is_x_axis, is_y_axis
-  use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
+  use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout, NOTE
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
   use fms_diag_yaml_mod, only: subRegion_type, diag_yaml, MAX_SUBAXES, diagYamlFilesVar_type
