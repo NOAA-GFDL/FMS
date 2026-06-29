@@ -31,9 +31,20 @@ jobs:
       uses: NOAA-EMC/ci-install-intel-toolkit@develop
       with:
         install-classic: true
-        install-oneapi: true
+        install-oneapi: false
         install-mpi: true
         mpi-wrapper-setup: classic
+    - name: Debug Intel compiler environment
+      run: |
+        echo "PATH=$PATH"
+        echo "CC=$CC"
+        echo "FC=$FC"
+        which mpiicc || true
+        which mpiifort || true
+        which icc || true
+        which ifort || true
+        mpiicc --version || true
+        mpiifort --version || true
     - name: Install packages for building
       run: sudo apt-get update && sudo apt-get install -y autoconf libtool automake zlib1g-dev
     - if: steps.cache.outputs.cache-hit != 'true'
@@ -42,6 +53,12 @@ jobs:
         sudo mkdir /libs
         wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
         tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
+        echo "===== Debug Intel Environment ====="
+        echo "PATH=$PATH"
+        which mpiicc || true
+        which mpiifort || true
+        mpiicc --version || true
+        mpiifort --version || true
         ./configure --prefix=/libs
         sudo make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
