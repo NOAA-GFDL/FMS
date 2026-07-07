@@ -234,7 +234,7 @@ integer function fms_register_diag_field_obj &
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: units                 !< The units of the variables
  CHARACTER(len=*), OPTIONAL,     INTENT(in)    :: standname             !< The variables stanard name
  class(*),         OPTIONAL,     INTENT(in)    :: missing_value         !< Missing value to add as a attribute
- class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(2)           !< Range to add as a attribute
+ class(*),         OPTIONAL,     INTENT(in)    :: varRANGE(:)           !< Range to add as a attribute (#1896)
  LOGICAL,          OPTIONAL,     INTENT(in)    :: mask_variant          !< .True. if mask changes over time
  LOGICAL,          OPTIONAL,     INTENT(in)    :: do_not_log            !< if TRUE, field info is not logged
  CHARACTER(len=*), OPTIONAL,     INTENT(out)   :: err_msg               !< Error message to be passed back up
