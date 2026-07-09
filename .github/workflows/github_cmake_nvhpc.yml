@@ -1,6 +1,6 @@
 name: Autotools build and unit testing with NVHPC
 
-on: [push, pull_request]
+on: pull_request
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,7 +13,7 @@ jobs:
       matrix:
         yaml-support: ["OFF" , "ON"]
     env:
-      REGISTRY_USER: "${{ github.actor }}"
+      REGISTRY_USER: "${{ github.repository_owner }}"
       REGISTRY_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     permissions:
       contents: read
