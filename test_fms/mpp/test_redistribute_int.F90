@@ -53,6 +53,10 @@ program test_mpp_redistribute
   call mpp_error(NOTE, "test_mpp_redistribute: 32-bit integer cubic grid test passed")
   call cubic_grid_redistribute_i8()
   call mpp_error(NOTE, "test_mpp_redistribute: 64-bit integer cubic grid test passed")
+  call tripolar_grid_redistribute_i4()
+  call mpp_error(NOTE, "test_mpp_redistribute: 32-bit integer tripolar grid test passed")
+  call tripolar_grid_redistribute_i8()
+  call mpp_error(NOTE, "test_mpp_redistribute: 64-bit integer tripolar grid test passed")
   call mpp_error(NOTE, "----------Tests Complete----------")
 
   call mpp_domains_exit()
@@ -655,6 +659,331 @@ contains
      deallocate(domain_ensemble)
 
   end subroutine cubic_grid_redistribute_i8
+
+  !> Tests redistribute with a one-tile tripolar-style ocean mosaic and 32-bit ints.
+  !! This test verifies redistribution of owned data on a tripolar-style
+  !! mosaic domain. It does not test folded-boundary halo updates.
+  subroutine tripolar_grid_redistribute_i4()
+    type(domain2D) :: domain_src, domain_dst
+
+    integer, parameter :: nx_tripolar = 48
+    integer, parameter :: ny_tripolar = 32
+    integer, parameter :: ntiles = 1
+
+    integer :: i, j, k
+    integer :: isc_src, iec_src, jsc_src, jec_src
+    integer :: isd_src, ied_src, jsd_src, jed_src
+    integer :: isc_dst, iec_dst, jsc_dst, jec_dst
+    integer :: isd_dst, ied_dst, jsd_dst, jed_dst
+
+    integer :: layout_src(2), layout_dst(2)
+    integer :: global_indices(4,ntiles)
+    integer :: layout2D_src(2,ntiles), layout2D_dst(2,ntiles)
+    integer :: pe_start(ntiles), pe_end(ntiles)
+
+    integer(i4_kind), allocatable :: src(:,:,:)
+    integer(i4_kind), allocatable :: dst(:,:,:)
+    integer(i4_kind), allocatable :: glbl(:,:,:)
+    integer(i4_kind), allocatable :: gcheck(:,:,:)
+
+    ! Nullify domain list otherwise it retains memory between calls.
+    call mpp_nullify_domain_list(domain_src)
+    call mpp_nullify_domain_list(domain_dst)
+
+    allocate(glbl(nx_tripolar,ny_tripolar,nz))
+    allocate(gcheck(nx_tripolar,ny_tripolar,nz))
+
+    do k = 1, nz
+      do j = 1, ny_tripolar
+        do i = 1, nx_tripolar
+          glbl(i,j,k) = k*1000000 + i*1000 + j
+        enddo
+      enddo
+    enddo
+
+    pe_start(1) = 0
+    pe_end(1)   = npes - 1
+
+    global_indices(:,1) = (/1, nx_tripolar, 1, ny_tripolar/)
+
+    call mpp_define_layout((/1, nx_tripolar, 1, ny_tripolar/), npes, layout_src)
+
+    ! Use a deliberately different decomposition for the destination domain.
+    ! This mirrors the simple redistribute test's x-layout to y-layout pattern.
+    if (npes <= nx_tripolar) then
+      layout_dst = (/npes, 1/)
+    else
+      call mpp_define_layout((/1, nx_tripolar, 1, ny_tripolar/), npes, layout_dst)
+    endif
+
+    layout2D_src(:,1) = layout_src
+    layout2D_dst(:,1) = layout_dst
+
+    call define_tripolar_mosaic("tripolar_src", domain_src, nx_tripolar, ny_tripolar, &
+                                global_indices, layout2D_src, pe_start, pe_end)
+
+    call define_tripolar_mosaic("tripolar_dst", domain_dst, nx_tripolar, ny_tripolar, &
+                                global_indices, layout2D_dst, pe_start, pe_end)
+
+    call mpp_broadcast_domain(domain_src)
+    call mpp_broadcast_domain(domain_dst)
+
+    call mpp_get_data_domain(domain_src, isd_src, ied_src, jsd_src, jed_src)
+    call mpp_get_compute_domain(domain_src, isc_src, iec_src, jsc_src, jec_src)
+    
+    call mpp_get_data_domain(domain_dst, isd_dst, ied_dst, jsd_dst, jed_dst)
+    call mpp_get_compute_domain(domain_dst, isc_dst, iec_dst, jsc_dst, jec_dst)
+
+    allocate(src(isd_src:ied_src, jsd_src:jed_src, nz))
+    allocate(dst(isd_dst:ied_dst, jsd_dst:jed_dst, nz))
+
+    src = 0
+    dst = 0
+
+    src(isc_src:iec_src, jsc_src:jec_src, :) = &
+        glbl(isc_src:iec_src, jsc_src:jec_src, :)
+
+    call mpp_redistribute(domain_src, src, domain_dst, dst)
+
+    call mpp_global_field(domain_dst, &
+                          dst(isc_dst:iec_dst, jsc_dst:jec_dst, :), &
+                          gcheck)
+
+    if (.not. compare_result4(glbl, gcheck)) then
+      call mpp_error(FATAL, &
+           "test_mpp_redistribute: failed tripolar grid 32-bit global check")
+    endif
+
+    ! Also check the destination owned region directly. This catches failures
+    ! even if only a subset of PEs participate in the global-field comparison.
+    if (.not. compare_result4(dst(isc_dst:iec_dst,jsc_dst:jec_dst,:), &
+                              glbl(isc_dst:iec_dst,jsc_dst:jec_dst,:))) then
+      call mpp_error(FATAL, &
+           "test_mpp_redistribute: failed tripolar grid 32-bit owned-region check")
+    endif
+
+    deallocate(src, dst, glbl, gcheck)
+
+    call mpp_deallocate_domain(domain_src)
+    call mpp_deallocate_domain(domain_dst)
+
+  end subroutine tripolar_grid_redistribute_i4
+
+
+  !> Tests redistribute with a one-tile tripolar-style ocean mosaic and 64-bit ints.
+  !! This test verifies redistribution of owned data on a tripolar-style
+  !! mosaic domain. It does not test folded-boundary halo updates.
+  subroutine tripolar_grid_redistribute_i8()
+    type(domain2D) :: domain_src, domain_dst
+
+    integer, parameter :: nx_tripolar = 48
+    integer, parameter :: ny_tripolar = 32
+    integer, parameter :: ntiles = 1
+
+    integer :: i, j, k
+    integer :: isc_src, iec_src, jsc_src, jec_src
+    integer :: isd_src, ied_src, jsd_src, jed_src
+    integer :: isc_dst, iec_dst, jsc_dst, jec_dst
+    integer :: isd_dst, ied_dst, jsd_dst, jed_dst
+
+    integer :: layout_src(2), layout_dst(2)
+    integer :: global_indices(4,ntiles)
+    integer :: layout2D_src(2,ntiles), layout2D_dst(2,ntiles)
+    integer :: pe_start(ntiles), pe_end(ntiles)
+
+    integer(i8_kind), allocatable :: src(:,:,:)
+    integer(i8_kind), allocatable :: dst(:,:,:)
+    integer(i8_kind), allocatable :: glbl(:,:,:)
+    integer(i8_kind), allocatable :: gcheck(:,:,:)
+
+    ! Nullify domain list otherwise it retains memory between calls.
+    call mpp_nullify_domain_list(domain_src)
+    call mpp_nullify_domain_list(domain_dst)
+
+    allocate(glbl(nx_tripolar,ny_tripolar,nz))
+    allocate(gcheck(nx_tripolar,ny_tripolar,nz))
+
+    do k = 1, nz
+      do j = 1, ny_tripolar
+        do i = 1, nx_tripolar
+          glbl(i,j,k) = k*1000000 + i*1000 + j
+        enddo
+      enddo
+    enddo
+
+    pe_start(1) = 0
+    pe_end(1)   = npes - 1
+
+    global_indices(:,1) = (/1, nx_tripolar, 1, ny_tripolar/)
+
+    call mpp_define_layout((/1, nx_tripolar, 1, ny_tripolar/), npes, layout_src)
+
+    ! Use a deliberately different decomposition for the destination domain.
+    ! This mirrors the simple redistribute test's x-layout to y-layout pattern.
+    if (npes <= nx_tripolar) then
+      layout_dst = (/npes, 1/)
+    else
+      call mpp_define_layout((/1, nx_tripolar, 1, ny_tripolar/), npes, layout_dst)
+    endif
+
+    layout2D_src(:,1) = layout_src
+    layout2D_dst(:,1) = layout_dst
+
+    call define_tripolar_mosaic("tripolar_src", domain_src, nx_tripolar, ny_tripolar, &
+                                global_indices, layout2D_src, pe_start, pe_end)
+
+    call define_tripolar_mosaic("tripolar_dst", domain_dst, nx_tripolar, ny_tripolar, &
+                                global_indices, layout2D_dst, pe_start, pe_end)
+
+    call mpp_broadcast_domain(domain_src)
+    call mpp_broadcast_domain(domain_dst)
+
+    call mpp_get_data_domain(domain_src, isd_src, ied_src, jsd_src, jed_src)
+    call mpp_get_compute_domain(domain_src, isc_src, iec_src, jsc_src, jec_src)
+
+    call mpp_get_data_domain(domain_dst, isd_dst, ied_dst, jsd_dst, jed_dst)
+    call mpp_get_compute_domain(domain_dst, isc_dst, iec_dst, jsc_dst, jec_dst)
+
+    allocate(src(isd_src:ied_src, jsd_src:jed_src, nz))
+    allocate(dst(isd_dst:ied_dst, jsd_dst:jed_dst, nz))
+
+    src = 0
+    dst = 0
+
+    src(isc_src:iec_src, jsc_src:jec_src, :) = & 
+        glbl(isc_src:iec_src, jsc_src:jec_src, :)
+
+    call mpp_redistribute(domain_src, src, domain_dst, dst)
+
+    call mpp_global_field(domain_dst, &
+                          dst(isc_dst:iec_dst, jsc_dst:jec_dst, :), &
+                          gcheck)
+
+    if (.not. compare_result8(glbl, gcheck)) then
+      call mpp_error(FATAL, &
+           "test_mpp_redistribute: failed tripolar grid 64-bit global check")
+    endif
+
+    ! Also check the destination owned region directly. This catches failures
+    ! even if only a subset of PEs participate in the global-field comparison.
+    if (.not. compare_result8(dst(isc_dst:iec_dst,jsc_dst:jec_dst,:), &
+                              glbl(isc_dst:iec_dst,jsc_dst:jec_dst,:))) then
+      call mpp_error(FATAL, &
+           "test_mpp_redistribute: failed tripolar grid 64-bit owned-region check")
+    endif
+
+    deallocate(src, dst, glbl, gcheck)
+
+    call mpp_deallocate_domain(domain_src)
+    call mpp_deallocate_domain(domain_dst)
+
+  end subroutine tripolar_grid_redistribute_i8
+
+
+  !> Define a one-tile tripolar-style ocean mosaic.
+  !!
+  !! Contact 1 is east-west periodic:
+  !!   ni:ni,1:nj :: 1:1,1:nj
+  !!
+  !! Contact 2 is the northern tripolar fold:
+  !!   1:ni/2,nj:nj :: ni:ni/2+1,nj:nj
+  !!
+  !! This mirrors the ocean_mosaic contact_index pattern in test_fms/mosaic2:
+  !!   "2880:2880,1:2160::1:1,1:2160"
+  !!   "1:1440,2160:2160::2880:1441,2160:2160"
+  subroutine define_tripolar_mosaic(type, domain, ni, nj, global_indices, layout, pe_start, pe_end)
+    character(len=*), intent(in) :: type
+    type(domain2D), intent(inout) :: domain
+
+    integer, intent(in) :: ni, nj
+    integer, intent(in) :: global_indices(:,:)
+    integer, intent(in) :: layout(:,:)
+    integer, intent(in) :: pe_start(:), pe_end(:)
+
+    integer, parameter :: ntiles = 1
+    integer, parameter :: num_contact = 2
+
+    integer, dimension(num_contact) :: istart1, iend1, jstart1, jend1, tile1
+    integer, dimension(num_contact) :: istart2, iend2, jstart2, jend2, tile2
+
+    integer :: msize(2)
+    integer :: nhalo = 1
+    integer :: shalo = 1
+    integer :: ehalo = 1
+    integer :: whalo = 1
+
+    if (mod(ni,2) /= 0) then
+      call mpp_error(FATAL, "define_tripolar_mosaic: ni must be even")
+    endif
+
+    if (size(pe_start(:)) /= ntiles .or. size(pe_end(:)) /= ntiles) then
+      call mpp_error(FATAL, &
+           "define_tripolar_mosaic: size of pe_start and pe_end should be 1")
+    endif
+
+    if (size(global_indices,1) /= 4) then
+      call mpp_error(FATAL, &
+           "define_tripolar_mosaic: size of first dimension of global_indices should be 4")
+    endif
+
+    if (size(global_indices,2) /= ntiles) then
+      call mpp_error(FATAL, &
+           "define_tripolar_mosaic: size of second dimension of global_indices should be 1")
+    endif
+
+    if (size(layout,1) /= 2) then
+      call mpp_error(FATAL, &
+           "define_tripolar_mosaic: size of first dimension of layout should be 2")
+    endif
+
+    if (size(layout,2) /= ntiles) then
+      call mpp_error(FATAL, &
+           "define_tripolar_mosaic: size of second dimension of layout should be 1")
+    endif
+
+    ! Contact 1: east-west periodic self contact.
+    tile1(1) = 1
+    tile2(1) = 1
+
+    istart1(1) = ni
+    iend1(1)   = ni
+    jstart1(1) = 1
+    jend1(1)   = nj
+
+    istart2(1) = 1
+    iend2(1)   = 1
+    jstart2(1) = 1
+    jend2(1)   = nj
+
+    ! Contact 2: northern folded tripolar self contact.
+    ! Left half of northern edge maps to right half in reversed i order.
+    tile1(2) = 1
+    tile2(2) = 1
+
+    istart1(2) = 1
+    iend1(2)   = ni/2
+    jstart1(2) = nj
+    jend1(2)   = nj
+
+    istart2(2) = ni
+    iend2(2)   = ni/2 + 1
+    jstart2(2) = nj
+    jend2(2)   = nj
+
+    msize(1) = maxval(ni/layout(1,:)) + whalo + ehalo + 1
+    msize(2) = maxval(nj/layout(2,:)) + shalo + nhalo + 1
+
+    call mpp_define_mosaic(global_indices, layout, domain, ntiles, num_contact, &
+                           tile1, tile2, &
+                           istart1, iend1, jstart1, jend1, &
+                           istart2, iend2, jstart2, jend2, &
+                           pe_start, pe_end, &
+                           symmetry = .true., &
+                           whalo = whalo, ehalo = ehalo, &
+                           shalo = shalo, nhalo = nhalo, &
+                           name = trim(type), memory_size = msize)
+
+  end subroutine define_tripolar_mosaic
 
   ! define mosaic domain for cubic grid
   subroutine define_cubic_mosaic(type, domain, ni, nj, global_indices, layout, pe_start, pe_end)
