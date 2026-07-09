@@ -730,7 +730,7 @@ contains
 
     call mpp_get_data_domain(domain_src, isd_src, ied_src, jsd_src, jed_src)
     call mpp_get_compute_domain(domain_src, isc_src, iec_src, jsc_src, jec_src)
-    
+
     call mpp_get_data_domain(domain_dst, isd_dst, ied_dst, jsd_dst, jed_dst)
     call mpp_get_compute_domain(domain_dst, isc_dst, iec_dst, jsc_dst, jec_dst)
 
@@ -850,7 +850,7 @@ contains
     src = 0
     dst = 0
 
-    src(isc_src:iec_src, jsc_src:jec_src, :) = & 
+    src(isc_src:iec_src, jsc_src:jec_src, :) = &
         glbl(isc_src:iec_src, jsc_src:jec_src, :)
 
     call mpp_redistribute(domain_src, src, domain_dst, dst)
