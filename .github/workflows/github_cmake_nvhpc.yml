@@ -1,4 +1,4 @@
-name: Autotools build and unit testing with NVHPC
+name: CMake build with NVHPC
 
 on: pull_request
 
@@ -22,13 +22,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4.2.2
     - name: Free disk space
-      uses: jlumbroso/free-disk-space@v1.3.1        
+      uses: jlumbroso/free-disk-space@v1.3.1
     - name: Setup Spack
       uses: spack/setup-spack@v3.0.0
       with:
         buildcache: true
-        spack_ref: v1.1.1 # spack branch to use 
-        packages_ref: v2026.03.0 # determines package versions available 
+        spack_ref: v1.2.0 # spack branch to use
     - name: Set up OCI build cache
       run: |
         spack mirror add \
