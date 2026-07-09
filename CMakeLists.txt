@@ -314,6 +314,10 @@ foreach(kind ${kinds})
     target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
   endif()
 
+  if(YAML_FOUND)
+    target_link_libraries(${libTgt}_c PRIVATE PkgConfig::YAML)
+  endif()
+
   # Fortran
   add_library(${libTgt}_f OBJECT ${fms_fortran_src_files})
 
@@ -457,6 +461,10 @@ if(NOT kinds)
 
     if(OpenMP_C_FOUND)
       target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
+    endif()
+
+    if(YAML_FOUND)
+      target_link_libraries(${libTgt}_c PRIVATE PkgConfig::YAML)
     endif()
 
     # Fortran
@@ -663,8 +671,10 @@ if(UNIT_TESTS)
     test_fms/diag_manager/test_flush_nc_file.F90
     test_fms/diag_manager/test_diag_out_yaml.F90
     test_fms/diag_manager/test_reduction_methods.F90
+    test_fms/diag_manager/test_diag_generalized_indices.F90
     test_fms/diag_manager/testing_utils.F90
     test_fms/diag_manager/test_diag_diurnal.F90
+    test_fms/diag_manager/check_diag_generalized_indices.F90
     test_fms/diag_manager/check_time_none.F90
     test_fms/diag_manager/check_time_min.F90
     test_fms/diag_manager/check_time_max.F90
@@ -717,6 +727,7 @@ if(UNIT_TESTS)
     test_fms/fms/test_fms.F90
     test_fms/interpolator/test_interpolator.F90
     test_fms/mpp/test_clock_init.F90
+    test_fms/mpp/test_corner_mosaic.F90
     test_fms/mpp/test_domains_simple.F90
     test_fms/mpp/test_domains_utility_mod.F90
     test_fms/mpp/test_global_arrays.F90
