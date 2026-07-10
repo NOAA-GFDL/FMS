@@ -255,41 +255,55 @@ contains
 
     select case (nd)
       case (2)
-        do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2))
-          block
-            integer :: i(2), idx
+        !$omp parallel loop
+        do i1=lb(1),ub(1),stride(1)
+          do i2=lb(2),ub(2),stride(2)
+            block
+              integer :: i(2), idx
 
-            i = [i1, i2]
-            idx = n(ij1)*stride(ij2)*(i(ij2)-lb(ij2)) + &
-                  stride(ij1)*(i(ij1)-lb(ij1)) + 1
-            buf(idx) = sgn * field2d(i1,i2)
-          end block
+              i = [i1, i2]
+              idx = n(ij1)*stride(ij2)*(i(ij2)-lb(ij2)) + &
+                    stride(ij1)*(i(ij1)-lb(ij1)) + 1
+              buf(idx) = sgn * field2d(i1,i2)
+            end block
+          end do
         end do
       case (3)
         iz1 = 1 + 2 + 3 - ix - iy
-        do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2), i3=lb(3):ub(3):stride(3))
-          block
-            integer :: i(3), idx
+        !$omp parallel loop
+        do i1=lb(1),ub(1),stride(1)
+          do i2=lb(2),ub(2),stride(2)
+            do i3=lb(3),ub(3),stride(3)
+              block
+                integer :: i(3), idx
 
-            i = [i1, i2, i3]
-            idx = n(ij1)*( n(ij2)*(i(iz1)-1) + stride(ij2)*(i(ij2)-lb(ij2))) + &
-                  stride(ij1)*(i(ij1)-lb(ij1)) + 1
-            buf(idx) = sgn * field3d(i1,i2,i3)
-          end block
+                i = [i1, i2, i3]
+                idx = n(ij1)*( n(ij2)*(i(iz1)-1) + stride(ij2)*(i(ij2)-lb(ij2))) + &
+                      stride(ij1)*(i(ij1)-lb(ij1)) + 1
+                buf(idx) = sgn * field3d(i1,i2,i3)
+              end block
+            end do
+          end do
         end do
       case (4)
         iz1 = trailz(sum(2**[1,2,3,4]) - 2**ix - 2**iy)
         iz2 = 1 + 2 + 3 + 4 - ix - iy - iz1
-        do concurrent (i1=lb(1):ub(1):stride(1), i2=lb(2):ub(2):stride(2), &
-                       i3=lb(3):ub(3):stride(3), i4=lb(4):ub(4):stride(4))
-          block
-            integer :: i(4), idx
+        !$omp parallel loop
+        do i1=lb(1),ub(1),stride(1)
+          do i2=lb(2),ub(2),stride(2)
+            do i3=lb(3),ub(3),stride(3)
+              do i4=lb(4),ub(4),stride(4)
+                block
+                  integer :: i(4), idx
 
-            i = [i1, i2, i3, i4]
-            idx = n(ij1)*( n(ij2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(ij2)*(i(ij2)-lb(ij2))) + &
-                  stride(ij1)*(i(ij1)-lb(ij1)) + 1
-            buf(idx) = sgn * field4d(i1,i2,i3,i4)
-          end block
+                  i = [i1, i2, i3, i4]
+                  idx = n(ij1)*( n(ij2)*( n(iz1)*(i(iz2)-1) + (i(iz1)-1)) + stride(ij2)*(i(ij2)-lb(ij2))) + &
+                        stride(ij1)*(i(ij1)-lb(ij1)) + 1
+                  buf(idx) = sgn * field4d(i1,i2,i3,i4)
+                end block
+              end do
+            end do
+          end do
         end do
     end select
   end subroutine pack_inner_loop

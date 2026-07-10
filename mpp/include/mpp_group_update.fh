@@ -1034,34 +1034,46 @@ subroutine FLIP_I_  (group, field_type, j0, is, ie, offset)
 
     select case(nd)
       case (2)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2))
-          block
-            integer :: src(2)
+        do i1=lb(1),ub(1)
+          do i2=lb(2),ub(2)
+            block
+              integer :: src(2)
 
-            src = [i1, i2]
-            src(ix) = offset1 - src(ix)
-            field2d(i1,i2) = field2d(src(1),src(2))
-          end block
+              src = [i1, i2]
+              src(ix) = offset1 - src(ix)
+              field2d(i1,i2) = field2d(src(1),src(2))
+            end block
+          end do
         end do
       case (3)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3))
-          block
-            integer :: src(3)
+        do i1=lb(1),ub(1)
+          do i2=lb(2),ub(2)
+            do i3=lb(3),ub(3)
+              block
+                integer :: src(3)
 
-            src = [i1, i2, i3]
-            src(ix) = offset1 - src(ix)
-            field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
-          end block
+                src = [i1, i2, i3]
+                src(ix) = offset1 - src(ix)
+                field3d(i1,i2,i3) = field3d(src(1),src(2),src(3))
+              end block
+            end do
+          end do
         end do
       case (4)
-        do concurrent (i1=lb(1):ub(1), i2=lb(2):ub(2), i3=lb(3):ub(3), i4=lb(4):ub(4))
-          block
-            integer :: src(4)
+        do i1=lb(1),ub(1)
+          do i2=lb(2),ub(2)
+            do i3=lb(3),ub(3)
+              do i4=lb(4),ub(4)
+                block
+                  integer :: src(4)
 
-            src = [i1, i2, i3, i4]
-            src(ix) = offset1 - src(ix)
-            field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
-          end block
+                  src = [i1, i2, i3, i4]
+                  src(ix) = offset1 - src(ix)
+                  field4d(i1,i2,i3,i4) = field4d(src(1),src(2),src(3),src(4))
+                end block
+              end do
+            end do
+          end do
         end do
     end select
   enddo
