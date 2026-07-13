@@ -185,7 +185,7 @@ subroutine MPP_GATHER_PELIST_GEN_3D_(is, ie, js, je, nk, pelist, array_seg, gath
    ! Check axis_to_storage is a permutation of 1..3
    if ( any(axis_to_storage < 1) .or. any(axis_to_storage > 3) ) call mpp_error(FATAL, &
                 "fms_io(mpp_gather_pelist): axis_to_storage entries must be in {1,2,3}")
-   if ( axis_to_storage(1) == axis_to_storage(2) .or. axis_to_storage(1) == axis_to_storage(3) & 
+   if ( axis_to_storage(1) == axis_to_storage(2) .or. axis_to_storage(1) == axis_to_storage(3) &
         .or. axis_to_storage(2) == axis_to_storage(3) ) &
      call mpp_error(FATAL, "fms_io(mpp_gather_pelist): axis_to_storage must be a permutation of 1,2,3")
 
