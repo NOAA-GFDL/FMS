@@ -85,6 +85,7 @@ program test_mpp_domains
   logical :: test_group_offload = .false.
   logical :: test_cubic_grid_redistribute = .false.
   logical :: test_cubic_grid_redistribute_generalized_indices = .false.
+  logical :: test_tripolar_grid_redistribute_generalized_indices = .false.
   logical :: check_parallel = .FALSE.
   logical :: test_get_nbr = .FALSE.
   logical :: test_boundary = .false.
@@ -112,7 +113,7 @@ program test_mpp_domains
                                test_performance, test_interface, num_fields, do_sleep, num_iter, &
                                mix_2D_3D, test_get_nbr, test_edge_update, &
                                test_cubic_grid_redistribute, test_cubic_grid_redistribute_generalized_indices, &
-                               ensemble_size, layout_cubic, &
+                               test_tripolar_grid_redistribute_generalized_indices, ensemble_size, layout_cubic, &
                                layout_ensemble, nthreads, test_boundary, layout_tripolar, &
                                test_group, test_global_sum, test_subset, test_nonsym_edge, &
                                test_halosize_performance, test_adjoint, wide_halo, &
@@ -200,7 +201,7 @@ program test_mpp_domains
   if( test_cubic_grid_redistribute ) then
       if (mpp_pe() == mpp_root_pe())  print *, &
          &  '--------------------> Calling cubic_grid_redistribute <-------------------'
-     call cubic_grid_redistribute()
+      call cubic_grid_redistribute()
       if (mpp_pe() == mpp_root_pe())  print *, &
          &  '--------------------> Finished cubic_grid_redistribute <-------------------'
   endif
@@ -210,9 +211,19 @@ program test_mpp_domains
          &  '--------------------> Calling cubic_grid_redistribute_generalized_indices <-------------------'
       if (mpp_pe() == mpp_root_pe())  print *, &
          &  'Storage Layout = (3,1,2)'
-     call cubic_grid_redistribute((/3,1,2/))
+      call cubic_grid_redistribute((/3,1,2/))
       if (mpp_pe() == mpp_root_pe())  print *, &
          &  '--------------------> Finished cubic_grid_redistribute_generalized_indices <-------------------'
+  endif
+
+  if( test_tripolar_grid_redistribute_generalized_indices ) then
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  '--------------------> Calling tripolar_grid_redistribute_generalized_indices <-------------------'
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  'Storage Layout = (3,1,2)'
+      call tripolar_grid_redistribute((/3,1,2/))
+      if (mpp_pe() == mpp_root_pe())  print *, &
+         &  '--------------------> Finished tripolar_grid_redistribute_generalized_indices <-------------------'
   endif
 
   if(test_boundary) then
@@ -362,6 +373,61 @@ contains
 #endif
     return
   end subroutine test_openmp
+
+  subroutine define_tripolar_mosaic(type, domain, ni, nj, global_indices, layout2D, pe_start, pe_end)
+    character(len=*), intent(in) :: type
+    type(domain2D),   intent(inout) :: domain
+
+    integer, intent(in) :: ni, nj
+    integer, intent(in) :: global_indices(:,:)
+    integer, intent(in) :: layout2D(:,:)
+    integer, intent(in) :: pe_start(:), pe_end(:)
+
+    integer, parameter :: ntiles = 1
+    integer, parameter :: num_contact = 2
+
+    integer :: tile1(num_contact), tile2(num_contact)
+    integer :: istart1(num_contact), iend1(num_contact), jstart1(num_contact), jend1(num_contact)
+    integer :: istart2(num_contact), iend2(num_contact), jstart2(num_contact), jend2(num_contact)
+
+    if (mod(ni,2) /= 0) then
+       call mpp_error(FATAL, 'define_tripolar_mosaic: ni must be even')
+    endif
+
+    ! Contact 1: east-west cyclic self-contact.
+    tile1(1) = 1
+    tile2(1) = 1
+
+    istart1(1) = ni
+    iend1(1)   = ni
+    jstart1(1) = 1
+    jend1(1)   = nj
+
+    istart2(1) = 1
+    iend2(1)   = 1
+    jstart2(1) = 1
+    jend2(1)   = nj
+
+    ! Contact 2: folded-north / tripolar fold.
+    ! First half of the northern edge maps to the second half in reversed i order.
+    tile1(2) = 1
+    tile2(2) = 1
+
+    istart1(2) = 1
+    iend1(2)   = ni/2
+    jstart1(2) = nj
+    jend1(2)   = nj
+
+    istart2(2) = ni
+    iend2(2)   = ni/2 + 1
+    jstart2(2) = nj
+    jend2(2)   = nj
+
+    call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+                           istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2, pe_start, pe_end, &
+                           whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, name=type, symmetry=.true.)
+
+  end subroutine define_tripolar_mosaic
 
   subroutine test_redistribute( type )
 !test redistribute between two domains
@@ -616,8 +682,6 @@ contains
     if(ALLOCATED(y))deallocate(y,y2,y3,y4,y5,y6)
   end subroutine test_redistribute
 
-  !#######################################################################
-
   subroutine cubic_grid_redistribute(axis_to_storage_in)
      integer, intent(in), optional :: axis_to_storage_in(3)
 
@@ -831,7 +895,236 @@ contains
 
   end subroutine cubic_grid_redistribute
 
-   !###################################################
+  subroutine tripolar_grid_redistribute(axis_to_storage_in)
+    integer, intent(in), optional :: axis_to_storage_in(3)
+
+    integer              :: npes, npes_per_ensemble, npes_per_tile
+    integer              :: ensemble_id, tile_id, ensemble_tile_id
+    integer              :: i, j, p, n, ntiles, my_root_pe
+    integer              :: isc_ens, iec_ens, jsc_ens, jec_ens
+    integer              :: isd_ens, ied_ens, jsd_ens, jed_ens
+    integer              :: isc, iec, jsc, jec
+    integer              :: isd, ied, jsd, jed
+    integer              :: sc(3), ec(3), sc_ens(3), ec_ens(3)
+    integer              :: sd(3), ed(3), sd_ens(3), ed_ens(3)
+    integer, allocatable :: my_ensemble_pelist(:), pe_start(:), pe_end(:)
+    integer, allocatable :: global_indices(:,:), layout2D(:,:)
+    real,    allocatable :: x(:,:,:,:), x_ens(:,:,:), y(:,:,:)
+    integer              :: layout(2)
+    type(domain2D)       :: domain
+    type(domain2D), allocatable :: domain_ensemble(:)
+    character(len=128)   :: mesg
+    integer              :: axis_to_storage(3), storage_to_axis(3)
+    integer              :: i_dim, j_dim, k_dim
+
+    !-------------------------------------------------------------------
+    ! axis_to_storage maps logical axis order to storage layout.
+    ! Example: axis_to_storage = (/3,1,2/) maps
+    !          logical x -> storage dim 3
+    !          logical y -> storage dim 1
+    !          logical z -> storage dim 2
+    !-------------------------------------------------------------------
+    axis_to_storage = (/1,2,3/)
+    if (present(axis_to_storage_in)) axis_to_storage = axis_to_storage_in
+
+    storage_to_axis(axis_to_storage(1)) = 1
+    storage_to_axis(axis_to_storage(2)) = 2
+    storage_to_axis(axis_to_storage(3)) = 3
+
+    i_dim = storage_to_axis(1)
+    j_dim = storage_to_axis(2)
+    k_dim = storage_to_axis(3)
+
+    ! Tripolar folded-north mosaic is one tile.
+    ntiles = 1
+
+    ! --- set up ensemble pelist
+    npes = mpp_npes()
+    if(mod(npes, ensemble_size) .NE. 0) call mpp_error(FATAL, &
+         "test_mpp_domains: npes is not divisible by ensemble_size")
+
+    npes_per_ensemble = npes/ensemble_size
+    allocate(my_ensemble_pelist(0:npes_per_ensemble-1))
+
+    ensemble_id = mpp_pe()/npes_per_ensemble + 1
+
+    do p = 0, npes_per_ensemble-1
+       my_ensemble_pelist(p) = (ensemble_id-1)*npes_per_ensemble + p
+    enddo
+
+    call mpp_declare_pelist(my_ensemble_pelist)
+
+    ! --- define full tripolar domain over all PEs
+    npes_per_tile = npes
+
+    tile_id = 1
+
+    if( npes_per_tile == layout_tripolar(1) * layout_tripolar(2) ) then
+       layout = layout_tripolar
+    else
+       call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+    endif
+
+    allocate(global_indices(4, ntiles))
+    allocate(layout2D(2, ntiles))
+    allocate(pe_start(ntiles), pe_end(ntiles))
+
+    global_indices(:,1) = (/1,nx,1,ny/)
+    layout2D(:,1)       = layout
+
+    pe_start(1) = 0
+    pe_end(1)   = npes - 1
+
+    call define_tripolar_mosaic("tripolar_grid", domain, nx, ny, &
+                                global_indices, layout2D, pe_start, pe_end)
+
+    ! --- define one tripolar domain per ensemble
+    allocate(domain_ensemble(ensemble_size))
+
+    call mpp_set_current_pelist(my_ensemble_pelist)
+
+    npes_per_tile = npes_per_ensemble
+    my_root_pe = my_ensemble_pelist(0)
+    ensemble_tile_id = 1
+
+    if( npes_per_tile == layout_ensemble(1) * layout_ensemble(2) ) then
+       layout = layout_ensemble
+    else if ( ensemble_size == 1 ) then
+       layout = (/npes_per_tile, 1/)
+    else
+       call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+    endif
+
+    global_indices(:,1) = (/1,nx,1,ny/)
+    layout2D(:,1)       = layout
+
+    pe_start(1) = my_root_pe
+    pe_end(1)   = my_root_pe + npes_per_tile - 1
+
+    call define_tripolar_mosaic("tripolar_grid_ensemble", domain_ensemble(ensemble_id), nx, ny, &
+                                global_indices, layout2D, pe_start, pe_end)
+
+    call mpp_set_current_pelist()
+
+    do n = 1, ensemble_size
+       call mpp_broadcast_domain(domain_ensemble(n))
+    enddo
+
+    call mpp_get_data_domain(domain_ensemble(ensemble_id), isd_ens, ied_ens, jsd_ens, jed_ens)
+    call mpp_get_compute_domain(domain_ensemble(ensemble_id), isc_ens, iec_ens, jsc_ens, jec_ens)
+
+    call mpp_get_data_domain(domain, isd, ied, jsd, jed)
+    call mpp_get_compute_domain(domain, isc, iec, jsc, jec)
+
+    sd_ens = (/isd_ens, jsd_ens, 1/)
+    ed_ens = (/ied_ens, jed_ens, nz/)
+
+    sd = (/isd, jsd, 1/)
+    ed = (/ied, jed, nz/)
+
+    allocate(x_ens(sd_ens(i_dim):ed_ens(i_dim), sd_ens(j_dim):ed_ens(j_dim), sd_ens(k_dim):ed_ens(k_dim)))
+    allocate(x(sd(i_dim):ed(i_dim), sd(j_dim):ed(j_dim), sd(k_dim):ed(k_dim), ensemble_size))
+    allocate(y(sd(i_dim):ed(i_dim), sd(j_dim):ed(j_dim), sd(k_dim):ed(k_dim)))
+
+    sc_ens = (/isc_ens, jsc_ens, 1/)
+    ec_ens = (/iec_ens, jec_ens, nz/)
+
+    x = 0.0
+    x_ens = 0.0
+
+    do k = sc_ens(k_dim), ec_ens(k_dim)
+       do j = sc_ens(j_dim), ec_ens(j_dim)
+          do i = sc_ens(i_dim), ec_ens(i_dim)
+             x_ens(i,j,k) = ensemble_id * 1.e6 + ensemble_tile_id * 1.e3 + &
+                            i + j * 1.e-3 + k * 1.e-6
+          enddo
+       enddo
+    enddo
+
+    ! Redistribute from each ensemble domain to the full tripolar domain.
+    sc = (/isc, jsc, 1/)
+    ec = (/iec, jec, nz/)
+
+    do n = 1, ensemble_size
+       x = 0.0
+
+       call mpp_redistribute(domain_ensemble(n), x_ens, domain, x(:,:,:,n), axis_to_storage_in=axis_to_storage)
+
+       y = 0.0
+
+       do k = sc(k_dim), ec(k_dim)
+          do j = sc(j_dim), ec(j_dim)
+             do i = sc(i_dim), ec(i_dim)
+                y(i,j,k) = n * 1.e6 + tile_id * 1.e3 + i + j * 1.e-3 + k * 1.e-6
+             enddo
+          enddo
+       enddo
+
+       write(mesg,'(a,i4)') "tripolar_grid redistribute from ensemble", n
+
+       call compare_checksums( x(sc(i_dim):ec(i_dim), sc(j_dim):ec(j_dim), sc(k_dim):ec(k_dim), n), &
+                               y(sc(i_dim):ec(i_dim), sc(j_dim):ec(j_dim), sc(k_dim):ec(k_dim)), trim(mesg) )
+    enddo
+
+    ! Redistribute from the full tripolar domain back to each ensemble domain.
+    deallocate(x, y, x_ens)
+
+    allocate(x(sd(i_dim):ed(i_dim), sd(j_dim):ed(j_dim), sd(k_dim):ed(k_dim), ensemble_size))
+    allocate(x_ens(sd_ens(i_dim):ed_ens(i_dim), sd_ens(j_dim):ed_ens(j_dim), sd_ens(k_dim):ed_ens(k_dim)))
+    allocate(y(sd_ens(i_dim):ed_ens(i_dim), sd_ens(j_dim):ed_ens(j_dim), sd_ens(k_dim):ed_ens(k_dim)))
+
+    x = 0.0
+
+    do k = sc(k_dim), ec(k_dim)
+       do j = sc(j_dim), ec(j_dim)
+          do i = sc(i_dim), ec(i_dim)
+             x(i,j,k,:) = i + j * 1.e-3 + k * 1.e-6
+          enddo
+       enddo
+    enddo
+
+    do n = 1, ensemble_size
+       x_ens = 0.0
+
+       call mpp_redistribute(domain, x(:,:,:,n), domain_ensemble(n), x_ens, axis_to_storage_in=axis_to_storage)
+
+       y = 0.0
+
+       if( ensemble_id == n ) then
+          do k = sc_ens(k_dim), ec_ens(k_dim)
+             do j = sc_ens(j_dim), ec_ens(j_dim)
+                do i = sc_ens(i_dim), ec_ens(i_dim)
+                   y(i,j,k) = i + j * 1.e-3 + k * 1.e-6
+                enddo
+             enddo
+          enddo
+       endif
+
+       write(mesg,'(a,i4)') "tripolar_grid redistribute to ensemble", n
+
+       call compare_checksums( x_ens(sc_ens(i_dim):ec_ens(i_dim), &
+                                 sc_ens(j_dim):ec_ens(j_dim),     &
+                                 sc_ens(k_dim):ec_ens(k_dim)),    &
+                               y(sc_ens(i_dim):ec_ens(i_dim),     &
+                                 sc_ens(j_dim):ec_ens(j_dim),     &
+                                 sc_ens(k_dim):ec_ens(k_dim)),    &
+                               trim(mesg) )
+    enddo
+
+    deallocate(x, y, x_ens)
+
+    call mpp_deallocate_domain(domain)
+
+    do n = 1, ensemble_size
+       call mpp_deallocate_domain(domain_ensemble(n))
+    enddo
+
+    deallocate(domain_ensemble)
+    deallocate(my_ensemble_pelist)
+    deallocate(global_indices, layout2D, pe_start, pe_end)
+
+  end subroutine tripolar_grid_redistribute
+
   subroutine test_uniform_mosaic( type )
     character(len=*), intent(in) :: type
 

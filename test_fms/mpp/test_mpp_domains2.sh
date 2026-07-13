@@ -122,6 +122,10 @@ sed "s/test_cubic_grid_redistribute_generalized_indices = .false./test_cubic_gri
 test_expect_success "cubic grid redistribute_generalized_indices" '
     mpirun -n 6 ../test_mpp_domains
 '
+sed "s/test_tripolar_grid_redistribute_generalized_indices = .false./test_tripolar_grid_redistribute_generalized_indices = .true./" input_base.nml > input.nml
+test_expect_success "tripolar grid redistribute_generalized_indices" '
+    mpirun -n 6 ../test_mpp_domains
+'
 sed "s/test_boundary = .false./test_boundary = .true./" input_base.nml > input.nml
 test_expect_success "boundary" '
     mpirun -n 6 ../test_mpp_domains
