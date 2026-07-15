@@ -52,7 +52,7 @@ jobs:
       run: |
         sudo mkdir /libs
         wget https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-1.14.6.tar.gz
-        tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
+        tar xf hdf5-1.14.6.tar.gz && cd hdf5-1.14.6
         ./configure
         sudo make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
