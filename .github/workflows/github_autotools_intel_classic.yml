@@ -13,8 +13,8 @@ jobs:
   intel-autotools:
     runs-on: ubuntu-latest
     env:
-      CC: mpiicc
-      FC: mpiifort
+      CC: /opt/intel/oneapi/mpi/2021.10.0/bin/mpiicc
+      FC: /opt/intel/oneapi/mpi/2021.10.0/bin/mpiifort
       CFLAGS:  "-I/libs/include"
       FCFLAGS: "-I/libs/include -g -traceback"
       LDFLAGS: "-L/libs/lib"
@@ -66,8 +66,8 @@ jobs:
         ./configure --prefix=/libs
         sudo make -j install && cd
       env:
-        CC: icc
-        FCC: ifort
+        CC: /opt/intel/oneapi/compiler/2023.2.1/linux/bin/intel64/icc
+        FCC: /opt/intel/oneapi/compiler/2023.2.1/linux/bin/intel64/ifort
     - name: checkout
       uses: actions/checkout@v4.2.2
     - name: Configure
