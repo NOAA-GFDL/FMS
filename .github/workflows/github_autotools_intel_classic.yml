@@ -51,23 +51,23 @@ jobs:
       name: Build netcdf
       run: |
         sudo mkdir /libs
-        wget https://hdf-wordpress-1.s3.amazonaws.com/wp-content/uploads/manual/HDF5/HDF5_1_12_2/source/hdf5-1.12.2.tar.gz
+        wget https://github.com/HDFGroup/hdf5/releases/download/hdf5_1.14.6/hdf5-1.14.6.tar.gz
         tar xf hdf5-1.12.2.tar.gz && cd hdf5-1.12.2
-        CC=gcc FC=gfortran ./configure --prefix=/libs
+        ./configure
         sudo make -j install && cd ..
         wget https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.8.1.tar.gz
         tar xf v4.8.1.tar.gz && cd netcdf-c-4.8.1
-        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
-        CC=gcc FC=gfortran ./configure --prefix=/libs --enable-remote-fortran-bootstrap
+        ./configure --enable-remote-fortran-bootstrap
         sudo make -j install
-        # sets this here to pass embeded configure checks
-        export LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH"
         sudo make -j -k build-netcdf-fortran
         sudo make -j install-netcdf-fortran
         wget https://github.com/yaml/libyaml/releases/download/0.2.5/yaml-0.2.5.tar.gz
         tar xf yaml-0.2.5.tar.gz && cd yaml-0.2.5
-        CC=gcc ./configure --prefix=/libs
+        ./configure --prefix=/libs
         sudo make -j install && cd
+      env:
+        CC: icc
+        FCC: ifort
     - name: checkout
       uses: actions/checkout@v4.2.2
     - name: Configure
@@ -77,4 +77,4 @@ jobs:
     - name: Compile
       run: make -j || make
     - name: Run test suite
-      run: make check LD_LIBRARY_PATH="/libs/lib:$LD_LIBRARY_PATH" TEST_VERBOSE=1
+      run: make check
