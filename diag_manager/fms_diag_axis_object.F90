@@ -37,7 +37,7 @@ module fms_diag_axis_object_mod
                               DIAG_NULL, index_gridtype, latlon_gridtype, pack_size_str, &
                               get_base_year, get_base_month, get_base_day, get_base_hour, get_base_minute,&
                               get_base_second, is_x_axis, is_y_axis
-  use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout
+  use mpp_mod,         only:  FATAL, mpp_error, uppercase, mpp_pe, mpp_root_pe, stdout, NOTE
   use fms2_io_mod,     only:  FmsNetcdfFile_t, FmsNetcdfDomainFile_t, FmsNetcdfUnstructuredDomainFile_t, &
                             & register_axis, register_field, register_variable_attribute, write_data
   use fms_diag_yaml_mod, only: subRegion_type, diag_yaml, MAX_SUBAXES, diagYamlFilesVar_type
@@ -458,7 +458,13 @@ module fms_diag_axis_object_mod
       if (present(parent_axis)) then
         select type(parent_axis)
         type is (fmsDiagFullAxis_type)
-          call write_data(fms2io_fileobj, this%subaxis_name, parent_axis%axis_data(i:j))
+          ! Added this select type so the the data is indexed correctly
+          select type (vardata => parent_axis%axis_data)
+          type is (real(kind=r8_kind))
+              call write_data(fms2io_fileobj, this%subaxis_name, vardata(i:j))
+          type is (real(kind=r4_kind))
+              call write_data(fms2io_fileobj, this%subaxis_name, vardata(i:j))
+          end select
         end select
       endif
     type is (fmsDiagDiurnalAxis_type)
@@ -881,8 +887,10 @@ module fms_diag_axis_object_mod
     if (present(nz_subaxis)) nsubaxis = nz_subaxis
 
     this%axis_id = axis_id
-    this%starting_index = starting_index
-    this%ending_index = ending_index
+
+    ! The min and max were added here to support axis that are both increasing and decreasing
+    this%starting_index = min(starting_index, ending_index)
+    this%ending_index = max(starting_index, ending_index)
     this%parent_axis_id = parent_id
     write(nsubaxis_char, '(i2.2)')  nsubaxis
     this%subaxis_name = trim(parent_axis_name)//"_sub"//nsubaxis_char

@@ -165,12 +165,9 @@ integer :: nsubset = 0 !< Number of processors to read exchange grid information
                        !! processor count. Try to set nsubset = mpp_npes/MPI_rank_per_node.
 logical :: do_alltoall = .true.
 logical :: do_alltoallv = .false.
-logical :: use_mpp_io = .false.!< use_mpp_io Default = .false. When true, uses mpp_io for IO.
-                               !! When false, uses fms2_io for IO.
 !> @brief xgrid nml
 namelist /xgrid_nml/ make_exchange_reproduce, interp_method, debug_stocks, xgrid_clocks_on, &
-    monotonic_exchange, nsubset, do_alltoall, do_alltoallv, &
-    use_mpp_io
+    monotonic_exchange, nsubset, do_alltoall, do_alltoallv
 
 integer :: remapping_method
 
@@ -537,12 +534,6 @@ subroutine xgrid_init(remap_method)
   out_unit = stdout()
   if ( mpp_pe() == mpp_root_pe() ) write (iunit,nml=xgrid_nml)
 
-  if (use_mpp_io) then
-          ! FATAL error if trying to use mpp_io
-        call error_mesg('xgrid_init', &
-             'MPP_IO is no longer supported.  Please remove use_mpp_io from namelists',&
-              FATAL)
-  endif
 !--------- check interp_method has suitable value
 !--- when monotonic_exchange is true, interp_method must be second order.
 
@@ -2116,7 +2107,7 @@ end subroutine setup_xmap
 function get_nest_contact_fms2_io(fileobj, tile_nest_out, tile_parent_out, is_nest_out, &
                           ie_nest_out, js_nest_out, je_nest_out, is_parent_out, &
                           ie_parent_out, js_parent_out, je_parent_out) &
-                        result(get_nest_contact) !< This is needed for use_mpp_io
+                        result(get_nest_contact)
 type(FmsNetcdfFile_t), intent(in)  :: fileobj
 integer,               intent(out) :: tile_nest_out, tile_parent_out
 integer,               intent(out) :: is_nest_out, ie_nest_out

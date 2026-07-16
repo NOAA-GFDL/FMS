@@ -22,14 +22,15 @@
 
 module interpolator_mod
 
-use mpp_mod,           only : mpp_error, &
-                              FATAL,     &
-                              mpp_pe,    &
-                              mpp_init,  &
-                              mpp_exit,  &
-                              mpp_npes,  &
-                              WARNING,   &
-                              NOTE,      &
+use mpp_mod,           only : inverse_permutation, &
+                              mpp_error,           &
+                              FATAL,               &
+                              mpp_pe,              &
+                              mpp_init,            &
+                              mpp_exit,            &
+                              mpp_npes,            &
+                              WARNING,             &
+                              NOTE,                &
                               input_nml_file
 use mpp_domains_mod,   only : mpp_domains_init,      &
                               mpp_update_domains,    &
@@ -400,10 +401,9 @@ logical :: read_all_on_init = .false.          !< No description
 integer :: verbose = 0                         !< No description
 logical :: conservative_interp = .true.        !< No description
 logical :: retain_cm3_bug = .false.            !< No description
-logical :: use_mpp_io = .false. !< Set to true to use mpp_io, otherwise fms2io is used
 
 namelist /interpolator_nml/    &
-                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug, use_mpp_io
+                             read_all_on_init, verbose, conservative_interp, retain_cm3_bug
 
 contains
 
