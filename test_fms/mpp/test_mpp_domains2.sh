@@ -28,7 +28,7 @@
 . ../test-lib.sh
 
 # TODO: Enable this test once generalized indices work is complete
-SKIP_TESTS="test_mpp_domains2.15"
+SKIP_TESTS="test_mpp_domains2.17"
 
 # TODO edge update, fails on non-blocking with gnu
 #SKIP_TESTS="$SKIP_TESTS $(basename $0 .sh).6"
