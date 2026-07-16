@@ -64,6 +64,10 @@ subroutine MPP_SCATTER_PELIST_GEN_2D_(is, ie, js, je, pelist, array_seg, input_d
 
    call mpp_scatter(is, ie, js, je, 1, pelist, arr3D, data3D, [dim_order, 3], is_root_pe)
 
+   nullify(data3D)
+   if (allocated(empty3D)) deallocate(empty3D)
+   nullify(arr3D)
+
    return
 
 end subroutine MPP_SCATTER_PELIST_GEN_2D_
