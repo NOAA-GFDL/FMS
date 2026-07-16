@@ -424,20 +424,22 @@ subroutine MPP_CREATE_GROUP_UPDATE_4D_V_( group, fieldx, fieldy, domain, flags, 
 end subroutine MPP_CREATE_GROUP_UPDATE_4D_V_
 
 
-subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
+subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type, omp_offload)
   type(mpp_group_update_type), intent(inout) :: group
   type(domain2D),              intent(inout) :: domain
   MPP_TYPE_,                   intent(in)    :: d_type
+  logical, optional, intent(in) :: omp_offload
 
   integer   :: nscalar, nvector, nlist
   logical   :: recv_y(8)
   integer   :: nsend, nrecv, flags_v
   integer   :: msgsize
-  integer   :: from_pe, to_pe, buffer_pos, pos
+  integer   :: from_pe, to_pe, buffer_pos, pos, idx
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, buffer_start_pos, ni, nj, nk
   integer   :: shift, gridtype, midpoint
   integer   :: npack, nunpack, rotation, isd
+  logical   :: use_device_ptr
 
   MPP_TYPE_ :: buffer(mpp_domains_stack_size)
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
@@ -452,6 +454,9 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   nvector = group%nvector
   nlist   = size(domain%list(:))
   gridtype = group%gridtype
+
+  use_device_ptr = .false.
+  if (present(omp_offload)) use_device_ptr = omp_offload
 
   !--- ksize_s must equal ksize_v
   if(nvector > 0 .AND. nscalar > 0) then
@@ -481,13 +486,16 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
 
   !---pre-post receive.
   call mpp_clock_begin(group_recv_clock)
+#ifdef __NVCOMPILER_OPENMP_GPU
+  !$omp target enter data map(alloc: buffer) if(use_device_ptr)
+#endif
   do m = 1, nrecv
      msgsize = group%recv_size(m)
      from_pe = group%from_pe(m)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_recv(m)
         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.false., &
-             tag=COMM_TAG_1)
+             tag=COMM_TAG_1, omp_offload=omp_offload)
      end if
   end do
 
@@ -500,7 +508,19 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   call mpp_clock_begin(group_pack_clock)
   !pack the data
   buffer_start_pos = 0
+  ! below switch runs OpenMP offloaded packing if ompoffload is .true. and compiled with
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_pack.inc>
+  else
+#ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_pack.inc>
+#define __NVCOMPILER_OPENMP_GPU
+#else
+#include <group_update_pack.inc>
+#endif
+  endif
   call mpp_clock_end(group_pack_clock)
 
   call mpp_clock_begin(group_send_clock)
@@ -509,7 +529,7 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
      if( msgsize .GT. 0 )then
         buffer_pos = group%buffer_pos_send(n)
         to_pe = group%to_pe(n)
-        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1)
+        call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1, omp_offload=omp_offload)
      endif
   enddo
   call mpp_clock_end(group_send_clock)
@@ -523,10 +543,24 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
   !---unpack the buffer
   nunpack = group%nunpack
   call mpp_clock_begin(group_unpk_clock)
+  ! below switch runs OpenMP offloaded unpacking if ompoffload is .true. and compiled with
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_unpack.inc>
+  else
+#ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_unpack.inc>
+#define __NVCOMPILER_OPENMP_GPU
+  !$omp target exit data map(release: buffer) if(use_device_ptr)
+#else
+#include <group_update_unpack.inc>
+#endif
+  endif
   call mpp_clock_end(group_unpk_clock)
 
   ! ---northern boundary fold
+  ! below omp offload loops have maps excluded as gcc doesn't support cray pointers in maps
   shift = 0
   if(domain%symmetry) shift = 1
   if( nvector >0 .AND. BTEST(domain%fold,NORTH) .AND. (.NOT.BTEST(flags_v,SCALAR_BIT)) )then
@@ -538,15 +572,25 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
            j  = domain%y(1)%global%end+shift
            is = domain%x(1)%global%begin; ie = domain%x(1)%global%end+shift
            if( .NOT. domain%symmetry ) is = is - 1
+           isd = domain%x(1)%domain_data%begin
            do i = is ,ie, midpoint
-              if( domain%x(1)%domain_data%begin.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
+              if( isd.LE.i .AND. i.LE. domain%x(1)%domain_data%end+shift )then
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
-                    do k = 1,ksize
-                       fieldx(i,j,k) = 0.
-                       fieldy(i,j,k) = 0.
-                    end do
+                    if (use_device_ptr) then
+                       !$omp target teams distribute parallel do default(shared) &
+                       !$omp   shared(ksize, ptr_fieldx, ptr_fieldy)
+                       do k = 1,ksize
+                          fieldx(i,j,k) = 0.
+                          fieldy(i,j,k) = 0.
+                       end do
+                    else
+                       do k = 1,ksize
+                          fieldx(i,j,k) = 0.
+                          fieldy(i,j,k) = 0.
+                       end do
+                    end if
                  end do
               end if
            end do
@@ -563,19 +607,31 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               else
                  is = domain%x(1)%global%begin - 1
               end if
-              if( is.GT.domain%x(1)%domain_data%begin )then
+              isd = domain%x(1)%domain_data%begin
+              if( is.GT.isd )then
 
-                 if( 2*is-domain%x(1)%domain_data%begin.GT.domain%x(1)%domain_data%end+shift ) &
+                 if( 2*is-isd.GT.domain%x(1)%domain_data%end+shift ) &
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north BGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldx = group%addrs_x(l)
                     ptr_fieldy = group%addrs_y(l)
-                    do k = 1,ksize
-                       do i = domain%x(1)%domain_data%begin,is-1
-                          fieldx(i,j,k) = fieldx(2*is-i,j,k)
-                          fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                    if (use_device_ptr) then
+                       !$omp target teams distribute parallel do collapse(2) default(shared) &
+                       !$omp   shared(ksize, isd, is, ptr_fieldx, ptr_fieldy)
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                             fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          end do
                        end do
-                    end do
+                    else
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldx(i,j,k) = fieldx(2*is-i,j,k)
+                             fieldy(i,j,k) = fieldy(2*is-i,j,k)
+                          end do
+                       end do
+                    endif
                  end do
               end if
            case(CGRID_NE)
@@ -586,11 +642,21 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
                       call mpp_error( FATAL, 'MPP_DO_UPDATE_V: folded-north CGRID_NE west edge ubound error.' )
                  do l=1,nvector
                     ptr_fieldy = group%addrs_y(l)
-                    do k = 1,ksize
-                       do i = isd,is-1
-                          fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                    if (use_device_ptr) then
+                       !$omp target teams distribute parallel do collapse(2) default(shared) &
+                       !$omp   shared(ksize, isd, is, ptr_fieldy)
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          end do
                        end do
-                    end do
+                    else
+                       do k = 1,ksize
+                          do i = isd,is-1
+                             fieldy(i,j,k) = fieldy(2*is-i-1,j,k)
+                          end do
+                       end do
+                    end if
                  end do
               end if
            end select
@@ -607,21 +673,42 @@ subroutine MPP_DO_GROUP_UPDATE_(group, domain, d_type)
               do l=1,nvector
                  ptr_fieldx = group%addrs_x(l)
                  ptr_fieldy = group%addrs_y(l)
-                 do k = 1,ksize
-                    do i = is,ie
-                       fieldx(i,j,k) = -fieldx(i,j,k)
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                 if (use_device_ptr) then
+                    !$omp target teams distribute parallel do collapse(2) default(shared) &
+                    !$omp   shared(ksize, is, ie, ptr_fieldx, ptr_fieldy)
+                    do k = 1,ksize
+                       do i = is,ie
+                          fieldx(i,j,k) = -fieldx(i,j,k)
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
                     end do
-                 end do
+                 else
+                    do k = 1,ksize
+                       do i = is,ie
+                          fieldx(i,j,k) = -fieldx(i,j,k)
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
+                    end do
+                 end if
               end do
            case(CGRID_NE)
               do l=1,nvector
                  ptr_fieldy = group%addrs_y(l)
-                 do k = 1,ksize
-                    do i = is, ie
-                       fieldy(i,j,k) = -fieldy(i,j,k)
+                 if (use_device_ptr) then
+                    !$omp target teams distribute parallel do collapse(2) default(shared) &
+                    !$omp   shared(ksize, is, ie, ptr_fieldy)
+                    do k = 1,ksize
+                       do i = is, ie
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
                     end do
-                 end do
+                 else
+                    do k = 1,ksize
+                       do i = is, ie
+                          fieldy(i,j,k) = -fieldy(i,j,k)
+                       end do
+                    end do
+                 end if
               end do
            end select
         end if
@@ -649,10 +736,11 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   integer   :: nscalar, nvector
   integer   :: nsend, nrecv, flags_v
   integer   :: msgsize, npack, rotation
-  integer   :: from_pe, to_pe, buffer_pos, pos
+  integer   :: from_pe, to_pe, buffer_pos, pos, idx
   integer   :: ksize, is, ie, js, je
-  integer   :: n, l, m, i, j, k, buffer_start_pos, nk
+  integer   :: n, l, m, i, j, k, buffer_start_pos, ni, nj, nk
   logical   :: reuse_buf_pos
+  logical, parameter :: use_device_ptr = .false. ! placeholder
   character(len=8)            :: text
 
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
@@ -729,7 +817,19 @@ subroutine MPP_START_GROUP_UPDATE_(group, domain, d_type, reuse_buffer)
   call mpp_clock_begin(nonblock_group_pack_clock)
   npack = group%npack
   buffer_start_pos = group%buffer_start_pos
+  ! below switch runs OpenMP offloaded packing if ompoffload is .true. and compiled with
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_pack.inc>
+  else
+#ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_pack.inc>
+#define __NVCOMPILER_OPENMP_GPU
+#else
+#include <group_update_pack.inc>
+#endif
+  endif
   call mpp_clock_end(nonblock_group_pack_clock)
 
   call mpp_clock_begin(nonblock_group_send_clock)
@@ -752,11 +852,12 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
   MPP_TYPE_,                   intent(in)    :: d_type
 
   integer   :: nsend, nrecv, nscalar, nvector
-  integer   :: k, buffer_pos, pos, m, n, l
+  integer   :: k, buffer_pos, pos, m, n, l, idx
   integer   :: is, ie, js, je, ksize, i, j
   integer   :: shift, gridtype, midpoint, flags_v
-  integer   :: nunpack, rotation, buffer_start_pos, nk, isd
+  integer   :: nunpack, rotation, buffer_start_pos, ni, nj, nk, isd
   logical   :: recv_y(8)
+  logical, parameter :: use_device_ptr = .false. ! placeholder
   MPP_TYPE_ :: buffer(size(mpp_domains_stack_nonblock(:)))
   MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
   MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
@@ -797,7 +898,20 @@ subroutine MPP_COMPLETE_GROUP_UPDATE_(group, domain, d_type)
 
   call mpp_clock_begin(nonblock_group_unpk_clock)
   buffer_start_pos = group%buffer_start_pos
+  ! below switch runs OpenMP offloaded unpacking if ompoffload is .true. and compiled with
+  ! OpenMP offload support. Otherwise, run OpenMP CPU by undefining GPU macro if defined
+  if (use_device_ptr) then
 #include <group_update_unpack.inc>
+  else
+#ifdef __NVCOMPILER_OPENMP_GPU
+#undef __NVCOMPILER_OPENMP_GPU
+#include <group_update_unpack.inc>
+#define __NVCOMPILER_OPENMP_GPU
+  !$omp target exit data map(release: buffer) if(use_device_ptr)
+#else
+#include <group_update_unpack.inc>
+#endif
+  endif
   call mpp_clock_end(nonblock_group_unpk_clock)
 
   ! ---northern boundary fold

@@ -17,64 +17,95 @@
 !***********************************************************************
 
 if( group%k_loop_inside ) then
-!$OMP parallel do default(none) shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
+! nvfortran + cray pointers imposes some restrictions on the loops below:
+!   * the compiler cannot privatise OpenMP cray pointers in offloaded loops. Hence, inner loops
+!     must be ported rather than the whole outer loop.
+!   * the more verbose form of openmp offload loops must be used. Would prefer "target teams loop".
+!   * default(shared) must be used otherwise loops hang or segfault. Would prefer "default(none)".
+#ifndef __NVCOMPILER_OPENMP_GPU
+!$OMP parallel do default(shared) shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
 !$OMP                          private(buffer_pos,pos,m,is,ie,js,je,rotation, &
-!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k)
+!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k,ni,nj,idx)
+#endif
   do n = 1, npack
      buffer_pos = group%pack_buffer_pos(n) + buffer_start_pos
      pos  = buffer_pos
-     is = group%pack_is(n); ie = group%pack_ie(n)
-     js = group%pack_js(n); je = group%pack_je(n)
+     is = group%pack_is(n); ie = group%pack_ie(n); ni = ie-is+1
+     js = group%pack_js(n); je = group%pack_je(n); nj = je-js+1
      rotation = group%pack_rotation(n)
      if( group%pack_type(n) == FIELD_S ) then
         select case( rotation )
         case(ZERO)
            do l=1, group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do j = js, je
                     do i = is, ie
-                       pos = pos + 1
-                       buffer(pos) = field(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
+                       buffer(idx) = field(i,j,k)
                     end do
                  end do
               enddo
+              pos = pos + ksize*nj*ni
            enddo
         case( MINUS_NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = field(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                       buffer(idx) = field(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = field(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = field(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) = field(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = field(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         end select
      else if( group%pack_type(n) == FIELD_X  ) then
@@ -82,77 +113,115 @@ if( group%k_loop_inside ) then
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx,ptr) &
+              !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do j = js, je
                     do i = is, ie
-                       pos = pos + 1
-                       buffer(pos) = fieldx(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
+                       buffer(idx) = fieldx(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( MINUS_NINETY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,is,ie,je,js,pos,nj,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do i = is, ie
                        do j = je, js, -1
-                          pos = pos + 1
-                          buffer(pos) = fieldy(i,j,k)
+                        idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                        buffer(idx) = fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,is,ie,je,js,pos,nj,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do i = is, ie
                        do j = je, js, -1
-                          pos = pos + 1
-                          buffer(pos) = -fieldy(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                          buffer(idx) = -fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         case( NINETY )
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,is,ie,je,js,pos,nj,ni,ptr_fieldy,ptr) &
+              !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = fieldy(i,j,k)
+                     !   pos = pos + 1
+                     !   buffer(pos) = fieldy(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = fieldy(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  -fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = -fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         end select ! select case( rotation(n) )
@@ -161,135 +230,197 @@ if( group%k_loop_inside ) then
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,is,ie,je,js,pos,nj,ni,ptr_fieldy,ptr) &
+              !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do j = js, je
                     do i = is, ie
-                       pos = pos + 1
-                       buffer(pos) = fieldy(i,j,k)
+                       idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
+                       buffer(idx) = fieldy(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( MINUS_NINETY )
            do l=1,nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx,ptr) &
+              !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
               do k = 1, ksize
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = fieldx(i,j,k)
+                     idx = pos + (k-1)*nj*ni + (i-is)*nj + (je-j) + 1
+                     buffer(idx) = fieldx(i,j,k)
                     end do
                  end do
               end do
+              pos = pos + ksize*nj*ni
            end do
         case( NINETY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1, nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do i = ie, is, -1
                        do j = js, je
-                          pos = pos + 1
-                          buffer(pos) = fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                          buffer(idx) = fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do i = ie, is, -1
                        do j = js, je
-                          pos = pos + 1
-                          buffer(pos) = -fieldx(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (ie-i)*nj + (j-js) + 1
+                          buffer(idx) = -fieldx(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,is,ie,je,js,pos,nj,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  fieldy(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,k,idx) shared(ksize,is,ie,je,js,pos,nj,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie,js:je,1:ksize)) map(from: buffer(pos+1:pos+ksize*nj*ni))
+#endif
                  do k = 1, ksize
                     do j = je, js, -1
                        do i = ie, is, -1
-                          pos = pos + 1
-                          buffer(pos) =  -fieldy(i,j,k)
+                          idx = pos + (k-1)*nj*ni + (je-j)*ni + (ie-i) + 1
+                          buffer(idx) = -fieldy(i,j,k)
                        end do
                     end do
                  end do
+                 pos = pos + ksize*nj*ni
               end do
            end if
         end select ! select case( rotation(n) )
      endif
   enddo
 else
-!$OMP parallel do default(none) shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
+#ifndef __NVCOMPILER_OPENMP_GPU
+!$OMP parallel do default(shared) shared(npack,group,ptr,nvector,ksize,buffer_start_pos) &
 !$OMP                          private(buffer_pos,pos,m,is,ie,js,je,rotation, &
-!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k)
+!$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k,ni,nj,idx)
+#endif
   do nk = 1, npack*ksize
      n = (nk-1)/ksize + 1
      k = mod((nk-1), ksize) + 1
      buffer_pos = group%pack_buffer_pos(n) + buffer_start_pos
      pos  = buffer_pos + (k-1)*group%pack_size(n)
-     is = group%pack_is(n); ie = group%pack_ie(n)
-     js = group%pack_js(n); je = group%pack_je(n)
+     is = group%pack_is(n); ie = group%pack_ie(n); ni = ie-is+1
+     js = group%pack_js(n); je = group%pack_je(n); nj = je-js+1
      rotation = group%pack_rotation(n)
      if( group%pack_type(n) == FIELD_S ) then
         select case( rotation )
         case(ZERO)
            do l=1, group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do j = js, je
                  do i = is, ie
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (j-js)*ni + (i-is) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            enddo
         case( MINUS_NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do i = is, ie
                  do j = je, js, -1
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (i-is)*nj + (je-j) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( NINETY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do i = ie, is, -1
                  do j = js, je
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (ie-i)*nj + (j-js) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            do l=1,group%nscalar  ! loop over number of fields
               ptr_field = group%addrs_s(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_field,ptr) &
+              !$omp   map(to: field(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do j = je, js, -1
                  do i = ie, is, -1
-                    pos = pos + 1
-                    buffer(pos) = field(i,j,k)
+                    idx = pos + (je-j)*ni + (ie-i) + 1
+                    buffer(idx) = field(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         end select
      else if( group%pack_type(n) == FIELD_X  ) then
@@ -297,65 +428,101 @@ else
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx,ptr) &
+              !$omp   map(to: fieldx(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do j = js, je
                  do i = is, ie
-                    pos = pos + 1
-                    buffer(pos) = fieldx(i,j,k)
+                    idx = pos + (j-js)*ni + (i-is) + 1
+                    buffer(idx) = fieldx(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( MINUS_NINETY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = fieldy(i,j,k)
+                       idx = pos + (i-is)*nj + (je-j) + 1
+                       buffer(idx) = fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do i = is, ie
                     do j = je, js, -1
-                       pos = pos + 1
-                       buffer(pos) = -fieldy(i,j,k)
+                       idx = pos + (i-is)*nj + (je-j) + 1
+                       buffer(idx) = -fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         case( NINETY )
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy,ptr) &
+              !$omp   map(to: fieldy(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do i = ie, is, -1
                  do j = js, je
-                    pos = pos + 1
-                    buffer(pos) = fieldy(i,j,k)
+                    idx = pos + (ie-i)*nj + (j-js) + 1
+                    buffer(idx) = fieldy(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  fieldx(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  -fieldx(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = -fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         end select ! select case( rotation(n) )
@@ -364,65 +531,101 @@ else
         case(ZERO)
            do l=1, nvector  ! loop over number of fields
               ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy,ptr) &
+              !$omp   map(to: fieldy(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do j = js, je
                  do i = is, ie
-                    pos = pos + 1
-                    buffer(pos) = fieldy(i,j,k)
+                    idx = pos + (j-js)*ni + (i-is) + 1
+                    buffer(idx) = fieldy(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( MINUS_NINETY )
            do l=1,nvector  ! loop over number of fields
               ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+              !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+              !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx,ptr) &
+              !$omp   map(to: fieldx(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
               do i = is, ie
                  do j = je, js, -1
-                    pos = pos + 1
-                    buffer(pos) = fieldx(i,j,k)
+                    idx = pos + (i-is)*nj + (je-j) + 1
+                    buffer(idx) = fieldx(i,j,k)
                  end do
               end do
+              pos = pos + nj*ni
            end do
         case( NINETY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1, nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = fieldx(i,j,k)
+                       idx = pos + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldx = group%addrs_x(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx,ptr) &
+                 !$omp   map(to: fieldx(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do i = ie, is, -1
                     do j = js, je
-                       pos = pos + 1
-                       buffer(pos) = -fieldx(i,j,k)
+                       idx = pos + (ie-i)*nj + (j-js) + 1
+                       buffer(idx) = -fieldx(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         case( ONE_HUNDRED_EIGHTY )
            if( BTEST(group%flags_v,SCALAR_BIT) ) then
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  fieldy(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            else
               do l=1,nvector  ! loop over number of fields
                  ptr_fieldy = group%addrs_y(l)
+#ifdef __NVCOMPILER_OPENMP_GPU
+                 !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+                 !$omp   default(shared) private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy,ptr) &
+                 !$omp   map(to: fieldy(is:ie, js:je, k)) map(from: buffer(pos+1:pos+nj*ni))
+#endif
                  do j = je, js, -1
                     do i = ie, is, -1
-                       pos = pos + 1
-                       buffer(pos) =  -fieldy(i,j,k)
+                       idx = pos + (je-j)*ni + (ie-i) + 1
+                       buffer(idx) = -fieldy(i,j,k)
                     end do
                  end do
+                 pos = pos + nj*ni
               end do
            end if
         end select ! select case( rotation(n) )

@@ -314,6 +314,10 @@ foreach(kind ${kinds})
     target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
   endif()
 
+  if(YAML_FOUND)
+    target_link_libraries(${libTgt}_c PRIVATE PkgConfig::YAML)
+  endif()
+
   # Fortran
   add_library(${libTgt}_f OBJECT ${fms_fortran_src_files})
 
@@ -457,6 +461,10 @@ if(NOT kinds)
 
     if(OpenMP_C_FOUND)
       target_link_libraries(${libTgt}_c PRIVATE OpenMP::OpenMP_C)
+    endif()
+
+    if(YAML_FOUND)
+      target_link_libraries(${libTgt}_c PRIVATE PkgConfig::YAML)
     endif()
 
     # Fortran

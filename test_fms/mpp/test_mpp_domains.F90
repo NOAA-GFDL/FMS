@@ -82,6 +82,7 @@ program test_mpp_domains
   logical :: test_edge_update = .false.
   logical :: test_nonsym_edge = .false.
   logical :: test_group = .false.
+  logical :: test_group_offload = .false.
   logical :: test_cubic_grid_redistribute = .false.
   logical :: check_parallel = .FALSE.
   logical :: test_get_nbr = .FALSE.
@@ -113,7 +114,7 @@ program test_mpp_domains
                                layout_ensemble, nthreads, test_boundary, layout_tripolar, &
                                test_group, test_global_sum, test_subset, test_nonsym_edge, &
                                test_halosize_performance, test_adjoint, wide_halo, &
-                               test_unstruct
+                               test_unstruct, test_group_offload
   integer :: i, j, k, n, p
   integer :: layout(2)
   integer :: id
@@ -234,6 +235,13 @@ program test_mpp_domains
        call test_group_update_r8('Cubic-Grid', p)
      enddo
      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished testing group_update <-------------------'
+  endif
+
+  if( test_group_offload) then
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Calling test_group <-------------------'
+     call test_group_update( 'Folded-north', use_omp_offload=test_group_offload )
+     call test_group_update( 'Cubic-Grid', use_omp_offload=test_group_offload )
+      if (mpp_pe() == mpp_root_pe())  print *, '--------------------> Finished test_group <-------------------'
   endif
 
   if( test_interface ) then
@@ -2485,6 +2493,607 @@ contains
 #include "group_update.inc"
 #undef FMS_TEST_KIND_
 #undef TEST_GROUP_UPDATE_
+
+  !###############################################################
+  subroutine test_group_update( type, use_omp_offload )
+    character(len=*), intent(in) :: type
+    logical, intent(in), optional :: use_omp_offload
+
+    type(domain2D) :: domain
+    integer        :: num_contact, ntiles, npes_per_tile
+    integer        :: i, j, k, l, n, shift
+    integer        :: isc, iec, jsc, jec, isd, ied, jsd, jed
+    integer        :: ism, iem, jsm, jem
+
+    integer, allocatable, dimension(:)       :: pe_start, pe_end, tile1, tile2
+    integer, allocatable, dimension(:)       :: istart1, iend1, jstart1, jend1
+    integer, allocatable, dimension(:)       :: istart2, iend2, jstart2, jend2
+    integer, allocatable, dimension(:,:)     :: layout2D, global_indices
+    real,    allocatable, dimension(:,:,:,:) :: x1, y1, x2, y2
+    real,    allocatable, dimension(:,:,:,:) :: a1, a2
+    real,    allocatable, dimension(:,:,:)   :: base
+    integer            :: id1, id2, id3
+    logical            :: folded_north
+    logical            :: cubic_grid
+    character(len=3)   :: text
+    integer            :: nx_save, ny_save
+    type(mpp_group_update_type) :: group_update
+    type(mpp_group_update_type), allocatable :: update_list(:)
+    logical :: do_omp_offload
+
+    folded_north       = .false.
+    cubic_grid         = .false.
+    do_omp_offload     = .false.
+    if (present(use_omp_offload)) do_omp_offload = use_omp_offload
+
+    nx_save = nx
+    ny_save = ny
+    !--- check the type
+    select case(type)
+    case ( 'Folded-north' )
+       ntiles = 1
+       shift = 0
+       num_contact = 2
+       folded_north = .true.
+       npes_per_tile = npes
+       if(layout_tripolar(1)*layout_tripolar(2) == npes ) then
+          layout = layout_tripolar
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+    case ( 'Cubic-Grid' )
+       if( nx_cubic == 0 ) then
+          call mpp_error(NOTE,'test_group_update: for Cubic_grid mosaic, nx_cubic is zero, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       if( nx_cubic .NE. ny_cubic ) then
+          call mpp_error(NOTE,'test_group_update: for Cubic_grid mosaic, nx_cubic does not equal ny_cubic, '//&
+               'No test is done for Cubic-Grid mosaic. ' )
+          return
+       endif
+       shift = 1
+       nx = nx_cubic
+       ny = ny_cubic
+       ntiles = 6
+       num_contact = 12
+       cubic_grid = .true.
+       if( mod(npes, ntiles) == 0 ) then
+          npes_per_tile = npes/ntiles
+          write(outunit,*)'NOTE from update_domains_performance ==> For Mosaic "', trim(type), &
+               '", each tile will be distributed over ', npes_per_tile, ' processors.'
+       else
+          call mpp_error(NOTE,'test_group_update: npes should be multiple of ntiles No test is done for '//trim(type))
+          return
+       endif
+       if(layout_cubic(1)*layout_cubic(2) == npes_per_tile) then
+          layout = layout_cubic
+       else
+          call mpp_define_layout( (/1,nx,1,ny/), npes_per_tile, layout )
+       endif
+    case default
+       call mpp_error(FATAL, 'test_group_update: no such test: '//type)
+    end select
+
+    allocate(layout2D(2,ntiles), global_indices(4,ntiles), pe_start(ntiles), pe_end(ntiles) )
+    do n = 1, ntiles
+       pe_start(n) = (n-1)*npes_per_tile
+       pe_end(n)   = n*npes_per_tile-1
+    end do
+
+    do n = 1, ntiles
+       global_indices(:,n) = (/1,nx,1,ny/)
+       layout2D(:,n)         = layout
+    end do
+
+    allocate(tile1(num_contact), tile2(num_contact) )
+    allocate(istart1(num_contact), iend1(num_contact), jstart1(num_contact), jend1(num_contact) )
+    allocate(istart2(num_contact), iend2(num_contact), jstart2(num_contact), jend2(num_contact) )
+
+    !--- define domain
+    if(folded_north) then
+       !--- Contact line 1, between tile 1 (EAST) and tile 1 (WEST)  --- cyclic
+       tile1(1) = 1; tile2(1) = 1
+       istart1(1) = nx; iend1(1) = nx; jstart1(1) = 1;  jend1(1) = ny
+       istart2(1) = 1;  iend2(1) = 1;  jstart2(1) = 1;  jend2(1) = ny
+       !--- Contact line 2, between tile 1 (NORTH) and tile 1 (NORTH)  --- folded-north-edge
+       tile1(2) = 1; tile2(2) = 1
+       istart1(2) = 1;  iend1(2) = nx/2;   jstart1(2) = ny;  jend1(2) = ny
+       istart2(2) = nx; iend2(2) = nx/2+1; jstart2(2) = ny;  jend2(2) = ny
+       call mpp_define_mosaic(global_indices, layout2D, domain, ntiles, num_contact, tile1, tile2, &
+            istart1, iend1, jstart1, jend1, istart2, iend2, jstart2, jend2,      &
+            pe_start, pe_end, whalo=whalo, ehalo=ehalo, shalo=shalo, nhalo=nhalo, &
+            name = type, symmetry = .false.  )
+    else if( cubic_grid ) then
+       call define_cubic_mosaic(type, domain, (/nx,nx,nx,nx,nx,nx/), (/ny,ny,ny,ny,ny,ny/), &
+            global_indices, layout2D, pe_start, pe_end )
+    endif
+
+    !--- setup data
+    call mpp_get_compute_domain( domain, isc, iec, jsc, jec )
+    call mpp_get_data_domain   ( domain, isd, ied, jsd, jed )
+    call mpp_get_memory_domain   ( domain, ism, iem, jsm, jem )
+
+    if(num_fields<1) then
+       call mpp_error(FATAL, "test_mpp_domains: num_fields must be a positive integer")
+    endif
+
+    allocate(update_list(num_fields))
+
+    id1 = mpp_clock_id( type//' group 2D', flags=MPP_CLOCK_SYNC )
+    id2 = mpp_clock_id( type//' non-group 2D', flags=MPP_CLOCK_SYNC )
+    id3 = mpp_clock_id( type//' non-block group 2D', flags=MPP_CLOCK_SYNC )
+
+    allocate( a1(ism:iem,      jsm:jem,       nz, num_fields) )
+    allocate( x1(ism:iem+shift,jsm:jem,       nz, num_fields) )
+    allocate( y1(ism:iem,      jsm:jem+shift, nz, num_fields) )
+    allocate( a2(ism:iem,      jsm:jem,       nz, num_fields) )
+    allocate( x2(ism:iem+shift,jsm:jem,       nz, num_fields) )
+    allocate( y2(ism:iem,      jsm:jem+shift, nz, num_fields) )
+    allocate( base(isc:iec+shift,jsc:jec+shift,nz) )
+    a1 = 0; x1 = 0; y1 = 0
+    ! allocate a1, x1, y1 on GPU (GPU x1, y1 only used for CGRID test)
+    !$omp target enter data if(do_omp_offload) map(to: a1, x1, y1)
+
+    base = 0
+    do k = 1,nz
+       do j = jsc, jec+shift
+          do i = isc, iec+shift
+             base(i,j,k) = k + i*1e-3 + j*1e-6
+          end do
+       end do
+    end do
+
+    !--- Test for partial direction update
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, flags=WUPDATE+SUPDATE)
+    end do
+
+    ! initialize a1 values on GPU only to check GPU data is being transferred
+    !$omp target teams loop if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsc, jec, isc, iec, a1, base) map(tofrom: a1) map(to: base)
+    do l = 1, num_fields
+       do k=1,nz
+          do j=jsc,jec
+             do i=isc,iec
+                a1(i,j,k,l) = base(i,j,k) + l*1e3
+             enddo
+          enddo
+          do i=isc-1,iec+1
+             a1(i,jsc-1,k,l) = 999;
+             a1(i,jec+1,k,l) = 999;
+          enddo
+          do j=jsc,jec
+             a1(isc-1,j,k,l) = 999
+             a1(iec+1,j,k,l) = 999
+          enddo
+       enddo
+    enddo
+    !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsm, jem, ism, iem, a1, a2) map(to: a1) map(from: a2)
+    do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem
+      a2(i,j,k,l) = a1(i,j,k,l)
+    enddo ; enddo ; enddo ; enddo
+    call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
+
+    do l = 1, num_fields
+       call mpp_update_domains( a2(:,:,:,l), domain, flags=WUPDATE+SUPDATE, complete=l==num_fields )
+    enddo
+
+    ! copy a1 back to host
+    !$omp target update if(do_omp_offload) from(a1)
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(isd:ied,jsd:jed,:,l),a2(isd:ied,jsd:jed,:,l),type//' CENTER South West '//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
+
+    !--- Test for DGRID update
+    if(type == 'Cubic-Grid' ) then
+       x1 = 0; y1 = 0
+       do l =1, num_fields
+          call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=DGRID_NE)
+       end do
+
+       do l = 1, num_fields
+          y1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
+          x1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
+       enddo
+       x2 = x1; y2 = y1
+       call mpp_start_group_update(group_update, domain, x1(isc,jsc,1,1))
+       call mpp_complete_group_update(group_update, domain, x1(isc,jsc,1,1))
+
+       do l = 1, num_fields
+          call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=DGRID_NE, complete=l==num_fields )
+       enddo
+
+    !--- compare checksum
+       do l = 1, num_fields
+          write(text, '(i3.3)') l
+          call compare_checksums(x1(isd:ied+shift,jsd:jed, :,l),x2(isd:ied+shift,jsd:jed, :,l),type//' DGRID X'//text)
+          call compare_checksums(y1(isd:ied, jsd:jed+shift,:,l),y2(isd:ied, jsd:jed+shift,:,l),type//' DGRID Y'//text)
+       enddo
+
+       call mpp_clear_group_update(group_update)
+    endif
+    !--- Test for CGRID
+    a1 = 0; x1 = 0; y1 = 0
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, a1(:,:,:,l), domain)
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+    end do
+
+    do n = 1, num_iter
+       a1 = 0; x1 = 0; y1 = 0
+       !$omp target update if(do_omp_offload) to(a1, x1, y1)
+       do l = 1, num_fields
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, jsc, jec, isc, iec, a1, base, l) map(to: base) map(tofrom: a1)
+          do k=1,nz
+             do j=jsc,jec
+                do i=isc,iec
+                   a1(i,j,k,l) = base(i,j,k) + l*1e3
+                enddo
+             enddo
+          enddo
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, jsc, jec, shift, isc, iec, x1, base, l) map(to: base) map(tofrom: x1)
+          do k=1,nz
+             do j=jsc,jec
+                do i=isc,iec+shift
+                   x1(i,j,k,l) = base(i,j,k) + l*1e3 + 1e6
+                enddo
+             enddo
+          enddo
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, jsc, jec, shift, isc, iec, y1, base, l) map(to: base) map(tofrom: y1)
+          do k=1,nz
+             do j=jsc,jec+shift
+                do i=isc,iec
+                   y1(i,j,k,l) = base(i,j,k) + l*1e3 + 2*1e6
+                enddo
+             enddo
+          enddo
+       enddo
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, ism, iem, a1, a2) map(from: a2) map(to: a1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem
+          a2(i,j,k,l) = a1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, ism, iem, shift, x1, x2) map(from: x2) map(to: x1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem+shift
+          x2(i,j,k,l) = x1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, shift, ism, iem, y1, y2) map(from: y2) map(to: y1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem+shift ; do i=ism,iem
+          y2(i,j,k,l) = y1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
+
+       call mpp_clock_begin(id1)
+       call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
+       call mpp_clock_end  (id1)
+
+       call mpp_clock_begin(id2)
+       do l = 1, num_fields
+          call mpp_update_domains( a2(:,:,:,l), domain, complete=l==num_fields )
+       enddo
+       do l = 1, num_fields
+          call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=CGRID_NE, complete=l==num_fields )
+       enddo
+       call mpp_clock_end(id2)
+
+       !--- compare checksum
+       if( n == num_iter ) then
+       !$omp target update if(do_omp_offload) from(a1, x1, y1)
+       do l = 1, num_fields
+          write(text, '(i3.3)') l
+          call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l),type//' CENTER '//text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed, :,l),x2(isd:ied+shift,jsd:jed, :,l),type//' CGRID X'//text)
+          call compare_checksums(y1(isd:ied, jsd:jed+shift,:,l),y2(isd:ied, jsd:jed+shift,:,l),type//' CGRID Y'//text)
+       enddo
+       endif
+       a1 = 0; x1 = 0; y1 = 0
+       do l = 1, num_fields
+          a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+          x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
+          y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
+       enddo
+       call mpp_clock_begin(id3)
+       call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end  (id3)
+       !--- compare checksum
+       if( n == num_iter ) then
+       do l = 1, num_fields
+          write(text, '(i3.3)') l
+          call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
+                                 type//' nonblock CENTER '//text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l), &
+                                 type//' nonblock CGRID X'//text)
+          call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
+                                 type//' nonblock CGRID Y'//text)
+       enddo
+       endif
+    enddo
+
+    call mpp_clear_group_update(group_update)
+
+    !--- The following is to test overlapping start and complete
+    if( num_fields > 1 ) then
+       do l =1, num_fields
+          call mpp_create_group_update(update_list(l), a1(:,:,:,l), domain)
+          call mpp_create_group_update(update_list(l), x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=CGRID_NE)
+       end do
+
+       do n = 1, num_iter
+
+          a1 = 0; x1 = 0; y1 = 0
+          do l = 1, num_fields
+             a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+             x1(isc:iec+shift,jsc:jec,      :,l) = base(isc:iec+shift,jsc:jec,      :) + l*1e3 + 1e6
+             y1(isc:iec,      jsc:jec+shift,:,l) = base(isc:iec,      jsc:jec+shift,:) + l*1e3 + 2*1e6
+          enddo
+          do l = 1, num_fields-1
+             call mpp_start_group_update(update_list(l), domain, a1(isc,jsc,1,1))
+          enddo
+
+          call mpp_complete_group_update(update_list(1), domain, a1(isc,jsc,1,1))
+          call mpp_start_group_update(update_list(num_fields), domain, a1(isc,jsc,1,1))
+          do l = 2, num_fields
+             call mpp_complete_group_update(update_list(l), domain, a1(isc,jsc,1,1))
+          enddo
+          !--- compare checksum
+          if( n == num_iter ) then
+          do l = 1, num_fields
+             write(text, '(i3.3)') l
+             call compare_checksums(a1(isd:ied,      jsd:jed,      :,l),a2(isd:ied,      jsd:jed,      :,l), &
+                                    type//' multiple nonblock CENTER '//text)
+             call compare_checksums(x1(isd:ied+shift,jsd:jed,      :,l),x2(isd:ied+shift,jsd:jed,      :,l), &
+                                    type//' multiple nonblock CGRID X'//text)
+             call compare_checksums(y1(isd:ied,      jsd:jed+shift,:,l),y2(isd:ied,      jsd:jed+shift,:,l), &
+                                    type//' multiple nonblock CGRID Y'//text)
+          enddo
+          endif
+       enddo
+    endif
+
+    do l =1, num_fields
+      call mpp_clear_group_update(update_list(l))
+    enddo
+    deallocate(update_list)
+
+    !--- test scalar 4-D variable
+    call mpp_create_group_update(group_update, a1(:,:,:,:), domain)
+
+    a1 = 0; x1 = 0; y1 = 0
+    !$omp target update if(do_omp_offload) to(a1)
+    !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsc, jec, isc, iec, a1, base) map(to: base) map(from: a1)
+    do l = 1, num_fields
+       do k=1,nz
+          do j=jsc,jec
+             do i=isc,iec
+                a1(i,j,k,l) = base(i,j,k) + l*1e3
+             enddo
+          enddo
+       enddo
+    enddo
+    !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+    !$omp   shared(num_fields, nz, jsm, jem, ism, iem, a1, a2) map(from: a2) map(to: a1)
+    do l=1,num_fields ; do k=1,nz ; do j=jsm,jem ; do i=ism,iem
+       a2(i,j,k,l) = a1(i,j,k,l)
+    enddo ; enddo ; enddo ; enddo
+    x2 = x1; y2 = y1
+    call mpp_clock_begin(id1)
+    call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
+    call mpp_clock_end  (id1)
+
+    call mpp_clock_begin(id2)
+    call mpp_update_domains( a2(:,:,:,:), domain )
+    call mpp_clock_end(id2)
+
+    !--- compare checksum
+    !$omp target update if(do_omp_offload) from(a1)
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l),type//' 4D CENTER '//text)
+    enddo
+
+    a1 = 0
+    do l = 1, num_fields
+       a1(isc:iec,      jsc:jec,      :,l) = base(isc:iec,      jsc:jec,      :) + l*1e3
+    enddo
+    call mpp_clock_begin(id3)
+    call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_clock_end  (id3)
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(a1(isd:ied, jsd:jed, :,l),a2(isd:ied, jsd:jed, :,l), &
+                              type//' nonblock 4D CENTER '//text)
+    enddo
+
+    !$omp target exit data if(do_omp_offload) map(release: a1, x1, y1)
+
+    !--- test for BGRID.
+    deallocate(a1, x1, y1)
+    deallocate(a2, x2, y2)
+    call mpp_clear_group_update(group_update)
+
+    allocate( a1(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
+    allocate( x1(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
+    allocate( y1(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
+    allocate( a2(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
+    allocate( x2(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
+    allocate( y2(ism:iem+shift,jsm:jem+shift, nz, num_fields) )
+
+    !$omp target enter data map(alloc: a1, x1, y1) if(do_omp_offload)
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, a1(:,:,:,l), domain, position=CORNER)
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=BGRID_NE)
+    end do
+
+    do n = 1, num_iter
+       a1 = 0; x1 = 0; y1 = 0
+       !$omp target update if(do_omp_offload) to(a1, x1, y1)
+       do l = 1, num_fields
+          !$omp target teams loop collapse(3) if(do_omp_offload) default(shared) &
+          !$omp   shared(nz, base, a1, x1, y1, l, jsc, jec, shift, isc, iec) &
+          !$omp   map(to: base) map(tofrom: a1, x1, y1)
+          do k=1,nz
+             do j=jsc,jec+shift
+                do i=isc,iec+shift
+                   a1(i,j,k,l) = base(i,j,k) + l*1e3
+                   x1(i,j,k,l) = base(i,j,k) + l*1e3 + 1e6
+                   y1(i,j,k,l) = base(i,j,k) + l*1e3 + 2*1e6
+                enddo
+             enddo
+          enddo
+       enddo
+       !$omp target teams loop collapse(4) if(do_omp_offload) default(shared) &
+       !$omp   shared(num_fields, nz, jsm, jem, shift, ism, iem, a1, x1, y1, a2, x2, y2) &
+       !$omp   map(from: a2, x2, y2) map(to: a1, x1, y1)
+       do l=1,num_fields ; do k=1,nz ; do j=jsm,jem+shift ; do i=ism,iem+shift
+          a2(i,j,k,l) = a1(i,j,k,l)
+          x2(i,j,k,l) = x1(i,j,k,l)
+          y2(i,j,k,l) = y1(i,j,k,l)
+       enddo ; enddo ; enddo ; enddo
+       call mpp_clock_begin(id1)
+       call mpp_do_group_update(group_update, domain, a1(isc,jsc,1,1), omp_offload=do_omp_offload)
+       call mpp_clock_end  (id1)
+
+       call mpp_clock_begin(id2)
+       do l = 1, num_fields
+          call mpp_update_domains( a2(:,:,:,l), domain, position=CORNER, complete=l==num_fields )
+       enddo
+       do l = 1, num_fields
+          call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=BGRID_NE, complete=l==num_fields )
+       enddo
+       call mpp_clock_end(id2)
+
+       !--- compare checksum
+       if( n == num_iter ) then
+       !$omp target update if(do_omp_offload) from(a1,x1,y1)
+       do l = 1, num_fields
+          write(text, '(i3.3)') l
+          call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l),type//&
+                               & ' CORNER '// text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed+shift,:,l),x2(isd:ied+shift,jsd:jed+shift,:,l),type//&
+                               & ' BGRID X'// text)
+          call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l),type//&
+                               & ' BGRID Y'// text)
+       enddo
+       endif
+
+       a1 = 0; x1 = 0; y1 = 0
+       do l = 1, num_fields
+          a1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3
+          x1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3 + 1e6
+          y1(isc:iec+shift,jsc:jec+shift,:,l) = base(isc:iec+shift,jsc:jec+shift,:) + l*1e3 + 2*1e6
+       enddo
+       call mpp_clock_begin(id3)
+       call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+       call mpp_clock_end  (id3)
+       !--- compare checksum
+       if( n == num_iter ) then
+       do l = 1, num_fields
+          write(text, '(i3.3)') l
+          call compare_checksums(a1(isd:ied+shift,jsd:jed+shift,:,l),a2(isd:ied+shift,jsd:jed+shift,:,l), &
+                                 type//' nonblockCORNER '//text)
+          call compare_checksums(x1(isd:ied+shift,jsd:jed+shift,:,l),x2(isd:ied+shift,jsd:jed+shift,:,l), &
+                                 type//' nonblock BGRID X'//text)
+          call compare_checksums(y1(isd:ied+shift,jsd:jed+shift,:,l),y2(isd:ied+shift,jsd:jed+shift,:,l), &
+                                 type//' nonblock BGRID Y'//text)
+       enddo
+       endif
+    enddo
+    !$omp target exit data if(do_omp_offload) map(release: a1,x1,y1)
+    call mpp_clear_group_update(group_update)
+
+    !-----------------------------------------------------------------------------
+    !                   test for AGRID vector and scalar pair
+    !-----------------------------------------------------------------------------
+    deallocate(x1, y1)
+    deallocate(x2, y2)
+
+    allocate( x1(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( y1(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( x2(ism:iem,jsm:jem, nz, num_fields) )
+    allocate( y2(ism:iem,jsm:jem, nz, num_fields) )
+
+    x1 = 0; y1 = 0
+    do l = 1, num_fields
+       x1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 1e6
+       y1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 2*1e6
+    enddo
+    x2 = x1; y2 = y1
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID)
+    end do
+
+    do l = 1, num_fields
+       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, complete=l==num_fields )
+    enddo
+
+    call mpp_start_group_update(group_update, domain, a1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, a1(isc,jsc,1,1))
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(isd:ied,jsd:jed,:,l),x2(isd:ied,jsd:jed,:,l),type//' AGRID X'//text)
+       call compare_checksums(y1(isd:ied,jsd:jed,:,l),y2(isd:ied,jsd:jed,:,l),type//' AGRID Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
+
+    x1 = 0; y1 = 0
+    do l = 1, num_fields
+       x1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 1e6
+       y1(isc:iec,jsc:jec,:,l) = base(isc:iec,jsc:jec,:) + l*1e3 + 2*1e6
+    enddo
+    x2 = x1; y2 = y1
+
+    do l =1, num_fields
+       call mpp_create_group_update(group_update, x1(:,:,:,l), y1(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR)
+    end do
+
+    do l = 1, num_fields
+       call mpp_update_domains( x2(:,:,:,l), y2(:,:,:,l), domain, gridtype=AGRID, flags=SCALAR_PAIR, &
+                              &  complete=l==num_fields)
+    enddo
+
+    call mpp_start_group_update(group_update, domain, x1(isc,jsc,1,1))
+    call mpp_complete_group_update(group_update, domain, x1(isc,jsc,1,1))
+
+    !--- compare checksum
+    do l = 1, num_fields
+       write(text, '(i3.3)') l
+       call compare_checksums(x1(isd:ied,jsd:jed,:,l),x2(isd:ied,jsd:jed,:,l),type//' AGRID SCALAR_PAIR X'//text)
+       call compare_checksums(y1(isd:ied,jsd:jed,:,l),y2(isd:ied,jsd:jed,:,l),type//' AGRID SCALAR_PAIR Y'//text)
+    enddo
+
+    call mpp_clear_group_update(group_update)
+
+    deallocate(pe_start, pe_end, tile1, tile2)
+    deallocate(istart1, iend1, jstart1, jend1)
+    deallocate(istart2, iend2, jstart2, jend2)
+    deallocate(layout2D, global_indices)
+
+    deallocate(a1, x1, y1)
+    deallocate(a2, x2, y2)
+    deallocate(base)
+    call mpp_deallocate_domain(domain)
+
+end subroutine test_group_update
 
 
   !###############################################################
