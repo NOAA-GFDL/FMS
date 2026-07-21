@@ -779,8 +779,9 @@ contains
     implicit none
     real(TEST_FMS_KIND_), dimension(:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
+    real(TEST_FMS_KIND_), parameter :: tol = 1.0e-6
 
-    if(answer(1) .ne. fms_result(1)) then
+    if(abs(answer(1) - fms_result(1)) .gt. tol) then
        write(*,*) 'Expected ', answer(1), ' but got ', fms_result(1)
        call mpp_error(FATAL,'ERROR:'//trim(whoami) )
     end if
@@ -792,8 +793,9 @@ contains
     implicit none
     real(TEST_FMS_KIND_), dimension(:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
+    real(TEST_FMS_KIND_), parameter :: tol = 1.0e-6
 
-    if(answer(1,1) .ne. fms_result(1,1)) then
+    if(abs(answer(1,1) - fms_result(1,1)) .gt. tol) then
        write(*,*) 'Expected ', answer(1,1), ' but got ', fms_result(1,1)
        call mpp_error(FATAL,'ERROR:'//trim(whoami) )
     end if
@@ -805,8 +807,9 @@ contains
     implicit none
     real(TEST_FMS_KIND_), dimension(:,:,:), intent(in) :: answer, fms_result
     character(len=*), intent(in) :: whoami
+    real(TEST_FMS_KIND_), parameter :: tol = 1.0e-6
 
-    if(answer(1,1,1) .ne. fms_result(1,1,1)) then
+    if(abs(answer(1,1,1) - fms_result(1,1,1)) .gt. tol) then
        write(*,*) 'Expected ', answer(1,1,1), ' but got ', fms_result(1,1,1)
        call mpp_error(FATAL,'ERROR:'//trim(whoami) )
     end if

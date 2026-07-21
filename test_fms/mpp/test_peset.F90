@@ -19,7 +19,7 @@ program test_peset
   !> @author Jessica Liptak
   !> @description Indirectly test the functionality of get_peset and expand_peset in mpp_util_sma.inc by passing
   !! processor IDs among PEs via mpp_send and mpp_recv, then calling mpp_sync_self.
-  use mpp_mod, only : mpp_init, mpp_sync_self, mpp_exit, mpp_npes, &
+  use mpp_mod, only : mpp_init, mpp_sync_self, mpp_exit, mpp_npes, mpp_exit,   &
                       mpp_error, FATAL, mpp_pe, mpp_init_test_peset_allocated, &
                       mpp_broadcast, mpp_root_pe, mpp_declare_pelist, input_nml_file
   implicit none
@@ -53,6 +53,8 @@ program test_peset
   if (sum(numlist) .ne. sum_id) call mpp_error(FATAL,"numlist sum does not match pelist sum")
   if (allocated(numlist)) deallocate(numlist)
   if (allocated(pelist)) deallocate(pelist)
-  !> Finalize mpp
+  ! test_level arg stops full init process, so this just needs to call mpi_finalize if using mpi
+#ifdef use_libMPI
   call MPI_FINALIZE(ierr)
+#endif
 end program test_peset

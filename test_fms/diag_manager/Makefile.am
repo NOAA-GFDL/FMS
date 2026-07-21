@@ -107,7 +107,7 @@ else
   ncdump_skip=""
 endif
 
-if SKIP_PARALLEL_TEST
+if SERIAL_BUILD
   parallel_skip="skip"
 else
   parallel_skip=""
