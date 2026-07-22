@@ -14,7 +14,7 @@ jobs:
   intel-oneapi-2025-3:
     runs-on: ubuntu-latest
     container:
-      image: intel/oneapi-hpckit:2025.3.1-0-devel-ubuntu22.04
+      image: intel/oneapi-toolkit:2026.1.0-devel-ubuntu22.04
       env:
         CC: "mpiicx"
         FC: "mpiifx"
