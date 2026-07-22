@@ -3,7 +3,7 @@ name: Autotools build and unit testing with Intel Oneapi
 on:
   pull_request:
   push:
-    branches: main
+    #branches: main
 
 # cancel running jobs if theres a newer push
 concurrency:
@@ -23,7 +23,7 @@ jobs:
         LDFLAGS: "-L/libs/lib"
         TEST_VERBOSE: 1
         I_MPI_FABRICS: "shm" # needed for mpi in image
-        SKIP_TESTS: "test_redistribute_int.1"
+        #SKIP_TESTS: "test_redistribute_int.1"
     steps:
     - name: Cache dependencies
       id: cache
