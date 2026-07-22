@@ -225,8 +225,7 @@ subroutine domain_write_2d(fileobj, variable_name, vdata, unlim_dim_level, &
   end(xdim_index) = start(xdim_index) + xc_size - 1
   end(ydim_index) = start(ydim_index) + yc_size - 1
 
-  dim_order(xdim_index) = 1
-  dim_order(ydim_index) = 2
+  dim_order = (/xdim_index, ydim_index/)
 
   ! Gather the data
   select type(vdata)
@@ -425,9 +424,7 @@ subroutine domain_write_3d(fileobj, variable_name, vdata, unlim_dim_level, &
   ioff = 1-xgmin
   joff = 1-ygmin
 
-  dim_order(xdim_index) = 1
-  dim_order(ydim_index) = 2
-  dim_order(zdim_index) = 3
+  dim_order = (/xdim_index, ydim_index, zdim_index/)
 
   ! Gather the data
   select type(vdata)

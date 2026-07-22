@@ -17,97 +17,384 @@
 !***********************************************************************
 !> @addtogroup mpp_domains_mod
 !> @{
-    subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type )
-      integer(i8_kind), intent(in)         :: f_in(:), f_out(:)
-      type(DomainCommunicator2D), intent(in) :: d_comm
-      MPP_TYPE_, intent(in)                  :: d_type
-      MPP_TYPE_ :: field_in(d_comm%domain_in%x(1)%domain_data%begin:d_comm%domain_in%x(1)%domain_data%end, &
-                            d_comm%domain_in%y(1)%domain_data%begin:d_comm%domain_in%y(1)%domain_data%end,d_comm%ke)
-      pointer( ptr_field_in, field_in)
-      MPP_TYPE_ :: field_out(d_comm%domain_out%x(1)%domain_data%begin:d_comm%domain_out%x(1)%domain_data%end, &
-                             d_comm%domain_out%y(1)%domain_data%begin:d_comm%domain_out%y(1)%domain_data%end,d_comm%ke)
-      pointer( ptr_field_out, field_out)
-      type(domain2D), pointer :: domain_in, domain_out
-      integer :: i, j, k, l, n, l_size
-      integer :: is, ie, js, je
-      integer :: ke
-      integer :: list, pos, msgsize
-      integer :: to_pe, from_pe
-      MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
-      pointer( ptr, buffer )
-      integer :: buffer_pos, wordlen, errunit
+subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_storage_in, &
+                                  & nchunks, chunk_shape_in, chunk_shape_out )
 
-!fix ke
-      errunit = stderr()
-      l_size = size(f_out(:))  ! equal to size(f_in(:))
-      ke = d_comm%ke
-      domain_in =>d_comm%domain_in; domain_out =>d_comm%domain_out
+  use iso_c_binding, only : c_ptr, c_null_ptr, c_f_pointer, c_intptr_t
 
-      buffer_pos = 0
-      ptr = LOC(mpp_domains_stack)
-      wordlen = size(TRANSFER(buffer(1),mpp_domains_stack))
+  integer(i8_kind), intent(in) :: f_in(:), f_out(:)
+  type(DomainCommunicator2D), intent(in) :: d_comm
+  MPP_TYPE_, intent(in) :: d_type
 
-!pre-post recv
-      n = d_comm%Rlist_size
-      do list = 0,n-1
-         if( .NOT. d_comm%R_do_buf(list) )cycle
-         from_pe = d_comm%cfrom_pe(list)
-         msgsize = d_comm%R_msize(list)*l_size
-         call mpp_recv( buffer(buffer_pos+1), glen=msgsize, from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
-         buffer_pos = buffer_pos + msgsize
+  integer, intent(in), optional :: axis_to_storage_in(3)
+
+  ! One entry per public redistribute field.
+  !
+  ! 2D/3D field:
+  !   nchunks(field) = 1
+  !
+  ! 4D field:
+  !   nchunks(field) = size(field,4)
+  !
+  ! 5D field:
+  !   nchunks(field) = size(field,4) * size(field,5)
+  integer, intent(in) :: nchunks(:)
+
+  ! Storage shape of one contiguous 3D chunk for each public field.
+  !
+  ! First dimension is the storage-dimension selector.
+  ! Second dimension is the public field-list selector.
+  integer, intent(in) :: chunk_shape_in(:,:)
+  integer, intent(in) :: chunk_shape_out(:,:)
+
+  integer :: axis_to_storage(3)
+
+  type(c_ptr) :: p_in, p_out
+
+  MPP_TYPE_, pointer :: field_in(:,:,:)
+  MPP_TYPE_, pointer :: field_out(:,:,:)
+
+  integer :: shape3(3)
+
+  ! Logical-axis bounds:
+  !   1 = x
+  !   2 = y
+  !   3 = z
+  integer :: logical_lo(3), logical_hi(3)
+
+  ! Bounds reordered into storage-dimension order.
+  integer :: storage_lo(3), storage_hi(3)
+
+  integer(c_intptr_t) :: base_addr
+  integer(c_intptr_t) :: chunk_addr
+  integer(c_intptr_t) :: chunk_offset
+  integer(c_intptr_t) :: chunk_elements
+  integer(c_intptr_t) :: element_bytes
+
+  type(domain2D), pointer :: domain_in, domain_out
+
+  integer :: nfields
+  integer :: total_chunks
+
+  integer :: field
+  integer :: chunk
+  integer :: list
+  integer :: n
+
+  integer :: s1, s2, s3
+  integer :: is, ie, js, je
+  integer :: ke
+
+  integer :: pos
+  integer :: msgsize
+  integer :: buffer_pos
+
+  integer :: to_pe
+  integer :: from_pe
+
+  integer :: errunit
+
+  MPP_TYPE_ :: buffer(size(mpp_domains_stack(:)))
+  pointer(ptr, buffer)
+
+  !--------------------------------------------------------------------
+  ! Validate axis permutation and field metadata.
+  !--------------------------------------------------------------------
+  axis_to_storage = (/1,2,3/)
+  if (present(axis_to_storage_in)) axis_to_storage = axis_to_storage_in
+
+  if (any(axis_to_storage < 1) .OR. any(axis_to_storage > 3) .OR. &
+      axis_to_storage(1) == axis_to_storage(2) .OR.               &
+      axis_to_storage(1) == axis_to_storage(3) .OR.               &
+      axis_to_storage(2) == axis_to_storage(3)) then
+    call mpp_error(FATAL, &
+         'MPP_DO_REDISTRIBUTE_3D_: invalid axis_to_storage permutation')
+  endif
+
+  nfields = size(f_in)
+
+  if (size(f_out) /= nfields) then
+    call mpp_error(FATAL, &
+         'MPP_DO_REDISTRIBUTE_3D_: input/output field-list sizes differ')
+  endif
+
+  if (size(nchunks) /= nfields) then
+    call mpp_error(FATAL, &
+         'MPP_DO_REDISTRIBUTE_3D_: invalid nchunks size')
+  endif
+
+  if (size(chunk_shape_in,1) /= 3 .OR.  &
+      size(chunk_shape_out,1) /= 3 .OR. &
+      size(chunk_shape_in,2) /= nfields .OR. &
+      size(chunk_shape_out,2) /= nfields) then
+    call mpp_error(FATAL, &
+         'MPP_DO_REDISTRIBUTE_3D_: invalid chunk-shape metadata')
+  endif
+
+  if (any(nchunks < 1)) then
+    call mpp_error(FATAL, &
+         'MPP_DO_REDISTRIBUTE_3D_: chunk counts must be positive')
+  endif
+
+  if (any(chunk_shape_in < 1) .OR. any(chunk_shape_out < 1)) then
+    call mpp_error(FATAL, &
+         'MPP_DO_REDISTRIBUTE_3D_: chunk extents must be positive')
+  endif
+
+  total_chunks = sum(nchunks)
+
+  !--------------------------------------------------------------------
+  ! General setup.
+  !--------------------------------------------------------------------
+  errunit = stderr()
+
+  ke = d_comm%ke
+
+  domain_in  => d_comm%domain_in
+  domain_out => d_comm%domain_out
+
+  ptr = LOC(mpp_domains_stack)
+
+  ! LOC addresses are byte addresses on the supported targets.
+  ! STORAGE_SIZE returns the number of bits per scalar element.
+  element_bytes = int(storage_size(d_type) / 8, kind=c_intptr_t)
+
+  if (element_bytes < 1_c_intptr_t) then
+    call mpp_error(FATAL, &
+         'MPP_DO_REDISTRIBUTE_3D_: invalid element size')
+  endif
+
+  !--------------------------------------------------------------------
+  ! Pre-post receives.
+  !
+  ! R_msize contains the x*y*z message size for one logical 3D chunk.
+  !--------------------------------------------------------------------
+  buffer_pos = 0
+  n = d_comm%Rlist_size
+
+  do list = 0, n-1
+
+    if (.NOT. d_comm%R_do_buf(list)) cycle
+
+    from_pe = d_comm%cfrom_pe(list)
+    msgsize = d_comm%R_msize(list) * total_chunks
+
+    call mpp_recv( buffer(buffer_pos+1), glen=msgsize, &
+                 & from_pe=from_pe, block=.FALSE., tag=COMM_TAG_1 )
+
+    buffer_pos = buffer_pos + msgsize
+
+  enddo
+
+  !--------------------------------------------------------------------
+  ! Pack and send.
+  !--------------------------------------------------------------------
+  n = d_comm%Slist_size
+
+  do list = 0, n-1
+
+    if (.NOT. d_comm%S_do_buf(list)) cycle
+
+    to_pe = d_comm%cto_pe(list)
+
+    is = d_comm%sendis(1,list)
+    ie = d_comm%sendie(1,list)
+    js = d_comm%sendjs(1,list)
+    je = d_comm%sendje(1,list)
+
+    ! Logical bounds within the local input field.
+    logical_lo(1) = is - domain_in%x(1)%domain_data%begin + 1
+    logical_hi(1) = ie - domain_in%x(1)%domain_data%begin + 1
+
+    logical_lo(2) = js - domain_in%y(1)%domain_data%begin + 1
+    logical_hi(2) = je - domain_in%y(1)%domain_data%begin + 1
+
+    logical_lo(3) = 1
+    logical_hi(3) = ke
+
+    ! Map logical-axis bounds onto the storage dimensions.
+    storage_lo = 0
+    storage_hi = 0
+
+    storage_lo(axis_to_storage(1)) = logical_lo(1)
+    storage_hi(axis_to_storage(1)) = logical_hi(1)
+
+    storage_lo(axis_to_storage(2)) = logical_lo(2)
+    storage_hi(axis_to_storage(2)) = logical_hi(2)
+
+    storage_lo(axis_to_storage(3)) = logical_lo(3)
+    storage_hi(axis_to_storage(3)) = logical_hi(3)
+
+    pos = buffer_pos
+
+    do field = 1, nfields
+
+      shape3 = chunk_shape_in(:,field)
+
+      ! Each input chunk must represent the same logical x/y/z shape
+      ! used to initialize this communicator.
+      if (shape3(axis_to_storage(1)) /= d_comm%isize_in .OR. &
+          shape3(axis_to_storage(2)) /= d_comm%jsize_in .OR. &
+          shape3(axis_to_storage(3)) /= ke) then
+        call mpp_error(FATAL, &
+             'MPP_DO_REDISTRIBUTE_3D_: incompatible input chunk shape')
+      endif
+
+      chunk_elements = int(shape3(1), kind=c_intptr_t) * &
+                       int(shape3(2), kind=c_intptr_t) * &
+                       int(shape3(3), kind=c_intptr_t)
+
+      base_addr = int(f_in(field), kind=c_intptr_t)
+
+      do chunk = 1, nchunks(field)
+
+        ! Each chunk is one contiguous 3D slab.
+        chunk_offset = int(chunk-1, kind=c_intptr_t) * &
+                       chunk_elements * element_bytes
+
+        chunk_addr = base_addr + chunk_offset
+
+        p_in = transfer(chunk_addr, c_null_ptr)
+
+        call c_f_pointer(p_in, field_in, shape3)
+
+        ! Traverse in Fortran column-major storage order:
+        ! storage dim 1 varies fastest.
+        do s3 = storage_lo(3), storage_hi(3)
+          do s2 = storage_lo(2), storage_hi(2)
+            do s1 = storage_lo(1), storage_hi(1)
+
+              pos = pos + 1
+              buffer(pos) = field_in(s1,s2,s3)
+
+            enddo
+          enddo
+        enddo
+
       enddo
+    enddo
 
-!send
-      n = d_comm%Slist_size
-      do list = 0,n-1
-         if( .NOT. d_comm%S_do_buf(list) )cycle
-         to_pe = d_comm%cto_pe(list)
-         is=d_comm%sendis(1,list); ie=d_comm%sendie(1,list)
-         js=d_comm%sendjs(1,list); je=d_comm%sendje(1,list)
-         pos = buffer_pos
-         do l=1,l_size  ! loop over number of fields
-           ptr_field_in = f_in(l)
-           do k = 1,ke
-              do j = js,je
-                 do i = is,ie
-                    pos = pos+1
-                    buffer(pos) = field_in(i,j,k)
-                 end do
-              end do
-           end do
-         end do
-         if( debug )write( errunit,* )'PE', pe, ' to PE ', to_pe, 'is,ie,js,je=', is, ie, js, je
-         msgsize = pos - buffer_pos
-         call mpp_send( buffer(buffer_pos+1), plen=msgsize, to_pe=to_pe, tag=COMM_TAG_1  )
-         buffer_pos = pos
-      end do
+    if (debug) then
+      write(errunit,*) 'PE', pe, ' to PE ', to_pe, &
+                       'is,ie,js,je=', is, ie, js, je
+    endif
 
-      call mpp_sync_self(check=EVENT_RECV)
+    msgsize = pos - buffer_pos
 
-!unpack buffer
-      buffer_pos = 0
-      n = d_comm%Rlist_size
-      do list = 0,n-1
-         if( .NOT. d_comm%R_do_buf(list) )cycle
-         from_pe = d_comm%cfrom_pe(list)
-         is=d_comm%recvis(1,list); ie=d_comm%recvie(1,list)
-         js=d_comm%recvjs(1,list); je=d_comm%recvje(1,list)
-         if( debug )write( errunit,* )'PE', pe, ' from PE ', from_pe, 'is,ie,js,je=', is, ie, js, je
-         pos = buffer_pos
-         do l=1,l_size  ! loop over number of in/out fields
-           ptr_field_out = f_out(l)
-           do k = 1,ke
-              do j = js,je
-                 do i = is,ie
-                    pos = pos+1
-                    field_out(i,j,k) = buffer(pos)
-                 end do
-              end do
-           end do
-         end do
-         buffer_pos = pos
-      end do
+    if (msgsize /= d_comm%S_msize(list) * total_chunks) then
+      call mpp_error(FATAL, &
+           'MPP_DO_REDISTRIBUTE_3D_: packed send size mismatch')
+    endif
 
-      call mpp_sync_self()
-    end subroutine MPP_DO_REDISTRIBUTE_3D_
+    call mpp_send( buffer(buffer_pos+1), plen=msgsize, &
+                 & to_pe=to_pe, tag=COMM_TAG_1 )
+
+    buffer_pos = pos
+
+  enddo
+
+  call mpp_sync_self(check=EVENT_RECV)
+
+  !--------------------------------------------------------------------
+  ! Unpack receive buffers.
+  !--------------------------------------------------------------------
+  buffer_pos = 0
+  n = d_comm%Rlist_size
+
+  do list = 0, n-1
+
+    if (.NOT. d_comm%R_do_buf(list)) cycle
+
+    from_pe = d_comm%cfrom_pe(list)
+
+    is = d_comm%recvis(1,list)
+    ie = d_comm%recvie(1,list)
+    js = d_comm%recvjs(1,list)
+    je = d_comm%recvje(1,list)
+
+    if (debug) then
+      write(errunit,*) 'PE', pe, ' from PE ', from_pe, &
+                       'is,ie,js,je=', is, ie, js, je
+    endif
+
+    ! Logical bounds within the local output field.
+    logical_lo(1) = is - domain_out%x(1)%domain_data%begin + 1
+    logical_hi(1) = ie - domain_out%x(1)%domain_data%begin + 1
+
+    logical_lo(2) = js - domain_out%y(1)%domain_data%begin + 1
+    logical_hi(2) = je - domain_out%y(1)%domain_data%begin + 1
+
+    logical_lo(3) = 1
+    logical_hi(3) = ke
+
+    storage_lo = 0
+    storage_hi = 0
+
+    storage_lo(axis_to_storage(1)) = logical_lo(1)
+    storage_hi(axis_to_storage(1)) = logical_hi(1)
+
+    storage_lo(axis_to_storage(2)) = logical_lo(2)
+    storage_hi(axis_to_storage(2)) = logical_hi(2)
+
+    storage_lo(axis_to_storage(3)) = logical_lo(3)
+    storage_hi(axis_to_storage(3)) = logical_hi(3)
+
+    pos = buffer_pos
+
+    do field = 1, nfields
+
+      shape3 = chunk_shape_out(:,field)
+
+      ! Input and output horizontal extents may differ, but the output
+      ! chunk must match the output communicator decomposition.
+      if (shape3(axis_to_storage(1)) /= d_comm%isize_out .OR. &
+          shape3(axis_to_storage(2)) /= d_comm%jsize_out .OR. &
+          shape3(axis_to_storage(3)) /= ke) then
+        call mpp_error(FATAL, &
+             'MPP_DO_REDISTRIBUTE_3D_: incompatible output chunk shape')
+      endif
+
+      chunk_elements = int(shape3(1), kind=c_intptr_t) * &
+                       int(shape3(2), kind=c_intptr_t) * &
+                       int(shape3(3), kind=c_intptr_t)
+
+      base_addr = int(f_out(field), kind=c_intptr_t)
+
+      do chunk = 1, nchunks(field)
+
+        chunk_offset = int(chunk-1, kind=c_intptr_t) * &
+                       chunk_elements * element_bytes
+
+        chunk_addr = base_addr + chunk_offset
+
+        p_out = transfer(chunk_addr, c_null_ptr)
+
+        call c_f_pointer(p_out, field_out, shape3)
+
+        do s3 = storage_lo(3), storage_hi(3)
+          do s2 = storage_lo(2), storage_hi(2)
+            do s1 = storage_lo(1), storage_hi(1)
+
+              pos = pos + 1
+              field_out(s1,s2,s3) = buffer(pos)
+
+            enddo
+          enddo
+        enddo
+
+      enddo
+    enddo
+
+    if (pos - buffer_pos /= d_comm%R_msize(list) * total_chunks) then
+      call mpp_error(FATAL, &
+           'MPP_DO_REDISTRIBUTE_3D_: unpacked receive size mismatch')
+    endif
+
+    buffer_pos = pos
+
+  enddo
+
+  call mpp_sync_self()
+
+end subroutine MPP_DO_REDISTRIBUTE_3D_
 !> @}

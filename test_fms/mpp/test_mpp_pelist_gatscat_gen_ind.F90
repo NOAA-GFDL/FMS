@@ -28,7 +28,7 @@ program test_mpp_pelist_gatscat_gen_ind
   implicit none
 
   integer :: pe, npes, root
-  integer :: dim_order(3)
+  integer :: storage_to_axis(3)
   integer :: perms(3,6)
   integer :: p
 
@@ -51,15 +51,15 @@ program test_mpp_pelist_gatscat_gen_ind
 
   do p = 1, 6
 
-    dim_order = perms(:,p)
+    storage_to_axis = perms(:,p)
 
     if (pe == root) then
       print *, '--------------------------------'
-      print *, 'dim_order =', dim_order
+      print *, 'storage_to_axis =', storage_to_axis
     endif
 
-    call test_scatter(npes, pe, root, dim_order)
-    call test_gather(npes, pe, root, dim_order)
+    call test_scatter(npes, pe, root, storage_to_axis)
+    call test_gather(npes, pe, root, storage_to_axis)
 
   enddo
 
@@ -76,17 +76,17 @@ contains
      val = 100.0*i + 10.0*j + k
    end function val
 
-!> @brief Convert logical indices (i,j,k) into storage indices using dim_order.
-   subroutine permute(i, j, k, dim_order, u, v, w)
-     integer, intent(in)  :: i, j, k, dim_order(3)
+!> @brief Convert logical indices (i,j,k) into storage indices using storage_to_axis.
+   subroutine permute(i, j, k, storage_to_axis, u, v, w)
+     integer, intent(in)  :: i, j, k, storage_to_axis(3)
      integer, intent(out) :: u, v, w
 
      integer :: idx(3)
 
      idx = (/i, j, k/)
-     u = idx(dim_order(1))
-     v = idx(dim_order(2))
-     w = idx(dim_order(3))
+     u = idx(storage_to_axis(1))
+     v = idx(storage_to_axis(2))
+     w = idx(storage_to_axis(3))
    end subroutine permute
 
 !> @brief Compute 1D domain decomposition in i-direction for each MPI rank.
@@ -116,9 +116,9 @@ contains
    end subroutine build_pelist
 
 !> @brief Allocate a 3D field in permuted layout, handling root and non-root cases.
-   subroutine alloc_field(field, dim_order, dims_logical, pe, root, is_global)
+   subroutine alloc_field(field, storage_to_axis, dims_logical, pe, root, is_global)
      real, allocatable, intent(out) :: field(:,:,:)
-     integer, intent(in) :: dim_order(3)
+     integer, intent(in) :: storage_to_axis(3)
      integer, intent(in) :: dims_logical(3)
      integer, intent(in) :: pe, root
      logical, intent(in) :: is_global
@@ -128,24 +128,24 @@ contains
      if (is_global) then
        if (pe == root) then
          dims = dims_logical
-         allocate(field(dims(dim_order(1)), &
-                        dims(dim_order(2)), &
-                        dims(dim_order(3))))
+         allocate(field(dims(storage_to_axis(1)), &
+                        dims(storage_to_axis(2)), &
+                        dims(storage_to_axis(3))))
        else
          allocate(field(1,1,1))
        endif
      else
        dims = dims_logical
-       allocate(field(dims(dim_order(1)), &
-                      dims(dim_order(2)), &
-                      dims(dim_order(3))))
+       allocate(field(dims(storage_to_axis(1)), &
+                      dims(storage_to_axis(2)), &
+                      dims(storage_to_axis(3))))
      endif
    end subroutine alloc_field
 
 !> @brief Populate a field with values from val(i,j,k) under the given permutation.
-   subroutine fill_from_val(segment, is, ie, NJ, NK, dim_order)
+   subroutine fill_from_val(segment, is, ie, NJ, NK, storage_to_axis)
      real, intent(inout) :: segment(:,:,:)
-     integer, intent(in) :: is, ie, NJ, NK, dim_order(3)
+     integer, intent(in) :: is, ie, NJ, NK, storage_to_axis(3)
 
      integer :: i, j, k
      integer :: u, v, w
@@ -153,7 +153,7 @@ contains
      do i=is,ie
        do j=1,NJ
          do k=1,NK
-           call permute(i-is+1, j, k, dim_order, u, v, w)
+           call permute(i-is+1, j, k, storage_to_axis, u, v, w)
            segment(u,v,w) = val(i,j,k)
          enddo
        enddo
@@ -161,10 +161,10 @@ contains
    end subroutine fill_from_val
 
 !> @brief Verify field values against val(i,j,k) for local (scatter) or global (gather) domains.
-   subroutine check_answer(field, is, ie, NI, NJ, NK, dim_order, check_global)
+   subroutine check_answer(field, is, ie, NI, NJ, NK, storage_to_axis, check_global)
      real, intent(in) :: field(:,:,:)
      integer, intent(in) :: is, ie, NI, NJ, NK
-     integer, intent(in) :: dim_order(3)
+     integer, intent(in) :: storage_to_axis(3)
      logical, intent(in) :: check_global   ! .true. = gather, .false. = scatter
 
      integer :: i, j, k
@@ -186,11 +186,11 @@ contains
 
            if (check_global) then
              ! gather -> global indexing
-             call permute(i, j, k, dim_order, u, v, w)
+             call permute(i, j, k, storage_to_axis, u, v, w)
            else
              ! scatter -> local indexing
              iloc = i - is + 1
-             call permute(iloc, j, k, dim_order, u, v, w)
+             call permute(iloc, j, k, storage_to_axis, u, v, w)
            endif
 
            if (field(u,v,w) /= val(i,j,k)) then
@@ -208,13 +208,14 @@ contains
    end subroutine check_answer
 
 !> @brief Test mpp_scatter with pelist and permuted storage layouts.
-   subroutine test_scatter(npes, pe, root, dim_order)
+   subroutine test_scatter(npes, pe, root, storage_to_axis)
      integer,intent(in) :: npes, pe, root
-     integer,intent(in) :: dim_order(3)
+     integer,intent(in) :: storage_to_axis(3)
 
      integer :: pelist(npes)
      integer :: is, ie, js, je
      integer :: NI, NJ, NK
+     integer :: axis_to_storage(3)
      real, allocatable :: global_perm(:,:,:)
      real, allocatable :: segment(:,:,:)
 
@@ -226,25 +227,30 @@ contains
      call build_pelist(npes, pelist)
      !call mpp_get_pelist(pelist)
 
-     call alloc_field(global_perm, dim_order, (/NI, NJ, NK/), pe, root, .true.)
-     call alloc_field(segment, dim_order, (/ie-is+1, NJ, NK/), pe, root, .false.)
+     call alloc_field(global_perm, storage_to_axis, (/NI, NJ, NK/), pe, root, .true.)
+     call alloc_field(segment, storage_to_axis, (/ie-is+1, NJ, NK/), pe, root, .false.)
 
      segment = -2.0
 
      if (pe == root) then
-       call fill_from_val(global_perm, 1, NI, NJ, NK, dim_order)
+       call fill_from_val(global_perm, 1, NI, NJ, NK, storage_to_axis)
      endif
+
+     ! Initialize axis_to_storage map
+     axis_to_storage(storage_to_axis(1)) = 1
+     axis_to_storage(storage_to_axis(2)) = 2
+     axis_to_storage(storage_to_axis(3)) = 3
 
      ! --- scatter ---
      call mpp_sync()
      if (pe == root) then
-       call mpp_scatter(is, ie, js, je, NK, pelist, segment, global_perm, dim_order, .true.)
+       call mpp_scatter(is, ie, js, je, NK, pelist, segment, global_perm, axis_to_storage, .true.)
      else
-       call mpp_scatter(is, ie, js, je, NK, pelist, segment, global_perm, dim_order, .false.)
+       call mpp_scatter(is, ie, js, je, NK, pelist, segment, global_perm, axis_to_storage, .false.)
      endif
      call mpp_sync()
 
-     call check_answer(segment, is, ie, NI, NJ, NK, dim_order, .false.)
+     call check_answer(segment, is, ie, NI, NJ, NK, storage_to_axis, .false.)
 
      if (pe == root) print *, 'SCATTER PASS'
 
@@ -253,13 +259,14 @@ contains
    end subroutine test_scatter
 
 !> @brief Test mpp_gather with pelist and permuted storage layouts.
-   subroutine test_gather(npes, pe, root, dim_order)
+   subroutine test_gather(npes, pe, root, storage_to_axis)
      integer,intent(in) :: npes, pe, root
-     integer,intent(in) :: dim_order(3)
+     integer,intent(in) :: storage_to_axis(3)
 
      integer :: pelist(npes)
      integer :: is, ie, js, je
      integer :: NI,NJ,NK
+     integer :: axis_to_storage(3)
      real, allocatable :: segment(:,:,:)
      real, allocatable :: gather_data(:,:,:)
 
@@ -270,22 +277,27 @@ contains
      call get_decomp(pe, npes, NI, NJ, is, ie, js, je)
      call build_pelist(npes, pelist)
 
-     call alloc_field(gather_data, dim_order, (/NI, NJ, NK/), pe, root, .true.)
-     call alloc_field(segment, dim_order, (/ie-is+1, NJ, NK/), pe, root, .false.)
+     call alloc_field(gather_data, storage_to_axis, (/NI, NJ, NK/), pe, root, .true.)
+     call alloc_field(segment, storage_to_axis, (/ie-is+1, NJ, NK/), pe, root, .false.)
 
-     call fill_from_val(segment, is, ie, NJ, NK, dim_order)
+     call fill_from_val(segment, is, ie, NJ, NK, storage_to_axis)
+
+     ! Initialize axis_to_storage map
+     axis_to_storage(storage_to_axis(1)) = 1
+     axis_to_storage(storage_to_axis(2)) = 2
+     axis_to_storage(storage_to_axis(3)) = 3
 
      ! --- GATHER ---
      call mpp_sync()
      if (pe == root) then
-       call mpp_gather(is, ie, js, je, NK, pelist, segment, gather_data, dim_order, .true.)
+       call mpp_gather(is, ie, js, je, NK, pelist, segment, gather_data, axis_to_storage, .true.)
      else
-       call mpp_gather(is, ie, js, je, NK, pelist, segment, gather_data, dim_order, .false.)
+       call mpp_gather(is, ie, js, je, NK, pelist, segment, gather_data, axis_to_storage, .false.)
      endif
      call mpp_sync()
 
      if (pe == root) then
-       call check_answer(gather_data, is, ie, NI, NJ, NK, dim_order, .true.)
+       call check_answer(gather_data, is, ie, NI, NJ, NK, storage_to_axis, .true.)
        print *, 'GATHER PASS'
      endif
 
