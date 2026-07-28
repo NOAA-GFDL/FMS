@@ -18,8 +18,9 @@
 !> @addtogroup horiz_interp_spherical_mod
 !> @{
   !> @parblock
-  !! Subroutine to find nearest neighbors and distance from source to destination
-  !! cells that will be used for spherical interpolation.
+  !! Subroutine to find the nearest neighbors on source grid to each cell
+  !! on the destination grid.  Also computes the distance between the source
+  !! and destination cells.
   !! @endparblock
   subroutine HORIZ_INTERP_SPHERICAL_NEW_(Interp, lon_in,lat_in,lon_out,lat_out, &
        num_nbrs, max_dist, src_modulo)
