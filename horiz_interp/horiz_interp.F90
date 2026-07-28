@@ -21,11 +21,12 @@
 !!
 !> @author Zhi Liang, Bruce Wyman
 !!
-!! This module can interpolate data from any logically rectangular grid
-!! to any logically rectangular grid. Four interpolation schems are used here:
-!! conservative, bilinear, bicubic and inverse of square distance weighted.
-!! The four interpolation schemes are implemented separately in
-!! horiz_interp_conserver_mod, horiz_interp_blinear_mod, horiz_interp_bicubic_mod
+!> @parblock
+!! Horiz_interp_mod contains subroutines and derived types to interpolate
+!! data from  any logically rectangular grid to any logically rectangular grid with
+!! the following interpolation schemes:  conservative, bilinear, bicubic, and 
+!! inverse of square distance weighted.
+!!
 !! and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
 !! is regular lon/lat grid. User can choose the interpolation method in the
 !! public interface horiz_interp_new through optional argument interp_method,
@@ -33,6 +34,7 @@
 !! The default value is "conservative". There is an optional mask field for
 !! missing input data. An optional output mask field may be used in conjunction with
 !! the input mask to show where output data exists.
+!! @endparblock
 
 module horiz_interp_mod
 

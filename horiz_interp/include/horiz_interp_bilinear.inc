@@ -17,24 +17,61 @@
 !***********************************************************************
 !> @addtogroup horiz_interp_bilinear_mod
 !> @{
+  !> @parblock
+  !! Subroutine to generate weights and mapping indices for bilinear interpolation from a
+  !! rectangular input grid specified as 1D arrays to any output grid specified as 2D arrays.
+  !! @endparblock
   subroutine HORIZ_INTERP_BILINEAR_NEW_1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo )
 
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),  dimension(:)        :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out, lat_out
-    integer, intent(in),          optional :: verbose
-    logical, intent(in),          optional :: src_modulo
+      !< will be populated with interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
+      !< are the longitude coordinates for the rectangular input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
+      !< are the latitude coordinates for the rectangular input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
+      !< are the longitude coordinates for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
+      !< are the latitude coordinates for the output grid in radians.
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output.
+    logical, intent(in), optional :: src_modulo
+      !< is true if the boundary condition along zonal boundary is cyclic.
 
     logical :: src_is_modulo
-    integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m
-    integer :: ie, is, je, js, ln_err, lt_err, warns, iunit
-    real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
-    real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
-    integer,parameter     :: kindl = FMS_HI_KIND_
-    logical               :: decreasing_lat !< .True. if latitude is monotically decreasing
-    logical               :: decreasing_lon !< .True. if longitude is monotically decreasing
+    integer :: nlon_in
+    integer :: nlat_in
+    integer :: nlon_out
+    integer :: nlat_out
+    integer :: n
+    integer :: m
+    integer :: ie
+    integer :: is
+    integer :: je
+    integer :: js
+    integer :: ln_err
+    integer :: lt_err
+    integer :: warns
+    integer :: iunit
+    real(FMS_HI_KIND_) :: wtw
+    real(FMS_HI_KIND_) :: wte
+    real(FMS_HI_KIND_) :: wts
+    real(FMS_HI_KIND_) :: wtn
+    real(FMS_HI_KIND_) :: lon
+    real(FMS_HI_KIND_) :: lat
+    real(FMS_HI_KIND_) :: tpi
+    real(FMS_HI_KIND_) :: hpi
+    real(FMS_HI_KIND_) :: glt_min
+    real(FMS_HI_KIND_) :: glt_max
+    real(FMS_HI_KIND_) :: gln_min
+    real(FMS_HI_KIND_) :: gln_max
+    real(FMS_HI_KIND_) :: min_lon
+    real(FMS_HI_KIND_) :: max_lon
+    integer, parameter :: kindl = FMS_HI_KIND_
+    logical :: decreasing_lat ! .True. if latitude is monotically decreasing
+    logical :: decreasing_lon ! .True. if longitude is monotically decreasing
 
     warns = 0
     if(present(verbose)) warns = verbose
@@ -199,37 +236,76 @@
 
   !#######################################################################
 
-  !> Initialization routine.
-  !!
-  !> Allocates space and initializes a derived-type variable
-  !! that contains pre-computed interpolation indices and weights.
+  !> @parblock
+  !! Subroutine to generate weights and mapping indices for bilinear interpolation.
+  !! @endparblock
   subroutine HORIZ_INTERP_BILINEAR_NEW_2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
        verbose, src_modulo, new_search, no_crash_when_not_found )
 
     !-----------------------------------------------------------------------
-    type(horiz_interp_type), intent(inout) :: Interp !< A derived type variable containing indices
-                                          !! and weights for subsequent interpolations. To
-                                          !! reinitialize for different grid-to-grid interpolation
-                                          !! @ref horiz_interp_del must be used first.
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_in !< Latitude (radians) for source data grid
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_in !< Longitude (radians) for source data grid
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lon_out !< Longitude (radians) for output data grid
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)      :: lat_out !< Latitude (radians) for output data grid
-    integer, intent(in),          optional :: verbose !< flag for amount of print output
-    logical, intent(in),          optional :: src_modulo !< indicates if the boundary condition
-                                          !! along zonal boundary is cyclic or not. Cyclic when true
-    logical, intent(in),          optional :: new_search
-    logical, intent(in),          optional :: no_crash_when_not_found
-    integer                                :: warns
-    logical                                :: src_is_modulo
-    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
-    integer                                :: m, n, is, ie, js, je, num_solution
-    real(FMS_HI_KIND_)                                   :: lon, lat, quadra, x, y, y1, y2
-    real(FMS_HI_KIND_)                                   :: a1, b1, c1, d1, a2, b2, c2, d2, a, b, c
-    real(FMS_HI_KIND_)                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
-    real(FMS_HI_KIND_)                                   :: tpi, lon_min, lon_max
-    real(FMS_HI_KIND_)                                   :: epsln2
-    logical                                :: use_new_search, no_crash
+    type(horiz_interp_type), intent(inout) :: Interp
+      !< will be populated with interpolation weights and mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_in
+      !< are the longitude coordinates for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_in
+      !< are the latitude coordinates for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
+      !< are the longitude coordinates for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
+      !< are the latitude coordinates for the output grid in radians.
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level for output.
+    logical, intent(in), optional :: src_modulo
+      !< is true if the boundary condition along zonal boundary is cyclic.
+    logical, intent(in), optional :: new_search
+      !< sets the neighbor search routine to find_neighbor_new if true.
+    logical, intent(in), optional :: no_crash_when_not_found
+      !< sets find_neighbor_new to error when nearest neighbors are not found.
+    integer :: warns
+    logical :: src_is_modulo
+    integer :: nlon_in
+    integer :: nlat_in
+    integer :: nlon_out
+    integer :: nlat_out
+    integer :: m
+    integer :: n
+    integer :: is
+    integer :: ie
+    integer :: js
+    integer :: je
+    integer :: num_solution
+    real(FMS_HI_KIND_) :: lon
+    real(FMS_HI_KIND_) :: lat
+    real(FMS_HI_KIND_) :: quadra
+    real(FMS_HI_KIND_) :: x
+    real(FMS_HI_KIND_) :: y
+    real(FMS_HI_KIND_) :: y1
+    real(FMS_HI_KIND_) :: y2
+    real(FMS_HI_KIND_) :: a1
+    real(FMS_HI_KIND_) :: b1
+    real(FMS_HI_KIND_) :: c1
+    real(FMS_HI_KIND_) :: d1
+    real(FMS_HI_KIND_) :: a2
+    real(FMS_HI_KIND_) :: b2
+    real(FMS_HI_KIND_) :: c2
+    real(FMS_HI_KIND_) :: d2
+    real(FMS_HI_KIND_) :: a
+    real(FMS_HI_KIND_) :: b
+    real(FMS_HI_KIND_) :: c
+    real(FMS_HI_KIND_) :: lon1
+    real(FMS_HI_KIND_) :: lat1
+    real(FMS_HI_KIND_) :: lon2
+    real(FMS_HI_KIND_) :: lat2
+    real(FMS_HI_KIND_) :: lon3
+    real(FMS_HI_KIND_) :: lat3
+    real(FMS_HI_KIND_) :: lon4
+    real(FMS_HI_KIND_) :: lat4
+    real(FMS_HI_KIND_) :: tpi
+    real(FMS_HI_KIND_) :: lon_min
+    real(FMS_HI_KIND_) :: lon_max
+    real(FMS_HI_KIND_) :: epsln2
+    logical :: use_new_search
+    logical :: no_crash
 
     integer, parameter :: kindl=FMS_HI_KIND_
 
@@ -412,23 +488,62 @@
 
     Interp% HI_KIND_TYPE_ % is_allocated = .true.
     Interp% interp_method = BILINEAR
-  end subroutine
+  end subroutine HORIZ_INTERP_BILINEAR_NEW_2D_
 
   !#######################################################################
-  !> this routine will search the source grid to fine the grid box that encloses
-  !! each destination grid.
+  !> @parblock
+  !! Subroutine to search the source grid to find the grid box that encloses
+  !! each destination grid.  Uses the original searching algorithm.
+  !! @endparblock
   subroutine FIND_NEIGHBOR_ ( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo )
     type(horiz_interp_type), intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_out, lat_out
-    logical,                 intent(in)    :: src_modulo
-    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
-    integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
-    integer                                :: is, js, jstart, jend, istart, iend, npts
-    integer, allocatable, dimension(:)     :: ilon, jlat
-    real(FMS_HI_KIND_)                     :: lon_min, lon_max, lon, lat, tpi
-    logical                                :: found
-    real(FMS_HI_KIND_)                     :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
+      !< will be populated with mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_in
+      !< are the longitude coordinates for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_in
+      !< are the latitude coordinates for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
+      !< are the longitude coordinates for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
+      !< are the latitude coordinates for the output grid in radians.
+    logical, intent(in) :: src_modulo
+      !< is true if the boundary condition along zonal boundary is cyclic.
+    integer :: nlon_in
+    integer :: nlat_in
+    integer :: nlon_out
+    integer :: nlat_out
+    integer :: max_step
+    integer :: n
+    integer :: m
+    integer :: l
+    integer :: i
+    integer :: j
+    integer :: ip1
+    integer :: jp1
+    integer :: step
+    integer :: is
+    integer :: js
+    integer :: jstart
+    integer :: jend
+    integer :: istart
+    integer :: iend
+    integer :: npts
+    integer, allocatable, dimension(:) :: ilon
+    integer, allocatable, dimension(:) :: jlat
+    real(FMS_HI_KIND_) :: lon_min
+    real(FMS_HI_KIND_) :: lon_max
+    real(FMS_HI_KIND_) :: lon
+    real(FMS_HI_KIND_) :: lat
+    real(FMS_HI_KIND_) :: tpi
+    logical :: found
+    real(FMS_HI_KIND_) :: lon1
+    real(FMS_HI_KIND_) :: lat1
+    real(FMS_HI_KIND_) :: lon2
+    real(FMS_HI_KIND_) :: lat2
+    real(FMS_HI_KIND_) :: lon3
+    real(FMS_HI_KIND_) :: lat3
+    real(FMS_HI_KIND_) :: lon4
+    real(FMS_HI_KIND_) :: lat4
 
     integer, parameter :: kindl=FMS_HI_KIND_
 
@@ -656,21 +771,28 @@
        enddo
     enddo
 
-  end subroutine
+  end subroutine FIND_NEIGHBOR_
 
   !#######################################################################
 
-  !> The function will return true if the point x,y is inside a polygon, or
-  !! false if it is not.  If the point is exactly on the edge of a polygon,
-  !! the function will return .true.
+  !> @parblock
+  !! Internally used function that returns True if gridpoint(x, y) is inside a polygon
+  !! specified by polyx and polyy.  Used to find nearest neighbors in find_neighbor_new.
+  !! @endparblock
   function INSIDE_POLYGON_(polyx, polyy, x, y)
-     real(FMS_HI_KIND_), dimension(:), intent(in) :: polyx !< longitude coordinates of corners
-     real(FMS_HI_KIND_), dimension(:), intent(in) :: polyy !< latitude coordinates of corners
-     real(FMS_HI_KIND_),               intent(in) :: x !< x coordinate of point to be tested
-     real(FMS_HI_KIND_),               intent(in) :: y !< y coordinate of point to be tested
-     logical                        :: INSIDE_POLYGON_
-     integer                        :: i, j, nedges
-     real(FMS_HI_KIND_)                           :: xx
+     real(FMS_HI_KIND_), dimension(:), intent(in) :: polyx
+       !< are the longitude coordinates of corners
+     real(FMS_HI_KIND_), dimension(:), intent(in) :: polyy
+       !< are the latitude coordinates of corners
+     real(FMS_HI_KIND_), intent(in) :: x
+       !< is the x coordinate of point to be tested
+     real(FMS_HI_KIND_), intent(in) :: y
+       !< is the y coordinate of point to be tested
+     logical :: INSIDE_POLYGON_
+     integer :: i
+     integer :: j
+     integer :: nedges
+     real(FMS_HI_KIND_) :: xx
 
      INSIDE_POLYGON_ = .false.
      nedges = size(polyx(:))
@@ -693,23 +815,62 @@
   end function
 
   !#######################################################################
-  !> this routine will search the source grid to fine the grid box that encloses
-  !! each destination grid.
+  !> @parblock
+  !! The newer internally used subroutine to search the source grid for grid cells that neighbors
+  !! each destination grid cells.
+  !! @endparblock
   subroutine FIND_NEIGHBOR_NEW_( Interp, lon_in, lat_in, lon_out, lat_out, src_modulo, no_crash )
     type(horiz_interp_type), intent(inout) :: Interp
-    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_out, lat_out
-    logical,                 intent(in)    :: src_modulo, no_crash
-    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
-    integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
-    integer                                :: is, js, jstart, jend, istart, iend, npts
-    integer, allocatable, dimension(:)     :: ilon, jlat
-    real(FMS_HI_KIND_)                                   :: lon_min, lon_max, lon, lat, tpi
-    logical                                :: found
-    real(FMS_HI_KIND_)                                   :: polyx(4), polyy(4)
-    real(FMS_HI_KIND_)                                   :: min_lon, min_lat, max_lon, max_lat
+      !< will be populated with mapping indices.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_in
+      !< are the longitude coordinates for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_in
+      !< are the latitude coordinates for the input grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
+      !< are the longitude coordinates for the output grid in radians.
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out 
+      !< are the latitude coordinates for the output grid in radians.
+    logical, intent(in) :: src_modulo
+      !< is true if the boundary condition along zonal boundary is cyclic.
+    logical, intent(in) :: no_crash
+      !< sets Interp%i_lon and Interp%j_lat to DUMMY values for cells with no nearest neighbors when true.
+    integer :: nlon_in
+    integer :: nlat_in
+    integer :: nlon_out
+    integer :: nlat_out
+    integer :: max_step
+    integer :: n
+    integer :: m
+    integer :: l
+    integer :: i
+    integer :: j
+    integer :: ip1
+    integer :: jp1
+    integer :: step
+    integer :: is
+    integer :: js
+    integer :: jstart
+    integer :: jend
+    integer :: istart
+    integer :: iend
+    integer :: npts
+    integer, allocatable, dimension(:) :: ilon
+    integer, allocatable, dimension(:) :: jlat
+    real(FMS_HI_KIND_) :: lon_min
+    real(FMS_HI_KIND_) :: lon_max
+    real(FMS_HI_KIND_) :: lon
+    real(FMS_HI_KIND_) :: lat
+    real(FMS_HI_KIND_) :: tpi
+    logical :: found
+    real(FMS_HI_KIND_) :: polyx(4)
+    real(FMS_HI_KIND_) :: polyy(4)
+    real(FMS_HI_KIND_) :: min_lon
+    real(FMS_HI_KIND_) :: min_lat
+    real(FMS_HI_KIND_) :: max_lon
+    real(FMS_HI_KIND_) :: max_lat
 
-    integer, parameter :: step_div=8, kindl = FMS_HI_KIND_
+    integer, parameter :: step_div=8
+    integer, parameter :: kindl = FMS_HI_KIND_
 
     tpi = 2.0_kindl * real(pi, FMS_HI_KIND_)
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
@@ -894,12 +1055,19 @@
        enddo
     enddo
 
-  end subroutine
+  end subroutine FIND_NEIGHBOR_NEW_
 
   !#######################################################################
+  !> @parblock
+  !! Internally used function in the older find_neighbor subroutine.
+  !! @endparblock
   function INTERSECT_(x1, y1, x2, y2, x)
-     real(FMS_HI_KIND_), intent(in) :: x1, y1, x2, y2, x
-     real(FMS_HI_KIND_)             :: INTERSECT_
+     real(FMS_HI_KIND_), intent(in) :: x1
+     real(FMS_HI_KIND_), intent(in) :: y1
+     real(FMS_HI_KIND_), intent(in) :: x2
+     real(FMS_HI_KIND_), intent(in) :: y2
+     real(FMS_HI_KIND_), intent(in) :: x
+     real(FMS_HI_KIND_) :: INTERSECT_
 
      INTERSECT_ = (y2-y1)*(x-x1)/(x2-x1) + y1
 
@@ -909,38 +1077,72 @@
 
   !#######################################################################
 
-  !> Subroutine for performing the horizontal interpolation between two grids
-  !!
-  !! @ref horiz_interp_bilinear_new must be called before calling this routine.
+  !> @parblock
+  !! Subroutine to bilinearly interpolate 2D data using the weights stored in Interp.
+  !! @endparblock
   subroutine HORIZ_INTERP_BILINEAR_ ( Interp, data_in, data_out, verbose, mask_in,mask_out, &
        missing_value, missing_permit, new_handle_missing )
     !-----------------------------------------------------------------------
-    type (horiz_interp_type), intent(in)        :: Interp !< Derived type variable containing
-                                               !! interpolation indices and weights. Returned by a
-                                               !! previous call to horiz_interp_bilinear_new
-    real(FMS_HI_KIND_), intent(in),  dimension(:,:)           :: data_in !< input data on source grid
-    real(FMS_HI_KIND_), intent(out), dimension(:,:)           :: data_out !< output data on source grid
-    integer, intent(in),               optional :: verbose !< 0 = no output; 1 = min,max,means; 2 =
-                                                           !! all output
-    real(FMS_HI_KIND_), intent(in), dimension(:,:),  optional :: mask_in !< Input mask, must be the same size as
-                                    !! the input data. The real(FMS_HI_KIND_) value of mask_in must be in the
-                                    !! range (0.,1.). Set mask_in=0.0 for data points
-                                    !! that should not be used or have missing data
-    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out !< output mask that specifies whether
-                                                            !! data was computed
-    real(FMS_HI_KIND_), intent(in),                  optional :: missing_value
-    integer, intent(in),               optional :: missing_permit
-    logical, intent(in),               optional :: new_handle_missing
+    type (horiz_interp_type), intent(in) :: Interp
+      !< contains the interpolation weights and mapping indices
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in
+      !< is the data to interpolate
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
+      !< will contain the interpolated data
+    integer, intent(in), optional :: verbose
+      !< sets the verbosity level: 0 = no output; 1 for min, max, means; 2 for all output
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
+      !< is used to mask the input data when new_handle_missing = .false..
+      !! Mask values for cells with missing_value will be set to 0.0
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
+      !< will be zero for output cells set to missing_value.
+    real(FMS_HI_KIND_), intent(in), optional :: missing_value
+      !< is the missing_value.
+    integer, intent(in), optional :: missing_permit
+      !< is the maximum number of missing values allowed in data_in; not used when new_handle_missing = .true..
+    logical, intent(in), optional :: new_handle_missing
+      !< turns on the new missing value handling algorithm if .true..
     !-----------------------------------------------------------------------
-    integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m,         &
-         is, ie, js, je, iverbose, max_missing, num_missing, &
-         miss_in, miss_out, iunit
-    real(FMS_HI_KIND_)    :: dwtsum, wtsum, min_in, max_in, avg_in, &
-         min_out, max_out, avg_out, wtw, wte, wts, wtn
-    real(FMS_HI_KIND_)    :: mask(size(data_in,1), size(data_in,2) )
-    logical :: set_to_missing, is_missing(4), new_handler
-    real(FMS_HI_KIND_)    :: f1, f2, f3, f4, middle, w, s
-    integer, parameter    :: kindl = FMS_HI_KIND_
+    integer :: nlon_in
+    integer :: nlat_in
+    integer :: nlon_out
+    integer :: nlat_out
+    integer :: n
+    integer :: m
+    integer :: is
+    integer :: ie
+    integer :: js
+    integer :: je
+    integer :: iverbose
+    integer :: max_missing
+    integer :: num_missing
+    integer :: miss_in
+    integer :: miss_out
+    integer :: iunit
+    real(FMS_HI_KIND_) :: dwtsum
+    real(FMS_HI_KIND_) :: wtsum
+    real(FMS_HI_KIND_) :: min_in
+    real(FMS_HI_KIND_) :: max_in
+    real(FMS_HI_KIND_) :: avg_in
+    real(FMS_HI_KIND_) :: min_out
+    real(FMS_HI_KIND_) :: max_out
+    real(FMS_HI_KIND_) :: avg_out
+    real(FMS_HI_KIND_) :: wtw
+    real(FMS_HI_KIND_) :: wte
+    real(FMS_HI_KIND_) :: wts
+    real(FMS_HI_KIND_) :: wtn
+    real(FMS_HI_KIND_) :: mask(size(data_in,1), size(data_in,2))
+    logical :: set_to_missing
+    logical :: is_missing(4)
+    logical :: new_handler
+    real(FMS_HI_KIND_) :: f1
+    real(FMS_HI_KIND_) :: f2
+    real(FMS_HI_KIND_) :: f3
+    real(FMS_HI_KIND_) :: f4
+    real(FMS_HI_KIND_) :: middle
+    real(FMS_HI_KIND_) :: w
+    real(FMS_HI_KIND_) :: s
+    integer, parameter :: kindl = FMS_HI_KIND_
 
     num_missing = 0
 
@@ -1220,31 +1422,46 @@
 
     return
 
-  end subroutine
+  end subroutine HORIZ_INTERP_BILINEAR_
 
-  !> Subroutine for reading a weight file and use it to fill in the horiz interp type
-  !! for the bilinear interpolation method.
+  !> @parblock
+  !! Subroutine to read a weight file and populate Interp for the bilinear interpolation.
+  !! @endparblock
   subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_(Interp, weight_filename, lon_out, lat_out, lon_in, lat_in, &
                                                  weight_file_source, interp_method, isw, iew, jsw, jew, nglon, nglat)
-    type(horiz_interp_type), intent(inout) :: Interp             !< Horiz interp time to fill
-    character(len=*),        intent(in)    :: weight_filename    !< Name of the weight file
-    real(FMS_HI_KIND_), target,     intent(in)    :: lat_out(:,:)       !< Output (model) latitude
-    real(FMS_HI_KIND_), target,      intent(in)    :: lon_out(:,:)       !< Output (model) longitude
-    real(FMS_HI_KIND_),      intent(in)    :: lat_in(:)          !< Input (data) latitude
-    real(FMS_HI_KIND_),      intent(in)    :: lon_in(:)          !< Input (data) longitude
-    character(len=*),        intent(in)    :: weight_file_source !< Source of the weight file
-    character(len=*),        intent(in)    :: interp_method      !< The interp method to use
-    integer,                 intent(in)    :: isw, iew, jsw, jew !< Starting and ending indices of the compute domain
-    integer,                 intent(in)    :: nglon              !< Number of longitudes in the global domain
-    integer,                 intent(in)    :: nglat              !< Number of latitudes in the globl domain
+    type(horiz_interp_type), intent(inout) :: Interp
+      !< will be populated with interpolation weights and mapping indices.
+    character(len=*), intent(in) :: weight_filename
+      !< is the name of the weight file.
+    real(FMS_HI_KIND_), target, intent(in) :: lat_out(:,:)
+      !< are the latitude coordinates of output grid.
+    real(FMS_HI_KIND_), target, intent(in) :: lon_out(:,:)
+      !< are the longitude coordinates of output grid.
+    real(FMS_HI_KIND_), intent(in) :: lat_in(:)
+      !< are the latitude coordinates for the rectangular input grid in radians.
+    real(FMS_HI_KIND_), intent(in) :: lon_in(:)
+      !< are the longitude coordinates for the rectangular input grid in radians.
+    character(len=*), intent(in) :: weight_file_source
+      !< source of the weight file, only accepts "fregrid" at this time.
+    character(len=*), intent(in) :: interp_method
+      !< is not used.
+    integer, intent(in) :: isw
+      !< is the starting x index in compute domain, used to read subsection of weight file.
+    integer, intent(in) :: iew
+      !< is the ending x index in compute domain, used to read subsection of weight file.
+    integer, intent(in) :: jsw
+      !< is the starting y index in compute domain, used to read subsection of weight file.
+    integer, intent(in) :: jew
+      !< is the ending y index in compute domain, used to read subsection of weight file.
+    integer, intent(in) :: nglon
+      !< is the number of longitude gridpoints in the global domain, used for consistency checking.
+    integer, intent(in) :: nglat
+      !< is the number of latitude gridpoints in the global domain, used for consistency checking.
 
-
-    real(FMS_HI_KIND_), allocatable :: var(:,:,:)     !< Dummy variable to read the indices and weight into
-    type(FmsNetcdfFile_t)           :: weight_fileobj !< FMS2io fileob for the weight file
-    integer                         :: nlon           !< Number of longitudes in the model grid as read
-                                                      !! from the weight file
-    integer                         :: nlat           !< Number of latitude in the model grid as read
-                                                      !! from the weight file
+    real(FMS_HI_KIND_), allocatable :: var(:,:,:) ! Dummy variable to read the indices and weight into
+    type(FmsNetcdfFile_t) :: weight_fileobj ! FMS2io fileob for the weight file
+    integer :: nlon ! Number of longitudes in the model grid as read from the weight file
+    integer :: nlat ! Number of latitude in the model grid as read from the weight file
 
     if (.not. open_file(weight_fileobj, weight_filename, "read" )) &
       call mpp_error(FATAL, "Error opening the weight file:"//&
