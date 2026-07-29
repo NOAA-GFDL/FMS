@@ -15,14 +15,13 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief File for @ref constants_mod
 
 !> @defgroup constants_mod constants_mod
-!> @ingroup constants
-!> @brief compatibility module as we transition to an FMSConstants module
+!{
+!! @brief File for @ref constants_mod
+!! @brief compatibility module as we transition to an FMSConstants module
 !!
-!>    Constants have been declared as type REAL, PARAMETER.
+!!    Constants have been declared as type REAL, PARAMETER.
 !!
 !!    The value a constant can not be changed in a users program.
 !!    New constants can be defined in terms of values from the
@@ -42,8 +41,6 @@
 !!    geopotential(:,:) = height(:,:) * grav_new
 !! @endverbatim
 
-!> @addtogroup constants_mod
-!> @{
 module constants_mod
 
 !> rename to not conflict with any other version vars
@@ -52,3 +49,4 @@ use FMSConstants, version => constants_version, constants_init => FMSconstants_i
 contains
 
 end module constants_mod
+!> @}
