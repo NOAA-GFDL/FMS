@@ -293,7 +293,7 @@ OPTIMIZE_OUTPUT_VHDL   = NO
 # Note that for custom extensions you also need to set FILE_PATTERNS otherwise
 # the files are not read by doxygen.
 
-EXTENSION_MAPPING      = F90=FortranFree inc=FortranFree h=FortranFree
+EXTENSION_MAPPING      = F90=FortranFree inc=FortranFree h=FortranFree fh=FortranFree
 
 # If the MARKDOWN_SUPPORT tag is enabled then doxygen pre-processes all comments
 # according to the Markdown format, which allows for more readable
@@ -706,7 +706,7 @@ FILE_VERSION_FILTER    = "git log --format='%H' -1"
 # DoxygenLayout.xml, doxygen will parse it automatically even if the LAYOUT_FILE
 # tag is left empty.
 
-LAYOUT_FILE            = docs/layout.xml
+LAYOUT_FILE            = @abs_top_builddir@/docs/layout.xml
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
@@ -792,7 +792,7 @@ WARN_LOGFILE           = doxywarn.log
 # directories like /usr/src/myproject. Separate the files or directories with
 # spaces.
 # Note: If this tag is empty the current directory is searched.
-INPUT                  = @abs_top_srcdir@ docs/landingPage.md
+INPUT                  = @abs_top_srcdir@ @abs_top_srcdir@/docs/landingPage.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -817,7 +817,7 @@ INPUT_ENCODING         = UTF-8
 # *.m, *.markdown, *.md, *.mm, *.dox, *.py, *.pyw, *.f90, *.f, *.for, *.tcl,
 # *.vhd, *.vhdl, *.ucf and *.qsf.
 
-FILE_PATTERNS          = *.F90 *.inc *.c *.h *.md
+FILE_PATTERNS          = *.F90 *.inc *.c *.h *.fh *.md
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -873,7 +873,7 @@ EXAMPLE_PATH           =
 # *.h) to filter out the source-files in the directories. If left blank all
 # files are included.
 
-EXAMPLE_PATTERNS       = *.F90 *.inc
+EXAMPLE_PATTERNS       = *.F90 *.inc *.fh
 
 # If the EXAMPLE_RECURSIVE tag is set to YES then subdirectories will be
 # searched for input files to be used with the \include or \dontinclude commands
@@ -942,7 +942,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = docs/landingPage.md
+USE_MDFILE_AS_MAINPAGE = @abs_top_builddir@/docs/landingPage.md
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
@@ -1880,7 +1880,7 @@ MAN_LINKS              = NO
 # captures the structure of the code including all documentation.
 # The default value is: NO.
 
-GENERATE_XML           = NO
+GENERATE_XML           = YES
 
 # The XML_OUTPUT tag is used to specify where the XML pages will be put. If a
 # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
@@ -1897,7 +1897,7 @@ XML_OUTPUT             = xml
 # The default value is: YES.
 # This tag requires that the tag GENERATE_XML is set to YES.
 
-XML_PROGRAMLISTING     = YES
+XML_PROGRAMLISTING     = NO
 
 #---------------------------------------------------------------------------
 # Configuration options related to the DOCBOOK output
@@ -2015,7 +2015,36 @@ SEARCH_INCLUDES        = YES
 # preprocessor.
 # This tag requires that the tag SEARCH_INCLUDES is set to YES.
 
-INCLUDE_PATH           = @abs_top_srcdir@/mpp/include @abs_top_srcdir@/fms2_io @abs_top_srcdir@/fms
+INCLUDE_PATH           = @abs_top_srcdir@/amip_interp/include \
+                         @abs_top_srcdir@/astronomy/include \
+                         @abs_top_srcdir@/axis_utils/include \
+                         @abs_top_srcdir@/column_diagnostics/include \
+                         @abs_top_srcdir@/constants \
+                         @abs_top_srcdir@/constants4 \
+                         @abs_top_srcdir@/coupler/include \
+                         @abs_top_srcdir@/data_override/include \
+                         @abs_top_srcdir@/diag_integral/include \
+                         @abs_top_srcdir@/diag_manager/include \
+                         @abs_top_srcdir@/field_manager/include \
+                         @abs_top_srcdir@/fms/include \
+                         @abs_top_srcdir@/fms2_io/include \
+                         @abs_top_srcdir@/horiz_interp/include \
+                         @abs_top_srcdir@/include \
+                         @abs_top_srcdir@/interpolator/include \
+                         @abs_top_srcdir@/monin_obukhov/include \
+                         @abs_top_srcdir@/mosaic2/include \
+                         @abs_top_srcdir@/mpp/include \
+                         @abs_top_srcdir@/random_numbers/include \
+                         @abs_top_srcdir@/sat_vapor_pres/include \
+                         @abs_top_srcdir@/string_utils/include \
+                         @abs_top_srcdir@/test_fms/common/include \
+                         @abs_top_srcdir@/test_fms/data_override/include \
+                         @abs_top_srcdir@/test_fms/fms/include \
+                         @abs_top_srcdir@/test_fms/mpp/include \
+                         @abs_top_srcdir@/time_interp/include \
+                         @abs_top_srcdir@/topography/include \
+                         @abs_top_srcdir@/tracer_manager/include \
+                         @abs_top_srcdir@/tridiagonal/include
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the
@@ -2023,7 +2052,7 @@ INCLUDE_PATH           = @abs_top_srcdir@/mpp/include @abs_top_srcdir@/fms2_io @
 # used.
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
-INCLUDE_FILE_PATTERNS  = *.h *.inc
+INCLUDE_FILE_PATTERNS  = *.h *.inc *.fh
 
 # The PREDEFINED tag can be used to specify one or more macro names that are
 # defined before the preprocessor is started (similar to the -D option of e.g.
