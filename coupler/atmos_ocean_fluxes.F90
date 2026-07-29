@@ -16,12 +16,12 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup atmos_ocean_fluxes_mod atmos_ocean_fluxes_mod
-!> @ingroup coupler
-!> @brief Implementation of routines to solve the gas fluxes at the
+!! @{
+!! @brief Implementation of routines to solve the gas fluxes at the
 !! ocean surface for a coupled model as outlined in the Biotic-HOWTO
 !! documentation below, revision 1.7, 1999/10/05.
 !!
-!> @author Richard Slater, John Dunne
+!! @author Richard Slater, John Dunne
 !!
 !! Ocean Carbon Model Intercomparison Study II: Gas exchange coupler.
 !!
@@ -34,8 +34,6 @@
 !! the individual fields, or fluxes. This could be used in
 !! the absence of an atmospheric or oceanic model.
 
-!> @addtogroup atmos_ocean_fluxes_mod
-!> @{
 module  atmos_ocean_fluxes_mod
   use mpp_mod,           only: stdout, mpp_error, FATAL, mpp_sum, mpp_npes
   use fms_mod,           only: write_version_number

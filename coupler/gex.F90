@@ -17,9 +17,9 @@
 !***********************************************************************
 
 !> @defgroup gex_mod gex_mod
-!> @ingroup gex
-!> @brief Simple generic exchange (gex) interface to pass (non-tracer) fields across components
-!> @author Fabien Paulot (Fabien.Paulot@noaa.gov)
+!! @{
+!! @brief Simple generic exchange (gex) interface to pass (non-tracer) fields across components
+!! @author Fabien Paulot (Fabien.Paulot@noaa.gov)
 !!
 !!
 !!
@@ -93,9 +93,6 @@
 !!  `gex array` is an array that contains all exchanged fields in the receiving component.
 !!  It needs to be made available in the routine where the field of interest is needed
 !!
-!> @file
-!> @addtogroup gex_mod
-!> @brief File for @ref gex_mod
 
 module gex_mod
 
@@ -123,7 +120,6 @@ integer, parameter :: gex_name  = 1    !< internal index for gex_name
 integer, parameter :: gex_units = 2    !< internal index for gex unit
 
 !> @brief This type represents the entries for a specific exchanged field
-!> @ingroup gex_mod
 type gex_type
    character(fm_field_name_len):: name  = '' !< gex name
    character(fm_string_len)    :: units = '' !< units (optional)
@@ -131,7 +127,6 @@ type gex_type
 end type gex_type
 
 !> @brief This type stores information about all the exchanged fields
-!> @ingroup gex_mod
 type gex_type_r
   type(gex_type), allocatable:: field(:)
 end type gex_type_r
@@ -140,15 +135,12 @@ integer,          allocatable :: n_gex(:,:)
 type(gex_type_r), allocatable :: gex_fields(:,:)
 
 !> @brief check that gex field was accessed by the sending component
-!> @ingroup gex_mod
 interface check_gex
    module procedure check_gex_name
    module procedure check_gex_index
 end interface check_gex
 
 
-!> @addtogroup gex_mod
-!> @{
 contains
 
 !> @brief Subroutine to initialize generic exchange between model components
