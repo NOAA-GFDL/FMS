@@ -17,7 +17,6 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_time_reduction_mod fms_diag_time_reduction_mod
-!> @ingroup diag_manager
 !> @brief fms_diag_time_reduction_mod defines classes encapsulating the diag_manager
 !! time redution types.
 !!
@@ -25,8 +24,6 @@
 !!
 !> @file
 !> @brief File for @ref fms_diag_time_reduction_mod
-!> @addtogroup fms_diag_time_reduction_mod
-!> @{
 MODULE fms_diag_time_reduction_mod
 
   USE diag_data_mod, only: EVERY_TIME
@@ -58,7 +55,6 @@ MODULE fms_diag_time_reduction_mod
   !! The integer parameters above are the legal time reduction types,
   !! but they are not necessarily mutually exclusive in some contexts.
   !!
-  !> @addtogroup fms_diag_time_reduction_mod
   TYPE fmsDiagTimeReduction_type
      integer , private :: the_time_reduction !< The time reduction type, as an  integer defined above.
      logical , private :: time_averaging !< Set true iff time_average, time_rms, time_power or time_diurnal is true
@@ -79,7 +75,6 @@ MODULE fms_diag_time_reduction_mod
   END TYPE fmsDiagTimeReduction_type
 
   !> @brief This interface is for the class constructor.
-  !> @addtogroup fms_diag_time_reduction_mod
   interface  fmsDiagTimeReduction_type
      procedure  :: fmsDiagTimeReduction_type_constructor
   end interface fmsDiagTimeReduction_type
@@ -222,5 +217,4 @@ CONTAINS
   end function is_time_power_imp
 
 end module fms_diag_time_reduction_mod
-!> @}
 ! close documentation grouping

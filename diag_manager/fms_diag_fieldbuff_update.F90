@@ -17,7 +17,6 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_fieldbuff_update_mod fms_diag_fieldbuff_update_mod
-!> @ingroup diag_manager
 !> @brief fms_diag_fieldbuff_update_mod Contains routines for updating the
 !! buffer (array) of field data statistics (e.g. average, rms) with new field data.
 !!
@@ -29,8 +28,6 @@
 !!
 !> @file
 !> @brief File for @ref fms_diag_fieldbuff_update_mod
-!> @addtogroup fms_diag_fieldbuff_update_mod
-!> @{
 MODULE fms_diag_fieldbuff_update_mod
    USE platform_mod
    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
@@ -49,7 +46,6 @@ MODULE fms_diag_fieldbuff_update_mod
 
    !> @brief Interface fieldbuff_update updates elements of field output buffer based on input field
    !! data and mathematical operations on the field data.
-   !> @ingroup fms_diag_fieldbuff_update_mod
    interface fieldbuff_update
       !< r4 version of the interface
       module procedure fieldbuff_update_r4
@@ -67,7 +63,6 @@ MODULE fms_diag_fieldbuff_update_mod
 
    !> @brief Interface fieldbuff_copy_missvals updates elements of the field output buffer with
    !! the missvalue input argument.
-   !> @ingroup fms_diag_fieldbuff_update_mod
    interface fieldbuff_copy_missvals
       !< r4 version of the interface
       module procedure fieldbuff_copy_missvals_r4
@@ -85,7 +80,6 @@ MODULE fms_diag_fieldbuff_update_mod
 
    !> @brief Interface fieldbuff_copy_fieldvals updates elements of the field output buffer with
    !! copies of corresponding element values in the input field data.
-   !> @ingroup fms_diag_fieldbuff_update_mod
    interface fieldbuff_copy_fieldvals
       !< r4 version of the interface
       module procedure fieldbuff_copy_fieldvals_r4
@@ -105,5 +99,4 @@ contains
 #include "fms_diag_fieldbuff_update.inc"
 
 END MODULE fms_diag_fieldbuff_update_mod
-!> @}
 ! close documentation grouping

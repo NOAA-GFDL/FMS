@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_util_mod diag_util_mod
-!> @ingroup diag_manager
+!! @{
 !! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
 !! @author Seth Underwood
 
@@ -86,14 +86,12 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
 
 
   !> @brief Prepend a value to a string attribute in the output field or output file.
-  !> @ingroup diag_util_mod
   INTERFACE prepend_attribute
      MODULE PROCEDURE prepend_attribute_field
      MODULE PROCEDURE prepend_attribute_file
   END INTERFACE prepend_attribute
 
   !> @brief Allocates the atttype in out_file.
-  !> @ingroup diag_util_mod
   INTERFACE attribute_init
      MODULE PROCEDURE attribute_init_field
      MODULE PROCEDURE attribute_init_file
@@ -105,8 +103,6 @@ use,intrinsic :: iso_c_binding, only: c_double,c_float,c_int64_t, &
   END INTERFACE fms_diag_check_out_of_bounds
 
 
-!> @addtogroup diag_util_mod
-!> @{
 
   ! Include variable "version" to be written to log file.
 #include <file_version.h>

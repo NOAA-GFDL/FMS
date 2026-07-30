@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_table_mod diag_table_mod
-!> @ingroup diag_manager
+!! @{
 !! @brief <TT>diag_table_mod</TT> is a set of subroutines use to parse out the data from a
 !! <TT>diag_table</TT>.  This module
 !!   will also setup the arrays required to store the information by counting the number of
@@ -262,7 +262,6 @@ MODULE diag_table_mod
   PUBLIC :: parse_diag_table
 
   !> Private type to hold field information for the diag table
-  !> @ingroup diag_table_mod
   TYPE field_description_type
      CHARACTER(len=128) :: module_name, field_name, output_name, file_name
      CHARACTER(len=50) :: time_sampling
@@ -273,7 +272,6 @@ MODULE diag_table_mod
   END TYPE field_description_type
 
   !> Private type to hold file information for the diag table
-  !> @ingroup diag_table_mod
   TYPE file_description_type
      INTEGER :: output_freq
      INTEGER :: file_format
@@ -294,8 +292,6 @@ MODULE diag_table_mod
      TYPE(time_type) :: start_time
   END TYPE file_description_type
 
-!> @addtogroup diag_table_mod
-!> @{
 
   CHARACTER(len=*), PARAMETER :: UNALLOWED_QTE = "'"//'"'
   CHARACTER(len=*), PARAMETER :: UNALLOWED_ALL = UNALLOWED_QTE//","

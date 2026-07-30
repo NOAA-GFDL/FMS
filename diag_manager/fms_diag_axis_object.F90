@@ -17,15 +17,11 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_axis_object_mod fms_diag_axis_object_mod
-!> @ingroup diag_manager
+!! @{
 !! @brief fms_diag_axis_object_mod stores the diag axis object, a diag domain
 !! object, and a subaxis object.
 
-!> @file
-!> @brief File for @ref diag_axis_object_mod
 
-!> @addtogroup fms_diag_axis_object_mod
-!> @{
 module fms_diag_axis_object_mod
 #ifdef use_yaml
   use mpp_domains_mod, only:  domain1d, domain2d, domainUG, mpp_get_compute_domain, CENTER, &
@@ -54,12 +50,10 @@ module fms_diag_axis_object_mod
           & fmsDiagDiurnalAxis_type, create_new_z_subaxis, is_parent_axis, define_new_subaxis_latlon, &
           & define_new_subaxis_index, find_z_sub_axis_name
 
-  !> @}
 
   !> @brief Type to hold the domain info for an axis
   !! This type was created to avoid having to send in "Domain", "Domain2", "DomainUG" as arguments into subroutines
   !! and instead only 1 class(diagDomain_t) argument can be send
-  !> @ingroup diag_axis_object_mod
   type diagDomain_t
     contains
       procedure :: set => set_axis_domain
@@ -83,7 +77,6 @@ module fms_diag_axis_object_mod
   end type
 
   !> @brief Type to hold the diagnostic axis description.
-  !> @ingroup diag_axis_object_mod
   TYPE :: fmsDiagAxis_type
      INTEGER                        , private :: axis_id         !< ID of the axis
 
@@ -101,13 +94,11 @@ module fms_diag_axis_object_mod
   END TYPE fmsDiagAxis_type
 
   !> @brief Type to hold the diag_axis (either subaxis or a full axis)
-  !> @ingroup diag_axis_object_mod
   type :: fmsDiagAxisContainer_type
     class(fmsDiagAxis_type), allocatable :: axis
   end type
 
   !> @brief Type to hold the subaxis
-  !> @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagSubAxis_type
     CHARACTER(len=:),  ALLOCATABLE , private  :: subaxis_name   !< Name of the subaxis
     INTEGER                        , private  :: starting_index !< Starting index of the subaxis relative to the
@@ -128,7 +119,6 @@ module fms_diag_axis_object_mod
   END TYPE fmsDiagSubAxis_type
 
   !> @brief Type to hold the diurnal axis
-  !> @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagDiurnalAxis_type
     INTEGER                      , private :: ndiurnal_samples !< The number of diurnal samples
     CHARACTER(len=:), ALLOCATABLE, private :: axis_name        !< The diurnal axis name
@@ -144,7 +134,6 @@ module fms_diag_axis_object_mod
   END TYPE fmsDiagDiurnalAxis_type
 
   !> @brief Type to hold the diagnostic axis description.
-  !> @ingroup diag_axis_object_mod
   TYPE, extends(fmsDiagAxis_type) :: fmsDiagFullAxis_type
      CHARACTER(len=:),   ALLOCATABLE, private :: axis_name       !< Name of the axis
      CHARACTER(len=:),   ALLOCATABLE, private :: units           !< Units of the axis
@@ -196,8 +185,6 @@ module fms_diag_axis_object_mod
      ! Get/has/is subroutines as needed
   END TYPE fmsDiagFullAxis_type
 
-  !> @addtogroup fms_diag_yaml_mod
-  !> @{
   contains
 
   !!!!!!!!!!!!!!!!! DIAG AXIS PROCEDURES !!!!!!!!!!!!!!!!!

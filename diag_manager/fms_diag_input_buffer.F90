@@ -16,10 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_input_buffer_mod fms_diag_input_buffer_mod
-!> @ingroup diag_manager
-!! @brief
-!> @addtogroup fms_diag_input_buffer_mod
-!> @{
+!! @{
 module fms_diag_input_buffer_mod
 #ifdef use_yaml
   use platform_mod,             only: r8_kind, r4_kind, i4_kind, i8_kind

@@ -16,11 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_grid_mod diag_grid_mod
-!> @ingroup diag_manager
-!> @brief diag_grid_mod is a set of procedures to work with the
+!! @{
+!! @brief diag_grid_mod is a set of procedures to work with the
 !!   model's global grid to allow regional output.
 !!
-!> @author Seth Underwood seth.underwood@noaa.gov
+!! @author Seth Underwood seth.underwood@noaa.gov
 !!
 !! <TT>diag_grid_mod</TT> contains useful utilities for dealing
 !!   with, mostly, regional output for grids other than the standard
@@ -68,7 +68,6 @@ use platform_mod
 
   !> @brief Private type to hold the model's global grid data, and other grid information for use
   !! in this module.
-  !> @ingroup diag_grid_mod
   type, private :: diag_global_grid_type
      REAL, allocatable, DIMENSION(:,:) :: glo_lat !< The latitude values on the global grid.
      REAL, allocatable, DIMENSION(:,:) :: glo_lon !< The longitude values on the global grid.
@@ -95,15 +94,12 @@ use platform_mod
 
   !> @brief Private type to hold the corresponding (x,y,z) location for a (lat,lon)
   !! location.
-  !> @ingroup diag_grid_mod
   type, private :: point
      REAL :: x !< The x value of the (x,y,z) coordinates.
      REAL :: y !< The y value of the (x,y,z) coordinates.
      REAL :: z !< The z value of the (x,y,z) coordinates.
   END TYPE point
 
-!> @addtogroup diag_grid_mod
-!> @{
 
   TYPE(diag_global_grid_type) :: diag_global_grid !< Variable to hold the global grid data
 

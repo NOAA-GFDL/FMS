@@ -17,7 +17,7 @@
 !***********************************************************************
 module fms_diag_field_object_mod
 !> \author Tom Robinson
-!> \email thomas.robinson@noaa.gov
+!! \email thomas.robinson@noaa.gov
 !! \brief Contains routines for the diag_objects
 !!
 !! \description The diag_manager passes an object back and forth between the diag routines and the users.

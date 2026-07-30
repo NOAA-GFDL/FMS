@@ -19,8 +19,6 @@
 !> @brief Imports the input buffer routines from other include files used
 !! in @ref diag_manager_mod
 
-!> @addtogroup diag_manager_mod
-!> @{
 
 #undef FMS_TRM_KIND_
 #define FMS_TRM_KIND_ r4_kind
@@ -33,5 +31,4 @@
 
 #include "fms_diag_input_buffer.inc"
 
-!> @}
 ! close documentation grouping

@@ -16,7 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @author Ryan Mulhall
-!> @email ryan.mulhall@noaa.gov
+!! @{
+!! @email ryan.mulhall@noaa.gov
 !! @brief Contains buffer types and routines for the diag manager
 !!
 !! @description Holds buffered data for fmsDiagVars_type objects
@@ -928,3 +929,4 @@ subroutine set_send_data_called(this)
 end subroutine set_send_data_called
 #endif
 end module fms_diag_output_buffer_mod
+!> @}
