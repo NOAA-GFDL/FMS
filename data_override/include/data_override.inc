@@ -55,7 +55,6 @@ private
 #include<file_version.h>
 
 !> Private type for holding field and grid information from a data table
-!> @ingroup data_override_mod
 type data_type
    character(len=3)   :: gridname
    character(len=128) :: fieldname_code  !< fieldname used in user's code (model)
@@ -77,7 +76,6 @@ type data_type
 end type data_type
 
 !> Private type for holding various data fields for performing data overrides
-!> @ingroup data_override_mod
 type override_type
    character(len=3)                 :: gridname
    character(len=128)               :: fieldname
@@ -99,7 +97,6 @@ end type override_type
 !> Private type for holding horiz_interp_type for a weight file
 !! This is needed so that if variables use the same weight file,
 !! then we won't have to read the weight file again
-!> @ingroup data_override_mod
 type fmsExternalWeights_type
   character(len=:), allocatable :: weight_filename !< Name of the weight file
   type(horiz_interp_type)       :: horiz_interp    !< Horiz interp type read in from the weight file

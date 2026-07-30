@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_axis_mod diag_axis_mod
+!! @ingroup diag_manager
 !! @{
 !> @brief An integral part of @ref diag_manager_mod. It helps to create axis IDs
 !! that are used in @ref register_diag_field.
@@ -88,7 +89,7 @@ use platform_mod
      MODULE PROCEDURE diag_axis_add_attribute_i1d
   END INTERFACE diag_axis_add_attribute
 
-\
+
 CONTAINS
 
   !> @brief Initialize the axis, and return the axis ID.

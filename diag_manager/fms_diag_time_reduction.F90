@@ -17,13 +17,12 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_time_reduction_mod fms_diag_time_reduction_mod
-!> @brief fms_diag_time_reduction_mod defines classes encapsulating the diag_manager
+!! @ingroup diag_manager
+!! @{
+!! @brief fms_diag_time_reduction_mod defines classes encapsulating the diag_manager
 !! time redution types.
 !!
-!> @author Miguel Zuniga
-!!
-!> @file
-!> @brief File for @ref fms_diag_time_reduction_mod
+!! @author Miguel Zuniga
 MODULE fms_diag_time_reduction_mod
 
   USE diag_data_mod, only: EVERY_TIME
@@ -217,4 +216,5 @@ CONTAINS
   end function is_time_power_imp
 
 end module fms_diag_time_reduction_mod
+!> @}
 ! close documentation grouping

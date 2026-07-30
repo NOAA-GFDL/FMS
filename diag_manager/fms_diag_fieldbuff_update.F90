@@ -17,17 +17,15 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_fieldbuff_update_mod fms_diag_fieldbuff_update_mod
-!> @brief fms_diag_fieldbuff_update_mod Contains routines for updating the
+!! @ingroup diag_manager
+!! @{
+!! @brief fms_diag_fieldbuff_update_mod Contains routines for updating the
 !! buffer (array) of field data statistics (e.g. average, rms) with new field data.
 !!
-!> @author Miguel Zuniga
 !!
 !! <TT>fms_diag_fieldbuff_update_mod</TT> contains routines for updating the buffer
 !!(array) of field data statistics (e.g. average, rms) with new field data. These
 !! routines are called by the send_data routines in the diag_manager.
-!!
-!> @file
-!> @brief File for @ref fms_diag_fieldbuff_update_mod
 MODULE fms_diag_fieldbuff_update_mod
    USE platform_mod
    USE mpp_mod, ONLY: mpp_pe, mpp_root_pe
@@ -99,4 +97,5 @@ contains
 #include "fms_diag_fieldbuff_update.inc"
 
 END MODULE fms_diag_fieldbuff_update_mod
+!> @}
 ! close documentation grouping

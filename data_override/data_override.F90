@@ -16,21 +16,28 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
+!> @defgroup data_override_mod data_override_mod
+!! @ingroup data_override
+!! @{
 ! data_override_r4 and data_override_r8 are not intended to be used directly -
 ! they should be used through the data_override_mod API. The body of
 ! data_override_r4 and data_override_r8 is contained in data_override.inc.
 
+!> @defgroup data_override_r4 data_override_r4
+!! @{
 module data_override_r4
 #include "data_override_r4.fh"
 end module data_override_r4
+!> @}
 
+!> @defgroup data_override_r8 data_override_r8
+!! @{
 module data_override_r8
 #include "data_override_r8.fh"
 end module data_override_r8
+!> @}
 
-!> @defgroup data_override_mod data_override_mod
-!> @ingroup data_override
-!! @brief Routines to get data in a file whose path is described in a user-provided data_table
+!> @brief Routines to get data in a file whose path is described in a user-provided data_table
 !! and do spatial and temporal interpolation if necessary to convert data to model's grid and time.
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!
@@ -63,7 +70,6 @@ private
 !! for a model's grid and time. Data path must be described in
 !! a user-provided data_table, see @ref data_override_mod "module description"
 !! for more information.
-!> @ingroup data_override_mod
 interface data_override
      module procedure data_override_0d_r4
      module procedure data_override_0d_r8
@@ -74,7 +80,6 @@ interface data_override
 end interface
 
 !> Version of @ref data_override for unstructured grids
-!> @ingroup data_override_mod
 interface data_override_UG
      module procedure data_override_UG_1d_r4
      module procedure data_override_UG_1d_r8
@@ -93,9 +98,6 @@ integer :: lnd_mode = 0 !> Land mode: possible values are 0 (uninitialized),
                         !! mode_r4, mode_r8, or ior(mode_r4, mode_r8)
 integer :: ice_mode = 0 !> Ice mode: possible values are 0 (uninitialized),
                         !! mode_r4, mode_r8, or ior(mode_r4, mode_r8)
-
-!> @addtogroup data_override_mod
-!> @{
 
 public :: data_override_init, data_override, data_override_unset_domains
 public :: data_override_UG

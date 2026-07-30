@@ -16,15 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup astronomy_mod astronomy_mod
-!> @ingroup astronomy
-!> @brief Provides astronomical variables for use
+!! @ingroup astronomy
+!! @{
+!! @brief Provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
 !!        for determination of astronomical values needed by the shortwave
 !!        radiation packages.
-!> @author Fei Liu
+!! @author Fei Liu
 
-!> @addtogroup astronomy_mod
-!> @{
 module astronomy_mod
 
 

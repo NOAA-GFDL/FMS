@@ -15,8 +15,10 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @author Ryan Mulhall
+!> @defgroup fms_diag_output_buffer_mod fms_diag_output_buffer_mod
+!! @ingroup diag_manager
 !! @{
+!! @author Ryan Mulhall
 !! @email ryan.mulhall@noaa.gov
 !! @brief Contains buffer types and routines for the diag manager
 !!

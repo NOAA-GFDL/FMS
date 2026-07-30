@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_input_buffer_mod fms_diag_input_buffer_mod
+!! @ingroup diag_manager
 !! @{
 module fms_diag_input_buffer_mod
 #ifdef use_yaml

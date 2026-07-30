@@ -17,6 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_bbox_mod fms_diag_bbox_mod
+!! @ingroup diag_manager
 !! @{
 !! @brief fms_diag_bbox_mod defines classes encapsulating bounding boxes
 !!   and interval bounds.
@@ -519,4 +520,4 @@ end function determine_if_block_is_in_region
 
   END MODULE fms_diag_bbox_mod
 !> @}
-  ! close documentation grouping
+! close documentation grouping

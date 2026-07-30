@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fmsconstants FMSConstants
+!! @ingroup constants
 !! @{
 !! @brief Defines useful constants for Earth. Constants are defined as real
 !!

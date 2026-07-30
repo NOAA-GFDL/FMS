@@ -17,11 +17,12 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_outfield_mod fms_diag_outfield_mod
+!! @ingroup diag_manager
 !! @{
 !! @brief fms_diag_outfield_mod defines data types and utility or auxiliary routines
 !! useful in updating the output buffer.
 !!
-!> @author Miguel Zuniga
+!! @author Miguel Zuniga
 !!
 !! <TT>fms_diag_outfield_mod</TT> The output buffer updating routines are passed configuration
 !!  and control data with types defined in this module; and some utility functions called by the
@@ -437,5 +438,5 @@ CONTAINS
   end function get_output_field_time_reduction
 
 END MODULE fms_diag_outfield_mod
-!}
+!> @}
 ! close documentation grouping

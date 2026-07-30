@@ -14,15 +14,12 @@
 !* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
-!***********************************************************************
-!> @defgroup axis_utils2_mod axis_utils2_mod
+!* **********************************************************************
+!> @defgroup axis_utils_mod axis_utils_mod
 !> @ingroup axis_utils
-!> @brief A set of utilities for manipulating axes and extracting axis attributes.
+!! @{
+!! @brief A set of utilities for manipulating axes and extracting axis attributes.
 !! FMS2_IO equivalent version of @ref axis_utils_mod.
-!> @author M.J. Harrison
-
-!> @addtogroup axis_utils2_mod
-!> @{
 module axis_utils2_mod
   use mpp_mod,      only: mpp_error, FATAL, stdout
   use fms_mod,      only: lowercase, uppercase, string_array_index, fms_error_handler
@@ -42,7 +39,6 @@ module axis_utils2_mod
   real(r8_kind), parameter    :: epsln = 1.e-10_r8_kind
   real(r8_kind), parameter    :: fp5 = 0.5_r8_kind, f360 = 360.0_r8_kind
 
-!> @}
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
 
@@ -93,9 +89,6 @@ module axis_utils2_mod
   interface find_index
       module procedure find_index_r4, find_index_r8
   end interface find_index
-
-!> @addtogroup axis_utils2_mod
-!> @{
 
 contains
 

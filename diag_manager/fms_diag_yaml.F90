@@ -17,13 +17,11 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_yaml_mod fms_diag_yaml_mod
+!! @ingroup diag_manager
+!! @{
 !! @brief fms_diag_yaml_mod is an integral part of
 !!   diag_manager_mod. Its function is to read the diag_table.yaml to fill in
 !!   the diag_yaml_object
-
-!> @file
-!> @brief File for @ref diag_yaml_mod
-
 module fms_diag_yaml_mod
 #ifdef use_yaml
 use diag_data_mod,   only: DIAG_NULL, DIAG_OCEAN, DIAG_ALL, DIAG_OTHER, set_base_time, latlon_gridtype, &
@@ -2226,4 +2224,5 @@ end function is_file_subregional
 
 #endif
 end module fms_diag_yaml_mod
+!> @}
 ! close documentation grouping

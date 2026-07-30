@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_util_mod diag_util_mod
+!! @diag_manager
 !! @{
 !! @brief Functions and subroutines necessary for the <TT>diag_manager_mod</TT>.
 !! @author Seth Underwood

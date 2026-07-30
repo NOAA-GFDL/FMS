@@ -17,6 +17,7 @@
 !***********************************************************************
 
 !> @defgroup gex_mod gex_mod
+!! @ingroup coupler
 !! @{
 !! @brief Simple generic exchange (gex) interface to pass (non-tracer) fields across components
 !! @author Fabien Paulot (Fabien.Paulot@noaa.gov)

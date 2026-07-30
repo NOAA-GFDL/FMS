@@ -15,9 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief include file for column_diagnostics_mod to generate subroutine/functions
-!!        for r8_kind arguments
 
 #undef  FMS_CD_KIND_
 #define FMS_CD_KIND_ r8_kind
@@ -29,5 +26,3 @@
 #define COLUMN_DIAGNOSTICS_HEADER_ column_diagnostics_header_r8
 
 #include "column_diagnostics.inc"
-
-!> @}

@@ -16,11 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup column_diagnostics_mod column_diagnostics_mod
-!> @ingroup column_diagnostics
+!! @ingroup column_diagnostics
+!! @{
 !! @brief Module to locate and mark desired diagnostic columns
-
-!> @addtogroup column_diagnostics_mod
-!> @{
 module column_diagnostics_mod
 
 use fms_mod,                only:  fms_init, mpp_pe, mpp_root_pe, &

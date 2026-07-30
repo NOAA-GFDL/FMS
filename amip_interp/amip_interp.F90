@@ -17,13 +17,14 @@
 !***********************************************************************
 !
 !> @defgroup amip_interp_mod amip_interp_mod
-!> @ingroup amip_interp
-!> @brief Provides observed sea surface temperature and ice mask data sets that have been
+!! @ingroup amip_interp
+!! @{
+!! @brief Provides observed sea surface temperature and ice mask data sets that have been
 !! interpolated onto your model's grid.
+!! @author Bruce Wyman
 !!
-!> @author Bruce Wyman
-!!
-!> When using these routines three possible data sets are available:
+!! @parblock
+!! When using these routines three possible data sets are available:
 !!
 !! 1. AMIP http://www.pcmdi.github.io/mips/amip from Jan 1979 to Jan 1989 (2 deg x 2 deg)
 !! 2. Reynolds OI @ref amip_interp.rey_oi.txt from Nov 1981 to Jan 1999 (1 deg x 1 deg)
@@ -52,7 +53,7 @@
 !!   satellite SSTs and in-situ data are used from 1981 to the
 !!   end of 1998.
 !!
-!> @note The data set used by this module have been reformatted as 32-bit IEEE.
+!! @note The data set used by this module have been reformatted as 32-bit IEEE.
 !!   The data values are packed into 16-bit integers.
 !!
 !!   The data sets are read from the following files:
@@ -109,9 +110,8 @@
 !!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
 !!                may be useful in accessing model sensitivities.
 !!     Default=0.
+!! @endparblock
 
-!> @addtogroup amip_interp_mod
-!> @{
 module amip_interp_mod
 
 use  time_interp_mod, only: time_interp, fraction_of_year

@@ -15,12 +15,16 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
+
+!> @defgroup fms_diag_field_object_mod fms_diag_object_mod
+!! @ingroup diag_manager
+!! @{
 module fms_diag_field_object_mod
-!> \author Tom Robinson
-!! \email thomas.robinson@noaa.gov
-!! \brief Contains routines for the diag_objects
+!! @author Tom Robinson
+!! @email thomas.robinson@noaa.gov
+!! @brief Contains routines for the diag_objects
 !!
-!! \description The diag_manager passes an object back and forth between the diag routines and the users.
+!! @description The diag_manager passes an object back and forth between the diag routines and the users.
 !! The procedures of this object and the types are all in this module.  The fms_dag_object is a type
 !! that contains all of the information of the variable.  It is extended by a type that holds the
 !! appropriate buffer for the data for manipulation.
@@ -2063,3 +2067,4 @@ function check_for_slices(field, diag_axis, var_size) &
 end function
 #endif
 end module fms_diag_field_object_mod
+!> @}

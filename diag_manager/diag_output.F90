@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_output_mod diag_output_mod
+!! @ingroup
 !! @{
 !! @brief diag_output_mod is an integral part of
 !!   diag_manager_mod. Its function is to write axis-meta-data,

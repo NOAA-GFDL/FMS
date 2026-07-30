@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_manager_mod diag_manager_mod
+!! @ingroup diag_manager
 !! @{
 !! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
 !!   on distributed systems. It is geared toward the writing of data in netCDF
@@ -137,9 +138,6 @@
 !!         corresponding fields (geolat/geolon) should also be written to the
 !!         same file.</LI>
 !!   </OL>
-
-!> @file
-!> @brief File for @ref diag_manager_mod
 
 MODULE diag_manager_mod
 use platform_mod

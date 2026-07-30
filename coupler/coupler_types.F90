@@ -16,6 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup coupler_types_mod coupler_types_mod
+!! @ingroup coupler
 !! @{
 !! @author Richard Slater, John Dunne
 !! @brief This module contains type declarations for the coupler.

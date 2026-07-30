@@ -17,11 +17,10 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_reduction_methods_mod fms_diag_reduction_methods_mod
+!! @ingroup diag_manager
+!! @{
 !! @brief fms_diag_reduction_methods_mod contains routines that are meant to be used for
 !! error checking and setting up to do the reduction methods
-
-!> @file
-!> @brief File for @ref fms_diag_reduction_methods_mod
 
 module fms_diag_reduction_methods_mod
   use platform_mod, only: r8_kind, r4_kind
@@ -182,4 +181,5 @@ module fms_diag_reduction_methods_mod
 #include "fms_diag_reduction_methods_r8.fh"
 
 end module fms_diag_reduction_methods_mod
+!> @}
 ! close documentation grouping

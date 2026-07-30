@@ -16,6 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_time_utils_mod fms_diag_time_utils_mod
+!! @ingroup fms_diag_time_utils_mod
+!! @{
 !! @brief fms_diag_time_utils contains functions and subroutines necessary for the
 !! <TT>diag_manager_mod</TT> related to time handling.
 !! @author Uriel Ramirez
@@ -415,3 +417,4 @@ subroutine set_time_type(time_int, time)
   END IF
 end subroutine set_time_type
 end module fms_diag_time_utils_mod
+!> @}

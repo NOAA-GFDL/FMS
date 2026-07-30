@@ -17,6 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_elem_weight_procs_mod fms_diag_elem_weight_procs_mod
+!! @diag_manager
 !! @{
 !! @brief fms_diag_elem_weight_procs_mod Contains elemental functions for uddating
 !! one element of a buffer array with field data.
