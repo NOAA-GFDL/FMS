@@ -17,6 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_affinity_mod fms_affinity_mod
+!! @ingroup fms_affinity
 !! @{
 !! @author Rusty Benson
 !! @brief Fortran API interfaces to set the thread affinity.

@@ -23,7 +23,6 @@
 !! interpolated onto your model's grid.
 !! @author Bruce Wyman
 !!
-!! @parblock
 !! When using these routines three possible data sets are available:
 !!
 !! 1. AMIP http://www.pcmdi.github.io/mips/amip from Jan 1979 to Jan 1989 (2 deg x 2 deg)
@@ -110,7 +109,6 @@
 !!                It is only used when abs(sst_pert) > 1.e-4.  SST perturbation runs
 !!                may be useful in accessing model sensitivities.
 !!     Default=0.
-!! @endparblock
 
 module amip_interp_mod
 
