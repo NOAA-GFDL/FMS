@@ -136,11 +136,6 @@ subroutine MPP_DO_REDISTRIBUTE_3D_( f_in, f_out, d_comm, d_type, axis_to_storage
          'MPP_DO_REDISTRIBUTE_3D_: chunk counts must be positive')
   endif
 
-  if (any(chunk_shape_in < 1) .OR. any(chunk_shape_out < 1)) then
-    call mpp_error(FATAL, &
-         'MPP_DO_REDISTRIBUTE_3D_: chunk extents must be positive')
-  endif
-
   total_chunks = sum(nchunks)
 
   !--------------------------------------------------------------------
