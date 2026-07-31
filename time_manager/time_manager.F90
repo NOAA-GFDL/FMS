@@ -16,8 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_manager_mod time_manager_mod
-!> @ingroup time_manager
-!> @brief A software package that provides a set of simple interfaces for
+!! @ingroup time_manager
+!! @{
+!! @brief A software package that provides a set of simple interfaces for
 !!   modelers to perform computations related to time and dates.
 !!
 !! Optional error flag can be used in calling arguments of public routines.
@@ -56,8 +57,6 @@
 !! The number of ticks per second is set via pubic subroutine set_ticks_per_second.
 !! For example, ticks_per_second = 1000  will set the tick to one millisecond.
 
-!> @addtogroup time_manager_mod
-!> @{
 module time_manager_mod
 
 
@@ -132,11 +131,8 @@ integer, parameter :: days_in_400_year_period = 146097    !< Used only for grego
 integer,parameter :: do_floor = 0
 integer,parameter :: do_nearest = 1
 
-!> @}
-
 !> @brief Type to represent amounts of time.
 !> Implemented as seconds and days to allow for larger intervals.
-!> @ingroup time_manager_mod
 type :: time_type
    private
    integer:: seconds
@@ -145,42 +141,30 @@ type :: time_type
 end type time_type
 
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (+);   module procedure time_plus;        end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (-);   module procedure time_minus;       end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (*);   module procedure time_scalar_mult
                           module procedure scalar_time_mult; end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (/);   module procedure time_scalar_divide
                           module procedure time_divide;      end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (>);   module procedure time_gt;          end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (>=);  module procedure time_ge;          end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (<);   module procedure time_lt;          end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (<=);  module procedure time_le;          end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (==);  module procedure time_eq;          end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (/=);  module procedure time_ne;          end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface operator (//);  module procedure time_real_divide; end interface
 !> Operator override interface for use with @ref time_type
-!> @ingroup time_manager_mod
 interface assignment(=);  module procedure time_assignment;  end interface
 
 !======================================================================
@@ -202,7 +186,6 @@ interface assignment(=);  module procedure time_assignment;  end interface
 !! time1 = set_time(seconds, days, ticks, err_msg)
 !! time2 = set_time("100 43200", err_msg, allow_rounding)
 !! @endcode
-!> @ingroup time_manager_mod
 interface set_time
   module procedure set_time_i, set_time_c
 end interface
@@ -241,8 +224,6 @@ end interface
 !! @code{.F90}
 !! if(err_msg /= '') call error_mesg('my_routine','additional info: '//trim(err_msg) ,FATAL)
 !! @endcode
-!!
-!> @ingroup time_manager_mod
 interface set_date
   module procedure set_date_i, set_date_c
 end interface
@@ -255,8 +236,6 @@ interface real_to_time_type
   module procedure real8_to_time_type
 end interface
 
-!> @addtogroup time_manager_mod
-!> @{
 
 !======================================================================
 
@@ -2645,3 +2624,4 @@ subroutine time_list_error (T,Terr)
 end subroutine time_list_error
 
 end module time_manager_mod
+!> @}

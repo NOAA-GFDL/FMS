@@ -16,8 +16,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
     !> Updates data domain of 3D field whose computational domains have been computed
     subroutine MPP_DO_UPDATE_3D_V_(f_addrsx,f_addrsy, domain, update_x, update_y, &
                                    d_type, ke, gridtype, flags)
@@ -1200,4 +1198,3 @@
       return
 
     end subroutine MPP_DO_UPDATE_3D_V_
-!> @}

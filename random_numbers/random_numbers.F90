@@ -17,10 +17,11 @@
 !***********************************************************************
 
 !> @defgroup random_numbers_mod random_numbers_mod
-!> @ingroup random_numbers
-!> @brief Generic module to wrap random number generators.
+!! @ingroup random_numbers
+!! @{
+!! @brief Generic module to wrap random number generators.
 !!
-!> The module defines a type that identifies the particular stream of random
+!!  The module defines a type that identifies the particular stream of random
 !!  numbers, and has procedures for initializing it and getting real numbers
 !!  in the range 0 to 1.
 !!  This version uses the Mersenne Twister to generate random numbers on [0, 1].
@@ -36,7 +37,6 @@ module random_numbers_mod
   private
 
   !> @brief Type to hold a stream of randomly generated numbers
-  !> @ingroup random_numbers_mod
   type randomNumberStream
     type(randomNumberSequence) :: theNumbers
   end type randomNumberStream
@@ -45,7 +45,6 @@ module random_numbers_mod
   !!
   !> @param stream @ref randomNumberStream to generate from
   !> @param[out] number output number(s)
-  !> @ingroup random_numbers_mod
   interface getRandomNumbers
     module procedure :: get_random_number_0d_r4, get_random_number_0d_r8
     module procedure :: get_random_number_1d_r4, get_random_number_1d_r8
@@ -53,7 +52,6 @@ module random_numbers_mod
   end interface getRandomNumbers
 
   !> Initializes stream for generating random numbers.
-  !> @ingroup random_numbers_mod
   interface initializeRandomNumberStream
     module procedure initializeRandomNumberStream_S, initializeRandomNumberStream_V
   end interface initializeRandomNumberStream
@@ -61,9 +59,6 @@ module random_numbers_mod
   public :: randomNumberStream,                             &
             initializeRandomNumberStream, getRandomNumbers, &
             constructSeed
-
-!> @addtogroup random_numbers_mod
-!> @{
 
 contains
 

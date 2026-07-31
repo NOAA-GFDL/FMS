@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for defining and managing unstructured grids
-
-!> @addtogroup mpp_domains_mod
-!> @{
   !#####################################################################
   subroutine mpp_define_unstruct_domain(UG_domain, SG_domain, npts_tile, grid_nlev, ndivs, npes_io_group, &
                                        &  grid_index, name)
@@ -908,4 +903,3 @@ end subroutine mpp_deallocate_domainUG
 #undef MPP_TYPE_
 #define MPP_TYPE_ integer(i4_kind)
 #include <mpp_global_field_ug.fh>
-!> @}

@@ -22,7 +22,6 @@
     !! forward array is already summed and broadcasted: all PEs already have the ad sum
     !! we are using f77-style call: array passed by address and not descriptor; further,
     !! the f90 conformance check is avoided.
-    !> @ingroup mpp_mod
     subroutine MPP_SUM_AD_( a, length, pelist )
       integer, intent(in) :: length
       integer, intent(in), optional :: pelist(:)

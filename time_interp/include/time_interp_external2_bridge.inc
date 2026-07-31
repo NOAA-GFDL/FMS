@@ -15,9 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @ingroup time_interp
-!> @addtogroup time_interp_external2_mod
-!> @{
 
     !> @brief 1D interpolation for @ref time_interp_external_bridge
     subroutine TIME_INTERP_EXTERNAL_BRIDGE_1D_(index1, index2, time, data_in, interp, verbose,horz_interp, mask_out, &

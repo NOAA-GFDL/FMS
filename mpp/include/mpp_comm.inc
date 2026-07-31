@@ -17,12 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Imports checksum, gather, and scatter routines from other include files used
-!! for communications and calculations between PE's in @ref mpp_mod
-
-!> @addtogroup mpp_mod
-!> @{
 
 subroutine mpp_init_legacy( flags, localcomm, test_level, alt_input_nml_path )
   integer, optional, intent(in) :: flags !< Flags for debug output, can be MPP_VERBOSE or MPP_DEBUG
@@ -534,4 +528,3 @@ end subroutine mpp_init_legacy
 #undef MPI_TYPE_
 #define MPI_TYPE_ MPI_REAL8
 #include <mpp_scatter.fh>
-!> @}

@@ -16,10 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup topography_mod topography_mod
-!> @ingroup topography
-!> @brief Routines for creating land surface topography fields and land-water masks
+!! @ingroup topography
+!! @{
+!! @brief Routines for creating land surface topography fields and land-water masks
 !! for latitude-longitude grids.
-!> @author Bruce Wyman
+!! @author Bruce Wyman
 !!
 !! This module generates realistic mountains and land-water masks
 !! on a specified latitude-longitude grid by interpolating from the
@@ -78,7 +79,6 @@ public :: topography_init,                 &
 !!
 !! <br>Example usage:
 !! @code{.F90} flag = get_topog_mean ( blon, blat, zmean )@endcode
-!> @ingroup topography_mod
 
 interface get_topog_mean
     module procedure get_topog_mean_1d_r4, get_topog_mean_1d_r8
@@ -104,7 +104,6 @@ end interface get_topog_mean
 !!
 !! Example usage:
 !! @code{.F90} flag = get_topog_stdev( blon, blat, stdev ) @code
-!> @ingroup topography_mod
 interface get_topog_stdev
     module procedure get_topog_stdev_1d_r4, get_topog_stdev_1d_r8
     module procedure get_topog_stdev_2d_r4, get_topog_stdev_2d_r8
@@ -124,7 +123,6 @@ end interface get_topog_stdev
 !!
 !! Example usage:
 !! @code{.F90} flag = get_ocean_frac ( blon, blat, ocean_frac ) @endcode
-!> @ingroup topography_mod
 interface get_ocean_frac
     module procedure get_ocean_frac_1d_r4, get_ocean_frac_1d_r8
     module procedure get_ocean_frac_2d_r4, get_ocean_frac_2d_r8
@@ -145,7 +143,6 @@ end interface get_ocean_frac
 !!
 !! Example code:
 !! @code{.F90} flag = get_ocean_mask( blon, blat, ocean_mask ) @endcode
-!> @ingroup topography_mod
 interface get_ocean_mask
     module procedure get_ocean_mask_1d_r4, get_ocean_mask_1d_r8
     module procedure get_ocean_mask_2d_r4, get_ocean_mask_2d_r8
@@ -165,7 +162,6 @@ end interface get_ocean_mask
 !! if the Navy 1/6 degree percent water data set was not readable.
 !!
 !! <br>Example usage:<br> @code{.F90} flag = get_water_frac ( blon, blat, water_frac ) @endcode
-!> @ingroup topography_mod
 interface get_water_frac
     module procedure get_water_frac_1d_r4, get_water_frac_1d_r8
     module procedure get_water_frac_2d_r4, get_water_frac_2d_r8
@@ -185,7 +181,6 @@ end interface get_water_frac
 !! if the Navy 1/6 degree percent water data set was not readable.
 !!
 !! Example usage: @code{.F90}flag = get_water_mask( blon, blat, water_mask ) @endcode
-!> @ingroup topography_mod
 interface get_water_mask
     module procedure get_water_mask_1d_r4, get_water_mask_1d_r8
     module procedure get_water_mask_2d_r4, get_water_mask_2d_r8
@@ -213,8 +208,6 @@ interface determine_ocean_points
     module procedure determine_ocean_points_r4, determine_ocean_points_r8
 end interface determine_ocean_points
 
-!> @addtogroup topography_mod
-!> @{
 
 character(len=FMS_PATH_LEN) :: topog_file = 'DATA/navy_topography.data', &
                                water_file = 'DATA/navy_pctwater.data'

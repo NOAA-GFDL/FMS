@@ -17,11 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for calculating data from distributed arrays
-
-!> @addtogroup mpp_domains_mod
-!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -1151,4 +1146,3 @@
 #define MPP_TYPE_ logical(l4_kind)
 #include <mpp_do_global_field_ad.fh>
 #undef LOGICAL_VARIABLE
-!> @}

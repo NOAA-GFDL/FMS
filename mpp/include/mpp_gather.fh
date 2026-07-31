@@ -15,10 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-
-!> @addtogroup mpp_mod
-!> @{
 subroutine MPP_GATHER_1D_(sbuf, rbuf, pelist)
 ! JWD: Did not create mpp_gather_2d because have no requirement for it
 ! JWD: See mpp_gather_2dv below
@@ -291,4 +287,3 @@ subroutine MPP_GATHER_PELIST_GEN_3D_(is, ie, js, je, nk, pelist, array_seg, gath
    call mpp_sync_self()
 
 end subroutine MPP_GATHER_PELIST_GEN_3D_
-!> @}

@@ -16,8 +16,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
 subroutine MPP_START_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, update_x, update_y,     &
                                      d_type, ke_max, ke_list, gridtype, flags, reuse_id_update, name)
   integer,             intent(in) :: id_update
@@ -1107,5 +1105,3 @@ subroutine MPP_COMPLETE_DO_UPDATE_3D_V_(id_update, f_addrsx, f_addrsy, domain, u
   return
 
 end subroutine MPP_COMPLETE_DO_UPDATE_3D_V_
-!> @}
-!> @{

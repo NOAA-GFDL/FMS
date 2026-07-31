@@ -18,11 +18,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief General utility functions for use in @ref mpp_mod
-
-!> @addtogroup mpp_mod
-!> @{
 
 #if defined(use_libMPI)
 #include <mpp_util_mpi.inc>
@@ -1596,4 +1591,3 @@ end function rarray_to_char
       call mpp_error(FATAL, "inverse_permutation: Invalid dim_order. Values must be non-repeating.")
     endif
   end subroutine inverse_permutation
-!> @}

@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup tracer_manager_mod tracer_manager_mod
-!> @ingroup tracer_manager
 
 #undef  FMS_TM_KIND_
 #define FMS_TM_KIND_ r8_kind

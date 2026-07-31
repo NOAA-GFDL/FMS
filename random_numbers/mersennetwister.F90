@@ -1,9 +1,10 @@
 !* This file includes a 3 clause BSD license header below.
 
 !> @defgroup mersennetwister_mod MersenneTwister_mod
-!> @ingroup random_numbers
-!> @brief Fortran-95 implementation of the Mersenne Twister 19937 algorithm
-!> @author Robert Pincus
+!! @ingroup random_numbers
+!! @{
+!! @brief Fortran-95 implementation of the Mersenne Twister 19937 algorithm
+!! @author Robert Pincus
 !!
 !! Users must declare one or more variables of type randomNumberSequence in the calling
 !! procedure which are then initialized using a required seed. If the
@@ -71,8 +72,6 @@
 !!    http://www.math.keio.ac.jp/matumoto/emt.html
 !!    email: matumoto@math.keio.ac.jp
 
-!> @addtogroup mersennetwister_mod
-!> @{
 module MersenneTwister_mod
 ! -------------------------------------------------------------
   use platform_mod, only: r8_kind, i8_kind

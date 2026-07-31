@@ -16,9 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_interp_mod time_interp_mod
-!> @ingroup time_interp
-!> @brief Computes a weight and dates/indices for linearly interpolating between two dates.
-!> @author Bruce Wyman
+!! @ingroup time_interp
+!! @{
+!! @brief Computes a weight and dates/indices for linearly interpolating between two dates.
+!! @author Bruce Wyman
 !!
 !! A time type is converted into two consecutive dates plus
 !! a fraction representing the distance between the dates.
@@ -122,7 +123,6 @@ public :: time_interp_init, time_interp, fraction_of_year
 !!       Feb 28 of the leap year when it is mapped onto a common year.
 !!       To turn this on, set correct_leap_year_inconsistency=.true.
 !! @param weight weight = (mod(Time,Time_end-Time_beg) - Timelist(index1)) / (Timelist(index2) - Timelist(index1))
-!> @ingroup time_interp_mod
 interface time_interp
     module procedure time_interp_frac_r8,  time_interp_year_r8, &
                      time_interp_month_r8, time_interp_day_r8,  &
@@ -132,8 +132,6 @@ interface time_interp
                      time_interp_list_r4,  time_interp_modulo_r4
 end interface
 
-!> @addtogroup time_interp_mod
-!> @{
 integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
 
 !-----------------------------------------------------------------------

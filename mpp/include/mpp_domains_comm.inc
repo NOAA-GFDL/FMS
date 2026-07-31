@@ -18,12 +18,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-
-!> @file
-!> @brief Routines for domain communications via @ref domaincommunicator2d
-
-!> @addtogroup mpp_domains_mod
-!> @{
     function mpp_redistribute_init_comm(domain_in,l_addrs_in, domain_out,l_addrs_out, &
                                         isize_in,jsize_in,ksize_in,isize_out,jsize_out,ksize_out) RESULT(d_comm)
       type(DomainCommunicator2D), pointer       :: d_comm
@@ -749,4 +743,3 @@
          endif
        end if
     end function set_domain_id
-!> @}

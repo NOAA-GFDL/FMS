@@ -15,26 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup topography_mod topography_mod
-!> @ingroup topography
-!> @brief Routines for creating land surface topography fields and land-water masks
-!! for latitude-longitude grids.
-!> @author Bruce Wyman
-!!
-!! This module generates realistic mountains and land-water masks
-!! on a specified latitude-longitude grid by interpolating from the
-!! 1/6 degree Navy mean topography and percent water data sets.
-!! The fields that can be generated are mean and standard deviation
-!! of topography within the specified grid boxes; and land-ocean (or
-!! water) mask and land-ocean (or water) fractional area.
-!!
-!! The interpolation scheme conserves the area-weighted average
-!! of the input data by using module horiz_interp.
-!!
-!! The interfaces get_gaussian_topog and gaussian_topog_init are documented
-!! in @ref gaussian_topog_mod
-
-!#######################################################################
 
  !> @brief Returns a "realistic" mean surface height field.
  !!
@@ -587,6 +567,3 @@ enddo
 where (.not.ocean) pctwater = 0.0_lkind
 
 end subroutine DETERMINE_OCEAN_POINTS_
-
-!> @}
-! close documentation grouping

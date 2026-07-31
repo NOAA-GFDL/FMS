@@ -16,10 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup tridiagonal_mod tridiagonal_mod
-!> @ingroup tridiagonal
-!> @brief Solves a tridiagonal system of equations.
+!! @ingroup tridiagonal
+!! @{
+!! @brief Solves a tridiagonal system of equations.
 !!
-!> The following schematic represents the system of equations solved,
+!! The following schematic represents the system of equations solved,
 !! where X is the solution.
 !! <PRE>
 !!     | B(1)  A(1)   0     0                .......            0    |  |X(1)|   |D(1)|
@@ -71,8 +72,6 @@
 !! </PRE>
 !!  This storage is deallocated when close_tridiagonal is called.
 
-!> @addtogroup tridiagonal_mod
-!> @{
 module tridiagonal_mod
 
     use platform_mod, only: r4_kind, r8_kind

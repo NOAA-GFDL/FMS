@@ -17,11 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-
-!> @addtogroup mpp_mod
-!> @{
-
 !> @brief Wrapper routine for scalar checksums
 !!
 !> mold is a dummy array to be used by TRANSFER()
@@ -45,4 +40,3 @@ function MPP_CHKSUM_( var, pelist, mask_val )
   end if
       return
     end function MPP_CHKSUM_
-!> @}

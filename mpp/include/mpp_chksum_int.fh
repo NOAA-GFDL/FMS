@@ -17,12 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for calculating global integer checksums for the @ref mpp_chksum interface.
-
-!> @addtogroup mpp_mod
-!> @{
-
 !> Calculates integer checksum over pelist
 function MPP_CHKSUM_INT_( var, pelist, mask_val )
   integer(i8_kind) :: MPP_CHKSUM_INT_
@@ -111,4 +105,3 @@ function MPP_CHKSUM_INT_RMASK_( var, pelist, mask_val )
   return
 
 end function MPP_CHKSUM_INT_RMASK_
-!> @}

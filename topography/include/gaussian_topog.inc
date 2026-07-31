@@ -15,19 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup gaussian_topog_mod gaussian_topog_mod
-!> @ingroup topography
-!> @brief Routines for creating Gaussian-shaped land surface topography
-!! for latitude-longitude grids.
-!> @author Bruce Wyman
-!!
-!! Interfaces generate simple Gaussian-shaped mountains from
-!! parameters specified by either argument list or namelist input.
-!! The mountain shapes are controlled by the height, half-width,
-!! and ridge-width parameters.
-
-!> @addtogroup gaussian_topog_mod
-!> @{
 
 !#######################################################################
 !> @brief Returns a simple surface height field that consists of a single
@@ -142,6 +129,3 @@ integer, parameter     :: lkind = FMS_TOP_KIND_
     enddo
 
 end function GET_GAUSSIAN_TOPOG_
-
-!> @}
-! close documentation grouping

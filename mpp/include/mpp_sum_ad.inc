@@ -17,11 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Adjoint summation routines for @ref mpp_mod
-
-!> @addtogroup mpp_mod
-!> @{
 
 !#######################################################################
 

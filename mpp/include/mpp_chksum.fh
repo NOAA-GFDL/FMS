@@ -18,10 +18,6 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @file
-!> @addtogroup mpp
-!> @brief Wrapper routine for @ref mpp_chksum interface
-
 !> Wrapper routine for @ref mpp_chksum interface
 !!
 !> @returns i8_kind checksum of var, which will actually be int if no_8byte_integers is defined

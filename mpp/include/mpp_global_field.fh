@@ -15,8 +15,7 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
+
     !> get a global field from a local field
     !! local field may be on compute OR data domain
 
@@ -273,4 +272,3 @@
 
       call mpp_sync_self
     end subroutine MPP_GLOBAL_FIELD_
-!> @}

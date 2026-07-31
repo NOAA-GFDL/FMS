@@ -16,13 +16,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-
-!> @file
-!> @brief Initialization and finalization routines for @ref mpp_domains_mod as well
-!! as other utility routines.
-
-!> @ingroup mpp_domains_mod
-!> @{
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
 !                 MPP_DOMAINS: initialization and termination                 !
@@ -958,7 +951,6 @@ end subroutine init_nonblock_type
       end do
 
     end subroutine mpp_broadcast_domain_nest_coarse
-!> @}
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !

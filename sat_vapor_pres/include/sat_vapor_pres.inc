@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup sat_vapor_pres_mod
-!> @{
 
 !#######################################################################
 ! <SUBROUTINE NAME="lookup_es_0d" INTERFACE="lookup_es">
@@ -1982,5 +1980,3 @@
  end subroutine SHOW_ALL_BAD_3D_
 
 !--------------------------------------------------------------
-
-!> @}

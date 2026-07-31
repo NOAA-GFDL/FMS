@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup sat_vapor_pres_k_mod
-!> @brief Kernel module to be used by @ref sat_vapor_pres_mod for
-!> @{
-
-!! table lookups and calculations
-
 !> This routine has been generalized to return tables for any temperature range and resolution
 !! The TABLEs for saturation vapor pressure are computed  with r8_kind precision since
 !! these TABLES are module level variables that are decared as r8_kind.
@@ -2642,5 +2636,3 @@
 
  end subroutine LOOKUP_ES3_K_0D_
 !#######################################################################
-!> @}
-! close documentation grouping

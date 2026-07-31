@@ -20,8 +20,6 @@
 !                                  MPP_TRANSMIT                               !
 !                                                                             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!> @addtogroup mpp_mod
-!> @{
 !> A message-passing routine intended to be reminiscent equally of both MPI and SHMEM
 !! put_data and get_data are contiguous MPP_TYPE_ arrays
 !!at each call, your put_data array is put to   to_pe's get_data
@@ -290,6 +288,5 @@
                        recv_data, recv_counts, displs, MPI_TYPE_, root_pe2, comm, ierr)
 
     end subroutine MPP_GATHERV_
-!> @}
 !####################################################################################
 #include <mpp_transmit.inc>

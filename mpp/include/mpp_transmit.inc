@@ -17,11 +17,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for data transmission between PE's
-
-!> @addtogroup mpp_mod
-!> @{
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                                                                             !
@@ -387,4 +382,3 @@
 
       return
     end subroutine MPP_BROADCAST_5D_
-!> @}

@@ -18,8 +18,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup mpp_domains_mod
-!> @{
     !> Get a local ad field from a global ad field
     !! global field may be on compute OR data domain
     subroutine MPP_GLOBAL_FIELD_2D_AD_( domain, local, global, flags, position,tile_count, default_data)
@@ -98,4 +96,3 @@
       gptr = LOC(global)
       call mpp_global_field_ad( domain, local3D, global3D, flags, position,tile_count, default_data )
     end subroutine MPP_GLOBAL_FIELD_5D_AD_
-!> @}

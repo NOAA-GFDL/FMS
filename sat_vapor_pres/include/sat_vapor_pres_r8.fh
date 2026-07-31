@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup sat_vapor_pres
-!> @{
 
 #undef  FMS_SVP_KIND_
 #define FMS_SVP_KIND_ r8_kind
@@ -181,5 +179,3 @@
 #define SHOW_ALL_BAD_3D_ show_all_bad_3d_r8
 
 #include "sat_vapor_pres.inc"
-
-!> @}
