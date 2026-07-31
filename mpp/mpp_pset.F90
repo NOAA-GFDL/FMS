@@ -21,14 +21,13 @@
 #endif
 
 !> @defgroup mpp_pset_mod mpp_pset_mod
-!> @ingroup mpp
-!> @brief Handles PSETs(Persistent Shared-memory Execution Threads) for mpp modules
+!! @ingroup mpp
+!! @{
+!! @brief Handles PSETs(Persistent Shared-memory Execution Threads) for mpp modules
 !!
 !! @author V. Balaji (v.balaji@noaa.gov)
 !! @date 2006-01-15
 
-!> @addtogroup mpp_pset_mod mpp_pset_mod
-!> @{
 module mpp_pset_mod
 #include <fms_platform.h>
 

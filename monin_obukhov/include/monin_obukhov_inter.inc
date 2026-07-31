@@ -16,10 +16,6 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @addtogroup monin_obukhov_inter
-!> @{
-
-
 pure subroutine MONIN_OBUKHOV_DIFF_(vonkarm,                &
      & ustar_min,                                     &
      & neutral, stable_option,new_mo_option,rich_crit, zeta_trans, &
@@ -716,6 +712,3 @@ else if(stable_option == 2) then
 end if
 
 end subroutine MONIN_OBUKHOV_STABLE_MIX_
-
-!> @}
-! close documentation grouping

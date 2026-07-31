@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines to add restart variables to a netcdf file with different dimension sizes
-!! for the @ref netcdf_add_restart_variable interface
-
-!> @addtogroup netcdf_io_mod
-!> @{
 
 !> @brief Add a restart variable to a netcdf file.
 subroutine netcdf_add_restart_variable_0d(fileobj, variable_name, vdata, dimensions, &
@@ -627,4 +621,4 @@ subroutine set_dimensions(fileobj, bc_dimensions, dimnames, global_size)
       endif
   endif
 end subroutine set_dimensions
-!> @}
+

@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Character array routines used in @ref fms_io_utils_mod
-
-!> @addtogroup fms_io_utils_mod
-!> @{
 
 !> @brief Allocate character arrays using an input array of sizes.
 subroutine allocate_array_char_1d(buf, sizes, initialize)
@@ -220,4 +215,3 @@ subroutine allocate_array_char_6d(buf, sizes, initialize)
     enddo
   endif
 end subroutine allocate_array_char_6d
-!> @}

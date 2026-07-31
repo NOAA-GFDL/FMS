@@ -16,9 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup interpolator_mod interpolator_mod
-!> @ingroup interpolator
-!> @brief A module to interpolate climatology data to model the grid.
-!> @author William Cooke <William.Cooke@noaa.gov>
+!! @ingroup interpolator
+!! @{
+!! @brief A module to interpolate climatology data to model the grid.
+!! @author William Cooke <William.Cooke@noaa.gov>
 !#######################################################################
 !
 !---------------------------------------------------------------------

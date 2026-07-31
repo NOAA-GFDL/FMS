@@ -20,7 +20,7 @@
 !> @defgroup drifters_comm_mod drifters_comm_mod
 !! @ingroup drifters
 !! @{
-!> @brief Routines and types to update drifter positions across processor domains
+!! @brief Routines and types to update drifter positions across processor domains
 
 module drifters_comm_mod
 #ifdef use_drifters

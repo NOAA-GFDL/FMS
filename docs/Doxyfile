@@ -76,7 +76,7 @@ PROJECT_LOGO           =
 # entered, it will be relative to the location where doxygen was started. If
 # left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = /home/Mikyung.Lee/chatbot/doxygen-fixes/docs
+OUTPUT_DIRECTORY       = /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/docs
 
 # If the CREATE_SUBDIRS tag is set to YES then doxygen will create 4096 sub-
 # directories (in 2 levels) under the output directory of each output format and
@@ -706,7 +706,7 @@ FILE_VERSION_FILTER    = "git log --format='%H' -1"
 # DoxygenLayout.xml, doxygen will parse it automatically even if the LAYOUT_FILE
 # tag is left empty.
 
-LAYOUT_FILE            = /home/Mikyung.Lee/chatbot/doxygen-fixes/docs/layout.xml
+LAYOUT_FILE            = /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/docs/layout.xml
 
 # The CITE_BIB_FILES tag can be used to specify one or more bib files containing
 # the reference definitions. This must be a list of .bib files. The .bib
@@ -792,7 +792,7 @@ WARN_LOGFILE           = doxywarn.log
 # directories like /usr/src/myproject. Separate the files or directories with
 # spaces.
 # Note: If this tag is empty the current directory is searched.
-INPUT                  = /home/Mikyung.Lee/chatbot/doxygen-fixes /home/Mikyung.Lee/chatbot/doxygen-fixes/docs/landingPage.md
+INPUT                  = /Users/misopotstickers/tmp-work/documentation/doxygen-fixes /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/docs/landingPage.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
@@ -942,7 +942,7 @@ FILTER_SOURCE_PATTERNS =
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
 
-USE_MDFILE_AS_MAINPAGE = /home/Mikyung.Lee/chatbot/doxygen-fixes/docs/landingPage.md
+USE_MDFILE_AS_MAINPAGE = /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/docs/landingPage.md
 
 #---------------------------------------------------------------------------
 # Configuration options related to source browsing
@@ -2015,36 +2015,36 @@ SEARCH_INCLUDES        = YES
 # preprocessor.
 # This tag requires that the tag SEARCH_INCLUDES is set to YES.
 
-INCLUDE_PATH           = /home/Mikyung.Lee/chatbot/doxygen-fixes/amip_interp/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/astronomy/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/axis_utils/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/column_diagnostics/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/constants \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/constants4 \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/coupler/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/data_override/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/diag_integral/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/diag_manager/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/field_manager/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/fms/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/fms2_io/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/horiz_interp/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/interpolator/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/monin_obukhov/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/mosaic2/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/mpp/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/random_numbers/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/sat_vapor_pres/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/string_utils/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/test_fms/common/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/test_fms/data_override/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/test_fms/fms/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/test_fms/mpp/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/time_interp/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/topography/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/tracer_manager/include \
-                         /home/Mikyung.Lee/chatbot/doxygen-fixes/tridiagonal/include
+INCLUDE_PATH           = /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/amip_interp/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/astronomy/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/axis_utils/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/column_diagnostics/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/constants \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/constants4 \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/coupler/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/data_override/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/diag_integral/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/diag_manager/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/field_manager/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/fms/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/fms2_io/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/horiz_interp/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/interpolator/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/monin_obukhov/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/mosaic2/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/mpp/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/random_numbers/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/sat_vapor_pres/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/string_utils/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/test_fms/common/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/test_fms/data_override/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/test_fms/fms/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/test_fms/mpp/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/time_interp/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/topography/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/tracer_manager/include \
+                         /Users/misopotstickers/tmp-work/documentation/doxygen-fixes/tridiagonal/include
 
 # You can use the INCLUDE_FILE_PATTERNS tag to specify one or more wildcard
 # patterns (like *.h and *.hpp) to filter out the header-files in the

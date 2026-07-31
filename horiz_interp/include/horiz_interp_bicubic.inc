@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_bicubic_mod
-!> @{
 
   !> @brief Creates a new @ref horiz_interp_type
   !!
@@ -663,4 +661,4 @@
       endif
       return
     end subroutine FILL_XY_
-!> @}
+

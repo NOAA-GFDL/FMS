@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for reading unstructured domain data, used in @ref read_data interface
-
-!> @addtogroup fms2_io_mod
-!> @{
 
 !> @brief Wrapper to distinguish interfaces.
 subroutine unstructured_domain_read_0d(fileobj, &
@@ -216,4 +211,4 @@ subroutine unstructured_domain_read_5d(fileobj, &
                         edge_lengths, &
                         broadcast)
 end subroutine unstructured_domain_read_5d
-!> @}
+

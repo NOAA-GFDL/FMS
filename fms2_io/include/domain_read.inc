@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Reads domain decomposed variables and scatters data to pe's for the @ref read_data interface
-
-!> @addtogroup fms2_io_mod
-!> @{
 
 !> @brief I/O domain root reads in  a domain decomposed variable at a
 !!        specific unlimited dimension level and scatters the data to the
@@ -954,4 +949,4 @@ subroutine domain_read_5d(fileobj, variable_name, vdata, unlim_dim_level, &
     end select
   endif
 end subroutine domain_read_5d
-!> @}
+

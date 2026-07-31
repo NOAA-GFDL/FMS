@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief include file for grid2_mod to generate subroutines/functions for r4_kind arguments
-
-!> @addtogroup grid2_mod
-!> @{
-
 #undef  FMS_MOS_KIND_
 #define FMS_MOS_KIND_ r4_kind
 
@@ -55,4 +49,4 @@
 #define GET_GRID_CELL_CENTERS_UG_ get_grid_cell_centers_UG_r4
 
 #include "grid2.inc"
-!> @}
+

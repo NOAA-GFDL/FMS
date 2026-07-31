@@ -16,7 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup memutils_mod memutils_mod
-!> @ingroup memutils
+!! @ingroup memutils
+!! @{
 !! @brief Module to expose the memory printing API
 !! @author V. Balaji
 !!
@@ -27,8 +28,6 @@
 !! This module exposes the print_memuse_stat and memutils_init calls for
 !! use in external user code.
 
-!> @addtogroup memutils_mod
-!> @{
 module memutils_mod
 !Author: Balaji (V.Balaji@noaa.gov)
   use mpp_mod, only: mpp_pe, mpp_root_pe, mpp_npes, mpp_min, mpp_max, mpp_sum, stderr

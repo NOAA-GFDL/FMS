@@ -16,12 +16,13 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_conserve_mod horiz_interp_conserve_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids using conservative interpolation
+!! @ingroup horiz_interp
+!! @{
+!! @brief Performs spatial interpolation between grids using conservative interpolation
 !!
-!> @author Bruce Wyman, Zhi Liang
+!! @author Bruce Wyman, Zhi Liang
 !!
-!> This module can conservatively interpolate data from any logically rectangular grid
+!! This module can conservatively interpolate data from any logically rectangular grid
 !! to any rectangular grid. The interpolation scheme is area-averaging
 !! conservative scheme. There is an optional mask field for missing input data in both
 !! horiz_interp__conserveinit and horiz_interp_conserve. For efficiency purpose, mask should only be
@@ -87,7 +88,6 @@ module horiz_interp_conserve_mod
   !!      interpolations. To reinitialize this variable for a different grid-to-grid
   !!      interpolation you must first use the "horiz_interp_del" interface.
   !!
-  !> @ingroup horiz_interp_conserve_mod
   interface horiz_interp_conserve_new
      module procedure horiz_interp_conserve_new_1dx1d_r4
      module procedure horiz_interp_conserve_new_1dx2d_r4
@@ -127,8 +127,6 @@ module horiz_interp_conserve_mod
 
 
 
-  !> @addtogroup horiz_interp_conserve_mod
-  !> @{
   public :: horiz_interp_conserve_init
   public :: horiz_interp_conserve_new, horiz_interp_conserve, horiz_interp_conserve_del
 

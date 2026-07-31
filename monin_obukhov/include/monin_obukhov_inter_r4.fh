@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @defgroup monin_obukhov_inter monin_obukhov_inter
-!> @ingroup monin_obukhov
-!> @brief Utility routines to be used in @ref monin_obukhov_mod
-
-!> @addtogroup monin_obukhov_inter
-!> @{
 
 #undef FMS_MO_KIND_
 #define FMS_MO_KIND_ r4_kind
@@ -53,6 +47,3 @@
 #define MONIN_OBUKHOV_STABLE_MIX_ monin_obukhov_stable_mix_r4
 
 #include "monin_obukhov_inter.inc"
-
-!> @}
-! close documentation grouping

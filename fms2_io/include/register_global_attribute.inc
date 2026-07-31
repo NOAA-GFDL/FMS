@@ -15,12 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for different dimensions to add global attributes in netcdf files for the
-!! @ref register_global_attribute interface
-
-!> @addtogroup netcdf_io_mod
-!> @{
 
 !> @brief Add a global attribute.
 subroutine register_global_attribute_0d(fileobj, &
@@ -119,4 +113,4 @@ subroutine register_global_attribute_1d(fileobj, &
                              & trim(attribute_name))
     endif
 end subroutine register_global_attribute_1d
-!> @}
+

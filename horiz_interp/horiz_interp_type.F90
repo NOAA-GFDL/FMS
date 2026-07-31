@@ -16,13 +16,12 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_type_mod horiz_interp_type_mod
-!> @ingroup horiz_interp
-!> @brief define derived data type that contains indices and weights used for subsequent
+!! @ingroup horiz_interp
+!! @{
+!! @brief define derived data type that contains indices and weights used for subsequent
 !! interpolations.
-!> @author Zhi Liang
+!! @author Zhi Liang
 
-!> @addtogroup
-!> @{
 module horiz_interp_type_mod
 
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
@@ -43,14 +42,10 @@ private
 public :: CONSERVE, BILINEAR, SPHERICAL, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
 
-!> @}
-
-!> @ingroup horiz_interp_type_mod
 interface assignment(=)
   module procedure horiz_interp_type_eq
 end interface
 
-!> @ingroup horiz_interp_type_mod
 interface stats
   module procedure stats_r4
   module procedure stats_r8
@@ -112,7 +107,6 @@ type horizInterpReals4_type
 end type horizInterpReals4_type
 
 !> Holds data pointers and metadata for horizontal interpolations, passed between the horiz_interp modules
-!> @ingroup horiz_interp_type_mod
  type horiz_interp_type
    integer, dimension(:,:), allocatable   :: ilon    !< indices for conservative scheme
    integer, dimension(:,:), allocatable   :: jlat    !< indices for conservative scheme
@@ -149,8 +143,6 @@ end type horizInterpReals4_type
                                                                     !! if compiled with r8_kind
  end type
 
-!> @addtogroup horiz_interp_type_mod
-!> @{
 contains
 
 !######################################################################################################################

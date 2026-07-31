@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for the @ref gather_data_bc interface
-
-!> @addtogroup netcdf_io_mod
-!> @{
 subroutine unpack_data_0d(fileobj, varid, varname, var_data)
   class(FmsNetcdfFile_t), intent(in)    :: fileobj  !< File object.
   integer,                intent(in)    :: varid    !< Netcdf variable ID

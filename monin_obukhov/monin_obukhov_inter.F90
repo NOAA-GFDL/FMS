@@ -16,11 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup monin_obukhov_inter monin_obukhov_inter
-!> @ingroup monin_obukhov
-!> @brief Utility routines to be used in @ref monin_obukhov_mod
+!! @ingroup monin_obukhov
+!! @{
+!! @brief Utility routines to be used in @ref monin_obukhov_mod
 
-!> @addtogroup monin_obukhov_inter
-!> @{
 module monin_obukhov_inter
 
 use platform_mod,    only: r4_kind, r8_kind

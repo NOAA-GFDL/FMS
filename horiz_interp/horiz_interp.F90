@@ -16,10 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_mod horiz_interp_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids.
+!! @ingroup horiz_interp
+!! @{
+!! @brief Performs spatial interpolation between grids.
 !!
-!> @author Zhi Liang, Bruce Wyman
+!! @author Zhi Liang, Bruce Wyman
 !!
 !! This module can interpolate data from any logically rectangular grid
 !! to any logically rectangular grid. Four interpolation schems are used here:
@@ -199,7 +200,6 @@ use platform_mod,               only: r4_kind, r8_kind
 !!      The output data array does not match the size of the input grid
 !!      edges specified. If you are using the initialization interface make
 !!      sure you have the correct grid size.
-!> @ingroup horiz_interp_mod
  interface horiz_interp
     module procedure horiz_interp_base_2d_r4
     module procedure horiz_interp_base_2d_r8
@@ -229,8 +229,6 @@ interface horiz_interp_solo_1d
 end interface
 
 
-!> @addtogroup horiz_interp_mod
-!> @{
 
  logical :: reproduce_siena = .false. !< Set reproduce_siena = .true. to reproduce siena results.
                  !! Set reproduce_siena = .false. to decrease truncation error

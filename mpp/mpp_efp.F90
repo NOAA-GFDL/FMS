@@ -16,15 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_efp_mod mpp_efp_mod
-!> @ingroup mpp
-!> @brief This module provides interfaces to the non-domain-oriented communication
+!! @ingroup mpp
+!! @{
+!! @brief This module provides interfaces to the non-domain-oriented communication
 !! subroutines.
 !!
-!> Mainly includes interfaces and type definitions for reproducing operations with extended
+!! Mainly includes interfaces and type definitions for reproducing operations with extended
 !! fixed point data.
 
-!> @addtogroup mpp_efp_mod
-!> @{
 module mpp_efp_mod
 
 use mpp_mod, only : mpp_error, FATAL, WARNING, NOTE
@@ -58,7 +57,6 @@ real(r8_kind), parameter, dimension(NUMINT) :: &
 logical :: overflow_error = .false., NaN_error = .false.
 logical :: debug = .false.    !< Making this true enables debugging output.
 
-!> @}
 
 !> This interface uses a conversion to an integer representation
 !! of real numbers to give order-invariant sums that will reproduce
@@ -66,7 +64,6 @@ logical :: debug = .false.    !< Making this true enables debugging output.
 !!
 !! This idea comes from R. Hallberg and A. Adcroft.
 !!
-!> @ingroup mpp_efp_mod
 interface mpp_reproducing_sum
   module procedure mpp_reproducing_sum_r8_2d
   module procedure mpp_reproducing_sum_r8_3d
@@ -75,7 +72,6 @@ end interface mpp_reproducing_sum
 
 !> The Extended Fixed Point (mpp_efp) type provides a public interface for doing
 !! sums and taking differences with this type.
-!> @ingroup mpp_efp_mod
 type, public :: mpp_efp_type
   private
   integer(i8_kind), dimension(NUMINT) :: v
@@ -83,17 +79,11 @@ end type mpp_efp_type
 
 
 !> Operator override interface for mpp_efp_type
-!> @ingroup mpp_efp_mod
 interface operator (+); module procedure mpp_efp_plus  ; end interface
 !> Operator override interface for mpp_efp_type
-!> @ingroup mpp_efp_mod
 interface operator (-); module procedure mpp_efp_minus ; end interface
 !> Assignment override interface for mpp_efp_type
-!> @ingroup mpp_efp_mod
 interface assignment(=); module procedure mpp_efp_assign ; end interface
-
-!> @addtogroup mpp_efp_mod
-!> @{
 
 contains
 

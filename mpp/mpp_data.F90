@@ -16,15 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_data_mod mpp_data_mod
-!> @ingroup mpp
-!> @brief Module to hold pointer and stack data for use in @ref mpp modules.
+!! @ingroup mpp
+!! @{
+!! @brief Module to hold pointer and stack data for use in @ref mpp modules.
 !!
-!> Makes stack and pointer data publicly available from @ref mpp_data_mpi.inc or @ref
+!! Makes stack and pointer data publicly available from @ref mpp_data_mpi.inc or @ref
 !! mpp_data_nocomm.inc for use in @ref mpp modules. This module is mainly
 !! for internal use within @ref mpp_mod and @ref mpp_domains_mod .
 
-!> @addtogroup mpp_data_mod
-!> @{
 module mpp_data_mod
 
 #ifdef use_libMPI

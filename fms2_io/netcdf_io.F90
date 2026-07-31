@@ -16,8 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup netcdf_io_mod netcdf_io_mod
-!> @ingroup fms2_io
-!> @brief This module defines the derived type, FmsNetcdfFile_t, and routines
+!! @ingroup fms2_io
+!! @{
+!! @brief This module defines the derived type, FmsNetcdfFile_t, and routines
 !! to handle calls to the netcdf library in order to read and write netcdf files.
 !!
 !! This module is specifically for netcdf input/output when domain decomposition is not involved
@@ -26,9 +27,6 @@
 !!
 !! This module is not intended to be used externally. Please use the public interfaces in fms2_io_mod
 !! for IO operations.
-!!
-!> @addtogroup netcdf_io_mod
-!> @{
 module netcdf_io_mod
 #ifndef MAX_NUM_RESTART_VARS_
 #define MAX_NUM_RESTART_VARS_ 250
@@ -66,10 +64,8 @@ integer, private :: fms2_deflate_level = default_deflate_level !< Netcdf deflate
 logical, private :: fms2_shuffle = .false. !< Flag indicating whether to use the netcdf shuffle filter
 logical, private :: fms2_is_netcdf4 = .false. !< Flag indicating whether the default netcdf file format is netcdf4
 
-!> @}
 
 !> @brief information needed fr regional restart variables
-!> @ingroup netcdf_io_mod
 type, private :: bc_information
   integer, dimension(:), allocatable :: indices !< Indices for the halo region for the variable
                                                 !! (starting x, ending x, starting y, ending y)
@@ -90,7 +86,6 @@ type, private :: bc_information
 endtype bc_information
 
 !> @brief Restart variable.
-!> @ingroup netcdf_io_mod
 type, private :: RestartVariable_t
   character(len=256) :: varname !< Variable name.
   class(*), pointer :: data0d => null() !< Scalar data pointer.
@@ -106,7 +101,6 @@ type, private :: RestartVariable_t
 endtype RestartVariable_t
 
 !> @brief Compressed dimension.
-!> @ingroup netcdf_io_mod
 type, private :: CompressedDimension_t
   character(len=256) :: dimname !< Dimension name.
   integer, dimension(:), allocatable :: npes_corner !< Array of starting
@@ -118,7 +112,6 @@ type, private :: CompressedDimension_t
 endtype CompressedDimension_t
 
 !> @brief information about the current dimensions for regional restart variables
-!> @ingroup netcdf_io_mod
 type, private :: dimension_information
   integer, dimension(5) :: xlen !> The size of each unique x dimension
   integer, dimension(5) :: ylen !> The size of each unique y dimension
@@ -143,7 +136,6 @@ endtype fmsOffloadingIn_type
 !> @brief Type to represent a netCDF file. Can be used with multiple cores
 !! but only the root pe will perform any I/O operations before sending the
 !! data to the other pes.
-!> @ingroup netcdf_io_mod
 type, public :: FmsNetcdfFile_t
   character(len=FMS_PATH_LEN) :: path !< File path.
   logical :: is_readonly !< Flag telling if the file is readonly.
@@ -181,7 +173,6 @@ endtype FmsNetcdfFile_t
 
 
 !> @brief Range type for a netcdf variable.
-!> @ingroup netcdf_io_mod
 type, public :: Valid_t
   logical :: has_range !< Flag that's true if both min/max exist for a variable.
   logical :: has_min !< Flag that's true if min exists for a variable.
@@ -269,7 +260,7 @@ public :: read_restart_bc
 public :: flush_file
 public :: get_variable_id
 
-!> @ingroup netcdf_io_mod
+
 interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_0d
   module procedure netcdf_add_restart_variable_1d
@@ -279,7 +270,6 @@ interface netcdf_add_restart_variable
   module procedure netcdf_add_restart_variable_5d
 end interface netcdf_add_restart_variable
 
-!> @ingroup netcdf_io_mod
 interface netcdf_read_data
   module procedure netcdf_read_data_0d
   module procedure netcdf_read_data_1d
@@ -290,7 +280,6 @@ interface netcdf_read_data
 end interface netcdf_read_data
 
 
-!> @ingroup netcdf_io_mod
 interface netcdf_write_data
   module procedure netcdf_write_data_0d
   module procedure netcdf_write_data_1d
@@ -301,7 +290,6 @@ interface netcdf_write_data
 end interface netcdf_write_data
 
 
-!> @ingroup netcdf_io_mod
 interface compressed_write
   module procedure compressed_write_0d
   module procedure compressed_write_1d
@@ -312,55 +300,46 @@ interface compressed_write
 end interface compressed_write
 
 
-!> @ingroup netcdf_io_mod
 interface register_global_attribute
   module procedure register_global_attribute_0d
   module procedure register_global_attribute_1d
 end interface register_global_attribute
 
 
-!> @ingroup netcdf_io_mod
 interface register_variable_attribute
   module procedure register_variable_attribute_0d
   module procedure register_variable_attribute_1d
 end interface register_variable_attribute
 
 
-!> @ingroup netcdf_io_mod
 interface get_global_attribute
   module procedure get_global_attribute_0d
   module procedure get_global_attribute_1d
 end interface get_global_attribute
 
 
-!> @ingroup netcdf_io_mod
 interface get_variable_attribute
   module procedure get_variable_attribute_0d
   module procedure get_variable_attribute_1d
 end interface get_variable_attribute
 
 
-!> @ingroup netcdf_io_mod
 interface scatter_data_bc
   module procedure scatter_data_bc_2d
   module procedure scatter_data_bc_3d
 end interface scatter_data_bc
 
-!> @ingroup netcdf_io_mod
 interface gather_data_bc
   module procedure gather_data_bc_2d
   module procedure gather_data_bc_3d
 end interface gather_data_bc
 
 !> The interface is needed to accomodate pgi because it can't handle class * and there was no other way around it
-!> @ingroup netcdf_io_mod
 interface is_valid
   module procedure is_valid_r8
   module procedure is_valid_r4
 end interface is_valid
 
-!> @addtogroup netcdf_io_mod
-!> @{
 
 contains
 

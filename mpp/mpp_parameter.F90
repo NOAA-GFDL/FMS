@@ -16,12 +16,11 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_parameter_mod mpp_parameter_mod
-!> @ingroup mpp
-!> @brief Parameters values for use in various @ref mpp modules
-!> If needed, these values should be imported from their corresponding mpp module
+!! @ingroup mpp
+!! @{
+!! @brief Parameters values for use in various @ref mpp modules
+!! If needed, these values should be imported from their corresponding mpp module
 
-!> @addtogroup mpp_parameter_mod
-!> @{
 module mpp_parameter_mod
   use platform_mod
 

@@ -15,11 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @file
-!> @brief Routines for writing domain decomposed variables for the @ref write_data interface
-
-!> @addtogroup fms2_io_mod
-!> @{
 
 !> @brief Gather "compute" domain data on the I/O root rank and then have
 !!        the I/O root write out the data that spans the "global" domain.
@@ -1636,4 +1631,4 @@ subroutine netcdf_mpi_write_5d(fileobj, variable_name, vdata, unlim_dim_level, c
 
   call check_netcdf_code(err, "Failed to write variable: "//trim(variable_name))
 end subroutine netcdf_mpi_write_5d
-!> @}
+

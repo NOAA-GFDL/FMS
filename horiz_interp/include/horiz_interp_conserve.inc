@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_conserve_mod
-!> @{
 subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
     type(horiz_interp_type), intent(inout) :: Interp
     real(FMS_HI_KIND_), intent(in),       dimension(:)   :: lon_in , lat_in
@@ -919,4 +917,3 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     !-----------------------------------------------------------------------
 
   end subroutine DATA_SUM_
-!> @}

@@ -16,9 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup interpolator_mod interpolator_mod
-!> @ingroup interpolator
-!> @brief A module to interpolate climatology data to model the grid.
-!> @author William Cooke <William.Cooke@noaa.gov>
+!! @ingroup interpolator
+!! @{
+!! @brief A module to interpolate climatology data to model the grid.
+!! @author William Cooke <William.Cooke@noaa.gov>
 
 module interpolator_mod
 
@@ -151,7 +152,6 @@ public interpolator_init, &
 !! @param [in] <js> Index for the physics window
 !! @param [out] <interp_data> The model fields with the interpolated climatology data
 !! @param [out] <clim_units> The units of field_name
-!> @ingroup interpolator_mod
 interface interpolator
    module procedure interpolator_4D_r4, interpolator_4D_r8
    module procedure interpolator_3D_r4, interpolator_3D_r8
@@ -162,7 +162,6 @@ interface interpolator
 end interface interpolator
 
 !> Private assignment override interface for interpolate type
-!> @ingroup interpolator_mod
 interface assignment(=)
    module procedure interpolate_type_eq
 end interface
@@ -229,7 +228,6 @@ end interface interp_linear
 !! @param [in] <grdout> Output grid
 !! @param [in] <datin> Input data
 !! @param [out] <datout> Output data
-!> @ingroup interpolator_mod
 interface interp_weighted_scalar
    module procedure interp_weighted_scalar_1D_r4, interp_weighted_scalar_1D_r8
    module procedure interp_weighted_scalar_2D_r4, interp_weighted_scalar_2d_r8
@@ -242,7 +240,6 @@ end interface interp_weighted_scalar
 #include<file_version.h>
 
 !> Redundant climatology data between fields
-!> @ingroup interpolate_type
 
 type, private :: interpolate_r4_type
 logical :: is_allocated = .false.
@@ -320,9 +317,6 @@ integer :: itaum     !< No description
 integer :: itaup     !< No description
 
 end type interpolate_type
-
-!> @addtogroup interpolator_mod
-!> @{
 
 logical            :: module_is_initialized = .false.
 logical            :: clim_diag_initialized = .false.

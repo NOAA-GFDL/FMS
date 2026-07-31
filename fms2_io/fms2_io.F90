@@ -16,8 +16,9 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms2_io_mod fms2_io_mod
-!> @ingroup fms2_io
-!> @brief This module supports netCDF I/O operations.
+!! @ingroup fms2_io
+!! @{
+!! @brief This module supports netCDF I/O operations.
 !!
 !! fms2_io_mod is the top level module that provides open, close, read, and write interfaces to the NetCDF package.
 !! This module defines public "aliases"(interfaces) to select procedures in fms_netcdf_domain_io_mod for reading/writing
@@ -66,8 +67,6 @@
 !! @note The legacy IO modules, fms_io_mod and mpp_io_mod, are no longer available.
 !! If converting legacy code from fms_io/mpp_io to fms2_io, please refer to the migration guide at fms2_io/readme.md.
 
-!> @addtogroup fms2_io_mod
-!> @{
 module fms2_io_mod
 use fms_io_utils_mod
 use netcdf_io_mod
@@ -151,7 +150,6 @@ public :: get_filename_appendix
 public :: set_filename_appendix
 public :: get_instance_filename
 public :: nullify_filename_appendix
-!> @}
 
 !> @brief Opens a NetCDF dataset on disk and initializes the file object.
 !!
@@ -209,7 +207,6 @@ end interface open_file
 !! @ref fmsnetcdfunstructureddomainfile_t for a given 2D domain at an optional path <br>
 !!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
-!> @ingroup fms2_io_mod
 interface open_virtual_file
   module procedure create_diskless_netcdf_file_wrap
   module procedure create_diskless_domain_file
@@ -229,7 +226,6 @@ end interface open_virtual_file
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
 !! For generic netcdf: @ref netcdf_io_mod.
-!> @ingroup fms2_io_mod
 interface close_file
   module procedure netcdf_file_close_wrap
   module procedure close_domain_file
@@ -253,7 +249,6 @@ end interface close_file
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
 !! For generic netcdf: @ref netcdf_io_mod.
-!> @ingroup fms2_io_mod
 interface register_axis
   module procedure netcdf_add_dimension
   module procedure register_compressed_dimension
@@ -278,7 +273,6 @@ end interface register_axis
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
 !! For generic netcdf: @ref netcdf_io_mod.
-!> @ingroup fms2_io_mod
 interface register_field
   module procedure netcdf_add_variable_wrap
   module procedure register_domain_variable
@@ -299,7 +293,6 @@ end interface register_field
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
 !! For generic netcdf: @ref netcdf_io_mod.
-!> @ingroup fms2_io_mod
 interface register_restart_field
   module procedure netcdf_add_restart_variable_0d_wrap
   module procedure netcdf_add_restart_variable_1d_wrap
@@ -330,7 +323,6 @@ end interface register_restart_field
 !!
 !! Write the value(s) in data to the field named "lon"
 !!
-!> @ingroup fms2_io_mod
 interface write_data
   module procedure compressed_write_0d_wrap
   module procedure compressed_write_1d_wrap
@@ -360,7 +352,6 @@ end interface write_data
 !!
 !! Read the values for the field "lat" from the file and write them onto data <br>
 !!
-!> @ingroup fms2_io_mod
 interface read_data
   module procedure compressed_read_0d
   module procedure compressed_read_1d
@@ -391,7 +382,6 @@ end interface read_data
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For netcdf files with an unstructured domain: @ref fms_netcdf_unstructured_domain_io_mod.
 !! For generic netcdf: @ref netcdf_io_mod.
-!> @ingroup fms2_io_mod
 interface write_restart
   module procedure netcdf_save_restart_wrap
   module procedure save_domain_restart
@@ -409,7 +399,6 @@ end interface write_restart
 !! @note This interface is only intended for use with diskless netcdf files.
 !!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
-!> @ingroup fms2_io_mod
 interface write_new_restart
   module procedure netcdf_save_restart_wrap2
   module procedure save_domain_restart_wrap
@@ -424,7 +413,6 @@ end interface write_new_restart
 !! @note For individual documentation on the listed routines, please see the appropriate helper module.
 !! For netcdf files with a structured domain: @ref fms_netcdf_domain_io_mod.
 !! For generic netcdf: @ref netcdf_io_mod.
-!> @ingroup fms2_io_mod
 interface read_restart
   module procedure netcdf_restore_state
   module procedure restore_domain_state
@@ -440,14 +428,11 @@ end interface read_restart
 !! @note This interface is only intended for use with diskless netcdf files.
 !!
 !! @note For individual documentation on the listed routines, please see the appropriate helper module: @ref blackboxio
-!> @ingroup fms2_io_mod
 interface read_new_restart
   module procedure netcdf_restore_state_wrap
   module procedure restore_domain_state_wrap
 end interface read_new_restart
 
-!> @addtogroup fms2_io_mod
-!> @{
 
 logical, private :: fms2_io_is_initialized = .false. !< True after calling fms2_io_init
 ! Namelist variables

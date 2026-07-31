@@ -16,9 +16,10 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup xgrid_mod xgrid_mod
-!> @ingroup exchange
-!> @brief Implements exchange grids for coupled models running on multiple processors
-!> @author Michael Winton, Zhi Liang
+!! @ingroup exchange
+!! @{
+!! @brief Implements exchange grids for coupled models running on multiple processors
+!! @author Michael Winton, Zhi Liang
 !!
 !! An exchange grid is formed from the union of
 !! the bounding lines of the two (logically rectangular) participating
@@ -87,8 +88,6 @@
 !!     J_OCN_ATMxOCN, and AREA_ATMxOCN</TT>.  These fields may be generated
 !!     by the <TT>make_xgrids</TT> utility.
 
-!> @addtogroup xgrid_mod
-!> @{
 module xgrid_mod
 
 
@@ -176,8 +175,6 @@ real(r8_kind), allocatable, dimension(:,:) :: AREA_ATM_MODEL, AREA_LND_MODEL, AR
 !> Area elements based on a the spherical model used by the ICE layer
 real(r8_kind), allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, AREA_OCN_SPHERE
 
-!> @}
-
 !> @brief Scatters data from model grid onto exchange grid.
 !!
 !> Example usage:
@@ -185,7 +182,6 @@ real(r8_kind), allocatable, dimension(:,:) :: AREA_ATM_SPHERE, AREA_LND_SPHERE, 
 !! call put_to_xgrid(d, grid_id, x, xmap, remap_order)
 !! @endcode
 !!
-!> @ingroup xgrid_mod
 interface put_to_xgrid
   module procedure put_side1_to_xgrid
   module procedure put_side2_to_xgrid
@@ -197,7 +193,6 @@ end interface
 !! @code{.F90}
 !! call get_from_xgrid(d, grid_id, x, xmap)
 !! @endcode
-!> @ingroup xgrid_mod
 interface get_from_xgrid
   module procedure get_side1_from_xgrid
   module procedure get_side2_from_xgrid
@@ -215,14 +210,12 @@ end interface
 !> @brief @ref get_from_xgrid for unstructured grids.
 !!
 !> Sums data from exchange grid to model grid.
-!> @ingroup xgrid_mod
 interface get_from_xgrid_ug
   module procedure get_side2_from_xgrid_ug
   module procedure get_side1_from_xgrid_ug
 end interface
 
 !> @brief Sets sub-grid area and numbering in the given exchange grid.
-!> @ingroup xgrid_mod
 interface set_frac_area
   module procedure set_frac_area_sg
   module procedure set_frac_area_ug
@@ -244,7 +237,6 @@ end interface
 !! @code{.F90}
 !! call conservation_check(d, grid_id, xmap,remap_order)
 !! @endcode
-!> @ingroup xgrid_mod
 interface conservation_check
   module procedure conservation_check_side1
   module procedure conservation_check_side2
@@ -253,7 +245,6 @@ end interface
 !> For an unstructured grid, returns three numbers which are the global sum of a
 !! variable (1) on its home model grid, (2) after interpolation to the other
 !! side grid(s), and (3) after re_interpolation back onto its home side grid(s).
-!> @ingroup xgrid_mod
 interface conservation_check_ug
   module procedure conservation_check_ug_side1
   module procedure conservation_check_ug_side2
@@ -261,7 +252,6 @@ end interface
 
 
 !> Private type for cell indices and data in the exchange grid
-!> @ingroup xgrid_mod
 type xcell_type
   integer :: i1 !< indices of cell in model arrays on both sides
   integer :: j1 !< indices of cell in model arrays on both sides
@@ -280,7 +270,6 @@ type xcell_type
 end type xcell_type
 
 !> Type to hold pointers for grid boxes
-!> @ingroup xgrid_mod
 type grid_box_type
    real(r8_kind), dimension(:,:),   pointer :: dx     => NULL()
    real(r8_kind), dimension(:,:),   pointer :: dy     => NULL()
@@ -296,7 +285,6 @@ type grid_box_type
 end type grid_box_type
 
 !> Private type to hold all data needed from given grid for an exchange grid
-!> @ingroup xgrid_mod
 type grid_type
   character(len=3)                :: id                               !< grid identifier
   integer                         :: npes                             !< number of processor on this grid.
@@ -360,7 +348,6 @@ type grid_type
 end type grid_type
 
 !> Private type for exchange grid data
-!> @ingroup xgrid_mod
 type x1_type
   integer :: i, j
   real(r8_kind)    :: area   !< (= geographic area * frac_area)
@@ -372,7 +359,6 @@ type x1_type
 end type x1_type
 
 !> Private type for exchange grid data
-!> @ingroup xgrid_mod
 type x2_type
   integer          :: i, j, l, k, pos
   real(r8_kind)    :: area   !< geographic area of exchange cell
@@ -380,7 +366,6 @@ type x2_type
 end type x2_type
 
 !> Private type for overlap exchange grid data
-!> @ingroup xgrid_mod
 type overlap_type
    integer                    :: count
    integer                    :: pe
@@ -395,7 +380,6 @@ type overlap_type
 end type overlap_type
 
 !> Private type used for exchange grid communication
-!> @ingroup xgrid_mod
 type comm_type
   integer                                   :: nsend, nrecv
   integer                                   :: sendsize, recvsize
@@ -405,7 +389,6 @@ type comm_type
 end type comm_type
 
 !> @brief Type for an exchange grid, holds pointers to included grids and any necessary data.
-!> @ingroup xgrid_mod
 type xmap_type
   private
   integer :: size            !< # of exchange grid cells with area > 0 on this pe
@@ -446,8 +429,6 @@ type xmap_type
   type(comm_type), pointer       :: get1_repro =>NULL()!< for get_1_from_xgrid_repro
 end type xmap_type
 
-!> @addtogroup stock_constants_mod
-!> @{
 !-----------------------------------------------------------------------
 ! Include variable "version" to be written to log file.
 #include<file_version.h>
@@ -472,15 +453,12 @@ end type xmap_type
  integer :: is_nest=0, ie_nest=0, js_nest=0, je_nest=0
  integer :: is_parent=0, ie_parent=0, js_parent=0, je_parent=0
 
-!> @}
  ! The following is required to compute stocks of water, heat, ...
 
-  !> @ingroup xgrid_mod
   interface stock_move
      module procedure stock_move_3d, stock_move_2d
   end interface
 
-  !> @ingroup xgrid_mod
   interface stock_move_ug
      module procedure stock_move_ug_3d
   end interface
@@ -488,19 +466,17 @@ end type xmap_type
   public stock_move, stock_type, stock_print, get_index_range, stock_integrate_2d
   public FIRST_ORDER, SECOND_ORDER, stock_move_ug
 
-  !> @ingroup xgrid_mod
+
   interface get_area_elements
      module procedure get_area_elements_fms2_io
   end interface
-  !> @ingroup xgrid_mod
+
   interface get_nest_contact
      module procedure get_nest_contact_fms2_io
   end interface
 
 contains
 
-!> @addtogroup xgrid_mod
-!> @{
 
 !#######################################################################
 !> @return logical in_box

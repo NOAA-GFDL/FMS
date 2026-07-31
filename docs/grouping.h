@@ -85,8 +85,8 @@
 !> @defgroup monin_obukhov Monin Obukhov
 !> @brief Modules and associated files in the monin_obukhov directory
 
-!> @defgroup mosaic Mosaic
-!> @brief Modules and associated files in the mosaic directory
+!> @defgroup grid_utils Grid Utils
+!> @brief Modules and associated files in the grid_utils directory
 
 !> @defgroup mosaic2 Mosaic2
 !> @brief Modules and associated files in the mosaic2 directory
