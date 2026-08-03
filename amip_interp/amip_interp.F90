@@ -170,35 +170,28 @@ public i_sst, j_sst, forecast_mode, use_ncep_sst
 !-----------------------------------------------------------------------
 !------ private defined data type --------
 
-!> @}
-
 !> @brief Private data type for representing a calendar date
-!> @ingroup amip_interp_mod
 type date_type
    sequence
    integer :: year, month, day
 end type
 
 !> Assignment overload to allow native assignment between amip_interp_type variables.
-!> @ingroup amip_interp_mod
 interface assignment(=)
   module procedure amip_interp_type_eq
 end interface
 
 !> Private logical equality overload for amip_interp_type
-!> @ingroup amip_interp_mod
 interface operator (==)
    module procedure date_equals
 end interface
 
 !> Private logical inequality overload for amip_interp_type
-!> @ingroup amip_interp_mod
 interface operator (/=)
    module procedure date_not_equals
 end interface
 
 !> Private logical greater than overload for amip_interp_type
-!> @ingroup amip_interp_mod
 interface operator (>)
    module procedure date_gt
 end interface
@@ -268,7 +261,6 @@ end interface
 !! The namelist variable date_out_of_range = 'fail' and the amip_interp_new
 !! argument use_annual = true.  This combination is not allowed.
 !!
-!> @ingroup amip_interp_mod
 interface amip_interp_new
    module procedure amip_interp_new_1d_r4, amip_interp_new_1d_r8
    module procedure amip_interp_new_2d_r4, amip_interp_new_2d_r8
@@ -278,7 +270,6 @@ end interface
 
 !> @brief Contains information needed by the interpolation module (exchange_mod) and buffers
 !! data (r4_kind flavor).
-!> @ingroup amip_interp_mod
 type amip_interp_type
    private
    type (horiz_interp_type)              :: Hintrp, Hintrp2 ! add by JHC
@@ -289,8 +280,6 @@ type amip_interp_type
    logical                               :: I_am_initialized=.false.
 end type amip_interp_type
 
-!> @addtogroup amip_interp_mod
-!> @{
 !-----------------------------------------------------------------------
 !  ---- resolution/grid variables ----
 

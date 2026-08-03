@@ -32,8 +32,6 @@
 #ifdef __APPLE__
 #include <pthread.h>
 #endif
-/** \endcond
- */
 // skips doc parsing for includes and license
 
 /**
@@ -140,5 +138,5 @@ int set_cpu_affinity(int cpu)
   return 0;
 }
 /**
- * @}
+* @}
 */

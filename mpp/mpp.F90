@@ -50,7 +50,7 @@
 !!   the parallel code is distributed across a cluster, or across the Net,
 !!   messages must be sent and received using the protocols for
 !!   long-distance communication, such as TCP/IP. This requires a
-!!   ``handshaking'' between nodes of the distributed system. One can think
+!!   ``handshaking`` between nodes of the distributed system. One can think
 !!   of the two different methods as involving <TT>put</TT>s or
 !!   <TT>get</TT>s (e.g the SHMEM library), or in the case of
 !!   negotiated communication (e.g MPI), <TT>send</TT>s and

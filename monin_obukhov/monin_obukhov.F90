@@ -94,8 +94,6 @@ end interface mo_derivative_m
 interface mo_derivative_t
     module procedure mo_derivative_t_r4, mo_derivative_t_r8
 end interface mo_derivative_t
-!> @addtogroup monin_obukhov_mod
-!> @{
 
 !-----------------------------------------------------------------------
 ! version number of this module

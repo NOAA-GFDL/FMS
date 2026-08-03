@@ -220,5 +220,5 @@ end subroutine close_column_diagnostics_units
 
 
                end module column_diagnostics_mod
-!@}
+!> @}
 ! close documentation grouping

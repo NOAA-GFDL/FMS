@@ -29,6 +29,7 @@
 
 /** @defgroup horiz_interp_conserve_xgrid horiz_interp_conserve_xgrid
  *  @ingroup horiz_interp
+ *  @{
  *  @brief Grid creation and calculation functions for use in @ref mosaic_mod
  * /
 

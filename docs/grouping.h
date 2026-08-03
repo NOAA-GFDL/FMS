@@ -25,8 +25,8 @@
 !> @defgroup astronomy Astronomy
 !> @brief Modules and associated files in the astronomy directory
 
-!> @defgroup axis_utils Axis Utilities
-!> @brief Modules and associated files in the axis_utils directory
+!> @defgroup axis_utils2 Axis Utilities
+!> @brief Modules and associated files in the axis_utils2 directory
 
 !> @defgroup amip_interp AMIP Interpolator
 !> @brief Modules and associated files in the amip_interp directory
@@ -39,6 +39,9 @@
 
 !> @defgroup constants Constants
 !> @brief Modules and associated files in the constants directory
+
+!> @defgroup constants4 Constants4
+!> @brief Modules and associated files in the constants4 directory
 
 !> @defgroup coupler Coupler
 !> @brief Modules and associated files in the coupler directory

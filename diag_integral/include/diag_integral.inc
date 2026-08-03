@@ -388,7 +388,3 @@ integer,           intent(in) :: je !< starting/ending i,j indices over which su
 !$OMP END CRITICAL
 
 end subroutine SUM_FIELD_2D_HEMI_
-
-
-!> @}
-! close documentation grouping

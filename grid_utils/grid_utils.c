@@ -27,8 +27,9 @@
 #include <mpi.h>
 #endif
 
-/** @defgroup grid_utils grid_utils
+/** @defgroup grid_utils_c grid_utils_c
  *  @ingroup grid_utils
+ *  @{
  *  @brief Error handling and other general utilities for @ref grid_utils
  */
 

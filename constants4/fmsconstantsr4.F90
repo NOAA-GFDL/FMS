@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fmsconstantsR4 FMSConstantsR4
-!> @ingroup constants4
+!! @ingroup constants4
 !! @{
 !! @brief Defines useful constants for Earth. Constants are defined as real
 !!
@@ -46,8 +46,8 @@
 !!    tempc(:,:,:) = tempk(:,:,:) - TFREEZE
 !!    geopotential(:,:) = height(:,:) * grav_new
 !! @endverbatim
-!> @file
-!> @brief File for @ref FMSconstantsR4_mod
+!! @file
+!! @brief File for @ref FMSconstantsR4_mod
 
 module FMSconstantsR4
 

@@ -24,6 +24,7 @@
 
 /** @defgroup gradient_c2l gradient_c2l
  *  @ingroup grid_utils
+ *  @{
  *  @brief Grid utility functions for use in @ref grid_utils
  */
 

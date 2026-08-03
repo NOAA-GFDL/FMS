@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !* **********************************************************************
 !> @defgroup axis_utils_mod axis_utils_mod
-!> @ingroup axis_utils
+!> @ingroup axis_utils2
 !! @{
 !! @brief A set of utilities for manipulating axes and extracting axis attributes.
 !! FMS2_IO equivalent version of @ref axis_utils_mod.

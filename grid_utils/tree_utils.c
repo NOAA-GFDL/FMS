@@ -25,6 +25,7 @@
 
 /** @defgroup tree_utils tree_utils
  *  @ingroup grid_utils
+ *  @{
  *  @brief utilities for create_xgrid_great_circle
  */
 

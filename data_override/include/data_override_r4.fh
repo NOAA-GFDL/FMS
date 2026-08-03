@@ -49,7 +49,10 @@
 #undef DATA_OVERRIDE_UG_2D_
 #define DATA_OVERRIDE_UG_2D_ data_override_ug_2d_r4
 
+!> @ingroup data_override_r4
+!! @{
 #include "data_override.inc"
+!> @}
 
 #undef FMS_DATA_OVERRIDE_KIND_
 #undef DATA_OVERRIDE_INIT_IMPL_
@@ -62,3 +65,4 @@
 #undef DATA_OVERRIDE_3D_
 #undef DATA_OVERRIDE_UG_1D_
 #undef DATA_OVERRIDE_UG_2D_
+

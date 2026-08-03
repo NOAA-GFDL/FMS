@@ -16,14 +16,8 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-!> @defgroup data_override_mod data_override_mod
-!! @ingroup data_override
-!! @{
-! data_override_r4 and data_override_r8 are not intended to be used directly -
-! they should be used through the data_override_mod API. The body of
-! data_override_r4 and data_override_r8 is contained in data_override.inc.
-
 !> @defgroup data_override_r4 data_override_r4
+!! @ingroup data_override
 !! @{
 module data_override_r4
 #include "data_override_r4.fh"
@@ -31,13 +25,20 @@ end module data_override_r4
 !> @}
 
 !> @defgroup data_override_r8 data_override_r8
+!! @ingroup data_override
 !! @{
 module data_override_r8
 #include "data_override_r8.fh"
 end module data_override_r8
 !> @}
 
-!> @brief Routines to get data in a file whose path is described in a user-provided data_table
+!> @defgroup data_override_mod data_override_mod
+!! @ingroup data_override
+!! @{
+!! data_override_r4 and data_override_r8 are not intended to be used directly -
+!! they should be used through the data_override_mod API. The body of
+!! data_override_r4 and data_override_r8 is contained in data_override.inc.
+!! @brief Routines to get data in a file whose path is described in a user-provided data_table
 !! and do spatial and temporal interpolation if necessary to convert data to model's grid and time.
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!

@@ -729,7 +729,7 @@ module mpp_domains_mod
 
   integer, parameter :: NO_CHECK = -1
   integer            :: debug_update_level = NO_CHECK
-!> @}
+  
 !***********************************************************************
 !
 !         public interface from mpp_domains_define.h
@@ -1022,7 +1022,7 @@ module mpp_domains_mod
 !!    domain-decomposed array on each PE. \e MPP_TYPE_ can be of type
 !!    \e complex, \e integer, \e logical or \e real;
 !!    of 4-byte or 8-byte kind; of rank up to 5. The vector version (with
-!!    two input data fields) is only present for \ereal types.<br>
+!!    two input data fields) is only present for \real types.<br>
 !!<br>
 !!    \empp_start_update_domains must be paired together with
 !!    \empp_complete_update_domains. In \e mpp_start_update_domains,
