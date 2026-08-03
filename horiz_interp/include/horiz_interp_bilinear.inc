@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_bilinear_mod
-!> @{
   !> @parblock
   !! Subroutine to generate weights and mapping indices for bilinear interpolation from a
   !! rectangular input grid specified as 1D arrays to any output grid specified as 2D arrays.
@@ -828,7 +826,7 @@
       !< are the latitude coordinates for the input grid in radians.
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
       !< are the longitude coordinates for the output grid in radians.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
       !< are the latitude coordinates for the output grid in radians.
     logical, intent(in) :: src_modulo
       !< is true if the boundary condition along zonal boundary is cyclic.
@@ -1526,5 +1524,3 @@
     Interp% I_am_initialized = .True.
     call close_file(weight_fileobj)
   end subroutine HORIZ_INTERP_READ_WEIGHTS_BILINEAR_
-
-!> @}

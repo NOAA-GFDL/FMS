@@ -16,16 +16,15 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_spherical_mod horiz_interp_spherical_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
-!> This module can interpolate data from rectangular/tripolar grid
+!! @{
+!! @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
+!! @parblock
+!! This module can interpolate data from rectangular/tripolar grid
 !! to rectangular/tripolar grid. The interpolation scheme is inverse-distance-weighted
 !! scheme.    There is an optional mask field for missing input data.
 !! An optional output mask field may be used in conjunction with
 !! the input mask to show where output data exists.
-
-!> @addtogroup horiz_interp_spherical_mod
-!> @{
+!! @endparblock
 module horiz_interp_spherical_mod
 
   use platform_mod,          only : r4_kind, r8_kind

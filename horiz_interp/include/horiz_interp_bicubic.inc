@@ -15,9 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_bicubic_mod
-!> @{
-
   !> @parblock
   !! Computes weights and mapping indices for bicubic interpation from a rectangular input grid
   !! specified as 1D arrays to a general output grid specified as 2D arrays.
@@ -206,7 +203,7 @@
     !-----------------------------------------------------------------------
     type(horiz_interp_type), intent(inout) :: Interp
       !< will be populated with interpolation weights and mapping indices
-    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:) :: lon_in
       !< are the longitude coordinates for the rectangular input grid in radians
     real(FMS_HI_KIND_), intent(in), dimension(:) :: lat_in
       !< are the latitude coordinates for the rectangular input grid in radians
@@ -459,7 +456,7 @@
 
    !> @parblock
    !! Internally used subroutine to interpolate data.  Adopted from
-   !! Numerical Recipes for Fortran (1986-1992) 
+   !! Numerical Recipes for Fortran (1986-1992)
    !! @endparblock
    subroutine BCUINT_(y,y1,y2,y12,x1l,x1u,x2l,x2u,t,u,ansy,ansy1,ansy2)
       real(FMS_HI_KIND_) ansy,ansy1,ansy2,x1l,x1u,x2l,x2u,y(4),y1(4),y12(4),y2(4)
@@ -486,7 +483,7 @@
 
    !> @parblock
    !! Internally used subroutine called by bcuint_r4/r8 to compute bicubic coefficients.
-   !! Adopted from Numerical Recipes for Fortran (1986-1992) 
+   !! Adopted from Numerical Recipes for Fortran (1986-1992)
    !! @endparblock
    subroutine BCUCOF_(y,y1,y2,y12,d1,d2,c)
       real(FMS_HI_KIND_) d1,d2,c(4,4),y(4),y1(4),y12(4),y2(4)
@@ -704,4 +701,3 @@
       endif
       return
     end subroutine FILL_XY_
-!> @}

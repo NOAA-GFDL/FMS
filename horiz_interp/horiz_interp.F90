@@ -16,15 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_mod horiz_interp_mod
-!> @ingroup horiz_interp
-!> @brief Performs spatial interpolation between grids.
+!! @{
+!! @brief Performs spatial interpolation between grids.
+!! @author Zhi Liang, Bruce Wyman
 !!
-!> @author Zhi Liang, Bruce Wyman
-!!
-!> @parblock
+!! @parblock
 !! Horiz_interp_mod contains subroutines and derived types to interpolate
 !! data from  any logically rectangular grid to any logically rectangular grid with
-!! the following interpolation schemes:  conservative, bilinear, bicubic, and 
+!! the following interpolation schemes:  conservative, bilinear, bicubic, and
 !! inverse of square distance weighted.
 !!
 !! and horiz_interp_spherical_mod. bicubic interpolation requires the source grid
@@ -230,9 +229,6 @@ interface horiz_interp_solo_1d
   module procedure horiz_interp_solo_1d_r8
 end interface
 
-
-!> @addtogroup horiz_interp_mod
-!> @{
 
  logical :: reproduce_siena = .false. !< Set reproduce_siena = .true. to reproduce siena results.
                  !! Set reproduce_siena = .false. to decrease truncation error

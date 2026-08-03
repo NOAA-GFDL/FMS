@@ -27,9 +27,9 @@
 #include <omp.h>
 #endif
 
-/** \file
- *  \ingroup mosaic
- *  \brief Grid creation and calculation functions for use in @ref mosaic_mod
+/** @file
+ *  @ingroup horiz_interp_conserve_mod
+ *  @brief Functions to compute the exchange grid
  * /
 
 /*******************************************************************************

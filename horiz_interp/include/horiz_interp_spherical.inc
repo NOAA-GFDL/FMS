@@ -15,8 +15,6 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_spherical_mod
-!> @{
   !> @parblock
   !! Subroutine to find the nearest neighbors on source grid to each cell
   !! on the destination grid.  Also computes the distance between the source
@@ -27,22 +25,22 @@
 
     type(horiz_interp_type), intent(inout) :: Interp
       !< will be populated with interpolation weights and mapping indices.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_in
       !< are the longitude gridpoints for the input grid in radians.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_in
       !< are the latitude gridpoints for the input grid in radians.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lon_out
       !< are the longitude gridpoints for the output grid in radians.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: lat_out
       !< are the latitude gridpoints for the output grid in radians.
-    logical, intent(in), optional :: src_modulo 
+    logical, intent(in), optional :: src_modulo
       !< is .true. if the source grid is cyclic in the zonal direction.
-    integer, intent(in), optional :: num_nbrs 
+    integer, intent(in), optional :: num_nbrs
       !< is the number of nearest neighbors for regridding.  When the number of neighbors within the radius
-      !! max_dist is less than num_nbrs, all the neighbors will be used to interpolate onto destination grid. 
+      !! max_dist is less than num_nbrs, all the neighbors will be used to interpolate onto destination grid.
       !! When number of neighbors within the radius max_dist is greater than num_nbrs, at least num_nbrs
       !! neighbors will be used to remap onto destination grid
-    real(FMS_HI_KIND_), optional, intent(in) :: max_dist 
+    real(FMS_HI_KIND_), optional, intent(in) :: max_dist
       !< is the maximum region of influence around destination grid points
 
     !------local variables ---------------------------------------
@@ -201,21 +199,21 @@
   !! Subroutine to interpolate 2D data using the weights and mapping indices stored in Interp.
   !! @endparblock
   subroutine HORIZ_INTERP_SPHERICAL_( Interp, data_in, data_out, verbose, mask_in, mask_out, missing_value)
-    type(horiz_interp_type), intent(in) :: Interp 
+    type(horiz_interp_type), intent(in) :: Interp
       !< contains the interpolation weights and mapping indices.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in
       !< is the data on the source grid to be interpolated.
-    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out 
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
       !< will contain the interpolated data on destination grid
-    integer, intent(in), optional :: verbose 
+    integer, intent(in), optional :: verbose
       !< sets the verbosity level:  0 = no output; 1 = min,max,means; 2 = most output
-    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
       !< masks the input data:  if mask value < 0.5, exclude input data from interpolation.
-    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out 
-      !< is computed to mask the output data: if mask value < 0.5, output data is set to 
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
+      !< is computed to mask the output data: if mask value < 0.5, output data is set to
       !! 0.0 or to missing_value if provided.
-    real(FMS_HI_KIND_), intent(in), optional :: missing_value 
-      !< is the missing_value 
+    real(FMS_HI_KIND_), intent(in), optional :: missing_value
+      !< is the missing_value
 
     !--- some local variables ----------------------------------------
     real(FMS_HI_KIND_), dimension(Interp%nlon_dst, Interp%nlat_dst,size(Interp%HI_KIND_TYPE_%src_dist,3)) :: wt
@@ -350,17 +348,17 @@
   !! stored in Interp.
   !! @endparblock
   subroutine HORIZ_INTERP_SPHERICAL_WGHT_( Interp, wt, verbose, mask_in, mask_out, missing_value)
-    type (horiz_interp_type), intent(in) :: Interp 
+    type (horiz_interp_type), intent(in) :: Interp
       !< contains weights and mapping indices for interpolation.
-    real(FMS_HI_KIND_), intent(out), dimension(:,:,:) :: wt 
+    real(FMS_HI_KIND_), intent(out), dimension(:,:,:) :: wt
       !< is the computed interpolation weights for each of the nearest neighbors found
-    integer, intent(in), optional :: verbose 
+    integer, intent(in), optional :: verbose
       !< sets the verbosity level:  0 = no output; 1 = min,max,means; 2 = most output
-    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
       !< masks the input cell:  if mask value < 0.5, will exlude data in cell from interpolation.
-    real(FMS_HI_KIND_), intent(inout), dimension(:,:), optional :: mask_out 
+    real(FMS_HI_KIND_), intent(inout), dimension(:,:), optional :: mask_out
       !< masks the output cell:  set to 0.0 to exclude data in cell from interpolation
-    real(FMS_HI_KIND_), intent(in), optional :: missing_value 
+    real(FMS_HI_KIND_), intent(in), optional :: missing_value
       !< is the missing_value
 
     !--- some local variables ----------------------------------------
@@ -451,13 +449,13 @@
       !< are the longitude values in radians of the source grid, flattened to 1D.
     real(FMS_HI_KIND_), intent(in), dimension(:) :: phi_src
       !< are the latitude values in radians of the source grid, flattened to 1D.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: theta_dst, 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: theta_dst,
       !< are the longitude values in radians of the destination grid.
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: phi_dst
       !< are the latitude values in radians of the destination grid.
     integer, intent(in) :: map_src_xsize
     !< is the size of the x dimension of the source grid.
-    integer, intent(in) :: map_src_ysize    
+    integer, intent(in) :: map_src_ysize
       !< is the size of the y dimension of the source grid.
     integer, intent(out), dimension(:,:,:) :: map_src_add
       !< are the flattened source grid indices of the nearest neighbors found for each destination point.
@@ -883,4 +881,3 @@
     enddo
 
   end subroutine FULL_SEARCH_
-!> @}

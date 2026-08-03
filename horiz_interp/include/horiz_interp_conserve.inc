@@ -15,10 +15,8 @@
 !* PARTICULAR PURPOSE. See the License for the specific language
 !* governing permissions and limitations under the License.
 !***********************************************************************
-!> @addtogroup horiz_interp_conserve_mod
-!> @{
 !> @parblock
-!! Subroutine to generate weights and mapping indices for conservative interpolation 
+!! Subroutine to generate weights and mapping indices for conservative interpolation
 !! when the input and output grids are supplied as 1D arrays.
 !! @endparblock
 subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, verbose)
@@ -235,7 +233,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !> @parblock
   !! Subroutine to compute weights and mapping indices for conservative interpolation where
-  !! the input grid is a rectangular grid specified as 1D arrays and the output grid can be 
+  !! the input grid is a rectangular grid specified as 1D arrays and the output grid can be
   !! any grid specified as 2D arrays.
   !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_NEW_1DX2D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
@@ -416,8 +414,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !> @parblock
   !! Subroutine to compute weights and mapping indices for conservative interpolation where
-  !! the input grid can be any grid specified as 2D arrays and the output grid is a rectangular 
-  !! grid specified as 1D arrays.   
+  !! the input grid can be any grid specified as 2D arrays and the output grid is a rectangular
+  !! grid specified as 1D arrays.
   !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_NEW_2DX1D_ ( Interp, lon_in, lat_in, lon_out, lat_out, &
                                                mask_in, mask_out, verbose)
@@ -657,24 +655,24 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !> @parblock
   !! Subroutine to interpolate 2D data using the weights and mapping indices stored
-  !! in Interp.  Calls horiz_interp_conserve_version1 when Interp%version = 1 and 
+  !! in Interp.  Calls horiz_interp_conserve_version1 when Interp%version = 1 and
   !! horiz_interp_conserve_version2 when Interp%version = 2.
   !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_( Interp, data_in, data_out, verbose, &
        mask_in, mask_out)
     !-----------------------------------------------------------------------
-    type (horiz_interp_type), intent(in) :: Interp 
+    type (horiz_interp_type), intent(in) :: Interp
       !< contains the interpolation weights and mapping indices
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: data_in
       !< is the data to be interpolated
-    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out 
+    real(FMS_HI_KIND_), intent(out), dimension(:,:) :: data_out
       !< will contain the interpolated data
-    integer, intent(in), optional :: verbose 
+    integer, intent(in), optional :: verbose
       !< sets verbosity level: 0 = no output; 1 = min,max,means; 2 = max output
-    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in 
+    real(FMS_HI_KIND_), intent(in), dimension(:,:), optional :: mask_in
       !< is used only for Interp%version = 1 where input and output grids were supplied as 1D arrays.
-    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out 
-      !< is populated only when Interp%version = 1 
+    real(FMS_HI_KIND_), intent(out), dimension(:,:), optional :: mask_out
+      !< is populated only when Interp%version = 1
 
     !  --- error checking ---
     if (size(data_in,1) /= Interp%nlon_src .or. size(data_in,2) /= Interp%nlat_src) &
@@ -697,7 +695,7 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   !##############################################################################
   !> @parblock
   !! Subroutine to interpolate 2D data using the weights and mapping indices stored
-  !! in Interp where weights were generated from input and output grids that were 
+  !! in Interp where weights were generated from input and output grids that were
   !! specified as 1D arrays.
   !! @endparblock
   subroutine HORIZ_INTERP_CONSERVE_VERSION1_ ( Interp, data_in, data_out, verbose, &
@@ -885,8 +883,8 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
 
   !#######################################################################
   !> @parblock
-  !! Internally used subroutine to compute statistics when Interp%version = 1.  
-  !! Called from horiz_interp_conserve_version1.  
+  !! Internally used subroutine to compute statistics when Interp%version = 1.
+  !! Called from horiz_interp_conserve_version1.
   !! @endparblock
   subroutine STATS_ ( dat, area, asum, dsum, wsum, low, high, miss, mask )
     real(FMS_HI_KIND_), intent(in) :: dat(:,:)
@@ -958,10 +956,10 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
   end subroutine STATS_
 
   !#######################################################################
-  
+
    !> @parblock
-  !! Internally used subroutine to compute dwtsum, wtsum, and arsum when Interp%version = 1.  
-  !! Called from horiz_interp_conserve_version1.  
+  !! Internally used subroutine to compute dwtsum, wtsum, and arsum when Interp%version = 1.
+  !! Called from horiz_interp_conserve_version1.
   !! @endparblock
   subroutine DATA_SUM_( grid_data, area, facis, facie, facjs, facje,  &
        dwtsum, wtsum, arsum, mask )
@@ -1009,4 +1007,3 @@ subroutine HORIZ_INTERP_CONSERVE_NEW_1DX1D_ ( Interp, lon_in, lat_in, lon_out, l
     !-----------------------------------------------------------------------
 
   end subroutine DATA_SUM_
-!> @}

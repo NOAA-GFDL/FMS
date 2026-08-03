@@ -16,16 +16,16 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_bicubic_mod horiz_interp_bicubic_mod
-!> @ingroup horiz_interp
-!> @brief Delivers methods for bicubic interpolation from a coarse regular grid
+!! @{
+!! @brief Delivers methods for bicubic interpolation from a coarse regular grid
 !! on a fine regular grid
 !!
-!> This module delivers methods for bicubic interpolation from a
+!! This module delivers methods for bicubic interpolation from a
 !! coarse regular grid on a fine regular grid.
 !! Subroutines
 !!
-!! - @ref bcuint
-!! - @ref bcucof
+!! - bcuint
+!! - bcucof
 !!
 !! are methods taken from
 !!
@@ -58,10 +58,9 @@ module horiz_interp_bicubic_mod
    public  :: horiz_interp_bicubic, horiz_interp_bicubic_new, horiz_interp_bicubic_del, fill_xy
    public  :: horiz_interp_bicubic_init
 
-  !> Creates a new @ref horiz_interp_type for bicubic interpolation.
+  !> Creates a new horiz_interp_type for bicubic interpolation.
   !! Allocates space and initializes a derived-type variable
   !! that contains pre-computed interpolation indices and weights.
-  !> @ingroup horiz_interp_bicubic_mod
   interface horiz_interp_bicubic_new
     module procedure horiz_interp_bicubic_new_1d_r8
     module procedure horiz_interp_bicubic_new_1d_s_r8
@@ -69,16 +68,13 @@ module horiz_interp_bicubic_mod
     module procedure horiz_interp_bicubic_new_1d_s_r4
   end interface
 
-  !> @brief Perform bicubic horizontal interpolation
+  !> Perform bicubic horizontal interpolation
   interface horiz_interp_bicubic
     module procedure horiz_interp_bicubic_r4
     module procedure horiz_interp_bicubic_r8
   end interface
 
-!> @addtogroup horiz_interp_bicubic_mod
-!> @{
-
-! Include variable "version" to be written to log file.
+!> Include variable "version" to be written to log file.
 #include<file_version.h>
    logical            :: module_is_initialized = .FALSE.
    integer            :: verbose_bicubic = 0
@@ -140,7 +136,7 @@ module horiz_interp_bicubic_mod
   end subroutine horiz_interp_bicubic_init
 
   !> Free memory from a horiz_interp_type used for bicubic interpolation
-  !! (allocated via @ref horiz_bicubic_new)
+  !! (allocated via horiz_bicubic_new)
   subroutine horiz_interp_bicubic_del( Interp )
     type(horiz_interp_type), intent(inout) :: Interp
 
