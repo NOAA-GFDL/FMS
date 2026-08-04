@@ -25,9 +25,9 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
   integer :: i, j, k, l, idx, nk
   integer :: npack, ksize
 
-  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
-  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
-  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
+  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize)
+  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize)
+  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize)
 
   pointer(ptr_field, field)
   pointer(ptr_fieldx, fieldx)
@@ -40,6 +40,7 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
   endif
 
   npack = group%npack
+  ksize = group%ksize
 
   if( group%k_loop_inside ) then
   ! nvfortran + cray pointers imposes some restrictions on the loops below:
@@ -59,7 +60,6 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
        js = group%pack_js(n); je = group%pack_je(n); nj = je-js+1
        rotation = group%pack_rotation(n)
        if( group%pack_type(n) == FIELD_S ) then
-          ksize = group%ksize_s
           select case( rotation )
           case(ZERO)
              do l=1, group%nscalar  ! loop over number of fields
@@ -135,7 +135,6 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
              end do
           end select
        else if( group%pack_type(n) == FIELD_X  ) then
-          ksize = group%ksize_v
           select case( rotation )
           case(ZERO)
              do l=1, group%nvector  ! loop over number of fields
@@ -253,7 +252,6 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
              end if
           end select ! select case( rotation(n) )
        else if( group%pack_type(n) == FIELD_Y ) then
-          ksize = group%ksize_v
           select case( rotation )
           case(ZERO)
              do l=1, group%nvector  ! loop over number of fields
@@ -385,7 +383,6 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
        js = group%pack_js(n); je = group%pack_je(n); nj = je-js+1
        rotation = group%pack_rotation(n)
        if( group%pack_type(n) == FIELD_S ) then
-          ksize = group%ksize_s
           select case( rotation )
           case(ZERO)
              do l=1, group%nscalar  ! loop over number of fields
@@ -453,7 +450,6 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
              end do
           end select
        else if( group%pack_type(n) == FIELD_X  ) then
-          ksize = group%ksize_v
           select case( rotation )
           case(ZERO)
              do l=1, group%nvector  ! loop over number of fields
@@ -557,7 +553,6 @@ subroutine GROUP_UPDATE_PACK_ (group, buffer, buffer_start_pos)
              end if
           end select ! select case( rotation(n) )
        else if( group%pack_type(n) == FIELD_Y ) then
-          ksize = group%ksize_v
           select case( rotation )
           case(ZERO)
              do l=1, group%nvector  ! loop over number of fields
@@ -672,16 +667,16 @@ subroutine GROUP_UPDATE_PACK_GENERAL_ (group, buffer, buffer_start_pos)
   integer, parameter :: SWAP_IJ=1, REVERSE_I=2, REVERSE_J=4, MINUS=8 !< Flags which affect packing order
   integer :: n, buffer_pos, pos, ltop, ni, nj, nk, nijk, l
 
+  nk = group%ksize
+
   do n=1,group%npack
      buffer_pos = group%pack_buffer_pos(n) + buffer_start_pos
      ni = group%pack_ie(n) - group%pack_is(n) + 1
      nj = group%pack_je(n) - group%pack_js(n) + 1
      if( group%pack_type(n) == FIELD_S ) then
        ltop = group%nscalar
-       nk = group%ksize_s
      else
        ltop = group%nvector
-       nk = group%ksize_v
      endif
      nijk = ni*nj*nk
      if( group%pack_type(n) == FIELD_S ) then

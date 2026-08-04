@@ -25,9 +25,9 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
   integer :: i, j, k, l, idx, nk
   integer :: nunpack, ksize
 
-  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
-  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
-  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
+  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize)
+  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize)
+  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize)
 
   pointer(ptr_field, field)
   pointer(ptr_fieldx, fieldx)
@@ -40,6 +40,7 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
   endif
 
   nunpack = group%nunpack
+  ksize = group%ksize
 
   if( group%k_loop_inside ) then
   ! nvfortran + cray pointers imposes some restrictions on the loops below:
@@ -58,7 +59,6 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
        is = group%unpack_is(n); ie = group%unpack_ie(n); ni = ie-is+1
        js = group%unpack_js(n); je = group%unpack_je(n); nj = je-js+1
        if( group%unpack_type(n) == FIELD_S ) then
-          ksize = group%ksize_s
           do l=1,group%nscalar  ! loop over number of fields
              ptr_field = transfer(group%addrs_s(l), ptr_field)
 #ifdef __NVCOMPILER_OPENMP_GPU
@@ -79,7 +79,6 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
              pos = pos + ksize*nj*ni
           end do
        else if( group%unpack_type(n) == FIELD_X ) then
-          ksize = group%ksize_v
           do l=1,group%nvector  ! loop over number of fields
              ptr_fieldx = transfer(group%addrs_x(l), ptr_fieldx)
 #ifdef __NVCOMPILER_OPENMP_GPU
@@ -100,7 +99,6 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
              pos = pos + ksize*nj*ni
           end do
        else if( group%unpack_type(n) == FIELD_Y ) then
-          ksize = group%ksize_v
           do l=1,group%nvector  ! loop over number of fields
              ptr_fieldy = transfer(group%addrs_y(l), ptr_fieldy)
 #ifdef __NVCOMPILER_OPENMP_GPU
@@ -136,7 +134,6 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
        is = group%unpack_is(n); ie = group%unpack_ie(n); ni = ie-is+1
        js = group%unpack_js(n); je = group%unpack_je(n); nj = je-js+1
        if( group%unpack_type(n) == FIELD_S ) then
-          ksize = group%ksize_s
           do l=1,group%nscalar  ! loop over number of fields
              ptr_field = transfer(group%addrs_s(l), ptr_field)
 #ifdef __NVCOMPILER_OPENMP_GPU
@@ -154,7 +151,6 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
              pos = pos + ni*nj
           end do
        else if( group%unpack_type(n) == FIELD_X ) then
-          ksize = group%ksize_v
           do l=1,group%nvector  ! loop over number of fields
              ptr_fieldx = transfer(group%addrs_x(l), ptr_fieldx)
 #ifdef __NVCOMPILER_OPENMP_GPU
@@ -172,7 +168,6 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
              pos = pos + ni*nj
           end do
        else if( group%unpack_type(n) == FIELD_Y ) then
-          ksize = group%ksize_v
           do l=1,group%nvector  ! loop over number of fields
              ptr_fieldy = transfer(group%addrs_y(l), ptr_fieldy)
 #ifdef __NVCOMPILER_OPENMP_GPU
@@ -200,16 +195,16 @@ subroutine GROUP_UPDATE_UNPACK_GENERAL_ (group, buffer, buffer_start_pos)
   integer, intent(in) :: buffer_start_pos
   integer :: n, buffer_pos, pos, ltop, ni, nj, nk, nijk, l
 
+  nk = group%ksize
+
   do n=group%nunpack,1,-1
      buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
      ni = group%unpack_ie(n) - group%unpack_is(n) + 1
      nj = group%unpack_je(n) - group%unpack_js(n) + 1
      if( group%unpack_type(n) == FIELD_S ) then
        ltop = group%nscalar
-       nk = group%ksize_s
      else
        ltop = group%nvector
-       nk = group%ksize_v
      endif
      nijk = ni*nj*nk
 

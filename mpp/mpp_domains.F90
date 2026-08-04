@@ -584,10 +584,11 @@ module mpp_domains_mod
      integer            :: nvector = 0
      integer            :: flags_s=0, flags_v=0
      integer            :: whalo_s=0, ehalo_s=0, shalo_s=0, nhalo_s=0
-     integer            :: isize_s=0, jsize_s=0, ksize_s=1
+     integer            :: isize_s=0, jsize_s=0
      integer            :: whalo_v=0, ehalo_v=0, shalo_v=0, nhalo_v=0
-     integer            :: isize_x=0, jsize_x=0, ksize_v=1
+     integer            :: isize_x=0, jsize_x=0
      integer            :: isize_y=0, jsize_y=0
+     integer            :: ksize=1
      integer            :: position=0, gridtype=0
      logical            :: recv_s(8), recv_x(8), recv_y(8)
      integer            :: is_s=0, ie_s=0, js_s=0, je_s=0

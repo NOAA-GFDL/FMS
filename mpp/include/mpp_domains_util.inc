@@ -2007,6 +2007,7 @@ end subroutine mpp_get_tile_compute_domains
      group%initialized = .true.
      nsend_s = 0; nsend_x = 0; nsend_y = 0
      nrecv_s = 0; nrecv_x = 0; nrecv_y = 0
+     ksize = group%ksize
 
      if(nscalar > 0) then
          !--- This check could not be done because of memory domain
@@ -2016,18 +2017,8 @@ end subroutine mpp_get_tile_compute_domains
         nrecv_s = update_s%nrecv
      endif
 
-     !--- ksize_s must equal ksize_v
-     if(nvector > 0 .AND. nscalar > 0) then
-        if(group%ksize_s .NE. group%ksize_v) then
-           call mpp_error(FATAL, "set_group_update: ksize_s and ksize_v are not equal")
-        endif
-        ksize = group%ksize_s
-     else if (nscalar > 0) then
-        ksize = group%ksize_s
-     else if (nvector > 0) then
-        ksize = group%ksize_v
-     else
-        call mpp_error(FATAL, "set_group_update: nscalar and nvector are all 0")
+     if(nvector.eq.0 .and. nscalar.eq.0) then
+        call mpp_error(FATAL, "set_group_update: nscalar and nvector are both 0")
      endif
 
     nthreads = 1
