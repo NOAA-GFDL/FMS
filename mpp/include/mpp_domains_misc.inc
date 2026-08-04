@@ -1974,6 +1974,10 @@ end subroutine init_nonblock_type
 #define GROUP_UPDATE_PACK_ group_update_pack_r8
 #undef GROUP_UPDATE_UNPACK_
 #define GROUP_UPDATE_UNPACK_ group_update_unpack_r8
+#undef GROUP_UPDATE_PACK_GENERAL_
+#define GROUP_UPDATE_PACK_GENERAL_ group_update_pack_general_r8
+#undef GROUP_UPDATE_UNPACK_GENERAL_
+#define GROUP_UPDATE_UNPACK_GENERAL_ group_update_unpack_general_r8
 #undef SET_ZERO_
 #define SET_ZERO_ set_zero_r8
 #undef NEGATE_HALO_
@@ -2004,6 +2008,10 @@ end subroutine init_nonblock_type
 #define GROUP_UPDATE_PACK_ group_update_pack_r4
 #undef GROUP_UPDATE_UNPACK_
 #define GROUP_UPDATE_UNPACK_ group_update_unpack_r4
+#undef GROUP_UPDATE_PACK_GENERAL_
+#define GROUP_UPDATE_PACK_GENERAL_ group_update_pack_general_r4
+#undef GROUP_UPDATE_UNPACK_GENERAL_
+#define GROUP_UPDATE_UNPACK_GENERAL_ group_update_unpack_general_r4
 #undef SET_ZERO_
 #define SET_ZERO_ set_zero_r4
 #undef NEGATE_HALO_

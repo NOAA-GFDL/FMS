@@ -20,6 +20,184 @@ subroutine GROUP_UPDATE_UNPACK_ (group, buffer, buffer_start_pos)
   type(mpp_group_update_type), intent(in) :: group
   MPP_TYPE_, intent(in) :: buffer(:)
   integer, intent(in) :: buffer_start_pos
+
+  integer :: n, buffer_pos, pos, is, ie, js, je, ni, nj
+  integer :: i, j, k, l, idx, nk
+  integer :: nunpack, ksize
+
+  MPP_TYPE_ :: field (group%is_s:group%ie_s,group%js_s:group%je_s, group%ksize_s)
+  MPP_TYPE_ :: fieldx(group%is_x:group%ie_x,group%js_x:group%je_x, group%ksize_v)
+  MPP_TYPE_ :: fieldy(group%is_y:group%ie_y,group%js_y:group%je_y, group%ksize_v)
+
+  pointer(ptr_field, field)
+  pointer(ptr_fieldx, fieldx)
+  pointer(ptr_fieldy, fieldy)
+
+  if (group%nscalar.gt.0 .and. (group%ix_s.ne.1 .or. group%iy_s.ne.2) .or. &
+      group%nvector.gt.0 .and. (group%ix_v.ne.1 .or. group%iy_v.ne.2)) then
+    call GROUP_UPDATE_UNPACK_GENERAL_ (group, buffer, buffer_start_pos)
+    return
+  endif
+
+  nunpack = group%nunpack
+
+  if( group%k_loop_inside ) then
+  ! nvfortran + cray pointers imposes some restrictions on the loops below:
+  !   * the compiler cannot privatise OpenMP cray pointers in offloaded loops. Hence, inner loops
+  !     must be ported rather than the whole outer loop.
+  !   * the more verbose form of openmp offload loops must be used. Would prefer "target teams loop".
+  !   * default(shared) must be used otherwise loops hang or segfault. Would prefer "default(none)".
+#ifndef __NVCOMPILER_OPENMP_GPU
+    !$OMP parallel do default(shared) shared(nunpack,group,ksize,buffer_start_pos) &
+    !$OMP                          private(buffer_pos,pos,is, ie, js, je, &
+    !$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy, n,k,ni,nj,idx)
+#endif
+    do n = nunpack, 1, -1
+       buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
+       pos = buffer_pos
+       is = group%unpack_is(n); ie = group%unpack_ie(n); ni = ie-is+1
+       js = group%unpack_js(n); je = group%unpack_je(n); nj = je-js+1
+       if( group%unpack_type(n) == FIELD_S ) then
+          ksize = group%ksize_s
+          do l=1,group%nscalar  ! loop over number of fields
+             ptr_field = transfer(group%addrs_s(l), ptr_field)
+#ifdef __NVCOMPILER_OPENMP_GPU
+             !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+             !$omp   default(shared) &
+             !$omp   private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_field) &
+             !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
+             !$omp   map(from: field(is:ie,js:je,1:ksize))
+#endif
+             do k = 1, ksize
+                do j = js, je
+                   do i = is, ie
+                      idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
+                      field(i,j,k) = buffer(idx)
+                   end do
+                end do
+             end do
+             pos = pos + ksize*nj*ni
+          end do
+       else if( group%unpack_type(n) == FIELD_X ) then
+          ksize = group%ksize_v
+          do l=1,group%nvector  ! loop over number of fields
+             ptr_fieldx = transfer(group%addrs_x(l), ptr_fieldx)
+#ifdef __NVCOMPILER_OPENMP_GPU
+             !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+             !$omp   default(shared) &
+             !$omp   private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldx) &
+             !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
+             !$omp   map(from: fieldx(is:ie,js:je,1:ksize))
+#endif
+             do k = 1, ksize
+                do j = js, je
+                   do i = is, ie
+                      idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
+                      fieldx(i,j,k) = buffer(idx)
+                   end do
+                end do
+             end do
+             pos = pos + ksize*nj*ni
+          end do
+       else if( group%unpack_type(n) == FIELD_Y ) then
+          ksize = group%ksize_v
+          do l=1,group%nvector  ! loop over number of fields
+             ptr_fieldy = transfer(group%addrs_y(l), ptr_fieldy)
+#ifdef __NVCOMPILER_OPENMP_GPU
+             !$omp target teams distribute parallel do collapse(3) if(use_device_ptr) &
+             !$omp   default(shared) &
+             !$omp   private(i,j,k,idx) shared(ksize,js,je,is,ie,pos,nj,ni,ptr_fieldy) &
+             !$omp   map(to: buffer(pos+1:pos+ksize*nj*ni)) &
+             !$omp   map(from: fieldy(is:ie,js:je,1:ksize))
+#endif
+             do k = 1, ksize
+                do j = js, je
+                   do i = is, ie
+                      idx = pos + (k-1)*nj*ni + (j-js)*ni + (i-is) + 1
+                      fieldy(i,j,k) = buffer(idx)
+                   end do
+                end do
+             end do
+             pos = pos + ksize*nj*ni
+          end do
+       endif
+    enddo
+  else
+#ifndef __NVCOMPILER_OPENMP_GPU
+    !$OMP parallel do default(shared) shared(nunpack,group,ksize,buffer_start_pos) &
+    !$OMP                          private(buffer_pos,pos,is, ie, js, je, &
+    !$OMP                                  ptr_field, ptr_fieldx, ptr_fieldy,n,k,ni,nj,idx)
+#endif
+    do nk = nunpack*ksize, 1, -1
+       n = (nk-1)/ksize + 1
+       k = mod((nk-1), ksize) + 1
+       buffer_pos = group%unpack_buffer_pos(n) + buffer_start_pos
+       pos = buffer_pos + (k-1)*group%unpack_size(n)
+       is = group%unpack_is(n); ie = group%unpack_ie(n); ni = ie-is+1
+       js = group%unpack_js(n); je = group%unpack_je(n); nj = je-js+1
+       if( group%unpack_type(n) == FIELD_S ) then
+          ksize = group%ksize_s
+          do l=1,group%nscalar  ! loop over number of fields
+             ptr_field = transfer(group%addrs_s(l), ptr_field)
+#ifdef __NVCOMPILER_OPENMP_GPU
+             !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+             !$omp   default(shared) &
+             !$omp   private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_field) &
+             !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: field(is:ie,js:je,k))
+#endif
+             do j = js, je
+                do i = is, ie
+                   idx = pos + (j-js)*ni + (i-is) + 1
+                   field(i,j,k) = buffer(idx)
+                end do
+             end do
+             pos = pos + ni*nj
+          end do
+       else if( group%unpack_type(n) == FIELD_X ) then
+          ksize = group%ksize_v
+          do l=1,group%nvector  ! loop over number of fields
+             ptr_fieldx = transfer(group%addrs_x(l), ptr_fieldx)
+#ifdef __NVCOMPILER_OPENMP_GPU
+             !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+             !$omp   default(shared) &
+             !$omp   private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldx) &
+             !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldx(is:ie,js:je,k))
+#endif
+             do j = js, je
+                do i = is, ie
+                   idx = pos + (j-js)*ni + (i-is) + 1
+                   fieldx(i,j,k) = buffer(idx)
+                end do
+             end do
+             pos = pos + ni*nj
+          end do
+       else if( group%unpack_type(n) == FIELD_Y ) then
+          ksize = group%ksize_v
+          do l=1,group%nvector  ! loop over number of fields
+             ptr_fieldy = transfer(group%addrs_y(l), ptr_fieldy)
+#ifdef __NVCOMPILER_OPENMP_GPU
+             !$omp target teams distribute parallel do collapse(2) if(use_device_ptr) &
+             !$omp   default(shared) &
+             !$omp   private(i,j,idx) shared(k,js,je,is,ie,pos,ni,ptr_fieldy) &
+             !$omp   map(to: buffer(pos+1:pos+nj*ni)) map(from: fieldy(is:ie,js:je,k))
+#endif
+             do j = js, je
+                do i = is, ie
+                 idx = pos + (j-js)*ni + (i-is) + 1
+                 fieldy(i,j,k) = buffer(idx)
+                end do
+             end do
+             pos = pos + ni*nj
+          end do
+       endif
+    enddo
+  endif
+end subroutine GROUP_UPDATE_UNPACK_
+
+subroutine GROUP_UPDATE_UNPACK_GENERAL_ (group, buffer, buffer_start_pos)
+  type(mpp_group_update_type), intent(in) :: group
+  MPP_TYPE_, intent(in) :: buffer(:)
+  integer, intent(in) :: buffer_start_pos
   integer :: n, buffer_pos, pos, ltop, ni, nj, nk, nijk, l
 
   do n=group%nunpack,1,-1
@@ -182,5 +360,4 @@ contains
         end do
     end select
   end subroutine unpack_inner_loop
-
-end subroutine GROUP_UPDATE_UNPACK_
+end subroutine GROUP_UPDATE_UNPACK_GENERAL_
