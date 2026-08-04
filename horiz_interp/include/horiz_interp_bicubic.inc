@@ -445,8 +445,8 @@
         call bcuint(y,y1,y2,y12,xcl,xcu,ycl,ycu,xz,yz,val,val1,val2)
         data_out   (i,j) = val
         if(present(mask_out)) mask_out(i,j) = 1.0_kindl
-!!        dff_x(i,j) = val1
-!!        dff_y(i,j) = val2
+!!        dff_x(i,j) = val1 ! x-derivative of fc at the fine grid
+!!        dff_y(i,j) = val2 ! y-derivative of fc at the fine grid
       enddo
     enddo
   return
@@ -542,8 +542,10 @@
 !-----------------------------------------------------------------------
 
    !> @parblock
-   !! Unused subroutine to find the lower neighbor of xf in field xc, return is the index
-   !! (TODO These routines are redundant, we can find the lower neighbor and add 1)
+   !! Unused subroutine to find the lower neighbor of xf in field xc, return is the index.
+   !! (TODO These routines are redundant, we can find the lower neighbor and add 1.)
+   !! xc, yc : co-ordinates of the coarse grid
+   !! xf, yf : co-ordinates of the fine grid
    !! @endparblock
     function INDL_(xc, xf)
     real(FMS_HI_KIND_), intent(in) :: xc(1:)
@@ -562,7 +564,9 @@
 !-----------------------------------------------------------------------
 
     !> @parblock
-    !> Unused subroutine to find the upper neighbour of xf in field xc, return is the index
+    !> Unused subroutine to find the upper neighbour of xf in field xc, return is the index.
+    !! xc, yc : co-ordinates of the coarse grid
+    !! co-ordinates of the fine grid
     !! @endparblock
     function INDU_(xc, xf)
     real(FMS_HI_KIND_), intent(in) :: xc(1:)

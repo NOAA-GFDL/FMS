@@ -16,9 +16,14 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_type_mod horiz_interp_type_mod
+!! @ingroup horiz_interp
 !! @{
-!! @brief define derived data type that contains indices and weights used for subsequent interpolations.
 !! @author Zhi Liang
+!!
+!! @parblock
+!! Defines horiz_interp_type
+!! @endparblock
+
 module horiz_interp_type_mod
 
 use mpp_mod, only : mpp_send, mpp_recv, mpp_sync_self, mpp_error, FATAL
@@ -31,18 +36,23 @@ private
 
 
 ! parameter to determine interpolation method
- integer, parameter :: CONSERVE = 1
- integer, parameter :: BILINEAR = 2
- integer, parameter :: SPHERICAL = 3
- integer, parameter :: BICUBIC  = 4
+ integer, parameter :: CONSERVE = 1 !< is an internally used parameter to mark conservative interpolation
+ integer, parameter :: BILINEAR = 2 !< is an internally used parameter to mark bilinear interpolation
+ integer, parameter :: SPHERICAL = 3 !< is an internally used parameter to mark spherical interpolation
+ integer, parameter :: BICUBIC  = 4 !< is an internally used parameter to mark bicubic interpolation
 
 public :: CONSERVE, BILINEAR, SPHERICAL, BICUBIC
 public :: horiz_interp_type, stats, assignment(=)
 
+!> Interface to override the "=" operator to a horiz_interp_eq that will
+!! copy the Interp instance of horiz_interp_type
 interface assignment(=)
   module procedure horiz_interp_type_eq
 end interface
 
+!> Generic interfaces to compute statistics for bilinear and spherical interpolation
+!! Calls stats_r4 when the output data is in 32-bit precision.  Calls stats_r8 when
+!! the output data is in 64-bit precision.
 interface stats
   module procedure stats_r4
   module procedure stats_r8
@@ -51,55 +61,71 @@ end interface
 
 !> real(8) pointers for use in horiz_interp_type
 type horizInterpReals8_type
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_dst !< area of the destination grid
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wti      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wtj      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r8_kind),    dimension(:,:,:), allocatable :: src_dist !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_x    !< the ratio of coordinates of the dest grid
-                                                                    !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                    !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_y  !< the ratio of coordinates of the dest grid
-                                                                  !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                  !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r8_kind),    dimension(:), allocatable     :: lon_in   !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
-   real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: faci
+     !< holds weights for conservative interpolation version 1
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: facj
+     !< holds weights for conservative interpolation version 1
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_src
+     !< holds source grid area
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: area_dst
+     !< holds destination grid area.
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wti
+     !< holds interpolation weights for bilinear interpolation; x-derivatives for bicubic interpolation.
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: wtj
+     !< holds interpolation weights for bilinear interpolation; y-derivatives for bicubic interpolation.
+   real(kind=r8_kind),    dimension(:,:,:), allocatable :: src_dist
+     !< holds distance between destination grid and neighbor source grid in spherical interpolation.
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_x
+     !< holds (x_dest -x_src_r)/(x_src_l -x_src_r) for bicubic interpolation
+   real(kind=r8_kind),    dimension(:,:), allocatable   :: rat_y
+     !< holds (y_src_l -y_src_r)/(y_src_l -y_src_r) for bicubic interpolation
+   real(kind=r8_kind),    dimension(:), allocatable     :: lon_in
+     !< holds the longitude coordinates on the source grid
+   real(kind=r8_kind),    dimension(:), allocatable     :: lat_in
+     !< holds the latitude coordinates on the source grid
+   real(kind=r8_kind),    dimension(:), allocatable     :: area_frac_dst
+     !< holds interpolation weights for conservative interpolation, version2
    real(kind=r8_kind),    dimension(:,:), allocatable   :: mask_in
+     !< masks the input grid to skip input cells when interpolation
    real(kind=r8_kind)                                   :: max_src_dist
-   logical                                              :: is_allocated = .false. !< set to true upon field allocation
+     !< sets to max_dist in spherical interpolation
+   logical                                              :: is_allocated = .false.
+     !< is .true. if Interp is populated
 
 end type horizInterpReals8_type
 
 !> holds real(4) pointers for use in horiz_interp_type
 type horizInterpReals4_type
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: faci     !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: facj     !< weights for conservative scheme
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_src !< area of the source grid
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_dst !< area of the destination grid
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wti      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wtj      !< weights for bilinear interpolation
-                                                                    !! wti ist used for derivative "weights" in bicubic
-   real(kind=r4_kind),    dimension(:,:,:), allocatable :: src_dist !< distance between destination grid and
-                                                                        !! neighbor source grid.
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_x    !< the ratio of coordinates of the dest grid
-                                                                    !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                    !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_y  !< the ratio of coordinates of the dest grid
-                                                                  !! (x_dest -x_src_r)/(x_src_l -x_src_r)
-                                                                  !! and (y_dest -y_src_r)/(y_src_l -y_src_r)
-   real(kind=r4_kind),    dimension(:), allocatable     :: lon_in   !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), allocatable     :: lat_in   !< the coordinates of the source grid
-   real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst !< area fraction in destination grid.
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: faci
+     !< holds weights for conservative interpolation version 1
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: facj
+     !< holds weights for conservative interpolation version 1
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_src
+     !< holds source grid area.
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: area_dst
+     !< holds destination grid area.
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wti
+     !< holds interpolation weights for bilinear interpolation; x-derivatives for bicubic interpolation.
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: wtj
+     !< holds interpolation weights for bilinear interpolation; y-derivatives for bicubic interpolation.
+   real(kind=r4_kind),    dimension(:,:,:), allocatable :: src_dist
+     !< holds distance between destination grid and neighbor source grid in spherical interpolation.
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_x
+     !< holds (x_dest -x_src_r)/(x_src_l -x_src_r) for bicubic interpolation
+   real(kind=r4_kind),    dimension(:,:), allocatable   :: rat_y
+     !< holds (y_src_l -y_src_r)/(y_src_l -y_src_r) for bicubic interpolation
+   real(kind=r4_kind),    dimension(:), allocatable     :: lon_in
+     !< holds the longitude coordinates on the source grid
+   real(kind=r4_kind),    dimension(:), allocatable     :: lat_in
+     !< holds the latitude coordinates on the source grid
+   real(kind=r4_kind),    dimension(:), allocatable     :: area_frac_dst
+     !< holds interpolation weights for conservative interpolation, version2
    real(kind=r4_kind),    dimension(:,:), allocatable   :: mask_in
+     !< masks the input grid to skip input cells when interpolation
    real(kind=r4_kind)                                   :: max_src_dist
-   logical                                              :: is_allocated = .false. !< set to true upon field allocation
+     !< sets to max_dist in spherical interpolation
+   logical                                              :: is_allocated = .false.
+     !< is .true. if Interp is populated
 
 end type horizInterpReals4_type
 
