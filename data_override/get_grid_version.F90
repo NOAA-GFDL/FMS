@@ -19,8 +19,8 @@
 !> @ingroup data_override
 !> @brief This module contains helper routines for @ref data_override_mod,
 !! and is not intended to be used directly. It provides interfaces for reading the global grid dimensions
-!! by reading a grid spec or mosaic file, and also a routine for checking that the read in sizes
-!! are valid. The exact variables it reads to get this information is controlled by the model domain 
+!! by reading a grid spec or mosaic file, and also a routine for checking that the read-in sizes
+!! are valid. The exact variables read to get this information are controlled by the model domain
 !! (ie. atm, ocn, land), which is passed in as a string.
 
 !> @addtogroup get_grid_version_mod

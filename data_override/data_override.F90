@@ -37,9 +37,6 @@ end module data_override_r8
 !!
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!
-!! More explanations about data_table entries can be found in the source code (defining data_type),
-!! as well as the README.md in this directory.
-!!
 !! This is typically used to convert data from a component's grid (ie. ocean, atmosphere, land, ice) to another
 !! component's grid, while maintaining consistency and accurate approximations.
 !!
@@ -51,6 +48,15 @@ end module data_override_r8
 !! the path to the data file, the field name in the data file, and the factor for unit conversion. The data_table
 !! can be specified in either the legacy ASCII format (data_table) or the YAML format (data_table.yaml).
 !! See the README.md in this directory for more information about the data_table yaml format.
+!!
+!! To give a brief overview of possible operations performed by data_override, here are some common use cases:
+!! - If a user wants to override fieldname_code with a constant value, set fieldname_file in data_table = ""
+!!   and factor = that constant value
+!! - If a user wants to override fieldname_code with data from a file, set fieldname_file = name in
+!!   the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
+!! - Fields will be overridden globally by default; users can also specify one or two regions in which
+!!   data_override will take place, in which case field values outside the region will not be affected.
+!!
 module data_override_mod
   use data_override_r4
   use data_override_r8
@@ -64,8 +70,8 @@ private
 
 !> Interface for reading and interpolating data from a file
 !! into the model's grid and time. Data path must be described in
-!! a user-provided data_table, see data_override/README.md for more information.
-!! on specifying the data_table or data_table.yaml file.
+!! a user-provided data_table, see data_override/README.md for more
+!! information on specifying the data_table or data_table.yaml file.
 !!
 !! The optional "override" argument is intent(out) and will be set to true if the data was successfully read and
 !! interpolated, or false if the data was not found in the data_table.
@@ -117,7 +123,8 @@ interface data_override
      module procedure data_override_3d_r8
 end interface
 
-!> Version of @ref data_override for unstructured grids. An unstructured grid is defined by mpp_domain_mod and contains
+!> Version of @ref data_override for unstructured grids. An unstructured grid is
+!! defined by mpp_domains_mod and contains
 !! a number of elements with custom defined axis.
 !!
 !! Typical calls to @ref data_override_UG are shown below. The selected

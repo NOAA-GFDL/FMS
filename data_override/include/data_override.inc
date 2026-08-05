@@ -379,8 +379,12 @@ function count_ne_1(in_1, in_2, in_3)
   count_ne_1 = .not.(in_1.NEQV.in_2.NEQV.in_3) .OR. (in_1.AND.in_2.AND.in_3)
 end function count_ne_1
 
+!> @brief Read and parse the legacy ASCII data_table.
+!!
+!! This routine supports legacy data_table syntaxes and sets the
+!! module-level table_size from the number of parsed entries.
 subroutine read_table(data_table)
-    type(data_type), dimension(max_table), intent(inout) :: data_table
+  type(data_type), dimension(max_table), intent(inout) :: data_table !< Parsed data_table entries
 
     integer :: ntable
     integer :: ntable_lima
@@ -398,7 +402,7 @@ subroutine read_table(data_table)
 
     integer :: sunit
 
-!  Read coupler_table
+!  Read data_table
     inquire(file='data_table', EXIST=table_exists)
     if (.not. table_exists) then
       call mpp_error(NOTE, 'data_override_mod: File data_table does not exist.')
@@ -561,7 +565,7 @@ subroutine read_table(data_table)
        data_entry%ext_weights = .false.
        data_table(ntable) = data_entry
     enddo
-    call mpp_error(FATAL,'too many enries in data_table')
+    call mpp_error(FATAL,'too many entries in data_table')
 99  call mpp_error(FATAL,'error in data_table format')
 100 continue
     table_size = ntable
@@ -584,7 +588,7 @@ subroutine read_table_yaml(data_table)
     character(len=FMS_FILE_LEN) :: filename !< Name of the expected data_table.yaml
     integer :: file_id
 
-    ! If doing and ensemble or nest run add the filename appendix (ens_XX or nest_XX) to the filename
+    ! If doing an ensemble or nest run, add a filename appendix (ens_XX or nest_XX).
     call get_instance_filename("data_table.yaml", filename)
     if (index(trim(filename), "ens_") .ne. 0) then
       if (file_exists(filename) .and. file_exists("data_table.yaml")) &
@@ -638,7 +642,7 @@ subroutine read_table_yaml(data_table)
               & data_table(i)%fieldname_file)
 
         mentries = get_num_blocks(file_id, "multi_file", parent_block_id=sub_block_id(1))
-        if(mentries.gt.1) call mpp_error(FATAL, "Too many multi_file blocks in tata table. "//&
+        if(mentries.gt.1) call mpp_error(FATAL, "Too many multi_file blocks in data table. "//&
               "Check your data_table.yaml entry for field:"//trim(data_table(i)%gridname)//":"//&
               trim(data_table(i)%fieldname_code))
 
@@ -711,7 +715,7 @@ end subroutine check_for_valid_gridname
 
 !> @brief Check if the interpol method is correct, crashes if it is not
 subroutine check_interpol_method(interp_method, filename, fieldname)
-   character(len=*), intent(in) :: interp_method !< The interpo_method
+  character(len=*), intent(in) :: interp_method !< The interp_method
    character(len=*), intent(in) :: filename      !< The filename
    character(len=*), intent(in) :: fieldname     !< The fieldname in the file
 
@@ -747,17 +751,17 @@ subroutine check_and_set_region_type(region_type_str, region_type_int)
       region_type_int = NO_REGION
    case default
       call mpp_error(FATAL, trim(region_type_str)//" is not a valid region type. "//&
-         "The acceptable values are inside_region and outside_regioon. Check your data_table.yaml")
+         "The acceptable values are inside_region and outside_region. Check your data_table.yaml")
    end select
 end subroutine check_and_set_region_type
 
 !> @brief Check if a region lon_start, lon_end, lat_start and lat_end is valid.
 !! Crashes if it is not.
 subroutine check_valid_lat_lon(lon_start, lon_end, lat_start, lat_end)
-   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_start !< Starting longitude of the data_override region
-   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_end   !< Ending longitude of the data_override region
-   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_start !< Starting latitude of the data_override region
-   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_end   !< Ending lattiude of the data_override region
+  real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_start !< Starting longitude of the data_override region
+  real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_end   !< Ending longitude of the data_override region
+  real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_start !< Starting latitude of the data_override region
+  real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_end   !< Ending latitude of the data_override region
 
    if (lon_start > lon_end) call mpp_error(FATAL, &
       "lon_start:"//string(lon_start)//" is greater than lon_end"//string(lon_end)//&
@@ -799,8 +803,8 @@ end subroutine
 
 !> @brief Given a gridname, this routine returns the working domain associated with this gridname
 subroutine get_domain(gridname, domain, comp_domain)
-  character(len=3), intent(in) :: gridname
-  type(domain2D), intent(inout) :: domain
+  character(len=3), intent(in) :: gridname !< Grid name (OCN, ATM, LND, or ICE)
+  type(domain2D), intent(inout) :: domain !< Output structured-grid domain for gridname
   integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
 
   domain = NULL_DOMAIN2D
@@ -823,8 +827,8 @@ end subroutine get_domain
 
 !> @brief Given a gridname, returns the unstructured grid (UG) domain associated with that gridname
 subroutine get_domainUG(gridname, UGdomain, comp_domain)
-  character(len=3), intent(in) :: gridname
-  type(domainUG), intent(inout) :: UGdomain
+  character(len=3), intent(in) :: gridname !< Grid name (currently LND only)
+  type(domainUG), intent(inout) :: UGdomain !< Output unstructured-grid domain for gridname
   integer, intent(out), optional :: comp_domain(4) !< istart,iend,jstart,jend for compute domain
   type(domain2D), pointer :: SGdomain => NULL()
 
@@ -847,7 +851,7 @@ subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data
   character(len=3), intent(in) :: gridname !< model grid ID string (ie. ocn,ice,atm,lnd)
   character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
                                                  !! different from the name in NetCDF data file)
-  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden successfully
   type(time_type), intent(in) :: time !< (target) model time
   real(FMS_DATA_OVERRIDE_KIND_), intent(out) :: data_out !< output scalar value returned by this call
   integer, intent(in), optional :: data_index
@@ -1009,10 +1013,12 @@ end subroutine DATA_OVERRIDE_0D_
 subroutine DATA_OVERRIDE_2D_(gridname,fieldname,data_2D,time,override, is_in, ie_in, js_in, je_in)
   character(len=3), intent(in) :: gridname !< model grid ID
   character(len=*), intent(in) :: fieldname !< field to override
-  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden successfully
   type(time_type), intent(in) :: time !<  model time
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: data_2D !< data returned by this call
-  integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
+  integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in !< Window bounds relative to
+                                                                         !! the compute domain when
+                                                                         !! using multi-window calls
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_3D
   integer       :: index1
   integer       :: i
@@ -1041,11 +1047,14 @@ end subroutine DATA_OVERRIDE_2D_
 subroutine DATA_OVERRIDE_3D_(gridname,fieldname_code,return_data,time,override,data_index, is_in, ie_in, js_in, je_in)
   character(len=3),             intent(in) :: gridname !< model grid ID
   character(len=*),             intent(in) :: fieldname_code !< field name as used in the model
-  logical,           optional, intent(out) :: override !< true if the field has been overridden succesfully
+  logical,           optional, intent(out) :: override !< true if the field has been overridden successfully
   type(time_type),              intent(in) :: time !< (target) model time
-  integer,           optional,  intent(in) :: data_index
+  integer,           optional,  intent(in) :: data_index !< Optional index into data_table to bypass
+                                                         !! field lookup by name
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), intent(inout) :: return_data !< data returned by this call
-  integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in
+  integer,           optional,  intent(in) :: is_in, ie_in, js_in, je_in !< Window bounds relative to
+                                                                          !! the compute domain when
+                                                                          !! using multi-window calls
   logical, dimension(:,:,:),   allocatable :: mask_out
 
   character(len=FMS_PATH_LEN) :: filename !< file containing source data
@@ -1889,7 +1898,7 @@ subroutine DATA_OVERRIDE_UG_1D_(gridname,fieldname,return_data,time,override)
   character(len=*),   intent(in) :: fieldname !< field to override
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:), intent(inout) :: return_data !< data returned by this call
   type(time_type),    intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden successfully
   !local vars
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), allocatable ::  data_SG
   type(domainUG) :: UG_domain
@@ -1924,7 +1933,7 @@ subroutine DATA_OVERRIDE_UG_2D_(gridname,fieldname,return_data,time,override)
   character(len=*),     intent(in) :: fieldname !< field to override
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:), intent(inout) :: return_data !< data returned by this call
   type(time_type),      intent(in) :: time !<  model time
-  logical, intent(out), optional :: override !< true if the field has been overridden succesfully
+  logical, intent(out), optional :: override !< true if the field has been overridden successfully
   !local vars
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:,:), allocatable ::  data_SG
   real(FMS_DATA_OVERRIDE_KIND_), dimension(:,:),   allocatable ::  data_UG
