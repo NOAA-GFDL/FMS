@@ -40,7 +40,7 @@
     integer, intent(in), optional :: verbose
       !< sets the verbosity level
     character(len=*), intent(in), optional :: interp_method
-      !< is the interpolation method; can be "conservative", "bilinear", "bicubic", or "spherical"; defaults to "conservative"
+      !< is the interpolation method; can be "conservative" (default), "bilinear", "bicubic", or "spherical"
     integer, intent(in), optional :: num_nbrs
       !< is the number of nearest neighbor for spherical interp; defaults to 4
     real(FMS_HI_KIND_),  intent(in), optional :: max_dist
@@ -193,7 +193,7 @@
    integer, intent(in), optional :: verbose
      !< sets the verbosity level
    character(len=*), intent(in), optional :: interp_method
-     !< is the interpolation method; can be "conservative", "bilinear", "bicubic", or "spherical"; defaults to "conservative"
+     !< is the interpolation method; can be "conservative" (default), "bilinear", "bicubic", or "spherical"
    integer, intent(in), optional :: num_nbrs
      !< is the number of nearest neighbor for spherical interp; defaults to 4
    real(FMS_HI_KIND_), intent(in), optional :: max_dist
