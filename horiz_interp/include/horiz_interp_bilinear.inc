@@ -39,37 +39,13 @@
       !< is true if the boundary condition along zonal boundary is cyclic.
 
     logical :: src_is_modulo
-    integer :: nlon_in
-    integer :: nlat_in
-    integer :: nlon_out
-    integer :: nlat_out
-    integer :: n
-    integer :: m
-    integer :: ie
-    integer :: is
-    integer :: je
-    integer :: js
-    integer :: ln_err
-    integer :: lt_err
-    integer :: warns
-    integer :: iunit
-    real(FMS_HI_KIND_) :: wtw
-    real(FMS_HI_KIND_) :: wte
-    real(FMS_HI_KIND_) :: wts
-    real(FMS_HI_KIND_) :: wtn
-    real(FMS_HI_KIND_) :: lon
-    real(FMS_HI_KIND_) :: lat
-    real(FMS_HI_KIND_) :: tpi
-    real(FMS_HI_KIND_) :: hpi
-    real(FMS_HI_KIND_) :: glt_min
-    real(FMS_HI_KIND_) :: glt_max
-    real(FMS_HI_KIND_) :: gln_min
-    real(FMS_HI_KIND_) :: gln_max
-    real(FMS_HI_KIND_) :: min_lon
-    real(FMS_HI_KIND_) :: max_lon
-    integer, parameter :: kindl = FMS_HI_KIND_
-    logical :: decreasing_lat ! .True. if latitude is monotically decreasing
-    logical :: decreasing_lon ! .True. if longitude is monotically decreasing
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m
+    integer :: ie, is, je, js, ln_err, lt_err, warns, iunit
+    real(FMS_HI_KIND_)    :: wtw, wte, wts, wtn, lon, lat, tpi, hpi
+    real(FMS_HI_KIND_)    :: glt_min, glt_max, gln_min, gln_max, min_lon, max_lon
+    integer,parameter     :: kindl = FMS_HI_KIND_
+    logical               :: decreasing_lat !< .True. if latitude is monotically decreasing
+    logical               :: decreasing_lon !< .True. if longitude is monotically decreasing
 
     warns = 0
     if(present(verbose)) warns = verbose
@@ -261,49 +237,14 @@
       !< sets find_neighbor_new to error when nearest neighbors are not found.
     integer :: warns
     logical :: src_is_modulo
-    integer :: nlon_in
-    integer :: nlat_in
-    integer :: nlon_out
-    integer :: nlat_out
-    integer :: m
-    integer :: n
-    integer :: is
-    integer :: ie
-    integer :: js
-    integer :: je
-    integer :: num_solution
-    real(FMS_HI_KIND_) :: lon
-    real(FMS_HI_KIND_) :: lat
-    real(FMS_HI_KIND_) :: quadra
-    real(FMS_HI_KIND_) :: x
-    real(FMS_HI_KIND_) :: y
-    real(FMS_HI_KIND_) :: y1
-    real(FMS_HI_KIND_) :: y2
-    real(FMS_HI_KIND_) :: a1
-    real(FMS_HI_KIND_) :: b1
-    real(FMS_HI_KIND_) :: c1
-    real(FMS_HI_KIND_) :: d1
-    real(FMS_HI_KIND_) :: a2
-    real(FMS_HI_KIND_) :: b2
-    real(FMS_HI_KIND_) :: c2
-    real(FMS_HI_KIND_) :: d2
-    real(FMS_HI_KIND_) :: a
-    real(FMS_HI_KIND_) :: b
-    real(FMS_HI_KIND_) :: c
-    real(FMS_HI_KIND_) :: lon1
-    real(FMS_HI_KIND_) :: lat1
-    real(FMS_HI_KIND_) :: lon2
-    real(FMS_HI_KIND_) :: lat2
-    real(FMS_HI_KIND_) :: lon3
-    real(FMS_HI_KIND_) :: lat3
-    real(FMS_HI_KIND_) :: lon4
-    real(FMS_HI_KIND_) :: lat4
-    real(FMS_HI_KIND_) :: tpi
-    real(FMS_HI_KIND_) :: lon_min
-    real(FMS_HI_KIND_) :: lon_max
-    real(FMS_HI_KIND_) :: epsln2
-    logical :: use_new_search
-    logical :: no_crash
+    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
+    integer                                :: m, n, is, ie, js, je, num_solution
+    real(FMS_HI_KIND_)                                   :: lon, lat, quadra, x, y, y1, y2
+    real(FMS_HI_KIND_)                                   :: a1, b1, c1, d1, a2, b2, c2, d2, a, b, c
+    real(FMS_HI_KIND_)                                   :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
+    real(FMS_HI_KIND_)                                   :: tpi, lon_min, lon_max
+    real(FMS_HI_KIND_)                                   :: epsln2
+    logical                                :: use_new_search, no_crash
 
     integer, parameter :: kindl=FMS_HI_KIND_
 
@@ -506,43 +447,14 @@
       !< are the latitude coordinates for the output grid in radians.
     logical, intent(in) :: src_modulo
       !< is true if the boundary condition along zonal boundary is cyclic.
-    integer :: nlon_in
-    integer :: nlat_in
-    integer :: nlon_out
-    integer :: nlat_out
-    integer :: max_step
-    integer :: n
-    integer :: m
-    integer :: l
-    integer :: i
-    integer :: j
-    integer :: ip1
-    integer :: jp1
-    integer :: step
-    integer :: is
-    integer :: js
-    integer :: jstart
-    integer :: jend
-    integer :: istart
-    integer :: iend
-    integer :: npts
-    integer, allocatable, dimension(:) :: ilon
-    integer, allocatable, dimension(:) :: jlat
-    real(FMS_HI_KIND_) :: lon_min
-    real(FMS_HI_KIND_) :: lon_max
-    real(FMS_HI_KIND_) :: lon
-    real(FMS_HI_KIND_) :: lat
-    real(FMS_HI_KIND_) :: tpi
-    logical :: found
-    real(FMS_HI_KIND_) :: lon1
-    real(FMS_HI_KIND_) :: lat1
-    real(FMS_HI_KIND_) :: lon2
-    real(FMS_HI_KIND_) :: lat2
-    real(FMS_HI_KIND_) :: lon3
-    real(FMS_HI_KIND_) :: lat3
-    real(FMS_HI_KIND_) :: lon4
-    real(FMS_HI_KIND_) :: lat4
 
+    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
+    integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
+    integer                                :: is, js, jstart, jend, istart, iend, npts
+    integer, allocatable, dimension(:)     :: ilon, jlat
+    real(FMS_HI_KIND_)                     :: lon_min, lon_max, lon, lat, tpi
+    logical                                :: found
+    real(FMS_HI_KIND_)                     :: lon1, lat1, lon2, lat2, lon3, lat3, lon4, lat4
     integer, parameter :: kindl=FMS_HI_KIND_
 
     tpi = 2.0_kindl*real(pi, FMS_HI_KIND_)
@@ -786,11 +698,9 @@
        !< is the x coordinate of point to be tested
      real(FMS_HI_KIND_), intent(in) :: y
        !< is the y coordinate of point to be tested
-     logical :: INSIDE_POLYGON_
-     integer :: i
-     integer :: j
-     integer :: nedges
-     real(FMS_HI_KIND_) :: xx
+     logical                        :: INSIDE_POLYGON_
+     integer                        :: i, j, nedges
+     real(FMS_HI_KIND_)                           :: xx
 
      INSIDE_POLYGON_ = .false.
      nedges = size(polyx(:))
@@ -832,43 +742,19 @@
       !< is true if the boundary condition along zonal boundary is cyclic.
     logical, intent(in) :: no_crash
       !< sets Interp%i_lon and Interp%j_lat to DUMMY values for cells with no nearest neighbors when true.
-    integer :: nlon_in
-    integer :: nlat_in
-    integer :: nlon_out
-    integer :: nlat_out
-    integer :: max_step
-    integer :: n
-    integer :: m
-    integer :: l
-    integer :: i
-    integer :: j
-    integer :: ip1
-    integer :: jp1
-    integer :: step
-    integer :: is
-    integer :: js
-    integer :: jstart
-    integer :: jend
-    integer :: istart
-    integer :: iend
-    integer :: npts
-    integer, allocatable, dimension(:) :: ilon
-    integer, allocatable, dimension(:) :: jlat
-    real(FMS_HI_KIND_) :: lon_min
-    real(FMS_HI_KIND_) :: lon_max
-    real(FMS_HI_KIND_) :: lon
-    real(FMS_HI_KIND_) :: lat
-    real(FMS_HI_KIND_) :: tpi
-    logical :: found
-    real(FMS_HI_KIND_) :: polyx(4)
-    real(FMS_HI_KIND_) :: polyy(4)
-    real(FMS_HI_KIND_) :: min_lon
-    real(FMS_HI_KIND_) :: min_lat
-    real(FMS_HI_KIND_) :: max_lon
-    real(FMS_HI_KIND_) :: max_lat
 
-    integer, parameter :: step_div=8
-    integer, parameter :: kindl = FMS_HI_KIND_
+    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_in , lat_in
+    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_out, lat_out
+    logical,                 intent(in)    :: src_modulo, no_crash
+    integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
+    integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
+    integer                                :: is, js, jstart, jend, istart, iend, npts
+    integer, allocatable, dimension(:)     :: ilon, jlat
+    real(FMS_HI_KIND_)                                   :: lon_min, lon_max, lon, lat, tpi
+    logical                                :: found
+    real(FMS_HI_KIND_)                                   :: polyx(4), polyy(4)
+    real(FMS_HI_KIND_)                                   :: min_lon, min_lat, max_lon, max_lat
+    integer, parameter :: step_div=8, kindl = FMS_HI_KIND_
 
     tpi = 2.0_kindl * real(pi, FMS_HI_KIND_)
     nlon_in  = size(lon_in,1) ; nlat_in  = size(lat_in,2)
@@ -1101,46 +987,15 @@
     logical, intent(in), optional :: new_handle_missing
       !< turns on the new missing value handling algorithm if .true..
     !-----------------------------------------------------------------------
-    integer :: nlon_in
-    integer :: nlat_in
-    integer :: nlon_out
-    integer :: nlat_out
-    integer :: n
-    integer :: m
-    integer :: is
-    integer :: ie
-    integer :: js
-    integer :: je
-    integer :: iverbose
-    integer :: max_missing
-    integer :: num_missing
-    integer :: miss_in
-    integer :: miss_out
-    integer :: iunit
-    real(FMS_HI_KIND_) :: dwtsum
-    real(FMS_HI_KIND_) :: wtsum
-    real(FMS_HI_KIND_) :: min_in
-    real(FMS_HI_KIND_) :: max_in
-    real(FMS_HI_KIND_) :: avg_in
-    real(FMS_HI_KIND_) :: min_out
-    real(FMS_HI_KIND_) :: max_out
-    real(FMS_HI_KIND_) :: avg_out
-    real(FMS_HI_KIND_) :: wtw
-    real(FMS_HI_KIND_) :: wte
-    real(FMS_HI_KIND_) :: wts
-    real(FMS_HI_KIND_) :: wtn
-    real(FMS_HI_KIND_) :: mask(size(data_in,1), size(data_in,2))
-    logical :: set_to_missing
-    logical :: is_missing(4)
-    logical :: new_handler
-    real(FMS_HI_KIND_) :: f1
-    real(FMS_HI_KIND_) :: f2
-    real(FMS_HI_KIND_) :: f3
-    real(FMS_HI_KIND_) :: f4
-    real(FMS_HI_KIND_) :: middle
-    real(FMS_HI_KIND_) :: w
-    real(FMS_HI_KIND_) :: s
-    integer, parameter :: kindl = FMS_HI_KIND_
+    integer :: nlon_in, nlat_in, nlon_out, nlat_out, n, m,         &
+         is, ie, js, je, iverbose, max_missing, num_missing, &
+         miss_in, miss_out, iunit
+    real(FMS_HI_KIND_)    :: dwtsum, wtsum, min_in, max_in, avg_in, &
+         min_out, max_out, avg_out, wtw, wte, wts, wtn
+    real(FMS_HI_KIND_)    :: mask(size(data_in,1), size(data_in,2) )
+    logical :: set_to_missing, is_missing(4), new_handler
+    real(FMS_HI_KIND_)    :: f1, f2, f3, f4, middle, w, s
+    integer, parameter    :: kindl = FMS_HI_KIND_
 
     num_missing = 0
 
