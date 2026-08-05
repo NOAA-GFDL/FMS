@@ -88,7 +88,7 @@ module horiz_interp_bicubic_mod
    real(r8_kind) :: tpi  !< is 2*PI.
 
    !> Unused interface.
-   interface fill_xy.
+   interface fill_xy
       module procedure fill_xy_r4
       module procedure fill_xy_r8
    end interface
