@@ -449,7 +449,7 @@
       !< are the longitude values in radians of the source grid, flattened to 1D.
     real(FMS_HI_KIND_), intent(in), dimension(:) :: phi_src
       !< are the latitude values in radians of the source grid, flattened to 1D.
-    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: theta_dst,
+    real(FMS_HI_KIND_), intent(in), dimension(:,:) :: theta_dst
       !< are the longitude values in radians of the destination grid.
     real(FMS_HI_KIND_), intent(in), dimension(:,:) :: phi_dst
       !< are the latitude values in radians of the destination grid.

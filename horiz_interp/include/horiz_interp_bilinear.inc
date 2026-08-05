@@ -743,9 +743,6 @@
     logical, intent(in) :: no_crash
       !< sets Interp%i_lon and Interp%j_lat to DUMMY values for cells with no nearest neighbors when true.
 
-    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_in , lat_in
-    real(FMS_HI_KIND_), intent(in),       dimension(:,:) :: lon_out, lat_out
-    logical,                 intent(in)    :: src_modulo, no_crash
     integer                                :: nlon_in, nlat_in, nlon_out, nlat_out
     integer                                :: max_step, n, m, l, i, j, ip1, jp1, step
     integer                                :: is, js, jstart, jend, istart, iend, npts
