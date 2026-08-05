@@ -77,17 +77,14 @@ SUBDIRS = \
 # Run the Fortran preprocessor on every .F90 file in PREPROCESS_DIRS,
 # writing output to preprocessed/<dir>/<file>.F90. test_fms is excluded.
 preprocess:
-	@for dir in $(SUBDIRS); do \
-	  for f in $(top_srcdir)/$$dir/*.F90; do \
+	for dir in $(top_srcdir)/$(SUBDIRS); do \
+	  for f in $$dir/*.F90; do \
 	    [ -e "$$f" ] || continue; \
-	    outdir=preprocessed/$$dir; \
+	    outdir=$(top_srcdir)/docs/preprocessed/$$dir; \
 	    $(MKDIR_P) $$outdir; \
-	    echo "$(FC) -E $$dir/`basename $$f` -o $$outdir/`basename $$f`"; \
-	    $(FC) -E $$f -o $$outdir/`basename $$f`; \
-	  done; 
+	    $(FC) -E -Duse_yaml -I$$dir -I$$dir/include -I$(top_srcdir)/include $$f -o $$outdir/`basename $$f`; \
+	  done \
 	done
-
-.PHONY: preprocess
 
 include_HEADERS = include/file_version.h include/fms_platform.h
 
