@@ -38,7 +38,9 @@ end module data_override_r8
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!
 !! This is typically used to convert data from a component's grid (ie. ocean, atmosphere, land, ice) to another
-!! component's grid, while maintaining consistency and accurate approximations.
+!! component's grid and model time, while maintaining consistency and accurate approximations. To do this,
+!! it makes use of horiz_interp_mod and time_interp_external2_mod from FMS to perform spatial and temporal
+!! interpolation, respectively.
 !!
 !! These routines are specifically designed for use with GFDL's input files, typically created by the make_*_mosaic
 !! tools available in fre-nctools. More specifically, a grid_spec.nc that defines paths/directories for the
@@ -57,6 +59,8 @@ end module data_override_r8
 !! - Fields will be overridden globally by default; users can also specify one or two regions in which
 !!   data_override will take place, in which case field values outside the region will not be affected.
 !!
+!! Data override also supports the use of nested domains and ensembles. See the README.md in this directory for more
+!! information about how to specify nested domains and ensembles.
 module data_override_mod
   use data_override_r4
   use data_override_r8
