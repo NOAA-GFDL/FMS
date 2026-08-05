@@ -17,7 +17,11 @@
 !***********************************************************************
 !> @defgroup get_grid_version_mod get_grid_version_mod
 !> @ingroup data_override
-!> @brief get_grid implementations and helper routines for @ref data_override_mod
+!> @brief This module contains helper routines for @ref data_override_mod,
+!! and is not intended to be used directly. It provides interfaces for reading the global grid dimensions
+!! by reading a grid spec or mosaic file, and also a routine for checking that the read in sizes
+!! are valid. The exact variables it reads to get this information is controlled by the model domain 
+!! (ie. atm, ocn, land), which is passed in as a string.
 
 !> @addtogroup get_grid_version_mod
 !> @{
@@ -33,11 +37,15 @@ use mosaic2_mod,     only : get_mosaic_tile_grid
 
 implicit none
 
+!> @brief get_grid_version_1 is intended to read in what is typically named "grid_spec.nc", as created by
+!! make_mosaic/make_coupler_mosaic in fre-nctools
 interface get_grid_version_1
   module procedure get_grid_version_1_r4
   module procedure get_grid_version_1_r8
 end interface get_grid_version_1
 
+!> @brief get_grid_version_2 reads grid coordinate data from an already-opened grid_spec.nc or mosaic
+!! file object, as created by make_mosaic/make_coupler_mosaic in fre-nctools
 interface get_grid_version_2
   module procedure get_grid_version_2_r4
   module procedure get_grid_version_2_r8
@@ -45,28 +53,28 @@ end interface get_grid_version_2
 
 contains
 
-!> Get lon and lat of three model (target) grids from grid_spec.nc
+!> @brief Validates that the domain size matches the grid dimensions from the grid file, calling FATAL if not.
 subroutine check_grid_sizes(domain_name, Domain, nlon, nlat)
-character(len=12), intent(in) :: domain_name
-type (domain2d),   intent(in) :: Domain
-integer,           intent(in) :: nlon, nlat
+  character(len=12), intent(in) :: domain_name
+  type (domain2d),   intent(in) :: Domain
+  integer,           intent(in) :: nlon, nlat
 
-character(len=184) :: error_message
-integer            :: xsize, ysize
+  character(len=184) :: error_message
+  integer            :: xsize, ysize
 
-call mpp_get_global_domain(Domain, xsize=xsize, ysize=ysize)
-if(nlon .NE. xsize .OR. nlat .NE. ysize) then
-  error_message = 'Error in data_override_init. Size of grid as specified by '// &
-                  '             does not conform to that specified by grid_spec.nc.'// &
-                  '  From             :     by      From grid_spec.nc:     by    '
-  error_message( 59: 70) = domain_name
-  error_message(130:141) = domain_name
-  write(error_message(143:146),'(i4)') xsize
-  write(error_message(150:153),'(i4)') ysize
-  write(error_message(174:177),'(i4)') nlon
-  write(error_message(181:184),'(i4)') nlat
-  call mpp_error(FATAL,error_message)
-endif
+  call mpp_get_global_domain(Domain, xsize=xsize, ysize=ysize)
+  if(nlon .NE. xsize .OR. nlat .NE. ysize) then
+    error_message = 'Error in data_override_init. Size of grid as specified by '// &
+                    '             does not conform to that specified by grid_spec.nc.'// &
+                    '  From             :     by      From grid_spec.nc:     by    '
+    error_message( 59: 70) = domain_name
+    error_message(130:141) = domain_name
+    write(error_message(143:146),'(i4)') xsize
+    write(error_message(150:153),'(i4)') ysize
+    write(error_message(174:177),'(i4)') nlon
+    write(error_message(181:184),'(i4)') nlat
+    call mpp_error(FATAL,error_message)
+  endif
 end subroutine check_grid_sizes
 
 #include "get_grid_version_r4.fh"

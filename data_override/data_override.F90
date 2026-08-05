@@ -16,38 +16,41 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 
-! data_override_r4 and data_override_r8 are not intended to be used directly -
-! they should be used through the data_override_mod API. The body of
-! data_override_r4 and data_override_r8 is contained in data_override.inc.
-
+!> @brief Data_override_r4 is a helper module for @ref data_override_mod, and is not intended to be used
+!! directly. It provides the real(kind=4) routines that are made public through the data_override and
+!! data_override_UG interfaces.
 module data_override_r4
 #include "data_override_r4.fh"
 end module data_override_r4
 
+!> @brief Data_override_r8 is a helper module for @ref data_override_mod, and is not intended to be used
+!! directly. It provides the real(kind=8) routines that are made public through the data_override and
+!! data_override_UG interfaces.
 module data_override_r8
 #include "data_override_r8.fh"
 end module data_override_r8
 
 !> @defgroup data_override_mod data_override_mod
 !> @ingroup data_override
-!! @brief Routines to get data in a file whose path is described in a user-provided data_table
+!! @brief Routines to write data to a file whose path is described in a user-provided data_table
 !! and do spatial and temporal interpolation if necessary to convert data to model's grid and time.
+!!
 !! @author Z. Liang, M.J. Harrison, M. Winton
 !!
-!! Before using @ref data_override a data_table must be created with the following entries:
-!! gridname, fieldname_code, fieldname_file, file_name, ongrid, factor.
+!! More explanations about data_table entries can be found in the source code (defining data_type),
+!! as well as the README.md in this directory.
 !!
-!! More explainations about data_table entries can be found in the source code (defining data_type)
+!! This is typically used to convert data from a component's grid (ie. ocean, atmosphere, land, ice) to another
+!! component's grid, while maintaining consistency and accurate approximations.
 !!
-!! If user wants to override fieldname_code with a const, set fieldname_file in data_table = ""
-!! and factor = const
+!! These routines are specifically designed for use with GFDL's input files, typically created by the make_*_mosaic
+!! tools available in fre-nctools. More specifically, a grid_spec.nc that defines paths/directories for the
+!! component's grid files is required during data_override_init.
 !!
-!! If user wants to override fieldname_code with data from a file, set fieldname_file = name in
-!! the netCDF data file, factor then will be for unit conversion (=1 if no conversion required)
-!!
-!! A field can be overridden globally (by default) or users can specify one or two regions in which
-!! data_override will take place, field values outside the region will not be affected.
-
+!! The operations performed are specified by the data_table. The data_table is a user-provided file that describes
+!! the path to the data file, the field name in the data file, and the factor for unit conversion. The data_table 
+!! can be specified in either the legacy ASCII format (data_table) or the YAML format (data_table.yaml).
+!! See the README.md in this directory for more information about the data_table yaml format.
 module data_override_mod
   use data_override_r4
   use data_override_r8
@@ -59,10 +62,46 @@ module data_override_mod
 implicit none
 private
 
-!> Interface for inserting and interpolating data into a file
-!! for a model's grid and time. Data path must be described in
+!> Interface for reading and interpolating data from a file
+!! into the model's grid and time. Data path must be described in
 !! a user-provided data_table, see @ref data_override_mod "module description"
 !! for more information.
+!!
+!! Typical calls to @ref data_override are shown below. The selected specific
+!! routine depends on argument rank and real kind.
+!! @code{.f90}
+!! use platform_mod, only: r4_kind, r8_kind
+!! use time_manager_mod, only: time_type
+!!
+!! type(time_type) :: Time
+!! logical :: used
+!! real(r4_kind) :: scalar_r4
+!! real(r8_kind) :: scalar_r8
+!! real(r4_kind) :: field2d_r4(is:ie,js:je)
+!! real(r8_kind) :: field2d_r8(is:ie,js:je)
+!! real(r4_kind) :: field3d_r4(is:ie,js:je,nlev)
+!! real(r8_kind) :: field3d_r8(is:ie,js:je,nlev)
+!!
+!! ! Initializes both r4 and r8 implementations for this domain.
+!! call data_override_init(Ocean_domain_in=Domain)
+!!
+!! ! data_override_0d_r4 / data_override_0d_r8
+!! call data_override('OCN', 'co2_obs', scalar_r4, Time, override=used)
+!! call data_override('OCN', 'co2_obs', scalar_r8, Time, override=used)
+!!
+!! ! data_override_2d_r4 / data_override_2d_r8
+!! call data_override('OCN', 'sst_obs', field2d_r4, Time, override=used)
+!! call data_override('OCN', 'sst_obs', field2d_r8, Time, override=used)
+!!
+!! ! Optional compute-domain window (as used by threaded callers).
+!! call data_override('OCN', 'sst_obs', field2d_r4, Time, override=used, &
+!!                    is_in=isw-is+1, ie_in=iew-is+1, js_in=jsw-js+1, je_in=jew-js+1)
+!!
+!! ! data_override_3d_r4 / data_override_3d_r8
+!! call data_override('LND', 'sst_obs', field3d_r4, Time, override=used)
+!! call data_override('LND', 'sst_obs', field3d_r8, Time, override=used)
+!! @endcode
+!!
 !> @ingroup data_override_mod
 interface data_override
      module procedure data_override_0d_r4
@@ -73,7 +112,33 @@ interface data_override
      module procedure data_override_3d_r8
 end interface
 
-!> Version of @ref data_override for unstructured grids
+!> Version of @ref data_override for unstructured grids. An unstructured grid is defined by mpp_domain_mod and contains
+!! a number of elements with custom defined axis.
+!!
+!! Typical calls to @ref data_override_UG are shown below. The selected
+!! specific routine depends on argument rank and real kind.
+!! @code{.f90}
+!! use platform_mod, only: r4_kind, r8_kind
+!! use time_manager_mod, only: time_type
+!!
+!! type(time_type) :: Time
+!! logical :: used
+!! real(r4_kind) :: ug1d_r4(npts_local)
+!! real(r8_kind) :: ug1d_r8(npts_local)
+!! real(r4_kind) :: ug2d_r4(npts_local,nlev)
+!! real(r8_kind) :: ug2d_r8(npts_local,nlev)
+!!
+!! ! Initialize with an unstructured land domain.
+!! call data_override_init(Land_domainUG_in=UG_domain)
+!!
+!! ! data_override_UG_1d_r4 / data_override_UG_1d_r8
+!! call data_override_UG('LND', 'sst_obs', ug1d_r4, Time, override=used)
+!! call data_override_UG('LND', 'sst_obs', ug1d_r8, Time, override=used)
+!!
+!! ! data_override_UG_2d_r4 / data_override_UG_2d_r8
+!! call data_override_UG('LND', 'sst_obs', ug2d_r4, Time, override=used)
+!! call data_override_UG('LND', 'sst_obs', ug2d_r8, Time, override=used)
+!! @endcode
 !> @ingroup data_override_mod
 interface data_override_UG
      module procedure data_override_UG_1d_r4

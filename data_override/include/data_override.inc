@@ -84,7 +84,7 @@ type override_type
    integer                          :: t_index            !< index for time interp
    integer                          :: pt_index           !< previous index for time interp
    integer                          :: nt_index           !< next index for time interp
-   type(horiz_interp_type), allocatable :: horz_interp(:) !< index for horizontal spatial interp
+   type(horiz_interp_type), allocatable :: horz_interp(:) !< horizontal interpolation data, one entry per thread/window
    integer                          :: dims(4)            !< dimensions(x,y,z,t) of the field in filename
    integer                          :: comp_domain(4)     !< istart,iend,jstart,jend for compute domain
    integer                          :: numthreads
@@ -165,11 +165,11 @@ contains
 !! or data_table.yaml. Each line of data_table contains one data_entry. Items of data_entry
 !! are comma-separated.
 subroutine DATA_OVERRIDE_INIT_IMPL_(Atm_domain_in, Ocean_domain_in, Ice_domain_in, Land_domain_in, Land_domainUG_in)
-  type (domain2d), intent(in), optional :: Atm_domain_in    !> Atmosphere domain
-  type (domain2d), intent(in), optional :: Ocean_domain_in  !> Ocean domain
-  type (domain2d), intent(in), optional :: Ice_domain_in    !> Ice domain
-  type (domain2d), intent(in), optional :: Land_domain_in   !> Land domain
-  type(domainUG) , intent(in), optional :: Land_domainUG_in !> Land domain, unstructured grid
+  type (domain2d), intent(in), optional :: Atm_domain_in    !< Atmosphere domain
+  type (domain2d), intent(in), optional :: Ocean_domain_in  !< Ocean domain
+  type (domain2d), intent(in), optional :: Ice_domain_in    !< Ice domain
+  type (domain2d), intent(in), optional :: Land_domain_in   !< Land domain
+  type(domainUG) , intent(in), optional :: Land_domainUG_in !< Land domain, unstructured grid
 
   character(len=18), parameter    :: grid_file = 'INPUT/grid_spec.nc'
   integer               :: i, iunit, io_status, ierr, use_get_grid_version
@@ -694,7 +694,7 @@ subroutine read_table_yaml(data_table)
       end do
 
     end if
-    table_size = nentries !< Because one variable is not enough
+    table_size = nentries !< Store parsed count as module-level state used by other subroutines
 end subroutine read_table_yaml
 
 !> @brief Check if a grid name is valid, crashes if it is not
@@ -735,7 +735,7 @@ end subroutine check_interpol_method
 !> @brief Check if a region_type is valid, crashes if it is not. Otherwise it sets the
 !! correct integer parameter.
 subroutine check_and_set_region_type(region_type_str, region_type_int)
-   character(len=*), intent(in)  :: region_type_str !< The region type as defined in the data.yaml
+   character(len=*), intent(in)  :: region_type_str !< The region type as defined in the data_table.yaml
    integer,          intent(out) :: region_type_int !< The region type as an integer parameter
 
    select case(trim(region_type_str))
@@ -756,7 +756,7 @@ end subroutine check_and_set_region_type
 subroutine check_valid_lat_lon(lon_start, lon_end, lat_start, lat_end)
    real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_start !< Starting longitude of the data_override region
    real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lon_end   !< Ending longitude of the data_override region
-   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_start !< Starting lattiude of the data_override region
+   real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_start !< Starting latitude of the data_override region
    real(FMS_DATA_OVERRIDE_KIND_), intent(in) :: lat_end   !< Ending lattiude of the data_override region
 
    if (lon_start > lon_end) call mpp_error(FATAL, &
@@ -817,7 +817,7 @@ subroutine get_domain(gridname, domain, comp_domain)
      call mpp_get_compute_domain(domain,comp_domain(1),comp_domain(2),comp_domain(3),comp_domain(4))
 end subroutine get_domain
 
-!> @brief Given a gridname, this routine returns the working domain associated with this gridname
+!> @brief Given a gridname, returns the unstructured grid (UG) domain associated with that gridname
 subroutine get_domainUG(gridname, UGdomain, comp_domain)
   character(len=3), intent(in) :: gridname
   type(domainUG), intent(inout) :: UGdomain
@@ -840,12 +840,12 @@ end subroutine get_domainUG
 
 !> @brief Routine to perform data override for scalar fields
 subroutine DATA_OVERRIDE_0D_(gridname,fieldname_code,data_out,time,override,data_index)
-  character(len=3), intent(in) :: gridname !< model grid ID (ocn,ice,atm,lnd)
+  character(len=3), intent(in) :: gridname !< model grid ID string (ie. ocn,ice,atm,lnd)
   character(len=*), intent(in) :: fieldname_code !< field name as used in the model (may be
                                                  !! different from the name in NetCDF data file)
   logical, intent(out), optional :: override !< true if the field has been overridden succesfully
   type(time_type), intent(in) :: time !< (target) model time
-  real(FMS_DATA_OVERRIDE_KIND_), intent(out) :: data_out !< output data array returned by this call
+  real(FMS_DATA_OVERRIDE_KIND_), intent(out) :: data_out !< output scalar value returned by this call
   integer, intent(in), optional :: data_index
 
   type(time_type)    :: first_record !< first record of "current" file
