@@ -115,7 +115,7 @@ include $(top_srcdir)/mkmods.mk
 #         -e 's|@PACKAGE_CMAKE_INSTALL_INCLUDEDIR[@]|$(includedir)|g' \
 #         -e 's|@PACKAGE_CMAKE_INSTALL_LIBDIR[@]|$(libdir)|g' \
 #         -e '/@PACKAGE_INIT[@]/ {' -e 'r $(top_srcdir)/_package_init_cmake' -e  'd' -e '}'
-#FMSConfig.cmake FMSConfigVersion.cmake: Makefile
+#FMSConfig.cmake FMSConfigVersion.cmake: MakefileMKDIR_P
 #	rm -f $@ $@.tmp
 #	$(edit) $@.in >$@.tmp
 #	mv $@.tmp $@

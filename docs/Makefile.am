@@ -24,7 +24,7 @@
 
 # Run doxygen.
 all:
-    ../make preprocess
+	$(MAKE) -C .. preprocess
 	doxygen Doxyfile
 	cat doxywarn.log
 # Confirm warning log file is empty.
