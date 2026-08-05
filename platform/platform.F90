@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup platform_mod platform_mod
-!! @addtogroup platform
+!! @ingroup platform
 !! @{
 !! @brief Uses @ref fms_platform.h to define byte sizes for variable kinds
 !! to be used in fms.

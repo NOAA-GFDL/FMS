@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mosaic2_mod mosaic2_mod
-!! @addtogroup mosaic2
+!! @ingroup mosaic2
 !! @{
 !! @brief Implements some utility routines to read mosaic information.
 !!

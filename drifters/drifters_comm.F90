@@ -18,7 +18,7 @@
 #include "fms_switches.h"
 
 !> @defgroup drifters_comm_mod drifters_comm_mod
-!! @addtogroup drifters
+!! @ingroup drifters
 !! @{
 !! @brief Routines and types to update drifter positions across processor domains
 

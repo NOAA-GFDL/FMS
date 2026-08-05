@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_memutils_mod mpp_memutils_mod
-!! @addtogroup mpp
+!! @ingroup mpp
 !! @{
 !! @brief Routines to initialize and report on memory usage during the model run.
 

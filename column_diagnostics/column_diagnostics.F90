@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup column_diagnostics_mod column_diagnostics_mod
-!! @addtogroup column_diagnostics
+!! @ingroup column_diagnostics
 !! @{
 !! @brief Module to locate and mark desired diagnostic columns
 module column_diagnostics_mod

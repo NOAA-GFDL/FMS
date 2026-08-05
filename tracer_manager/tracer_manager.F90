@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup tracer_manager_mod tracer_manager_mod
-!! @addtogroup tracer_manager
+!! @ingroup tracer_manager
 !! @{
 !! @brief Code to manage the simple addition of tracers to the FMS code.
 !! This code keeps track of the numbers and names of tracers included

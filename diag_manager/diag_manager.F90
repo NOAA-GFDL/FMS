@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_manager_mod diag_manager_mod
-!! @addtogroup diag_manager
+!! @ingroup diag_manager
 !! @{
 !! @brief diag_manager_mod is a set of simple calls for parallel diagnostics
 !!   on distributed systems. It is geared toward the writing of data in netCDF

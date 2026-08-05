@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_yaml_mod fms_diag_yaml_mod
-!! @addtogroup diag_manager
+!! @ingroup diag_manager
 !! @{
 !! @brief fms_diag_yaml_mod is an integral part of
 !!   diag_manager_mod. Its function is to read the diag_table.yaml to fill in

@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup sat_vapor_pres_mod sat_vapor_pres_mod
-!! @addtogroup sat_vapor_pres
+!! @ingroup sat_vapor_pres
 !! @{
 !! @brief Routines for computing the saturation vapor pressure (es),
 !! the specific humidity (qs) and vapor mixing ratio (mrs)

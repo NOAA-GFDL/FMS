@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup tridiagonal_mod tridiagonal_mod
-!! @addtogroup tridiagonal
+!! @ingroup tridiagonal
 !! @{
 !! @brief Solves a tridiagonal system of equations.
 !!

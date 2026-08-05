@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_io_utils_mod fms_io_utils_mod
-!! @addtogroup fms2_io
+!! @ingroup fms2_io
 !! @{
 !! @brief Misc. utility routines for use in @ref fms2_io
 

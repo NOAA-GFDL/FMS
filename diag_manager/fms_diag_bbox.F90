@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_bbox_mod fms_diag_bbox_mod
-!! @addtogroup diag_manager
+!! @ingroup diag_manager
 !! @{
 !! @brief fms_diag_bbox_mod defines classes encapsulating bounding boxes
 !!   and interval bounds.

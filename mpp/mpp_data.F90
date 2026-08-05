@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup mpp_data_mod mpp_data_mod
-!! @addtogroup mpp
+!! @ingroup mpp
 !! @{
 !! @brief Module to hold pointer and stack data for use in @ref mpp modules.
 !!

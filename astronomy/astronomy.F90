@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup astronomy_mod astronomy_mod
-!! @addtogroup astronomy
+!! @ingroup astronomy
 !! @{
 !! @brief Provides astronomical variables for use
 !!        by other modules within fms. The only currently used interface is
@@ -142,7 +142,7 @@ module astronomy_mod
     !!                       [days, seconds]
     !! @param [in] <allow_negative_cosz> Allow negative values for cosz?
     !! @param [out] <half_day_out> half_day_out
-    !> @addtogroup astronomy_mod
+    !> @ingroup astronomy_mod
     interface diurnal_solar
       module procedure diurnal_solar_2d_r4, diurnal_solar_2d_r8
       module procedure diurnal_solar_1d_r4, diurnal_solar_1d_r8
@@ -200,7 +200,7 @@ module astronomy_mod
     !! (a):(a/r)**2 [dimensionless]
     !! @param [out] <solar> shortwave flux factor: cosine of zenith angle * daylight fraction /
     !! (earth-sun distance squared) [dimensionless]
-    !> @addtogroup astronomy_mod
+    !> @ingroup astronomy_mod
     interface daily_mean_solar
       module procedure daily_mean_solar_2d_r4, daily_mean_solar_2d_r8
       module procedure daily_mean_solar_1d_r4, daily_mean_solar_1d_r8
@@ -247,7 +247,7 @@ module astronomy_mod
     !!                        Earth-Sun distance of 1.0. [dimensionless]
     !! @param [out] <rrsun> Annual mean Earth-Sun distance (r) relative to semi-major axis of orbital ellipse
     !!                      (a):(a/r)**2 [dimensionless]
-    !> @addtogroup astronomy_mod
+    !> @ingroup astronomy_mod
     interface annual_mean_solar
       module procedure annual_mean_solar_2d_r4, annual_mean_solar_2d_r8
       module procedure annual_mean_solar_1d_r4, annual_mean_solar_1d_r8
@@ -269,7 +269,7 @@ module astronomy_mod
     !! ~~~~~~~~~~
     !!
     !! @param [out] <period_out> Length of year for calendar in use
-    !> @addtogroup astronomy_mod
+    !> @ingroup astronomy_mod
     interface get_period
        module procedure get_period_time_type, get_period_integer
     end interface
@@ -289,7 +289,7 @@ module astronomy_mod
     !! ~~~~~~~~~~
     !!
     !! @param [in] <period_in> Length of year for calendar in use
-    !> @addtogroup astronomy_mod
+    !> @ingroup astronomy_mod
     interface set_period
        module procedure set_period_time_type, set_period_integer
     end interface
@@ -336,14 +336,14 @@ module astronomy_mod
     !! @param [in] <dec> Solar declination [radians]
     !! @param [out] <h> Half of the length of daylight at the given latitude and orbital position (dec); value
     !!                  ranges between 0 (all darkness) and pi (all daylight) [dimensionless]
-    !> @addtogroup astronomy_mod
+    !> @ingroup astronomy_mod
     interface half_day
       module procedure half_day_2d_r4, half_day_2d_r8
       module procedure half_day_0d_r4, half_day_0d_r8
     end interface half_day
 
 
-!> @addtogroup astronomy_mod
+!> @ingroup astronomy_mod
 !> @{
 
 !---------------------------------------------------------------------

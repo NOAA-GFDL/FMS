@@ -21,7 +21,7 @@
 #endif
 
 !> @defgroup mpp_pset_mod mpp_pset_mod
-!! @addtogroup mpp
+!! @ingroup mpp
 !! @{
 !! @brief Handles PSETs(Persistent Shared-memory Execution Threads) for mpp modules
 !!

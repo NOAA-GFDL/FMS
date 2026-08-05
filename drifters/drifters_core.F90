@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup drifters_core_mod drifters_core_mod
-!! @addtogroup drifters
+!! @ingroup drifters
 !! @{
 !! @brief Handles the mechanics for adding and removing drifters
 

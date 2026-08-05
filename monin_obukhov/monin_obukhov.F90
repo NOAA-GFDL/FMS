@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup monin_obukhov_mod monin_obukhov_mod
-!! @addtogroup monin_obukhov
+!! @ingroup monin_obukhov
 !! @{
 !! @brief Routines for computing surface drag coefficients
 !! from data at the lowest model level

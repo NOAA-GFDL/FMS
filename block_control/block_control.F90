@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup block_control_mod block_control_mod
-!! @addtogroup block_control
+!! @ingroup block_control
 !! @{
 !> @brief Routines for "blocks" used for  OpenMP threading of column-based
 !!        calculations

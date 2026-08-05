@@ -17,7 +17,7 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
 !> @defgroup mpp_domains_mod mpp_domains_mod
-!! @addtogroup mpp
+!! @ingroup mpp
 !! @{
 !! @brief Domain decomposition and domain update for message-passing codes
 !! @author V. Balaji SGI/GFDL Princeton University
@@ -729,7 +729,7 @@ module mpp_domains_mod
 
   integer, parameter :: NO_CHECK = -1
   integer            :: debug_update_level = NO_CHECK
-  
+
 !***********************************************************************
 !
 !         public interface from mpp_domains_define.h

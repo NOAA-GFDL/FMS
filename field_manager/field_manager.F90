@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup field_manager_mod field_manager_mod
-!! @addtogroup field_manager
+!! @ingroup field_manager
 !! @{
 !! @brief Reads entries from a field table and stores this
 !! information along with the type  of field it belongs to.

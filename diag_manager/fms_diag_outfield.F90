@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_outfield_mod fms_diag_outfield_mod
-!! @addtogroup diag_manager
+!! @ingroup diag_manager
 !! @{
 !! @brief fms_diag_outfield_mod defines data types and utility or auxiliary routines
 !! useful in updating the output buffer.

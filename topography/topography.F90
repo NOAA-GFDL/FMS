@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup topography_mod topography_mod
-!! @addtogroup topography
+!! @ingroup topography
 !! @{
 !! @brief Routines for creating land surface topography fields and land-water masks
 !! for latitude-longitude grids.

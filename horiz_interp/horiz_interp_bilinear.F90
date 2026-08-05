@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_bilinear_mod horiz_interp_bilinear_mod
-!! @addtogroup horiz_interp
+!! @ingroup horiz_interp
 !! @{
 !! @brief Performs spatial interpolation between grids using bilinear interpolation
 !!

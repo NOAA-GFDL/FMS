@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_mod fms_mod
-!! @addtogroup fms
+!! @ingroup fms
 !! @{
 !! @brief The fms module provides routines that are commonly used
 !!   by most FMS modules.

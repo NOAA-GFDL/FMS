@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup FMS FMS
-!> @addtogroup libfms
+!> @ingroup libfms
 !> @brief A convenience module to use any FMS routines, functions, values
 !> @author Ryan Mulhall
 !!
@@ -59,7 +59,7 @@
 !> @file
 !> @brief File for @ref FMS
 
-!> @addtogroup FMS
+!> @ingroup FMS
 !> @{
 module fms
 

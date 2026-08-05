@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup blackboxio blackboxio
-!! @addtogroup fms2_io
+!! @ingroup fms2_io
 !! @{
 !! @brief File utility functions for use within @ref fms2_io
 

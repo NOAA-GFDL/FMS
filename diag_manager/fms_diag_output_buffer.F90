@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup fms_diag_output_buffer_mod fms_diag_output_buffer_mod
-!! @addtogroup diag_manager
+!! @ingroup diag_manager
 !! @{
 !! @author Ryan Mulhall
 !! @email ryan.mulhall@noaa.gov

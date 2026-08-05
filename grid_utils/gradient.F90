@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup gradient_mod gradient_mod
-!> @addtogroup grid_utils
+!> @ingroup grid_utils
 !! @{
 !! @brief Implements some utility routines to calculate gradient.
 !! @author Zhi Liang

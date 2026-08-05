@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup diag_integral_mod diag_integral_mod
-!! @addtogroup diag_integral
+!! @ingroup diag_integral
 !! @{
 !!
 !! @author Fei Liu <Fei.Liu@noaa.gov>

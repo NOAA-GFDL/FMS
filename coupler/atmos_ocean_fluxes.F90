@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup atmos_ocean_fluxes_mod atmos_ocean_fluxes_mod
-!! @addtogroup coupler
+!! @ingroup coupler
 !! @{
 !! @brief Implementation of routines to solve the gas fluxes at the
 !! ocean surface for a coupled model as outlined in the Biotic-HOWTO

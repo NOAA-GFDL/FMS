@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup time_interp_mod time_interp_mod
-!! @addtogroup time_interp
+!! @ingroup time_interp
 !! @{
 !! @brief Computes a weight and dates/indices for linearly interpolating between two dates.
 !! @author Bruce Wyman

@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup horiz_interp_spherical_mod horiz_interp_spherical_mod
-!! @addtogroup horiz_interp
+!! @ingroup horiz_interp
 !! @{
 !! @brief Performs spatial interpolation between grids using inverse-distance-weighted scheme.
 !! This module can interpolate data from rectangular/tripolar grid

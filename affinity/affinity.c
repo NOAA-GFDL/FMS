@@ -35,7 +35,7 @@
 // skips doc parsing for includes and license
 
 /**
- * @addtogroup fms_affinity_mod
+ * @ingroup fms_affinity_mod
  * @{
  */
 

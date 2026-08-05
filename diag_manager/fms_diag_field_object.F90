@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup fms_diag_field_object_mod fms_diag_object_mod
-!! @addtogroup diag_manager
+!! @ingroup diag_manager
 !! @{
 module fms_diag_field_object_mod
 !! @author Tom Robinson

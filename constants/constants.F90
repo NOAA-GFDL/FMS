@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup constants_mod constants_mod
-!! @addtogroup constants
+!! @ingroup constants
 !! @{
 !! @brief File for @ref constants_mod
 !! @brief compatibility module as we transition to an FMSConstants module

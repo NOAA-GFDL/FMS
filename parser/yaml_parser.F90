@@ -17,7 +17,7 @@
 !***********************************************************************
 
 !> @defgroup yaml_parser_mod yaml_parser_mod
-!! @addtogroup parser
+!! @ingroup parser
 !! @{
 !! @brief Routines to use for parsing yaml files
 

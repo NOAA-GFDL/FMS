@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup ensemble_manager_mod ensemble_manager_mod
-!! @addtogroup coupler
+!! @ingroup coupler
 !! @{
 !! @brief Routines for setting up and managing ensembles and ensemble pe lists.
 

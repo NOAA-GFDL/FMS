@@ -16,7 +16,7 @@
 !* governing permissions and limitations under the License.
 !***********************************************************************
 !> @defgroup gaussian_topog_mod gaussian_topog_mod
-!! @addtogroup topography
+!! @ingroup topography
 !! @{
 !! @brief Routines for creating Gaussian-shaped land surface topography
 !! for latitude-longitude grids.
