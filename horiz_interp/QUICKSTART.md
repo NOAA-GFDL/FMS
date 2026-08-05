@@ -2,8 +2,8 @@
 
 `horiz_interp_mod` interpolates 2D and 3D data with `conservative order 1`,
 `bilinear`, `bicubic`, and `spherical` (inverse-distance weighted) methods.
-Not all methods support all input and output grids.  All longititude and 
-latitude values must be in radians.
+Not all methods support all input and output grids.  The source and destination
+grids, specified in longititude and latitude, must be in radians.
 
 # Basic usage
 
@@ -15,7 +15,7 @@ latitude values must be in radians.
 
 ```fortran
 use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, &
-                             horiz_interp, horiz_interp_del, horiz_interp_type
+                            horiz_interp, horiz_interp_del, horiz_interp_type
 use platform_mod, only:  r8_kind ! 64-bit floating point precision
 
 implicit none
@@ -143,6 +143,47 @@ call horiz_interp_end()
 call fms_end()
 ```
 
+## 3D data
+```fortran
+use horiz_interp_mod, only: horiz_interp_init, horiz_interp_new, &
+                             horiz_interp, horiz_interp_del, horiz_interp_type
+use platform_mod, only:  r8_kind ! 64-bit floating point precision
+
+implicit none
+
+type(horiz_interp_type) :: Interp
+real(r8_kind), allocatable :: lon_src(:, :), lat_src(:, :) ! source grid
+real(r8_kind), allocatable :: lon_dst(:,:), lat_dst(:,:) ! destination grid
+real(r8_kind), allocatable :: data_src(:,:,:), data_dst(:,:,:) ! data 
+
+! ... allocate and define the source grid in lon_src and lat_src
+! allocate and define the destination grid in lon_dst and lat_dst
+! ... allocate data_src and compute data on source grid
+
+! start program
+call fms_init()
+
+! ... set domains and MPI parallelization
+
+! initialize horiz_interp_mod
+call horiz_interp_init()
+
+! Compute interpolation weights and mapping indices
+call horiz_interp_new(Interp, lon_src, lat_src, lon_dst, lat_dst, interp_method="bilinear")
+
+! Interpolate (can be reused for many data fields on the same grid)
+call horiz_interp(Interp, data_src, data_dst)
+
+! Release the interpolator when finished
+call horiz_interp_del(Interp)
+
+! finalize horiz_interp_mod
+call horiz_interp_end()
+
+! end program
+call fms_end()
+```
+
 # Interpolation methods
 It is recommended to set the optional argument `interp_method` to one of the following:
 
@@ -151,70 +192,69 @@ It is recommended to set the optional argument `interp_method` to one of the fol
 * `"bicubic"` — bicubic interpolation.  Only supports 1D source with 2D destination, or 1D source and destination grids.
 * `"spherical"` — inverse-distance weighting over nearest neighbors.  Only supports 2D source and destination grids.
 
-# Optional arguments
+
+# Horiz_interp_new optional arguments
+
 `Horiz_interp_new` supports the following optional arguments for each interpolation methods. 
 All methods support `verbose` (sets the verbosity level, 0/1/2, default 0) and `interp_method` (selects the
 method itself) are accepted by `horiz_interp_new` regardless of method and are not repeated below.
 
-## `"conserve"`
+## conservative
 
-* `mask_in` — mask for the source grid; excludes masked input cells from the interpolation.
-  Values must be between 0 and 1.
-* `mask_out` — returns the fractional area of each output grid cell covered by unmasked input cells.
-* `is_latlon_in` / `is_latlon_out` — indicate whether the 2D input grid (`is_latlon_in`) and/or the
-  destination grid (`is_latlon_out`) is a lat/lon grid.  If not provided, horiz_interp_new will automatically 
-  check if the grids are rectilinear grids and trigger the "1D" algorithms for efficiency.
+* `mask_in`:  mask for the source grid; excludes masked input cells from the interpolation.
+  Values must be between 0 and 1.  If not provided, all source grid cells will be remapped to the destination grid.
+* `mask_out`:   will be populated with fractional area of each output grid cell covered by unmasked input cells.  
+   Will not be computed if not provided.
+* `is_latlon_in`/`is_latlon_out`:  .true. if the 2D input/destination grid is a lat/lon grid.  If not provided, 
+  `horiz_interp_new` will automatically check the grids and trigger the more efficient "1D" algorithms.
   
-At the `horiz_interp` (interpolate) step, `mask_in` and `mask_out` are only used when `Interp%version=1`.
 
-## `"bilinear"`
+## bilinear
 
-* `src_modulo` — `.true.` if the source grid is cyclic (periodic) in longitude.  Defaults to `.false.`
-* `grid_at_center` — set to `.true.` if the input lon/lat coordinates (1D source grids only) are the
-  grid cell center points. If `.false.` (default), the input coordinates are treated as cell
-  boundaries and the centers are computed internally.
+* `src_modulo`:  `.true.` if the source grid is cyclic (periodic) in longitude.  Defaults to `.false.` if not provided.
+* `grid_at_center`:  set to `.true.` if the input lon/lat coordinates (1D source grids only) are the
+  grid cell center points. If not provided, defaults to `.false.` and the input coordinates are treated as edge points
+  to compute the centers internally.
 
-At the `horiz_interp` (interpolate) step:
 
-* `missing_value` — a value in `data_in` to be treated as missing.
-* `missing_permit` — the maximum number of surrounding missing values allowed before an output point
-  is itself marked missing.
-* `new_missing_handle` — set to `.true.` to turn on alternative missing-value handling.
-
-## `"bicubic"`
+## bicubic
 
 * `src_modulo` — set to `.true.` if the source grid is cyclic (periodic) in longitude.
-* `grid_at_center` — set to `.true.` if the input lon/lat coordinates are the grid cell center points.
-  If `.false.` (default), the input coordinates are treated as cell boundaries and the centers are
-  computed internally.
+* `grid_at_center`:  set to `.true.` if the input lon/lat coordinates (1D source grids only) are the
+  grid cell center points. If not provided, defaults to `.false.` and the input coordinates are treated as edge points
+  to compute the centers internally.
 
-At the `horiz_interp` (interpolate) step:
 
-* `missing_value` — a value in `data_in` to be treated as missing.
-* `missing_permit` — the maximum number of surrounding missing values allowed before an output point
-  is itself marked missing.
+## spherical
 
-## `"spherical"`
+* `num_nbrs` — number of nearest neighbors to find.  Defaults to 4 if not provided.
+* `max_dist` — maximum distance in radians to search for neighboring cells on the input grid for each output grid cell.  Defaults to 0.1 radians if not provided.
+* `src_modulo` — set to `.true.` if the source grid is cyclic (periodic) in longitude.  Defaults to `.false.` if not provided.
 
-* `num_nbrs` — number of nearest neighbors to use; defaults to 4.
-* `max_dist` — maximum radius of influence [radians] around an output grid cell; defaults to 0.1 radians.
-* `src_modulo` — set to `.true.` if the source grid is cyclic (periodic) in longitude.
 
-At the `horiz_interp` (interpolate) step:
+## Horiz_interp optional arguments (when Interp is provided)
 
-* `missing_value` — a value in `data_in` to be treated as missing.
+## conservative 
 
-## All methods, at the `horiz_interp` (interpolate) step
+* `mask_in`/ `mask_out`:  Used only when `Interp%version1 = .true.` (when weights were generated from 1D representation of both input and output grids.)
 
-* `err_msg` — if present, interpolation errors (e.g. an uninitialized `Interp`) are returned in this
-  string instead of triggering a fatal error.
+## bilinear
 
-## Notes
+* `missing_value`:  data on the source grid with values equal to the `missing_value` will be treated as missing.
+* `missing_permit`:  maximum number of missing values permitted.  Defaults to 0 if not provided.  Is not used if `new_missing_handle` is `.true.`
+* `new_missing_handle`:  set to `.true.` to turn on the new missing handle algorithm.  Defaults to `.false.`
 
-- `horiz_interp` also accepts 3D data arrays (`(i,j,k)`), interpolating each
-  vertical level with the same horizontal weights.
-- Both 32-bit (`r4`) and 64-bit (`r8`) real kinds are supported transparently
-  through the generic interfaces.
-- See `test_fms/horiz_interp/test_horiz_interp.F90` for complete working
-  examples of every grid combination (1D/2D source × 1D/2D destination) and
-  every interpolation method.
+## bicubic 
+
+* `missing_value`:  data on the source grid with values equal to the `missing_value` will be treated as missing.
+* `missing_permit`:  maximum number of missing values permitted.  Defaults to 0 if not provided.  Is not used if `new_missing_handle` is `.true.`
+
+## spherical
+
+* `missing_value`:  data on the source grid with values equal to the `missing_value` will be treated as missing.
+
+
+# Additional notes
+- Horiz_interp_mod supporst both 32-bit (`r4_kind`) and 64-bit (`r8_kind`) grids and data.
+  If `Interp` was populated with weights computed from grids in 32-bit precision, data is expected to be in 32-bit precision.  
+  Likewise, if `Interp` was populated with weights computed from grids in 64-bit precision, data is expected to be in 64-bit precision.
